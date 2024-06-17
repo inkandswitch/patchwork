@@ -4,12 +4,16 @@
   "version": "0.0.1",
   "type": "module",
   "module": "index.js",
+  "workspaces": [
+    "packages/*"
+  ],
+
   "scripts": {
     "dev": "vite --force --port 5173",
     "build:main": "tsc && vite build",
-    "build:sw": "pnpm run build --config vite.config-sw.ts",
+    "build:sw": "vite build --config vite.config-sw.ts",
     "build": "pnpm run build:main && pnpm run build:sw",
-    "build:dev": "pnpm run build && concurrently \"http-server dist\" \"pnpm run chokidar 'src/**/*' 'service-worker.js' -c 'yarn build'\"",
+    "build:dev": "pnpm run build:main -- --watch & pnpm run build:sw -- --watch & pnpm run preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest"
@@ -120,5 +124,8 @@
     "vite-plugin-top-level-await": "^1.4.1",
     "vite-plugin-wasm": "^3.3.0",
     "vitest": "^0.34.6"
+  },
+  "resolutions": {
+    "@automerge/automerge-wasm": "file:./src/vendor/automerge-wasm"
   }
 }
