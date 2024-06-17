@@ -11,10 +11,16 @@ Patchwork is a general framework for editing automerge documents with arbitrary 
 
 ### Run it
 
+NOTE: these instructions for running are very preliminary and should be improved
+
 ```
-yarn
-yarn dev
+pnpm install
+cd packages/core
+pnpm build
+vite preview
 ```
+
+and then manually rerun `pnpm build` when things change :(
 
 ### Folder structure
 
@@ -51,5 +57,4 @@ Notably, datatypes and tools are separated because we want to encourage multiple
 - Create a tool that can view / edit your new data type
   - Create a new folder in `src/tools/`
   - Add your new tool to the `TOOLS` list in `src/os/tools.ts`
-    p
 
