@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@automerge/automerge-wasm': file:./packages/core/src/vendor/automerge-wasm
+
 importers:
 
   .: {}
@@ -325,8 +328,8 @@ packages:
   '@automerge/automerge-repo@1.1.12':
     resolution: {integrity: sha512-rhUcA24xN2+vt4dYt1BQdfaO4f8jC+suVZeqUjUlHKN2PTHe0aqJfy/WtwnRgp1d1VJulSMpusOYX0FMUqRcJw==}
 
-  '@automerge/automerge-wasm@0.17.0':
-    resolution: {integrity: sha512-EPTqadOj+wzv73rPaa80Q+tKnM+XpEtYhqZ4reB9647OZdiQjQwlXo+y/7VrGO+x48Kow0sYpZa9rgx8t785kA==}
+  '@automerge/automerge-wasm@file:packages/core/src/vendor/automerge-wasm':
+    resolution: {directory: packages/core/src/vendor/automerge-wasm, type: directory}
 
   '@automerge/automerge@2.2.2':
     resolution: {integrity: sha512-tjEMNWXr6wgIZuGpJ7JwFZuKoWBuYt7tl8lCRhC/Pyqht8LsXFMI1stfi3ZrUTqDkJ1qwPSOTS2iwKLw8ObErw==}
@@ -4913,11 +4916,11 @@ snapshots:
       - supports-color
       - typescript
 
-  '@automerge/automerge-wasm@0.17.0': {}
+  '@automerge/automerge-wasm@file:packages/core/src/vendor/automerge-wasm': {}
 
   '@automerge/automerge@2.2.2':
     dependencies:
-      '@automerge/automerge-wasm': 0.17.0
+      '@automerge/automerge-wasm': file:packages/core/src/vendor/automerge-wasm
       uuid: 9.0.1
 
   '@babel/code-frame@7.24.7':
