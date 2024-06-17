@@ -1,4 +1,4 @@
-// TODO: don't import directly from core/src?
+// TODO: don't import directly from core/src. Expose an official interface to the OS.
 import { EditorProps, Tool } from "@patchwork/core/src/os/tools";
 
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
