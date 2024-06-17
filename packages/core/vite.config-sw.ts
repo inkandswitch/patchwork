@@ -26,4 +26,13 @@ export default defineConfig({
       NODE_ENV: "production",
     },
   },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      "@automerge/automerge-wasm": path.resolve(
+        __dirname,
+        "./src/vendor/automerge-wasm"
+      ),
+    },
+  },
 });

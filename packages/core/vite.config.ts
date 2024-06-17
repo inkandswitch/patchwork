@@ -84,6 +84,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@automerge/automerge-wasm": path.resolve(
+        __dirname,
+        "./src/vendor/automerge-wasm"
+      ),
     },
   },
 
