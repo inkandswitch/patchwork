@@ -1,0 +1,10 @@
+{
+  "name": "patchwork",
+  "version": "1.0.0",
+  "description": "A malleable software environment for collaborative work",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "Ink & Switch"
+
+}
