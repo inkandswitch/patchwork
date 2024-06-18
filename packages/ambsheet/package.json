@@ -1,0 +1,30 @@
+{
+  "name": "@patchwork/hello-world",
+  "version": "0.0.1",
+  "description": "A tiny sample patchwork datatype + tool",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rollup -c",
+    "deploy": "trailhead push --dir dist --automergeDocUrl automerge:MhPDen55wgXjCaGMk9zxfUx4gfw"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge": "^2.2.2",
+    "@automerge/automerge-repo": "^1.1.12",
+    "@automerge/automerge-repo-react-hooks": "^1.1.12",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/node": "^20.8.2",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "rollup": "^4.18.0",
+    "tslib": "^2.6.3",
+    "typescript": "^5.0.2"
+  }
+}
