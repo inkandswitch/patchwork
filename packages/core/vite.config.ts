@@ -4,7 +4,7 @@ import fs from "fs";
 import { globSync } from "glob";
 import { fileURLToPath } from "node:url";
 import path from "path";
-import { HtmlTagDescriptor, defineConfig } from "vite";
+import { HtmlTagDescriptor, Plugin, defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
 import { Generator } from "@jspm/generator";
@@ -14,7 +14,70 @@ const SHARED_DEPENDENCIES = [
   "@automerge/automerge-repo",
   "@automerge/automerge-repo-react-hooks",
   "react",
+  "@patchwork/sdk",
 ];
+
+// Plugin that helps make vite dev work for us
+const viteDevImportMapPlugin = {
+  name: "shared-deps-import-map",
+  async transformIndexHtml(html, { server }) {
+    if (server) {
+      const hash = JSON.parse(
+        fs.readFileSync(
+          path.join(__dirname, "node_modules/.vite/deps/_metadata.json"),
+          "utf-8"
+        )
+      ).browserHash;
+
+      const importMap = { imports: {} };
+
+      for (const dep of SHARED_DEPENDENCIES) {
+        importMap.imports[dep] = `/node_modules/.vite/deps/${dep.replace(
+          /\//g,
+          "_"
+        )}.js?v=${hash}`;
+      }
+
+      const tags: HtmlTagDescriptor[] = [
+        {
+          tag: "script",
+          attrs: {
+            type: "importmap",
+          },
+          children: JSON.stringify(importMap, null, 2),
+          injectTo: "head-prepend",
+        },
+      ];
+
+      return { html, tags };
+    }
+
+    const generator = new Generator({
+      debug: false,
+      env: ["browser", "module"],
+    });
+
+    for (const dep of SHARED_DEPENDENCIES) {
+      await generator.install(dep);
+    }
+
+    // TODO: add @patchwork/sdk to the import map
+
+    return {
+      html,
+      tags: [
+        {
+          tag: "script",
+          attrs: {
+            type: "importmap",
+          },
+          children: JSON.stringify(generator.getMap(), null, 2),
+          injectTo: "head-prepend",
+        },
+      ],
+    };
+  },
+};
 
 export default defineConfig({
   base: "./",
@@ -22,64 +85,9 @@ export default defineConfig({
   plugins: [
     topLevelAwait(),
     react(),
-    {
-      name: "shared-deps-import-map",
-      async transformIndexHtml(html, { server }) {
-        if (server) {
-          const hash = JSON.parse(
-            fs.readFileSync(
-              path.join(__dirname, "node_modules/.vite/deps/_metadata.json"),
-              "utf-8"
-            )
-          ).browserHash;
 
-          const importMap = { imports: {} };
-
-          for (const dep of SHARED_DEPENDENCIES) {
-            importMap.imports[dep] = `/node_modules/.vite/deps/${dep.replace(
-              /\//g,
-              "_"
-            )}.js?v=${hash}`;
-          }
-
-          const tags: HtmlTagDescriptor[] = [
-            {
-              tag: "script",
-              attrs: {
-                type: "importmap",
-              },
-              children: JSON.stringify(importMap, null, 2),
-              injectTo: "head-prepend",
-            },
-          ];
-
-          return { html, tags };
-        }
-
-        const generator = new Generator({
-          debug: false,
-          env: ["browser", "module"],
-        });
-
-        for (const dep of SHARED_DEPENDENCIES) {
-          await generator.install(dep);
-        }
-
-        return {
-          html,
-          tags: [
-            {
-              tag: "script",
-              attrs: {
-                type: "importmap",
-              },
-              children: JSON.stringify(generator.getMap(), null, 2),
-              injectTo: "head-prepend",
-            },
-          ],
-        };
-      },
-    },
+    // TODO: re-enable this if we want to support vite dev again
+    // viteDevImportMapPlugin as Plugin
   ],
   resolve: {
     alias: {
@@ -114,6 +122,7 @@ export default defineConfig({
       external: SHARED_DEPENDENCIES,
       input: {
         main: path.resolve(__dirname, "index.html"),
+        sdk: path.resolve(__dirname, "src/os/sdk.ts"), // Added entrypoint for sdk.ts
         ...Object.fromEntries(
           globSync(
             path.resolve(__dirname, "src/datatypes/*/module.@(ts|js|tsx|jsx)")
@@ -161,6 +170,11 @@ export default defineConfig({
           if (chunkInfo.name.startsWith("dataType-")) {
             const typeId = chunkInfo.name.split("-")[1];
             return `dataTypes/${typeId}.js`;
+          }
+
+          // output sdk under "/sdk.js"
+          if (chunkInfo.name === "sdk") {
+            return `sdk.js`;
           }
 
           return "assets/[name]-[hash].js"; // Default behavior for other entries
