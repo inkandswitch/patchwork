@@ -1,13 +1,17 @@
-import { EditorProps, Tool } from "@patchwork/sdk";
+import { type EditorProps, type Tool, hashToColor } from "@patchwork/sdk";
 
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { HelloWorldDoc } from "./datatype";
+
+import * as Automerge from "@automerge/automerge";
 
 export const HelloWorldEditor = ({
   docUrl,
 }: EditorProps<HelloWorldDoc, never>) => {
   const [doc] = useDocument<HelloWorldDoc>(docUrl);
-  return <div>Message: {doc?.message}</div>;
+  const heads = Automerge.getHeads(doc);
+  const color = hashToColor(heads[0]);
+  return <div style={{ backgroundColor: color }}>Hello world</div>;
 };
 
 export const helloWorldTool: Tool = {
@@ -15,5 +19,6 @@ export const helloWorldTool: Tool = {
   id: "helloWorld",
   name: "Hello World",
   editorComponent: HelloWorldEditor,
-  supportedDataTypes: ["helloWorld"],
+  statusBarComponent: HelloWorldEditor,
+  supportedDataTypes: "*",
 };

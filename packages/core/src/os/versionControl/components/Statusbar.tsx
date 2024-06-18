@@ -3,7 +3,7 @@ import { EditorProps, useToolsForDataType } from "@/os/tools";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import React, { useMemo } from "react";
-import { PackageDoc } from "@/packages/pkg/datatype";
+import { PackageDoc, init as initPackage } from "@/packages/pkg/datatype";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 
 type StatusBarProps = EditorProps<unknown, unknown> & {
@@ -83,13 +83,7 @@ export const StatusBar = (props: StatusBarProps) => {
             addNewDocument({
               type: "pkg",
               change: (doc) => {
-                (doc as PackageDoc).source = {
-                  type: "automerge",
-                  "index.js": {
-                    contentType: "application/javascript",
-                    contents: getEmptyPackageSource(dataType.id, doc),
-                  },
-                };
+                initPackage(doc);
               },
             })
           }

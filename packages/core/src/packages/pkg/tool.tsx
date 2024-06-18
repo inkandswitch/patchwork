@@ -30,7 +30,10 @@ export const PackageEditor: React.FC<EditorProps<never, never>> = ({
 
   const onChangeSourceCode = (evt) => {
     changeModuleDoc((doc) => {
-      doc.source["index.js"] = {
+      if (doc.source.type !== "automerge") {
+        return;
+      }
+      doc.source.fileContents["index.js"] = {
         contentType: "application/javascript",
         contents: evt.target.value,
       };
@@ -45,16 +48,32 @@ export const PackageEditor: React.FC<EditorProps<never, never>> = ({
       } else if (newType === "automerge") {
         doc.source = {
           type: "automerge",
-          "index.js": {
-            contentType: "application/javascript",
-            contents: "return {};",
+          // TODO: this is just a tiny sample package json;
+          // figure out what we actually want to put here...
+          packageJson: {
+            name: "my-package",
+            version: "0.0.1",
+            main: "index.js",
+          },
+          files: ["index.js"],
+          fileContents: {
+            "index.js": {
+              contentType: "application/javascript",
+              contents: "return {};",
+            },
           },
         };
       }
     });
   };
 
-  const source = moduleDoc.source["index.js"]?.contents ?? "";
+  let source = "";
+  if (
+    moduleDoc.source.type === "automerge" &&
+    typeof moduleDoc.source.fileContents["index.js"]?.contents === "string"
+  ) {
+    source = moduleDoc.source.fileContents["index.js"].contents;
+  }
 
   return (
     <div className="p-4 w-full">

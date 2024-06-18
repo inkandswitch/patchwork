@@ -2,10 +2,11 @@
   "name": "@patchwork/hello-world",
   "version": "0.0.1",
   "description": "A tiny sample patchwork datatype + tool",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc && node build.mjs",
-    "deploy": "trailhead push --dir dist --automergeDocUrl automerge:NqNeHRLoMrydP6Qs5LpwHTnq2UV"
+    "deploy": "trailhead push --dir dist --automergeDocUrl automerge:2iUF13FStaGcNCBhm7TZAnMrdjPA"
   },
   "keywords": [],
   "author": "Ink & Switch",
@@ -13,7 +14,6 @@
     "@automerge/automerge": "^2.2.2",
     "@automerge/automerge-repo": "^1.1.12",
     "@automerge/automerge-repo-react-hooks": "^1.1.12",
-    "@patchwork/core": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

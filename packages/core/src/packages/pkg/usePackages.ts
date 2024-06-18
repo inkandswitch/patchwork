@@ -61,7 +61,7 @@ export const usePackageModulesInRootFolder = (): Package[] => {
           const sourceUrl =
             source.type === "url"
               ? source.url
-              : `https://automerge/${docId}/source/index.js?heads=${heads.join(
+              : `https://automerge/${docId}/source/fileContents/index.js?heads=${heads.join(
                   ","
                 )}`;
 
