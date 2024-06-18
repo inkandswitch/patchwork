@@ -68,11 +68,15 @@ export const PackageEditor: React.FC<EditorProps<never, never>> = ({
   };
 
   let source = "";
-  if (
-    moduleDoc.source.type === "automerge" &&
-    typeof moduleDoc.source.fileContents["index.js"]?.contents === "string"
-  ) {
-    source = moduleDoc.source.fileContents["index.js"].contents;
+  if (moduleDoc.source.type === "automerge") {
+    const contents = moduleDoc.source.fileContents["index.js"]?.contents;
+    console.log({ contents });
+    if (typeof contents === "string") {
+      source = contents;
+    } else if (contents.constructor.name === "RawString") {
+      // couldn't get instanceof to work here...
+      source = contents.toString();
+    }
   }
 
   return (
