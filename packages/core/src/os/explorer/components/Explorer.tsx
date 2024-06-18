@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { useDataType, useDataTypes } from "@/os/datatypes";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
@@ -22,7 +21,12 @@ import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "@/os/versionControl/components/VersionControlEditor";
 import { Branch, HasVersionControlMetadata } from "@/os/versionControl/schema";
 
-import { useTool, useToolsForDataType } from "@patchwork/sdk";
+import {
+  useTool,
+  useToolsForDataType,
+  useDataType,
+  useDataTypes,
+} from "@patchwork/sdk";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { useSelectedDocLink } from "../hooks/useSelectedDocLink";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";

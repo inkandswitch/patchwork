@@ -1,4 +1,4 @@
-import { DataType } from "@/os/datatypes";
+import { type DataType } from "@patchwork/sdk";
 import { ContactDoc, RegisteredContactDoc } from "@/os/explorer/account";
 import { HasVersionControlMetadata } from "@/os/versionControl/schema";
 import { MarkdownDoc, markdownDataType } from "@/packages/essay/datatype";

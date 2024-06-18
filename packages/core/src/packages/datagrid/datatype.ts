@@ -5,7 +5,7 @@ import {
 } from "@/os/versionControl/schema";
 import { next as A } from "@automerge/automerge";
 import { pick } from "lodash";
-import { DataType } from "@/os/datatypes";
+import { type DataType } from "@patchwork/sdk";
 import { Sheet } from "lucide-react";
 
 // SCHEMA

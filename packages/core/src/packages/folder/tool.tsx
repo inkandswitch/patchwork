@@ -2,7 +2,7 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import React from "react";
 
-import { useDataType } from "@/os/datatypes";
+import { useDataType } from "@patchwork/sdk";
 import { selectDocLink } from "@/os/explorer/hooks/useSelectedDocLink";
 import { Icon } from "@/os/lib/icons";
 import { EditorProps, Tool, useToolsForDataType } from "@/os/tools";

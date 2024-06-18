@@ -1,7 +1,7 @@
 import { DEFAULT_MODEL, openaiClient } from "@/os/lib/llm";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { Doc, splice } from "@automerge/automerge/next";
-import { DataType } from "../datatypes";
+import { type DataType } from "@patchwork/sdk";
 import { createBranch } from "./branches";
 import { Branch, HasVersionControlMetadata } from "./schema";
 

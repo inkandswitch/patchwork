@@ -1,4 +1,4 @@
-import { DataType } from "@/os/datatypes";
+import { type DataType } from "@patchwork/sdk";
 import { EditorProps, useToolsForDataType } from "@/os/tools";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
@@ -50,8 +50,6 @@ export const StatusBar = (props: StatusBarProps) => {
 
     [tools]
   );
-
-  console.log({ tools });
 
   return (
     <div

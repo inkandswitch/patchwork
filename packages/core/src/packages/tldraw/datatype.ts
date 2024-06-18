@@ -1,4 +1,4 @@
-import { DataType } from "@/os/datatypes";
+import { type DataType } from "@patchwork/sdk";
 import { DecodedChangeWithMetadata } from "@/os/versionControl/groupChanges";
 import {
   Annotation,

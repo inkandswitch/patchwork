@@ -1,4 +1,4 @@
-import { DataType } from "@/os/datatypes";
+import { type DataType } from "@patchwork/sdk";
 import { HasVersionControlMetadata } from "@/os/versionControl/schema";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { Folder } from "lucide-react";

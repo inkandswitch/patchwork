@@ -16,7 +16,7 @@ import { Repo } from "@automerge/automerge-repo";
 import { splice } from "@automerge/automerge/next";
 import { pick } from "lodash";
 import JSZip from "jszip";
-import { DataType } from "@/os/datatypes";
+import { type DataType } from "@patchwork/sdk";
 
 // SCHEMA
 

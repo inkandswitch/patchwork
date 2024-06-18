@@ -6,7 +6,7 @@ import {
   HasVersionControlMetadata,
 } from "@/os/versionControl/schema";
 import { DecodedChangeWithMetadata } from "@/os/versionControl/groupChanges";
-import { DataType } from "@/os/datatypes";
+import { type DataType } from "@patchwork/sdk";
 
 export interface Position {
   row: number;

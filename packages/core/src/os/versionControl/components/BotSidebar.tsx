@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
-import { DataType } from "@/os/datatypes";
+import { type DataType } from "@patchwork/sdk";
 import {
   AssistantMessage,
   ChatMessage,

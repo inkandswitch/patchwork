@@ -33,7 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ContactAvatar } from "./ContactAvatar";
-import { useDataTypes } from "@/os/datatypes";
+import { useDataTypes } from "@patchwork/sdk";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Icon } from "@/os/lib/icons";
 
