@@ -1,7 +1,7 @@
 {
-  "name": "@patchwork/hello-world",
+  "name": "@patchwork/doc-heads",
   "version": "0.0.1",
-  "description": "A tiny sample patchwork datatype + tool",
+  "description": "See the heads for any document",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
