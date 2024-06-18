@@ -112,7 +112,7 @@ Include a short commit message of 2-8 words summarizing the change in specific t
   };
   \`\`\`
   `,
-    path: ["source", "index.js", "contents"],
+    path: ["source", "fileContents", "index.js", "contents"],
   },
 };
 
