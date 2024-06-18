@@ -7,7 +7,6 @@ import {
   useDocument,
   useHandle,
 } from "@automerge/automerge-repo-react-hooks";
-import "react-error-boundary";
 import * as Automerge from "@automerge/automerge";
 
 import {
@@ -144,8 +143,7 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
   }
 
   return (
-    <div>
-      <h2 style={{ fontWeight: "bold" }}>doc url is: {documentUrl}</h2>
+    <div style={{ padding: "16px" }}>
       <button onClick={goBack} disabled={history.length === 0}>
         Back
       </button>

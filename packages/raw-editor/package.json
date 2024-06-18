@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "rollup -c",
-    "deploy": "trailhead push --dir dist --automergeDocUrl automerge:3xNzsb1aQSwFJnp3jmQxjuLAKhdp"
+    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:3xNzsb1aQSwFJnp3jmQxjuLAKhdp"
   },
   "keywords": [],
   "author": "Ink & Switch",
