@@ -7,10 +7,10 @@
   "workspaces": [
     "packages/*"
   ],
-
   "scripts": {
     "dev": "vite --force --port 5173",
     "build:main": "tsc && vite build",
+    "build2": "rm -rf dist && cp -r public dist && node ./build.js",
     "build:sw": "vite build --config vite.config-sw.ts",
     "build": "pnpm run build:main && pnpm run build:sw",
     "build:dev": "pnpm build && concurrently \"vite preview\" \"pnpm run chokidar 'src/**/*' 'service-worker.js' -c 'pnpm build'\"",
@@ -80,14 +80,14 @@
     "react-error-boundary": "^4.0.13",
     "react-markdown": "^9.0.1",
     "react-range-slider-input": "^3.0.7",
+    "react-redux": ">= 5.0.7",
     "react-trello": "^2.2.11",
     "react-usestateref": "^1.0.8",
-    "react-redux": ">= 5.0.7",
     "redux": ">= 4.0.0",
     "redux-actions": ">= 2.6.1",
     "redux-logger": ">= 3.0.6",
-    "styled-components": ">= 4.0.3",
     "sonner": "^1.4.0",
+    "styled-components": ">= 4.0.3",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7",
     "use-resize-observer": "^9.1.0",
@@ -109,6 +109,8 @@
     "chokidar": "^3.6.0",
     "chokidar-cli": "^3.0.0",
     "concurrently": "^8.2.2",
+    "esbuild": "^0.21.5",
+    "esbuild-plugin-svgr": "^2.1.0",
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
