@@ -13,6 +13,7 @@
     "build2": "rm -rf dist && cp -r public dist && node ./build.js",
     "build:sw": "vite build --config vite.config-sw.ts",
     "build": "pnpm run build:main && pnpm run build:sw",
+    "build:no-tsc": "vite build && pnpm build:sw",
     "build:dev": "pnpm build && concurrently \"vite preview\" \"pnpm run chokidar 'src/**/*' 'service-worker.js' -c 'pnpm build'\"",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
