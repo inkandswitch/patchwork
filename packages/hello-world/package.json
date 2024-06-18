@@ -4,7 +4,7 @@
   "description": "A tiny sample patchwork datatype + tool",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && vite build"
+    "build": "tsc && node build.js"
   },
   "keywords": [],
   "author": "Ink & Switch",
@@ -17,10 +17,11 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@types/node": "^20.8.2",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
-    "@types/node": "^20.8.2",
     "@vitejs/plugin-react": "^4.2.1",
+    "esbuild": "^0.21.5",
     "vite": "^5.2.1",
     "vite-plugin-top-level-await": "^1.4.1",
     "vite-plugin-wasm": "^3.3.0"

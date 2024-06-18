@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "esModuleInterop": true,
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
@@ -15,10 +14,10 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    "baseUrl": ".",
     "paths": {
-      "@patchwork/core": ["../core/src"],
-      "@automerge/automerge-wasm" : ["./src/vendor/automerge-wasm/index.d.ts"],
+      "@/*": ["./packages/core/src/*"],
+      "@patchwork/sdk": ["./packages/core/src/os/sdk.ts"],
+      "@automerge/automerge-wasm": ["./packages/core/src/vendor/automerge-wasm/index.d.ts"]
     },
 
     /* Linting */
@@ -27,5 +26,6 @@
     // "noUnusedParameters": true,
     // "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
+  "include": ["packages"],
+  "exclude": ["packages/core/src/vendor"]
 }

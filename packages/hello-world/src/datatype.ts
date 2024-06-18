@@ -1,5 +1,5 @@
-import { DataType } from "@patchwork/core";
-import { HasVersionControlMetadata } from "@patchwork/core";
+import { DataType } from "@patchwork/sdk";
+import { HasVersionControlMetadata } from "@patchwork/sdk";
 import { Repo } from "@automerge/automerge-repo";
 
 // SCHEMA
@@ -13,10 +13,10 @@ export const helloWorldDatatype: DataType<HelloWorldDoc, never, never> = {
   id: "helloWorld",
   name: "Hello World",
   isExperimental: true,
-  icon: "👋",
+  icon: "Globe",
   init: (doc: any, repo: Repo) => {
     doc.message = "Hello, world!";
   },
-  getTitle: async (doc: any, repo: Repo) => {},
+  getTitle: async (doc: any, repo: Repo) => "hello world",
   markCopy: () => {},
 };
