@@ -70,7 +70,6 @@ export const PackageEditor: React.FC<EditorProps<never, never>> = ({
   let source = "";
   if (moduleDoc.source.type === "automerge") {
     const contents = moduleDoc.source.fileContents["index.js"]?.contents;
-    console.log({ contents });
     if (typeof contents === "string") {
       source = contents;
     } else if (contents.constructor.name === "RawString") {
