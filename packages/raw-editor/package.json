@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "rollup -c",
-    "deploy": "trailhead push --dir dist --automergeDocUrl automerge:MhPDen55wgXjCaGMk9zxfUx4gfw"
+    "deploy": "trailhead push --dir dist --automergeDocUrl automerge:3xNzsb1aQSwFJnp3jmQxjuLAKhdp"
   },
   "keywords": [],
   "author": "Ink & Switch",
@@ -14,10 +14,14 @@
     "@automerge/automerge": "^2.2.2",
     "@automerge/automerge-repo": "^1.1.12",
     "@automerge/automerge-repo-react-hooks": "^1.1.12",
+    "@microlink/react-json-view": "^1.23.0",
+    "@radix-ui/react-icons": "^1.3.0",
+    "htm": "^3.1.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/node": "^20.8.2",
