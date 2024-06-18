@@ -3,16 +3,9 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronsLeft,
-  FileQuestionIcon,
   FolderInput,
 } from "lucide-react";
-import React, {
-  ReactElement,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { NodeRendererProps, Tree } from "react-arborist";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
