@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import ReactDom from "react-dom/client";
-import ReactJson from "@microlink/react-json-view";
+import ReactJson, { InteractionProps } from "@microlink/react-json-view";
 // import { isValidAutomergeUrl } from "@automerge/automerge-repo"
 import {
   RepoContext,
@@ -8,7 +8,6 @@ import {
   useHandle,
 } from "@automerge/automerge-repo-react-hooks";
 import "react-error-boundary";
-import { html } from "htm/react";
 import * as Automerge from "@automerge/automerge";
 
 import {
@@ -59,7 +58,7 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
   }, [history, setHistory, changeDocumentUrl]);
 
   const onEdit = useCallback(
-    ({ namespace, new_value, name }) => {
+    ({ namespace, new_value, name }: InteractionProps) => {
       changeDoc(function (doc) {
         let current = doc;
         for (
@@ -141,22 +140,26 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
   );
 
   if (!doc) {
-    return html`<div>Loading ${documentUrl}...</div>`;
+    return <div>Loading {documentUrl}...</div>;
   }
 
-  return html`
-    <h2 style=${{ fontWeight: "bold" }}>doc url: ${documentUrl}</h2>
-    <button onClick=${goBack} disabled=${history.length === 0}>Back</button>
-    <${ReactJson}
-      collapsed="3"
-      src=${doc}
-      onEdit=${onEdit}
-      onAdd=${onAdd}
-      onDelete=${onDelete}
-      onSelect=${onSelect}
-    />
-    <button onClick=${onDownloadDoc}>
-      Download Automerge binary document.
-    </button>
-  `;
+  return (
+    <div>
+      <h2 style={{ fontWeight: "bold" }}>doc url is: {documentUrl}</h2>
+      <button onClick={goBack} disabled={history.length === 0}>
+        Back
+      </button>
+      <ReactJson
+        collapsed={3}
+        src={doc}
+        onEdit={onEdit}
+        onAdd={onAdd}
+        onDelete={onDelete}
+        onSelect={onSelect}
+      />
+      <button onClick={onDownloadDoc}>
+        Download Automerge binary document.
+      </button>
+    </div>
+  );
 };
