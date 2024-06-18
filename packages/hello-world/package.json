@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc && node build.mjs",
-    "deploy": "trailhead push --dir dist --automergeDocUrl automerge:2iUF13FStaGcNCBhm7TZAnMrdjPA"
+    "deploy": "trailhead push --dir dist --automergeDocUrl automerge:ppmqZa9Fpg4TuRHtfZDbCnKw3Up"
   },
   "keywords": [],
   "author": "Ink & Switch",
