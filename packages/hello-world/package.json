@@ -4,7 +4,8 @@
   "description": "A tiny sample patchwork datatype + tool",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && node build.mjs"
+    "build": "tsc && node build.mjs",
+    "deploy": "trailhead push --dir dist --automergeDocUrl automerge:NqNeHRLoMrydP6Qs5LpwHTnq2UV"
   },
   "keywords": [],
   "author": "Ink & Switch",
