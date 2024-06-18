@@ -52,13 +52,10 @@ export const StatusBar = (props: StatusBarProps) => {
   );
 
   return (
-    <div
-      className="bg-gray-100 p-2 flex items-center border-t border-gray-200 gap-3"
-      style={{ height: "48px" }}
-    >
+    <div className="h-8 bg-gray-100 px-2 flex items-center border-t border-gray-200">
       {toolsWithStatusBarComponent.map((tool) => (
         <div
-          className={`bg-white border border-gray-200 rounded-md px-2 py-1 relative ${
+          className={`border-r border-gray-200 px-4 relative text-xs ${
             tool.sourceDocUrl ? "border-dashed" : ""
           }`}
         >
