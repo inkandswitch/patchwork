@@ -55,7 +55,7 @@ export const StatusBar = (props: StatusBarProps) => {
     <div className="h-8 bg-gray-100 px-2 flex items-center border-t border-gray-200">
       {toolsWithStatusBarComponent.map((tool) => (
         <div
-          className={`border-r border-gray-200 px-4 relative text-sm ${
+          className={`border-r border-gray-200 px-4 relative text-sm cursor-default ${
             tool.sourceDocUrl ? "border-dashed" : ""
           }`}
         >
