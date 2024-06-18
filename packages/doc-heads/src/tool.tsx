@@ -20,7 +20,7 @@ export const DocHeadsViewer = ({ docUrl }: EditorProps<unknown, never>) => {
     >
       <div className="flex items-center">
         <div
-          className="w-4 h-4 rounded-full"
+          className="w-2 h-2 rounded-full"
           style={{ backgroundColor: color }}
         ></div>
         <span className="ml-2 font-mono">{heads[0]?.slice(0, 6)}</span>
