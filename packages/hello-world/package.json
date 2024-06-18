@@ -4,7 +4,7 @@
   "description": "A tiny sample patchwork datatype + tool",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && node build.js"
+    "build": "tsc && node build.mjs"
   },
   "keywords": [],
   "author": "Ink & Switch",

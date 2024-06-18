@@ -1,14 +1,12 @@
-// TODO: don't import directly from core/src. Expose an official interface to the OS.
-import { EditorProps, Tool } from "@patchwork/core/src/os/tools";
+import { EditorProps, Tool } from "@patchwork/sdk";
 
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { HelloWorldDoc } from "./datatype";
-import React from "react";
 
 export const HelloWorldEditor = ({
   docUrl,
 }: EditorProps<HelloWorldDoc, never>) => {
-  const [doc, changeDoc] = useDocument<HelloWorldDoc>(docUrl);
+  const [doc] = useDocument<HelloWorldDoc>(docUrl);
   return <div>Message: {doc?.message}</div>;
 };
 

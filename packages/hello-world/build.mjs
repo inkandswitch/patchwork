@@ -11,5 +11,6 @@ await esbuild.build({
     "@automerge/automerge-repo",
     "@automerge/automerge-repo-react-hooks",
     "@automerge/automerge-wasm",
+    "react",
   ],
 });

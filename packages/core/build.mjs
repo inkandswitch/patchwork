@@ -7,5 +7,12 @@ await esbuild.build({
   bundle: true,
   outdir: "dist",
   plugins: [svgr()],
-  external: ["@automerge/automerge-wasm"],
+  external: [
+    "@patchwork/sdk",
+    "@automerge/automerge",
+    "@automerge/automerge-repo",
+    "@automerge/automerge-repo-react-hooks",
+    "@automerge/automerge-wasm",
+    "react",
+  ],
 });
