@@ -16,7 +16,7 @@
     "@automerge/automerge-repo-react-hooks": "^1.1.12",
     "@rollup/plugin-replace": "^5.0.7",
     "react": "^18.2.0",
-    "react-trello": "^2.2.11",
+    "react-trello": "^2.2.11"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^26.0.1",
