@@ -16,8 +16,10 @@ const SHARED_DEPENDENCIES = [
   "@automerge/automerge-repo",
   "@automerge/automerge-repo-react-hooks",
   "react",
+  "react-dom",
   "react-dom/client",
   "react-dom/server",
+  "react/jsx-runtime",
 ];
 
 // Internal modules that are shared with dynamically loaded packages
@@ -93,7 +95,7 @@ const generateImportMapPlugin: Plugin = {
     const importMap = generator.getMap();
 
     for (const [name, url] of Object.entries(SHARED_MODULES)) {
-      importMap.import[name] = url;
+      importMap.imports[name] = url;
     }
 
     return {
