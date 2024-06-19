@@ -1,0 +1,35 @@
+{
+  "name": "@patchwork/kanban",
+  "version": "0.0.1",
+  "description": "A basic kanban board",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rollup -c",
+    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:2YcTuizZJPJ4SeXmPdJS8ZjUNScU"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge": "^2.2.2",
+    "@automerge/automerge-repo": "^1.1.12",
+    "@automerge/automerge-repo-react-hooks": "^1.1.12",
+    "@rollup/plugin-replace": "^5.0.7",
+    "react": "^18.2.0",
+    "react-trello": "^2.2.11",
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/node": "^20.8.2",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "rollup": "^4.18.0",
+    "rollup-plugin-postcss": "^4.0.2",
+    "rollup-plugin-terser": "^7.0.2",
+    "tslib": "^2.6.3",
+    "typescript": "^5.0.2"
+  }
+}
