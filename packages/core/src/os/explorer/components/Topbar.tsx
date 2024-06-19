@@ -33,7 +33,7 @@ import { HasVersionControlMetadata } from "@/os/versionControl/schema";
 import { runBot } from "@/packages/bot";
 import { MarkdownDoc } from "@/packages/essay";
 import { getHeads } from "@automerge/automerge";
-import { useDataType } from "@patchwork/sdk";
+import { useDataType } from "../../datatypes";
 import { useDatatypeSettings, useRootFolderDocWithChildren } from "../account";
 import { getUrlSafeName } from "../hooks/useSelectedDocLink";
 

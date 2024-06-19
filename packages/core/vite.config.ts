@@ -9,16 +9,45 @@ import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
 import { Generator } from "@jspm/generator";
 
+// Dependencies that are shared with dynamically loaded packages
+// actual url will be resolved by generateImportMapPlugin
 const SHARED_DEPENDENCIES = [
   "@automerge/automerge",
   "@automerge/automerge-repo",
   "@automerge/automerge-repo-react-hooks",
   "react",
-  "@patchwork/sdk",
+  "react-dom/client",
+  "react-dom/server",
 ];
 
-// Plugin that helps make vite dev work for us
-const viteDevImportMapPlugin = {
+// Internal modules that are shared with dynamically loaded packages
+const SHARED_MODULES = {
+  "@patchwork/sdk": "./sdk.js",
+};
+
+// All dependencies that should not be bundled in and instead are loaded
+// through the import map created by generateImportMapPlugin
+const EXTERNAL_DEPENDENCIES = SHARED_DEPENDENCIES.concat(
+  Object.keys(SHARED_MODULES)
+);
+
+/* Generates an import map for the shared dependencies. Depending on wether we are in dev mode
+ * or in build mode we have to do different things
+ *
+ * Dev mode:
+ *
+ * Esbuild is used in dev mode which doesn't handle external dependencies properly
+ * (see: https://github.com/evanw/esbuild/issues/1927).
+ *
+ * - Don't externalize dependencies in main bundle of core
+ * - Generate import map that links to the pre bundled dependencies that are linked from the main bundle
+ *
+ * Build mode:
+ *
+ * - Externalize shared dependencies
+ * - Generate import map using jspm generator
+ * */
+const generateImportMapPlugin: Plugin = {
   name: "shared-deps-import-map",
   async transformIndexHtml(html, { server }) {
     if (server) {
@@ -29,7 +58,7 @@ const viteDevImportMapPlugin = {
         )
       ).browserHash;
 
-      const importMap = { imports: {} };
+      const importMap = { imports: { ...SHARED_MODULES } };
 
       for (const dep of SHARED_DEPENDENCIES) {
         importMap.imports[dep] = `/node_modules/.vite/deps/${dep.replace(
@@ -61,7 +90,11 @@ const viteDevImportMapPlugin = {
       await generator.install(dep);
     }
 
-    // TODO: add @patchwork/sdk to the import map
+    const importMap = generator.getMap();
+
+    for (const [name, url] of Object.entries(SHARED_MODULES)) {
+      importMap.import[name] = url;
+    }
 
     return {
       html,
@@ -71,7 +104,7 @@ const viteDevImportMapPlugin = {
           attrs: {
             type: "importmap",
           },
-          children: JSON.stringify(generator.getMap(), null, 2),
+          children: JSON.stringify(importMap, null, 2),
           injectTo: "head-prepend",
         },
       ],
@@ -82,13 +115,7 @@ const viteDevImportMapPlugin = {
 export default defineConfig({
   base: "./",
 
-  plugins: [
-    topLevelAwait(),
-    react(),
-
-    // TODO: re-enable this if we want to support vite dev again
-    // viteDevImportMapPlugin as Plugin
-  ],
+  plugins: [topLevelAwait(), react(), generateImportMapPlugin],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -119,7 +146,7 @@ export default defineConfig({
     minify: false,
 
     rollupOptions: {
-      external: SHARED_DEPENDENCIES,
+      external: EXTERNAL_DEPENDENCIES,
       input: {
         main: path.resolve(__dirname, "index.html"),
         sdk: path.resolve(__dirname, "src/os/sdk.ts"), // Added entrypoint for sdk.ts

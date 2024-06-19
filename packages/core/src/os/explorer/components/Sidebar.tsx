@@ -16,7 +16,7 @@ import {
   FolderDoc,
   FolderDocWithChildren,
 } from "@/packages/folder";
-import { useDataType, useDataTypes } from "@patchwork/sdk";
+import { useDataType, useDataTypes } from "../../datatypes";
 
 import {
   Popover,
