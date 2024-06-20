@@ -6,11 +6,10 @@ import { Annotation } from "@/os/versionControl/schema";
 import { TextPatch } from "@/os/versionControl/utils";
 import { next as A, Doc } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
-import { FileExportMethod } from "./fileExports";
-import { useEffect, useState } from "react";
-import { usePackageModulesInRootFolder } from "@/packages/pkg/usePackages";
-import { IconType } from "./lib/icons";
+import { useMemo } from "react";
 import * as PACKAGES from "../packages";
+import { FileExportMethod } from "./fileExports";
+import { IconType } from "./lib/icons";
 
 export type CoreDataType<D> = {
   id: string;
@@ -110,34 +109,14 @@ const isDataType = (
   return "type" in value && value.type === "patchwork:dataType";
 };
 
-export const useDataTypes = () => {
-  const [dataTypes, setDataTypes] = useState<
-    DataType<unknown, unknown, unknown>[]
-  >([]);
-  const [dynamicDataTypes, setDynamicDataTypes] = useState<
-    DataType<unknown, unknown, unknown>[]
-  >([]);
-  const modules = usePackageModulesInRootFolder();
-
-  // add exported tools in packages to tools
-  useEffect(() => {
-    setDynamicDataTypes(
-      Object.values(modules).flatMap(({ module }) =>
-        Object.values(module).filter(isDataType)
-      )
-    );
-  }, [modules]);
-
-  // load packages asynchronously to break the dependency loop tools -> packages -> tools
-  useEffect(() => {
-    setDataTypes(
+export const useDataTypes = (): DataType<unknown, unknown, unknown>[] => {
+  return useMemo(
+    () =>
       Object.values(PACKAGES).flatMap((module) =>
         Object.values(module).filter(isDataType)
-      )
-    );
-  }, []);
-
-  return dataTypes.concat(dynamicDataTypes);
+      ),
+    []
+  );
 };
 
 export const useDataType = <D, T, V>(
