@@ -1,36 +1,7 @@
-import React, { useState, useCallback, useEffect } from "react";
-import ReactDom from "react-dom/client";
-import ReactJson, { InteractionProps } from "@microlink/react-json-view";
-// import { isValidAutomergeUrl } from "@automerge/automerge-repo"
-import {
-  RepoContext,
-  useDocument,
-  useHandle,
-} from "@automerge/automerge-repo-react-hooks";
 import * as Automerge from "@automerge/automerge";
-
-import {
-  FileIcon,
-  FilePlusIcon,
-  Cross2Icon,
-  Share1Icon,
-} from "@radix-ui/react-icons";
-
-function isServiceWorkerUrl(url) {
-  return url.match(/^(.*)\/automerge-repo\/automerge:\w+\/(.*)/);
-}
-
-// faked to avoid dependency
-function isValidAutomergeUrl(url) {
-  return url.match(/^automerge:(.*)/);
-}
-
-function parseServiceWorkerUrl(url) {
-  const { docUrl } = url.match(
-    /^(.*)\/automerge-repo\/(?<docUrl>automerge:\w+)\/(.*)/
-  ).groups;
-  return docUrl;
-}
+import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import ReactJson, { InteractionProps } from "@microlink/react-json-view";
+import { useCallback, useState } from "react";
 
 export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
   const [documentUrl, changeDocumentUrl] = useState(originalDocumentUrl);
@@ -46,15 +17,6 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
     },
     [history, setHistory, changeDocumentUrl]
   );
-
-  const goBack = useCallback(() => {
-    if (history.length === 0) {
-      return;
-    }
-    const [url, ...rest] = history;
-    setHistory(rest);
-    changeDocumentUrl(url);
-  }, [history, setHistory, changeDocumentUrl]);
 
   const onEdit = useCallback(
     ({ namespace, new_value, name }: InteractionProps) => {
@@ -98,7 +60,7 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
 
   const onSelect = useCallback(function (arg) {
     console.log("select", arg);
-    const { value } = arg;
+    /*const { value } = arg;
     if (!(typeof value === "string")) {
       return;
     }
@@ -107,7 +69,7 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
       onSelectAutomergeUrl(value);
     } else if (isServiceWorkerUrl(value)) {
       onSelectAutomergeUrl(parseServiceWorkerUrl(value));
-    }
+    }*/
   }, []);
 
   // lifted from https://gist.github.com/davalapar/d0a5ba7cce4bc599f54800da22926da2
@@ -143,10 +105,7 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
   }
 
   return (
-    <div style={{ padding: "16px" }}>
-      <button onClick={goBack} disabled={history.length === 0}>
-        Back
-      </button>
+    <div className="p-2 h-full overflow-auto">
       <ReactJson
         collapsed={3}
         src={doc}
