@@ -1,53 +1,50 @@
 # Patchwork
 
-Patchwork is a general framework for editing automerge documents with arbitrary tools.
+Patchwork is a malleable, local-first collaboration environment. It lets you edit many types of automerge documents using various UI tools.
 
 ## Concepts
 
-- Datatypes: schemas for automerge documents. eg: markdown, drawing
-- Tools: UIs for viewing and editing documents. eg: markdown editor, tldraw canvas, raw json editor
+- Datatype: a "file format" or "schema" for automerge documents. eg: markdown, drawing
+- Tool: a UI for viewing and editing documents. eg: markdown editor, tldraw canvas, raw json editor.
+- Package: a unit for wrapping up datatypes and tools and sharing them.
 
 ## Development
 
-### Run it
+Run it:
 
 ```
+pnpm install
 pnpm dev
 ```
 
 ### Folder structure
 
-This repo has many independent parts which are collected in a single repo for convenience, but which we intend to separate more in the future. As such, we need to carefully observe structural boundaries.
+This monorepo (managed with pnpm workspaces) includes both the core OS APIs as well as various datatypes and tools.
 
-Notably, datatypes and tools are separated because we want to encourage multiple tools for the same datatype, and discourage tight coupling.
+`./os`: contains the core OS functionality: general API definitions, UI chrome like the doc list sidebar, and versioning utilities. (Over time we'll likely split these out into separate packages.)
 
-- os
-  - contains universal functionality for the OS layer, including OS chrome (like the Explorer sidebar) and versioning utilities
+`./packages/*` contains *packages* which can define datatypes and tools. These packages are not statically included in the deployed OS. Instead, they can be pushed to automerge documents and loaded dynamically. This is currently experimental functionality.
 
-- datatypes
-   - contains a folder for each datatype.
-   - A datatype should always define an `index.ts` that explicitly defines what functionality is intended to be used outside of the datatype.
-   - The `index.ts` file should export the datatype definition as a default export
+`./os/src/packages/*`: we bundle some mature core packages like our essay editor datatype and tool directly into the OS and deploy them statically as part of the OS deploy. Over the long term we plan to pull these out of this directory and deploy them dynamically.
 
-- tools
-  - contains a folder for each tool
-  - a tool should always define an `index.ts` file that only exports the tool definition as a default export
-  - tools shouldn't export code to be used outside of the tool folder
-      - There is a question how to handle variations like how to model
+### Dependency hygeine
 
-- Dependencies
-  - os: doesn't depend on other files (except for pulling together the tools and datatypes). Anything can import definitions from the os folder.
-  - datatypes: depends on functionality in os. Tools can import functions from datatyes
-  - tools: depends on functionality both from os and datatyes. Avoid referencing definitions in tools from outside or other tools. If you need to share functionality try to move it up into the datatype or the os
+- Datatypes and tools can depend on the core OS APIs. Over time we plan to formalize a clear SDK that the OS exports.
+- Datatypes can depend on the OS but should not depend on tools.
+- Tools can depend on functionality in both the OS or various datatypes that they support.
 
-### Adding a new datatype
+### Adding a new package
 
-- You can copy an existing datatype as a template. `markdown` is a reasonable example
-- Create a new datatype
-  - Create a new folder in `src/datatypes/` for your datatype
-  - Fill in `src/datatypes/<your_datatype>/datatype.ts` with a TS type, an init function, and other functions
-  - Add your new datatype to the `DATA_TYPES` map in `os/src/datatypes.ts`
-- Create a tool that can view / edit your new data type
-  - Create a new folder in `os/src/tools/`
-  - Add your new tool to the `TOOLS` list in `os/src/tools.ts`
+If you want a fast development loop and easy deploy as part of the core OS deploy:
+
+- Run `pnpm dev` to run the OS in dev mode
+- copy one of the existing directories in `os/src/packages` and modify to your liking
+- Update the listing in `os/src/packages/index.ts`
+
+If you want to dynamically deploy a new package to an automerge document and are ok with a more experimental developer experience:
+
+- copy `packages/raw-editor` as a sample
+- In package.json: change the package name, and the automerge doc ID that it will deploy to
+- edit the code
+- run `pnpm push` to deploy to automerge. (You'll need [trailhead](https://github.com/inkandswitch/trailhead) installed.)
 
