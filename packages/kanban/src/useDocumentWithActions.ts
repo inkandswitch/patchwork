@@ -1,6 +1,6 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
-import { useDataType } from "@patchwork/sdk";
+import { useDataType } from "@/sdk";
 import { useMemo } from "react";
 
 /** Returns a doc with helper actions from a datatype definition.

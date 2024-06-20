@@ -1,4 +1,4 @@
-import { Tool } from "@/os/tools";
+import { Tool } from "@/tools";
 import { TLDraw } from "./components/TLDraw";
 import { TLDrawAnnotations } from "./components/TLDrawAnnotations";
 

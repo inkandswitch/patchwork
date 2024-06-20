@@ -1,10 +1,10 @@
-import { type DataType } from "@patchwork/sdk";
-import { DecodedChangeWithMetadata } from "@/os/versionControl/groupChanges";
+import { type DataType } from "@/sdk";
+import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
 import {
   Annotation,
   HasVersionControlMetadata,
   initVersionControlMetadata,
-} from "@/os/versionControl/schema";
+} from "@/versionControl/schema";
 import { next as A } from "@automerge/automerge";
 import {
   Editor,

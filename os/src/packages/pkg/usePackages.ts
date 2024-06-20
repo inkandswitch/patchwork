@@ -1,10 +1,10 @@
-import { useRootFolderDocWithChildren } from "@/os/explorer/account";
+import { useRootFolderDocWithChildren } from "@/explorer/account";
 import { AutomergeUrl, DocumentId } from "@automerge/automerge-repo";
 import { useDocuments } from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useRef, useEffect, useState } from "react";
 import { next as A } from "@automerge/automerge";
 import { PackageDoc } from "./datatype";
-import { HasVersionControlMetadata } from "@/os/versionControl/schema";
+import { HasVersionControlMetadata } from "@/versionControl/schema";
 
 type Package = {
   module: any;

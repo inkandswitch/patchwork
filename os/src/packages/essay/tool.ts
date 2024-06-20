@@ -1,4 +1,4 @@
-import { Tool } from "@/os/tools";
+import { Tool } from "@/tools";
 import { EssayAnnotations } from "./components/EssayAnnotations";
 import { EssayEditor } from "./components/EssayEditor";
 

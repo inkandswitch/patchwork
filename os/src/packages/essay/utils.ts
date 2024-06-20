@@ -2,8 +2,8 @@ import { EditorView } from "@codemirror/view";
 import { next as A } from "@automerge/automerge";
 import { ReactElement, useMemo } from "react";
 import ReactDOMServer from "react-dom/server";
-import { AnnotationGroupWithUIState } from "@/os/versionControl/schema";
-import { useScrollPosition } from "@/os/hooks/useScrollPosition";
+import { AnnotationGroupWithUIState } from "@/versionControl/schema";
+import { useScrollPosition } from "@/hooks/useScrollPosition";
 import { MarkdownDocAnchor, MarkdownDoc } from "./datatype";
 
 export type AnnotationGroupWithPosition = AnnotationGroupWithUIState<

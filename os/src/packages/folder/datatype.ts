@@ -1,5 +1,5 @@
-import { type DataType } from "@patchwork/sdk";
-import { HasVersionControlMetadata } from "@/os/versionControl/schema";
+import { type DataType } from "@/sdk";
+import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { Folder } from "lucide-react";
 

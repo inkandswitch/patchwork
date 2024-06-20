@@ -1,8 +1,8 @@
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import React, { useMemo } from "react";
 
-import { Textarea } from "@/components/ui/textarea";
-import { EditorProps, Tool } from "@/os/tools";
+import { Textarea } from "@/shadcn/ui/textarea";
+import { EditorProps, Tool } from "@/tools";
 import { view } from "@automerge/automerge";
 import { get, set } from "lodash";
 import { PackageDoc } from "./datatype";

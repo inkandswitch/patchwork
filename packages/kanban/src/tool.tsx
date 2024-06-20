@@ -1,4 +1,4 @@
-import { EditorProps, Tool } from "@patchwork/sdk";
+import { EditorProps, Tool } from "@/sdk";
 import { useDocumentWithActions } from "./useDocumentWithActions";
 import { next as A } from "@automerge/automerge";
 import { useMemo } from "react";

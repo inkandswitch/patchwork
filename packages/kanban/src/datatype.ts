@@ -1,10 +1,10 @@
-import { DataType } from "@patchwork/sdk";
-import { ChangeGroup } from "@patchwork/sdk";
+import { DataType } from "@/sdk";
+import { ChangeGroup } from "@/sdk";
 import {
   Annotation,
   HasVersionControlMetadata,
   initVersionControlMetadata,
-} from "@patchwork/sdk";
+} from "@/sdk";
 import { next as A } from "@automerge/automerge";
 
 // SCHEMA

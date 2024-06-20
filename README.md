@@ -46,8 +46,8 @@ Notably, datatypes and tools are separated because we want to encourage multiple
 - Create a new datatype
   - Create a new folder in `src/datatypes/` for your datatype
   - Fill in `src/datatypes/<your_datatype>/datatype.ts` with a TS type, an init function, and other functions
-  - Add your new datatype to the `DATA_TYPES` map in `src/os/datatypes.ts`
+  - Add your new datatype to the `DATA_TYPES` map in `os/src/datatypes.ts`
 - Create a tool that can view / edit your new data type
-  - Create a new folder in `src/tools/`
-  - Add your new tool to the `TOOLS` list in `src/os/tools.ts`
+  - Create a new folder in `os/src/tools/`
+  - Add your new tool to the `TOOLS` list in `os/src/tools.ts`
 

@@ -14,9 +14,9 @@ import { EditorView } from "@codemirror/view";
 
 // TODO: audit the CSS being imported here;
 // it should be all 1) specific to TEE, 2) not dependent on viewport / media queries
-import { EditorProps } from "@/os/tools";
-import { AnnotationWithUIState } from "@/os/versionControl/schema";
-import { getCursorPositionSafely } from "@/os/versionControl/utils";
+import { EditorProps } from "@/tools";
+import { AnnotationWithUIState } from "@/versionControl/schema";
+import { getCursorPositionSafely } from "@/versionControl/utils";
 import { isEqual, uniq } from "lodash";
 import "../index.css";
 

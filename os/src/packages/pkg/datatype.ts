@@ -1,5 +1,5 @@
-import { type DataType } from "@patchwork/sdk";
-import { HasVersionControlMetadata } from "@/os/versionControl/schema";
+import { type DataType } from "@/sdk";
+import { HasVersionControlMetadata } from "@/versionControl/schema";
 
 // SCHEMA
 
@@ -23,8 +23,8 @@ import {useDocument} from "@automerge/automerge-repo-react-hooks";
 
 export const tool = {
   type: "patchwork:tool",
-  id: "??", 
-  name: "??", 
+  id: "??",
+  name: "??",
   supportedDataTypes: "*",
   statusBarComponent: ({ docUrl }) => {
     const [doc] = useDocument(docUrl);

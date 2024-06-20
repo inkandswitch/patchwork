@@ -2,10 +2,10 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useState } from "react";
 
-import { useCurrentAccount } from "@/os/explorer/account";
-import { EditorProps } from "@/os/tools";
-import { SideBySideProps } from "@/os/versionControl/components/VersionControlEditor";
-import { AnnotationWithUIState } from "@/os/versionControl/schema";
+import { useCurrentAccount } from "@/explorer/account";
+import { EditorProps } from "@/tools";
+import { SideBySideProps } from "@/versionControl/components/VersionControlEditor";
+import { AnnotationWithUIState } from "@/versionControl/schema";
 import { next as A } from "@automerge/automerge";
 import { Editor, TLCamera, TLShape, Tldraw } from "@tldraw/tldraw";
 import "@tldraw/tldraw/tldraw.css";

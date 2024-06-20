@@ -1,18 +1,18 @@
 import * as A from "@automerge/automerge/next";
 import { AnnotationGroupWithPosition } from "../utils";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shadcn/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { getAnnotationGroupId } from "@/os/versionControl/annotations";
-import { AnnotationGroupView } from "@/os/versionControl/components/AnnotationGroupView";
+} from "@/shadcn/ui/tooltip";
+import { getAnnotationGroupId } from "@/versionControl/annotations";
+import { AnnotationGroupView } from "@/versionControl/components/AnnotationGroupView";
 import { DocHandle } from "@automerge/automerge-repo";
 import { MessageCircle } from "lucide-react";
 import { TextSelection } from "./CodeMirrorEditor";
-import { CommentState } from "@/os/versionControl/schema";
+import { CommentState } from "@/versionControl/schema";
 import { MarkdownDoc, MarkdownDocAnchor } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";
 

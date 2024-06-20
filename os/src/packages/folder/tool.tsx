@@ -2,10 +2,10 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import React from "react";
 
-import { useDataType } from "@/os/datatypes";
-import { selectDocLink } from "@/os/explorer/hooks/useSelectedDocLink";
-import { Icon } from "@/os/lib/icons";
-import { EditorProps, Tool, useToolsForDataType } from "@/os/tools";
+import { useDataType } from "@/datatypes";
+import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
+import { Icon } from "@/lib/icons";
+import { EditorProps, Tool, useToolsForDataType } from "@/tools";
 import { DocLink, FolderDoc } from "./datatype";
 
 export const FolderViewer: React.FC<EditorProps<never, never>> = ({

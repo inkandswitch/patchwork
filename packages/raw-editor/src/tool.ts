@@ -1,4 +1,4 @@
-import { Tool } from "@patchwork/sdk";
+import { Tool } from "@/sdk";
 import { RawEditor } from "./components/RawEditor";
 
 export const rawEditorTool: Tool = {
@@ -6,5 +6,5 @@ export const rawEditorTool: Tool = {
   id: "raw",
   name: "Raw Editor",
   editorComponent: RawEditor,
-  supportedDataTypes: "*"
+  supportedDataTypes: "*",
 };

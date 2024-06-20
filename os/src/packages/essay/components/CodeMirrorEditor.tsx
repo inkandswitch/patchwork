@@ -4,7 +4,7 @@ import { markdown } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
 import { EditorView } from "@codemirror/view";
 
-import { theme, useMarkdownPlugins } from "@/os/lib/markdown";
+import { theme, useMarkdownPlugins } from "@/lib/markdown";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { type DocHandle } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
@@ -16,7 +16,7 @@ import { frontmatterPlugin } from "../codemirrorPlugins/frontmatter";
 import { previewFiguresPlugin } from "../codemirrorPlugins/previewFigures";
 import { tableOfContentsPreviewPlugin } from "../codemirrorPlugins/tableOfContentsPreview";
 
-import { AnnotationWithUIState } from "@/os/versionControl/schema";
+import { AnnotationWithUIState } from "@/versionControl/schema";
 import { isEqual } from "lodash";
 import { clickableMarkdownLinksPlugin } from "../codemirrorPlugins/clickableMarkdownLinks";
 import {

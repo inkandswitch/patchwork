@@ -1,22 +1,22 @@
-import { AssetsDoc } from "@/os/assets";
-import { FileExportMethod } from "@/os/fileExports";
-import { DecodedChangeWithMetadata } from "@/os/versionControl/groupChanges";
+import { AssetsDoc } from "@/assets";
+import { FileExportMethod } from "@/fileExports";
+import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
 import {
   Annotation,
   HasVersionControlMetadata,
   initVersionControlMetadata,
-} from "@/os/versionControl/schema";
+} from "@/versionControl/schema";
 import {
   TextPatch,
   getCursorPositionSafely,
   getCursorSafely,
-} from "@/os/versionControl/utils";
+} from "@/versionControl/utils";
 import { next as A } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import { splice } from "@automerge/automerge/next";
 import { pick } from "lodash";
 import JSZip from "jszip";
-import { type DataType } from "@patchwork/sdk";
+import { type DataType } from "@/sdk";
 
 // SCHEMA
 
