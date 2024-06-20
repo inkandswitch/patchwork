@@ -109,7 +109,7 @@ export default defineConfig({
       external: EXTERNAL_DEPENDENCIES,
       input: {
         main: path.resolve(__dirname, "index.html"),
-        sdk: path.resolve(__dirname, "src/os/sdk.ts"), // Added entrypoint for sdk.ts
+        sdk: path.resolve(__dirname, "src/sdk.ts"), // Added entrypoint for sdk.ts
         ...Object.fromEntries(
           globSync(
             path.resolve(__dirname, "src/datatypes/*/module.@(ts|js|tsx|jsx)")
