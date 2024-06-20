@@ -114,9 +114,6 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
         onDelete={onDelete}
         onSelect={onSelect}
       />
-      <button onClick={onDownloadDoc}>
-        Download Automerge binary document.
-      </button>
     </div>
   );
 };
