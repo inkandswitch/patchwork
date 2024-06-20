@@ -2,9 +2,7 @@ import { DocLink, DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { Doc, DocHandle, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import {
-  BotIcon,
   Download,
-  EditIcon,
   GitForkIcon,
   Menu,
   MoreHorizontal,
@@ -25,15 +23,12 @@ import {
   DropdownMenuTrigger,
 } from "@/shadcn/ui/dropdown-menu";
 
-import { Button } from "@/shadcn/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { genericExportMethods } from "@/fileExports";
 import { Tool } from "@/tools";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { MarkdownDoc } from "@/packages/essay";
 import { getHeads } from "@automerge/automerge";
 import { useDataType } from "../../datatypes";
-import { useDatatypeSettings, useRootFolderDocWithChildren } from "../account";
 import { getUrlSafeName } from "../hooks/useSelectedDocLink";
 
 type TopbarProps = {
@@ -66,11 +61,6 @@ export const Topbar: React.FC<TopbarProps> = ({
 }) => {
   const repo = useRepo();
 
-  const { flatDocLinks } = useRootFolderDocWithChildren();
-
-  const datatypeSettings = useDatatypeSettings();
-  const isBotDatatypeEnabled = datatypeSettings?.enabledDatatypeIds.bot;
-
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
@@ -78,8 +68,6 @@ export const Topbar: React.FC<TopbarProps> = ({
   selectedDataTypeRef.current = selectedDataTypeId;
 
   const selectedDataType = useDataType(selectedDataTypeId);
-
-  const botDocLinks = flatDocLinks?.filter((doc) => doc.type === "bot") ?? [];
 
   return (
     <div className="h-10 bg-gray-100 flex items-center flex-shrink-0 border-b border-gray-300">

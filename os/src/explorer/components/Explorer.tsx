@@ -269,6 +269,16 @@ export const Explorer: React.FC = () => {
                 </div>
               )}
 
+              {selectedDocUrl && selectedDoc && tools.length === 0 && (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="text-center">
+                    <p className="text-sm">
+                      No tools available for datatype: {selectedDocLink?.type}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* NOTE: we set the URL as the component key, to force re-mount on URL change.
                 If we want more continuity we could not do this. */}
               {selectedDocUrl && selectedDoc && currentTool && (
