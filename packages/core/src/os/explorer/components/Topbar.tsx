@@ -30,7 +30,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { genericExportMethods } from "@/os/fileExports";
 import { Tool } from "@/os/tools";
 import { HasVersionControlMetadata } from "@/os/versionControl/schema";
-import { runBot } from "@/packages/bot";
 import { MarkdownDoc } from "@/packages/essay";
 import { getHeads } from "@automerge/automerge";
 import { useDataType } from "../../datatypes";
@@ -226,73 +225,6 @@ export const Topbar: React.FC<TopbarProps> = ({
                   Export as {method.name}
                 </DropdownMenuItem>
               ))}
-
-            {selectedDocLink?.type === "essay" && isBotDatatypeEnabled && (
-              <>
-                {/* todo: the logic for running bots and when to show the menu should
-                probably live inside the bots directory --
-                how do datatypes contribute things to the global topbar? */}
-                <DropdownMenuSeparator />
-
-                {botDocLinks.map((botDocLink) => (
-                  <DropdownMenuItem
-                    className="flex justify-between"
-                    key={botDocLink.url}
-                    onClick={async () => {
-                      const resultPromise = runBot({
-                        botDocUrl: botDocLink.url,
-                        targetDocHandle:
-                          selectedDocHandle as DocHandle<MarkdownDoc>,
-                        repo,
-                      });
-                      toast.promise(resultPromise, {
-                        loading: `Running ${botDocLink.name}...`,
-                        success: (result) => (
-                          <div className="flex gap-1">
-                            <div className="flex items-center gap-2">
-                              <div className="max-w-48">
-                                {botDocLink.name} ran successfully.
-                              </div>
-                              <Button
-                                onClick={() => {
-                                  selectDocLink({
-                                    ...selectedDocLink,
-                                    branchUrl: result,
-                                  });
-                                }}
-                                className="px-4 h-6"
-                              >
-                                View branch
-                              </Button>
-                            </div>
-                          </div>
-                        ),
-                        error: `${botDocLink.name} failed, see console`,
-                      });
-                    }}
-                  >
-                    <div className="flex items-center">
-                      <BotIcon
-                        className="inline-block text-gray-500 mr-2"
-                        size={14}
-                      />{" "}
-                      Run {botDocLink.name}
-                    </div>
-                    <EditIcon
-                      size={14}
-                      className="inline-block ml-2 cursor-pointer"
-                      onClick={(e) => {
-                        selectDocLink({
-                          ...botDocLink,
-                          type: "essay",
-                        });
-                        e.stopPropagation();
-                      }}
-                    />
-                  </DropdownMenuItem>
-                ))}
-              </>
-            )}
 
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => removeDocLink(selectedDocLink)}>

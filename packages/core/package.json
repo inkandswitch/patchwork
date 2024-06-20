@@ -98,7 +98,7 @@
     "@jspm/generator": "^2.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@testing-library/react": "^15.0.2",
-    "@types/lodash": "^4.14.199",
+    "@types/lodash": "^4.17.5",
     "@types/node": "^20.8.2",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
