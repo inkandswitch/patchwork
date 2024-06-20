@@ -3,11 +3,15 @@
   "version": "1.0.0",
   "description": "A malleable software environment for collaborative work",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "dev": "pnpm --filter os dev",
+    "build": "pnpm --filter os build",
+    "preinstall": "npx only-allow pnpm"
+  },
   "keywords": [],
   "author": "Ink & Switch",
   "resolutions": {
-    "@automerge/automerge-wasm": "file:./packages/core/src/vendor/automerge-wasm"
+    "@automerge/automerge-wasm": "file:./os/src/vendor/automerge-wasm"
   },
   "devDependencies": {
   }

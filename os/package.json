@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/core",
+  "name": "@patchwork/os",
   "private": true,
   "version": "0.0.1",
   "type": "module",

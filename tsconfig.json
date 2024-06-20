@@ -15,9 +15,9 @@
     "jsx": "react-jsx",
 
     "paths": {
-      "@/*": ["./packages/core/src/*"],
-      "@patchwork/sdk": ["./packages/core/src/os/sdk.ts"],
-      "@automerge/automerge-wasm": ["./packages/core/src/vendor/automerge-wasm/index.d.ts"]
+      "@/*": ["./os/src/*"],
+      "@patchwork/sdk": ["./os/src/os/sdk.ts"],
+      "@automerge/automerge-wasm": ["./os/src/vendor/automerge-wasm/index.d.ts"]
     },
 
     /* Linting */
@@ -26,6 +26,6 @@
     // "noUnusedParameters": true,
     // "noFallthroughCasesInSwitch": true
   },
-  "include": ["packages"],
-  "exclude": ["packages/core/src/vendor"]
+  "include": ["os", "packages"],
+  "exclude": ["os/src/vendor"]
 }

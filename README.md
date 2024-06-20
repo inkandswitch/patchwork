@@ -11,16 +11,9 @@ Patchwork is a general framework for editing automerge documents with arbitrary 
 
 ### Run it
 
-NOTE: these instructions for running are very preliminary and should be improved
-
 ```
-pnpm install
-cd packages/core
-pnpm build
-vite preview
+pnpm dev
 ```
-
-and then manually rerun `pnpm build` when things change :(
 
 ### Folder structure
 
