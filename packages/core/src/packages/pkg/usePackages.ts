@@ -12,6 +12,11 @@ type Package = {
 };
 
 export const usePackageModulesInRootFolder = (): Package[] => {
+  // we can do an return before the hooks because this condition is fixed at build time
+  if (import.meta.env.MODE === "development") {
+    return [];
+  }
+
   const { flatDocLinks } = useRootFolderDocWithChildren();
   const [modules, setModules] = useState<Package[]>([]);
 
