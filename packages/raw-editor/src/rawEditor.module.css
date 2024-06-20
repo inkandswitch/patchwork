@@ -1,0 +1,5 @@
+.raw-editor {
+  @tailwind base;
+@tailwind components;
+@tailwind utilities;
+}

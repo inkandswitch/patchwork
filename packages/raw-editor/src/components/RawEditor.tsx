@@ -2,6 +2,7 @@ import * as Automerge from "@automerge/automerge";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import ReactJson, { InteractionProps } from "@microlink/react-json-view";
 import { useCallback, useState } from "react";
+import styles from "../rawEditor.module.css";
 
 export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
   const [documentUrl, changeDocumentUrl] = useState(originalDocumentUrl);
@@ -105,15 +106,17 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
   }
 
   return (
-    <div className="p-2 h-full overflow-auto">
-      <ReactJson
-        collapsed={3}
-        src={doc}
-        onEdit={onEdit}
-        onAdd={onAdd}
-        onDelete={onDelete}
-        onSelect={onSelect}
-      />
+    <div className={`${styles.rawEditor}`}>
+      <div className="p-2 h-full overflow-auto ">
+        <ReactJson
+          collapsed={3}
+          src={doc}
+          onEdit={onEdit}
+          onAdd={onAdd}
+          onDelete={onDelete}
+          onSelect={onSelect}
+        />
+      </div>
     </div>
   );
 };
