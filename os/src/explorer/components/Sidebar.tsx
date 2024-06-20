@@ -1,10 +1,4 @@
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
-import {
-  ChevronDown,
-  ChevronRight,
-  ChevronsLeft,
-  FolderInput,
-} from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { NodeRendererProps, Tree } from "react-arborist";
 import { AccountPicker } from "./AccountPicker";
@@ -32,6 +26,7 @@ import {
   useDatatypeSettings,
 } from "../account";
 import { Icon } from "@/lib/icons";
+import { ChevronsLeft, FolderInput } from "lucide-react";
 
 const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const { node, style, dragHandle } = props;
@@ -40,9 +35,9 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
 
   if (node.data.type === "folder") {
     if (node.isOpen) {
-      icon = ChevronDown;
+      icon = "ChevronDown";
     } else {
-      icon = ChevronRight;
+      icon = "ChevronRight";
     }
   } else {
     icon = dataType?.icon;
