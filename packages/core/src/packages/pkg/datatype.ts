@@ -3,52 +3,31 @@ import { HasVersionControlMetadata } from "@/os/versionControl/schema";
 
 // SCHEMA
 
-// todo confirm this type
-type FileContents =
-  | {
-      contentType: string;
-      contents: string;
-    }
-  | { [key: string]: FileContents };
-
-type UrlSource = {
-  type: "url";
-  url: string;
+export type FileEntry = {
+  contentType: string;
+  contents: string | Uint8Array;
 };
 
-type AutomergeDocSource = {
-  type: "automerge";
-  packageJson: any;
-  files: string[];
-  fileContents: { [key: string]: FileContents };
+export type FileSystem = {
+  [name: string]: FileEntry | FileSystem;
 };
-
-type PackageSource = UrlSource | AutomergeDocSource;
 
 export type PackageDoc = HasVersionControlMetadata<never, never> & {
   title: string;
-  source: PackageSource;
+  packageJSON: any;
+  fileContents: FileSystem;
 };
 
-const EMPTY_SOURCE = `
-import React from "react";
+const EMPTY_SOURCE = `import React from "react";
 import {useDocument} from "@automerge/automerge-repo-react-hooks";
-
-/*
- An example for doc:
-
-*/
 
 export const tool = {
   type: "patchwork:tool",
-  id: "??", // todo: come up with an id
-  name: "??", // todo: come up with a short name
+  id: "??", 
+  name: "??", 
   supportedDataTypes: "*",
   statusBarComponent: ({ docUrl }) => {
     const [doc] = useDocument(docUrl);
-
-    // todo: implement
-    console.log("Hello from sample tool", doc);
 
     return "TODO";
   },
@@ -57,23 +36,24 @@ export const tool = {
 
 // FUNCTIONS
 
-export const init = (doc: any) => {
-  doc.title = "New Module";
+export const init = (doc: PackageDoc) => {
+  doc.title = "New Package";
 
-  // TODO figure out what we want the empty state to look like properly
-  doc.source = {
-    type: "automerge",
-    packageJson: {
-      name: "my-package",
-      version: "0.0.1",
-      main: "index.js",
-    },
+  // todo: figure out what we want the empty state to look like properly
+
+  doc.packageJSON = {
+    type: "module",
+    name: "my-package",
+    description: "",
+    version: "0.0.1",
+    main: "index.js",
     files: ["index.js"],
-    fileContents: {
-      "index.js": {
-        contentType: "application/javascript",
-        contents: EMPTY_SOURCE,
-      },
+  };
+
+  doc.fileContents = {
+    "index.js": {
+      contentType: "application/javascript",
+      contents: EMPTY_SOURCE,
     },
   };
 };

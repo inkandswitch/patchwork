@@ -1,121 +1,52 @@
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import React from "react";
+import React, { useMemo } from "react";
 
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { EditorProps, Tool } from "@/os/tools";
-import { PackageDoc } from "./datatype";
 import { view } from "@automerge/automerge";
+import { get, set } from "lodash";
+import { PackageDoc } from "./datatype";
 
 export const PackageEditor: React.FC<EditorProps<never, never>> = ({
   docUrl,
   docHeads,
 }: EditorProps<never, never>) => {
-  const [rawModuleDoc, changeModuleDoc] = useDocument<PackageDoc>(docUrl);
+  const [rawPackageDoc, changeModuleDoc] = useDocument<PackageDoc>(docUrl);
 
-  if (!rawModuleDoc) {
+  if (!rawPackageDoc) {
     return null;
   }
 
-  const moduleDoc = docHeads ? view(rawModuleDoc, docHeads) : rawModuleDoc;
-
-  const onChangeUrlInput = (evt) => {
-    changeModuleDoc((doc) => {
-      doc.source = {
-        type: "url",
-        url: evt.target.value,
-      };
-    });
-  };
+  const { packageJSON, fileContents } = docHeads
+    ? view(rawPackageDoc, docHeads)
+    : rawPackageDoc;
+  const mainPath = useMemo(
+    () => packageJSON.main.split("/"),
+    [packageJSON.main]
+  );
 
   const onChangeSourceCode = (evt) => {
     changeModuleDoc((doc) => {
-      if (doc.source.type !== "automerge") {
-        return;
-      }
-      doc.source.fileContents["index.js"] = {
+      set(doc.fileContents, mainPath, {
         contentType: "application/javascript",
         contents: evt.target.value,
-      };
+      });
     });
   };
 
-  const handleTypeChange = (evt) => {
-    const newType = evt.target.value;
-    changeModuleDoc((doc) => {
-      if (newType === "url") {
-        doc.source = { type: "url", url: "" };
-      } else if (newType === "automerge") {
-        doc.source = {
-          type: "automerge",
-          // TODO: this is just a tiny sample package json;
-          // figure out what we actually want to put here...
-          packageJson: {
-            name: "my-package",
-            version: "0.0.1",
-            main: "index.js",
-          },
-          files: ["index.js"],
-          fileContents: {
-            "index.js": {
-              contentType: "application/javascript",
-              contents: "return {};",
-            },
-          },
-        };
-      }
-    });
-  };
-
-  let source = "";
-  if (moduleDoc.source.type === "automerge") {
-    const contents = moduleDoc.source.fileContents["index.js"]?.contents;
-    if (typeof contents === "string") {
-      source = contents;
-    } else if (contents.constructor.name === "RawString") {
-      // couldn't get instanceof to work here...
-      source = contents.toString();
-    }
-  }
+  const mainSource = useMemo<string>(() => {
+    return get(fileContents, mainPath)?.contents as string;
+  }, [mainPath, fileContents]);
 
   return (
-    <div className="p-4 w-full">
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">
-          Package Type
-        </label>
-        <select
-          className="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline"
-          value={moduleDoc.source.type}
-          onChange={handleTypeChange}
-        >
-          <option value="url">URL</option>
-          <option value="automerge">Automerge</option>
-        </select>
-      </div>
-
-      <div className="font-mono mb-6">
-        {moduleDoc.source.type === "url" && (
-          <div>
-            <div className="mb-2 text-gray-600 uppercase font-mono">URL</div>
-            <Input
-              value={moduleDoc.source.url ?? ""}
-              onChange={onChangeUrlInput}
-            />
-          </div>
-        )}
-        {moduleDoc.source.type === "automerge" && (
-          <div>
-            <div className="mb-2 text-gray-600 uppercase font-mono">
-              Source Code
-            </div>
-            <Textarea
-              rows={source.split("\n").length}
-              value={source}
-              onChange={onChangeSourceCode}
-            />
-          </div>
-        )}
+    <div className="p-4 w-full h-full font-mono flex flex-col">
+      <div className="mb-2 text-gray-600 uppercase font-mono">Source Code</div>
+      <div className="flex-1 min-h-0 overflow-auto">
+        <Textarea
+          className="h-full cursor-default"
+          value={mainSource}
+          onChange={onChangeSourceCode}
+        />
       </div>
     </div>
   );

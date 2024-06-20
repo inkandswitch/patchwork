@@ -62,22 +62,16 @@ export const usePackageModulesInRootFolder = (): Package[] => {
     (async () => {
       const modules = await Promise.all(
         Object.entries(allPackageDocs).map(async ([docId, packageDoc]) => {
-          const { source } = packageDoc;
-          const heads = A.getHeads(packageDoc);
-
-          const sourceUrl =
-            source.type === "url"
-              ? source.url
-              : `https://automerge/${docId}/source/fileContents/index.js?heads=${heads.join(
-                  ","
-                )}`;
+          const { packageJSON } = packageDoc;
+          const heads = A.getHeads(packageDoc).join(",");
+          const moduleUrl = `https://automerge/${docId}/fileContents/${packageJSON.main}?heads=${heads}`;
 
           const sourcePackage = packageDoc.branchMetadata.source
             ? packageDocs[packageDoc.branchMetadata.source.url.slice(10)]
             : undefined;
 
           return {
-            module: await import(sourceUrl),
+            module: await import(moduleUrl),
             sourceDocUrl: sourcePackage
               ? sourcePackage.branchMetadata.branches.find((branch) =>
                   branch.url.includes(docId)
