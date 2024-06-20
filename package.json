@@ -8,5 +8,7 @@
   "author": "Ink & Switch",
   "resolutions": {
     "@automerge/automerge-wasm": "file:./packages/core/src/vendor/automerge-wasm"
+  },
+  "devDependencies": {
   }
 }

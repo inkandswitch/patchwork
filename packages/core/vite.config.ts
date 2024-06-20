@@ -33,56 +33,16 @@ const EXTERNAL_DEPENDENCIES = SHARED_DEPENDENCIES.concat(
   Object.keys(SHARED_MODULES)
 );
 
-/* Generates an import map for the shared dependencies. Depending on wether we are in dev mode
- * or in build mode we have to do different things
- *
- * Dev mode:
- *
- * Esbuild is used in dev mode which doesn't handle external dependencies properly
- * (see: https://github.com/evanw/esbuild/issues/1927).
- *
- * - Don't externalize dependencies in main bundle of core
- * - Generate import map that links to the pre bundled dependencies that are linked from the main bundle
- *
- * Build mode:
- *
- * - Externalize shared dependencies
- * - Generate import map using jspm generator
- * */
+// Generates an import map for the external dependencies
 const generateImportMapPlugin: Plugin = {
   name: "shared-deps-import-map",
   async transformIndexHtml(html, { server }) {
+    // do nothing in dev mode
     if (server) {
-      const hash = JSON.parse(
-        fs.readFileSync(
-          path.join(__dirname, "node_modules/.vite/deps/_metadata.json"),
-          "utf-8"
-        )
-      ).browserHash;
-
-      const importMap = { imports: { ...SHARED_MODULES } };
-
-      for (const dep of SHARED_DEPENDENCIES) {
-        importMap.imports[dep] = `/node_modules/.vite/deps/${dep.replace(
-          /\//g,
-          "_"
-        )}.js?v=${hash}`;
-      }
-
-      const tags: HtmlTagDescriptor[] = [
-        {
-          tag: "script",
-          attrs: {
-            type: "importmap",
-          },
-          children: JSON.stringify(importMap, null, 2),
-          injectTo: "head-prepend",
-        },
-      ];
-
-      return { html, tags };
+      return html;
     }
 
+    // in build mode generate import map
     const generator = new Generator({
       debug: false,
       env: ["browser", "module"],
@@ -145,8 +105,6 @@ export default defineConfig({
     plugins: () => [wasm()],
   },
   build: {
-    minify: false,
-
     rollupOptions: {
       external: EXTERNAL_DEPENDENCIES,
       input: {
