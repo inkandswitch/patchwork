@@ -11,10 +11,12 @@ type Package = {
   sourceDocUrl?: AutomergeUrl;
 };
 
+const NO_PACKAGES = [];
+
 export const usePackageModulesInRootFolder = (): Package[] => {
   // we can do an return before the hooks because this condition is fixed at build time
   if (import.meta.env.MODE === "development") {
-    return [];
+    return NO_PACKAGES; // return same array so hooks that depend on usePackageModulesInRootFolder don't create an infinite loops
   }
 
   const { flatDocLinks } = useRootFolderDocWithChildren();
