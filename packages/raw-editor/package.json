@@ -3,10 +3,10 @@
   "version": "0.0.1",
   "description": "A raw view and editor for any Automerge document",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "index.js",
   "scripts": {
     "build": "rollup -c",
-    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:3xNzsb1aQSwFJnp3jmQxjuLAKhdp"
+    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:58ieMURDbDNTyQpeKU6eWuhqGzA"
   },
   "keywords": [],
   "author": "Ink & Switch",
