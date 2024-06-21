@@ -3,7 +3,6 @@ import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
 import { next as A } from "@automerge/automerge";
 import { pick } from "lodash";
 import { type DataType } from "@/sdk";
-import { Sheet } from "lucide-react";
 
 // SCHEMA
 

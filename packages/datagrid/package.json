@@ -1,0 +1,24 @@
+{
+  "name": "@patchwork/datagrid",
+  "version": "0.0.1",
+  "description": "A raw view and editor for any Automerge document",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "rollup -c",
+    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:3wGv4cn63qqf8UnxyB5MZAzw1MfU"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge": "^2.2.2",
+    "@automerge/automerge-repo": "^1.1.12",
+    "@automerge/automerge-repo-react-hooks": "^1.1.12",
+    "@handsontable/react": "^14.1.0",
+    "handsontable": "^14.1.0",
+    "hyperformula": "^2.7.0",
+    "lodash": "^4.17.21",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
