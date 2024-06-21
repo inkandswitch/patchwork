@@ -16,9 +16,8 @@ import {
   createTLStore,
   defaultShapeUtils,
 } from "@tldraw/tldraw";
-import { init as tldrawinit } from "automerge-tldraw";
+import { init as tldrawinit } from "./vendor/automerge-tldraw";
 import { pick } from "lodash";
-import { PenLine } from "lucide-react";
 
 // SCHEMA
 
