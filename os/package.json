@@ -19,10 +19,10 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@patchwork/essay": "workspace:*",
     "@patchwork/datagrid": "workspace:*",
     "@patchwork/tldraw": "workspace:*",
     "@automerge/automerge": "^2.2.2",
-    "@automerge/automerge-codemirror": "^0.0.11",
     "@automerge/automerge-repo": "^1.1.12",
     "@automerge/automerge-repo-network-messagechannel": "^1.1.12",
     "@automerge/automerge-repo-network-websocket": "^1.1.12",
@@ -58,8 +58,8 @@
     "clsx": "^2.0.0",
     "cmdk": "^0.2.0",
     "eventemitter3": "^5.0.1",
-    "jszip": "^3.10.1",
     "lodash": "^4.17.21",
+    "@tldraw/tldraw": "2.0.0-alpha.17",
     "lucide-react": "^0.284.0",
     "next-themes": "^0.2.1",
     "openai": "^4.11.0",

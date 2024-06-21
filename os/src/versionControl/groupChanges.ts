@@ -677,8 +677,8 @@ export const getGroupedChanges = <T extends Branchable>({
 
             branchChangeGroup.changeGroup.markers.push({
               ...mergeMarker,
-              // @ts-expect-error this is fine; we know we're adding to a merge marker
-              changeGroups: [finalized],
+              // @ts-ignore
+              changeGroups: [finalized], //this is fine; we know we're adding to a merge marker
             });
             const otherMarkersForThisGroup = markersForGroup.filter(
               (m) => m !== mergeMarker

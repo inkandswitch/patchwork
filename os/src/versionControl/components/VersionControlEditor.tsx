@@ -26,7 +26,7 @@ import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { getRelativeTimeString } from "@/lib/dates";
 import { isLLMActive } from "@/lib/llm";
 import { EditorProps, Tool } from "@/tools";
-import { isMarkdownDoc } from "@/packages/essay";
+import { isMarkdownDoc } from "../../../../packages/essay/src";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
