@@ -71,7 +71,7 @@ export const usePackageModulesInRootFolder = (): Package[] => {
             : undefined;
 
           return {
-            module: await import(moduleUrl),
+            module: await import(/* @vite-ignore */ moduleUrl),
             sourceDocUrl: sourcePackage
               ? sourcePackage.branchMetadata.branches.find((branch) =>
                   branch.url.includes(docId)
