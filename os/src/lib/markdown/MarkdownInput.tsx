@@ -14,14 +14,16 @@ type MarkdownInputProps = {
   // handle to the main doc which has an assets doc that we use
   // to store dragged in images
   docWithAssetsHandle?: DocHandle<HasAssets>;
-};
 
-export const BASE_EXTENSIONS = [];
+  // set focus after initialization
+  autoFocus?: boolean;
+};
 
 export const MarkdownInput = ({
   value,
   onChange,
   docWithAssetsHandle,
+  autoFocus,
 }: MarkdownInputProps) => {
   const [editorView, setEditorView] = useState(null);
   const [container, setContainer] = useState(null);
@@ -58,7 +60,9 @@ export const MarkdownInput = ({
       parent: container,
     });
 
-    view.focus();
+    if (autoFocus) {
+      view.focus();
+    }
 
     setEditorView(view);
 

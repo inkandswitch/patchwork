@@ -1,13 +1,12 @@
 // vite.config.ts
+import { Generator } from "@jspm/generator";
 import react from "@vitejs/plugin-react";
-import fs from "fs";
 import { globSync } from "glob";
 import { fileURLToPath } from "node:url";
 import path from "path";
-import { HtmlTagDescriptor, Plugin, defineConfig } from "vite";
+import { Plugin, defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
-import { Generator } from "@jspm/generator";
 
 // Dependencies that are shared with dynamically loaded packages
 // actual url will be resolved by generateImportMapPlugin

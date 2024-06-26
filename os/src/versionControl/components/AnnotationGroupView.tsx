@@ -444,6 +444,7 @@ const DiscussionCommentView = ({
           }}
         >
           <MarkdownInput
+            autoFocus
             value={content}
             onChange={isBeingEdited ? setUpdatedContent : undefined}
             docWithAssetsHandle={docWithAssetsHandle}

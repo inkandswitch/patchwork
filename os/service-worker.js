@@ -109,7 +109,8 @@ self.addEventListener("fetch", async (event) => {
   const url = new URL(event.request.url);
 
   if (ASSETS_REQUEST_URL_REGEX.test(event.request.url)) {
-    const [, docId, ...parts] = url.pathname.split("/");
+    const [, docId, ...encodedParts] = url.pathname.split("/");
+    const parts = encodedParts.map((part) => decodeURIComponent(part));
 
     const automergeUrl = `automerge:${docId}`;
     if (!isValidAutomergeUrl(automergeUrl)) {
@@ -178,7 +179,11 @@ self.addEventListener("fetch", async (event) => {
         const file = parts.reduce((dir, name) => dir?.[name], doc);
         if (!file) {
           return new Response(
-            `Not found\nObject path: ${path}\n${JSON.stringify(doc, null, 2)}`,
+            `Not found\nObject path: ${url.pathname}\n${JSON.stringify(
+              doc,
+              null,
+              2
+            )}`,
             {
               status: 404,
               headers: { "Content-Type": "text/plain" },
@@ -188,7 +193,9 @@ self.addEventListener("fetch", async (event) => {
 
         if (!file.contentType || file.contents === undefined) {
           return new Response(
-            `Invalid file entry.\n${url}:\nfileEntry:${JSON.stringify(file)}`,
+            `Invalid file entry.\n${url.pathname}:\nfileEntry:${JSON.stringify(
+              file
+            )}`,
             {
               status: 404,
               headers: { "Content-Type": "text/plain" },
