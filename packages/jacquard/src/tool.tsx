@@ -22,26 +22,33 @@ export const JacquardProject = ({
   }
 
   const fileContents = selectedFile ? doc.fileContents[selectedFile] : null;
-  const buildRuns = selectedFile
-    ? doc.buildRuns.filter((run) => run.outputs.includes(selectedFile))
-    : [];
+
+  const buildRunsForFile = (fileName: string) => {
+    return doc.buildRuns.filter((run) => run.outputs.includes(fileName));
+  };
+
+  const buildRunsForSelectedFile = buildRunsForFile(selectedFile);
 
   return (
     <div className="flex h-full">
       <div className="w-1/4 border-r border-gray-300 p-4">
         <div className="font-bold mb-2">Files:</div>
         <ul className="space-y-2">
-          {Object.keys(doc.fileContents).map((fileName) => (
-            <li
-              key={fileName}
-              className={`cursor-pointer p-2 ${
-                selectedFile === fileName ? "bg-gray-200" : ""
-              }`}
-              onClick={() => setSelectedFile(fileName)}
-            >
-              {fileName}
-            </li>
-          ))}
+          {Object.keys(doc.fileContents).map((fileName) => {
+            const derived = buildRunsForFile(fileName).length > 0;
+
+            return (
+              <li
+                key={fileName}
+                className={`cursor-pointer p-2 ${
+                  selectedFile === fileName ? "bg-gray-200" : ""
+                } ${derived ? "text-gray-500" : ""}`}
+                onClick={() => setSelectedFile(fileName)}
+              >
+                {fileName}
+              </li>
+            );
+          })}
         </ul>
       </div>
       <div className="w-3/4 p-4 flex flex-col gap-4">
@@ -53,11 +60,11 @@ export const JacquardProject = ({
             )}
           </div>
         )}
-        {buildRuns.length > 0 && (
+        {buildRunsForSelectedFile.length > 0 && (
           <div className="border border-gray-300 p-4">
             <div className="font-bold mb-2">Build Runs:</div>
             <ul className="space-y-2">
-              {buildRuns.map((run, index) => (
+              {buildRunsForSelectedFile.map((run, index) => (
                 <li key={index} className="p-2">
                   generated at {new Date(run.timestamp).toLocaleString()} by
                   <pre>{run.command}</pre>
