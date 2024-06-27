@@ -38,6 +38,7 @@ const getTitle = async (doc: JacquardProjectDoc) => {
 export const init = (doc: any) => {
   doc.title = "Untitled Project";
   doc.fileContents = {};
+  doc.buildRuns = [];
 };
 
 export const jacquardProjectDatatype: DataType<

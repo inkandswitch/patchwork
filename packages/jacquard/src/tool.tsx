@@ -21,10 +21,15 @@ export const JacquardProject = ({
   }
 
   return (
-    <div className="p-4">
-      <h1>Jacquard!</h1>
-      <div>Files:</div>
-      <pre>{JSON.stringify(doc.fileContents, null, 2)}</pre>
+    <div className="p-4 flex flex-col gap-4">
+      <div className="border border-gray-300 p-4">
+        <div>Files:</div>
+        <pre>{JSON.stringify(doc.fileContents, null, 2)}</pre>
+      </div>
+      <div className="border border-gray-300 p-4">
+        <div>Build Runs:</div>
+        <pre>{JSON.stringify(doc.buildRuns, null, 2)}</pre>
+      </div>
     </div>
   );
 };
