@@ -14,7 +14,7 @@ export type JacquardProjectDoc = HasVersionControlMetadata<unknown, unknown> & {
     command: string; // TODO more indirection here to a "task" of some kind?
     inputs: string[];
     inputHeads: Heads;
-    outputHeads: Heads;
+    timestamp: number;
   }>;
 };
 
