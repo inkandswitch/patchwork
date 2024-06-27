@@ -38,6 +38,7 @@
     "@lezer/highlight": "^1.1.6",
     "@patchwork/datagrid": "workspace:*",
     "@patchwork/essay": "workspace:*",
+    "@patchwork/jacquard": "workspace:*",
     "@patchwork/kanban": "workspace:*",
     "@patchwork/tldraw": "workspace:*",
     "@radix-ui/react-avatar": "^1.0.4",
