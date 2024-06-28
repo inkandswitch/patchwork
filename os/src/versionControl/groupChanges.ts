@@ -701,6 +701,7 @@ export const getGroupedChanges = <T extends Branchable>({
 
     // Choose whether to add this change to the existing group or start a new group depending on the algorithm.
     if (currentGroup && grouping(currentGroup, decodedChange)) {
+      console.log("adding to group");
       currentGroup = addChangeToGroup({
         group: currentGroup,
         change: decodedChange,

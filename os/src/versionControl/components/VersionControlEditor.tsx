@@ -288,6 +288,24 @@ export const VersionControlEditor: React.FC<{
     selectedBranch?.url
   );
 
+  const selectedDoc = selectedBranch ? branchDoc : doc;
+
+  const buildMetadata = useMemo(() => {
+    if (!selectedDoc) return undefined;
+    const allChangesForDoc = A.getAllChanges(selectedDoc);
+    const lastChange = A.decodeChange(
+      allChangesForDoc[allChangesForDoc.length - 1]
+    );
+    console.log({ lastChange });
+    if (lastChange.message !== undefined) {
+      const lastChangeMetadata = JSON.parse(lastChange.message);
+      if (lastChangeMetadata?.changeType === "build") {
+        return lastChangeMetadata;
+      }
+    }
+    return undefined;
+  }, [selectedDoc]);
+
   const branchDiff = useMemo(() => {
     if (branchDoc) {
       return diffWithProvenance(
@@ -496,6 +514,14 @@ export const VersionControlEditor: React.FC<{
             </SelectContent>
           </Select>
 
+          {buildMetadata && (
+            <div>
+              Built:
+              <span className="font-mono">{buildMetadata.command}</span> at{" "}
+              {new Date(buildMetadata.timestamp).toLocaleString()}
+            </div>
+          )}
+
           {selectedBranch && (
             <BranchActions
               doc={doc}
@@ -552,7 +578,6 @@ export const VersionControlEditor: React.FC<{
               </div>
             )}
           </div>
-
           {!sidebarMode && (
             <div className="ml-auto mr-4">
               <div className="flex items-center gap-2">

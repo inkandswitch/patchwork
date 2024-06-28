@@ -140,12 +140,15 @@ export const Explorer: React.FC = () => {
     [repo, selectedDocLink, selectDocLink]
   );
 
-  useSyncDocTitle({
-    selectedDocLink,
-    selectedDoc,
-    selectDocLink,
-    repo,
-  });
+  // NOTE: commented out this code in the Jacquard sketch
+  // we wanna keep unix-y titles and avoid syncing up from doc
+
+  // useSyncDocTitle({
+  //   selectedDocLink,
+  //   selectedDoc,
+  //   selectDocLink,
+  //   repo,
+  // });
 
   // update tab title to be the selected doc
   useEffect(() => {
