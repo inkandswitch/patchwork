@@ -41,11 +41,11 @@ export const JacquardProject = ({
               <li
                 key={fileName}
                 className={`cursor-pointer p-2 ${
-                  selectedFile === fileName ? "bg-gray-200" : ""
+                  selectedFile === fileName ? "bg-blue-100" : ""
                 } ${derived ? "text-gray-500" : ""}`}
                 onClick={() => setSelectedFile(fileName)}
               >
-                {fileName}
+                {fileName} {derived ? "(derived)" : ""}
               </li>
             );
           })}
@@ -63,13 +63,16 @@ export const JacquardProject = ({
         {buildRunsForSelectedFile.length > 0 && (
           <div className="border border-gray-300 p-4">
             <div className="font-bold mb-2">Build Runs:</div>
-            <ul className="space-y-2">
-              {buildRunsForSelectedFile.map((run, index) => (
-                <li key={index} className="p-2">
-                  generated at {new Date(run.timestamp).toLocaleString()} by
-                  <pre>{run.command}</pre>
-                </li>
-              ))}
+            <ul className="space-y-2 max-h-40 overflow-scroll">
+              {buildRunsForSelectedFile
+                .slice()
+                .reverse()
+                .map((run, index) => (
+                  <li key={index} className="p-2">
+                    generated at {new Date(run.timestamp).toLocaleString()} by
+                    <pre>{run.command}</pre>
+                  </li>
+                ))}
             </ul>
           </div>
         )}
