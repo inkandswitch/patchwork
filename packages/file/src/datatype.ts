@@ -6,7 +6,7 @@ import { type DataType } from "@/sdk";
 export type FileDoc = HasVersionControlMetadata<unknown, unknown> & {
   name: string;
   type: string;
-  content: string | BinaryData;
+  content: string | Uint8Array;
 };
 
 // FUNCTIONS
