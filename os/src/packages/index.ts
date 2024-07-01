@@ -5,3 +5,4 @@ export * as kanban from "@patchwork/kanban";
 export * as pkg from "./pkg";
 export * as tldraw from "@patchwork/tldraw";
 export * as jacquard from "@patchwork/jacquard";
+export * as file from "@patchwork/file";
