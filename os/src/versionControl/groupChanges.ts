@@ -157,6 +157,8 @@ export const groupingByEditTime =
     return newChange.time < currentGroup.time + maxGapInMinutes * 60 * 1000;
   };
 
+export const noGrouping = () => false;
+
 export const groupingByAuthorOrTime =
   <T>(maxGapInMinutes: number) =>
   (currentGroup: ChangeGroup<T>, newChange: DecodedChangeWithMetadata) => {

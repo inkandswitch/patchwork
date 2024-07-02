@@ -1,5 +1,5 @@
 import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { type DataType } from "@/sdk";
+import { noGrouping, type DataType } from "@/sdk";
 
 // SCHEMA
 
@@ -41,4 +41,7 @@ export const fileDatatype: DataType<FileDoc, never, string> = {
   getTitle,
   setTitle,
   markCopy,
+  // todo: long term we probably want something different but this lets
+  // us see each change directly
+  groupChanges: noGrouping,
 };

@@ -136,6 +136,7 @@ export const TimelineSidebar: React.FC<{
     includePatchInChangeGroup,
     promptForAIChangeGroupSummary: promptForAutoChangeGroupDescription,
     fallbackSummaryForChangeGroup,
+    groupChanges,
   } = dataType ?? {};
 
   // todo: extract this as an interface that different doc types can implement
@@ -146,7 +147,7 @@ export const TimelineSidebar: React.FC<{
     >
   >(() => {
     return {
-      grouping: groupingByEditTime(30),
+      grouping: groupChanges ?? groupingByEditTime(30),
       includeChangeInHistory,
       includePatchInChangeGroup,
       fallbackSummaryForChangeGroup,

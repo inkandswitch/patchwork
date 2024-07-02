@@ -99,6 +99,14 @@ export type VersionedDataType<D, T, V> = {
    *  If this method is not implemented the anchors will not be sorted.
    */
   sortAnchorsBy?: (doc: D, anchor: T) => any;
+
+  /**
+   * Specifies how changes are grouped for more details look in: groupChange.ts
+   */
+  groupChanges?: (
+    currentGroup: ChangeGroup<D>,
+    newChange: DecodedChangeWithMetadata
+  ) => boolean;
 };
 
 export type DataType<D, T, V> = CoreDataType<D> & VersionedDataType<D, T, V>;
