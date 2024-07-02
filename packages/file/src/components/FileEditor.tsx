@@ -1,7 +1,10 @@
 import { EditorProps } from "@/tools";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { FileDoc } from "../datatype";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import * as Automerge from "@automerge/automerge";
+import { type AutomergeUrl } from "@automerge/automerge-repo";
+import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -22,25 +25,77 @@ export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
     return null;
   }
 
-  if (typeof doc.content === "string") {
-    return <pre className="overflow-auto h-full p-4">{doc.content}</pre>;
-  }
+  // todo: make more error resistant. and optimize further?
+  const buildMetadataFromChange = useMemo(() => {
+    const changes = Automerge.getAllChanges(doc);
+    const lastChange = changes[changes.length - 1];
+    const lastChangeDecoded = Automerge.decodeChange(lastChange);
+    const lastChangeMetadata =
+      lastChangeDecoded.message && JSON.parse(lastChangeDecoded.message);
+    if (lastChangeMetadata["buildDocUrl"]) {
+      return lastChangeMetadata as {
+        buildDocUrl: AutomergeUrl;
+        buildId: string;
+      };
+    }
+    return null;
+  }, [doc]);
 
-  if (
-    doc.type === "svg" ||
-    doc.type === "png" ||
-    doc.type === "jpg" ||
-    doc.type === "jpeg" ||
-    doc.type === "gif" ||
-    doc.type === "webp" ||
-    doc.type === "bmp"
-  ) {
-    return (
-      <div className="overflow-auto h-full p-4">
-        <img src={binaryUrl} className="w-full h-full object-contain" />
-      </div>
-    );
-  }
+  const repo = useRepo();
 
-  return <div className="p-4">Unsupported binary file</div>;
+  // janky initial logic to check staleness, can be improved further
+  const [buildMetadata, setBuildMetadata] = useState<
+    JacquardBuildMetadata["buildRuns"][number] | null
+  >(null);
+  useEffect(() => {
+    (async () => {
+      if (!buildMetadataFromChange) {
+        setBuildMetadata(null);
+        return;
+      }
+
+      const buildMetadataHandle = repo.find<JacquardBuildMetadata>(
+        buildMetadataFromChange.buildDocUrl
+      );
+      const allBuildMetadata = await buildMetadataHandle.doc();
+      const buildMetadata = allBuildMetadata.buildRuns.find(
+        (build) => build.id === buildMetadataFromChange.buildId
+      );
+
+      if (!buildMetadata) {
+        setBuildMetadata(null);
+        return;
+      }
+
+      setBuildMetadata(buildMetadata);
+    })();
+  }, [buildMetadataFromChange, doc]);
+
+  console.log({ buildMetadata });
+
+  return (
+    <>
+      {buildMetadata ? (
+        <div className="p-2">
+          Built by {buildMetadata.command} at{" "}
+          {new Date(buildMetadata.timestamp).toLocaleString()}
+        </div>
+      ) : null}
+      {typeof doc.content === "string" ? (
+        <pre className="overflow-auto h-full p-4">{doc.content}</pre>
+      ) : (
+        <>
+          {["svg", "png", "jpg", "jpeg", "gif", "webp", "bmp"].includes(
+            doc.type
+          ) ? (
+            <div className="overflow-auto h-full p-4">
+              <img src={binaryUrl} className="w-full h-full object-contain" />
+            </div>
+          ) : (
+            <div className="p-4">Unsupported binary file</div>
+          )}
+        </>
+      )}
+    </>
+  );
 };

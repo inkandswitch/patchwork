@@ -10,6 +10,7 @@ export type JacquardBuildMetadata = HasVersionControlMetadata<
 > & {
   title: string;
   buildRuns: Array<{
+    id: string;
     outputs: string[]; // TODO one output? multiple outputs?
     command: string; // TODO more indirection here to a "task" of some kind?
     inputs: string[];
