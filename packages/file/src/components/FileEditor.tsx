@@ -25,53 +25,7 @@ export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
     return null;
   }
 
-  // todo: make more error resistant. and optimize further?
-  const buildMetadataFromChange = useMemo(() => {
-    const changes = Automerge.getAllChanges(doc);
-    const lastChange = changes[changes.length - 1];
-    const lastChangeDecoded = Automerge.decodeChange(lastChange);
-    const lastChangeMetadata =
-      lastChangeDecoded.message && JSON.parse(lastChangeDecoded.message);
-    if (lastChangeMetadata && lastChangeMetadata["buildDocUrl"]) {
-      return lastChangeMetadata as {
-        buildDocUrl: AutomergeUrl;
-        buildId: string;
-      };
-    }
-    return null;
-  }, [doc]);
-
-  const repo = useRepo();
-
-  // janky initial logic to check staleness, can be improved further
-  const [buildMetadata, setBuildMetadata] = useState<
-    JacquardBuildMetadata["buildRuns"][number] | null
-  >(null);
-  useEffect(() => {
-    (async () => {
-      if (!buildMetadataFromChange) {
-        setBuildMetadata(null);
-        return;
-      }
-
-      const buildMetadataHandle = repo.find<JacquardBuildMetadata>(
-        buildMetadataFromChange.buildDocUrl
-      );
-      const allBuildMetadata = await buildMetadataHandle.doc();
-      const buildMetadata = allBuildMetadata.buildRuns.find(
-        (build) => build.id === buildMetadataFromChange.buildId
-      );
-
-      if (!buildMetadata) {
-        setBuildMetadata(null);
-        return;
-      }
-
-      setBuildMetadata(buildMetadata);
-    })();
-  }, [buildMetadataFromChange, doc]);
-
-  console.log({ buildMetadata });
+  const buildMetadata = useBuildMetadata(doc);
 
   return (
     <>
@@ -98,4 +52,32 @@ export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
       )}
     </>
   );
+};
+
+const useBuildMetadata = (doc: Automerge.Doc<unknown>) => {
+  // todo: make more error resistant. and optimize further?
+  const { buildDocUrl, buildId } = useMemo(() => {
+    const changes = Automerge.getAllChanges(doc);
+    const lastChange = changes[changes.length - 1];
+    const lastChangeDecoded = Automerge.decodeChange(lastChange);
+    const lastChangeMetadata =
+      lastChangeDecoded.message && JSON.parse(lastChangeDecoded.message);
+    if (lastChangeMetadata && lastChangeMetadata["buildDocUrl"]) {
+      return lastChangeMetadata as {
+        buildDocUrl: AutomergeUrl;
+        buildId: string;
+      };
+    }
+    return { buildDocUrl: null, buildId: null };
+  }, [doc]);
+
+  const [buildDoc] = useDocument<JacquardBuildMetadata>(buildDocUrl);
+
+  return useMemo(() => {
+    if (!buildId || !buildDoc || !doc) {
+      return;
+    }
+
+    return buildDoc.buildRuns.find(({ id }) => buildId === id);
+  }, [buildId, buildDoc]);
 };
