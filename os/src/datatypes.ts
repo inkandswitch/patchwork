@@ -6,7 +6,7 @@ import { Annotation } from "@/versionControl/schema";
 import { TextPatch } from "@/versionControl/utils";
 import { next as A, Doc } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
-import { useMemo } from "react";
+import { ReactElement, useMemo } from "react";
 import * as PACKAGES from "./packages";
 import { FileExportMethod } from "./fileExports";
 import { IconType } from "./lib/icons";
@@ -56,7 +56,9 @@ export type VersionedDataType<D, T, V> = {
    */
 
   /* Generate a summary of a change group based on its contents */
-  fallbackSummaryForChangeGroup?: (changeGroup: ChangeGroup<D>) => string;
+  fallbackSummaryForChangeGroup?: (
+    changeGroup: ChangeGroup<D>
+  ) => string | ReactElement;
 
   /* Generate a prompt for an LLM to summarize a change group */
   promptForAIChangeGroupSummary?: (args: {

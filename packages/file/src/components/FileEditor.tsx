@@ -11,6 +11,7 @@ import {
 import { useMemo } from "react";
 import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
 import { FileDoc } from "../datatype";
+import { ImageFileViewer, isImageFile } from "./ImageFileViewer";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -19,13 +20,6 @@ import { FileDoc } from "../datatype";
 
 export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
   const [doc] = useDocument<FileDoc>(docUrl);
-
-  const binaryUrl = useMemo(() => {
-    if (doc && typeof doc.content !== "string") {
-      return URL.createObjectURL(new Blob([doc.content]));
-    }
-    return null;
-  }, [doc]);
 
   const buildMetadata = useBuildMetadata(doc);
   const isStale = useIsStale(buildMetadata?.inputs ?? []);
@@ -57,14 +51,12 @@ export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
         <pre>{doc.content}</pre>
       ) : (
         <>
-          {["svg", "png", "jpg", "jpeg", "gif", "webp", "bmp"].includes(
-            doc.type
-          ) ? (
+          {isImageFile(doc) ? (
             <div className="overflow-auto h-full p-4">
-              <img src={binaryUrl} className="w-full h-full object-contain" />
+              <ImageFileViewer doc={doc} />
             </div>
           ) : (
-            <div className="p-4">Unsupported binary file</div>
+            <div className="p-4">No preview binary file</div>
           )}
         </>
       )}

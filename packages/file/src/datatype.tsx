@@ -1,5 +1,7 @@
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { noGrouping, type DataType } from "@/sdk";
+import { defaultNoopBatch } from "mobx-react-lite/dist/utils/observerBatching";
+import { ImageFileViewer, isImageFile } from "./components/ImageFileViewer";
 
 // SCHEMA
 
@@ -44,4 +46,14 @@ export const fileDatatype: DataType<FileDoc, never, string> = {
   // todo: long term we probably want something different but this lets
   // us see each change directly
   groupChanges: noGrouping,
+
+  fallbackSummaryForChangeGroup(changeGroup) {
+    const doc = changeGroup.docAtEndOfChangeGroup;
+
+    if (isImageFile(doc)) {
+      return <ImageFileViewer doc={doc} />;
+    }
+
+    return "changed";
+  },
 };
