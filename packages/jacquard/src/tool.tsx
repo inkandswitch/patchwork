@@ -22,14 +22,14 @@ export const JacquardProject = ({
   }
 
   return (
-    <div className="flex h-full">
+    <div className="h-full">
       {doc.buildRuns
         .slice()
         .reverse()
         .map((run, index) => (
           <li key={index} className="p-2">
-            {run.outputs.join(",")}
-            generated at {new Date(run.timestamp).toLocaleString()} by
+            {run.outputs.map(({ path }) => path).join(",")} generated at{" "}
+            {new Date(run.timestamp).toLocaleString()} by
             <pre>{run.command}</pre>
           </li>
         ))}

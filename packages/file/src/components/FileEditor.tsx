@@ -1,10 +1,16 @@
 import { EditorProps } from "@/tools";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { FileDoc } from "../datatype";
-import { useEffect, useMemo, useState } from "react";
 import * as Automerge from "@automerge/automerge";
-import { type AutomergeUrl } from "@automerge/automerge-repo";
+import {
+  parseAutomergeUrl,
+  type AutomergeUrl,
+} from "@automerge/automerge-repo";
+import {
+  useDocument,
+  useDocuments,
+} from "@automerge/automerge-repo-react-hooks";
+import { useMemo } from "react";
 import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
+import { FileDoc } from "../datatype";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -26,6 +32,7 @@ export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
   }
 
   const buildMetadata = useBuildMetadata(doc);
+  const isStale = useIsStale(buildMetadata?.inputs ?? []);
 
   return (
     <>
@@ -35,6 +42,17 @@ export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
           {new Date(buildMetadata.timestamp).toLocaleString()}
         </div>
       ) : null}
+
+      {buildMetadata && buildMetadata.inputs.length > 0 && (
+        <div>
+          depends on: {buildMetadata?.inputs.map(({ path }) => path).join(",")}
+          {isStale ? (
+            <div className="text-yellow-500">stale</div>
+          ) : (
+            <div>up to date</div>
+          )}
+        </div>
+      )}
       {typeof doc.content === "string" ? (
         <pre className="overflow-auto h-full p-4">{doc.content}</pre>
       ) : (
@@ -80,4 +98,34 @@ const useBuildMetadata = (doc: Automerge.Doc<unknown>) => {
 
     return buildDoc.buildRuns.find(({ id }) => buildId === id);
   }, [buildId, buildDoc]);
+};
+
+interface DocUrlAtHeads {
+  docUrl: AutomergeUrl;
+  heads: Automerge.Heads;
+}
+
+/* pass in a list of doc urls at some heads to monitor if the docs are still at these heads
+ * returns true if the most recent versions of all documents is at the specified heads, otherwise false
+ */
+const useIsStale = (docUrlsAtHeads: DocUrlAtHeads[]) => {
+  const urls = useMemo(
+    () => docUrlsAtHeads.map(({ docUrl }) => docUrl),
+    [docUrlsAtHeads]
+  );
+
+  const docsById = useDocuments(urls);
+
+  return useMemo(() => {
+    if (docUrlsAtHeads.length === 0) {
+      return false;
+    }
+
+    return docUrlsAtHeads.some(({ docUrl, heads }) => {
+      const { documentId } = parseAutomergeUrl(docUrl);
+      const doc = docsById[documentId];
+
+      return doc && !Automerge.equals(Automerge.getHeads(doc), heads);
+    });
+  }, [docsById, docUrlsAtHeads]);
 };

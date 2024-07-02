@@ -1,8 +1,16 @@
+import * as Automerge from "@automerge/automerge";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { type DataType } from "@/sdk";
 import { Heads } from "@automerge/automerge/next";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 
 // SCHEMA
+
+interface Reference {
+  docUrl: AutomergeUrl;
+  heads: Automerge.Heads;
+  path: string;
+}
 
 export type JacquardBuildMetadata = HasVersionControlMetadata<
   unknown,
@@ -11,9 +19,9 @@ export type JacquardBuildMetadata = HasVersionControlMetadata<
   title: string;
   buildRuns: Array<{
     id: string;
-    outputs: string[]; // TODO one output? multiple outputs?
+    outputs: Reference[]; // TODO one output? multiple outputs?
     command: string; // TODO more indirection here to a "task" of some kind?
-    inputs: string[];
+    inputs: Reference[];
     inputHeads: Heads;
     timestamp: number;
   }>;
