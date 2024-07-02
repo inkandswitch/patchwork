@@ -18,8 +18,13 @@ import { ImageFileViewer, isImageFile } from "./ImageFileViewer";
 // that gets passed in the content of the document so you can determine based on the content
 // if this tool supports the data type
 
-export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
-  const [doc] = useDocument<FileDoc>(docUrl);
+export const FileEditor = ({
+  docUrl,
+  docHeads,
+}: EditorProps<FileDoc, never>) => {
+  const [_doc] = useDocument<FileDoc>(docUrl);
+
+  const doc = docHeads ? Automerge.view(_doc, docHeads) : _doc;
 
   const buildMetadata = useBuildMetadata(doc);
   const isStale = useIsStale(buildMetadata?.inputs ?? []);
@@ -30,22 +35,27 @@ export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
 
   return (
     <div className="overflow-auto h-full p-4">
-      {buildMetadata ? (
-        <div className="p-2">
-          Built by {buildMetadata.command} at{" "}
-          {new Date(buildMetadata.timestamp).toLocaleString()}
-        </div>
-      ) : null}
+      {!docHeads && (
+        <>
+          {buildMetadata ? (
+            <div className="p-2">
+              Built by {buildMetadata.command} at{" "}
+              {new Date(buildMetadata.timestamp).toLocaleString()}
+            </div>
+          ) : null}
 
-      {buildMetadata && buildMetadata.inputs.length > 0 && (
-        <div>
-          depends on: {buildMetadata?.inputs.map(({ path }) => path).join(",")}
-          {isStale ? (
-            <div className="text-yellow-500">stale</div>
-          ) : (
-            <div>up to date</div>
+          {buildMetadata && buildMetadata.inputs.length > 0 && (
+            <div>
+              depends on:{" "}
+              {buildMetadata?.inputs.map(({ path }) => path).join(",")}
+              {isStale ? (
+                <div className="text-yellow-500">stale</div>
+              ) : (
+                <div>up to date</div>
+              )}
+            </div>
           )}
-        </div>
+        </>
       )}
       {typeof doc.content === "string" ? (
         <pre>{doc.content}</pre>
