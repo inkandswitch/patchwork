@@ -8,10 +8,11 @@ import {
   useDocument,
   useDocuments,
 } from "@automerge/automerge-repo-react-hooks";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
 import { FileDoc } from "../datatype";
 import { ImageFileViewer, isImageFile } from "./ImageFileViewer";
+import { Checkbox } from "@/shadcn/ui/checkbox";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -23,6 +24,7 @@ export const FileEditor = ({
   docHeads,
 }: EditorProps<FileDoc, never>) => {
   const [_doc] = useDocument<FileDoc>(docUrl);
+  const [showSourceFiles, setShowDependencies] = useState(false);
 
   const doc = docHeads ? Automerge.view(_doc, docHeads) : _doc;
 
@@ -33,30 +35,8 @@ export const FileEditor = ({
     return null;
   }
 
-  return (
-    <div className="overflow-auto h-full p-4">
-      {!docHeads && (
-        <>
-          {buildMetadata ? (
-            <div className="p-2">
-              Built by {buildMetadata.command} at{" "}
-              {new Date(buildMetadata.timestamp).toLocaleString()}
-            </div>
-          ) : null}
-
-          {buildMetadata && buildMetadata.inputs.length > 0 && (
-            <div>
-              depends on:{" "}
-              {buildMetadata?.inputs.map(({ path }) => path).join(",")}
-              {isStale ? (
-                <div className="text-yellow-500">stale</div>
-              ) : (
-                <div>up to date</div>
-              )}
-            </div>
-          )}
-        </>
-      )}
+  const fileView = (
+    <div className="p-4">
       {typeof doc.content === "string" ? (
         <pre>{doc.content}</pre>
       ) : (
@@ -70,6 +50,62 @@ export const FileEditor = ({
           )}
         </>
       )}
+    </div>
+  );
+
+  return (
+    <div className="h-full flex flex-col">
+      {buildMetadata && (
+        <div className="bg-gray-100 pl-4 pt-3 pb-3 flex gap-2 items-center border-b border-gray-200 justify-between">
+          <div>
+            Built by{" "}
+            <span className="font-mono text-gray-500">
+              {buildMetadata.command}
+            </span>{" "}
+            at {new Date(buildMetadata.timestamp).toLocaleString()}
+          </div>
+
+          <div className="flex items-center mr-1">
+            <Checkbox
+              id="diff-overlay-checkbox"
+              className="mr-1"
+              checked={showSourceFiles}
+              onCheckedChange={() => setShowDependencies((flag) => !flag)}
+            />
+            <label htmlFor="diff-overlay-checkbox">show source files</label>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-auto h-full">
+        {showSourceFiles &&
+          buildMetadata &&
+          buildMetadata.inputs.map((input) => (
+            <div>
+              <div className="flex border-t border-gray-200 p-2">
+                <div className="rounded-md px-1  text-gray-500  border border-gray-500">
+                  {input.path}
+                </div>
+              </div>
+              <div className="max-h-[200px] overflow-auto">
+                <FileEditor docUrl={input.docUrl} />
+              </div>
+            </div>
+          ))}
+
+        {showSourceFiles ? (
+          <div>
+            <div className="flex border-t border-gray-200 p-2">
+              <div className="rounded-md px-1  text-gray-500  border border-gray-500">
+                {doc.name}
+              </div>
+            </div>
+            {fileView}
+          </div>
+        ) : (
+          fileView
+        )}
+      </div>
     </div>
   );
 };
