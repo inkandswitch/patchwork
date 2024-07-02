@@ -28,7 +28,7 @@ export const FileEditor = ({
 
   const doc = docHeads ? Automerge.view(_doc, docHeads) : _doc;
 
-  const buildMetadata = useBuildMetadata(doc);
+  const buildMetadata = useBuildMetadata(doc, docHeads);
   const isStale = useIsStale(buildMetadata?.inputs ?? []);
 
   if (!doc) {
@@ -63,6 +63,9 @@ export const FileEditor = ({
               {buildMetadata.command}
             </span>{" "}
             at {new Date(buildMetadata.timestamp).toLocaleString()}
+            {isStale && !docHeads && (
+              <span className="text-gray-500">(stale)</span>
+            )}
           </div>
 
           <div className="flex items-center mr-1">
@@ -88,7 +91,7 @@ export const FileEditor = ({
                 </div>
               </div>
               <div className="max-h-[200px] overflow-auto">
-                <FileEditor docUrl={input.docUrl} />
+                <FileEditor docUrl={input.docUrl} docHeads={input.heads} />
               </div>
             </div>
           ))}
@@ -110,16 +113,35 @@ export const FileEditor = ({
   );
 };
 
-const useBuildMetadata = (doc: Automerge.Doc<unknown>) => {
+const useBuildMetadata = (
+  doc: Automerge.Doc<unknown>,
+  heads?: Automerge.Heads
+) => {
   // todo: make more error resistant. and optimize further?
   const { buildDocUrl, buildId } = useMemo(() => {
     if (!doc) {
       return { buildDocUrl: null, buildId: null };
     }
 
-    const changes = Automerge.getAllChanges(doc);
-    const lastChange = changes[changes.length - 1];
-    const lastChangeDecoded = Automerge.decodeChange(lastChange);
+    const changes = Automerge.getAllChanges(
+      heads ? Automerge.view(doc, heads) : doc
+    );
+
+    // todo: handle heads with size > 1
+    // go back in history until we find a change that matches the current head
+    let lastChangeDecoded;
+    do {
+      const lastChange = changes.pop();
+      if (!lastChange) {
+        break;
+      }
+      const decodedChange = Automerge.decodeChange(lastChange);
+      if (!heads || heads[0] === decodedChange.hash) {
+        lastChangeDecoded = decodedChange;
+      }
+    } while (heads && !lastChangeDecoded);
+
+    console.log({ lastChangeDecoded, heads });
     const lastChangeMetadata =
       lastChangeDecoded.message && JSON.parse(lastChangeDecoded.message);
     if (lastChangeMetadata && lastChangeMetadata["buildDocUrl"]) {
@@ -129,7 +151,7 @@ const useBuildMetadata = (doc: Automerge.Doc<unknown>) => {
       };
     }
     return { buildDocUrl: null, buildId: null };
-  }, [doc]);
+  }, [doc, heads]);
 
   const [buildDoc] = useDocument<JacquardBuildMetadata>(buildDocUrl);
 
