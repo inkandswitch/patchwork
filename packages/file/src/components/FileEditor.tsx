@@ -32,7 +32,7 @@ export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
     const lastChangeDecoded = Automerge.decodeChange(lastChange);
     const lastChangeMetadata =
       lastChangeDecoded.message && JSON.parse(lastChangeDecoded.message);
-    if (lastChangeMetadata["buildDocUrl"]) {
+    if (lastChangeMetadata && lastChangeMetadata["buildDocUrl"]) {
       return lastChangeMetadata as {
         buildDocUrl: AutomergeUrl;
         buildId: string;
