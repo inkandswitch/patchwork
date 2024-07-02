@@ -1,2 +1,2 @@
-export { jacquardProjectDatatype as dataType } from "./datatype";
-export { jacquardTool as tool } from "./tool";
+export { jacquardBuildMetadataDatatype as dataType } from "./datatype";
+export { jacquardBuildMetadataTool as tool } from "./tool";

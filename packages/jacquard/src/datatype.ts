@@ -4,11 +4,11 @@ import { Heads } from "@automerge/automerge/next";
 
 // SCHEMA
 
-export type JacquardProjectDoc = HasVersionControlMetadata<unknown, unknown> & {
+export type JacquardBuildMetadata = HasVersionControlMetadata<
+  unknown,
+  unknown
+> & {
   title: string;
-  fileContents: { [key: string]: { contentType: string; contents: string } };
-
-  // TODO: move build runs metadata out of the doc, because things get weird with heads?
   buildRuns: Array<{
     outputs: string[]; // TODO one output? multiple outputs?
     command: string; // TODO more indirection here to a "task" of some kind?
@@ -23,16 +23,16 @@ export type JacquardProjectDoc = HasVersionControlMetadata<unknown, unknown> & {
 // When a copy of the document has been made,
 // update the title so it's more clear which one is the copy vs original.
 // (this mechanism needs to be thought out more...)
-export const markCopy = (doc: JacquardProjectDoc) => {
+export const markCopy = (doc: JacquardBuildMetadata) => {
   doc.title = "Copy of " + doc.title;
 };
 
-const setTitle = async (doc: JacquardProjectDoc, title: string) => {
+const setTitle = async (doc: JacquardBuildMetadata, title: string) => {
   doc.title = title;
 };
 
-const getTitle = async (doc: JacquardProjectDoc) => {
-  return doc.title || "Untitled Project";
+const getTitle = async (doc: JacquardBuildMetadata) => {
+  return doc.title || "Untitled Build Metadata";
 };
 
 export const init = (doc: any) => {
@@ -41,14 +41,14 @@ export const init = (doc: any) => {
   doc.buildRuns = [];
 };
 
-export const jacquardProjectDatatype: DataType<
-  JacquardProjectDoc,
+export const jacquardBuildMetadataDatatype: DataType<
+  JacquardBuildMetadata,
   never,
   string
 > = {
   type: "patchwork:dataType",
-  id: "jacquard-project",
-  name: "Jacquard Project",
+  id: "jacquard-build-metadata",
+  name: "Jacquard Build Metadata",
   icon: "Microscope",
   isExperimental: false, // TODO set true before merging?
 
