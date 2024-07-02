@@ -22,7 +22,7 @@ export const JacquardProject = ({
   }
 
   return (
-    <div className="h-full">
+    <div className="h-full overflow-auto">
       {doc.buildRuns
         .slice()
         .reverse()

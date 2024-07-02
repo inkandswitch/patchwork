@@ -27,15 +27,15 @@ export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
     return null;
   }, [doc]);
 
+  const buildMetadata = useBuildMetadata(doc);
+  const isStale = useIsStale(buildMetadata?.inputs ?? []);
+
   if (!doc) {
     return null;
   }
 
-  const buildMetadata = useBuildMetadata(doc);
-  const isStale = useIsStale(buildMetadata?.inputs ?? []);
-
   return (
-    <>
+    <div className="overflow-auto h-full p-4">
       {buildMetadata ? (
         <div className="p-2">
           Built by {buildMetadata.command} at{" "}
@@ -54,7 +54,7 @@ export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
         </div>
       )}
       {typeof doc.content === "string" ? (
-        <pre className="overflow-auto h-full p-4">{doc.content}</pre>
+        <pre>{doc.content}</pre>
       ) : (
         <>
           {["svg", "png", "jpg", "jpeg", "gif", "webp", "bmp"].includes(
@@ -68,13 +68,17 @@ export const FileEditor = ({ docUrl }: EditorProps<FileDoc, never>) => {
           )}
         </>
       )}
-    </>
+    </div>
   );
 };
 
 const useBuildMetadata = (doc: Automerge.Doc<unknown>) => {
   // todo: make more error resistant. and optimize further?
   const { buildDocUrl, buildId } = useMemo(() => {
+    if (!doc) {
+      return { buildDocUrl: null, buildId: null };
+    }
+
     const changes = Automerge.getAllChanges(doc);
     const lastChange = changes[changes.length - 1];
     const lastChangeDecoded = Automerge.decodeChange(lastChange);
