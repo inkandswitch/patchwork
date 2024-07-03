@@ -17,7 +17,6 @@ export type BuildRun = {
   outputs: Reference[]; // TODO one output? multiple outputs?
   command: string; // TODO more indirection here to a "task" of some kind?
   inputs: Reference[];
-  inputHeads: Heads;
   timestamp: number;
 };
 

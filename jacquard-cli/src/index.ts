@@ -38,8 +38,7 @@ const main = async () => {
     {
       name: "syncServerUrl",
       type: String,
-      defaultValue: "ws://localhost:3030",
-      //defaultValue: "wss://sync.automerge.org",
+      defaultValue: "wss://sync.automerge.org",
     },
     {
       name: "syncServerStorageId",

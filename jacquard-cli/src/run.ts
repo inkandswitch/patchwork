@@ -42,7 +42,7 @@ export async function run(
 
           if (match) {
             const { type, filePath } = match.groups;
-            const relativePath = path.relative(dir, filePath);
+            const relativePath = `./${path.relative(dir, filePath)}`;
 
             if (type === "input") {
               inputs.push(relativePath);

@@ -15,6 +15,7 @@ import { BuildMetadata } from "./run";
 import { FileDoc } from "../../packages/file/src/datatype";
 import { MarkdownDoc } from "../../packages/essay/src";
 import { FolderDoc } from "@/packages/folder";
+import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 
 export async function push(
   repo: Repo,
@@ -44,7 +45,7 @@ export async function push(
 
   const files = fs.readdirSync(dir);
 
-  let buildMetadataHandle;
+  let buildMetadataHandle: DocHandle<JacquardBuildMetadata>;
   // if build metadata was passed into the push, update the build metadata doc
   if (buildMetadata) {
     // TODO: feels weird to ID the build metadata doc by name like this
@@ -97,9 +98,17 @@ export async function push(
     const fileType = path.extname(filePath).slice(1);
     const fileNameWithExtension = path.basename(filePath);
 
-    const existingDocLink = folderHandle
-      .docSync()
-      .docs.find((link) => link.name === fileNameWithExtension);
+    const folderDoc = folderHandle.docSync();
+
+    if (!folderDoc.docs) {
+      throw new Error(
+        `this doesn't look like a folder doc, it's missing a docs property: ${folderHandle.url}`
+      );
+    }
+
+    const existingDocLink = folderDoc.docs.find(
+      (link) => link.name === fileNameWithExtension
+    );
 
     const changeMetadata =
       buildMetadata &&
