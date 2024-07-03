@@ -1,3 +1,4 @@
+import React from "react";
 import { EditorProps } from "@/tools";
 import * as Automerge from "@automerge/automerge";
 import {
@@ -10,20 +11,19 @@ import {
 } from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useState } from "react";
 import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
-import { FileDoc } from "../datatype";
-import { ImageFileViewer, isImageFile } from "./ImageFileViewer";
+import { FileDoc, TextFileDoc } from "../datatype";
+import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import { TextFileEditor } from "./TextFileEditor";
+import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
 // that gets passed in the content of the document so you can determine based on the content
 // if this tool supports the data type
 
-export const FileEditor = ({
-  docUrl,
-  docHeads,
-}: EditorProps<FileDoc, never>) => {
+export const FileEditor = (props: EditorProps<FileDoc, never>) => {
+  const { docUrl, docHeads } = props;
   const [_doc] = useDocument<FileDoc>(docUrl);
   const [showSourceFiles, setShowDependencies] = useState(false);
 
@@ -39,15 +39,28 @@ export const FileEditor = ({
   const fileView = (
     <div>
       {typeof doc.content === "string" ? (
-        <TextFileEditor docUrl={docUrl} docHeads={docHeads} />
+        React.createElement(
+          TextFileEditor,
+          props as EditorProps<TextFileDoc, never>
+        )
       ) : (
         <>
           {isImageFile(doc) ? (
             <div className="overflow-auto h-full p-4">
-              <ImageFileViewer doc={doc} />
+              {React.createElement(
+                ImageFileViewer,
+                props as EditorProps<ImageFileDoc, never>
+              )}
+            </div>
+          ) : isPDFFile(doc) ? (
+            <div className="overflow-auto h-full">
+              {React.createElement(
+                PDFFileViewer,
+                props as EditorProps<PDFFileDoc, never>
+              )}
             </div>
           ) : (
-            <div className="p-4">No preview binary file</div>
+            <div className="p-4">No preview for binary file</div>
           )}
         </>
       )}

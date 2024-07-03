@@ -7,7 +7,7 @@ import { ImageFileViewer, isImageFile } from "./components/ImageFileViewer";
 
 export type FileDoc = HasVersionControlMetadata<unknown, unknown> & {
   name: string;
-  type: string;
+  type: string; // todo: should maybe rename type to extension?
   content: string | Uint8Array;
 };
 
