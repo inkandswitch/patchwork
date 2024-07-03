@@ -3,6 +3,7 @@ import { EditorProps, Tool } from "@/tools";
 import { next as A } from "@automerge/automerge";
 import { useMemo, useState } from "react";
 import { JacquardBuildMetadata } from "./datatype";
+import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 
 export const JacquardProject = ({
   docUrl,
@@ -44,10 +45,13 @@ export const JacquardProject = ({
             <div className="cursor-default">
               <div className="text-sm font-medium">Inputs:</div>
               <div className="flex flex-wrap gap-2 text-xs">
-                {run.inputs.map(({ path }) => (
+                {run.inputs.map(({ path, docUrl }) => (
                   <div
                     key={path}
-                    className="px-2 py-1 bg-gray-100 border border-gray-300 rounded-full"
+                    className="px-2 py-1 bg-gray-100 border border-gray-300 rounded-full cursor-pointer"
+                    onClick={() =>
+                      selectDocLink({ url: docUrl, type: "file", name: path })
+                    }
                   >
                     {path}
                   </div>
@@ -57,10 +61,13 @@ export const JacquardProject = ({
             <div className="cursor-default">
               <div className="text-sm font-medium">Outputs:</div>
               <div className="flex flex-wrap gap-2 text-xs">
-                {run.outputs.map(({ path }) => (
+                {run.outputs.map(({ path, docUrl }) => (
                   <div
                     key={path}
-                    className="px-2 py-1 bg-gray-100 border border-gray-300 rounded-full"
+                    className="px-2 py-1 bg-gray-100 border border-gray-300 rounded-full cursor-pointer"
+                    onClick={() =>
+                      selectDocLink({ url: docUrl, type: "file", name: path })
+                    }
                   >
                     {path}
                   </div>
