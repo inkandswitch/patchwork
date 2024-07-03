@@ -13,6 +13,7 @@ import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
 import { FileDoc } from "../datatype";
 import { ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { Checkbox } from "@/shadcn/ui/checkbox";
+import { TextFileEditor } from "./TextFileEditor";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -38,7 +39,7 @@ export const FileEditor = ({
   const fileView = (
     <div className="p-4">
       {typeof doc.content === "string" ? (
-        <pre>{doc.content}</pre>
+        <TextFileEditor docUrl={docUrl} docHeads={docHeads} />
       ) : (
         <>
           {isImageFile(doc) ? (

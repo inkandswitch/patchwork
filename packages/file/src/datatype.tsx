@@ -11,6 +11,10 @@ export type FileDoc = HasVersionControlMetadata<unknown, unknown> & {
   content: string | Uint8Array;
 };
 
+export type TextFileDoc = FileDoc & {
+  content: string;
+};
+
 // FUNCTIONS
 
 // When a copy of the document has been made,
