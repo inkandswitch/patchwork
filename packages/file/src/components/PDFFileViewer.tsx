@@ -39,9 +39,8 @@ export const PDFFileViewer = ({
 //   "pdfjs-dist/build/pdf.worker.min.js",
 //   import.meta.url
 // ).toString();
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-//`//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const options = {
   cMapUrl: "/cmaps/",
@@ -53,8 +52,6 @@ const resizeObserverOptions = {};
 const maxWidth = 800;
 
 export const PDFViewer = ({ data }: { data: Uint8Array }) => {
-  console.log("data", data);
-
   const [numPages, setNumPages] = useState<number>();
   const [containerRef, setContainerRef] = useState<HTMLElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>();
