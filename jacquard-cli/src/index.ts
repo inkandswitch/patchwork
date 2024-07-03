@@ -24,7 +24,7 @@ export type CommandLineArgs = {
 };
 
 const main = async () => {
-  const mainDefinitions = [{ name: "command", defaultOption: true }];
+  const mainDefinitions = [{ name: "action", defaultOption: true }];
   const mainOptions = commandLineArgs(mainDefinitions, {
     stopAtFirstUnknown: true,
   });
@@ -32,13 +32,14 @@ const main = async () => {
   const argv = mainOptions._unknown || [];
 
   const allFlags = [
-    { name: "dir", type: String },
+    { name: "dir", type: String, defaultValue: "." },
     { name: "automergeDocUrl", type: String },
     { name: "test", type: Boolean, defaultValue: false },
     {
       name: "syncServerUrl",
       type: String,
-      defaultValue: "wss://sync.automerge.org",
+      defaultValue: "ws://localhost:3030",
+      //defaultValue: "wss://sync.automerge.org",
     },
     {
       name: "syncServerStorageId",
@@ -73,7 +74,7 @@ const main = async () => {
   let jacquardConfig = getJaquardConfig();
 
   const {
-    dir = ".",
+    dir,
     test,
     automergeDocUrl = jacquardConfig?.projectFolderUrl,
     syncServerUrl,
@@ -110,17 +111,17 @@ const main = async () => {
 
   const t = Date.now();
 
-  if (mainOptions.command === "push") {
+  if (mainOptions.action === "push") {
     await push(repo, {
       dir,
       automergeDocUrl,
       syncServerStorageId,
       patchworkUrl,
     });
-  } else if (mainOptions.command === "pull") {
+  } else if (mainOptions.action === "pull") {
     console.log("not implemented");
     //await pull({ repo, dir, automergeDocUrl });
-  } else if (mainOptions.command === "run") {
+  } else if (mainOptions.action === "run") {
     await run(repo, {
       dir,
       automergeDocUrl,

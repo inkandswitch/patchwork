@@ -1,6 +1,7 @@
+import path from "path";
 import { getHeads, uuid } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
-import { exec } from "child_process";
+import { spawn } from "child_process";
 import { push } from "./push.js";
 import { CommandLineArgs } from "./index.js";
 
@@ -12,6 +13,9 @@ export type BuildMetadata = {
   timestamp: number;
 };
 
+const JACQUARD_DECLARE_REGEX =
+  /jacquard: declare (?<type>(input|output)) (?<filePath>.*)/;
+
 export async function run(
   repo: Repo,
   {
@@ -19,32 +23,52 @@ export async function run(
     automergeDocUrl,
     syncServerStorageId,
     patchworkUrl,
-    inputs,
-    outputs,
+    inputs = [],
+    outputs = [],
     command,
   }: CommandLineArgs
 ) {
-  let currentHeads;
-  if (automergeDocUrl != null) {
-    const currentDoc = await repo.find(automergeDocUrl).doc();
-    currentHeads = getHeads(currentDoc);
-  } else {
-    currentHeads = null;
-  }
-
   await new Promise((resolve, reject) => {
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error executing command: ${error.message}`);
-        reject(error);
-        return;
+    const [cmd, ...args] = command.split(" ");
+
+    const child = spawn(cmd, args);
+
+    child.stdout.on("data", (data) => {
+      data
+        .toString()
+        .split("\n")
+        .forEach((line: string) => {
+          const match = line.match(JACQUARD_DECLARE_REGEX);
+
+          if (match) {
+            const { type, filePath } = match.groups;
+            const relativePath = path.relative(dir, filePath);
+
+            if (type === "input") {
+              inputs.push(relativePath);
+            } else {
+              outputs.push(relativePath);
+            }
+          } else {
+            console.log(line);
+          }
+        });
+    });
+
+    child.stderr.on("data", (data) => {
+      console.error(data.toString());
+    });
+    child.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`Command failed with exit code ${code}`));
+      } else {
+        resolve(true);
       }
-      if (stderr) {
-        console.error(`stderr: ${stderr}`);
-        reject(new Error(stderr));
-        return;
-      }
-      resolve(true);
+    });
+
+    child.on("error", (error) => {
+      console.error(`Error executing command: ${error.message}`);
+      reject(error);
     });
   });
 
