@@ -12,19 +12,21 @@ interface Reference {
   path: string;
 }
 
+export type BuildRun = {
+  id: string;
+  outputs: Reference[]; // TODO one output? multiple outputs?
+  command: string; // TODO more indirection here to a "task" of some kind?
+  inputs: Reference[];
+  inputHeads: Heads;
+  timestamp: number;
+};
+
 export type JacquardBuildMetadata = HasVersionControlMetadata<
   unknown,
   unknown
 > & {
   title: string;
-  buildRuns: Array<{
-    id: string;
-    outputs: Reference[]; // TODO one output? multiple outputs?
-    command: string; // TODO more indirection here to a "task" of some kind?
-    inputs: Reference[];
-    inputHeads: Heads;
-    timestamp: number;
-  }>;
+  buildRuns: BuildRun[];
 };
 
 // FUNCTIONS

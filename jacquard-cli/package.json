@@ -1,0 +1,25 @@
+{
+  "name": "jacquard-cli",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "jacquard": "./src/index.ts"
+  },
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge": "^2.2.2",
+    "@automerge/automerge-repo": "^1.1.12",
+    "@automerge/automerge-repo-network-websocket": "^1.1.12",
+    "command-line-args": "^5.2.1",
+    "isbinaryfile": "^5.0.0",
+    "mime-types": "^2.1.35"
+  },
+  "devDependencies": {
+    "@types/command-line-args": "^5.2.3",
+    "@types/node": "^20.14.9"
+  }
+}

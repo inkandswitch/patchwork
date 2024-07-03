@@ -62,7 +62,7 @@ export const FileEditor = ({
             <span className="font-mono text-gray-500">
               {buildMetadata.command}
             </span>{" "}
-            at {new Date(buildMetadata.timestamp).toLocaleString()}
+            at {new Date(buildMetadata.timestamp).toLocaleString()}{" "}
             {isStale && !docHeads && (
               <span className="text-gray-500">(stale)</span>
             )}

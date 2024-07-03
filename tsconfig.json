@@ -26,6 +26,6 @@
     // "noUnusedParameters": true,
     // "noFallthroughCasesInSwitch": true
   },
-  "include": ["os", "packages"],
+  "include": ["os", "packages", "jacquard-cli"],
   "exclude": ["os/src/vendor"]
 }

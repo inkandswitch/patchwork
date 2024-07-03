@@ -1,0 +1,4 @@
+- consider shape of datatype, build runs...
+- staleness marker (careful with heads)
+- dynamic config
+- don't clobber files
