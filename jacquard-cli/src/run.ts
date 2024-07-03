@@ -4,6 +4,7 @@ import { Repo } from "@automerge/automerge-repo";
 import { spawn } from "child_process";
 import { push } from "./push.js";
 import { CommandLineArgs } from "./index.js";
+import { pull } from "./pull.js";
 
 export type BuildMetadata = {
   id: string;
@@ -28,6 +29,10 @@ export async function run(
     command,
   }: CommandLineArgs
 ) {
+  // pull before to ensure we run on latest files
+  // todo: find better approach
+  await pull(repo, { dir, automergeDocUrl });
+
   await new Promise((resolve, reject) => {
     const [cmd, ...args] = command.split(" ");
 
