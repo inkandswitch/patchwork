@@ -7,8 +7,8 @@ import path from "path";
 import { AutomergeUrl, Repo, StorageId } from "@automerge/automerge-repo";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 
-// import { pull } from "./pull";
 import { push } from "./push";
+import { pull } from "./pull";
 import { run } from "./run";
 
 export type CommandLineArgs = {
@@ -118,8 +118,7 @@ const main = async () => {
       patchworkUrl,
     });
   } else if (mainOptions.action === "pull") {
-    console.log("not implemented");
-    //await pull({ repo, dir, automergeDocUrl });
+    await pull(repo, { dir, automergeDocUrl });
   } else if (mainOptions.action === "run") {
     await run(repo, {
       dir,
