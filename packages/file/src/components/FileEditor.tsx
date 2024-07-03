@@ -37,7 +37,7 @@ export const FileEditor = ({
   }
 
   const fileView = (
-    <div className="p-4">
+    <div>
       {typeof doc.content === "string" ? (
         <TextFileEditor docUrl={docUrl} docHeads={docHeads} />
       ) : (
