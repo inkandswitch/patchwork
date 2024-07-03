@@ -2,6 +2,7 @@
 
 import fs from "fs";
 import commandLineArgs from "command-line-args";
+import path from "path";
 
 import { AutomergeUrl, Repo, StorageId } from "@automerge/automerge-repo";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
@@ -22,7 +23,7 @@ export type CommandLineArgs = {
   command?: string;
 };
 
-async function main() {
+const main = async () => {
   const mainDefinitions = [{ name: "command", defaultOption: true }];
   const mainOptions = commandLineArgs(mainDefinitions, {
     stopAtFirstUnknown: true,
@@ -69,10 +70,12 @@ async function main() {
     argv,
   }) as CommandLineArgs;
 
+  let jacquardConfig = getJaquardConfig();
+
   const {
-    dir,
-    automergeDocUrl,
+    dir = ".",
     test,
+    automergeDocUrl = jacquardConfig?.projectFolderUrl,
     syncServerUrl,
     syncServerStorageId,
     patchworkUrl,
@@ -132,6 +135,24 @@ async function main() {
 
   console.log(`Done! (${duration} ms)`);
   process.exit(0);
-}
+};
+
+const getJaquardConfig = () => {
+  const currentDir = process.cwd();
+
+  const configFilePath = path.join(currentDir, "jacquard.json");
+
+  if (fs.existsSync(configFilePath)) {
+    try {
+      const configFileContents = fs.readFileSync(configFilePath, "utf8");
+      return JSON.parse(configFileContents);
+    } catch (error) {
+      console.warn("invalid jacquare.json file");
+      return null;
+    }
+  } else {
+    return null;
+  }
+};
 
 main();
