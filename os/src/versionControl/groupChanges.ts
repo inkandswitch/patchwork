@@ -32,6 +32,7 @@ import {
   Taggable,
 } from "./schema";
 import { TextPatch, diffWithProvenance } from "./utils";
+import { ReactElement } from "react";
 
 /** Change group attributes that could work for any document */
 export type ChangeGroup<T> = {
@@ -55,7 +56,7 @@ export type ChangeGroup<T> = {
    *  NOTE: user-provided summaries are persisted elsewhere, this fallback is just computed
    *  on the fly!
    */
-  fallbackSummary: string;
+  fallbackSummary: string | ReactElement;
 };
 
 export type GenericChangeGroup = ChangeGroup<unknown>;
@@ -301,7 +302,9 @@ export type ChangeGroupingOptions<D> = {
    */
   includePatchInChangeGroup?: (patch: Patch | TextPatch) => boolean; // todo: can we not leak TextPatch to all datatypes?
 
-  fallbackSummaryForChangeGroup?: (changeGroup: ChangeGroup<D>) => string;
+  fallbackSummaryForChangeGroup?: (
+    changeGroup: ChangeGroup<D>
+  ) => string | ReactElement;
 };
 
 /** A memoized record of some change groups, including a record of what options were used. */
