@@ -66,11 +66,12 @@ const main = async () => {
     },
   ];
 
+  const jacquardConfig = getJaquardConfig();
+
   const options = commandLineArgs(allFlags, {
     argv,
+    stopAtFirstUnknown: mainOptions.action === "run", // allow run to be used as prefix for other commands
   }) as CommandLineArgs;
-
-  let jacquardConfig = getJaquardConfig();
 
   const {
     dir,
@@ -110,24 +111,38 @@ const main = async () => {
 
   const t = Date.now();
 
-  if (mainOptions.action === "push") {
-    await push(repo, {
-      dir,
-      automergeDocUrl,
-      syncServerStorageId,
-      patchworkUrl,
-    });
-  } else if (mainOptions.action === "pull") {
-    await pull(repo, { dir, automergeDocUrl });
-  } else if (mainOptions.action === "run") {
-    await run(repo, {
-      dir,
-      automergeDocUrl,
-      patchworkUrl,
-      inputs,
-      outputs,
-      command,
-    });
+  switch (mainOptions.action) {
+    case "push":
+      await push(repo, {
+        dir,
+        automergeDocUrl,
+        syncServerStorageId,
+        patchworkUrl,
+      });
+      break;
+
+    case "pull":
+      await pull(repo, { dir, automergeDocUrl });
+      break;
+
+    case "run": {
+      await run(repo, {
+        dir,
+        automergeDocUrl,
+        patchworkUrl,
+        inputs,
+        outputs,
+        command:
+          "_unknown" in options
+            ? (options._unknown as string[]).join(" ")
+            : command,
+      });
+      break;
+    }
+
+    default:
+      console.error(`unknown command: ${mainOptions.action}`);
+      process.exit(1);
   }
 
   const duration = Date.now() - t;
