@@ -175,7 +175,7 @@ const useBuildMetadata = (
     }
 
     return buildDoc.buildRuns.find(({ id }) => buildId === id);
-  }, [buildId, buildDoc]);
+  }, [buildId, buildDoc, doc]);
 };
 
 interface DocUrlAtHeads {
