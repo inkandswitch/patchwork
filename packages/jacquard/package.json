@@ -11,6 +11,7 @@
     "@automerge/automerge": "^2.2.2",
     "@automerge/automerge-repo": "^1.1.12",
     "@automerge/automerge-repo-react-hooks": "^1.1.12",
+    "@visx/network": "^3.3.0",
     "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
