@@ -13,9 +13,11 @@
     "@automerge/automerge-repo-react-hooks": "^1.1.12",
     "lodash": "^4.17.21",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "reactflow": "^11.11.4"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.5",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7"
   }
