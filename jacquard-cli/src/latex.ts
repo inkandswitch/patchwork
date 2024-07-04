@@ -15,8 +15,8 @@ export async function latex(
   filePath: string,
   { dir, automergeDocUrl }: CommandLineArgs
 ) {
-  const inputs: string[] = [filePath];
-  const outputs: string[] = [replaceExtension(filePath, "pdf")];
+  const inputs: string[] = [`./${filePath}`];
+  const outputs: string[] = [`./${replaceExtension(filePath, "pdf")}`];
 
   // pull before to ensure we run on latest files
   // todo: find better approach
@@ -51,6 +51,7 @@ export async function latex(
   });
 
   // parse dependencies from build log
+
   const logPath = replaceExtension(filePath, "log");
   const logContent = fs.readFileSync(logPath, "utf8");
 
@@ -58,9 +59,20 @@ export async function latex(
     const match = line.match(FILE_REFRENCE_REGEX);
 
     if (match) {
-      inputs.push(match.groups.filePath);
+      inputs.push(`./${match.groups.filePath}`);
     }
   });
+
+  // hack: parse bib file references
+  // todo: find a more principled solution
+
+  const sourceContent = fs.readFileSync(filePath, "utf8");
+  const BIB_REF_REGEX = /\\bibliography\{(?<filePath>[^}]*)\}/g;
+  for (const match of sourceContent.matchAll(BIB_REF_REGEX)) {
+    const texFileDir = path.dirname(filePath);
+    const bibFilePath = match.groups.filePath;
+    inputs.push(`./${path.relative(dir, path.join(texFileDir, bibFilePath))}`);
+  }
 
   // delete build log
 
