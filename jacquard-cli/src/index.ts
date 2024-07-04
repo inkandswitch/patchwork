@@ -10,6 +10,7 @@ import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network
 import { push } from "./push";
 import { pull } from "./pull";
 import { run } from "./run";
+import { latex } from "./latex";
 
 export type CommandLineArgs = {
   dir: string;
@@ -70,7 +71,8 @@ const main = async () => {
 
   const options = commandLineArgs(allFlags, {
     argv,
-    stopAtFirstUnknown: mainOptions.action === "run", // allow run to be used as prefix for other commands
+    stopAtFirstUnknown:
+      mainOptions.action === "run" || mainOptions.action === "latex", // allow run and latex to have rest arguments
   }) as CommandLineArgs;
 
   const {
@@ -137,6 +139,23 @@ const main = async () => {
             ? (options._unknown as string[]).join(" ")
             : command,
       });
+      break;
+    }
+
+    case "latex": {
+      const filePath =
+        "_unknown" in options &&
+        options._unknown instanceof Array &&
+        options._unknown.length === 1
+          ? options._unknown[0]
+          : undefined;
+
+      if (!filePath) {
+        console.error("No file path specified: use latext <filename>");
+        process.exit(1);
+      }
+
+      await latex(repo, filePath, { automergeDocUrl, dir });
       break;
     }
 
