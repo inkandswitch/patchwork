@@ -1,5 +1,5 @@
 import path from "path";
-import { getHeads, uuid } from "@automerge/automerge";
+import { uuid } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import { spawn } from "child_process";
 import { push } from "./push.js";
@@ -12,6 +12,7 @@ export type BuildMetadata = {
   inputs: string[];
   command: string;
   timestamp: number;
+  duration: number;
 };
 
 const JACQUARD_DECLARE_REGEX =
@@ -33,9 +34,10 @@ export async function run(
   // todo: find better approach
   await pull(repo, { dir, automergeDocUrl });
 
+  const timestampStart = Date.now();
+
   await new Promise((resolve, reject) => {
     const [cmd, ...args] = command.split(" ");
-
     const child = spawn(cmd, args);
 
     child.stdout.on("data", (data) => {
@@ -77,13 +79,16 @@ export async function run(
     });
   });
 
+  const timestampEnd = Date.now();
+
   // todo: rethink how this works with multiple build rules
   const buildMetadata: BuildMetadata = {
     id: uuid(),
     outputs,
-    command,
+    command: `run ${command}`,
     inputs,
-    timestamp: Date.now(),
+    timestamp: timestampEnd,
+    duration: timestampEnd - timestampEnd,
   };
 
   await push(

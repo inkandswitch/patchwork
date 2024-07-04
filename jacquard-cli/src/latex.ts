@@ -1,8 +1,12 @@
 import { Repo } from "@automerge/automerge-repo";
 import fs from "fs";
 import path from "path";
-import { CommandLineArgs } from "./index.js";
+import { CommandLineArgs } from "./index";
 import { spawn } from "child_process";
+import { pull } from "./pull";
+import { push } from "./push";
+import { BuildMetadata } from "./run";
+import { uuid } from "@automerge/automerge";
 
 const FILE_REFRENCE_REGEX = /^<use (?<filePath>.*)\>$/;
 
@@ -11,11 +15,16 @@ export async function latex(
   filePath: string,
   { dir, automergeDocUrl }: CommandLineArgs
 ) {
+  const inputs: string[] = [filePath];
+  const outputs: string[] = [replaceExtension(filePath, "pdf")];
+
   // pull before to ensure we run on latest files
   // todo: find better approach
-  // await pull(repo, { dir, automergeDocUrl });
+  await pull(repo, { dir, automergeDocUrl });
 
   // run tectonic
+
+  const timestampStart = Date.now();
 
   await new Promise((resolve, reject) => {
     const child = spawn("tectonic", [filePath, "--keep-logs"]);
@@ -42,17 +51,14 @@ export async function latex(
   });
 
   // parse dependencies from build log
-
-  const extension = path.extname(filePath);
-  const logPath = `${filePath.slice(0, -extension.length)}.log`;
-
+  const logPath = replaceExtension(filePath, "log");
   const logContent = fs.readFileSync(logPath, "utf8");
 
   logContent.split("\n").map((line) => {
     const match = line.match(FILE_REFRENCE_REGEX);
 
     if (match) {
-      console.log("use", match.groups.filePath);
+      inputs.push(match.groups.filePath);
     }
   });
 
@@ -60,14 +66,28 @@ export async function latex(
 
   fs.unlinkSync(logPath);
 
-  /* await push(
+  const timestampEnd = Date.now();
+
+  const buildMetadata: BuildMetadata = {
+    id: uuid(),
+    inputs,
+    outputs,
+    command: `latex ${filePath}`,
+    timestamp: timestampEnd,
+    duration: timestampEnd - timestampStart,
+  };
+
+  await push(
     repo,
     {
       dir,
       automergeDocUrl,
-      syncServerStorageId,
-      patchworkUrl,
     },
     buildMetadata
-  ); */
+  );
 }
+
+const replaceExtension = (filePath: string, newExtension: string) => {
+  const extension = path.extname(filePath);
+  return `${filePath.slice(0, -extension.length)}.${newExtension}`;
+};
