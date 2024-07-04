@@ -1,7 +1,6 @@
+import { ChangeGroup, noGrouping, type DataType } from "@/sdk";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { noGrouping, type DataType } from "@/sdk";
-import { defaultNoopBatch } from "mobx-react-lite/dist/utils/observerBatching";
-import { ImageFileViewer, isImageFile } from "./components/ImageFileViewer";
+import { isImageFile, useBinaryUrl } from "./components/ImageFileViewer";
 
 // SCHEMA
 
@@ -52,12 +51,22 @@ export const fileDatatype: DataType<FileDoc, never, string> = {
   groupChanges: noGrouping,
 
   fallbackSummaryForChangeGroup(changeGroup) {
-    const doc = changeGroup.docAtEndOfChangeGroup;
-
-    if (isImageFile(doc)) {
-      return <ImageFileViewer doc={doc} />;
-    }
-
-    return "changed";
+    return <ChangeGroupView changeGroup={changeGroup} />;
   },
+};
+
+const ChangeGroupView = ({
+  changeGroup,
+}: {
+  changeGroup: ChangeGroup<FileDoc>;
+}) => {
+  const doc = changeGroup.docAtEndOfChangeGroup;
+
+  if (!isImageFile(doc)) {
+    return "changed";
+  }
+
+  const binaryUrl = useBinaryUrl(doc?.content as Uint8Array);
+
+  return <img src={binaryUrl} className="w-full h-full object-contain" />;
 };

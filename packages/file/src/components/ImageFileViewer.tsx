@@ -20,13 +20,17 @@ export const ImageFileViewer = ({
   const [_doc] = useDocument<ImageFileDoc>(docUrl);
 
   const doc = docHeads ? Automerge.view(_doc, docHeads) : _doc;
-
-  const binaryUrl = useMemo(() => {
-    if (doc && typeof doc.content !== "string") {
-      return URL.createObjectURL(new Blob([doc.content]));
-    }
-    return null;
-  }, [doc]);
+  const binaryUrl = useBinaryUrl(doc?.content);
 
   return <img src={binaryUrl} className="w-full h-full object-contain" />;
+};
+
+export const useBinaryUrl = (value: Uint8Array) => {
+  return useMemo(() => {
+    if (!(value instanceof Uint8Array)) {
+      return;
+    }
+
+    return URL.createObjectURL(new Blob([value]));
+  }, [value]);
 };
