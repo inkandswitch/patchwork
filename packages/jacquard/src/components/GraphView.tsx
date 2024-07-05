@@ -5,6 +5,7 @@ import { useDocuments } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { instance } from "@viz-js/viz";
 import { BuildRun, Reference } from "../datatype";
+import LoadingSpinnerOfShame from "./LoadingSpinnerOfShame";
 
 const S_plotstyle = "S.plotstyle";
 const make_fig1_py = "make-fig1.py";
@@ -60,11 +61,11 @@ export const GraphView = ({ projectFolderDoc, buildRuns }: GraphViewProps) => {
     buildRuns,
   });
 
-  console.log(projectState);
+  if (!projectState) {
+    return <LoadingSpinnerOfShame />;
+  }
 
-  // const buildgraph = makeBuildGraph(projectState);
-
-  return <GraphvizView source={stateGraphSrc(state1)} />;
+  return <GraphvizView source={stateGraphSrc(projectState)} />;
 };
 
 type ProjectState = {
@@ -85,8 +86,6 @@ const useProjectState = ({
   );
   const files = useDocuments(fileUrls);
 
-  console.log(files);
-
   const references = useMemo<Reference[]>(
     () =>
       Object.entries(files).map(([id, doc]) => ({
@@ -97,12 +96,15 @@ const useProjectState = ({
     [files]
   );
 
-  return useMemo(
-    () => ({
-      references,
-      buildRuns,
-    }),
-    [buildRuns, references]
+  return useMemo<ProjectState>(
+    () =>
+      !folderDoc || folderDoc.docs.length !== references.length
+        ? null
+        : {
+            references,
+            buildRuns,
+          },
+    [folderDoc, buildRuns, references]
   );
 };
 
@@ -142,18 +144,27 @@ type StaleReason = {
 };
 
 function stateGraphSrc(state: ProjectState) {
+  const buildGraph = makeBuildGraph(state);
+
   const lines = [];
   for (let reference of state.references) {
-    lines.push(
-      `${gvId(reference.docUrl)} [shape=plain label="${reference.docUrl}"];`
-    );
+    const status = buildGraph.docStatuses[reference.docUrl];
+    lines.push(`${gvId(reference.docUrl)} [
+      shape=plain
+      label="${reference.docUrl}\\n${reference.heads}"
+      tooltip="${status.map(reasonToString).join("; ")}"
+      ${status.length > 0 ? "style=filled fillcolor=orange" : ""}
+    ];`);
   }
   for (let buildRun of state.buildRuns) {
-    lines.push(
-      `${gvId(buildRun.id)} [shape=plain label="${
-        buildRun.id
-      }" fontcolor=blue];`
-    );
+    const status = buildGraph.buildRunStatuses[buildRun.id];
+    lines.push(`${gvId(buildRun.id)} [
+      shape=plain 
+      label="${buildRun.id}"
+      fontcolor=blue
+      tooltip="${status.map(reasonToString).join("; ")}"
+      ${status.length > 0 ? "style=filled fillcolor=orange" : ""}
+    ];`);
     for (let input of buildRun.inputs) {
       const inputReferenceInState = getReferenceFromDocUrl(state, input.docUrl);
       const outOfDate = inputReferenceInState.heads !== input.heads;
@@ -170,6 +181,14 @@ function stateGraphSrc(state: ProjectState) {
     rankdir="LR";
     ${lines.join("\n")}
   }`;
+}
+
+function reasonToString(reason) {
+  const affectStr =
+    reason.intermediateChain.length > 0
+      ? `through ${reason.intermediateChain.join(" → ")}`
+      : "directly";
+  return `${reason.originalChangeOld.docUrl} changed from ${reason.originalChangeOld.heads} to ${reason.originalChangeNew.heads}, affecting us ${affectStr}`;
 }
 
 function gvId(str: string) {
