@@ -39,12 +39,10 @@ const main = async () => {
     {
       name: "syncServerUrl",
       type: String,
-      defaultValue: "wss://sync.automerge.org",
     },
     {
       name: "syncServerStorageId",
       type: String,
-      defaultValue: "3760df37-a4c6-4f66-9ecd-732039a9385d",
     },
     {
       name: "patchworkUrl",
@@ -79,13 +77,18 @@ const main = async () => {
     dir,
     test,
     automergeDocUrl = jacquardConfig?.projectFolderUrl,
-    syncServerUrl,
-    syncServerStorageId,
+    syncServerUrl = jacquardConfig?.syncServer?.url ??
+      "wss://sync.automerge.org",
+    syncServerStorageId = jacquardConfig?.syncServer
+      ? jacquardConfig.syncServer.storageId
+      : "3760df37-a4c6-4f66-9ecd-732039a9385d",
     patchworkUrl,
     inputs,
     outputs,
     command,
   } = options;
+
+  console.log("sync with: ", syncServerUrl);
 
   if (!automergeDocUrl && mainOptions.command == "pull") {
     console.error("No URL specified: use --automergeDocUrl <url>");
