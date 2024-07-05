@@ -69,6 +69,10 @@ export async function push(
       buildMetadataHandle.change((doc) => {
         doc.title = "Build Metadata";
         doc.buildRuns = [];
+        // todo: find a better solution
+        // in the build metadata viewer we need access to the project folder to compute
+        // the build graph with staleness. Maybe the build metadata should be part of the folder?
+        doc.projectFolderUrl = folderHandle.url;
       });
       folderHandle.change((d) => {
         d.docs.push({

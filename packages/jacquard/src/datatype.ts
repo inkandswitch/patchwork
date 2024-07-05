@@ -6,7 +6,7 @@ import { AutomergeUrl } from "@automerge/automerge-repo";
 
 // SCHEMA
 
-interface Reference {
+export interface Reference {
   docUrl: AutomergeUrl;
   heads: Automerge.Heads;
   path: string;
@@ -26,6 +26,7 @@ export type JacquardBuildMetadata = HasVersionControlMetadata<
 > & {
   title: string;
   buildRuns: BuildRun[];
+  projectFolderUrl: AutomergeUrl;
 };
 
 // FUNCTIONS
