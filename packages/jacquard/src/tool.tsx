@@ -3,27 +3,26 @@ import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { EditorProps, Tool } from "@/tools";
 import { next as A } from "@automerge/automerge";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
-import { Graph } from "@visx/network";
 import { useMemo, useState } from "react";
 import ReactFlow from "reactflow";
 import "reactflow/dist/style.css";
 import { BuildRun, JacquardBuildMetadata } from "./datatype";
-
-console.log(Graph);
+import { GraphView } from "./components/GraphView";
+import { FolderDoc } from "@/packages/folder";
 
 export const JacquardBuildMetadataViewer = ({
   docUrl,
   docHeads,
 }: EditorProps<JacquardBuildMetadata, never>) => {
   const [latestDoc] = useDocument<JacquardBuildMetadata>(docUrl); // used to trigger re-rendering when jacquardTool
-  const handle = useHandle<JacquardBuildMetadata>(docUrl);
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<string>("graph");
 
   const doc = useMemo(
     () => (docHeads ? A.view(latestDoc, docHeads) : latestDoc),
     [latestDoc, docHeads]
   );
+
+  const [projectFolderDoc] = useDocument<FolderDoc>(doc.projectFolderUrl);
 
   if (!doc) {
     return null;
@@ -46,7 +45,10 @@ export const JacquardBuildMetadataViewer = ({
         {selectedTab === "log" ? (
           <LogView buildRuns={doc.buildRuns} />
         ) : (
-          <GraphView buildRuns={doc.buildRuns} />
+          <GraphView
+            projectFolderDoc={projectFolderDoc}
+            buildRuns={doc.buildRuns}
+          />
         )}
       </div>
     </div>
@@ -113,14 +115,6 @@ const LogView = ({ buildRuns }: BuildRunsViewProps) => (
       ))}
   </div>
 );
-
-const GraphView = ({ buildRuns }: BuildRunsViewProps) => {
-  return (
-    <div className="w-full h-full">
-      <ReactFlow nodes={[]} edges={[]} />
-    </div>
-  );
-};
 
 export const jacquardBuildMetadataTool: Tool = {
   type: "patchwork:tool",
