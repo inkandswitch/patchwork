@@ -78,7 +78,7 @@ export const FileEditor = (props: EditorProps<FileDoc, never>) => {
             </span>{" "}
             at {new Date(buildMetadata.timestamp).toLocaleString()}{" "}
             {isStale && !docHeads && (
-              <span className="text-gray-500">(stale)</span>
+              <span className="rounded px-1 bg-orange-300">stale</span>
             )}
           </div>
 
