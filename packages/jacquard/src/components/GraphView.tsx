@@ -5,7 +5,6 @@ import { useDocuments } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { instance } from "@viz-js/viz";
 import { BuildRun, Reference } from "../datatype";
-import LoadingSpinnerOfShame from "./LoadingSpinnerOfShame";
 import { FileDoc } from "../../../file/src/datatype";
 
 type GraphViewProps = {
@@ -21,7 +20,7 @@ export const GraphView = ({ projectFolderDoc, buildRuns }: GraphViewProps) => {
   });
 
   if (!projectState) {
-    return <LoadingSpinnerOfShame />;
+    return;
   }
 
   return (
@@ -145,6 +144,7 @@ function stateGraphSrc(state: ProjectState) {
     lines.push(`${gvId(reference.docUrl)} [
       shape=plain
       label="${reference.path}"
+      fontsize=10
       fontname="sans-serif"
       tooltip="${status.map(reasonToString).join("; ")}"
       ${status.length > 0 ? 'style=filled fillcolor="#fdba74"' : ""}
@@ -155,8 +155,8 @@ function stateGraphSrc(state: ProjectState) {
     lines.push(`${gvId(buildRun.id)} [
       shape=plain 
       label="${buildRun.command}"
-      fontcolor=blue
       fontname="sans-serif"
+      fontsize=10
       tooltip="${status.map(reasonToString).join("; ")}"
       ${status.length > 0 ? 'style=filled fillcolor="#fdba74"' : ""}
     ];`);
@@ -179,7 +179,7 @@ function stateGraphSrc(state: ProjectState) {
   }
 
   const source = `digraph {
-    graph [pad="0.5"];
+    graph [pad="0.2"];
     rankdir="LR";
     ${lines.join("\n")}
   }`;
