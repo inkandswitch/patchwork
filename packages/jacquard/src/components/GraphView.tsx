@@ -153,10 +153,13 @@ function stateGraphSrc(state: ProjectState) {
       lines.push(`${gvId(buildRun.id)} -> ${gvId(output.docUrl)};`);
     }
   }
-  return `digraph {
+
+  const source = `digraph {
     rankdir="LR";
     ${lines.join("\n")}
   }`;
+
+  return source;
 }
 
 function reasonToString(reason) {
@@ -168,7 +171,11 @@ function reasonToString(reason) {
 }
 
 function gvId(str: string) {
-  return str.replaceAll("-", "_").replaceAll(".", "_");
+  // add a _ prefix because ids can't start with a number
+  return `_${str
+    .replaceAll("-", "_")
+    .replaceAll(".", "_")
+    .replaceAll(":", "_")}`;
 }
 
 function makeBuildGraph(state: ProjectState): BuildGraph {
