@@ -6,49 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { instance } from "@viz-js/viz";
 import { BuildRun, Reference } from "../datatype";
 import LoadingSpinnerOfShame from "./LoadingSpinnerOfShame";
-
-const S_plotstyle = "S.plotstyle";
-const make_fig1_py = "make-fig1.py";
-const fig1_pdf = "fig1.pdf";
-const fig1_png = "fig1.png";
-const A_bib = "A.bib";
-const A_tex = "A.tex";
-const A_pdf = "A.pdf";
-
-const python_v1 = {
-  id: "python-v1",
-  inputs: [
-    { docUrl: S_plotstyle, heads: "v1" },
-    { docUrl: make_fig1_py, heads: "v1" },
-  ],
-  outputs: [
-    { docUrl: fig1_pdf, heads: "v1" },
-    { docUrl: fig1_png, heads: "v1" },
-  ],
-};
-
-const tectonic_v1 = {
-  id: "tectonic-v1",
-  inputs: [
-    { docUrl: A_bib, heads: "v1" },
-    { docUrl: A_tex, heads: "v1" },
-    { docUrl: fig1_pdf, heads: "v1" },
-  ],
-  outputs: [{ docUrl: A_pdf, heads: "v1" }],
-};
-
-const state1 = {
-  references: [
-    { docUrl: S_plotstyle, heads: "v1" },
-    { docUrl: make_fig1_py, heads: "v1" },
-    { docUrl: fig1_pdf, heads: "v1" },
-    { docUrl: fig1_png, heads: "v1" },
-    { docUrl: A_bib, heads: "v1" },
-    { docUrl: A_tex, heads: "v1" },
-    { docUrl: A_pdf, heads: "v1" },
-  ],
-  buildRuns: [python_v1, tectonic_v1],
-} as any;
+import { FileDoc } from "../../../file/src/datatype";
 
 type GraphViewProps = {
   buildRuns: BuildRun[];
@@ -106,7 +64,7 @@ const useProjectState = ({
       Object.entries(files).map(([id, doc]) => ({
         docUrl: `automerge:${id}` as AutomergeUrl,
         heads: Automerge.getHeads(doc),
-        path: "",
+        path: (doc as FileDoc).name, // todo: handle this generically, we just assume here that this is a file doc
       })),
     [files]
   );
@@ -166,7 +124,7 @@ function stateGraphSrc(state: ProjectState) {
     const status = buildGraph.docStatuses[reference.docUrl];
     lines.push(`${gvId(reference.docUrl)} [
       shape=plain
-      label="${reference.docUrl}\\n${reference.heads}"
+      label="${reference.path}"
       tooltip="${status.map(reasonToString).join("; ")}"
       ${status.length > 0 ? "style=filled fillcolor=orange" : ""}
     ];`);
@@ -175,7 +133,7 @@ function stateGraphSrc(state: ProjectState) {
     const status = buildGraph.buildRunStatuses[buildRun.id];
     lines.push(`${gvId(buildRun.id)} [
       shape=plain 
-      label="${buildRun.id}"
+      label="${buildRun.command}"
       fontcolor=blue
       tooltip="${status.map(reasonToString).join("; ")}"
       ${status.length > 0 ? "style=filled fillcolor=orange" : ""}
