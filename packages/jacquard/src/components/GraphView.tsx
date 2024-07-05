@@ -145,8 +145,9 @@ function stateGraphSrc(state: ProjectState) {
     lines.push(`${gvId(reference.docUrl)} [
       shape=plain
       label="${reference.path}"
+      fontname="sans-serif"
       tooltip="${status.map(reasonToString).join("; ")}"
-      ${status.length > 0 ? "style=filled fillcolor=orange" : ""}
+      ${status.length > 0 ? 'style=filled fillcolor="#fdba74"' : ""}
     ];`);
   }
   for (let buildRun of state.buildRuns) {
@@ -155,8 +156,9 @@ function stateGraphSrc(state: ProjectState) {
       shape=plain 
       label="${buildRun.command}"
       fontcolor=blue
+      fontname="sans-serif"
       tooltip="${status.map(reasonToString).join("; ")}"
-      ${status.length > 0 ? "style=filled fillcolor=orange" : ""}
+      ${status.length > 0 ? 'style=filled fillcolor="#fdba74"' : ""}
     ];`);
     for (let input of buildRun.inputs) {
       const inputReferenceInState = getReferenceFromDocUrl(state, input.docUrl);
@@ -165,16 +167,19 @@ function stateGraphSrc(state: ProjectState) {
         input.heads
       );
       lines.push(`${gvId(input.docUrl)} -> ${gvId(buildRun.id)} [
-        color=${outOfDate ? '"orange"' : '"black"'}
+        color=${outOfDate ? '"#fdba74"' : '"#AAAAAA"'}
         style=${outOfDate ? '"dashed"' : '"solid"'}
       ];`);
     }
     for (let output of buildRun.outputs) {
-      lines.push(`${gvId(buildRun.id)} -> ${gvId(output.docUrl)};`);
+      lines.push(`${gvId(buildRun.id)} -> ${gvId(output.docUrl)} [
+        color="#A9A9A9"
+      ];`);
     }
   }
 
   const source = `digraph {
+    graph [pad="0.5"];
     rankdir="LR";
     ${lines.join("\n")}
   }`;
