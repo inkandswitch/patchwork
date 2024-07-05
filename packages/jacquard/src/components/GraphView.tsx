@@ -167,7 +167,10 @@ function stateGraphSrc(state: ProjectState) {
     ];`);
     for (let input of buildRun.inputs) {
       const inputReferenceInState = getReferenceFromDocUrl(state, input.docUrl);
-      const outOfDate = inputReferenceInState.heads !== input.heads;
+      const outOfDate = !Automerge.equals(
+        inputReferenceInState.heads,
+        input.heads
+      );
       lines.push(`${gvId(input.docUrl)} -> ${gvId(buildRun.id)} [
         color=${outOfDate ? '"orange"' : '"black"'}
         style=${outOfDate ? '"dashed"' : '"solid"'}
@@ -224,7 +227,7 @@ function makeBuildGraph(state: ProjectState): BuildGraph {
     let status = [];
     for (let input of buildRun.inputs) {
       const inputReferenceInState = getReferenceFromDocUrl(state, input.docUrl);
-      if (inputReferenceInState.heads !== input.heads) {
+      if (!Automerge.equals(inputReferenceInState.heads, input.heads)) {
         // orange arrow
         status.push({
           originalChangeOld: input,
