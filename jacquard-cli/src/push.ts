@@ -131,9 +131,11 @@ export async function push(
       // TODO: this is a datatype-specific mapping from unix file to automerge doc!
       // needs to be specified somewhere datatype-specific I guess.
       // notably: it's also an incremental update to support diffs.
+      let didChange = false;
       handle.change(
         (doc) => {
           if (!Automerge.equals(doc.content, fileContents)) {
+            didChange = true;
             if (typeof fileContents === "string") {
               updateText(doc, ["content"], fileContents);
             } else {
@@ -145,6 +147,10 @@ export async function push(
           message: changeMetadata ? JSON.stringify(changeMetadata) : undefined,
         }
       );
+
+      if (didChange) {
+        console.log("push", filePath, Automerge.getHeads(handle.docSync()));
+      }
     } else {
       // Make a new doc in the folder
       const handle = repo.create<unknown>();
@@ -200,6 +206,8 @@ export async function push(
           }
         );
       }
+
+      console.log("push", filePath, Automerge.getHeads(handle.docSync()));
 
       folderHandle.change((d) => {
         d.docs.push({
