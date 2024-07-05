@@ -1,21 +1,32 @@
 import { FolderDoc } from "@/packages/folder";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
-import { useDocuments } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useDocuments,
+} from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { instance } from "@viz-js/viz";
-import { BuildRun, Reference } from "../datatype";
+import { BuildRun, JacquardBuildMetadata, Reference } from "../datatype";
 import { FileDoc } from "../../../file/src/datatype";
+import { EditorProps } from "@/tools";
 
-type GraphViewProps = {
-  buildRuns: BuildRun[];
-  projectFolderDoc: FolderDoc;
-};
+export const GraphView = ({
+  docUrl,
+  docHeads,
+}: EditorProps<JacquardBuildMetadata, never>) => {
+  const [latestDoc] = useDocument<JacquardBuildMetadata>(docUrl);
 
-export const GraphView = ({ projectFolderDoc, buildRuns }: GraphViewProps) => {
+  const doc = useMemo(
+    () => (docHeads ? Automerge.view(latestDoc, docHeads) : latestDoc),
+    [latestDoc, docHeads]
+  );
+
+  const [projectFolderDoc] = useDocument<FolderDoc>(doc?.projectFolderUrl);
+
   const projectState = useProjectState({
     folderDoc: projectFolderDoc,
-    buildRuns,
+    buildRuns: doc?.buildRuns ?? [],
     filesReferencedInBuildsOnly: true,
   });
 
