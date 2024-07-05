@@ -1,6 +1,6 @@
 import { FolderDoc } from "@/packages/folder";
 import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocuments } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { instance } from "@viz-js/viz";
@@ -24,7 +24,11 @@ export const GraphView = ({ projectFolderDoc, buildRuns }: GraphViewProps) => {
     return <LoadingSpinnerOfShame />;
   }
 
-  return <GraphvizView source={stateGraphSrc(projectState)} />;
+  return (
+    <div className="p-4">
+      <GraphvizView source={stateGraphSrc(projectState)} />
+    </div>
+  );
 };
 
 type ProjectState = {
@@ -47,6 +51,7 @@ const useProjectState = ({
         ? []
         : folderDoc.docs.flatMap(({ url }) =>
             !filesReferencedInBuildsOnly ||
+            // filter out files that are not referenced by any build run
             buildRuns.some(
               ({ inputs, outputs }) =>
                 inputs.some((input) => input.docUrl === url) ||
@@ -69,15 +74,30 @@ const useProjectState = ({
     [files]
   );
 
+  const filteredBuildRuns = useMemo(
+    () =>
+      // filter out build runs that are no longer relevant
+      // a build run is relevant as long as at least one of it's output still exists in the current project
+      buildRuns.filter(({ outputs }, index) =>
+        outputs.some(({ docUrl, heads }) => {
+          const { documentId } = parseAutomergeUrl(docUrl);
+          const doc = files[documentId];
+
+          return doc && Automerge.equals(Automerge.getHeads(doc), heads);
+        })
+      ),
+    [buildRuns, files]
+  );
+
   return useMemo<ProjectState>(
     () =>
       !folderDoc || fileUrls.length !== references.length
         ? null
         : {
             references,
-            buildRuns,
+            buildRuns: filteredBuildRuns,
           },
-    [folderDoc, buildRuns, references]
+    [folderDoc, filteredBuildRuns, references]
   );
 };
 
