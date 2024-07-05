@@ -22,7 +22,7 @@ export const JacquardBuildMetadataViewer = ({
     [latestDoc, docHeads]
   );
 
-  const [projectFolderDoc] = useDocument<FolderDoc>(doc.projectFolderUrl);
+  const [projectFolderDoc] = useDocument<FolderDoc>(doc?.projectFolderUrl);
 
   if (!doc) {
     return null;
