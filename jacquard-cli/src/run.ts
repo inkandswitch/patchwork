@@ -88,7 +88,7 @@ export async function run(
     command: `run ${command}`,
     inputs,
     timestamp: timestampEnd,
-    duration: timestampEnd - timestampEnd,
+    duration: timestampEnd - timestampStart,
   };
 
   await push(
