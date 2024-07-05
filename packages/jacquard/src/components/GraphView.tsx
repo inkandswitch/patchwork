@@ -59,6 +59,7 @@ export const GraphView = ({ projectFolderDoc, buildRuns }: GraphViewProps) => {
   const projectState = useProjectState({
     folderDoc: projectFolderDoc,
     buildRuns,
+    filesReferencedInBuildsOnly: true,
   });
 
   if (!projectState) {
@@ -76,12 +77,26 @@ type ProjectState = {
 const useProjectState = ({
   folderDoc,
   buildRuns,
+  filesReferencedInBuildsOnly,
 }: {
   folderDoc: FolderDoc;
   buildRuns: BuildRun[];
+  filesReferencedInBuildsOnly?: boolean;
 }): ProjectState => {
   const fileUrls = useMemo(
-    () => (!folderDoc ? [] : folderDoc.docs.map(({ url }) => url)),
+    () =>
+      !folderDoc
+        ? []
+        : folderDoc.docs.flatMap(({ url }) =>
+            !filesReferencedInBuildsOnly ||
+            buildRuns.some(
+              ({ inputs, outputs }) =>
+                inputs.some((input) => input.docUrl === url) ||
+                outputs.some((output) => output.docUrl === url)
+            )
+              ? [url]
+              : []
+          ),
     [folderDoc?.docs]
   );
   const files = useDocuments(fileUrls);
@@ -98,7 +113,7 @@ const useProjectState = ({
 
   return useMemo<ProjectState>(
     () =>
-      !folderDoc || folderDoc.docs.length !== references.length
+      !folderDoc || fileUrls.length !== references.length
         ? null
         : {
             references,
