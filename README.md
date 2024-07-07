@@ -48,3 +48,12 @@ If you want to dynamically deploy a new package to an automerge document and are
 - edit the code
 - run `pnpm push` to deploy to automerge. (You'll need [trailhead](https://github.com/inkandswitch/trailhead) installed.)
 
+### AI
+
+LLM features in Patchwork include bot edits and change history summarization. Currently these are backed by the OpenAI API. To enable them in local dev you'll need to set up an API key locally. Create a file at `os/.env.local`:
+
+```
+VITE_OPENAI_API_KEY=<OpenAI key>
+```
+
+You can get the lab OpenAI key from Geoffrey.

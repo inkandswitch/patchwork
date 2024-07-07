@@ -15,6 +15,7 @@ import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { Branch, HasVersionControlMetadata } from "../schema";
 import { SidebarMode } from "./VersionControlEditor";
 import Markdown from "react-markdown";
+import { isLLMActive } from "@/lib/llm";
 
 export type HasBotChatHistory = {
   botChatHistory: ChatMessage[];
@@ -22,8 +23,8 @@ export type HasBotChatHistory = {
 
 // A string which will be visible to the bot representing user acceptance of edits.
 // We won't show it to the user because that's weird, we'll just show something in the UI
-const ACCEPT_MESSAGE = "I accept your edits.";
-const REJECT_MESSAGE = "I reject your edits.";
+const ACCEPT_MESSAGE = "Edits accepted.";
+const REJECT_MESSAGE = "Edits rejected.";
 
 export const BotSidebar = ({
   doc,
@@ -145,6 +146,17 @@ export const BotSidebar = ({
   const reviewSuggestion = () => {
     setSidebarMode("review");
   };
+
+  if (!isLLMActive) {
+    return (
+      <div className="flex justify-center items-center h-full p-4">
+        <p className="text-sm text-gray-500">
+          AI edits are disabled because OpenAI API key is not present. See
+          README for details.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full p-2">
