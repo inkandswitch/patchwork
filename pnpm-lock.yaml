@@ -20,10 +20,10 @@ importers:
         version: 2.2.2
       '@automerge/automerge-repo':
         specifier: ^1.1.12
-        version: 1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)
       '@automerge/automerge-repo-react-hooks':
         specifier: ^1.1.12
-        version: 1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
       '@handsontable/react':
         specifier: ^14.1.0
         version: 14.4.0(handsontable@14.4.0)
@@ -60,10 +60,10 @@ importers:
         version: 0.0.11(@lezer/common@1.2.1)
       '@automerge/automerge-repo':
         specifier: ^1.1.12
-        version: 1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)
       '@automerge/automerge-repo-react-hooks':
         specifier: ^1.1.12
-        version: 1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
       '@codemirror/lang-markdown':
         specifier: ^6.2.1
         version: 6.2.5
@@ -111,6 +111,64 @@ importers:
         specifier: ^18.3.0
         version: 18.3.0
 
+  packages/folder-list-view:
+    dependencies:
+      '@automerge/automerge':
+        specifier: ^2.2.2
+        version: 2.2.2
+      '@automerge/automerge-repo':
+        specifier: ^1.1.12
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)
+      '@automerge/automerge-repo-react-hooks':
+        specifier: ^1.1.12
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@rollup/plugin-commonjs':
+        specifier: ^26.0.1
+        version: 26.0.1(rollup@4.18.0)
+      '@rollup/plugin-node-resolve':
+        specifier: ^15.2.3
+        version: 15.2.3(rollup@4.18.0)
+      '@rollup/plugin-typescript':
+        specifier: ^11.1.6
+        version: 11.1.6(rollup@4.18.0)(tslib@2.6.3)(typescript@5.5.2)
+      '@types/node':
+        specifier: ^20.8.2
+        version: 20.14.7
+      '@types/react':
+        specifier: ^18.2.15
+        version: 18.3.3
+      '@types/react-dom':
+        specifier: ^18.2.7
+        version: 18.3.0
+      autoprefixer:
+        specifier: ^10.4.16
+        version: 10.4.19(postcss@8.4.38)
+      postcss:
+        specifier: ^8.4.31
+        version: 8.4.38
+      rollup:
+        specifier: ^4.18.0
+        version: 4.18.0
+      rollup-plugin-postcss:
+        specifier: ^4.0.2
+        version: 4.0.2(postcss@8.4.38)(ts-node@10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2))
+      tailwindcss:
+        specifier: ^3.3.3
+        version: 3.4.4(ts-node@10.9.2(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2))
+      tslib:
+        specifier: ^2.6.3
+        version: 2.6.3
+      typescript:
+        specifier: ^5.0.2
+        version: 5.5.2
+
   packages/kanban:
     dependencies:
       '@automerge/automerge':
@@ -118,10 +176,10 @@ importers:
         version: 2.2.2
       '@automerge/automerge-repo':
         specifier: ^1.1.12
-        version: 1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)
       '@automerge/automerge-repo-react-hooks':
         specifier: ^1.1.12
-        version: 1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
       '@firefox-devtools/react-contextmenu':
         specifier: ^5.1.0
         version: 5.1.1(prop-types@15.8.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -236,10 +294,10 @@ importers:
         version: 2.2.2
       '@automerge/automerge-repo':
         specifier: ^1.1.12
-        version: 1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)
       '@automerge/automerge-repo-react-hooks':
         specifier: ^1.1.12
-        version: 1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
       '@microlink/react-json-view':
         specifier: ^1.23.0
         version: 1.23.0(@types/react@18.3.3)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -288,7 +346,7 @@ importers:
         version: 4.0.2(postcss@8.4.38)(ts-node@10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2))
       tailwindcss:
         specifier: ^3.3.3
-        version: 3.4.4(ts-node@10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2))
+        version: 3.4.4(ts-node@10.9.2(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2))
       tslib:
         specifier: ^2.6.3
         version: 2.6.3
@@ -303,10 +361,10 @@ importers:
         version: 2.2.2
       '@automerge/automerge-repo':
         specifier: ^1.1.12
-        version: 1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)
       '@automerge/automerge-repo-react-hooks':
         specifier: ^1.1.12
-        version: 1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
+        version: 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)
       '@tldraw/tldraw':
         specifier: 2.0.0-alpha.17
         version: 2.0.0-alpha.17(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -5820,21 +5878,6 @@ snapshots:
       - supports-color
       - typescript
 
-  '@automerge/automerge-repo-react-hooks@1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.2)':
-    dependencies:
-      '@automerge/automerge': 2.2.2
-      '@automerge/automerge-repo': 1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)
-      eventemitter3: 5.0.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-usestateref: 1.0.9(react@18.3.1)
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - supports-color
-      - typescript
-
   '@automerge/automerge-repo-storage-indexeddb@1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)':
     dependencies:
       '@automerge/automerge-repo': 1.1.12(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)
@@ -5855,25 +5898,6 @@ snapshots:
       fast-sha256: 1.3.0
       tiny-typed-emitter: 2.1.0
       ts-node: 10.9.2(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)
-      uuid: 9.0.1
-      xstate: 5.13.2
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - supports-color
-      - typescript
-
-  '@automerge/automerge-repo@1.1.12(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)':
-    dependencies:
-      '@automerge/automerge': 2.2.2
-      bs58check: 3.0.1
-      cbor-x: 1.5.9
-      debug: 4.3.5
-      eventemitter3: 5.0.1
-      fast-sha256: 1.3.0
-      tiny-typed-emitter: 2.1.0
-      ts-node: 10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)
       uuid: 9.0.1
       xstate: 5.13.2
     transitivePeerDependencies:
@@ -8048,7 +8072,7 @@ snapshots:
   '@tailwindcss/forms@0.5.7(tailwindcss@3.4.4(ts-node@10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)))':
     dependencies:
       mini-svg-data-uri: 1.4.4
-      tailwindcss: 3.4.4(ts-node@10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2))
+      tailwindcss: 3.4.4(ts-node@10.9.2(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2))
 
   '@tanstack/react-virtual@3.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -10602,7 +10626,7 @@ snapshots:
       yaml: 1.10.2
     optionalDependencies:
       postcss: 8.4.38
-      ts-node: 10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)
+      ts-node: 10.9.2(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)
 
   postcss-load-config@4.0.2(postcss@8.4.38)(ts-node@10.9.2(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)):
     dependencies:
@@ -10611,14 +10635,6 @@ snapshots:
     optionalDependencies:
       postcss: 8.4.38
       ts-node: 10.9.2(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2)
-
-  postcss-load-config@4.0.2(postcss@8.4.38)(ts-node@10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)):
-    dependencies:
-      lilconfig: 3.1.2
-      yaml: 2.4.5
-    optionalDependencies:
-      postcss: 8.4.38
-      ts-node: 10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)
 
   postcss-merge-longhand@5.1.7(postcss@8.4.38):
     dependencies:
@@ -11518,33 +11534,6 @@ snapshots:
     transitivePeerDependencies:
       - ts-node
 
-  tailwindcss@3.4.4(ts-node@10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2)):
-    dependencies:
-      '@alloc/quick-lru': 5.2.0
-      arg: 5.0.2
-      chokidar: 3.6.0
-      didyoumean: 1.2.2
-      dlv: 1.1.3
-      fast-glob: 3.3.2
-      glob-parent: 6.0.2
-      is-glob: 4.0.3
-      jiti: 1.21.6
-      lilconfig: 2.1.0
-      micromatch: 4.0.7
-      normalize-path: 3.0.0
-      object-hash: 3.0.0
-      picocolors: 1.0.1
-      postcss: 8.4.38
-      postcss-import: 15.1.0(postcss@8.4.38)
-      postcss-js: 4.0.1(postcss@8.4.38)
-      postcss-load-config: 4.0.2(postcss@8.4.38)(ts-node@10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2))
-      postcss-nested: 6.0.1(postcss@8.4.38)
-      postcss-selector-parser: 6.1.0
-      resolve: 1.22.8
-      sucrase: 3.35.0
-    transitivePeerDependencies:
-      - ts-node
-
   tar@6.2.1:
     dependencies:
       chownr: 2.0.0
@@ -11620,26 +11609,6 @@ snapshots:
   ts-interface-checker@0.1.13: {}
 
   ts-node@10.9.2(@swc/core@1.6.3(@swc/helpers@0.5.5))(@types/node@20.14.7)(typescript@5.5.2):
-    dependencies:
-      '@cspotcode/source-map-support': 0.8.1
-      '@tsconfig/node10': 1.0.11
-      '@tsconfig/node12': 1.0.11
-      '@tsconfig/node14': 1.0.3
-      '@tsconfig/node16': 1.0.4
-      '@types/node': 20.14.7
-      acorn: 8.12.0
-      acorn-walk: 8.3.3
-      arg: 4.1.3
-      create-require: 1.1.1
-      diff: 4.0.2
-      make-error: 1.3.6
-      typescript: 5.5.2
-      v8-compile-cache-lib: 3.0.1
-      yn: 3.1.1
-    optionalDependencies:
-      '@swc/core': 1.6.3(@swc/helpers@0.5.5)
-
-  ts-node@10.9.2(@swc/core@1.6.3)(@types/node@20.14.7)(typescript@5.5.2):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.11
