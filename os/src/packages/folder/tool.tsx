@@ -7,6 +7,7 @@ import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { Icon } from "@/lib/icons";
 import { EditorProps, Tool, useToolsForDataType } from "@/tools";
 import { DocLink, FolderDoc } from "./datatype";
+import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
 
 export const FolderViewer: React.FC<EditorProps<never, never>> = ({
   docUrl,
@@ -27,7 +28,9 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
       </div>
       <div className="flex flex-col gap-10 px-4 h-full overflow-y-auto pb-24">
         {folderAtHeads.docs.map((docLink, index) => (
-          <FolderEntryView docLink={docLink} key={index} />
+          <MountOnlyWhenVisible key={index} height={"16rem"}>
+            <FolderEntryView docLink={docLink} />
+          </MountOnlyWhenVisible>
         ))}
       </div>
     </div>
@@ -64,7 +67,7 @@ export const FolderEntryView = ({ docLink }) => {
               Open
             </button>
           </div>
-          <div className="h-72 border border-gray-300">
+          <div className="h-64 border border-gray-300">
             {!tool && <div>No editor available</div>}
             {tool &&
               docLink.type !== "folder" &&
