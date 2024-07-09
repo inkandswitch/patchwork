@@ -58,9 +58,10 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
         className={`${node.isSelected ? "text-gray-800" : "text-gray-500"} ${
           node.data.type === "folder" && "hover:bg-gray-400 text-gray-800"
         } p-1 mr-0.5 rounded-sm transition-all`}
-        onClick={() => {
+        onClick={(e) => {
           if (node.data.type === "folder") {
             node.toggle();
+            e.stopPropagation();
           }
         }}
       >
