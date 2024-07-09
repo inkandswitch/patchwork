@@ -95,6 +95,7 @@ export default defineConfig({
     exclude: [
       "@automerge/automerge-wasm",
       "@automerge/automerge-wasm/bundler/bindgen_bg.wasm",
+      "@automerge/automerge-repo-network-websocket",
       "@syntect/wasm",
     ],
   },
