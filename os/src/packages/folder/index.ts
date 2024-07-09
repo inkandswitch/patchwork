@@ -5,4 +5,7 @@ export {
   type DocLink,
   type DocLinkWithFolderPath,
 } from "./datatype";
-export { folderViewerTool as tool } from "./tool";
+export {
+  folderViewerListTool as tool2,
+  folderViewerWithEmbedsTool as tool,
+} from "./tool";
