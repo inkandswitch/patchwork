@@ -28,9 +28,7 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
       </div>
       <div className="flex flex-col gap-10 px-4 h-full overflow-y-auto pb-24">
         {folderAtHeads.docs.map((docLink, index) => (
-          <MountOnlyWhenVisible key={index} height={"16rem"}>
-            <FolderEntryView docLink={docLink} />
-          </MountOnlyWhenVisible>
+          <FolderEntryView docLink={docLink} key={index} />
         ))}
       </div>
     </div>
@@ -48,7 +46,7 @@ export const FolderEntryView = ({ docLink }) => {
   const icon = tool?.icon ?? dataType?.icon;
 
   return (
-    <div>
+    <div className="h-72">
       {!tool ? (
         <div className="flex gap-2 items-center font-medium mb-1">
           Unknown type: {docLink.type}
@@ -67,13 +65,16 @@ export const FolderEntryView = ({ docLink }) => {
               Open
             </button>
           </div>
+
           <div className="h-64 border border-gray-300">
             {!tool && <div>No editor available</div>}
-            {tool &&
-              docLink.type !== "folder" &&
-              React.createElement(tool.editorComponent, {
-                docUrl: docLink.url,
-              })}
+            {tool && docLink.type !== "folder" && (
+              <MountOnlyWhenVisible height={"16rem"}>
+                {React.createElement(tool.editorComponent, {
+                  docUrl: docLink.url,
+                })}
+              </MountOnlyWhenVisible>
+            )}
             {docLink.type === "folder" && (
               <div className="bg-gray-50 justify-center items-center flex h-full">
                 Click "open" to see nested folder contents
