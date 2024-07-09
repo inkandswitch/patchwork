@@ -97,6 +97,8 @@ export const useTools = (): Tool[] => {
     );
   }, []);
 
+  console.log("dynamic", dynamicTools);
+
   return builtInTools.concat(dynamicTools);
 };
 

@@ -1,5 +1,5 @@
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import React, { useMemo } from "react";
+import React from "react";
 
 import { Textarea } from "@/shadcn/ui/textarea";
 import { EditorProps, Tool } from "@/tools";
@@ -20,10 +20,8 @@ export const PackageEditor: React.FC<EditorProps<never, never>> = ({
   const { packageJSON, fileContents } = docHeads
     ? view(rawPackageDoc, docHeads)
     : rawPackageDoc;
-  const mainPath = useMemo(
-    () => packageJSON.main.split("/"),
-    [packageJSON.main]
-  );
+
+  const mainPath = packageJSON.main.split("/");
 
   const onChangeSourceCode = (evt) => {
     changeModuleDoc((doc) => {
@@ -34,9 +32,7 @@ export const PackageEditor: React.FC<EditorProps<never, never>> = ({
     });
   };
 
-  const mainSource = useMemo<string>(() => {
-    return get(fileContents, mainPath)?.contents as string;
-  }, [mainPath, fileContents]);
+  const mainSource = get(fileContents, mainPath)?.contents as string;
 
   return (
     <div className="p-4 w-full h-full font-mono flex flex-col">
