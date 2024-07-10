@@ -1,6 +1,10 @@
 import { FolderDoc } from "@/packages/folder";
 import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  parseAutomergeUrl,
+  isValidAutomergeUrl,
+} from "@automerge/automerge-repo";
 import {
   useDocument,
   useDocuments,
@@ -10,6 +14,7 @@ import { instance } from "@viz-js/viz";
 import { BuildRun, JacquardBuildMetadata, Reference } from "../datatype";
 import { FileDoc } from "../../../file/src/datatype";
 import { EditorProps } from "@/tools";
+import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 
 export const GraphView = ({
   docUrl,
@@ -125,7 +130,35 @@ const GraphvizView = ({ source }: { source: string }) => {
       // make sure that the source hasn't changed while waiting for the render to finish
       if (sourceRef.current === source) {
         container.innerText = "";
-        container.appendChild(viz.renderSVGElement(source));
+        const svg = viz.renderSVGElement(source);
+        container.appendChild(svg);
+
+        // Add click event listeners to all nodes
+        svg.querySelectorAll(".node").forEach((node) => {
+          const titleElement = node.querySelector("title");
+          const nodeIdFromTitle = titleElement
+            ? titleElement.textContent
+            : null;
+
+          const possibleAutomergeUrl = nodeIdFromTitle
+            .slice(1)
+            .replaceAll("_", ":");
+
+          if (!isValidAutomergeUrl(possibleAutomergeUrl)) {
+            return;
+          }
+
+          (node as SVGElement).style.cursor = "pointer";
+
+          node.addEventListener("click", (e) => {
+            const docUrl = possibleAutomergeUrl as AutomergeUrl;
+            selectDocLink({
+              url: docUrl,
+              name: "fake",
+              type: "file", // TODO: figure out what to do when we have non file-type docs
+            });
+          });
+        });
       }
     });
   }, [container, source]);
@@ -164,7 +197,7 @@ function stateGraphSrc(state: ProjectState) {
   for (let buildRun of state.buildRuns) {
     const status = buildGraph.buildRunStatuses[buildRun.id];
     lines.push(`${gvId(buildRun.id)} [
-      shape=plain 
+      shape=plain
       label="${buildRun.command}"
       fontname="sans-serif"
       fontsize=10
