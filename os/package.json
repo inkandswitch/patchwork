@@ -4,7 +4,6 @@
   "version": "0.0.1",
   "type": "module",
   "module": "index.js",
-  "packageManager": "pnpm@9.5.0",
   "workspaces": [
     "packages/*"
   ],
