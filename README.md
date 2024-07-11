@@ -2,20 +2,33 @@
 
 Patchwork is a malleable, local-first collaboration environment. It lets you edit many types of automerge documents using various UI tools.
 
+
 ## Concepts
 
 - Datatype: a "file format" or "schema" for automerge documents. eg: markdown, drawing
 - Tool: a UI for viewing and editing documents. eg: markdown editor, tldraw canvas, raw json editor.
 - Package: a unit for wrapping up datatypes and tools and sharing them.
 
+The Patchwork OS has 2 kinds of packages: built-ins and dynamic. Built-in packages are bundled into the OS and deployed together with it. Dynamic packages are deployed to Automerge documents and loaded out of Automerge at runtime. Currently most of our packages are built-ins, but we plan to gradually migrate everything to dynamic over time, so that we're only deploying the OS and all the datatypes + tools are loaded out of Automerge.
+
+
 ## Development
 
-Run it:
+For typical development you can run these commands for a fast development loop based on `vite dev`:
 
 ```
 pnpm install
 pnpm dev
 ```
+
+However, with the above commands dynamic packages won't work. To include dynamic packages loaded out of Automerge, run:
+
+```
+cd os
+pnpm preview
+```
+
+This is a slower dev loop which will re-bundle the app every time a change is made.
 
 ### Folder structure
 
@@ -23,7 +36,7 @@ This monorepo (managed with pnpm workspaces) includes both the core OS APIs as w
 
 `./os`: contains the core OS functionality: general API definitions, UI chrome like the doc list sidebar, and versioning utilities. (Over time we'll likely split these out into separate packages.)
 
-`./packages/*` contains *packages* which can define datatypes and tools. These packages are not statically included in the deployed OS. Instead, they can be pushed to automerge documents and loaded dynamically. This is currently experimental functionality.
+`./packages/*` contains *packages* which can define datatypes and tools. Some of these packages are referenced from `./os` and bundled as built-ins; some are deployed to Automerge as dynamic packages.
 
 `./os/src/packages/*`: we bundle some mature core packages like our essay editor datatype and tool directly into the OS and deploy them statically as part of the OS deploy. Over the long term we plan to pull these out of this directory and deploy them dynamically.
 
