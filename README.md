@@ -21,14 +21,27 @@ pnpm install
 pnpm dev
 ```
 
-However, with the above commands dynamic packages won't work. To include dynamic packages loaded out of Automerge, run:
+However, with the above commands dynamic packages won't work. To include dynamic packages loaded out of Automerge:
+
+Switch to the `os` directory:
 
 ```
 cd os
+```
+
+Run a build watcher:
+
+```
+pnpm build:dev
+```
+
+Run a vite preview server:
+
+```
 pnpm preview
 ```
 
-This is a slower dev loop which will re-bundle the app every time a change is made.
+And you'll need to manually refresh the browser to see changes. This is a slower dev loop which will re-bundle the app every time a change is made.
 
 ### Folder structure
 
