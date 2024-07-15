@@ -59,6 +59,7 @@ import { toast } from "sonner";
 import { useAnnotations } from "../annotations";
 import {
   createBranch,
+  createJacquardBranch,
   deleteBranch,
   mergeBranch,
   suggestBranchName,
@@ -197,9 +198,21 @@ export const VersionControlEditor: React.FC<{
       });
       setSelectedBranch(branch);
       toast("Created a new branch");
-      return repo.find(branch.url);
     },
     [repo, handle, account?.contactHandle?.url, setSelectedBranch]
+  );
+
+  const handleCreateJacquardBranch = useCallback(
+    async () => {
+      const branchUrl = await createJacquardBranch({
+        repo,
+        handle,
+        createdBy: account?.contactHandle?.url,
+      });
+      setSelectedJacquardBranchUrl(branchUrl);
+      toast("Created a new branch");
+    },
+    [repo, handle, account?.contactHandle?.url]
   );
 
   const moveCurrentChangesToBranch = () => {
@@ -613,7 +626,7 @@ export const VersionControlEditor: React.FC<{
             value={selectedJacquardBranchUrl ?? null}  // select doesn't like undefined
             onValueChange={(value) => {
               if (value === "__newBranch") {
-                throw new Error('not implemented');
+                handleCreateJacquardBranch();
               } else if (value === "__moveChangesToBranch") {
                 throw new Error('not implemented');
               } else {

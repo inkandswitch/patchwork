@@ -1,6 +1,6 @@
 import * as A from "@automerge/automerge/next";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import { LegacyBranch, Branchable } from "./schema";
+import { LegacyBranch, Branchable, HasVersionControlMetadata, BranchDoc, VersionControlSidecarDoc } from "./schema";
 import { getStringCompletion } from "@/lib/llm";
 import { MarkdownDoc } from "../../../packages/essay/src";
 import { Hash } from "@automerge/automerge-wasm";
@@ -66,6 +66,41 @@ export const createBranch = <DocType extends Branchable>({
   });
 
   return branchPointer;
+};
+
+export const createJacquardBranch = async <DocType extends HasVersionControlMetadata<unknown, unknown>>({
+  repo,
+  handle,
+  createdBy,
+}: {
+  repo: Repo;
+  handle: DocHandle<DocType>;
+  createdBy: AutomergeUrl;
+}): Promise<AutomergeUrl> => {
+  const doc = handle.docSync();
+  const versionControlMetadataHandle = repo.find<VersionControlSidecarDoc>(doc.versionControlMetadataUrl);
+  const versionControlMetadataDoc = await versionControlMetadataHandle.doc();
+
+  const cloneHandle = repo.clone(handle);
+
+  const branchHandle = repo.create<BranchDoc>();
+  branchHandle.change((doc) => {
+    doc.name = `Branch #${(versionControlMetadataDoc.branches?.length ?? 0) + 1}`;
+    doc.createdAt = Date.now();
+    doc.createdBy = createdBy;
+    doc.clones = {
+      [handle.url]: {
+        url: cloneHandle.url,
+        baseHeads: A.getHeads(handle.docSync()),
+      },
+    };
+  });
+
+  versionControlMetadataHandle.change((doc) => {
+    doc.branches.push(branchHandle.url);
+  });
+
+  return branchHandle.url;
 };
 
 export const mergeBranch = <DocType extends Branchable>({
