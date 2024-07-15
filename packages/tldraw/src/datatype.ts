@@ -6,6 +6,7 @@ import {
   initVersionControlMetadata,
 } from "@/versionControl/schema";
 import { next as A } from "@automerge/automerge";
+import { Repo } from "@automerge/automerge-repo";
 import {
   Editor,
   SerializedSchema,
@@ -45,11 +46,11 @@ export const setTitle = (doc: any, title: string) => {
   doc.store["page:page"].name = title;
 };
 
-export const init = (doc: TLDrawDoc) => {
+export const init = (doc: TLDrawDoc, repo: Repo) => {
   tldrawinit(doc);
   doc.store["page:page"].name = "Drawing";
 
-  initVersionControlMetadata(doc);
+  initVersionControlMetadata(doc, repo);
 };
 
 export const includePatchInChangeGroup = (patch: A.Patch) => {

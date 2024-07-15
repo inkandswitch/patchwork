@@ -63,7 +63,7 @@ import {
   suggestBranchName,
 } from "../branches";
 import {
-  Branch,
+  LegacyBranch,
   DiffWithProvenance,
   HasVersionControlMetadata,
 } from "../schema";
@@ -89,8 +89,8 @@ export const VersionControlEditor: React.FC<{
   docUrl: AutomergeUrl;
   datatypeId: string;
   tool: Tool;
-  selectedBranch: Branch | undefined;
-  setSelectedBranch: (branch: Branch) => void;
+  selectedBranch: LegacyBranch | undefined;
+  setSelectedBranch: (branch: LegacyBranch) => void;
   addNewDocument: (doc: { type: string; change?: (doc: any) => void }) => void;
 }> = ({
   docUrl: mainDocUrl,

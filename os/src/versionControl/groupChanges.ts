@@ -23,7 +23,7 @@ import {
 import { isEqual, sortBy } from "lodash";
 import { getChangesFromMergedBranch } from "./branches";
 import {
-  Branch,
+  LegacyBranch,
   Branchable,
   DiffWithProvenance,
   Discussable,
@@ -75,14 +75,14 @@ export type HeadsMarker<T> = {
   | { type: "tag"; tag: Tag }
   | {
       type: "otherBranchMergedIntoThisDoc";
-      branch: Branch;
+      branch: LegacyBranch;
       changeGroups: ChangeGroup<T>[];
     }
-  | { type: "branchCreatedFromThisDoc"; branch: Branch }
+  | { type: "branchCreatedFromThisDoc"; branch: LegacyBranch }
   | {
       type: "originOfThisBranch";
       source: Branchable["branchMetadata"]["source"];
-      branch: Branch;
+      branch: LegacyBranch;
     }
   | { type: "discussionThread"; discussion: Discussion<unknown> }
 );
@@ -574,7 +574,7 @@ export const getGroupedChanges = <T extends Branchable>({
     [key: string]: {
       changeGroup: ChangeGroup<T>;
       changeHashes: Set<Hash>;
-      mergeMetadata: Branch["mergeMetadata"];
+      mergeMetadata: LegacyBranch["mergeMetadata"];
     };
   } = {};
   for (const branch of doc.branchMetadata.branches) {

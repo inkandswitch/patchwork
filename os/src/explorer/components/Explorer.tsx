@@ -19,7 +19,10 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
 import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
-import { Branch, HasVersionControlMetadata } from "@/versionControl/schema";
+import {
+  LegacyBranch,
+  HasVersionControlMetadata,
+} from "@/versionControl/schema";
 
 import { useTool, useToolsForDataType } from "../../tools";
 import { useDataType, useDataTypes } from "../../datatypes";
@@ -54,7 +57,7 @@ export const Explorer: React.FC = () => {
   const selectedDataTypeId = selectedDocLink?.type;
   const selectedBranchUrl = selectedDocLink?.branchUrl;
 
-  const selectedBranch = useMemo<Branch>(() => {
+  const selectedBranch = useMemo<LegacyBranch>(() => {
     if (!selectedBranchUrl || !selectedDoc) {
       return;
     }

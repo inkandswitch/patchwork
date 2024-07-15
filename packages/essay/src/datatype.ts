@@ -46,7 +46,7 @@ const init = (doc: any, repo: Repo) => {
   doc.content = "# Untitled\n\n";
   doc.commentThreads = {};
 
-  initVersionControlMetadata(doc);
+  initVersionControlMetadata(doc, repo);
   const handle = repo.create<AssetsDoc>();
   handle.change((doc) => {
     doc.files = {};

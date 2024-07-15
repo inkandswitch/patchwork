@@ -1,6 +1,6 @@
 import * as A from "@automerge/automerge/next";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import { Branch, Branchable } from "./schema";
+import { LegacyBranch, Branchable } from "./schema";
 import { getStringCompletion } from "@/lib/llm";
 import { MarkdownDoc } from "../../../packages/essay/src";
 import { Hash } from "@automerge/automerge-wasm";
@@ -21,7 +21,7 @@ export const createBranch = <DocType extends Branchable>({
    */
   heads?: A.Heads;
   createdBy: AutomergeUrl;
-}): Branch => {
+}): LegacyBranch => {
   //
   // This code should work but doesn't, not sure why yet? ----- GL 2/14
   // We should be taking the specified heads into account when creating a branch

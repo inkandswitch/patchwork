@@ -1,10 +1,52 @@
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
 import { TextPatch } from "./utils";
 import { HasAssets } from "@/assets";
 import { HasBotChatHistory } from "./components/BotSidebar";
 
-export type Branch = {
+// This is a separate doc to store version control metadata.
+// Eventually we envision all VC metadata living in here.
+// But for now, we have some metadata living in docs themselves, and
+// some living in this sidecar.
+export type VersionControlSidecarDoc = {
+  branches: AutomergeUrl[];
+};
+
+type HasLinkToVersionControlSidecar = {
+  versionControlMetadataUrl: AutomergeUrl;
+};
+
+// Represents a branch across multiple documents
+export type BranchDoc = {
+  /* A mapping of URLs of "main" docs to clones representing that doc on this branch */
+  clones: {
+    [key: string]: {
+      url: AutomergeUrl;
+      // The base of the branch = the heads at which this branch was created
+      baseHeads: A.Heads;
+    };
+  };
+
+  name: string;
+
+  /** timestamp when the branch was created */
+  createdAt: number;
+
+  /** author contact doc URL for branch creator */
+  createdBy?: AutomergeUrl;
+
+  mergeMetadata?: {
+    /** timestamp when the branch was merged */
+    mergedAt: number;
+    /** Heads of the branch at the point it was merged */
+    // TODO: record merge heads per doc on branch
+    // mergeHeads: A.Heads;
+    /** author contact doc URL for branch merger */
+    mergedBy: AutomergeUrl;
+  };
+};
+
+export type LegacyBranch = {
   name: string;
   /** URL pointing to the clone doc */
   url: AutomergeUrl;
@@ -34,7 +76,7 @@ export type Branchable = {
     } | null;
 
     /* A pointer to copies of this doc */
-    branches: Array<Branch>;
+    branches: Array<LegacyBranch>;
   };
 };
 
@@ -125,7 +167,8 @@ export type HasVersionControlMetadata<T, V> = HasChangeGroupSummaries &
   // We should create a base schema that's a union of all interfaces that we can assume all documents implement but
   // split them up into logical sub interfaces like versioning, commenting, assets, etc
   HasAssets &
-  HasBotChatHistory;
+  HasBotChatHistory &
+  HasLinkToVersionControlSidecar;
 
 export type AnnotationId = string & { __annotationId: true };
 
@@ -177,7 +220,7 @@ export interface AnnotationPosition<T, V> {
   annotation: Annotation<T, V>;
 }
 
-export const initVersionControlMetadata = (doc: any) => {
+export const initVersionControlMetadata = (doc: any, repo: Repo) => {
   doc.branchMetadata = {
     source: null,
     branches: [],
@@ -185,4 +228,11 @@ export const initVersionControlMetadata = (doc: any) => {
   doc.discussions = {};
   doc.tags = [];
   doc.changeGroupSummaries = {};
+
+  // init the separate metadata doc
+  const metadataHandle = repo.create<VersionControlSidecarDoc>();
+  metadataHandle.change((d) => {
+    d.branches = [];
+  });
+  doc.versionControlMetadataUrl = metadataHandle.url;
 };

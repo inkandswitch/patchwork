@@ -3,7 +3,7 @@ import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { Doc, splice } from "@automerge/automerge/next";
 import { type DataType } from "@/sdk";
 import { createBranch } from "./branches";
-import { Branch, HasVersionControlMetadata } from "./schema";
+import { LegacyBranch, HasVersionControlMetadata } from "./schema";
 
 // These types are a superset of OpenAI's API so we can directly store a chat history
 // and pass it to OpenAI without further modification.
@@ -128,7 +128,7 @@ export const makeBotTextEdits = async ({
   chatHistory: ChatMessage[];
   dataType: DataType<unknown, unknown, unknown>;
   repo: Repo;
-}): Promise<Branch | null> => {
+}): Promise<LegacyBranch | null> => {
   const { instructions, path } = DATATYPE_CONFIGS[dataType.id];
 
   const messages = [

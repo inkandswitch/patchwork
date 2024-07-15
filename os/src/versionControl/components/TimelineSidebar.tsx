@@ -24,7 +24,7 @@ import {
   PencilIcon,
 } from "lucide-react";
 import {
-  Branch,
+  LegacyBranch,
   DiffWithProvenance,
   Discussion,
   HasChangeGroupSummaries,
@@ -110,8 +110,8 @@ export type ChangelogSelection =
 export const TimelineSidebar: React.FC<{
   dataType: DataType<unknown, unknown, unknown>;
   docUrl: AutomergeUrl;
-  selectedBranch: Branch;
-  setSelectedBranch: (branch: Branch) => void;
+  selectedBranch: LegacyBranch;
+  setSelectedBranch: (branch: LegacyBranch) => void;
   setDocHeads: (heads: Heads) => void;
   setDiff: (diff: DiffWithProvenance) => void;
 }> = ({
@@ -660,7 +660,7 @@ const ChangeGroupDescription = ({
 
 const BranchMergedItem: React.FC<{
   doc: HasChangeGroupSummaries;
-  branch: Branch;
+  branch: LegacyBranch;
   changeGroups: GenericChangeGroup[];
   selected: boolean;
 }> = ({ doc, branch, changeGroups, selected }) => {
@@ -730,10 +730,10 @@ const BranchCreatedItem = ({
   branch,
   selected,
 }: {
-  branch: Branch;
+  branch: LegacyBranch;
   selected: boolean;
-  selectedBranch: Branch;
-  setSelectedBranch: (branch: Branch) => void;
+  selectedBranch: LegacyBranch;
+  setSelectedBranch: (branch: LegacyBranch) => void;
 }) => {
   return (
     <ItemView selected={selected} color="neutral">
@@ -758,7 +758,7 @@ const BranchOriginItem = ({
   branch,
   selected,
 }: {
-  branch: Branch;
+  branch: LegacyBranch;
   selected: boolean;
 }) => {
   return (

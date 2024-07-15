@@ -12,7 +12,7 @@ import {
 } from "../bots";
 import { toast } from "sonner";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { Branch, HasVersionControlMetadata } from "../schema";
+import { LegacyBranch, HasVersionControlMetadata } from "../schema";
 import { SidebarMode } from "./VersionControlEditor";
 import Markdown from "react-markdown";
 import { isLLMActive } from "@/lib/llm";
@@ -39,8 +39,8 @@ export const BotSidebar = ({
   doc: Doc<HasVersionControlMetadata<unknown, unknown>>;
   handle: DocHandle<HasVersionControlMetadata<unknown, unknown>>;
   dataType: DataType<unknown, unknown, unknown>;
-  selectedBranch: Branch | undefined;
-  setSelectedBranch: (branch: Branch) => void;
+  selectedBranch: LegacyBranch | undefined;
+  setSelectedBranch: (branch: LegacyBranch) => void;
   setSidebarMode: (mode: SidebarMode) => void;
   mergeBranch: (branchUrl: AutomergeUrl) => void;
   deleteBranch: (branchUrl: AutomergeUrl) => void;
