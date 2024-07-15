@@ -202,18 +202,15 @@ export const VersionControlEditor: React.FC<{
     [repo, handle, account?.contactHandle?.url, setSelectedBranch]
   );
 
-  const handleCreateJacquardBranch = useCallback(
-    async () => {
-      const branchUrl = await createJacquardBranch({
-        repo,
-        handle,
-        createdBy: account?.contactHandle?.url,
-      });
-      setSelectedJacquardBranchUrl(branchUrl);
-      toast("Created a new branch");
-    },
-    [repo, handle, account?.contactHandle?.url]
-  );
+  const handleCreateJacquardBranch = useCallback(async () => {
+    const branchUrl = await createJacquardBranch({
+      repo,
+      handle,
+      createdBy: account?.contactHandle?.url,
+    });
+    setSelectedJacquardBranchUrl(branchUrl);
+    toast("Created a new branch");
+  }, [repo, handle, account?.contactHandle?.url]);
 
   const moveCurrentChangesToBranch = () => {
     if (!isMarkdownDoc(doc))
@@ -304,8 +301,33 @@ export const VersionControlEditor: React.FC<{
     selectedBranch?.url
   );
 
-  const selectedDoc = selectedBranch ? branchDoc : doc;
+  const [versionControlMetadataDoc] = useDocument<VersionControlSidecarDoc>(
+    doc?.versionControlMetadataUrl
+  );
+  const branchDocs = useDocuments<BranchDoc>(
+    versionControlMetadataDoc?.branches
+  );
 
+  // TODO: "Jacquard" in here is provisional until we remove old branches
+  const [selectedJacquardBranchUrl, setSelectedJacquardBranchUrl] =
+    useState<AutomergeUrl | null>();
+  const selectedJacquardBranchId =
+    selectedJacquardBranchUrl &&
+    parseAutomergeUrl(selectedJacquardBranchUrl).documentId;
+  const selectedJacquardBranchDoc =
+    branchDocs &&
+    selectedJacquardBranchId &&
+    branchDocs[selectedJacquardBranchId];
+
+  const cloneHandle = useHandle(
+    selectedJacquardBranchDoc?.clones?.[handle.url]?.url
+  );
+  const selectedCloneUrl = cloneHandle?.url ?? mainDocUrl;
+  const [cloneDocForSelectedJacquardBranch] = useDocument<
+    HasVersionControlMetadata<unknown, unknown>
+  >(cloneHandle?.url);
+
+  const selectedDoc = cloneDocForSelectedJacquardBranch ?? doc;
   const buildMetadata = useMemo(() => {
     if (!selectedDoc) return undefined;
     const allChangesForDoc = A.getAllChanges(selectedDoc);
@@ -393,14 +415,6 @@ export const VersionControlEditor: React.FC<{
       window.removeEventListener("keydown", handleKeyPress, true);
     };
   }, [selectedAnchors]);
-
-  const [ versionControlMetadataDoc ] = useDocument<VersionControlSidecarDoc>(doc?.versionControlMetadataUrl);
-  const branchDocs = useDocuments<BranchDoc>(versionControlMetadataDoc?.branches);
-
-  // TODO: "Jacquard" in here is provisional until we remove old branches
-  const [ selectedJacquardBranchUrl, setSelectedJacquardBranchUrl ] = useState<AutomergeUrl | null>();
-  const selectedJacquardBranchId = selectedJacquardBranchUrl && parseAutomergeUrl(selectedJacquardBranchUrl).documentId;
-  const selectedJacquardBranchDoc = branchDocs && selectedJacquardBranchId && branchDocs[selectedJacquardBranchId];
 
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
 
@@ -622,24 +636,22 @@ export const VersionControlEditor: React.FC<{
         </div>
 
         <div className="bg-gray-100 pl-4 pt-3 pb-3 flex gap-2 items-center border-b border-gray-200">
+          🧪 Jacquard Temp
           <Select
-            value={selectedJacquardBranchUrl ?? null}  // select doesn't like undefined
+            value={selectedJacquardBranchUrl ?? null} // select doesn't like undefined
             onValueChange={(value) => {
               if (value === "__newBranch") {
                 handleCreateJacquardBranch();
               } else if (value === "__moveChangesToBranch") {
-                throw new Error('not implemented');
+                throw new Error("not implemented");
               } else {
                 const selectedBranchUrl = value as AutomergeUrl | null;
 
                 if (selectedBranchUrl) {
-                  const branch = doc.branchMetadata.branches.find(
-                    (b) => b.url === selectedBranchUrl
-                  );
-                  setSelectedBranch(branch);
-                  toast(`Switched to branch: ${branch.name}`);
+                  setSelectedJacquardBranchUrl(selectedBranchUrl);
+                  toast(`Switched to branch`);
                 } else {
-                  setSelectedBranch(null);
+                  setSelectedJacquardBranchUrl(null);
                   toast("Switched to Main");
                 }
               }
@@ -675,32 +687,31 @@ export const VersionControlEditor: React.FC<{
                 </SelectLabel>
 
                 {/* for now only show open branches here; maybe in future show a list of merged branches */}
-                {Object.entries(branchDocs)
-                  .map(([branchId, branchDoc]) => (
-                    <SelectItem
-                      key={branchId}
-                      className={`${
-                        selectedJacquardBranchId === branchId ? "font-medium" : ""
-                      }`}
-                      value={"automerge:" + branchId}
-                    >
-                      <div>{branchDoc.name}</div>
-                      <div className="ml-auto text-xs text-gray-600 flex gap-1">
-                        {branchDoc.createdAt && (
-                          <div>{getRelativeTimeString(branchDoc.createdAt)}</div>
-                        )}
-                        <span>by</span>
-                        {branchDoc.createdBy && (
-                          <ContactAvatar
-                            url={branchDoc.createdBy}
-                            size="sm"
-                            showName
-                            showImage={false}
-                          />
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
+                {Object.entries(branchDocs).map(([branchId, branchDoc]) => (
+                  <SelectItem
+                    key={branchId}
+                    className={`${
+                      selectedJacquardBranchId === branchId ? "font-medium" : ""
+                    }`}
+                    value={"automerge:" + branchId}
+                  >
+                    <div>{branchDoc.name}</div>
+                    <div className="ml-auto text-xs text-gray-600 flex gap-1">
+                      {branchDoc.createdAt && (
+                        <div>{getRelativeTimeString(branchDoc.createdAt)}</div>
+                      )}
+                      <span>by</span>
+                      {branchDoc.createdBy && (
+                        <ContactAvatar
+                          url={branchDoc.createdBy}
+                          size="sm"
+                          showName
+                          showImage={false}
+                        />
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
                 <SelectItem
                   value={"__newBranch"}
                   key={"__newBranch"}
@@ -724,7 +735,6 @@ export const VersionControlEditor: React.FC<{
               </SelectGroup>
             </SelectContent>
           </Select>
-
           {buildMetadata && (
             <div>
               Built:
@@ -732,7 +742,6 @@ export const VersionControlEditor: React.FC<{
               {new Date(buildMetadata.timestamp).toLocaleString()}
             </div>
           )}
-
           {selectedBranch && (
             <BranchActions
               doc={doc}
@@ -744,7 +753,6 @@ export const VersionControlEditor: React.FC<{
               handleMergeBranch={handleMergeBranch}
             />
           )}
-
           <div className="flex items-center gap-1 text-sm font-medium text-gray-700">
             {selectedBranch && (
               <div className="mr-2">
@@ -847,7 +855,7 @@ export const VersionControlEditor: React.FC<{
                 <DocEditor
                   key={selectedBranch?.url ?? mainDocUrl}
                   tool={tool}
-                  docUrl={selectedBranch?.url ?? mainDocUrl}
+                  docUrl={selectedCloneUrl}
                   docHeads={docHeads}
                   annotations={visibleAnnotations}
                   annotationGroups={annotationGroups}
@@ -865,8 +873,8 @@ export const VersionControlEditor: React.FC<{
         </ErrorBoundary>
         <StatusBar
           dataType={dataType}
-          key={selectedBranch?.url ?? mainDocUrl}
-          docUrl={selectedBranch?.url ?? mainDocUrl}
+          key={selectedCloneUrl}
+          docUrl={selectedCloneUrl}
           docHeads={docHeads}
           annotations={visibleAnnotations}
           annotationGroups={annotationGroups}
@@ -918,9 +926,9 @@ export const VersionControlEditor: React.FC<{
             {sidebarMode === "history" && (
               <TimelineSidebar
                 // set key to trigger re-mount on branch change
-                key={selectedBranch?.url ?? mainDocUrl}
+                key={selectedCloneUrl}
                 dataType={dataType}
-                docUrl={selectedBranch?.url ?? mainDocUrl}
+                docUrl={selectedCloneUrl}
                 setDocHeads={setDocHeadsFromTimelineSidebar}
                 setDiff={setDiffFromTimelineSidebar}
                 selectedBranch={selectedBranch}
