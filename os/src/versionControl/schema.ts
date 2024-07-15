@@ -8,6 +8,7 @@ import { HasBotChatHistory } from "./components/BotSidebar";
 // Eventually we envision all VC metadata living in here.
 // But for now, we have some metadata living in docs themselves, and
 // some living in this sidecar.
+// TODO: "Sidecar" in here is provisional until we remove old branches
 export type VersionControlSidecarDoc = {
   branches: AutomergeUrl[];
 };

@@ -27,9 +27,10 @@ import { getRelativeTimeString } from "@/lib/dates";
 import { isLLMActive } from "@/lib/llm";
 import { EditorProps, Tool } from "@/tools";
 import { isMarkdownDoc } from "../../../../packages/essay/src";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
+  useDocuments,
   useHandle,
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
@@ -66,6 +67,8 @@ import {
   LegacyBranch,
   DiffWithProvenance,
   HasVersionControlMetadata,
+  VersionControlSidecarDoc,
+  BranchDoc,
 } from "../schema";
 import {
   combinePatches,
@@ -90,7 +93,7 @@ export const VersionControlEditor: React.FC<{
   datatypeId: string;
   tool: Tool;
   selectedBranch: LegacyBranch | undefined;
-  setSelectedBranch: (branch: LegacyBranch) => void;
+  setSelectedBranch: (branch: LegacyBranch | undefined) => void;
   addNewDocument: (doc: { type: string; change?: (doc: any) => void }) => void;
 }> = ({
   docUrl: mainDocUrl,
@@ -378,6 +381,14 @@ export const VersionControlEditor: React.FC<{
     };
   }, [selectedAnchors]);
 
+  const [ versionControlMetadataDoc ] = useDocument<VersionControlSidecarDoc>(doc?.versionControlMetadataUrl);
+  const branchDocs = useDocuments<BranchDoc>(versionControlMetadataDoc?.branches);
+
+  // TODO: "Jacquard" in here is provisional until we remove old branches
+  const [ selectedJacquardBranchUrl, setSelectedJacquardBranchUrl ] = useState<AutomergeUrl | null>();
+  const selectedJacquardBranchId = selectedJacquardBranchUrl && parseAutomergeUrl(selectedJacquardBranchUrl).documentId;
+  const selectedJacquardBranchDoc = branchDocs && selectedJacquardBranchId && branchDocs[selectedJacquardBranchId];
+
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
 
   if (!doc || !datatypeId || !doc.branchMetadata) return <div>Loading...</div>;
@@ -482,6 +493,193 @@ export const VersionControlEditor: React.FC<{
                         {branch.createdBy && (
                           <ContactAvatar
                             url={branch.createdBy}
+                            size="sm"
+                            showName
+                            showImage={false}
+                          />
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                <SelectItem
+                  value={"__newBranch"}
+                  key={"__newBranch"}
+                  className="font-regular"
+                >
+                  <PlusIcon className="inline mr-1" size={12} />
+                  Create new branch
+                </SelectItem>
+                {!selectedBranch && isMarkdownDoc(doc) && (
+                  <SelectItem
+                    value={"__moveChangesToBranch"}
+                    key={"__moveChangesToBranch"}
+                    className="font-regular"
+                    onMouseEnter={() => setIsHoveringYankToBranchOption(true)}
+                    onMouseLeave={() => setIsHoveringYankToBranchOption(false)}
+                  >
+                    <SplitIcon className="inline mr-1" size={12} />
+                    Move edits from this session to a new branch
+                  </SelectItem>
+                )}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+
+          {buildMetadata && (
+            <div>
+              Built:
+              <span className="font-mono">{buildMetadata.command}</span> at{" "}
+              {new Date(buildMetadata.timestamp).toLocaleString()}
+            </div>
+          )}
+
+          {selectedBranch && (
+            <BranchActions
+              doc={doc}
+              branchDoc={branchDoc}
+              branchUrl={selectedBranch.url}
+              handleDeleteBranch={handleDeleteBranch}
+              handleRenameBranch={renameBranch}
+              handleRebaseBranch={rebaseBranch}
+              handleMergeBranch={handleMergeBranch}
+            />
+          )}
+
+          <div className="flex items-center gap-1 text-sm font-medium text-gray-700">
+            {selectedBranch && (
+              <div className="mr-2">
+                <Button
+                  onClick={(e) => {
+                    handleMergeBranch(selectedBranch.url);
+                    e.stopPropagation();
+                  }}
+                  variant="outline"
+                  className="h-6"
+                >
+                  <MergeIcon className="mr-2" size={12} />
+                  Merge
+                </Button>
+              </div>
+            )}
+            {selectedBranch && (
+              <div className="flex items-center mr-1">
+                <Checkbox
+                  id="diff-overlay-checkbox"
+                  className="mr-1"
+                  checked={showChangesFlag}
+                  onClick={(e) => e.stopPropagation()}
+                  onCheckedChange={() => setShowChangesFlag(!showChangesFlag)}
+                />
+                <label htmlFor="diff-overlay-checkbox">Highlight changes</label>
+              </div>
+            )}
+
+            {selectedBranch && (
+              <div className="flex items-center">
+                <Checkbox
+                  id="side-by-side"
+                  className="mr-1"
+                  checked={compareWithMainFlag}
+                  onClick={(e) => e.stopPropagation()}
+                  onCheckedChange={() =>
+                    setCompareWithMainFlag(!compareWithMainFlag)
+                  }
+                />
+                <label htmlFor="side-by-side">Show next to main</label>
+              </div>
+            )}
+          </div>
+          {!sidebarMode && (
+            <div className="ml-auto mr-4">
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setSidebarMode("review")}
+                  variant="outline"
+                  className={`h-8 text-x ${
+                    highlightSidebarButton
+                      ? "bg-yellow-200 hover:bg-yellow-400"
+                      : ""
+                  }`}
+                >
+                  <MessageSquareIcon size={20} />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-gray-100 pl-4 pt-3 pb-3 flex gap-2 items-center border-b border-gray-200">
+          <Select
+            value={selectedJacquardBranchUrl ?? null}  // select doesn't like undefined
+            onValueChange={(value) => {
+              if (value === "__newBranch") {
+                throw new Error('not implemented');
+              } else if (value === "__moveChangesToBranch") {
+                throw new Error('not implemented');
+              } else {
+                const selectedBranchUrl = value as AutomergeUrl | null;
+
+                if (selectedBranchUrl) {
+                  const branch = doc.branchMetadata.branches.find(
+                    (b) => b.url === selectedBranchUrl
+                  );
+                  setSelectedBranch(branch);
+                  toast(`Switched to branch: ${branch.name}`);
+                } else {
+                  setSelectedBranch(null);
+                  toast("Switched to Main");
+                }
+              }
+            }}
+          >
+            <SelectTrigger className="h-8 text-sm w-[18rem] font-medium">
+              <SelectValue>
+                {selectedJacquardBranchDoc ? (
+                  <div className="flex items-center gap-2">
+                    <GitBranchIcon className="inline" size={12} />
+                    {truncate(selectedJacquardBranchDoc.name, { length: 30 })}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <CrownIcon className="inline" size={12} />
+                    Main
+                  </div>
+                )}{" "}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="w-72">
+              <SelectItem
+                value={null}
+                className={!selectedBranch ? "font-medium" : ""}
+              >
+                <CrownIcon className="inline mr-1" size={12} />
+                Main
+              </SelectItem>
+              <SelectGroup>
+                <SelectLabel className="-ml-5">
+                  <GitBranchIcon className="inline mr-1" size={12} />
+                  Branches
+                </SelectLabel>
+
+                {/* for now only show open branches here; maybe in future show a list of merged branches */}
+                {Object.entries(branchDocs)
+                  .map(([branchId, branchDoc]) => (
+                    <SelectItem
+                      key={branchId}
+                      className={`${
+                        selectedJacquardBranchId === branchId ? "font-medium" : ""
+                      }`}
+                      value={"automerge:" + branchId}
+                    >
+                      <div>{branchDoc.name}</div>
+                      <div className="ml-auto text-xs text-gray-600 flex gap-1">
+                        {branchDoc.createdAt && (
+                          <div>{getRelativeTimeString(branchDoc.createdAt)}</div>
+                        )}
+                        <span>by</span>
+                        {branchDoc.createdBy && (
+                          <ContactAvatar
+                            url={branchDoc.createdBy}
                             size="sm"
                             showName
                             showImage={false}
