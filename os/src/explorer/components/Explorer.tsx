@@ -289,6 +289,7 @@ export const Explorer: React.FC = () => {
                 If we want more continuity we could not do this. */}
               {selectedDocUrl && selectedDoc && currentTool && (
                 <VersionControlEditor
+                  selectedDocLink={selectedDocLink}
                   datatypeId={selectedDocLink?.type}
                   docUrl={selectedDocUrl}
                   key={selectedDocUrl}

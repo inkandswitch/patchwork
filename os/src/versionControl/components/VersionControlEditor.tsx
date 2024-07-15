@@ -80,6 +80,7 @@ import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { BotSidebar } from "./BotSidebar";
 import { StatusBar } from "./Statusbar";
+import { DocLinkWithFolderPath } from "@/packages/folder";
 
 interface MakeBranchOptions {
   name?: string;
@@ -96,6 +97,7 @@ export const VersionControlEditor: React.FC<{
   selectedBranch: LegacyBranch | undefined;
   setSelectedBranch: (branch: LegacyBranch | undefined) => void;
   addNewDocument: (doc: { type: string; change?: (doc: any) => void }) => void;
+  selectedDocLink: DocLinkWithFolderPath;
 }> = ({
   docUrl: mainDocUrl,
   datatypeId,
@@ -103,7 +105,9 @@ export const VersionControlEditor: React.FC<{
   selectedBranch,
   setSelectedBranch,
   addNewDocument,
+  selectedDocLink,
 }) => {
+  console.log({ selectedDocLink });
   const repo = useRepo();
   const [doc, changeDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
