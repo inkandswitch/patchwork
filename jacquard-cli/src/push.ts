@@ -16,7 +16,26 @@ import { FileDoc } from "../../packages/file/src/datatype";
 import { MarkdownDoc } from "../../packages/essay/src";
 import { FolderDoc } from "@/packages/folder";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
-import { init } from "../../os/src/packages/folder/datatype";
+import { VersionControlSidecarDoc } from "@/sdk";
+
+// NOTE: copied this from the version control code in our os folder.
+// couldn't get imports working from os to jacquard-cli so just copying the function for now.
+const initVersionControlMetadata = (doc: any, repo: Repo) => {
+  doc.branchMetadata = {
+    source: null,
+    branches: [],
+  };
+  doc.discussions = {};
+  doc.tags = [];
+  doc.changeGroupSummaries = {};
+
+  // init the separate metadata doc
+  const metadataHandle = repo.create<VersionControlSidecarDoc>();
+  metadataHandle.change((d) => {
+    d.branches = [];
+  });
+  doc.versionControlMetadataUrl = metadataHandle.url;
+};
 
 export async function push(
   repo: Repo,
@@ -34,8 +53,9 @@ export async function push(
   } else {
     folderHandle = repo.create();
     folderHandle.change((d) => {
-      init(d, repo); // todo should have a patchwork sdk function for creating new doc of datatype
       d.title = "Jacquard folder";
+      d.docs = [];
+      initVersionControlMetadata(d, repo);
     });
   }
 
