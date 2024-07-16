@@ -36,7 +36,7 @@ export type FolderDoc = {
 
 // FUNCTIONS
 
-const init = (doc: any, repo: Repo) => {
+export const init = (doc: any, repo: Repo) => {
   initVersionControlMetadata(doc, repo);
   doc.title = "Untitled Folder";
   doc.docs = [];

@@ -13,14 +13,14 @@ const FILE_REFRENCE_REGEX = /^<use (?<filePath>.*)\>$/;
 export async function latex(
   repo: Repo,
   filePath: string,
-  { dir, automergeDocUrl }: CommandLineArgs
+  { dir, projectFolderUrl }: CommandLineArgs
 ) {
   const inputs: string[] = [`./${filePath}`];
   const outputs: string[] = [`./${replaceExtension(filePath, "pdf")}`];
 
   // pull before to ensure we run on latest files
   // todo: find better approach
-  await pull(repo, { dir, automergeDocUrl });
+  await pull(repo, { dir, projectFolderUrl });
 
   // run tectonic
 
@@ -93,7 +93,7 @@ export async function latex(
     repo,
     {
       dir,
-      automergeDocUrl,
+      projectFolderUrl,
     },
     buildMetadata
   );

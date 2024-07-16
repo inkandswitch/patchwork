@@ -7,13 +7,13 @@ import { FileDoc } from "../../packages/file/src/datatype";
 
 export async function pull(
   repo: Repo,
-  { automergeDocUrl, dir }: CommandLineArgs
+  { projectFolderUrl, dir }: CommandLineArgs
 ) {
-  let handle = repo.find<FolderDoc>(automergeDocUrl);
+  let handle = repo.find<FolderDoc>(projectFolderUrl);
   const doc = await handle.doc();
 
   if (!doc) {
-    console.error(`Could not find ${automergeDocUrl}: ${handle.state}`);
+    console.error(`Could not find ${projectFolderUrl}: ${handle.state}`);
     process.exit(1);
   }
 

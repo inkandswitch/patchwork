@@ -11,10 +11,11 @@ import { push } from "./push";
 import { pull } from "./pull";
 import { run } from "./run";
 import { latex } from "./latex";
+import { listBranches } from "./branch";
 
 export type CommandLineArgs = {
   dir: string;
-  automergeDocUrl?: AutomergeUrl;
+  projectFolderUrl?: AutomergeUrl;
   test?: boolean;
   syncServerUrl?: string;
   syncServerStorageId?: StorageId;
@@ -23,6 +24,8 @@ export type CommandLineArgs = {
   outputs?: string[];
   command?: string;
 };
+
+type ActiveBranch = { type: "main" } | { type: "branch"; url: AutomergeUrl };
 
 const main = async () => {
   const mainDefinitions = [{ name: "action", defaultOption: true }];
@@ -34,7 +37,7 @@ const main = async () => {
 
   const allFlags = [
     { name: "dir", type: String, defaultValue: "." },
-    { name: "automergeDocUrl", type: String },
+    { name: "projectFolderUrl", type: String },
     { name: "test", type: Boolean, defaultValue: false },
     {
       name: "syncServerUrl",
@@ -65,7 +68,7 @@ const main = async () => {
     },
   ];
 
-  const jacquardConfig = getJaquardConfig();
+  const jacquardConfig = getJacquardConfig();
 
   const options = commandLineArgs(allFlags, {
     argv,
@@ -76,7 +79,7 @@ const main = async () => {
   const {
     dir,
     test,
-    automergeDocUrl = jacquardConfig?.projectFolderUrl,
+    projectFolderUrl = jacquardConfig?.projectFolderUrl,
     syncServerUrl = jacquardConfig?.syncServer?.url ??
       "wss://sync.automerge.org",
     syncServerStorageId = jacquardConfig?.syncServer
@@ -88,10 +91,10 @@ const main = async () => {
     command,
   } = options;
 
-  console.log("sync with: ", syncServerUrl);
+  const activeBranch = jacquardConfig?.activeBranch ?? { type: "main" };
 
-  if (!automergeDocUrl && mainOptions.command == "pull") {
-    console.error("No URL specified: use --automergeDocUrl <url>");
+  if (!projectFolderUrl && mainOptions.command == "pull") {
+    console.error("No URL specified: use --projectFolderUrl <url>");
     process.exit(1);
   }
 
@@ -117,23 +120,27 @@ const main = async () => {
   const t = Date.now();
 
   switch (mainOptions.action) {
+    case "branch": {
+      await listBranches(repo, { projectFolderUrl });
+      break;
+    }
     case "push":
       await push(repo, {
         dir,
-        automergeDocUrl,
+        projectFolderUrl,
         syncServerStorageId,
         patchworkUrl,
       });
       break;
 
     case "pull":
-      await pull(repo, { dir, automergeDocUrl });
+      await pull(repo, { dir, projectFolderUrl });
       break;
 
     case "run": {
       await run(repo, {
         dir,
-        automergeDocUrl,
+        projectFolderUrl,
         patchworkUrl,
         inputs,
         outputs,
@@ -158,7 +165,7 @@ const main = async () => {
         process.exit(1);
       }
 
-      await latex(repo, filePath, { automergeDocUrl, dir });
+      await latex(repo, filePath, { projectFolderUrl, dir });
       break;
     }
 
@@ -173,7 +180,7 @@ const main = async () => {
   process.exit(0);
 };
 
-const getJaquardConfig = () => {
+const getJacquardConfig = () => {
   const currentDir = process.cwd();
 
   const configFilePath = path.join(currentDir, "jacquard.json");

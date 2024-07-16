@@ -16,25 +16,26 @@ import { FileDoc } from "../../packages/file/src/datatype";
 import { MarkdownDoc } from "../../packages/essay/src";
 import { FolderDoc } from "@/packages/folder";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
+import { init } from "../../os/src/packages/folder/datatype";
 
 export async function push(
   repo: Repo,
-  { dir, automergeDocUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs,
+  { dir, projectFolderUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs,
   buildMetadata?: BuildMetadata
 ) {
   let folderHandle: DocHandle<FolderDoc>;
-  if (automergeDocUrl !== undefined) {
-    folderHandle = repo.find(automergeDocUrl);
+  if (projectFolderUrl !== undefined) {
+    folderHandle = repo.find(projectFolderUrl);
     await folderHandle.doc();
     if (folderHandle.docSync() === undefined) {
-      console.error(`Could not find doc at ${automergeDocUrl}`);
+      console.error(`Could not find doc at ${projectFolderUrl}`);
       process.exit(1);
     }
   } else {
     folderHandle = repo.create();
     folderHandle.change((d) => {
+      init(d, repo); // todo should have a patchwork sdk function for creating new doc of datatype
       d.title = "Jacquard folder";
-      d.docs = [];
     });
   }
 
@@ -254,8 +255,8 @@ export async function push(
     })
   );
 
-  if (automergeDocUrl) {
-    console.log(`Updated ${automergeDocUrl} with new contents.`);
+  if (projectFolderUrl) {
+    console.log(`Updated ${projectFolderUrl} with new contents.`);
   } else {
     console.log(`Created new doc at ${folderHandle.url}`);
   }
