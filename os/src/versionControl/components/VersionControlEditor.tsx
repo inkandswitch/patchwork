@@ -276,6 +276,7 @@ export const VersionControlEditor: React.FC<{
       });
       setSelectedBranch(branch);
       toast("Created a new branch");
+      return repo.find(branch.url);
     },
     [repo, handle, account?.contactHandle?.url, setSelectedBranch]
   );

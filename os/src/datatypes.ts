@@ -5,12 +5,11 @@ import {
 import { Annotation, DocCloneMap } from "@/versionControl/schema";
 import { TextPatch } from "@/versionControl/utils";
 import { next as A, Doc } from "@automerge/automerge";
-import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+import { AutomergeUrl, Repo, DocHandle } from "@automerge/automerge-repo";
 import { ReactElement, useMemo } from "react";
 import * as PACKAGES from "./packages";
 import { FileExportMethod } from "./fileExports";
 import { IconType } from "./lib/icons";
-import { DocHandle } from "@automerge/automerge-repo/src";
 
 export type CoreDataType<D> = {
   id: string;
