@@ -1,7 +1,8 @@
-import { type DataType } from "@/sdk";
+import { DocCloneMap, initVersionControlMetadata, type DataType } from "@/sdk";
+import { cloneDoc } from "@/versionControl/branches";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { AutomergeUrl } from "@automerge/automerge-repo";
-import { Folder } from "lucide-react";
+import * as Automerge from "@automerge/automerge";
+import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 
 // SCHEMA
 
@@ -35,7 +36,8 @@ export type FolderDoc = {
 
 // FUNCTIONS
 
-const init = (doc: any) => {
+const init = (doc: any, repo: Repo) => {
+  initVersionControlMetadata(doc, repo);
   doc.title = "Untitled Folder";
   doc.docs = [];
 };
@@ -55,6 +57,28 @@ const setTitle = (doc: FolderDoc, title: string) => {
   doc.title = title;
 };
 
+const clone = async (
+  repo: Repo,
+  handle: DocHandle<FolderDoc>,
+  dataTypes: DataType<unknown, unknown, unknown>[],
+  docCloneMap: DocCloneMap
+): Promise<void> => {
+  const cloneHandle = repo.clone(handle);
+
+  docCloneMap[handle.url] = {
+    url: cloneHandle.url,
+    baseHeads: Automerge.getHeads(handle.docSync()),
+  };
+
+  const doc = await handle.doc();
+
+  for (const docLink of doc.docs) {
+    const childHandle = repo.find(docLink.url);
+
+    await cloneDoc(repo, childHandle, docLink.type, dataTypes, docCloneMap);
+  }
+};
+
 export const folderDatatype: DataType<FolderDoc, never, never> = {
   type: "patchwork:dataType",
   id: "folder",
@@ -64,4 +88,5 @@ export const folderDatatype: DataType<FolderDoc, never, never> = {
   getTitle,
   setTitle,
   markCopy,
+  clone,
 };

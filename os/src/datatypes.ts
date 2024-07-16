@@ -121,8 +121,8 @@ export type VersionedDataType<D, T, V> = {
     repo: Repo,
     handle: DocHandle<D>,
     dataTypes: DataType<unknown, unknown, unknown>[],
-    docCloneMap: DocCloneMap /* check first if the document already exists before cloning it */
-  ) => DocCloneMap;
+    docCloneMap: DocCloneMap // mutable doc clone map
+  ) => Promise<void>;
 };
 
 export type DataType<D, T, V> = CoreDataType<D> & VersionedDataType<D, T, V>;

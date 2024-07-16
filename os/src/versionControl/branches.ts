@@ -91,12 +91,22 @@ export const createJacquardBranch = async <
   createdBy: AutomergeUrl;
 }): Promise<AutomergeUrl> => {
   const doc = handle.docSync();
+
+  if (!doc.versionControlMetadataUrl) {
+    console.error("missing version control metadata url");
+    return;
+  }
+
   const versionControlMetadataHandle = repo.find<VersionControlSidecarDoc>(
     doc.versionControlMetadataUrl
   );
   const versionControlMetadataDoc = await versionControlMetadataHandle.doc();
 
   const branchHandle = repo.create<BranchDoc>();
+
+  const clonesMap = {};
+  await cloneDoc(repo, handle, dataTypeId, dataTypes, clonesMap);
+
   branchHandle.change((doc) => {
     doc.name = `Branch #${
       (versionControlMetadataDoc.branches?.length ?? 0) + 1
@@ -104,7 +114,7 @@ export const createJacquardBranch = async <
 
     doc.createdAt = Date.now();
     doc.createdBy = createdBy;
-    doc.clones = cloneDoc(repo, handle, dataTypeId, dataTypes);
+    doc.clones = clonesMap;
   });
 
   versionControlMetadataHandle.change((doc) => {
@@ -114,25 +124,28 @@ export const createJacquardBranch = async <
   return branchHandle.url;
 };
 
-export const cloneDoc = (
+export const cloneDoc = async (
   repo: Repo,
   handle: DocHandle<unknown>,
   dataTypeId: string,
   dataTypes: DataType<unknown, unknown, unknown>[],
-  docCloneMap: DocCloneMap = {}
-) => {
-  const clone = lookupDataTypeId(dataTypeId, dataTypes)?.clone;
+  docCloneMap: DocCloneMap
+): Promise<void> => {
+  // skip, if doc has already been cloned
+  if (docCloneMap[handle.url]) {
+    return;
+  }
 
+  const clone = lookupDataTypeId(dataTypeId, dataTypes)?.clone;
   if (clone) {
-    return { ...docCloneMap, ...clone(repo, handle, dataTypes, docCloneMap) };
+    await clone(repo, handle, dataTypes, docCloneMap);
+    return;
   }
 
   const cloneHandle = repo.clone(handle);
-  return {
-    [handle.url]: {
-      url: cloneHandle.url,
-      baseHeads: A.getHeads(handle.docSync()),
-    },
+  docCloneMap[handle.url] = {
+    url: cloneHandle.url,
+    baseHeads: A.getHeads(handle.docSync()),
   };
 };
 
