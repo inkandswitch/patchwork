@@ -16,18 +16,38 @@ import { FileDoc } from "../../packages/file/src/datatype";
 import { MarkdownDoc } from "../../packages/essay/src";
 import { FolderDoc } from "@/packages/folder";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
+import { VersionControlSidecarDoc } from "@/sdk";
+
+// NOTE: copied this from the version control code in our os folder.
+// couldn't get imports working from os to jacquard-cli so just copying the function for now.
+const initVersionControlMetadata = (doc: any, repo: Repo) => {
+  doc.branchMetadata = {
+    source: null,
+    branches: [],
+  };
+  doc.discussions = {};
+  doc.tags = [];
+  doc.changeGroupSummaries = {};
+
+  // init the separate metadata doc
+  const metadataHandle = repo.create<VersionControlSidecarDoc>();
+  metadataHandle.change((d) => {
+    d.branches = [];
+  });
+  doc.versionControlMetadataUrl = metadataHandle.url;
+};
 
 export async function push(
   repo: Repo,
-  { dir, automergeDocUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs,
+  { dir, projectFolderUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs,
   buildMetadata?: BuildMetadata
 ) {
   let folderHandle: DocHandle<FolderDoc>;
-  if (automergeDocUrl !== undefined) {
-    folderHandle = repo.find(automergeDocUrl);
+  if (projectFolderUrl !== undefined) {
+    folderHandle = repo.find(projectFolderUrl);
     await folderHandle.doc();
     if (folderHandle.docSync() === undefined) {
-      console.error(`Could not find doc at ${automergeDocUrl}`);
+      console.error(`Could not find doc at ${projectFolderUrl}`);
       process.exit(1);
     }
   } else {
@@ -35,6 +55,7 @@ export async function push(
     folderHandle.change((d) => {
       d.title = "Jacquard folder";
       d.docs = [];
+      initVersionControlMetadata(d, repo);
     });
   }
 
@@ -149,7 +170,11 @@ export async function push(
       );
 
       if (didChange) {
-        console.log("push", filePath, Automerge.getHeads(handle.docSync()));
+        console.log(
+          "pushed file:",
+          filePath,
+          Automerge.getHeads(handle.docSync())
+        );
       }
     } else {
       // Make a new doc in the folder
@@ -254,8 +279,8 @@ export async function push(
     })
   );
 
-  if (automergeDocUrl) {
-    console.log(`Updated ${automergeDocUrl} with new contents.`);
+  if (projectFolderUrl) {
+    console.log(`Updated ${projectFolderUrl} with new contents.`);
   } else {
     console.log(`Created new doc at ${folderHandle.url}`);
   }

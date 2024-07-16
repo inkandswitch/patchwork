@@ -22,7 +22,7 @@ export async function run(
   repo: Repo,
   {
     dir,
-    automergeDocUrl,
+    projectFolderUrl,
     syncServerStorageId,
     patchworkUrl,
     inputs = [],
@@ -33,7 +33,7 @@ export async function run(
   // pull before to ensure we run on latest files
   // todo: find better approach
   console.log("pull changes");
-  await pull(repo, { dir, automergeDocUrl });
+  await pull(repo, { dir, projectFolderUrl });
 
   const timestampStart = Date.now();
 
@@ -96,7 +96,7 @@ export async function run(
     repo,
     {
       dir,
-      automergeDocUrl,
+      projectFolderUrl,
       syncServerStorageId,
       patchworkUrl,
     },

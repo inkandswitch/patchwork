@@ -24,7 +24,7 @@ Create a new doc:
 
 Update an existing doc:
 
-`jacquard push --dir <dir to sync> --automergeDocUrl <existing doc url>`
+`jacquard push --dir <dir to sync> --projectFolderUrl <existing doc url>`
 
 Other options:
 

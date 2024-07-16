@@ -142,6 +142,8 @@ export const cloneDoc = async (
     return;
   }
 
+  await handle.whenReady();
+
   const cloneHandle = repo.clone(handle);
   docCloneMap[handle.url] = {
     url: cloneHandle.url,
