@@ -333,14 +333,14 @@ export const VersionControlEditor: React.FC<{
   );
 
   // the document on which the branch was created
-  const { branchRootDocUrl, branchRootDocFolderPath } = useMemo<{
-    branchRootDocUrl: AutomergeUrl | undefined;
-    branchRootDocFolderPath: AutomergeUrl[] | undefined;
+  const { branchScopeDocUrl, branchScopeDocFolderPath } = useMemo<{
+    branchScopeDocUrl: AutomergeUrl | undefined;
+    branchScopeDocFolderPath: AutomergeUrl[] | undefined;
   }>(() => {
     if (!selectedDocLink) {
       return {
-        branchRootDocUrl: undefined,
-        branchRootDocFolderPath: undefined,
+        branchScopeDocUrl: undefined,
+        branchScopeDocFolderPath: undefined,
       };
     }
 
@@ -353,8 +353,8 @@ export const VersionControlEditor: React.FC<{
       ]?.branches.length > 0
     ) {
       return {
-        branchRootDocUrl: mainDocUrl,
-        branchRootDocFolderPath: selectedDocLink.folderPath,
+        branchScopeDocUrl: mainDocUrl,
+        branchScopeDocFolderPath: selectedDocLink.folderPath,
       };
     }
 
@@ -378,20 +378,23 @@ export const VersionControlEditor: React.FC<{
         versionControlMetadataDoc.branches.length > 0
       ) {
         return {
-          branchRootDocUrl: folderDocUrl,
-          branchRootDocFolderPath: folderPath.slice(0, i),
+          branchScopeDocUrl: folderDocUrl,
+          branchScopeDocFolderPath: folderPath.slice(0, i),
         };
       }
     }
 
-    return { branchRootDocUrl: undefined, branchRootDocFolderPath: undefined };
+    return {
+      branchScopeDocUrl: undefined,
+      branchScopeDocFolderPath: undefined,
+    };
   }, [versionControlMetadataByDocId, parentFolderDocsById, doc]);
 
-  const [branchRootDoc] =
-    useDocument<HasVersionControlMetadata<unknown, unknown>>(branchRootDocUrl);
+  const [branchScopeDoc] =
+    useDocument<HasVersionControlMetadata<unknown, unknown>>(branchScopeDocUrl);
 
   const [versionControlMetadataDoc] = useDocument<VersionControlSidecarDoc>(
-    branchRootDoc?.versionControlMetadataUrl
+    branchScopeDoc?.versionControlMetadataUrl
   );
 
   const branchDocs = useDocuments<BranchDoc>(
@@ -401,19 +404,19 @@ export const VersionControlEditor: React.FC<{
   // TODO: "Jacquard" in here is provisional until we remove old branches
 
   const selectedJacquardBranchUrl = useMemo(() => {
-    if (!branchRootDocFolderPath || !uiStateDoc || !branchRootDocUrl) {
+    if (!branchScopeDocFolderPath || !uiStateDoc || !branchScopeDocUrl) {
       return;
     }
 
     const openBranch = uiStateDoc.openBranches.find((branch) => {
       return (
-        branch.docUrl === branchRootDocUrl &&
-        isEqual(branch.folderPath, branchRootDocFolderPath)
+        branch.docUrl === branchScopeDocUrl &&
+        isEqual(branch.folderPath, branchScopeDocFolderPath)
       );
     });
 
     return openBranch?.branchDocUrl;
-  }, [uiStateDoc?.openBranches, branchRootDocUrl, branchRootDocFolderPath]);
+  }, [uiStateDoc?.openBranches, branchScopeDocUrl, branchScopeDocFolderPath]);
 
   const setSelectedJacquardBranchUrl = (branchDocUrl: AutomergeUrl) => {
     changeUIStateDoc((uiStateDoc) => {
@@ -428,8 +431,8 @@ export const VersionControlEditor: React.FC<{
 
       const openBranch = uiStateDoc.openBranches.find((branch) => {
         return (
-          branch.docUrl === branchRootDocUrl &&
-          isEqual(branch.folderPath, branchRootDocFolderPath)
+          branch.docUrl === branchScopeDocUrl &&
+          isEqual(branch.folderPath, branchScopeDocFolderPath)
         );
       });
 

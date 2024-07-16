@@ -29,6 +29,10 @@ export type DocLinkWithFolderPath = DocLink & {
   folderPath: AutomergeUrl[];
 };
 
+// This is a better newer version of DocLinkWithFolderPath,
+// it contains the same information with better structure
+export type DocPath = DocLink[];
+
 export type FolderDoc = {
   title: string;
   docs: DocLink[];
