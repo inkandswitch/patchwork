@@ -1,4 +1,4 @@
-import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
 import { TextPatch } from "./utils";
 import { HasAssets } from "@/assets";
@@ -163,7 +163,7 @@ export type HasChangeGroupSummaries = {
   };
 };
 
-export type HasVersionControlMetadata<T, V> = HasChangeGroupSummaries &
+export type HasVersionControlMetadata<T = unknown, V = unknown> = HasChangeGroupSummaries &
   Branchable &
   Taggable &
   Diffable &
@@ -237,6 +237,10 @@ export const initVersionControlMetadata = (doc: any, repo: Repo) => {
   doc.tags = [];
   doc.changeGroupSummaries = {};
 
+  initVersionControlMetadataDoc(doc, repo);
+};
+
+export const initVersionControlMetadataDoc = (doc: any, repo: Repo) => {
   // init the separate metadata doc
   const metadataHandle = repo.create<VersionControlSidecarDoc>();
   metadataHandle.change((d) => {
@@ -244,3 +248,26 @@ export const initVersionControlMetadata = (doc: any, repo: Repo) => {
   });
   doc.versionControlMetadataUrl = metadataHandle.url;
 };
+
+export const getVersionControlMetadataHandle = (handle: DocHandle<any>, repo: Repo): DocHandle<VersionControlSidecarDoc> => {
+  const doc = handle.docSync();
+  let versionControlMetadataUrl = doc.versionControlMetadataUrl;
+  if (!versionControlMetadataUrl) {
+    handle.change((d) => {
+      initVersionControlMetadataDoc(d, repo);
+      versionControlMetadataUrl = d.versionControlMetadataUrl;
+    });
+  }
+  return repo.find<VersionControlSidecarDoc>(versionControlMetadataUrl);
+};
+
+export const ensureMetadataHandleIsBranchScope = (handle: DocHandle<VersionControlSidecarDoc>) => {
+  handle.change((d) => {
+    if (!d.isBranchScope) {
+      d.isBranchScope = true;
+      // @ts-expect-error not smart enough to figure this one out
+      d.branches = [];
+    }
+  });
+  return handle as DocHandle<VersionControlSidecarDoc & { isBranchScope: true }>;
+}

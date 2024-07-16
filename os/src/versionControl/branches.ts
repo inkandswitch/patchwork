@@ -5,12 +5,11 @@ import {
   Branchable,
   HasVersionControlMetadata,
   BranchDoc,
-  VersionControlSidecarDoc,
 } from "./schema";
 import { getStringCompletion } from "@/lib/llm";
 import { MarkdownDoc } from "../../../packages/essay/src";
 import { Hash } from "@automerge/automerge-wasm";
-import { DataType, DocCloneMap, lookupDataTypeId } from "@/sdk";
+import { DataType, DocCloneMap, ensureMetadataHandleIsBranchScope, getVersionControlMetadataHandle, lookupDataTypeId } from "@/sdk";
 
 export const createBranch = <DocType extends Branchable>({
   repo,
@@ -79,33 +78,26 @@ export const createJacquardBranch = async <
   DocType extends HasVersionControlMetadata<unknown, unknown>
 >({
   repo,
-  handle,
+  branchScopeHandle,
   dataTypeId,
   dataTypes,
   createdBy,
 }: {
   repo: Repo;
-  handle: DocHandle<DocType>;
+  branchScopeHandle: DocHandle<DocType>;
   dataTypeId: string;
   dataTypes: DataType<unknown, unknown, unknown>[];
   createdBy: AutomergeUrl;
 }): Promise<AutomergeUrl> => {
-  const doc = handle.docSync();
-
-  if (!doc.versionControlMetadataUrl) {
-    console.error("missing version control metadata url");
-    return;
-  }
-
-  const versionControlMetadataHandle = repo.find<VersionControlSidecarDoc>(
-    doc.versionControlMetadataUrl
+  const versionControlMetadataHandle = ensureMetadataHandleIsBranchScope(
+    getVersionControlMetadataHandle(branchScopeHandle, repo)
   );
   const versionControlMetadataDoc = await versionControlMetadataHandle.doc();
 
   const branchHandle = repo.create<BranchDoc>();
 
   const clonesMap = {};
-  await cloneDoc(repo, handle, dataTypeId, dataTypes, clonesMap);
+  await cloneDocWithLinks(repo, branchScopeHandle, dataTypeId, dataTypes, clonesMap);
 
   branchHandle.change((doc) => {
     doc.name = `Branch #${
@@ -118,43 +110,46 @@ export const createJacquardBranch = async <
   });
 
   versionControlMetadataHandle.change((doc) => {
-    if (!doc.isBranchScope) {
-      doc.isBranchScope = true;
-      // @ts-expect-error not smart enough to figure this one out
-      doc.branches = [];
-    }
-    // @ts-expect-error not smart enough to figure this one out
     doc.branches.push(branchHandle.url);
   });
 
   return branchHandle.url;
 };
 
-export const cloneDoc = async (
+export const cloneDocWithLinks = async (
   repo: Repo,
   handle: DocHandle<unknown>,
   dataTypeId: string,
   dataTypes: DataType<unknown, unknown, unknown>[],
   docCloneMap: DocCloneMap
 ): Promise<void> => {
+  console.log("cloning", handle.url);
+
   // skip, if doc has already been cloned
   if (docCloneMap[handle.url]) {
     return;
   }
 
-  const clone = lookupDataTypeId(dataTypeId, dataTypes)?.clone;
-  if (clone) {
-    await clone(repo, handle, dataTypes, docCloneMap);
-    return;
-  }
-
+  // clone self
   await handle.whenReady();
-
   const cloneHandle = repo.clone(handle);
   docCloneMap[handle.url] = {
     url: cloneHandle.url,
     baseHeads: A.getHeads(handle.docSync()),
   };
+
+  // clone links
+  const links = lookupDataTypeId(dataTypeId, dataTypes)?.links;
+  console.log("links func", links, lookupDataTypeId(dataTypeId, dataTypes));
+  if (links) {
+    const doc = await handle.doc();
+    const links_ = links(doc);
+    console.log("links are", links_);
+    await Promise.all(links_.map((link) => {
+      const handle = repo.find(link);
+      cloneDocWithLinks(repo, handle, dataTypeId, dataTypes, docCloneMap);
+    }));
+  }
 };
 
 export const mergeBranch = <DocType extends Branchable>({

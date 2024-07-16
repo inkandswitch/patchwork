@@ -1,181 +1,69 @@
-import { Button } from "@/shadcn/ui/button";
-import { Checkbox } from "@/shadcn/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/shadcn/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/shadcn/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
-import { useDataType, useDataTypes } from "../../datatypes";
 import { AccountDoc, UIStateDoc, useCurrentAccount } from "@/explorer/account";
-import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
-import { getRelativeTimeString } from "@/lib/dates";
-import { isLLMActive } from "@/lib/llm";
+import { DocLinkWithFolderPath } from "@/packages/folder";
+import { DocPath } from "@/packages/folder/datatype";
+import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { EditorProps, Tool } from "@/tools";
-import { isMarkdownDoc } from "../../../../packages/essay/src";
-import { AutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
-  useDocuments,
-  useHandle,
-  useRepo,
+  useHandle
 } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
-import { truncate, isEqual } from "lodash";
 import {
   BotIcon,
   ChevronsRight,
   CrownIcon,
-  Edit3Icon,
   GitBranchIcon,
-  GitBranchPlusIcon,
-  GitMergeIcon,
   HistoryIcon,
-  Link,
-  MergeIcon,
-  MessageSquareIcon,
-  MoreHorizontal,
-  PlusIcon,
-  SplitIcon,
-  Trash2Icon,
+  MessageSquareIcon
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { toast } from "sonner";
+import { useDataType, useDataTypes } from "../../datatypes";
 import { useAnnotations } from "../annotations";
+import { useBranchScopeAndActiveBranchInfo } from "../hooks";
 import {
-  createBranch,
-  createJacquardBranch,
-  deleteBranch,
-  mergeBranch,
-  suggestBranchName,
-} from "../branches";
-import {
-  LegacyBranch,
   DiffWithProvenance,
   HasVersionControlMetadata,
-  VersionControlSidecarDoc,
-  BranchDoc,
+  LegacyBranch
 } from "../schema";
 import {
   combinePatches,
   diffWithProvenance,
   useActorIdToAuthorMap,
 } from "../utils";
-import { ReviewSidebar } from "./ReviewSidebar";
-import { TimelineSidebar } from "./TimelineSidebar";
-import { BotSidebar } from "./BotSidebar";
 import { StatusBar } from "./Statusbar";
-import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
-
-interface MakeBranchOptions {
-  name?: string;
-  heads?: A.Heads;
-}
+import { VersionControlBar } from "./VersionControlBar";
 
 export type SidebarMode = "review" | "history" | "Bot";
 
-// Given a doc path representing current selected doc,
-// resolve a branch scope and return relevant information about branches
-const useBranchScope = (docPath: DocPath) => {
-  // we need the metadata docs of all parent folders which requires an async op to load
-  // to work with them in the useMemo hook below we fetch them with useDocuments
-  const docsInDocPathById = useDocuments<FolderDoc>(
-    docPath.map((link) => link.url)
-  );
-  const versionControlMetadataDocUrls = useMemo(() => {
-    return Object.values(docsInDocPathById)
-      .map(
-        (doc) =>
-          (doc as HasVersionControlMetadata<unknown, unknown>)
-            .versionControlMetadataUrl
-      )
-      .filter((url) => url !== undefined);
-  }, [docsInDocPathById]);
-  const versionControlMetadataByDocId = useDocuments<VersionControlSidecarDoc>(
-    versionControlMetadataDocUrls
-  );
-
-  // the document on which the branch was created
-  // TODO: return branches
-  return useMemo(() => {
-    // otherwise go up the hierarchy and check if any of the parent folders are branch scopes
-    for (let i = docPath.length - 1; i >= 0; i--) {
-      const docLink = docPath[i];
-      const docId = parseAutomergeUrl(docLink.url).documentId;
-      const doc = docsInDocPathById[docId];
-      if (!doc.versionControlMetadataUrl) {
-        continue;
-      }
-
-      const versionControlMetadataDocId = parseAutomergeUrl(
-        doc.versionControlMetadataUrl
-      ).documentId;
-      const versionControlMetadataDoc =
-        versionControlMetadataByDocId[versionControlMetadataDocId];
-      if (
-        versionControlMetadataDoc &&
-        versionControlMetadataDoc.isBranchScope
-      ) {
-        return {
-          branchScopeDocUrl: docLink.url,
-          // branchScopeDocFolderPath: folderPath.slice(0, i),
-          branches: versionControlMetadataDoc.branches,
-        };
-      }
-    }
-
-    return undefined;
-  }, [versionControlMetadataByDocId, docsInDocPathById]);
-
-  // const [branchScopeDoc] =
-  //   useDocument<HasVersionControlMetadata<unknown, unknown>>(branchScopeDocUrl);
-
-  // const [versionControlMetadataDoc] = useDocument<VersionControlSidecarDoc>(
-  //   branchScopeDoc?.versionControlMetadataUrl
-  // );
-
-  // const branchDocs = useDocuments<BranchDoc>(
-  //   versionControlMetadataDoc?.isBranchScope
-  //     ? versionControlMetadataDoc.branches
-  //     : []
-  // );
-};
+// TODO: provisional until we get rid of DocLinkWithFolderPath
+const fakeDocPath = (docLinkWithFolderPath: DocLinkWithFolderPath): DocPath => {
+  return [
+    ...docLinkWithFolderPath.folderPath.map((url) => ({
+      name: undefined as any,
+      type: undefined as any,
+      url,
+    })),
+    docLinkWithFolderPath,
+  ];
+}
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
   docUrl: AutomergeUrl;
   datatypeId: string;
   tool: Tool;
-  selectedBranch: LegacyBranch | undefined;
-  setSelectedBranch: (branch: LegacyBranch | undefined) => void;
   addNewDocument: (doc: { type: string; change?: (doc: any) => void }) => void;
   selectedDocLink: DocLinkWithFolderPath;
 }> = ({
   docUrl: mainDocUrl,
   datatypeId,
   tool,
-  selectedBranch,
-  setSelectedBranch,
   addNewDocument,
   selectedDocLink,
 }) => {
-  const repo = useRepo();
   const [doc, changeDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
   const handle =
@@ -183,7 +71,7 @@ export const VersionControlEditor: React.FC<{
 
   const account = useCurrentAccount();
   const [accountDoc] = useDocument<AccountDoc>(account?.handle.url);
-  const [uiStateDoc, changeUIStateDoc] = useDocument<UIStateDoc>(
+  const uiStateHandle = useHandle<UIStateDoc>(
     accountDoc?.uiStateUrl
   );
   const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
@@ -196,15 +84,15 @@ export const VersionControlEditor: React.FC<{
   const dataTypes = useDataTypes();
 
   // Reset compare view settings every time you switch branches
-  useEffect(() => {
-    if (!selectedBranch) {
-      setCompareWithMainFlag(false);
-      setShowChangesFlag(false);
-    } else {
-      setCompareWithMainFlag(false);
-      setShowChangesFlag(true);
-    }
-  }, [JSON.stringify(selectedBranch)]);
+  // useEffect(() => {
+  //   if (!legacySelectedBranch) {
+  //     setCompareWithMainFlag(false);
+  //     setShowChangesFlag(false);
+  //   } else {
+  //     setCompareWithMainFlag(false);
+  //     setShowChangesFlag(true);
+  //   }
+  // }, [JSON.stringify(legacySelectedBranch)]);
 
   const [sidebarMode, _setSidebarMode] = useState<SidebarMode>();
 
@@ -249,211 +137,17 @@ export const VersionControlEditor: React.FC<{
 
   const actorIdToAuthor = useActorIdToAuthorMap(mainDocUrl);
 
-  const showDiff =
-    (showChangesFlag && selectedBranch) || isHoveringYankToBranchOption;
+  const docPath = fakeDocPath(selectedDocLink);
 
-  // init branch metadata when the doc loads if it doesn't have it already
-  useEffect(() => {
-    if (doc && !doc.branchMetadata) {
-      changeDoc(
-        (doc) =>
-          (doc.branchMetadata = {
-            source: null,
-            branches: [],
-          })
-      );
-    }
-  }, [doc, changeDoc]);
+  const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(docPath, uiStateHandle);
+  const { cloneOrMainOm } = branchScopeAndActiveBranchInfo;
 
-  const handleCreateBranch = useCallback(
-    ({ name, heads }: MakeBranchOptions = {}) => {
-      const branch = createBranch({
-        repo,
-        handle,
-        name,
-        heads,
-        createdBy: account?.contactHandle?.url,
-      });
-      setSelectedBranch(branch);
-      toast("Created a new branch");
-      return repo.find(branch.url);
-    },
-    [repo, handle, account?.contactHandle?.url, setSelectedBranch]
-  );
-
-  const handleCreateJacquardBranch = useCallback(async () => {
-    const branchUrl = await createJacquardBranch({
-      repo,
-      handle,
-      dataTypeId: datatypeId,
-      dataTypes,
-      createdBy: account?.contactHandle?.url,
-    });
-    setSelectedJacquardBranchUrl(branchUrl);
-    toast("Created a new branch");
-  }, [repo, handle, account?.contactHandle?.url]);
-
-  const moveCurrentChangesToBranch = () => {
-    if (!isMarkdownDoc(doc))
-      throw new Error(
-        "No content to move to branch; this only works for MarkdownDoc now"
-      );
-
-    // todo: only pull in changes the author made themselves?
-    const latestText = doc.content;
-    const textBeforeEditSession = A.view(doc, sessionStartHeads).content;
-
-    // revert content of main to before edit session started
-    handle.change((doc) => {
-      A.updateText(doc, ["content"], textBeforeEditSession);
-    });
-
-    // Branch off after the revert is done -- this means that our
-    // change to add back the edits won't be clobbered when we merge
-    const branchHandle = handleCreateBranch();
-    branchHandle.change((doc) => {
-      A.updateText(doc, ["content"], latestText);
-    });
-
-    setSessionStartHeads(A.getHeads(doc));
-    setIsHoveringYankToBranchOption(false);
-  };
-
-  const handleDeleteBranch = useCallback(
-    (branchUrl: AutomergeUrl) => {
-      setSelectedBranch(null);
-      deleteBranch({ docHandle: handle, branchUrl });
-      toast("Deleted branch");
-    },
-    [handle, setSelectedBranch]
-  );
-
-  const handleMergeBranch = useCallback(
-    (branchUrl: AutomergeUrl) => {
-      const branchHandle =
-        repo.find<HasVersionControlMetadata<unknown, unknown>>(branchUrl);
-      const docHandle =
-        repo.find<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
-      mergeBranch({
-        docHandle,
-        branchHandle,
-        mergedBy: account?.contactHandle?.url,
-      });
-      setSelectedBranch(null);
-      toast.success("Branch merged to main");
-    },
-    [repo, mainDocUrl, account?.contactHandle?.url, setSelectedBranch]
-  );
-
-  const rebaseBranch = (draftUrl: AutomergeUrl) => {
-    const draftHandle =
-      repo.find<HasVersionControlMetadata<unknown, unknown>>(draftUrl);
-    const docHandle =
-      repo.find<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
-    draftHandle.merge(docHandle);
-    draftHandle.change((doc) => {
-      doc.branchMetadata.source.branchHeads = A.getHeads(docHandle.docSync());
-    });
-
-    toast("Incorporated updates from main");
-  };
-
-  const renameBranch = useCallback(
-    (draftUrl: AutomergeUrl, newName: string) => {
-      const docHandle =
-        repo.find<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
-      docHandle.change((doc) => {
-        const copy = doc.branchMetadata.branches.find(
-          (copy) => copy.url === draftUrl
-        );
-        if (copy) {
-          copy.name = newName;
-          toast(`Renamed branch to "${newName}"`);
-        }
-      });
-    },
-    [mainDocUrl, repo]
-  );
-
-  const [branchDoc, changeBranchDoc] = useDocument<
-    HasVersionControlMetadata<unknown, unknown>
-  >(selectedBranch?.url);
-  const branchHandle = useHandle<HasVersionControlMetadata<unknown, unknown>>(
-    selectedBranch?.url
-  );
-
-  // TODO: "Jacquard" in here is provisional until we remove old branches
-
-  const selectedJacquardBranchUrl = useMemo(() => {
-    if (!branchScopeDocFolderPath || !uiStateDoc || !branchScopeDocUrl) {
-      return;
-    }
-
-    const openBranch = uiStateDoc.openBranches.find((branch) => {
-      return (
-        branch.docUrl === branchScopeDocUrl &&
-        isEqual(branch.folderPath, branchScopeDocFolderPath)
-      );
-    });
-
-    return openBranch?.branchDocUrl;
-  }, [uiStateDoc?.openBranches, branchScopeDocUrl, branchScopeDocFolderPath]);
-
-  const setSelectedJacquardBranchUrl = (branchDocUrl: AutomergeUrl) => {
-    changeUIStateDoc((uiStateDoc) => {
-      // handle old uiState docs
-      if (!uiStateDoc.openBranches) {
-        uiStateDoc.openBranches = [];
-      }
-
-      if (!selectedDocLink) {
-        return;
-      }
-
-      const openBranch = uiStateDoc.openBranches.find((branch) => {
-        return (
-          branch.docUrl === branchScopeDocUrl &&
-          isEqual(branch.folderPath, branchScopeDocFolderPath)
-        );
-      });
-
-      if (openBranch) {
-        openBranch.branchDocUrl = branchDocUrl;
-      } else {
-        uiStateDoc.openBranches.push({
-          folderPath: selectedDocLink.folderPath,
-          docUrl: mainDocUrl,
-          branchDocUrl,
-        });
-      }
-    });
-  };
-
-  useState<AutomergeUrl | null>();
-  const selectedJacquardBranchId =
-    selectedJacquardBranchUrl &&
-    parseAutomergeUrl(selectedJacquardBranchUrl).documentId;
-  const selectedJacquardBranchDoc =
-    branchDocs &&
-    selectedJacquardBranchId &&
-    branchDocs[selectedJacquardBranchId];
-
-  const cloneHandle = useHandle(
-    selectedJacquardBranchDoc?.clones?.[handle.url]?.url
-  );
-  const selectedCloneUrl = cloneHandle?.url ?? mainDocUrl;
-  const [cloneDocForSelectedJacquardBranch] = useDocument<
-    HasVersionControlMetadata<unknown, unknown>
-  >(cloneHandle?.url);
-
-  const selectedDoc = cloneDocForSelectedJacquardBranch ?? doc;
   const buildMetadata = useMemo(() => {
-    if (!selectedDoc) return undefined;
-    const allChangesForDoc = A.getAllChanges(selectedDoc);
+    if (!cloneOrMainOm.doc) return undefined;
+    const allChangesForDoc = A.getAllChanges(cloneOrMainOm.doc);
     const lastChange = A.decodeChange(
       allChangesForDoc[allChangesForDoc.length - 1]
     );
-    console.log({ lastChange });
     if (lastChange.message !== undefined) {
       const lastChangeMetadata = JSON.parse(lastChange.message);
       if (lastChangeMetadata?.changeType === "build") {
@@ -461,29 +155,7 @@ export const VersionControlEditor: React.FC<{
       }
     }
     return undefined;
-  }, [selectedDoc]);
-
-  const branchDiff = useMemo(() => {
-    if (branchDoc) {
-      return diffWithProvenance(
-        branchDoc,
-        branchDoc.branchMetadata.source.branchHeads,
-        A.getHeads(branchDoc)
-      );
-    }
-  }, [branchDoc]);
-
-  const diffForEditor =
-    diffFromTimelineSidebar ??
-    (showDiff ? branchDiff ?? currentEditSessionDiff : undefined);
-
-  const docHeads = docHeadsFromTimelineSidebar ?? undefined;
-  const activeDoc = selectedBranch
-    ? branchDoc
-    : docHeads
-    ? A.view(doc, docHeads)
-    : doc;
-  const activeHandle = selectedBranch ? branchHandle : handle;
+  }, [cloneOrMainOm.doc]);
 
   const dataType = useDataType(datatypeId);
 
@@ -497,9 +169,8 @@ export const VersionControlEditor: React.FC<{
     setSelectedAnnotationGroupId,
     setCommentState,
   } = useAnnotations({
-    doc: activeDoc,
+    doc: cloneOrMainOm.doc as A.Doc<HasVersionControlMetadata>,
     dataType,
-    diff: diffForEditor,
     isCommentInputFocused,
   });
 
@@ -535,6 +206,19 @@ export const VersionControlEditor: React.FC<{
     };
   }, [selectedAnchors]);
 
+  // init branch metadata when the doc loads if it doesn't have it already
+  useEffect(() => {
+    if (doc && !doc.branchMetadata) {
+      changeDoc(
+        (doc) =>
+          (doc.branchMetadata = {
+            source: null,
+            branches: [],
+          })
+      );
+    }
+  }, [doc, changeDoc]);
+
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
 
   if (!doc || !datatypeId || !doc.branchMetadata) return <div>Loading...</div>;
@@ -565,439 +249,43 @@ export const VersionControlEditor: React.FC<{
   return (
     <div className="flex h-full overflow-hidden">
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Branch picker topbar */}
-        <div className="bg-gray-100 pl-4 pt-3 pb-3 flex gap-2 items-center border-b border-gray-200">
-          <Select
-            value={selectedBranch?.url ?? "main"}
-            onValueChange={(value) => {
-              if (value === "__newBranch") {
-                handleCreateBranch();
-              } else if (value === "__moveChangesToBranch") {
-                moveCurrentChangesToBranch();
-              } else {
-                const selectedBranchUrl = value as AutomergeUrl;
-                const branch = doc.branchMetadata.branches.find(
-                  (b) => b.url === selectedBranchUrl
-                );
-
-                setSelectedBranch(branch);
-
-                if (branch) {
-                  toast(`Switched to branch: ${branch.name}`);
-                } else {
-                  toast("Switched to Main");
-                }
-              }
-            }}
-          >
-            <SelectTrigger className="h-8 text-sm w-[18rem] font-medium">
-              <SelectValue>
-                {selectedBranch ? (
-                  <div className="flex items-center gap-2">
-                    <GitBranchIcon className="inline" size={12} />
-                    {truncate(selectedBranch.name, { length: 30 })}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <CrownIcon className="inline" size={12} />
-                    Main
-                  </div>
-                )}{" "}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="w-72">
-              <SelectItem
-                value={null}
-                className={!selectedBranch ? "font-medium" : ""}
-              >
-                <CrownIcon className="inline mr-1" size={12} />
-                Main
-              </SelectItem>
-              <SelectGroup>
-                <SelectLabel className="-ml-5">
-                  <GitBranchIcon className="inline mr-1" size={12} />
-                  Branches
-                </SelectLabel>
-
-                {/* for now only show open branches here; maybe in future show a list of merged branches */}
-                {branches
-                  .filter((branch) => branch.mergeMetadata === undefined)
-                  .map((branch) => (
-                    <SelectItem
-                      key={branch.url}
-                      className={`${
-                        selectedBranch?.url === branch.url ? "font-medium" : ""
-                      }`}
-                      value={branch.url}
-                    >
-                      <div>{branch.name}</div>
-                      <div className="ml-auto text-xs text-gray-600 flex gap-1">
-                        {branch.createdAt && (
-                          <div>{getRelativeTimeString(branch.createdAt)}</div>
-                        )}
-                        <span>by</span>
-                        {branch.createdBy && (
-                          <ContactAvatar
-                            url={branch.createdBy}
-                            size="sm"
-                            showName
-                            showImage={false}
-                          />
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                <SelectItem
-                  value={"__newBranch"}
-                  key={"__newBranch"}
-                  className="font-regular"
-                >
-                  <PlusIcon className="inline mr-1" size={12} />
-                  Create new branch
-                </SelectItem>
-                {!selectedBranch && isMarkdownDoc(doc) && (
-                  <SelectItem
-                    value={"__moveChangesToBranch"}
-                    key={"__moveChangesToBranch"}
-                    className="font-regular"
-                    onMouseEnter={() => setIsHoveringYankToBranchOption(true)}
-                    onMouseLeave={() => setIsHoveringYankToBranchOption(false)}
-                  >
-                    <SplitIcon className="inline mr-1" size={12} />
-                    Move edits from this session to a new branch
-                  </SelectItem>
-                )}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-
-          {buildMetadata && (
-            <div>
-              Built:
-              <span className="font-mono">{buildMetadata.command}</span> at{" "}
-              {new Date(buildMetadata.timestamp).toLocaleString()}
-            </div>
-          )}
-
-          {selectedBranch && (
-            <BranchActions
-              doc={doc}
-              branchDoc={branchDoc}
-              branchUrl={selectedBranch.url}
-              handleDeleteBranch={handleDeleteBranch}
-              handleRenameBranch={renameBranch}
-              handleRebaseBranch={rebaseBranch}
-              handleMergeBranch={handleMergeBranch}
-            />
-          )}
-
-          <div className="flex items-center gap-1 text-sm font-medium text-gray-700">
-            {selectedBranch && (
-              <div className="mr-2">
-                <Button
-                  onClick={(e) => {
-                    handleMergeBranch(selectedBranch.url);
-                    e.stopPropagation();
-                  }}
-                  variant="outline"
-                  className="h-6"
-                >
-                  <MergeIcon className="mr-2" size={12} />
-                  Merge
-                </Button>
-              </div>
-            )}
-            {selectedBranch && (
-              <div className="flex items-center mr-1">
-                <Checkbox
-                  id="diff-overlay-checkbox"
-                  className="mr-1"
-                  checked={showChangesFlag}
-                  onClick={(e) => e.stopPropagation()}
-                  onCheckedChange={() => setShowChangesFlag(!showChangesFlag)}
-                />
-                <label htmlFor="diff-overlay-checkbox">Highlight changes</label>
-              </div>
-            )}
-
-            {selectedBranch && (
-              <div className="flex items-center">
-                <Checkbox
-                  id="side-by-side"
-                  className="mr-1"
-                  checked={compareWithMainFlag}
-                  onClick={(e) => e.stopPropagation()}
-                  onCheckedChange={() =>
-                    setCompareWithMainFlag(!compareWithMainFlag)
-                  }
-                />
-                <label htmlFor="side-by-side">Show next to main</label>
-              </div>
-            )}
-          </div>
-          {!sidebarMode && (
-            <div className="ml-auto mr-4">
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => setSidebarMode("review")}
-                  variant="outline"
-                  className={`h-8 text-x ${
-                    highlightSidebarButton
-                      ? "bg-yellow-200 hover:bg-yellow-400"
-                      : ""
-                  }`}
-                >
-                  <MessageSquareIcon size={20} />
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="bg-gray-100 pl-4 pt-3 pb-3 flex gap-2 items-center border-b border-gray-200">
-          🧪 Jacquard
-          {branchScopeDocUrl && branchScopeDocUrl !== mainDocUrl && (
-            <div className="ml-2">in a branch scope</div>
-          )}
-          <Select
-            value={selectedJacquardBranchUrl ?? null} // select doesn't like undefined
-            onValueChange={(value) => {
-              if (value === "__newBranch") {
-                handleCreateJacquardBranch();
-              } else if (value === "__moveChangesToBranch") {
-                throw new Error("not implemented");
-              } else {
-                const selectedBranchUrl = value as AutomergeUrl | null;
-
-                if (selectedBranchUrl) {
-                  setSelectedJacquardBranchUrl(selectedBranchUrl);
-                  toast(`Switched to branch`);
-                } else {
-                  setSelectedJacquardBranchUrl(null);
-                  toast("Switched to Main");
-                }
-              }
-            }}
-          >
-            <SelectTrigger className="h-8 text-sm w-[18rem] font-medium">
-              <SelectValue>
-                {selectedJacquardBranchDoc ? (
-                  <div className="flex items-center gap-2">
-                    <GitBranchIcon className="inline" size={12} />
-                    {truncate(selectedJacquardBranchDoc.name, { length: 30 })}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <CrownIcon className="inline" size={12} />
-                    Main
-                  </div>
-                )}{" "}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="w-72">
-              <SelectItem
-                value={null}
-                className={!selectedBranch ? "font-medium" : ""}
-              >
-                <CrownIcon className="inline mr-1" size={12} />
-                Main
-              </SelectItem>
-              <SelectGroup>
-                <SelectLabel className="-ml-5">
-                  <GitBranchIcon className="inline mr-1" size={12} />
-                  Branches
-                </SelectLabel>
-
-                {/* for now only show open branches here; maybe in future show a list of merged branches */}
-                {Object.entries(branchDocs).map(([branchId, branchDoc]) => (
-                  <SelectItem
-                    key={branchId}
-                    className={`${
-                      selectedJacquardBranchId === branchId ? "font-medium" : ""
-                    }`}
-                    value={"automerge:" + branchId}
-                  >
-                    <div>{branchDoc.name}</div>
-                    <div className="ml-auto text-xs text-gray-600 flex gap-1">
-                      {branchDoc.createdAt && (
-                        <div>{getRelativeTimeString(branchDoc.createdAt)}</div>
-                      )}
-                      <span>by</span>
-                      {branchDoc.createdBy && (
-                        <ContactAvatar
-                          url={branchDoc.createdBy}
-                          size="sm"
-                          showName
-                          showImage={false}
-                        />
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-                <SelectItem
-                  value={"__newBranch"}
-                  key={"__newBranch"}
-                  className="font-regular"
-                >
-                  <PlusIcon className="inline mr-1" size={12} />
-                  Create new branch
-                </SelectItem>
-                {!selectedBranch && isMarkdownDoc(doc) && (
-                  <SelectItem
-                    value={"__moveChangesToBranch"}
-                    key={"__moveChangesToBranch"}
-                    className="font-regular"
-                    onMouseEnter={() => setIsHoveringYankToBranchOption(true)}
-                    onMouseLeave={() => setIsHoveringYankToBranchOption(false)}
-                  >
-                    <SplitIcon className="inline mr-1" size={12} />
-                    Move edits from this session to a new branch
-                  </SelectItem>
-                )}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          {buildMetadata && (
-            <div>
-              Built:
-              <span className="font-mono">{buildMetadata.command}</span> at{" "}
-              {new Date(buildMetadata.timestamp).toLocaleString()}
-            </div>
-          )}
-          {selectedBranch && (
-            <BranchActions
-              doc={doc}
-              branchDoc={branchDoc}
-              branchUrl={selectedBranch.url}
-              handleDeleteBranch={handleDeleteBranch}
-              handleRenameBranch={renameBranch}
-              handleRebaseBranch={rebaseBranch}
-              handleMergeBranch={handleMergeBranch}
-            />
-          )}
-          <div className="flex items-center gap-1 text-sm font-medium text-gray-700">
-            {selectedBranch && (
-              <div className="mr-2">
-                <Button
-                  onClick={(e) => {
-                    handleMergeBranch(selectedBranch.url);
-                    e.stopPropagation();
-                  }}
-                  variant="outline"
-                  className="h-6"
-                >
-                  <MergeIcon className="mr-2" size={12} />
-                  Merge
-                </Button>
-              </div>
-            )}
-            {selectedBranch && (
-              <div className="flex items-center mr-1">
-                <Checkbox
-                  id="diff-overlay-checkbox"
-                  className="mr-1"
-                  checked={showChangesFlag}
-                  onClick={(e) => e.stopPropagation()}
-                  onCheckedChange={() => setShowChangesFlag(!showChangesFlag)}
-                />
-                <label htmlFor="diff-overlay-checkbox">Highlight changes</label>
-              </div>
-            )}
-
-            {selectedBranch && (
-              <div className="flex items-center">
-                <Checkbox
-                  id="side-by-side"
-                  className="mr-1"
-                  checked={compareWithMainFlag}
-                  onClick={(e) => e.stopPropagation()}
-                  onCheckedChange={() =>
-                    setCompareWithMainFlag(!compareWithMainFlag)
-                  }
-                />
-                <label htmlFor="side-by-side">Show next to main</label>
-              </div>
-            )}
-          </div>
-          {!sidebarMode && (
-            <div className="ml-auto mr-4">
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => setSidebarMode("review")}
-                  variant="outline"
-                  className={`h-8 text-x ${
-                    highlightSidebarButton
-                      ? "bg-yellow-200 hover:bg-yellow-400"
-                      : ""
-                  }`}
-                >
-                  <MessageSquareIcon size={20} />
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        <VersionControlBar
+          docUrl={mainDocUrl}
+          datatypeId={datatypeId}
+          branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
+          buildMetadata={buildMetadata}
+          sidebarMode={sidebarMode}
+          setSidebarMode={setSidebarMode}
+          highlightSidebarButton={highlightSidebarButton}
+        />
 
         {/* Main doc editor pane */}
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <div className="flex-grow items-stretch justify-stretch relative flex flex-col overflow-hidden">
-            {compareWithMainFlag && selectedBranch && (
-              <div className="w-full flex top-0 bg-gray-100 pt-4 text-sm font-medium">
-                <div className="flex-1 pl-4">
-                  <div className="inline-flex items-center gap-1">
-                    <CrownIcon className="inline mr-1" size={12} /> Main
-                  </div>
-                </div>
-                <div className="flex-1 pl-4">
-                  {" "}
-                  <GitBranchIcon className="inline mr-1" size={12} />
-                  {selectedBranch.name}
-                </div>
-              </div>
-            )}
             <div className="flex-1 min-h-0 relative">
-              {selectedBranch && compareWithMainFlag ? (
-                <SideBySide
-                  key={mainDocUrl}
-                  mainDocUrl={mainDocUrl}
-                  tool={tool}
-                  docUrl={selectedBranch.url}
-                  docHeads={docHeads}
-                  annotations={visibleAnnotations}
-                  annotationGroups={annotationGroups}
-                  actorIdToAuthor={actorIdToAuthor}
-                  setSelectedAnchors={setSelectedAnchors}
-                  setHoveredAnchor={setHoveredAnchor}
-                  setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
-                  setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
-                  hideInlineComments={hideInlineComments}
-                  setCommentState={setCommentState}
-                />
-              ) : (
-                <DocEditor
-                  key={selectedBranch?.url ?? mainDocUrl}
-                  tool={tool}
-                  docUrl={selectedCloneUrl}
-                  docHeads={docHeads}
-                  annotations={visibleAnnotations}
-                  annotationGroups={annotationGroups}
-                  actorIdToAuthor={actorIdToAuthor}
-                  setSelectedAnchors={setSelectedAnchors}
-                  setHoveredAnchor={setHoveredAnchor}
-                  setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
-                  setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
-                  hideInlineComments={hideInlineComments}
-                  setCommentState={setCommentState}
-                />
-              )}
+              <DocEditor
+                key={cloneOrMainOm.url}
+                tool={tool}
+                docUrl={cloneOrMainOm.url}
+                docHeads={undefined}
+                annotations={visibleAnnotations}
+                annotationGroups={annotationGroups}
+                actorIdToAuthor={actorIdToAuthor}
+                setSelectedAnchors={setSelectedAnchors}
+                setHoveredAnchor={setHoveredAnchor}
+                setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
+                setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
+                hideInlineComments={hideInlineComments}
+                setCommentState={setCommentState}
+              />
             </div>
           </div>
         </ErrorBoundary>
         <StatusBar
           dataType={dataType}
-          key={selectedCloneUrl}
-          docUrl={selectedCloneUrl}
-          docHeads={docHeads}
+          key={cloneOrMainOm.url}
+          docUrl={cloneOrMainOm.url}
+          docHeads={undefined}
           annotations={visibleAnnotations}
           annotationGroups={annotationGroups}
           actorIdToAuthor={actorIdToAuthor}
@@ -1044,8 +332,10 @@ export const VersionControlEditor: React.FC<{
             </Tabs>
           </div>
 
+
+
           <div className="min-h-0 flex-grow w-96">
-            {sidebarMode === "history" && (
+            {/* {sidebarMode === "history" && (
               <TimelineSidebar
                 // set key to trigger re-mount on branch change
                 key={selectedCloneUrl}
@@ -1053,11 +343,11 @@ export const VersionControlEditor: React.FC<{
                 docUrl={selectedCloneUrl}
                 setDocHeads={setDocHeadsFromTimelineSidebar}
                 setDiff={setDiffFromTimelineSidebar}
-                selectedBranch={selectedBranch}
+                selectedBranch={legacySelectedBranch}
                 setSelectedBranch={setSelectedBranch}
               />
-            )}
-            {sidebarMode === "review" && (
+            )} */}
+            {/* {sidebarMode === "review" && (
               <ReviewSidebar
                 doc={activeDoc}
                 handle={activeHandle}
@@ -1070,19 +360,19 @@ export const VersionControlEditor: React.FC<{
                 setIsCommentInputFocused={setIsCommentInputFocused}
                 setCommentState={setCommentState}
               />
-            )}
-            {sidebarMode === "Bot" && (
+            )} */}
+            {/* {sidebarMode === "Bot" && (
               <BotSidebar
                 doc={activeDoc}
                 handle={activeHandle}
                 dataType={dataType}
-                selectedBranch={selectedBranch}
+                selectedBranch={legacySelectedBranch}
                 setSelectedBranch={setSelectedBranch}
                 setSidebarMode={setSidebarMode}
                 mergeBranch={handleMergeBranch}
                 deleteBranch={handleDeleteBranch}
               />
-            )}
+            )} */}
           </div>
         </div>
       )}
@@ -1165,134 +455,134 @@ export const SideBySide = <T, V>(props: SideBySideProps<T, V>) => {
   );
 };
 
-const BranchActions: React.FC<{
-  doc: HasVersionControlMetadata<unknown, unknown>;
-  branchDoc: HasVersionControlMetadata<unknown, unknown>;
-  branchUrl: AutomergeUrl;
-  handleDeleteBranch: (branchUrl: AutomergeUrl) => void;
-  handleRenameBranch: (branchUrl: AutomergeUrl, newName: string) => void;
-  handleRebaseBranch: (branchUrl: AutomergeUrl) => void;
-  handleMergeBranch: (branchUrl: AutomergeUrl) => void;
-}> = ({
-  doc,
-  branchDoc,
-  branchUrl,
-  handleDeleteBranch,
-  handleRenameBranch,
-  handleRebaseBranch,
-  handleMergeBranch,
-}) => {
-  const branchHeads = useMemo(
-    () => (branchDoc ? JSON.stringify(A.getHeads(branchDoc)) : undefined),
-    [branchDoc]
-  );
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
+// const BranchActions: React.FC<{
+//   doc: HasVersionControlMetadata<unknown, unknown>;
+//   branchDoc: HasVersionControlMetadata<unknown, unknown>;
+//   branchUrl: AutomergeUrl;
+//   handleDeleteBranch: (branchUrl: AutomergeUrl) => void;
+//   handleRenameBranch: (branchUrl: AutomergeUrl, newName: string) => void;
+//   handleRebaseBranch: (branchUrl: AutomergeUrl) => void;
+//   handleMergeBranch: (branchUrl: AutomergeUrl) => void;
+// }> = ({
+//   doc,
+//   branchDoc,
+//   branchUrl,
+//   handleDeleteBranch,
+//   handleRenameBranch,
+//   handleRebaseBranch,
+//   handleMergeBranch,
+// }) => {
+//   const branchHeads = useMemo(
+//     () => (branchDoc ? JSON.stringify(A.getHeads(branchDoc)) : undefined),
+//     [branchDoc]
+//   );
+//   const [dropdownOpen, setDropdownOpen] = useState(false);
+//   const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
 
-  // compute new name suggestions anytime the branch heads change
-  // todo: seems like this should run outside of the react UI...
-  useEffect(() => {
-    if (!dropdownOpen || !doc || !branchDoc) return;
-    if (!isMarkdownDoc(doc) || !isMarkdownDoc(branchDoc)) {
-      console.warn("suggestions only work for markdown docs");
-      return;
-    }
-    if (!isLLMActive) return;
-    setNameSuggestions([]);
-    (async () => {
-      const suggestions = (
-        await suggestBranchName({ doc, branchUrl, branchDoc })
-      ).split("\n");
-      setNameSuggestions(suggestions);
-    })();
-  }, [doc, branchDoc, branchUrl, branchHeads, dropdownOpen]);
+//   // compute new name suggestions anytime the branch heads change
+//   // todo: seems like this should run outside of the react UI...
+//   useEffect(() => {
+//     if (!dropdownOpen || !doc || !branchDoc) return;
+//     if (!isMarkdownDoc(doc) || !isMarkdownDoc(branchDoc)) {
+//       console.warn("suggestions only work for markdown docs");
+//       return;
+//     }
+//     if (!isLLMActive) return;
+//     setNameSuggestions([]);
+//     (async () => {
+//       const suggestions = (
+//         await suggestBranchName({ doc, branchUrl, branchDoc })
+//       ).split("\n");
+//       setNameSuggestions(suggestions);
+//     })();
+//   }, [doc, branchDoc, branchUrl, branchHeads, dropdownOpen]);
 
-  return (
-    <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-      <DropdownMenuTrigger>
-        <MoreHorizontal
-          size={18}
-          className="mt-1 mr-21 text-gray-500 hover:text-gray-800"
-        />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="mr-4 w-72">
-        <DropdownMenuItem
-          onClick={() => {
-            navigator.clipboard.writeText(window.location.href).then(
-              () => {
-                toast("Link copied to clipboard");
-              },
-              () => {
-                toast.error("Failed to copy link to clipboard");
-              }
-            );
-          }}
-        >
-          <Link className="inline-block text-gray-500 mr-2" size={14} /> Copy
-          link to branch
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => {
-            const newName = prompt("Enter the new name for this branch:");
-            if (newName && newName.trim() !== "") {
-              handleRenameBranch(branchUrl, newName.trim());
-            }
-          }}
-        >
-          <Edit3Icon className="inline-block text-gray-500 mr-2" size={14} />{" "}
-          Rename branch
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => {
-            handleRebaseBranch(branchUrl);
-          }}
-        >
-          <GitBranchPlusIcon
-            className="inline-block text-gray-500 mr-2"
-            size={14}
-          />{" "}
-          Incorporate updates from main
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => {
-            handleMergeBranch(branchUrl);
-          }}
-        >
-          <GitMergeIcon className="inline-block text-gray-500 mr-2" size={14} />{" "}
-          Merge branch
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => {
-            if (
-              window.confirm("Are you sure you want to delete this branch?")
-            ) {
-              handleDeleteBranch(branchUrl);
-            }
-          }}
-        >
-          <Trash2Icon className="inline-block text-gray-500 mr-2" size={14} />{" "}
-          Delete branch
-        </DropdownMenuItem>
-        <DropdownMenuSeparator></DropdownMenuSeparator>
-        {isLLMActive && (
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Suggested renames:</DropdownMenuLabel>
-            {nameSuggestions.length === 0 && (
-              <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
-            )}
-            {nameSuggestions.map((suggestion) => (
-              <DropdownMenuItem
-                key={suggestion}
-                onClick={() => {
-                  handleRenameBranch(branchUrl, suggestion);
-                }}
-              >
-                {suggestion}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuGroup>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
+//   return (
+//     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+//       <DropdownMenuTrigger>
+//         <MoreHorizontal
+//           size={18}
+//           className="mt-1 mr-21 text-gray-500 hover:text-gray-800"
+//         />
+//       </DropdownMenuTrigger>
+//       <DropdownMenuContent className="mr-4 w-72">
+//         <DropdownMenuItem
+//           onClick={() => {
+//             navigator.clipboard.writeText(window.location.href).then(
+//               () => {
+//                 toast("Link copied to clipboard");
+//               },
+//               () => {
+//                 toast.error("Failed to copy link to clipboard");
+//               }
+//             );
+//           }}
+//         >
+//           <Link className="inline-block text-gray-500 mr-2" size={14} /> Copy
+//           link to branch
+//         </DropdownMenuItem>
+//         <DropdownMenuItem
+//           onClick={() => {
+//             const newName = prompt("Enter the new name for this branch:");
+//             if (newName && newName.trim() !== "") {
+//               handleRenameBranch(branchUrl, newName.trim());
+//             }
+//           }}
+//         >
+//           <Edit3Icon className="inline-block text-gray-500 mr-2" size={14} />{" "}
+//           Rename branch
+//         </DropdownMenuItem>
+//         <DropdownMenuItem
+//           onClick={() => {
+//             handleRebaseBranch(branchUrl);
+//           }}
+//         >
+//           <GitBranchPlusIcon
+//             className="inline-block text-gray-500 mr-2"
+//             size={14}
+//           />{" "}
+//           Incorporate updates from main
+//         </DropdownMenuItem>
+//         <DropdownMenuItem
+//           onClick={() => {
+//             handleMergeBranch(branchUrl);
+//           }}
+//         >
+//           <GitMergeIcon className="inline-block text-gray-500 mr-2" size={14} />{" "}
+//           Merge branch
+//         </DropdownMenuItem>
+//         <DropdownMenuItem
+//           onClick={() => {
+//             if (
+//               window.confirm("Are you sure you want to delete this branch?")
+//             ) {
+//               handleDeleteBranch(branchUrl);
+//             }
+//           }}
+//         >
+//           <Trash2Icon className="inline-block text-gray-500 mr-2" size={14} />{" "}
+//           Delete branch
+//         </DropdownMenuItem>
+//         <DropdownMenuSeparator></DropdownMenuSeparator>
+//         {isLLMActive && (
+//           <DropdownMenuGroup>
+//             <DropdownMenuLabel>Suggested renames:</DropdownMenuLabel>
+//             {nameSuggestions.length === 0 && (
+//               <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
+//             )}
+//             {nameSuggestions.map((suggestion) => (
+//               <DropdownMenuItem
+//                 key={suggestion}
+//                 onClick={() => {
+//                   handleRenameBranch(branchUrl, suggestion);
+//                 }}
+//               >
+//                 {suggestion}
+//               </DropdownMenuItem>
+//             ))}
+//           </DropdownMenuGroup>
+//         )}
+//       </DropdownMenuContent>
+//     </DropdownMenu>
+//   );
+// };

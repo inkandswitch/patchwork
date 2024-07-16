@@ -294,14 +294,6 @@ export const Explorer: React.FC = () => {
                   docUrl={selectedDocUrl}
                   key={selectedDocUrl}
                   tool={currentTool}
-                  selectedBranch={selectedBranch}
-                  setSelectedBranch={(branch) => {
-                    selectDocLink({
-                      ...selectedDocLink,
-                      branchUrl: branch?.url,
-                      branchName: branch?.name,
-                    });
-                  }}
                   addNewDocument={addNewDocument}
                 />
               )}

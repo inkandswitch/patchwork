@@ -111,17 +111,11 @@ export type VersionedDataType<D, T, V> = {
   ) => boolean;
 
   /**
-   * Clone is called when a new branch of a document is created
-   *
-   * This method should clone all sub documents that are contained in the doc
-   * If no custom clone method is provided Patchwork will just clone the doc itself
+   * Specifies what other Automerge documents are "linked to" from this
+   * document. This is currently used to figure out which documents to clone
+   * when a branch is created.
    */
-  clone?: (
-    repo: Repo,
-    handle: DocHandle<D>,
-    dataTypes: DataType<unknown, unknown, unknown>[],
-    docCloneMap: DocCloneMap // mutable doc clone map
-  ) => Promise<void>;
+  links?: (doc: D) => AutomergeUrl[];
 };
 
 export type DataType<D, T, V> = CoreDataType<D> & VersionedDataType<D, T, V>;

@@ -15,6 +15,7 @@ import { useForceUpdate } from "@/hooks/useForceUpdate";
 
 import { FolderDoc } from "@/packages/folder";
 import { useFolderDocWithChildren } from "../packages/folder/hooks/useFolderDocWithChildren";
+import { DocPath } from "@/packages/folder/datatype";
 
 export type ModuleSettingsDoc = {
   enabledDatatypeIds: { [id: string]: boolean };
@@ -33,14 +34,15 @@ export type UIStateDoc = {
    */
   openedFoldersInSidebar: { url: AutomergeUrl; folderPath: AutomergeUrl[] }[];
 
-  /** Documents in the folder hierarchy that have a branch checked out
+  /** Documents in the folder hierarchy that have a branch checked out.
+   *  Map from branch scope path string (made via docPathString) to branch URL.
    */
-  openBranches: {
-    folderPath: AutomergeUrl[];
-    docUrl: AutomergeUrl;
-    branchDocUrl: AutomergeUrl;
-  }[];
+  openBranches: {[docPathString: string]: AutomergeUrl};
 };
+
+export function docPathString(docPath: DocPath): string {
+  return docPath.map((link) => link.url).join("/");
+}
 
 export interface AnonymousContactDoc {
   type: "anonymous";
@@ -269,7 +271,7 @@ export function useCurrentAccount(): Account | undefined {
       const uiStateHandle = repo.create<UIStateDoc>();
       uiStateHandle.change((uiState) => {
         uiState.openedFoldersInSidebar = [];
-        uiState.openBranches = [];
+        uiState.openBranches = {};
       });
       account.handle.change((account) => {
         account.uiStateUrl = uiStateHandle.url;
