@@ -20,7 +20,7 @@ import {
 } from "@/shadcn/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { useDataType, useDataTypes } from "../../datatypes";
-import { useCurrentAccount } from "@/explorer/account";
+import { AccountDoc, UIStateDoc, useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { getRelativeTimeString } from "@/lib/dates";
@@ -35,7 +35,7 @@ import {
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
-import { truncate } from "lodash";
+import { truncate, isEqual } from "lodash";
 import {
   BotIcon,
   ChevronsRight,
@@ -113,7 +113,12 @@ export const VersionControlEditor: React.FC<{
     useDocument<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
   const handle =
     useHandle<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
+
   const account = useCurrentAccount();
+  const [accountDoc] = useDocument<AccountDoc>(account?.handle.url);
+  const [uiStateDoc, changeUIStateDoc] = useDocument<UIStateDoc>(
+    accountDoc?.uiStateUrl
+  );
   const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
   const [isHoveringYankToBranchOption, setIsHoveringYankToBranchOption] =
@@ -317,8 +322,50 @@ export const VersionControlEditor: React.FC<{
   );
 
   // TODO: "Jacquard" in here is provisional until we remove old branches
-  const [selectedJacquardBranchUrl, setSelectedJacquardBranchUrl] =
-    useState<AutomergeUrl | null>();
+  const selectedJacquardBranchUrl = useMemo(() => {
+    if (!selectedDocLink || !uiStateDoc) {
+      return;
+    }
+
+    const openBranch = uiStateDoc.openBranches.find(
+      (branch) =>
+        branch.docUrl === mainDocUrl &&
+        isEqual(branch.folderPath, selectedDocLink.folderPath)
+    );
+    return openBranch?.branchDocUrl;
+  }, [uiStateDoc?.openBranches, selectedDocLink]);
+
+  const setSelectedJacquardBranchUrl = (branchDocUrl: AutomergeUrl) => {
+    changeUIStateDoc((uiStateDoc) => {
+      // handle old uiState docs
+      if (!uiStateDoc.openBranches) {
+        uiStateDoc.openBranches = [];
+      }
+
+      if (!selectedDocLink) {
+        return;
+      }
+
+      const openBranch = uiStateDoc.openBranches.find((branch) => {
+        return (
+          branch.docUrl === mainDocUrl &&
+          isEqual(branch.folderPath, selectedDocLink.folderPath)
+        );
+      });
+
+      if (openBranch) {
+        openBranch.branchDocUrl = branchDocUrl;
+      } else {
+        uiStateDoc.openBranches.push({
+          folderPath: selectedDocLink.folderPath,
+          docUrl: mainDocUrl,
+          branchDocUrl,
+        });
+      }
+    });
+  };
+
+  useState<AutomergeUrl | null>();
   const selectedJacquardBranchId =
     selectedJacquardBranchUrl &&
     parseAutomergeUrl(selectedJacquardBranchUrl).documentId;

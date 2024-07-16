@@ -32,6 +32,14 @@ export type UIStateDoc = {
    *  (If the object is here it counts as open; otherwise we default to closed)
    */
   openedFoldersInSidebar: { url: AutomergeUrl; folderPath: AutomergeUrl[] }[];
+
+  /** Documents in the folder hierarchy that have a branch checked out
+   */
+  openBranches: {
+    folderPath: AutomergeUrl[];
+    docUrl: AutomergeUrl;
+    branchDocUrl: AutomergeUrl;
+  }[];
 };
 
 export interface AnonymousContactDoc {
@@ -261,6 +269,7 @@ export function useCurrentAccount(): Account | undefined {
       const uiStateHandle = repo.create<UIStateDoc>();
       uiStateHandle.change((uiState) => {
         uiState.openedFoldersInSidebar = [];
+        uiState.openBranches = [];
       });
       account.handle.change((account) => {
         account.uiStateUrl = uiStateHandle.url;
