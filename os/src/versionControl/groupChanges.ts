@@ -9,8 +9,7 @@
 // - getAllChanges returns different orders on different devices;
 //   we should define a total order for changes across all devices.
 
-import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { DocHandle } from "@automerge/automerge-repo/dist/DocHandle";
+import { AutomergeUrl, Repo, DocHandle } from "@automerge/automerge-repo";
 import { Hash, Heads } from "@automerge/automerge-wasm"; // todo: should be able to import from @automerge/automerge
 import {
   ActorId,

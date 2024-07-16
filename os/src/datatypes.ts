@@ -2,14 +2,15 @@ import {
   ChangeGroup,
   DecodedChangeWithMetadata,
 } from "@/versionControl/groupChanges";
-import { Annotation } from "@/versionControl/schema";
+import { Annotation, DocCloneMap } from "@/versionControl/schema";
 import { TextPatch } from "@/versionControl/utils";
 import { next as A, Doc } from "@automerge/automerge";
-import { Repo } from "@automerge/automerge-repo";
+import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { ReactElement, useMemo } from "react";
 import * as PACKAGES from "./packages";
 import { FileExportMethod } from "./fileExports";
 import { IconType } from "./lib/icons";
+import { DocHandle } from "@automerge/automerge-repo/src";
 
 export type CoreDataType<D> = {
   id: string;
@@ -109,6 +110,19 @@ export type VersionedDataType<D, T, V> = {
     currentGroup: ChangeGroup<D>,
     newChange: DecodedChangeWithMetadata
   ) => boolean;
+
+  /**
+   * Clone is called when a new branch of a document is created
+   *
+   * This method should clone all sub documents that are contained in the doc
+   * If no custom clone method is provided Patchwork will just clone the doc itself
+   */
+  clone?: (
+    repo: Repo,
+    handle: DocHandle<D>,
+    dataTypes: DataType<unknown, unknown, unknown>[],
+    docCloneMap: DocCloneMap /* check first if the document already exists before cloning it */
+  ) => DocCloneMap;
 };
 
 export type DataType<D, T, V> = CoreDataType<D> & VersionedDataType<D, T, V>;
@@ -133,6 +147,13 @@ export const useDataType = <D, T, V>(
   id: string
 ): DataType<D, T, V> | undefined => {
   const dataTypes = useDataTypes();
+  return lookupDataTypeId<D, T, V>(id, dataTypes);
+};
+
+export const lookupDataTypeId = <D, T, V>(
+  id: string,
+  dataTypes: DataType<unknown, unknown, unknown>[]
+) => {
   return dataTypes.find((dataType) => dataType.id == id) as
     | DataType<D, T, V>
     | undefined;

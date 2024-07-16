@@ -17,16 +17,18 @@ type HasLinkToVersionControlSidecar = {
   versionControlMetadataUrl: AutomergeUrl;
 };
 
+export type DocCloneMap = {
+  [key: string]: {
+    url: AutomergeUrl;
+    // The base of the branch = the heads at which this branch was created
+    baseHeads: A.Heads;
+  };
+};
+
 // Represents a branch across multiple documents
 export type BranchDoc = {
   /* A mapping of URLs of "main" docs to clones representing that doc on this branch */
-  clones: {
-    [key: string]: {
-      url: AutomergeUrl;
-      // The base of the branch = the heads at which this branch was created
-      baseHeads: A.Heads;
-    };
-  };
+  clones: DocCloneMap;
 
   name: string;
 

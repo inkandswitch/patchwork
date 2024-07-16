@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/shadcn/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
-import { useDataType } from "../../datatypes";
+import { useDataType, useDataTypes } from "../../datatypes";
 import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
@@ -121,6 +121,8 @@ export const VersionControlEditor: React.FC<{
   const [showChangesFlag, setShowChangesFlag] = useState<boolean>(true);
   const [compareWithMainFlag, setCompareWithMainFlag] =
     useState<boolean>(false);
+  const dataTypes = useDataTypes();
+
   // Reset compare view settings every time you switch branches
   useEffect(() => {
     if (!selectedBranch) {
@@ -210,6 +212,8 @@ export const VersionControlEditor: React.FC<{
     const branchUrl = await createJacquardBranch({
       repo,
       handle,
+      dataTypeId: datatypeId,
+      dataTypes,
       createdBy: account?.contactHandle?.url,
     });
     setSelectedJacquardBranchUrl(branchUrl);
