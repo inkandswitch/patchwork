@@ -118,6 +118,12 @@ export const createJacquardBranch = async <
   });
 
   versionControlMetadataHandle.change((doc) => {
+    if (!doc.isBranchScope) {
+      doc.isBranchScope = true;
+      // @ts-expect-error not smart enough to figure this one out
+      doc.branches = [];
+    }
+    // @ts-expect-error not smart enough to figure this one out
     doc.branches.push(branchHandle.url);
   });
 

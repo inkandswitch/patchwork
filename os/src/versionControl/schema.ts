@@ -9,9 +9,14 @@ import { HasBotChatHistory } from "./components/BotSidebar";
 // But for now, we have some metadata living in docs themselves, and
 // some living in this sidecar.
 // TODO: "Sidecar" in here is provisional until we remove old branches
-export type VersionControlSidecarDoc = {
-  branches: AutomergeUrl[];
-};
+export type VersionControlSidecarDoc =
+  | {
+      isBranchScope: false;
+    }
+  | {
+      isBranchScope: true;
+      branches: AutomergeUrl[];
+    };
 
 type HasLinkToVersionControlSidecar = {
   versionControlMetadataUrl: AutomergeUrl;
@@ -235,7 +240,7 @@ export const initVersionControlMetadata = (doc: any, repo: Repo) => {
   // init the separate metadata doc
   const metadataHandle = repo.create<VersionControlSidecarDoc>();
   metadataHandle.change((d) => {
-    d.branches = [];
+    d.isBranchScope = false;
   });
   doc.versionControlMetadataUrl = metadataHandle.url;
 };

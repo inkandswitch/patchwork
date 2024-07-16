@@ -333,6 +333,7 @@ export const VersionControlEditor: React.FC<{
   );
 
   // the document on which the branch was created
+  // TODO: return branches
   const { branchScopeDocUrl, branchScopeDocFolderPath } = useMemo<{
     branchScopeDocUrl: AutomergeUrl | undefined;
     branchScopeDocFolderPath: AutomergeUrl[] | undefined;
@@ -344,13 +345,12 @@ export const VersionControlEditor: React.FC<{
       };
     }
 
-    // check if there are branches on the current doc
+    // check if the current doc is a branch scope
     if (
-      doc &&
-      doc.versionControlMetadataUrl &&
+      doc?.versionControlMetadataUrl &&
       versionControlMetadataByDocId[
         parseAutomergeUrl(doc.versionControlMetadataUrl).documentId
-      ]?.branches.length > 0
+      ]?.isBranchScope
     ) {
       return {
         branchScopeDocUrl: mainDocUrl,
@@ -358,7 +358,7 @@ export const VersionControlEditor: React.FC<{
       };
     }
 
-    // otherwise go up the hierarchy and check if any of the parent folders have branches
+    // otherwise go up the hierarchy and check if any of the parent folders are branch scopes
     const { folderPath } = selectedDocLink;
     for (let i = folderPath.length - 1; i >= 0; i--) {
       const folderDocUrl = folderPath[i];
@@ -375,7 +375,7 @@ export const VersionControlEditor: React.FC<{
         versionControlMetadataByDocId[versionControlMetadataDocId];
       if (
         versionControlMetadataDoc &&
-        versionControlMetadataDoc.branches.length > 0
+        versionControlMetadataDoc.isBranchScope
       ) {
         return {
           branchScopeDocUrl: folderDocUrl,
@@ -398,7 +398,9 @@ export const VersionControlEditor: React.FC<{
   );
 
   const branchDocs = useDocuments<BranchDoc>(
-    versionControlMetadataDoc?.branches
+    versionControlMetadataDoc?.isBranchScope
+      ? versionControlMetadataDoc.branches
+      : []
   );
 
   // TODO: "Jacquard" in here is provisional until we remove old branches
@@ -774,7 +776,10 @@ export const VersionControlEditor: React.FC<{
         </div>
 
         <div className="bg-gray-100 pl-4 pt-3 pb-3 flex gap-2 items-center border-b border-gray-200">
-          🧪 Jacquard Temp
+          🧪 Jacquard
+          {branchScopeDocUrl && branchScopeDocUrl !== mainDocUrl && (
+            <div className="ml-2">in a branch scope</div>
+          )}
           <Select
             value={selectedJacquardBranchUrl ?? null} // select doesn't like undefined
             onValueChange={(value) => {
