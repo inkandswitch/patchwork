@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "pnpm --filter os dev",
     "build": "pnpm --filter os build",
-    "preinstall": "npx only-allow pnpm"
+    "preinstall": "npx only-allow pnpm",
+    "test": "pnpm --filter os test"
   },
   "keywords": [],
   "author": "Ink & Switch",

@@ -7,9 +7,9 @@
   "scripts": {},
   "keywords": [],
   "dependencies": {
-    "@automerge/automerge": "^2.2.2",
-    "@automerge/automerge-repo": "^1.1.12",
-    "@automerge/automerge-repo-react-hooks": "^1.1.12",
+    "@automerge/automerge": "2.2.3",
+    "@automerge/automerge-repo": "^1.2.0",
+    "@automerge/automerge-repo-react-hooks": "^1.2.0",
     "@firefox-devtools/react-contextmenu": "^5.1.0",
     "@headlessui/react": "^2.0.3",
     "@hello-pangea/dnd": "^16.6.0",

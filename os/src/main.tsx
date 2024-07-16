@@ -8,8 +8,8 @@ import {
   Repo,
 } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
-import * as AW from "@automerge/automerge-wasm";
 
+import wasmBlobUrl from "@automerge/automerge/automerge.wasm?url";
 import { next as Automerge } from "@automerge/automerge";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 
@@ -17,6 +17,11 @@ import { RepoContext } from "@automerge/automerge-repo-react-hooks";
 import { getAccount } from "./explorer/account.js";
 import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
+import { BACKUP_SYNC } from "./explorer/components/SyncIndicator.js";
+
+// Peer id prefix is added to both the peer id of the client and the service worker
+// to make it easier to grep for logs that are related to your own changes / sync state
+const PEER_ID_PREFIX = localStorage.getItem("PEER_ID_PREFIX");
 
 const serviceWorker = await setupServiceWorker();
 
@@ -40,12 +45,11 @@ establishMessageChannel(serviceWorker);
 
 async function setupServiceWorker(): Promise<ServiceWorker> {
   return navigator.serviceWorker
-    .register("/service-worker.js", {
-      type: "module",
-    })
+    .register("/service-worker.js")
     .then((registration) => {
       // If the service worker is still installing, we wait until it is activated
       if (registration.installing) {
+        console.log("spawing new service worker");
         return new Promise((resolve) => {
           registration.installing.onstatechange = (event) => {
             const serviceWorker = event.target as ServiceWorker;
@@ -62,18 +66,18 @@ async function setupServiceWorker(): Promise<ServiceWorker> {
 }
 
 async function setupRepo() {
-  // in our vendored version we export a promise that resolves once the wasm is loaded
-  // this property is missing in the type declaration
-  // @ts-expect-error
-  await AW.promise;
-  A.use(AW);
+  if (PEER_ID_PREFIX) {
+    console.log("Using peer id prefix: ", PEER_ID_PREFIX);
+  }
 
   // We create a repo without any network adapters.
   // Later we connect the repo with the repo in the service worker through a message channel
+  const peerId = "frontend-" + Math.round(Math.random() * 10000);
+
   const repo = new Repo({
     storage: new IndexedDBStorageAdapter(),
     network: [],
-    peerId: ("frontend-" + Math.round(Math.random() * 10000)) as PeerId,
+    peerId: (PEER_ID_PREFIX ? `${PEER_ID_PREFIX}-${peerId}` : peerId) as PeerId,
     sharePolicy: async (peerId) => peerId.includes("service-worker"),
     // We need to enable remote heads gossiping so the remote heads of the sync server
     // are forwarded from the service worker to the repo here in the main thread
@@ -94,16 +98,19 @@ navigator.serviceWorker.addEventListener("controllerchange", (event) => {
   }
 });
 
-// Re-establish the MessageChannel if the service worker restarts
 navigator.serviceWorker.addEventListener("message", (event) => {
-  if (event.data.type === "SERVICE_WORKER_RESTARTED") {
-    console.log("Service worker restarted, establishing message channel");
-    establishMessageChannel(serviceWorker);
+  switch (event.data.type) {
+    case "SERVICE_WORKER_RESTARTED":
+      // Re-establish the MessageChannel if the service worker restarts
+      establishMessageChannel(serviceWorker);
+      break;
   }
 });
 
 // Connects the repo in the tab with the repo in the service worker through a message channel.
 // The repo in the tab takes advantage of loaded state in the SW.
+// With the init message we also pass the config for initializing the repo. The config only
+// takes effect if the service worker hasn't been initialized before
 // TODO: clean up MessageChannels to old repos
 function establishMessageChannel(serviceWorker: ServiceWorker) {
   // Send one side of a MessageChannel to the service worker and register the other with the repo.
@@ -111,7 +118,17 @@ function establishMessageChannel(serviceWorker: ServiceWorker) {
   repo.networkSubsystem.addNetworkAdapter(
     new MessageChannelNetworkAdapter(messageChannel.port1)
   );
-  serviceWorker.postMessage({ type: "INIT_PORT" }, [messageChannel.port2]);
+  serviceWorker.postMessage(
+    {
+      type: "INIT",
+      config: {
+        wasmBlobUrl,
+        backupSync: BACKUP_SYNC,
+        peerIdPrefix: PEER_ID_PREFIX,
+      },
+    },
+    [messageChannel.port2]
+  );
   console.log("Connected to service worker");
 }
 

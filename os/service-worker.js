@@ -1,31 +1,82 @@
-import * as AutomergeWasm from "@automerge/automerge-wasm";
-import * as Automerge from "@automerge/automerge";
-import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo";
+// @ts-check
+import * as Automerge from "@automerge/automerge/slim";
+import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo/slim";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 
+/**
+ * This file is not built using the standard Vite toolchain, it is built by the
+ * build-service-worker.js script which is invoked by `yarn run build`. In
+ * order to provide a good development experience there is also a vite plugin
+ * which builds the file using esbuild in development configured in
+ * vite.config.ts.
+ *
+ * Why?! You exclaim in horror. The problem is that Firefox does not support
+ * ES modules in service workers, but Vite doesn't give us any way of using a
+ * different build in service-worker.js to elsewhere. Hence, this hack, which
+ * allows us to specify an IIFE output for just service-worker.js.
+ *
+ * Now, this means that we can't use a bunch of useful vite functionality, most
+ * importantly we can't use the `?url` suffix on an import. This is a shame
+ * because due to the fact that we can't use ES modules here, we need some way
+ * of getting the URL to the `.wasm` file which we use to initialize Automerge.
+ * As a workaround, we wait for the host page to send us a message with the URL
+ * for the wasm blob in it.
+ */
+
 const CACHE_NAME = "v6";
 
-const PEER_ID = "service-worker-" + Math.round(Math.random() * 1000000);
+let PEER_ID = `service-worker-${Math.round(Math.random() * 1000000)}`;
 
-async function initializeRepo() {
-  console.log(`${PEER_ID}: Creating repo`);
+/* Config is passed by the client in the init message
+{
+  wasmBlobUrl: string  // url to the wasm blob
+  backupSync: boolean  // weather or not the experimental sync server should be enabled
+  peerIdPrefix: string // prefix that is added to peer to make it easier to find own messages in server log
+}*/
+let resolveConfig;
+const config = new Promise((resolve) => {
+  resolveConfig = resolve;
+});
+
+const repo = new Promise(async (resolve) => {
+  const { wasmBlobUrl, backupSync, peerIdPrefix } = await config;
+
+  console.log("init repo", { wasmBlobUrl, backupSync, peerIdPrefix });
+
+  await Automerge.initializeWasm(wasmBlobUrl);
+
+  console.log("done");
+
+  if (peerIdPrefix) {
+    PEER_ID = `${peerIdPrefix}-${PEER_ID}`;
+  }
+
   const repo = new Repo({
     storage: new IndexedDBStorageAdapter(),
-    network: [new BrowserWebSocketClientAdapter("wss://sync.automerge.org")],
+    network: [
+      new BrowserWebSocketClientAdapter("wss://sync.automerge.org"),
+    ].concat(
+      backupSync
+        ? [
+            new BrowserWebSocketClientAdapter(
+              "wss://jacquardsync.memoryandthought.me"
+            ),
+          ]
+        : []
+    ),
     peerId: PEER_ID,
     sharePolicy: async (peerId) => peerId.includes("storage-server"),
     enableRemoteHeadsGossiping: true,
   });
 
-  await AutomergeWasm.promise;
-  Automerge.use(AutomergeWasm);
+  // Put the repo on the global context for interactive use
+  self.repo = repo;
+  self.Automerge = Automerge;
 
-  return repo;
-}
-
-const repo = initializeRepo();
+  resolve(repo);
+});
 
 function sendMessageToClients(message) {
   clients.matchAll().then((clients) => {
@@ -38,16 +89,6 @@ function sendMessageToClients(message) {
 // When the service worker restarts, tell all clients to re-establish the message channel
 sendMessageToClients({ type: "SERVICE_WORKER_RESTARTED" });
 
-// put it on the global context for interactive use
-repo.then((r) => {
-  self.repo = r;
-  self.Automerge = Automerge;
-});
-
-// Paul: I'm not sure what this comment means
-// return a promise from this so that we can wait on it before returning fetch/addNetworkAdapter
-// because otherwise we might not have the WASM module loaded before we get to work.
-
 self.addEventListener("install", () => {
   /* We skip waiting which means the service worker immediately takes over once it's installed
    * Any existing tab that is connected to a previous worker gets sent an "controllerchange" event to switch over to the new service worker
@@ -56,15 +97,22 @@ self.addEventListener("install", () => {
 });
 
 self.addEventListener("message", async (event) => {
-  if (event.data.type === "PING") {
-    return;
-  }
   console.log(`${PEER_ID}: Client messaged`, event.data);
-  if (event.data && event.data.type === "INIT_PORT") {
-    const clientPort = event.ports[0];
-    (await repo).networkSubsystem.addNetworkAdapter(
-      new MessageChannelNetworkAdapter(clientPort, { useWeakRef: true })
-    );
+
+  switch (event.data.type) {
+    case "PING":
+      // don't do anything, message is only needed to keep service worker running
+      return;
+
+    case "INIT":
+      // load config and connect with client through message channel
+      // if config is already loaded the new config is ignored
+      const clientPort = event.ports[0];
+      resolveConfig(event.data.config);
+
+      (await repo).networkSubsystem.addNetworkAdapter(
+        new MessageChannelNetworkAdapter(clientPort, { useWeakRef: true })
+      );
   }
 });
 

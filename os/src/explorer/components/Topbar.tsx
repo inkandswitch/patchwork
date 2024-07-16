@@ -13,7 +13,12 @@ import React, { useRef } from "react";
 import { toast } from "sonner";
 import { saveFile } from "../utils";
 import { AccountPicker } from "./AccountPicker";
-import { SyncIndicator } from "./SyncIndicator";
+import {
+  AUTOMERGE_SYNC_SERVER_STORAGE_ID,
+  BACKUP_SYNC,
+  JACQUARD_SYNC_SERVER_STORAGE_ID,
+  SyncIndicator,
+} from "./SyncIndicator";
 
 import {
   DropdownMenu,
@@ -89,7 +94,20 @@ export const Topbar: React.FC<TopbarProps> = ({
       </div>
       <div className="ml-1 mt-[-2px]">
         {isValidAutomergeUrl(selectedDocUrl) && (
-          <SyncIndicator docUrl={selectedDocUrl} />
+          <>
+            <SyncIndicator
+              docUrl={selectedDocUrl}
+              storageId={AUTOMERGE_SYNC_SERVER_STORAGE_ID}
+              name={"sync.automerge.org"}
+            />
+            {BACKUP_SYNC && (
+              <SyncIndicator
+                docUrl={selectedDocUrl}
+                storageId={JACQUARD_SYNC_SERVER_STORAGE_ID}
+                name={"jacquard.sync"}
+              />
+            )}
+          </>
         )}
       </div>
 
