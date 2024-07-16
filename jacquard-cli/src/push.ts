@@ -170,7 +170,11 @@ export async function push(
       );
 
       if (didChange) {
-        console.log("push", filePath, Automerge.getHeads(handle.docSync()));
+        console.log(
+          "pushed file:",
+          filePath,
+          Automerge.getHeads(handle.docSync())
+        );
       }
     } else {
       // Make a new doc in the folder

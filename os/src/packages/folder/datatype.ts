@@ -63,6 +63,8 @@ const clone = async (
   dataTypes: DataType<unknown, unknown, unknown>[],
   docCloneMap: DocCloneMap
 ): Promise<void> => {
+  console.log("cloning folder", handle.url);
+  await handle.whenReady();
   const cloneHandle = repo.clone(handle);
 
   docCloneMap[handle.url] = {
@@ -73,8 +75,9 @@ const clone = async (
   const doc = await handle.doc();
 
   for (const docLink of doc.docs) {
+    console.log("cloning", docLink.name);
     const childHandle = repo.find(docLink.url);
-
+    await childHandle.whenReady();
     await cloneDoc(repo, childHandle, docLink.type, dataTypes, docCloneMap);
   }
 };

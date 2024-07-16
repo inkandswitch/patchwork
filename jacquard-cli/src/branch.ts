@@ -1,3 +1,4 @@
+import { ContactDoc } from "@/explorer/account";
 import {
   BranchDoc,
   HasVersionControlMetadata,
@@ -10,6 +11,7 @@ export const listBranches = async (
   repo: Repo,
   { projectFolderUrl }: { projectFolderUrl: AutomergeUrl }
 ) => {
+  console.log("loading branches for", projectFolderUrl);
   const projectFolderDoc = await repo
     .find<HasVersionControlMetadata<unknown, unknown>>(projectFolderUrl)
     .doc();
@@ -30,15 +32,23 @@ export const listBranches = async (
   const branchDocs = await Promise.all(
     branchUrls.map((url) => repo.find<BranchDoc>(url).doc())
   );
+  if (branchDocs.length === 0) {
+    console.log("No branches found");
+    return;
+  }
 
-  console.log("Branches:");
-  branchDocs.forEach((branch) => {
+  branchDocs.forEach(async (branch) => {
     console.log(`- ${branch.name}`);
     if (branch.createdAt) {
       console.log(`  Created: ${new Date(branch.createdAt).toLocaleString()}`);
     }
     if (branch.createdBy) {
-      console.log(`  Created by: ${branch.createdBy}`);
+      const contactDoc = await repo.find<ContactDoc>(branch.createdBy).doc();
+      if (contactDoc.type === "registered") {
+        console.log(`  Created by: ${contactDoc.name}`);
+      } else {
+        console.log(`  Created by: anonyous user`);
+      }
     }
   });
 };
