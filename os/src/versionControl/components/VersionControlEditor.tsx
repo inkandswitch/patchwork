@@ -81,6 +81,7 @@ import { TimelineSidebar } from "./TimelineSidebar";
 import { BotSidebar } from "./BotSidebar";
 import { StatusBar } from "./Statusbar";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
+import { DocPath } from "@/packages/folder/datatype";
 
 interface MakeBranchOptions {
   name?: string;
@@ -88,6 +89,73 @@ interface MakeBranchOptions {
 }
 
 export type SidebarMode = "review" | "history" | "Bot";
+
+// Given a doc path representing current selected doc,
+// resolve a branch scope and return relevant information about branches
+const useBranchScope = (docPath: DocPath) => {
+  // we need the metadata docs of all parent folders which requires an async op to load
+  // to work with them in the useMemo hook below we fetch them with useDocuments
+  const docsInDocPathById = useDocuments<FolderDoc>(
+    docPath.map((link) => link.url)
+  );
+  const versionControlMetadataDocUrls = useMemo(() => {
+    return Object.values(docsInDocPathById)
+      .map(
+        (doc) =>
+          (doc as HasVersionControlMetadata<unknown, unknown>)
+            .versionControlMetadataUrl
+      )
+      .filter((url) => url !== undefined);
+  }, [docsInDocPathById]);
+  const versionControlMetadataByDocId = useDocuments<VersionControlSidecarDoc>(
+    versionControlMetadataDocUrls
+  );
+
+  // the document on which the branch was created
+  // TODO: return branches
+  return useMemo(() => {
+    // otherwise go up the hierarchy and check if any of the parent folders are branch scopes
+    for (let i = docPath.length - 1; i >= 0; i--) {
+      const docLink = docPath[i];
+      const docId = parseAutomergeUrl(docLink.url).documentId;
+      const doc = docsInDocPathById[docId];
+      if (!doc.versionControlMetadataUrl) {
+        continue;
+      }
+
+      const versionControlMetadataDocId = parseAutomergeUrl(
+        doc.versionControlMetadataUrl
+      ).documentId;
+      const versionControlMetadataDoc =
+        versionControlMetadataByDocId[versionControlMetadataDocId];
+      if (
+        versionControlMetadataDoc &&
+        versionControlMetadataDoc.isBranchScope
+      ) {
+        return {
+          branchScopeDocUrl: docLink.url,
+          // branchScopeDocFolderPath: folderPath.slice(0, i),
+          branches: versionControlMetadataDoc.branches,
+        };
+      }
+    }
+
+    return undefined;
+  }, [versionControlMetadataByDocId, docsInDocPathById]);
+
+  // const [branchScopeDoc] =
+  //   useDocument<HasVersionControlMetadata<unknown, unknown>>(branchScopeDocUrl);
+
+  // const [versionControlMetadataDoc] = useDocument<VersionControlSidecarDoc>(
+  //   branchScopeDoc?.versionControlMetadataUrl
+  // );
+
+  // const branchDocs = useDocuments<BranchDoc>(
+  //   versionControlMetadataDoc?.isBranchScope
+  //     ? versionControlMetadataDoc.branches
+  //     : []
+  // );
+};
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -311,96 +379,6 @@ export const VersionControlEditor: React.FC<{
   >(selectedBranch?.url);
   const branchHandle = useHandle<HasVersionControlMetadata<unknown, unknown>>(
     selectedBranch?.url
-  );
-
-  // we need the metadata docs of all parent folders which requires an async op to load
-  // to work with them in the useMemo hook below we fetch them with useDocuments
-  const parentFolderDocsById = useDocuments<FolderDoc>(
-    selectedDocLink?.folderPath ?? []
-  );
-  const versionControlMetadataDocUrls = useMemo(() => {
-    return Object.values(parentFolderDocsById)
-      .map(
-        (doc) =>
-          (doc as HasVersionControlMetadata<unknown, unknown>)
-            .versionControlMetadataUrl
-      )
-      .concat(doc?.versionControlMetadataUrl)
-      .filter((url) => url !== undefined);
-  }, [parentFolderDocsById]);
-  const versionControlMetadataByDocId = useDocuments<VersionControlSidecarDoc>(
-    versionControlMetadataDocUrls
-  );
-
-  // the document on which the branch was created
-  // TODO: return branches
-  const { branchScopeDocUrl, branchScopeDocFolderPath } = useMemo<{
-    branchScopeDocUrl: AutomergeUrl | undefined;
-    branchScopeDocFolderPath: AutomergeUrl[] | undefined;
-  }>(() => {
-    if (!selectedDocLink) {
-      return {
-        branchScopeDocUrl: undefined,
-        branchScopeDocFolderPath: undefined,
-      };
-    }
-
-    // check if the current doc is a branch scope
-    if (
-      doc?.versionControlMetadataUrl &&
-      versionControlMetadataByDocId[
-        parseAutomergeUrl(doc.versionControlMetadataUrl).documentId
-      ]?.isBranchScope
-    ) {
-      return {
-        branchScopeDocUrl: mainDocUrl,
-        branchScopeDocFolderPath: selectedDocLink.folderPath,
-      };
-    }
-
-    // otherwise go up the hierarchy and check if any of the parent folders are branch scopes
-    const { folderPath } = selectedDocLink;
-    for (let i = folderPath.length - 1; i >= 0; i--) {
-      const folderDocUrl = folderPath[i];
-      const folderDocId = parseAutomergeUrl(folderDocUrl).documentId;
-      const folderDoc = parentFolderDocsById[folderDocId];
-      if (!folderDoc || !folderDoc.versionControlMetadataUrl) {
-        continue;
-      }
-
-      const versionControlMetadataDocId = parseAutomergeUrl(
-        folderDoc.versionControlMetadataUrl
-      ).documentId;
-      const versionControlMetadataDoc =
-        versionControlMetadataByDocId[versionControlMetadataDocId];
-      if (
-        versionControlMetadataDoc &&
-        versionControlMetadataDoc.isBranchScope
-      ) {
-        return {
-          branchScopeDocUrl: folderDocUrl,
-          branchScopeDocFolderPath: folderPath.slice(0, i),
-        };
-      }
-    }
-
-    return {
-      branchScopeDocUrl: undefined,
-      branchScopeDocFolderPath: undefined,
-    };
-  }, [versionControlMetadataByDocId, parentFolderDocsById, doc]);
-
-  const [branchScopeDoc] =
-    useDocument<HasVersionControlMetadata<unknown, unknown>>(branchScopeDocUrl);
-
-  const [versionControlMetadataDoc] = useDocument<VersionControlSidecarDoc>(
-    branchScopeDoc?.versionControlMetadataUrl
-  );
-
-  const branchDocs = useDocuments<BranchDoc>(
-    versionControlMetadataDoc?.isBranchScope
-      ? versionControlMetadataDoc.branches
-      : []
   );
 
   // TODO: "Jacquard" in here is provisional until we remove old branches
