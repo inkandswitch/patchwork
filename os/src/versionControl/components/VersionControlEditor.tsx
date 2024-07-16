@@ -80,7 +80,7 @@ import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { BotSidebar } from "./BotSidebar";
 import { StatusBar } from "./Statusbar";
-import { DocLinkWithFolderPath } from "@/packages/folder";
+import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 
 interface MakeBranchOptions {
   name?: string;
@@ -107,7 +107,6 @@ export const VersionControlEditor: React.FC<{
   addNewDocument,
   selectedDocLink,
 }) => {
-  console.log({ selectedDocLink });
   const repo = useRepo();
   const [doc, changeDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
@@ -314,26 +313,107 @@ export const VersionControlEditor: React.FC<{
     selectedBranch?.url
   );
 
-  const [versionControlMetadataDoc] = useDocument<VersionControlSidecarDoc>(
-    doc?.versionControlMetadataUrl
+  // we need the metadata docs of all parent folders which requires an async op to load
+  // to work with them in the useMemo hook below we fetch them with useDocuments
+  const parentFolderDocsById = useDocuments<FolderDoc>(
+    selectedDocLink?.folderPath ?? []
   );
+  const versionControlMetadataDocUrls = useMemo(() => {
+    return Object.values(parentFolderDocsById)
+      .map(
+        (doc) =>
+          (doc as HasVersionControlMetadata<unknown, unknown>)
+            .versionControlMetadataUrl
+      )
+      .concat(doc?.versionControlMetadataUrl)
+      .filter((url) => url !== undefined);
+  }, [parentFolderDocsById]);
+  const versionControlMetadataByDocId = useDocuments<VersionControlSidecarDoc>(
+    versionControlMetadataDocUrls
+  );
+
+  // the document on which the branch was created
+  const { branchRootDocUrl, branchRootDocFolderPath } = useMemo<{
+    branchRootDocUrl: AutomergeUrl | undefined;
+    branchRootDocFolderPath: AutomergeUrl[] | undefined;
+  }>(() => {
+    if (!selectedDocLink) {
+      return {
+        branchRootDocUrl: undefined,
+        branchRootDocFolderPath: undefined,
+      };
+    }
+
+    // check if there are branches on the current doc
+    if (
+      doc &&
+      doc.versionControlMetadataUrl &&
+      versionControlMetadataByDocId[
+        parseAutomergeUrl(doc.versionControlMetadataUrl).documentId
+      ]?.branches.length > 0
+    ) {
+      return {
+        branchRootDocUrl: mainDocUrl,
+        branchRootDocFolderPath: selectedDocLink.folderPath,
+      };
+    }
+
+    // otherwise go up the hierarchy and check if any of the parent folders have branches
+    const { folderPath } = selectedDocLink;
+    for (let i = folderPath.length - 1; i >= 0; i--) {
+      const folderDocUrl = folderPath[i];
+      const folderDocId = parseAutomergeUrl(folderDocUrl).documentId;
+      const folderDoc = parentFolderDocsById[folderDocId];
+      if (!folderDoc || !folderDoc.versionControlMetadataUrl) {
+        continue;
+      }
+
+      const versionControlMetadataDocId = parseAutomergeUrl(
+        folderDoc.versionControlMetadataUrl
+      ).documentId;
+      const versionControlMetadataDoc =
+        versionControlMetadataByDocId[versionControlMetadataDocId];
+      if (
+        versionControlMetadataDoc &&
+        versionControlMetadataDoc.branches.length > 0
+      ) {
+        return {
+          branchRootDocUrl: folderDocUrl,
+          branchRootDocFolderPath: folderPath.slice(0, i),
+        };
+      }
+    }
+
+    return { branchRootDocUrl: undefined, branchRootDocFolderPath: undefined };
+  }, [versionControlMetadataByDocId, parentFolderDocsById, doc]);
+
+  const [branchRootDoc] =
+    useDocument<HasVersionControlMetadata<unknown, unknown>>(branchRootDocUrl);
+
+  const [versionControlMetadataDoc] = useDocument<VersionControlSidecarDoc>(
+    branchRootDoc?.versionControlMetadataUrl
+  );
+
   const branchDocs = useDocuments<BranchDoc>(
     versionControlMetadataDoc?.branches
   );
 
   // TODO: "Jacquard" in here is provisional until we remove old branches
+
   const selectedJacquardBranchUrl = useMemo(() => {
-    if (!selectedDocLink || !uiStateDoc) {
+    if (!branchRootDocFolderPath || !uiStateDoc || !branchRootDocUrl) {
       return;
     }
 
-    const openBranch = uiStateDoc.openBranches.find(
-      (branch) =>
-        branch.docUrl === mainDocUrl &&
-        isEqual(branch.folderPath, selectedDocLink.folderPath)
-    );
+    const openBranch = uiStateDoc.openBranches.find((branch) => {
+      return (
+        branch.docUrl === branchRootDocUrl &&
+        isEqual(branch.folderPath, branchRootDocFolderPath)
+      );
+    });
+
     return openBranch?.branchDocUrl;
-  }, [uiStateDoc?.openBranches, selectedDocLink]);
+  }, [uiStateDoc?.openBranches, branchRootDocUrl, branchRootDocFolderPath]);
 
   const setSelectedJacquardBranchUrl = (branchDocUrl: AutomergeUrl) => {
     changeUIStateDoc((uiStateDoc) => {
@@ -348,8 +428,8 @@ export const VersionControlEditor: React.FC<{
 
       const openBranch = uiStateDoc.openBranches.find((branch) => {
         return (
-          branch.docUrl === mainDocUrl &&
-          isEqual(branch.folderPath, selectedDocLink.folderPath)
+          branch.docUrl === branchRootDocUrl &&
+          isEqual(branch.folderPath, branchRootDocFolderPath)
         );
       });
 
