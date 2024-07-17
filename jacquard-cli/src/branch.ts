@@ -27,27 +27,38 @@ export const listBranches = async (
   const versionControlMetadataDoc = await repo
     .find<VersionControlSidecarDoc>(versionControlMetadataUrl)
     .doc();
+
+  if (!versionControlMetadataDoc.isBranchScope) {
+    console.log("No branches found. (Folder is not a branch scope)");
+    return;
+  }
   const branchUrls = versionControlMetadataDoc.branches;
 
-  const branchDocs = await Promise.all(
-    branchUrls.map((url) => repo.find<BranchDoc>(url).doc())
+  const branches = await Promise.all(
+    branchUrls.map(async (url) => ({
+      url,
+      branchDoc: await repo.find<BranchDoc>(url).doc(),
+    }))
   );
-  if (branchDocs.length === 0) {
-    console.log("No branches found");
+  if (branches.length === 0) {
+    console.log("No branches found.");
     return;
   }
 
-  branchDocs.forEach(async (branch) => {
-    console.log(`- ${branch.name}`);
-    if (branch.createdAt) {
-      console.log(`  Created: ${new Date(branch.createdAt).toLocaleString()}`);
+  branches.forEach(async ({ branchDoc, url }) => {
+    console.log(`- ${branchDoc.name}`);
+    console.log(`  URL: ${url}`);
+    if (branchDoc.createdAt) {
+      console.log(
+        `  Created: ${new Date(branchDoc.createdAt).toLocaleString()}`
+      );
     }
-    if (branch.createdBy) {
-      const contactDoc = await repo.find<ContactDoc>(branch.createdBy).doc();
+    if (branchDoc.createdBy) {
+      const contactDoc = await repo.find<ContactDoc>(branchDoc.createdBy).doc();
       if (contactDoc.type === "registered") {
         console.log(`  Created by: ${contactDoc.name}`);
       } else {
-        console.log(`  Created by: anonyous user`);
+        console.log(`  Created by: anonymous user`);
       }
     }
   });

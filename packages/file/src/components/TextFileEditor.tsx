@@ -37,7 +37,7 @@ export const TextFileEditor = ({ docUrl }: EditorProps<TextFileDoc, never>) => {
     return () => {
       view.destroy();
     };
-  }, [container, fileDoc.type]);
+  }, [container, fileDoc.type, handle]);
 
   return <div className="codemirror-editor" ref={setContainer} />;
 };

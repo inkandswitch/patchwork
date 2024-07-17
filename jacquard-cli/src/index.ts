@@ -12,6 +12,7 @@ import { pull } from "./pull";
 import { run } from "./run";
 import { latex } from "./latex";
 import { listBranches } from "./branch";
+import { activateBranch } from "./activate";
 
 export type CommandLineArgs = {
   dir: string;
@@ -23,9 +24,8 @@ export type CommandLineArgs = {
   inputs?: string[];
   outputs?: string[];
   command?: string;
+  branchUrl?: string;
 };
-
-type ActiveBranch = { type: "main" } | { type: "branch"; url: AutomergeUrl };
 
 const main = async () => {
   const mainDefinitions = [{ name: "action", defaultOption: true }];
@@ -38,6 +38,7 @@ const main = async () => {
   const allFlags = [
     { name: "dir", type: String, defaultValue: "." },
     { name: "projectFolderUrl", type: String },
+    { name: "branchUrl", type: String },
     { name: "test", type: Boolean, defaultValue: false },
     {
       name: "syncServerUrl",
@@ -89,6 +90,7 @@ const main = async () => {
     inputs,
     outputs,
     command,
+    branchUrl,
   } = options;
 
   const activeBranch = jacquardConfig?.activeBranch ?? { type: "main" };
@@ -122,6 +124,10 @@ const main = async () => {
   switch (mainOptions.action) {
     case "branch": {
       await listBranches(repo, { projectFolderUrl });
+      break;
+    }
+    case "activate": {
+      await activateBranch(repo, { projectFolderUrl, branchUrl, dir });
       break;
     }
     case "push":
