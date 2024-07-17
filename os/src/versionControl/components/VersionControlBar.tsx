@@ -185,6 +185,10 @@ export const VersionControlBar = ({
           onValueChange={(value) => {
             if (value === "__newBranch") {
               handleCreateJacquardBranch();
+            } else if (value === "__makeIntoBranchScope") {
+              ensureMetadataHandleIsBranchScope(
+                branchScopeVersionControlMetadataOm.handle
+              );
             } else if (value === "__moveChangesToBranch") {
               throw new Error("not implemented");
             } else {
@@ -202,27 +206,32 @@ export const VersionControlBar = ({
         >
           <SelectTrigger className="h-8 text-sm w-[18rem] font-medium">
             <SelectValue>
-              {activeBranchOm ? (
-                <div className="flex items-center gap-2">
+              {activeBranchOm
+              ? <div className="flex items-center gap-2">
                   <GitBranchIcon className="inline" size={12} />
                   {truncate(activeBranchOm.doc.name, { length: 30 })}
                 </div>
-              ) : (
-                <div className="flex items-center gap-2">
+              : isRealBranchScope
+              ? <div className="flex items-center gap-2">
                   <CrownIcon className="inline" size={12} />
                   Main
                 </div>
-              )}{" "}
+              : <div className="flex items-center gap-2 opacity-50">
+                  No branches
+                </div>
+              }{" "}
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="w-72">
-            <SelectItem
-              value={null}
-              className={!activeBranchOm ? "font-medium" : ""}
-            >
-              <CrownIcon className="inline mr-1" size={12} />
-              Main
-            </SelectItem>
+            { isRealBranchScope &&
+              <SelectItem
+                value={null}
+                className={!activeBranchOm ? "font-medium" : ""}
+              >
+                <CrownIcon className="inline mr-1" size={12} />
+                Main
+              </SelectItem>
+            }
             <SelectGroup>
               <SelectLabel className="-ml-5">
                 <GitBranchIcon className="inline mr-1" size={12} />
@@ -270,6 +279,18 @@ export const VersionControlBar = ({
                 <PlusIcon className="inline mr-1" size={12} />
                 Create new branch
               </SelectItem>
+              { !isRealBranchScope &&
+                <SelectItem
+                  value={"__makeIntoBranchScope"}
+                  key={"__makeIntoBranchScope"}
+                  className="font-regular"
+                >
+                  <div className="opacity-50">
+                    <PlusIcon className="inline mr-1" size={12} />
+                    Convert to main branch
+                  </div>
+                </SelectItem>
+              }
             </SelectGroup>
           </SelectContent>
         </Select>

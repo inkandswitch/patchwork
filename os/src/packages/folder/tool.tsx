@@ -10,9 +10,6 @@ import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import { AccountDoc, UIStateDoc, useCurrentAccount } from "@/explorer/account";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { VersionControlSidecarDoc } from "@/sdk";
-import { Button } from "@/shadcn/ui/button";
-import { GitBranchIcon } from "lucide-react";
 
 export const FolderViewer: React.FC<EditorProps<never, never>> = ({
   docUrl,
@@ -20,9 +17,6 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
   getFakeDocPathForDocUrl,
 }: EditorProps<never, never>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
-
-  const [versionControlMetadata, changeVersionControlMetadata] =
-    useDocument<VersionControlSidecarDoc>(folder?.versionControlMetadataUrl);
 
   const folderAtHeads = docHeads ? A.view(folder, docHeads) : folder;
 
@@ -32,35 +26,8 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
 
   return (
     <div className="p-2 h-full overflow-hidden">
-      <div className="text-gray-500 text-sm mb-4 pb-2 border-b border-gray-300 flex items-center gap-4">
-        <div>{folderAtHeads.docs.length} documents</div>
-        <div>
-          {versionControlMetadata?.isBranchScope ? (
-            <div className="flex items-center">
-              <GitBranchIcon className="h-4 w-4" />
-              <div>Branchable folder</div>
-            </div>
-          ) : (
-            <div className="flex items-center">
-              <GitBranchIcon className="h-4 w-4" />
-              <div>Not a branchable folder</div>
-              <Button
-                onClick={() => {
-                  changeVersionControlMetadata((d) => {
-                    d.isBranchScope = true;
-                    // @ts-expect-error it's fine see previous line
-                    d.branches = [];
-                  });
-                }}
-                variant="outline"
-                size="sm"
-                className="ml-2 text-xs h-8"
-              >
-                Make branchable
-              </Button>
-            </div>
-          )}
-        </div>
+      <div className="text-gray-500 text-sm mb-4 pb-2 border-b border-gray-300">
+        {folderAtHeads.docs.length} documents
       </div>
       <div className="flex flex-col gap-10 px-4 h-full overflow-y-auto pb-24">
         {folderAtHeads.docs.map((docLink, index) => (
@@ -80,10 +47,7 @@ type FolderEntryView = {
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
 };
 
-export const FolderEntryView = ({
-  docLink,
-  getFakeDocPathForDocUrl,
-}: FolderEntryView) => {
+export const FolderEntryView = ({ docLink, getFakeDocPathForDocUrl }: FolderEntryView) => {
   const account = useCurrentAccount();
   const [accountDoc] = useDocument<AccountDoc>(account?.handle.url);
   const uiStateHandle = useHandle<UIStateDoc>(accountDoc?.uiStateUrl);
