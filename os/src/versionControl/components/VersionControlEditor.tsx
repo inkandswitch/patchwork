@@ -12,7 +12,7 @@ import {
   HistoryIcon,
   MessageSquareIcon,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useDataType, useDataTypes } from "../../datatypes";
 import { useAnnotations } from "../annotations";
@@ -76,6 +76,11 @@ export const VersionControlEditor: React.FC<{
   const [compareWithMainFlag, setCompareWithMainFlag] =
     useState<boolean>(false);
   const dataTypes = useDataTypes();
+
+  const getFakeDocPathForDocUrl = useCallback((url) => {
+    const docLinkWithFolderPath = flatDocLinks.find(link => link.url === url)
+    return fakeDocPath(docLinkWithFolderPath)
+  }, [flatDocLinks])
 
   // Reset compare view settings every time you switch branches
   // useEffect(() => {
@@ -254,7 +259,7 @@ export const VersionControlEditor: React.FC<{
           sidebarMode={sidebarMode}
           setSidebarMode={setSidebarMode}
           highlightSidebarButton={highlightSidebarButton}
-          flatDocLinks={flatDocLinks}
+          getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
         />
 
         {/* Main doc editor pane */}
@@ -275,6 +280,7 @@ export const VersionControlEditor: React.FC<{
                 setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
                 hideInlineComments={hideInlineComments}
                 setCommentState={setCommentState}
+                getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
               />
             </div>
           </div>
@@ -294,6 +300,7 @@ export const VersionControlEditor: React.FC<{
           hideInlineComments={hideInlineComments}
           setCommentState={setCommentState}
           addNewDocument={addNewDocument}
+          getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
         />
       </div>
 
@@ -394,6 +401,7 @@ const DocEditor = <T, V>({
   setSelectedAnnotationGroupId,
   setHoveredAnnotationGroupId,
   setCommentState,
+  getFakeDocPathForDocUrl,
 }: EditorPropsWithTool<T, V>) => {
   if (!tool) {
     return;
@@ -414,6 +422,7 @@ const DocEditor = <T, V>({
       setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
       setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
       setCommentState={setCommentState}
+      getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
     />
   );
 };

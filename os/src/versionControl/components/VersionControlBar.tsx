@@ -1,6 +1,8 @@
 import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
+import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { getRelativeTimeString } from "@/lib/dates";
+import { DocPath } from "@/packages/folder/datatype";
 import { ensureMetadataHandleIsBranchScope, useDataTypes } from "@/sdk";
 import { Button } from "@/shadcn/ui/button";
 import {
@@ -14,7 +16,7 @@ import {
 } from "@/shadcn/ui/select";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { truncate } from "lodash";
+import _, { truncate } from "lodash";
 import {
   CrownIcon,
   GitBranchIcon,
@@ -26,8 +28,6 @@ import { toast } from "sonner";
 import { createJacquardBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../hooks";
 import { SidebarMode } from "./VersionControlEditor";
-import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
-import { DocLinkWithFolderPath } from "@/packages/folder";
 
 // interface MakeBranchOptions {
 //   name?: string;
@@ -42,7 +42,7 @@ export const VersionControlBar = ({
   sidebarMode,
   setSidebarMode,
   highlightSidebarButton,
-  flatDocLinks,
+  getFakeDocPathForDocUrl,
 }: {
   docUrl: AutomergeUrl;
   datatypeId: string;
@@ -51,7 +51,7 @@ export const VersionControlBar = ({
   sidebarMode: SidebarMode;
   setSidebarMode: (mode: SidebarMode) => void;
   highlightSidebarButton: boolean;
-  flatDocLinks: DocLinkWithFolderPath[];
+  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
 }) => {
   const {
     branchScopeOm,
@@ -68,23 +68,13 @@ export const VersionControlBar = ({
   const account = useCurrentAccount();
 
   const handleCreateJacquardBranch = useCallback(async () => {
-    // TODO: We can derive a type for the branch scope by rummaging around in the flat doc links...
-    // but this is a temporary approach; better would be to just have doc paths available.
-    const docLinkForBranchScope = flatDocLinks.find(
-      (link) => link.url === branchScopeOm.url
-    );
-
-    if (!docLinkForBranchScope) {
-      console.error(
-        "couldn't find branch scope in folder hierarchy",
-        branchScopeOm.url
-      );
-    }
+    const docPathForBranchScope = getFakeDocPathForDocUrl(branchScopeOm.url);
+    const docLinkForBranchScope = _.last(docPathForBranchScope);
 
     const branchUrl = await createJacquardBranch({
       repo,
       branchScopeHandle: branchScopeOm.handle,
-      dataTypeId: docLinkForBranchScope?.type, // TODO: oh crap this is the datatypeId of the doc, not the branch scope
+      dataTypeId: docLinkForBranchScope?.type,
       dataTypes,
       createdBy: account?.contactHandle?.url,
     });
@@ -93,10 +83,11 @@ export const VersionControlBar = ({
   }, [
     account?.contactHandle?.url,
     branchScopeOm?.handle,
+    branchScopeOm?.url,
     dataTypes,
-    datatypeId,
+    getFakeDocPathForDocUrl,
     repo,
-    setActiveBranchUrl,
+    setActiveBranchUrl
   ]);
 
   // const moveCurrentChangesToBranch = () => {

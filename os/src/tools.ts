@@ -13,6 +13,7 @@ import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { DataType } from "./datatypes";
 import { IconType } from "./lib/icons";
 import * as PACKAGES from "./packages";
+import { DocPath } from "./packages/folder/datatype";
 
 export type Tool = {
   id: string;
@@ -55,6 +56,9 @@ export type EditorProps<T, V> = {
   setCommentState?: (state: CommentState<T>) => void;
 
   hideInlineComments?: boolean;
+
+  // TODO: will be replaced when we have real doc paths everywhere
+  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
 };
 
 export type AnnotationsViewProps<

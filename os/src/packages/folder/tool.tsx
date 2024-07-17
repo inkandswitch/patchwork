@@ -1,4 +1,4 @@
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import React from "react";
 
@@ -6,11 +6,15 @@ import { useDataType } from "@/datatypes";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { Icon } from "@/lib/icons";
 import { EditorProps, Tool, useToolsForDataType } from "@/tools";
-import { DocLink, FolderDoc } from "./datatype";
+import { DocLink, DocPath, FolderDoc } from "./datatype";
+import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
+import { AccountDoc, UIStateDoc, useCurrentAccount } from "@/explorer/account";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 
 export const FolderViewer: React.FC<EditorProps<never, never>> = ({
   docUrl,
   docHeads,
+  getFakeDocPathForDocUrl,
 }: EditorProps<never, never>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
 
@@ -27,7 +31,11 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
       </div>
       <div className="flex flex-col gap-10 px-4 h-full overflow-y-auto pb-24">
         {folderAtHeads.docs.map((docLink, index) => (
-          <FolderEntryView docLink={docLink} key={index} />
+          <FolderEntryView
+            docLink={docLink}
+            key={index}
+            getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+          />
         ))}
       </div>
     </div>
@@ -36,9 +44,19 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
 
 type FolderEntryView = {
   docLink: DocLink;
+  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
 };
 
-export const FolderEntryView = ({ docLink }) => {
+export const FolderEntryView = ({ docLink, getFakeDocPathForDocUrl }: FolderEntryView) => {
+  const account = useCurrentAccount();
+  const [accountDoc] = useDocument<AccountDoc>(account?.handle.url);
+  const uiStateHandle = useHandle<UIStateDoc>(accountDoc?.uiStateUrl);
+  const docPath = getFakeDocPathForDocUrl(docLink.url);
+  const { cloneOrMainOm } = useBranchScopeAndActiveBranchInfo(
+    docPath,
+    uiStateHandle
+  );
+
   const dataType = useDataType(docLink.type);
   const tool = useToolsForDataType(docLink.type)[0];
 
@@ -69,7 +87,8 @@ export const FolderEntryView = ({ docLink }) => {
             {tool &&
               docLink.type !== "folder" &&
               React.createElement(tool.editorComponent, {
-                docUrl: docLink.url,
+                docUrl: cloneOrMainOm?.url,
+                getFakeDocPathForDocUrl,
               })}
             {docLink.type === "folder" && (
               <div className="bg-gray-50 justify-center items-center flex h-full">
