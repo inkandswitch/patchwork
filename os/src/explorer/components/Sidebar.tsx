@@ -109,12 +109,12 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
               {node.children.length}
             </div>
           )}
-          <div className="text-xs text-gray-500 flex items-center">
+          <div className="text-xs text-gray-500 flex items-center gap-1">
             {isBranchScope && <GitBranchIcon size={14} className="ml-1" />}
             {isBranchScope && activeBranchOm
               ? `${activeBranchOm.doc.name}`
               : isBranchScope
-              ? "main"
+              ? "Main"
               : ""}
           </div>
         </div>
