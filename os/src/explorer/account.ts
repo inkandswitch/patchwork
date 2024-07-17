@@ -37,7 +37,7 @@ export type UIStateDoc = {
   /** Documents in the folder hierarchy that have a branch checked out.
    *  Map from branch scope path string (made via docPathString) to branch URL.
    */
-  openBranches: {[docPathString: string]: AutomergeUrl};
+  openBranches: { [docPathString: string]: AutomergeUrl };
 };
 
 export function docPathString(docPath: DocPath): string {
@@ -303,6 +303,7 @@ export function useCurrentAccountDoc(): [
   return [accountDoc, changeAccountDoc];
 }
 
+// TODO: is it ok to load this multiple times in the UI tree? Is that extra overhead?
 export function useRootFolderDocWithChildren() {
   const [accountDoc] = useCurrentAccountDoc();
 

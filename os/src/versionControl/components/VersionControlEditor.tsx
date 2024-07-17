@@ -1,22 +1,16 @@
 import { AccountDoc, UIStateDoc, useCurrentAccount } from "@/explorer/account";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
-import { DocLinkWithFolderPath } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
+import { DocLinkWithFolderPath, DocPath } from "@/packages/folder/datatype";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { EditorProps, Tool } from "@/tools";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import {
-  useDocument,
-  useHandle
-} from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import {
   BotIcon,
   ChevronsRight,
-  CrownIcon,
-  GitBranchIcon,
   HistoryIcon,
-  MessageSquareIcon
+  MessageSquareIcon,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
@@ -26,7 +20,7 @@ import { useBranchScopeAndActiveBranchInfo } from "../hooks";
 import {
   DiffWithProvenance,
   HasVersionControlMetadata,
-  LegacyBranch
+  LegacyBranch,
 } from "../schema";
 import {
   combinePatches,
@@ -48,7 +42,7 @@ const fakeDocPath = (docLinkWithFolderPath: DocLinkWithFolderPath): DocPath => {
     })),
     docLinkWithFolderPath,
   ];
-}
+};
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -57,12 +51,14 @@ export const VersionControlEditor: React.FC<{
   tool: Tool;
   addNewDocument: (doc: { type: string; change?: (doc: any) => void }) => void;
   selectedDocLink: DocLinkWithFolderPath;
+  flatDocLinks: DocLinkWithFolderPath[];
 }> = ({
   docUrl: mainDocUrl,
   datatypeId,
   tool,
   addNewDocument,
   selectedDocLink,
+  flatDocLinks,
 }) => {
   const [doc, changeDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
@@ -71,9 +67,7 @@ export const VersionControlEditor: React.FC<{
 
   const account = useCurrentAccount();
   const [accountDoc] = useDocument<AccountDoc>(account?.handle.url);
-  const uiStateHandle = useHandle<UIStateDoc>(
-    accountDoc?.uiStateUrl
-  );
+  const uiStateHandle = useHandle<UIStateDoc>(accountDoc?.uiStateUrl);
   const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
   const [isHoveringYankToBranchOption, setIsHoveringYankToBranchOption] =
@@ -139,7 +133,10 @@ export const VersionControlEditor: React.FC<{
 
   const docPath = fakeDocPath(selectedDocLink);
 
-  const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(docPath, uiStateHandle);
+  const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(
+    docPath,
+    uiStateHandle
+  );
   const { cloneOrMainOm } = branchScopeAndActiveBranchInfo;
 
   const buildMetadata = useMemo(() => {
@@ -257,6 +254,7 @@ export const VersionControlEditor: React.FC<{
           sidebarMode={sidebarMode}
           setSidebarMode={setSidebarMode}
           highlightSidebarButton={highlightSidebarButton}
+          flatDocLinks={flatDocLinks}
         />
 
         {/* Main doc editor pane */}
@@ -331,8 +329,6 @@ export const VersionControlEditor: React.FC<{
               </TabsList>
             </Tabs>
           </div>
-
-
 
           <div className="min-h-0 flex-grow w-96">
             {/* {sidebarMode === "history" && (

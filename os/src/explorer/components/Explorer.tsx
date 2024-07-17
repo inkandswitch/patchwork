@@ -38,7 +38,7 @@ export const Explorer: React.FC = () => {
   const [accountDoc] = useCurrentAccountDoc();
 
   const rootFolderData = useRootFolderDocWithChildren();
-  const { doc: rootFolderDoc, rootFolderUrl } = rootFolderData;
+  const { doc: rootFolderDoc, rootFolderUrl, flatDocLinks } = rootFolderData;
 
   const [showSidebar, setShowSidebar] = useState(true);
 
@@ -295,6 +295,7 @@ export const Explorer: React.FC = () => {
                   key={selectedDocUrl}
                   tool={currentTool}
                   addNewDocument={addNewDocument}
+                  flatDocLinks={flatDocLinks}
                 />
               )}
             </div>
