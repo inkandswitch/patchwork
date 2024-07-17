@@ -33,7 +33,9 @@ import { VersionControlBar } from "./VersionControlBar";
 export type SidebarMode = "review" | "history" | "Bot";
 
 // TODO: provisional until we get rid of DocLinkWithFolderPath
-const fakeDocPath = (docLinkWithFolderPath: DocLinkWithFolderPath): DocPath => {
+export const fakeDocPath = (
+  docLinkWithFolderPath: DocLinkWithFolderPath
+): DocPath => {
   return [
     ...docLinkWithFolderPath.folderPath.map((url) => ({
       name: undefined as any,
@@ -52,6 +54,7 @@ export const VersionControlEditor: React.FC<{
   addNewDocument: (doc: { type: string; change?: (doc: any) => void }) => void;
   selectedDocLink: DocLinkWithFolderPath;
   flatDocLinks: DocLinkWithFolderPath[];
+  getFakeDocPathForDocUrl: (url: AutomergeUrl) => DocPath;
 }> = ({
   docUrl: mainDocUrl,
   datatypeId,
@@ -59,6 +62,7 @@ export const VersionControlEditor: React.FC<{
   addNewDocument,
   selectedDocLink,
   flatDocLinks,
+  getFakeDocPathForDocUrl,
 }) => {
   const [doc, changeDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
@@ -76,11 +80,6 @@ export const VersionControlEditor: React.FC<{
   const [compareWithMainFlag, setCompareWithMainFlag] =
     useState<boolean>(false);
   const dataTypes = useDataTypes();
-
-  const getFakeDocPathForDocUrl = useCallback((url) => {
-    const docLinkWithFolderPath = flatDocLinks.find(link => link.url === url)
-    return fakeDocPath(docLinkWithFolderPath)
-  }, [flatDocLinks])
 
   // Reset compare view settings every time you switch branches
   // useEffect(() => {

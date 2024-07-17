@@ -18,7 +18,10 @@ import { LoadingScreen } from "./LoadingScreen";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
-import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
+import {
+  VersionControlEditor,
+  fakeDocPath,
+} from "@/versionControl/components/VersionControlEditor";
 import {
   LegacyBranch,
   HasVersionControlMetadata,
@@ -46,6 +49,16 @@ export const Explorer: React.FC = () => {
     folderDocWithMetadata: rootFolderData,
     repo,
   });
+
+  const getFakeDocPathForDocUrl = useCallback(
+    (url) => {
+      const docLinkWithFolderPath = flatDocLinks.find(
+        (link) => link.url === url
+      );
+      return fakeDocPath(docLinkWithFolderPath);
+    },
+    [flatDocLinks]
+  );
 
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocHandle =
@@ -296,6 +309,7 @@ export const Explorer: React.FC = () => {
                   tool={currentTool}
                   addNewDocument={addNewDocument}
                   flatDocLinks={flatDocLinks}
+                  getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                 />
               )}
             </div>
