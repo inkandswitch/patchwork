@@ -124,6 +124,7 @@ export const clickableMarkdownLinksPlugin = [
 
           // ensure that mouse actually points inside of link and not beside it
           const rect = view.coordsAtPos(pos - 1);
+          if (!rect) { return; }  // strict mode when
           const distance = Math.abs(rect.left - event.clientX);
           if (link && distance < 20) {
             if (view.state.field(hoveredLinkField) !== link) {
