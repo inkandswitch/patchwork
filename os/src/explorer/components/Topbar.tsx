@@ -80,11 +80,11 @@ export const Topbar: React.FC<TopbarProps> = ({
         </div>
       )}
       <div className="ml-3 text-sm text-gray-700 font-bold">
-        {selectedDataType &&
+        {/* {selectedDataType &&
           React.createElement(selectedDataType.icon, {
             className: "inline mr-1",
             size: 14,
-          })}
+          })} */}
         {selectedDocName}
       </div>
       <div className="ml-1 mt-[-2px]">
