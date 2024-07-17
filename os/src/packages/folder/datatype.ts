@@ -60,7 +60,7 @@ const setTitle = (doc: FolderDoc, title: string) => {
 };
 
 const links = (doc: FolderDoc) => {
-  return doc.docs.map((link) => link.url);
+  return doc.docs;
 };
 
 export const folderDatatype: DataType<FolderDoc, never, never> = {

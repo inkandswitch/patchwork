@@ -10,6 +10,7 @@ import { ReactElement, useMemo } from "react";
 import * as PACKAGES from "./packages";
 import { FileExportMethod } from "./fileExports";
 import { IconType } from "./lib/icons";
+import { DocLink } from "./packages/folder";
 
 export type CoreDataType<D> = {
   id: string;
@@ -115,7 +116,7 @@ export type VersionedDataType<D, T, V> = {
    * document. This is currently used to figure out which documents to clone
    * when a branch is created.
    */
-  links?: (doc: D) => AutomergeUrl[];
+  links?: (doc: D) => DocLink[];
 };
 
 export type DataType<D, T, V> = CoreDataType<D> & VersionedDataType<D, T, V>;

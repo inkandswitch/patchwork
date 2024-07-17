@@ -9,7 +9,13 @@ import {
 import { getStringCompletion } from "@/lib/llm";
 import { MarkdownDoc } from "../../../packages/essay/src";
 import { Hash } from "@automerge/automerge-wasm";
-import { DataType, DocCloneMap, ensureMetadataHandleIsBranchScope, getVersionControlMetadataHandle, lookupDataTypeId } from "@/sdk";
+import {
+  DataType,
+  DocCloneMap,
+  ensureMetadataHandleIsBranchScope,
+  getVersionControlMetadataHandle,
+  lookupDataTypeId,
+} from "@/sdk";
 
 export const createBranch = <DocType extends Branchable>({
   repo,
@@ -97,7 +103,15 @@ export const createJacquardBranch = async <
   const branchHandle = repo.create<BranchDoc>();
 
   const clonesMap = {};
-  await cloneDocWithLinks(repo, branchScopeHandle, dataTypeId, dataTypes, clonesMap);
+  await cloneDocWithLinks(
+    repo,
+    branchScopeHandle,
+    dataTypeId,
+    dataTypes,
+    clonesMap
+  );
+
+  console.log("clonesMap", clonesMap);
 
   branchHandle.change((doc) => {
     doc.name = `Branch #${
@@ -145,10 +159,18 @@ export const cloneDocWithLinks = async (
     const doc = await handle.doc();
     const links_ = links(doc);
     console.log("links are", links_);
-    await Promise.all(links_.map((link) => {
-      const handle = repo.find(link);
-      cloneDocWithLinks(repo, handle, dataTypeId, dataTypes, docCloneMap);
-    }));
+    await Promise.all(
+      links_.map(async (link) => {
+        const handle = repo.find(link.url);
+        await cloneDocWithLinks(
+          repo,
+          handle,
+          link.type,
+          dataTypes,
+          docCloneMap
+        );
+      })
+    );
   }
 };
 
