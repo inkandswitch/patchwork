@@ -63,7 +63,7 @@ export const VersionControlBar = ({
     const branchUrl = await createJacquardBranch({
       repo,
       branchScopeHandle: branchScopeOm.handle,
-      dataTypeId: datatypeId,
+      dataTypeId: datatypeId,  // TODO: oh crap this is the datatypeId of the doc, not the branch scope
       dataTypes,
       createdBy: account?.contactHandle?.url,
     });
