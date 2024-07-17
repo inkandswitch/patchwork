@@ -23,7 +23,7 @@ import {
   MessageSquareIcon,
   PlusIcon,
 } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { createJacquardBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../hooks";
@@ -67,6 +67,8 @@ export const VersionControlBar = ({
   const dataTypes = useDataTypes();
   const account = useCurrentAccount();
 
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
+
   const handleCreateJacquardBranch = useCallback(async () => {
     const docPathForBranchScope = getFakeDocPathForDocUrl(branchScopeOm.url);
     const docLinkForBranchScope = _.last(docPathForBranchScope);
@@ -87,8 +89,11 @@ export const VersionControlBar = ({
     dataTypes,
     getFakeDocPathForDocUrl,
     repo,
-    setActiveBranchUrl
+    setActiveBranchUrl,
   ]);
+
+  const isInsideBranchScope =
+    isRealBranchScope && branchScopeOm?.url !== docUrl;
 
   // const moveCurrentChangesToBranch = () => {
   //   if (!isMarkdownDoc(doc))
@@ -173,120 +178,106 @@ export const VersionControlBar = ({
   // );
 
   return (
-    <div className="bg-gray-100 pl-4 pt-3 pb-3 flex gap-2 items-center border-b border-gray-200">
-      <Select
-        value={activeBranchOm?.url ?? null} // select doesn't like undefined
-        onValueChange={(value) => {
-          if (value === "__newBranch") {
-            handleCreateJacquardBranch();
-          } else if (value === "__moveChangesToBranch") {
-            throw new Error("not implemented");
-          } else {
-            const selectedBranchUrl = value as AutomergeUrl | null;
-
-            if (selectedBranchUrl) {
-              setActiveBranchUrl(selectedBranchUrl);
-              toast(`Switched to branch`);
+    <div className="bg-gray-100 pl-4 py-2 flex gap-2 items-center border-b border-gray-200">
+      <div className="flex flex-col gap-1">
+        <Select
+          value={activeBranchOm?.url ?? null} // select doesn't like undefined
+          onValueChange={(value) => {
+            if (value === "__newBranch") {
+              handleCreateJacquardBranch();
+            } else if (value === "__moveChangesToBranch") {
+              throw new Error("not implemented");
             } else {
-              setActiveBranchUrl(null);
-              toast("Switched to Main");
-            }
-          }
-        }}
-      >
-        <SelectTrigger className="h-8 text-sm w-[18rem] font-medium">
-          <SelectValue>
-            {activeBranchOm ? (
-              <div className="flex items-center gap-2">
-                <GitBranchIcon className="inline" size={12} />
-                {truncate(activeBranchOm.doc.name, { length: 30 })}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <CrownIcon className="inline" size={12} />
-                Main
-              </div>
-            )}{" "}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent className="w-72">
-          <SelectItem
-            value={null}
-            className={!activeBranchOm ? "font-medium" : ""}
-          >
-            <CrownIcon className="inline mr-1" size={12} />
-            Main
-          </SelectItem>
-          <SelectGroup>
-            <SelectLabel className="-ml-5">
-              <GitBranchIcon className="inline mr-1" size={12} />
-              Branches
-            </SelectLabel>
+              const selectedBranchUrl = value as AutomergeUrl | null;
 
-            {/* for now only show open branches here; maybe in future show a list of merged branches */}
-            {branchOms.map(
-              (branchOm) =>
-                branchOm && (
-                  <SelectItem
-                    key={branchOm.url}
-                    className={`${
-                      activeBranchOm?.url === branchOm.url ? "font-medium" : ""
-                    }`}
-                    value={branchOm.url}
-                  >
-                    <div>{branchOm.doc.name}</div>
-                    <div className="ml-auto text-xs text-gray-600 flex gap-1">
-                      {branchOm.doc.createdAt && (
-                        <div>
-                          {getRelativeTimeString(branchOm.doc.createdAt)}
-                        </div>
-                      )}
-                      <span>by</span>
-                      {branchOm.doc.createdBy && (
-                        <ContactAvatar
-                          url={branchOm.doc.createdBy}
-                          size="sm"
-                          showName
-                          showImage={false}
-                        />
-                      )}
-                    </div>
-                  </SelectItem>
-                )
-            )}
-            <SelectItem
-              value={"__newBranch"}
-              key={"__newBranch"}
-              className="font-regular"
-            >
-              <PlusIcon className="inline mr-1" size={12} />
-              Create new branch
-            </SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      <div className="font-mono text-xs flex gap-2 items-center">
-        {!isRealBranchScope ? (
-          <>
-            <div>is not in any branch scope</div>
-            <Button
-              onClick={() =>
-                ensureMetadataHandleIsBranchScope(
-                  branchScopeVersionControlMetadataOm.handle
-                )
+              if (selectedBranchUrl) {
+                setActiveBranchUrl(selectedBranchUrl);
+                toast(`Switched to branch`);
+              } else {
+                setActiveBranchUrl(null);
+                toast("Switched to Main");
               }
-              variant="outline"
-              className="h-8 text-x"
+            }
+          }}
+        >
+          <SelectTrigger className="h-8 text-sm w-[18rem] font-medium">
+            <SelectValue>
+              {activeBranchOm ? (
+                <div className="flex items-center gap-2">
+                  <GitBranchIcon className="inline" size={12} />
+                  {truncate(activeBranchOm.doc.name, { length: 30 })}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <CrownIcon className="inline" size={12} />
+                  Main
+                </div>
+              )}{" "}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="w-72">
+            <SelectItem
+              value={null}
+              className={!activeBranchOm ? "font-medium" : ""}
             >
-              make it one
-            </Button>
-          </>
-        ) : branchScopeOm?.url === docUrl ? (
-          <> is a branch scope </>
-        ) : (
-          <>
-            <div>is inside a branch scope</div>
-            <Button
+              <CrownIcon className="inline mr-1" size={12} />
+              Main
+            </SelectItem>
+            <SelectGroup>
+              <SelectLabel className="-ml-5">
+                <GitBranchIcon className="inline mr-1" size={12} />
+                Branches
+              </SelectLabel>
+
+              {/* for now only show open branches here; maybe in future show a list of merged branches */}
+              {branchOms.map(
+                (branchOm) =>
+                  branchOm && (
+                    <SelectItem
+                      key={branchOm.url}
+                      className={`${
+                        activeBranchOm?.url === branchOm.url
+                          ? "font-medium"
+                          : ""
+                      }`}
+                      value={branchOm.url}
+                    >
+                      <div>{branchOm.doc.name}</div>
+                      <div className="ml-auto text-xs text-gray-600 flex gap-1">
+                        {branchOm.doc.createdAt && (
+                          <div>
+                            {getRelativeTimeString(branchOm.doc.createdAt)}
+                          </div>
+                        )}
+                        <span>by</span>
+                        {branchOm.doc.createdBy && (
+                          <ContactAvatar
+                            url={branchOm.doc.createdBy}
+                            size="sm"
+                            showName
+                            showImage={false}
+                          />
+                        )}
+                      </div>
+                    </SelectItem>
+                  )
+              )}
+              <SelectItem
+                value={"__newBranch"}
+                key={"__newBranch"}
+                className="font-regular"
+              >
+                <PlusIcon className="inline mr-1" size={12} />
+                Create new branch
+              </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        {isInsideBranchScope && (
+          <div className="pl-2 text-xs text-gray-500">
+            branch of{" "}
+            <span
+              className="underline cursor-pointer"
               onClick={() =>
                 selectDocLink({
                   url: branchScopeOm?.url,
@@ -294,18 +285,66 @@ export const VersionControlBar = ({
                   type: "folder", // TODO: figure out what to do if we have non folder branch scopes
                 })
               }
-              variant="outline"
-              className="h-8 text-x"
             >
-              go there
-            </Button>
-          </>
+              {branchScopeOm.doc.title}
+            </span>
+          </div>
         )}
-        <div className="border p-2 rounded">
-          <div>clone/self - {cloneOrMainOm.url}</div>
-          <div>branch - {activeBranchOm?.url ?? "none"}</div>
-        </div>
       </div>
+      <div className="flex items-center ml-4">
+        <label htmlFor="debugInfo" className="flex items-center">
+          <input
+            type="checkbox"
+            id="debugInfo"
+            checked={showDebugInfo}
+            onChange={(e) => setShowDebugInfo(e.target.checked)}
+          />
+          <span className="ml-2 font-mono text-xs">debug</span>
+        </label>
+      </div>
+      {showDebugInfo && (
+        <div className="font-mono text-xs flex gap-2 items-center">
+          {!isRealBranchScope ? (
+            <>
+              <div>is not in any branch scope</div>
+              <Button
+                onClick={() =>
+                  ensureMetadataHandleIsBranchScope(
+                    branchScopeVersionControlMetadataOm.handle
+                  )
+                }
+                variant="outline"
+                className="h-8 text-x"
+              >
+                make it one
+              </Button>
+            </>
+          ) : branchScopeOm?.url === docUrl ? (
+            <> is a branch scope </>
+          ) : (
+            <>
+              <div>is inside a branch scope</div>
+              <Button
+                onClick={() =>
+                  selectDocLink({
+                    url: branchScopeOm?.url,
+                    name: "fake",
+                    type: "folder", // TODO: figure out what to do if we have non folder branch scopes
+                  })
+                }
+                variant="outline"
+                className="h-8 text-x"
+              >
+                go there
+              </Button>
+            </>
+          )}
+          <div className="border p-2 rounded">
+            <div>clone/self - {cloneOrMainOm.url}</div>
+            <div>branch - {activeBranchOm?.url ?? "none"}</div>
+          </div>
+        </div>
+      )}
       {buildMetadata && (
         <div>
           Built:

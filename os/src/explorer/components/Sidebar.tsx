@@ -61,7 +61,7 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const [versionControlMetadataDoc] = useDocument<VersionControlSidecarDoc>(
     doc?.versionControlMetadataUrl
   );
-  const isBranchScope = versionControlMetadataDoc.isBranchScope;
+  const isBranchScope = versionControlMetadataDoc?.isBranchScope;
 
   let icon;
 
