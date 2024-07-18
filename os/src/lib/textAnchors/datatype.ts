@@ -4,7 +4,7 @@ import {
   getCursorSafely,
 } from "@/versionControl/utils";
 import * as Automerge from "@automerge/automerge/next";
-import { get, isEqual } from "lodash";
+import { get, isEqual, last } from "lodash";
 
 export type TextAnchor = {
   fromCursor: Automerge.Cursor;
@@ -65,13 +65,13 @@ export const textAnchorsAtPath = <D>(
 
       switch (patch.action) {
         case "splice": {
-          const patchStart = patch.path[1] as number;
+          const patchStart = last(patch.path) as number;
           const patchEnd = Math.min(
-            (patch.path[1] as number) + patch.value.length,
+            (last(patch.path) as number) + patch.value.length,
             content.length - 1
           );
-          const fromCursor = getCursorSafely(doc, ["content"], patchStart);
-          const toCursor = getCursorSafely(doc, ["content"], patchEnd);
+          const fromCursor = getCursorSafely(doc, path, patchStart);
+          const toCursor = getCursorSafely(doc, path, patchEnd);
 
           if (!fromCursor || !toCursor) {
             console.warn("Failed to get cursor for patch", patch);
@@ -82,7 +82,7 @@ export const textAnchorsAtPath = <D>(
           if (
             nextPatch &&
             nextPatch.action === "del" &&
-            nextPatch.path[1] === patchEnd
+            last(patch.path) === patchEnd
           ) {
             const before = contentBefore.slice(
               patchStart - offset,
@@ -117,10 +117,10 @@ export const textAnchorsAtPath = <D>(
           break;
         }
         case "del": {
-          const patchStart = patch.path[1] as number;
-          const patchEnd = (patch.path[1] as number) + 1;
-          const fromCursor = getCursorSafely(doc, ["content"], patchStart);
-          const toCursor = getCursorSafely(doc, ["content"], patchEnd);
+          const patchStart = last(patch.path) as number;
+          const patchEnd = (last(patch.path) as number) + 1;
+          const fromCursor = getCursorSafely(doc, path, patchStart);
+          const toCursor = getCursorSafely(doc, path, patchEnd);
 
           const deleted = contentBefore.slice(
             patchStart - offset,
@@ -154,8 +154,8 @@ export const textAnchorsAtPath = <D>(
   },
 
   valueOfAnchor: (doc: D, anchor: TextAnchor) => {
-    const from = getCursorPositionSafely(doc, ["content"], anchor.fromCursor);
-    const to = getCursorPositionSafely(doc, ["content"], anchor.toCursor);
+    const from = getCursorPositionSafely(doc, path, anchor.fromCursor);
+    const to = getCursorPositionSafely(doc, path, anchor.toCursor);
 
     // if the anchor points to an empty range return undefined
     // so highlight comments that point to this will be filtered out
@@ -167,15 +167,15 @@ export const textAnchorsAtPath = <D>(
   },
 
   doAnchorsOverlap: (doc: D, anchor1: TextAnchor, anchor2: TextAnchor) => {
-    const from1 = getCursorPositionSafely(doc, ["content"], anchor1.fromCursor);
-    const to1 = getCursorPositionSafely(doc, ["content"], anchor1.toCursor);
-    const from2 = getCursorPositionSafely(doc, ["content"], anchor2.fromCursor);
-    const to2 = getCursorPositionSafely(doc, ["content"], anchor2.toCursor);
+    const from1 = getCursorPositionSafely(doc, path, anchor1.fromCursor);
+    const to1 = getCursorPositionSafely(doc, path, anchor1.toCursor);
+    const from2 = getCursorPositionSafely(doc, path, anchor2.fromCursor);
+    const to2 = getCursorPositionSafely(doc, path, anchor2.toCursor);
 
     return Math.max(from1, from2) <= Math.min(to1, to2);
   },
 
   sortAnchorsBy: (doc: D, anchor: TextAnchor) => {
-    return getCursorPositionSafely(doc, ["content"], anchor.fromCursor);
+    return getCursorPositionSafely(doc, path, anchor.fromCursor);
   },
 });
