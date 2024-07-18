@@ -48,11 +48,24 @@ export function OmSig<T>(url: AutomergeUrl | undefined, repo: Repo): Signal<Om<T
 
 export function definedValue<T>(signal: Signal<T | undefined>): Promise<T> {
   return new Promise((resolve) => {
+    // `react` runs synchronously, but it can't unsubscribe during this first
+    // run since `unsubscribe` itself isn't defined yet; hence the `firstRun` /
+    // `workedOnFirstRun` dance.
+    let firstRun = true;
+    let workedOnFirstRun = false;
     const unsubscribe = react(`wait for ${signal.name} to be defined`, () => {
       if (signal.value !== undefined) {
-        unsubscribe();
+        if (!firstRun) {
+          unsubscribe();
+        } else {
+          workedOnFirstRun = true;
+        }
         resolve(signal.value);
       }
     });
+    if (workedOnFirstRun) {
+      unsubscribe();
+    }
+    firstRun = false;
   });
 }
