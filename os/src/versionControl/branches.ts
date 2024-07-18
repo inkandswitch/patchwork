@@ -16,6 +16,7 @@ import {
   getVersionControlMetadataHandle,
   lookupDataTypeId,
 } from "@/sdk";
+import { Om } from "@/om";
 
 export const createBranch = <DocType extends Branchable>({
   repo,
@@ -174,28 +175,26 @@ export const cloneDocWithLinks = async (
   }
 };
 
-export const mergeBranch = <DocType extends Branchable>({
-  docHandle,
-  branchHandle,
+export const mergeBranch = async ({
+  repo,
+  branchOm,
   mergedBy,
 }: {
-  docHandle: DocHandle<DocType>;
-  branchHandle: DocHandle<DocType>;
+  repo: Repo;
+  branchOm: Om<BranchDoc>;
   mergedBy: AutomergeUrl;
 }) => {
-  docHandle.merge(branchHandle);
-  docHandle.change((doc) => {
-    const branch = doc.branchMetadata.branches.find(
-      (branch) => branch.url === branchHandle.url
-    );
+  Object.entries(branchOm.doc.clones).forEach(([originalDocUrl, { url }]) => {
+    const originalHandle = repo.find(originalDocUrl as AutomergeUrl);
+    const cloneHandle = repo.find(url);
 
-    if (!branch) {
-      console.warn("Branch not found in doc metadata", branchHandle.url);
-    }
+    originalHandle.merge(cloneHandle);
+  });
 
+  // todo: handle creation and deletion of documents
+  branchOm.handle.change((branch) => {
     branch.mergeMetadata = {
       mergedAt: Date.now(),
-      mergeHeads: A.getHeads(branchHandle.docSync()),
       mergedBy,
     };
   });

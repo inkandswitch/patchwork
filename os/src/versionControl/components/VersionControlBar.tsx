@@ -25,9 +25,10 @@ import {
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { createJacquardBranch } from "../branches";
+import { createJacquardBranch, mergeBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../hooks";
 import { SidebarMode } from "./VersionControlEditor";
+import { MergeIcon } from "lucide-react";
 
 // interface MakeBranchOptions {
 //   name?: string;
@@ -134,22 +135,15 @@ export const VersionControlBar = ({
   //   [handle, setSelectedBranch]
   // );
 
-  // const handleMergeBranch = useCallback(
-  //   (branchUrl: AutomergeUrl) => {
-  //     const branchHandle =
-  //       repo.find<HasVersionControlMetadata<unknown, unknown>>(branchUrl);
-  //     const docHandle =
-  //       repo.find<HasVersionControlMetadata<unknown, unknown>>(docUrl);
-  //     mergeBranch({
-  //       docHandle,
-  //       branchHandle,
-  //       mergedBy: account?.contactHandle?.url,
-  //     });
-  //     setSelectedBranch(null);
-  //     toast.success("Branch merged to main");
-  //   },
-  //   [repo, docUrl, account?.contactHandle?.url, setSelectedBranch]
-  // );
+  const handleMergeBranch = () => {
+    mergeBranch({
+      repo,
+      branchOm: activeBranchOm,
+      mergedBy: account?.contactHandle?.url,
+    });
+    setActiveBranchUrl(null);
+    toast.success("Branch merged to main");
+  };
 
   // const rebaseBranch = (draftUrl: AutomergeUrl) => {
   //   const draftHandle =
@@ -318,6 +312,21 @@ export const VersionControlBar = ({
           </div>
         )}
       </div>
+      {activeBranchOm && (
+        <div className="mr-2">
+          <Button
+            onClick={(e) => {
+              handleMergeBranch();
+              e.stopPropagation();
+            }}
+            variant="outline"
+            className="h-6"
+          >
+            <MergeIcon className="mr-2" size={12} />
+            Merge
+          </Button>
+        </div>
+      )}
       <div className="flex items-center ml-4">
         <label htmlFor="debugInfo" className="flex items-center">
           <input
@@ -329,6 +338,7 @@ export const VersionControlBar = ({
           <span className="ml-2 font-mono text-xs">debug</span>
         </label>
       </div>
+
       {activeBranchOm && (
         <div className="flex items-center ml-4">
           <label htmlFor="debugInfo" className="flex items-center">
