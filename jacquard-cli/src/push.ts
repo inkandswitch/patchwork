@@ -42,68 +42,18 @@ export async function push(
   { dir, projectFolderUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs,
   buildMetadata?: BuildMetadata
 ) {
-  let folderHandle: DocHandle<FolderDoc>;
-  if (projectFolderUrl !== undefined) {
-    folderHandle = repo.find(projectFolderUrl);
-    await folderHandle.doc();
-    if (folderHandle.docSync() === undefined) {
-      console.error(`Could not find doc at ${projectFolderUrl}`);
-      process.exit(1);
-    }
-  } else {
-    folderHandle = repo.create();
-    folderHandle.change((d) => {
-      d.title = "Jacquard folder";
-      d.docs = [];
-      initVersionControlMetadata(d, repo);
-    });
-  }
-
-  console.log("folder", folderHandle.url);
+  let folderHandle: DocHandle<FolderDoc> = await findOrCreateFolderHandle(
+    projectFolderUrl,
+    repo
+  );
 
   const oldHeads = A.getHeads(folderHandle.docSync());
   console.log("oldHeads", oldHeads);
 
   const files = fs.readdirSync(dir);
 
-  let buildMetadataHandle: DocHandle<JacquardBuildMetadata>;
-  // if build metadata was passed into the push, update the build metadata doc
-  if (buildMetadata) {
-    // TODO: feels weird to ID the build metadata doc by name like this
-    const folderDoc = folderHandle.docSync();
-
-    if (!folderDoc.docs) {
-      throw new Error(
-        "seems like the passed in automerge doc url doesn't point to a folder"
-      );
-    }
-
-    const buildMetadataDocUrl = folderDoc.docs.find(
-      (link) => link.name === "Build Metadata"
-    )?.url;
-
-    if (buildMetadataDocUrl) {
-      buildMetadataHandle = repo.find(buildMetadataDocUrl);
-      await buildMetadataHandle.whenReady();
-    } else {
-      buildMetadataHandle = repo.create();
-      buildMetadataHandle.change((doc) => {
-        doc.title = "Build Metadata";
-        doc.buildRuns = [];
-        // todo: find a better solution
-        // in the build metadata viewer we need access to the project folder to compute
-        // the build graph with staleness. Maybe the build metadata should be part of the folder?
-        doc.projectFolderUrl = folderHandle.url;
-      });
-      folderHandle.change((d) => {
-        d.docs.push({
-          name: "Build Metadata",
-          url: buildMetadataHandle.url,
-          type: "jacquard-build-metadata",
-        });
-      });
-    }
-  }
+  const buildMetadataHandle: DocHandle<JacquardBuildMetadata> =
+    await findOrCreateBuildMetadataHandle(buildMetadata, folderHandle, repo);
 
   const fileHandlesByFileName = {};
 
@@ -298,4 +248,70 @@ export async function push(
   await new Promise(() => {});
 
   //await isSynced;
+}
+
+async function findOrCreateFolderHandle(projectFolderUrl, repo: Repo) {
+  let folderHandle: DocHandle<FolderDoc>;
+  if (projectFolderUrl !== undefined) {
+    folderHandle = repo.find(projectFolderUrl);
+    await folderHandle.doc();
+    if (folderHandle.docSync() === undefined) {
+      console.error(`Could not find doc at ${projectFolderUrl}`);
+      process.exit(1);
+    }
+  } else {
+    folderHandle = repo.create();
+    folderHandle.change((d) => {
+      d.title = "Jacquard folder";
+      d.docs = [];
+      initVersionControlMetadata(d, repo);
+    });
+  }
+  return folderHandle;
+}
+
+async function findOrCreateBuildMetadataHandle(
+  buildMetadata: BuildMetadata,
+  folderHandle: DocHandle<FolderDoc>,
+  repo: Repo
+) {
+  let buildMetadataHandle: DocHandle<JacquardBuildMetadata>;
+  // if build metadata was passed into the push, update the build metadata doc
+  if (buildMetadata) {
+    // TODO: feels weird to ID the build metadata doc by name like this
+    const folderDoc = folderHandle.docSync();
+
+    if (!folderDoc.docs) {
+      throw new Error(
+        "seems like the passed in automerge doc url doesn't point to a folder"
+      );
+    }
+
+    const buildMetadataDocUrl = folderDoc.docs.find(
+      (link) => link.name === "Build Metadata"
+    )?.url;
+
+    if (buildMetadataDocUrl) {
+      buildMetadataHandle = repo.find(buildMetadataDocUrl);
+      await buildMetadataHandle.whenReady();
+    } else {
+      buildMetadataHandle = repo.create();
+      buildMetadataHandle.change((doc) => {
+        doc.title = "Build Metadata";
+        doc.buildRuns = [];
+        // todo: find a better solution
+        // in the build metadata viewer we need access to the project folder to compute
+        // the build graph with staleness. Maybe the build metadata should be part of the folder?
+        doc.projectFolderUrl = folderHandle.url;
+      });
+      folderHandle.change((d) => {
+        d.docs.push({
+          name: "Build Metadata",
+          url: buildMetadataHandle.url,
+          type: "jacquard-build-metadata",
+        });
+      });
+    }
+  }
+  return buildMetadataHandle;
 }
