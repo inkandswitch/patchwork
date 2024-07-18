@@ -1,5 +1,4 @@
 import { Button } from "@/shadcn/ui/button";
-import { AutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
   useHandle,
@@ -11,6 +10,7 @@ import {
   useCurrentAccount,
   useCurrentAccountDoc,
   useRootFolderDocWithChildren,
+  useUIStateHandle,
 } from "../account";
 
 import { Toaster } from "@/shadcn/ui/sonner";
@@ -23,15 +23,19 @@ import {
   fakeDocPath,
 } from "@/versionControl/components/VersionControlEditor";
 import {
-  LegacyBranch,
   HasVersionControlMetadata,
+  LegacyBranch,
 } from "@/versionControl/schema";
 
-import { useTool, useToolsForDataType } from "../../tools";
-import { useDataType, useDataTypes } from "../../datatypes";
+import { Om } from "@/om";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
+import { DocPath } from "@/packages/folder/datatype";
+import { definedValue } from "@/signals";
+import { branchScopeAndActiveBranchInfoSig } from "@/versionControl/signals";
+import _ from "lodash";
+import { useDataType, useDataTypes } from "../../datatypes";
+import { useTool, useToolsForDataType } from "../../tools";
 import { useSelectedDocLink } from "../hooks/useSelectedDocLink";
-import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
 import { ErrorFallback } from "./ErrorFallback";
 
 export const Explorer: React.FC = () => {
@@ -55,6 +59,9 @@ export const Explorer: React.FC = () => {
       const docLinkWithFolderPath = flatDocLinks.find(
         (link) => link.url === url
       );
+      if (!docLinkWithFolderPath) {
+        throw new Error(`getFakeDocPathForDocUrl: No doc found for url: ${url}`);
+      }
       return fakeDocPath(docLinkWithFolderPath);
     },
     [flatDocLinks]
@@ -97,6 +104,8 @@ export const Explorer: React.FC = () => {
       ? selectedTool
       : toolModules[0];
 
+  const uiStateHandle = useUIStateHandle();
+
   const addNewDocument = useCallback(
     async ({
       type,
@@ -121,22 +130,24 @@ export const Explorer: React.FC = () => {
         }
       });
 
-      let parentFolderUrl: AutomergeUrl;
-      let folderPath: AutomergeUrl[];
+      let parentFolderDocPath: DocPath;
 
       if (!selectedDocLink) {
-        parentFolderUrl = rootFolderUrl;
-        folderPath = [rootFolderUrl];
+        // If nothing is selected, add the new document to the root folder
+        // TODO: very weird code here
+        parentFolderDocPath = fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []});
       } else if (selectedDocLink.type === "folder") {
         // If a folder is currently selected, add the new document to that folder
-        parentFolderUrl = selectedDocLink.url;
-        folderPath = [...selectedDocLink.folderPath, selectedDocLink.url];
+        parentFolderDocPath = fakeDocPath(selectedDocLink);
       } else {
         // Otherwise, add the new document to the parent folder of the selected doc
-        parentFolderUrl =
-          selectedDocLink?.folderPath[selectedDocLink.folderPath.length - 1];
-        folderPath = selectedDocLink.folderPath;
+        parentFolderDocPath = _.initial(fakeDocPath(selectedDocLink));
       }
+
+      const { cloneOrMainOm } = await definedValue(
+        branchScopeAndActiveBranchInfoSig(parentFolderDocPath, uiStateHandle, repo)
+      );
+      const parentFolderBranchedOm = cloneOrMainOm as Om<FolderDoc>;
 
       const newDocLink = {
         url: newDocHandle.url,
@@ -144,16 +155,16 @@ export const Explorer: React.FC = () => {
         name: "Untitled document",
       };
 
-      repo
-        .find<FolderDoc>(parentFolderUrl)
-        .change((doc) => doc.docs.unshift(newDocLink));
+      parentFolderBranchedOm.handle.change((folderDoc) => {
+        folderDoc.docs.unshift(newDocLink);
+      });
 
       selectDocLink({
         ...newDocLink,
-        folderPath,
+        folderPath: parentFolderDocPath.map((link) => link.url),
       });
     },
-    [repo, selectedDocLink, selectDocLink]
+    [dataTypes, repo, selectedDocLink, uiStateHandle, selectDocLink, rootFolderUrl]
   );
 
   // NOTE: commented out this code in the Jacquard sketch

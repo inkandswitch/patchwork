@@ -1,5 +1,5 @@
 import { AnyDocumentId, AutomergeUrl, parseAutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { Signal, atom, computed } from 'signia';
+import { Signal, atom, computed, react } from 'signia';
 import { Om } from "./om";
 
 
@@ -44,4 +44,15 @@ export function OmSig<T>(url: AutomergeUrl | undefined, repo: Repo): Signal<Om<T
   const id = parseAutomergeUrl(url).documentId;
   const handle = repo.find<T>(id);
   return computed(`getOmSig:${url}`, () => docSig.value && { url, id, handle, doc: docSig.value });
+}
+
+export function definedValue<T>(signal: Signal<T | undefined>): Promise<T> {
+  return new Promise((resolve) => {
+    const unsubscribe = react(`wait for ${signal.name} to be defined`, () => {
+      if (signal.value !== undefined) {
+        unsubscribe();
+        resolve(signal.value);
+      }
+    });
+  });
 }
