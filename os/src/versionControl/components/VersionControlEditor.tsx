@@ -1,4 +1,4 @@
-import { AccountDoc, UIStateDoc, useCurrentAccount } from "@/explorer/account";
+import { useUIStateHandle } from "@/explorer/account";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { DocLinkWithFolderPath, DocPath } from "@/packages/folder/datatype";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
@@ -12,15 +12,14 @@ import {
   HistoryIcon,
   MessageSquareIcon,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useDataType, useDataTypes } from "../../datatypes";
 import { useAnnotations } from "../annotations";
 import { useBranchScopeAndActiveBranchInfo } from "../hooks";
 import {
   DiffWithProvenance,
-  HasVersionControlMetadata,
-  LegacyBranch,
+  HasVersionControlMetadata
 } from "../schema";
 import {
   combinePatches,
@@ -69,9 +68,7 @@ export const VersionControlEditor: React.FC<{
   const handle =
     useHandle<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
 
-  const account = useCurrentAccount();
-  const [accountDoc] = useDocument<AccountDoc>(account?.handle.url);
-  const uiStateHandle = useHandle<UIStateDoc>(accountDoc?.uiStateUrl);
+  const uiStateHandle = useUIStateHandle();
   const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
   const [isHoveringYankToBranchOption, setIsHoveringYankToBranchOption] =

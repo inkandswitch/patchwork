@@ -1,15 +1,15 @@
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import React from "react";
 
 import { useDataType } from "@/datatypes";
+import { useUIStateHandle } from "@/explorer/account";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { Icon } from "@/lib/icons";
 import { EditorProps, Tool, useToolsForDataType } from "@/tools";
-import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
-import { AccountDoc, UIStateDoc, useCurrentAccount } from "@/explorer/account";
 import { AutomergeUrl } from "@automerge/automerge-repo";
+import { DocLink, DocPath, FolderDoc } from "./datatype";
 
 export const FolderViewer: React.FC<EditorProps<never, never>> = ({
   docUrl,
@@ -48,9 +48,7 @@ type FolderEntryView = {
 };
 
 export const FolderEntryView = ({ docLink, getFakeDocPathForDocUrl }: FolderEntryView) => {
-  const account = useCurrentAccount();
-  const [accountDoc] = useDocument<AccountDoc>(account?.handle.url);
-  const uiStateHandle = useHandle<UIStateDoc>(accountDoc?.uiStateUrl);
+  const uiStateHandle = useUIStateHandle();
   const docPath = getFakeDocPathForDocUrl(docLink.url);
   const { cloneOrMainOm } = useBranchScopeAndActiveBranchInfo(
     docPath,

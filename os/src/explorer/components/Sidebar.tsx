@@ -14,44 +14,38 @@ import { useDataType, useDataTypes } from "../../datatypes";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 
-import { Input } from "@/shadcn/ui/input";
+import { Icon } from "@/lib/icons";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { Input } from "@/shadcn/ui/input";
+import { fakeDocPath } from "@/versionControl/components/VersionControlEditor";
+import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import {
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
 } from "@/versionControl/schema";
 import {
   useDocument,
-  useHandle,
-  useRepo,
+  useRepo
 } from "@automerge/automerge-repo-react-hooks";
 import { structuredClone } from "@tldraw/tldraw";
 import { capitalize, uniqBy } from "lodash";
+import { ChevronsLeft, FolderInput, GitBranchIcon } from "lucide-react";
 import {
-  AccountDoc,
   UIStateDoc,
-  useCurrentAccount,
   useCurrentAccountDoc,
   useDatatypeSettings,
+  useUIStateHandle
 } from "../account";
-import { Icon } from "@/lib/icons";
-import { ChevronsLeft, FolderInput, GitBranchIcon } from "lucide-react";
-import { fakeDocPath } from "@/versionControl/components/VersionControlEditor";
-import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 
 const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const { node, style, dragHandle } = props;
   const dataType = useDataType(node.data.type);
 
-  const docPath = fakeDocPath(node.data);
-
-  const account = useCurrentAccount();
-  const [accountDoc] = useDocument<AccountDoc>(account?.handle.url);
-  const uiStateHandle = useHandle<UIStateDoc>(accountDoc?.uiStateUrl);
-
   // For every doc, we figure out the branch scope and active branch info.
   // Currently we don't show anything if the doc is controlled by a parent branch scope,
   // but we could use that info to visualize something in the future.
+  const docPath = fakeDocPath(node.data);
+  const uiStateHandle = useUIStateHandle();
   const { activeBranchOm } = useBranchScopeAndActiveBranchInfo(
     docPath,
     uiStateHandle

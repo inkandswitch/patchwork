@@ -5,17 +5,17 @@ import {
   isValidAutomergeUrl,
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
-import { useRepo, useDocument } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { EventEmitter } from "eventemitter3";
 
+import { useForceUpdate } from "@/hooks/useForceUpdate";
+import { ChangeFn } from "@automerge/automerge/next";
 import { useEffect, useState } from "react";
 import { uploadFile } from "./utils";
-import { ChangeFn } from "@automerge/automerge/next";
-import { useForceUpdate } from "@/hooks/useForceUpdate";
 
 import { FolderDoc } from "@/packages/folder";
-import { useFolderDocWithChildren } from "../packages/folder/hooks/useFolderDocWithChildren";
 import { DocPath } from "@/packages/folder/datatype";
+import { useFolderDocWithChildren } from "../packages/folder/hooks/useFolderDocWithChildren";
 
 export type ModuleSettingsDoc = {
   enabledDatatypeIds: { [id: string]: boolean };
@@ -333,6 +333,13 @@ export const useDatatypeSettings = (): ModuleSettingsDoc => {
   );
 
   return datatypeSettingsDoc;
+};
+
+export const useUIStateHandle = (): DocHandle<UIStateDoc> => {
+  const account = useCurrentAccount();
+  const [accountDoc] = useDocument<AccountDoc>(account?.handle.url);
+  const uiStateHandle = useHandle<UIStateDoc>(accountDoc?.uiStateUrl);
+  return uiStateHandle
 };
 
 // Helpers to convert an automerge URL to/from an Account Token that the user can
