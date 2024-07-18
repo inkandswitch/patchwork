@@ -4,7 +4,7 @@ import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import _ from "lodash";
 import { useCallback, useMemo } from "react";
-import { Om, useOm, useOms } from "./om";
+import { Om, useOm, useOms } from "../om";
 import {
   BranchDoc,
   HasVersionControlMetadata,
