@@ -164,6 +164,7 @@ export const SideBySide = ({
   annotations,
   setSelectedAnchors,
   setHoveredAnchor,
+  getFakeDocPathForDocUrl,
 }: SideBySideProps<unknown, unknown>) => {
   const [camera, setCamera] = useState<TLCamera>();
 
@@ -178,6 +179,7 @@ export const SideBySide = ({
           onChangeCamera={setCamera}
           setSelectedAnchors={setSelectedAnchors}
           setHoveredAnchor={setHoveredAnchor}
+          getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
         />
       </div>
       <div className="h-full flex-1 overflow-auto border-l border-l-gray-200">
@@ -192,6 +194,7 @@ export const SideBySide = ({
           onChangeCamera={setCamera}
           setSelectedAnchors={setSelectedAnchors}
           setHoveredAnchor={setHoveredAnchor}
+          getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
         />
       </div>
     </div>

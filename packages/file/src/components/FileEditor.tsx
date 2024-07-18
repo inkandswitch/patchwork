@@ -23,7 +23,7 @@ import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 // if this tool supports the data type
 
 export const FileEditor = (props: EditorProps<FileDoc, never>) => {
-  const { docUrl, docHeads } = props;
+  const { docUrl, docHeads, getFakeDocPathForDocUrl } = props;
   const [_doc] = useDocument<FileDoc>(docUrl);
   const [showSourceFiles, setShowDependencies] = useState(false);
 
@@ -105,7 +105,7 @@ export const FileEditor = (props: EditorProps<FileDoc, never>) => {
                 </div>
               </div>
               <div className="max-h-[200px] overflow-auto">
-                <FileEditor docUrl={input.docUrl} docHeads={input.heads} />
+                <FileEditor docUrl={input.docUrl} docHeads={input.heads} getFakeDocPathForDocUrl={getFakeDocPathForDocUrl} />
               </div>
             </div>
           ))}

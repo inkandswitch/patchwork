@@ -2,7 +2,7 @@ import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { getRelativeTimeString } from "@/lib/dates";
-import { DocPath } from "@/packages/folder/datatype";
+import { DocPath, FolderDoc } from "@/packages/folder/datatype";
 import { ensureMetadataHandleIsBranchScope, useDataTypes } from "@/sdk";
 import { Button } from "@/shadcn/ui/button";
 import {
@@ -307,7 +307,8 @@ export const VersionControlBar = ({
                 })
               }
             >
-              {branchScopeOm.doc.title}
+              {/* TODO: only folders can contain documents, so far... */}
+              {(branchScopeOm.doc as FolderDoc).title}
             </span>
           </div>
         )}
