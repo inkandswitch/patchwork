@@ -1,18 +1,15 @@
 import { docPathString, UIStateDoc } from "@/explorer/account";
 import { DocPath } from "@/packages/folder/datatype";
+import { OmSig } from "@/signals";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import _ from "lodash";
-import { useCallback, useMemo } from "react";
-import { Om, useOm, useOms } from "../om";
+import { computed, Signal, } from 'signia';
+import { BranchScopeAndActiveBranchInfo, BranchScopeInfo } from "./hooks";
 import {
   BranchDoc,
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
 } from "./schema";
-import { Signal, computed } from 'signia';
-import { BranchScopeInfo } from "./hooks";
-import { OmSig } from "@/signals";
 
 // Given a doc path, you can ask for its "branch scope info". For convenience,
 // if the path doesn't actually have a branch scope, we return values as though
@@ -64,77 +61,66 @@ export const branchScopeInfoSig = (docPath: DocPath, repo: Repo): Signal<BranchS
   });
 };
 
-// export type BranchScopeAndActiveBranchInfo2 = BranchScopeInfo2 & {
-//   activeBranchOm: Om<BranchDoc>;
-//   setActiveBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
-//   cloneOrMainOm: Om;
-// };
+export const activeBranchInfoSig = (
+  branchScopePath: DocPath,
+  uiStateHandle: DocHandle<UIStateDoc> | undefined,
+  repo: Repo
+) => {
+  const uiStateOmSig = OmSig<UIStateDoc>(uiStateHandle?.url, repo);
 
-// export const useActiveBranchInfo = (
-//   branchScopePath: DocPath,
-//   uiStateHandle: DocHandle<UIStateDoc>
-// ) => {
-//   const [uiStateDoc, changeUIStateDoc] = useDocument<UIStateDoc>(
-//     uiStateHandle?.url
-//   );
+  return computed('', () => {
+    const activeBranchUrl = uiStateOmSig.value?.doc.openBranches[docPathString(branchScopePath)] ?? null;
 
-//   const activeBranchUrl: AutomergeUrl | null = useMemo(() => {
-//     return uiStateDoc?.openBranches[docPathString(branchScopePath)] ?? null;
-//   }, [branchScopePath, uiStateDoc?.openBranches]);
+    const setActiveBranchUrl = (branchDocUrl: AutomergeUrl | null) => {
+      uiStateOmSig.value.handle.change((uiStateDoc) => {
+        // handle old uiState docs
+        if (
+          !uiStateDoc.openBranches ||
+          Array.isArray(uiStateDoc.openBranches)
+        ) {
+          uiStateDoc.openBranches = {};
+        }
 
-//   const activeBranchOm = useOm<BranchDoc>(activeBranchUrl);
+        if (branchDocUrl) {
+          uiStateDoc.openBranches[docPathString(branchScopePath)] =
+            branchDocUrl;
+        } else {
+          delete uiStateDoc.openBranches[docPathString(branchScopePath)];
+        }
+      });
+    };
 
-//   const setActiveBranchUrl = useCallback(
-//     (branchDocUrl: AutomergeUrl | null) => {
-//       changeUIStateDoc((uiStateDoc) => {
-//         // handle old uiState docs
-//         if (
-//           !uiStateDoc.openBranches ||
-//           Array.isArray(uiStateDoc.openBranches)
-//         ) {
-//           uiStateDoc.openBranches = {};
-//         }
+    return {
+      activeBranchOm: OmSig<BranchDoc>(activeBranchUrl, repo).value,
+      setActiveBranchUrl,
+    };
+  });
+};
 
-//         if (branchDocUrl) {
-//           uiStateDoc.openBranches[docPathString(branchScopePath)] =
-//             branchDocUrl;
-//         } else {
-//           delete uiStateDoc.openBranches[docPathString(branchScopePath)];
-//         }
-//       });
-//     },
-//     [branchScopePath, changeUIStateDoc]
-//   );
+// This hook goes a bit further than useBranchScope. It asks for the UI state,
+// and uses that to figure out what branch is active in the branch scope.
+export const branchScopeAndActiveBranchInfoSig = (
+  docPath: DocPath,
+  uiStateHandle: DocHandle<UIStateDoc>,
+  repo: Repo,
+): Signal<BranchScopeAndActiveBranchInfo> => {
+  const branchScopeInfoSig_ = branchScopeInfoSig(docPath, repo);
 
-//   return {
-//     activeBranchOm,
-//     setActiveBranchUrl,
-//   };
-// };
+  const activeBranchInfoSig_ = computed('', () => {
+    const { branchScopePath } = branchScopeInfoSig_.value;
+    return activeBranchInfoSig(branchScopePath, uiStateHandle, repo).value;
+  });
 
-// // This hook goes a bit further than useBranchScope. It asks for the UI state,
-// // and uses that to figure out what branch is active in the branch scope.
-// export const useBranchScopeAndActiveBranchInfo = (
-//   docPath: DocPath,
-//   uiStateHandle: DocHandle<UIStateDoc>
-// ): BranchScopeAndActiveBranchInfo => {
-//   const branchScopeInfo = useBranchScopeInfo(docPath);
-//   const { branchScopePath } = branchScopeInfo;
+  const cloneOmSig = computed('', () => {
+    const cloneUrl = activeBranchInfoSig_.value.activeBranchOm?.doc?.clones?.[_.last(docPath).url]?.url;
+    return OmSig(cloneUrl, repo).value;
+  });
+  const mainOmSig = OmSig(_.last(docPath).url, repo);
+  const cloneOrMainOmSig = computed('', () => cloneOmSig.value ?? mainOmSig.value);
 
-//   const { activeBranchOm, setActiveBranchUrl } = useActiveBranchInfo(
-//     branchScopePath,
-//     uiStateHandle
-//   );
-
-//   const cloneUrl = activeBranchOm?.doc?.clones?.[_.last(docPath).url]?.url;
-//   const cloneOm = useOm(cloneUrl);
-//   const mainOm = useOm(_.last(docPath).url);
-//   const cloneOrMainOm = cloneOm ?? mainOm;
-
-//   return {
-//     ...branchScopeInfo,
-//     activeBranchOm,
-//     setActiveBranchUrl,
-//     cloneOrMainOm,
-//   };
-// };
+  return computed('', () => ({
+    ...branchScopeInfoSig_.value,
+    ...activeBranchInfoSig_.value,
+    cloneOrMainOm: cloneOrMainOmSig.value,
+  }));
+};

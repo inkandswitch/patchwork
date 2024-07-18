@@ -1,17 +1,16 @@
-import { docPathString, UIStateDoc } from "@/explorer/account";
+import { UIStateDoc } from "@/explorer/account";
 import { DocPath } from "@/packages/folder/datatype";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import _ from "lodash";
-import { useCallback, useMemo } from "react";
-import { Om, useOm, useOms } from "../om";
+import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import { useMemo } from "react";
+import { useValue } from "signia-react";
+import { Om } from "../om";
 import {
   BranchDoc,
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
 } from "./schema";
-import { useValue } from "signia-react";
-import { branchScopeInfoSig } from "./signals";
+import { activeBranchInfoSig, branchScopeAndActiveBranchInfoSig, branchScopeInfoSig } from "./signals";
 
 // Given a doc path, you can ask for its "branch scope info". For convenience,
 // if the path doesn't actually have a branch scope, we return values as though
@@ -35,53 +34,6 @@ export const useBranchScopeInfo = (docPath: DocPath): BranchScopeInfo => {
   return useValue(branchScopeInfoSig_);
 };
 
-// export const useBranchScopeInfo = (docPath: DocPath): BranchScopeInfo => {
-//   // we need the metadata docs of all parent folders which requires an async op to load
-//   // to work with them in the useMemo hook below we fetch them with useDocuments
-//   const docPathOms = useOms<HasVersionControlMetadata>(
-//     docPath.map((link) => link.url)
-//   );
-//   const versionControlMetadataDocUrls = docPathOms.map(
-//     (om) => om?.doc.versionControlMetadataUrl
-//   );
-//   const versionControlMetadataOms = useOms<VersionControlSidecarDoc>(
-//     versionControlMetadataDocUrls
-//   );
-
-//   const { branchUrls, ...info } = useMemo(() => {
-//     // otherwise go up the hierarchy and check if any of the parent folders are branch scopes
-//     for (let i = docPath.length - 1; i >= 0; i--) {
-//       const docPathOm = docPathOms[i];
-//       const versionControlMetadataOm = versionControlMetadataOms[i];
-//       if (
-//         versionControlMetadataOm &&
-//         versionControlMetadataOm.doc.isBranchScope
-//       ) {
-//         return {
-//           branchScopeOm: docPathOm,
-//           branchScopeVersionControlMetadataOm: versionControlMetadataOm,
-//           branchScopePath: docPath.slice(0, i + 1),
-//           isRealBranchScope: true,
-//           branchUrls: versionControlMetadataOm.doc.branches,
-//         };
-//       }
-//     }
-
-//     // we didn't find a branch scope; let's pretend to be our own
-//     return {
-//       branchScopeOm: _.last(docPathOms),
-//       branchScopeVersionControlMetadataOm: _.last(versionControlMetadataOms),
-//       branchScopePath: docPath,
-//       isRealBranchScope: false,
-//       branchUrls: [],
-//     };
-//   }, [docPath, docPathOms, versionControlMetadataOms]);
-
-//   const branchOms = useOms<BranchDoc>(branchUrls);
-
-//   return { ...info, branchOms };
-// };
-
 export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & {
   activeBranchOm: Om<BranchDoc>;
   setActiveBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
@@ -92,42 +44,12 @@ export const useActiveBranchInfo = (
   branchScopePath: DocPath,
   uiStateHandle: DocHandle<UIStateDoc>
 ) => {
-  const [uiStateDoc, changeUIStateDoc] = useDocument<UIStateDoc>(
-    uiStateHandle?.url
+  const repo = useRepo();
+  const activeBranchInfoSig_ = useMemo(() =>
+    activeBranchInfoSig(branchScopePath, uiStateHandle, repo),
+    [branchScopePath, uiStateHandle, repo]
   );
-
-  const activeBranchUrl: AutomergeUrl | null = useMemo(() => {
-    return uiStateDoc?.openBranches[docPathString(branchScopePath)] ?? null;
-  }, [branchScopePath, uiStateDoc?.openBranches]);
-
-  const activeBranchOm = useOm<BranchDoc>(activeBranchUrl);
-
-  const setActiveBranchUrl = useCallback(
-    (branchDocUrl: AutomergeUrl | null) => {
-      changeUIStateDoc((uiStateDoc) => {
-        // handle old uiState docs
-        if (
-          !uiStateDoc.openBranches ||
-          Array.isArray(uiStateDoc.openBranches)
-        ) {
-          uiStateDoc.openBranches = {};
-        }
-
-        if (branchDocUrl) {
-          uiStateDoc.openBranches[docPathString(branchScopePath)] =
-            branchDocUrl;
-        } else {
-          delete uiStateDoc.openBranches[docPathString(branchScopePath)];
-        }
-      });
-    },
-    [branchScopePath, changeUIStateDoc]
-  );
-
-  return {
-    activeBranchOm,
-    setActiveBranchUrl,
-  };
+  return useValue(activeBranchInfoSig_);
 };
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
@@ -136,23 +58,10 @@ export const useBranchScopeAndActiveBranchInfo = (
   docPath: DocPath,
   uiStateHandle: DocHandle<UIStateDoc>
 ): BranchScopeAndActiveBranchInfo => {
-  const branchScopeInfo = useBranchScopeInfo(docPath);
-  const { branchScopePath } = branchScopeInfo;
-
-  const { activeBranchOm, setActiveBranchUrl } = useActiveBranchInfo(
-    branchScopePath,
-    uiStateHandle
+  const repo = useRepo();
+  const branchScopeAndActiveBranchInfoSig_ = useMemo(() =>
+    branchScopeAndActiveBranchInfoSig(docPath, uiStateHandle, repo),
+    [docPath, uiStateHandle, repo]
   );
-
-  const cloneUrl = activeBranchOm?.doc?.clones?.[_.last(docPath).url]?.url;
-  const cloneOm = useOm(cloneUrl);
-  const mainOm = useOm(_.last(docPath).url);
-  const cloneOrMainOm = cloneOm ?? mainOm;
-
-  return {
-    ...branchScopeInfo,
-    activeBranchOm,
-    setActiveBranchUrl,
-    cloneOrMainOm,
-  };
+  return useValue(branchScopeAndActiveBranchInfoSig_);
 };

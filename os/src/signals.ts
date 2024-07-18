@@ -5,9 +5,12 @@ import { Om } from "./om";
 
 const DOC_SIGNAL_CACHE = new Map<AutomergeUrl, Signal<any | undefined>>();
 
-export function DocSig<T>(url: AutomergeUrl, repo: Repo): Signal<T | undefined> {
+const UNDEFINED_SIGNAL = atom('undefined', undefined);
+
+export function DocSig<T>(url: AutomergeUrl | undefined, repo: Repo): Signal<T | undefined> {
   if (!(typeof url === "string")) {
-    throw new Error(`DocSig called with something that isn't a string: ${url}`);
+    return UNDEFINED_SIGNAL;
+    // throw new Error(`DocSig called with something that isn't a string: ${url}`);
   }
 
   const fromCache = DOC_SIGNAL_CACHE.get(url);
@@ -32,7 +35,11 @@ export function DocSig<T>(url: AutomergeUrl, repo: Repo): Signal<T | undefined> 
   return signal;
 }
 
-export function OmSig<T>(url: AutomergeUrl, repo: Repo): Signal<Om<T> | undefined> {
+export function OmSig<T>(url: AutomergeUrl | undefined, repo: Repo): Signal<Om<T> | undefined> {
+  if (!(typeof url === "string")) {
+    return UNDEFINED_SIGNAL;
+    // throw new Error(`OmSig called with something that isn't a string: ${url}`);
+  }
   const docSig = DocSig<T>(url, repo);
   const id = parseAutomergeUrl(url).documentId;
   const handle = repo.find<T>(id);
