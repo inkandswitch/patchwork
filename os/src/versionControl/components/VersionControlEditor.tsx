@@ -17,10 +17,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { useDataType, useDataTypes } from "../../datatypes";
 import { useAnnotations } from "../annotations";
 import { useBranchScopeAndActiveBranchInfo } from "../hooks";
-import {
-  DiffWithProvenance,
-  HasVersionControlMetadata
-} from "../schema";
+import { DiffWithProvenance, HasVersionControlMetadata } from "../schema";
 import {
   combinePatches,
   diffWithProvenance,
@@ -138,7 +135,20 @@ export const VersionControlEditor: React.FC<{
     docPath,
     uiStateHandle
   );
-  const { cloneOrMainOm } = branchScopeAndActiveBranchInfo;
+  const { cloneOrMainOm, baseHeads } = branchScopeAndActiveBranchInfo;
+
+  const branchDiff = useMemo(() => {
+    if (baseHeads && cloneOrMainOm) {
+      return diffWithProvenance(
+        cloneOrMainOm.doc,
+        baseHeads,
+        A.getHeads(cloneOrMainOm.doc)
+      );
+    }
+  }, [baseHeads, cloneOrMainOm]);
+
+  // todo: handle other cases like diff from the timeline
+  const diff = branchDiff;
 
   const buildMetadata = useMemo(() => {
     if (!cloneOrMainOm?.doc) return undefined;
@@ -170,6 +180,7 @@ export const VersionControlEditor: React.FC<{
     doc: cloneOrMainOm?.doc as A.Doc<HasVersionControlMetadata>,
     dataType,
     isCommentInputFocused,
+    diff,
   });
 
   // global comment keyboard shortcut
@@ -219,7 +230,8 @@ export const VersionControlEditor: React.FC<{
 
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
 
-  if (!cloneOrMainOm || !datatypeId || !doc.branchMetadata) return <div>Loading...</div>;
+  if (!cloneOrMainOm || !datatypeId || !doc.branchMetadata)
+    return <div>Loading...</div>;
 
   // ---- ANYTHING RELYING ON doc SHOULD GO BELOW HERE ----
 
@@ -254,6 +266,8 @@ export const VersionControlEditor: React.FC<{
           buildMetadata={buildMetadata}
           sidebarMode={sidebarMode}
           setSidebarMode={setSidebarMode}
+          showChangesFlag={showChangesFlag}
+          setShowChangesFlag={setShowChangesFlag}
           highlightSidebarButton={highlightSidebarButton}
           getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
         />

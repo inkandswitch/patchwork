@@ -41,6 +41,8 @@ export const VersionControlBar = ({
   buildMetadata,
   sidebarMode,
   setSidebarMode,
+  showChangesFlag,
+  setShowChangesFlag,
   highlightSidebarButton,
   getFakeDocPathForDocUrl,
 }: {
@@ -50,6 +52,8 @@ export const VersionControlBar = ({
   buildMetadata: any;
   sidebarMode: SidebarMode;
   setSidebarMode: (mode: SidebarMode) => void;
+  showChangesFlag: boolean;
+  setShowChangesFlag: (flag: boolean) => void;
   highlightSidebarButton: boolean;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
 }) => {
@@ -206,24 +210,25 @@ export const VersionControlBar = ({
         >
           <SelectTrigger className="h-8 text-sm w-[18rem] font-medium">
             <SelectValue>
-              {activeBranchOm
-              ? <div className="flex items-center gap-2">
+              {activeBranchOm ? (
+                <div className="flex items-center gap-2">
                   <GitBranchIcon className="inline" size={12} />
                   {truncate(activeBranchOm.doc.name, { length: 30 })}
                 </div>
-              : isRealBranchScope
-              ? <div className="flex items-center gap-2">
+              ) : isRealBranchScope ? (
+                <div className="flex items-center gap-2">
                   <CrownIcon className="inline" size={12} />
                   Main
                 </div>
-              : <div className="flex items-center gap-2 opacity-50">
+              ) : (
+                <div className="flex items-center gap-2 opacity-50">
                   No branches
                 </div>
-              }{" "}
+              )}{" "}
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="w-72">
-            { isRealBranchScope &&
+            {isRealBranchScope && (
               <SelectItem
                 value={null}
                 className={!activeBranchOm ? "font-medium" : ""}
@@ -231,7 +236,7 @@ export const VersionControlBar = ({
                 <CrownIcon className="inline mr-1" size={12} />
                 Main
               </SelectItem>
-            }
+            )}
             <SelectGroup>
               <SelectLabel className="-ml-5">
                 <GitBranchIcon className="inline mr-1" size={12} />
@@ -279,7 +284,7 @@ export const VersionControlBar = ({
                 <PlusIcon className="inline mr-1" size={12} />
                 Create new branch
               </SelectItem>
-              { !isRealBranchScope &&
+              {!isRealBranchScope && (
                 <SelectItem
                   value={"__makeIntoBranchScope"}
                   key={"__makeIntoBranchScope"}
@@ -290,7 +295,7 @@ export const VersionControlBar = ({
                     Convert to main branch
                   </div>
                 </SelectItem>
-              }
+              )}
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -324,6 +329,19 @@ export const VersionControlBar = ({
           <span className="ml-2 font-mono text-xs">debug</span>
         </label>
       </div>
+      {activeBranchOm && (
+        <div className="flex items-center ml-4">
+          <label htmlFor="debugInfo" className="flex items-center">
+            <input
+              type="checkbox"
+              id="debugInfo"
+              checked={showChangesFlag}
+              onChange={(e) => setShowChangesFlag(e.target.checked)}
+            />
+            <span className="ml-2 font-mono text-xs">highlight changes</span>
+          </label>
+        </div>
+      )}
       {showDebugInfo && (
         <div className="font-mono text-xs flex gap-2 items-center">
           {!isRealBranchScope ? (
