@@ -29,6 +29,7 @@ import { createJacquardBranch, mergeBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../hooks";
 import { SidebarMode } from "./VersionControlEditor";
 import { MergeIcon } from "lucide-react";
+import { CopyButton } from "./CopyButton";
 
 // interface MakeBranchOptions {
 //   name?: string;
@@ -312,6 +313,12 @@ export const VersionControlBar = ({
           </div>
         )}
       </div>
+      <CopyButton
+        text={activeBranchOm?.url ?? "main"}
+        label="Copied branch URL"
+        size={16}
+        className="opacity-50"
+      />
       {activeBranchOm && (
         <div className="mr-2">
           <Button
