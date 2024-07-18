@@ -186,7 +186,7 @@ const main = async () => {
   process.exit(0);
 };
 
-const getJacquardConfig = () => {
+export const getJacquardConfig = () => {
   const currentDir = process.cwd();
 
   const configFilePath = path.join(currentDir, "jacquard.json");
