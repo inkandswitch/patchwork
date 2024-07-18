@@ -1,6 +1,10 @@
+import { docPathString, UIStateDoc, useUIStateHandle } from "@/explorer/account";
 import { OmSig } from "@/signals";
-import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+import { fakeDocPath } from "@/versionControl/components/VersionControlEditor";
+import { branchScopeAndActiveBranchInfoSig } from "@/versionControl/signals";
+import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import _ from "lodash";
 import { useMemo } from "react";
 import { computed, Signal } from "signia";
 import { useValue } from "signia-react";
@@ -10,9 +14,7 @@ import {
   FolderDoc,
   FolderDocWithChildren,
 } from "../datatype";
-import { docPathString } from "@/explorer/account";
-import { fakeDocPath } from "@/versionControl/components/VersionControlEditor";
-import _ from "lodash";
+import { Om } from "@/om";
 
 export type FolderDocWithMetadata = {
   rootFolderUrl: AutomergeUrl;
@@ -49,23 +51,29 @@ const computeFlattenedDocLinks = ({
 // TODO: reactive but not incremental
 function materializeFolderDocSig(
   docPath: DocPath | undefined,
+  uiStateHandle: DocHandle<UIStateDoc>,
   repo: Repo,
 ): Signal<FolderDocWithChildren | 'loading'> {
-  const folderOmSig = OmSig<FolderDoc>(_.last(docPath).url, repo);
+  const branchScopeAndActiveBranchInfoSig_ = branchScopeAndActiveBranchInfoSig(docPath, uiStateHandle, repo);
 
   return computed(`materializeFolderDocSig:${docPathString(docPath)}`, () => {
-    const folderOm = folderOmSig.value;
+    const branchScopeAndActiveBranchInfo = branchScopeAndActiveBranchInfoSig_.value;
+    if (!branchScopeAndActiveBranchInfo) {
+      return 'loading';
+    }
+    const folderOm = branchScopeAndActiveBranchInfo.cloneOrMainOm as Om<FolderDoc>;
     const folder = folderOm?.doc;
     if (!folder) {
       return 'loading';
     }
+
     let somethingLoading = false;
     const result = {
       ...folder,
       docs:
         folder.docs?.map((link) => {
           if (link.type === "folder") {
-            const folderContents = materializeFolderDocSig([...docPath, link], repo).value;
+            const folderContents = materializeFolderDocSig([...docPath, link], uiStateHandle, repo).value;
             if (folderContents === 'loading') {
               somethingLoading = true;
             }
@@ -85,14 +93,15 @@ export function useFolderDocWithChildren(
   rootFolderUrl: AutomergeUrl | undefined
 ): FolderDocWithMetadata {
   const repo = useRepo();
+  const uiStateHandle = useUIStateHandle();
   // TODO: this is v weird; id dunno how our docpaths relate to the root folder
   const rootDocPath = useMemo(() =>
     fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []}),
     [rootFolderUrl]
   );
   const docWithLinks = useValue(useMemo(() =>
-    materializeFolderDocSig(rootDocPath, repo),
-    [rootDocPath, repo]
+    materializeFolderDocSig(rootDocPath, uiStateHandle, repo),
+    [rootDocPath, uiStateHandle, repo]
   ));
 
   // flatDocLinks is a flat array of all the docs in the hierarchy
