@@ -30,8 +30,7 @@ export type BranchScopeInfo = {
 
 export const useBranchScopeInfo = (docPath: DocPath): BranchScopeInfo => {
   const repo = useRepo();
-  const branchScopeInfoSig_ = useMemo(() => branchScopeInfoSig(docPath, repo), [docPath, repo]);
-  return useValue(branchScopeInfoSig_);
+  return useValue(useMemo(() => branchScopeInfoSig(docPath, repo), [docPath, repo]));
 };
 
 export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & {
@@ -45,11 +44,10 @@ export const useActiveBranchInfo = (
   uiStateHandle: DocHandle<UIStateDoc>
 ) => {
   const repo = useRepo();
-  const activeBranchInfoSig_ = useMemo(() =>
+  return useValue(useMemo(() =>
     activeBranchInfoSig(branchScopePath, uiStateHandle, repo),
     [branchScopePath, uiStateHandle, repo]
-  );
-  return useValue(activeBranchInfoSig_);
+  ));
 };
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
@@ -59,9 +57,8 @@ export const useBranchScopeAndActiveBranchInfo = (
   uiStateHandle: DocHandle<UIStateDoc>
 ): BranchScopeAndActiveBranchInfo => {
   const repo = useRepo();
-  const branchScopeAndActiveBranchInfoSig_ = useMemo(() =>
+  return useValue(useMemo(() =>
     branchScopeAndActiveBranchInfoSig(docPath, uiStateHandle, repo),
     [docPath, uiStateHandle, repo]
-  );
-  return useValue(branchScopeAndActiveBranchInfoSig_);
+  ));
 };
