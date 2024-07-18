@@ -30,7 +30,6 @@ export const branchScopeInfoSig = (docPath: DocPath, repo: Repo): Signal<BranchS
   );
 
   return computed('', () => {
-    console.log('branchScopeInfoSig', docPathOmSigs.map((x) => x.value), versionControlMetadataOmSigs.map((x) => x.value));
     // go up the hierarchy and check if any of the parent folders are branch scopes
     for (let i = docPath.length - 1; i >= 0; i--) {
       const versionControlMetadataOm = versionControlMetadataOmSigs[i].value;

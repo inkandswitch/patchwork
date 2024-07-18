@@ -6,9 +6,13 @@ import { computed, Signal } from "signia";
 import { useValue } from "signia-react";
 import {
   DocLinkWithFolderPath,
+  DocPath,
   FolderDoc,
   FolderDocWithChildren,
 } from "../datatype";
+import { docPathString } from "@/explorer/account";
+import { fakeDocPath } from "@/versionControl/components/VersionControlEditor";
+import _ from "lodash";
 
 export type FolderDocWithMetadata = {
   rootFolderUrl: AutomergeUrl;
@@ -44,12 +48,12 @@ const computeFlattenedDocLinks = ({
 
 // TODO: reactive but not incremental
 function materializeFolderDocSig(
-  folderUrl: AutomergeUrl | undefined,
+  docPath: DocPath | undefined,
   repo: Repo,
 ): Signal<FolderDocWithChildren | 'loading'> {
-  const folderOmSig = OmSig<FolderDoc>(folderUrl, repo);
+  const folderOmSig = OmSig<FolderDoc>(_.last(docPath).url, repo);
 
-  return computed(`materializeFolderDocSig:${folderUrl}`, () => {
+  return computed(`materializeFolderDocSig:${docPathString(docPath)}`, () => {
     const folderOm = folderOmSig.value;
     const folder = folderOm?.doc;
     if (!folder) {
@@ -61,7 +65,7 @@ function materializeFolderDocSig(
       docs:
         folder.docs?.map((link) => {
           if (link.type === "folder") {
-            const folderContents = materializeFolderDocSig(link.url, repo).value;
+            const folderContents = materializeFolderDocSig([...docPath, link], repo).value;
             if (folderContents === 'loading') {
               somethingLoading = true;
             }
@@ -81,9 +85,14 @@ export function useFolderDocWithChildren(
   rootFolderUrl: AutomergeUrl | undefined
 ): FolderDocWithMetadata {
   const repo = useRepo();
+  // TODO: this is v weird; id dunno how our docpaths relate to the root folder
+  const rootDocPath = useMemo(() =>
+    fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []}),
+    [rootFolderUrl]
+  );
   const docWithLinks = useValue(useMemo(() =>
-    materializeFolderDocSig(rootFolderUrl, repo),
-    [rootFolderUrl, repo]
+    materializeFolderDocSig(rootDocPath, repo),
+    [rootDocPath, repo]
   ));
 
   // flatDocLinks is a flat array of all the docs in the hierarchy
