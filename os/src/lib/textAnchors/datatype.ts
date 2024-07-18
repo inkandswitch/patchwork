@@ -16,7 +16,7 @@ export type ResolvedTextAnchor = TextAnchor & {
   toPos: number;
 };
 
-type TextAnchorMethods<D> = {
+export type TextAnchorMethods<D> = {
   patchesToAnnotations: (
     doc: D,
     docBefore: D,

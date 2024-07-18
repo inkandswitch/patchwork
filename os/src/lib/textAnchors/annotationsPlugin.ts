@@ -2,7 +2,26 @@ import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 import { StateEffect, StateField } from "@codemirror/state";
 
 import { AnnotationWithUIState } from "@/versionControl/schema";
-import { ResolvedTextAnchor } from "@/lib/markdown/textAnchors";
+import { ResolvedTextAnchor } from "@/lib/textAnchors";
+
+export const ANNOTATION_STYLES = {
+  ".cm-patch-splice": {
+    backgroundColor: "rgb(0 255 0 / 5%)",
+    borderBottom: "rgb(0 202 0 / 30%) 2px solid",
+    borderRadius: "3px",
+  },
+  ".cm-patch-splice.active": {
+    backgroundColor: "rgb(0 255 0 / 20%)",
+  },
+  ".cm-patch-splice .cm-comment-thread, .cm-comment-thread .cm-patch-splice": {
+    backgroundColor: "rgb(100 202 0 / 5%)",
+  },
+  ".cm-patch-splice .cm-comment-thread.active, .cm-comment-thread.active .cm-patch-splice":
+    {
+      backgroundColor: "rgb(100 202 0 / 30%)",
+      borderBottom: "rgb(0 222 0 / 100%) 2px solid",
+    },
+};
 
 export const setAnnotationsEffect =
   StateEffect.define<AnnotationWithUIState<ResolvedTextAnchor, string>[]>();
@@ -16,6 +35,7 @@ const annotationsField = StateField.define<
   update(patches, tr) {
     for (const e of tr.effects) {
       if (e.is(setAnnotationsEffect)) {
+        console.log("update annotations", e.value);
         return e.value;
       }
     }
@@ -106,6 +126,8 @@ const annotationDecorations = EditorView.decorations.compute(
   (state) => {
     const annotations = state.field(annotationsField);
 
+    console.log("render annotations", annotations);
+
     const decorations = annotations.flatMap((annotation) => {
       const { fromPos, toPos } = annotation.anchor;
       if (fromPos >= toPos) {
@@ -155,4 +177,8 @@ const annotationDecorations = EditorView.decorations.compute(
   }
 );
 
-export const annotationsPlugin = [annotationDecorations, annotationsField];
+export const annotationsPlugin = [
+  EditorView.theme(ANNOTATION_STYLES),
+  annotationDecorations,
+  annotationsField,
+];

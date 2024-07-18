@@ -5,7 +5,7 @@ import ReactDOMServer from "react-dom/server";
 import { AnnotationGroupWithUIState } from "@/versionControl/schema";
 import { useScrollPosition } from "@/hooks/useScrollPosition";
 import { MarkdownDoc } from "./datatype";
-import { TextAnchor } from "@/lib/markdown/textAnchors";
+import { TextAnchor } from "@/lib/textAnchors";
 
 export type AnnotationGroupWithPosition = AnnotationGroupWithUIState<
   TextAnchor,

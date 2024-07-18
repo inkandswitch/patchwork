@@ -1,26 +1,27 @@
-import { RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { markdown } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
 import { EditorView } from "@codemirror/view";
 
 import { theme, useMarkdownPlugins } from "@/lib/markdown";
+import { annotationsPlugin, useAnnotationsInEditor } from "@/lib/textAnchors";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { type DocHandle } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
-import {
-  annotationsPlugin,
-  setAnnotationsEffect,
-} from "../codemirrorPlugins/annotations";
 import { frontmatterPlugin } from "../codemirrorPlugins/frontmatter";
 import { previewFiguresPlugin } from "../codemirrorPlugins/previewFigures";
 import { tableOfContentsPreviewPlugin } from "../codemirrorPlugins/tableOfContentsPreview";
 
+import {
+  ResolvedTextAnchor,
+  TextAnchor,
+  useScrollAnnotationsIntoView,
+} from "@/lib/textAnchors";
 import { AnnotationWithUIState } from "@/versionControl/schema";
 import { isEqual } from "lodash";
 import { clickableMarkdownLinksPlugin } from "../codemirrorPlugins/clickableMarkdownLinks";
 import { MarkdownDoc } from "../datatype";
-import { ResolvedTextAnchor, TextAnchor } from "@/lib/markdown/textAnchors";
 
 export type TextSelection = {
   from: number;
@@ -67,15 +68,8 @@ export function MarkdownDocEditor({
 
   const handleReady = handle.isReady();
 
-  useScrollAnnotationsIntoView(annotations, editorRoot);
-
-  // Propagate annotations into codemirror
-  useEffect(() => {
-    editorRoot.current?.dispatch({
-      // split up replaces
-      effects: setAnnotationsEffect.of(annotations),
-    });
-  }, [annotations, editorRoot.current]);
+  useScrollAnnotationsIntoView({ annotations, editor: editorRoot.current });
+  useAnnotationsInEditor({ annotations, editor: editorRoot.current });
 
   // This big useEffect sets up the editor view
   useEffect(() => {
@@ -261,52 +255,3 @@ export function MarkdownDocEditor({
     </div>
   );
 }
-
-// Scroll annotations into view when needed
-const useScrollAnnotationsIntoView = (
-  annotations: AnnotationWithUIState<ResolvedTextAnchor, string>[],
-  editorRoot: RefObject<EditorView>
-) => {
-  const annotationsToScrollIntoView = useMemo(
-    () =>
-      annotations.filter((annotation) => annotation.shouldBeVisibleInViewport),
-    [annotations]
-  );
-
-  useEffect(() => {
-    const editor = editorRoot?.current;
-
-    // only change scroll position if editor is not focused
-    if (
-      !editor ||
-      editor.hasFocus ||
-      annotationsToScrollIntoView.length === 0
-    ) {
-      return;
-    }
-
-    let from = annotationsToScrollIntoView[0].anchor.fromPos;
-    let to = annotationsToScrollIntoView[0].anchor.toPos;
-
-    for (let i = 1; i < annotationsToScrollIntoView.length; i++) {
-      const annotation = annotationsToScrollIntoView[i];
-
-      if (annotation.anchor.fromPos < from) {
-        from = annotation.anchor.fromPos;
-      }
-
-      if (annotation.anchor.toPos > to) {
-        to = annotation.anchor.toPos;
-      }
-    }
-
-    editor.dispatch({
-      effects: EditorView.scrollIntoView(from, {
-        y: "nearest",
-        yMargin: 100,
-      }),
-    });
-
-    editorRoot.current;
-  }, [annotationsToScrollIntoView, editorRoot]);
-};

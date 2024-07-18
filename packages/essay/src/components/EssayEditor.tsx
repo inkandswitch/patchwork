@@ -18,7 +18,11 @@ import "../index.css";
 
 import { useAnnotationGroupsWithPosition } from "../utils";
 import { CommentsSidebar } from "./CommentsSidebar";
-import { ResolvedTextAnchor, TextAnchor } from "@/lib/markdown/textAnchors";
+import {
+  ResolvedTextAnchor,
+  TextAnchor,
+  useResolvedAnnotationAtPath,
+} from "@/lib/textAnchors";
 
 export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const {
@@ -51,24 +55,11 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
     setVisibleAuthorsForEdits(uniq(Object.values(actorIdToAuthor ?? {})));
   }, [actorIdToAuthor]);
 
-  const resolvedAnnotations = useMemo<
-    AnnotationWithUIState<ResolvedTextAnchor, string>[]
-  >(() => {
-    return annotations.flatMap((annotation) => {
-      const { fromCursor, toCursor } = annotation.anchor;
-      const fromPos = getCursorPositionSafely(doc, ["content"], fromCursor);
-      const toPos = getCursorPositionSafely(doc, ["content"], toCursor);
-
-      return fromPos === null || toPos === null
-        ? []
-        : [
-            {
-              ...annotation,
-              anchor: { fromPos, toPos, fromCursor, toCursor },
-            },
-          ];
-    });
-  }, [doc, annotations]);
+  const resolvedAnnotations = useResolvedAnnotationAtPath({
+    doc,
+    path: ["content"],
+    annotations,
+  });
 
   const annotationGroupsWithPosition = useAnnotationGroupsWithPosition({
     doc,

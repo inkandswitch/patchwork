@@ -49,22 +49,6 @@ const MARKDOWN_STYLES = {
     fontWeight: "normal",
     lineHeight: "0.8em",
   },
-  ".cm-patch-splice": {
-    backgroundColor: "rgb(0 255 0 / 5%)",
-    borderBottom: "rgb(0 202 0 / 30%) 2px solid",
-    borderRadius: "3px",
-  },
-  ".cm-patch-splice.active": {
-    backgroundColor: "rgb(0 255 0 / 20%)",
-  },
-  ".cm-patch-splice .cm-comment-thread, .cm-comment-thread .cm-patch-splice": {
-    backgroundColor: "rgb(100 202 0 / 5%)",
-  },
-  ".cm-patch-splice .cm-comment-thread.active, .cm-comment-thread.active .cm-patch-splice":
-    {
-      backgroundColor: "rgb(100 202 0 / 30%)",
-      borderBottom: "rgb(0 222 0 / 100%) 2px solid",
-    },
 };
 
 const baseHeadingStyles = {
@@ -167,7 +151,6 @@ const markdownStyles = HighlightStyle.define([
 
 export const theme = (style: "serif" | "sans") => [
   EditorView.theme({
-    ...MARKDOWN_STYLES,
     ".cm-content": {
       ...MARKDOWN_STYLES[".cm-content"],
       ...(style === "serif"

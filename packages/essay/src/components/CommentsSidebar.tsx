@@ -15,7 +15,7 @@ import { TextSelection } from "./CodeMirrorEditor";
 import { CommentState } from "@/versionControl/schema";
 import { MarkdownDoc } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";
-import { TextAnchor } from "@/lib/markdown/textAnchors";
+import { TextAnchor } from "@/lib/textAnchors";
 
 export const CommentsSidebar = ({
   doc,

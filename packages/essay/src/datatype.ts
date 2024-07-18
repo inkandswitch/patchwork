@@ -1,6 +1,6 @@
 import { AssetsDoc } from "@/assets";
 import { FileExportMethod } from "@/fileExports";
-import { TextAnchor, textAnchorsAtPath } from "@/lib/markdown/textAnchors";
+import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
 import { type DataType } from "@/sdk";
 import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
 import {

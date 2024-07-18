@@ -105,7 +105,11 @@ export const FileEditor = (props: EditorProps<FileDoc, never>) => {
                 </div>
               </div>
               <div className="max-h-[200px] overflow-auto">
-                <FileEditor docUrl={input.docUrl} docHeads={input.heads} getFakeDocPathForDocUrl={getFakeDocPathForDocUrl} />
+                <FileEditor
+                  docUrl={input.docUrl}
+                  docHeads={input.heads}
+                  getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+                />
               </div>
             </div>
           ))}

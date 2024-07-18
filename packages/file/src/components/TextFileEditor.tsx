@@ -1,17 +1,43 @@
+import {
+  TextAnchor,
+  annotationsPlugin,
+  useAnnotationsInEditor,
+  useResolvedAnnotationAtPath,
+  useScrollAnnotationsIntoView,
+} from "@/lib/textAnchors";
 import { EditorProps } from "@/tools";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
-import { useHandle, useDocument } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import { json } from "@codemirror/lang-json";
+import { python } from "@codemirror/lang-python";
 import { EditorView, basicSetup } from "codemirror";
 import { useEffect, useState } from "react";
 import { TextFileDoc } from "../datatype";
-import { python } from "@codemirror/lang-python";
-import { json } from "@codemirror/lang-json";
-import { yaml } from "@codemirror/lang-yaml";
 
-export const TextFileEditor = ({ docUrl }: EditorProps<TextFileDoc, never>) => {
+export const TextFileEditor = ({
+  docUrl,
+  annotations,
+}: EditorProps<TextAnchor, string>) => {
   const [container, setContainer] = useState<HTMLElement>();
+  const [editor, setEditor] = useState<EditorView>();
   const [fileDoc] = useDocument<TextFileDoc>(docUrl);
   const handle = useHandle<TextFileDoc>(docUrl);
+
+  const resolvedAnnotations = useResolvedAnnotationAtPath({
+    doc: fileDoc,
+    path: ["content"],
+    annotations,
+  });
+
+  useScrollAnnotationsIntoView({
+    annotations: resolvedAnnotations,
+    editor,
+  });
+
+  useAnnotationsInEditor({
+    annotations: resolvedAnnotations,
+    editor,
+  });
 
   useEffect(() => {
     if (!container) {
@@ -28,11 +54,13 @@ export const TextFileEditor = ({ docUrl }: EditorProps<TextFileDoc, never>) => {
           path: ["content"],
         }),
         getPluginsByType(fileDoc.type),
+        annotationsPlugin,
       ],
       parent: container,
     });
 
     view.focus();
+    setEditor(view);
 
     return () => {
       view.destroy();
@@ -48,9 +76,6 @@ const getPluginsByType = (type: string) => {
       return [python()];
     case "json":
       return [json()];
-    case "yaml":
-    // todo: for some reason doesn't work
-    // return [yaml()];
     default:
       return [];
   }

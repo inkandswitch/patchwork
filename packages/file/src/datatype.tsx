@@ -1,6 +1,7 @@
 import { ChangeGroup, noGrouping, type DataType } from "@/sdk";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { isImageFile, useBinaryUrl } from "./components/ImageFileViewer";
+import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
 
 // SCHEMA
 
@@ -37,7 +38,7 @@ export const init = (doc: any) => {
   throw new Error("can't create empty file");
 };
 
-export const fileDatatype: DataType<FileDoc, never, string> = {
+export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
   type: "patchwork:dataType",
   id: "file",
   name: "File",
@@ -53,6 +54,8 @@ export const fileDatatype: DataType<FileDoc, never, string> = {
   fallbackSummaryForChangeGroup(changeGroup) {
     return <ChangeGroupView changeGroup={changeGroup} />;
   },
+
+  ...textAnchorsAtPath(["content"]),
 };
 
 const ChangeGroupView = ({
@@ -61,12 +64,11 @@ const ChangeGroupView = ({
   changeGroup: ChangeGroup<FileDoc>;
 }) => {
   const doc = changeGroup.docAtEndOfChangeGroup;
+  const binaryUrl = useBinaryUrl(doc?.content as Uint8Array);
 
   if (!isImageFile(doc)) {
     return "changed";
   }
-
-  const binaryUrl = useBinaryUrl(doc?.content as Uint8Array);
 
   return <img src={binaryUrl} className="w-full h-full object-contain" />;
 };

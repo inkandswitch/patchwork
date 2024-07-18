@@ -1,7 +1,7 @@
 import { truncate } from "lodash";
 import { AnnotationsViewProps } from "@/tools";
 import { MarkdownDoc } from "../datatype";
-import { TextAnchor } from "@/lib/markdown/textAnchors";
+import { TextAnchor } from "@/lib/textAnchors";
 
 export const EssayAnnotations = ({
   annotations,
