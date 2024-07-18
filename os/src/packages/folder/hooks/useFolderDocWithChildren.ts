@@ -47,50 +47,49 @@ const computeFlattenedDocLinks = ({
   );
 };
 
+const findLinks = (folderDoc: FolderDocWithChildren) => {
+  const urls = [];
+  for (const child of folderDoc.docs) {
+    if (child.type === "folder") {
+      urls.push(child.url);
+    }
+    if (child.folderContents) {
+      urls.push(...findLinks(child.folderContents));
+    }
+  }
+
+  return urls;
+};
+
+const materializeLinks = (
+  folder: FolderDoc,
+  loadedDocs: Record<AutomergeUrl, FolderDoc>
+): FolderDocWithChildren => {
+  return {
+    ...folder,
+    docs:
+      folder.docs?.map((link) => {
+        if (loadedDocs[link.url]) {
+          return {
+            ...link,
+            folderContents: materializeLinks(
+              loadedDocs[link.url],
+              loadedDocs
+            ),
+          };
+        } else {
+          return link;
+        }
+      }) ?? [],
+  };
+};
+
+
+
 // This hook recursively traverses a tree of nested folders and loads folder contents.
 export function useFolderDocWithChildren(
   rootFolderUrl: AutomergeUrl | undefined
 ): FolderDocWithMetadata {
-  const materializeLinks = useCallback(
-    (
-      folder: FolderDoc,
-      loadedDocs: Record<AutomergeUrl, FolderDoc>
-    ): FolderDocWithChildren => {
-      return {
-        ...folder,
-        docs:
-          folder.docs?.map((link) => {
-            if (loadedDocs[link.url]) {
-              return {
-                ...link,
-                folderContents: materializeLinks(
-                  loadedDocs[link.url],
-                  loadedDocs
-                ),
-              };
-            } else {
-              return link;
-            }
-          }) ?? [],
-      };
-    },
-    []
-  );
-
-  const findLinks = useCallback((folderDoc: FolderDocWithChildren) => {
-    const urls = [];
-    for (const child of folderDoc.docs) {
-      if (child.type === "folder") {
-        urls.push(child.url);
-      }
-      if (child.folderContents) {
-        urls.push(...findLinks(child.folderContents));
-      }
-    }
-
-    return urls;
-  }, []);
-
   const docWithLinks = useDocumentWithLinks({
     rootUrl: rootFolderUrl,
     findLinks: findLinks,
