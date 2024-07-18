@@ -1,43 +1,26 @@
 import { AssetsDoc } from "@/assets";
 import { FileExportMethod } from "@/fileExports";
+import { TextAnchor, textAnchorsAtPath } from "@/lib/markdown/textAnchors";
+import { type DataType } from "@/sdk";
 import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
 import {
-  Annotation,
   HasVersionControlMetadata,
   initVersionControlMetadata,
 } from "@/versionControl/schema";
-import {
-  TextPatch,
-  getCursorPositionSafely,
-  getCursorSafely,
-} from "@/versionControl/utils";
+import { TextPatch } from "@/versionControl/utils";
 import { next as A } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import { splice } from "@automerge/automerge/next";
-import { pick } from "lodash";
 import JSZip from "jszip";
-import { type DataType } from "@/sdk";
+import { pick } from "lodash";
 
 // SCHEMA
 
 // todo: split content of document and metadata
 // currently branches copy also global metadata
 // unclear if comments should be part of the doc or the content
-export type MarkdownDoc = HasVersionControlMetadata<
-  MarkdownDocAnchor,
-  string
-> & {
+export type MarkdownDoc = HasVersionControlMetadata<TextAnchor, string> & {
   content: string;
-};
-
-export type MarkdownDocAnchor = {
-  fromCursor: A.Cursor;
-  toCursor: A.Cursor;
-};
-
-export type ResolvedMarkdownDocAnchor = MarkdownDocAnchor & {
-  fromPos: number;
-  toPos: number;
 };
 
 // FUNCTIONS
@@ -141,153 +124,6 @@ ${JSON.stringify(pick(docBefore, ["content", "commentThreads"]), null, 2)}
 ${JSON.stringify(pick(docAfter, ["content", "commentThreads"]), null, 2)}`;
 };
 
-export const patchesToAnnotations = (
-  doc: MarkdownDoc,
-  docBefore: MarkdownDoc,
-  patches: A.Patch[]
-) => {
-  const filteredPatches = patches.filter(
-    (patch) =>
-      patch.path[0] === "content" &&
-      (patch.action === "splice" || patch.action === "del")
-  );
-
-  const annotations: Annotation<MarkdownDocAnchor, string>[] = [];
-
-  // We keep track of the offset between doc and docBefore.
-  //
-  // - everytime we encounter an insert we add the length of the inserted string
-  // - everytime we encounter a delete we subtract the number of deleted characters
-  //
-  // We can then translate positions in the new doc to positions in the old doc by subtracting the offset
-  //
-  // Note: we can't use cursors for this position translation because the cursor functions
-  // always operate on the most recent version of a document even if you pass in a document at some heads
-  let offset = 0;
-
-  for (let i = 0; i < filteredPatches.length; i++) {
-    const patch = filteredPatches[i];
-
-    switch (patch.action) {
-      case "splice": {
-        const patchStart = patch.path[1] as number;
-        const patchEnd = Math.min(
-          (patch.path[1] as number) + patch.value.length,
-          doc.content.length - 1
-        );
-        const fromCursor = getCursorSafely(doc, ["content"], patchStart);
-        const toCursor = getCursorSafely(doc, ["content"], patchEnd);
-
-        if (!fromCursor || !toCursor) {
-          console.warn("Failed to get cursor for patch", patch);
-          break;
-        }
-
-        const nextPatch = filteredPatches[i + 1];
-        if (
-          nextPatch &&
-          nextPatch.action === "del" &&
-          nextPatch.path[1] === patchEnd
-        ) {
-          const before = docBefore.content.slice(
-            patchStart - offset,
-            patchStart - offset + nextPatch.length
-          );
-
-          annotations.push({
-            type: "changed",
-            before,
-            after: patch.value,
-            anchor: {
-              fromCursor: fromCursor,
-              toCursor: toCursor,
-            },
-          });
-
-          offset += patch.value.length - nextPatch.length;
-
-          i += 1;
-        } else {
-          annotations.push({
-            type: "added",
-            added: patch.value,
-            anchor: {
-              fromCursor: fromCursor,
-              toCursor: toCursor,
-            },
-          });
-
-          offset += patch.value.length;
-        }
-        break;
-      }
-      case "del": {
-        const patchStart = patch.path[1] as number;
-        const patchEnd = (patch.path[1] as number) + 1;
-        const fromCursor = getCursorSafely(doc, ["content"], patchStart);
-        const toCursor = getCursorSafely(doc, ["content"], patchEnd);
-
-        const deleted = docBefore.content.slice(
-          patchStart - offset,
-          patchStart - offset + patch.length
-        );
-
-        offset -= patch.length;
-
-        if (!fromCursor || !toCursor) {
-          console.warn("Failed to get cursor for patch", patch);
-          break;
-        }
-
-        annotations.push({
-          type: "deleted",
-          deleted,
-          anchor: {
-            fromCursor: fromCursor,
-            toCursor: toCursor,
-          },
-        });
-        break;
-      }
-
-      default:
-        throw new Error("invalid patch");
-    }
-  }
-
-  return annotations;
-};
-
-const valueOfAnchor = (doc: MarkdownDoc, anchor: MarkdownDocAnchor) => {
-  const from = getCursorPositionSafely(doc, ["content"], anchor.fromCursor);
-  const to = getCursorPositionSafely(doc, ["content"], anchor.toCursor);
-
-  // if the anchor points to an empty range return undefined
-  // so highlight comments that point to this will be filtered out
-  if (from === to) {
-    return undefined;
-  }
-
-  return doc.content.slice(from, to);
-};
-
-const doAnchorsOverlap = (
-  doc: MarkdownDoc,
-  anchor1: MarkdownDocAnchor,
-  anchor2: MarkdownDocAnchor
-) => {
-  const from1 = getCursorPositionSafely(doc, ["content"], anchor1.fromCursor);
-  const to1 = getCursorPositionSafely(doc, ["content"], anchor1.toCursor);
-  const from2 = getCursorPositionSafely(doc, ["content"], anchor2.fromCursor);
-  const to2 = getCursorPositionSafely(doc, ["content"], anchor2.toCursor);
-
-  return Math.max(from1, from2) <= Math.min(to1, to2);
-};
-
-const sortAnchorsBy = (doc: MarkdownDoc, anchor: MarkdownDocAnchor) => {
-  return getCursorPositionSafely(doc, ["content"], anchor.fromCursor);
-};
-
 const fileExportMethods: FileExportMethod<MarkdownDoc>[] = [
   {
     id: "markdown",
@@ -317,11 +153,7 @@ const fileExportMethods: FileExportMethod<MarkdownDoc>[] = [
   },
 ];
 
-export const markdownDataType: DataType<
-  MarkdownDoc,
-  MarkdownDocAnchor,
-  string
-> = {
+export const markdownDataType: DataType<MarkdownDoc, TextAnchor, string> = {
   type: "patchwork:dataType",
   id: "essay",
   name: "Essay",
@@ -332,9 +164,6 @@ export const markdownDataType: DataType<
   includeChangeInHistory,
   includePatchInChangeGroup,
   promptForAIChangeGroupSummary,
-  patchesToAnnotations,
-  valueOfAnchor,
-  doAnchorsOverlap,
-  sortAnchorsBy,
   fileExportMethods,
+  ...textAnchorsAtPath(["content"]),
 };

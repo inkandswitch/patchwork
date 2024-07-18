@@ -1,10 +1,11 @@
 import { truncate } from "lodash";
 import { AnnotationsViewProps } from "@/tools";
-import { MarkdownDoc, MarkdownDocAnchor } from "../datatype";
+import { MarkdownDoc } from "../datatype";
+import { TextAnchor } from "@/lib/markdown/textAnchors";
 
 export const EssayAnnotations = ({
   annotations,
-}: AnnotationsViewProps<MarkdownDoc, MarkdownDocAnchor, string>) => {
+}: AnnotationsViewProps<MarkdownDoc, TextAnchor, string>) => {
   return (
     <div className="px-2 bg-white rounded-sm">
       {annotations.map((annotation, index) => {

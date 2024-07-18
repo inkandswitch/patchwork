@@ -3,11 +3,7 @@ import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import { MarkdownDocEditor, TextSelection } from "./CodeMirrorEditor";
 
-import {
-  MarkdownDoc,
-  MarkdownDocAnchor,
-  ResolvedMarkdownDocAnchor,
-} from "../datatype";
+import { MarkdownDoc } from "../datatype";
 import { useEffect, useMemo, useState } from "react";
 
 import { EditorView } from "@codemirror/view";
@@ -22,8 +18,9 @@ import "../index.css";
 
 import { useAnnotationGroupsWithPosition } from "../utils";
 import { CommentsSidebar } from "./CommentsSidebar";
+import { ResolvedTextAnchor, TextAnchor } from "@/lib/markdown/textAnchors";
 
-export const EssayEditor = (props: EditorProps<MarkdownDocAnchor, string>) => {
+export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const {
     docUrl,
     docHeads,
@@ -55,7 +52,7 @@ export const EssayEditor = (props: EditorProps<MarkdownDocAnchor, string>) => {
   }, [actorIdToAuthor]);
 
   const resolvedAnnotations = useMemo<
-    AnnotationWithUIState<ResolvedMarkdownDocAnchor, string>[]
+    AnnotationWithUIState<ResolvedTextAnchor, string>[]
   >(() => {
     return annotations.flatMap((annotation) => {
       const { fromCursor, toCursor } = annotation.anchor;

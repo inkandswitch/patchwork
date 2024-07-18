@@ -13,7 +13,10 @@ async function initializeRepo() {
   console.log(`${PEER_ID}: Creating repo`);
   const repo = new Repo({
     storage: new IndexedDBStorageAdapter(),
-    network: [new BrowserWebSocketClientAdapter("wss://sync.automerge.org")],
+    network: [
+      new BrowserWebSocketClientAdapter("ws://localhost:3030"),
+      //new BrowserWebSocketClientAdapter("wss://sync.automerge.org")
+    ],
     peerId: PEER_ID,
     sharePolicy: async (peerId) => peerId.includes("storage-server"),
     enableRemoteHeadsGossiping: true,

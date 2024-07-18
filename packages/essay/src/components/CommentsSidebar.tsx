@@ -13,8 +13,9 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { MessageCircle } from "lucide-react";
 import { TextSelection } from "./CodeMirrorEditor";
 import { CommentState } from "@/versionControl/schema";
-import { MarkdownDoc, MarkdownDocAnchor } from "../datatype";
+import { MarkdownDoc } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";
+import { TextAnchor } from "@/lib/markdown/textAnchors";
 
 export const CommentsSidebar = ({
   doc,
@@ -35,7 +36,7 @@ export const CommentsSidebar = ({
   annotationGroupsWithPosition: AnnotationGroupWithPosition[];
   setSelectedAnnotationGroupId: (id: string) => void;
   setHoveredAnnotationGroupId: (id: string) => void;
-  setCommentState: (state: CommentState<MarkdownDocAnchor>) => void;
+  setCommentState: (state: CommentState<TextAnchor>) => void;
 }) => {
   return (
     <div className="relative">

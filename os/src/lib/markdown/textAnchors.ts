@@ -11,6 +11,11 @@ export type TextAnchor = {
   toCursor: Automerge.Cursor;
 };
 
+export type ResolvedTextAnchor = TextAnchor & {
+  fromPos: number;
+  toPos: number;
+};
+
 type TextAnchorMethods<D> = {
   patchesToAnnotations: (
     doc: D,
@@ -35,14 +40,14 @@ export const textAnchorsAtPath = <D>(
   patchesToAnnotations: (doc: D, docBefore: D, patches: Automerge.Patch[]) => {
     const filteredPatches = patches.filter(
       (patch) =>
-        isEqual(patch.path, path) &&
+        isEqual(patch.path.slice(0, -1), path) &&
         (patch.action === "splice" || patch.action === "del")
     );
 
     const annotations: Annotation<TextAnchor, string>[] = [];
 
     const content: string = get(doc, path);
-    const contentBefore: string = get(doc, path);
+    const contentBefore: string = get(docBefore, path);
 
     // We keep track of the offset between doc and docBefore.
     //

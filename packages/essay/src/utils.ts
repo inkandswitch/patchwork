@@ -4,10 +4,11 @@ import { ReactElement, useMemo } from "react";
 import ReactDOMServer from "react-dom/server";
 import { AnnotationGroupWithUIState } from "@/versionControl/schema";
 import { useScrollPosition } from "@/hooks/useScrollPosition";
-import { MarkdownDocAnchor, MarkdownDoc } from "./datatype";
+import { MarkdownDoc } from "./datatype";
+import { TextAnchor } from "@/lib/markdown/textAnchors";
 
 export type AnnotationGroupWithPosition = AnnotationGroupWithUIState<
-  MarkdownDocAnchor,
+  TextAnchor,
   string
 > & {
   yCoord: number;
@@ -15,7 +16,7 @@ export type AnnotationGroupWithPosition = AnnotationGroupWithUIState<
 
 // a very rough approximation; needs to be better but being perfect seems hard
 const estimatedHeightOfAnnotationGroup = (
-  annotationGroup: AnnotationGroupWithUIState<MarkdownDocAnchor, string>
+  annotationGroup: AnnotationGroupWithUIState<TextAnchor, string>
 ) => {
   const commentHeights = annotationGroup.discussion
     ? annotationGroup.discussion.comments.map(
@@ -39,7 +40,7 @@ export const getVisibleAnnotationGroupsWithPos = ({
   editorView,
   annotationGroups,
 }: {
-  annotationGroups: AnnotationGroupWithUIState<MarkdownDocAnchor, string>[];
+  annotationGroups: AnnotationGroupWithUIState<TextAnchor, string>[];
   doc: MarkdownDoc;
   editorView: EditorView;
 }): AnnotationGroupWithPosition[] => {
@@ -142,7 +143,7 @@ export const useAnnotationGroupsWithPosition = ({
   editorView,
   editorContainer,
 }: {
-  annotationGroups: AnnotationGroupWithUIState<MarkdownDocAnchor, string>[];
+  annotationGroups: AnnotationGroupWithUIState<TextAnchor, string>[];
   doc: MarkdownDoc;
   editorView: EditorView;
   editorContainer: HTMLElement;

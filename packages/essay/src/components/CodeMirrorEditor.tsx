@@ -19,11 +19,8 @@ import { tableOfContentsPreviewPlugin } from "../codemirrorPlugins/tableOfConten
 import { AnnotationWithUIState } from "@/versionControl/schema";
 import { isEqual } from "lodash";
 import { clickableMarkdownLinksPlugin } from "../codemirrorPlugins/clickableMarkdownLinks";
-import {
-  MarkdownDoc,
-  MarkdownDocAnchor,
-  ResolvedMarkdownDocAnchor,
-} from "../datatype";
+import { MarkdownDoc } from "../datatype";
+import { ResolvedTextAnchor, TextAnchor } from "@/lib/markdown/textAnchors";
 
 export type TextSelection = {
   from: number;
@@ -38,10 +35,10 @@ export type MarkdownDocEditorProps = {
   setSelection?: (selection: TextSelection) => void;
   setHasFocus?: (hasFocus) => void;
   setView?: (view: EditorView) => void;
-  setSelectedAnchors?: (anchors: MarkdownDocAnchor[]) => void;
+  setSelectedAnchors?: (anchors: TextAnchor[]) => void;
   readOnly?: boolean;
   docHeads?: A.Heads;
-  annotations?: AnnotationWithUIState<ResolvedMarkdownDocAnchor, string>[];
+  annotations?: AnnotationWithUIState<ResolvedTextAnchor, string>[];
   setEditorContainerElement?: (container: HTMLDivElement) => void;
 };
 
@@ -64,7 +61,7 @@ export function MarkdownDocEditor({
   const markdownPlugins = useMarkdownPlugins({ docWithAssetsHandle: handle });
 
   const annotationsRef = useRef<
-    AnnotationWithUIState<ResolvedMarkdownDocAnchor, string>[]
+    AnnotationWithUIState<ResolvedTextAnchor, string>[]
   >([]);
   annotationsRef.current = annotations;
 
@@ -267,7 +264,7 @@ export function MarkdownDocEditor({
 
 // Scroll annotations into view when needed
 const useScrollAnnotationsIntoView = (
-  annotations: AnnotationWithUIState<ResolvedMarkdownDocAnchor, string>[],
+  annotations: AnnotationWithUIState<ResolvedTextAnchor, string>[],
   editorRoot: RefObject<EditorView>
 ) => {
   const annotationsToScrollIntoView = useMemo(
