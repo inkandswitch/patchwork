@@ -39,7 +39,7 @@ export async function run(
 
   await new Promise((resolve, reject) => {
     const [cmd, ...args] = command.split(" ");
-    const child = spawn(cmd, args);
+    const child = spawn(cmd, args, { shell: true });
 
     child.stdout.on("data", (data) => {
       data
