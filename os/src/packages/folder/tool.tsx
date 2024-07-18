@@ -56,10 +56,7 @@ export const FolderEntryView = ({
 }: FolderEntryView) => {
   const uiStateHandle = useUIStateHandle();
   const docPath = getFakeDocPathForDocUrl(docLink.url);
-  const { cloneOrMainOm, baseHeads } = useBranchScopeAndActiveBranchInfo(
-    docPath,
-    uiStateHandle
-  );
+  const { cloneOrMainOm, baseHeads } = useBranchScopeAndActiveBranchInfo(docPath);
 
   const dataType = useDataType(docLink.type);
   const tool = useToolsForDataType(docLink.type)[0];

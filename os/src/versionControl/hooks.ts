@@ -1,7 +1,7 @@
-import * as Automerge from "@automerge/automerge";
-import { UIStateDoc } from "@/explorer/account";
+import { useUIStateHandle } from "@/explorer/account";
 import { DocPath } from "@/packages/folder/datatype";
-import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
+import * as Automerge from "@automerge/automerge";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useMemo } from "react";
 import { useValue } from "signia-react";
@@ -48,10 +48,10 @@ export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & {
 };
 
 export const useActiveBranchInfo = (
-  branchScopePath: DocPath,
-  uiStateHandle: DocHandle<UIStateDoc>
+  branchScopePath: DocPath
 ) => {
   const repo = useRepo();
+  const uiStateHandle = useUIStateHandle();
   return useValue(
     useMemo(
       () => activeBranchInfoSig(branchScopePath, uiStateHandle, repo),
@@ -63,10 +63,10 @@ export const useActiveBranchInfo = (
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.
 export const useBranchScopeAndActiveBranchInfo = (
-  docPath: DocPath,
-  uiStateHandle: DocHandle<UIStateDoc>
+  docPath: DocPath
 ): BranchScopeAndActiveBranchInfo => {
   const repo = useRepo();
+  const uiStateHandle = useUIStateHandle();
   return useValue(
     useMemo(
       () => branchScopeAndActiveBranchInfoSig(docPath, uiStateHandle, repo),

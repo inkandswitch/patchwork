@@ -131,10 +131,7 @@ export const VersionControlEditor: React.FC<{
 
   const docPath = fakeDocPath(selectedDocLink);
 
-  const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(
-    docPath,
-    uiStateHandle
-  );
+  const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(docPath);
   const { cloneOrMainOm, baseHeads } = branchScopeAndActiveBranchInfo;
 
   const branchDiff = useMemo(() => {

@@ -46,10 +46,7 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   // but we could use that info to visualize something in the future.
   const docPath = fakeDocPath(node.data);
   const uiStateHandle = useUIStateHandle();
-  const { activeBranchOm } = useBranchScopeAndActiveBranchInfo(
-    docPath,
-    uiStateHandle
-  );
+  const { activeBranchOm } = useBranchScopeAndActiveBranchInfo(docPath);
 
   const [doc] = useDocument<HasVersionControlMetadata>(node.data.url);
   const [versionControlMetadataDoc] = useDocument<VersionControlSidecarDoc>(
