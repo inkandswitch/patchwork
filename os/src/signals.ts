@@ -1,0 +1,40 @@
+import { AnyDocumentId, AutomergeUrl, parseAutomergeUrl, Repo } from "@automerge/automerge-repo";
+import { Signal, atom, computed } from 'signia';
+import { Om } from "./om";
+
+
+const DOC_SIGNAL_CACHE = new Map<AutomergeUrl, Signal<any | undefined>>();
+
+export function DocSig<T>(url: AutomergeUrl, repo: Repo): Signal<T | undefined> {
+  if (!(typeof url === "string")) {
+    throw new Error(`DocSig called with something that isn't a string: ${url}`);
+  }
+
+  const fromCache = DOC_SIGNAL_CACHE.get(url);
+  if (fromCache) {
+    return fromCache as Signal<T | undefined>;
+  }
+
+  const signal = atom<T | undefined>(`getDocSig:${url}`, undefined)
+
+  const handle = repo.find<T>(url);
+  handle.doc().then((doc) => {
+    signal.set(doc);
+  })
+  handle.on("change", (ev) => {
+    signal.set(ev.doc);
+  })
+  handle.on("delete", () => {
+    signal.set(undefined);
+  });
+
+  DOC_SIGNAL_CACHE.set(url, signal);
+  return signal;
+}
+
+export function OmSig<T>(url: AutomergeUrl, repo: Repo): Signal<Om<T> | undefined> {
+  const docSig = DocSig<T>(url, repo);
+  const id = parseAutomergeUrl(url).documentId;
+  const handle = repo.find<T>(id);
+  return computed(`getOmSig:${url}`, () => docSig.value && { url, id, handle, doc: docSig.value });
+}

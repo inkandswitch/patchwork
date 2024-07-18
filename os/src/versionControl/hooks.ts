@@ -1,7 +1,7 @@
 import { docPathString, UIStateDoc } from "@/explorer/account";
 import { DocPath } from "@/packages/folder/datatype";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import _ from "lodash";
 import { useCallback, useMemo } from "react";
 import { Om, useOm, useOms } from "../om";
@@ -10,6 +10,8 @@ import {
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
 } from "./schema";
+import { useValue } from "signia-react";
+import { branchScopeInfoSig } from "./signals";
 
 // Given a doc path, you can ask for its "branch scope info". For convenience,
 // if the path doesn't actually have a branch scope, we return values as though
@@ -26,52 +28,59 @@ export type BranchScopeInfo = {
 
 // Given a doc path representing current selected doc,
 // resolve a branch scope and return relevant information about branches
+
 export const useBranchScopeInfo = (docPath: DocPath): BranchScopeInfo => {
-  // we need the metadata docs of all parent folders which requires an async op to load
-  // to work with them in the useMemo hook below we fetch them with useDocuments
-  const docPathOms = useOms<HasVersionControlMetadata>(
-    docPath.map((link) => link.url)
-  );
-  const versionControlMetadataDocUrls = docPathOms.map(
-    (om) => om?.doc.versionControlMetadataUrl
-  );
-  const versionControlMetadataOms = useOms<VersionControlSidecarDoc>(
-    versionControlMetadataDocUrls
-  );
-
-  const { branchUrls, ...info } = useMemo(() => {
-    // otherwise go up the hierarchy and check if any of the parent folders are branch scopes
-    for (let i = docPath.length - 1; i >= 0; i--) {
-      const docPathOm = docPathOms[i];
-      const versionControlMetadataOm = versionControlMetadataOms[i];
-      if (
-        versionControlMetadataOm &&
-        versionControlMetadataOm.doc.isBranchScope
-      ) {
-        return {
-          branchScopeOm: docPathOm,
-          branchScopeVersionControlMetadataOm: versionControlMetadataOm,
-          branchScopePath: docPath.slice(0, i + 1),
-          isRealBranchScope: true,
-          branchUrls: versionControlMetadataOm.doc.branches,
-        };
-      }
-    }
-
-    // we didn't find a branch scope; let's pretend to be our own
-    return {
-      branchScopeOm: _.last(docPathOms),
-      branchScopeVersionControlMetadataOm: _.last(versionControlMetadataOms),
-      branchScopePath: docPath,
-      isRealBranchScope: false,
-      branchUrls: [],
-    };
-  }, [docPath, docPathOms, versionControlMetadataOms]);
-
-  const branchOms = useOms<BranchDoc>(branchUrls);
-
-  return { ...info, branchOms };
+  const repo = useRepo();
+  const branchScopeInfoSig_ = useMemo(() => branchScopeInfoSig(docPath, repo), [docPath, repo]);
+  return useValue(branchScopeInfoSig_);
 };
+
+// export const useBranchScopeInfo = (docPath: DocPath): BranchScopeInfo => {
+//   // we need the metadata docs of all parent folders which requires an async op to load
+//   // to work with them in the useMemo hook below we fetch them with useDocuments
+//   const docPathOms = useOms<HasVersionControlMetadata>(
+//     docPath.map((link) => link.url)
+//   );
+//   const versionControlMetadataDocUrls = docPathOms.map(
+//     (om) => om?.doc.versionControlMetadataUrl
+//   );
+//   const versionControlMetadataOms = useOms<VersionControlSidecarDoc>(
+//     versionControlMetadataDocUrls
+//   );
+
+//   const { branchUrls, ...info } = useMemo(() => {
+//     // otherwise go up the hierarchy and check if any of the parent folders are branch scopes
+//     for (let i = docPath.length - 1; i >= 0; i--) {
+//       const docPathOm = docPathOms[i];
+//       const versionControlMetadataOm = versionControlMetadataOms[i];
+//       if (
+//         versionControlMetadataOm &&
+//         versionControlMetadataOm.doc.isBranchScope
+//       ) {
+//         return {
+//           branchScopeOm: docPathOm,
+//           branchScopeVersionControlMetadataOm: versionControlMetadataOm,
+//           branchScopePath: docPath.slice(0, i + 1),
+//           isRealBranchScope: true,
+//           branchUrls: versionControlMetadataOm.doc.branches,
+//         };
+//       }
+//     }
+
+//     // we didn't find a branch scope; let's pretend to be our own
+//     return {
+//       branchScopeOm: _.last(docPathOms),
+//       branchScopeVersionControlMetadataOm: _.last(versionControlMetadataOms),
+//       branchScopePath: docPath,
+//       isRealBranchScope: false,
+//       branchUrls: [],
+//     };
+//   }, [docPath, docPathOms, versionControlMetadataOms]);
+
+//   const branchOms = useOms<BranchDoc>(branchUrls);
+
+//   return { ...info, branchOms };
+// };
 
 export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & {
   activeBranchOm: Om<BranchDoc>;
