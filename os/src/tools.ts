@@ -59,6 +59,9 @@ export type EditorProps<T, V> = {
 
   // TODO: will be replaced when we have real doc paths everywhere
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
+
+  // HACK
+  mainDocUrl: AutomergeUrl;
 };
 
 export type AnnotationsViewProps<

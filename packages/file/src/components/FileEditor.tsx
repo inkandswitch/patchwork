@@ -24,7 +24,7 @@ import { TextAnchor } from "@/lib/textAnchors";
 // if this tool supports the data type
 
 export const FileEditor = (props: EditorProps<unknown, unknown>) => {
-  const { docUrl, docHeads, getFakeDocPathForDocUrl } = props;
+  const { docUrl, docHeads, getFakeDocPathForDocUrl, mainDocUrl } = props;
   const [_doc] = useDocument<FileDoc>(docUrl);
   const [showSourceFiles, setShowDependencies] = useState(false);
 
@@ -70,6 +70,10 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
 
   return (
     <div className="h-full flex flex-col">
+      <div className="flex flex-col">
+        <div>docUrl: {docUrl}</div>
+        <div>mainDocUrl: {mainDocUrl}</div>
+      </div>
       {buildMetadata && (
         <div className="bg-gray-100 pl-4 pt-3 pb-3 flex gap-2 items-center border-b border-gray-200 justify-between">
           <div>
@@ -110,6 +114,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
                   docUrl={input.docUrl}
                   docHeads={input.heads}
                   getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+                  mainDocUrl={mainDocUrl}
                 />
               </div>
             </div>

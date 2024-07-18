@@ -291,6 +291,7 @@ export const VersionControlEditor: React.FC<{
                 hideInlineComments={hideInlineComments}
                 setCommentState={setCommentState}
                 getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+                mainDocUrl={mainDocUrl}
               />
             </div>
           </div>
@@ -311,6 +312,7 @@ export const VersionControlEditor: React.FC<{
           setCommentState={setCommentState}
           addNewDocument={addNewDocument}
           getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+          mainDocUrl={mainDocUrl}
         />
       </div>
 
@@ -412,6 +414,7 @@ const DocEditor = <T, V>({
   setHoveredAnnotationGroupId,
   setCommentState,
   getFakeDocPathForDocUrl,
+  mainDocUrl,
 }: EditorPropsWithTool<T, V>) => {
   if (!tool) {
     return;
@@ -433,6 +436,7 @@ const DocEditor = <T, V>({
       setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
       setCommentState={setCommentState}
       getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+      mainDocUrl={mainDocUrl}
     />
   );
 };

@@ -110,6 +110,7 @@ export const FolderEntryView = ({
               docLink.type !== "folder" &&
               React.createElement(tool.editorComponent, {
                 docUrl: cloneOrMainOm?.url,
+                mainDocUrl: docLink.url,
                 getFakeDocPathForDocUrl,
                 ...annotationProps,
               })}
