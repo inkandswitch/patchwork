@@ -31,11 +31,8 @@ export const DiscussionInput = function <
   const [commentBoxContent, setCommentBoxContent] = useState("");
 
   const currentlyActiveHeads = changelogSelection
-    ? JSON.parse(
-        JSON.stringify(
-          changelogItems.find((i) => i.id === changelogSelection.to.itemId)
-            ?.heads
-        )
+    ? structuredClone(
+        changelogItems.find((i) => i.id === changelogSelection.to.itemId)?.heads
       )
     : A.getHeads(doc);
 
