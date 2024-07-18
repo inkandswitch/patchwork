@@ -180,6 +180,7 @@ export const SideBySide = ({
           setSelectedAnchors={setSelectedAnchors}
           setHoveredAnchor={setHoveredAnchor}
           getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+          mainDocUrl={mainDocUrl}
         />
       </div>
       <div className="h-full flex-1 overflow-auto border-l border-l-gray-200">
@@ -195,6 +196,7 @@ export const SideBySide = ({
           setSelectedAnchors={setSelectedAnchors}
           setHoveredAnchor={setHoveredAnchor}
           getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+          mainDocUrl={mainDocUrl}
         />
       </div>
     </div>
