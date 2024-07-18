@@ -1,38 +1,23 @@
 import fs from "fs";
 import path from "path";
-import { CommandLineArgs, getJacquardConfig } from ".";
-import {
-  AutomergeUrl,
-  Repo,
-  isValidAutomergeUrl,
-} from "@automerge/automerge-repo";
+import { CommandLineArgs } from ".";
+import { Doc, Repo } from "@automerge/automerge-repo";
 import { FolderDoc } from "@/packages/folder";
 import { FileDoc } from "../../packages/file/src/datatype";
-import { BranchDoc, DocCloneMap } from "@/sdk";
-
-const lookupClone = (cloneMap: DocCloneMap, docUrl: AutomergeUrl) => {
-  return cloneMap[docUrl]?.url ?? docUrl;
-};
+import { findWithActiveBranch } from "./findWithActiveBranch";
 
 export async function pull(
   repo: Repo,
   { projectFolderUrl, dir }: CommandLineArgs
 ) {
-  const config = getJacquardConfig();
-  const branchUrl = config.activeBranchUrl;
-
-  let cloneMap: DocCloneMap = {};
-  if (branchUrl !== "main" && isValidAutomergeUrl(branchUrl)) {
-    const branchDoc = await repo.find<BranchDoc>(branchUrl).doc();
-    cloneMap = branchDoc.clones;
-  }
-
-  const folderUrl = lookupClone(cloneMap, projectFolderUrl);
-  let handle = repo.find<FolderDoc>(folderUrl);
-  const doc = await handle.doc();
+  const folderHandle = await findWithActiveBranch<FolderDoc>(
+    projectFolderUrl,
+    repo
+  );
+  const doc = await folderHandle.doc();
 
   if (!doc) {
-    console.error(`Could not find ${folderUrl}: ${handle.state}`);
+    console.error(`Could not find ${folderHandle.url}: ${folderHandle.state}`);
     process.exit(1);
   }
 
@@ -43,9 +28,8 @@ export async function pull(
         return;
       }
 
-      const clonedUrl = lookupClone(cloneMap, docLink.url);
-      const handle = repo.find<FileDoc>(clonedUrl);
-      const fileDoc = await handle.doc();
+      const fileHandle = await findWithActiveBranch<FileDoc>(docLink.url, repo);
+      const fileDoc = await fileHandle.doc();
 
       // todo: handle other docs that are not files
       if (docLink.type !== "file") {

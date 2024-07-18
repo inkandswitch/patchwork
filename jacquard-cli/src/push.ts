@@ -17,6 +17,7 @@ import { MarkdownDoc } from "../../packages/essay/src";
 import { FolderDoc } from "@/packages/folder";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 import { VersionControlSidecarDoc } from "@/sdk";
+import { findWithActiveBranch } from "./findWithActiveBranch";
 
 // NOTE: copied this from the version control code in our os folder.
 // couldn't get imports working from os to jacquard-cli so just copying the function for now.
@@ -94,7 +95,10 @@ export async function push(
         : undefined;
 
     if (existingDocLink) {
-      const handle = repo.find<FileDoc>(existingDocLink.url);
+      const handle = await findWithActiveBranch<FileDoc>(
+        existingDocLink.url,
+        repo
+      );
       fileHandlesByFileName[fileNameWithExtension] = handle;
 
       await handle.whenReady();
@@ -253,7 +257,10 @@ export async function push(
 async function findOrCreateFolderHandle(projectFolderUrl, repo: Repo) {
   let folderHandle: DocHandle<FolderDoc>;
   if (projectFolderUrl !== undefined) {
-    folderHandle = repo.find(projectFolderUrl);
+    folderHandle = await findWithActiveBranch<FolderDoc>(
+      projectFolderUrl,
+      repo
+    );
     await folderHandle.doc();
     if (folderHandle.docSync() === undefined) {
       console.error(`Could not find doc at ${projectFolderUrl}`);
@@ -292,7 +299,10 @@ async function findOrCreateBuildMetadataHandle(
     )?.url;
 
     if (buildMetadataDocUrl) {
-      buildMetadataHandle = repo.find(buildMetadataDocUrl);
+      buildMetadataHandle = await findWithActiveBranch<JacquardBuildMetadata>(
+        buildMetadataDocUrl,
+        repo
+      );
       await buildMetadataHandle.whenReady();
     } else {
       buildMetadataHandle = repo.create();
