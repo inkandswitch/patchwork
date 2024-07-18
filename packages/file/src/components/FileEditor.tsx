@@ -16,13 +16,14 @@ import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import { TextFileEditor } from "./TextFileEditor";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
+import { TextAnchor } from "@/lib/textAnchors";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
 // that gets passed in the content of the document so you can determine based on the content
 // if this tool supports the data type
 
-export const FileEditor = (props: EditorProps<FileDoc, never>) => {
+export const FileEditor = (props: EditorProps<unknown, unknown>) => {
   const { docUrl, docHeads, getFakeDocPathForDocUrl } = props;
   const [_doc] = useDocument<FileDoc>(docUrl);
   const [showSourceFiles, setShowDependencies] = useState(false);
@@ -41,7 +42,7 @@ export const FileEditor = (props: EditorProps<FileDoc, never>) => {
       {typeof doc.content === "string" ? (
         React.createElement(
           TextFileEditor,
-          props as EditorProps<TextFileDoc, never>
+          props as EditorProps<TextAnchor, string>
         )
       ) : (
         <>
@@ -49,14 +50,14 @@ export const FileEditor = (props: EditorProps<FileDoc, never>) => {
             <div className="overflow-auto h-full p-4">
               {React.createElement(
                 ImageFileViewer,
-                props as EditorProps<ImageFileDoc, never>
+                props as EditorProps<never, never>
               )}
             </div>
           ) : isPDFFile(doc) ? (
             <div className="overflow-auto h-full">
               {React.createElement(
                 PDFFileViewer,
-                props as EditorProps<PDFFileDoc, never>
+                props as EditorProps<never, never>
               )}
             </div>
           ) : (
