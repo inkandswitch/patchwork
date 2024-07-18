@@ -1,6 +1,6 @@
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
-import React from "react";
+import React, { useMemo } from "react";
 
 import { useDataType } from "@/datatypes";
 import { useUIStateHandle } from "@/explorer/account";
@@ -10,6 +10,9 @@ import { EditorProps, Tool, useToolsForDataType } from "@/tools";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { DocLink, DocPath, FolderDoc } from "./datatype";
+import { useAnnotations } from "@/versionControl/annotations";
+import { diffWithProvenance } from "@/versionControl/utils";
+import { HasVersionControlMetadata } from "@/versionControl/schema";
 
 export const FolderViewer: React.FC<EditorProps<never, never>> = ({
   docUrl,
@@ -47,10 +50,13 @@ type FolderEntryView = {
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
 };
 
-export const FolderEntryView = ({ docLink, getFakeDocPathForDocUrl }: FolderEntryView) => {
+export const FolderEntryView = ({
+  docLink,
+  getFakeDocPathForDocUrl,
+}: FolderEntryView) => {
   const uiStateHandle = useUIStateHandle();
   const docPath = getFakeDocPathForDocUrl(docLink.url);
-  const { cloneOrMainOm } = useBranchScopeAndActiveBranchInfo(
+  const { cloneOrMainOm, baseHeads } = useBranchScopeAndActiveBranchInfo(
     docPath,
     uiStateHandle
   );
@@ -59,6 +65,24 @@ export const FolderEntryView = ({ docLink, getFakeDocPathForDocUrl }: FolderEntr
   const tool = useToolsForDataType(docLink.type)[0];
 
   const icon = tool?.icon ?? dataType?.icon;
+
+  // TODO: we shouldn't have to duplicate this code here, also right now the change highlights can't be disabled
+  const diff = useMemo(() => {
+    if (baseHeads && cloneOrMainOm) {
+      return diffWithProvenance(
+        cloneOrMainOm.doc,
+        baseHeads,
+        A.getHeads(cloneOrMainOm.doc)
+      );
+    }
+  }, [baseHeads, cloneOrMainOm]);
+
+  const annotationProps = useAnnotations({
+    doc: cloneOrMainOm?.doc as A.Doc<HasVersionControlMetadata>,
+    dataType,
+    isCommentInputFocused: false,
+    diff,
+  });
 
   return (
     <div>
@@ -87,6 +111,7 @@ export const FolderEntryView = ({ docLink, getFakeDocPathForDocUrl }: FolderEntr
               React.createElement(tool.editorComponent, {
                 docUrl: cloneOrMainOm?.url,
                 getFakeDocPathForDocUrl,
+                ...annotationProps,
               })}
             {docLink.type === "folder" && (
               <div className="bg-gray-50 justify-center items-center flex h-full">

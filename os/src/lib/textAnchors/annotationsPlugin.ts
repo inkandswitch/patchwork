@@ -35,7 +35,6 @@ const annotationsField = StateField.define<
   update(patches, tr) {
     for (const e of tr.effects) {
       if (e.is(setAnnotationsEffect)) {
-        console.log("update annotations", e.value);
         return e.value;
       }
     }
@@ -125,8 +124,6 @@ const annotationDecorations = EditorView.decorations.compute(
   [annotationsField],
   (state) => {
     const annotations = state.field(annotationsField);
-
-    console.log("render annotations", annotations);
 
     const decorations = annotations.flatMap((annotation) => {
       const { fromPos, toPos } = annotation.anchor;

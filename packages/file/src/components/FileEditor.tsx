@@ -27,7 +27,7 @@ export const FileEditor = (props: EditorProps<FileDoc, never>) => {
   const [_doc] = useDocument<FileDoc>(docUrl);
   const [showSourceFiles, setShowDependencies] = useState(false);
 
-  const doc = docHeads ? Automerge.view(_doc, docHeads) : _doc;
+  const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
 
   const buildMetadata = useBuildMetadata(doc, docHeads);
   const isStale = useIsStale(buildMetadata?.inputs ?? []);
