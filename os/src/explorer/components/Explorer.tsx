@@ -37,6 +37,7 @@ import { useDataType, useDataTypes } from "../../datatypes";
 import { useTool, useToolsForDataType } from "../../tools";
 import { useSelectedDocLink } from "../hooks/useSelectedDocLink";
 import { ErrorFallback } from "./ErrorFallback";
+import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();
@@ -167,15 +168,13 @@ export const Explorer: React.FC = () => {
     [dataTypes, repo, selectedDocLink, uiStateHandle, selectDocLink, rootFolderUrl]
   );
 
-  // NOTE: commented out this code in the Jacquard sketch
-  // we wanna keep unix-y titles and avoid syncing up from doc
-
-  // useSyncDocTitle({
-  //   selectedDocLink,
-  //   selectedDoc,
-  //   selectDocLink,
-  //   repo,
-  // });
+  // TODO: this only reads the main branch
+  useSyncDocTitle({
+    selectedDocLink,
+    selectedDoc,
+    selectDocLink,
+    repo,
+  });
 
   // update tab title to be the selected doc
   useEffect(() => {
