@@ -186,7 +186,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const {
     doc: rootFolderDocWithChildren,
-    status,
     rootFolderUrl,
     flatDocLinks,
   } = rootFolderDoc;
@@ -300,7 +299,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     selectDocLink({ ...selectedDocLink, name });
   };
 
-  const onToggle = (id: string) => {
+  const onToggle = async (id: string) => {
+    if (!uiStateDoc) {
+      // TODO: the tree component calls onToggle in response to the initial
+      // `selection`; this causes an error in the below changeUIStateDoc cuz the
+      // ui state doc isn't ready; this hack seems to work? but i dunno
+      return;
+    }
     const link = JSON.parse(id);
     changeUIStateDoc((uiState) => {
       if (
@@ -334,7 +339,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   );
 
   // Show a loading spinner until we've recursively loaded all folder contents
-  if (status === "loading") {
+  if (rootFolderDocWithChildren === undefined) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p className="text-gray-400 text-sm">Loading...</p>

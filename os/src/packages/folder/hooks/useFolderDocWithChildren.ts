@@ -1,17 +1,19 @@
-import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useCallback, useMemo } from "react";
+import { OmSig } from "@/signals";
+import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import { useMemo } from "react";
+import { computed, Signal } from "signia";
+import { useValue } from "signia-react";
 import {
   DocLinkWithFolderPath,
   FolderDoc,
   FolderDocWithChildren,
 } from "../datatype";
-import { useDocumentWithLinks } from "./useDocumentWithLinks";
 
 export type FolderDocWithMetadata = {
   rootFolderUrl: AutomergeUrl;
   flatDocLinks: DocLinkWithFolderPath[];
   doc: FolderDocWithChildren;
-  status: "loading" | "loaded";
 };
 
 // Returns a flattened list of doc links in the folder tree, as an easy lookup index.
@@ -23,23 +25,16 @@ export type FolderDocWithMetadata = {
 const computeFlattenedDocLinks = ({
   folderPath,
   doc,
-  status,
 }: {
   folderPath: AutomergeUrl[];
   doc: FolderDocWithChildren;
-  status: "loading" | "loaded";
 }): DocLinkWithFolderPath[] | undefined => {
-  if (status === "loading") {
-    return undefined;
-  }
-
   return doc?.docs.flatMap((docLink) =>
     docLink.type === "folder" && docLink.folderContents
       ? [
           { ...docLink, folderPath: folderPath },
           ...computeFlattenedDocLinks({
             doc: docLink.folderContents,
-            status,
             folderPath: [...folderPath, docLink.url],
           }),
         ]
@@ -47,68 +42,62 @@ const computeFlattenedDocLinks = ({
   );
 };
 
-const findLinks = (folderDoc: FolderDocWithChildren) => {
-  const urls = [];
-  for (const child of folderDoc.docs) {
-    if (child.type === "folder") {
-      urls.push(child.url);
+// TODO: reactive but not incremental
+function materializeFolderDocSig(
+  folderUrl: AutomergeUrl | undefined,
+  repo: Repo,
+): Signal<FolderDocWithChildren | 'loading'> {
+  const folderOmSig = OmSig<FolderDoc>(folderUrl, repo);
+
+  return computed(`materializeFolderDocSig:${folderUrl}`, () => {
+    const folderOm = folderOmSig.value;
+    const folder = folderOm?.doc;
+    if (!folder) {
+      return 'loading';
     }
-    if (child.folderContents) {
-      urls.push(...findLinks(child.folderContents));
-    }
-  }
-
-  return urls;
-};
-
-const materializeLinks = (
-  folder: FolderDoc,
-  loadedDocs: Record<AutomergeUrl, FolderDoc>
-): FolderDocWithChildren => {
-  return {
-    ...folder,
-    docs:
-      folder.docs?.map((link) => {
-        if (loadedDocs[link.url]) {
-          return {
-            ...link,
-            folderContents: materializeLinks(
-              loadedDocs[link.url],
-              loadedDocs
-            ),
-          };
-        } else {
-          return link;
-        }
-      }) ?? [],
-  };
-};
-
-
+    let somethingLoading = false;
+    const result = {
+      ...folder,
+      docs:
+        folder.docs?.map((link) => {
+          if (link.type === "folder") {
+            const folderContents = materializeFolderDocSig(link.url, repo).value;
+            if (folderContents === 'loading') {
+              somethingLoading = true;
+            }
+            // cast is ok cuz if it's loading, we won't return result
+            return { ...link, folderContents: folderContents as FolderDocWithChildren };
+          } else {
+            return link;
+          }
+        }) ?? [],
+    };
+    return somethingLoading ? 'loading' : result;
+  });
+}
 
 // This hook recursively traverses a tree of nested folders and loads folder contents.
 export function useFolderDocWithChildren(
   rootFolderUrl: AutomergeUrl | undefined
 ): FolderDocWithMetadata {
-  const docWithLinks = useDocumentWithLinks({
-    rootUrl: rootFolderUrl,
-    findLinks: findLinks,
-    materializeLinks: materializeLinks,
-  });
+  const repo = useRepo();
+  const docWithLinks = useValue(useMemo(() =>
+    materializeFolderDocSig(rootFolderUrl, repo),
+    [rootFolderUrl, repo]
+  ));
 
   // flatDocLinks is a flat array of all the docs in the hierarchy
   const flatDocLinks = useMemo(
     () =>
-      computeFlattenedDocLinks({
-        doc: docWithLinks.doc,
-        status: docWithLinks.status,
+      docWithLinks === 'loading' ? undefined : computeFlattenedDocLinks({
+        doc: docWithLinks,
         folderPath: [rootFolderUrl],
       }),
     [docWithLinks, rootFolderUrl]
   );
 
   return {
-    ...docWithLinks,
+    doc: docWithLinks === 'loading' ? undefined : docWithLinks,
     rootFolderUrl,
     flatDocLinks,
   };

@@ -141,7 +141,7 @@ export const VersionControlEditor: React.FC<{
   const { cloneOrMainOm } = branchScopeAndActiveBranchInfo;
 
   const buildMetadata = useMemo(() => {
-    if (!cloneOrMainOm.doc) return undefined;
+    if (!cloneOrMainOm?.doc) return undefined;
     const allChangesForDoc = A.getAllChanges(cloneOrMainOm.doc);
     const lastChange = A.decodeChange(
       allChangesForDoc[allChangesForDoc.length - 1]
@@ -153,7 +153,7 @@ export const VersionControlEditor: React.FC<{
       }
     }
     return undefined;
-  }, [cloneOrMainOm.doc]);
+  }, [cloneOrMainOm?.doc]);
 
   const dataType = useDataType(datatypeId);
 
@@ -167,7 +167,7 @@ export const VersionControlEditor: React.FC<{
     setSelectedAnnotationGroupId,
     setCommentState,
   } = useAnnotations({
-    doc: cloneOrMainOm.doc as A.Doc<HasVersionControlMetadata>,
+    doc: cloneOrMainOm?.doc as A.Doc<HasVersionControlMetadata>,
     dataType,
     isCommentInputFocused,
   });
@@ -219,7 +219,7 @@ export const VersionControlEditor: React.FC<{
 
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
 
-  if (!doc || !datatypeId || !doc.branchMetadata) return <div>Loading...</div>;
+  if (!cloneOrMainOm || !datatypeId || !doc.branchMetadata) return <div>Loading...</div>;
 
   // ---- ANYTHING RELYING ON doc SHOULD GO BELOW HERE ----
 
