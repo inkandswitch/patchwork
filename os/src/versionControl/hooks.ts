@@ -1,3 +1,4 @@
+import * as Automerge from "@automerge/automerge";
 import { UIStateDoc } from "@/explorer/account";
 import { DocPath } from "@/packages/folder/datatype";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
@@ -10,7 +11,11 @@ import {
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
 } from "./schema";
-import { activeBranchInfoSig, branchScopeAndActiveBranchInfoSig, branchScopeInfoSig } from "./signals";
+import {
+  activeBranchInfoSig,
+  branchScopeAndActiveBranchInfoSig,
+  branchScopeInfoSig,
+} from "./signals";
 
 // Given a doc path, you can ask for its "branch scope info". For convenience,
 // if the path doesn't actually have a branch scope, we return values as though
@@ -30,12 +35,15 @@ export type BranchScopeInfo = {
 
 export const useBranchScopeInfo = (docPath: DocPath): BranchScopeInfo => {
   const repo = useRepo();
-  return useValue(useMemo(() => branchScopeInfoSig(docPath, repo), [docPath, repo]));
+  return useValue(
+    useMemo(() => branchScopeInfoSig(docPath, repo), [docPath, repo])
+  );
 };
 
 export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & {
   activeBranchOm: Om<BranchDoc>;
   setActiveBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
+  baseHeads: Automerge.Heads;
   cloneOrMainOm: Om;
 };
 
@@ -44,10 +52,12 @@ export const useActiveBranchInfo = (
   uiStateHandle: DocHandle<UIStateDoc>
 ) => {
   const repo = useRepo();
-  return useValue(useMemo(() =>
-    activeBranchInfoSig(branchScopePath, uiStateHandle, repo),
-    [branchScopePath, uiStateHandle, repo]
-  ));
+  return useValue(
+    useMemo(
+      () => activeBranchInfoSig(branchScopePath, uiStateHandle, repo),
+      [branchScopePath, uiStateHandle, repo]
+    )
+  );
 };
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
@@ -57,8 +67,10 @@ export const useBranchScopeAndActiveBranchInfo = (
   uiStateHandle: DocHandle<UIStateDoc>
 ): BranchScopeAndActiveBranchInfo => {
   const repo = useRepo();
-  return useValue(useMemo(() =>
-    branchScopeAndActiveBranchInfoSig(docPath, uiStateHandle, repo),
-    [docPath, uiStateHandle, repo]
-  ));
+  return useValue(
+    useMemo(
+      () => branchScopeAndActiveBranchInfoSig(docPath, uiStateHandle, repo),
+      [docPath, uiStateHandle, repo]
+    )
+  );
 };

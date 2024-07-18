@@ -3,7 +3,7 @@ import { DocPath } from "@/packages/folder/datatype";
 import { OmSig } from "@/signals";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import _ from "lodash";
-import { computed, Signal, } from 'signia';
+import { computed, Signal } from "signia";
 import { BranchScopeAndActiveBranchInfo, BranchScopeInfo } from "./hooks";
 import {
   BranchDoc,
@@ -18,18 +18,28 @@ import {
 
 // Given a doc path representing current selected doc,
 // resolve a branch scope and return relevant information about branches
-export const branchScopeInfoSig = (docPath: DocPath, repo: Repo): Signal<BranchScopeInfo> => {
+export const branchScopeInfoSig = (
+  docPath: DocPath,
+  repo: Repo
+): Signal<BranchScopeInfo> => {
   // we need the metadata docs of all parent folders which requires an async op to load
   // to work with them in the useMemo hook below we fetch them with useDocuments
-  const docPathOmSigs = docPath.map((link) => OmSig<HasVersionControlMetadata>(link.url, repo));
+  const docPathOmSigs = docPath.map((link) =>
+    OmSig<HasVersionControlMetadata>(link.url, repo)
+  );
   const versionControlMetadataOmSigs = docPathOmSigs.map((docPathOmSig, i) =>
-    computed('', () =>
-      docPathOmSig.value?.doc.versionControlMetadataUrl &&
-      OmSig<VersionControlSidecarDoc>(docPathOmSig.value.doc.versionControlMetadataUrl, repo).value
+    computed(
+      "",
+      () =>
+        docPathOmSig.value?.doc.versionControlMetadataUrl &&
+        OmSig<VersionControlSidecarDoc>(
+          docPathOmSig.value.doc.versionControlMetadataUrl,
+          repo
+        ).value
     )
   );
 
-  return computed('', () => {
+  return computed("", () => {
     // go up the hierarchy and check if any of the parent folders are branch scopes
     for (let i = docPath.length - 1; i >= 0; i--) {
       const versionControlMetadataOm = versionControlMetadataOmSigs[i].value;
@@ -37,8 +47,9 @@ export const branchScopeInfoSig = (docPath: DocPath, repo: Repo): Signal<BranchS
         versionControlMetadataOm &&
         versionControlMetadataOm.doc.isBranchScope
       ) {
-        const branchOms = versionControlMetadataOm.doc.branches.map((branchUrl) =>
-          OmSig<BranchDoc>(branchUrl, repo).value);
+        const branchOms = versionControlMetadataOm.doc.branches.map(
+          (branchUrl) => OmSig<BranchDoc>(branchUrl, repo).value
+        );
         return {
           branchScopeOm: docPathOmSigs[i].value,
           branchScopeVersionControlMetadataOm: versionControlMetadataOm,
@@ -52,7 +63,8 @@ export const branchScopeInfoSig = (docPath: DocPath, repo: Repo): Signal<BranchS
     // we didn't find a branch scope; let's pretend to be our own
     return {
       branchScopeOm: _.last(docPathOmSigs).value,
-      branchScopeVersionControlMetadataOm: _.last(versionControlMetadataOmSigs).value,
+      branchScopeVersionControlMetadataOm: _.last(versionControlMetadataOmSigs)
+        .value,
       branchScopePath: docPath,
       isRealBranchScope: false,
       branchOms: [],
@@ -67,8 +79,10 @@ export const activeBranchInfoSig = (
 ) => {
   const uiStateOmSig = OmSig<UIStateDoc>(uiStateHandle?.url, repo);
 
-  return computed('', () => {
-    const activeBranchUrl = uiStateOmSig.value?.doc.openBranches[docPathString(branchScopePath)] ?? null;
+  return computed("", () => {
+    const activeBranchUrl =
+      uiStateOmSig.value?.doc.openBranches[docPathString(branchScopePath)] ??
+      null;
 
     const setActiveBranchUrl = (branchDocUrl: AutomergeUrl | null) => {
       uiStateOmSig.value.handle.change((uiStateDoc) => {
@@ -101,25 +115,35 @@ export const activeBranchInfoSig = (
 export const branchScopeAndActiveBranchInfoSig = (
   docPath: DocPath,
   uiStateHandle: DocHandle<UIStateDoc>,
-  repo: Repo,
+  repo: Repo
 ): Signal<BranchScopeAndActiveBranchInfo> => {
   const branchScopeInfoSig_ = branchScopeInfoSig(docPath, repo);
 
-  const activeBranchInfoSig_ = computed('', () => {
+  const activeBranchInfoSig_ = computed("", () => {
     const { branchScopePath } = branchScopeInfoSig_.value;
     return activeBranchInfoSig(branchScopePath, uiStateHandle, repo).value;
   });
 
-  const cloneOmSig = computed('', () => {
-    const cloneUrl = activeBranchInfoSig_.value.activeBranchOm?.doc?.clones?.[_.last(docPath).url]?.url;
+  const cloneEntrySig = computed("", () => {
+    return activeBranchInfoSig_.value.activeBranchOm?.doc?.clones?.[
+      _.last(docPath).url
+    ];
+  });
+
+  const cloneOmSig = computed("", () => {
+    const cloneUrl = cloneEntrySig.value?.url;
     return OmSig(cloneUrl, repo).value;
   });
   const mainOmSig = OmSig(_.last(docPath).url, repo);
-  const cloneOrMainOmSig = computed('', () => cloneOmSig.value ?? mainOmSig.value);
+  const cloneOrMainOmSig = computed(
+    "",
+    () => cloneOmSig.value ?? mainOmSig.value
+  );
 
-  return computed('', () => ({
+  return computed("", () => ({
     ...branchScopeInfoSig_.value,
     ...activeBranchInfoSig_.value,
     cloneOrMainOm: cloneOrMainOmSig.value,
+    baseHeads: cloneEntrySig.value?.baseHeads,
   }));
 };
