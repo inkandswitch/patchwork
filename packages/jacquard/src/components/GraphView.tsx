@@ -8,6 +8,7 @@ import {
 import {
   useDocument,
   useDocuments,
+  useRepo,
 } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { instance } from "@viz-js/viz";
@@ -15,25 +16,40 @@ import { BuildRun, JacquardBuildMetadata, Reference } from "../datatype";
 import { FileDoc } from "../../../file/src/datatype";
 import { EditorProps } from "@/tools";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
+import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
+import { computed } from "signia";
+import { useValue } from "signia-react";
+import { branchScopeAndActiveBranchInfoSig } from "@/versionControl/signals";
+import { useUIStateHandle } from "@/explorer/account";
+import { DocPath } from "@/packages/folder/datatype";
+import { objectEntries } from "@/utils";
 
 export const GraphView = ({
   docUrl,
   docHeads,
+  getFakeDocPathForDocUrl,
 }: EditorProps<JacquardBuildMetadata, never>) => {
-  const [latestDoc] = useDocument<JacquardBuildMetadata>(docUrl);
+  const [latestDoc] = useDocument<JacquardBuildMetadata>(docUrl);  // ok cuz docUrl is a clone
 
   const doc = useMemo(
     () => (docHeads ? Automerge.view(latestDoc, docHeads) : latestDoc),
     [latestDoc, docHeads]
   );
 
-  const [projectFolderDoc] = useDocument<FolderDoc>(doc?.projectFolderUrl);
+  const folderProjectDocPath = getFakeDocPathForDocUrl(doc?.projectFolderUrl);
+  const { cloneOrMainOm: projectFolderOm } = useBranchScopeAndActiveBranchInfo(folderProjectDocPath);
+
+
+  // const [projectFolderDoc] = useDocument<FolderDoc>(doc?.projectFolderUrl);
 
   const projectState = useProjectState({
-    folderDoc: projectFolderDoc,
+    folderDoc: projectFolderOm.doc as FolderDoc,
     buildRuns: doc?.buildRuns ?? [],
     filesReferencedInBuildsOnly: true,
+    getFakeDocPathForDocUrl
   });
+
+  console.log("projectState", projectState);
 
   if (!projectState) {
     return;
@@ -46,6 +62,15 @@ export const GraphView = ({
   );
 };
 
+export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
+  // TODO: we should be able to use equality to check if heads match, but
+  // there's a bug where cloning a doc adds an extra head to it; pvh promises
+  // this will get fixed soon. for now we will check if one set of heads is the
+  // subset of another – this is generally atypical cuz we don't do much
+  // concurrent stuff.
+  return heads1.every((head) => heads2.includes(head)) || heads2.every((head) => heads1.includes(head));
+}
+
 type ProjectState = {
   references: Reference[];
   buildRuns: BuildRun[];
@@ -55,10 +80,12 @@ const useProjectState = ({
   folderDoc,
   buildRuns,
   filesReferencedInBuildsOnly,
+  getFakeDocPathForDocUrl,
 }: {
   folderDoc: FolderDoc;
   buildRuns: BuildRun[];
   filesReferencedInBuildsOnly?: boolean;
+  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
 }): ProjectState => {
   const fileUrls = useMemo(
     () =>
@@ -75,14 +102,26 @@ const useProjectState = ({
               ? [url]
               : []
           ),
-    [folderDoc?.docs]
+    [buildRuns, filesReferencedInBuildsOnly, folderDoc]
   );
-  const files = useDocuments(fileUrls);
+  const repo = useRepo();
+  const uiStateHandle = useUIStateHandle();
+  const files = useValue(useMemo(() => computed('', () => {
+    let result: Record<AutomergeUrl, Automerge.Doc<unknown>> = {};
+    for (let url of fileUrls) {
+      const docPath = getFakeDocPathForDocUrl(url);
+      const maybeDoc = branchScopeAndActiveBranchInfoSig(docPath, uiStateHandle, repo).value?.cloneOrMainOm?.doc;
+      if (maybeDoc) {
+        result[url] = maybeDoc;
+      }
+    };
+    return result;
+  }), [fileUrls, getFakeDocPathForDocUrl, repo, uiStateHandle]));
 
   const references = useMemo<Reference[]>(
     () =>
-      Object.entries(files).map(([id, doc]) => ({
-        docUrl: `automerge:${id}` as AutomergeUrl,
+      objectEntries(files).map(([docUrl, doc]) => ({
+        docUrl: docUrl as AutomergeUrl,
         heads: Automerge.getHeads(doc),
         path: (doc as FileDoc).name, // todo: handle this generically, we just assume here that this is a file doc
       })),
@@ -95,10 +134,8 @@ const useProjectState = ({
       // a build run is relevant as long as at least one of it's output still exists in the current project
       buildRuns.filter(({ outputs }, index) =>
         outputs.some(({ docUrl, heads }) => {
-          const { documentId } = parseAutomergeUrl(docUrl);
-          const doc = files[documentId];
-
-          return doc && Automerge.equals(Automerge.getHeads(doc), heads);
+          const doc = files[docUrl];
+          return doc && headsMatch(Automerge.getHeads(doc), heads);
         })
       ),
     [buildRuns, files]
@@ -112,7 +149,7 @@ const useProjectState = ({
             references,
             buildRuns: filteredBuildRuns,
           },
-    [folderDoc, filteredBuildRuns, references]
+    [folderDoc, fileUrls.length, references, filteredBuildRuns]
   );
 };
 
@@ -206,7 +243,7 @@ function stateGraphSrc(state: ProjectState) {
     ];`);
     for (let input of buildRun.inputs) {
       const inputReferenceInState = getReferenceFromDocUrl(state, input.docUrl);
-      const outOfDate = !Automerge.equals(
+      const outOfDate = !headsMatch(
         inputReferenceInState.heads,
         input.heads
       );
@@ -276,7 +313,7 @@ function makeBuildGraph(state: ProjectState): BuildGraph {
     let status = [];
     for (let input of buildRun.inputs) {
       const inputReferenceInState = getReferenceFromDocUrl(state, input.docUrl);
-      if (!Automerge.equals(inputReferenceInState.heads, input.heads)) {
+      if (!headsMatch(inputReferenceInState.heads, input.heads)) {
         // orange arrow
         status.push({
           originalChangeOld: input,
