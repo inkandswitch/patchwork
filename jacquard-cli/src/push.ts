@@ -5,6 +5,7 @@ import * as Automerge from "@automerge/automerge";
 import { isBinaryFileSync } from "isbinaryfile";
 import { next as A } from "@automerge/automerge";
 import {
+  AutomergeUrl,
   DocHandle,
   Repo,
   parseAutomergeUrl,
@@ -56,7 +57,10 @@ export async function push(
   const buildMetadataHandle: DocHandle<JacquardBuildMetadata> =
     await findOrCreateBuildMetadataHandle(buildMetadata, folderHandle, repo);
 
-  const fileHandlesByFileName = {};
+  const mainUrlsAndCloneHandlesByFileName: Record<string,{
+    mainUrl: AutomergeUrl;
+    cloneHandle: DocHandle<FileDoc>;
+  }> = {};
 
   for (const filePath of files) {
     // todo: sync subfolders
@@ -99,7 +103,10 @@ export async function push(
         existingDocLink.url,
         repo
       );
-      fileHandlesByFileName[fileNameWithExtension] = handle;
+      mainUrlsAndCloneHandlesByFileName[fileNameWithExtension] = {
+        mainUrl: existingDocLink.url,
+        cloneHandle: handle,
+      };
 
       await handle.whenReady();
 
@@ -133,7 +140,10 @@ export async function push(
     } else {
       // Make a new doc in the folder
       const handle = repo.create<unknown>();
-      fileHandlesByFileName[fileNameWithExtension] = handle;
+      mainUrlsAndCloneHandlesByFileName[fileNameWithExtension] = {
+        mainUrl: handle.url,
+        cloneHandle: handle as DocHandle<FileDoc>,
+      };
 
       await handle.whenReady();
 
@@ -191,7 +201,7 @@ export async function push(
       folderHandle.change((d) => {
         d.docs.push({
           name: filePath,
-          url: handle.url,
+          url: handle.url,  // this is ok cuz it's a new doc, not a clone
           type: isMarkdown ? "essay" : "file",
         });
       });
@@ -203,19 +213,19 @@ export async function push(
       doc.buildRuns.push({
         ...buildMetadata,
         inputs: buildMetadata.inputs.map((inputPath) => {
-          const handle = fileHandlesByFileName[path.basename(inputPath)];
+          const { mainUrl, cloneHandle } = mainUrlsAndCloneHandlesByFileName[path.basename(inputPath)];
           return {
-            docUrl: handle.url,
+            docUrl: mainUrl,
             path: inputPath,
-            heads: A.getHeads(handle.docSync()),
+            heads: A.getHeads(cloneHandle.docSync()),
           };
         }),
         outputs: buildMetadata.outputs.map((outputPath) => {
-          const handle = fileHandlesByFileName[path.basename(outputPath)];
+          const { mainUrl, cloneHandle } = mainUrlsAndCloneHandlesByFileName[path.basename(outputPath)];
           return {
-            docUrl: handle.url,
+            docUrl: mainUrl,
             path: outputPath,
-            heads: A.getHeads(handle.docSync()),
+            heads: A.getHeads(cloneHandle.docSync()),
           };
         }),
       });
