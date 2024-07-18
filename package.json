@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A malleable software environment for collaborative work",
   "main": "index.js",
+  "packageManager": "pnpm@9.5.0",
   "scripts": {
     "dev": "pnpm --filter os dev",
     "build": "pnpm --filter os build",
