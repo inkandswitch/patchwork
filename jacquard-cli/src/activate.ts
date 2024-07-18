@@ -16,6 +16,21 @@ export async function activateBranch(
   repo: Repo,
   { projectFolderUrl, dir, branchUrl }: CommandLineArgs
 ) {
+  // Read the existing jacquard.json file
+  const jacquardConfigPath = path.join(dir, "jacquard.json");
+  let jacquardConfig = {};
+
+  if (fs.existsSync(jacquardConfigPath)) {
+    const configContent = fs.readFileSync(jacquardConfigPath, "utf-8");
+    jacquardConfig = JSON.parse(configContent);
+  }
+
+  // Update the activeBranchUrl in the config
+  jacquardConfig.activeBranchUrl = branchUrl;
+
+  // Write the updated config back to jacquard.json
+  fs.writeFileSync(jacquardConfigPath, JSON.stringify(jacquardConfig, null, 2));
+
   let cloneMap: DocCloneMap = {};
   if (branchUrl !== "main" && isValidAutomergeUrl(branchUrl)) {
     const branchDoc = await repo.find<BranchDoc>(branchUrl).doc();
@@ -34,6 +49,10 @@ export async function activateBranch(
   // todo: handle nested folders
   await Promise.all(
     doc.docs.map(async (docLink) => {
+      if (docLink.name === "jacquard.json") {
+        return;
+      }
+
       const clonedUrl = lookupClone(cloneMap, docLink.url);
       const handle = repo.find<FileDoc>(clonedUrl);
       const fileDoc = await handle.doc();
