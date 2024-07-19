@@ -266,6 +266,8 @@ export const VersionControlEditor: React.FC<{
           setSidebarMode={setSidebarMode}
           showChangesFlag={showChangesFlag}
           setShowChangesFlag={setShowChangesFlag}
+          compareWithMainFlag={compareWithMainFlag}
+          setCompareWithMainFlag={setCompareWithMainFlag}
           highlightSidebarButton={highlightSidebarButton}
           getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
         />
@@ -274,24 +276,45 @@ export const VersionControlEditor: React.FC<{
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <div className="flex-grow items-stretch justify-stretch relative flex flex-col overflow-hidden">
             <div className="flex-1 min-h-0 relative">
-              <DocEditor
-                key={cloneOrMainOm.url}
-                tool={tool}
-                docUrl={cloneOrMainOm.url}
-                docHeads={undefined}
-                annotations={visibleAnnotations}
-                annotationGroups={annotationGroups}
-                actorIdToAuthor={actorIdToAuthor}
-                setSelectedAnchors={setSelectedAnchors}
-                setHoveredAnchor={setHoveredAnchor}
-                setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
-                setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
-                hideInlineComments={hideInlineComments}
-                setCommentState={setCommentState}
-                getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-                mainDocUrl={mainDocUrl}
-                highlightChanges={showChangesFlag}
-              />
+              {compareWithMainFlag ? (
+                <SideBySide
+                  key={cloneOrMainOm.url}
+                  tool={tool}
+                  docUrl={cloneOrMainOm.url}
+                  docHeads={undefined}
+                  annotations={visibleAnnotations}
+                  annotationGroups={annotationGroups}
+                  actorIdToAuthor={actorIdToAuthor}
+                  setSelectedAnchors={setSelectedAnchors}
+                  setHoveredAnchor={setHoveredAnchor}
+                  setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
+                  setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
+                  hideInlineComments={hideInlineComments}
+                  setCommentState={setCommentState}
+                  getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+                  mainDocUrl={mainDocUrl}
+                  highlightChanges={showChangesFlag}
+                />
+              ) : (
+                <DocEditor
+                  key={cloneOrMainOm.url}
+                  tool={tool}
+                  docUrl={cloneOrMainOm.url}
+                  docHeads={undefined}
+                  annotations={visibleAnnotations}
+                  annotationGroups={annotationGroups}
+                  actorIdToAuthor={actorIdToAuthor}
+                  setSelectedAnchors={setSelectedAnchors}
+                  setHoveredAnchor={setHoveredAnchor}
+                  setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
+                  setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
+                  hideInlineComments={hideInlineComments}
+                  setCommentState={setCommentState}
+                  getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+                  mainDocUrl={mainDocUrl}
+                  highlightChanges={showChangesFlag}
+                />
+              )}
             </div>
           </div>
         </ErrorBoundary>

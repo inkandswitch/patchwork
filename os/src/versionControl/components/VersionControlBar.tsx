@@ -62,6 +62,8 @@ export const VersionControlBar = ({
   setShowChangesFlag,
   highlightSidebarButton,
   getFakeDocPathForDocUrl,
+  compareWithMainFlag,
+  setCompareWithMainFlag,
 }: {
   docUrl: AutomergeUrl;
   datatypeId: string;
@@ -73,6 +75,8 @@ export const VersionControlBar = ({
   setShowChangesFlag: (flag: boolean) => void;
   highlightSidebarButton: boolean;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
+  compareWithMainFlag: boolean;
+  setCompareWithMainFlag: (flag: boolean) => void;
 }) => {
   const {
     branchScopeOm,
@@ -352,6 +356,19 @@ export const VersionControlBar = ({
           <span className="ml-2 font-mono text-xs">show debug info</span>
         </label>
       </div>
+      {activeBranchOm && (
+        <div className="flex items-center ml-4">
+          <label htmlFor="compareWithMain" className="flex items-center">
+            <input
+              type="checkbox"
+              id="compareWithMain"
+              checked={compareWithMainFlag}
+              onChange={(e) => setCompareWithMainFlag(e.target.checked)}
+            />
+            <span className="ml-2 font-mono text-xs">compare with main</span>
+          </label>
+        </div>
+      )}
 
       {showDebugInfo && (
         <div className="font-mono text-xs flex gap-2 items-center">
