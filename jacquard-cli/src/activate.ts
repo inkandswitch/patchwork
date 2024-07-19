@@ -15,7 +15,7 @@ export async function activateBranch(
 ) {
   // Read the existing jacquard.json file
   const jacquardConfigPath = path.join(dir, "jacquard.json");
-  let jacquardConfig = {};
+  let jacquardConfig: any = {};
 
   if (fs.existsSync(jacquardConfigPath)) {
     const configContent = fs.readFileSync(jacquardConfigPath, "utf-8");

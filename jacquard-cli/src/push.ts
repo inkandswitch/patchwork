@@ -17,7 +17,7 @@ import { FileDoc } from "../../packages/file/src/datatype";
 import { MarkdownDoc } from "../../packages/essay/src";
 import { FolderDoc } from "@/packages/folder";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
-import { VersionControlSidecarDoc } from "@/sdk";
+import { ensureMetadataHandleIsBranchScope, VersionControlSidecarDoc } from "@/sdk";
 import { findWithActiveBranch } from "./findWithActiveBranch";
 
 // NOTE: copied this from the version control code in our os folder.
@@ -33,9 +33,7 @@ const initVersionControlMetadata = (doc: any, repo: Repo) => {
 
   // init the separate metadata doc
   const metadataHandle = repo.create<VersionControlSidecarDoc>();
-  metadataHandle.change((d) => {
-    d.branches = [];
-  });
+  ensureMetadataHandleIsBranchScope(metadataHandle);
   doc.versionControlMetadataUrl = metadataHandle.url;
 };
 
