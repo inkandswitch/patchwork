@@ -1,6 +1,6 @@
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 
 import { useDataType } from "@/datatypes";
 import { useUIStateHandle } from "@/explorer/account";
@@ -21,8 +21,8 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
   highlightChanges,
 }: EditorProps<never, never>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
-
   const folderAtHeads = docHeads ? A.view(folder, docHeads) : folder;
+  const [hideUnchangedFiles, setHideUnchangedFiles] = useState(false);
 
   if (!folder) {
     return null;
@@ -30,8 +30,19 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
 
   return (
     <div className="p-2 h-full overflow-hidden">
-      <div className="text-gray-500 text-sm mb-4 pb-2 border-b border-gray-300">
-        {folderAtHeads.docs.length} documents
+      <div className="flex border-b border-gray-300 justify-between items-center p-2">
+        <div className="text-gray-500 text-sm">
+          {folderAtHeads.docs.length} documents
+        </div>
+        <label htmlFor="debugInfo" className="flex items-center">
+          <input
+            type="checkbox"
+            id="debugInfo"
+            onChange={() => setHideUnchangedFiles(!hideUnchangedFiles)}
+            checked={hideUnchangedFiles}
+          />
+          <span className="ml-2 font-mono text-xs">hide unchanged files</span>
+        </label>
       </div>
       <div className="flex flex-col gap-10 px-4 h-full overflow-y-auto pb-24">
         {folderAtHeads.docs.map((docLink, index) => (
@@ -40,6 +51,7 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
             key={index}
             getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
             highlightChanges={highlightChanges}
+            hideUnchangedFiles={hideUnchangedFiles}
           />
         ))}
       </div>
@@ -51,9 +63,11 @@ type FolderEntryView = {
   highlightChanges: boolean;
   docLink: DocLink;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
+  hideUnchangedFiles: boolean;
 };
 
 export const FolderEntryView = ({
+  hideUnchangedFiles,
   highlightChanges,
   docLink,
   getFakeDocPathForDocUrl,
@@ -85,6 +99,10 @@ export const FolderEntryView = ({
     isCommentInputFocused: false,
     diff,
   });
+
+  if (hideUnchangedFiles && (!diff || diff.patches.length === 0)) {
+    return null;
+  }
 
   return (
     <div>
