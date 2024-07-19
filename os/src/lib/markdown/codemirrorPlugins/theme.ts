@@ -151,6 +151,7 @@ const markdownStyles = HighlightStyle.define([
 
 export const theme = (style: "serif" | "sans") => [
   EditorView.theme({
+    ...MARKDOWN_STYLES,
     ".cm-content": {
       ...MARKDOWN_STYLES[".cm-content"],
       ...(style === "serif"
