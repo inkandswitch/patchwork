@@ -34,10 +34,10 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
         <div className="text-gray-500 text-sm">
           {folderAtHeads.docs.length} documents
         </div>
-        <label htmlFor="debugInfo" className="flex items-center">
+        <label htmlFor="hideUnchangedFiles" className="flex items-center">
           <input
             type="checkbox"
-            id="debugInfo"
+            id="hideUnchangedFiles"
             onChange={() => setHideUnchangedFiles(!hideUnchangedFiles)}
             checked={hideUnchangedFiles}
           />
