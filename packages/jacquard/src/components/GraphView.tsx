@@ -1,27 +1,19 @@
-import { useUIStateHandle } from "@/explorer/account";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { FolderDoc } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
 import { EditorProps } from "@/tools";
-import { objectEntries } from "@/utils";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
-import { branchScopeAndActiveBranchInfoSig } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import {
   AutomergeUrl,
   isValidAutomergeUrl
 } from "@automerge/automerge-repo";
 import {
-  useDocument,
-  useRepo
+  useDocument
 } from "@automerge/automerge-repo-react-hooks";
 import { instance } from "@viz-js/viz";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { computed } from "signia";
-import { useValue } from "signia-react";
-import { FileDoc } from "../../../file/src/datatype";
-import { BuildRun, JacquardBuildMetadata, Reference } from "../datatype";
-import { getReferenceFromDocUrl, getStalenessInfo, ProjectState, reasonToString } from "../getStalenessInfo";
+import { JacquardBuildMetadata } from "../datatype";
+import { getReferenceFromDocUrl, getStalenessInfo, headsMatch, ProjectState, reasonToString, useProjectState } from "../getStalenessInfo";
 
 export const GraphView = ({
   docUrl,
@@ -58,92 +50,6 @@ export const GraphView = ({
     <div className="p-4">
       <GraphvizView source={stateGraphSrc(projectState)} />
     </div>
-  );
-};
-
-export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
-  // TODO: we should be able to use equality to check if heads match, but
-  // there's a bug where cloning a doc adds an extra head to it; pvh promises
-  // this will get fixed soon. for now we will check if one set of heads is the
-  // subset of another – this is generally atypical cuz we don't do much
-  // concurrent stuff.
-  return heads1.every((head) => heads2.includes(head)) || heads2.every((head) => heads1.includes(head));
-}
-
-const useProjectState = ({
-  folderDoc,
-  buildRuns,
-  filesReferencedInBuildsOnly,
-  getFakeDocPathForDocUrl,
-}: {
-  folderDoc: FolderDoc;
-  buildRuns: BuildRun[];
-  filesReferencedInBuildsOnly?: boolean;
-  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
-}): ProjectState => {
-  const fileUrls = useMemo(
-    () =>
-      !folderDoc
-        ? []
-        : folderDoc.docs.flatMap(({ url }) =>
-            !filesReferencedInBuildsOnly ||
-            // filter out files that are not referenced by any build run
-            buildRuns.some(
-              ({ inputs, outputs }) =>
-                inputs.some((input) => input.docUrl === url) ||
-                outputs.some((output) => output.docUrl === url)
-            )
-              ? [url]
-              : []
-          ),
-    [buildRuns, filesReferencedInBuildsOnly, folderDoc]
-  );
-  const repo = useRepo();
-  const uiStateHandle = useUIStateHandle();
-  const files = useValue(useMemo(() => computed('', () => {
-    let result: Record<AutomergeUrl, Automerge.Doc<unknown>> = {};
-    for (let url of fileUrls) {
-      const docPath = getFakeDocPathForDocUrl(url);
-      const maybeDoc = branchScopeAndActiveBranchInfoSig(docPath, uiStateHandle, repo).value?.cloneOrMainOm?.doc;
-      if (maybeDoc) {
-        result[url] = maybeDoc;
-      }
-    };
-    return result;
-  }), [fileUrls, getFakeDocPathForDocUrl, repo, uiStateHandle]));
-
-  const references = useMemo<Reference[]>(
-    () =>
-      objectEntries(files).map(([docUrl, doc]) => ({
-        docUrl: docUrl as AutomergeUrl,
-        heads: Automerge.getHeads(doc),
-        path: (doc as FileDoc).name, // todo: handle this generically, we just assume here that this is a file doc
-      })),
-    [files]
-  );
-
-  const filteredBuildRuns = useMemo(
-    () =>
-      // filter out build runs that are no longer relevant
-      // a build run is relevant as long as at least one of it's output still exists in the current project
-      buildRuns.filter(({ outputs }, index) =>
-        outputs.some(({ docUrl, heads }) => {
-          const doc = files[docUrl];
-          return doc && headsMatch(Automerge.getHeads(doc), heads);
-        })
-      ),
-    [buildRuns, files]
-  );
-
-  return useMemo<ProjectState>(
-    () =>
-      !folderDoc || fileUrls.length !== references.length
-        ? null
-        : {
-            references,
-            buildRuns: filteredBuildRuns,
-          },
-    [folderDoc, fileUrls.length, references, filteredBuildRuns]
   );
 };
 
