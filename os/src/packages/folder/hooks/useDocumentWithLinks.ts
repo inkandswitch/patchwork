@@ -79,10 +79,11 @@ export const useDocumentWithLinks = <TRawDoc, TDocWithLinksMaterialized>({
     setUrlsToLoad(urlsToLoadForCurrentDocWithChildren);
   }, [rootUrl, rootDoc, urlsToLoadForCurrentDocWithChildren]);
 
-  const stillLoading =
-    !rootDoc ||
-    Object.keys(docContentsMapWithUrlsAsKeys).length <
-      urlsToLoadForCurrentDocWithChildren.length;
+  const pendingUrlsToLoad = (urlsToLoadForCurrentDocWithChildren ?? []).filter(
+    (url) => !docContentsMapWithUrlsAsKeys[url]
+  );
+
+  const stillLoading = !rootDoc || pendingUrlsToLoad.length > 0;
 
   const status = stillLoading ? "loading" : ("loaded" as LoadingStatus);
 
