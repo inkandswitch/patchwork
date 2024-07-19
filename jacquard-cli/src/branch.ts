@@ -11,6 +11,10 @@ export const listBranches = async (
   repo: Repo,
   { projectFolderUrl }: { projectFolderUrl: AutomergeUrl }
 ) => {
+  if (!projectFolderUrl) {
+    console.log("No project folder URL provided.");
+    return;
+  }
   console.log("loading branches for", projectFolderUrl);
   const projectFolderDoc = await repo
     .find<HasVersionControlMetadata<unknown, unknown>>(projectFolderUrl)

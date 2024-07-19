@@ -13,6 +13,7 @@ import {
 } from "../../packages/jacquard/src/getStalenessInfo";
 import { run } from "./run";
 import { getBuildMetadataDocUrl, waitForSync } from "./util";
+import { findWithActiveBranch } from "./findWithActiveBranch";
 
 // TODO: jacquard watch
 
@@ -21,7 +22,10 @@ export async function refresh(
   { dir, projectFolderUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs
 ) {
   // get build metadata
-  const folderHandle = repo.find<FolderDoc>(projectFolderUrl);
+  const folderHandle = await findWithActiveBranch<FolderDoc>(
+    projectFolderUrl,
+    repo
+  );
 
   const folderDoc = await folderHandle.doc();
   if (folderDoc === undefined) {
@@ -29,16 +33,21 @@ export async function refresh(
     process.exit(1);
   }
 
+
   const buildMetadataDocUrl = getBuildMetadataDocUrl(folderDoc);
   if (!buildMetadataDocUrl) {
     console.error(`Project has no build metadata`);
     process.exit(1);
   }
 
-  const buildMetadataHandle =
-    repo.find<JacquardBuildMetadata>(buildMetadataDocUrl);
+  const buildMetadataHandle = await findWithActiveBranch<JacquardBuildMetadata>(
+    buildMetadataDocUrl,
+    repo
+  );
 
   // TODO: report what's gonna run (in unknown order)
+
+  let ranSomethingEver = false;
 
   while (true) {
     const buildMetadataDoc = await buildMetadataHandle.doc();
@@ -48,14 +57,14 @@ export async function refresh(
       folderDoc,
       buildMetadataDoc.buildRuns
     );
-    const stalenessGraph = getStalenessInfo(projectState);
+    const stalenessInfo = getStalenessInfo(projectState);
 
-    console.log(stalenessGraph);
+    console.log(stalenessInfo);
 
-    let ranSomething = false;
+    let ranSomethingThisLoop = false;
 
     for (const [buildRunId, status] of Object.entries(
-      stalenessGraph.buildRunStatuses
+      stalenessInfo.buildRunStatuses
     )) {
       if (status.length > 0) {
         // we are stale
@@ -64,7 +73,7 @@ export async function refresh(
         );
         if (
           buildRun.inputs.every(
-            (input) => stalenessGraph.docStatuses[input.docUrl].length === 0
+            (input) => stalenessInfo.docStatuses[input.docUrl].length === 0
           )
         ) {
           // all inputs are up to date, so we can run this build
@@ -78,9 +87,10 @@ export async function refresh(
               patchworkUrl,
               command: buildRun.command,
             },
-            true,  // actually, let's wait now
+            false,  // actually, let's wait now
           );
-          ranSomething = true;
+          ranSomethingThisLoop = true;
+          ranSomethingEver = true;
           break;
         }
       }
@@ -88,15 +98,33 @@ export async function refresh(
 
     console.log("did a loop");
 
-    if (!ranSomething) {
+    if (!ranSomethingThisLoop) {
       break;
     }
   }
+
+  if (ranSomethingEver) {
+    // TODO: fake handles to wait for
+    await waitForSync([], syncServerStorageId);
+  }
+
   // TODO: stretch goals:
   //   "I'm going to run these commands in this order! here's the estimated time"
   //   "go? (y/n)" (unless you -y)
 }
 
+// TODO: copied out of GraphView
+function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
+  // TODO: we should be able to use equality to check if heads match, but
+  // there's a bug where cloning a doc adds an extra head to it; pvh promises
+  // this will get fixed soon. for now we will check if one set of heads is the
+  // subset of another – this is generally atypical cuz we don't do much
+  // concurrent stuff.
+  return heads1.every((head) => heads2.includes(head)) || heads2.every((head) => heads1.includes(head));
+}
+
+
+// TODO: adapted from GraphView hook; signals would unify them
 async function getProjectState(
   repo: Repo,
   folderDoc: Doc<FolderDoc>,
@@ -118,12 +146,11 @@ async function getProjectState(
 
   const files = Object.fromEntries(
     await Promise.all(
-      fileUrls.map((fileUrl) =>
-        repo
-          .find(fileUrl)
-          .doc()
-          .then((doc) => [fileUrl, doc])
-      )
+      fileUrls.map(async (fileUrl) => {
+        const fileHandle = await findWithActiveBranch<FileDoc>(fileUrl, repo);
+        const doc = await fileHandle.doc();
+        return [fileUrl, doc];
+      })
     )
   );
 
@@ -139,7 +166,7 @@ async function getProjectState(
     outputs.some(({ docUrl, heads }) => {
       const doc = files[docUrl];
 
-      return doc && Automerge.equals(Automerge.getHeads(doc), heads);
+      return doc && headsMatch(Automerge.getHeads(doc), heads);
     })
   );
 

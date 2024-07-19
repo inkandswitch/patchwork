@@ -45,7 +45,6 @@ export async function run(
 
   // pull before to ensure we run on latest files
   // todo: find better approach
-  console.log("pull changes");
   await pull(repo, { dir, projectFolderUrl });
 
   const timestampStart = Date.now();

@@ -284,6 +284,7 @@ async function findOrCreateFolderHandle(projectFolderUrl, repo: Repo) {
       d.docs = [];
       initVersionControlMetadata(d, repo);
     });
+    fs.writeFileSync("jacquard.json", JSON.stringify({ projectFolderUrl: folderHandle.url }));
   }
   return folderHandle;
 }

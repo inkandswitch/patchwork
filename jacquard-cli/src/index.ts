@@ -14,6 +14,7 @@ import { latex } from "./latex";
 import { listBranches } from "./branch";
 import { activateBranch } from "./activate";
 import { refresh } from "./refresh";
+import { getJacquardConfig } from "./util";
 
 export type CommandLineArgs = {
   dir: string;
@@ -173,24 +174,6 @@ const main = async () => {
 
   console.log(`Done! (${duration} ms)`);
   process.exit(0);
-};
-
-export const getJacquardConfig = () => {
-  const currentDir = process.cwd();
-
-  const configFilePath = path.join(currentDir, "jacquard.json");
-
-  if (fs.existsSync(configFilePath)) {
-    try {
-      const configFileContents = fs.readFileSync(configFilePath, "utf8");
-      return JSON.parse(configFileContents);
-    } catch (error) {
-      console.warn("invalid jacquare.json file");
-      return null;
-    }
-  } else {
-    return null;
-  }
 };
 
 main();

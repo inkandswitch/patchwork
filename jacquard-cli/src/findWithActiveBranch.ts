@@ -1,10 +1,10 @@
-import { getJacquardConfig } from ".";
 import {
   AutomergeUrl,
   Repo,
   isValidAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { BranchDoc, DocCloneMap } from "@/sdk";
+import { getJacquardConfig } from "./util";
 
 /* Like repo.find, but considers the active branch */
 export const findWithActiveBranch = async <T>(
@@ -12,7 +12,7 @@ export const findWithActiveBranch = async <T>(
   repo: Repo
 ) => {
   const config = getJacquardConfig();
-  const branchUrl = config.activeBranchUrl;
+  const branchUrl = config?.activeBranchUrl;
 
   let cloneMap: DocCloneMap = {};
   if (branchUrl !== "main" && isValidAutomergeUrl(branchUrl)) {

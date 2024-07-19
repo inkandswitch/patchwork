@@ -28,16 +28,29 @@ export async function pull(
         return;
       }
 
-      const fileHandle = await findWithActiveBranch<FileDoc>(docLink.url, repo);
-      const fileDoc = await fileHandle.doc();
-
       // todo: handle other docs that are not files
       if (docLink.type !== "file") {
         console.log(`skip ${docLink.name}`);
         return;
       }
 
+      // console.log(docLink.name, "A");
+
+      const fileHandle = await findWithActiveBranch<FileDoc>(docLink.url, repo);
+
+      // console.log(docLink.name, "B");
+      const fileDoc = await fileHandle.doc();
+
+      // console.log(docLink.name, "C");
+
+      if (!fileDoc) {
+        console.error(`Could not find ${docLink.url}: ${fileHandle.state}`);
+        return;
+      }
+
       fs.writeFileSync(path.join(dir, fileDoc.name), fileDoc.content);
+
+      // console.log(docLink.name, "D");
     })
   );
 }
