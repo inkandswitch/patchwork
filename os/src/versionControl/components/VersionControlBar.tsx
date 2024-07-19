@@ -2,9 +2,16 @@ import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { getRelativeTimeString } from "@/lib/dates";
+import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";
-import { ensureMetadataHandleIsBranchScope, useDataTypes } from "@/sdk";
+import { BranchDoc, ensureMetadataHandleIsBranchScope, useDataTypes, VersionControlSidecarDoc } from "@/sdk";
 import { Button } from "@/shadcn/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/shadcn/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -19,17 +26,20 @@ import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import _, { truncate } from "lodash";
 import {
   CrownIcon,
+  Edit3Icon,
   GitBranchIcon,
+  Link,
+  MergeIcon,
   MessageSquareIcon,
+  MoreHorizontal,
   PlusIcon,
+  Trash2Icon
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { createJacquardBranch, mergeBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../hooks";
 import { SidebarMode } from "./VersionControlEditor";
-import { MergeIcon } from "lucide-react";
-import { CopyButton } from "./CopyButton";
 
 // interface MakeBranchOptions {
 //   name?: string;
@@ -127,15 +137,6 @@ export const VersionControlBar = ({
   //   setIsHoveringYankToBranchOption(false);
   // };
 
-  // const handleDeleteBranch = useCallback(
-  //   (branchUrl: AutomergeUrl) => {
-  //     setSelectedBranch(null);
-  //     deleteBranch({ docHandle: handle, branchUrl });
-  //     toast("Deleted branch");
-  //   },
-  //   [handle, setSelectedBranch]
-  // );
-
   const handleMergeBranch = () => {
     mergeBranch({
       repo,
@@ -158,23 +159,6 @@ export const VersionControlBar = ({
 
   //   toast("Incorporated updates from main");
   // };
-
-  // const renameBranch = useCallback(
-  //   (draftUrl: AutomergeUrl, newName: string) => {
-  //     const docHandle =
-  //       repo.find<HasVersionControlMetadata<unknown, unknown>>(docUrl);
-  //     docHandle.change((doc) => {
-  //       const copy = doc.branchMetadata.branches.find(
-  //         (copy) => copy.url === draftUrl
-  //       );
-  //       if (copy) {
-  //         copy.name = newName;
-  //         toast(`Renamed branch to "${newName}"`);
-  //       }
-  //     });
-  //   },
-  //   [docUrl, repo]
-  // );
 
   return (
     <div className="bg-gray-100 pl-4 py-2 flex gap-2 items-center border-b border-gray-200">
@@ -313,12 +297,15 @@ export const VersionControlBar = ({
           </div>
         )}
       </div>
-      <CopyButton
-        text={activeBranchOm?.url ?? "main"}
-        label="Copied branch URL"
-        size={16}
-        className="opacity-50"
-      />
+
+      {activeBranchOm && (
+        <BranchActions
+          activeBranchOm={activeBranchOm}
+          branchScopeVersionControlMetadataOm={branchScopeVersionControlMetadataOm}
+          setActiveBranchUrl={setActiveBranchUrl}
+        />
+      )}
+
       {activeBranchOm && (
         <div className="mr-2">
           <Button
@@ -334,18 +321,6 @@ export const VersionControlBar = ({
           </Button>
         </div>
       )}
-      <div className="flex items-center ml-4">
-        <label htmlFor="debugInfo" className="flex items-center">
-          <input
-            type="checkbox"
-            id="debugInfo"
-            checked={showDebugInfo}
-            onChange={(e) => setShowDebugInfo(e.target.checked)}
-          />
-          <span className="ml-2 font-mono text-xs">debug</span>
-        </label>
-      </div>
-
       {activeBranchOm && (
         <div className="flex items-center ml-4">
           <label htmlFor="highlightChanges" className="flex items-center">
@@ -359,43 +334,20 @@ export const VersionControlBar = ({
           </label>
         </div>
       )}
+      <div className="flex items-center ml-4">
+        <label htmlFor="debugInfo" className="flex items-center">
+          <input
+            type="checkbox"
+            id="debugInfo"
+            checked={showDebugInfo}
+            onChange={(e) => setShowDebugInfo(e.target.checked)}
+          />
+          <span className="ml-2 font-mono text-xs">show debug info</span>
+        </label>
+      </div>
+
       {showDebugInfo && (
         <div className="font-mono text-xs flex gap-2 items-center">
-          {!isRealBranchScope ? (
-            <>
-              <div>is not in any branch scope</div>
-              <Button
-                onClick={() =>
-                  ensureMetadataHandleIsBranchScope(
-                    branchScopeVersionControlMetadataOm.handle
-                  )
-                }
-                variant="outline"
-                className="h-8 text-x"
-              >
-                make it one
-              </Button>
-            </>
-          ) : branchScopeOm?.url === docUrl ? (
-            <> is a branch scope </>
-          ) : (
-            <>
-              <div>is inside a branch scope</div>
-              <Button
-                onClick={() =>
-                  selectDocLink({
-                    url: branchScopeOm?.url,
-                    name: "fake",
-                    type: "folder", // TODO: figure out what to do if we have non folder branch scopes
-                  })
-                }
-                variant="outline"
-                className="h-8 text-x"
-              >
-                go there
-              </Button>
-            </>
-          )}
           <div className="border p-2 rounded">
             <div>clone/self - {cloneOrMainOm.url}</div>
             <div>branch - {activeBranchOm?.url ?? "none"}</div>
@@ -427,5 +379,149 @@ export const VersionControlBar = ({
         </div>
       )}
     </div>
+  );
+};
+
+const BranchActions: React.FC<{
+  activeBranchOm: Om<BranchDoc>;
+  branchScopeVersionControlMetadataOm: Om<VersionControlSidecarDoc>;
+  setActiveBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
+}> = ({
+  activeBranchOm,
+  branchScopeVersionControlMetadataOm,
+  setActiveBranchUrl,
+}) => {
+
+  const handleRenameBranch = useCallback(() => {
+    const newName = prompt("Enter the new name for this branch:");
+    const newNameTrimmed = newName?.trim();
+    if (newNameTrimmed) {
+      activeBranchOm.handle.change((d) => {
+        d.name = newNameTrimmed;
+      });
+    }
+  }, [activeBranchOm.handle]);
+
+  const handleDeleteBranch = useCallback(() => {
+    if (
+      !window.confirm("Are you sure you want to delete this branch?")
+    ) {
+      return;
+    }
+
+    branchScopeVersionControlMetadataOm.handle.change((d) => {
+      if (!d.isBranchScope) {
+        throw new Error("internal error");
+      }
+      d.branches = d.branches.filter((b) => b !== activeBranchOm.url);
+    });
+
+    setActiveBranchUrl(null);
+
+    toast("Deleted branch");
+  }, [activeBranchOm.url, branchScopeVersionControlMetadataOm.handle, setActiveBranchUrl]);
+
+
+  // const branchHeads = useMemo(
+  //   () => (branchDoc ? JSON.stringify(A.getHeads(branchDoc)) : undefined),
+  //   [branchDoc]
+  // );
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
+
+  // // compute new name suggestions anytime the branch heads change
+  // // todo: seems like this should run outside of the react UI...
+  // useEffect(() => {
+  //   if (!dropdownOpen || !doc || !branchDoc) return;
+  //   if (!isMarkdownDoc(doc) || !isMarkdownDoc(branchDoc)) {
+  //     console.warn("suggestions only work for markdown docs");
+  //     return;
+  //   }
+  //   if (!isLLMActive) return;
+  //   setNameSuggestions([]);
+  //   (async () => {
+  //     const suggestions = (
+  //       await suggestBranchName({ doc, branchUrl, branchDoc })
+  //     ).split("\n");
+  //     setNameSuggestions(suggestions);
+  //   })();
+  // }, [doc, branchDoc, branchUrl, branchHeads, dropdownOpen]);
+
+  return (
+    <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+      <DropdownMenuTrigger>
+        <MoreHorizontal
+          size={18}
+          className="mt-1 mr-21 text-gray-500 hover:text-gray-800"
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="mr-4 w-72">
+        <DropdownMenuItem
+          onClick={handleRenameBranch}
+        >
+          <Edit3Icon className="inline-block text-gray-500 mr-2" size={14} />{" "}
+          Rename branch
+        </DropdownMenuItem>
+        {/* <DropdownMenuItem
+          onClick={() => {
+            handleRebaseBranch(branchUrl);
+          }}
+        >
+          <GitBranchPlusIcon
+            className="inline-block text-gray-500 mr-2"
+            size={14}
+          />{" "}
+          Incorporate updates from main
+        </DropdownMenuItem> */}
+        {/* <DropdownMenuItem
+          onClick={() => {
+            handleMergeBranch(branchUrl);
+          }}
+        >
+          <GitMergeIcon className="inline-block text-gray-500 mr-2" size={14} />{" "}
+          Merge branch
+        </DropdownMenuItem> */}
+        <DropdownMenuItem
+          onClick={handleDeleteBranch}
+        >
+          <Trash2Icon className="inline-block text-gray-500 mr-2" size={14} />{" "}
+          Delete branch
+        </DropdownMenuItem>
+        {/* <DropdownMenuSeparator></DropdownMenuSeparator> */}
+        {/* {isLLMActive && (
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Suggested renames:</DropdownMenuLabel>
+            {nameSuggestions.length === 0 && (
+              <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
+            )}
+            {nameSuggestions.map((suggestion) => (
+              <DropdownMenuItem
+                key={suggestion}
+                onClick={() => {
+                  handleRenameBranch(branchUrl, suggestion);
+                }}
+              >
+                {suggestion}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+        )} */}
+        <DropdownMenuItem
+          onClick={() => {
+            navigator.clipboard.writeText(activeBranchOm.url).then(
+              () => {
+                toast("Link copied to clipboard");
+              },
+              () => {
+                toast.error("Failed to copy link to clipboard");
+              }
+            );
+          }}
+        >
+          <Link className="inline-block text-gray-500 mr-2" size={14} /> Copy
+          branch Automerge URL
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
