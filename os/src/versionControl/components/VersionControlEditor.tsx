@@ -131,7 +131,8 @@ export const VersionControlEditor: React.FC<{
 
   const docPath = fakeDocPath(selectedDocLink);
 
-  const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(docPath);
+  const branchScopeAndActiveBranchInfo =
+    useBranchScopeAndActiveBranchInfo(docPath);
   const { cloneOrMainOm, baseHeads } = branchScopeAndActiveBranchInfo;
 
   const branchDiff = useMemo(() => {
@@ -177,7 +178,7 @@ export const VersionControlEditor: React.FC<{
     doc: cloneOrMainOm?.doc as A.Doc<HasVersionControlMetadata>,
     dataType,
     isCommentInputFocused,
-    diff,
+    diff: showChangesFlag ? diff : undefined,
   });
 
   // global comment keyboard shortcut
@@ -289,6 +290,7 @@ export const VersionControlEditor: React.FC<{
                 setCommentState={setCommentState}
                 getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                 mainDocUrl={mainDocUrl}
+                highlightChanges={showChangesFlag}
               />
             </div>
           </div>
@@ -412,6 +414,7 @@ const DocEditor = <T, V>({
   setCommentState,
   getFakeDocPathForDocUrl,
   mainDocUrl,
+  highlightChanges,
 }: EditorPropsWithTool<T, V>) => {
   if (!tool) {
     return;
@@ -434,6 +437,7 @@ const DocEditor = <T, V>({
       setCommentState={setCommentState}
       getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
       mainDocUrl={mainDocUrl}
+      highlightChanges={highlightChanges}
     />
   );
 };

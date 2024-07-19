@@ -18,6 +18,7 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
   docUrl,
   docHeads,
   getFakeDocPathForDocUrl,
+  highlightChanges,
 }: EditorProps<never, never>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
 
@@ -38,6 +39,7 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
             docLink={docLink}
             key={index}
             getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+            highlightChanges={highlightChanges}
           />
         ))}
       </div>
@@ -46,17 +48,20 @@ export const FolderViewer: React.FC<EditorProps<never, never>> = ({
 };
 
 type FolderEntryView = {
+  highlightChanges: boolean;
   docLink: DocLink;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
 };
 
 export const FolderEntryView = ({
+  highlightChanges,
   docLink,
   getFakeDocPathForDocUrl,
 }: FolderEntryView) => {
   const uiStateHandle = useUIStateHandle();
   const docPath = getFakeDocPathForDocUrl(docLink.url);
-  const { cloneOrMainOm, baseHeads } = useBranchScopeAndActiveBranchInfo(docPath);
+  const { cloneOrMainOm, baseHeads } =
+    useBranchScopeAndActiveBranchInfo(docPath);
 
   const dataType = useDataType(docLink.type);
   const tool = useToolsForDataType(docLink.type)[0];
@@ -65,7 +70,7 @@ export const FolderEntryView = ({
 
   // TODO: we shouldn't have to duplicate this code here, also right now the change highlights can't be disabled
   const diff = useMemo(() => {
-    if (baseHeads && cloneOrMainOm) {
+    if (baseHeads && cloneOrMainOm && highlightChanges) {
       return diffWithProvenance(
         cloneOrMainOm.doc,
         baseHeads,

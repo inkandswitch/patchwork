@@ -4,13 +4,18 @@ import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { getRelativeTimeString } from "@/lib/dates";
 import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";
-import { BranchDoc, ensureMetadataHandleIsBranchScope, useDataTypes, VersionControlSidecarDoc } from "@/sdk";
+import {
+  BranchDoc,
+  ensureMetadataHandleIsBranchScope,
+  useDataTypes,
+  VersionControlSidecarDoc,
+} from "@/sdk";
 import { Button } from "@/shadcn/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/shadcn/ui/dropdown-menu";
 import {
   Select,
@@ -33,7 +38,7 @@ import {
   MessageSquareIcon,
   MoreHorizontal,
   PlusIcon,
-  Trash2Icon
+  Trash2Icon,
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -301,7 +306,9 @@ export const VersionControlBar = ({
       {activeBranchOm && (
         <BranchActions
           activeBranchOm={activeBranchOm}
-          branchScopeVersionControlMetadataOm={branchScopeVersionControlMetadataOm}
+          branchScopeVersionControlMetadataOm={
+            branchScopeVersionControlMetadataOm
+          }
           setActiveBranchUrl={setActiveBranchUrl}
         />
       )}
@@ -391,7 +398,6 @@ const BranchActions: React.FC<{
   branchScopeVersionControlMetadataOm,
   setActiveBranchUrl,
 }) => {
-
   const handleRenameBranch = useCallback(() => {
     const newName = prompt("Enter the new name for this branch:");
     const newNameTrimmed = newName?.trim();
@@ -403,9 +409,7 @@ const BranchActions: React.FC<{
   }, [activeBranchOm.handle]);
 
   const handleDeleteBranch = useCallback(() => {
-    if (
-      !window.confirm("Are you sure you want to delete this branch?")
-    ) {
+    if (!window.confirm("Are you sure you want to delete this branch?")) {
       return;
     }
 
@@ -419,8 +423,11 @@ const BranchActions: React.FC<{
     setActiveBranchUrl(null);
 
     toast("Deleted branch");
-  }, [activeBranchOm.url, branchScopeVersionControlMetadataOm.handle, setActiveBranchUrl]);
-
+  }, [
+    activeBranchOm.url,
+    branchScopeVersionControlMetadataOm?.handle,
+    setActiveBranchUrl,
+  ]);
 
   // const branchHeads = useMemo(
   //   () => (branchDoc ? JSON.stringify(A.getHeads(branchDoc)) : undefined),
@@ -456,9 +463,7 @@ const BranchActions: React.FC<{
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="mr-4 w-72">
-        <DropdownMenuItem
-          onClick={handleRenameBranch}
-        >
+        <DropdownMenuItem onClick={handleRenameBranch}>
           <Edit3Icon className="inline-block text-gray-500 mr-2" size={14} />{" "}
           Rename branch
         </DropdownMenuItem>
@@ -481,9 +486,7 @@ const BranchActions: React.FC<{
           <GitMergeIcon className="inline-block text-gray-500 mr-2" size={14} />{" "}
           Merge branch
         </DropdownMenuItem> */}
-        <DropdownMenuItem
-          onClick={handleDeleteBranch}
-        >
+        <DropdownMenuItem onClick={handleDeleteBranch}>
           <Trash2Icon className="inline-block text-gray-500 mr-2" size={14} />{" "}
           Delete branch
         </DropdownMenuItem>
