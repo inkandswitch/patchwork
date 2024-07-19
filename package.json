@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "pnpm --filter os dev",
     "build": "pnpm --filter os build",
-    "preinstall": "npx only-allow pnpm"
+    "preinstall": "npx only-allow pnpm",
+    "tsc-lenient": "tsc",
+    "tsc-strict": "tsc --project tsconfig.strict.json"
   },
   "keywords": [],
   "author": "Ink & Switch",
