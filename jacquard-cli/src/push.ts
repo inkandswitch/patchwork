@@ -17,7 +17,7 @@ import { FileDoc } from "../../packages/file/src/datatype";
 import { MarkdownDoc } from "../../packages/essay/src";
 import { FolderDoc } from "@/packages/folder";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
-import { ensureMetadataHandleIsBranchScope, VersionControlSidecarDoc } from "@/sdk";
+import { VersionControlSidecarDoc } from "@/sdk";
 import { findWithActiveBranch } from "./findWithActiveBranch";
 import { waitForSync } from "./util";
 
@@ -335,4 +335,17 @@ async function findOrCreateBuildMetadataHandle(
     }
   }
   return buildMetadataHandle;
+}
+
+// TODO: copied in from os/src/versionControl/schema.ts cuz importing it brings
+// in TLDraw stuff that breaks our cute li'l bun
+export const ensureMetadataHandleIsBranchScope = (handle: DocHandle<VersionControlSidecarDoc>) => {
+  handle.change((d) => {
+    if (!d.isBranchScope) {
+      d.isBranchScope = true;
+      // @ts-expect-error not smart enough to figure this one out
+      d.branches = [];
+    }
+  });
+  return handle as DocHandle<VersionControlSidecarDoc & { isBranchScope: true }>;
 }
