@@ -6,6 +6,7 @@ import {
 } from "@/sdk";
 import { Repo } from "@automerge/automerge-repo";
 import { AutomergeUrl } from "@automerge/automerge-repo";
+import { getJacquardConfig } from "./util";
 
 export const listBranches = async (
   repo: Repo,
@@ -15,7 +16,7 @@ export const listBranches = async (
     console.log("No project folder URL provided.");
     return;
   }
-  console.log("loading branches for", projectFolderUrl);
+  console.log("loading branches for project folder", projectFolderUrl);
   const projectFolderDoc = await repo
     .find<HasVersionControlMetadata<unknown, unknown>>(projectFolderUrl)
     .doc();
@@ -49,8 +50,19 @@ export const listBranches = async (
     return;
   }
 
+  const config = getJacquardConfig();
+
+  if (config?.activeBranchUrl === "main") {
+    console.log(`- \x1b[1mmain\x1b[0m`);
+  } else {
+    console.log(`- main`);
+  }
   branches.forEach(async ({ branchDoc, url }) => {
-    console.log(`- ${branchDoc.name}`);
+    if (config?.activeBranchUrl === url) {
+      console.log(`- \x1b[1m${branchDoc.name}\x1b[0m`);
+    } else {
+      console.log(`- ${branchDoc.name}`);
+    }
     console.log(`  URL: ${url}`);
     if (branchDoc.createdAt) {
       console.log(
