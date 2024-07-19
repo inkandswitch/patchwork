@@ -348,10 +348,10 @@ export const VersionControlBar = ({
 
       {activeBranchOm && (
         <div className="flex items-center ml-4">
-          <label htmlFor="debugInfo" className="flex items-center">
+          <label htmlFor="highlightChanges" className="flex items-center">
             <input
               type="checkbox"
-              id="debugInfo"
+              id="highlightChanges"
               checked={showChangesFlag}
               onChange={(e) => setShowChangesFlag(e.target.checked)}
             />
