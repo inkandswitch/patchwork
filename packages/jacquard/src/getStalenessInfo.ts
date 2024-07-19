@@ -1,5 +1,6 @@
 import { BuildRun, Reference } from "./datatype";
 import * as Automerge from "@automerge/automerge";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 
 
 export type ProjectState = {
@@ -20,7 +21,7 @@ export type StaleReason = {
   intermediateChain: string[];
 };
 
-export function reasonToString(reason) {
+export function reasonToString(reason: StaleReason) {
   const affectStr =
     reason.intermediateChain.length > 0
       ? `through ${reason.intermediateChain.join(" → ")}`
@@ -29,15 +30,15 @@ export function reasonToString(reason) {
 }
 
 export function getStalenessInfo(state: ProjectState): StalenessInfo {
-  let docStatuses = {};
-  let buildRunStatuses = {};
+  let docStatuses: Record<string, StaleStatus> = {};
+  let buildRunStatuses: Record<string, StaleStatus> = {};
 
-  function getReferenceStatus(reference) {
+  function getReferenceStatus(reference: Reference): StaleStatus {
     if (docStatuses[reference.docUrl]) {
       return docStatuses[reference.docUrl];
     }
 
-    let status = [];
+    let status: StaleStatus = [];
     const buildRun = getBuildRunOutputtingDocUrl(state, reference.docUrl);
     if (buildRun) {
       // is the build run producing this doc out of date? if so, copy those reasons, adding the build run to the chain
@@ -49,7 +50,7 @@ export function getStalenessInfo(state: ProjectState): StalenessInfo {
     return status;
   }
 
-  function getBuildRunStatus(buildRun: BuildRun) {
+  function getBuildRunStatus(buildRun: BuildRun): StaleStatus {
     if (buildRunStatuses[buildRun.id]) {
       return buildRunStatuses[buildRun.id];
     }
@@ -88,17 +89,25 @@ export function getStalenessInfo(state: ProjectState): StalenessInfo {
   return { docStatuses, buildRunStatuses };
 }
 
-export function getBuildRunOutputtingDocUrl(state, docUrl) {
-  return state.buildRuns.find((buildRun) =>
+export function getBuildRunOutputtingDocUrl(state: ProjectState, docUrl: AutomergeUrl) {
+  const found = state.buildRuns.find((buildRun) =>
     buildRun.outputs.some((output) => output.docUrl === docUrl)
   );
+  if (!found) {
+    throw new Error(`Could not find reference for ${docUrl}`);
+  }
+  return found;
 }
 
-export function getReferenceFromDocUrl(state, docUrl) {
-  return state.references.find((reference) => reference.docUrl === docUrl);
+export function getReferenceFromDocUrl(state: ProjectState, docUrl: AutomergeUrl) {
+  const found = state.references.find((reference) => reference.docUrl === docUrl);
+  if (!found) {
+    throw new Error(`Could not find reference for ${docUrl}`);
+  }
+  return found;
 }
 
-export function addToReasonChain(reason, link) {
+export function addToReasonChain(reason: StaleReason, link: string) {
   return {
     ...reason,
     intermediateChain: [...reason.intermediateChain, link],
