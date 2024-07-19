@@ -13,6 +13,7 @@ import { run } from "./run";
 import { latex } from "./latex";
 import { listBranches } from "./branch";
 import { activateBranch } from "./activate";
+import { refresh } from "./refresh";
 
 export type CommandLineArgs = {
   dir: string;
@@ -158,20 +159,8 @@ const main = async () => {
       break;
     }
 
-    case "latex": {
-      const filePath =
-        "_unknown" in options &&
-        options._unknown instanceof Array &&
-        options._unknown.length === 1
-          ? options._unknown[0]
-          : undefined;
-
-      if (!filePath) {
-        console.error("No file path specified: use latext <filename>");
-        process.exit(1);
-      }
-
-      await latex(repo, filePath, { projectFolderUrl, dir });
+    case "refresh": {
+      await refresh(repo, { dir, projectFolderUrl });
       break;
     }
 

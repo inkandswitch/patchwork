@@ -5,7 +5,10 @@ import { spawn } from "child_process";
 import { push } from "./push.js";
 import { CommandLineArgs } from "./index.js";
 import { pull } from "./pull.js";
+import { latex } from "./latex.js";
 
+// TODO: this is an awful lot like BuildRun, but not; at the very least a naming
+// issue
 export type BuildMetadata = {
   id: string;
   outputs: string[];
@@ -14,6 +17,9 @@ export type BuildMetadata = {
   timestamp: number;
   duration: number;
 };
+
+// TODO: maybe we set a JACQUARD_OUTPUTS_FILE env var, then the process writes
+// output declarations to that file rather than stdout?
 
 const JACQUARD_DECLARE_REGEX =
   /jacquard: declare (?<type>(input|output)) (?<filePath>.*)/;
@@ -28,8 +34,15 @@ export async function run(
     inputs = [],
     outputs = [],
     command,
-  }: CommandLineArgs
+  }: CommandLineArgs,
+  wait = true,
 ) {
+  // hack to make latex subset of run
+  const commandSplit = command.split(" ");
+  if (commandSplit.length === 2 && commandSplit[0] === 'latex') {
+    return await latex(repo, commandSplit[1], { dir, projectFolderUrl });
+  }
+
   // pull before to ensure we run on latest files
   // todo: find better approach
   console.log("pull changes");
@@ -86,7 +99,7 @@ export async function run(
   const buildMetadata: BuildMetadata = {
     id: uuid(),
     outputs,
-    command: `run ${command}`,
+    command,
     inputs,
     timestamp: timestampEnd,
     duration: timestampEnd - timestampStart,
@@ -100,6 +113,7 @@ export async function run(
       syncServerStorageId,
       patchworkUrl,
     },
-    buildMetadata
+    buildMetadata,
+    wait
   );
 }

@@ -1,28 +1,27 @@
+import { useUIStateHandle } from "@/explorer/account";
+import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { FolderDoc } from "@/packages/folder";
+import { DocPath } from "@/packages/folder/datatype";
+import { EditorProps } from "@/tools";
+import { objectEntries } from "@/utils";
+import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
+import { branchScopeAndActiveBranchInfoSig } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import {
   AutomergeUrl,
-  parseAutomergeUrl,
-  isValidAutomergeUrl,
+  isValidAutomergeUrl
 } from "@automerge/automerge-repo";
 import {
   useDocument,
-  useDocuments,
-  useRepo,
+  useRepo
 } from "@automerge/automerge-repo-react-hooks";
-import { useEffect, useMemo, useRef, useState } from "react";
 import { instance } from "@viz-js/viz";
-import { BuildRun, JacquardBuildMetadata, Reference } from "../datatype";
-import { FileDoc } from "../../../file/src/datatype";
-import { EditorProps } from "@/tools";
-import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
-import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "signia";
 import { useValue } from "signia-react";
-import { branchScopeAndActiveBranchInfoSig } from "@/versionControl/signals";
-import { useUIStateHandle } from "@/explorer/account";
-import { DocPath } from "@/packages/folder/datatype";
-import { objectEntries } from "@/utils";
+import { FileDoc } from "../../../file/src/datatype";
+import { BuildRun, JacquardBuildMetadata, Reference } from "../datatype";
+import { getReferenceFromDocUrl, getStalenessInfo, ProjectState, reasonToString } from "../getStalenessInfo";
 
 export const GraphView = ({
   docUrl,
@@ -70,11 +69,6 @@ export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
   // concurrent stuff.
   return heads1.every((head) => heads2.includes(head)) || heads2.every((head) => heads1.includes(head));
 }
-
-type ProjectState = {
-  references: Reference[];
-  buildRuns: BuildRun[];
-};
 
 const useProjectState = ({
   folderDoc,
@@ -203,25 +197,12 @@ const GraphvizView = ({ source }: { source: string }) => {
   return <div ref={setContainer}></div>;
 };
 
-type BuildGraph = {
-  docStatuses: Record<string, StaleStatus>; // keyed by docUrl
-  buildRunStatuses: Record<string, StaleStatus>; // keyed by BuildRun id
-};
-
-type StaleStatus = StaleReason[];
-
-type StaleReason = {
-  originalChangeOld: Reference;
-  originalChangeNew: Reference;
-  intermediateChain: string[];
-};
-
 function stateGraphSrc(state: ProjectState) {
-  const buildGraph = makeBuildGraph(state);
+  const stalenessInfo = getStalenessInfo(state);
 
   const lines = [];
   for (let reference of state.references) {
-    const status = buildGraph.docStatuses[reference.docUrl];
+    const status = stalenessInfo.docStatuses[reference.docUrl];
     lines.push(`${gvId(reference.docUrl)} [
       shape=plain
       label="${reference.path}"
@@ -232,7 +213,7 @@ function stateGraphSrc(state: ProjectState) {
     ];`);
   }
   for (let buildRun of state.buildRuns) {
-    const status = buildGraph.buildRunStatuses[buildRun.id];
+    const status = stalenessInfo.buildRunStatuses[buildRun.id];
     lines.push(`${gvId(buildRun.id)} [
       shape=plain
       label="${buildRun.command}"
@@ -268,95 +249,10 @@ function stateGraphSrc(state: ProjectState) {
   return source;
 }
 
-function reasonToString(reason) {
-  const affectStr =
-    reason.intermediateChain.length > 0
-      ? `through ${reason.intermediateChain.join(" → ")}`
-      : "directly";
-  return `${reason.originalChangeOld.docUrl} changed from ${reason.originalChangeOld.heads} to ${reason.originalChangeNew.heads}, affecting us ${affectStr}`;
-}
-
 function gvId(str: string) {
   // add a _ prefix because ids can't start with a number
   return `_${str
     .replaceAll("-", "_")
     .replaceAll(".", "_")
     .replaceAll(":", "_")}`;
-}
-
-function makeBuildGraph(state: ProjectState): BuildGraph {
-  let docStatuses = {};
-  let buildRunStatuses = {};
-
-  function getReferenceStatus(reference) {
-    if (docStatuses[reference.docUrl]) {
-      return docStatuses[reference.docUrl];
-    }
-
-    let status = [];
-    const buildRun = getBuildRunOutputtingDocUrl(state, reference.docUrl);
-    if (buildRun) {
-      // is the build run producing this doc out of date? if so, copy those reasons, adding the build run to the chain
-      status = getBuildRunStatus(buildRun).map((reason) =>
-        addToReasonChain(reason, buildRun.id)
-      );
-    }
-    docStatuses[reference.docUrl] = status;
-    return status;
-  }
-
-  function getBuildRunStatus(buildRun: BuildRun) {
-    if (buildRunStatuses[buildRun.id]) {
-      return buildRunStatuses[buildRun.id];
-    }
-
-    let status = [];
-    for (let input of buildRun.inputs) {
-      const inputReferenceInState = getReferenceFromDocUrl(state, input.docUrl);
-      if (!headsMatch(inputReferenceInState.heads, input.heads)) {
-        // orange arrow
-        status.push({
-          originalChangeOld: input,
-          originalChangeNew: inputReferenceInState,
-          intermediateChain: [],
-        });
-      } else {
-        // might inherit staleness from upstream
-        status.push(
-          ...getReferenceStatus(input).map((reason) =>
-            addToReasonChain(reason, input.docUrl)
-          )
-        );
-      }
-    }
-    buildRunStatuses[buildRun.id] = status;
-    return status;
-  }
-
-  for (let reference of state.references) {
-    getReferenceStatus(reference);
-  }
-
-  for (let buildRun of state.buildRuns) {
-    getBuildRunStatus(buildRun);
-  }
-
-  return { docStatuses, buildRunStatuses };
-}
-
-function getBuildRunOutputtingDocUrl(state, docUrl) {
-  return state.buildRuns.find((buildRun) =>
-    buildRun.outputs.some((output) => output.docUrl === docUrl)
-  );
-}
-
-function getReferenceFromDocUrl(state, docUrl) {
-  return state.references.find((reference) => reference.docUrl === docUrl);
-}
-
-function addToReasonChain(reason, link) {
-  return {
-    ...reason,
-    intermediateChain: [...reason.intermediateChain, link],
-  };
 }

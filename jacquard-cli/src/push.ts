@@ -19,6 +19,7 @@ import { FolderDoc } from "@/packages/folder";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 import { ensureMetadataHandleIsBranchScope, VersionControlSidecarDoc } from "@/sdk";
 import { findWithActiveBranch } from "./findWithActiveBranch";
+import { waitForSync } from "./util";
 
 // NOTE: copied this from the version control code in our os folder.
 // couldn't get imports working from os to jacquard-cli so just copying the function for now.
@@ -40,7 +41,8 @@ const initVersionControlMetadata = (doc: any, repo: Repo) => {
 export async function push(
   repo: Repo,
   { dir, projectFolderUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs,
-  buildMetadata?: BuildMetadata
+  buildMetadata?: BuildMetadata,
+  wait = true,
 ) {
   let folderHandle: DocHandle<FolderDoc> = await findOrCreateFolderHandle(
     projectFolderUrl,
@@ -59,6 +61,9 @@ export async function push(
     mainUrl: AutomergeUrl;
     cloneHandle: DocHandle<FileDoc>;
   }> = {};
+
+  const handlesToWaitOn: DocHandle<unknown>[] = [];
+  handlesToWaitOn.push(folderHandle);
 
   for (const filePath of files) {
     // todo: sync subfolders
@@ -112,6 +117,7 @@ export async function push(
       // needs to be specified somewhere datatype-specific I guess.
       // notably: it's also an incremental update to support diffs.
       let didChange = false;
+      handlesToWaitOn.push(handle);
       handle.change(
         (doc) => {
           if (!Automerge.equals(doc.content, fileContents)) {
@@ -142,6 +148,7 @@ export async function push(
         mainUrl: handle.url,
         cloneHandle: handle as DocHandle<FileDoc>,
       };
+      handlesToWaitOn.push(handle);
 
       await handle.whenReady();
 
@@ -228,6 +235,7 @@ export async function push(
         }),
       });
     });
+    handlesToWaitOn.push(buildMetadataHandle);
   }
 
   const newHeads = A.getHeads(folderHandle.docSync());
@@ -247,19 +255,14 @@ export async function push(
     console.log(`Created new doc at ${folderHandle.url}`);
   }
 
-  console.log("Waiting for changes to sync...");
-
   const { documentId } = parseAutomergeUrl(folderHandle.url);
   console.log(
     `View at: ${patchworkUrl}/#jacquard-project--${documentId}?type=folder`
   );
 
-  console.log("waiting");
-  // todo: adapt isSynced to handle multiple documents
-  // right now we are waiting forever
-  await new Promise(() => {});
-
-  //await isSynced;
+  if (wait) {
+    await waitForSync(handlesToWaitOn, syncServerStorageId);
+  }
 }
 
 async function findOrCreateFolderHandle(projectFolderUrl, repo: Repo) {
