@@ -82,9 +82,9 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
               {buildMetadata.command}
             </span>{" "}
             at {new Date(buildMetadata.timestamp).toLocaleString()}{" "}
-            {isStale && !docHeads && (
+            {/*isStale && !docHeads && (
               <span className="rounded px-1 bg-orange-300">stale</span>
-            )}
+            )*/}
           </div>
 
           <div className="flex items-center mr-1">
