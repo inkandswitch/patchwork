@@ -7,7 +7,7 @@ import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import _ from "lodash";
 import { useMemo } from "react";
 import { computed, Signal } from "signia";
-import { useValue } from "signia-react";
+import { useComputed, useValue } from "signia-react";
 import {
   DocLinkWithFolderPath,
   DocPath,
@@ -42,7 +42,7 @@ const computeFlattenedDocLinks = ({
           ...computeFlattenedDocLinks({
             doc: docLink.folderContents,
             folderPath: [...folderPath, docLink.url],
-          }),
+          }) ?? [],
         ]
       : { ...docLink, folderPath }
   );
@@ -50,7 +50,7 @@ const computeFlattenedDocLinks = ({
 
 // TODO: reactive but not incremental
 function materializeFolderDocSig(
-  docPath: DocPath | undefined,
+  docPath: DocPath,
   uiStateHandle: DocHandle<UIStateDoc>,
   repo: Repo,
 ): Signal<FolderDocWithChildren | 'loading'> {
