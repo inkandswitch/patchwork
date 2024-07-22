@@ -50,8 +50,8 @@ export type EditorProps<A, V> = {
 
   setSelectedAnchors?: (anchors: A[]) => void;
   setHoveredAnchor?: (anchor: A | null) => void;
-  setSelectedAnnotationGroupId?: (groupId: string) => void;
-  setHoveredAnnotationGroupId?: (groupId: string) => void;
+  setSelectedAnnotationGroupId?: (groupId: string | undefined) => void;
+  setHoveredAnnotationGroupId?: (groupId: string | undefined) => void;
   setCommentState?: (state: CommentState<A>) => void;
 
   hideInlineComments?: boolean;

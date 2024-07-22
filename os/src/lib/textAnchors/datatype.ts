@@ -34,7 +34,7 @@ export type TextAnchorMethods<D> = {
   sortAnchorsBy: (doc: D, anchor: TextAnchor) => number;
 };
 
-export const textAnchorsAtPath = <D>(
+export const textAnchorsAtPath = <D extends Automerge.Doc<unknown>>(
   path: Automerge.Prop[]
 ): TextAnchorMethods<D> => ({
   patchesToAnnotations: (doc: D, docBefore: D, patches: Automerge.Patch[]) => {
@@ -81,6 +81,8 @@ export const textAnchorsAtPath = <D>(
           const nextPatch = filteredPatches[i + 1];
           if (
             nextPatch &&
+            'length' in nextPatch &&
+            nextPatch.length !== undefined &&  // TODO: JAH strict fix
             nextPatch.action === "del" &&
             last(patch.path) === patchEnd
           ) {
@@ -117,6 +119,11 @@ export const textAnchorsAtPath = <D>(
           break;
         }
         case "del": {
+          if (!('length' in patch && patch.length !== undefined)) {
+            // TODO: JAH strict fix
+            break;
+          }
+
           const patchStart = last(patch.path) as number;
           const patchEnd = (last(patch.path) as number) + 1;
           const fromCursor = getCursorSafely(doc, path, patchStart);
@@ -172,10 +179,16 @@ export const textAnchorsAtPath = <D>(
     const from2 = getCursorPositionSafely(doc, path, anchor2.fromCursor);
     const to2 = getCursorPositionSafely(doc, path, anchor2.toCursor);
 
+    if (from1 === null || to1 === null || from2 === null || to2 === null) {
+      // TODO: JAH strict fix
+      return false;
+    }
+
     return Math.max(from1, from2) <= Math.min(to1, to2);
   },
 
   sortAnchorsBy: (doc: D, anchor: TextAnchor) => {
-    return getCursorPositionSafely(doc, path, anchor.fromCursor);
+    // TODO: JAH strict fix... threw a -1 in there lol
+    return getCursorPositionSafely(doc, path, anchor.fromCursor) || -1;
   },
 });

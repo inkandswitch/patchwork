@@ -1,6 +1,5 @@
 import * as A from "@automerge/automerge";
 import ReactDom from "react-dom/client";
-//@ts-ignore
 import {
   AutomergeUrl,
   DocHandle,
@@ -45,9 +44,10 @@ async function setupServiceWorker(): Promise<ServiceWorker> {
     })
     .then((registration) => {
       // If the service worker is still installing, we wait until it is activated
-      if (registration.installing) {
+      const installing = registration.installing;
+      if (installing) {
         return new Promise((resolve) => {
-          registration.installing.onstatechange = (event) => {
+          installing.onstatechange = (event) => {
             const serviceWorker = event.target as ServiceWorker;
             if (serviceWorker.state === "activated") {
               resolve(serviceWorker);
@@ -57,15 +57,15 @@ async function setupServiceWorker(): Promise<ServiceWorker> {
       }
 
       // otherwise return the active service worker
-      return registration.active;
+      // TODO: JAH strict fix... docs suggest there are more states than just installing and active
+      return registration.active!;
     });
 }
 
 async function setupRepo() {
   // in our vendored version we export a promise that resolves once the wasm is loaded
   // this property is missing in the type declaration
-  // @ts-expect-error
-  await AW.promise;
+  await (AW as any).promise;
   A.use(AW);
 
   // We create a repo without any network adapters.
@@ -85,7 +85,7 @@ async function setupRepo() {
 
 // Re-establish the MessageChannel if the controlling service worker changes.
 navigator.serviceWorker.addEventListener("controllerchange", (event) => {
-  const newServiceWorker = (event.target as ServiceWorkerContainer).controller;
+  const newServiceWorker = (event.target as ServiceWorkerContainer).controller!;
   // controllerchange is fired after a new service worker is installed
   // even if we wait above in setupServiceWorker() until the service worker state changes to activated.
   // To make sure we don't call establishMessageChannel twice check if this is actually a new service worker
@@ -176,4 +176,4 @@ const Root = () => (
   </RepoContext.Provider>
 );
 
-ReactDom.createRoot(document.getElementById("root")).render(<Root />);
+ReactDom.createRoot(document.getElementById("root")!).render(<Root />);

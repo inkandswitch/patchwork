@@ -5,6 +5,7 @@ import * as wasm from "@automerge/automerge-wasm";
 import * as A from "@automerge/automerge/next";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { DiffWithProvenance } from "./schema";
+import { useHandleDef } from "@/hooks/useHandleDef";
 
 // Turns hashes (eg for changes and actors) into colors for scannability
 export const hashToColor = (hash: string) => {
@@ -45,7 +46,7 @@ export const diffWithProvenance = (
 export const useActorIdToAuthorMap = (
   url: AutomergeUrl
 ): Record<A.ActorId, AutomergeUrl> => {
-  const handle = useHandle<any>(url);
+  const handle = useHandleDef<any>(url);
   const forceUpdate = useForceUpdate();
   const actorIdToAuthorRef = useRef<Record<A.ActorId, AutomergeUrl>>({});
 
@@ -58,7 +59,10 @@ export const useActorIdToAuthorMap = (
 
         let metadata;
         try {
-          metadata = JSON.parse(decodedChange.message);
+          const message = decodedChange.message;
+          if (typeof message === "string") {
+            metadata = JSON.parse(message);
+          }
         } catch (e) {
           // ignore
         }
@@ -70,6 +74,7 @@ export const useActorIdToAuthorMap = (
     };
 
     handle.doc().then((doc) => {
+      if (!doc) { return; }  // TODO: JAH strict fix
       lastHeads = A.getHeads(doc);
       addChangesToActorIdMap(A.getAllChanges(doc));
     });
@@ -79,7 +84,7 @@ export const useActorIdToAuthorMap = (
         return;
       }
 
-      const doc = handle.docSync();
+      const doc = handle.docSync()!;  // TODO: JAH strict fix
       const changes = A.getChanges(A.view(doc, lastHeads), doc);
       lastHeads = A.getHeads(doc);
       addChangesToActorIdMap(changes);

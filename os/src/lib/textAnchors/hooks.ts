@@ -59,12 +59,12 @@ export const useResolvedAnnotationAtPath = ({
   path,
   annotations,
 }: {
-  doc: unknown;
+  doc: Automerge.Doc<unknown> | undefined;
   path: Automerge.Prop[];
   annotations: AnnotationWithUIState<TextAnchor, string>[];
 }) =>
   useMemo<AnnotationWithUIState<ResolvedTextAnchor, string>[]>(() => {
-    if (!annotations) {
+    if (!annotations || !doc) {
       return [];
     }
 

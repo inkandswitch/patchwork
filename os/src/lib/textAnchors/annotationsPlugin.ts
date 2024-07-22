@@ -93,7 +93,7 @@ class DeletionMarker extends WidgetType {
     return box;
   }
 
-  eq(other) {
+  eq(other: DeletionMarker) {
     return (
       other.deletedText === this.deletedText && other.isActive === this.isActive
     );

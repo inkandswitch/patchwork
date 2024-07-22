@@ -23,6 +23,7 @@ import {
   TextAnchor,
   useResolvedAnnotationAtPath,
 } from "@/lib/textAnchors";
+import { useHandleDef } from "@/hooks/useHandleDef";
 
 export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const {
@@ -41,8 +42,7 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const [hasEditorFocus, setHasEditorFocus] = useState(false);
   const [selection, setSelection] = useState<TextSelection>();
   const [doc] = useDocument<MarkdownDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const repo = useRepo();
-  const handle = repo.find<MarkdownDoc>(docUrl);
+  const handle = useHandleDef<MarkdownDoc>(docUrl);
   const [editorView, setEditorView] = useState<EditorView>();
   const [editorContainer, setEditorContainer] = useState<HTMLDivElement | null>(null);
   const readOnly = doc && docHeads && !isEqual(docHeads, A.getHeads(doc));
