@@ -25,6 +25,7 @@ import {
 } from "../utils";
 import { StatusBar } from "./Statusbar";
 import { VersionControlBar } from "./VersionControlBar";
+import { T } from "@tldraw/tldraw";
 
 export type SidebarMode = "review" | "history" | "Bot";
 
@@ -86,7 +87,7 @@ export const VersionControlEditor: React.FC<{
   //   }
   // }, [JSON.stringify(legacySelectedBranch)]);
 
-  const [sidebarMode, _setSidebarMode] = useState<SidebarMode>();
+  const [sidebarMode, _setSidebarMode] = useState<SidebarMode | null>(null);
 
   const setSidebarMode = (sidebarMode: SidebarMode) => {
     // reset state from history mode
@@ -154,7 +155,7 @@ export const VersionControlEditor: React.FC<{
     const lastChange = A.decodeChange(
       allChangesForDoc[allChangesForDoc.length - 1]
     );
-    if (lastChange.message !== undefined) {
+    if (lastChange.message !== null) {
       const lastChangeMetadata = JSON.parse(lastChange.message);
       if (lastChangeMetadata?.changeType === "build") {
         return lastChangeMetadata;
@@ -228,7 +229,7 @@ export const VersionControlEditor: React.FC<{
 
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
 
-  if (!cloneOrMainOm || !datatypeId || !doc.branchMetadata)
+  if (!cloneOrMainOm || !datatypeId || !doc?.branchMetadata)
     return <div>Loading...</div>;
 
   // ---- ANYTHING RELYING ON doc SHOULD GO BELOW HERE ----
@@ -443,7 +444,7 @@ const DocEditor = <T, V>({
     return;
   }
 
-  const Component = tool.editorComponent;
+  const Component = tool.editorComponent as React.FC<EditorProps<T, V>>;
 
   return (
     <Component

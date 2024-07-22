@@ -1,5 +1,5 @@
 import { DocHandle } from "@automerge/automerge-repo";
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useState } from "react";
 
 import { useCurrentAccount } from "@/explorer/account";
@@ -28,13 +28,14 @@ export const TLDraw = ({
   setHoveredAnchor = () => {},
 }: TLDrawProps) => {
   useDocument<TLDrawDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const handle = useHandle<TLDrawDoc>(docUrl);
+  const repo = useRepo();
+  const handle = repo.find<TLDrawDoc>(docUrl);
   const account = useCurrentAccount();
   const userId = account ? account.contactHandle.url : "no-account";
 
   const [doc] = useDocument<TLDrawDoc>(docUrl);
   const docAtHeads = useMemo(
-    () => (docHeads ? A.view(doc, docHeads) : undefined),
+    () => (doc && docHeads ? A.view(doc, docHeads) : undefined),
     [doc, docHeads]
   );
 
@@ -68,7 +69,7 @@ export const TLDraw = ({
       ) : (
         <EditableTLDraw
           userId={userId}
-          doc={doc}
+          doc={doc!}  // TODO: JAH strict fix
           annotations={annotations}
           handle={handle}
           camera={camera ?? localCamera}

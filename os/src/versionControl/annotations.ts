@@ -44,7 +44,7 @@ export function useAnnotations({
   isCommentInputFocused,
 }: {
   doc: A.Doc<HasVersionControlMetadata<unknown, unknown>>;
-  dataType: DataType<unknown, unknown, unknown>;
+  dataType: DataType<unknown, unknown, unknown> | undefined;
   diff?: DiffWithProvenance;
   isCommentInputFocused: boolean;
 }): {

@@ -141,7 +141,7 @@ const fileExportMethods: FileExportMethod<MarkdownDoc>[] = [
 
       const zip = new JSZip();
       zip.file("index.md", doc.content);
-      for (const [filename, file] of Object.entries(assetsDoc.files)) {
+      for (const [filename, file] of Object.entries(assetsDoc!.files)) {  // TODO: JAH strict fix
         zip.file(`assets/${filename}`, file.contents);
       }
 

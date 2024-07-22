@@ -1,4 +1,3 @@
-import * as A from "@automerge/automerge/next";
 import React, { useEffect, useMemo, useState } from "react";
 
 import {
@@ -9,7 +8,7 @@ import {
   HasVersionControlMetadata,
 } from "@/versionControl/schema";
 import { usePackageModulesInRootFolder } from "@/packages/pkg/usePackages";
-import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
+import { ActorId, AutomergeUrl, DocHandle, Heads } from "@automerge/automerge-repo";
 import { DataType } from "./datatypes";
 import { IconType } from "./lib/icons";
 import * as PACKAGES from "./packages";
@@ -41,19 +40,19 @@ export type Tool = {
   sourceDocUrl?: AutomergeUrl;
 };
 
-export type EditorProps<T, V> = {
+export type EditorProps<A, V> = {
   docUrl: AutomergeUrl;
-  docHeads?: A.Heads;
+  docHeads?: Heads;
   activeDiscussionIds?: string[];
-  annotations?: AnnotationWithUIState<T, V>[];
-  annotationGroups?: AnnotationGroupWithUIState<T, V>[];
-  actorIdToAuthor?: Record<A.ActorId, AutomergeUrl>; // todo: can we replace that with memoize?
+  annotations?: AnnotationWithUIState<A, V>[];
+  annotationGroups?: AnnotationGroupWithUIState<A, V>[];
+  actorIdToAuthor?: Record<ActorId, AutomergeUrl>; // todo: can we replace that with memoize?
 
-  setSelectedAnchors?: (anchors: T[]) => void;
-  setHoveredAnchor?: (anchors: T) => void;
+  setSelectedAnchors?: (anchors: A[]) => void;
+  setHoveredAnchor?: (anchor: A) => void;
   setSelectedAnnotationGroupId?: (groupId: string) => void;
   setHoveredAnnotationGroupId?: (groupId: string) => void;
-  setCommentState?: (state: CommentState<T>) => void;
+  setCommentState?: (state: CommentState<A>) => void;
 
   hideInlineComments?: boolean;
 
@@ -134,5 +133,5 @@ export const useToolsForDataType = (
 
 export const useTool = (id: string): Tool => {
   const tools = useTools();
-  return tools.find((tool) => tool.id === id);
+  return tools.find((tool) => tool.id === id)!;  // TODO: JAH strict fix
 };

@@ -3,6 +3,7 @@ import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
 import { next as A } from "@automerge/automerge";
 import { pick } from "lodash";
 import { type DataType } from "@/sdk";
+import { TextPatch } from "@/versionControl/utils";
 
 // SCHEMA
 
@@ -70,7 +71,7 @@ export const includeChangeInHistory = (doc: DataGridDoc) => {
   };
 };
 
-export const includePatchInChangeGroup = (patch: A.Patch) =>
+export const includePatchInChangeGroup = (patch: A.Patch | TextPatch) =>
   patch.path[0] === "data" || patch.path[0] === "commentThreads";
 
 const promptForAIChangeGroupSummary = ({

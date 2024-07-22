@@ -69,7 +69,7 @@ export const VersionControlBar = ({
   datatypeId: string;
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
   buildMetadata: any;
-  sidebarMode: SidebarMode;
+  sidebarMode: SidebarMode | null;
   setSidebarMode: (mode: SidebarMode) => void;
   showChangesFlag: boolean;
   setShowChangesFlag: (flag: boolean) => void;

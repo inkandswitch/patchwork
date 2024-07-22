@@ -205,13 +205,13 @@ export interface HighlightAnnotation<A, V> {
   value: V;
 }
 
-export type Annotation<T, V> =
-  | AddAnnotation<T, V>
-  | DeleteAnnotation<T, V>
-  | ChangeAnnotation<T, V>
-  | HighlightAnnotation<T, V>;
+export type Annotation<A, V> =
+  | AddAnnotation<A, V>
+  | DeleteAnnotation<A, V>
+  | ChangeAnnotation<A, V>
+  | HighlightAnnotation<A, V>;
 
-export type AnnotationWithUIState<T, V> = Annotation<T, V> & {
+export type AnnotationWithUIState<A, V> = Annotation<A, V> & {
   /** Whether the annotation should be visually emphasized in the UI (eg, with darker coloring).
    *  This is used to indicate hovered/selected annotations within the UI.
    */
@@ -222,10 +222,10 @@ export type AnnotationWithUIState<T, V> = Annotation<T, V> & {
   shouldBeVisibleInViewport: boolean;
 };
 
-export interface AnnotationPosition<T, V> {
+export interface AnnotationPosition<A, V> {
   x: number;
   y: number;
-  annotation: Annotation<T, V>;
+  annotation: Annotation<A, V>;
 }
 
 export const initVersionControlMetadata = (doc: any, repo: Repo) => {

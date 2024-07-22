@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 type StatusBarProps = EditorProps<unknown, unknown> & {
-  dataType: DataType<unknown, unknown, unknown>;
+  dataType: DataType<unknown, unknown, unknown> | undefined;
   addNewDocument: (doc: { type: string; change?: (doc: any) => void }) => void;
 };
 

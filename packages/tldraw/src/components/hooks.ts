@@ -52,9 +52,9 @@ export const useDiffStyling = ({
   editor,
 }: {
   doc: TLDrawDoc;
-  annotations: AnnotationWithUIState<TLDrawDocAnchor, TLShape>[];
+  annotations: AnnotationWithUIState<TLDrawDocAnchor, TLShape>[] | undefined;
   store: TLStoreWithStatus;
-  editor: Editor;
+  editor: Editor | undefined;
 }) => {
   const tempShapeIdsRef = useRef(new Set<TLShapeId>());
   const highlightedElementsRef = useRef(new Set<HTMLElement>());
