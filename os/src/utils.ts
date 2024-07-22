@@ -15,3 +15,5 @@ export type FromEntries<T> = T extends ReadonlyArray<readonly [infer K extends s
 export function objectFromEntries<T extends ReadonlyArray<readonly [PropertyKey, any]>>(entries: T): FromEntries<T> {
   return Object.fromEntries(entries) as FromEntries<T>;
 }
+
+export function typeOnlyAssert(condition: boolean): asserts condition { }

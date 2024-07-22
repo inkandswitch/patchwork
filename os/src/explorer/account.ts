@@ -16,6 +16,7 @@ import { uploadFile } from "./utils";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { useFolderDocWithChildren } from "../packages/folder/hooks/useFolderDocWithChildren";
+import { typeOnlyAssert } from "@/utils";
 
 export type ModuleSettingsDoc = {
   enabledDatatypeIds: { [id: string]: boolean };
@@ -89,7 +90,7 @@ class Account extends EventEmitter<AccountEvents> {
         // try to see if account is already loaded
         const accountHandle = this.#repo.find<AccountDoc>(newAccountUrl);
         const accountDoc = await accountHandle.doc();
-        if (accountDoc.contactUrl) {
+        if (accountDoc?.contactUrl) {
           this.logIn(newAccountUrl);
           return;
         }
@@ -110,6 +111,10 @@ class Account extends EventEmitter<AccountEvents> {
 
     const accountHandle = this.#repo.find<AccountDoc>(accountUrl);
     const accountDoc = await accountHandle.doc();
+    if (!accountDoc) {
+      // TODO: JAH strict fix
+      throw new Error(`Account not found: ${accountUrl}`);
+    }
     const contactHandle = this.#repo.find<ContactDoc>(accountDoc.contactUrl);
 
     this.#contactHandle = contactHandle;
@@ -123,7 +128,9 @@ class Account extends EventEmitter<AccountEvents> {
       avatarUrl = await uploadFile(this.#repo, avatar);
     }
 
-    this.contactHandle.change((contact: RegisteredContactDoc) => {
+    this.contactHandle.change((contact: ContactDoc) => {
+      typeOnlyAssert(contact.type === "registered");
+
       contact.type = "registered";
       contact.name = name;
 
@@ -175,14 +182,17 @@ export async function getAccount(repo: Repo) {
 
   // try to load existing account
   if (accountUrl) {
-    CURRENT_ACCOUNT = new Promise<Account>(async (resolve) => {
+    CURRENT_ACCOUNT = (async () => {
       const accountHandle = repo.find<AccountDoc>(accountUrl);
-      const contactHandle = repo.find<ContactDoc>(
-        (await accountHandle.doc()).contactUrl
-      );
+      const accountDoc = await accountHandle.doc();
+      if (!accountDoc) {
+        // TODO: JAH strict fix
+        throw new Error(`Account not found: ${accountUrl}`);
+      }
+      const contactHandle = repo.find<ContactDoc>(accountDoc.contactUrl);
 
-      resolve(new Account(repo, accountHandle, contactHandle));
-    });
+      return new Account(repo, accountHandle, contactHandle);
+    })();
 
     return CURRENT_ACCOUNT;
   }
@@ -257,7 +267,7 @@ export function useCurrentAccount(): Account | undefined {
   // In the future, replace this with a more principled schema migration system.
   useEffect(() => {
     const doc = account?.handle.docSync();
-    if (doc && doc.rootFolderUrl === undefined) {
+    if (account && doc && doc.rootFolderUrl === undefined) {
       const rootFolderHandle = repo.create<FolderDoc>();
       rootFolderHandle.change((rootFolder) => {
         rootFolder.docs = [];
@@ -267,7 +277,7 @@ export function useCurrentAccount(): Account | undefined {
       });
     }
 
-    if (doc && doc.uiStateUrl === undefined) {
+    if (account && doc && doc.uiStateUrl === undefined) {
       const uiStateHandle = repo.create<UIStateDoc>();
       uiStateHandle.change((uiState) => {
         uiState.openedFoldersInSidebar = [];
@@ -278,7 +288,7 @@ export function useCurrentAccount(): Account | undefined {
       });
     }
 
-    if (doc && doc.moduleSettingsUrl === undefined) {
+    if (account && doc && doc.moduleSettingsUrl === undefined) {
       const moduleSettingsHandle = repo.create<ModuleSettingsDoc>();
       moduleSettingsHandle.change((settings) => {
         settings.enabledDatatypeIds = {};
@@ -293,7 +303,7 @@ export function useCurrentAccount(): Account | undefined {
 }
 
 export function useCurrentAccountDoc(): [
-  AccountDoc,
+  AccountDoc | undefined,
   (changeFn: ChangeFn<AccountDoc>) => void
 ] {
   const account = useCurrentAccount();
@@ -311,22 +321,21 @@ export function useRootFolderDocWithChildren() {
   const repo = useRepo();
   useEffect(() => {
     if (accountDoc) {
-      // @ts-ignore
-      window.rootFolderHandle = repo.find<FolderDoc>(accountDoc.rootFolderUrl);
+      (window as any).rootFolderHandle = repo.find<FolderDoc>(accountDoc.rootFolderUrl);
     }
   }, [repo, accountDoc]);
 
   return useFolderDocWithChildren(accountDoc?.rootFolderUrl);
 }
 
-export function useSelf(): ContactDoc {
+export function useSelf(): ContactDoc | undefined {
   const [accountDoc] = useCurrentAccountDoc();
   const [contactDoc] = useDocument<ContactDoc>(accountDoc?.contactUrl);
 
   return contactDoc;
 }
 
-export const useDatatypeSettings = (): ModuleSettingsDoc => {
+export const useDatatypeSettings = (): ModuleSettingsDoc | undefined => {
   const [accountDoc] = useCurrentAccountDoc();
   const [datatypeSettingsDoc] = useDocument<ModuleSettingsDoc>(
     accountDoc?.moduleSettingsUrl
@@ -335,7 +344,7 @@ export const useDatatypeSettings = (): ModuleSettingsDoc => {
   return datatypeSettingsDoc;
 };
 
-export const useUIStateHandle = (): DocHandle<UIStateDoc> => {
+export const useUIStateHandle = (): DocHandle<UIStateDoc> | undefined => {
   const account = useCurrentAccount();
   const [accountDoc] = useDocument<AccountDoc>(account?.handle.url);
   const uiStateHandle = useHandle<UIStateDoc>(accountDoc?.uiStateUrl);
