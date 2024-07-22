@@ -12,7 +12,7 @@ export const useScrollAnnotationsIntoView = ({
   editor,
 }: {
   annotations: AnnotationWithUIState<ResolvedTextAnchor, string>[];
-  editor: EditorView;
+  editor: EditorView | null;
 }) => {
   const annotationsToScrollIntoView = useMemo(
     () =>
@@ -89,7 +89,7 @@ export const useAnnotationsInEditor = ({
   editor,
   annotations,
 }: {
-  editor: EditorView;
+  editor: EditorView | null;
   annotations: AnnotationWithUIState<ResolvedTextAnchor, string>[];
 }) =>
   useEffect(() => {

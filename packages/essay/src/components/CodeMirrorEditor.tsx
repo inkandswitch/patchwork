@@ -34,7 +34,7 @@ export type MarkdownDocEditorProps = {
   handle: DocHandle<MarkdownDoc>;
   path: A.Prop[];
   setSelection?: (selection: TextSelection) => void;
-  setHasFocus?: (hasFocus) => void;
+  setHasFocus?: (hasFocus: boolean) => void;
   setView?: (view: EditorView) => void;
   setSelectedAnchors?: (anchors: TextAnchor[]) => void;
   readOnly?: boolean;
@@ -53,7 +53,7 @@ export function MarkdownDocEditor({
   setView = () => {},
   readOnly,
   docHeads,
-  annotations,
+  annotations = [],  // TODO: JAH strict fix
   setEditorContainerElement,
 }: MarkdownDocEditorProps) {
   const containerRef = useRef(null);
@@ -76,7 +76,8 @@ export function MarkdownDocEditor({
     if (!handleReady || !editorContainer) {
       return;
     }
-    const doc = handle.docSync();
+    // TODO: JAH I don't think this is appropriately reactive to the handle loading?
+    const doc = handle.docSync()!;
     const docAtHeads = docHeads ? A.view(doc, docHeads) : doc;
     const source = docAtHeads.content; // this should use path
 
@@ -127,13 +128,17 @@ export function MarkdownDocEditor({
             const selection = view.state.selection.ranges[0];
 
             if (selection) {
-              setSelection({
-                from: selection.from,
-                to: selection.to,
-                yCoord:
-                  -1 * view.scrollDOM.getBoundingClientRect().top +
-                  view.coordsAtPos(selection.from).top,
-              });
+              const coords = view.coordsAtPos(selection.from);
+              if (coords) {
+                // TODO: JAH strict fix... not sure if there should be an else here
+                setSelection({
+                  from: selection.from,
+                  to: selection.to,
+                  yCoord:
+                    -1 * view.scrollDOM.getBoundingClientRect().top +
+                    coords.top,
+                });
+              }
 
               if (selection.from === selection.to) {
                 const cursorPos = selection.from;
