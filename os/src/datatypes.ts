@@ -138,14 +138,14 @@ export const useDataTypes = (): DataType<unknown, unknown, unknown>[] => {
 };
 
 export const useDataType = <D, T, V>(
-  id: string
+  id: string | undefined
 ): DataType<D, T, V> | undefined => {
   const dataTypes = useDataTypes();
   return lookupDataTypeId<D, T, V>(id, dataTypes);
 };
 
 export const lookupDataTypeId = <D, T, V>(
-  id: string,
+  id: string | undefined,
   dataTypes: DataType<unknown, unknown, unknown>[]
 ) => {
   return dataTypes.find((dataType) => dataType.id == id) as

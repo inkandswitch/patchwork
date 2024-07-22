@@ -1,6 +1,6 @@
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { NodeRendererProps, Tree } from "react-arborist";
+import { MoveHandler, NodeRendererProps, RenameHandler, Tree } from "react-arborist";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
 
@@ -45,7 +45,6 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   // Currently we don't show anything if the doc is controlled by a parent branch scope,
   // but we could use that info to visualize something in the future.
   const docPath = fakeDocPath(node.data);
-  const uiStateHandle = useUIStateHandle();
   const { activeBranchOm } = useBranchScopeAndActiveBranchInfo(docPath);
 
   const [doc] = useDocument<HasVersionControlMetadata>(node.data.url);
@@ -97,7 +96,7 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
           </div>
           {node.data.type === "folder" && (
             <div className="ml-2 text-gray-500 text-xs py-0.5 px-1.5 rounded-lg bg-gray-200">
-              {node.children.length}
+              {node.children?.length || 0}
             </div>
           )}
           <div className="text-xs text-gray-500 flex items-center gap-1">
@@ -138,8 +137,8 @@ const Edit = ({ node }: NodeRendererProps<DocLink>) => {
 
 type SidebarProps = {
   rootFolderDoc: FolderDocWithMetadata;
-  selectedDocLink: DocLinkWithFolderPath | null;
-  selectDocLink: (docLink: DocLinkWithFolderPath | null) => void;
+  selectedDocLink: DocLinkWithFolderPath | undefined;
+  selectDocLink: (docLink: DocLinkWithFolderPath | undefined) => void;
   hideSidebar: () => void;
   addNewDocument: (doc: { type: string }) => void;
 };
@@ -147,7 +146,7 @@ type SidebarProps = {
 const prepareDataForTree = (
   folderDoc: FolderDocWithChildren,
   folderPath: AutomergeUrl[]
-) => {
+): DocLinkWithFolderPath[] => {
   if (!folderDoc) {
     return [];
   }
@@ -211,15 +210,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
     accountDoc?.uiStateUrl
   );
 
-  const onMove = ({ parentNode, index: dragTargetIndex, dragNodes }) => {
+  const onMove: MoveHandler<DocLinkWithFolderPath> = ({
+    parentNode,
+    index: dragTargetIndex,
+    dragNodes,
+  }) => {
     for (const dragNode of dragNodes) {
       const currentParentUrl =
-        dragNode.parent.level < 0
+        dragNode.parent!.level < 0  // TODO: JAH strict fix
           ? rootFolderUrl
-          : (dragNode.parent.data.url as AutomergeUrl);
+          : (dragNode.parent!.data.url as AutomergeUrl);
       const currentParentHandle = repo.find<FolderDoc>(currentParentUrl);
       const dragItemIndex = currentParentHandle
-        .docSync()
+        .docSync()!  // TODO: JAH strict fix
         .docs.findIndex((item) => item.url === dragNode.data.url);
 
       const newParentUrl =
@@ -239,7 +242,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ? dragTargetIndex - 1
           : dragTargetIndex;
 
-      let removedItem;
+      let removedItem: DocLink;
       currentParentHandle.change((d) => {
         const spliceResult = d.docs.splice(dragItemIndex, 1);
         removedItem = structuredClone({ ...spliceResult[0] });
@@ -257,11 +260,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const treeSelection = selectedDocLink ? idAccessor(selectedDocLink) : null;
 
-  const onRename = ({ node, name }) => {
+  const onRename: RenameHandler<DocLinkWithFolderPath> = ({ node, name }) => {
     const docLink = flatDocLinks.find((doc) => doc.url === node.data.url);
-    const dataType = dataTypes.find(({ id }) => id === docLink.type);
+    const dataType = dataTypes.find(({ id }) => id === docLink?.type)!;  // TODO: JAH strict fix
 
-    if (!dataType.setTitle) {
+    if (!dataType?.setTitle) {
       alert(
         `${capitalize(
           dataType.name

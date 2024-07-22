@@ -113,10 +113,10 @@ const parseUrl = (url: URL): Omit<DocLink, "name"> | null => {
   );
 
   if (!match) {
-    return;
+    return null;
   }
 
-  const { docId, branchName } = match.groups;
+  const { docId, branchName } = match.groups!;
 
   const docUrl = stringifyAutomergeUrl(docId as DocumentId);
   if (!isValidAutomergeUrl(docUrl)) {
@@ -164,7 +164,7 @@ export const useSelectedDocLink = ({
 }): {
   selectedDocLink: DocLinkWithFolderPath | undefined;
   // todo: should the folder path be optional?
-  selectDocLink: (docLink: DocLinkWithFolderPath) => void;
+  selectDocLink: (docLink: DocLinkWithFolderPath | undefined) => void;
 } => {
   // parse the current URL
   const currentUrl = useCurrentUrl();

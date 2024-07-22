@@ -12,8 +12,8 @@ export const LoadingScreen = ({
   docUrl,
   handle,
 }: {
-  docUrl: AutomergeUrl | null;
-  handle: DocHandle<any> | null;
+  docUrl: AutomergeUrl | undefined;
+  handle: DocHandle<any> | undefined;
 }) => {
   const [loadProgress, setLoadProgress] = useState(0);
   useEffect(() => {

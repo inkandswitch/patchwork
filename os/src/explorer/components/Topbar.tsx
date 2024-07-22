@@ -35,7 +35,7 @@ type TopbarProps = {
   showSidebar: boolean;
   setShowSidebar: (showSidebar: boolean) => void;
   selectedDocLink: DocLinkWithFolderPath | undefined;
-  selectDocLink: (docLink: DocLinkWithFolderPath | null) => void;
+  selectDocLink: (docLink: DocLinkWithFolderPath | undefined) => void;
   selectedDoc: Doc<HasVersionControlMetadata<unknown, unknown>> | undefined;
   selectedDocHandle:
     | DocHandle<HasVersionControlMetadata<unknown, unknown>>
@@ -167,7 +167,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 await folderHandle.whenReady();
 
                 const index = folderHandle
-                  .docSync()
+                  .docSync()!  // TODO: JAH strict fix
                   .docs.findIndex((doc) => doc.url === selectedDocUrl);
                 folderHandle.change((doc) =>
                   doc.docs.splice(index + 1, 0, newDocLink)

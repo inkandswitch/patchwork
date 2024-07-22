@@ -39,7 +39,7 @@ export const ContactAvatar = ({
   const [maybeAnonymousContact] = useDocument<ContactDoc>(url);
   const [registeredContact] = useDocument<RegisteredContactDoc>(undefined);
 
-  const contact: RegisteredContactDoc =
+  const contact: RegisteredContactDoc | undefined =
     maybeAnonymousContact?.type === "registered"
       ? maybeAnonymousContact
       : registeredContact;

@@ -111,7 +111,7 @@ export const useTools = (): Tool[] => {
 };
 
 export const useToolsForDataType = (
-  dataType: DataType<unknown, unknown, unknown> | string
+  dataType: DataType<unknown, unknown, unknown> | string | undefined
 ): Tool[] => {
   const tools = useTools();
 
@@ -131,7 +131,7 @@ export const useToolsForDataType = (
   }, [tools, dataType]);
 };
 
-export const useTool = (id: string): Tool => {
+export const useTool = (id: string | undefined): Tool | undefined => {
   const tools = useTools();
-  return tools.find((tool) => tool.id === id)!;  // TODO: JAH strict fix
+  return tools.find((tool) => tool.id === id);
 };

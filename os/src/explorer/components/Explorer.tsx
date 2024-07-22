@@ -56,7 +56,7 @@ export const Explorer: React.FC = () => {
   });
 
   const getFakeDocPathForDocUrl = useCallback(
-    (url) => {
+    (url: string) => {
       const docLinkWithFolderPath = flatDocLinks.find(
         (link) => link.url === url
       );
@@ -78,7 +78,7 @@ export const Explorer: React.FC = () => {
   const selectedDataTypeId = selectedDocLink?.type;
   const selectedBranchUrl = selectedDocLink?.branchUrl;
 
-  const selectedBranch = useMemo<LegacyBranch>(() => {
+  const selectedBranch = useMemo<LegacyBranch | undefined>(() => {
     if (!selectedBranchUrl || !selectedDoc) {
       return;
     }
@@ -97,7 +97,7 @@ export const Explorer: React.FC = () => {
   const currentTool =
     // make sure the current tool is reset to the fallback tool
     // if the selected datatype changes and the selected tool is not compatible
-    selectedTool &&
+    selectedTool && selectedDataType &&
     (selectedTool.supportedDataTypes === "*" ||
       selectedTool.supportedDataTypes.some(
         (supportedDataType) => supportedDataType === selectedDataType.id
@@ -115,6 +115,10 @@ export const Explorer: React.FC = () => {
       type: string;
       change?: (doc: unknown) => void;
     }) => {
+      if (!uiStateHandle) {
+        throw new Error("uiStateHandle not ready");
+      }
+
       const dataType = dataTypes.find(({ id }) => id === type);
 
       if (!dataType) {
@@ -207,23 +211,25 @@ export const Explorer: React.FC = () => {
     const folderHandle = repo.find<FolderDoc>(
       link.folderPath[link.folderPath.length - 1]
     );
-    await folderHandle.whenReady();
-    const itemIndex = folderHandle
-      .docSync()
+    const folderDoc = await folderHandle.doc();
+    if (!folderDoc) {
+      throw new Error("Folder doc missing");
+    }
+    const itemIndex = folderDoc
       .docs.findIndex((item) => item.url === link.url);
     if (itemIndex >= 0) {
-      if (itemIndex < folderHandle.docSync().docs.length - 1) {
+      if (itemIndex < folderDoc.docs.length - 1) {
         selectDocLink({
-          ...folderHandle.docSync().docs[itemIndex + 1],
+          ...folderDoc.docs[itemIndex + 1],
           folderPath: link.folderPath,
         });
       } else if (itemIndex > 1) {
         selectDocLink({
-          ...folderHandle.docSync().docs[itemIndex - 1],
+          ...folderDoc.docs[itemIndex - 1],
           folderPath: link.folderPath,
         });
       } else {
-        selectDocLink(null);
+        selectDocLink(undefined);
       }
 
       // Wait for the URL to update before we delete the doc link;

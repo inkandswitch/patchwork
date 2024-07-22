@@ -1,7 +1,7 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 // TODO move these utils
 import { getRelativeTimeString } from "@/lib/dates";
-import { next as A } from "@automerge/automerge";
+import { next as A, Heads } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, StorageId } from "@automerge/automerge-repo";
 import { useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useMachine } from "@xstate/react";
@@ -32,7 +32,7 @@ const SyncIndicatorInner = ({ handle }: { handle: DocHandle<unknown> }) => {
 
   const isSynced = syncState === SyncState.InSync;
 
-  const prevHandle = useRef(undefined);
+  const prevHandle = useRef<DocHandle<unknown> | undefined>(undefined);
 
   useEffect(() => {
     if (prevHandle.current && prevHandle.current.url !== handle.url) {
@@ -211,8 +211,8 @@ enum SyncState {
 }
 
 interface SyncIndicatorState {
-  syncServerHeads: A.Heads;
-  ownHeads: A.Heads;
+  syncServerHeads: A.Heads | undefined;
+  ownHeads: A.Heads | undefined;
   lastSyncUpdate?: number;
   isInternetConnected: boolean;
   syncState: SyncState;
@@ -270,6 +270,10 @@ function useSyncIndicatorState(handle: DocHandle<unknown>): SyncIndicatorState {
       setSyncServerHeads(syncServerHeads ?? []); // initialize to empty heads if we have no state
 
       handle.doc().then((doc) => {
+        if (!doc) {
+          // TODO: JAH strict fix
+          throw new Error("No doc");
+        }
         setOwnHeads(A.getHeads(doc));
       });
     }
@@ -281,7 +285,7 @@ function useSyncIndicatorState(handle: DocHandle<unknown>): SyncIndicatorState {
       }
     };
 
-    const onRemoteHeads = ({ storageId, heads }) => {
+    const onRemoteHeads = ({ storageId, heads }: { storageId: StorageId, heads: Heads }) => {
       if (storageId === SYNC_SERVER_STORAGE_ID) {
         send({ type: "RECEIVED_SYNC_MESSAGE" });
         setSyncServerHeads(heads);
