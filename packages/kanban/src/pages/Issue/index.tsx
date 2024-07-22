@@ -29,7 +29,7 @@ function IssuePage({
 
   const cardIndex = doc.cards.findIndex((issue) => issue.id === id);
   const card = doc.cards[cardIndex];
-  const lane = doc.lanes.find(({ cardIds }) => cardIds.includes(card.id));
+  const lane = doc.lanes.find(({ cardIds }) => cardIds.includes(card.id))!;  // TODO: JAH strict fix
 
   // ensure description is not undefined, this can be the
   useEffect(() => {

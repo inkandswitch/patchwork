@@ -48,6 +48,11 @@ function IssueModal({
       return;
     }
 
+    if (!account) {
+      alert("Please login before submitting");
+      return;
+    }
+
     changeDoc((doc) => {
       const timestamp = Date.now();
 
@@ -85,7 +90,7 @@ function IssueModal({
     <Dialog
       open={isOpen}
       onOpenChange={() => {
-        onDismiss();
+        onDismiss && onDismiss();
         reset();
       }}
       modal={false}
