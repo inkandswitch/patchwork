@@ -90,7 +90,7 @@ interface TlDrawProps {
   camera?: TLCamera;
   onChangeCamera?: (camera: TLCamera) => void;
   setSelectedAnchors: (anchors: TLDrawDocAnchor[]) => void;
-  setHoveredAnchor: (anchor: TLDrawDocAnchor) => void;
+  setHoveredAnchor: (anchor: TLDrawDocAnchor | null) => void;
 }
 
 const EditableTLDraw = ({

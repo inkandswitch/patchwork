@@ -17,7 +17,7 @@ export const useCameraSync = ({
 }: {
   camera?: TLCamera;
   onChangeCamera?: (camera: TLCamera) => void;
-  editor: Editor;
+  editor?: Editor;
 }) => {
   useEffect(() => {
     if (!editor || !camera || isEqual(editor.camera, camera)) {
@@ -193,9 +193,9 @@ export const useAnchorEventListener = ({
   setSelectedAnchors,
   setHoveredAnchor,
 }: {
-  editor: Editor;
+  editor?: Editor;
   setSelectedAnchors: (anchors: TLDrawDocAnchor[]) => void;
-  setHoveredAnchor: (anchors: TLDrawDocAnchor) => void;
+  setHoveredAnchor: (anchors: TLDrawDocAnchor | null) => void;
 }) => {
   useEffect(() => {
     if (!editor) {

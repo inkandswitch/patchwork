@@ -190,7 +190,7 @@ export function useAnnotations({
 
       highlightAnnotations.push(...discussionHighlightAnnotations);
 
-      const overlappingAnnotations = [];
+      const overlappingAnnotations: HighlightAnnotation<unknown, unknown>[] = [];
 
       editAnnotations.forEach((editAnnotation) => {
         if (
@@ -200,7 +200,7 @@ export function useAnnotations({
         ) {
           // mark any annotation that is part of a discussion as claimed
           claimedAnnotations.add(editAnnotation);
-          overlappingAnnotations.push(editAnnotation);
+          overlappingAnnotations.push(editAnnotation as HighlightAnnotation<unknown, unknown>);  // TODO: JAH strict fix
         }
       });
 
@@ -242,7 +242,7 @@ export function useAnnotations({
             ? -Infinity // annotation groups without annotations are global comments which are always shown on top
             : min(
                 annotationGroup.annotations.map((annotation) =>
-                  dataType.sortAnchorsBy(doc, annotation.anchor)
+                  dataType.sortAnchorsBy!(doc, annotation.anchor)
                 )
               )
         )
@@ -271,7 +271,7 @@ export function useAnnotations({
     const selectedAnchors = new Set<string>();
     const hoveredAnchors = new Set<string>();
     const selectedAnnotationGroupIds = new Set<string>();
-    let expandedAnnotationGroupId: string;
+    let expandedAnnotationGroupId: string | undefined;
 
     // Record selection state for anchors and annotation groups
     switch (selectedState?.type) {
@@ -407,7 +407,7 @@ export function useAnnotations({
                 commentState.type === "edit" &&
                 annotationGroup.discussion?.comments.some(
                   (comment) => comment.id === commentState.commentId
-                );
+                ) || false;
               break;
           }
         }
@@ -418,7 +418,7 @@ export function useAnnotations({
             expandedAnnotationGroupId === id ||
             (!expandedAnnotationGroupId && isCommentBeingCreated)
               ? "expanded"
-              : selectedAnnotationGroupIds.has(id)
+              : id && selectedAnnotationGroupIds.has(id)
               ? "focused"
               : "neutral",
           comment: isCommentBeingEdited

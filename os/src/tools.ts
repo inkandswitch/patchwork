@@ -49,7 +49,7 @@ export type EditorProps<A, V> = {
   actorIdToAuthor?: Record<ActorId, AutomergeUrl>; // todo: can we replace that with memoize?
 
   setSelectedAnchors?: (anchors: A[]) => void;
-  setHoveredAnchor?: (anchor: A) => void;
+  setHoveredAnchor?: (anchor: A | null) => void;
   setSelectedAnnotationGroupId?: (groupId: string) => void;
   setHoveredAnnotationGroupId?: (groupId: string) => void;
   setCommentState?: (state: CommentState<A>) => void;
