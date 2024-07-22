@@ -12,7 +12,7 @@ export const LogView = ({
   const [latestDoc] = useDocument<JacquardBuildMetadata>(docUrl);
 
   const doc = useMemo(
-    () => (docHeads ? Automerge.view(latestDoc, docHeads) : latestDoc),
+    () => (latestDoc && docHeads ? Automerge.view(latestDoc, docHeads) : latestDoc),
     [latestDoc, docHeads]
   );
 

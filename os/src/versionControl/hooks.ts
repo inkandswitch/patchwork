@@ -63,7 +63,7 @@ export const useActiveBranchInfo = (
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.
 export const useBranchScopeAndActiveBranchInfo = (
-  docPath: DocPath
+  docPath: DocPath | undefined
 ): BranchScopeAndActiveBranchInfo => {
   const repo = useRepo();
   const uiStateHandle = useUIStateHandle();

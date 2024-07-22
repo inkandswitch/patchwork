@@ -31,11 +31,11 @@ export const GraphView = ({
   const [latestDoc] = useDocument<JacquardBuildMetadata>(docUrl);  // ok cuz docUrl is a clone
 
   const doc = useMemo(
-    () => (docHeads ? Automerge.view(latestDoc, docHeads) : latestDoc),
+    () => (docHeads && latestDoc ? Automerge.view(latestDoc, docHeads) : latestDoc),
     [latestDoc, docHeads]
   );
 
-  const folderProjectDocPath = getFakeDocPathForDocUrl(doc?.projectFolderUrl);
+  const folderProjectDocPath = doc && getFakeDocPathForDocUrl(doc.projectFolderUrl);
   const { cloneOrMainOm: projectFolderOm } = useBranchScopeAndActiveBranchInfo(folderProjectDocPath);
 
 
@@ -80,7 +80,7 @@ const useProjectState = ({
   buildRuns: BuildRun[];
   filesReferencedInBuildsOnly?: boolean;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
-}): ProjectState => {
+}): ProjectState | undefined => {
   const fileUrls = useMemo(
     () =>
       !folderDoc
@@ -135,10 +135,10 @@ const useProjectState = ({
     [buildRuns, files]
   );
 
-  return useMemo<ProjectState>(
+  return useMemo(
     () =>
       !folderDoc || fileUrls.length !== references.length
-        ? null
+        ? undefined
         : {
             references,
             buildRuns: filteredBuildRuns,
@@ -148,7 +148,7 @@ const useProjectState = ({
 };
 
 const GraphvizView = ({ source }: { source: string }) => {
-  const [container, setContainer] = useState<HTMLElement>();
+  const [container, setContainer] = useState<HTMLElement | null>(null);
   const sourceRef = useRef<string>();
   sourceRef.current = source;
 
@@ -169,10 +169,10 @@ const GraphvizView = ({ source }: { source: string }) => {
           const titleElement = node.querySelector("title");
           const nodeIdFromTitle = titleElement
             ? titleElement.textContent
-            : null;
+            : undefined;
 
           const possibleAutomergeUrl = nodeIdFromTitle
-            .slice(1)
+            ?.slice(1)
             .replaceAll("_", ":");
 
           if (!isValidAutomergeUrl(possibleAutomergeUrl)) {
