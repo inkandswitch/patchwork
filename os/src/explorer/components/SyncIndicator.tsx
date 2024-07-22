@@ -15,7 +15,7 @@ export const AUTOMERGE_SYNC_SERVER_STORAGE_ID = (import.meta.env
   "3760df37-a4c6-4f66-9ecd-732039a9385d") as StorageId;
 
 export const JACQUARD_SYNC_SERVER_STORAGE_ID =
-  "b9645395-f69a-40ca-ab42-b3a63e11ea18" as StorageId;
+  "8EQu4Pnz70bYtynRVIVcNciTTarwODfg" as StorageId;
 
 export const BACKUP_SYNC = localStorage.getItem("BACKUP_SYNC");
 
