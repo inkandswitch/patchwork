@@ -30,7 +30,6 @@ export type TextSelection = {
 };
 
 export type MarkdownDocEditorProps = {
-  editorContainer: HTMLDivElement;
   handle: DocHandle<MarkdownDoc>;
   path: A.Prop[];
   setSelection?: (selection: TextSelection) => void;
@@ -40,11 +39,9 @@ export type MarkdownDocEditorProps = {
   readOnly?: boolean;
   docHeads?: A.Heads;
   annotations?: AnnotationWithUIState<ResolvedTextAnchor, string>[];
-  setEditorContainerElement?: (container: HTMLDivElement) => void;
 };
 
 export function MarkdownDocEditor({
-  editorContainer,
   handle,
   path,
   setSelection = () => {},
@@ -54,9 +51,8 @@ export function MarkdownDocEditor({
   readOnly,
   docHeads,
   annotations = [],  // TODO: JAH strict fix
-  setEditorContainerElement,
 }: MarkdownDocEditorProps) {
-  const containerRef = useRef(null);
+  const [container, setContainer] = useState<HTMLElement | null>(null);
   const editorRoot = useRef<EditorView>(null);
   const [editorCrashed, setEditorCrashed] = useState<boolean>(false);
   const markdownPlugins = useMarkdownPlugins({ docWithAssetsHandle: handle });
@@ -73,7 +69,7 @@ export function MarkdownDocEditor({
 
   // This big useEffect sets up the editor view
   useEffect(() => {
-    if (!handleReady || !editorContainer) {
+    if (!handleReady || !container) {
       return;
     }
     // TODO: JAH I don't think this is appropriately reactive to the handle loading?
@@ -193,14 +189,10 @@ export function MarkdownDocEditor({
           editorRoot.current?.destroy();
         }
       },
-      parent: containerRef.current,
+      parent: container,
     });
 
     editorRoot.current = view;
-
-    if (setEditorContainerElement) {
-      setEditorContainerElement(containerRef.current);
-    }
 
     // pass the view up to the parent so it can use it too
     setView(view);
@@ -210,7 +202,7 @@ export function MarkdownDocEditor({
     return () => {
       view.destroy();
     };
-  }, [handle, handleReady, docHeads, editorContainer, markdownPlugins]);
+  }, [container, handle, handleReady, docHeads, markdownPlugins]);
 
   if (editorCrashed) {
     return (
@@ -254,7 +246,7 @@ export function MarkdownDocEditor({
     <div className="flex flex-col items-stretch min-h-screen">
       <div
         className="codemirror-editor flex-grow relative min-h-screen"
-        ref={containerRef}
+        ref={setContainer}
         onKeyDown={onKeyDown}
       />
     </div>

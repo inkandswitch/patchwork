@@ -92,7 +92,6 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
             }`}
           >
             <MarkdownDocEditor
-              editorContainer={editorContainer}
               handle={handle}
               path={["content"]}
               setSelectedAnchors={setSelectedAnchors}
