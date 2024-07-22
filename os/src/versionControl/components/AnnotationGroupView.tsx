@@ -136,9 +136,11 @@ export const AnnotationGroupView = forwardRef<
           discussions = doc.discussions;
         }
 
-        let discussionId = annotationGroup.discussion?.id;
+        let discussionId: string;
 
-        if (!discussionId) {
+        if (annotationGroup.discussion?.id) {
+          discussionId = annotationGroup.discussion?.id;
+        } else {
           discussionId = uuid();
           discussions[discussionId] = {
             id: discussionId,

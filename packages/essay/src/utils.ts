@@ -143,10 +143,10 @@ export const useAnnotationGroupsWithPosition = ({
   editorView,
   editorContainer,
 }: {
-  annotationGroups: AnnotationGroupWithUIState<TextAnchor, string>[];
-  doc: MarkdownDoc;
-  editorView: EditorView;
-  editorContainer: HTMLElement;
+  annotationGroups?: AnnotationGroupWithUIState<TextAnchor, string>[];
+  doc?: MarkdownDoc;
+  editorView?: EditorView;
+  editorContainer: HTMLElement | null;
 }): AnnotationGroupWithPosition[] => {
   // Next we get the vertical position for each thread.
 
@@ -159,7 +159,7 @@ export const useAnnotationGroupsWithPosition = ({
   const scrollPosition = useScrollPosition(editorContainer);
 
   const annotationGroupsWithPositions = useMemo(() => {
-    return editorView
+    return editorView && doc && annotationGroups
       ? getVisibleAnnotationGroupsWithPos({
           editorView,
           doc,

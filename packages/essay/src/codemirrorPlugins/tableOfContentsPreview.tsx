@@ -71,9 +71,13 @@ function getTOCDecorations(view: EditorView) {
 
     const tocMatch = text.match(TOC_COMMAND_REGEX);
 
-    if (tocMatch) {
+    if (tocMatch?.index) {
       const position = tocMatch.index + from;
       const markdownTree = ensureSyntaxTree(view.state, view.state.doc.length);
+      if (!markdownTree) {
+        console.warn("markdownTree is not available?");
+        continue;
+      }
 
       const headingsList: Heading[] = [];
       const dfs = (tree: Tree, position: number) => {

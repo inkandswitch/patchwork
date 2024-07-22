@@ -34,7 +34,7 @@ function getFrontmatterDecorations(view: EditorView) {
 
     const frontmatterMatch = text.match(frontmatterRegex);
 
-    if (frontmatterMatch) {
+    if (frontmatterMatch?.index) {
       const position = frontmatterMatch.index + from;
       decorations.push(
         Decoration.mark({

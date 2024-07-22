@@ -1,6 +1,6 @@
 import { next as A } from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { MarkdownDocEditor, TextSelection } from "./CodeMirrorEditor";
 
 import { MarkdownDoc } from "../datatype";
@@ -41,10 +41,11 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const [hasEditorFocus, setHasEditorFocus] = useState(false);
   const [selection, setSelection] = useState<TextSelection>();
   const [doc] = useDocument<MarkdownDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const handle = useHandle<MarkdownDoc>(docUrl);
+  const repo = useRepo();
+  const handle = repo.find<MarkdownDoc>(docUrl);
   const [editorView, setEditorView] = useState<EditorView>();
-  const [editorContainer, setEditorContainer] = useState<HTMLDivElement>(null);
-  const readOnly = docHeads && !isEqual(docHeads, A.getHeads(doc));
+  const [editorContainer, setEditorContainer] = useState<HTMLDivElement | null>(null);
+  const readOnly = doc && docHeads && !isEqual(docHeads, A.getHeads(doc));
 
   const [visibleAuthorsForEdits, setVisibleAuthorsForEdits] = useState<
     AutomergeUrl[]

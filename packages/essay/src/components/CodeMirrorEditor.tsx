@@ -53,7 +53,7 @@ export function MarkdownDocEditor({
   annotations = [],  // TODO: JAH strict fix
 }: MarkdownDocEditorProps) {
   const [container, setContainer] = useState<HTMLElement | null>(null);
-  const editorRoot = useRef<EditorView>(null);
+  const editorRoot = useRef<EditorView | null>(null);
   const [editorCrashed, setEditorCrashed] = useState<boolean>(false);
   const markdownPlugins = useMarkdownPlugins({ docWithAssetsHandle: handle });
 
@@ -222,7 +222,7 @@ export function MarkdownDocEditor({
     );
   }
 
-  const onKeyDown = (evt) => {
+  const onKeyDown = (evt: React.KeyboardEvent) => {
     // Let cmd-s thru for saving the doc
     if (evt.key === "s" && (evt.metaKey || evt.ctrlKey)) {
       return;

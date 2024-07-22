@@ -34,8 +34,8 @@ export const CommentsSidebar = ({
   hasEditorFocus: boolean;
   hideInlineComments: boolean;
   annotationGroupsWithPosition: AnnotationGroupWithPosition[];
-  setSelectedAnnotationGroupId: (id: string) => void;
-  setHoveredAnnotationGroupId: (id: string) => void;
+  setSelectedAnnotationGroupId: (id: string | undefined) => void | undefined;
+  setHoveredAnnotationGroupId: (id: string | undefined) => void | undefined;
   setCommentState: (state: CommentState<TextAnchor>) => void;
 }) => {
   return (
