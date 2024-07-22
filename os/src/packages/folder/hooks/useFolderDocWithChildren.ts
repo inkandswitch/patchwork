@@ -1,20 +1,17 @@
-import { docPathString, UIStateDoc, useUIStateHandle } from "@/explorer/account";
-import { OmSig } from "@/signals";
+import { UIStateDoc, useUIStateHandle } from "@/explorer/account";
+import { Om } from "@/om";
+import { isLoaded, parallelMap, throwIfMissing, useUsesDocs } from "@/signals";
 import { fakeDocPath } from "@/versionControl/components/VersionControlEditor";
-import { branchScopeAndActiveBranchInfoSig } from "@/versionControl/signals";
+import { branchScopeAndActiveBranchInfo } from "@/versionControl/signals";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import _ from "lodash";
-import { useMemo } from "react";
-import { computed, Signal } from "signia";
-import { useComputed, useValue } from "signia-react";
+import { useCallback, useMemo } from "react";
 import {
   DocLinkWithFolderPath,
   DocPath,
   FolderDoc,
   FolderDocWithChildren,
 } from "../datatype";
-import { Om } from "@/om";
 
 export type FolderDocWithMetadata = {
   rootFolderUrl: AutomergeUrl;
@@ -49,43 +46,29 @@ const computeFlattenedDocLinks = ({
 };
 
 // TODO: reactive but not incremental
-function materializeFolderDocSig(
+function materializeFolderDoc(
   docPath: DocPath,
   uiStateHandle: DocHandle<UIStateDoc>,
   repo: Repo,
-): Signal<FolderDocWithChildren | 'loading'> {
-  const branchScopeAndActiveBranchInfoSig_ = branchScopeAndActiveBranchInfoSig(docPath, uiStateHandle, repo);
+): FolderDocWithChildren {
+  const branchScopeAndActiveBranchInfo_ = branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo);
 
-  return computed(`materializeFolderDocSig:${docPathString(docPath)}`, () => {
-    const branchScopeAndActiveBranchInfo = branchScopeAndActiveBranchInfoSig_.value;
-    if (!branchScopeAndActiveBranchInfo) {
-      return 'loading';
-    }
-    const folderOm = branchScopeAndActiveBranchInfo.cloneOrMainOm as Om<FolderDoc>;
-    const folder = folderOm?.doc;
-    if (!folder) {
-      return 'loading';
-    }
+  const folderOm = branchScopeAndActiveBranchInfo_.cloneOrMainOm as Om<FolderDoc>;
+  const folder = folderOm.doc;
 
-    let somethingLoading = false;
-    const result = {
-      ...folder,
-      docs:
-        folder.docs?.map((link) => {
-          if (link.type === "folder") {
-            const folderContents = materializeFolderDocSig([...docPath, link], uiStateHandle, repo).value;
-            if (folderContents === 'loading') {
-              somethingLoading = true;
-            }
-            // cast is ok cuz if it's loading, we won't return result
-            return { ...link, folderContents: folderContents as FolderDocWithChildren };
-          } else {
-            return link;
-          }
-        }) ?? [],
-    };
-    return somethingLoading ? 'loading' : result;
-  });
+  return {
+    ...folder,
+    docs:
+      parallelMap(folder.docs, (link) => {
+        if (link.type === "folder") {
+          const folderContents = materializeFolderDoc([...docPath, link], uiStateHandle, repo);
+          // cast is ok cuz if it's loading, we won't return result
+          return { ...link, folderContents };
+        } else {
+          return link;
+        }
+      }) ?? [],
+  };
 }
 
 // This hook recursively traverses a tree of nested folders and loads folder contents.
@@ -99,23 +82,25 @@ export function useFolderDocWithChildren(
     fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []}),
     [rootFolderUrl]
   );
-  const docWithLinks = useValue(useMemo(() =>
-    materializeFolderDocSig(rootDocPath, uiStateHandle, repo),
-    [rootDocPath, uiStateHandle, repo]
-  ));
+  const docWithLinks = useUsesDocs(useCallback(() => {
+    return materializeFolderDoc(rootDocPath, uiStateHandle, repo);
+  }, [rootDocPath, uiStateHandle, repo]));
+
+  throwIfMissing(docWithLinks);
+
 
   // flatDocLinks is a flat array of all the docs in the hierarchy
   const flatDocLinks = useMemo(
     () =>
-      docWithLinks === 'loading' ? undefined : computeFlattenedDocLinks({
+      isLoaded(docWithLinks) ? computeFlattenedDocLinks({
         doc: docWithLinks,
         folderPath: [rootFolderUrl],
-      }),
+      }) : undefined,
     [docWithLinks, rootFolderUrl]
   );
 
   return {
-    doc: docWithLinks === 'loading' ? undefined : docWithLinks,
+    doc: isLoaded(docWithLinks) ? docWithLinks : undefined,
     rootFolderUrl,
     flatDocLinks,
   };

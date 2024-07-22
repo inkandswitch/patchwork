@@ -17,3 +17,7 @@ export function objectFromEntries<T extends ReadonlyArray<readonly [PropertyKey,
 }
 
 export function typeOnlyAssert(condition: boolean): asserts condition { }
+
+export function canBeUndef<T>(x: T): T | undefined {
+  return x;
+}

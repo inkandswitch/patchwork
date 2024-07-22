@@ -16,6 +16,7 @@ import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { ErrorBoundary } from "react-error-boundary";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
+import { isLoaded } from "@/signals";
 
 export const FolderViewerWithEmbeds: React.FC<EditorProps<never, never>> = ({
   docUrl,
@@ -77,7 +78,7 @@ export const FolderEntryView = ({
 }: FolderEntryView) => {
   const uiStateHandle = useUIStateHandle();
   const docPath = getFakeDocPathForDocUrl(docLink.url);
-  const { cloneOrMainOm, baseHeads } =
+  const branchScopeAndActiveBranchInfo =
     useBranchScopeAndActiveBranchInfo(docPath);
 
   const dataType = useDataType(docLink.type);
@@ -87,6 +88,10 @@ export const FolderEntryView = ({
 
   // TODO: we shouldn't have to duplicate this code here, also right now the change highlights can't be disabled
   const diff = useMemo(() => {
+    if (!isLoaded(branchScopeAndActiveBranchInfo)) {
+      return;
+    }
+    const { cloneOrMainOm, baseHeads } = branchScopeAndActiveBranchInfo;
     if (baseHeads && cloneOrMainOm && highlightChanges) {
       return diffWithProvenance(
         cloneOrMainOm.doc,
@@ -94,7 +99,7 @@ export const FolderEntryView = ({
         A.getHeads(cloneOrMainOm.doc)
       );
     }
-  }, [baseHeads, cloneOrMainOm]);
+  }, [branchScopeAndActiveBranchInfo, highlightChanges]);
 
   const annotationProps = useAnnotations({
     doc: cloneOrMainOm?.doc as A.Doc<HasVersionControlMetadata>,

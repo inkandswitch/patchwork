@@ -1,5 +1,5 @@
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MoveHandler, NodeRendererProps, RenameHandler, Tree } from "react-arborist";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 import { Icon } from "@/lib/icons";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { Input } from "@/shadcn/ui/input";
+import { getDoc, isLoaded, useUsesDocs } from "@/signals";
 import { fakeDocPath } from "@/versionControl/components/VersionControlEditor";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import {
@@ -33,8 +34,7 @@ import { ChevronsLeft, FolderInput, GitBranchIcon } from "lucide-react";
 import {
   UIStateDoc,
   useCurrentAccountDoc,
-  useDatatypeSettings,
-  useUIStateHandle
+  useDatatypeSettings
 } from "../account";
 
 const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
@@ -45,13 +45,14 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   // Currently we don't show anything if the doc is controlled by a parent branch scope,
   // but we could use that info to visualize something in the future.
   const docPath = fakeDocPath(node.data);
-  const { activeBranchOm } = useBranchScopeAndActiveBranchInfo(docPath);
+  const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(docPath);
 
-  const [doc] = useDocument<HasVersionControlMetadata>(node.data.url);
-  const [versionControlMetadataDoc] = useDocument<VersionControlSidecarDoc>(
-    doc?.versionControlMetadataUrl
-  );
-  const isBranchScope = versionControlMetadataDoc?.isBranchScope;
+  const repo = useRepo();
+  const isBranchScope = useUsesDocs(useCallback(() => {
+    const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
+    const versionControlMetadataDoc = getDoc<VersionControlSidecarDoc>(doc.versionControlMetadataUrl, repo);
+    return versionControlMetadataDoc.isBranchScope;
+  }, [node.data.url, repo])) === true;
 
   let icon;
 
@@ -102,8 +103,8 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
           )}
           <div className="text-xs text-gray-500 flex items-center gap-1">
             {isBranchScope && <GitBranchIcon size={14} className="ml-1" />}
-            {isBranchScope && activeBranchOm
-              ? `${activeBranchOm.doc.name}`
+            {isBranchScope && isLoaded(branchScopeAndActiveBranchInfo)
+              ? `${branchScopeAndActiveBranchInfo.activeBranchOm.doc.name}`
               : isBranchScope
               ? "Main"
               : ""}

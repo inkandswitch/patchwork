@@ -1,50 +1,24 @@
 import { useUIStateHandle } from "@/explorer/account";
 import { DocPath } from "@/packages/folder/datatype";
-import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { LoadingError, MissingError, UsesDocs, useUsesDocs } from "@/signals";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { useMemo } from "react";
-import { useValue } from "signia-react";
-import { Om } from "../om";
+import { useCallback } from "react";
 import {
-  BranchDoc,
-  HasVersionControlMetadata,
-  VersionControlSidecarDoc,
-} from "./schema";
-import {
-  activeBranchInfoSig,
-  branchScopeAndActiveBranchInfoSig,
-  branchScopeInfoSig,
+  activeBranchInfo,
+  BranchScopeAndActiveBranchInfo,
+  branchScopeAndActiveBranchInfo,
+  BranchScopeInfo,
+  branchScopeInfo,
 } from "./signals";
-
-// Given a doc path, you can ask for its "branch scope info". For convenience,
-// if the path doesn't actually have a branch scope, we return values as though
-// it were its own branch scope. (This represents what happens if you create a
-// branch on a document without a branch scope – it becomes one.)
-
-export type BranchScopeInfo = {
-  branchScopeOm: Om<HasVersionControlMetadata>;
-  branchScopeVersionControlMetadataOm: Om<VersionControlSidecarDoc>;
-  branchScopePath: DocPath;
-  branchOms: Om<BranchDoc>[];
-  isRealBranchScope: boolean;
-};
 
 // Given a doc path representing current selected doc,
 // resolve a branch scope and return relevant information about branches
 
-export const useBranchScopeInfo = (docPath: DocPath): BranchScopeInfo => {
+export const useBranchScopeInfo = (docPath: DocPath): UsesDocs<BranchScopeInfo> => {
   const repo = useRepo();
-  return useValue(
-    useMemo(() => branchScopeInfoSig(docPath, repo), [docPath, repo])
-  );
-};
-
-export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & {
-  activeBranchOm: Om<BranchDoc>;
-  setActiveBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
-  baseHeads: Automerge.Heads;
-  cloneOrMainOm: Om;
+  return useUsesDocs(useCallback(() => {
+    return branchScopeInfo(docPath, repo);
+  }, [docPath, repo]));
 };
 
 export const useActiveBranchInfo = (
@@ -52,25 +26,19 @@ export const useActiveBranchInfo = (
 ) => {
   const repo = useRepo();
   const uiStateHandle = useUIStateHandle();
-  return useValue(
-    useMemo(
-      () => activeBranchInfoSig(branchScopePath, uiStateHandle, repo),
-      [branchScopePath, uiStateHandle, repo]
-    )
-  );
+  return useUsesDocs(useCallback(() => {
+    return activeBranchInfo(branchScopePath, uiStateHandle, repo);
+  }, [branchScopePath, uiStateHandle, repo]));
 };
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.
 export const useBranchScopeAndActiveBranchInfo = (
   docPath: DocPath | undefined
-): BranchScopeAndActiveBranchInfo => {
+): BranchScopeAndActiveBranchInfo | LoadingError | MissingError => {
   const repo = useRepo();
   const uiStateHandle = useUIStateHandle();
-  return useValue(
-    useMemo(
-      () => branchScopeAndActiveBranchInfoSig(docPath, uiStateHandle, repo),
-      [docPath, uiStateHandle, repo]
-    )
-  );
+  return useUsesDocs(useCallback(() => {
+    return branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo);
+  }, [docPath, uiStateHandle, repo]));
 };

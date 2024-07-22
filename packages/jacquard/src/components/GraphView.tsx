@@ -1,18 +1,20 @@
 import { useUIStateHandle } from "@/explorer/account";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
-import { FolderDoc } from "@/packages/folder";
-import { DocPath, FolderDocWithChildren } from "@/packages/folder/datatype";
+import { DocPath } from "@/packages/folder/datatype";
+import {
+  FolderDocWithMetadata,
+  useFolderDocWithChildren,
+} from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { useUsesDocs } from "@/signals";
 import { EditorProps } from "@/tools";
 import { objectEntries } from "@/utils";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
-import { branchScopeAndActiveBranchInfoSig } from "@/versionControl/signals";
+import { branchScopeAndActiveBranchInfo } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { instance } from "@viz-js/viz";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { computed } from "signia";
-import { useValue } from "signia-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileDoc } from "../../../file/src/datatype";
 import { BuildRun, JacquardBuildMetadata, Reference } from "../datatype";
 import {
@@ -21,10 +23,6 @@ import {
   ProjectState,
   reasonToString,
 } from "../getStalenessInfo";
-import {
-  FolderDocWithMetadata,
-  useFolderDocWithChildren,
-} from "@/packages/folder/hooks/useFolderDocWithChildren";
 
 export const GraphView = ({
   docUrl,
@@ -111,27 +109,17 @@ const useProjectState = ({
 
   const repo = useRepo();
   const uiStateHandle = useUIStateHandle();
-  const files = useValue(
-    useMemo(
-      () =>
-        computed("", () => {
-          let result: Record<AutomergeUrl, Automerge.Doc<unknown>> = {};
-          for (let url of fileUrls) {
-            const docPath = getFakeDocPathForDocUrl(url);
-            const maybeDoc = branchScopeAndActiveBranchInfoSig(
-              docPath,
-              uiStateHandle,
-              repo
-            ).value?.cloneOrMainOm?.doc;
-            if (maybeDoc) {
-              result[url] = maybeDoc;
-            }
-          }
-          return result;
-        }),
-      [fileUrls, getFakeDocPathForDocUrl, repo, uiStateHandle]
-    )
-  );
+  const files = useUsesDocs(useCallback(() => {
+    let result: Record<AutomergeUrl, Automerge.Doc<unknown>> = {};
+    for (let url of fileUrls) {
+      const docPath = getFakeDocPathForDocUrl(url);
+      const maybeDoc = branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo).cloneOrMainOm.doc;
+      if (maybeDoc) {
+        result[url] = maybeDoc;
+      }
+    };
+    return result;
+  }, [fileUrls, getFakeDocPathForDocUrl, repo, uiStateHandle]));
 
   const references = useMemo<Reference[]>(
     () =>
