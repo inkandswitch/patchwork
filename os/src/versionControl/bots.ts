@@ -2,8 +2,8 @@ import { DEFAULT_MODEL, openaiClient } from "@/lib/llm";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { Doc, splice } from "@automerge/automerge/next";
 import { type DataType } from "@/sdk";
-import { createBranch } from "./branches";
 import { LegacyBranch, HasVersionControlMetadata } from "./schema";
+import { HasBotChatHistory } from "./components/BotSidebar";
 
 // These types are a superset of OpenAI's API so we can directly store a chat history
 // and pass it to OpenAI without further modification.
@@ -59,7 +59,7 @@ const toolsSpec = [
 ];
 
 // given a path like ["content", "main"], get doc.content.main
-const getPath = (doc: Doc<unknown>, path: string[]) => {
+const getPath = (doc: Doc<any>, path: string[]) => {
   return path.reduce((acc, key) => acc[key], doc);
 };
 
@@ -116,7 +116,10 @@ Include a short commit message of 2-8 words summarizing the change in specific t
   },
 };
 
-export const SUPPORTED_DATATYPES = Object.keys(DATATYPE_CONFIGS);
+const SUPPORTED_DATATYPES = Object.keys(DATATYPE_CONFIGS);
+export const isSupportedDatatype = (datatype: string): datatype is keyof typeof DATATYPE_CONFIGS => {
+  return SUPPORTED_DATATYPES.includes(datatype);
+}
 
 export const makeBotTextEdits = async ({
   targetDocHandle,
@@ -129,6 +132,10 @@ export const makeBotTextEdits = async ({
   dataType: DataType<unknown, unknown, unknown>;
   repo: Repo;
 }): Promise<LegacyBranch | null> => {
+  if (!isSupportedDatatype(dataType.id)) {
+    throw new Error(`Unsupported datatype: ${dataType.id}`);
+  }
+
   const { instructions, path } = DATATYPE_CONFIGS[dataType.id];
 
   const messages = [
@@ -141,11 +148,11 @@ If you call a tool, only make a single call.`,
     {
       role: "user",
       content: `Current document contents:
-${getPath(targetDocHandle.docSync(), path)}`,
+${getPath(targetDocHandle.docSync()!, path)}`,  // TODO: JAH strict fix
     },
   ];
 
-  const response = await openaiClient.chat.completions.create({
+  const response = await openaiClient!.chat.completions.create({  // TODO: JAH strict fix
     model: DEFAULT_MODEL,
     temperature: 0,
     // @ts-expect-error I don't understand what's wrong with the input here...
@@ -190,6 +197,7 @@ ${getPath(targetDocHandle.docSync(), path)}`,
     }
 
     // Now we create a new branch to hold the edits
+    //@ts-expect-error switch this to new Jacquard branches
     const branch = createBranch({
       name: parsed.commitMessage,
       createdBy: EDITOR_BOT_CONTACT_URL,
@@ -206,7 +214,7 @@ ${getPath(targetDocHandle.docSync(), path)}`,
     // This is because we can't know the branch URL until we create the branch,
     // but we want the branch URL to exist on both the main doc and the branch even if
     // the branch is never merged. So we just do the change on both docs.
-    const updateBranchUrlForAssistantMessage = (docHandle) => {
+    const updateBranchUrlForAssistantMessage = (docHandle: DocHandle<HasBotChatHistory>) => {
       docHandle.change((d) => {
         const lastAssistantMessage = d.botChatHistory
           .slice()

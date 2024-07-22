@@ -7,7 +7,7 @@ import { type DataType } from "@/sdk";
 import {
   AssistantMessage,
   ChatMessage,
-  SUPPORTED_DATATYPES,
+  isSupportedDatatype,
   makeBotTextEdits,
 } from "../bots";
 import { toast } from "sonner";
@@ -40,7 +40,7 @@ export const BotSidebar = ({
   handle: DocHandle<HasVersionControlMetadata<unknown, unknown>>;
   dataType: DataType<unknown, unknown, unknown>;
   selectedBranch: LegacyBranch | undefined;
-  setSelectedBranch: (branch: LegacyBranch) => void;
+  setSelectedBranch: (branch: LegacyBranch | undefined) => void;
   setSidebarMode: (mode: SidebarMode) => void;
   mergeBranch: (branchUrl: AutomergeUrl) => void;
   deleteBranch: (branchUrl: AutomergeUrl) => void;
@@ -91,7 +91,7 @@ export const BotSidebar = ({
     setLoading(false);
   };
 
-  if (!SUPPORTED_DATATYPES.includes(dataType.id)) {
+  if (!isSupportedDatatype(dataType.id)) {
     return (
       <div className="p-2 text-sm text-gray-500 flex items-center justify-center h-full">
         Bots are not yet supported for datatype: {dataType.id}
@@ -118,7 +118,7 @@ export const BotSidebar = ({
         content: ACCEPT_MESSAGE,
       });
     });
-    mergeBranch(selectedBranch.url);
+    mergeBranch(selectedBranch!.url);  // TODO: JAH strict fix
   };
   const rejectSuggestion = () => {
     handle.change((d) => {
@@ -131,7 +131,7 @@ export const BotSidebar = ({
     // need to also do the update on the main doc because we're not merging the branch...
     const mainDocHandle = repo.find<
       HasVersionControlMetadata<unknown, unknown>
-    >(doc.branchMetadata.source.url);
+    >(doc.branchMetadata.source!.url);  // TODO: JAH strict fix
     mainDocHandle.change((d) => {
       d.botChatHistory.push({
         role: "user",
@@ -139,7 +139,7 @@ export const BotSidebar = ({
       });
     });
 
-    deleteBranch(selectedBranch.url);
+    deleteBranch(selectedBranch!.url);  // TODO: JAH strict fix
 
     setSelectedBranch(undefined);
   };
