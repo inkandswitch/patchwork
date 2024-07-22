@@ -13,15 +13,16 @@ import { python } from "@codemirror/lang-python";
 import { EditorView, basicSetup } from "codemirror";
 import { useEffect, useState } from "react";
 import { TextFileDoc } from "../datatype";
+import { useHandleDef } from "@/hooks/useHandleDef";
 
 export const TextFileEditor = ({
   docUrl,
   annotations,
 }: EditorProps<TextAnchor, string>) => {
-  const [container, setContainer] = useState<HTMLElement>();
+  const [container, setContainer] = useState<HTMLElement | null>(null);
   const [editor, setEditor] = useState<EditorView>();
   const [fileDoc] = useDocument<TextFileDoc>(docUrl);
-  const handle = useHandle<TextFileDoc>(docUrl);
+  const handle = useHandleDef<TextFileDoc>(docUrl);
 
   const resolvedAnnotations = useResolvedAnnotationAtPath({
     doc: fileDoc,
@@ -46,14 +47,14 @@ export const TextFileEditor = ({
 
     const doc = handle.docSync();
     const view = new EditorView({
-      doc: doc.content,
+      doc: doc!.content,  // TODO: JAH strict fix
       extensions: [
         basicSetup,
         automergeSyncPlugin({
           handle,
           path: ["content"],
         }),
-        getPluginsByType(fileDoc.type),
+        getPluginsByType(fileDoc!.type),  // TODO: JAH strict fix
         annotationsPlugin,
       ],
       parent: container,

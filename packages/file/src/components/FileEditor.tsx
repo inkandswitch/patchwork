@@ -50,14 +50,14 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
             <div className="overflow-auto h-full p-4">
               {React.createElement(
                 ImageFileViewer,
-                props as EditorProps<never, never>
+                props as EditorProps<ImageFileDoc, never>
               )}
             </div>
           ) : isPDFFile(doc) ? (
             <div className="overflow-auto h-full">
               {React.createElement(
                 PDFFileViewer,
-                props as EditorProps<never, never>
+                props as EditorProps<PDFFileDoc, never>
               )}
             </div>
           ) : (
@@ -138,13 +138,13 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
 };
 
 const useBuildMetadata = (
-  doc: Automerge.Doc<unknown>,
+  doc: Automerge.Doc<unknown> | undefined,
   heads?: Automerge.Heads
 ) => {
   // todo: make more error resistant. and optimize further?
   const { buildDocUrl, buildId } = useMemo(() => {
     if (!doc) {
-      return { buildDocUrl: null, buildId: null };
+      return { buildDocUrl: undefined, buildId: undefined };
     }
 
     const changes = Automerge.getAllChanges(
@@ -167,14 +167,14 @@ const useBuildMetadata = (
 
     console.log({ lastChangeDecoded, heads });
     const lastChangeMetadata =
-      lastChangeDecoded.message && JSON.parse(lastChangeDecoded.message);
+      lastChangeDecoded!.message && JSON.parse(lastChangeDecoded!.message);  // TODO: JAH strict fix
     if (lastChangeMetadata && lastChangeMetadata["buildDocUrl"]) {
       return lastChangeMetadata as {
         buildDocUrl: AutomergeUrl;
         buildId: string;
       };
     }
-    return { buildDocUrl: null, buildId: null };
+    return { buildDocUrl: undefined, buildId: undefined };
   }, [doc, heads]);
 
   const [buildDoc] = useDocument<JacquardBuildMetadata>(buildDocUrl);

@@ -23,7 +23,7 @@ export const PDFFileViewer = ({
 }: EditorProps<PDFFileDoc, never>) => {
   const [_doc] = useDocument<PDFFileDoc>(docUrl);
 
-  const doc = docHeads ? Automerge.view(_doc, docHeads) : _doc;
+  const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
 
   if (!doc) {
     return;
