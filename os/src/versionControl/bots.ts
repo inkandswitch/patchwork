@@ -1,4 +1,4 @@
-import { DEFAULT_MODEL, openaiClient } from "@/lib/llm";
+import { DEFAULT_MODEL, getOpenaiClient, openaiClient } from "@/lib/llm";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { Doc, splice } from "@automerge/automerge/next";
 import { type DataType } from "@/sdk";
@@ -152,7 +152,7 @@ ${getPath(targetDocHandle.docSync()!, path)}`,  // TODO: JAH strict fix
     },
   ];
 
-  const response = await openaiClient!.chat.completions.create({  // TODO: JAH strict fix
+  const response = await getOpenaiClient().chat.completions.create({
     model: DEFAULT_MODEL,
     temperature: 0,
     // @ts-expect-error I don't understand what's wrong with the input here...
