@@ -7,8 +7,9 @@
     "dev": "pnpm --filter os dev",
     "build": "pnpm --filter os build",
     "preinstall": "npx only-allow pnpm",
-    "tsc-lenient": "tsc",
-    "tsc-strict": "tsc --project tsconfig.strict.json"
+    "tsc": "tsc",
+    "tsconfig-strict": "cp tsconfig.strict.json tsconfig.json && git update-index --assume-unchanged tsconfig.json",
+    "tsconfig-lenient": "cp tsconfig.lenient.json tsconfig.json && git update-index --no-assume-unchanged tsconfig.json"
   },
   "keywords": [],
   "author": "Ink & Switch",
