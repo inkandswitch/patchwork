@@ -12,26 +12,26 @@ export async function waitForSync(
   handlesToWaitOn: DocHandle<unknown>[],
   syncServerStorageId: StorageId
 ) {
-  console.log("Waiting for sync");
-
-  // idk if that fancy stuff works
-  await new Promise((resolve) => {
-    setTimeout(resolve, 10000);
-  });
-  return;
+  console.log("Waiting for files to sync...");
 
   return Promise.all(
     handlesToWaitOn.map(
       (handle) =>
         new Promise((resolve) => {
           const newHeads = A.getHeads(handle.docSync());
+          const remoteHeads = handle.getRemoteHeads(syncServerStorageId);
+
+          // If the remote heads are already up to date, we can resolve immediately.
+          if (A.equals(newHeads, remoteHeads)) {
+            resolve(true);
+          }
+
+          // Otherwise, we wait to receive updated an remote-heads event
           handle.on("remote-heads", ({ storageId, heads }) => {
-            console.log("got remote heads", storageId, heads);
             if (
               storageId === syncServerStorageId &&
               A.equals(newHeads, heads)
             ) {
-              console.log("match!");
               resolve(true);
             }
           });
@@ -50,7 +50,7 @@ export const getJacquardConfig = () => {
       const configFileContents = fs.readFileSync(configFilePath, "utf8");
       return JSON.parse(configFileContents);
     } catch (error) {
-      console.warn("invalid jacquare.json file");
+      console.warn("invalid jacquard.json file");
       return null;
     }
   } else {

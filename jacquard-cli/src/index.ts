@@ -95,8 +95,6 @@ const main = async () => {
     branchUrl,
   } = options;
 
-  const activeBranch = jacquardConfig?.activeBranch ?? { type: "main" };
-
   if (!projectFolderUrl && mainOptions.command == "pull") {
     console.error("No URL specified: use --projectFolderUrl <url>");
     process.exit(1);

@@ -23,7 +23,11 @@ import { waitForSync } from "./util";
 
 // NOTE: copied this from the version control code in our os folder.
 // couldn't get imports working from os to jacquard-cli so just copying the function for now.
-const initVersionControlMetadata = (doc: any, repo: Repo) => {
+const initVersionControlMetadata = (
+  doc: any,
+  repo: Repo,
+  options: { branchScope: boolean }
+) => {
   doc.branchMetadata = {
     source: null,
     branches: [],
@@ -34,7 +38,9 @@ const initVersionControlMetadata = (doc: any, repo: Repo) => {
 
   // init the separate metadata doc
   const metadataHandle = repo.create<VersionControlSidecarDoc>();
-  ensureMetadataHandleIsBranchScope(metadataHandle);
+  if (options.branchScope) {
+    ensureMetadataHandleIsBranchScope(metadataHandle);
+  }
   doc.versionControlMetadataUrl = metadataHandle.url;
 };
 
@@ -42,183 +48,46 @@ export async function push(
   repo: Repo,
   { dir, projectFolderUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs,
   buildMetadata?: BuildMetadata,
-  wait = true,
+  wait = true
 ) {
   let folderHandle: DocHandle<FolderDoc> = await findOrCreateFolderHandle(
     projectFolderUrl,
     repo
   );
 
-  const oldHeads = A.getHeads(folderHandle.docSync());
-  console.log("oldHeads", oldHeads);
-
-  const files = fs.readdirSync(dir);
+  // const oldHeads = A.getHeads(folderHandle.docSync());
+  // console.log("oldHeads", oldHeads);
 
   const buildMetadataHandle: DocHandle<JacquardBuildMetadata> =
     await findOrCreateBuildMetadataHandle(buildMetadata, folderHandle, repo);
 
-  const mainUrlsAndCloneHandlesByFileName: Record<string,{
-    mainUrl: AutomergeUrl;
-    cloneHandle: DocHandle<FileDoc>;
-  }> = {};
-
-  const handlesToWaitOn: DocHandle<unknown>[] = [];
-  handlesToWaitOn.push(folderHandle);
-
-  for (const filePath of files) {
-    // todo: sync subfolders
-    if (fs.lstatSync(filePath).isDirectory()) {
-      continue;
+  const mainUrlsAndCloneHandlesByFileName: Record<
+    string,
+    {
+      mainUrl: AutomergeUrl;
+      cloneHandle: DocHandle<FileDoc>;
     }
+  > = {};
 
-    const isBinary = isBinaryFileSync(filePath);
-    const isMarkdown = path.extname(filePath) === "md";
+  const handlesToWaitOn: DocHandle<unknown>[] = [folderHandle];
 
-    const fileContents = fs.readFileSync(
-      filePath,
-      !isBinary ? "utf8" : undefined
-    );
-    const fileType = path.extname(filePath).slice(1);
-    const fileNameWithExtension = path.basename(filePath);
-
-    const folderDoc = folderHandle.docSync();
-
-    if (!folderDoc.docs) {
-      throw new Error(
-        `this doesn't look like a folder doc, it's missing a docs property: ${folderHandle.url}`
-      );
-    }
-
-    const existingDocLink = folderDoc.docs.find(
-      (link) => link.name === fileNameWithExtension
-    );
-
-    const changeMetadata =
-      buildMetadata &&
-      buildMetadata.outputs.some(
-        (o) => path.resolve(filePath) === path.resolve(o)
-      )
-        ? { buildDocUrl: buildMetadataHandle.url, buildId: buildMetadata.id }
-        : undefined;
-
-    if (existingDocLink) {
-      const handle = await findWithActiveBranch<FileDoc>(
-        existingDocLink.url,
-        repo
-      );
-      mainUrlsAndCloneHandlesByFileName[fileNameWithExtension] = {
-        mainUrl: existingDocLink.url,
-        cloneHandle: handle,
-      };
-
-      await handle.whenReady();
-
-      // TODO: this is a datatype-specific mapping from unix file to automerge doc!
-      // needs to be specified somewhere datatype-specific I guess.
-      // notably: it's also an incremental update to support diffs.
-      let didChange = false;
-      handlesToWaitOn.push(handle);
-      handle.change(
-        (doc) => {
-          if (!Automerge.equals(doc.content, fileContents)) {
-            didChange = true;
-            if (typeof fileContents === "string") {
-              updateText(doc, ["content"], fileContents);
-            } else {
-              doc.content = fileContents;
-            }
-          }
-        },
-        {
-          message: changeMetadata ? JSON.stringify(changeMetadata) : undefined,
-        }
-      );
-
-      if (didChange) {
-        console.log(
-          "pushed file:",
-          filePath,
-          Automerge.getHeads(handle.docSync())
-        );
-      }
-    } else {
-      // Make a new doc in the folder
-      const handle = repo.create<unknown>();
-      mainUrlsAndCloneHandlesByFileName[fileNameWithExtension] = {
-        mainUrl: handle.url,
-        cloneHandle: handle as DocHandle<FileDoc>,
-      };
-      handlesToWaitOn.push(handle);
-
-      await handle.whenReady();
-
-      // do some special handling for markdown
-      // todo: import markdown as regular text files
-      if (isMarkdown) {
-        (handle as DocHandle<MarkdownDoc>).change(
-          (doc) => {
-            // init datatype schema
-            doc.content = fileContents;
-            doc.discussions = {};
-
-            // init patchwork metadata
-            doc.branchMetadata = {
-              source: null,
-              branches: [],
-            };
-            doc.discussions = {};
-            doc.tags = [];
-            doc.changeGroupSummaries = {};
-          },
-          {
-            message: changeMetadata
-              ? JSON.stringify(changeMetadata)
-              : undefined,
-          }
-        );
-      } else {
-        (handle as DocHandle<FileDoc>).change(
-          (doc) => {
-            doc.name = path.basename(filePath);
-            // todo: maybe convert type to generic id independent of file extensions
-            doc.type = fileType;
-            doc.content = fileContents;
-
-            // init patchwork metadata
-            doc.branchMetadata = {
-              source: null,
-              branches: [],
-            };
-            doc.discussions = {};
-            doc.tags = [];
-            doc.changeGroupSummaries = {};
-          },
-          {
-            message: changeMetadata
-              ? JSON.stringify(changeMetadata)
-              : undefined,
-          }
-        );
-      }
-
-      console.log("push", filePath, Automerge.getHeads(handle.docSync()));
-
-      folderHandle.change((d) => {
-        d.docs.push({
-          name: filePath,
-          url: handle.url,  // this is ok cuz it's a new doc, not a clone
-          type: isMarkdown ? "essay" : "file",
-        });
-      });
-    }
-  }
+  await pushDir({
+    repo,
+    dir,
+    folderHandle,
+    mainUrlsAndCloneHandlesByFileName,
+    handlesToWaitOn,
+    buildMetadata,
+    buildMetadataHandle,
+  });
 
   if (buildMetadata) {
     buildMetadataHandle.change((doc) => {
       doc.buildRuns.push({
         ...buildMetadata,
         inputs: buildMetadata.inputs.map((inputPath) => {
-          const { mainUrl, cloneHandle } = mainUrlsAndCloneHandlesByFileName[path.basename(inputPath)];
+          const { mainUrl, cloneHandle } =
+            mainUrlsAndCloneHandlesByFileName[path.basename(inputPath)];
           return {
             docUrl: mainUrl,
             path: inputPath,
@@ -226,7 +95,8 @@ export async function push(
           };
         }),
         outputs: buildMetadata.outputs.map((outputPath) => {
-          const { mainUrl, cloneHandle } = mainUrlsAndCloneHandlesByFileName[path.basename(outputPath)];
+          const { mainUrl, cloneHandle } =
+            mainUrlsAndCloneHandlesByFileName[path.basename(outputPath)];
           return {
             docUrl: mainUrl,
             path: outputPath,
@@ -238,21 +108,13 @@ export async function push(
     handlesToWaitOn.push(buildMetadataHandle);
   }
 
-  const newHeads = A.getHeads(folderHandle.docSync());
-  console.log("newHeads", newHeads);
-
-  const isSynced = new Promise((resolve) =>
-    folderHandle.on("remote-heads", ({ storageId, heads }) => {
-      if (storageId === syncServerStorageId && A.equals(newHeads, heads)) {
-        resolve(true);
-      }
-    })
-  );
+  // const newHeads = A.getHeads(folderHandle.docSync());
+  // console.log("newHeads", newHeads);
 
   if (projectFolderUrl) {
-    console.log(`Updated ${projectFolderUrl} with new contents.`);
+    console.log(`Updated files in existing folder ${projectFolderUrl}`);
   } else {
-    console.log(`Created new doc at ${folderHandle.url}`);
+    console.log(`Created new folder at ${folderHandle.url}`);
   }
 
   const { documentId } = parseAutomergeUrl(folderHandle.url);
@@ -262,6 +124,84 @@ export async function push(
 
   if (wait) {
     await waitForSync(handlesToWaitOn, syncServerStorageId);
+  }
+}
+
+async function pushDir({
+  dir,
+  handlesToWaitOn,
+  repo,
+  mainUrlsAndCloneHandlesByFileName,
+  folderHandle,
+  buildMetadata,
+  buildMetadataHandle,
+}: {
+  dir: string;
+  handlesToWaitOn: DocHandle<unknown>[];
+  repo: Repo;
+  mainUrlsAndCloneHandlesByFileName: Record<
+    string,
+    { mainUrl: AutomergeUrl; cloneHandle: DocHandle<FileDoc> }
+  >;
+  folderHandle: DocHandle<FolderDoc>;
+  buildMetadata?: BuildMetadata;
+  buildMetadataHandle?: DocHandle<JacquardBuildMetadata>;
+}) {
+  const files = fs.readdirSync(dir);
+
+  for (const filePath of files.map((file) => path.join(dir, file))) {
+    // For a directory, recursively push
+    if (fs.lstatSync(filePath).isDirectory()) {
+      const folderDoc = await folderHandle.doc();
+      const existingDocLink = folderDoc.docs.find(
+        (link) => link.name === path.basename(filePath)
+      );
+      let subFolderHandle;
+      if (existingDocLink) {
+        subFolderHandle = await findWithActiveBranch<FolderDoc>(
+          existingDocLink.url,
+          repo
+        );
+      } else {
+        subFolderHandle = repo.create<FolderDoc>();
+        subFolderHandle.change((doc) => {
+          doc.title = path.basename(filePath);
+          doc.docs = [];
+          initVersionControlMetadata(doc, repo, { branchScope: false });
+        });
+        folderHandle.change((d) => {
+          d.docs.push({
+            name: path.basename(filePath),
+            url: subFolderHandle.url,
+            type: "folder",
+          });
+        });
+      }
+      await pushDir({
+        dir: filePath,
+        handlesToWaitOn,
+        repo,
+        mainUrlsAndCloneHandlesByFileName,
+        folderHandle: subFolderHandle,
+        buildMetadata,
+        buildMetadataHandle,
+      });
+    } else {
+      const { handle, mainUrl, didChange } = await pushFile({
+        filePath,
+        folderHandle,
+        repo,
+        buildMetadata,
+        buildMetadataHandle,
+      });
+      mainUrlsAndCloneHandlesByFileName[path.basename(filePath)] = {
+        mainUrl: mainUrl,
+        cloneHandle: handle,
+      };
+      if (didChange) {
+        handlesToWaitOn.push(handle);
+      }
+    }
   }
 }
 
@@ -282,9 +222,12 @@ async function findOrCreateFolderHandle(projectFolderUrl, repo: Repo) {
     folderHandle.change((d) => {
       d.title = "Jacquard folder";
       d.docs = [];
-      initVersionControlMetadata(d, repo);
+      initVersionControlMetadata(d, repo, { branchScope: true });
     });
-    fs.writeFileSync("jacquard.json", JSON.stringify({ projectFolderUrl: folderHandle.url }));
+    fs.writeFileSync(
+      "jacquard.json",
+      JSON.stringify({ projectFolderUrl: folderHandle.url })
+    );
   }
   return folderHandle;
 }
@@ -340,7 +283,9 @@ async function findOrCreateBuildMetadataHandle(
 
 // TODO: copied in from os/src/versionControl/schema.ts cuz importing it brings
 // in TLDraw stuff that breaks our cute li'l bun
-export const ensureMetadataHandleIsBranchScope = (handle: DocHandle<VersionControlSidecarDoc>) => {
+export const ensureMetadataHandleIsBranchScope = (
+  handle: DocHandle<VersionControlSidecarDoc>
+) => {
   handle.change((d) => {
     if (!d.isBranchScope) {
       d.isBranchScope = true;
@@ -348,5 +293,141 @@ export const ensureMetadataHandleIsBranchScope = (handle: DocHandle<VersionContr
       d.branches = [];
     }
   });
-  return handle as DocHandle<VersionControlSidecarDoc & { isBranchScope: true }>;
-}
+  return handle as DocHandle<
+    VersionControlSidecarDoc & { isBranchScope: true }
+  >;
+};
+
+const pushFile = async ({
+  filePath,
+  folderHandle,
+  repo,
+  buildMetadata,
+  buildMetadataHandle,
+}): Promise<{
+  handle: DocHandle<FileDoc>;
+  mainUrl: AutomergeUrl;
+  didChange: boolean;
+}> => {
+  const isBinary = isBinaryFileSync(filePath);
+  const isMarkdown = path.extname(filePath) === "md";
+
+  const fileContents = fs.readFileSync(
+    filePath,
+    !isBinary ? "utf8" : undefined
+  );
+  const fileType = path.extname(filePath).slice(1);
+  const fileNameWithExtension = path.basename(filePath);
+
+  const folderDoc = await folderHandle.doc();
+
+  if (!folderDoc.docs) {
+    throw new Error(
+      `this doesn't look like a folder doc, it's missing a docs property: ${folderHandle.url}`
+    );
+  }
+
+  const existingDocLink = folderDoc.docs.find(
+    (link) => link.name === fileNameWithExtension
+  );
+
+  const changeMetadata =
+    buildMetadata &&
+    buildMetadata.outputs.some(
+      (o) => path.resolve(filePath) === path.resolve(o)
+    )
+      ? { buildDocUrl: buildMetadataHandle.url, buildId: buildMetadata.id }
+      : undefined;
+
+  let handle;
+  let mainUrl;
+  let didChange = false;
+  if (existingDocLink) {
+    handle = await findWithActiveBranch<FileDoc>(existingDocLink.url, repo);
+    mainUrl = existingDocLink.url;
+
+    await handle.whenReady();
+
+    // TODO: this is a datatype-specific mapping from unix file to automerge doc!
+    // needs to be specified somewhere datatype-specific I guess.
+    // notably: it's also an incremental update to support diffs.
+    handle.change(
+      (doc) => {
+        if (!Automerge.equals(doc.content, fileContents)) {
+          didChange = true;
+          if (typeof fileContents === "string") {
+            updateText(doc, ["content"], fileContents);
+          } else {
+            doc.content = fileContents;
+          }
+        }
+      },
+      {
+        message: changeMetadata ? JSON.stringify(changeMetadata) : undefined,
+      }
+    );
+  } else {
+    // Make a new doc in the folder
+    handle = repo.create();
+    didChange = true;
+
+    await handle.whenReady();
+
+    // do some special handling for markdown
+    // todo: import markdown as regular text files
+    if (isMarkdown) {
+      (handle as DocHandle<MarkdownDoc>).change(
+        (doc) => {
+          // init datatype schema
+          doc.content = fileContents;
+          doc.discussions = {};
+
+          // init patchwork metadata
+          doc.branchMetadata = {
+            source: null,
+            branches: [],
+          };
+          doc.discussions = {};
+          doc.tags = [];
+          doc.changeGroupSummaries = {};
+        },
+        {
+          message: changeMetadata ? JSON.stringify(changeMetadata) : undefined,
+        }
+      );
+    } else {
+      (handle as DocHandle<FileDoc>).change(
+        (doc) => {
+          doc.name = path.basename(filePath);
+          // todo: maybe convert type to generic id independent of file extensions
+          doc.type = fileType;
+          doc.content = fileContents;
+
+          // init patchwork metadata
+          doc.branchMetadata = {
+            source: null,
+            branches: [],
+          };
+          doc.discussions = {};
+          doc.tags = [];
+          doc.changeGroupSummaries = {};
+        },
+        {
+          message: changeMetadata ? JSON.stringify(changeMetadata) : undefined,
+        }
+      );
+    }
+
+    console.log("push", filePath, Automerge.getHeads(handle.docSync()));
+
+    folderHandle.change((d) => {
+      d.docs.push({
+        name: fileNameWithExtension,
+        url: handle.url, // this is ok cuz it's a new doc, not a clone
+        type: isMarkdown ? "essay" : "file",
+      });
+    });
+  }
+
+  return { handle, mainUrl, didChange };
+};

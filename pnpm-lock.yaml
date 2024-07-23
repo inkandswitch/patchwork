@@ -296,9 +296,6 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^2.1.8
         version: 2.4.0(@tiptap/pm@2.4.0)
-      '@types/react-window':
-        specifier: ^1.8.8
-        version: 1.8.8
       animate.css:
         specifier: ^4.1.1
         version: 4.1.1
@@ -360,6 +357,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.2.7
         version: 18.3.0
+      '@types/react-window':
+        specifier: ^1.8.8
+        version: 1.8.8
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
