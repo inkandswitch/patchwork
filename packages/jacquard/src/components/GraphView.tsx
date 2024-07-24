@@ -1,51 +1,58 @@
 import { useUIStateHandle } from "@/explorer/account";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { FolderDoc } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
+import { DocPath, FolderDocWithChildren } from "@/packages/folder/datatype";
 import { EditorProps } from "@/tools";
 import { objectEntries } from "@/utils";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import { branchScopeAndActiveBranchInfoSig } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
-import {
-  AutomergeUrl,
-  isValidAutomergeUrl
-} from "@automerge/automerge-repo";
-import {
-  useDocument,
-  useRepo
-} from "@automerge/automerge-repo-react-hooks";
+import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
+import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { instance } from "@viz-js/viz";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "signia";
 import { useValue } from "signia-react";
 import { FileDoc } from "../../../file/src/datatype";
 import { BuildRun, JacquardBuildMetadata, Reference } from "../datatype";
-import { getReferenceFromDocUrl, getStalenessInfo, ProjectState, reasonToString } from "../getStalenessInfo";
+import {
+  getReferenceFromDocUrl,
+  getStalenessInfo,
+  ProjectState,
+  reasonToString,
+} from "../getStalenessInfo";
+import {
+  FolderDocWithMetadata,
+  useFolderDocWithChildren,
+} from "@/packages/folder/hooks/useFolderDocWithChildren";
 
 export const GraphView = ({
   docUrl,
   docHeads,
   getFakeDocPathForDocUrl,
 }: EditorProps<JacquardBuildMetadata, never>) => {
-  const [latestDoc] = useDocument<JacquardBuildMetadata>(docUrl);  // ok cuz docUrl is a clone
+  const [latestDoc] = useDocument<JacquardBuildMetadata>(docUrl); // ok cuz docUrl is a clone
 
   const doc = useMemo(
-    () => (docHeads && latestDoc ? Automerge.view(latestDoc, docHeads) : latestDoc),
+    () =>
+      docHeads && latestDoc ? Automerge.view(latestDoc, docHeads) : latestDoc,
     [latestDoc, docHeads]
   );
 
-  const folderProjectDocPath = doc && getFakeDocPathForDocUrl(doc.projectFolderUrl);
-  const { cloneOrMainOm: projectFolderOm } = useBranchScopeAndActiveBranchInfo(folderProjectDocPath);
+  const folderProjectDocPath =
+    doc && getFakeDocPathForDocUrl(doc.projectFolderUrl);
+  const { cloneOrMainOm: projectFolderOm } =
+    useBranchScopeAndActiveBranchInfo(folderProjectDocPath);
 
+  const projectFolder = useFolderDocWithChildren(projectFolderOm.url);
 
   // const [projectFolderDoc] = useDocument<FolderDoc>(doc?.projectFolderUrl);
 
   const projectState = useProjectState({
-    folderDoc: projectFolderOm.doc as FolderDoc,
+    folderDoc: projectFolder,
     buildRuns: doc?.buildRuns ?? [],
     filesReferencedInBuildsOnly: true,
-    getFakeDocPathForDocUrl
+    getFakeDocPathForDocUrl,
   });
 
   console.log("projectState", projectState);
@@ -67,7 +74,10 @@ export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
   // this will get fixed soon. for now we will check if one set of heads is the
   // subset of another – this is generally atypical cuz we don't do much
   // concurrent stuff.
-  return heads1.every((head) => heads2.includes(head)) || heads2.every((head) => heads1.includes(head));
+  return (
+    heads1.every((head) => heads2.includes(head)) ||
+    heads2.every((head) => heads1.includes(head))
+  );
 }
 
 const useProjectState = ({
@@ -76,7 +86,7 @@ const useProjectState = ({
   filesReferencedInBuildsOnly,
   getFakeDocPathForDocUrl,
 }: {
-  folderDoc: FolderDoc;
+  folderDoc: FolderDocWithMetadata;
   buildRuns: BuildRun[];
   filesReferencedInBuildsOnly?: boolean;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
@@ -85,7 +95,7 @@ const useProjectState = ({
     () =>
       !folderDoc
         ? []
-        : folderDoc.docs.flatMap(({ url }) =>
+        : folderDoc.flatDocLinks.flatMap(({ url }) =>
             !filesReferencedInBuildsOnly ||
             // filter out files that are not referenced by any build run
             buildRuns.some(
@@ -98,19 +108,30 @@ const useProjectState = ({
           ),
     [buildRuns, filesReferencedInBuildsOnly, folderDoc]
   );
+
   const repo = useRepo();
   const uiStateHandle = useUIStateHandle();
-  const files = useValue(useMemo(() => computed('', () => {
-    let result: Record<AutomergeUrl, Automerge.Doc<unknown>> = {};
-    for (let url of fileUrls) {
-      const docPath = getFakeDocPathForDocUrl(url);
-      const maybeDoc = branchScopeAndActiveBranchInfoSig(docPath, uiStateHandle, repo).value?.cloneOrMainOm?.doc;
-      if (maybeDoc) {
-        result[url] = maybeDoc;
-      }
-    };
-    return result;
-  }), [fileUrls, getFakeDocPathForDocUrl, repo, uiStateHandle]));
+  const files = useValue(
+    useMemo(
+      () =>
+        computed("", () => {
+          let result: Record<AutomergeUrl, Automerge.Doc<unknown>> = {};
+          for (let url of fileUrls) {
+            const docPath = getFakeDocPathForDocUrl(url);
+            const maybeDoc = branchScopeAndActiveBranchInfoSig(
+              docPath,
+              uiStateHandle,
+              repo
+            ).value?.cloneOrMainOm?.doc;
+            if (maybeDoc) {
+              result[url] = maybeDoc;
+            }
+          }
+          return result;
+        }),
+      [fileUrls, getFakeDocPathForDocUrl, repo, uiStateHandle]
+    )
+  );
 
   const references = useMemo<Reference[]>(
     () =>
@@ -225,10 +246,7 @@ function stateGraphSrc(state: ProjectState) {
     ];`);
     for (let input of buildRun.inputs) {
       const inputReferenceInState = getReferenceFromDocUrl(state, input.docUrl);
-      const outOfDate = !headsMatch(
-        inputReferenceInState.heads,
-        input.heads
-      );
+      const outOfDate = !headsMatch(inputReferenceInState.heads, input.heads);
       lines.push(`${gvId(input.docUrl)} -> ${gvId(buildRun.id)} [
         color=${outOfDate ? '"#fdba74"' : '"#AAAAAA"'}
         style=${outOfDate ? '"dashed"' : '"solid"'}
