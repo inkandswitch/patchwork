@@ -47,6 +47,12 @@ async function pullFolder({
           await pullFile({ fileUrl: docLink.url, dir, repo });
           break;
         case "folder":
+          // Create the folder on disk if it doesn't exist
+          if (!fs.existsSync(path.join(dir, docLink.name))) {
+            fs.mkdirSync(path.join(dir, docLink.name), { recursive: true });
+          }
+
+          // then pull the contents of the folder
           await pullFolder({
             folderUrl: docLink.url,
             dir: path.join(dir, docLink.name),
