@@ -1,22 +1,22 @@
-import { useUIStateHandle } from "@/explorer/account";
+import { ifLoaded, incorporateDocReactiveState, useDocReactive } from "@/doc-reactive";
+import { UIStateDoc, useUIStateHandleDocReactive } from "@/explorer/account";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { DocPath } from "@/packages/folder/datatype";
 import {
   FolderDocWithMetadata,
   useFolderDocWithChildren,
 } from "@/packages/folder/hooks/useFolderDocWithChildren";
-import { useUsesDocs } from "@/signals";
 import { EditorProps } from "@/tools";
 import { objectEntries } from "@/utils";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import { branchScopeAndActiveBranchInfo } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, DocHandle, isValidAutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { instance } from "@viz-js/viz";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileDoc } from "../../../file/src/datatype";
-import { BuildRun, JacquardBuildMetadata, Reference } from "../datatype";
+import { BuildRun, JacquardBuildMetadata } from "../datatype";
 import {
   getReferenceFromDocUrl,
   getStalenessInfo,
@@ -37,12 +37,11 @@ export const GraphView = ({
     [latestDoc, docHeads]
   );
 
-  const folderProjectDocPath =
-    doc && getFakeDocPathForDocUrl(doc.projectFolderUrl);
-  const { cloneOrMainOm: projectFolderOm } =
-    useBranchScopeAndActiveBranchInfo(folderProjectDocPath);
+  const folderProjectDocPath = doc && getFakeDocPathForDocUrl(doc.projectFolderUrl);
+  const branchScopeAndActiveBranchInfo = ifLoaded(useBranchScopeAndActiveBranchInfo(folderProjectDocPath));
+  const projectFolderOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
-  const projectFolder = useFolderDocWithChildren(projectFolderOm.url);
+  const projectFolder = useFolderDocWithChildren(projectFolderOm?.url);
 
   // const [projectFolderDoc] = useDocument<FolderDoc>(doc?.projectFolderUrl);
 
@@ -78,83 +77,90 @@ export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
   );
 }
 
+
 const useProjectState = ({
   folderDoc,
   buildRuns,
   filesReferencedInBuildsOnly,
   getFakeDocPathForDocUrl,
 }: {
-  folderDoc: FolderDocWithMetadata;
+  folderDoc: FolderDocWithMetadata | undefined;
   buildRuns: BuildRun[];
   filesReferencedInBuildsOnly?: boolean;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
 }): ProjectState | undefined => {
-  const fileUrls = useMemo(
-    () =>
-      !folderDoc
-        ? []
-        : folderDoc.flatDocLinks.flatMap(({ url }) =>
-            !filesReferencedInBuildsOnly ||
-            // filter out files that are not referenced by any build run
-            buildRuns.some(
-              ({ inputs, outputs }) =>
-                inputs.some((input) => input.docUrl === url) ||
-                outputs.some((output) => output.docUrl === url)
-            )
-              ? [url]
-              : []
-          ),
-    [buildRuns, filesReferencedInBuildsOnly, folderDoc]
-  );
-
   const repo = useRepo();
-  const uiStateHandle = useUIStateHandle();
-  const files = useUsesDocs(useCallback(() => {
-    let result: Record<AutomergeUrl, Automerge.Doc<unknown>> = {};
-    for (let url of fileUrls) {
-      const docPath = getFakeDocPathForDocUrl(url);
-      const maybeDoc = branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo).cloneOrMainOm.doc;
-      if (maybeDoc) {
-        result[url] = maybeDoc;
-      }
-    };
-    return result;
-  }, [fileUrls, getFakeDocPathForDocUrl, repo, uiStateHandle]));
+  const uiStateHandle = useUIStateHandleDocReactive();
+  return ifLoaded(useDocReactive(useCallback(() => {
+    if (!folderDoc) { return; }
+    incorporateDocReactiveState(uiStateHandle);
+    return getProjectState({
+      repo,
+      uiStateHandle: uiStateHandle,
+      folderDoc,
+      buildRuns,
+      filesReferencedInBuildsOnly,
+      getFakeDocPathForDocUrl,
+    });
+  }, [buildRuns, filesReferencedInBuildsOnly, folderDoc, getFakeDocPathForDocUrl, repo, uiStateHandle])));
+};
 
-  const references = useMemo<Reference[]>(
-    () =>
-      objectEntries(files).map(([docUrl, doc]) => ({
-        docUrl: docUrl as AutomergeUrl,
-        heads: Automerge.getHeads(doc),
-        path: (doc as FileDoc).name, // todo: handle this generically, we just assume here that this is a file doc
-      })),
-    [files]
+const getProjectState = ({
+  repo,
+  uiStateHandle,
+  folderDoc,
+  buildRuns,
+  filesReferencedInBuildsOnly,
+  getFakeDocPathForDocUrl,
+}: {
+  repo: Repo,
+  uiStateHandle: DocHandle<UIStateDoc>,
+  folderDoc: FolderDocWithMetadata;
+  buildRuns: BuildRun[];
+  filesReferencedInBuildsOnly?: boolean;
+  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
+}): ProjectState => {
+  const fileUrls = folderDoc.flatDocLinks.flatMap(({ url }) =>
+    !filesReferencedInBuildsOnly ||
+    // filter out files that are not referenced by any build run
+    buildRuns.some(
+      ({ inputs, outputs }) =>
+        inputs.some((input) => input.docUrl === url) ||
+        outputs.some((output) => output.docUrl === url)
+    )
+      ? [url]
+      : []
   );
 
-  const filteredBuildRuns = useMemo(
-    () =>
-      // filter out build runs that are no longer relevant
-      // a build run is relevant as long as ALL of its output still exists in the current project
-      // TODO: this used to be "at least one", but we're gonna lazily try this
-      buildRuns.filter(({ outputs }, index) =>
-        outputs.every(({ docUrl, heads }) => {
-          const doc = files[docUrl];
-          return doc && headsMatch(Automerge.getHeads(doc), heads);
-        })
-      ),
-    [buildRuns, files]
+  let files: Record<AutomergeUrl, Automerge.Doc<FileDoc>> = {};
+  for (let url of fileUrls) {
+    const docPath = getFakeDocPathForDocUrl(url);
+    const maybeDoc = branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo).cloneOrMainOm.doc;
+    if (maybeDoc) {
+      files[url] = maybeDoc as Automerge.Doc<FileDoc>;
+    }
+  };
+
+  const references = objectEntries(files).map(([docUrl, doc]) => ({
+    docUrl: docUrl as AutomergeUrl,
+    heads: Automerge.getHeads(doc),
+    path: (doc as FileDoc).name, // todo: handle this generically, we just assume here that this is a file doc
+  }));
+
+  // filter out build runs that are no longer relevant
+  // a build run is relevant as long as ALL of its output still exists in the current project
+  // TODO: this used to be "at least one", but we're gonna lazily try this
+  const filteredBuildRuns = buildRuns.filter(({ outputs }) =>
+    outputs.every(({ docUrl, heads }) => {
+      const doc = files[docUrl];
+      return doc && headsMatch(Automerge.getHeads(doc), heads);
+    })
   );
 
-  return useMemo(
-    () =>
-      !folderDoc || fileUrls.length !== references.length
-        ? undefined
-        : {
-            references,
-            buildRuns: filteredBuildRuns,
-          },
-    [folderDoc, fileUrls.length, references, filteredBuildRuns]
-  );
+  return {
+    references,
+    buildRuns: filteredBuildRuns,
+  };
 };
 
 const GraphvizView = ({ source }: { source: string }) => {

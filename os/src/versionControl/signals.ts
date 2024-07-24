@@ -1,7 +1,7 @@
 import { docPathString, UIStateDoc } from "@/explorer/account";
 import { Om } from "@/om";
 import { DocPath } from "@/packages/folder/datatype";
-import { getOm, parallelMap } from "@/signals";
+import { getOm, parallelMap } from "@/doc-reactive";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import {
@@ -74,11 +74,19 @@ export const branchScopeInfo = (
   };
 };
 
+export type ActiveBranchInfo = {
+  /**
+   * undefined means "main"
+   */
+  activeBranchOm: Om<BranchDoc> | undefined;
+  setActiveBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
+};
+
 export const activeBranchInfo = (
   branchScopePath: DocPath,
   uiStateHandle: DocHandle<UIStateDoc>,
   repo: Repo
-) => {
+): ActiveBranchInfo => {
   const uiStateOm = getOm<UIStateDoc>(uiStateHandle.url, repo);
 
   const activeBranchUrl = canBeUndef(uiStateOm.doc.openBranches[docPathString(branchScopePath)]);
@@ -108,18 +116,16 @@ export const activeBranchInfo = (
   };
 };
 
-export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & {
-  activeBranchOm: Om<BranchDoc>;
-  setActiveBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
-  baseHeads: Automerge.Heads;
+export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & ActiveBranchInfo & {
+  baseHeads: Automerge.Heads | undefined;
   cloneOrMainOm: Om;
 };
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.
 export const branchScopeAndActiveBranchInfo = (
-  docPath: DocPath | undefined,
-  uiStateHandle: DocHandle<UIStateDoc> | undefined,
+  docPath: DocPath,
+  uiStateHandle: DocHandle<UIStateDoc>,
   repo: Repo
 ): BranchScopeAndActiveBranchInfo => {
   const branchScopeInfo_ = branchScopeInfo(docPath, repo);
@@ -135,5 +141,6 @@ export const branchScopeAndActiveBranchInfo = (
     ...branchScopeInfo_,
     ...activeBranchInfo_,
     cloneOrMainOm,
+    baseHeads: cloneEntry?.baseHeads,
   };
 };

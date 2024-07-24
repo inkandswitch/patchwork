@@ -43,7 +43,7 @@ import {
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { createJacquardBranch, mergeBranch } from "../branches";
-import { BranchScopeAndActiveBranchInfo } from "../hooks";
+import { BranchScopeAndActiveBranchInfo } from "../signals";
 import { SidebarMode } from "./VersionControlEditor";
 
 // interface MakeBranchOptions {

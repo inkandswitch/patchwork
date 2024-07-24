@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 import { Icon } from "@/lib/icons";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { Input } from "@/shadcn/ui/input";
-import { getDoc, isLoaded, useUsesDocs } from "@/signals";
+import { getDoc, isLoaded, useDocReactive } from "@/doc-reactive";
 import { fakeDocPath } from "@/versionControl/components/VersionControlEditor";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import {
@@ -36,6 +36,7 @@ import {
   useCurrentAccountDoc,
   useDatatypeSettings
 } from "../account";
+import { canBeUndef } from "@/utils";
 
 const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const { node, style, dragHandle } = props;
@@ -48,9 +49,11 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(docPath);
 
   const repo = useRepo();
-  const isBranchScope = useUsesDocs(useCallback(() => {
+  const isBranchScope = useDocReactive(useCallback(() => {
     const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
-    const versionControlMetadataDoc = getDoc<VersionControlSidecarDoc>(doc.versionControlMetadataUrl, repo);
+    const versionControlMetadataUrl = canBeUndef(doc.versionControlMetadataUrl);
+    if (!versionControlMetadataUrl) { return false;}
+    const versionControlMetadataDoc = getDoc<VersionControlSidecarDoc>(versionControlMetadataUrl, repo);
     return versionControlMetadataDoc.isBranchScope;
   }, [node.data.url, repo])) === true;
 
@@ -103,8 +106,8 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
           )}
           <div className="text-xs text-gray-500 flex items-center gap-1">
             {isBranchScope && <GitBranchIcon size={14} className="ml-1" />}
-            {isBranchScope && isLoaded(branchScopeAndActiveBranchInfo)
-              ? `${branchScopeAndActiveBranchInfo.activeBranchOm.doc.name}`
+            {isBranchScope && branchScopeAndActiveBranchInfo
+              ? `${branchScopeAndActiveBranchInfo.activeBranchOm?.doc.name ?? "Main"}`
               : isBranchScope
               ? "Main"
               : ""}

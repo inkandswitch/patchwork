@@ -30,7 +30,7 @@ import {
 import { Om } from "@/om";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
-import { loadedValue } from "@/signals";
+import { waitForLoaded } from "@/doc-reactive";
 import { branchScopeAndActiveBranchInfo } from "@/versionControl/signals";
 import _ from "lodash";
 import { useDataType, useDataTypes } from "../../datatypes";
@@ -46,7 +46,9 @@ export const Explorer: React.FC = () => {
   const [accountDoc] = useCurrentAccountDoc();
 
   const rootFolderData = useRootFolderDocWithChildren();
-  const { doc: rootFolderDoc, rootFolderUrl, flatDocLinks } = rootFolderData;
+  const rootFolderDoc = rootFolderData?.doc;
+  const rootFolderUrl = rootFolderData?.rootFolderUrl;
+  const flatDocLinks = rootFolderData?.flatDocLinks;
 
   const [showSidebar, setShowSidebar] = useState(true);
 
@@ -149,7 +151,7 @@ export const Explorer: React.FC = () => {
         parentFolderDocPath = _.initial(fakeDocPath(selectedDocLink));
       }
 
-      const { cloneOrMainOm } = await loadedValue(() =>
+      const { cloneOrMainOm } = await waitForLoaded(() =>
         branchScopeAndActiveBranchInfo(parentFolderDocPath, uiStateHandle, repo)
       );
       const parentFolderBranchedOm = cloneOrMainOm as Om<FolderDoc>;

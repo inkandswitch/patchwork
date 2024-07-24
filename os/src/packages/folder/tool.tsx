@@ -4,19 +4,19 @@ import React, { useMemo, useState } from "react";
 
 import { useDataType } from "@/datatypes";
 import { useUIStateHandle } from "@/explorer/account";
+import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { Icon } from "@/lib/icons";
+import { ifLoaded } from "@/doc-reactive";
 import { EditorProps, Tool, useToolsForDataType } from "@/tools";
-import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
-import { AutomergeUrl } from "@automerge/automerge-repo";
-import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { useAnnotations } from "@/versionControl/annotations";
-import { diffWithProvenance } from "@/versionControl/utils";
+import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { ErrorFallback } from "@/explorer/components/ErrorFallback";
+import { diffWithProvenance } from "@/versionControl/utils";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 import { ErrorBoundary } from "react-error-boundary";
+import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
-import { isLoaded } from "@/signals";
 
 export const FolderViewerWithEmbeds: React.FC<EditorProps<never, never>> = ({
   docUrl,
@@ -25,10 +25,10 @@ export const FolderViewerWithEmbeds: React.FC<EditorProps<never, never>> = ({
   highlightChanges,
 }: EditorProps<never, never>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const folderAtHeads = docHeads ? A.view(folder, docHeads) : folder;
+  const folderAtHeads = folder && docHeads ? A.view(folder, docHeads) : folder;
   const [hideUnchangedFiles, setHideUnchangedFiles] = useState(false);
 
-  if (!folder) {
+  if (!folder || !folderAtHeads) {
     return null;
   }
 
@@ -54,7 +54,7 @@ export const FolderViewerWithEmbeds: React.FC<EditorProps<never, never>> = ({
             docLink={docLink}
             key={index}
             getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-            highlightChanges={highlightChanges}
+            highlightChanges={highlightChanges ?? false}
             hideUnchangedFiles={hideUnchangedFiles}
           />
         ))}
@@ -80,6 +80,7 @@ export const FolderEntryView = ({
   const docPath = getFakeDocPathForDocUrl(docLink.url);
   const branchScopeAndActiveBranchInfo =
     useBranchScopeAndActiveBranchInfo(docPath);
+  const cloneOrMainOm = ifLoaded(branchScopeAndActiveBranchInfo)?.cloneOrMainOm;
 
   const dataType = useDataType(docLink.type);
   const tool = useToolsForDataType(docLink.type)[0];
@@ -88,7 +89,7 @@ export const FolderEntryView = ({
 
   // TODO: we shouldn't have to duplicate this code here, also right now the change highlights can't be disabled
   const diff = useMemo(() => {
-    if (!isLoaded(branchScopeAndActiveBranchInfo)) {
+    if (!branchScopeAndActiveBranchInfo) {
       return;
     }
     const { cloneOrMainOm, baseHeads } = branchScopeAndActiveBranchInfo;

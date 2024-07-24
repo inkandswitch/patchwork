@@ -10,13 +10,15 @@ import { EventEmitter } from "eventemitter3";
 
 import { useForceUpdate } from "@/hooks/useForceUpdate";
 import { ChangeFn } from "@automerge/automerge/next";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { uploadFile } from "./utils";
 
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { useFolderDocWithChildren } from "../packages/folder/hooks/useFolderDocWithChildren";
 import { typeOnlyAssert } from "@/utils";
+import { DocReactiveState, getDoc, getOm, ifLoaded, LoadingError, useDocReactive } from "@/doc-reactive";
+import { Om } from "@/om";
 
 export type ModuleSettingsDoc = {
   enabledDatatypeIds: { [id: string]: boolean };
@@ -344,11 +346,19 @@ export const useDatatypeSettings = (): ModuleSettingsDoc | undefined => {
   return datatypeSettingsDoc;
 };
 
-export const useUIStateHandle = (): DocHandle<UIStateDoc> | undefined => {
+// terrible name & it should return an om; sry; transitional
+export const useUIStateHandleDocReactive = (): DocReactiveState<DocHandle<UIStateDoc>> => {
+  const repo = useRepo();
   const account = useCurrentAccount();
-  const [accountDoc] = useDocument<AccountDoc>(account?.handle.url);
-  const uiStateHandle = useHandle<UIStateDoc>(accountDoc?.uiStateUrl);
-  return uiStateHandle
+  return useDocReactive(useCallback(() => {
+    if (!account) { throw new LoadingError(); }
+    const accountDoc = getDoc<AccountDoc>(account.handle.url, repo);
+    return repo.find<UIStateDoc>(accountDoc.uiStateUrl);
+  }, [account, repo]));
+}
+
+export const useUIStateHandle = (): DocHandle<UIStateDoc> | undefined => {
+  return ifLoaded(useUIStateHandleDocReactive());
 };
 
 // Helpers to convert an automerge URL to/from an Account Token that the user can

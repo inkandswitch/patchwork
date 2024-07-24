@@ -1,11 +1,11 @@
+import { ifLoaded, parallelMap, useDocReactive } from "@/doc-reactive";
 import { UIStateDoc, useUIStateHandle } from "@/explorer/account";
 import { Om } from "@/om";
-import { isLoaded, parallelMap, throwIfMissing, useUsesDocs } from "@/signals";
 import { fakeDocPath } from "@/versionControl/components/VersionControlEditor";
 import { branchScopeAndActiveBranchInfo } from "@/versionControl/signals";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import {
   DocLinkWithFolderPath,
   DocPath,
@@ -31,8 +31,8 @@ const computeFlattenedDocLinks = ({
 }: {
   folderPath: AutomergeUrl[];
   doc: FolderDocWithChildren;
-}): DocLinkWithFolderPath[] | undefined => {
-  return doc?.docs.flatMap((docLink) =>
+}): DocLinkWithFolderPath[] => {
+  return doc.docs.flatMap((docLink) =>
     docLink.type === "folder" && docLink.folderContents
       ? [
           { ...docLink, folderPath: folderPath },
@@ -74,34 +74,21 @@ function materializeFolderDoc(
 // This hook recursively traverses a tree of nested folders and loads folder contents.
 export function useFolderDocWithChildren(
   rootFolderUrl: AutomergeUrl | undefined
-): FolderDocWithMetadata {
+): FolderDocWithMetadata | undefined {
   const repo = useRepo();
   const uiStateHandle = useUIStateHandle();
-  // TODO: this is v weird; id dunno how our docpaths relate to the root folder
-  const rootDocPath = useMemo(() =>
-    fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []}),
-    [rootFolderUrl]
-  );
-  const docWithLinks = useUsesDocs(useCallback(() => {
-    return materializeFolderDoc(rootDocPath, uiStateHandle, repo);
-  }, [rootDocPath, uiStateHandle, repo]));
-
-  throwIfMissing(docWithLinks);
-
-
-  // flatDocLinks is a flat array of all the docs in the hierarchy
-  const flatDocLinks = useMemo(
-    () =>
-      isLoaded(docWithLinks) ? computeFlattenedDocLinks({
-        doc: docWithLinks,
-        folderPath: [rootFolderUrl],
-      }) : undefined,
-    [docWithLinks, rootFolderUrl]
-  );
-
-  return {
-    doc: isLoaded(docWithLinks) ? docWithLinks : undefined,
-    rootFolderUrl,
-    flatDocLinks,
-  };
+  return ifLoaded(useDocReactive(useCallback(() => {
+    if (!rootFolderUrl || !uiStateHandle) return undefined;
+    const rootDocPath = fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []});
+    const docWithLinks = materializeFolderDoc(rootDocPath, uiStateHandle, repo);
+    const flatDocLinks = computeFlattenedDocLinks({
+      doc: docWithLinks,
+      folderPath: [rootFolderUrl],
+    });
+    return {
+      doc: docWithLinks,
+      rootFolderUrl,
+      flatDocLinks,
+    };
+  }, [rootFolderUrl, uiStateHandle, repo])));
 }

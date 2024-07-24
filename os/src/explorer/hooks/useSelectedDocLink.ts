@@ -135,7 +135,7 @@ export const parseUrl = (url: URL): Omit<DocLink, "name"> | null => {
 
   return {
     url: docUrl,
-    type: datatypeId,
+    type: datatypeId!,  // TODO: JAH strict fix
     branchUrl: branchUrl as AutomergeUrl,
     branchName,
   };
@@ -194,7 +194,7 @@ export const useSelectedDocLink = ({
     setSelectedDocLinkDangerouslyBypassingURL,
   ] = useState<DocLinkWithFolderPath | undefined>();
 
-  const selectedDocLink: DocLinkWithFolderPath = useMemo(() => {
+  const selectedDocLink: DocLinkWithFolderPath | undefined = useMemo(() => {
     if (!urlParams || !urlParams.url) {
       return undefined;
     }
@@ -214,16 +214,17 @@ export const useSelectedDocLink = ({
       return;
     }
 
-    let linkInPath: DocLinkWithFolderPath;
+    let linkInPath: DocLinkWithFolderPath | undefined;
 
     for (let i = previousFolderPath.length; i >= 0; i--) {
       const comparisonPath = previousFolderPath.slice(0, i);
 
-      linkInPath = matches.find((match) =>
+      const maybeLinkInPath = matches.find((match) =>
         isEqual(match.folderPath, comparisonPath)
       );
 
-      if (linkInPath) {
+      if (maybeLinkInPath) {
+        linkInPath = maybeLinkInPath;
         break;
       }
     }
@@ -244,7 +245,7 @@ export const useSelectedDocLink = ({
     selectedDocLinkDangerouslyBypassingURL,
   ]);
 
-  const selectDocLink = (docLink: DocLinkWithFolderPath | null) => {
+  const selectDocLink = (docLink: DocLinkWithFolderPath | undefined) => {
     if (!docLink) {
       setSelectedDocLinkDangerouslyBypassingURL(undefined);
       window.location.hash = "";
@@ -258,7 +259,7 @@ export const useSelectedDocLink = ({
   // Add the doc to our collection if we don't have it
   useEffect(() => {
     if (
-      !folderDocWithMetadata.flatDocLinks ||
+      !folderDocWithMetadata ||
       !urlParams?.url ||
       !urlParams?.type
     ) {
@@ -298,7 +299,7 @@ export const useSelectedDocLink = ({
 
   // sync the branch name with the url
   useEffect(() => {
-    if (!urlParams) {
+    if (!urlParams || !selectedDocLink) {  // TODO: JAH strict fix
       return;
     }
 
@@ -314,10 +315,10 @@ export const useSelectedDocLink = ({
     if (!urlParams.branchUrl && branchName) {
       window.location.hash = docLinkToUrl({
         ...selectedDocLink,
-        branchName: null,
+        branchName: undefined,
       });
     }
-  }, [branchName, urlParams?.branchName]);
+  }, [branchName, selectedDocLink, urlParams]);
 
   useEffect(() => {
     if (!selectedDocLink) {
@@ -326,7 +327,7 @@ export const useSelectedDocLink = ({
 
     // @ts-expect-error window global
     window.handle = repo.find(selectedDocLink.url);
-  }, [selectedDocLink]);
+  }, [repo, selectedDocLink]);
 
   return {
     selectedDocLink,

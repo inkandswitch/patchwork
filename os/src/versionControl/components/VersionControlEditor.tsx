@@ -26,6 +26,7 @@ import {
 import { StatusBar } from "./Statusbar";
 import { VersionControlBar } from "./VersionControlBar";
 import { T } from "@tldraw/tldraw";
+import { ifLoaded } from "@/doc-reactive";
 
 export type SidebarMode = "review" | "history" | "Bot";
 
@@ -133,8 +134,9 @@ export const VersionControlEditor: React.FC<{
   const docPath = fakeDocPath(selectedDocLink);
 
   const branchScopeAndActiveBranchInfo =
-    useBranchScopeAndActiveBranchInfo(docPath);
-  const { cloneOrMainOm, baseHeads } = branchScopeAndActiveBranchInfo;
+    ifLoaded(useBranchScopeAndActiveBranchInfo(docPath));
+  const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
+  const baseHeads = branchScopeAndActiveBranchInfo?.baseHeads;
 
   const branchDiff = useMemo(() => {
     if (baseHeads && cloneOrMainOm) {
@@ -258,20 +260,23 @@ export const VersionControlEditor: React.FC<{
   return (
     <div className="flex h-full overflow-hidden">
       <div className="flex flex-col flex-1 overflow-hidden">
-        <VersionControlBar
-          docUrl={mainDocUrl}
-          datatypeId={datatypeId}
-          branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
-          buildMetadata={buildMetadata}
-          sidebarMode={sidebarMode}
-          setSidebarMode={setSidebarMode}
-          showChangesFlag={showChangesFlag}
-          setShowChangesFlag={setShowChangesFlag}
-          compareWithMainFlag={compareWithMainFlag}
-          setCompareWithMainFlag={setCompareWithMainFlag}
-          highlightSidebarButton={highlightSidebarButton}
-          getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-        />
+        { branchScopeAndActiveBranchInfo
+          ? <VersionControlBar
+              docUrl={mainDocUrl}
+              datatypeId={datatypeId}
+              branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
+              buildMetadata={buildMetadata}
+              sidebarMode={sidebarMode}
+              setSidebarMode={setSidebarMode}
+              showChangesFlag={showChangesFlag}
+              setShowChangesFlag={setShowChangesFlag}
+              compareWithMainFlag={compareWithMainFlag}
+              setCompareWithMainFlag={setCompareWithMainFlag}
+              highlightSidebarButton={highlightSidebarButton}
+              getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+            />
+          : <div>Loading version control information...</div>
+        }
 
         {/* Main doc editor pane */}
         <ErrorBoundary FallbackComponent={ErrorFallback}>
