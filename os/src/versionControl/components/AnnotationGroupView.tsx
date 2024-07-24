@@ -34,7 +34,7 @@ export interface AnnotationGroupViewProps {
   hasPrev: boolean;
   setIsHovered: (isHovered: boolean) => void;
   setIsSelected: (isSelected: boolean) => void;
-  setCommentState: (state: CommentState<unknown>) => void;
+  setCommentState?: (state: CommentState<unknown>) => void;
   enableScrollSync?: boolean; // todo: this shouldn't be a flag
   hideAnnotations?: boolean;
 }

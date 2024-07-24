@@ -60,7 +60,7 @@ function getLinks(view: EditorView): Link[] {
       enter: (node) => {
         if (node.name === "Link") {
           const link = view.state.sliceDoc(node.from, node.to);
-          const url = link.match(URL_REGEX)?.groups.url;
+          const url = link.match(URL_REGEX)?.groups!.url;
           if (!url) {
             return;
           }

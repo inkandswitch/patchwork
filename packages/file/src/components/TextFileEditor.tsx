@@ -55,7 +55,7 @@ export const TextFileEditor = ({
 
     const doc = handle.docSync();
     const view = new EditorView({
-      doc: doc.content.value, // TODO: JAH strict fix
+      doc: doc!.content.value, // TODO: JAH strict fix
       extensions: [
         basicSetup,
         automergeSyncPlugin({
@@ -74,7 +74,7 @@ export const TextFileEditor = ({
     return () => {
       view.destroy();
     };
-  }, [container, fileDoc.type, handle]);
+  }, [container, fileDoc, handle]);
 
   return <div className="codemirror-editor" ref={setContainer} />;
 };

@@ -33,7 +33,7 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
     annotationGroups = [],
     setSelectedAnchors = () => {},
     actorIdToAuthor,
-    hideInlineComments,
+    hideInlineComments = false,
     setSelectedAnnotationGroupId,
     setHoveredAnnotationGroupId,
     setCommentState,

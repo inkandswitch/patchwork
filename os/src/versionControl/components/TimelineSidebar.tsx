@@ -51,13 +51,14 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { ChangeGrouper } from "../ChangeGrouper";
 import { ChangeGroupingOptions } from "../groupChanges";
 
-const useScrollToBottom = (doc) => {
+const useScrollToBottom = (doc: unknown) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    void doc;  // TODO: JAH I think we're supposed to react to this changing?
     if (scrollerRef.current) {
       scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
     }
-  }, [scrollerRef.current, doc]);
+  }, [doc]);
   return scrollerRef;
 };
 
@@ -74,7 +75,7 @@ type ChangelogSelectionAnchor = {
 };
 
 const useTimelineItems = (
-  handle,
+  handle: DocHandle<HasVersionControlMetadata<unknown, unknown>>,
   options: Omit<
     ChangeGroupingOptions<HasVersionControlMetadata<unknown, unknown>>,
     "markers"
@@ -90,7 +91,7 @@ const useTimelineItems = (
       setItems(grouper.items);
     }
 
-    const listener = (items) => {
+    const listener = (items: TimelineItems<HasVersionControlMetadata<unknown, unknown>>[]) => {
       setItems(items);
     };
 
@@ -99,7 +100,7 @@ const useTimelineItems = (
       grouper.off("change", listener);
       grouper.teardown();
     };
-  }, [handle, options]);
+  }, [handle, options, repo]);
   return items;
 };
 
@@ -111,9 +112,9 @@ export const TimelineSidebar: React.FC<{
   dataType: DataType<unknown, unknown, unknown>;
   docUrl: AutomergeUrl;
   selectedBranch: LegacyBranch;
-  setSelectedBranch: (branch: LegacyBranch) => void;
-  setDocHeads: (heads: Heads) => void;
-  setDiff: (diff: DiffWithProvenance) => void;
+  setSelectedBranch: (branch: LegacyBranch | undefined) => void;
+  setDocHeads: (heads: Heads | undefined) => void;
+  setDiff: (diff: DiffWithProvenance | undefined) => void;
 }> = ({
   dataType,
   docUrl,
@@ -127,7 +128,7 @@ export const TimelineSidebar: React.FC<{
   const [mainDoc] = useDocument<HasVersionControlMetadata<unknown, unknown>>(
     doc?.branchMetadata?.source?.url
   );
-  const handle = useHandle<HasVersionControlMetadata<unknown, unknown>>(docUrl);
+  const handle = useHandle<HasVersionControlMetadata<unknown, unknown>>(docUrl)!;  // TODO: JAH strict fix
   const scrollerRef = useScrollToBottom(doc);
   const [showHiddenItems, setShowHiddenItems] = useState(false);
 
@@ -152,12 +153,7 @@ export const TimelineSidebar: React.FC<{
       includePatchInChangeGroup,
       fallbackSummaryForChangeGroup,
     };
-  }, [
-    dataType.id,
-    includeChangeInHistory,
-    includePatchInChangeGroup,
-    fallbackSummaryForChangeGroup,
-  ]);
+  }, [groupChanges, includeChangeInHistory, includePatchInChangeGroup, fallbackSummaryForChangeGroup]);
 
   const changelogItems = useTimelineItems(handle, changeGroupingOptions);
 
@@ -227,7 +223,7 @@ export const TimelineSidebar: React.FC<{
         <div className="flex items-center">
           <div
             className="cursor-pointer text-gray-500 font-semibold underline w-12 flex-shrink-0"
-            onClick={() => setSelectedBranch(null)}
+            onClick={() => setSelectedBranch(undefined)}
           >
             {selectedBranch && (
               <>
@@ -296,7 +292,7 @@ export const TimelineSidebar: React.FC<{
             const selected =
               selection &&
               index >= selection.from.index &&
-              index <= selection.to.index;
+              index <= selection.to.index || false;
 
             const dateChangedFromPrevItem =
               new Date(changelogItems[index - 1]?.time).toDateString() !==
@@ -480,13 +476,13 @@ const useChangelogSelection = function <T>({
   setDocHeads,
 }: {
   items: TimelineItems<T>[];
-  setDiff: (diff: DiffWithProvenance) => void;
-  setDocHeads: (heads: Heads) => void;
+  setDiff: (diff: DiffWithProvenance | undefined) => void;
+  setDocHeads: (heads: Heads | undefined) => void;
 }): {
   // The current selection
   selection: ChangelogSelection;
   // Click handler for the items
-  handleClick: ({ itemId, shiftPressed }) => void;
+  handleClick: ({ itemId, shiftPressed }: { itemId: string, shiftPressed: boolean }) => void;
   // Ref for the container of the items
   itemsContainerRef: React.RefObject<HTMLDivElement>;
   // Callback to clear the selection
@@ -494,7 +490,7 @@ const useChangelogSelection = function <T>({
 } {
   // Internally we track selection using item IDs.
   // Once we return it out of the hook, we'll also tack on numbers, to help out in the view.
-  const [selection, setSelection] = useState<{ from: string; to: string }>(
+  const [selection, setSelection] = useState<{ from: string; to: string } | undefined>(
     undefined
   );
 
@@ -540,7 +536,7 @@ const useChangelogSelection = function <T>({
 
   const itemsContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleClick = ({ itemId, shiftPressed }) => {
+  const handleClick = ({ itemId, shiftPressed }: { itemId: string, shiftPressed: boolean }) => {
     if (!shiftPressed) {
       setSelection({ from: itemId, to: itemId });
       return;

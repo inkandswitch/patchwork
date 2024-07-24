@@ -36,13 +36,13 @@ export const PDFFileViewer = ({
   return <PDFViewer data={binaryData} />;
 };
 
-const useBinaryDataOfDocFile = (doc: FileDoc) => {
+const useBinaryDataOfDocFile = (doc: FileDoc | undefined) => {
   const urlRef = useRef<string>();
-  urlRef.current = doc.content.type === "link" ? doc.content.url : undefined;
+  urlRef.current = doc && doc.content.type === "link" ? doc.content.url : undefined;
 
   const [binaryData, setBinaryData] = useState<Uint8Array>();
 
-  const content = doc.content;
+  const content = doc?.content;
 
   useEffect(() => {
     if (!content) {
@@ -55,7 +55,7 @@ const useBinaryDataOfDocFile = (doc: FileDoc) => {
     }
 
     if (content.type === "link" && urlRef.current) {
-      setBinaryData(null);
+      setBinaryData(undefined);
       fetch(urlRef.current)
         .then((response) => response.arrayBuffer())
         .then((buffer) => {

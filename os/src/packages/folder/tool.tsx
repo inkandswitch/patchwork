@@ -6,7 +6,7 @@ import { useDataType } from "@/datatypes";
 import { useUIStateHandle } from "@/explorer/account";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
-import { Icon } from "@/lib/icons";
+import { Icon, IconType } from "@/lib/icons";
 import { ifLoaded } from "@/doc-reactive";
 import { EditorProps, Tool, useToolsForDataType } from "@/tools";
 import { useAnnotations } from "@/versionControl/annotations";
@@ -122,7 +122,7 @@ export const FolderEntryView = ({
       ) : (
         <>
           <div className="flex gap-2 items-center font-medium mb-1">
-            <Icon type={icon} size={16} />
+            <Icon type={icon as IconType} size={16} />
             <div>{docLink.name}</div>
             <button
               className="text-sm text-gray-500 underline align-bottom cursor-pointer"
@@ -140,7 +140,7 @@ export const FolderEntryView = ({
               <MountOnlyWhenVisible height={"16rem"}>
                 <ErrorBoundary FallbackComponent={ErrorFallback}>
                   <tool.editorComponent
-                    docUrl={cloneOrMainOm?.url}
+                    docUrl={cloneOrMainOm!.url}  // TODO: JAH strict fix
                     mainDocUrl={docLink.url}
                     getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                     {...annotationProps}

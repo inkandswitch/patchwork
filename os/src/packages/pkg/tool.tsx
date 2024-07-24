@@ -23,7 +23,7 @@ export const PackageEditor: React.FC<EditorProps<never, never>> = ({
 
   const mainPath = packageJSON.main.split("/");
 
-  const onChangeSourceCode = (evt) => {
+  const onChangeSourceCode = (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
     changeModuleDoc((doc) => {
       set(doc.fileContents, mainPath, {
         contentType: "application/javascript",

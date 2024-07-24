@@ -1,9 +1,9 @@
+import { getStringCompletion, isLLMActive } from "@/lib/llm";
 import { DocHandle } from "@automerge/automerge-repo";
+import { debounce } from "lodash";
+import { useEffect, useMemo } from "react";
 import { ChangeGroup } from "./groupChanges";
 import { HasChangeGroupSummaries } from "./schema";
-import { getStringCompletion, isLLMActive } from "@/lib/llm";
-import { debounce } from "lodash";
-import { useCallback, useEffect } from "react";
 
 export const populateChangeGroupSummaries = async <
   T extends HasChangeGroupSummaries
@@ -16,7 +16,7 @@ export const populateChangeGroupSummaries = async <
   groups: ChangeGroup<T>[];
   handle: DocHandle<T>;
   force?: boolean;
-  promptForAutoChangeGroupDescription: (args: {
+  promptForAutoChangeGroupDescription?: (args: {
     docBefore: T;
     docAfter: T;
   }) => string;
@@ -32,7 +32,7 @@ export const populateChangeGroupSummaries = async <
   }
 
   for (const [index, group] of groups.entries()) {
-    if (!force && handle.docSync().changeGroupSummaries[group.id]) {
+    if (!force && handle.docSync()!.changeGroupSummaries[group.id]) {
       continue;
     }
     await populateGroupSummary({
@@ -84,14 +84,14 @@ export const useAutoPopulateChangeGroupSummaries = <
   promptForAutoChangeGroupDescription,
 }: {
   changeGroups: ChangeGroup<T>[];
-  handle: DocHandle<T>;
+  handle?: DocHandle<T>;
   msBetween?: number;
-  promptForAutoChangeGroupDescription: (args: {
+  promptForAutoChangeGroupDescription?: (args: {
     docBefore: T;
     docAfter: T;
   }) => string;
 }) => {
-  const debouncedPopulate = useCallback(
+  const debouncedPopulate = useMemo(() =>
     debounce(({ groups, handle, force }) => {
       populateChangeGroupSummaries({
         groups,
@@ -100,7 +100,7 @@ export const useAutoPopulateChangeGroupSummaries = <
         promptForAutoChangeGroupDescription,
       });
     }, msBetween),
-    []
+    [msBetween, promptForAutoChangeGroupDescription]
   );
 
   useEffect(() => {

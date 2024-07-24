@@ -324,7 +324,7 @@ export const Explorer: React.FC = () => {
 
               {/* NOTE: we set the URL as the component key, to force re-mount on URL change.
                 If we want more continuity we could not do this. */}
-              {selectedDocUrl && selectedDoc && currentTool && (
+              {selectedDocUrl && selectedDoc && currentTool && flatDocLinks && (
                 <VersionControlEditor
                   selectedDocLink={selectedDocLink}
                   datatypeId={selectedDocLink?.type}

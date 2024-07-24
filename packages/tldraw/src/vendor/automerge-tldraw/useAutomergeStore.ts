@@ -14,6 +14,8 @@ import {
   react,
   TLStoreSnapshot,
   sortById,
+  RecordId,
+  UnknownRecord,
 } from "@tldraw/tldraw";
 import { useEffect, useState } from "react";
 import { DocHandle, DocHandleChangePayload } from "@automerge/automerge-repo";
@@ -158,8 +160,8 @@ export function useAutomergePresence({
       // @ts-expect-error tldraw types need update
       .get()
       .sort(sortById)
-      .map((record) => record.id)
-      .filter((id) => !toPut.find((record) => record.id === id));
+      .map((record: TLRecord) => record.id)
+      .filter((id: RecordId<UnknownRecord>) => !toPut.find((record) => record.id === id));
 
     if (toRemove.length) innerStore.remove(toRemove);
     if (toPut.length) innerStore.put(toPut);

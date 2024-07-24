@@ -7,6 +7,7 @@ import {
   DecodedChangeWithMetadata,
   getTimelineItems,
   getMarkersForDoc,
+  HeadsMarker,
 } from "./groupChanges";
 import { HasVersionControlMetadata } from "./schema";
 import { next as A } from "@automerge/automerge";
@@ -58,7 +59,7 @@ export class ChangeGrouper<
     }
 
     // Listen for changes to the doc and update the items array as needed.
-    let cachedMarkers;
+    let cachedMarkers: HeadsMarker<D>[];
     handle.on("change", () => {
       const markers = getMarkersForDoc(this.handle, this.repo);
       if (!isEqual(markers, cachedMarkers)) {

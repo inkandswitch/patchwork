@@ -11,7 +11,7 @@ type Package = {
   sourceDocUrl?: AutomergeUrl;
 };
 
-const NO_PACKAGES = [];
+const NO_PACKAGES: Package[] = [];
 
 export const usePackageModulesInRootFolder = (): Package[] => {
   // we can do an return before the hooks because this condition is fixed at build time
@@ -19,7 +19,8 @@ export const usePackageModulesInRootFolder = (): Package[] => {
     return NO_PACKAGES; // return same array so hooks that depend on usePackageModulesInRootFolder don't create an infinite loops
   }
 
-  const { flatDocLinks } = useRootFolderDocWithChildren();
+  const folderDocWithMetadata = useRootFolderDocWithChildren();
+  const flatDocLinks = folderDocWithMetadata?.flatDocLinks;
   const [modules, setModules] = useState<Package[]>([]);
 
   const packageDocLinks = useMemo(

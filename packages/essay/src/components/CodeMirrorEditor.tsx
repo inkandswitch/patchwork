@@ -53,7 +53,7 @@ export function MarkdownDocEditor({
   annotations = [],  // TODO: JAH strict fix
 }: MarkdownDocEditorProps) {
   const [container, setContainer] = useState<HTMLElement | null>(null);
-  const editorRoot = useRef<EditorView | null>(null);
+  const editorRoot = useRef<EditorView | undefined>(undefined);
   const [editorCrashed, setEditorCrashed] = useState<boolean>(false);
   const markdownPlugins = useMarkdownPlugins({ docWithAssetsHandle: handle });
 

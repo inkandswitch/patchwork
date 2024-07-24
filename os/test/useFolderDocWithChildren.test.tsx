@@ -1,10 +1,11 @@
-import { AutomergeUrl, PeerId, Repo } from "@automerge/automerge-repo";
-import { DummyStorageAdapter } from "@automerge/automerge-repo/helpers/DummyStorageAdapter.js";
-import { render, waitFor, act } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import { RepoContext } from "@automerge/automerge-repo-react-hooks";
-import { useFolderDocWithChildren } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { FolderDocWithChildren } from "@/packages/folder";
+import { useFolderDocWithChildren } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { AutomergeUrl, PeerId, Repo } from "@automerge/automerge-repo";
+import { RepoContext } from "@automerge/automerge-repo-react-hooks";
+import { DummyStorageAdapter } from "@automerge/automerge-repo/helpers/DummyStorageAdapter.js";
+import { act, render, waitFor } from "@testing-library/react";
+import { ReactNode } from "react";
+import { describe, expect, it, vi } from "vitest";
 
 describe("useFolderDocWithChildren", () => {
   const setup = () => {
@@ -14,7 +15,7 @@ describe("useFolderDocWithChildren", () => {
       storage: new DummyStorageAdapter(),
     });
 
-    const wrapper = ({ children }) => {
+    const wrapper = ({ children }: { children: ReactNode }) => {
       return (
         <RepoContext.Provider value={repo}>{children}</RepoContext.Provider>
       );
@@ -36,7 +37,7 @@ describe("useFolderDocWithChildren", () => {
     rootFolderUrl: AutomergeUrl;
     onDoc: (arg: {
       doc: FolderDocWithChildren;
-    }) => void;
+    } | undefined) => void;
   }) => {
     const doc = useFolderDocWithChildren(rootFolderUrl);
     onDoc(doc);
