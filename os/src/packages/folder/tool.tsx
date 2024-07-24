@@ -13,6 +13,8 @@ import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { useAnnotations } from "@/versionControl/annotations";
 import { diffWithProvenance } from "@/versionControl/utils";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
+import { ErrorFallback } from "@/explorer/components/ErrorFallback";
+import { ErrorBoundary } from "react-error-boundary";
 
 export const FolderViewer: React.FC<EditorProps<never, never>> = ({
   docUrl,
@@ -128,12 +130,15 @@ export const FolderEntryView = ({
             {!tool && <div>No editor available</div>}
             {tool &&
               docLink.type !== "folder" &&
-              React.createElement(tool.editorComponent, {
-                docUrl: cloneOrMainOm?.url,
-                mainDocUrl: docLink.url,
-                getFakeDocPathForDocUrl,
-                ...annotationProps,
-              })}
+              <ErrorBoundary FallbackComponent={ErrorFallback}>
+                <tool.editorComponent
+                  docUrl={cloneOrMainOm?.url}
+                  mainDocUrl={docLink.url}
+                  getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+                  {...annotationProps}
+                />
+              </ErrorBoundary>
+            }
             {docLink.type === "folder" && (
               <div className="bg-gray-50 justify-center items-center flex h-full">
                 Click "open" to see nested folder contents
