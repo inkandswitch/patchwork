@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@types/command-line-args": "^5.2.3",
+    "@types/mime-types": "^2.1.4",
     "@types/node": "^20.14.12"
   }
 }

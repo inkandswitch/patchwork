@@ -307,6 +307,7 @@ export const ensureMetadataHandleIsBranchScope = (
 ) => {
   handle.change((d) => {
     if (!d.isBranchScope) {
+      // @ts-expect-error TS may or may not be smart enough to figure this one out
       d.isBranchScope = true;
       // @ts-expect-error TS not smart enough to figure this one out
       d.branches = [];
@@ -377,6 +378,7 @@ const pushFile = async ({
 
     if (isBinary) {
       const doc = await handle.doc();
+      if (!doc) { throw new Error(`Doc missing: ${handle.url}`); }
       const hash = sha256(fileContents);
       if (!(doc.content.type === "link" && doc.content.url.endsWith(hash))) {
         didChange = true;

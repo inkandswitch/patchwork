@@ -67,13 +67,13 @@ const ENDPOINT_URL = "https://file-server-txxa.onrender.com/file";
 
 export const uploadFile = async (
   fileBuffer: Buffer,
-  mimeType: string
+  mimeType: string | false
 ): Promise<string> => {
   try {
     const response = await fetch(ENDPOINT_URL, {
       method: "POST",
       headers: {
-        "Content-Type": mimeType,
+        "Content-Type": mimeType || "application/octet-stream",
       },
       body: fileBuffer,
     });
