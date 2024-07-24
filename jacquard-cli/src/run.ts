@@ -35,7 +35,7 @@ export async function run(
     outputs = [],
     command,
   }: CommandLineArgs,
-  wait = true,
+  wait = true
 ) {
   if (!command) {
     console.error("No command provided");
@@ -44,13 +44,13 @@ export async function run(
 
   // hack to make latex subset of run
   const commandSplit = command.split(" ");
-  if (commandSplit.length === 2 && commandSplit[0] === 'latex') {
-    return await latex(repo, commandSplit[1], { dir, projectFolderUrl, syncServerStorageId });
+  if (commandSplit.length === 2 && commandSplit[0] === "latex") {
+    return await latex(repo, commandSplit[1], {
+      dir,
+      projectFolderUrl,
+      syncServerStorageId,
+    });
   }
-
-  // pull before to ensure we run on latest files
-  // todo: find better approach
-  await pull(repo, { dir, projectFolderUrl });
 
   const timestampStart = Date.now();
 
