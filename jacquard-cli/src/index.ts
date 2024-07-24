@@ -140,7 +140,7 @@ const main = async () => {
       break;
 
     case "pull":
-      await pull(repo, { dir, projectFolderUrl });
+      await pull(repo, { dir, projectFolderUrl, syncServerStorageId });
       break;
 
     case "run": {
@@ -154,12 +154,13 @@ const main = async () => {
           "_unknown" in options
             ? (options._unknown as string[]).join(" ")
             : command,
+        syncServerStorageId,
       });
       break;
     }
 
     case "refresh": {
-      await refresh(repo, { dir, projectFolderUrl });
+      await refresh(repo, { dir, projectFolderUrl, syncServerStorageId });
       break;
     }
 
