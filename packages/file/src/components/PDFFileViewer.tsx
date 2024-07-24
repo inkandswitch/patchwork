@@ -27,7 +27,7 @@ export const PDFFileViewer = ({
   const [_doc] = useDocument<PDFFileDoc>(docUrl);
 
   const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
-  const binaryData = doc && useBinaryDataOfDocFile(doc);
+  const binaryData = useBinaryDataOfDocFile(doc);
 
   if (!doc || !binaryData) {
     return;
@@ -42,18 +42,24 @@ const useBinaryDataOfDocFile = (doc: FileDoc) => {
 
   const [binaryData, setBinaryData] = useState<Uint8Array>();
 
+  const content = doc.content;
+
   useEffect(() => {
-    if (doc.content.type === "binary") {
-      setBinaryData(doc.content.value);
+    if (!content) {
       return;
     }
 
-    if (doc.content.type === "link" && urlRef.current) {
+    if (content.type === "binary") {
+      setBinaryData(content.value);
+      return;
+    }
+
+    if (content.type === "link" && urlRef.current) {
       setBinaryData(null);
       fetch(urlRef.current)
         .then((response) => response.arrayBuffer())
         .then((buffer) => {
-          if ((doc.content as LinkedFileContent).url === urlRef.current) {
+          if ((content as LinkedFileContent).url === urlRef.current) {
             setBinaryData(new Uint8Array(buffer));
           }
         })
@@ -61,7 +67,7 @@ const useBinaryDataOfDocFile = (doc: FileDoc) => {
           console.error("Error fetching binary data:", error);
         });
     }
-  }, [doc.content]);
+  }, [content]);
 
   return binaryData;
 };
