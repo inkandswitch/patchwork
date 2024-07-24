@@ -27,5 +27,4 @@
     // "noFallthroughCasesInSwitch": true
   },
   "include": ["os", "packages", "jacquard-cli"],
-  "exclude": ["os/src/vendor"]
 }

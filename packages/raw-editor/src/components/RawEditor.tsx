@@ -106,17 +106,15 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
   }
 
   return (
-    <div className={`${styles.rawEditor}`}>
-      <div className="p-2 h-full overflow-auto ">
-        <ReactJson
-          collapsed={3}
-          src={doc}
-          onEdit={onEdit}
-          onAdd={onAdd}
-          onDelete={onDelete}
-          onSelect={onSelect}
-        />
-      </div>
+    <div className={`${styles.rawEditor} p-2 h-full overflow-auto`}>
+      <ReactJson
+        collapsed={3}
+        src={doc}
+        onEdit={onEdit}
+        onAdd={onAdd}
+        onDelete={onDelete}
+        onSelect={onSelect}
+      />
     </div>
   );
 };

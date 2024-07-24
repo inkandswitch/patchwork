@@ -15,8 +15,9 @@ import { diffWithProvenance } from "@/versionControl/utils";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { ErrorBoundary } from "react-error-boundary";
+import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
 
-export const FolderViewer: React.FC<EditorProps<never, never>> = ({
+export const FolderViewerWithEmbeds: React.FC<EditorProps<never, never>> = ({
   docUrl,
   docHeads,
   getFakeDocPathForDocUrl,
@@ -107,7 +108,7 @@ export const FolderEntryView = ({
   }
 
   return (
-    <div>
+    <div className="h-72">
       {!tool ? (
         <div className="flex gap-2 items-center font-medium mb-1">
           Unknown type: {docLink.type}
@@ -126,19 +127,21 @@ export const FolderEntryView = ({
               Open
             </button>
           </div>
-          <div className="h-72 border border-gray-300">
+
+          <div className="h-64 border border-gray-300">
             {!tool && <div>No editor available</div>}
-            {tool &&
-              docLink.type !== "folder" &&
-              <ErrorBoundary FallbackComponent={ErrorFallback}>
-                <tool.editorComponent
-                  docUrl={cloneOrMainOm?.url}
-                  mainDocUrl={docLink.url}
-                  getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-                  {...annotationProps}
-                />
-              </ErrorBoundary>
-            }
+            {tool && docLink.type !== "folder" && (
+              <MountOnlyWhenVisible height={"16rem"}>
+                <ErrorBoundary FallbackComponent={ErrorFallback}>
+                  <tool.editorComponent
+                    docUrl={cloneOrMainOm?.url}
+                    mainDocUrl={docLink.url}
+                    getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+                    {...annotationProps}
+                  />
+                </ErrorBoundary>
+              </MountOnlyWhenVisible>
+            )}
             {docLink.type === "folder" && (
               <div className="bg-gray-50 justify-center items-center flex h-full">
                 Click "open" to see nested folder contents
@@ -151,10 +154,10 @@ export const FolderEntryView = ({
   );
 };
 
-export const folderViewerTool: Tool = {
+export const folderViewerWithEmbedsTool: Tool = {
   type: "patchwork:tool",
-  id: "folder",
-  name: "Folder",
-  editorComponent: FolderViewer,
+  id: "folder-embeds",
+  name: "Embeds",
+  editorComponent: FolderViewerWithEmbeds,
   supportedDataTypes: ["folder"],
 };

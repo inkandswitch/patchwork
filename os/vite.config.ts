@@ -7,6 +7,61 @@ import path from "path";
 import { Plugin, defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
+import { build } from "esbuild";
+
+const SERVICE_WORKER_MODULE_ID = "/service-worker.js";
+const SERVICE_WORKER_PATH = path.join(import.meta.dirname, "service-worker.js");
+
+/**
+ * This plugin builds the service worker in service-worker.js using esbuild
+ *
+ * The reason this is necessary is that Firefox does not support ES modules in
+ * service workers so we need to build an IIFE script, but we don't want to
+ * use IIFE everywhere else.
+ */
+function swPlugin(): Plugin {
+  return {
+    name: "service-worker-dev",
+    enforce: "pre",
+    apply: "serve",
+    handleHotUpdate(ctx) {
+      if (ctx.file === SERVICE_WORKER_PATH) {
+        ctx.server.hot.send({
+          type: "full-reload",
+        });
+        const module = ctx.server.moduleGraph.getModuleById(
+          SERVICE_WORKER_MODULE_ID
+        );
+        if (module != null) {
+          ctx.server.moduleGraph.invalidateModule(module);
+        }
+        return [];
+      }
+    },
+    async resolveId(id) {
+      if (id === SERVICE_WORKER_MODULE_ID) {
+        return SERVICE_WORKER_MODULE_ID;
+      }
+      if (id === SERVICE_WORKER_PATH) {
+        return SERVICE_WORKER_PATH;
+      }
+      return null;
+    },
+    async load(id) {
+      if (id === SERVICE_WORKER_MODULE_ID || id === SERVICE_WORKER_PATH) {
+        const result = await build({
+          absWorkingDir: import.meta.dirname,
+          entryPoints: ["service-worker.js"],
+          bundle: true,
+          format: "iife",
+          write: false,
+        });
+        return result.outputFiles[0].text;
+      }
+      return null;
+    },
+  };
+}
 
 // Dependencies that are shared with dynamically loaded packages
 // actual url will be resolved by generateImportMapPlugin
@@ -33,7 +88,7 @@ const EXTERNAL_DEPENDENCIES = SHARED_DEPENDENCIES.concat(
 );
 
 // Generates an import map for the external dependencies
-const generateImportMapPlugin: Plugin = {
+const generateImportMapPlugin = (): Plugin => ({
   name: "shared-deps-import-map",
   async transformIndexHtml(html, { server }) {
     // do nothing in dev mode
@@ -71,12 +126,18 @@ const generateImportMapPlugin: Plugin = {
       ],
     };
   },
-};
+});
 
 export default defineConfig({
   base: "./",
 
-  plugins: [topLevelAwait(), react(), generateImportMapPlugin],
+  plugins: [
+    topLevelAwait(),
+    wasm(),
+    react(),
+    generateImportMapPlugin(),
+    swPlugin(),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -88,15 +149,7 @@ export default defineConfig({
   },
 
   optimizeDeps: {
-    // This is necessary because otherwise `vite dev` includes two separate
-    // versions of the JS wrapper. This causes problems because the JS
-    // wrapper has a module level variable to track JS side heap
-    // allocations, and initializing this twice causes horrible breakage
-    exclude: [
-      "@automerge/automerge-wasm",
-      "@automerge/automerge-wasm/bundler/bindgen_bg.wasm",
-      "@syntect/wasm",
-    ],
+    exclude: ["@syntect/wasm"],
   },
 
   worker: {

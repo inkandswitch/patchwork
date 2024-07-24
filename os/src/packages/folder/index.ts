@@ -5,4 +5,4 @@ export {
   type DocLink,
   type DocLinkWithFolderPath,
 } from "./datatype";
-export { folderViewerTool as tool } from "./tool";
+export { folderViewerWithEmbedsTool as tool } from "./tool";

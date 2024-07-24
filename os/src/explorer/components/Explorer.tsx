@@ -100,7 +100,7 @@ export const Explorer: React.FC = () => {
     selectedTool && selectedDataType &&
     (selectedTool.supportedDataTypes === "*" ||
       selectedTool.supportedDataTypes.some(
-        (supportedDataType) => supportedDataType === selectedDataType.id
+        (supportedDataType) => supportedDataType === selectedDataType?.id
       ))
       ? selectedTool
       : toolModules[0];

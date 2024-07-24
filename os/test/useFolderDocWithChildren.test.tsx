@@ -1,5 +1,5 @@
 import { AutomergeUrl, PeerId, Repo } from "@automerge/automerge-repo";
-import { DummyStorageAdapter } from "@automerge/automerge-repo/test/helpers/DummyStorageAdapter";
+import { DummyStorageAdapter } from "@automerge/automerge-repo/helpers/DummyStorageAdapter.js";
 import { render, waitFor, act } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
@@ -65,19 +65,21 @@ describe("useFolderDocWithChildren", () => {
       wrapper,
     });
     await waitFor(() =>
-      expect(onDoc).toHaveBeenCalledWith({
-        doc: {
-          title: "Top Level Folder",
-          docs: [
-            {
-              name: "Item 1",
-              type: "content",
-              url: leaf1.url,
-            },
-          ],
-        },
-        status: "loaded",
-      })
+      expect(onDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doc: {
+            title: "Top Level Folder",
+            docs: [
+              {
+                name: "Item 1",
+                type: "content",
+                url: leaf1.url,
+              },
+            ],
+          },
+          status: "loaded",
+        })
+      )
     );
   });
 
@@ -104,19 +106,21 @@ describe("useFolderDocWithChildren", () => {
       wrapper,
     });
     await waitFor(() =>
-      expect(onDoc).toHaveBeenCalledWith({
-        doc: {
-          title: "Top Level Folder",
-          docs: [
-            {
-              name: "Item 1",
-              type: "content",
-              url: leaf1.url,
-            },
-          ],
-        },
-        status: "loaded",
-      })
+      expect(onDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doc: {
+            title: "Top Level Folder",
+            docs: [
+              {
+                name: "Item 1",
+                type: "content",
+                url: leaf1.url,
+              },
+            ],
+          },
+          status: "loaded",
+        })
+      )
     );
 
     act(() => {
@@ -130,24 +134,26 @@ describe("useFolderDocWithChildren", () => {
     });
 
     await waitFor(() =>
-      expect(onDoc).toHaveBeenCalledWith({
-        doc: {
-          title: "Top Level Folder",
-          docs: [
-            {
-              name: "Item 1",
-              type: "content",
-              url: leaf1.url,
-            },
-            {
-              name: "Item 2",
-              type: "content",
-              url: leaf2.url,
-            },
-          ],
-        },
-        status: "loaded",
-      })
+      expect(onDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doc: {
+            title: "Top Level Folder",
+            docs: [
+              {
+                name: "Item 1",
+                type: "content",
+                url: leaf1.url,
+              },
+              {
+                name: "Item 2",
+                type: "content",
+                url: leaf2.url,
+              },
+            ],
+          },
+          status: "loaded",
+        })
+      )
     );
   });
 
@@ -173,19 +179,21 @@ describe("useFolderDocWithChildren", () => {
       wrapper,
     });
     await waitFor(() =>
-      expect(onDoc).toHaveBeenCalledWith({
-        doc: {
-          title: "Top Level Folder",
-          docs: [
-            {
-              name: "Item 1",
-              type: "content",
-              url: leaf1.url,
-            },
-          ],
-        },
-        status: "loaded",
-      })
+      expect(onDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doc: {
+            title: "Top Level Folder",
+            docs: [
+              {
+                name: "Item 1",
+                type: "content",
+                url: leaf1.url,
+              },
+            ],
+          },
+          status: "loaded",
+        })
+      )
     );
 
     const subFolder2 = repo.create({
@@ -211,56 +219,60 @@ describe("useFolderDocWithChildren", () => {
 
     // First we just see the link to the new folder
     await waitFor(() =>
-      expect(onDoc).toHaveBeenCalledWith({
-        doc: {
-          title: "Top Level Folder",
-          docs: [
-            {
-              name: "Item 1",
-              type: "content",
-              url: leaf1.url,
-            },
-            {
-              name: "Sub Folder 2",
-              type: "folder",
-              url: subFolder2.url,
-            },
-          ],
-        },
-        status: "loading",
-      })
+      expect(onDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doc: {
+            title: "Top Level Folder",
+            docs: [
+              {
+                name: "Item 1",
+                type: "content",
+                url: leaf1.url,
+              },
+              {
+                name: "Sub Folder 2",
+                type: "folder",
+                url: subFolder2.url,
+              },
+            ],
+          },
+          status: "loading",
+        })
+      )
     );
 
     // Then we see its contents loaded
     await waitFor(() =>
-      expect(onDoc).toHaveBeenCalledWith({
-        doc: {
-          title: "Top Level Folder",
-          docs: [
-            {
-              name: "Item 1",
-              type: "content",
-              url: leaf1.url,
-            },
-            {
-              name: "Sub Folder 2",
-              type: "folder",
-              url: subFolder2.url,
-              folderContents: {
-                title: "Sub Folder 2",
-                docs: [
-                  {
-                    name: "Item 1",
-                    type: "content",
-                    url: leaf1.url,
-                  },
-                ],
+      expect(onDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doc: {
+            title: "Top Level Folder",
+            docs: [
+              {
+                name: "Item 1",
+                type: "content",
+                url: leaf1.url,
               },
-            },
-          ],
-        },
-        status: "loaded",
-      })
+              {
+                name: "Sub Folder 2",
+                type: "folder",
+                url: subFolder2.url,
+                folderContents: {
+                  title: "Sub Folder 2",
+                  docs: [
+                    {
+                      name: "Item 1",
+                      type: "content",
+                      url: leaf1.url,
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+          status: "loaded",
+        })
+      )
     );
   });
 
@@ -305,56 +317,60 @@ describe("useFolderDocWithChildren", () => {
 
     // At first, the sub folder is just a link, without contents loaded yet
     await waitFor(() =>
-      expect(onDoc).toHaveBeenCalledWith({
-        doc: {
-          title: "Top Level Folder",
-          docs: [
-            {
-              name: "Sub Folder",
-              type: "folder",
-              url: subFolderHandle.url,
-            },
-            {
-              name: "Item 2",
-              type: "content",
-              url: leaf2.url,
-            },
-          ],
-        },
-        status: "loading",
-      })
+      expect(onDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doc: {
+            title: "Top Level Folder",
+            docs: [
+              {
+                name: "Sub Folder",
+                type: "folder",
+                url: subFolderHandle.url,
+              },
+              {
+                name: "Item 2",
+                type: "content",
+                url: leaf2.url,
+              },
+            ],
+          },
+          status: "loading",
+        })
+      )
     );
 
     // Then once the sub folder loads, its contents are nested inside
     await waitFor(() =>
-      expect(onDoc).toHaveBeenCalledWith({
-        doc: {
-          title: "Top Level Folder",
-          docs: [
-            {
-              name: "Sub Folder",
-              type: "folder",
-              url: subFolderHandle.url,
-              folderContents: {
-                title: "Sub Folder",
-                docs: [
-                  {
-                    name: "Item 1",
-                    type: "content",
-                    url: leaf1.url,
-                  },
-                ],
+      expect(onDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doc: {
+            title: "Top Level Folder",
+            docs: [
+              {
+                name: "Sub Folder",
+                type: "folder",
+                url: subFolderHandle.url,
+                folderContents: {
+                  title: "Sub Folder",
+                  docs: [
+                    {
+                      name: "Item 1",
+                      type: "content",
+                      url: leaf1.url,
+                    },
+                  ],
+                },
               },
-            },
-            {
-              name: "Item 2",
-              type: "content",
-              url: leaf2.url,
-            },
-          ],
-        },
-        status: "loaded",
-      })
+              {
+                name: "Item 2",
+                type: "content",
+                url: leaf2.url,
+              },
+            ],
+          },
+          status: "loaded",
+        })
+      )
     );
   });
 
@@ -416,108 +432,114 @@ describe("useFolderDocWithChildren", () => {
 
     // At first, the sub folder is just a link, without contents loaded yet
     await waitFor(() =>
-      expect(onDoc).toHaveBeenCalledWith({
-        doc: {
-          title: "Top Level Folder",
-          docs: [
-            {
-              name: "Sub Folder",
-              type: "folder",
-              url: subFolderHandle.url,
-            },
-            {
-              name: "Item 2",
-              type: "content",
-              url: leaf2.url,
-            },
-          ],
-        },
-        status: "loading",
-      })
+      expect(onDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doc: {
+            title: "Top Level Folder",
+            docs: [
+              {
+                name: "Sub Folder",
+                type: "folder",
+                url: subFolderHandle.url,
+              },
+              {
+                name: "Item 2",
+                type: "content",
+                url: leaf2.url,
+              },
+            ],
+          },
+          status: "loading",
+        })
+      )
     );
 
     // Then once the sub folder loads, its contents are nested inside
     await waitFor(() =>
-      expect(onDoc).toHaveBeenCalledWith({
-        doc: {
-          title: "Top Level Folder",
-          docs: [
-            {
-              name: "Sub Folder",
-              type: "folder",
-              url: subFolderHandle.url,
-              folderContents: {
-                title: "Sub Folder",
-                docs: [
-                  {
-                    name: "Item 1",
-                    type: "content",
-                    url: leaf1.url,
-                  },
-                  {
-                    name: "Sub Sub Folder",
-                    type: "folder",
-                    url: subsubFolderHandle.url,
-                  },
-                ],
+      expect(onDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doc: {
+            title: "Top Level Folder",
+            docs: [
+              {
+                name: "Sub Folder",
+                type: "folder",
+                url: subFolderHandle.url,
+                folderContents: {
+                  title: "Sub Folder",
+                  docs: [
+                    {
+                      name: "Item 1",
+                      type: "content",
+                      url: leaf1.url,
+                    },
+                    {
+                      name: "Sub Sub Folder",
+                      type: "folder",
+                      url: subsubFolderHandle.url,
+                    },
+                  ],
+                },
               },
-            },
-            {
-              name: "Item 2",
-              type: "content",
-              url: leaf2.url,
-            },
-          ],
-        },
-        status: "loading",
-      })
+              {
+                name: "Item 2",
+                type: "content",
+                url: leaf2.url,
+              },
+            ],
+          },
+          status: "loading",
+        })
+      )
     );
 
     // Finally we load all the way down the tree
     await waitFor(() =>
-      expect(onDoc).toHaveBeenCalledWith({
-        doc: {
-          title: "Top Level Folder",
-          docs: [
-            {
-              name: "Sub Folder",
-              type: "folder",
-              url: subFolderHandle.url,
-              folderContents: {
-                title: "Sub Folder",
-                docs: [
-                  {
-                    name: "Item 1",
-                    type: "content",
-                    url: leaf1.url,
-                  },
-                  {
-                    name: "Sub Sub Folder",
-                    type: "folder",
-                    url: subsubFolderHandle.url,
-                    folderContents: {
-                      title: "Sub Sub Folder",
-                      docs: [
-                        {
-                          name: "Item 3",
-                          type: "content",
-                          url: leaf3.url,
-                        },
-                      ],
+      expect(onDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doc: {
+            title: "Top Level Folder",
+            docs: [
+              {
+                name: "Sub Folder",
+                type: "folder",
+                url: subFolderHandle.url,
+                folderContents: {
+                  title: "Sub Folder",
+                  docs: [
+                    {
+                      name: "Item 1",
+                      type: "content",
+                      url: leaf1.url,
                     },
-                  },
-                ],
+                    {
+                      name: "Sub Sub Folder",
+                      type: "folder",
+                      url: subsubFolderHandle.url,
+                      folderContents: {
+                        title: "Sub Sub Folder",
+                        docs: [
+                          {
+                            name: "Item 3",
+                            type: "content",
+                            url: leaf3.url,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
               },
-            },
-            {
-              name: "Item 2",
-              type: "content",
-              url: leaf2.url,
-            },
-          ],
-        },
-        status: "loaded",
-      })
+              {
+                name: "Item 2",
+                type: "content",
+                url: leaf2.url,
+              },
+            ],
+          },
+          status: "loaded",
+        })
+      )
     );
   });
 });

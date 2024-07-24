@@ -11,15 +11,15 @@
   },
   "author": "Ink & Switch",
   "dependencies": {
-    "@automerge/automerge": "^2.2.2",
-    "@automerge/automerge-repo": "^1.1.12",
-    "@automerge/automerge-repo-network-websocket": "^1.1.12",
+    "@automerge/automerge": "^2.2.3",
+    "@automerge/automerge-repo": "^1.2.1",
+    "@automerge/automerge-repo-network-websocket": "^1.2.1",
     "command-line-args": "^5.2.1",
-    "isbinaryfile": "^5.0.0",
+    "isbinaryfile": "^5.0.2",
     "mime-types": "^2.1.35"
   },
   "devDependencies": {
     "@types/command-line-args": "^5.2.3",
-    "@types/node": "^20.14.9"
+    "@types/node": "^20.14.12"
   }
 }

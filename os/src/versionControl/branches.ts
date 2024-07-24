@@ -8,7 +8,8 @@ import {
 } from "./schema";
 import { getStringCompletion } from "@/lib/llm";
 import { MarkdownDoc } from "../../../packages/essay/src";
-import { Hash } from "@automerge/automerge-wasm";
+
+type Hash = string;
 import {
   DataType,
   DocCloneMap,

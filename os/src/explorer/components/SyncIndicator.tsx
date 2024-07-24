@@ -4,22 +4,55 @@ import { getRelativeTimeString } from "@/lib/dates";
 import { next as A, Heads } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, StorageId } from "@automerge/automerge-repo";
 import { useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
+import { Button } from "@/shadcn/ui/button";
 import { useMachine } from "@xstate/react";
-import { WifiIcon, WifiOffIcon } from "lucide-react";
+import { WifiIcon, WifiOffIcon, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createMachine, raise, stateIn } from "xstate";
 
-export const SyncIndicator = ({ docUrl }: { docUrl: AutomergeUrl }) => {
+export const AUTOMERGE_SYNC_SERVER_STORAGE_ID = (import.meta.env
+  ?.VITE_SYNC_SERVER_STORAGE_ID ??
+  "3760df37-a4c6-4f66-9ecd-732039a9385d") as StorageId;
+
+export const JACQUARD_SYNC_SERVER_STORAGE_ID =
+  "8EQu4Pnz70bYtynRVIVcNciTTarwODfg" as StorageId;
+
+export const BACKUP_SYNC = localStorage.getItem("BACKUP_SYNC");
+
+export const SyncIndicator = ({
+  docUrl,
+  storageId,
+  name,
+}: {
+  docUrl: AutomergeUrl;
+  storageId?: StorageId;
+  name?: string;
+}) => {
   const handle = useHandle(docUrl);
   if (!handle) {
     return null;
   }
-  return <SyncIndicatorInner key={handle.url} handle={handle} />;
+  return (
+    <SyncIndicatorInner
+      key={handle.url}
+      handle={handle}
+      storageId={storageId}
+      name={name}
+    />
+  );
 };
 
 // NOTE: this sync indicator component does *not* support changing the handle between renders.
 // If you want to change the handle, you should re-mount the component.
-const SyncIndicatorInner = ({ handle }: { handle: DocHandle<unknown> }) => {
+const SyncIndicatorInner = ({
+  handle,
+  storageId = AUTOMERGE_SYNC_SERVER_STORAGE_ID,
+  name,
+}: {
+  handle: DocHandle<unknown>;
+  storageId?: StorageId;
+  name?: string;
+}) => {
   const {
     lastSyncUpdate,
     isInternetConnected,
@@ -28,8 +61,8 @@ const SyncIndicatorInner = ({ handle }: { handle: DocHandle<unknown> }) => {
     syncServerResponseError,
     syncServerHeads,
     ownHeads,
-  } = useSyncIndicatorState(handle);
-
+  } = useSyncIndicatorState(handle, storageId);
+  const repo = useRepo();
   const isSynced = syncState === SyncState.InSync;
 
   const prevHandle = useRef<DocHandle<unknown> | undefined>(undefined);
@@ -47,8 +80,59 @@ const SyncIndicatorInner = ({ handle }: { handle: DocHandle<unknown> }) => {
     prevHandle.current = handle;
   }, [handle]);
 
+  const onCopySyncState = async () => {
+    if (repo.peers.length !== 1) {
+      throw new Error("tab is connected to multiple peers");
+    }
+
+    const ownStorageId = await repo.storageId();
+
+    const ownSyncState = await repo.storageSubsystem.loadSyncState(
+      handle.documentId,
+      ownStorageId
+    );
+
+    const syncServerSyncState = await repo.storageSubsystem.loadSyncState(
+      handle.documentId,
+      storageId
+    );
+
+    const data = {
+      syncServerHeads,
+      self: {
+        storageId: ownStorageId,
+        heads: ownHeads,
+        syncState: ownSyncState,
+      },
+      syncServer: {
+        name,
+        heads: syncServerHeads,
+        storageId,
+        syncState: syncServerSyncState,
+      },
+    };
+
+    navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(
+      () => {
+        console.log("Copied sync state to clipboard", data);
+      },
+      (err) => {
+        console.error("Failed to copy sync state:", err);
+      }
+    );
+  };
+
   const headsView = (
-    <div className="mt-2 pt-2 border-t border-gray-300">
+    <div className="mt-2 pt-2 border-t border-gray-300 relative">
+      {name && (
+        <div className="whitespace-nowrap flex">
+          <dt className="font-bold inline mr-1">Name:</dt>
+          <dd className="inline text-ellipsis flex-shrink overflow-hidden min-w-0">
+            {name}
+          </dd>
+        </div>
+      )}
+
       <div className="whitespace-nowrap flex">
         <dt className="font-bold inline mr-1">Server heads:</dt>
         <dd className="inline text-ellipsis flex-shrink overflow-hidden min-w-0">
@@ -62,6 +146,17 @@ const SyncIndicatorInner = ({ handle }: { handle: DocHandle<unknown> }) => {
         <dd className="inline text-ellipsis flex-shrink overflow-hidden min-w-0">
           {JSON.stringify((ownHeads ?? []).map((part) => part.slice(0, 4)))}
         </dd>
+      </div>
+
+      <div className="absolute right-0 top-2 flex items-center justify-center">
+        <Button
+          variant="ghost"
+          className="w-full"
+          size="sm"
+          onClick={onCopySyncState}
+        >
+          <Copy size={14} />
+        </Button>
       </div>
     </div>
   );
@@ -201,9 +296,6 @@ const SyncIndicatorInner = ({ handle }: { handle: DocHandle<unknown> }) => {
   }
 };
 
-const SYNC_SERVER_STORAGE_ID = (import.meta.env?.VITE_SYNC_SERVER_STORAGE_ID ??
-  "3760df37-a4c6-4f66-9ecd-732039a9385d") as StorageId;
-
 enum SyncState {
   InSync,
   OutOfSync,
@@ -220,14 +312,24 @@ interface SyncIndicatorState {
   syncServerResponseError: boolean;
 }
 
-function useSyncIndicatorState(handle: DocHandle<unknown>): SyncIndicatorState {
+function useSyncIndicatorState(
+  handle: DocHandle<unknown>,
+  storageId: StorageId
+): SyncIndicatorState {
   const repo = useRepo();
   const [lastSyncUpdate, setLastSyncUpdate] = useState<number | undefined>(); // todo: should load that from persisted sync state
   const [syncServerHeads, setSyncServerHeads] = useState<A.Heads | undefined>();
   const [ownHeads, setOwnHeads] = useState<A.Heads | undefined>();
 
   useEffect(() => {
-    repo.subscribeToRemotes([SYNC_SERVER_STORAGE_ID]);
+    // hack: since we have two sync indictators we hard code the storage ids here
+    // otherwise one of the subscriptions would win, since subscribe unsubscribes any existing storageIds that are not in the list
+    // maybe we should reconsider this api
+    // todo: remove this once we got rid of the duplicte
+    repo.subscribeToRemotes([
+      AUTOMERGE_SYNC_SERVER_STORAGE_ID,
+      JACQUARD_SYNC_SERVER_STORAGE_ID,
+    ]);
   }, [repo]);
 
   const [machineConfig] = useState(() =>
@@ -266,7 +368,7 @@ function useSyncIndicatorState(handle: DocHandle<unknown>): SyncIndicatorState {
   // heads change listener
   useEffect(() => {
     if (machine.matches("sync.unknown")) {
-      const syncServerHeads = handle.getRemoteHeads(SYNC_SERVER_STORAGE_ID);
+      const syncServerHeads = handle.getRemoteHeads(storageId);
       setSyncServerHeads(syncServerHeads ?? []); // initialize to empty heads if we have no state
 
       handle.doc().then((doc) => {
@@ -285,8 +387,8 @@ function useSyncIndicatorState(handle: DocHandle<unknown>): SyncIndicatorState {
       }
     };
 
-    const onRemoteHeads = ({ storageId, heads }: { storageId: StorageId, heads: Heads }) => {
-      if (storageId === SYNC_SERVER_STORAGE_ID) {
+    const onRemoteHeads = ({ storageId: remoteStorageId, heads }: { storageId: StorageId, heads: Heads }) => {
+      if (storageId === remoteStorageId) {
         send({ type: "RECEIVED_SYNC_MESSAGE" });
         setSyncServerHeads(heads);
         setLastSyncUpdate(Date.now());
@@ -397,20 +499,21 @@ export function getSyncIndicatorMachine({
             },
             outOfSync: {
               initial: "ok",
-              after: {
-                // every time we re-enter the out of sync state the timeout gets reset
-                [maxSyncMessageDelay]: {
-                  target: ".error",
-                  guard: stateIn("internet.connected"),
-                },
-              },
               on: {
                 IS_IN_SYNC: "inSync",
                 RECEIVED_SYNC_MESSAGE: "outOfSync",
                 CONNECTION_INIT_TIMEOUT: "outOfSync",
               },
               states: {
-                ok: {},
+                ok: {
+                  after: {
+                    // every time we re-enter the out of sync state the timeout gets reset
+                    [maxSyncMessageDelay]: {
+                      target: "error",
+                      guard: stateIn({ internet: "connected" }),
+                    },
+                  },
+                },
                 error: {},
               },
             },

@@ -3,19 +3,17 @@
   "version": "1.0.0",
   "description": "A malleable software environment for collaborative work",
   "main": "index.js",
+  "packageManager": "pnpm@9.5.0",
   "scripts": {
     "dev": "pnpm --filter os dev",
     "build": "pnpm --filter os build",
-    "preinstall": "npx only-allow pnpm",
     "tsc": "tsc",
     "tsconfig-strict": "cp tsconfig.strict.json tsconfig.json && git update-index --assume-unchanged tsconfig.json",
-    "tsconfig-lenient": "cp tsconfig.lenient.json tsconfig.json && git update-index --no-assume-unchanged tsconfig.json"
+    "tsconfig-lenient": "cp tsconfig.lenient.json tsconfig.json && git update-index --no-assume-unchanged tsconfig.json",
+    "preinstall": "npx only-allow pnpm",
+    "test": "pnpm --filter os test"
   },
   "keywords": [],
   "author": "Ink & Switch",
-  "resolutions": {
-    "@automerge/automerge-wasm": "file:./os/src/vendor/automerge-wasm"
-  },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }

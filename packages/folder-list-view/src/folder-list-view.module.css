@@ -1,0 +1,5 @@
+.folder-list-view {
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+}
