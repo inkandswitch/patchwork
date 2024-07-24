@@ -45,7 +45,7 @@ export async function run(
   // hack to make latex subset of run
   const commandSplit = command.split(" ");
   if (commandSplit.length === 2 && commandSplit[0] === 'latex') {
-    return await latex(repo, commandSplit[1], { dir, projectFolderUrl });
+    return await latex(repo, commandSplit[1], { dir, projectFolderUrl, syncServerStorageId });
   }
 
   // pull before to ensure we run on latest files

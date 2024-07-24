@@ -13,7 +13,7 @@ const FILE_REFRENCE_REGEX = /^<use (?<filePath>.*)\>$/;
 export async function latex(
   repo: Repo,
   filePath: string,
-  { dir, projectFolderUrl }: CommandLineArgs
+  { dir, projectFolderUrl, syncServerStorageId }: CommandLineArgs
 ) {
   const inputs: string[] = [`./${filePath}`];
   const outputs: string[] = [`./${replaceExtension(filePath, "pdf")}`];
@@ -94,6 +94,7 @@ export async function latex(
     {
       dir,
       projectFolderUrl,
+      syncServerStorageId,
     },
     buildMetadata
   );
