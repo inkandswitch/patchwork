@@ -176,9 +176,10 @@ async function getProjectState(
   }));
 
   // filter out build runs that are no longer relevant
-  // a build run is relevant as long as at least one of it's output still exists in the current project
+  // a build run is relevant as long as ALL of its output still exists in the current project
+  // TODO: this used to be "at least one", but we're gonna lazily try this
   const filteredBuildRuns = buildRuns.filter(({ outputs }, index) =>
-    outputs.some(({ docUrl, heads }) => {
+    outputs.every(({ docUrl, heads }) => {
       const doc = files[docUrl];
 
       return doc && headsMatch(Automerge.getHeads(doc), heads);
