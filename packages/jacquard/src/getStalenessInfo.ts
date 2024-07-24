@@ -89,17 +89,14 @@ export function getStalenessInfo(state: ProjectState): StalenessInfo {
   return { docStatuses, buildRunStatuses };
 }
 
-export function getBuildRunOutputtingDocUrl(state: ProjectState, docUrl: AutomergeUrl) {
+export function getBuildRunOutputtingDocUrl(state: ProjectState, docUrl: AutomergeUrl): BuildRun | undefined {
   const found = state.buildRuns.find((buildRun) =>
     buildRun.outputs.some((output) => output.docUrl === docUrl)
   );
-  if (!found) {
-    throw new Error(`Could not find reference for ${docUrl}`);
-  }
   return found;
 }
 
-export function getReferenceFromDocUrl(state: ProjectState, docUrl: AutomergeUrl) {
+export function getReferenceFromDocUrl(state: ProjectState, docUrl: AutomergeUrl): Reference {
   const found = state.references.find((reference) => reference.docUrl === docUrl);
   if (!found) {
     throw new Error(`Could not find reference for ${docUrl}`);
