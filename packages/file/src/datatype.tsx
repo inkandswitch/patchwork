@@ -5,14 +5,30 @@ import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
 
 // SCHEMA
 
+export type BinaryFileContent = {
+  type: "binary";
+  value: Uint8Array;
+};
+
+export type TextFileContent = {
+  type: "text";
+  value: string;
+};
+
+export type LinkedFileContent = {
+  type: "link";
+  url: string;
+};
+
+export type FileContent =
+  | BinaryFileContent
+  | TextFileContent
+  | LinkedFileContent;
+
 export type FileDoc = HasVersionControlMetadata<unknown, unknown> & {
   name: string;
   type: string; // todo: should maybe rename type to extension?
-  content: string | Uint8Array;
-};
-
-export type TextFileDoc = FileDoc & {
-  content: string;
+  content: FileContent;
 };
 
 // FUNCTIONS
@@ -55,7 +71,7 @@ export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
     return <ChangeGroupView changeGroup={changeGroup} />;
   },
 
-  ...textAnchorsAtPath(["content"]),
+  ...textAnchorsAtPath(["content", "value"]),
 };
 
 const ChangeGroupView = ({
@@ -64,7 +80,9 @@ const ChangeGroupView = ({
   changeGroup: ChangeGroup<FileDoc>;
 }) => {
   const doc = changeGroup.docAtEndOfChangeGroup;
-  const binaryUrl = useBinaryUrl(doc?.content as Uint8Array);
+  const binaryUrl = useBinaryUrl(
+    doc?.content.type === "binary" ? doc.content.value : undefined
+  );
 
   if (!isImageFile(doc)) {
     return "changed";

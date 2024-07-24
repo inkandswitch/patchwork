@@ -12,8 +12,16 @@ import { json } from "@codemirror/lang-json";
 import { python } from "@codemirror/lang-python";
 import { EditorView, basicSetup } from "codemirror";
 import { useEffect, useState } from "react";
-import { TextFileDoc } from "../datatype";
+import { FileDoc, TextFileContent } from "../datatype";
 import { useHandleDef } from "@/hooks/useHandleDef";
+
+export type TextFileDoc = FileDoc & {
+  content: TextFileContent;
+};
+
+export const isTextFile = (doc: FileDoc) => {
+  return doc.content.type === "text";
+};
 
 export const TextFileEditor = ({
   docUrl,
@@ -26,7 +34,7 @@ export const TextFileEditor = ({
 
   const resolvedAnnotations = useResolvedAnnotationAtPath({
     doc: fileDoc,
-    path: ["content"],
+    path: ["content", "value"],
     annotations,
   });
 
@@ -47,14 +55,14 @@ export const TextFileEditor = ({
 
     const doc = handle.docSync();
     const view = new EditorView({
-      doc: doc!.content,  // TODO: JAH strict fix
+      doc: doc.content.value, // TODO: JAH strict fix
       extensions: [
         basicSetup,
         automergeSyncPlugin({
           handle,
-          path: ["content"],
+          path: ["content", "value"],
         }),
-        getPluginsByType(fileDoc!.type),  // TODO: JAH strict fix
+        getPluginsByType(fileDoc!.type), // TODO: JAH strict fix
         annotationsPlugin,
       ],
       parent: container,

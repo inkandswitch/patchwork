@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as Automerge from "@automerge/automerge";
-import { FileDoc } from "../datatype";
+import { FileDoc, LinkedFileContent } from "../datatype";
 import { EditorProps } from "@/tools";
 
 export type ImageFileDoc = FileDoc & {
-  content: Uint8Array;
+  content: LinkedFileContent;
   type: "svg" | "png" | "jpg" | "jpeg" | "gif" | "webp" | "bmp";
 };
 
@@ -20,9 +20,10 @@ export const ImageFileViewer = ({
   const [_doc] = useDocument<ImageFileDoc>(docUrl);
 
   const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
-  const binaryUrl = useBinaryUrl(doc?.content);
 
-  return <img src={binaryUrl} className="w-full h-full object-contain" />;
+  return (
+    <img src={doc?.content.url} className="w-full h-full object-contain" />
+  );
 };
 
 export const useBinaryUrl = (value: Uint8Array | undefined) => {

@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@automerge/automerge-wasm': file:./os/src/vendor/automerge-wasm
-
 importers:
 
   .: {}

@@ -11,10 +11,10 @@ import {
 } from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useState } from "react";
 import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
-import { FileDoc, TextFileDoc } from "../datatype";
+import { FileDoc } from "../datatype";
 import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { Checkbox } from "@/shadcn/ui/checkbox";
-import { TextFileEditor } from "./TextFileEditor";
+import { TextFileEditor, isTextFile } from "./TextFileEditor";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextAnchor } from "@/lib/textAnchors";
 
@@ -39,7 +39,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
 
   const fileView = (
     <div>
-      {typeof doc.content === "string" ? (
+      {isTextFile(doc) ? (
         React.createElement(
           TextFileEditor,
           props as EditorProps<TextAnchor, string>
@@ -167,7 +167,7 @@ const useBuildMetadata = (
 
     console.log({ lastChangeDecoded, heads });
     const lastChangeMetadata =
-      lastChangeDecoded!.message && JSON.parse(lastChangeDecoded!.message);  // TODO: JAH strict fix
+      lastChangeDecoded!.message && JSON.parse(lastChangeDecoded!.message); // TODO: JAH strict fix
     if (lastChangeMetadata && lastChangeMetadata["buildDocUrl"]) {
       return lastChangeMetadata as {
         buildDocUrl: AutomergeUrl;

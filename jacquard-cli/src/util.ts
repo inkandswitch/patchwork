@@ -3,6 +3,7 @@ import * as A from "@automerge/automerge";
 import { Doc, DocHandle, StorageId } from "@automerge/automerge-repo";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 
 export function getBuildMetadataDocUrl(folderDoc: Doc<FolderDoc>) {
   return folderDoc.docs.find((link) => link.name === "Build Metadata")?.url;
@@ -22,7 +23,7 @@ export async function waitForSync(
     handlesToWaitOn.map(
       (handle) =>
         new Promise((resolve) => {
-          const newHeads = A.getHeads(handle.docSync()!);  // TODO: JAH strict fix
+          const newHeads = A.getHeads(handle.docSync()!); // TODO: JAH strict fix
           const remoteHeads = handle.getRemoteHeads(syncServerStorageId);
 
           // If the remote heads are already up to date, we can resolve immediately.
@@ -60,4 +61,49 @@ export const getJacquardConfig = () => {
   } else {
     return null;
   }
+};
+
+const ENDPOINT_URL = "https://file-server-txxa.onrender.com/file";
+
+export const uploadFile = async (
+  fileBuffer: Buffer,
+  mimeType: string
+): Promise<string> => {
+  try {
+    const response = await fetch(ENDPOINT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": mimeType,
+      },
+      body: fileBuffer,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload file: ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    return responseData.url as string;
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    throw error;
+  }
+};
+
+export const sha256 = (buffer: Buffer) =>
+  crypto.createHash("sha256").update(buffer).digest("hex");
+
+export const sleep = async (duration: number): Promise<void> => {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(), duration);
+  });
+};
+
+export const fetchFile = async (url: string): Promise<Uint8Array> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch file: ${response.statusText}`);
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  return new Uint8Array(arrayBuffer);
 };

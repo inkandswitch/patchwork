@@ -14,12 +14,13 @@ import {
 import { CommandLineArgs } from ".";
 import { BuildMetadata } from "./run";
 import { FileDoc } from "../../packages/file/src/datatype";
-import { MarkdownDoc } from "../../packages/essay/src";
 import { FolderDoc } from "@/packages/folder";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 import { VersionControlSidecarDoc } from "@/sdk";
 import { findWithActiveBranch } from "./findWithActiveBranch";
-import { waitForSync } from "./util";
+import { sha256, uploadFile, waitForSync } from "./util";
+import mime from "mime-types";
+import { sleep } from "./util";
 
 // NOTE: copied this from the version control code in our os folder.
 // couldn't get imports working from os to jacquard-cli so just copying the function for now.
@@ -60,14 +61,14 @@ export async function push(
     repo
   );
 
-  // const oldHeads = A.getHeads(folderHandle.docSync());
-  // console.log("oldHeads", oldHeads);
-
-  const buildStuff: BuildStuff | undefined =
-    buildMetadata && {
+  const buildStuff: BuildStuff | undefined = buildMetadata && {
+    buildMetadata,
+    buildMetadataHandle: await findOrCreateBuildMetadataHandle(
       buildMetadata,
-      buildMetadataHandle: await findOrCreateBuildMetadataHandle(buildMetadata, folderHandle, repo),
-    };
+      folderHandle,
+      repo
+    ),
+  };
 
   const mainUrlsAndCloneHandlesByFileName: Record<
     string,
@@ -99,7 +100,7 @@ export async function push(
           return {
             docUrl: mainUrl,
             path: inputPath,
-            heads: A.getHeads(cloneHandle.docSync()!),  // TODO: JAH strict fix
+            heads: A.getHeads(cloneHandle.docSync()!), // TODO: JAH strict fix
           };
         }),
         outputs: buildMetadata.outputs.map((outputPath) => {
@@ -108,16 +109,13 @@ export async function push(
           return {
             docUrl: mainUrl,
             path: outputPath,
-            heads: A.getHeads(cloneHandle.docSync()!),  // TODO: JAH strict fix
+            heads: A.getHeads(cloneHandle.docSync()!), // TODO: JAH strict fix
           };
         }),
       });
     });
     handlesToWaitOn.push(buildMetadataHandle!);
   }
-
-  // const newHeads = A.getHeads(folderHandle.docSync());
-  // console.log("newHeads", newHeads);
 
   if (projectFolderUrl) {
     console.log(`Updated files in existing folder ${projectFolderUrl}`);
@@ -138,7 +136,7 @@ export async function push(
 type BuildStuff = {
   buildMetadata: BuildMetadata;
   buildMetadataHandle: DocHandle<JacquardBuildMetadata>;
-}
+};
 
 async function pushDir({
   dir,
@@ -161,6 +159,11 @@ async function pushDir({
   const files = fs.readdirSync(dir);
 
   for (const filePath of files.map((file) => path.join(dir, file))) {
+    // TODO: do this in a more principled way
+    if (filePath.endsWith(".DS_Store") || filePath.endsWith("__pycache__")) {
+      continue;
+    }
+
     // For a directory, recursively push
     if (fs.lstatSync(filePath).isDirectory()) {
       const folderDoc = await folderHandle.doc();
@@ -217,7 +220,10 @@ async function pushDir({
   }
 }
 
-async function findOrCreateFolderHandle(projectFolderUrl: AutomergeUrl, repo: Repo) {
+async function findOrCreateFolderHandle(
+  projectFolderUrl: AutomergeUrl,
+  repo: Repo
+) {
   let folderHandle: DocHandle<FolderDoc>;
   if (projectFolderUrl !== undefined) {
     folderHandle = await findWithActiveBranch<FolderDoc>(
@@ -326,13 +332,11 @@ const pushFile = async ({
   mainUrl: AutomergeUrl;
   didChange: boolean;
 }> => {
-  const isBinary = isBinaryFileSync(filePath);
-  const isMarkdown = path.extname(filePath) === "md";
+  const fileContents = isBinaryFileSync(filePath)
+    ? fs.readFileSync(filePath)
+    : fs.readFileSync(filePath, "utf-8");
+  const isBinary = fileContents instanceof Buffer;
 
-  const fileContents = fs.readFileSync(
-    filePath,
-    !isBinary ? "utf8" : undefined
-  );
   const fileType = path.extname(filePath).slice(1);
   const fileNameWithExtension = path.basename(filePath);
 
@@ -356,11 +360,14 @@ const pushFile = async ({
     buildStuff.buildMetadata.outputs.some(
       (o) => path.resolve(filePath) === path.resolve(o)
     )
-      ? { buildDocUrl: buildStuff.buildMetadataHandle.url, buildId: buildStuff.buildMetadata.id }
+      ? {
+          buildDocUrl: buildStuff.buildMetadataHandle.url,
+          buildId: buildStuff.buildMetadata.id,
+        }
       : undefined;
 
   let handle: DocHandle<FileDoc>;
-  let mainUrl: AutomergeUrl = undefined as any;  // TODO: JAH strict fix - what happens if !existingDocLink below?
+  let mainUrl: AutomergeUrl = undefined as any; // TODO: JAH strict fix - what happens if !existingDocLink below?
   let didChange = false;
   if (existingDocLink) {
     handle = await findWithActiveBranch<FileDoc>(existingDocLink.url, repo);
@@ -368,83 +375,101 @@ const pushFile = async ({
 
     await handle.whenReady();
 
-    // TODO: this is a datatype-specific mapping from unix file to automerge doc!
-    // needs to be specified somewhere datatype-specific I guess.
-    // notably: it's also an incremental update to support diffs.
-    handle.change(
-      (doc) => {
-        if (!Automerge.equals(doc.content, fileContents)) {
-          didChange = true;
-          if (typeof fileContents === "string") {
-            updateText(doc, ["content"], fileContents);
-          } else {
-            doc.content = fileContents;
+    if (isBinary) {
+      const doc = await handle.doc();
+      const hash = sha256(fileContents);
+      if (!(doc.content.type === "link" && doc.content.url.endsWith(hash))) {
+        didChange = true;
+        handle = await findWithActiveBranch<FileDoc>(existingDocLink.url, repo);
+
+        const mimeType = mime.lookup(fileType);
+        const url = await uploadFile(fileContents, mimeType);
+
+        handle.change(
+          (doc) => {
+            doc.content = { type: "link", url };
+          },
+          {
+            message: changeMetadata
+              ? JSON.stringify(changeMetadata)
+              : undefined,
           }
-        }
-      },
-      {
-        message: changeMetadata ? JSON.stringify(changeMetadata) : undefined,
+        );
       }
-    );
-  } else {
-    // Make a new doc in the folder
-    handle = repo.create();
-    didChange = true;
-
-    await handle.whenReady();
-
-    // do some special handling for markdown
-    // todo: import markdown as regular text files
-    if (isMarkdown) {
-      (handle as DocHandle<MarkdownDoc>).change(
-        (doc) => {
-          // init datatype schema
-          doc.content = fileContents as string;  // TODO: JAH strict fix - what if it's a Buffer?
-          doc.discussions = {};
-
-          // init patchwork metadata
-          doc.branchMetadata = {
-            source: null,
-            branches: [],
-          };
-          doc.discussions = {};
-          doc.tags = [];
-          doc.changeGroupSummaries = {};
-        },
-        {
-          message: changeMetadata ? JSON.stringify(changeMetadata) : undefined,
-        }
-      );
     } else {
-      (handle as DocHandle<FileDoc>).change(
+      // TODO: this is a datatype-specific mapping from unix file to automerge doc!
+      // needs to be specified somewhere datatype-specific I guess.
+      // notably: it's also an incremental update to support diffs.
+      handle.change(
         (doc) => {
-          doc.name = path.basename(filePath);
-          // todo: maybe convert type to generic id independent of file extensions
-          doc.type = fileType;
-          doc.content = fileContents;
+          if (!Automerge.equals(doc.content, fileContents)) {
+            didChange = true;
 
-          // init patchwork metadata
-          doc.branchMetadata = {
-            source: null,
-            branches: [],
-          };
-          doc.discussions = {};
-          doc.tags = [];
-          doc.changeGroupSummaries = {};
+            if (doc.content.type === "text") {
+              updateText(doc, ["content", "value"], fileContents);
+            } else {
+              doc.content = {
+                type: "text",
+                value: fileContents,
+              };
+            }
+          }
         },
         {
           message: changeMetadata ? JSON.stringify(changeMetadata) : undefined,
         }
       );
     }
+  } else {
+    // Make a new doc in the folder
+    handle = repo.create();
+    didChange = true;
 
-    console.log("push", filePath, Automerge.getHeads(handle.docSync()!));  // TODO: JAH strict fix
+    // delay to not overload automerge repo by creating many handles
+    sleep(500);
+
+    if (isBinary) {
+      const mimeType = mime.lookup(fileType);
+      const url = await uploadFile(fileContents, mimeType);
+
+      handle.change((doc) => {
+        doc.name = path.basename(filePath);
+        doc.type = fileType;
+        doc.content = { type: "link", url };
+
+        // init patchwork metadata
+        doc.branchMetadata = {
+          source: null,
+          branches: [],
+        };
+        doc.discussions = {};
+        doc.tags = [];
+        doc.changeGroupSummaries = {};
+      });
+    } else {
+      handle.change((doc) => {
+        doc.name = path.basename(filePath);
+        doc.type = fileType;
+        doc.content = { type: "text", value: fileContents };
+
+        // init patchwork metadata
+        doc.branchMetadata = {
+          source: null,
+          branches: [],
+        };
+        doc.discussions = {};
+        doc.tags = [];
+        doc.changeGroupSummaries = {};
+      });
+    }
+
+    console.log("push", filePath, Automerge.getHeads(handle.docSync()!)); // TODO: JAH strict fix
 
     folderHandle.change((d) => {
       d.docs.push({
         name: fileNameWithExtension,
         url: handle.url, // this is ok cuz it's a new doc, not a clone
-        type: isMarkdown ? "essay" : "file",
+        type: "file",
       });
     });
   }

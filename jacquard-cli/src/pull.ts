@@ -5,6 +5,7 @@ import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { FolderDoc } from "@/packages/folder";
 import { FileDoc } from "../../packages/file/src/datatype";
 import { findWithActiveBranch } from "./findWithActiveBranch";
+import { fetchFile } from "./util";
 
 export async function pull(
   repo: Repo,
@@ -77,5 +78,10 @@ async function pullFile({
     return;
   }
 
-  fs.writeFileSync(path.join(dir, fileDoc.name), fileDoc.content);
+  const content =
+    fileDoc.content.type === "link"
+      ? await fetchFile(fileDoc.content.url)
+      : fileDoc.content.value;
+
+  fs.writeFileSync(path.join(dir, fileDoc.name), content);
 }
