@@ -17,8 +17,8 @@ export const useSyncDocTitle = ({
   repo,
   selectDocLink,
 }: {
-  selectedDoc: Doc<HasVersionControlMetadata<unknown, unknown>>;
-  selectedDocLink: DocLinkWithFolderPath;
+  selectedDoc?: Doc<HasVersionControlMetadata<unknown, unknown>>;
+  selectedDocLink?: DocLinkWithFolderPath;
   repo: Repo;
   selectDocLink: (docLink: DocLinkWithFolderPath) => void;
 }) => {
@@ -29,7 +29,7 @@ export const useSyncDocTitle = ({
 
   useEffect(() => {
     if (!selectedDocLink || !selectedDoc || !dataType) {
-      selectedDocTitleRef.current = null;
+      selectedDocTitleRef.current = undefined;
       return;
     }
 
@@ -38,14 +38,14 @@ export const useSyncDocTitle = ({
       selectedDocTitleRef.current = { url: selectedDocLink.url };
     }
 
-    let counter = (counterRef.current = counterRef.current + 1);
+    const counter = (counterRef.current = counterRef.current + 1);
 
     // load title
     dataType.getTitle(selectedDoc, repo).then((title) => {
       // do nothing if selectedDocLink has changed in between
       // or if this promise resolved after newer update
       if (
-        selectedDocLink.url !== selectedDocTitleRef.current.url ||
+        selectedDocLink.url !== selectedDocTitleRef.current?.url ||
         counter !== counterRef.current
       ) {
         return;
@@ -83,5 +83,5 @@ export const useSyncDocTitle = ({
         });
       }
     });
-  }, [selectedDoc, selectedDocLink?.url, dataType]);
+  }, [selectedDoc, dataType, selectedDocLink, repo, selectDocLink]);
 };

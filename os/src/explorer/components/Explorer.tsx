@@ -59,6 +59,9 @@ export const Explorer: React.FC = () => {
 
   const getFakeDocPathForDocUrl = useCallback(
     (url: string) => {
+      if (!flatDocLinks) {
+        throw new Error("getFakeDocPathForDocUrl: flatDocLinks not ready");
+      }
       const docLinkWithFolderPath = flatDocLinks.find(
         (link) => link.url === url
       );
@@ -142,6 +145,9 @@ export const Explorer: React.FC = () => {
       if (!selectedDocLink) {
         // If nothing is selected, add the new document to the root folder
         // TODO: very weird code here
+        if (!rootFolderUrl) {
+          throw new Error("Root folder URL not ready");
+        }
         parentFolderDocPath = fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []});
       } else if (selectedDocLink.type === "folder") {
         // If a folder is currently selected, add the new document to that folder

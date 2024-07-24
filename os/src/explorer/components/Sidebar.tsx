@@ -14,7 +14,7 @@ import { useDataType, useDataTypes } from "../../datatypes";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 
-import { Icon } from "@/lib/icons";
+import { Icon, IconType } from "@/lib/icons";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { Input } from "@/shadcn/ui/input";
 import { getDoc, isLoaded, useDocReactive } from "@/doc-reactive";
@@ -91,7 +91,7 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
           }
         }}
       >
-        <Icon type={icon} size={14} />
+        <Icon type={icon as IconType} size={14} />
       </div>
 
       {!node.isEditing && (
@@ -263,7 +263,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     rootFolderUrl,
   ]);
 
-  const treeSelection = selectedDocLink ? idAccessor(selectedDocLink) : null;
+  const treeSelection = selectedDocLink ? idAccessor(selectedDocLink) : undefined;
 
   const onRename: RenameHandler<DocLinkWithFolderPath> = ({ node, name }) => {
     const docLink = flatDocLinks.find((doc) => doc.url === node.data.url);
@@ -298,10 +298,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       docLink.url
     );
     docHandle.change((doc) => {
-      dataType.setTitle(doc, name);
+      dataType.setTitle?.(doc, name);
     });
 
-    selectDocLink({ ...selectedDocLink, name });
+    selectDocLink({ ...selectedDocLink!, name });  // TODO: JAH strict fix
   };
 
   const onToggle = async (id: string) => {
@@ -339,7 +339,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })
         ] = true;
         return acc;
-      }, {}),
+      }, {} as Record<string, true>),
     [uiStateDoc]
   );
 

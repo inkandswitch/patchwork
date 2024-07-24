@@ -156,6 +156,10 @@ export const Topbar: React.FC<TopbarProps> = ({
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={async () => {
+                if (!selectedDocHandle || !selectedDataType || !selectedDocLink) {
+                  // TODO: JAH strict fix lazy
+                  throw new Error("something unexpected is missing idk");
+                }
                 const newHandle =
                   repo.clone<HasVersionControlMetadata<unknown, unknown>>(
                     selectedDocHandle
@@ -164,7 +168,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                   selectedDataType.markCopy(doc);
                   doc.branchMetadata.source = {
                     url: selectedDocUrl,
-                    branchHeads: getHeads(selectedDocHandle.docSync()),
+                    branchHeads: getHeads(selectedDocHandle.docSync()!),  // TODO: JAH strict fix
                   };
                 });
 
@@ -211,6 +215,10 @@ export const Topbar: React.FC<TopbarProps> = ({
                 <DropdownMenuItem
                   key={index}
                   onClick={async () => {
+                    if (!selectedDoc || !selectedDocLink) {
+                      // TODO: JAH strict fix lazy
+                      throw new Error("something unexpected is missing idk");
+                    }
                     const blob = await method.export(selectedDoc, repo);
                     const filename = `${getUrlSafeName(selectedDocLink.name)}.${
                       method.extension
@@ -233,7 +241,7 @@ export const Topbar: React.FC<TopbarProps> = ({
               ))}
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => removeDocLink(selectedDocLink)}>
+            <DropdownMenuItem onClick={() => selectedDocLink && removeDocLink(selectedDocLink)}>
               <Trash2Icon
                 className="inline-block text-gray-500 mr-2"
                 size={14}

@@ -87,12 +87,14 @@ const SyncIndicatorInner = ({
 
     const ownStorageId = await repo.storageId();
 
-    const ownSyncState = await repo.storageSubsystem.loadSyncState(
+    // TODO: JAH strict fix - lots of !s here
+
+    const ownSyncState = await repo.storageSubsystem!.loadSyncState(
       handle.documentId,
-      ownStorageId
+      ownStorageId!
     );
 
-    const syncServerSyncState = await repo.storageSubsystem.loadSyncState(
+    const syncServerSyncState = await repo.storageSubsystem!.loadSyncState(
       handle.documentId,
       storageId
     );
