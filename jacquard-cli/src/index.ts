@@ -15,6 +15,7 @@ import { listBranches } from "./branch";
 import { activateBranch } from "./activate";
 import { refresh } from "./refresh";
 import { getJacquardConfig } from "./util";
+import { watch } from "./watch";
 
 export type CommandLineArgs = {
   dir: string;
@@ -161,6 +162,11 @@ const main = async () => {
 
     case "refresh": {
       await refresh(repo, { dir, projectFolderUrl, syncServerStorageId });
+      break;
+    }
+
+    case "watch": {
+      await watch(repo, { dir, projectFolderUrl, syncServerStorageId });
       break;
     }
 

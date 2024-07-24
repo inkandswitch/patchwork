@@ -16,8 +16,6 @@ import { run } from "./run";
 import { getBuildMetadataDocUrl, waitForSync } from "./util";
 import { findWithActiveBranch } from "./findWithActiveBranch";
 
-// TODO: jacquard watch
-
 export async function refresh(
   repo: Repo,
   { dir, projectFolderUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs
@@ -67,8 +65,6 @@ export async function refresh(
       buildMetadataDoc.buildRuns
     );
     const stalenessInfo = getStalenessInfo(projectState);
-
-    console.log(stalenessInfo);
 
     let ranSomethingThisLoop = false;
 
