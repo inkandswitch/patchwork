@@ -50,6 +50,11 @@ export async function push(
   buildMetadata?: BuildMetadata,
   wait = true
 ) {
+  if (!projectFolderUrl) {
+    console.log("No project folder URL provided.");
+    return;
+  }
+
   let folderHandle: DocHandle<FolderDoc> = await findOrCreateFolderHandle(
     projectFolderUrl,
     repo
@@ -58,8 +63,11 @@ export async function push(
   // const oldHeads = A.getHeads(folderHandle.docSync());
   // console.log("oldHeads", oldHeads);
 
-  const buildMetadataHandle: DocHandle<JacquardBuildMetadata> =
-    await findOrCreateBuildMetadataHandle(buildMetadata, folderHandle, repo);
+  const buildStuff: BuildStuff | undefined =
+    buildMetadata && {
+      buildMetadata,
+      buildMetadataHandle: await findOrCreateBuildMetadataHandle(buildMetadata, folderHandle, repo),
+    };
 
   const mainUrlsAndCloneHandlesByFileName: Record<
     string,
@@ -77,11 +85,11 @@ export async function push(
     folderHandle,
     mainUrlsAndCloneHandlesByFileName,
     handlesToWaitOn,
-    buildMetadata,
-    buildMetadataHandle,
+    buildStuff,
   });
 
-  if (buildMetadata) {
+  if (buildStuff) {
+    const { buildMetadata, buildMetadataHandle } = buildStuff;
     buildMetadataHandle.change((doc) => {
       doc.buildRuns.push({
         ...buildMetadata,
@@ -91,7 +99,7 @@ export async function push(
           return {
             docUrl: mainUrl,
             path: inputPath,
-            heads: A.getHeads(cloneHandle.docSync()),
+            heads: A.getHeads(cloneHandle.docSync()!),  // TODO: JAH strict fix
           };
         }),
         outputs: buildMetadata.outputs.map((outputPath) => {
@@ -100,12 +108,12 @@ export async function push(
           return {
             docUrl: mainUrl,
             path: outputPath,
-            heads: A.getHeads(cloneHandle.docSync()),
+            heads: A.getHeads(cloneHandle.docSync()!),  // TODO: JAH strict fix
           };
         }),
       });
     });
-    handlesToWaitOn.push(buildMetadataHandle);
+    handlesToWaitOn.push(buildMetadataHandle!);
   }
 
   // const newHeads = A.getHeads(folderHandle.docSync());
@@ -127,14 +135,18 @@ export async function push(
   }
 }
 
+type BuildStuff = {
+  buildMetadata: BuildMetadata;
+  buildMetadataHandle: DocHandle<JacquardBuildMetadata>;
+}
+
 async function pushDir({
   dir,
   handlesToWaitOn,
   repo,
   mainUrlsAndCloneHandlesByFileName,
   folderHandle,
-  buildMetadata,
-  buildMetadataHandle,
+  buildStuff,
 }: {
   dir: string;
   handlesToWaitOn: DocHandle<unknown>[];
@@ -144,8 +156,7 @@ async function pushDir({
     { mainUrl: AutomergeUrl; cloneHandle: DocHandle<FileDoc> }
   >;
   folderHandle: DocHandle<FolderDoc>;
-  buildMetadata?: BuildMetadata;
-  buildMetadataHandle?: DocHandle<JacquardBuildMetadata>;
+  buildStuff?: BuildStuff;
 }) {
   const files = fs.readdirSync(dir);
 
@@ -153,10 +164,13 @@ async function pushDir({
     // For a directory, recursively push
     if (fs.lstatSync(filePath).isDirectory()) {
       const folderDoc = await folderHandle.doc();
+      if (!folderDoc) {
+        throw new Error(`Folder doc missing: ${folderDoc}`);
+      }
       const existingDocLink = folderDoc.docs.find(
         (link) => link.name === path.basename(filePath)
       );
-      let subFolderHandle;
+      let subFolderHandle: DocHandle<FolderDoc>;
       if (existingDocLink) {
         subFolderHandle = await findWithActiveBranch<FolderDoc>(
           existingDocLink.url,
@@ -183,16 +197,14 @@ async function pushDir({
         repo,
         mainUrlsAndCloneHandlesByFileName,
         folderHandle: subFolderHandle,
-        buildMetadata,
-        buildMetadataHandle,
+        buildStuff,
       });
     } else {
       const { handle, mainUrl, didChange } = await pushFile({
         filePath,
         folderHandle,
         repo,
-        buildMetadata,
-        buildMetadataHandle,
+        buildStuff,
       });
       mainUrlsAndCloneHandlesByFileName[path.basename(filePath)] = {
         mainUrl: mainUrl,
@@ -205,7 +217,7 @@ async function pushDir({
   }
 }
 
-async function findOrCreateFolderHandle(projectFolderUrl, repo: Repo) {
+async function findOrCreateFolderHandle(projectFolderUrl: AutomergeUrl, repo: Repo) {
   let folderHandle: DocHandle<FolderDoc>;
   if (projectFolderUrl !== undefined) {
     folderHandle = await findWithActiveBranch<FolderDoc>(
@@ -238,45 +250,46 @@ async function findOrCreateBuildMetadataHandle(
   repo: Repo
 ) {
   let buildMetadataHandle: DocHandle<JacquardBuildMetadata>;
-  // if build metadata was passed into the push, update the build metadata doc
-  if (buildMetadata) {
-    // TODO: feels weird to ID the build metadata doc by name like this
-    const folderDoc = folderHandle.docSync();
 
-    if (!folderDoc.docs) {
-      throw new Error(
-        "seems like the passed in automerge doc url doesn't point to a folder"
-      );
-    }
+  // TODO: feels weird to ID the build metadata doc by name like this
+  const folderDoc = folderHandle.docSync();
+  if (!folderDoc) {
+    throw new Error(`Folder doc missing: ${folderHandle.url}`);
+  }
 
-    const buildMetadataDocUrl = folderDoc.docs.find(
-      (link) => link.name === "Build Metadata"
-    )?.url;
+  if (!folderDoc.docs) {
+    throw new Error(
+      "seems like the passed in automerge doc url doesn't point to a folder"
+    );
+  }
 
-    if (buildMetadataDocUrl) {
-      buildMetadataHandle = await findWithActiveBranch<JacquardBuildMetadata>(
-        buildMetadataDocUrl,
-        repo
-      );
-      await buildMetadataHandle.whenReady();
-    } else {
-      buildMetadataHandle = repo.create();
-      buildMetadataHandle.change((doc) => {
-        doc.title = "Build Metadata";
-        doc.buildRuns = [];
-        // todo: find a better solution
-        // in the build metadata viewer we need access to the project folder to compute
-        // the build graph with staleness. Maybe the build metadata should be part of the folder?
-        doc.projectFolderUrl = folderHandle.url;
+  const buildMetadataDocUrl = folderDoc.docs.find(
+    (link) => link.name === "Build Metadata"
+  )?.url;
+
+  if (buildMetadataDocUrl) {
+    buildMetadataHandle = await findWithActiveBranch<JacquardBuildMetadata>(
+      buildMetadataDocUrl,
+      repo
+    );
+    await buildMetadataHandle.whenReady();
+  } else {
+    buildMetadataHandle = repo.create();
+    buildMetadataHandle.change((doc) => {
+      doc.title = "Build Metadata";
+      doc.buildRuns = [];
+      // todo: find a better solution
+      // in the build metadata viewer we need access to the project folder to compute
+      // the build graph with staleness. Maybe the build metadata should be part of the folder?
+      doc.projectFolderUrl = folderHandle.url;
+    });
+    folderHandle.change((d) => {
+      d.docs.push({
+        name: "Build Metadata",
+        url: buildMetadataHandle.url,
+        type: "jacquard-build-metadata",
       });
-      folderHandle.change((d) => {
-        d.docs.push({
-          name: "Build Metadata",
-          url: buildMetadataHandle.url,
-          type: "jacquard-build-metadata",
-        });
-      });
-    }
+    });
   }
   return buildMetadataHandle;
 }
@@ -288,8 +301,9 @@ export const ensureMetadataHandleIsBranchScope = (
 ) => {
   handle.change((d) => {
     if (!d.isBranchScope) {
+      // @ts-expect-error TS not smart enough to figure this one out
       d.isBranchScope = true;
-      // @ts-expect-error not smart enough to figure this one out
+      // @ts-expect-error TS not smart enough to figure this one out
       d.branches = [];
     }
   });
@@ -302,8 +316,12 @@ const pushFile = async ({
   filePath,
   folderHandle,
   repo,
-  buildMetadata,
-  buildMetadataHandle,
+  buildStuff,
+}: {
+  filePath: string;
+  folderHandle: DocHandle<FolderDoc>;
+  repo: Repo;
+  buildStuff?: BuildStuff;
 }): Promise<{
   handle: DocHandle<FileDoc>;
   mainUrl: AutomergeUrl;
@@ -320,6 +338,9 @@ const pushFile = async ({
   const fileNameWithExtension = path.basename(filePath);
 
   const folderDoc = await folderHandle.doc();
+  if (!folderDoc) {
+    throw new Error(`Folder doc missing: ${folderHandle.url}`);
+  }
 
   if (!folderDoc.docs) {
     throw new Error(
@@ -332,15 +353,15 @@ const pushFile = async ({
   );
 
   const changeMetadata =
-    buildMetadata &&
-    buildMetadata.outputs.some(
+    buildStuff &&
+    buildStuff.buildMetadata.outputs.some(
       (o) => path.resolve(filePath) === path.resolve(o)
     )
-      ? { buildDocUrl: buildMetadataHandle.url, buildId: buildMetadata.id }
+      ? { buildDocUrl: buildStuff.buildMetadataHandle.url, buildId: buildStuff.buildMetadata.id }
       : undefined;
 
-  let handle;
-  let mainUrl;
+  let handle: DocHandle<FileDoc>;
+  let mainUrl: AutomergeUrl = undefined as any;  // TODO: JAH strict fix - what happens if !existingDocLink below?
   let didChange = false;
   if (existingDocLink) {
     handle = await findWithActiveBranch<FileDoc>(existingDocLink.url, repo);
@@ -379,7 +400,7 @@ const pushFile = async ({
       (handle as DocHandle<MarkdownDoc>).change(
         (doc) => {
           // init datatype schema
-          doc.content = fileContents;
+          doc.content = fileContents as string;  // TODO: JAH strict fix - what if it's a Buffer?
           doc.discussions = {};
 
           // init patchwork metadata
@@ -418,7 +439,7 @@ const pushFile = async ({
       );
     }
 
-    console.log("push", filePath, Automerge.getHeads(handle.docSync()));
+    console.log("push", filePath, Automerge.getHeads(handle.docSync()!));  // TODO: JAH strict fix
 
     folderHandle.change((d) => {
       d.docs.push({

@@ -17,6 +17,9 @@ export const findWithActiveBranch = async <T>(
   let cloneMap: DocCloneMap = {};
   if (branchUrl !== "main" && isValidAutomergeUrl(branchUrl)) {
     const branchDoc = await repo.find<BranchDoc>(branchUrl).doc();
+    if (!branchDoc) {
+      throw new Error(`Version control metadata doc missing: ${branchUrl}`);
+    }
     cloneMap = branchDoc.clones;
   }
   const url = cloneMap[docUrl]?.url ?? docUrl;

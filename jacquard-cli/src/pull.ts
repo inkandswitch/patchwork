@@ -10,6 +10,10 @@ export async function pull(
   repo: Repo,
   { projectFolderUrl, dir }: CommandLineArgs
 ) {
+  if (!projectFolderUrl) {
+    console.log("No project folder URL provided.");
+    return;
+  }
   await pullFolder({ folderUrl: projectFolderUrl, dir, repo });
 }
 

@@ -59,7 +59,7 @@ export async function latex(
     const match = line.match(FILE_REFRENCE_REGEX);
 
     if (match) {
-      inputs.push(`./${match.groups.filePath}`);
+      inputs.push(`./${match.groups!.filePath}`);
     }
   });
 
@@ -70,7 +70,7 @@ export async function latex(
   const BIB_REF_REGEX = /\\bibliography\{(?<filePath>[^}]*)\}/g;
   for (const match of sourceContent.matchAll(BIB_REF_REGEX)) {
     const texFileDir = path.dirname(filePath);
-    const bibFilePath = match.groups.filePath;
+    const bibFilePath = match.groups!.filePath;
     inputs.push(`./${path.relative(dir, path.join(texFileDir, bibFilePath))}`);
   }
 

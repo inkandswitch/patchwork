@@ -1,4 +1,5 @@
 import { FolderDoc } from "@/packages/folder";
+import { objectFromEntries } from "@/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { CommandLineArgs } from ".";
@@ -21,6 +22,11 @@ export async function refresh(
   repo: Repo,
   { dir, projectFolderUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs
 ) {
+  if (!projectFolderUrl) {
+    console.log("No project folder URL provided.");
+    return;
+  }
+
   // get build metadata
   const folderHandle = await findWithActiveBranch<FolderDoc>(
     projectFolderUrl,
@@ -51,6 +57,9 @@ export async function refresh(
 
   while (true) {
     const buildMetadataDoc = await buildMetadataHandle.doc();
+    if (!buildMetadataDoc) {
+      throw new Error(`Build metadata doc missing: ${buildMetadataDocUrl}`);
+    }
 
     const projectState = await getProjectState(
       repo,
@@ -71,6 +80,9 @@ export async function refresh(
         const buildRun = buildMetadataDoc.buildRuns.find(
           ({ id }) => id === buildRunId
         );
+        if (!buildRun) {
+          throw new Error(`Build run missing from doc: ${buildRunId}`);
+        }
         if (
           buildRun.inputs.every(
             (input) => stalenessInfo.docStatuses[input.docUrl].length === 0
@@ -144,11 +156,14 @@ async function getProjectState(
       : []
   );
 
-  const files = Object.fromEntries(
+  const files = objectFromEntries(
     await Promise.all(
       fileUrls.map(async (fileUrl) => {
         const fileHandle = await findWithActiveBranch<FileDoc>(fileUrl, repo);
         const doc = await fileHandle.doc();
+        if (!doc) {
+          throw new Error(`File doc missing: ${fileHandle.url} (main: ${fileUrl})`);
+        }
         return [fileUrl, doc];
       })
     )

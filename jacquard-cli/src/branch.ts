@@ -20,6 +20,9 @@ export const listBranches = async (
   const projectFolderDoc = await repo
     .find<HasVersionControlMetadata<unknown, unknown>>(projectFolderUrl)
     .doc();
+  if (!projectFolderDoc) {
+    throw new Error(`Project folder doc missing: ${projectFolderUrl}`);
+  }
   const versionControlMetadataUrl = projectFolderDoc.versionControlMetadataUrl;
 
   if (!versionControlMetadataUrl) {
@@ -32,6 +35,9 @@ export const listBranches = async (
   const versionControlMetadataDoc = await repo
     .find<VersionControlSidecarDoc>(versionControlMetadataUrl)
     .doc();
+  if (!versionControlMetadataDoc) {
+    throw new Error(`Version control metadata doc missing: ${versionControlMetadataUrl}`);
+  }
 
   if (!versionControlMetadataDoc.isBranchScope) {
     console.log("No branches found. (Folder is not a branch scope)");
@@ -58,12 +64,16 @@ export const listBranches = async (
     console.log(`- main`);
   }
   branches.forEach(async ({ branchDoc, url }) => {
+    const name = branchDoc?.name ?? '<branch doc missing>';
     if (config?.activeBranchUrl === url) {
-      console.log(`- \x1b[1m${branchDoc.name}\x1b[0m`);
+      console.log(`- \x1b[1m${name}\x1b[0m`);
     } else {
-      console.log(`- ${branchDoc.name}`);
+      console.log(`- ${name}`);
     }
     console.log(`  URL: ${url}`);
+    if (!branchDoc) {
+      return;
+    }
     if (branchDoc.createdAt) {
       console.log(
         `  Created: ${new Date(branchDoc.createdAt).toLocaleString()}`
@@ -71,7 +81,9 @@ export const listBranches = async (
     }
     if (branchDoc.createdBy) {
       const contactDoc = await repo.find<ContactDoc>(branchDoc.createdBy).doc();
-      if (contactDoc.type === "registered") {
+      if (!contactDoc) {
+        console.log(`  Created by: <contact doc missing>`);
+      } else if (contactDoc.type === "registered") {
         console.log(`  Created by: ${contactDoc.name}`);
       } else {
         console.log(`  Created by: anonymous user`);

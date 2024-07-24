@@ -10,15 +10,19 @@ export function getBuildMetadataDocUrl(folderDoc: Doc<FolderDoc>) {
 
 export async function waitForSync(
   handlesToWaitOn: DocHandle<unknown>[],
-  syncServerStorageId: StorageId
+  syncServerStorageId: StorageId | undefined
 ) {
-  console.log("Waiting for files to sync...");
+  if (!syncServerStorageId) {
+    console.log("No sync server storage ID provided. Waiting forever...");
+    return new Promise(() => {});
+  }
 
+  console.log("Waiting for files to sync...");
   return Promise.all(
     handlesToWaitOn.map(
       (handle) =>
         new Promise((resolve) => {
-          const newHeads = A.getHeads(handle.docSync());
+          const newHeads = A.getHeads(handle.docSync()!);  // TODO: JAH strict fix
           const remoteHeads = handle.getRemoteHeads(syncServerStorageId);
 
           // If the remote heads are already up to date, we can resolve immediately.

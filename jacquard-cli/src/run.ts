@@ -37,6 +37,11 @@ export async function run(
   }: CommandLineArgs,
   wait = true,
 ) {
+  if (!command) {
+    console.error("No command provided");
+    process.exit(1);
+  }
+
   // hack to make latex subset of run
   const commandSplit = command.split(" ");
   if (commandSplit.length === 2 && commandSplit[0] === 'latex') {
@@ -61,7 +66,7 @@ export async function run(
           const match = line.match(JACQUARD_DECLARE_REGEX);
 
           if (match) {
-            const { type, filePath } = match.groups;
+            const { type, filePath } = match.groups!;
             const relativePath = `./${path.relative(dir, filePath)}`;
 
             if (type === "input") {
