@@ -180,7 +180,6 @@ export const Explorer: React.FC = () => {
   // TODO: this only reads the main branch
   useSyncDocTitle({
     selectedDocLink,
-    selectedDoc,
     selectDocLink,
     repo,
   });

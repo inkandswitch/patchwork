@@ -1,9 +1,10 @@
+import { incorporateDocReactiveState, isLoaded, LoadingError, useDocReactive } from "@/doc-reactive";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
+import { fakeDocPath, getOmOnBranchFromPath } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { Doc } from "@automerge/automerge/next";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useDataType } from "../../datatypes";
+import { useUIStateOm } from "../account";
 
 // This hook keeps the name of the link synced with the title of the document.
 // The update is triggered every time the selected doc changes.
@@ -12,12 +13,10 @@ import { useDataType } from "../../datatypes";
 // updated once the users opens the link again.
 
 export const useSyncDocTitle = ({
-  selectedDoc,
   selectedDocLink,
   repo,
   selectDocLink,
 }: {
-  selectedDoc?: Doc<HasVersionControlMetadata<unknown, unknown>>;
   selectedDocLink?: DocLinkWithFolderPath;
   repo: Repo;
   selectDocLink: (docLink: DocLinkWithFolderPath) => void;
@@ -26,9 +25,23 @@ export const useSyncDocTitle = ({
   const counterRef = useRef(0);
   const selectedDocTitleRef = useRef<{ url: AutomergeUrl; title?: string }>();
   const dataType = useDataType(selectedDocLink?.type);
+  const uiStateOm = useUIStateOm();
+  const selectedDocPath = selectedDocLink && fakeDocPath(selectedDocLink);
+
+  const selectedDoc = useDocReactive(useCallback(() => {
+    if (!selectedDocPath) { throw new LoadingError; }
+    incorporateDocReactiveState(uiStateOm);
+    return getOmOnBranchFromPath(selectedDocPath, uiStateOm, repo).doc;
+  }, [repo, selectedDocPath, uiStateOm]));
+
+  const parentFolderOm = useDocReactive(useCallback(() => {
+    if (!selectedDocPath) { throw new LoadingError; }
+    incorporateDocReactiveState(uiStateOm);
+    return getOmOnBranchFromPath<FolderDoc>(selectedDocPath.slice(0, -1), uiStateOm, repo);
+  }, [repo, selectedDocPath, uiStateOm]));
 
   useEffect(() => {
-    if (!selectedDocLink || !selectedDoc || !dataType) {
+    if (!selectedDocLink || !isLoaded(selectedDoc) || !dataType || !isLoaded(parentFolderOm)) {
       selectedDocTitleRef.current = undefined;
       return;
     }
@@ -55,18 +68,8 @@ export const useSyncDocTitle = ({
       if (title !== selectedDocTitleRef.current?.title) {
         selectedDocTitleRef.current.title = title;
 
-        const parentFolderUrl =
-          selectedDocLink.folderPath[selectedDocLink.folderPath.length - 1];
-        if (!parentFolderUrl) {
-          console.warn(
-            "expected to find a parent folder for selected doc",
-            selectedDocLink.url
-          );
-        }
-
-        const folderHandle = repo.find<FolderDoc>(parentFolderUrl);
-        folderHandle.change((doc) => {
-          const existingDocLink = doc.docs.find(
+        parentFolderOm.handle.change((d) => {
+          const existingDocLink = d.docs.find(
             (link) => link.url === selectedDocLink.url
           );
           // check if the doc link matches the current title
@@ -83,5 +86,5 @@ export const useSyncDocTitle = ({
         });
       }
     });
-  }, [selectedDoc, dataType, selectedDocLink, repo, selectDocLink]);
+  }, [selectedDoc, dataType, selectedDocLink, repo, selectDocLink, parentFolderOm]);
 };
