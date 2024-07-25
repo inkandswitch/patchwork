@@ -62,7 +62,7 @@ export const TextFileEditor = ({
           handle,
           path: ["content", "value"],
         }),
-        getPluginsByType(fileDoc!.type), // TODO: JAH strict fix
+        getPluginsByType(doc!.type), // TODO: JAH strict fix
         annotationsPlugin,
       ],
       parent: container,
@@ -74,7 +74,7 @@ export const TextFileEditor = ({
     return () => {
       view.destroy();
     };
-  }, [container, fileDoc, handle]);
+  }, [container, handle]);
 
   return <div className="codemirror-editor" ref={setContainer} />;
 };
