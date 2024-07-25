@@ -23,7 +23,11 @@ export async function activateBranch(
   }
 
   // Update the activeBranchUrl in the config
-  jacquardConfig.activeBranchUrl = branchUrl;
+  if (branchUrl === "main") {
+    delete jacquardConfig.activeBranchUrl;
+  } else {
+    jacquardConfig.activeBranchUrl = branchUrl;
+  }
 
   // Write the updated config back to jacquard.json
   fs.writeFileSync(jacquardConfigPath, JSON.stringify(jacquardConfig, null, 2));

@@ -58,7 +58,7 @@ export const listBranches = async (
 
   const config = getJacquardConfig();
 
-  if (config?.activeBranchUrl === "main") {
+  if (!config!.activeBranchUrl) {
     console.log(`- \x1b[1mmain\x1b[0m`);
   } else {
     console.log(`- main`);
