@@ -1,4 +1,4 @@
-import { ifLoaded, incorporateDocReactiveState, useDocReactive } from "@/doc-reactive";
+import { ifLoaded, incorporateDocReactiveState, parallelMap, useDocReactive } from "@/doc-reactive";
 import { UIStateDoc, useUIStateHandleDocReactive } from "@/explorer/account";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { DocPath } from "@/packages/folder/datatype";
@@ -133,13 +133,13 @@ const getProjectState = ({
   );
 
   let files: Record<AutomergeUrl, Automerge.Doc<FileDoc>> = {};
-  for (let url of fileUrls) {
+  parallelMap(fileUrls, (url) => {
     const docPath = getFakeDocPathForDocUrl(url);
     const maybeDoc = branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo).cloneOrMainOm.doc;
     if (maybeDoc) {
       files[url] = maybeDoc as Automerge.Doc<FileDoc>;
     }
-  };
+  });
 
   const references = objectEntries(files).map(([docUrl, doc]) => ({
     docUrl: docUrl as AutomergeUrl,
