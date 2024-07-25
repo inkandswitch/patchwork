@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { EditorProps } from "@/tools";
 import * as Automerge from "@automerge/automerge";
 import {
@@ -8,6 +8,7 @@ import {
 import {
   useDocument,
   useDocuments,
+  useRepo,
 } from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useState } from "react";
 import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
@@ -17,6 +18,8 @@ import { Checkbox } from "@/shadcn/ui/checkbox";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextAnchor } from "@/lib/textAnchors";
+import { ifLoaded } from "@/doc-reactive";
+import { getLastBuildRun } from "../../../jacquard/src/signals";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -30,8 +33,9 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
 
   const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
 
-  const buildMetadata = useBuildMetadata(doc, docHeads);
-  const isStale = useIsStale(buildMetadata?.inputs ?? []);
+  const repo = useRepo();
+  const buildMetadata = ifLoaded(getLastBuildRun(docUrl, repo, docHeads))
+
 
   if (!doc) {
     return null;
@@ -137,56 +141,6 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
   );
 };
 
-const useBuildMetadata = (
-  doc: Automerge.Doc<unknown> | undefined,
-  heads?: Automerge.Heads
-) => {
-  // todo: make more error resistant. and optimize further?
-  const { buildDocUrl, buildId } = useMemo(() => {
-    if (!doc) {
-      return { buildDocUrl: undefined, buildId: undefined };
-    }
-
-    const changes = Automerge.getAllChanges(
-      heads ? Automerge.view(doc, heads) : doc
-    );
-
-    // todo: handle heads with size > 1
-    // go back in history until we find a change that matches the current head
-    let lastChangeDecoded;
-    do {
-      const lastChange = changes.pop();
-      if (!lastChange) {
-        break;
-      }
-      const decodedChange = Automerge.decodeChange(lastChange);
-      if (!heads || heads[0] === decodedChange.hash) {
-        lastChangeDecoded = decodedChange;
-      }
-    } while (heads && !lastChangeDecoded);
-
-    console.log({ lastChangeDecoded, heads });
-    const lastChangeMetadata =
-      lastChangeDecoded!.message && JSON.parse(lastChangeDecoded!.message); // TODO: JAH strict fix
-    if (lastChangeMetadata && lastChangeMetadata["buildDocUrl"]) {
-      return lastChangeMetadata as {
-        buildDocUrl: AutomergeUrl;
-        buildId: string;
-      };
-    }
-    return { buildDocUrl: undefined, buildId: undefined };
-  }, [doc, heads]);
-
-  const [buildDoc] = useDocument<JacquardBuildMetadata>(buildDocUrl);
-
-  return useMemo(() => {
-    if (!buildId || !buildDoc || !doc) {
-      return;
-    }
-
-    return buildDoc.buildRuns.find(({ id }) => buildId === id);
-  }, [buildId, buildDoc, doc]);
-};
 
 interface DocUrlAtHeads {
   docUrl: AutomergeUrl;
