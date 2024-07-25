@@ -116,6 +116,17 @@ export const activeBranchInfo = (
   };
 };
 
+export const resolveUrlOnBranch = (
+  url: AutomergeUrl,
+  activeBranchOm: Om<BranchDoc> | undefined,  // undefined means "main"
+): {
+  url: AutomergeUrl,
+  baseHeads: Automerge.Heads | undefined,
+} => {
+  const cloneEntry = activeBranchOm?.doc.clones[url];
+  return cloneEntry ?? { url, baseHeads: undefined };
+}
+
 export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & ActiveBranchInfo & {
   baseHeads: Automerge.Heads | undefined;
   cloneOrMainOm: Om;
@@ -132,15 +143,13 @@ export const branchScopeAndActiveBranchInfo = (
   const activeBranchInfo_ = activeBranchInfo(branchScopeInfo_.branchScopePath, uiStateHandle, repo);
 
   const lastLink = docPath[docPath.length - 1];
-  const cloneEntry = activeBranchInfo_.activeBranchOm?.doc.clones[lastLink.url];
-  const cloneOm = cloneEntry && getOm(cloneEntry.url, repo);
-  const mainOm = getOm(lastLink.url, repo);
-  const cloneOrMainOm = cloneOm ?? mainOm;
+  const { url, baseHeads } = resolveUrlOnBranch(lastLink.url, activeBranchInfo_.activeBranchOm);
+  const cloneOrMainOm = getOm(url, repo);
 
   return {
     ...branchScopeInfo_,
     ...activeBranchInfo_,
     cloneOrMainOm,
-    baseHeads: cloneEntry?.baseHeads,
+    baseHeads,
   };
 };
