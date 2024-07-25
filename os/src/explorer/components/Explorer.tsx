@@ -30,7 +30,7 @@ import { Om } from "@/om";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { waitForLoaded } from "@/doc-reactive";
-import { branchScopeAndActiveBranchInfo, fakeDocPath } from "@/versionControl/signals";
+import { getBranchScopeAndActiveBranchInfo, fakeDocPath } from "@/versionControl/signals";
 import _ from "lodash";
 import { useDataType, useDataTypes } from "../../datatypes";
 import { useTool, useToolsForDataType } from "../../tools";
@@ -157,7 +157,7 @@ export const Explorer: React.FC = () => {
       }
 
       const { cloneOrMainOm } = await waitForLoaded(() =>
-        branchScopeAndActiveBranchInfo(parentFolderDocPath, uiStateHandle, repo)
+        getBranchScopeAndActiveBranchInfo(parentFolderDocPath, uiStateHandle, repo)
       );
       const parentFolderBranchedOm = cloneOrMainOm as Om<FolderDoc>;
 

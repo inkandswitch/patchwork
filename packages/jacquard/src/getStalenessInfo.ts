@@ -5,7 +5,7 @@ import {
   FolderDocWithMetadata
 } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { objectEntries } from "@/utils";
-import { branchScopeAndActiveBranchInfo } from "@/versionControl/signals";
+import { getBranchScopeAndActiveBranchInfo } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { FileDoc } from "../../file/src/datatype";

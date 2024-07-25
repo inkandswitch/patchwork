@@ -4,11 +4,11 @@ import { DocPath } from "@/packages/folder/datatype";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";
 import {
-  activeBranchInfo,
+  getActiveBranchInfo,
   BranchScopeAndActiveBranchInfo,
-  branchScopeAndActiveBranchInfo,
+  getBranchScopeAndActiveBranchInfo,
   BranchScopeInfo,
-  branchScopeInfo,
+  getBranchScopeInfo,
 } from "./signals";
 
 // Given a doc path representing current selected doc,
@@ -22,7 +22,7 @@ export const useBranchScopeInfo = (
 ): BranchScopeInfo | undefined => {
   const repo = useRepo();
   return ifLoaded(useDocReactive(useCallback(() => {
-    return docPath && branchScopeInfo(docPath, repo);
+    return docPath && getBranchScopeInfo(docPath, repo);
   }, [docPath, repo])));
 };
 
@@ -32,7 +32,7 @@ export const useActiveBranchInfo = (
   const repo = useRepo();
   const uiStateHandle = useUIStateHandle();
   return ifLoaded(useDocReactive(useCallback(() => {
-    return branchScopePath && uiStateHandle && activeBranchInfo(branchScopePath, uiStateHandle, repo);
+    return branchScopePath && uiStateHandle && getActiveBranchInfo(branchScopePath, uiStateHandle, repo);
   }, [branchScopePath, uiStateHandle, repo])));
 };
 
@@ -44,6 +44,6 @@ export const useBranchScopeAndActiveBranchInfo = (
   const repo = useRepo();
   const uiStateHandle = useUIStateHandle();
   return ifLoaded(useDocReactive(useCallback(() => {
-    return docPath && uiStateHandle && branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo);
+    return docPath && uiStateHandle && getBranchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo);
   }, [docPath, uiStateHandle, repo])));
 };

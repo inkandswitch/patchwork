@@ -9,7 +9,7 @@ import {
 import { EditorProps } from "@/tools";
 import { objectEntries } from "@/utils";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
-import { branchScopeAndActiveBranchInfo } from "@/versionControl/signals";
+import { getBranchScopeAndActiveBranchInfo } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, isValidAutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -89,7 +89,7 @@ const useProjectState = ({
       filesReferencedInBuildsOnly,
       getDocOnBranch(url: AutomergeUrl) {
         const docPath = getFakeDocPathForDocUrl(url);
-        return branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo).cloneOrMainOm.doc as Automerge.Doc<FileDoc>;
+        return getBranchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo).cloneOrMainOm.doc as Automerge.Doc<FileDoc>;
       }
     });
   }, [buildRuns, filesReferencedInBuildsOnly, folderDoc, getFakeDocPathForDocUrl, repo, uiStateHandle])));

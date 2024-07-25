@@ -1,28 +1,19 @@
-import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MoveHandler, NodeRendererProps, RenameHandler, Tree } from "react-arborist";
-import { AccountPicker } from "./AccountPicker";
-import { FillFlexParent } from "./FillFlexParent";
-
+import { getDoc, ifLoaded, incorporateDocReactiveState, useDocReactive } from "@/doc-reactive";
+import { Icon, IconType } from "@/lib/icons";
 import {
   DocLink,
   DocLinkWithFolderPath,
   FolderDoc,
   FolderDocWithChildren,
 } from "@/packages/folder";
-import { useDataType, useDataTypes } from "../../datatypes";
-
-import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
-
-import { Icon, IconType } from "@/lib/icons";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { Input } from "@/shadcn/ui/input";
-import { getDoc, isLoaded, useDocReactive } from "@/doc-reactive";
-import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 import {
-  HasVersionControlMetadata,
-  VersionControlSidecarDoc,
+  HasVersionControlMetadata
 } from "@/versionControl/schema";
+import { fakeDocPath, getActiveBranchInfo, getVersionControlMetadataOm } from "@/versionControl/signals";
+import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
   useRepo
@@ -30,32 +21,34 @@ import {
 import { structuredClone } from "@tldraw/tldraw";
 import { capitalize, uniqBy } from "lodash";
 import { ChevronsLeft, FolderInput, GitBranchIcon } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MoveHandler, NodeRendererProps, RenameHandler, Tree } from "react-arborist";
+import { useDataType, useDataTypes } from "../../datatypes";
 import {
   UIStateDoc,
   useCurrentAccountDoc,
-  useDatatypeSettings
+  useDatatypeSettings,
+  useUIStateHandleDocReactive
 } from "../account";
-import { canBeUndef } from "@/utils";
-import { fakeDocPath } from "@/versionControl/signals";
+import { AccountPicker } from "./AccountPicker";
+import { FillFlexParent } from "./FillFlexParent";
 
 const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const { node, style, dragHandle } = props;
   const dataType = useDataType(node.data.type);
 
-  // For every doc, we figure out the branch scope and active branch info.
-  // Currently we don't show anything if the doc is controlled by a parent branch scope,
-  // but we could use that info to visualize something in the future.
   const docPath = fakeDocPath(node.data);
-  const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(docPath);
-
   const repo = useRepo();
-  const isBranchScope = useDocReactive(useCallback(() => {
+  const uiState = useUIStateHandleDocReactive();
+  const activeBranchName = ifLoaded(useDocReactive(useCallback(() => {
+    incorporateDocReactiveState(uiState);
     const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
-    const versionControlMetadataUrl = canBeUndef(doc.versionControlMetadataUrl);
-    if (!versionControlMetadataUrl) { return false;}
-    const versionControlMetadataDoc = getDoc<VersionControlSidecarDoc>(versionControlMetadataUrl, repo);
-    return versionControlMetadataDoc.isBranchScope;
-  }, [node.data.url, repo])) === true;
+    const versionControlMetadataDoc = getVersionControlMetadataOm(doc, repo)?.doc;
+    if (versionControlMetadataDoc?.isBranchScope) {
+      const { activeBranchOm } = getActiveBranchInfo(docPath, uiState, repo);
+      return activeBranchOm?.doc.name ?? "Main";
+    }
+  }, [docPath, node.data.url, repo, uiState])));
 
   let icon;
 
@@ -104,14 +97,12 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
               {node.children?.length || 0}
             </div>
           )}
-          <div className="text-xs text-gray-500 flex items-center gap-1">
-            {isBranchScope && <GitBranchIcon size={14} className="ml-1" />}
-            {isBranchScope && branchScopeAndActiveBranchInfo
-              ? `${branchScopeAndActiveBranchInfo.activeBranchOm?.doc.name ?? "Main"}`
-              : isBranchScope
-              ? "Main"
-              : ""}
-          </div>
+          { activeBranchName &&
+            <div className="text-xs text-gray-500 flex items-center gap-1">
+              <GitBranchIcon size={14} className="ml-1" />
+              {activeBranchName}
+            </div>
+          }
         </div>
       )}
       {node.isEditing && <Edit {...props} />}

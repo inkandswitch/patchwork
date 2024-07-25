@@ -11,6 +11,15 @@ import {
 } from "./schema";
 import { canBeUndef } from "@/utils";
 
+export const getVersionControlMetadataOm = (
+  doc: Automerge.Doc<HasVersionControlMetadata>,
+  repo: Repo,
+): Om<VersionControlSidecarDoc> | undefined => {
+  const versionControlMetadataUrl = canBeUndef(doc.versionControlMetadataUrl);
+  return versionControlMetadataUrl && getOm<VersionControlSidecarDoc>(versionControlMetadataUrl, repo);
+}
+
+
 // Given a doc path, you can ask for its "branch scope info". For convenience,
 // if the path doesn't actually have a branch scope, we return values as though
 // it were its own branch scope. (This represents what happens if you create a
@@ -26,7 +35,7 @@ export type BranchScopeInfo = {
 
 // Given a doc path representing current selected doc,
 // resolve a branch scope and return relevant information about branches
-export const branchScopeInfo = (
+export const getBranchScopeInfo = (
   docPath: DocPath,
   repo: Repo
 ): BranchScopeInfo => {
@@ -34,11 +43,7 @@ export const branchScopeInfo = (
   // to work with them in the useMemo hook below we fetch them with useDocuments
   const linkInfos = parallelMap(docPath, (link) => {
     const linkOm = getOm<HasVersionControlMetadata>(link.url, repo);
-    const versionControlMetadataUrl = linkOm.doc.versionControlMetadataUrl as AutomergeUrl | undefined;
-    const versionControlMetadataOm = versionControlMetadataUrl && getOm<VersionControlSidecarDoc>(
-      versionControlMetadataUrl,
-      repo
-    );
+    const versionControlMetadataOm = getVersionControlMetadataOm(linkOm.doc, repo);
     return { linkOm, versionControlMetadataOm };
   });
 
@@ -82,7 +87,7 @@ export type ActiveBranchInfo = {
   setActiveBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
 };
 
-export const activeBranchInfo = (
+export const getActiveBranchInfo = (
   branchScopePath: DocPath,
   uiStateHandle: DocHandle<UIStateDoc>,
   repo: Repo
@@ -136,21 +141,21 @@ export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & ActiveBranchInfo 
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.
-export const branchScopeAndActiveBranchInfo = (
+export const getBranchScopeAndActiveBranchInfo = (
   docPath: DocPath,
   uiStateHandle: DocHandle<UIStateDoc>,
   repo: Repo
 ): BranchScopeAndActiveBranchInfo => {
-  const branchScopeInfo_ = branchScopeInfo(docPath, repo);
-  const activeBranchInfo_ = activeBranchInfo(branchScopeInfo_.branchScopePath, uiStateHandle, repo);
+  const branchScopeInfo = getBranchScopeInfo(docPath, repo);
+  const activeBranchInfo = getActiveBranchInfo(branchScopeInfo.branchScopePath, uiStateHandle, repo);
 
   const lastLink = docPath[docPath.length - 1];
-  const { url, baseHeads } = resolveUrlOnBranch(lastLink.url, activeBranchInfo_.activeBranchOm?.url, repo);
+  const { url, baseHeads } = resolveUrlOnBranch(lastLink.url, activeBranchInfo.activeBranchOm?.url, repo);
   const cloneOrMainOm = getOm(url, repo);
 
   return {
-    ...branchScopeInfo_,
-    ...activeBranchInfo_,
+    ...branchScopeInfo,
+    ...activeBranchInfo,
     cloneOrMainOm,
     baseHeads,
   };

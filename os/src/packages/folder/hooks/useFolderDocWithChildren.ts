@@ -1,7 +1,7 @@
 import { ifLoaded, parallelMap, useDocReactive } from "@/doc-reactive";
 import { useUIStateHandle } from "@/explorer/account";
 import { Om } from "@/om";
-import { branchScopeAndActiveBranchInfo, fakeDocPath } from "@/versionControl/signals";
+import { getBranchScopeAndActiveBranchInfo, fakeDocPath } from "@/versionControl/signals";
 import { AutomergeUrl, Doc } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";
@@ -92,8 +92,8 @@ export function useFolderDocWithChildren(
   return ifLoaded(useDocReactive(useCallback(() => {
     if (!rootFolderUrl || !uiStateHandle) return undefined;
     const getDocOnBranch = (docPath: DocPath) => {
-      const branchScopeAndActiveBranchInfo_ = branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo);
-      const folderOm = branchScopeAndActiveBranchInfo_.cloneOrMainOm as Om<FolderDoc>;
+      const branchScopeAndActiveBranchInfo = getBranchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo);
+      const folderOm = branchScopeAndActiveBranchInfo.cloneOrMainOm as Om<FolderDoc>;
       return folderOm.doc;
     };
     return getFolderDocWithChildren(rootFolderUrl, getDocOnBranch);
