@@ -63,11 +63,12 @@ export async function refresh(
       const getDocOnBranchFromUrl = (fileUrl: AutomergeUrl) => {
         const fileHandle = findWithActiveBranch<FileDoc>(fileUrl, repo);
         return getDoc<any>(fileHandle.url, repo);
-      }
+      };
 
       const folderDoc = getFolderDocWithChildren(
         projectFolderUrl,
-        (docPath: DocPath) => getDocOnBranchFromUrl(docPath[docPath.length - 1].url)
+        (docPath: DocPath) =>
+          getDocOnBranchFromUrl(docPath[docPath.length - 1].url)
       );
 
       return getProjectState({
@@ -75,9 +76,11 @@ export async function refresh(
         buildRuns: buildMetadataDoc.buildRuns,
         filesReferencedInBuildsOnly: true,
         getDocOnBranchFromUrl,
-      })
+      });
     });
     const stalenessInfo = getStalenessInfo(projectState);
+
+    console.log(stalenessInfo);
 
     let ranSomethingThisLoop = false;
 
@@ -108,7 +111,7 @@ export async function refresh(
               patchworkUrl,
               command: buildRun.command,
             },
-            false,  // actually, let's wait now
+            false // actually, let's wait now
           );
           ranSomethingThisLoop = true;
           ranSomethingEver = true;

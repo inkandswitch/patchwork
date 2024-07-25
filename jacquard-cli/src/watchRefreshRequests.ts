@@ -16,7 +16,13 @@ export async function watchRefreshRequests(
   }
 
   const projectFolderHandle = repo.find<FolderDoc>(projectFolderUrl);
+
   const projectFolder = await projectFolderHandle.doc();
+
+  if (!projectFolder) {
+    console.log("Failed to load project folder");
+    return;
+  }
 
   const metadataDocUrl = projectFolder.docs.find(
     (doc) => doc.type === "jacquard-build-metadata"
@@ -34,9 +40,12 @@ export async function watchRefreshRequests(
   // todo: allow to abort running refreshs
   let needsRefresh = false;
 
-  const metaDataDocHandle = repo.find<JacquardBuildMetadata>(metadataDocUrl);
+  const metadataDocHandle = repo.find<JacquardBuildMetadata>(metadataDocUrl);
+  await metadataDocHandle.whenReady();
 
-  metaDataDocHandle.on("change", async ({ doc }) => {
+  console.log("waiting for requests ...");
+
+  metadataDocHandle.on("change", async ({ doc }) => {
     if (doc.refreshState === "requesting") {
       triggerRefresh();
     }
@@ -48,16 +57,21 @@ export async function watchRefreshRequests(
       return;
     }
 
-    metaDataDocHandle.change((doc) => {
+    metadataDocHandle.change((doc) => {
       doc.refreshState = "processing";
     });
 
+    console.log("\nrefresh started");
+
+    console.log("pulling");
     await pull(repo, {
       dir,
       projectFolderUrl,
       syncServerStorageId,
       patchworkUrl,
     });
+    console.log("done pull");
+
     activeRefresh = refresh(repo, {
       dir,
       projectFolderUrl,
@@ -68,14 +82,30 @@ export async function watchRefreshRequests(
     await activeRefresh;
     await sleep(500);
 
+    activeRefresh = undefined;
+
+    console.log("refresh finished");
+
     // check if we need to rerun refresh because a refresh was triggered
     if (needsRefresh) {
       triggerRefresh();
       return;
     }
 
-    metaDataDocHandle.change((doc) => {
-      doc.refreshState = "processing";
+    metadataDocHandle.change((doc) => {
+      doc.refreshState = "idle";
     });
   };
+
+  const metadataDoc = await metadataDocHandle.doc();
+
+  if (
+    metadataDoc?.refreshState === "requesting" ||
+    metadataDoc?.refreshState === "processing"
+  ) {
+    triggerRefresh();
+  }
+
+  // wait indefinitely
+  return await new Promise(() => {});
 }
