@@ -89,11 +89,9 @@ export type ActiveBranchInfo = {
 
 export const getActiveBranchInfo = (
   branchScopePath: DocPath,
-  uiStateHandle: DocHandle<UIStateDoc>,
+  uiStateOm: Om<UIStateDoc>,
   repo: Repo
 ): ActiveBranchInfo => {
-  const uiStateOm = getOm<UIStateDoc>(uiStateHandle.url, repo);
-
   const activeBranchUrl = canBeUndef(uiStateOm.doc.openBranches[docPathString(branchScopePath)]);
 
   const setActiveBranchUrl = (branchDocUrl: AutomergeUrl | null) => {
@@ -143,11 +141,11 @@ export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & ActiveBranchInfo 
 // and uses that to figure out what branch is active in the branch scope.
 export const getBranchScopeAndActiveBranchInfo = (
   docPath: DocPath,
-  uiStateHandle: DocHandle<UIStateDoc>,
+  uiStateOm: Om<UIStateDoc>,
   repo: Repo
 ): BranchScopeAndActiveBranchInfo => {
   const branchScopeInfo = getBranchScopeInfo(docPath, repo);
-  const activeBranchInfo = getActiveBranchInfo(branchScopeInfo.branchScopePath, uiStateHandle, repo);
+  const activeBranchInfo = getActiveBranchInfo(branchScopeInfo.branchScopePath, uiStateOm, repo);
 
   const lastLink = docPath[docPath.length - 1];
   const { url, baseHeads } = resolveUrlOnBranch(lastLink.url, activeBranchInfo.activeBranchOm?.url, repo);
@@ -160,6 +158,17 @@ export const getBranchScopeAndActiveBranchInfo = (
     baseHeads,
   };
 };
+
+/**
+ * Get the Om at the docPath, accounting for active branches stored in the UI state.
+ */
+export const getOmOnBranchFromPath = <T>(
+  docPath: DocPath,
+  uiStateOm: Om<UIStateDoc>,
+  repo: Repo
+): Om<T> => {
+  return getBranchScopeAndActiveBranchInfo(docPath, uiStateOm, repo).cloneOrMainOm as Om<T>;
+}
 
 // TODO: provisional until we get rid of DocLinkWithFolderPath. also, this is in
 // "signals" (bad name) cuz it needs to be somewhere that's safe to access from

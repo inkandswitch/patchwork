@@ -1,13 +1,13 @@
-import { ifLoaded, useDocReactive } from "@/doc-reactive";
-import { useUIStateHandle } from "@/explorer/account";
+import { ifLoaded, incorporateDocReactiveState, useDocReactive } from "@/doc-reactive";
+import { useUIStateOm } from "@/explorer/account";
 import { DocPath } from "@/packages/folder/datatype";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";
 import {
-  getActiveBranchInfo,
   BranchScopeAndActiveBranchInfo,
-  getBranchScopeAndActiveBranchInfo,
   BranchScopeInfo,
+  getActiveBranchInfo,
+  getBranchScopeAndActiveBranchInfo,
   getBranchScopeInfo,
 } from "./signals";
 
@@ -30,10 +30,11 @@ export const useActiveBranchInfo = (
   branchScopePath: DocPath | undefined
 ) => {
   const repo = useRepo();
-  const uiStateHandle = useUIStateHandle();
+  const uiStateOm = useUIStateOm();
   return ifLoaded(useDocReactive(useCallback(() => {
-    return branchScopePath && uiStateHandle && getActiveBranchInfo(branchScopePath, uiStateHandle, repo);
-  }, [branchScopePath, uiStateHandle, repo])));
+    incorporateDocReactiveState(uiStateOm);
+    return branchScopePath && getActiveBranchInfo(branchScopePath, uiStateOm, repo);
+  }, [uiStateOm, branchScopePath, repo])));
 };
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
@@ -42,8 +43,9 @@ export const useBranchScopeAndActiveBranchInfo = (
   docPath: DocPath | undefined
 ): BranchScopeAndActiveBranchInfo | undefined => {
   const repo = useRepo();
-  const uiStateHandle = useUIStateHandle();
+  const uiStateOm = useUIStateOm();
   return ifLoaded(useDocReactive(useCallback(() => {
-    return docPath && uiStateHandle && getBranchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo);
-  }, [docPath, uiStateHandle, repo])));
+    incorporateDocReactiveState(uiStateOm);
+    return docPath && uiStateOm && getBranchScopeAndActiveBranchInfo(docPath, uiStateOm, repo);
+  }, [docPath, uiStateOm, repo])));
 };

@@ -1,4 +1,4 @@
-import { getDoc, ifLoaded, incorporateDocReactiveState, useDocReactive } from "@/doc-reactive";
+import { getDoc, ifLoaded, incorporateDocReactiveState, useDocReactive, waitForLoaded } from "@/doc-reactive";
 import { Icon, IconType } from "@/lib/icons";
 import {
   DocLink,
@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 import {
   HasVersionControlMetadata
 } from "@/versionControl/schema";
-import { fakeDocPath, getActiveBranchInfo, getVersionControlMetadataOm } from "@/versionControl/signals";
+import { fakeDocPath, getActiveBranchInfo, getOmOnBranchFromPath, getVersionControlMetadataOm } from "@/versionControl/signals";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
@@ -25,13 +25,15 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { MoveHandler, NodeRendererProps, RenameHandler, Tree } from "react-arborist";
 import { useDataType, useDataTypes } from "../../datatypes";
 import {
+  docPathString,
   UIStateDoc,
   useCurrentAccountDoc,
   useDatatypeSettings,
-  useUIStateHandleDocReactive
+  useUIStateOm
 } from "../account";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
+import { DocPath } from "@/packages/folder/datatype";
 
 const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const { node, style, dragHandle } = props;
@@ -39,16 +41,16 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
 
   const docPath = fakeDocPath(node.data);
   const repo = useRepo();
-  const uiState = useUIStateHandleDocReactive();
+  const uiStateOm = useUIStateOm();
   const activeBranchName = ifLoaded(useDocReactive(useCallback(() => {
-    incorporateDocReactiveState(uiState);
+    incorporateDocReactiveState(uiStateOm);
     const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
     const versionControlMetadataDoc = getVersionControlMetadataOm(doc, repo)?.doc;
     if (versionControlMetadataDoc?.isBranchScope) {
-      const { activeBranchOm } = getActiveBranchInfo(docPath, uiState, repo);
+      const { activeBranchOm } = getActiveBranchInfo(docPath, uiStateOm, repo);
       return activeBranchOm?.doc.name ?? "Main";
     }
-  }, [docPath, node.data.url, repo, uiState])));
+  }, [docPath, node.data.url, repo, uiStateOm])));
 
   let icon;
 
@@ -206,45 +208,64 @@ export const Sidebar: React.FC<SidebarProps> = ({
     accountDoc?.uiStateUrl
   );
 
-  const onMove: MoveHandler<DocLinkWithFolderPath> = ({
+  const uiStateOm = useUIStateOm();
+
+  const onMove: MoveHandler<DocLinkWithFolderPath> = async ({
     parentNode,
     index: dragTargetIndex,
     dragNodes,
   }) => {
+    // Here's how this interacts with branching...
+    // - The original folder entry is always removed from the source folder on
+    //   its active branch.
+    // - A new folder entry is always added to the destination folder on its
+    //   active branch.
+    // - If the original item was on a branch, strictly UNDER its branch scope,
+    //   then we need to make sure we're moving the contents it has on that
+    //   branch to the destination location. There are two cases here...
+    //   - If the destination location is on the same branch, we can just move
+    //     the directory entry (which refers to the main copy) over verbatim.
+    //   - If the destination location is on a different branch, we need to
+    //     create a new directory entry that refers to the clone on the branch.
+    //     This sort of breaks our rule about not putting clone URLs into data,
+    //     but I think it's ok; we're promoting a clone to a main copy.
+
     for (const dragNode of dragNodes) {
-      const currentParentUrl =
-        dragNode.parent!.level < 0  // TODO: JAH strict fix
-          ? rootFolderUrl
-          : (dragNode.parent!.data.url as AutomergeUrl);
-      const currentParentHandle = repo.find<FolderDoc>(currentParentUrl);
-      const dragItemIndex = currentParentHandle
-        .docSync()!  // TODO: JAH strict fix
+      const srcPath = fakeDocPath(dragNode.data);
+      const srcParentPath = srcPath.slice(0, -1);
+      const srcParentOm = await waitForLoaded(() => {
+        incorporateDocReactiveState(uiStateOm);
+        return getOmOnBranchFromPath<FolderDoc>(srcParentPath, uiStateOm, repo);
+      })
+      const dragItemIndex = srcParentOm.doc
         .docs.findIndex((item) => item.url === dragNode.data.url);
-
-      const newParentUrl =
-        !parentNode || parentNode.level < 0
-          ? rootFolderUrl
-          : (parentNode.data.url as AutomergeUrl);
-      const newParentHandle = repo.find<FolderDoc>(newParentUrl);
-
-      if (dragItemIndex === undefined) {
-        return;
+      if (dragItemIndex === -1) {
+        throw new Error("Couldn't find drag item in parent folder");
       }
+
+      const dstParentPath: DocPath =
+        !parentNode || parentNode.level < 0
+          ? fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []})
+          : fakeDocPath(parentNode.data);
+      const dstParentOm = await waitForLoaded(() => {
+        incorporateDocReactiveState(uiStateOm);
+        return getOmOnBranchFromPath<FolderDoc>(dstParentPath, uiStateOm, repo);
+      });
 
       // If we're dragging later within the same folder, we need to account for
       // the fact that the array will be shorter after we remove the original element
       const adjustedTargetIndex =
-        currentParentUrl === newParentUrl && dragItemIndex < dragTargetIndex
+        docPathString(srcParentPath) === docPathString(dstParentPath) && dragItemIndex < dragTargetIndex
           ? dragTargetIndex - 1
           : dragTargetIndex;
 
       let removedItem: DocLink;
-      currentParentHandle.change((d) => {
+      srcParentOm.handle.change((d) => {
         const spliceResult = d.docs.splice(dragItemIndex, 1);
         removedItem = structuredClone({ ...spliceResult[0] });
       });
 
-      newParentHandle.change((d) => {
+      dstParentOm.handle.change((d) => {
         d.docs.splice(adjustedTargetIndex, 0, removedItem);
       });
     }

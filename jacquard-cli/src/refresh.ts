@@ -60,21 +60,21 @@ export async function refresh(
     }
 
     const projectState = await waitForLoaded(() => {
-      const getDocOnBranch = (fileUrl: AutomergeUrl) => {
+      const getDocOnBranchFromUrl = (fileUrl: AutomergeUrl) => {
         const fileHandle = findWithActiveBranch<FileDoc>(fileUrl, repo);
         return getDoc<any>(fileHandle.url, repo);
       }
 
       const folderDoc = getFolderDocWithChildren(
         projectFolderUrl,
-        (docPath: DocPath) => getDocOnBranch(docPath[docPath.length - 1].url)
+        (docPath: DocPath) => getDocOnBranchFromUrl(docPath[docPath.length - 1].url)
       );
 
       return getProjectState({
         folderDoc,
         buildRuns: buildMetadataDoc.buildRuns,
         filesReferencedInBuildsOnly: true,
-        getDocOnBranch,
+        getDocOnBranchFromUrl,
       })
     });
     const stalenessInfo = getStalenessInfo(projectState);

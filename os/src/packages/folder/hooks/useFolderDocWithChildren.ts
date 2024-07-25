@@ -1,7 +1,6 @@
-import { ifLoaded, parallelMap, useDocReactive } from "@/doc-reactive";
-import { useUIStateHandle } from "@/explorer/account";
-import { Om } from "@/om";
-import { getBranchScopeAndActiveBranchInfo, fakeDocPath } from "@/versionControl/signals";
+import { ifLoaded, incorporateDocReactiveState, parallelMap, useDocReactive } from "@/doc-reactive";
+import { useUIStateOm } from "@/explorer/account";
+import { fakeDocPath, getOmOnBranchFromPath } from "@/versionControl/signals";
 import { AutomergeUrl, Doc } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";
@@ -47,9 +46,9 @@ const computeFlattenedDocLinks = ({
 // TODO: reactive but not incremental
 function materializeFolderDoc(
   docPath: DocPath,
-  getDocOnBranch: (docPath: DocPath) => Doc<FolderDoc>,
+  getDocOnBranch: (docPath: DocPath) => Doc<unknown>,
 ): FolderDocWithChildren {
-  const folder = getDocOnBranch(docPath);
+  const folder = getDocOnBranch(docPath) as Doc<FolderDoc>;
 
   return {
     ...folder,
@@ -68,10 +67,10 @@ function materializeFolderDoc(
 
 export function getFolderDocWithChildren(
   rootFolderUrl: AutomergeUrl,
-  getDocOnBranch: (docPath: DocPath) => Doc<FolderDoc>
+  getDocOnBranchFromPath: (docPath: DocPath) => Doc<unknown>
 ): FolderDocWithMetadata {
   const rootDocPath = fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []});
-  const docWithLinks = materializeFolderDoc(rootDocPath, getDocOnBranch);
+  const docWithLinks = materializeFolderDoc(rootDocPath, getDocOnBranchFromPath);
   const flatDocLinks = computeFlattenedDocLinks({
     doc: docWithLinks,
     folderPath: [rootFolderUrl],
@@ -88,14 +87,13 @@ export function useFolderDocWithChildren(
   rootFolderUrl: AutomergeUrl | undefined
 ): FolderDocWithMetadata | undefined {
   const repo = useRepo();
-  const uiStateHandle = useUIStateHandle();
+  const uiStateOm = useUIStateOm();
   return ifLoaded(useDocReactive(useCallback(() => {
-    if (!rootFolderUrl || !uiStateHandle) return undefined;
-    const getDocOnBranch = (docPath: DocPath) => {
-      const branchScopeAndActiveBranchInfo = getBranchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo);
-      const folderOm = branchScopeAndActiveBranchInfo.cloneOrMainOm as Om<FolderDoc>;
-      return folderOm.doc;
+    if (!rootFolderUrl) return undefined;
+    incorporateDocReactiveState(uiStateOm);
+    const getDocOnBranchFromPath = (docPath: DocPath) => {
+      return getOmOnBranchFromPath(docPath, uiStateOm, repo).doc;
     };
-    return getFolderDocWithChildren(rootFolderUrl, getDocOnBranch);
-  }, [rootFolderUrl, uiStateHandle, repo])));
+    return getFolderDocWithChildren(rootFolderUrl, getDocOnBranchFromPath);
+  }, [rootFolderUrl, uiStateOm, repo])));
 }

@@ -29,12 +29,12 @@ export const getProjectState = ({
   folderDoc,
   buildRuns,
   filesReferencedInBuildsOnly,
-  getDocOnBranch,
+  getDocOnBranchFromUrl,
 }: {
   folderDoc: FolderDocWithMetadata;
   buildRuns: BuildRun[];
   filesReferencedInBuildsOnly?: boolean;
-  getDocOnBranch: (url: AutomergeUrl) => Automerge.Doc<FileDoc>;
+  getDocOnBranchFromUrl: (url: AutomergeUrl) => Automerge.Doc<unknown>;
 }): ProjectState => {
   const fileUrls = folderDoc.flatDocLinks.flatMap(({ url }) =>
     !filesReferencedInBuildsOnly ||
@@ -50,7 +50,7 @@ export const getProjectState = ({
 
   let files: Record<AutomergeUrl, Automerge.Doc<FileDoc>> = {};
   parallelMap(fileUrls, (url) => {
-    files[url] = getDocOnBranch(url);
+    files[url] = getDocOnBranchFromUrl(url) as Automerge.Doc<FileDoc>;
   });
 
   const references = objectEntries(files).map(([docUrl, doc]) => ({

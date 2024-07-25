@@ -76,7 +76,6 @@ export const FolderEntryView = ({
   docLink,
   getFakeDocPathForDocUrl,
 }: FolderEntryView) => {
-  const uiStateHandle = useUIStateHandle();
   const docPath = getFakeDocPathForDocUrl(docLink.url);
   const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;

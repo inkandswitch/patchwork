@@ -1,4 +1,4 @@
-import { waitForLoaded } from "@/doc-reactive";
+import { incorporateDocReactiveState, waitForLoaded } from "@/doc-reactive";
 import { Om } from "@/om";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
@@ -26,7 +26,7 @@ import {
   useCurrentAccount,
   useCurrentAccountDoc,
   useRootFolderDocWithChildren,
-  useUIStateHandle,
+  useUIStateOm
 } from "../account";
 import { useSelectedDocLink } from "../hooks/useSelectedDocLink";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
@@ -106,7 +106,7 @@ export const Explorer: React.FC = () => {
       ? selectedTool
       : toolModules[0];
 
-  const uiStateHandle = useUIStateHandle();
+  const uiStateOm = useUIStateOm();
 
   const addNewDocument = useCallback(
     async ({
@@ -116,7 +116,7 @@ export const Explorer: React.FC = () => {
       type: string;
       change?: (doc: unknown) => void;
     }) => {
-      if (!uiStateHandle) {
+      if (!uiStateOm) {
         throw new Error("uiStateHandle not ready");
       }
 
@@ -153,9 +153,10 @@ export const Explorer: React.FC = () => {
         parentFolderDocPath = _.initial(fakeDocPath(selectedDocLink));
       }
 
-      const { cloneOrMainOm } = await waitForLoaded(() =>
-        getBranchScopeAndActiveBranchInfo(parentFolderDocPath, uiStateHandle, repo)
-      );
+      const { cloneOrMainOm } = await waitForLoaded(() => {
+        incorporateDocReactiveState(uiStateOm);
+        return getBranchScopeAndActiveBranchInfo(parentFolderDocPath, uiStateOm, repo)
+      });
       const parentFolderBranchedOm = cloneOrMainOm as Om<FolderDoc>;
 
       const newDocLink = {
@@ -173,7 +174,7 @@ export const Explorer: React.FC = () => {
         folderPath: parentFolderDocPath.map((link) => link.url),
       });
     },
-    [dataTypes, repo, selectedDocLink, uiStateHandle, selectDocLink, rootFolderUrl]
+    [dataTypes, repo, selectedDocLink, uiStateOm, selectDocLink, rootFolderUrl]
   );
 
   // TODO: this only reads the main branch

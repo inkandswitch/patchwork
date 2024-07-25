@@ -1,14 +1,15 @@
-import { ifLoaded, incorporateDocReactiveState, useDocReactive } from "@/doc-reactive";
-import { useUIStateHandleDocReactive } from "@/explorer/account";
+import { getOm, ifLoaded, incorporateDocReactiveState, useDocReactive } from "@/doc-reactive";
+import { useUIStateOm } from "@/explorer/account";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { DocPath } from "@/packages/folder/datatype";
 import {
   FolderDocWithMetadata,
+  getFolderDocWithChildren,
   useFolderDocWithChildren,
 } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { EditorProps } from "@/tools";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
-import { getBranchScopeAndActiveBranchInfo } from "@/versionControl/signals";
+import { getBranchScopeAndActiveBranchInfo, getOmOnBranchFromPath } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -30,30 +31,30 @@ export const GraphView = ({
   docHeads,
   getFakeDocPathForDocUrl,
 }: EditorProps<JacquardBuildMetadata, never>) => {
-  const [latestDoc] = useDocument<JacquardBuildMetadata>(docUrl); // ok cuz docUrl is a clone
-
-  const doc = useMemo(
-    () =>
-      docHeads && latestDoc ? Automerge.view(latestDoc, docHeads) : latestDoc,
-    [latestDoc, docHeads]
-  );
-
-  const folderProjectDocPath = doc && getFakeDocPathForDocUrl(doc.projectFolderUrl);
-  const branchScopeAndActiveBranchInfo = ifLoaded(useBranchScopeAndActiveBranchInfo(folderProjectDocPath));
-  const projectFolderOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
-
-  const projectFolder = useFolderDocWithChildren(projectFolderOm?.url);
-
-  // const [projectFolderDoc] = useDocument<FolderDoc>(doc?.projectFolderUrl);
-
-  const projectState = useProjectState({
-    folderDoc: projectFolder,
-    buildRuns: doc?.buildRuns ?? [],
-    filesReferencedInBuildsOnly: true,
-    getFakeDocPathForDocUrl,
-  });
-
-  console.log("projectState", projectState);
+  const repo = useRepo();
+  const uiStateOm = useUIStateOm();
+  const projectState = ifLoaded(useDocReactive(useCallback(() => {
+    incorporateDocReactiveState(uiStateOm);
+    const latestDocOm = getOm<JacquardBuildMetadata>(docUrl, repo); // ok cuz docUrl is a clone
+    const doc = docHeads ? Automerge.view(latestDocOm.doc, docHeads) : latestDocOm.doc;
+    const projectFolderDocPath = getFakeDocPathForDocUrl(doc.projectFolderUrl);
+    const projectFolderOm = getOmOnBranchFromPath(projectFolderDocPath, uiStateOm, repo);
+    const projectFolderWithMetadata = getFolderDocWithChildren(
+      projectFolderOm.url,
+      function getDocOnBranchFromPath(docPath: DocPath) {
+        return getOmOnBranchFromPath(docPath, uiStateOm, repo).doc;
+      }
+    );
+    return getProjectState({
+      folderDoc: projectFolderWithMetadata,
+      buildRuns: doc.buildRuns,
+      filesReferencedInBuildsOnly: true,
+      getDocOnBranchFromUrl(url: AutomergeUrl) {
+        const docPath = getFakeDocPathForDocUrl(url);
+        return getBranchScopeAndActiveBranchInfo(docPath, uiStateOm, repo).cloneOrMainOm.doc;
+      }
+    });
+  }, [docHeads, docUrl, getFakeDocPathForDocUrl, repo, uiStateOm])));
 
   if (!projectState) {
     return;
@@ -64,34 +65,6 @@ export const GraphView = ({
       <GraphvizView source={stateGraphSrc(projectState)} />
     </div>
   );
-};
-
-const useProjectState = ({
-  folderDoc,
-  buildRuns,
-  filesReferencedInBuildsOnly,
-  getFakeDocPathForDocUrl,
-}: {
-  folderDoc: FolderDocWithMetadata | undefined;
-  buildRuns: BuildRun[];
-  filesReferencedInBuildsOnly?: boolean;
-  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
-}): ProjectState | undefined => {
-  const repo = useRepo();
-  const uiStateHandle = useUIStateHandleDocReactive();
-  return ifLoaded(useDocReactive(useCallback(() => {
-    if (!folderDoc) { return; }
-    incorporateDocReactiveState(uiStateHandle);
-    return getProjectState({
-      folderDoc,
-      buildRuns,
-      filesReferencedInBuildsOnly,
-      getDocOnBranch(url: AutomergeUrl) {
-        const docPath = getFakeDocPathForDocUrl(url);
-        return getBranchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo).cloneOrMainOm.doc as Automerge.Doc<FileDoc>;
-      }
-    });
-  }, [buildRuns, filesReferencedInBuildsOnly, folderDoc, getFakeDocPathForDocUrl, repo, uiStateHandle])));
 };
 
 const GraphvizView = ({ source }: { source: string }) => {

@@ -346,19 +346,18 @@ export const useDatatypeSettings = (): ModuleSettingsDoc | undefined => {
   return datatypeSettingsDoc;
 };
 
-// terrible name & it should return an om; sry; transitional
-export const useUIStateHandleDocReactive = (): DocReactiveState<DocHandle<UIStateDoc>> => {
+export const useUIStateOm = (): DocReactiveState<Om<UIStateDoc>> => {
   const repo = useRepo();
   const account = useCurrentAccount();
   return useDocReactive(useCallback(() => {
     if (!account) { throw new LoadingError(); }
     const accountDoc = getDoc<AccountDoc>(account.handle.url, repo);
-    return repo.find<UIStateDoc>(accountDoc.uiStateUrl);
+    return getOm<UIStateDoc>(accountDoc.uiStateUrl, repo);
   }, [account, repo]));
 }
 
 export const useUIStateHandle = (): DocHandle<UIStateDoc> | undefined => {
-  return ifLoaded(useUIStateHandleDocReactive());
+  return ifLoaded(useUIStateOm())?.handle;
 };
 
 // Helpers to convert an automerge URL to/from an Account Token that the user can
