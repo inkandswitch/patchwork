@@ -78,9 +78,8 @@ export const FolderEntryView = ({
 }: FolderEntryView) => {
   const uiStateHandle = useUIStateHandle();
   const docPath = getFakeDocPathForDocUrl(docLink.url);
-  const branchScopeAndActiveBranchInfo =
-    useBranchScopeAndActiveBranchInfo(docPath);
-  const cloneOrMainOm = ifLoaded(branchScopeAndActiveBranchInfo)?.cloneOrMainOm;
+  const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(docPath);
+  const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
   const dataType = useDataType(docLink.type);
   const tool = useToolsForDataType(docLink.type)[0];
@@ -136,11 +135,11 @@ export const FolderEntryView = ({
 
           <div className="h-64 border border-gray-300">
             {!tool && <div>No editor available</div>}
-            {tool && docLink.type !== "folder" && (
+            {cloneOrMainOm && tool && docLink.type !== "folder" && (
               <MountOnlyWhenVisible height={"16rem"}>
                 <ErrorBoundary FallbackComponent={ErrorFallback}>
                   <tool.editorComponent
-                    docUrl={cloneOrMainOm!.url}  // TODO: JAH strict fix
+                    docUrl={cloneOrMainOm.url}
                     mainDocUrl={docLink.url}
                     getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                     {...annotationProps}
