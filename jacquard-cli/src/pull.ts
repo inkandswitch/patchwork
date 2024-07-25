@@ -4,8 +4,9 @@ import { CommandLineArgs } from ".";
 import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { FolderDoc } from "@/packages/folder";
 import { FileDoc } from "../../packages/file/src/datatype";
-import { findWithActiveBranch } from "./findWithActiveBranch";
+import { findWithActiveBranch, findWithActiveBranchPromise } from "./findWithActiveBranch";
 import { fetchFile } from "./util";
+import { waitForLoaded } from "@/doc-reactive";
 
 export async function pull(
   repo: Repo,
@@ -27,7 +28,7 @@ async function pullFolder({
   dir: string;
   repo: Repo;
 }) {
-  const folderHandle = await findWithActiveBranch<FolderDoc>(folderUrl, repo);
+  const folderHandle = await findWithActiveBranchPromise<FolderDoc>(folderUrl, repo);
   const doc = await folderHandle.doc();
 
   if (!doc) {
@@ -76,7 +77,7 @@ async function pullFile({
   dir: string;
   repo: Repo;
 }) {
-  const fileHandle = await findWithActiveBranch<FileDoc>(fileUrl, repo);
+  const fileHandle = await findWithActiveBranchPromise<FileDoc>(fileUrl, repo);
   const fileDoc = await fileHandle.doc();
 
   if (!fileDoc) {

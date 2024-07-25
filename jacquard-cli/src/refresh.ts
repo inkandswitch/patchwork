@@ -1,20 +1,20 @@
+import { getDoc, waitForLoaded } from "@/doc-reactive";
 import { FolderDoc } from "@/packages/folder";
-import { objectFromEntries } from "@/utils";
-import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
+import { DocPath } from "@/packages/folder/datatype";
+import { getFolderDocWithChildren } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { CommandLineArgs } from ".";
 import { FileDoc } from "../../packages/file/src/datatype";
 import {
-  BuildRun,
-  JacquardBuildMetadata,
+  JacquardBuildMetadata
 } from "../../packages/jacquard/src/datatype";
 import {
-  getStalenessInfo,
-  ProjectState,
+  getProjectState,
+  getStalenessInfo
 } from "../../packages/jacquard/src/getStalenessInfo";
+import { findWithActiveBranch, findWithActiveBranchPromise } from "./findWithActiveBranch";
 import { run } from "./run";
 import { getBuildMetadataDocUrl, waitForSync } from "./util";
-import { findWithActiveBranch } from "./findWithActiveBranch";
 
 export async function refresh(
   repo: Repo,
@@ -26,7 +26,7 @@ export async function refresh(
   }
 
   // get build metadata
-  const folderHandle = await findWithActiveBranch<FolderDoc>(
+  const folderHandle = await findWithActiveBranchPromise<FolderDoc>(
     projectFolderUrl,
     repo
   );
@@ -44,7 +44,7 @@ export async function refresh(
     process.exit(1);
   }
 
-  const buildMetadataHandle = await findWithActiveBranch<JacquardBuildMetadata>(
+  const buildMetadataHandle = await findWithActiveBranchPromise<JacquardBuildMetadata>(
     buildMetadataDocUrl,
     repo
   );
@@ -59,11 +59,24 @@ export async function refresh(
       throw new Error(`Build metadata doc missing: ${buildMetadataDocUrl}`);
     }
 
-    const projectState = await getProjectState(
-      repo,
-      folderDoc,
-      buildMetadataDoc.buildRuns
-    );
+    const projectState = await waitForLoaded(() => {
+      const getDocOnBranch = (fileUrl: AutomergeUrl) => {
+        const fileHandle = findWithActiveBranch<FileDoc>(fileUrl, repo);
+        return getDoc<any>(fileHandle.url, repo);
+      }
+
+      const folderDoc = getFolderDocWithChildren(
+        projectFolderUrl,
+        (docPath: DocPath) => getDocOnBranch(docPath[docPath.length - 1].url)
+      );
+
+      return getProjectState({
+        folderDoc,
+        buildRuns: buildMetadataDoc.buildRuns,
+        filesReferencedInBuildsOnly: true,
+        getDocOnBranch,
+      })
+    });
     const stalenessInfo = getStalenessInfo(projectState);
 
     let ranSomethingThisLoop = false;
@@ -119,71 +132,4 @@ export async function refresh(
   // TODO: stretch goals:
   //   "I'm going to run these commands in this order! here's the estimated time"
   //   "go? (y/n)" (unless you -y)
-}
-
-// TODO: copied out of GraphView
-function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
-  // TODO: we should be able to use equality to check if heads match, but
-  // there's a bug where cloning a doc adds an extra head to it; pvh promises
-  // this will get fixed soon. for now we will check if one set of heads is the
-  // subset of another – this is generally atypical cuz we don't do much
-  // concurrent stuff.
-  return heads1.every((head) => heads2.includes(head)) || heads2.every((head) => heads1.includes(head));
-}
-
-
-// TODO: adapted from GraphView hook; signals would unify them
-async function getProjectState(
-  repo: Repo,
-  folderDoc: Doc<FolderDoc>,
-  buildRuns: BuildRun[]
-): Promise<ProjectState> {
-  const filesReferencedInBuildsOnly = true;
-
-  const fileUrls = folderDoc.docs.flatMap(({ url }) =>
-    !filesReferencedInBuildsOnly ||
-    // filter out files that are not referenced by any build run
-    buildRuns.some(
-      ({ inputs, outputs }) =>
-        inputs.some((input) => input.docUrl === url) ||
-        outputs.some((output) => output.docUrl === url)
-    )
-      ? [url]
-      : []
-  );
-
-  const files = objectFromEntries(
-    await Promise.all(
-      fileUrls.map(async (fileUrl) => {
-        const fileHandle = await findWithActiveBranch<FileDoc>(fileUrl, repo);
-        const doc = await fileHandle.doc();
-        if (!doc) {
-          throw new Error(`File doc missing: ${fileHandle.url} (main: ${fileUrl})`);
-        }
-        return [fileUrl, doc];
-      })
-    )
-  );
-
-  const references = Object.entries(files).map(([docUrl, doc]) => ({
-    docUrl: docUrl as AutomergeUrl,
-    heads: Automerge.getHeads(doc),
-    path: (doc as FileDoc).name, // todo: handle this generically, we just assume here that this is a file doc
-  }));
-
-  // filter out build runs that are no longer relevant
-  // a build run is relevant as long as ALL of its output still exists in the current project
-  // TODO: this used to be "at least one", but we're gonna lazily try this
-  const filteredBuildRuns = buildRuns.filter(({ outputs }, index) =>
-    outputs.every(({ docUrl, heads }) => {
-      const doc = files[docUrl];
-
-      return doc && headsMatch(Automerge.getHeads(doc), heads);
-    })
-  );
-
-  return {
-    references,
-    buildRuns: filteredBuildRuns,
-  };
 }

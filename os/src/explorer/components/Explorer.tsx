@@ -20,7 +20,6 @@ import { Topbar } from "./Topbar";
 
 import {
   VersionControlEditor,
-  fakeDocPath,
 } from "@/versionControl/components/VersionControlEditor";
 import {
   HasVersionControlMetadata,
@@ -31,7 +30,7 @@ import { Om } from "@/om";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { waitForLoaded } from "@/doc-reactive";
-import { branchScopeAndActiveBranchInfo } from "@/versionControl/signals";
+import { branchScopeAndActiveBranchInfo, fakeDocPath } from "@/versionControl/signals";
 import _ from "lodash";
 import { useDataType, useDataTypes } from "../../datatypes";
 import { useTool, useToolsForDataType } from "../../tools";

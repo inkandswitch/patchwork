@@ -84,12 +84,13 @@ const useProjectState = ({
     if (!folderDoc) { return; }
     incorporateDocReactiveState(uiStateHandle);
     return getProjectState({
-      repo,
-      uiStateHandle: uiStateHandle,
       folderDoc,
       buildRuns,
       filesReferencedInBuildsOnly,
-      getFakeDocPathForDocUrl,
+      getDocOnBranch(url: AutomergeUrl) {
+        const docPath = getFakeDocPathForDocUrl(url);
+        return branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo).cloneOrMainOm.doc as Automerge.Doc<FileDoc>;
+      }
     });
   }, [buildRuns, filesReferencedInBuildsOnly, folderDoc, getFakeDocPathForDocUrl, repo, uiStateHandle])));
 };

@@ -29,19 +29,15 @@ export type ProjectState = {
 };
 
 export const getProjectState = ({
-  repo,
-  uiStateHandle,
   folderDoc,
   buildRuns,
   filesReferencedInBuildsOnly,
-  getFakeDocPathForDocUrl,
+  getDocOnBranch,
 }: {
-  repo: Repo,
-  uiStateHandle: DocHandle<UIStateDoc>,
   folderDoc: FolderDocWithMetadata;
   buildRuns: BuildRun[];
   filesReferencedInBuildsOnly?: boolean;
-  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
+  getDocOnBranch: (url: AutomergeUrl) => Automerge.Doc<FileDoc>;
 }): ProjectState => {
   const fileUrls = folderDoc.flatDocLinks.flatMap(({ url }) =>
     !filesReferencedInBuildsOnly ||
@@ -57,11 +53,7 @@ export const getProjectState = ({
 
   let files: Record<AutomergeUrl, Automerge.Doc<FileDoc>> = {};
   parallelMap(fileUrls, (url) => {
-    const docPath = getFakeDocPathForDocUrl(url);
-    const maybeDoc = branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo).cloneOrMainOm.doc;
-    if (maybeDoc) {
-      files[url] = maybeDoc as Automerge.Doc<FileDoc>;
-    }
+    files[url] = getDocOnBranch(url);
   });
 
   const references = objectEntries(files).map(([docUrl, doc]) => ({

@@ -1,7 +1,7 @@
 import { docPathString, UIStateDoc } from "@/explorer/account";
 import { Om } from "@/om";
-import { DocPath } from "@/packages/folder/datatype";
-import { getOm, parallelMap } from "@/doc-reactive";
+import { DocLinkWithFolderPath, type DocPath } from "@/packages/folder/datatype";
+import { getDoc, getOm, parallelMap } from "@/doc-reactive";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import {
@@ -118,12 +118,14 @@ export const activeBranchInfo = (
 
 export const resolveUrlOnBranch = (
   url: AutomergeUrl,
-  activeBranchOm: Om<BranchDoc> | undefined,  // undefined means "main"
+  activeBranchUrl: AutomergeUrl | undefined,  // undefined means "main"
+  repo: Repo
 ): {
   url: AutomergeUrl,
   baseHeads: Automerge.Heads | undefined,
 } => {
-  const cloneEntry = activeBranchOm?.doc.clones[url];
+  const activeBranchDoc = activeBranchUrl && getDoc<BranchDoc>(activeBranchUrl, repo);
+  const cloneEntry = activeBranchDoc?.clones[url];
   return cloneEntry ?? { url, baseHeads: undefined };
 }
 
@@ -143,7 +145,7 @@ export const branchScopeAndActiveBranchInfo = (
   const activeBranchInfo_ = activeBranchInfo(branchScopeInfo_.branchScopePath, uiStateHandle, repo);
 
   const lastLink = docPath[docPath.length - 1];
-  const { url, baseHeads } = resolveUrlOnBranch(lastLink.url, activeBranchInfo_.activeBranchOm);
+  const { url, baseHeads } = resolveUrlOnBranch(lastLink.url, activeBranchInfo_.activeBranchOm?.url, repo);
   const cloneOrMainOm = getOm(url, repo);
 
   return {
@@ -152,4 +154,20 @@ export const branchScopeAndActiveBranchInfo = (
     cloneOrMainOm,
     baseHeads,
   };
+};
+
+// TODO: provisional until we get rid of DocLinkWithFolderPath. also, this is in
+// "signals" (bad name) cuz it needs to be somewhere that's safe to access from
+// cli code
+export const fakeDocPath = (
+  docLinkWithFolderPath: DocLinkWithFolderPath
+): DocPath => {
+  return [
+    ...docLinkWithFolderPath.folderPath.map((url) => ({
+      name: undefined as any,
+      type: undefined as any,
+      url,
+    })),
+    docLinkWithFolderPath,
+  ];
 };

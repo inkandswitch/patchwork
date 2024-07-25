@@ -1,8 +1,6 @@
-import fs from "fs";
-import path from "path";
-import process from "process";
+import { FolderDoc } from "@/packages/folder";
+import { VersionControlSidecarDoc } from "@/sdk";
 import * as Automerge from "@automerge/automerge";
-import { isBinaryFileSync } from "isbinaryfile";
 import { next as A } from "@automerge/automerge";
 import {
   AutomergeUrl,
@@ -11,16 +9,17 @@ import {
   parseAutomergeUrl,
   updateText,
 } from "@automerge/automerge-repo";
-import { CommandLineArgs } from ".";
-import { BuildMetadata } from "./run";
-import { FileDoc } from "../../packages/file/src/datatype";
-import { FolderDoc } from "@/packages/folder";
-import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
-import { VersionControlSidecarDoc } from "@/sdk";
-import { findWithActiveBranch } from "./findWithActiveBranch";
-import { sha256, uploadFile, waitForSync } from "./util";
+import fs from "fs";
+import { isBinaryFileSync } from "isbinaryfile";
 import mime from "mime-types";
-import { sleep } from "./util";
+import path from "path";
+import process from "process";
+import { CommandLineArgs } from ".";
+import { FileDoc } from "../../packages/file/src/datatype";
+import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
+import { findWithActiveBranchPromise } from "./findWithActiveBranch";
+import { BuildMetadata } from "./run";
+import { sha256, sleep, uploadFile, waitForSync } from "./util";
 
 // NOTE: copied this from the version control code in our os folder.
 // couldn't get imports working from os to jacquard-cli so just copying the function for now.
@@ -175,7 +174,7 @@ async function pushDir({
       );
       let subFolderHandle: DocHandle<FolderDoc>;
       if (existingDocLink) {
-        subFolderHandle = await findWithActiveBranch<FolderDoc>(
+        subFolderHandle = await findWithActiveBranchPromise<FolderDoc>(
           existingDocLink.url,
           repo
         );
@@ -226,7 +225,7 @@ async function findOrCreateFolderHandle(
 ) {
   let folderHandle: DocHandle<FolderDoc>;
   if (projectFolderUrl !== undefined) {
-    folderHandle = await findWithActiveBranch<FolderDoc>(
+    folderHandle = await findWithActiveBranchPromise<FolderDoc>(
       projectFolderUrl,
       repo
     );
@@ -274,7 +273,7 @@ async function findOrCreateBuildMetadataHandle(
   )?.url;
 
   if (buildMetadataDocUrl) {
-    buildMetadataHandle = await findWithActiveBranch<JacquardBuildMetadata>(
+    buildMetadataHandle = await findWithActiveBranchPromise<JacquardBuildMetadata>(
       buildMetadataDocUrl,
       repo
     );
@@ -371,7 +370,7 @@ const pushFile = async ({
   let mainUrl: AutomergeUrl = undefined as any; // TODO: JAH strict fix - what happens if !existingDocLink below?
   let didChange = false;
   if (existingDocLink) {
-    handle = await findWithActiveBranch<FileDoc>(existingDocLink.url, repo);
+    handle = await findWithActiveBranchPromise<FileDoc>(existingDocLink.url, repo);
     mainUrl = existingDocLink.url;
 
     await handle.whenReady();
@@ -382,7 +381,7 @@ const pushFile = async ({
       const hash = sha256(fileContents);
       if (!(doc.content.type === "link" && doc.content.url.endsWith(hash))) {
         didChange = true;
-        handle = await findWithActiveBranch<FileDoc>(existingDocLink.url, repo);
+        handle = await findWithActiveBranchPromise<FileDoc>(existingDocLink.url, repo);
 
         const mimeType = mime.lookup(fileType);
         const url = await uploadFile(fileContents, mimeType);

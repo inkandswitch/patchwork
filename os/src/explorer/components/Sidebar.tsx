@@ -18,7 +18,6 @@ import { Icon, IconType } from "@/lib/icons";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { Input } from "@/shadcn/ui/input";
 import { getDoc, isLoaded, useDocReactive } from "@/doc-reactive";
-import { fakeDocPath } from "@/versionControl/components/VersionControlEditor";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import {
   HasVersionControlMetadata,
@@ -37,6 +36,7 @@ import {
   useDatatypeSettings
 } from "../account";
 import { canBeUndef } from "@/utils";
+import { fakeDocPath } from "@/versionControl/signals";
 
 const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const { node, style, dragHandle } = props;

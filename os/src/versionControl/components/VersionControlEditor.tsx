@@ -25,24 +25,10 @@ import {
 } from "../utils";
 import { StatusBar } from "./Statusbar";
 import { VersionControlBar } from "./VersionControlBar";
-import { T } from "@tldraw/tldraw";
 import { ifLoaded } from "@/doc-reactive";
+import { fakeDocPath } from "../signals";
 
 export type SidebarMode = "review" | "history" | "Bot";
-
-// TODO: provisional until we get rid of DocLinkWithFolderPath
-export const fakeDocPath = (
-  docLinkWithFolderPath: DocLinkWithFolderPath
-): DocPath => {
-  return [
-    ...docLinkWithFolderPath.folderPath.map((url) => ({
-      name: undefined as any,
-      type: undefined as any,
-      url,
-    })),
-    docLinkWithFolderPath,
-  ];
-};
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{

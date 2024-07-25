@@ -1,9 +1,8 @@
 import { ifLoaded, parallelMap, useDocReactive } from "@/doc-reactive";
-import { UIStateDoc, useUIStateHandle } from "@/explorer/account";
+import { useUIStateHandle } from "@/explorer/account";
 import { Om } from "@/om";
-import { fakeDocPath } from "@/versionControl/components/VersionControlEditor";
-import { branchScopeAndActiveBranchInfo } from "@/versionControl/signals";
-import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
+import { branchScopeAndActiveBranchInfo, fakeDocPath } from "@/versionControl/signals";
+import { AutomergeUrl, Doc } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";
 import {
@@ -48,26 +47,39 @@ const computeFlattenedDocLinks = ({
 // TODO: reactive but not incremental
 function materializeFolderDoc(
   docPath: DocPath,
-  uiStateHandle: DocHandle<UIStateDoc>,
-  repo: Repo,
+  getDocOnBranch: (docPath: DocPath) => Doc<FolderDoc>,
 ): FolderDocWithChildren {
-  const branchScopeAndActiveBranchInfo_ = branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo);
-
-  const folderOm = branchScopeAndActiveBranchInfo_.cloneOrMainOm as Om<FolderDoc>;
-  const folder = folderOm.doc;
+  const folder = getDocOnBranch(docPath);
 
   return {
     ...folder,
     docs:
       parallelMap(folder.docs, (link) => {
         if (link.type === "folder") {
-          const folderContents = materializeFolderDoc([...docPath, link], uiStateHandle, repo);
+          const folderContents = materializeFolderDoc([...docPath, link], getDocOnBranch);
           // cast is ok cuz if it's loading, we won't return result
           return { ...link, folderContents };
         } else {
           return link;
         }
       }) ?? [],
+  };
+}
+
+export function getFolderDocWithChildren(
+  rootFolderUrl: AutomergeUrl,
+  getDocOnBranch: (docPath: DocPath) => Doc<FolderDoc>
+): FolderDocWithMetadata {
+  const rootDocPath = fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []});
+  const docWithLinks = materializeFolderDoc(rootDocPath, getDocOnBranch);
+  const flatDocLinks = computeFlattenedDocLinks({
+    doc: docWithLinks,
+    folderPath: [rootFolderUrl],
+  });
+  return {
+    doc: docWithLinks,
+    rootFolderUrl,
+    flatDocLinks,
   };
 }
 
@@ -79,16 +91,11 @@ export function useFolderDocWithChildren(
   const uiStateHandle = useUIStateHandle();
   return ifLoaded(useDocReactive(useCallback(() => {
     if (!rootFolderUrl || !uiStateHandle) return undefined;
-    const rootDocPath = fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []});
-    const docWithLinks = materializeFolderDoc(rootDocPath, uiStateHandle, repo);
-    const flatDocLinks = computeFlattenedDocLinks({
-      doc: docWithLinks,
-      folderPath: [rootFolderUrl],
-    });
-    return {
-      doc: docWithLinks,
-      rootFolderUrl,
-      flatDocLinks,
+    const getDocOnBranch = (docPath: DocPath) => {
+      const branchScopeAndActiveBranchInfo_ = branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo);
+      const folderOm = branchScopeAndActiveBranchInfo_.cloneOrMainOm as Om<FolderDoc>;
+      return folderOm.doc;
     };
+    return getFolderDocWithChildren(rootFolderUrl, getDocOnBranch);
   }, [rootFolderUrl, uiStateHandle, repo])));
 }
