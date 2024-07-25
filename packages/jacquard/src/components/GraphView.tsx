@@ -18,8 +18,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileDoc } from "../../../file/src/datatype";
 import { BuildRun, JacquardBuildMetadata } from "../datatype";
 import {
+  getProjectState,
   getReferenceFromDocUrl,
   getStalenessInfo,
+  headsMatch,
   ProjectState,
   reasonToString,
 } from "../getStalenessInfo";
@@ -65,19 +67,6 @@ export const GraphView = ({
   );
 };
 
-export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
-  // TODO: we should be able to use equality to check if heads match, but
-  // there's a bug where cloning a doc adds an extra head to it; pvh promises
-  // this will get fixed soon. for now we will check if one set of heads is the
-  // subset of another – this is generally atypical cuz we don't do much
-  // concurrent stuff.
-  return (
-    heads1.every((head) => heads2.includes(head)) ||
-    heads2.every((head) => heads1.includes(head))
-  );
-}
-
-
 const useProjectState = ({
   folderDoc,
   buildRuns,
@@ -103,64 +92,6 @@ const useProjectState = ({
       getFakeDocPathForDocUrl,
     });
   }, [buildRuns, filesReferencedInBuildsOnly, folderDoc, getFakeDocPathForDocUrl, repo, uiStateHandle])));
-};
-
-const getProjectState = ({
-  repo,
-  uiStateHandle,
-  folderDoc,
-  buildRuns,
-  filesReferencedInBuildsOnly,
-  getFakeDocPathForDocUrl,
-}: {
-  repo: Repo,
-  uiStateHandle: DocHandle<UIStateDoc>,
-  folderDoc: FolderDocWithMetadata;
-  buildRuns: BuildRun[];
-  filesReferencedInBuildsOnly?: boolean;
-  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
-}): ProjectState => {
-  const fileUrls = folderDoc.flatDocLinks.flatMap(({ url }) =>
-    !filesReferencedInBuildsOnly ||
-    // filter out files that are not referenced by any build run
-    buildRuns.some(
-      ({ inputs, outputs }) =>
-        inputs.some((input) => input.docUrl === url) ||
-        outputs.some((output) => output.docUrl === url)
-    )
-      ? [url]
-      : []
-  );
-
-  let files: Record<AutomergeUrl, Automerge.Doc<FileDoc>> = {};
-  parallelMap(fileUrls, (url) => {
-    const docPath = getFakeDocPathForDocUrl(url);
-    const maybeDoc = branchScopeAndActiveBranchInfo(docPath, uiStateHandle, repo).cloneOrMainOm.doc;
-    if (maybeDoc) {
-      files[url] = maybeDoc as Automerge.Doc<FileDoc>;
-    }
-  });
-
-  const references = objectEntries(files).map(([docUrl, doc]) => ({
-    docUrl: docUrl as AutomergeUrl,
-    heads: Automerge.getHeads(doc),
-    path: (doc as FileDoc).name, // todo: handle this generically, we just assume here that this is a file doc
-  }));
-
-  // filter out build runs that are no longer relevant
-  // a build run is relevant as long as ALL of its output still exists in the current project
-  // TODO: this used to be "at least one", but we're gonna lazily try this
-  const filteredBuildRuns = buildRuns.filter(({ outputs }) =>
-    outputs.every(({ docUrl, heads }) => {
-      const doc = files[docUrl];
-      return doc && headsMatch(Automerge.getHeads(doc), heads);
-    })
-  );
-
-  return {
-    references,
-    buildRuns: filteredBuildRuns,
-  };
 };
 
 const GraphvizView = ({ source }: { source: string }) => {
