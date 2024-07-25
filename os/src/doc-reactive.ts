@@ -1,3 +1,4 @@
+import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Doc, parseAutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { atom, computed, react, Signal } from 'signia';
 import { Om } from "./om";
@@ -186,14 +187,19 @@ export function parallelMap<T, U>(values: T[], fn: (value: T) => U): U[] {
 /* Reactive values for docs & oms */
 /**********************************/
 
-const DOC_SIGNAL_CACHE = new Map<AutomergeUrl, Signal<DocReactiveState<Doc<unknown>>>>();
+// TODO: all doc functions accept a third optional heads argument which is a bit akward
+// instead we should put heads into the url
 
-function getDocSignal<T>(url: AutomergeUrl, repo: Repo): Signal<DocReactiveState<Doc<T>>> {
+const DOC_SIGNAL_CACHE = new Map<string, Signal<DocReactiveState<Doc<unknown>>>>()
+
+function getDocSignal<T>(url: AutomergeUrl, repo: Repo, heads?: Automerge.Heads): Signal<DocReactiveState<Doc<T>>> {
   if (!(typeof url === "string")) {
     throw new Error(`Expected string URL, got ${url}`);
   }
 
-  const fromCache = DOC_SIGNAL_CACHE.get(url);
+  const KEY = `${url}:${heads?.join(",")}`
+
+  const fromCache = DOC_SIGNAL_CACHE.get(KEY);
   if (fromCache) {
     return fromCache as Signal<DocReactiveState<Doc<T>>>;
   }
@@ -202,16 +208,22 @@ function getDocSignal<T>(url: AutomergeUrl, repo: Repo): Signal<DocReactiveState
 
   const handle = repo.find<T>(url);
   handle.doc().then((doc) => {
-    signal.set(doc ?? new MissingError(url));
-  })
-  handle.on("change", (ev) => {
-    signal.set(ev.doc);
-  })
-  handle.on("delete", () => {
-    signal.set(new MissingError(url));
+    signal.set(
+      doc ? (heads ? Automerge.view(doc, heads) : doc) : new MissingError(url)
+    );
   });
 
-  DOC_SIGNAL_CACHE.set(url, signal);
+  // don't subscribe to changes if we view the doc at some heads
+  if (heads) {
+    handle.on("change", (ev) => {
+      signal.set(ev.doc);
+    })
+    handle.on("delete", () => {
+      signal.set(new MissingError(url));
+    });
+  }
+
+  DOC_SIGNAL_CACHE.set(KEY, signal);
   return signal;
 }
 
@@ -220,22 +232,25 @@ function getDocSignal<T>(url: AutomergeUrl, repo: Repo): Signal<DocReactiveState
  * missing, this will be reflected in the return value – this function will not
  * throw.
  */
-export function getDocState<T = Doc<unknown>>(url: AutomergeUrl, repo: Repo): DocReactiveState<Doc<T>> {
-  return getDocSignal<T>(url, repo).value;
+export function getDocState<T = Doc<unknown>>(url: AutomergeUrl, repo: Repo, heads?: Automerge.Heads): DocReactiveState<Doc<T>> {
+  return getDocSignal<T>(url, repo, heads).value;
 }
 
 /**
  * Get the value of a doc in a reactive context. If the doc is loading or
  * missing, this will throw an error which will be caught by useDocReactive.
  */
-export function getDoc<T = Doc<unknown>>(url: AutomergeUrl, repo: Repo): Doc<T> {
-  return docReactiveStateToValue(getDocSignal<T>(url, repo).value);
+export function getDoc<T = Doc<unknown>>(url: AutomergeUrl, repo: Repo, heads?: Automerge.Heads): Doc<T> {
+  return docReactiveStateToValue(getDocSignal<T>(url, repo, heads).value);
 }
 
-const OM_SIGNAL_CACHE = new Map<AutomergeUrl, Signal<DocReactiveState<Om<unknown>>>>();
+const OM_SIGNAL_CACHE = new Map<string, Signal<DocReactiveState<Om<unknown>>>>();
 
-function getOmSignal<T>(url: AutomergeUrl, repo: Repo): Signal<DocReactiveState<Om<T>>> {
-  const fromCache = OM_SIGNAL_CACHE.get(url);
+function getOmSignal<T>(url: AutomergeUrl, repo: Repo, heads?: Automerge.Heads): Signal<DocReactiveState<Om<T>>> {
+  
+  const KEY = `${url}:${heads?.join(",")}`
+
+  const fromCache = OM_SIGNAL_CACHE.get(KEY);
   if (fromCache) {
     return fromCache as Signal<DocReactiveState<Om<T>>>;
   }
@@ -256,16 +271,16 @@ function getOmSignal<T>(url: AutomergeUrl, repo: Repo): Signal<DocReactiveState<
  * missing, this will be reflected in the return value – this function will not
  * throw.
  */
-export function getOmState<T>(url: AutomergeUrl, repo: Repo): DocReactiveState<Om<T>> {
-  return getOmSignal<T>(url, repo).value;
+export function getOmState<T>(url: AutomergeUrl, repo: Repo, heads?: Automerge.Heads): DocReactiveState<Om<T>> {
+  return getOmSignal<T>(url, repo, heads).value;
 }
 
 /**
  * Get the value of an Om in a reactive context. If the doc is loading or
  * missing, this will throw an error which will be caught by useDocReactive.
  */
-export function getOm<T>(url: AutomergeUrl, repo: Repo): Om<T> {
-  return docReactiveStateToValue(getOmSignal<T>(url, repo).value);
+export function getOm<T>(url: AutomergeUrl, repo: Repo, heads?: Automerge.Heads): Om<T> {
+  return docReactiveStateToValue(getOmSignal<T>(url, repo, heads).value);
 }
 
 /**********************/
