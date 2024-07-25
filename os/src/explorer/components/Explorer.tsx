@@ -1,23 +1,9 @@
+import { waitForLoaded } from "@/doc-reactive";
+import { Om } from "@/om";
+import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
+import { DocPath } from "@/packages/folder/datatype";
 import { Button } from "@/shadcn/ui/button";
-import {
-  useDocument,
-  useHandle,
-  useRepo,
-} from "@automerge/automerge-repo-react-hooks";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ErrorBoundary } from "react-error-boundary";
-import {
-  useCurrentAccount,
-  useCurrentAccountDoc,
-  useRootFolderDocWithChildren,
-  useUIStateHandle,
-} from "../account";
-
 import { Toaster } from "@/shadcn/ui/sonner";
-import { LoadingScreen } from "./LoadingScreen";
-import { Sidebar } from "./Sidebar";
-import { Topbar } from "./Topbar";
-
 import {
   VersionControlEditor,
 } from "@/versionControl/components/VersionControlEditor";
@@ -25,18 +11,29 @@ import {
   HasVersionControlMetadata,
   LegacyBranch,
 } from "@/versionControl/schema";
-
-import { Om } from "@/om";
-import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
-import { waitForLoaded } from "@/doc-reactive";
-import { getBranchScopeAndActiveBranchInfo, fakeDocPath } from "@/versionControl/signals";
+import { fakeDocPath, getBranchScopeAndActiveBranchInfo } from "@/versionControl/signals";
+import {
+  useDocument,
+  useHandle,
+  useRepo,
+} from "@automerge/automerge-repo-react-hooks";
 import _ from "lodash";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { useDataType, useDataTypes } from "../../datatypes";
 import { useTool, useToolsForDataType } from "../../tools";
+import {
+  useCurrentAccount,
+  useCurrentAccountDoc,
+  useRootFolderDocWithChildren,
+  useUIStateHandle,
+} from "../account";
 import { useSelectedDocLink } from "../hooks/useSelectedDocLink";
-import { ErrorFallback } from "./ErrorFallback";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
+import { ErrorFallback } from "./ErrorFallback";
+import { LoadingScreen } from "./LoadingScreen";
+import { Sidebar } from "./Sidebar";
+import { Topbar } from "./Topbar";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();

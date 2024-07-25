@@ -1,13 +1,10 @@
 import { parallelMap } from "@/doc-reactive";
-import { UIStateDoc } from "@/explorer/account";
-import { DocPath } from "@/packages/folder/datatype";
 import {
   FolderDocWithMetadata
 } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { objectEntries } from "@/utils";
-import { getBranchScopeAndActiveBranchInfo } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 import { FileDoc } from "../../file/src/datatype";
 import { BuildRun, Reference } from "./datatype";
 

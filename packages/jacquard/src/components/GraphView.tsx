@@ -1,5 +1,5 @@
-import { ifLoaded, incorporateDocReactiveState, parallelMap, useDocReactive } from "@/doc-reactive";
-import { UIStateDoc, useUIStateHandleDocReactive } from "@/explorer/account";
+import { ifLoaded, incorporateDocReactiveState, useDocReactive } from "@/doc-reactive";
+import { useUIStateHandleDocReactive } from "@/explorer/account";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { DocPath } from "@/packages/folder/datatype";
 import {
@@ -7,11 +7,10 @@ import {
   useFolderDocWithChildren,
 } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { EditorProps } from "@/tools";
-import { objectEntries } from "@/utils";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import { getBranchScopeAndActiveBranchInfo } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl, DocHandle, isValidAutomergeUrl, Repo } from "@automerge/automerge-repo";
+import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { instance } from "@viz-js/viz";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
