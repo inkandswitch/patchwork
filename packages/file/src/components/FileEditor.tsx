@@ -11,15 +11,19 @@ import {
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useState } from "react";
-import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
 import { FileDoc } from "../datatype";
 import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextAnchor } from "@/lib/textAnchors";
-import { ifLoaded } from "@/doc-reactive";
-import { getLastBuildRun } from "../../../jacquard/src/signals";
+import { ifLoaded, useDocReactive } from "@/doc-reactive";
+import {
+  getProjectBuildMetadataOm,
+  getLastBuildRun,
+} from "../../../jacquard/src/signals";
+import { Button } from "@/shadcn/ui/button";
+import { RefreshCw } from "lucide-react";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -34,8 +38,36 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
   const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
 
   const repo = useRepo();
-  const buildMetadata = ifLoaded(getLastBuildRun(docUrl, repo, docHeads))
+  const buildMetadata = ifLoaded(
+    useDocReactive(
+      useCallback(
+        () => getLastBuildRun(docUrl, repo, docHeads),
+        [docUrl, repo, docHeads]
+      )
+    )
+  );
+  const projectBuildMetadataOm = ifLoaded(
+    useDocReactive(
+      useCallback(
+        () => getProjectBuildMetadataOm(getFakeDocPathForDocUrl(docUrl), repo),
+        [docUrl, repo, getFakeDocPathForDocUrl]
+      )
+    )
+  );
 
+  const handleRefresh = () => {
+    if (!projectBuildMetadataOm) {
+      return;
+    }
+
+    projectBuildMetadataOm.handle.change((doc) => {
+      doc.refreshState = "requesting";
+
+      console.log("change state");
+    });
+  };
+
+  console.log({ projectMetadata: projectBuildMetadataOm?.doc });
 
   if (!doc) {
     return null;
@@ -79,7 +111,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
         <div>mainDocUrl: {mainDocUrl}</div>
       </div> */}
       {buildMetadata && (
-        <div className="bg-gray-100 pl-4 pt-3 pb-3 flex gap-2 items-center border-b border-gray-200 justify-between">
+        <div className="bg-gray-100 pl-4 pt-3 pb-3 flex gap-2 items-center border-b border-gray-200">
           <div>
             Built by{" "}
             <span className="font-mono text-gray-500">
@@ -90,6 +122,29 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
               <span className="rounded px-1 bg-orange-300">stale</span>
             )*/}
           </div>
+
+          <Button
+            variant="outline"
+            className="flex gap-2"
+            onClick={handleRefresh}
+          >
+            <RefreshCw
+              size={16}
+              className={
+                projectBuildMetadataOm?.doc.refreshState === "processing" ||
+                projectBuildMetadataOm?.doc.refreshState === "requesting"
+                  ? "animate-spin"
+                  : ""
+              }
+            />
+            {projectBuildMetadataOm?.doc.refreshState === "requesting"
+              ? "waiting"
+              : projectBuildMetadataOm?.doc.refreshState === "processing"
+              ? "processing"
+              : ""}
+          </Button>
+
+          <div className="flex-1" />
 
           <div className="flex items-center mr-1">
             <Checkbox
@@ -140,7 +195,6 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
     </div>
   );
 };
-
 
 interface DocUrlAtHeads {
   docUrl: AutomergeUrl;
