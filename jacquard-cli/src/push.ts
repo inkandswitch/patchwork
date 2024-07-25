@@ -50,11 +50,6 @@ export async function push(
   buildMetadata?: BuildMetadata,
   wait = true
 ) {
-  if (!projectFolderUrl) {
-    console.log("No project folder URL provided.");
-    return;
-  }
-
   let folderHandle: DocHandle<FolderDoc> = await findOrCreateFolderHandle(
     projectFolderUrl,
     repo
@@ -137,6 +132,9 @@ type BuildStuff = {
   buildMetadataHandle: DocHandle<JacquardBuildMetadata>;
 };
 
+// TODO put this in a config file
+const IGNORE_FILES_ENDING_IN = [".DS_Store", "__pycache__", ".git", ".mrg"];
+
 async function pushDir({
   dir,
   handlesToWaitOn,
@@ -159,7 +157,7 @@ async function pushDir({
 
   for (const filePath of files.map((file) => path.join(dir, file))) {
     // TODO: do this in a more principled way
-    if (filePath.endsWith(".DS_Store") || filePath.endsWith("__pycache__")) {
+    if (IGNORE_FILES_ENDING_IN.some((ignore) => filePath.endsWith(ignore))) {
       continue;
     }
 
@@ -220,7 +218,7 @@ async function pushDir({
 }
 
 async function findOrCreateFolderHandle(
-  projectFolderUrl: AutomergeUrl,
+  projectFolderUrl: AutomergeUrl | undefined,
   repo: Repo
 ) {
   let folderHandle: DocHandle<FolderDoc>;
@@ -235,9 +233,13 @@ async function findOrCreateFolderHandle(
       process.exit(1);
     }
   } else {
+    // assign a folder name based on the local FS name for this folder
+    const projectName = path.basename(process.cwd());
+
     folderHandle = repo.create();
+    console.log(`Created new folder: ${folderHandle.url}`);
     folderHandle.change((d) => {
-      d.title = "Jacquard folder";
+      d.title = projectName;
       d.docs = [];
       initVersionControlMetadata(d, repo, { branchScope: true });
     });
@@ -273,10 +275,11 @@ async function findOrCreateBuildMetadataHandle(
   )?.url;
 
   if (buildMetadataDocUrl) {
-    buildMetadataHandle = await findWithActiveBranchPromise<JacquardBuildMetadata>(
-      buildMetadataDocUrl,
-      repo
-    );
+    buildMetadataHandle =
+      await findWithActiveBranchPromise<JacquardBuildMetadata>(
+        buildMetadataDocUrl,
+        repo
+      );
     await buildMetadataHandle.whenReady();
   } else {
     buildMetadataHandle = repo.create();
@@ -370,18 +373,26 @@ const pushFile = async ({
   let mainUrl: AutomergeUrl = undefined as any; // TODO: JAH strict fix - what happens if !existingDocLink below?
   let didChange = false;
   if (existingDocLink) {
-    handle = await findWithActiveBranchPromise<FileDoc>(existingDocLink.url, repo);
+    handle = await findWithActiveBranchPromise<FileDoc>(
+      existingDocLink.url,
+      repo
+    );
     mainUrl = existingDocLink.url;
 
     await handle.whenReady();
 
     if (isBinary) {
       const doc = await handle.doc();
-      if (!doc) { throw new Error(`Doc missing: ${handle.url}`); }
+      if (!doc) {
+        throw new Error(`Doc missing: ${handle.url}`);
+      }
       const hash = sha256(fileContents);
       if (!(doc.content.type === "link" && doc.content.url.endsWith(hash))) {
         didChange = true;
-        handle = await findWithActiveBranchPromise<FileDoc>(existingDocLink.url, repo);
+        handle = await findWithActiveBranchPromise<FileDoc>(
+          existingDocLink.url,
+          repo
+        );
 
         const mimeType = mime.lookup(fileType);
         const url = await uploadFile(fileContents, mimeType);
