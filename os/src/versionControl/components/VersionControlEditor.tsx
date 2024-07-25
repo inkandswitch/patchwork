@@ -50,18 +50,16 @@ export const VersionControlEditor: React.FC<{
 }) => {
   const [doc, changeDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
-  const handle =
-    useHandle<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
 
-  const uiStateHandle = useUIStateHandle();
+  // const uiStateHandle = useUIStateHandle();
   const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
-  const [isHoveringYankToBranchOption, setIsHoveringYankToBranchOption] =
-    useState(false);
+  // const [isHoveringYankToBranchOption, setIsHoveringYankToBranchOption] =
+  //   useState(false);
   const [showChangesFlag, setShowChangesFlag] = useState<boolean>(true);
   const [compareWithMainFlag, setCompareWithMainFlag] =
     useState<boolean>(false);
-  const dataTypes = useDataTypes();
+  // const dataTypes = useDataTypes();
 
   // Reset compare view settings every time you switch branches
   // useEffect(() => {
@@ -76,20 +74,20 @@ export const VersionControlEditor: React.FC<{
 
   const [sidebarMode, _setSidebarMode] = useState<SidebarMode | null>(null);
 
-  const setSidebarMode = (sidebarMode: SidebarMode) => {
+  const setSidebarMode = (sidebarMode: SidebarMode | null) => {
     // reset state from history mode
     if (sidebarMode !== "history") {
-      setDiffFromTimelineSidebar(undefined);
-      setDocHeadsFromTimelineSidebar(undefined);
+      // setDiffFromTimelineSidebar(undefined);
+      // setDocHeadsFromTimelineSidebar(undefined);
     }
 
     _setSidebarMode(sidebarMode);
   };
 
-  const [diffFromTimelineSidebar, setDiffFromTimelineSidebar] =
-    useState<DiffWithProvenance>();
-  const [docHeadsFromTimelineSidebar, setDocHeadsFromTimelineSidebar] =
-    useState<A.Heads>();
+  // const [diffFromTimelineSidebar, setDiffFromTimelineSidebar] =
+  //   useState<DiffWithProvenance>();
+  // const [docHeadsFromTimelineSidebar, setDocHeadsFromTimelineSidebar] =
+  //   useState<A.Heads>();
 
   useEffect(() => {
     if (!doc || sessionStartHeads) {
@@ -99,21 +97,21 @@ export const VersionControlEditor: React.FC<{
     setSessionStartHeads(A.getHeads(doc));
   }, [doc, sessionStartHeads]);
 
-  const currentEditSessionDiff = useMemo(() => {
-    if (!doc || !sessionStartHeads || !isHoveringYankToBranchOption) {
-      return undefined;
-    }
+  // const currentEditSessionDiff = useMemo(() => {
+  //   if (!doc || !sessionStartHeads || !isHoveringYankToBranchOption) {
+  //     return undefined;
+  //   }
 
-    const diff = diffWithProvenance(doc, sessionStartHeads, A.getHeads(doc));
+  //   const diff = diffWithProvenance(doc, sessionStartHeads, A.getHeads(doc));
 
-    // todo: generalize
-    return {
-      ...diff,
-      patches: combinePatches(
-        diff.patches.filter((patch) => patch.path[0] === "content")
-      ),
-    };
-  }, [doc, sessionStartHeads, isHoveringYankToBranchOption]);
+  //   // todo: generalize
+  //   return {
+  //     ...diff,
+  //     patches: combinePatches(
+  //       diff.patches.filter((patch) => patch.path[0] === "content")
+  //     ),
+  //   };
+  // }, [doc, sessionStartHeads, isHoveringYankToBranchOption]);
 
   const actorIdToAuthor = useActorIdToAuthorMap(mainDocUrl);
 
@@ -222,7 +220,7 @@ export const VersionControlEditor: React.FC<{
 
   // ---- ANYTHING RELYING ON doc SHOULD GO BELOW HERE ----
 
-  const branches = doc.branchMetadata.branches ?? [];
+  // const branches = doc.branchMetadata.branches ?? [];
 
   // Currently we can't filter out comments that didn't exist in a previous version of the document
   // this leads to seemingly random places in the document being highlighted. The problem is that
