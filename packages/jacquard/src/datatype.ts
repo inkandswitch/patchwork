@@ -20,12 +20,16 @@ export type BuildRun = {
   timestamp: number;
 };
 
+// todo: think about error handling and more detailed update reporting
+type RefreshState = "requesting" | "processing" | "idle";
+
 export type JacquardBuildMetadata = HasVersionControlMetadata<
   unknown,
   unknown
 > & {
   title: string;
   buildRuns: BuildRun[];
+  refreshState: RefreshState;
   projectFolderUrl: AutomergeUrl;
 };
 
