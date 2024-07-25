@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 import {
   HasVersionControlMetadata
 } from "@/versionControl/schema";
-import { fakeDocPath, getActiveBranchInfo, getOmOnBranchFromPath, getVersionControlMetadataOm } from "@/versionControl/signals";
+import { fakeDocPath, getActiveBranchInfo, getBranchScopeAndActiveBranchInfo, getOmOnBranchFromPath, getVersionControlMetadataOm } from "@/versionControl/signals";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
@@ -216,21 +216,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
     dragNodes,
   }) => {
     // Here's how this interacts with branching...
-    // - The original folder entry is always removed from the source folder on
-    //   its active branch.
-    // - A new folder entry is always added to the destination folder on its
-    //   active branch.
-    // - If the original item was on a branch, strictly UNDER its branch scope,
-    //   then we need to make sure we're moving the contents it has on that
-    //   branch to the destination location. There are two cases here...
-    //   - If the destination location is on the same branch, we can just move
-    //     the directory entry (which refers to the main copy) over verbatim.
-    //   - If the destination location is on a different branch, we need to
-    //     create a new directory entry that refers to the clone on the branch.
-    //     This sort of breaks our rule about not putting clone URLs into data,
-    //     but I think it's ok; we're promoting a clone to a main copy.
+    // 1. The original folder entry is always removed from the source folder on
+    //    its active branch.
+    // 2. A new folder entry is always added to the destination folder on its
+    //    active branch.
+    // 3. If the original item was on a branch, strictly UNDER its branch scope,
+    //    then we need to make sure we're moving the contents it has on that
+    //    branch to the destination location. There are two cases here...
+    //    - If the destination location is on the same branch, we can just move
+    //      the directory entry (which refers to the main copy) over verbatim.
+    //    - If the destination location is on a different branch, we need to
+    //      create a new directory entry that refers to the clone on the branch.
+    //      This sort of breaks our rule about not putting clone URLs into data,
+    //      but I think it's ok; we're promoting a clone to a main copy.
 
     for (const dragNode of dragNodes) {
+      const srcUrl = dragNode.data.url;
       const srcPath = fakeDocPath(dragNode.data);
       const srcParentPath = srcPath.slice(0, -1);
       const srcParentOm = await waitForLoaded(() => {
@@ -252,6 +253,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
         return getOmOnBranchFromPath<FolderDoc>(dstParentPath, uiStateOm, repo);
       });
 
+      // Time for the subtlety listed under #3 above...
+      let overrideUrl: AutomergeUrl | undefined;
+      await waitForLoaded(() => {
+        incorporateDocReactiveState(uiStateOm);
+        const srcBranchInfo = getBranchScopeAndActiveBranchInfo(srcPath, uiStateOm, repo);
+        if (
+          srcBranchInfo.activeBranchOm  // we're on a branch
+          && srcBranchInfo.branchScopeOm.url !== srcUrl  // the branch scope lies above
+        ) {
+          const dstBranchInfo = getBranchScopeAndActiveBranchInfo(dstParentPath, uiStateOm, repo);
+          if (dstBranchInfo.activeBranchOm?.url !== srcBranchInfo.activeBranchOm.url) {
+            overrideUrl = srcBranchInfo.cloneOrMainOm.url;
+          }
+        }
+      });
+
       // If we're dragging later within the same folder, we need to account for
       // the fact that the array will be shorter after we remove the original element
       const adjustedTargetIndex =
@@ -264,8 +281,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         const spliceResult = d.docs.splice(dragItemIndex, 1);
         removedItem = structuredClone({ ...spliceResult[0] });
       });
-
       dstParentOm.handle.change((d) => {
+        if (overrideUrl) {
+          removedItem.url = overrideUrl;
+        }
         d.docs.splice(adjustedTargetIndex, 0, removedItem);
       });
     }
