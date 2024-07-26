@@ -16,7 +16,8 @@
     "@automerge/automerge-repo-network-websocket": "^1.2.1",
     "command-line-args": "^5.2.1",
     "isbinaryfile": "^5.0.2",
-    "mime-types": "^2.1.35"
+    "mime-types": "^2.1.35",
+    "signia": "^0.1.5"
   },
   "devDependencies": {
     "@types/command-line-args": "^5.2.3",

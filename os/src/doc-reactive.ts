@@ -73,6 +73,15 @@ export function useDocReactive<T>(cb: () => T): DocReactiveState<T> {
   return useValue(signal);
 }
 
+
+/**
+ * Turn a reactive doc into a signal
+ * This is useful when using reactive docs outside of react
+ */
+export function docReactiveSignal<T>(cb: () => T): DocReactiveSignal<T> {
+  return computed("docReactiveSignal", () => docReactiveValueToState(cb))
+}
+
 /**
  * For use in async code. Waits for a doc-reactive value callback to be loaded,
  * then resolves with the value. Throws if the value is missing.

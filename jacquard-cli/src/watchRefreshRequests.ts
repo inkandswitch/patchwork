@@ -1,10 +1,22 @@
-import { Repo } from "@automerge/automerge-repo";
-import { CommandLineArgs } from ".";
-import { refresh } from "./refresh";
+import { docReactiveSignal, getDoc, getOm, ifLoaded } from "@/doc-reactive";
+import { Om } from "@/om";
 import { FolderDoc } from "@/packages/folder";
+import {
+  getVersionControlMetadataOm,
+  resolveUrlOnBranch,
+} from "@/versionControl/signals";
+import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+import { CommandLineArgs } from ".";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
-import { sleep } from "./util";
+import { activateBranch } from "./activate";
 import { pull } from "./pull";
+import { refresh } from "./refresh";
+import { sleep } from "./util";
+
+type BuildMetadataDocWithBranchUrl = {
+  branchUrl?: AutomergeUrl;
+  buildMetadataOm: Om<JacquardBuildMetadata>;
+};
 
 export async function watchRefreshRequests(
   repo: Repo,
@@ -18,52 +30,83 @@ export async function watchRefreshRequests(
   const projectFolderHandle = repo.find<FolderDoc>(projectFolderUrl);
 
   const projectFolder = await projectFolderHandle.doc();
-
   if (!projectFolder) {
     console.log("Failed to load project folder");
     return;
   }
+  const buildMetadataDocsWithPendingRefresh = docReactiveSignal<
+    BuildMetadataDocWithBranchUrl[]
+  >(() => {
+    const projectFolder = getDoc<FolderDoc>(projectFolderHandle.url, repo);
 
-  const metadataDocUrl = projectFolder.docs.find(
-    (doc) => doc.type === "jacquard-build-metadata"
-  )?.url;
+    const versionControlMetadataOm = getVersionControlMetadataOm(
+      projectFolder,
+      repo
+    );
 
-  if (!metadataDocUrl) {
-    console.log("Project has not build metadata file");
-    return;
-  }
+    const pending: BuildMetadataDocWithBranchUrl[] = [];
 
-  let activeRefresh: Promise<void> | undefined;
+    // check build metadata on main
+    const mainBuildMetadataOm = getBuildMetadataOmOfFolder(projectFolder, repo);
+    if (
+      mainBuildMetadataOm &&
+      mainBuildMetadataOm.doc.refreshState === "requesting"
+    ) {
+      pending.push({ buildMetadataOm: mainBuildMetadataOm });
+    }
 
-  // set to true if refresh is triggered while a previous refresh is still ongoing
-  // this is needed because we can only run one refresh at a time right now
-  // todo: allow to abort running refreshs
-  let needsRefresh = false;
+    if (!versionControlMetadataOm?.doc.isBranchScope) {
+      return [];
+    }
 
-  const metadataDocHandle = repo.find<JacquardBuildMetadata>(metadataDocUrl);
-  await metadataDocHandle.whenReady();
+    // check branches
+    for (const branchUrl of versionControlMetadataOm.doc.branches) {
+      const branchBuildMetadataDocUrl = resolveUrlOnBranch(
+        versionControlMetadataOm.url,
+        branchUrl,
+        repo
+      ).url;
+
+      const branchBuildMetadataOm = getOm<JacquardBuildMetadata>(
+        branchBuildMetadataDocUrl,
+        repo
+      );
+
+      if (branchBuildMetadataOm.doc.refreshState === "requesting") {
+        pending.push({ buildMetadataOm: branchBuildMetadataOm, branchUrl });
+      }
+    }
+
+    return pending;
+  });
 
   console.log("waiting for requests ...");
 
-  metadataDocHandle.on("change", async ({ doc }) => {
-    if (doc.refreshState === "requesting") {
-      triggerRefresh();
-    }
-  });
+  while (true) {
+    const pending = ifLoaded(buildMetadataDocsWithPendingRefresh.value);
+    const next = pending && pending[0];
 
-  const triggerRefresh = async () => {
-    if (activeRefresh) {
-      needsRefresh = true;
-      return;
+    if (!next) {
+      await sleep(500);
+      continue;
     }
 
-    metadataDocHandle.change((doc) => {
+    next.buildMetadataOm.handle.change((doc) => {
       doc.refreshState = "processing";
     });
 
     console.log("\nrefresh started");
 
+    console.log("switch to branch:", next.branchUrl ?? "main");
+
+    await activateBranch(repo, {
+      projectFolderUrl,
+      dir,
+      branchUrl: next.branchUrl,
+    });
+
     console.log("pulling");
+    ``;
     await pull(repo, {
       dir,
       projectFolderUrl,
@@ -72,40 +115,31 @@ export async function watchRefreshRequests(
     });
     console.log("done pull");
 
-    activeRefresh = refresh(repo, {
+    await refresh(repo, {
       dir,
       projectFolderUrl,
       syncServerStorageId,
       patchworkUrl,
     });
 
-    await activeRefresh;
     await sleep(500);
-
-    activeRefresh = undefined;
 
     console.log("refresh finished");
 
-    // check if we need to rerun refresh because a refresh was triggered
-    if (needsRefresh) {
-      triggerRefresh();
-      return;
-    }
-
-    metadataDocHandle.change((doc) => {
+    next.buildMetadataOm.handle.change((doc) => {
       doc.refreshState = "idle";
     });
-  };
+  }
+}
 
-  const metadataDoc = await metadataDocHandle.doc();
+const getBuildMetadataOmOfFolder = (projectFolder: FolderDoc, repo: Repo) => {
+  const buildMetadataDocLink = projectFolder.docs.find(
+    (docLink) => docLink.type === "jacquard-build-metadata"
+  );
 
-  if (
-    metadataDoc?.refreshState === "requesting" ||
-    metadataDoc?.refreshState === "processing"
-  ) {
-    triggerRefresh();
+  if (!buildMetadataDocLink) {
+    return;
   }
 
-  // wait indefinitely
-  return await new Promise(() => {});
-}
+  return getOm<JacquardBuildMetadata>(buildMetadataDocLink.url, repo);
+};

@@ -28,6 +28,9 @@ importers:
       mime-types:
         specifier: ^2.1.35
         version: 2.1.35
+      signia:
+        specifier: ^0.1.5
+        version: 0.1.5
     devDependencies:
       '@types/command-line-args':
         specifier: ^5.2.3
