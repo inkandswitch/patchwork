@@ -402,7 +402,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           const isEnabled = datatypeSettings?.enabledDatatypeIds[id];
           if (
             isEnabled == false ||
-            (isEnabled !== true && dataType.isExperimental)
+            (isEnabled !== true && dataType.isExperimental) ||
+            dataType.disableManualCreation
           ) {
             return;
           }

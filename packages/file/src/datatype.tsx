@@ -63,6 +63,7 @@ export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
   getTitle,
   setTitle,
   markCopy,
+  disableManualCreation: true,
   // todo: long term we probably want something different but this lets
   // us see each change directly
   groupChanges: noGrouping,

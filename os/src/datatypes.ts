@@ -26,6 +26,9 @@ export type CoreDataType<D> = {
   /* Marking a data types as experimental hides it by default
    * so the user has to enable them in their account first  */
   isExperimental?: boolean;
+
+  /* If this flag is enabled the data type won't show up in the new document menu */
+  disableManualCreation?: boolean;
 };
 
 export type VersionedDataType<D, T, V> = {
