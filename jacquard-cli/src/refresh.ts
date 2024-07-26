@@ -80,8 +80,6 @@ export async function refresh(
     });
     const stalenessInfo = getStalenessInfo(projectState);
 
-    console.log(stalenessInfo);
-
     let ranSomethingThisLoop = false;
 
     for (const [buildRunId, status] of Object.entries(
