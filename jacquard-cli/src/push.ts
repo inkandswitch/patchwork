@@ -309,7 +309,6 @@ export const ensureMetadataHandleIsBranchScope = (
 ) => {
   handle.change((d) => {
     if (!d.isBranchScope) {
-      // @ts-expect-error TS may or may not be smart enough to figure this one out
       d.isBranchScope = true;
       // @ts-expect-error TS not smart enough to figure this one out
       d.branches = [];

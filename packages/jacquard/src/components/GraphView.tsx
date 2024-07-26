@@ -25,6 +25,8 @@ import {
   ProjectState,
   reasonToString,
 } from "../getStalenessInfo";
+import { BuildRefreshButton } from "./BuildRefreshButton";
+import { useOm } from "@/om";
 
 export const GraphView = ({
   docUrl,
@@ -33,35 +35,53 @@ export const GraphView = ({
 }: EditorProps<JacquardBuildMetadata, never>) => {
   const repo = useRepo();
   const uiStateOm = useUIStateOm();
-  const projectState = ifLoaded(useDocReactive(useCallback(() => {
-    incorporateDocReactiveState(uiStateOm);
-    const latestDocOm = getOm<JacquardBuildMetadata>(docUrl, repo); // ok cuz docUrl is a clone
-    const doc = docHeads ? Automerge.view(latestDocOm.doc, docHeads) : latestDocOm.doc;
-    const projectFolderDocPath = getFakeDocPathForDocUrl(doc.projectFolderUrl);
-    const projectFolderOm = getOmOnBranchFromPath(projectFolderDocPath, uiStateOm, repo);
-    const projectFolderWithMetadata = getFolderDocWithChildren(
-      projectFolderOm.url,
-      function getDocOnBranchFromPath(docPath: DocPath) {
-        return getOmOnBranchFromPath(docPath, uiStateOm, repo).doc;
-      }
-    );
-    return getProjectState({
-      folderDoc: projectFolderWithMetadata,
-      buildRuns: doc.buildRuns,
-      filesReferencedInBuildsOnly: true,
-      getDocOnBranchFromUrl(url: AutomergeUrl) {
-        const docPath = getFakeDocPathForDocUrl(url);
-        return getBranchScopeAndActiveBranchInfo(docPath, uiStateOm, repo).cloneOrMainOm.doc;
-      }
-    });
-  }, [docHeads, docUrl, getFakeDocPathForDocUrl, repo, uiStateOm])));
+  const projectBuildMetadataOm = useOm<JacquardBuildMetadata>(docUrl);
+  const projectState = ifLoaded(
+    useDocReactive(
+      useCallback(() => {
+        incorporateDocReactiveState(uiStateOm);
+        const latestDocOm = getOm<JacquardBuildMetadata>(docUrl, repo); // ok cuz docUrl is a clone
+        const doc = docHeads
+          ? Automerge.view(latestDocOm.doc, docHeads)
+          : latestDocOm.doc;
+        const projectFolderDocPath = getFakeDocPathForDocUrl(
+          doc.projectFolderUrl
+        );
+        const projectFolderOm = getOmOnBranchFromPath(
+          projectFolderDocPath,
+          uiStateOm,
+          repo
+        );
+        const projectFolderWithMetadata = getFolderDocWithChildren(
+          projectFolderOm.url,
+          function getDocOnBranchFromPath(docPath: DocPath) {
+            return getOmOnBranchFromPath(docPath, uiStateOm, repo).doc;
+          }
+        );
+        return getProjectState({
+          folderDoc: projectFolderWithMetadata,
+          buildRuns: doc.buildRuns,
+          filesReferencedInBuildsOnly: true,
+          getDocOnBranchFromUrl(url: AutomergeUrl) {
+            const docPath = getFakeDocPathForDocUrl(url);
+            return getBranchScopeAndActiveBranchInfo(docPath, uiStateOm, repo)
+              .cloneOrMainOm.doc;
+          },
+        });
+      }, [docHeads, docUrl, getFakeDocPathForDocUrl, repo, uiStateOm])
+    )
+  );
 
   if (!projectState) {
     return;
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 flex flex-col">
+      <div className="flex">
+        <div className="flex-1" />
+        <BuildRefreshButton projectBuildMetadataOm={projectBuildMetadataOm} />
+      </div>
       <GraphvizView source={stateGraphSrc(projectState)} />
     </div>
   );

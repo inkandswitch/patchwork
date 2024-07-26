@@ -1,4 +1,6 @@
-import React, { useCallback } from "react";
+import { ifLoaded, useDocReactive } from "@/doc-reactive";
+import { TextAnchor } from "@/lib/textAnchors";
+import { Checkbox } from "@/shadcn/ui/checkbox";
 import { EditorProps } from "@/tools";
 import * as Automerge from "@automerge/automerge";
 import {
@@ -10,20 +12,16 @@ import {
   useDocuments,
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
-import { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
+import { BuildRefreshButton } from "../../../jacquard/src/components/BuildRefreshButton";
+import {
+  getLastBuildRun,
+  getProjectBuildMetadataOm,
+} from "../../../jacquard/src/signals";
 import { FileDoc } from "../datatype";
 import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
-import { Checkbox } from "@/shadcn/ui/checkbox";
-import { TextFileEditor, isTextFile } from "./TextFileEditor";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
-import { TextAnchor } from "@/lib/textAnchors";
-import { ifLoaded, useDocReactive } from "@/doc-reactive";
-import {
-  getProjectBuildMetadataOm,
-  getLastBuildRun,
-} from "../../../jacquard/src/signals";
-import { Button } from "@/shadcn/ui/button";
-import { RefreshCw } from "lucide-react";
+import { TextFileEditor, isTextFile } from "./TextFileEditor";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -54,20 +52,6 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
       )
     )
   );
-
-  const handleRefresh = () => {
-    if (!projectBuildMetadataOm) {
-      return;
-    }
-
-    projectBuildMetadataOm.handle.change((doc) => {
-      doc.refreshState = "requesting";
-
-      console.log("change state");
-    });
-  };
-
-  console.log({ projectMetadata: projectBuildMetadataOm?.doc });
 
   if (!doc) {
     return null;
@@ -123,26 +107,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
             )*/}
           </div>
 
-          <Button
-            variant="outline"
-            className="flex gap-2"
-            onClick={handleRefresh}
-          >
-            <RefreshCw
-              size={16}
-              className={
-                projectBuildMetadataOm?.doc.refreshState === "processing" ||
-                projectBuildMetadataOm?.doc.refreshState === "requesting"
-                  ? "animate-spin"
-                  : ""
-              }
-            />
-            {projectBuildMetadataOm?.doc.refreshState === "requesting"
-              ? "waiting"
-              : projectBuildMetadataOm?.doc.refreshState === "processing"
-              ? "processing"
-              : ""}
-          </Button>
+          <BuildRefreshButton projectBuildMetadataOm={projectBuildMetadataOm} />
 
           <div className="flex-1" />
 
