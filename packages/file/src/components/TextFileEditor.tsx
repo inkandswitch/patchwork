@@ -7,7 +7,7 @@ import {
 } from "@/lib/textAnchors";
 import { EditorProps } from "@/tools";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { json } from "@codemirror/lang-json";
 import { python } from "@codemirror/lang-python";
 import { EditorView, basicSetup } from "codemirror";
@@ -64,6 +64,7 @@ export const TextFileEditor = ({
         }),
         getPluginsByType(doc!.type), // TODO: JAH strict fix
         annotationsPlugin,
+        EditorView.lineWrapping,
       ],
       parent: container,
     });
