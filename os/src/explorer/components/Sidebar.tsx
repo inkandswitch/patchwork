@@ -296,7 +296,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const treeSelection = selectedDocLink ? idAccessor(selectedDocLink) : undefined;
 
-  const onRename: RenameHandler<DocLinkWithFolderPath> = ({ node, name }) => {
+  const onRename: RenameHandler<DocLinkWithFolderPath> = async ({ node, name }) => {
     const docLink = flatDocLinks.find((doc) => doc.url === node.data.url);
     const dataType = dataTypes.find(({ id }) => id === docLink?.type)!;  // TODO: JAH strict fix
 
@@ -312,12 +312,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (!docLink) {
       return;
     }
-    const parentHandle = repo.find<FolderDoc>(
-      docLink.folderPath[docLink.folderPath.length - 1]
-    );
+
+    const docPath = fakeDocPath(node.data);
+    const docOm = await waitForLoaded(() => {
+      incorporateDocReactiveState(uiStateOm);
+      return getOmOnBranchFromPath<FolderDoc>(docPath, uiStateOm, repo);
+    })
+    const parentPath = docPath.slice(0, -1);
+    const parentOm = await waitForLoaded(() => {
+      incorporateDocReactiveState(uiStateOm);
+      return getOmOnBranchFromPath<FolderDoc>(parentPath, uiStateOm, repo);
+    })
 
     // rename doc link
-    parentHandle.change((d) => {
+    parentOm.handle.change((d) => {
       const doc = d.docs.find((doc) => doc.url === docLink.url);
       if (doc) {
         doc.name = name;
@@ -325,10 +333,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     });
 
     // rename doc title
-    const docHandle = repo.find<HasVersionControlMetadata<unknown, unknown>>(
-      docLink.url
-    );
-    docHandle.change((doc) => {
+    docOm.handle.change((doc) => {
       dataType.setTitle?.(doc, name);
     });
 
