@@ -1,4 +1,4 @@
-import { incorporateDocReactiveState, isLoaded, LoadingError, useDocReactive } from "@/doc-reactive";
+import { getDR, isLoaded, LoadingError, useDocReactive } from "@/doc-reactive";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { fakeDocPath, getOmOnBranchFromPath } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
@@ -30,14 +30,12 @@ export const useSyncDocTitle = ({
 
   const selectedDoc = useDocReactive(useCallback(() => {
     if (!selectedDocPath) { throw new LoadingError; }
-    incorporateDocReactiveState(uiStateOm);
-    return getOmOnBranchFromPath(selectedDocPath, uiStateOm, repo).doc;
+    return getOmOnBranchFromPath(selectedDocPath, getDR(uiStateOm), repo).doc;
   }, [repo, selectedDocPath, uiStateOm]));
 
   const parentFolderOm = useDocReactive(useCallback(() => {
     if (!selectedDocPath) { throw new LoadingError; }
-    incorporateDocReactiveState(uiStateOm);
-    return getOmOnBranchFromPath<FolderDoc>(selectedDocPath.slice(0, -1), uiStateOm, repo);
+    return getOmOnBranchFromPath<FolderDoc>(selectedDocPath.slice(0, -1), getDR(uiStateOm), repo);
   }, [repo, selectedDocPath, uiStateOm]));
 
   useEffect(() => {

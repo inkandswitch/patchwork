@@ -138,9 +138,10 @@ export function ifLoaded<T>(value: DocReactiveState<T>): T | undefined {
 }
 
 /**
- * Used in a reactive context to incorporate a doc-reactive state into a value.
+ * Used in a reactive context to give a doc-reactive state a chance to throw a
+ * LoadingError / MissingError. This is useful for type narrowing.
  */
-export function incorporateDocReactiveState<T>(
+export function waitForDR<T>(
   value: DocReactiveState<T>
 ): asserts value is T {
   if (value instanceof LoadingError || value instanceof MissingError) {
@@ -153,8 +154,8 @@ export function incorporateDocReactiveState<T>(
  * MissingError. Can be used to thread output of one useDocReactive into
  * another. Could perhaps use a better name.
  */
-export function docReactiveStateToValue<T>(value: DocReactiveState<T>): T {
-  incorporateDocReactiveState(value);
+export function getDR<T>(value: DocReactiveState<T>): T {
+  waitForDR(value);
   return value;
 }
 
@@ -270,7 +271,7 @@ export function getDoc<T = Doc<unknown>>(
   repo: Repo,
   heads?: Automerge.Heads
 ): Doc<T> {
-  return docReactiveStateToValue(getDocSignal<T>(url, repo, heads).value);
+  return getDR(getDocSignal<T>(url, repo, heads).value);
 }
 
 const OM_SIGNAL_CACHE = new Map<
@@ -323,7 +324,7 @@ export function getOm<T>(
   repo: Repo,
   heads?: Automerge.Heads
 ): Om<T> {
-  return docReactiveStateToValue(getOmSignal<T>(url, repo, heads).value);
+  return getDR(getOmSignal<T>(url, repo, heads).value);
 }
 
 /**********************/

@@ -1,4 +1,4 @@
-import { ifLoaded, incorporateDocReactiveState, parallelMap, useDocReactive } from "@/doc-reactive";
+import { getDR, ifLoaded, parallelMap, useDocReactive } from "@/doc-reactive";
 import { useUIStateOm } from "@/explorer/account";
 import { fakeDocPath, getOmOnBranchFromPath } from "@/versionControl/signals";
 import { AutomergeUrl, Doc } from "@automerge/automerge-repo";
@@ -33,12 +33,12 @@ const computeFlattenedDocLinks = ({
   return doc.docs.flatMap((docLink) =>
     docLink.type === "folder" && docLink.folderContents
       ? [
-          { ...docLink, folderPath: folderPath },
-          ...computeFlattenedDocLinks({
-            doc: docLink.folderContents,
-            folderPath: [...folderPath, docLink.url],
-          }) ?? [],
-        ]
+        { ...docLink, folderPath: folderPath },
+        ...computeFlattenedDocLinks({
+          doc: docLink.folderContents,
+          folderPath: [...folderPath, docLink.url],
+        }) ?? [],
+      ]
       : { ...docLink, folderPath }
   );
 };
@@ -69,7 +69,7 @@ export function getFolderDocWithChildren(
   rootFolderUrl: AutomergeUrl,
   getDocOnBranchFromPath: (docPath: DocPath) => Doc<unknown>
 ): FolderDocWithMetadata {
-  const rootDocPath = fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []});
+  const rootDocPath = fakeDocPath({ url: rootFolderUrl, name: 'root', type: 'folder', folderPath: [] });
   const docWithLinks = materializeFolderDoc(rootDocPath, getDocOnBranchFromPath);
   const flatDocLinks = computeFlattenedDocLinks({
     doc: docWithLinks,
@@ -90,9 +90,8 @@ export function useFolderDocWithChildren(
   const uiStateOm = useUIStateOm();
   return ifLoaded(useDocReactive(useCallback(() => {
     if (!rootFolderUrl) return undefined;
-    incorporateDocReactiveState(uiStateOm);
     const getDocOnBranchFromPath = (docPath: DocPath) => {
-      return getOmOnBranchFromPath(docPath, uiStateOm, repo).doc;
+      return getOmOnBranchFromPath(docPath, getDR(uiStateOm), repo).doc;
     };
     return getFolderDocWithChildren(rootFolderUrl, getDocOnBranchFromPath);
   }, [rootFolderUrl, uiStateOm, repo])));

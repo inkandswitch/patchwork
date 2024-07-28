@@ -1,4 +1,4 @@
-import { incorporateDocReactiveState, waitForLoaded } from "@/doc-reactive";
+import { getDR, waitForLoaded } from "@/doc-reactive";
 import { Om } from "@/om";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
@@ -162,14 +162,13 @@ export const Explorer: React.FC = () => {
         parentFolderDocPath = _.initial(fakeDocPath(selectedDocLink));
       }
 
-      const { cloneOrMainOm } = await waitForLoaded(() => {
-        incorporateDocReactiveState(uiStateOm);
-        return getBranchScopeAndActiveBranchInfo(
+      const { cloneOrMainOm } = await waitForLoaded(() =>
+        getBranchScopeAndActiveBranchInfo(
           parentFolderDocPath,
-          uiStateOm,
+          getDR(uiStateOm),
           repo,
-        );
-      });
+        ),
+      );
       const parentFolderBranchedOm = cloneOrMainOm as Om<FolderDoc>;
 
       const newDocLink = {

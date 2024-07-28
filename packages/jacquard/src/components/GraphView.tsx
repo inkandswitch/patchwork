@@ -1,4 +1,4 @@
-import { getOm, ifLoaded, incorporateDocReactiveState, useDocReactive } from "@/doc-reactive";
+import { getOm, ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
 import { useUIStateOm } from "@/explorer/account";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { DocPath } from "@/packages/folder/datatype";
@@ -39,7 +39,7 @@ export const GraphView = ({
   const projectState = ifLoaded(
     useDocReactive(
       useCallback(() => {
-        incorporateDocReactiveState(uiStateOm);
+        waitForDR(uiStateOm);
         const latestDocOm = getOm<JacquardBuildMetadata>(docUrl, repo); // ok cuz docUrl is a clone
         const doc = docHeads
           ? Automerge.view(latestDocOm.doc, docHeads)

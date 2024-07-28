@@ -1,7 +1,7 @@
 import {
   getDoc,
+  getDR,
   ifLoaded,
-  incorporateDocReactiveState,
   useDocReactive,
   waitForLoaded,
 } from "@/doc-reactive";
@@ -12,6 +12,7 @@ import {
   FolderDoc,
   FolderDocWithChildren,
 } from "@/packages/folder";
+import { DocPath } from "@/packages/folder/datatype";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { Input } from "@/shadcn/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
@@ -51,7 +52,6 @@ import {
 } from "../account";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
-import { DocPath } from "@/packages/folder/datatype";
 
 const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const { node, style, dragHandle } = props;
@@ -63,7 +63,6 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const activeBranchName = ifLoaded(
     useDocReactive(
       useCallback(() => {
-        incorporateDocReactiveState(uiStateOm);
         const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
         const versionControlMetadataDoc = getVersionControlMetadataOm(
           doc,
@@ -72,7 +71,7 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
         if (versionControlMetadataDoc?.isBranchScope) {
           const { activeBranchOm } = getActiveBranchInfo(
             docPath,
-            uiStateOm,
+            getDR(uiStateOm),
             repo,
           );
           return activeBranchOm?.doc.name ?? "Main";
@@ -263,10 +262,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       const srcUrl = dragNode.data.url;
       const srcPath = fakeDocPath(dragNode.data);
       const srcParentPath = srcPath.slice(0, -1);
-      const srcParentOm = await waitForLoaded(() => {
-        incorporateDocReactiveState(uiStateOm);
-        return getOmOnBranchFromPath<FolderDoc>(srcParentPath, uiStateOm, repo);
-      });
+      const srcParentOm = await waitForLoaded(() =>
+        getOmOnBranchFromPath<FolderDoc>(srcParentPath, getDR(uiStateOm), repo),
+      );
       const dragItemIndex = srcParentOm.doc.docs.findIndex(
         (item) => item.url === dragNode.data.url,
       );
@@ -283,18 +281,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               folderPath: [],
             })
           : fakeDocPath(parentNode.data);
-      const dstParentOm = await waitForLoaded(() => {
-        incorporateDocReactiveState(uiStateOm);
-        return getOmOnBranchFromPath<FolderDoc>(dstParentPath, uiStateOm, repo);
-      });
+      const dstParentOm = await waitForLoaded(() =>
+        getOmOnBranchFromPath<FolderDoc>(dstParentPath, getDR(uiStateOm), repo),
+      );
 
       // Time for the subtlety listed under #3 above...
       let overrideUrl: AutomergeUrl | undefined;
       await waitForLoaded(() => {
-        incorporateDocReactiveState(uiStateOm);
         const srcBranchInfo = getBranchScopeAndActiveBranchInfo(
           srcPath,
-          uiStateOm,
+          getDR(uiStateOm),
           repo,
         );
         if (
@@ -303,7 +299,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) {
           const dstBranchInfo = getBranchScopeAndActiveBranchInfo(
             dstParentPath,
-            uiStateOm,
+            getDR(uiStateOm),
             repo,
           );
           if (
@@ -366,15 +362,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
 
     const docPath = fakeDocPath(node.data);
-    const docOm = await waitForLoaded(() => {
-      incorporateDocReactiveState(uiStateOm);
-      return getOmOnBranchFromPath<FolderDoc>(docPath, uiStateOm, repo);
-    });
+    const docOm = await waitForLoaded(() =>
+      getOmOnBranchFromPath<FolderDoc>(docPath, getDR(uiStateOm), repo),
+    );
     const parentPath = docPath.slice(0, -1);
-    const parentOm = await waitForLoaded(() => {
-      incorporateDocReactiveState(uiStateOm);
-      return getOmOnBranchFromPath<FolderDoc>(parentPath, uiStateOm, repo);
-    });
+    const parentOm = await waitForLoaded(() =>
+      getOmOnBranchFromPath<FolderDoc>(parentPath, getDR(uiStateOm), repo),
+    );
 
     // rename doc link
     parentOm.handle.change((d) => {
