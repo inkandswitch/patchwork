@@ -1,4 +1,10 @@
-import { getDoc, ifLoaded, incorporateDocReactiveState, useDocReactive, waitForLoaded } from "@/doc-reactive";
+import {
+  getDoc,
+  ifLoaded,
+  incorporateDocReactiveState,
+  useDocReactive,
+  waitForLoaded,
+} from "@/doc-reactive";
 import { Icon, IconType } from "@/lib/icons";
 import {
   DocLink,
@@ -9,27 +15,39 @@ import {
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { Input } from "@/shadcn/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
+import { HasVersionControlMetadata } from "@/versionControl/schema";
 import {
-  HasVersionControlMetadata
-} from "@/versionControl/schema";
-import { fakeDocPath, getActiveBranchInfo, getBranchScopeAndActiveBranchInfo, getOmOnBranchFromPath, getVersionControlMetadataOm } from "@/versionControl/signals";
+  fakeDocPath,
+  getActiveBranchInfo,
+  getBranchScopeAndActiveBranchInfo,
+  getOmOnBranchFromPath,
+  getVersionControlMetadataOm,
+} from "@/versionControl/signals";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
-import {
-  useDocument,
-  useRepo
-} from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { structuredClone } from "@tldraw/tldraw";
 import { capitalize, uniqBy } from "lodash";
 import { ChevronsLeft, FolderInput, GitBranchIcon } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MoveHandler, NodeRendererProps, RenameHandler, Tree } from "react-arborist";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  MoveHandler,
+  NodeRendererProps,
+  RenameHandler,
+  Tree,
+} from "react-arborist";
 import { useDataType, useDataTypes } from "../../datatypes";
 import {
   docPathString,
   UIStateDoc,
   useCurrentAccountDoc,
   useDatatypeSettings,
-  useUIStateOm
+  useUIStateOm,
 } from "../account";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
@@ -42,15 +60,26 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const docPath = fakeDocPath(node.data);
   const repo = useRepo();
   const uiStateOm = useUIStateOm();
-  const activeBranchName = ifLoaded(useDocReactive(useCallback(() => {
-    incorporateDocReactiveState(uiStateOm);
-    const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
-    const versionControlMetadataDoc = getVersionControlMetadataOm(doc, repo)?.doc;
-    if (versionControlMetadataDoc?.isBranchScope) {
-      const { activeBranchOm } = getActiveBranchInfo(docPath, uiStateOm, repo);
-      return activeBranchOm?.doc.name ?? "Main";
-    }
-  }, [docPath, node.data.url, repo, uiStateOm])));
+  const activeBranchName = ifLoaded(
+    useDocReactive(
+      useCallback(() => {
+        incorporateDocReactiveState(uiStateOm);
+        const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
+        const versionControlMetadataDoc = getVersionControlMetadataOm(
+          doc,
+          repo,
+        )?.doc;
+        if (versionControlMetadataDoc?.isBranchScope) {
+          const { activeBranchOm } = getActiveBranchInfo(
+            docPath,
+            uiStateOm,
+            repo,
+          );
+          return activeBranchOm?.doc.name ?? "Main";
+        }
+      }, [docPath, node.data.url, repo, uiStateOm]),
+    ),
+  );
 
   let icon;
 
@@ -99,12 +128,12 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
               {node.children?.length || 0}
             </div>
           )}
-          { activeBranchName &&
+          {activeBranchName && (
             <div className="text-xs text-gray-500 flex items-center gap-1">
               <GitBranchIcon size={14} className="ml-1" />
               {activeBranchName}
             </div>
-          }
+          )}
         </div>
       )}
       {node.isEditing && <Edit {...props} />}
@@ -143,7 +172,7 @@ type SidebarProps = {
 
 const prepareDataForTree = (
   folderDoc: FolderDocWithChildren,
-  folderPath: AutomergeUrl[]
+  folderPath: AutomergeUrl[],
 ): DocLinkWithFolderPath[] => {
   if (!folderDoc) {
     return [];
@@ -205,7 +234,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [accountDoc] = useCurrentAccountDoc();
 
   const [uiStateDoc, changeUIStateDoc] = useDocument<UIStateDoc>(
-    accountDoc?.uiStateUrl
+    accountDoc?.uiStateUrl,
   );
 
   const uiStateOm = useUIStateOm();
@@ -237,16 +266,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
       const srcParentOm = await waitForLoaded(() => {
         incorporateDocReactiveState(uiStateOm);
         return getOmOnBranchFromPath<FolderDoc>(srcParentPath, uiStateOm, repo);
-      })
-      const dragItemIndex = srcParentOm.doc
-        .docs.findIndex((item) => item.url === dragNode.data.url);
+      });
+      const dragItemIndex = srcParentOm.doc.docs.findIndex(
+        (item) => item.url === dragNode.data.url,
+      );
       if (dragItemIndex === -1) {
         throw new Error("Couldn't find drag item in parent folder");
       }
 
       const dstParentPath: DocPath =
         !parentNode || parentNode.level < 0
-          ? fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []})
+          ? fakeDocPath({
+              url: rootFolderUrl,
+              name: "root",
+              type: "folder",
+              folderPath: [],
+            })
           : fakeDocPath(parentNode.data);
       const dstParentOm = await waitForLoaded(() => {
         incorporateDocReactiveState(uiStateOm);
@@ -257,13 +292,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
       let overrideUrl: AutomergeUrl | undefined;
       await waitForLoaded(() => {
         incorporateDocReactiveState(uiStateOm);
-        const srcBranchInfo = getBranchScopeAndActiveBranchInfo(srcPath, uiStateOm, repo);
+        const srcBranchInfo = getBranchScopeAndActiveBranchInfo(
+          srcPath,
+          uiStateOm,
+          repo,
+        );
         if (
-          srcBranchInfo.activeBranchOm  // we're on a branch
-          && srcBranchInfo.branchScopeOm.url !== srcUrl  // the branch scope lies above
+          srcBranchInfo.activeBranchOm && // we're on a branch
+          srcBranchInfo.branchScopeOm.url !== srcUrl // the branch scope lies above
         ) {
-          const dstBranchInfo = getBranchScopeAndActiveBranchInfo(dstParentPath, uiStateOm, repo);
-          if (dstBranchInfo.activeBranchOm?.url !== srcBranchInfo.activeBranchOm.url) {
+          const dstBranchInfo = getBranchScopeAndActiveBranchInfo(
+            dstParentPath,
+            uiStateOm,
+            repo,
+          );
+          if (
+            dstBranchInfo.activeBranchOm?.url !==
+            srcBranchInfo.activeBranchOm.url
+          ) {
             overrideUrl = srcBranchInfo.cloneOrMainOm.url;
           }
         }
@@ -272,7 +318,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       // If we're dragging later within the same folder, we need to account for
       // the fact that the array will be shorter after we remove the original element
       const adjustedTargetIndex =
-        docPathString(srcParentPath) === docPathString(dstParentPath) && dragItemIndex < dragTargetIndex
+        docPathString(srcParentPath) === docPathString(dstParentPath) &&
+        dragItemIndex < dragTargetIndex
           ? dragTargetIndex - 1
           : dragTargetIndex;
 
@@ -294,17 +341,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
     rootFolderUrl,
   ]);
 
-  const treeSelection = selectedDocLink ? idAccessor(selectedDocLink) : undefined;
+  const treeSelection = selectedDocLink
+    ? idAccessor(selectedDocLink)
+    : undefined;
 
-  const onRename: RenameHandler<DocLinkWithFolderPath> = async ({ node, name }) => {
+  const onRename: RenameHandler<DocLinkWithFolderPath> = async ({
+    node,
+    name,
+  }) => {
     const docLink = flatDocLinks.find((doc) => doc.url === node.data.url);
-    const dataType = dataTypes.find(({ id }) => id === docLink?.type)!;  // TODO: JAH strict fix
+    const dataType = dataTypes.find(({ id }) => id === docLink?.type)!; // TODO: JAH strict fix
 
     if (!dataType?.setTitle) {
       alert(
         `${capitalize(
-          dataType.name
-        )} documents can only be renamed in the main editor, not the sidebar.`
+          dataType.name,
+        )} documents can only be renamed in the main editor, not the sidebar.`,
       );
       return;
     }
@@ -317,12 +369,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const docOm = await waitForLoaded(() => {
       incorporateDocReactiveState(uiStateOm);
       return getOmOnBranchFromPath<FolderDoc>(docPath, uiStateOm, repo);
-    })
+    });
     const parentPath = docPath.slice(0, -1);
     const parentOm = await waitForLoaded(() => {
       incorporateDocReactiveState(uiStateOm);
       return getOmOnBranchFromPath<FolderDoc>(parentPath, uiStateOm, repo);
-    })
+    });
 
     // rename doc link
     parentOm.handle.change((d) => {
@@ -337,7 +389,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       dataType.setTitle?.(doc, name);
     });
 
-    selectDocLink({ ...selectedDocLink!, name });  // TODO: JAH strict fix
+    selectDocLink({ ...selectedDocLink!, name }); // TODO: JAH strict fix
   };
 
   const onToggle = async (id: string) => {
@@ -353,7 +405,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         uiState.openedFoldersInSidebar.find((folder) => folder.url === link.url)
       ) {
         const index = uiState.openedFoldersInSidebar.findIndex(
-          (folder) => folder.url === link.url
+          (folder) => folder.url === link.url,
         );
         if (index !== -1) {
           uiState.openedFoldersInSidebar.splice(index, 1);
@@ -366,17 +418,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const initialOpenState = useMemo(
     () =>
-      (uiStateDoc?.openedFoldersInSidebar ?? []).reduce((acc, key) => {
-        acc[
-          // This is gross: we need to make sure that JSON stringify does the keys in the right order...
-          JSON.stringify({
-            url: key.url,
-            folderPath: key.folderPath,
-          })
-        ] = true;
-        return acc;
-      }, {} as Record<string, true>),
-    [uiStateDoc]
+      (uiStateDoc?.openedFoldersInSidebar ?? []).reduce(
+        (acc, key) => {
+          acc[
+            // This is gross: we need to make sure that JSON stringify does the keys in the right order...
+            JSON.stringify({
+              url: key.url,
+              folderPath: key.folderPath,
+            })
+          ] = true;
+          return acc;
+        },
+        {} as Record<string, true>,
+      ),
+    [uiStateDoc],
   );
 
   // Show a loading spinner until we've recursively loaded all folder contents
@@ -463,8 +518,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   automergeUrlToOpen
                     ? "bg-green-100"
                     : openUrlInput.length > 0
-                    ? "bg-red-100"
-                    : ""
+                      ? "bg-red-100"
+                      : ""
                 }`}
               />
               <div className="text-xs text-gray-500 text-right mt-1">

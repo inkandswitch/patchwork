@@ -179,7 +179,7 @@ export const VersionControlBar = ({
               handleCreateJacquardBranch();
             } else if (value === "__makeIntoBranchScope") {
               ensureMetadataHandleIsBranchScope(
-                branchScopeVersionControlMetadataOm.handle
+                branchScopeVersionControlMetadataOm.handle,
               );
             } else if (value === "__moveChangesToBranch") {
               throw new Error("not implemented");
@@ -262,7 +262,7 @@ export const VersionControlBar = ({
                         )}
                       </div>
                     </SelectItem>
-                  )
+                  ),
               )}
               <SelectItem
                 value={"__newBranch"}
@@ -534,7 +534,7 @@ const BranchActions: React.FC<{
               },
               () => {
                 toast.error("Failed to copy link to clipboard");
-              }
+              },
             );
           }}
         >

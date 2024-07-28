@@ -4,14 +4,15 @@ import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { Button } from "@/shadcn/ui/button";
 import { Toaster } from "@/shadcn/ui/sonner";
-import {
-  VersionControlEditor,
-} from "@/versionControl/components/VersionControlEditor";
+import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
 import {
   HasVersionControlMetadata,
   LegacyBranch,
 } from "@/versionControl/schema";
-import { fakeDocPath, getBranchScopeAndActiveBranchInfo } from "@/versionControl/signals";
+import {
+  fakeDocPath,
+  getBranchScopeAndActiveBranchInfo,
+} from "@/versionControl/signals";
 import {
   useDocument,
   useHandle,
@@ -26,7 +27,7 @@ import {
   useCurrentAccount,
   useCurrentAccountDoc,
   useRootFolderDocWithChildren,
-  useUIStateOm
+  useUIStateOm,
 } from "../account";
 import { useSelectedDocLink } from "../hooks/useSelectedDocLink";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
@@ -59,14 +60,16 @@ export const Explorer: React.FC = () => {
         throw new Error("getFakeDocPathForDocUrl: flatDocLinks not ready");
       }
       const docLinkWithFolderPath = flatDocLinks.find(
-        (link) => link.url === url
+        (link) => link.url === url,
       );
       if (!docLinkWithFolderPath) {
-        throw new Error(`getFakeDocPathForDocUrl: No doc found for url: ${url}`);
+        throw new Error(
+          `getFakeDocPathForDocUrl: No doc found for url: ${url}`,
+        );
       }
       return fakeDocPath(docLinkWithFolderPath);
     },
-    [flatDocLinks]
+    [flatDocLinks],
   );
 
   const selectedDocUrl = selectedDocLink?.url;
@@ -85,7 +88,7 @@ export const Explorer: React.FC = () => {
     }
 
     return selectedDoc.branchMetadata.branches.find(
-      (b) => b.url === selectedBranchUrl
+      (b) => b.url === selectedBranchUrl,
     );
   }, [selectedBranchUrl, selectedDoc]);
 
@@ -98,10 +101,11 @@ export const Explorer: React.FC = () => {
   const currentTool =
     // make sure the current tool is reset to the fallback tool
     // if the selected datatype changes and the selected tool is not compatible
-    selectedTool && selectedDataType &&
+    selectedTool &&
+    selectedDataType &&
     (selectedTool.supportedDataTypes === "*" ||
       selectedTool.supportedDataTypes.some(
-        (supportedDataType) => supportedDataType === selectedDataType?.id
+        (supportedDataType) => supportedDataType === selectedDataType?.id,
       ))
       ? selectedTool
       : toolModules[0];
@@ -144,7 +148,12 @@ export const Explorer: React.FC = () => {
         if (!rootFolderUrl) {
           throw new Error("Root folder URL not ready");
         }
-        parentFolderDocPath = fakeDocPath({url: rootFolderUrl, name: 'root', type: 'folder', folderPath: []});
+        parentFolderDocPath = fakeDocPath({
+          url: rootFolderUrl,
+          name: "root",
+          type: "folder",
+          folderPath: [],
+        });
       } else if (selectedDocLink.type === "folder") {
         // If a folder is currently selected, add the new document to that folder
         parentFolderDocPath = fakeDocPath(selectedDocLink);
@@ -155,7 +164,11 @@ export const Explorer: React.FC = () => {
 
       const { cloneOrMainOm } = await waitForLoaded(() => {
         incorporateDocReactiveState(uiStateOm);
-        return getBranchScopeAndActiveBranchInfo(parentFolderDocPath, uiStateOm, repo)
+        return getBranchScopeAndActiveBranchInfo(
+          parentFolderDocPath,
+          uiStateOm,
+          repo,
+        );
       });
       const parentFolderBranchedOm = cloneOrMainOm as Om<FolderDoc>;
 
@@ -174,7 +187,7 @@ export const Explorer: React.FC = () => {
         folderPath: parentFolderDocPath.map((link) => link.url),
       });
     },
-    [dataTypes, repo, selectedDocLink, uiStateOm, selectDocLink, rootFolderUrl]
+    [dataTypes, repo, selectedDocLink, uiStateOm, selectDocLink, rootFolderUrl],
   );
 
   // TODO: this only reads the main branch
@@ -213,14 +226,13 @@ export const Explorer: React.FC = () => {
 
   const removeDocLink = async (link: DocLinkWithFolderPath) => {
     const folderHandle = repo.find<FolderDoc>(
-      link.folderPath[link.folderPath.length - 1]
+      link.folderPath[link.folderPath.length - 1],
     );
     const folderDoc = await folderHandle.doc();
     if (!folderDoc) {
       throw new Error("Folder doc missing");
     }
-    const itemIndex = folderDoc
-      .docs.findIndex((item) => item.url === link.url);
+    const itemIndex = folderDoc.docs.findIndex((item) => item.url === link.url);
     if (itemIndex >= 0) {
       if (itemIndex < folderDoc.docs.length - 1) {
         selectDocLink({
