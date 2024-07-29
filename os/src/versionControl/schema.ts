@@ -163,7 +163,10 @@ export type HasChangeGroupSummaries = {
   };
 };
 
-export type HasVersionControlMetadata<T = unknown, V = unknown> = HasChangeGroupSummaries &
+export type HasVersionControlMetadata<
+  T = unknown,
+  V = unknown
+> = HasChangeGroupSummaries &
   Branchable &
   Taggable &
   Diffable &
@@ -249,7 +252,10 @@ export const initVersionControlMetadataDoc = (doc: any, repo: Repo) => {
   doc.versionControlMetadataUrl = metadataHandle.url;
 };
 
-export const getVersionControlMetadataHandle = (handle: DocHandle<any>, repo: Repo): DocHandle<VersionControlSidecarDoc> => {
+export const getVersionControlMetadataHandle = (
+  handle: DocHandle<any>,
+  repo: Repo
+): DocHandle<VersionControlSidecarDoc> => {
   const doc = handle.docSync();
   let versionControlMetadataUrl = doc.versionControlMetadataUrl;
   if (!versionControlMetadataUrl) {
@@ -261,14 +267,17 @@ export const getVersionControlMetadataHandle = (handle: DocHandle<any>, repo: Re
   return repo.find<VersionControlSidecarDoc>(versionControlMetadataUrl);
 };
 
-export const ensureMetadataHandleIsBranchScope = (handle: DocHandle<VersionControlSidecarDoc>) => {
+export const ensureMetadataHandleIsBranchScope = (
+  handle: DocHandle<VersionControlSidecarDoc>
+) => {
   handle.change((d) => {
     if (!d.isBranchScope) {
-      // @ts-expect-error TS may or may not be smart enough to figure this one out
       d.isBranchScope = true;
       // @ts-expect-error TS not smart enough to figure this one out
       d.branches = [];
     }
   });
-  return handle as DocHandle<VersionControlSidecarDoc & { isBranchScope: true }>;
-}
+  return handle as DocHandle<
+    VersionControlSidecarDoc & { isBranchScope: true }
+  >;
+};
