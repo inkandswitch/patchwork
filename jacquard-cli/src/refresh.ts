@@ -31,7 +31,7 @@ export async function refresh(
     patchworkUrl,
     onProgress = () => {},
   }: CommandLineArgs & {
-    onProgress?: (buildRungs: BuildRunWithProgress[]) => void;
+    onProgress?: (buildRuns: BuildRunWithProgress[]) => void;
   }
 ) {
   if (!projectFolderUrl) {

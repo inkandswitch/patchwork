@@ -80,7 +80,12 @@ export const GraphView = ({
     <div className="p-4 flex flex-col">
       <div className="flex">
         <div className="flex-1" />
-        <BuildRefreshButton projectBuildMetadataOm={projectBuildMetadataOm} />
+        {projectBuildMetadataOm && (
+          <BuildRefreshButton
+            projectBuildMetadataOm={projectBuildMetadataOm}
+            projectState={projectState}
+          />
+        )}
       </div>
       <GraphvizView source={stateGraphSrc(projectState)} />
     </div>

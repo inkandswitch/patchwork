@@ -3,7 +3,6 @@ import {
   getDoc,
   getOm,
   ifLoaded,
-  parallel,
   parallelMap,
 } from "@/doc-reactive";
 import { Om } from "@/om";
@@ -16,10 +15,8 @@ import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { CommandLineArgs } from ".";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 import { activateBranch } from "./activate";
-import { pull } from "./pull";
 import { refresh } from "./refresh";
 import { sleep } from "./util";
-import { BranchDoc } from "@/versionControl/schema";
 
 type BuildMetadataDocWithBranchUrl = {
   branchUrl?: AutomergeUrl;
