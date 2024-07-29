@@ -164,13 +164,13 @@ export type HasChangeGroupSummaries = {
 };
 
 export type HasVersionControlMetadata<
-  T = unknown,
-  V = unknown
+  TAnchor = unknown,
+  TAnchorValue = unknown
 > = HasChangeGroupSummaries &
   Branchable &
   Taggable &
   Diffable &
-  Discussable<T> &
+  Discussable<TAnchor> &
   // @Paul 5/24/24
   // todo: we should rethink how to structure core interfaces
   // the application now assumes that all document types in the system implement HasVersionControlMetadata

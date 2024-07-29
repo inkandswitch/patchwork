@@ -66,18 +66,18 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
         const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
         const versionControlMetadataDoc = getVersionControlMetadataOm(
           doc,
-          repo,
+          repo
         )?.doc;
         if (versionControlMetadataDoc?.isBranchScope) {
           const { activeBranchOm } = getActiveBranchInfo(
             docPath,
             getDR(uiStateOm),
-            repo,
+            repo
           );
           return activeBranchOm?.doc.name ?? "Main";
         }
-      }, [docPath, node.data.url, repo, uiStateOm]),
-    ),
+      }, [docPath, node.data.url, repo, uiStateOm])
+    )
   );
 
   let icon;
@@ -140,7 +140,7 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   );
 };
 
-const Edit = ({ node }: NodeRendererProps<DocLink>) => {
+const Edit = ({ node }: NodeRendererProps<DocLinkWithFolderPath>) => {
   const input = useRef<any>();
 
   useEffect(() => {
@@ -171,7 +171,7 @@ type SidebarProps = {
 
 const prepareDataForTree = (
   folderDoc: FolderDocWithChildren,
-  folderPath: AutomergeUrl[],
+  folderPath: AutomergeUrl[]
 ): DocLinkWithFolderPath[] => {
   if (!folderDoc) {
     return [];
@@ -233,7 +233,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [accountDoc] = useCurrentAccountDoc();
 
   const [uiStateDoc, changeUIStateDoc] = useDocument<UIStateDoc>(
-    accountDoc?.uiStateUrl,
+    accountDoc?.uiStateUrl
   );
 
   const uiStateOm = useUIStateOm();
@@ -263,10 +263,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       const srcPath = fakeDocPath(dragNode.data);
       const srcParentPath = srcPath.slice(0, -1);
       const srcParentOm = await waitForLoaded(() =>
-        getOmOnBranchFromPath<FolderDoc>(srcParentPath, getDR(uiStateOm), repo),
+        getOmOnBranchFromPath<FolderDoc>(srcParentPath, getDR(uiStateOm), repo)
       );
       const dragItemIndex = srcParentOm.doc.docs.findIndex(
-        (item) => item.url === dragNode.data.url,
+        (item) => item.url === dragNode.data.url
       );
       if (dragItemIndex === -1) {
         throw new Error("Couldn't find drag item in parent folder");
@@ -282,7 +282,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })
           : fakeDocPath(parentNode.data);
       const dstParentOm = await waitForLoaded(() =>
-        getOmOnBranchFromPath<FolderDoc>(dstParentPath, getDR(uiStateOm), repo),
+        getOmOnBranchFromPath<FolderDoc>(dstParentPath, getDR(uiStateOm), repo)
       );
 
       // Time for the subtlety listed under #3 above...
@@ -291,7 +291,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         const srcBranchInfo = getBranchScopeAndActiveBranchInfo(
           srcPath,
           getDR(uiStateOm),
-          repo,
+          repo
         );
         if (
           srcBranchInfo.activeBranchOm && // we're on a branch
@@ -300,7 +300,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           const dstBranchInfo = getBranchScopeAndActiveBranchInfo(
             dstParentPath,
             getDR(uiStateOm),
-            repo,
+            repo
           );
           if (
             dstBranchInfo.activeBranchOm?.url !==
@@ -351,8 +351,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (!dataType?.setTitle) {
       alert(
         `${capitalize(
-          dataType.name,
-        )} documents can only be renamed in the main editor, not the sidebar.`,
+          dataType.name
+        )} documents can only be renamed in the main editor, not the sidebar.`
       );
       return;
     }
@@ -363,11 +363,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     const docPath = fakeDocPath(node.data);
     const docOm = await waitForLoaded(() =>
-      getOmOnBranchFromPath<FolderDoc>(docPath, getDR(uiStateOm), repo),
+      getOmOnBranchFromPath<FolderDoc>(docPath, getDR(uiStateOm), repo)
     );
     const parentPath = docPath.slice(0, -1);
     const parentOm = await waitForLoaded(() =>
-      getOmOnBranchFromPath<FolderDoc>(parentPath, getDR(uiStateOm), repo),
+      getOmOnBranchFromPath<FolderDoc>(parentPath, getDR(uiStateOm), repo)
     );
 
     // rename doc link
@@ -399,7 +399,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         uiState.openedFoldersInSidebar.find((folder) => folder.url === link.url)
       ) {
         const index = uiState.openedFoldersInSidebar.findIndex(
-          (folder) => folder.url === link.url,
+          (folder) => folder.url === link.url
         );
         if (index !== -1) {
           uiState.openedFoldersInSidebar.splice(index, 1);
@@ -412,20 +412,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const initialOpenState = useMemo(
     () =>
-      (uiStateDoc?.openedFoldersInSidebar ?? []).reduce(
-        (acc, key) => {
-          acc[
-            // This is gross: we need to make sure that JSON stringify does the keys in the right order...
-            JSON.stringify({
-              url: key.url,
-              folderPath: key.folderPath,
-            })
-          ] = true;
-          return acc;
-        },
-        {} as Record<string, true>,
-      ),
-    [uiStateDoc],
+      (uiStateDoc?.openedFoldersInSidebar ?? []).reduce((acc, key) => {
+        acc[
+          // This is gross: we need to make sure that JSON stringify does the keys in the right order...
+          JSON.stringify({
+            url: key.url,
+            folderPath: key.folderPath,
+          })
+        ] = true;
+        return acc;
+      }, {} as Record<string, true>),
+    [uiStateDoc]
   );
 
   // Show a loading spinner until we've recursively loaded all folder contents
@@ -512,8 +509,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   automergeUrlToOpen
                     ? "bg-green-100"
                     : openUrlInput.length > 0
-                      ? "bg-red-100"
-                      : ""
+                    ? "bg-red-100"
+                    : ""
                 }`}
               />
               <div className="text-xs text-gray-500 text-right mt-1">

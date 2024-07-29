@@ -7,10 +7,10 @@ import { view } from "@automerge/automerge";
 import { get, set } from "lodash";
 import { PackageDoc } from "./datatype";
 
-export const PackageEditor: React.FC<EditorProps<never, never>> = ({
+export const PackageEditor: React.FC<EditorProps<unknown, unknown>> = ({
   docUrl,
   docHeads,
-}: EditorProps<never, never>) => {
+}: EditorProps<unknown, unknown>) => {
   const [rawPackageDoc, changeModuleDoc] = useDocument<PackageDoc>(docUrl);
 
   if (!rawPackageDoc) {

@@ -24,7 +24,7 @@ import { TextPatch } from "@/versionControl/utils";
 
 // SCHEMA
 
-export type TLDrawDoc = HasVersionControlMetadata<never, never> & {
+export type TLDrawDoc = HasVersionControlMetadata<TLShapeId, TLShape> & {
   store: SerializedStore<TLRecord>;
   schema: SerializedSchema;
 };
@@ -292,7 +292,7 @@ const getBounds = (shape: TLShape): Bounds => {
   // hack: getGeometry throws an error for some shape types because we don't have a proper editor instance here.
   // we just create an empty editor so we can call the getGeometry function
   try {
-    geometry = editor.shapeUtils[shape.type]!.getGeometry(shape);  // TODO: JAH strict fix
+    geometry = editor.shapeUtils[shape.type]!.getGeometry(shape); // TODO: JAH strict fix
   } catch (err) {
     return { x: 0, y: 0, w: 0, h: 0 };
   }

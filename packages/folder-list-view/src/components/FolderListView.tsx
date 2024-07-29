@@ -25,13 +25,14 @@ const FolderListItem: React.FC<{ docLink: DocLink }> = ({ docLink }) => {
   );
 };
 
-export const FolderViewerList: React.FC<EditorProps<never, never>> = ({
+export const FolderViewerList: React.FC<EditorProps<unknown, unknown>> = ({
   docUrl,
   docHeads,
-}: EditorProps<never, never>) => {
+}: EditorProps<unknown, unknown>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
 
-  const folderAtHeads = folder && docHeads ? Automerge.view(folder, docHeads) : folder;
+  const folderAtHeads =
+    folder && docHeads ? Automerge.view(folder, docHeads) : folder;
 
   if (!folder) {
     return null;

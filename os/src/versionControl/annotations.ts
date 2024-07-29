@@ -54,8 +54,8 @@ export function useAnnotations({
   setHoveredAnchor: (anchor: unknown) => void;
   setSelectedAnchors: (anchors: unknown[]) => void;
   hoveredAnnotationGroupId: string | undefined;
-  setHoveredAnnotationGroupId: (id: string) => void;
-  setSelectedAnnotationGroupId: (id: string) => void;
+  setHoveredAnnotationGroupId: (id: string | undefined) => void;
+  setSelectedAnnotationGroupId: (id: string | undefined) => void;
   setCommentState: (state: CommentState<unknown>) => void;
 } {
   const [commentState, setCommentState] = useState<CommentState<unknown>>();
@@ -190,7 +190,8 @@ export function useAnnotations({
 
       highlightAnnotations.push(...discussionHighlightAnnotations);
 
-      const overlappingAnnotations: HighlightAnnotation<unknown, unknown>[] = [];
+      const overlappingAnnotations: HighlightAnnotation<unknown, unknown>[] =
+        [];
 
       editAnnotations.forEach((editAnnotation) => {
         if (
@@ -200,7 +201,9 @@ export function useAnnotations({
         ) {
           // mark any annotation that is part of a discussion as claimed
           claimedAnnotations.add(editAnnotation);
-          overlappingAnnotations.push(editAnnotation as HighlightAnnotation<unknown, unknown>);  // TODO: JAH strict fix
+          overlappingAnnotations.push(
+            editAnnotation as HighlightAnnotation<unknown, unknown>
+          ); // TODO: JAH strict fix
         }
       });
 
@@ -404,10 +407,11 @@ export function useAnnotations({
               break;
             case "edit":
               isCommentBeingEdited =
-                commentState.type === "edit" &&
-                annotationGroup.discussion?.comments.some(
-                  (comment) => comment.id === commentState.commentId
-                ) || false;
+                (commentState.type === "edit" &&
+                  annotationGroup.discussion?.comments.some(
+                    (comment) => comment.id === commentState.commentId
+                  )) ||
+                false;
               break;
           }
         }

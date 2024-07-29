@@ -1,5 +1,9 @@
 import { useRootFolderDocWithChildren } from "@/explorer/account";
-import { AutomergeUrl, DocumentId } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  DocumentId,
+  parseAutomergeUrl,
+} from "@automerge/automerge-repo";
 import { useDocuments } from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useRef, useEffect, useState } from "react";
 import { next as A } from "@automerge/automerge";
@@ -67,16 +71,21 @@ export const usePackageModulesInRootFolder = (): Package[] => {
           const heads = A.getHeads(packageDoc).join(",");
           const moduleUrl = `https://automerge/${docId}/fileContents/${packageJSON.main}?heads=${heads}`;
 
-          const sourcePackage = packageDoc.branchMetadata.source
-            ? packageDocs[packageDoc.branchMetadata.source.url.slice(10)]
-            : undefined;
+          let sourcePackage: PackageDoc | undefined;
+          if (packageDoc.branchMetadata?.source) {
+            const { documentId } = parseAutomergeUrl(
+              packageDoc.branchMetadata.source.url
+            );
+
+            sourcePackage = packageDocs[documentId];
+          }
 
           return {
             module: await import(/* @vite-ignore */ moduleUrl),
             sourceDocUrl: sourcePackage
               ? sourcePackage.branchMetadata.branches.find((branch) =>
                   branch.url.includes(docId)
-                )
+                ).url
               : undefined,
           };
         })

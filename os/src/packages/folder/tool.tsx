@@ -18,12 +18,14 @@ import { ErrorBoundary } from "react-error-boundary";
 import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
 
-export const FolderViewerWithEmbeds: React.FC<EditorProps<never, never>> = ({
+export const FolderViewerWithEmbeds: React.FC<
+  EditorProps<unknown, unknown>
+> = ({
   docUrl,
   docHeads,
   getFakeDocPathForDocUrl,
   highlightChanges,
-}: EditorProps<never, never>) => {
+}: EditorProps<unknown, unknown>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
   const folderAtHeads = folder && docHeads ? A.view(folder, docHeads) : folder;
   const [hideUnchangedFiles, setHideUnchangedFiles] = useState(false);
@@ -77,7 +79,8 @@ export const FolderEntryView = ({
   getFakeDocPathForDocUrl,
 }: FolderEntryView) => {
   const docPath = getFakeDocPathForDocUrl(docLink.url);
-  const branchScopeAndActiveBranchInfo = useBranchScopeAndActiveBranchInfo(docPath);
+  const branchScopeAndActiveBranchInfo =
+    useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
   const dataType = useDataType(docLink.type);

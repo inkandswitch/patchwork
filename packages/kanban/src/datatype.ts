@@ -20,7 +20,7 @@ export type Card = {
   createdByContactUrl: AutomergeUrl;
 };
 
-export type KanbanBoardDoc = HasVersionControlMetadata<never, never> & {
+export type KanbanBoardDoc = HasVersionControlMetadata<unknown, unknown> & {
   title: string;
   lanes: Lane[];
   cards: Card[];

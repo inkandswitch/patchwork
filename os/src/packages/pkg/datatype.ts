@@ -12,7 +12,7 @@ export type FileSystem = {
   [name: string]: FileEntry | FileSystem;
 };
 
-export type PackageDoc = HasVersionControlMetadata<never, never> & {
+export type PackageDoc = HasVersionControlMetadata<unknown, unknown> & {
   title: string;
   packageJSON: any;
   fileContents: FileSystem;

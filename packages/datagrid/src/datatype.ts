@@ -7,7 +7,7 @@ import { TextPatch } from "@/versionControl/utils";
 
 // SCHEMA
 
-export type DataGridDoc = HasVersionControlMetadata<never, never> & {
+export type DataGridDoc = HasVersionControlMetadata<unknown, unknown> & {
   title: string; // The title of the table
 
   // NOTE: modeling the data this way does not result in reasonable merges.

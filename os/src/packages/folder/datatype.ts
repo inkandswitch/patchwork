@@ -34,7 +34,7 @@ export type DocPath = DocLink[];
 export type FolderDoc = {
   title: string;
   docs: DocLink[];
-} & HasVersionControlMetadata<never, never>;
+} & HasVersionControlMetadata<unknown, unknown>;
 
 // FUNCTIONS
 
