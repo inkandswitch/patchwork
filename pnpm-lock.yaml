@@ -25,6 +25,9 @@ importers:
       isbinaryfile:
         specifier: ^5.0.2
         version: 5.0.2
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       mime-types:
         specifier: ^2.1.35
         version: 2.1.35
@@ -35,6 +38,9 @@ importers:
       '@types/command-line-args':
         specifier: ^5.2.3
         version: 5.2.3
+      '@types/lodash':
+        specifier: ^4.17.7
+        version: 4.17.7
       '@types/mime-types':
         specifier: ^2.1.4
         version: 2.1.4

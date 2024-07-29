@@ -6,19 +6,36 @@ import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { CommandLineArgs } from ".";
 import { FileDoc } from "../../packages/file/src/datatype";
 import {
-  JacquardBuildMetadata
+  BuildRun,
+  JacquardBuildMetadata,
 } from "../../packages/jacquard/src/datatype";
 import {
   getProjectState,
-  getStalenessInfo
+  getStalenessInfo,
 } from "../../packages/jacquard/src/getStalenessInfo";
-import { findWithActiveBranch, findWithActiveBranchPromise } from "./findWithActiveBranch";
+import {
+  findWithActiveBranch,
+  findWithActiveBranchPromise,
+} from "./findWithActiveBranch";
 import { run } from "./run";
 import { getBuildMetadataDocUrl, waitForSync } from "./util";
+import { omit } from "lodash";
+
+type BuildRunWithProgress = Omit<BuildRun, "timestamp"> & {
+  progress: "waiting" | "running" | "done";
+};
 
 export async function refresh(
   repo: Repo,
-  { dir, projectFolderUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs
+  {
+    dir,
+    projectFolderUrl,
+    syncServerStorageId,
+    patchworkUrl,
+    onProgress = () => {},
+  }: CommandLineArgs & {
+    onProgress?: (buildRungs: BuildRunWithProgress[]) => void;
+  }
 ) {
   if (!projectFolderUrl) {
     console.log("No project folder URL provided.");
@@ -37,28 +54,24 @@ export async function refresh(
     process.exit(1);
   }
 
-
   const buildMetadataDocUrl = getBuildMetadataDocUrl(folderDoc);
   if (!buildMetadataDocUrl) {
     console.error(`Project has no build metadata`);
     process.exit(1);
   }
 
-  const buildMetadataHandle = await findWithActiveBranchPromise<JacquardBuildMetadata>(
-    buildMetadataDocUrl,
-    repo
-  );
+  const buildMetadataHandle =
+    await findWithActiveBranchPromise<JacquardBuildMetadata>(
+      buildMetadataDocUrl,
+      repo
+    );
 
-  // TODO: report what's gonna run (in unknown order)
+  const buildMetadataDoc = await buildMetadataHandle.doc();
+  if (!buildMetadataDoc) {
+    throw new Error(`Build metadata doc missing: ${buildMetadataDocUrl}`);
+  }
 
-  let ranSomethingEver = false;
-
-  while (true) {
-    const buildMetadataDoc = await buildMetadataHandle.doc();
-    if (!buildMetadataDoc) {
-      throw new Error(`Build metadata doc missing: ${buildMetadataDocUrl}`);
-    }
-
+  const getCurrentStalenessInfo = async () => {
     const projectState = await waitForLoaded(() => {
       const getDocOnBranchFromUrl = (fileUrl: AutomergeUrl) => {
         const fileHandle = findWithActiveBranch<FileDoc>(fileUrl, repo);
@@ -78,7 +91,36 @@ export async function refresh(
         getDocOnBranchFromUrl,
       });
     });
-    const stalenessInfo = getStalenessInfo(projectState);
+
+    return getStalenessInfo(projectState);
+  };
+
+  // collect buildRuns that are in progress
+  const buildRunsWithProgress: BuildRunWithProgress[] = Object.entries(
+    (await getCurrentStalenessInfo()).buildRunStatuses
+  ).flatMap(([buildRunId, status]) => {
+    if (status.length === 0) {
+      return [];
+    }
+
+    const buildRun = buildMetadataDoc.buildRuns.find(
+      ({ id }) => id === buildRunId
+    );
+    if (!buildRun) {
+      throw new Error(`Build run missing from doc: ${buildRunId}`);
+    }
+
+    return [{ ...omit(buildRun, ["timestamp"]), progress: "waiting" }];
+  });
+
+  onProgress(buildRunsWithProgress);
+
+  // TODO: report what's gonna run (in unknown order)
+
+  let ranSomethingEver = false;
+
+  while (true) {
+    let stalenessInfo = await getCurrentStalenessInfo();
 
     let ranSomethingThisLoop = false;
 
@@ -98,6 +140,14 @@ export async function refresh(
             (input) => stalenessInfo.docStatuses[input.docUrl].length === 0
           )
         ) {
+          const buildRunWithProgress = buildRunsWithProgress.find(
+            ({ id }) => id === buildRunId
+          );
+          if (buildRunWithProgress) {
+            buildRunWithProgress.progress = "running";
+            onProgress(buildRunsWithProgress);
+          }
+
           // all inputs are up to date, so we can run this build
           console.log(`running build ${buildRunId}: ${buildRun.command}`);
           await run(
@@ -111,6 +161,12 @@ export async function refresh(
             },
             false // actually, let's wait now
           );
+
+          if (buildRunWithProgress) {
+            buildRunWithProgress.progress = "done";
+            onProgress(buildRunsWithProgress);
+          }
+
           ranSomethingThisLoop = true;
           ranSomethingEver = true;
           break;
