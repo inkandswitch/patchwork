@@ -7,6 +7,7 @@ import { CommandLineArgs } from ".";
 import { FileDoc } from "../../packages/file/src/datatype";
 import {
   BuildRun,
+  BuildRunWithProgress,
   JacquardBuildMetadata,
 } from "../../packages/jacquard/src/datatype";
 import {
@@ -20,10 +21,6 @@ import {
 import { run } from "./run";
 import { getBuildMetadataDocUrl, waitForSync } from "./util";
 import { omit } from "lodash";
-
-type BuildRunWithProgress = Omit<BuildRun, "timestamp"> & {
-  progress: "waiting" | "running" | "done";
-};
 
 export async function refresh(
   repo: Repo,

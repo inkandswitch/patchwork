@@ -20,8 +20,25 @@ export type BuildRun = {
   timestamp: number;
 };
 
+export type BuildRunWithProgress = Omit<BuildRun, "timestamp"> & {
+  progress: "waiting" | "running" | "done";
+};
+
 // todo: think about error handling and more detailed update reporting
-type RefreshState = "requesting" | "processing" | "idle";
+
+type IdleRefreshState = { type: "idle" };
+
+type RequestingRefreshState = { type: "requesting" };
+
+type ProcessingRefreshState = {
+  type: "processing";
+  buildRuns: BuildRunWithProgress[];
+};
+
+type RefreshState =
+  | IdleRefreshState
+  | RequestingRefreshState
+  | ProcessingRefreshState;
 
 export type JacquardBuildMetadata = HasVersionControlMetadata<
   unknown,

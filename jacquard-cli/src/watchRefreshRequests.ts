@@ -63,7 +63,7 @@ export async function watchRefreshRequests(
       return [];
     }
 
-    if (mainBuildMetadataOm.doc.refreshState === "requesting") {
+    if (mainBuildMetadataOm.doc.refreshState?.type === "requesting") {
       pending.push({ buildMetadataOm: mainBuildMetadataOm });
     }
 
@@ -88,7 +88,7 @@ export async function watchRefreshRequests(
         repo
       );
 
-      if (branchBuildMetadataOm.doc.refreshState === "requesting") {
+      if (branchBuildMetadataOm.doc.refreshState.type === "requesting") {
         pending.push({ buildMetadataOm: branchBuildMetadataOm, branchUrl });
       }
     });
@@ -109,10 +109,6 @@ export async function watchRefreshRequests(
       continue;
     }
 
-    next.buildMetadataOm.handle.change((doc) => {
-      doc.refreshState = "processing";
-    });
-
     console.log("switch to branch:", next.branchUrl ?? "main");
 
     await activateBranch(repo, {
@@ -128,6 +124,14 @@ export async function watchRefreshRequests(
       projectFolderUrl,
       syncServerStorageId,
       patchworkUrl,
+      onProgress: (buildRuns) => {
+        next.buildMetadataOm.handle.change((doc) => {
+          doc.refreshState = {
+            type: "processing",
+            buildRuns: JSON.parse(JSON.stringify(buildRuns)), // turn automerge object into POJO before assigning it back to the doc
+          };
+        });
+      },
     });
 
     await sleep(500);
@@ -135,7 +139,7 @@ export async function watchRefreshRequests(
     console.log("refresh finished");
 
     next.buildMetadataOm.handle.change((doc) => {
-      doc.refreshState = "idle";
+      doc.refreshState = { type: "idle" };
     });
   }
 }
