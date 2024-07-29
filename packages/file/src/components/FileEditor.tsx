@@ -1,4 +1,4 @@
-import { ifLoaded, useDocReactive } from "@/doc-reactive";
+import { getDR, getOm, ifLoaded, useDocReactive } from "@/doc-reactive";
 import { TextAnchor } from "@/lib/textAnchors";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import { EditorProps } from "@/tools";
@@ -22,6 +22,8 @@ import { FileDoc } from "../datatype";
 import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
+import { resolveUrlOnBranch } from "@/versionControl/signals";
+import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -29,7 +31,13 @@ import { TextFileEditor, isTextFile } from "./TextFileEditor";
 // if this tool supports the data type
 
 export const FileEditor = (props: EditorProps<unknown, unknown>) => {
-  const { docUrl, docHeads, getFakeDocPathForDocUrl, mainDocUrl } = props;
+  const {
+    docUrl,
+    docHeads,
+    getFakeDocPathForDocUrl,
+    mainDocUrl,
+    activeBranchUrl,
+  } = props;
   const [_doc] = useDocument<FileDoc>(docUrl);
   const [showSourceFiles, setShowDependencies] = useState(false);
 
@@ -44,12 +52,48 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
       )
     )
   );
+
+  const buildMetadataInputsOnBranch = ifLoaded(
+    useDocReactive(
+      useCallback(() => {
+        getDR(buildMetadata);
+        return buildMetadata?.inputs.map((input) =>
+          activeBranchUrl
+            ? {
+                ...input,
+                docUrl: resolveUrlOnBranch(input.docUrl, activeBranchUrl, repo)
+                  .url,
+                mainDocUrl: input.docUrl,
+              }
+            : { ...input, mainDocUrl: input.docUrl }
+        );
+      }, [buildMetadata, activeBranchUrl, repo])
+    )
+  );
+
   const projectBuildMetadataOm = ifLoaded(
     useDocReactive(
-      useCallback(
-        () => getProjectBuildMetadataOm(getFakeDocPathForDocUrl(docUrl), repo),
-        [docUrl, repo, getFakeDocPathForDocUrl]
-      )
+      useCallback(() => {
+        const buildMetadataUrlOnMain = getProjectBuildMetadataOm(
+          getFakeDocPathForDocUrl(mainDocUrl),
+          repo
+        )?.url;
+
+        // todo: handle case where main has no build data, but only exists on the branch
+        if (!buildMetadataUrlOnMain) {
+          return;
+        }
+
+        const currentBuildMetadataUrl = activeBranchUrl
+          ? resolveUrlOnBranch(buildMetadataUrlOnMain, activeBranchUrl, repo)
+              .url
+          : buildMetadataUrlOnMain;
+        if (!currentBuildMetadataUrl) {
+          return;
+        }
+
+        return getOm<JacquardBuildMetadata>(currentBuildMetadataUrl, repo);
+      }, [mainDocUrl, repo, getFakeDocPathForDocUrl, activeBranchUrl])
     )
   );
 
@@ -81,7 +125,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
               )}
             </div>
           ) : (
-            <div className="p-4">No preview for binary file</div>
+            <div className="p-4">No preview for file</div>
           )}
         </>
       )}
@@ -107,7 +151,11 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
             )*/}
           </div>
 
-          <BuildRefreshButton projectBuildMetadataOm={projectBuildMetadataOm} />
+          {projectBuildMetadataOm && (
+            <BuildRefreshButton
+              projectBuildMetadataOm={projectBuildMetadataOm}
+            />
+          )}
 
           <div className="flex-1" />
 
@@ -124,9 +172,9 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
       )}
 
       <div className="overflow-auto h-full">
-        {showSourceFiles &&
-          buildMetadata &&
-          buildMetadata.inputs.map((input) => (
+        {buildMetadataInputsOnBranch &&
+          showSourceFiles &&
+          buildMetadataInputsOnBranch.map((input) => (
             <div>
               <div className="flex border-t border-gray-200 p-2">
                 <div className="rounded-md px-1  text-gray-500  border border-gray-500">
@@ -138,7 +186,8 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
                   docUrl={input.docUrl}
                   docHeads={input.heads}
                   getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-                  mainDocUrl={mainDocUrl}
+                  mainDocUrl={input.mainDocUrl}
+                  activeBranchUrl={activeBranchUrl}
                 />
               </div>
             </div>

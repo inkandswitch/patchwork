@@ -244,23 +244,24 @@ export const VersionControlEditor: React.FC<{
   return (
     <div className="flex h-full overflow-hidden">
       <div className="flex flex-col flex-1 overflow-hidden">
-        { branchScopeAndActiveBranchInfo
-          ? <VersionControlBar
-              docUrl={mainDocUrl}
-              datatypeId={datatypeId}
-              branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
-              buildMetadata={buildMetadata}
-              sidebarMode={sidebarMode}
-              setSidebarMode={setSidebarMode}
-              showChangesFlag={showChangesFlag}
-              setShowChangesFlag={setShowChangesFlag}
-              compareWithMainFlag={compareWithMainFlag}
-              setCompareWithMainFlag={setCompareWithMainFlag}
-              highlightSidebarButton={highlightSidebarButton}
-              getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-            />
-          : <div>Loading version control information...</div>
-        }
+        {branchScopeAndActiveBranchInfo ? (
+          <VersionControlBar
+            docUrl={mainDocUrl}
+            datatypeId={datatypeId}
+            branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
+            buildMetadata={buildMetadata}
+            sidebarMode={sidebarMode}
+            setSidebarMode={setSidebarMode}
+            showChangesFlag={showChangesFlag}
+            setShowChangesFlag={setShowChangesFlag}
+            compareWithMainFlag={compareWithMainFlag}
+            setCompareWithMainFlag={setCompareWithMainFlag}
+            highlightSidebarButton={highlightSidebarButton}
+            getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+          />
+        ) : (
+          <div>Loading version control information...</div>
+        )}
 
         {/* Main doc editor pane */}
         <ErrorBoundary FallbackComponent={ErrorFallback}>
@@ -283,6 +284,9 @@ export const VersionControlEditor: React.FC<{
                   setCommentState={setCommentState}
                   getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                   mainDocUrl={mainDocUrl}
+                  activeBranchUrl={
+                    branchScopeAndActiveBranchInfo.activeBranchOm?.url
+                  }
                   highlightChanges={showChangesFlag}
                 />
               ) : (
@@ -302,6 +306,9 @@ export const VersionControlEditor: React.FC<{
                   setCommentState={setCommentState}
                   getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                   mainDocUrl={mainDocUrl}
+                  activeBranchUrl={
+                    branchScopeAndActiveBranchInfo.activeBranchOm?.url
+                  }
                   highlightChanges={showChangesFlag}
                 />
               )}
@@ -427,6 +434,7 @@ const DocEditor = <T, V>({
   setCommentState,
   getFakeDocPathForDocUrl,
   mainDocUrl,
+  activeBranchUrl,
   highlightChanges,
 }: EditorPropsWithTool<T, V>) => {
   if (!tool) {
@@ -450,6 +458,7 @@ const DocEditor = <T, V>({
       setCommentState={setCommentState}
       getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
       mainDocUrl={mainDocUrl}
+      activeBranchUrl={activeBranchUrl}
       highlightChanges={highlightChanges}
     />
   );

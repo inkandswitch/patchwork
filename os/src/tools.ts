@@ -61,6 +61,7 @@ export type EditorProps<A, V> = {
 
   // HACK
   mainDocUrl: AutomergeUrl;
+  activeBranchUrl?: AutomergeUrl;
 
   // Hack, folder needs to know if highlight is enabled so it can conditionally pass down
   // change annotations to the embedded file views
