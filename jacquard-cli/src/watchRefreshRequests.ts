@@ -1,4 +1,11 @@
-import { docReactiveSignal, getDoc, getOm, ifLoaded } from "@/doc-reactive";
+import {
+  docReactiveSignal,
+  getDoc,
+  getOm,
+  ifLoaded,
+  parallel,
+  parallelMap,
+} from "@/doc-reactive";
 import { Om } from "@/om";
 import { FolderDoc } from "@/packages/folder";
 import {
@@ -12,6 +19,7 @@ import { activateBranch } from "./activate";
 import { pull } from "./pull";
 import { refresh } from "./refresh";
 import { sleep } from "./util";
+import { BranchDoc } from "@/versionControl/schema";
 
 type BuildMetadataDocWithBranchUrl = {
   branchUrl?: AutomergeUrl;
@@ -34,6 +42,7 @@ export async function watchRefreshRequests(
     console.log("Failed to load project folder");
     return;
   }
+
   const buildMetadataDocsWithPendingRefresh = docReactiveSignal<
     BuildMetadataDocWithBranchUrl[]
   >(() => {
@@ -48,21 +57,28 @@ export async function watchRefreshRequests(
 
     // check build metadata on main
     const mainBuildMetadataOm = getBuildMetadataOmOfFolder(projectFolder, repo);
-    if (
-      mainBuildMetadataOm &&
-      mainBuildMetadataOm.doc.refreshState === "requesting"
-    ) {
+
+    if (!mainBuildMetadataOm) {
+      console.log("skip has no build metadata");
+      return [];
+    }
+
+    if (mainBuildMetadataOm.doc.refreshState === "requesting") {
       pending.push({ buildMetadataOm: mainBuildMetadataOm });
     }
 
     if (!versionControlMetadataOm?.doc.isBranchScope) {
+      console.log("skip check branches");
       return [];
     }
 
+    console.log("check branches", versionControlMetadataOm.doc.branches.length);
+
     // check branches
-    for (const branchUrl of versionControlMetadataOm.doc.branches) {
+
+    parallelMap(versionControlMetadataOm.doc.branches, (branchUrl) => {
       const branchBuildMetadataDocUrl = resolveUrlOnBranch(
-        versionControlMetadataOm.url,
+        mainBuildMetadataOm.url,
         branchUrl,
         repo
       ).url;
@@ -75,7 +91,7 @@ export async function watchRefreshRequests(
       if (branchBuildMetadataOm.doc.refreshState === "requesting") {
         pending.push({ buildMetadataOm: branchBuildMetadataOm, branchUrl });
       }
-    }
+    });
 
     return pending;
   });
@@ -86,6 +102,8 @@ export async function watchRefreshRequests(
     const pending = ifLoaded(buildMetadataDocsWithPendingRefresh.value);
     const next = pending && pending[0];
 
+    console.log("check");
+
     if (!next) {
       await sleep(500);
       continue;
@@ -95,8 +113,6 @@ export async function watchRefreshRequests(
       doc.refreshState = "processing";
     });
 
-    console.log("\nrefresh started");
-
     console.log("switch to branch:", next.branchUrl ?? "main");
 
     await activateBranch(repo, {
@@ -105,14 +121,6 @@ export async function watchRefreshRequests(
       branchUrl: next.branchUrl,
     });
 
-    console.log("pulling");
-    ``;
-    await pull(repo, {
-      dir,
-      projectFolderUrl,
-      syncServerStorageId,
-      patchworkUrl,
-    });
     console.log("done pull");
 
     await refresh(repo, {
