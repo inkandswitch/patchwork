@@ -17,16 +17,21 @@ import {
 export const BuildRefreshButton = ({
   projectBuildMetadataOm,
   projectState,
+  alignTooltip,
 }: {
   projectBuildMetadataOm: Om<JacquardBuildMetadata>;
   projectState?: ProjectState;
+  alignTooltip?: "start" | "end" | "center";
 }) => {
   getProjectState;
 
   const { refreshState } = projectBuildMetadataOm.doc;
 
   const handleRefresh = () => {
-    if (!projectBuildMetadataOm) {
+    if (
+      !projectBuildMetadataOm ||
+      projectBuildMetadataOm.doc.refreshState.type !== "idle"
+    ) {
       return;
     }
 
@@ -54,8 +59,6 @@ export const BuildRefreshButton = ({
     return null;
   }
 
-  const showTooltip = projectState || refreshState.type === "processing";
-
   return (
     <TooltipProvider>
       <Tooltip>
@@ -64,7 +67,6 @@ export const BuildRefreshButton = ({
             variant="outline"
             className="flex gap-2 w-fit"
             onClick={handleRefresh}
-            disabled={projectBuildMetadataOm.doc.refreshState.type !== "idle"}
           >
             <RefreshCw
               size={16}
@@ -82,33 +84,37 @@ export const BuildRefreshButton = ({
               : ""}
           </Button>
         </TooltipTrigger>
-        {showTooltip && (
-          <TooltipContent side="bottom">
-            {refreshState.type === "processing" &&
-              refreshState.buildRuns.map(({ command, progress }) => (
-                <div className="flex gap-2 items-center">
-                  <ProgressIcon state={progress} />
-                  <div className="font-mono">{command}</div>
-                </div>
-              ))}
 
-            {refreshState.type === "idle" && (
-              <div className="flex flex-col gap-2">
-                <div>Refresh will run the following comands</div>
-                <div className="w-full border-t border-gray-300"></div>
-
-                <div>
-                  {buildsToRun.map((build) => (
-                    <div className="flex gap-2 items-center">
-                      <ProgressIcon state="waiting" />
-                      <div className="font-mono">{build.command}</div>
-                    </div>
-                  ))}
-                </div>
+        <TooltipContent side="bottom" align={alignTooltip}>
+          {refreshState.type === "processing" &&
+            refreshState.buildRuns.map(({ command, progress }) => (
+              <div className="flex gap-2 items-center">
+                <ProgressIcon state={progress} />
+                <div className="font-mono">{command}</div>
               </div>
-            )}
-          </TooltipContent>
-        )}
+            ))}
+
+          {(refreshState.type === "idle" ||
+            refreshState.type === "requesting") && (
+            <div className="flex flex-col gap-2">
+              <div>
+                {refreshState.type === "idle"
+                  ? "The following commands need to rerun"
+                  : "Waiting for demon to start build"}
+              </div>
+              <div className="w-full border-t border-gray-300"></div>
+
+              <div>
+                {buildsToRun.map((build) => (
+                  <div className="flex gap-2 items-center">
+                    <ProgressIcon state="waiting" />
+                    <div className="font-mono">{build.command}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );

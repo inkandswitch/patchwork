@@ -84,6 +84,7 @@ export const GraphView = ({
           <BuildRefreshButton
             projectBuildMetadataOm={projectBuildMetadataOm}
             projectState={projectState}
+            alignTooltip="end"
           />
         )}
       </div>
