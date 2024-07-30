@@ -1,4 +1,5 @@
 import {
+  ResolvedTextAnchor,
   TextAnchor,
   annotationsPlugin,
   useAnnotationsInEditor,
@@ -11,9 +12,11 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { json } from "@codemirror/lang-json";
 import { python } from "@codemirror/lang-python";
 import { EditorView, basicSetup } from "codemirror";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileDoc, TextFileContent } from "../datatype";
 import { useHandleDef } from "@/hooks/useHandleDef";
+import { selectedAnchorsPlugin } from "../../../essay/src/codemirrorPlugins/setSelectedAnchors";
+import { AnnotationWithUIState } from "@/sdk";
 
 export type TextFileDoc = FileDoc & {
   content: TextFileContent;
@@ -26,6 +29,7 @@ export const isTextFile = (doc: FileDoc) => {
 export const TextFileEditor = ({
   docUrl,
   annotations,
+  setSelectedAnchors,
 }: EditorProps<TextAnchor, string>) => {
   const [container, setContainer] = useState<HTMLElement | null>(null);
   const [editor, setEditor] = useState<EditorView>();
@@ -48,6 +52,11 @@ export const TextFileEditor = ({
     editor,
   });
 
+  const annotationsRef = useRef<
+    AnnotationWithUIState<ResolvedTextAnchor, string>[]
+  >([]);
+  annotationsRef.current = resolvedAnnotations;
+
   useEffect(() => {
     if (!container) {
       return;
@@ -65,6 +74,12 @@ export const TextFileEditor = ({
         getPluginsByType(doc!.type), // TODO: JAH strict fix
         annotationsPlugin,
         EditorView.lineWrapping,
+        selectedAnchorsPlugin({
+          setSelectedAnchors,
+          annotationsRef,
+          doc,
+          path: ["content", "value"],
+        }),
       ],
       parent: container,
     });
@@ -75,9 +90,14 @@ export const TextFileEditor = ({
     return () => {
       view.destroy();
     };
-  }, [container, handle]);
+  }, [container, handle, setSelectedAnchors]);
 
-  return <div className="codemirror-editor" ref={setContainer} />;
+  return (
+    <div
+      className="codemirror-editor h-full overflow-auto scroll-smooth"
+      ref={setContainer}
+    />
+  );
 };
 
 const getPluginsByType = (type: string) => {

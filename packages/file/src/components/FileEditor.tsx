@@ -124,7 +124,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
         jacquardProjectInfo.buildMetadataOm.doc.refreshState.type !== "idle"));
 
   const fileView = (
-    <div>
+    <>
       {isTextFile(doc) ? (
         React.createElement(
           TextFileEditor,
@@ -151,7 +151,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
           )}
         </>
       )}
-    </div>
+    </>
   );
 
   return (

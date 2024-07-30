@@ -27,6 +27,8 @@ import { StatusBar } from "./Statusbar";
 import { VersionControlBar } from "./VersionControlBar";
 import { ifLoaded } from "@/doc-reactive";
 import { fakeDocPath } from "../signals";
+import { ReviewSidebar } from "./ReviewSidebar";
+import { Om } from "@/om";
 
 export type SidebarMode = "review" | "history" | "Bot";
 
@@ -117,8 +119,9 @@ export const VersionControlEditor: React.FC<{
 
   const docPath = fakeDocPath(selectedDocLink);
 
-  const branchScopeAndActiveBranchInfo =
-    ifLoaded(useBranchScopeAndActiveBranchInfo(docPath));
+  const branchScopeAndActiveBranchInfo = ifLoaded(
+    useBranchScopeAndActiveBranchInfo(docPath)
+  );
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
   const baseHeads = branchScopeAndActiveBranchInfo?.baseHeads;
 
@@ -369,6 +372,11 @@ export const VersionControlEditor: React.FC<{
           </div>
 
           <div className="min-h-0 flex-grow w-96">
+            {sidebarMode === "history" && (
+              <div className="p-4 text-gray-600">
+                <p>History is not available in Jacquard Patchwork yet.</p>
+              </div>
+            )}
             {/* {sidebarMode === "history" && (
               <TimelineSidebar
                 // set key to trigger re-mount on branch change
@@ -381,10 +389,11 @@ export const VersionControlEditor: React.FC<{
                 setSelectedBranch={setSelectedBranch}
               />
             )} */}
-            {/* {sidebarMode === "review" && (
+
+            {sidebarMode === "review" && (
               <ReviewSidebar
-                doc={activeDoc}
-                handle={activeHandle}
+                doc={cloneOrMainOm.doc}
+                handle={cloneOrMainOm.handle}
                 tool={tool}
                 annotationGroups={annotationGroups}
                 selectedAnchors={selectedAnchors}
@@ -394,7 +403,7 @@ export const VersionControlEditor: React.FC<{
                 setIsCommentInputFocused={setIsCommentInputFocused}
                 setCommentState={setCommentState}
               />
-            )} */}
+            )}
             {/* {sidebarMode === "Bot" && (
               <BotSidebar
                 doc={activeDoc}

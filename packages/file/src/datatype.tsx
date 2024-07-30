@@ -25,7 +25,7 @@ export type FileContent =
   | TextFileContent
   | LinkedFileContent;
 
-export type FileDoc = HasVersionControlMetadata<unknown, unknown> & {
+export type FileDoc = HasVersionControlMetadata<TextAnchor, string> & {
   name: string;
   type: string; // todo: should maybe rename type to extension?
   content: FileContent;

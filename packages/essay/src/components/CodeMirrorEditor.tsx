@@ -19,9 +19,10 @@ import {
   useScrollAnnotationsIntoView,
 } from "@/lib/textAnchors";
 import { AnnotationWithUIState } from "@/versionControl/schema";
-import { isEqual } from "lodash";
+import { get, isEqual } from "lodash";
 import { clickableMarkdownLinksPlugin } from "../codemirrorPlugins/clickableMarkdownLinks";
 import { MarkdownDoc } from "../datatype";
+import { selectedAnchorsPlugin } from "../codemirrorPlugins/setSelectedAnchors";
 
 export type TextSelection = {
   from: number;
@@ -50,7 +51,7 @@ export function MarkdownDocEditor({
   setView = () => {},
   readOnly,
   docHeads,
-  annotations = [],  // TODO: JAH strict fix
+  annotations = [], // TODO: JAH strict fix
 }: MarkdownDocEditorProps) {
   const [container, setContainer] = useState<HTMLElement | null>(null);
   const editorRoot = useRef<EditorView | undefined>(undefined);
@@ -75,7 +76,7 @@ export function MarkdownDocEditor({
     // TODO: JAH I don't think this is appropriately reactive to the handle loading?
     const doc = handle.docSync()!;
     const docAtHeads = docHeads ? A.view(doc, docHeads) : doc;
-    const source = docAtHeads.content; // this should use path
+    const source = get(docAtHeads, path);
 
     let previousHasFocus = false;
 
@@ -101,6 +102,12 @@ export function MarkdownDocEditor({
         clickableMarkdownLinksPlugin,
         previewFiguresPlugin,
         tableOfContentsPreviewPlugin,
+        selectedAnchorsPlugin({
+          setSelectedAnchors,
+          annotationsRef,
+          doc,
+          path,
+        }),
       ],
       dispatch(transaction, view) {
         const previousSelection = view.state.selection;
@@ -116,7 +123,9 @@ export function MarkdownDocEditor({
             previousHasFocus = view.hasFocus;
           }
 
-          // new selection is sometimes set
+          // Here we update selection state separately from selected anchors because
+          // the comments sidebar needs to know y coordinate for the selection.
+          // In the future perhaps we can unify further.
           if (
             transaction.newSelection &&
             !isEqual(view.state.selection, previousSelection)
@@ -135,44 +144,6 @@ export function MarkdownDocEditor({
                     coords.top,
                 });
               }
-
-              if (selection.from === selection.to) {
-                const cursorPos = selection.from;
-
-                const selectedAnnotationAnchors =
-                  annotationsRef.current.flatMap((annotation) =>
-                    annotation.anchor.fromPos <= cursorPos &&
-                    annotation.anchor.toPos > cursorPos
-                      ? [annotation.anchor]
-                      : []
-                  );
-
-                setSelectedAnchors(
-                  // remove resolved position
-                  selectedAnnotationAnchors.map(({ fromCursor, toCursor }) => ({
-                    fromCursor,
-                    toCursor,
-                  }))
-                );
-              } else {
-                const docLength = view.state.doc.length;
-                setSelectedAnchors([
-                  {
-                    fromCursor: A.getCursor(doc, path, selection.from),
-                    toCursor: A.getCursor(
-                      doc,
-                      path,
-                      // todo: remove once cursors can point to sides of characters
-                      // we can't get a cursor to the end the document because cursors always point to characters
-                      // in the future we want to have a cursor API in Automerge that allows to point to a side of a character similar to marks
-                      // as a workaround for now we just point to the last character instead if the end of the document is selected
-                      selection.to === docLength ? docLength - 1 : selection.to
-                    ),
-                  },
-                ]);
-              }
-            } else {
-              setSelectedAnchors([]);
             }
           }
         } catch (e) {

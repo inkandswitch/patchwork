@@ -21,6 +21,16 @@ export const ANNOTATION_STYLES = {
       backgroundColor: "rgb(100 202 0 / 30%)",
       borderBottom: "rgb(0 222 0 / 100%) 2px solid",
     },
+  ".cm-comment-thread": {
+    backgroundColor: "rgb(255 249 194)",
+  },
+  ".cm-comment-thread.active": {
+    backgroundColor: "rgb(255 227 135)",
+  },
+  // active highlighting wins if it's inside another thread
+  ".cm-comment-thread.active .cm-comment-thread": {
+    backgroundColor: "rgb(255 227 135)",
+  },
 };
 
 export const setAnnotationsEffect =

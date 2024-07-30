@@ -1,6 +1,9 @@
 import { docPathString, UIStateDoc } from "@/explorer/account";
 import { Om } from "@/om";
-import { DocLinkWithFolderPath, type DocPath } from "@/packages/folder/datatype";
+import {
+  DocLinkWithFolderPath,
+  type DocPath,
+} from "@/packages/folder/datatype";
 import { getDoc, getOm, parallelMap } from "@/doc-reactive";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
@@ -13,12 +16,14 @@ import { canBeUndef } from "@/utils";
 
 export const getVersionControlMetadataOm = (
   doc: Automerge.Doc<HasVersionControlMetadata>,
-  repo: Repo,
+  repo: Repo
 ): Om<VersionControlSidecarDoc> | undefined => {
   const versionControlMetadataUrl = canBeUndef(doc.versionControlMetadataUrl);
-  return versionControlMetadataUrl && getOm<VersionControlSidecarDoc>(versionControlMetadataUrl, repo);
-}
-
+  return (
+    versionControlMetadataUrl &&
+    getOm<VersionControlSidecarDoc>(versionControlMetadataUrl, repo)
+  );
+};
 
 // Given a doc path, you can ask for its "branch scope info". For convenience,
 // if the path doesn't actually have a branch scope, we return values as though
@@ -27,7 +32,7 @@ export const getVersionControlMetadataOm = (
 
 export type BranchScopeInfo = {
   branchScopeOm: Om<HasVersionControlMetadata>;
-  branchScopeVersionControlMetadataOm: Om<VersionControlSidecarDoc> | undefined;  // undefined if we don't have a branch scope, and we don't even have a sidecar doc
+  branchScopeVersionControlMetadataOm: Om<VersionControlSidecarDoc> | undefined; // undefined if we don't have a branch scope, and we don't even have a sidecar doc
   branchScopePath: DocPath;
   branchOms: Om<BranchDoc>[];
   isRealBranchScope: boolean;
@@ -43,7 +48,10 @@ export const getBranchScopeInfo = (
   // to work with them in the useMemo hook below we fetch them with useDocuments
   const linkInfos = parallelMap(docPath, (link) => {
     const linkOm = getOm<HasVersionControlMetadata>(link.url, repo);
-    const versionControlMetadataOm = getVersionControlMetadataOm(linkOm.doc, repo);
+    const versionControlMetadataOm = getVersionControlMetadataOm(
+      linkOm.doc,
+      repo
+    );
     return { linkOm, versionControlMetadataOm };
   });
 
@@ -55,7 +63,8 @@ export const getBranchScopeInfo = (
       versionControlMetadataOm &&
       versionControlMetadataOm.doc.isBranchScope
     ) {
-      const branchOms = parallelMap(versionControlMetadataOm.doc.branches,
+      const branchOms = parallelMap(
+        versionControlMetadataOm.doc.branches,
         (branchUrl) => getOm<BranchDoc>(branchUrl, repo)
       );
       return {
@@ -92,21 +101,19 @@ export const getActiveBranchInfo = (
   uiStateOm: Om<UIStateDoc>,
   repo: Repo
 ): ActiveBranchInfo => {
-  const activeBranchUrl = canBeUndef(uiStateOm.doc.openBranches[docPathString(branchScopePath)]);
+  const activeBranchUrl = canBeUndef(
+    uiStateOm.doc.openBranches[docPathString(branchScopePath)]
+  );
 
   const setActiveBranchUrl = (branchDocUrl: AutomergeUrl | null) => {
     uiStateOm.handle.change((uiStateDoc) => {
       // handle old uiState docs
-      if (
-        !uiStateDoc.openBranches ||
-        Array.isArray(uiStateDoc.openBranches)
-      ) {
+      if (!uiStateDoc.openBranches || Array.isArray(uiStateDoc.openBranches)) {
         uiStateDoc.openBranches = {};
       }
 
       if (branchDocUrl) {
-        uiStateDoc.openBranches[docPathString(branchScopePath)] =
-          branchDocUrl;
+        uiStateDoc.openBranches[docPathString(branchScopePath)] = branchDocUrl;
       } else {
         delete uiStateDoc.openBranches[docPathString(branchScopePath)];
       }
@@ -121,21 +128,23 @@ export const getActiveBranchInfo = (
 
 export const resolveUrlOnBranch = (
   url: AutomergeUrl,
-  activeBranchUrl: AutomergeUrl | undefined,  // undefined means "main"
+  activeBranchUrl: AutomergeUrl | undefined, // undefined means "main"
   repo: Repo
 ): {
-  url: AutomergeUrl,
-  baseHeads: Automerge.Heads | undefined,
+  url: AutomergeUrl;
+  baseHeads: Automerge.Heads | undefined;
 } => {
-  const activeBranchDoc = activeBranchUrl && getDoc<BranchDoc>(activeBranchUrl, repo);
+  const activeBranchDoc =
+    activeBranchUrl && getDoc<BranchDoc>(activeBranchUrl, repo);
   const cloneEntry = activeBranchDoc?.clones[url];
   return cloneEntry ?? { url, baseHeads: undefined };
-}
-
-export type BranchScopeAndActiveBranchInfo = BranchScopeInfo & ActiveBranchInfo & {
-  baseHeads: Automerge.Heads | undefined;
-  cloneOrMainOm: Om;
 };
+
+export type BranchScopeAndActiveBranchInfo = BranchScopeInfo &
+  ActiveBranchInfo & {
+    baseHeads: Automerge.Heads | undefined;
+    cloneOrMainOm: Om<HasVersionControlMetadata>;
+  };
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.
@@ -145,11 +154,19 @@ export const getBranchScopeAndActiveBranchInfo = (
   repo: Repo
 ): BranchScopeAndActiveBranchInfo => {
   const branchScopeInfo = getBranchScopeInfo(docPath, repo);
-  const activeBranchInfo = getActiveBranchInfo(branchScopeInfo.branchScopePath, uiStateOm, repo);
+  const activeBranchInfo = getActiveBranchInfo(
+    branchScopeInfo.branchScopePath,
+    uiStateOm,
+    repo
+  );
 
   const lastLink = docPath[docPath.length - 1];
-  const { url, baseHeads } = resolveUrlOnBranch(lastLink.url, activeBranchInfo.activeBranchOm?.url, repo);
-  const cloneOrMainOm = getOm(url, repo);
+  const { url, baseHeads } = resolveUrlOnBranch(
+    lastLink.url,
+    activeBranchInfo.activeBranchOm?.url,
+    repo
+  );
+  const cloneOrMainOm = getOm<HasVersionControlMetadata>(url, repo);
 
   return {
     ...branchScopeInfo,
@@ -167,8 +184,9 @@ export const getOmOnBranchFromPath = <T>(
   uiStateOm: Om<UIStateDoc>,
   repo: Repo
 ): Om<T> => {
-  return getBranchScopeAndActiveBranchInfo(docPath, uiStateOm, repo).cloneOrMainOm as Om<T>;
-}
+  return getBranchScopeAndActiveBranchInfo(docPath, uiStateOm, repo)
+    .cloneOrMainOm as Om<T>;
+};
 
 // This is an alternative to getOmOnBranchFromPath where you can directly provide the branchUrl
 // to resolve the docUrl on

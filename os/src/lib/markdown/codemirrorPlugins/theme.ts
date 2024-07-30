@@ -31,16 +31,6 @@ const MARKDOWN_STYLES = {
   ".cm-activeLine": {
     backgroundColor: "inherit",
   },
-  ".cm-comment-thread": {
-    backgroundColor: "rgb(255 249 194)",
-  },
-  ".cm-comment-thread.active": {
-    backgroundColor: "rgb(255 227 135)",
-  },
-  // active highlighting wins if it's inside another thread
-  ".cm-comment-thread.active .cm-comment-thread": {
-    backgroundColor: "rgb(255 227 135)",
-  },
   ".frontmatter, .frontmatter *": {
     fontSize: "14px",
     fontFamily: "monospace",
