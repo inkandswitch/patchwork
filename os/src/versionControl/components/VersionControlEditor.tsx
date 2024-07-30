@@ -1,10 +1,9 @@
-import { useUIStateHandle } from "@/explorer/account";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { DocLinkWithFolderPath, DocPath } from "@/packages/folder/datatype";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { EditorProps, Tool } from "@/tools";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import {
   BotIcon,
@@ -14,21 +13,16 @@ import {
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { useDataType, useDataTypes } from "../../datatypes";
+import { useDataType } from "../../datatypes";
 import { useAnnotations } from "../annotations";
 import { useBranchScopeAndActiveBranchInfo } from "../hooks";
-import { DiffWithProvenance, HasVersionControlMetadata } from "../schema";
-import {
-  combinePatches,
-  diffWithProvenance,
-  useActorIdToAuthorMap,
-} from "../utils";
+import { HasVersionControlMetadata } from "../schema";
+import { diffWithProvenance, useActorIdToAuthorMap } from "../utils";
 import { StatusBar } from "./Statusbar";
 import { VersionControlBar } from "./VersionControlBar";
 import { ifLoaded } from "@/doc-reactive";
 import { fakeDocPath } from "../signals";
 import { ReviewSidebar } from "./ReviewSidebar";
-import { Om } from "@/om";
 
 export type SidebarMode = "review" | "history" | "Bot";
 
