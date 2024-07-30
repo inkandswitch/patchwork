@@ -40,6 +40,12 @@ export async function watchRefreshRequests(
     return;
   }
 
+  if (!projectFolder.docs || !Array.isArray(projectFolder.docs)) {
+    throw new Error(
+      `Looks like "${projectFolderUrl}" is not a folder document. It doesn't have a docs array`
+    );
+  }
+
   const buildMetadataDocsWithPendingRefresh = docReactiveSignal<
     BuildMetadataDocWithBranchUrl[]
   >(() => {
@@ -142,6 +148,7 @@ export async function watchRefreshRequests(
 }
 
 const getBuildMetadataOmOfFolder = (projectFolder: FolderDoc, repo: Repo) => {
+  debugger;
   const buildMetadataDocLink = projectFolder.docs.find(
     (docLink) => docLink.type === "jacquard-build-metadata"
   );
