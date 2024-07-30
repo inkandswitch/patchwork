@@ -30,9 +30,15 @@ import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import _, { truncate } from "lodash";
 import {
+  ColumnsIcon,
   CrownIcon,
+  DiffIcon,
   Edit3Icon,
+  FileDiffIcon,
   GitBranchIcon,
+  GitCompareIcon,
+  GitPullRequestDraftIcon,
+  HighlighterIcon,
   Link,
   MergeIcon,
   MessageSquareIcon,
@@ -45,6 +51,12 @@ import { toast } from "sonner";
 import { createJacquardBranch, mergeBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../signals";
 import { SidebarMode } from "./VersionControlEditor";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shadcn/ui/tooltip";
 
 // interface MakeBranchOptions {
 //   name?: string;
@@ -170,8 +182,8 @@ export const VersionControlBar = ({
   // };
 
   return (
-    <div className="bg-gray-100 pl-4 py-2 flex gap-2 items-center border-b border-gray-200">
-      <div className="flex flex-col gap-1">
+    <div className="bg-gray-100 pl-4 py-2 flex gap-4 items-center border-b border-gray-200">
+      <div className="flex items-center">
         <Select
           value={activeBranchOm?.url ?? null} // select doesn't like undefined
           onValueChange={(value) => {
@@ -196,7 +208,7 @@ export const VersionControlBar = ({
             }
           }}
         >
-          <SelectTrigger className="h-8 text-sm w-[18rem] font-medium">
+          <SelectTrigger className="h-8 text-sm w-[14rem] font-medium">
             <SelectValue>
               {activeBranchOm ? (
                 <div className="flex items-center gap-2">
@@ -289,7 +301,7 @@ export const VersionControlBar = ({
         </Select>
         {isInsideBranchScope && (
           <div className="pl-2 text-xs text-gray-500">
-            branch of{" "}
+            (branch of{" "}
             <span
               className="underline cursor-pointer"
               onClick={() =>
@@ -303,62 +315,97 @@ export const VersionControlBar = ({
               {/* TODO: only folders can contain documents, so far... */}
               {(branchScopeOm.doc as FolderDoc).title}
             </span>
+            )
           </div>
         )}
       </div>
 
-      {activeBranchOm && (
-        <BranchActions
-          activeBranchOm={activeBranchOm}
-          branchScopeVersionControlMetadataOm={
-            branchScopeVersionControlMetadataOm
-          }
-          setActiveBranchUrl={setActiveBranchUrl}
-        />
-      )}
+      <div className="flex gap-1 items-center">
+        {activeBranchOm && (
+          <div>
+            <Button
+              onClick={(e) => {
+                if (
+                  !window.confirm(
+                    "Are you sure you want to merge this branch to main?"
+                  )
+                ) {
+                  return;
+                }
 
-      {activeBranchOm && (
-        <div className="mr-2">
-          <Button
-            onClick={(e) => {
-              handleMergeBranch();
-              e.stopPropagation();
-            }}
-            variant="outline"
-            className="h-6"
-          >
-            <MergeIcon className="mr-2" size={12} />
-            Merge
-          </Button>
-        </div>
-      )}
-      {activeBranchOm && (
-        <div className="flex items-center ml-4">
-          <label htmlFor="highlightChanges" className="flex items-center">
-            <input
-              type="checkbox"
-              id="highlightChanges"
-              checked={showChangesFlag}
-              onChange={(e) => setShowChangesFlag(e.target.checked)}
-            />
-            <span className="ml-2 font-mono text-xs">highlight changes</span>
-          </label>
-        </div>
-      )}
+                handleMergeBranch();
+                e.stopPropagation();
+              }}
+              variant="outline"
+              className="h-8 px-2 text-xs"
+            >
+              <MergeIcon className="h-4 w-4 mr-1" />
+              Merge
+            </Button>
+          </div>
+        )}
+        {activeBranchOm && (
+          <div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowChangesFlag(!showChangesFlag)}
+                    className={`h-8 px-2 text-xs ${
+                      showChangesFlag
+                        ? "shadow-inner shadow-gray-300 border-gray-400 "
+                        : "shadow-none"
+                    }`}
+                  >
+                    <FileDiffIcon className="h-4 w-4 mr-1" />
+                    Diff
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Highlight changes compared to main</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
 
-      {activeBranchOm && (
-        <div className="flex items-center ml-4">
-          <label htmlFor="compareWithMain" className="flex items-center">
-            <input
-              type="checkbox"
-              id="compareWithMain"
-              checked={compareWithMainFlag}
-              onChange={(e) => setCompareWithMainFlag(e.target.checked)}
-            />
-            <span className="ml-2 font-mono text-xs">compare with main</span>
-          </label>
-        </div>
-      )}
+        {activeBranchOm && (
+          <div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCompareWithMainFlag(!compareWithMainFlag)}
+                    className={`h-8 px-2 text-xs ${
+                      compareWithMainFlag
+                        ? "shadow-inner shadow-gray-300  border-gray-400 "
+                        : "shadow-none "
+                    }`}
+                  >
+                    <ColumnsIcon className="h-4 w-4 mr-1" />
+                    Compare
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Show side by side with main</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
+
+        {activeBranchOm && (
+          <BranchActions
+            activeBranchOm={activeBranchOm}
+            branchScopeVersionControlMetadataOm={
+              branchScopeVersionControlMetadataOm
+            }
+            setActiveBranchUrl={setActiveBranchUrl}
+          />
+        )}
+      </div>
 
       {buildMetadata && (
         <div>
