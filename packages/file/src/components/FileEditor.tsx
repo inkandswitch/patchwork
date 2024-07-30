@@ -38,6 +38,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
     mainDocUrl,
     activeBranchUrl,
   } = props;
+
   const [_doc] = useDocument<FileDoc>(docUrl);
   const [showSourceFiles, setShowDependencies] = useState(false);
 
@@ -46,6 +47,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
   const repo = useRepo();
   const buildMetadata = ifLoaded(
     useDocReactive(
+      "buildMetadata",
       useCallback(
         () => getLastBuildRun(docUrl, repo, docHeads),
         [docUrl, repo, docHeads]
@@ -55,6 +57,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
 
   const buildMetadataInputsOnBranch = ifLoaded(
     useDocReactive(
+      "buildMetadataInputs",
       useCallback(() => {
         getDR(buildMetadata);
         return buildMetadata?.inputs.map((input) =>

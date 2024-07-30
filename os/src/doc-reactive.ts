@@ -8,7 +8,7 @@ import {
 import { atom, computed, react, Signal } from "signia";
 import { Om } from "./om";
 import { useValue } from "signia-react";
-import { useMemo } from "react";
+import { useDebugValue, useMemo } from "react";
 
 /**************************************/
 /* Background: Three layers of values */
@@ -65,12 +65,27 @@ export class MissingError extends Error {
  * React hook. Given a doc-reactive value callback, returns a doc-reactive state
  * that updates when upstream doc states change.
  */
-export function useDocReactive<T>(cb: () => T): DocReactiveState<T> {
+
+export function useDocReactive<T>(cb: () => T): DocReactiveState<T>;
+export function useDocReactive<T>(
+  label: string,
+  cb: () => T
+): DocReactiveState<T>;
+export function useDocReactive<T>(
+  labelOrCb: string | (() => T),
+  maybeCb?: () => T
+): DocReactiveState<T> {
+  const cb = typeof labelOrCb === "function" ? labelOrCb : (maybeCb as () => T);
+  const label = typeof labelOrCb === "string" ? labelOrCb : undefined;
+
   const signal = useMemo(
     () => computed("useDocReactive", () => docReactiveValueToState(cb)),
     [cb]
   );
-  return useValue(signal);
+
+  const value = useValue(signal);
+  useDebugValue(label ? { [label]: value } : value);
+  return value;
 }
 
 
