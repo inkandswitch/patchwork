@@ -131,7 +131,7 @@ const markdownStyles = HighlightStyle.define([
   {
     tag: [tags.meta],
     fontWeight: 300,
-    color: "#888",
+    color: "#999",
     fontFamily: '"Merriweather Sans", sans-serif',
   },
   { tag: tags.keyword, ...baseCodeStyles, color: "#708" },

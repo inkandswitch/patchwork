@@ -1,7 +1,10 @@
 import { next as A } from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
-import { MarkdownDocEditor, TextSelection } from "./CodeMirrorEditor";
+import {
+  MarkdownCodeMirrorEditor,
+  TextSelection,
+} from "./MarkdownCodeMirrorEditor";
 
 import {
   MarkdownDoc,
@@ -103,7 +106,7 @@ export const EssayEditor = (props: EditorProps<MarkdownDocAnchor, string>) => {
                 : "border border-gray-200 "
             }`}
           >
-            <MarkdownDocEditor
+            <MarkdownCodeMirrorEditor
               editorContainer={editorContainer}
               handle={handle}
               path={["content"]}

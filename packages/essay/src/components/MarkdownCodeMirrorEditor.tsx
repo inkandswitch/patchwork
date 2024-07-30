@@ -45,7 +45,7 @@ export type MarkdownDocEditorProps = {
   setEditorContainerElement?: (container: HTMLDivElement) => void;
 };
 
-export function MarkdownDocEditor({
+export function MarkdownCodeMirrorEditor({
   editorContainer,
   handle,
   path,
