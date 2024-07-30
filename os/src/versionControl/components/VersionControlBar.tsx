@@ -32,13 +32,9 @@ import _, { truncate } from "lodash";
 import {
   ColumnsIcon,
   CrownIcon,
-  DiffIcon,
   Edit3Icon,
   FileDiffIcon,
   GitBranchIcon,
-  GitCompareIcon,
-  GitPullRequestDraftIcon,
-  HighlighterIcon,
   Link,
   MergeIcon,
   MessageSquareIcon,
@@ -67,7 +63,6 @@ export const VersionControlBar = ({
   docUrl,
   datatypeId,
   branchScopeAndActiveBranchInfo,
-  buildMetadata,
   sidebarMode,
   setSidebarMode,
   showChangesFlag,
@@ -80,7 +75,6 @@ export const VersionControlBar = ({
   docUrl: AutomergeUrl;
   datatypeId: string;
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
-  buildMetadata: any;
   sidebarMode: SidebarMode | null;
   setSidebarMode: (mode: SidebarMode) => void;
   showChangesFlag: boolean;
@@ -407,13 +401,6 @@ export const VersionControlBar = ({
         )}
       </div>
 
-      {buildMetadata && (
-        <div>
-          Built:
-          <span className="font-mono">{buildMetadata.command}</span> at{" "}
-          {new Date(buildMetadata.timestamp).toLocaleString()}
-        </div>
-      )}
       {!sidebarMode && (
         <div className="ml-auto mr-4">
           <div className="flex items-center gap-2">

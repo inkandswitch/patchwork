@@ -132,21 +132,6 @@ export const VersionControlEditor: React.FC<{
   // todo: handle other cases like diff from the timeline
   const diff = branchDiff;
 
-  const buildMetadata = useMemo(() => {
-    if (!cloneOrMainOm?.doc) return undefined;
-    const allChangesForDoc = A.getAllChanges(cloneOrMainOm.doc);
-    const lastChange = A.decodeChange(
-      allChangesForDoc[allChangesForDoc.length - 1]
-    );
-    if (lastChange.message !== null) {
-      const lastChangeMetadata = JSON.parse(lastChange.message);
-      if (lastChangeMetadata?.changeType === "build") {
-        return lastChangeMetadata;
-      }
-    }
-    return undefined;
-  }, [cloneOrMainOm?.doc]);
-
   const dataType = useDataType(datatypeId);
 
   const {
@@ -246,7 +231,6 @@ export const VersionControlEditor: React.FC<{
             docUrl={mainDocUrl}
             datatypeId={datatypeId}
             branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
-            buildMetadata={buildMetadata}
             sidebarMode={sidebarMode}
             setSidebarMode={setSidebarMode}
             showChangesFlag={showChangesFlag}
