@@ -1,10 +1,4 @@
-import {
-  getDR,
-  getOm,
-  ifLoaded,
-  useDocReactive,
-  waitForDR,
-} from "@/doc-reactive";
+import { getDR, ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
 import { TextAnchor } from "@/lib/textAnchors";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import { EditorProps } from "@/tools";
@@ -22,21 +16,15 @@ import React, { useCallback, useMemo, useState } from "react";
 import { BuildRefreshButton } from "../../../jacquard/src/components/BuildRefreshButton";
 import {
   getLastBuildRun,
-  getProjectBuildMetadataOm,
   getProjectStateFromProjectInfo,
 } from "../../../jacquard/src/signals";
 import { FileDoc } from "../datatype";
 import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
-import { getOmOnBranch, resolveUrlOnBranch } from "@/versionControl/signals";
-import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
-import { getFolderDocWithChildrenOnBranch } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { resolveUrlOnBranch } from "@/versionControl/signals";
 import { useJacquardProjectInfoWithActiveBranch } from "../../../jacquard/src/hooks";
-import {
-  getProjectState,
-  getStalenessInfo,
-} from "../../../jacquard/src/getStalenessInfo";
+import { getStalenessInfo } from "../../../jacquard/src/getStalenessInfo";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
