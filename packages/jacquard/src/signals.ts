@@ -22,8 +22,30 @@ export const getLastBuildChangeMetadata = (
     heads ? Automerge.view(doc, heads) : doc
   );
 
+  // return metadata of latests change if no heads is specified
+  if (!heads) {
+    let change = changes.pop();
+    let metadata: BuildChangeMetadata | undefined;
+
+    if (change) {
+      metadata = decodeBuildMetadataOfChange(change);
+      if (metadata) {
+        return metadata;
+      }
+    }
+
+    // hack: special handling because cloning a doucment adds one additional change so the heads no longer match
+    // To handle this case we go back one more change
+    change = changes.pop();
+    if (!metadata && change) {
+      return decodeBuildMetadataOfChange(change);
+    }
+
+    return;
+  }
+
+  // ... otherwise go back in history until we find a change that matches the current head
   // todo: handle heads with size > 1
-  // go back in history until we find a change that matches the current head
   let lastChangeDecoded: Automerge.DecodedChange | undefined;
   do {
     const lastChange = changes.pop();
@@ -31,7 +53,7 @@ export const getLastBuildChangeMetadata = (
       break;
     }
     const decodedChange = Automerge.decodeChange(lastChange);
-    if (!heads || heads[0] === decodedChange.hash) {
+    if (heads[0] === decodedChange.hash) {
       lastChangeDecoded = decodedChange;
     }
   } while (heads && !lastChangeDecoded);
@@ -41,6 +63,10 @@ export const getLastBuildChangeMetadata = (
   }
 
   return getBuildChangeMetadata(lastChangeDecoded);
+};
+
+const decodeBuildMetadataOfChange = (change: Uint8Array) => {
+  return getBuildChangeMetadata(Automerge.decodeChange(change));
 };
 
 export const getLastBuildRun = (
