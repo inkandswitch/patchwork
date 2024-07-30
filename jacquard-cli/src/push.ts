@@ -286,6 +286,7 @@ async function findOrCreateBuildMetadataHandle(
     buildMetadataHandle.change((doc) => {
       doc.title = "Build Metadata";
       doc.buildRuns = [];
+      doc.refreshState = { type: "idle" };
       // todo: find a better solution
       // in the build metadata viewer we need access to the project folder to compute
       // the build graph with staleness. Maybe the build metadata should be part of the folder?
