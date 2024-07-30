@@ -148,7 +148,6 @@ export async function watchRefreshRequests(
 }
 
 const getBuildMetadataOmOfFolder = (projectFolder: FolderDoc, repo: Repo) => {
-  debugger;
   const buildMetadataDocLink = projectFolder.docs.find(
     (docLink) => docLink.type === "jacquard-build-metadata"
   );
