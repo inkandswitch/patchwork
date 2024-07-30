@@ -71,7 +71,7 @@ export const BuildRefreshButton = ({
         <TooltipTrigger>
           <Button
             variant="outline"
-            className="flex gap-2 w-fit h-8"
+            className="flex gap-2 w-fit h-8 text-xs px-2"
             onClick={handleRefresh}
           >
             <RefreshCw
@@ -140,7 +140,7 @@ export const DisabledBuildRefreshButton = () => {
           <Button
             variant="outline"
             size="sm"
-            className="h-7 px-2 text-xs"
+            className="h-8 px-2 text-xs"
             disabled={true}
           >
             <RefreshCw size={14} className="mr-1" />
