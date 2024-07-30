@@ -86,24 +86,29 @@ export const BuildRefreshButton = ({
         </TooltipTrigger>
 
         <TooltipContent side="bottom" align={alignTooltip}>
-          {refreshState?.type === "processing" &&
-            refreshState.buildRuns.map(({ command, progress }) => (
-              <div className="flex gap-2 items-center">
-                <ProgressIcon state={progress} />
-                <div className="font-mono">{command}</div>
-              </div>
-            ))}
+          <div className="flex flex-col gap-2">
+            <div>
+              {refreshState.type === "idle"
+                ? "The following commands need to rerun"
+                : refreshState.type === "requesting"
+                ? "Waiting for demon to start build"
+                : "Demon is running the commands"}
+            </div>
+            <div className="w-full border-t border-gray-300"></div>
 
-          {(refreshState?.type === "idle" ||
-            refreshState?.type === "requesting") && (
-            <div className="flex flex-col gap-2">
+            {refreshState?.type === "processing" && (
               <div>
-                {refreshState.type === "idle"
-                  ? "The following commands need to rerun"
-                  : "Waiting for demon to start build"}
+                {refreshState.buildRuns.map(({ command, progress }) => (
+                  <div className="flex gap-2 items-center">
+                    <ProgressIcon state={progress} />
+                    <div className="font-mono">{command}</div>
+                  </div>
+                ))}
               </div>
-              <div className="w-full border-t border-gray-300"></div>
+            )}
 
+            {(refreshState?.type === "idle" ||
+              refreshState?.type === "requesting") && (
               <div>
                 {buildsToRun.map((build) => (
                   <div className="flex gap-2 items-center">
@@ -112,8 +117,8 @@ export const BuildRefreshButton = ({
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

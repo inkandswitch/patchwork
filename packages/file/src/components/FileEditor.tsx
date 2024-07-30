@@ -88,7 +88,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
   );
 
   const jacquardProjectInfo = useJacquardProjectInfoWithActiveBranch(
-    getFakeDocPathForDocUrl(docUrl)
+    getFakeDocPathForDocUrl(mainDocUrl)
   );
 
   const projectState = ifLoaded(
@@ -116,6 +116,12 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
   if (!doc) {
     return null;
   }
+
+  const showRefreshButton =
+    jacquardProjectInfo?.buildMetadataOm &&
+    (isStale ||
+      (jacquardProjectInfo.buildMetadataOm.doc.refreshState &&
+        jacquardProjectInfo.buildMetadataOm.doc.refreshState.type !== "idle"));
 
   const fileView = (
     <div>
@@ -167,12 +173,13 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
             )*/}
           </div>
 
-          {isStale ? "stale" : ""}
+          {isStale && "(stale)"}
 
-          {jacquardProjectInfo?.buildMetadataOm && isStale && (
+          {showRefreshButton && (
             <BuildRefreshButton
               projectBuildMetadataOm={jacquardProjectInfo.buildMetadataOm}
               projectState={projectState}
+              alignTooltip="start"
             />
           )}
 

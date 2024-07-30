@@ -91,7 +91,7 @@ export async function watchRefreshRequests(
         repo
       );
 
-      if (branchBuildMetadataOm.doc.refreshState.type === "requesting") {
+      if (branchBuildMetadataOm.doc.refreshState?.type === "requesting") {
         pending.push({ buildMetadataOm: branchBuildMetadataOm, branchUrl });
       }
     });
