@@ -83,12 +83,19 @@ export async function push(
     buildStuff,
   });
 
+  console.log("before we do build stuff", mainUrlsAndCloneHandlesByFileName);
+
   if (buildStuff) {
     const { buildMetadata, buildMetadataHandle } = buildStuff;
     buildMetadataHandle.change((doc) => {
       doc.buildRuns.push({
         ...buildMetadata,
         inputs: buildMetadata.inputs.map((inputPath) => {
+          console.log({
+            inputPath,
+            base: path.basename(inputPath),
+            mainUrlsAndCloneHandlesByFileName,
+          });
           const { mainUrl, cloneHandle } =
             mainUrlsAndCloneHandlesByFileName[path.basename(inputPath)];
           return {
@@ -435,6 +442,7 @@ const pushFile = async ({
   } else {
     // Make a new doc in the folder
     handle = repo.create();
+    mainUrl = handle.url;
     didChange = true;
 
     // delay to not overload automerge repo by creating many handles
@@ -474,8 +482,6 @@ const pushFile = async ({
         doc.changeGroupSummaries = {};
       });
     }
-
-    console.log("push", filePath, Automerge.getHeads(handle.docSync()!)); // TODO: JAH strict fix
 
     folderHandle.change((d) => {
       d.docs.push({

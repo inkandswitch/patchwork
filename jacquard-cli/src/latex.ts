@@ -18,10 +18,6 @@ export async function latex(
   const inputs: string[] = [`./${filePath}`];
   const outputs: string[] = [`./${replaceExtension(filePath, "pdf")}`];
 
-  // pull before to ensure we run on latest files
-  // todo: find better approach
-  await pull(repo, { dir, projectFolderUrl });
-
   // run tectonic
 
   const timestampStart = Date.now();
@@ -71,7 +67,12 @@ export async function latex(
   for (const match of sourceContent.matchAll(BIB_REF_REGEX)) {
     const texFileDir = path.dirname(filePath);
     const bibFilePath = match.groups!.filePath;
-    inputs.push(`./${path.relative(dir, path.join(texFileDir, bibFilePath))}`);
+    const bibFilePathWithExt = path.extname(bibFilePath)
+      ? bibFilePath
+      : `${bibFilePath}.bib`;
+    inputs.push(
+      `./${path.relative(dir, path.join(texFileDir, bibFilePathWithExt))}`
+    );
   }
 
   // delete build log

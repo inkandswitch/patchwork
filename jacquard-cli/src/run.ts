@@ -4,7 +4,6 @@ import { Repo } from "@automerge/automerge-repo";
 import { spawn } from "child_process";
 import { push } from "./push.js";
 import { CommandLineArgs } from "./index.js";
-import { pull } from "./pull.js";
 import { latex } from "./latex.js";
 
 // TODO: this is an awful lot like BuildRun, but not; at the very least a naming
