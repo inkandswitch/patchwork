@@ -1,74 +1,43 @@
-import { getOm, ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
-import { useUIStateOm } from "@/explorer/account";
+import { ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
-import { DocPath } from "@/packages/folder/datatype";
-import {
-  FolderDocWithMetadata,
-  getFolderDocWithChildren,
-  useFolderDocWithChildren,
-} from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { EditorProps } from "@/tools";
-import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
-import { getBranchScopeAndActiveBranchInfo, getOmOnBranchFromPath } from "@/versionControl/signals";
-import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
+import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { instance } from "@viz-js/viz";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileDoc } from "../../../file/src/datatype";
-import { BuildRun, JacquardBuildMetadata } from "../datatype";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { JacquardBuildMetadata } from "../datatype";
 import {
-  getProjectState,
   getReferenceFromDocUrl,
   getStalenessInfo,
   headsMatch,
   ProjectState,
   reasonToString,
 } from "../getStalenessInfo";
+import { useJacquardProjectInfoWithActiveBranch } from "../hooks";
+import { getProjectStateFromProjectInfo } from "../signals";
 import { BuildRefreshButton } from "./BuildRefreshButton";
-import { useOm } from "@/om";
 
 export const GraphView = ({
-  docUrl,
-  docHeads,
+  mainDocUrl,
   getFakeDocPathForDocUrl,
 }: EditorProps<JacquardBuildMetadata, never>) => {
   const repo = useRepo();
-  const uiStateOm = useUIStateOm();
-  const projectBuildMetadataOm = useOm<JacquardBuildMetadata>(docUrl);
+
+  const jacquardProjectInfo = useJacquardProjectInfoWithActiveBranch(
+    getFakeDocPathForDocUrl(mainDocUrl)
+  );
+
   const projectState = ifLoaded(
     useDocReactive(
       useCallback(() => {
-        waitForDR(uiStateOm);
-        const latestDocOm = getOm<JacquardBuildMetadata>(docUrl, repo); // ok cuz docUrl is a clone
-        const doc = docHeads
-          ? Automerge.view(latestDocOm.doc, docHeads)
-          : latestDocOm.doc;
-        const projectFolderDocPath = getFakeDocPathForDocUrl(
-          doc.projectFolderUrl
-        );
-        const projectFolderOm = getOmOnBranchFromPath(
-          projectFolderDocPath,
-          uiStateOm,
-          repo
-        );
-        const projectFolderWithMetadata = getFolderDocWithChildren(
-          projectFolderOm.url,
-          function getDocOnBranchFromPath(docPath: DocPath) {
-            return getOmOnBranchFromPath(docPath, uiStateOm, repo).doc;
-          }
-        );
-        return getProjectState({
-          folderDoc: projectFolderWithMetadata,
-          buildRuns: doc.buildRuns,
-          filesReferencedInBuildsOnly: true,
-          getDocOnBranchFromUrl(url: AutomergeUrl) {
-            const docPath = getFakeDocPathForDocUrl(url);
-            return getBranchScopeAndActiveBranchInfo(docPath, uiStateOm, repo)
-              .cloneOrMainOm.doc;
-          },
-        });
-      }, [docHeads, docUrl, getFakeDocPathForDocUrl, repo, uiStateOm])
+        waitForDR(jacquardProjectInfo);
+
+        if (!jacquardProjectInfo) {
+          return;
+        }
+
+        return getProjectStateFromProjectInfo(jacquardProjectInfo, repo);
+      }, [jacquardProjectInfo, repo])
     )
   );
 
@@ -80,9 +49,9 @@ export const GraphView = ({
     <div className="p-4 flex flex-col">
       <div className="flex">
         <div className="flex-1" />
-        {projectBuildMetadataOm && (
+        {jacquardProjectInfo?.buildMetadataOm && (
           <BuildRefreshButton
-            projectBuildMetadataOm={projectBuildMetadataOm}
+            projectBuildMetadataOm={jacquardProjectInfo.buildMetadataOm}
             projectState={projectState}
             alignTooltip="end"
           />

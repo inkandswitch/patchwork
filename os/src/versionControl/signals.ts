@@ -170,6 +170,19 @@ export const getOmOnBranchFromPath = <T>(
   return getBranchScopeAndActiveBranchInfo(docPath, uiStateOm, repo).cloneOrMainOm as Om<T>;
 }
 
+// This is an alternative to getOmOnBranchFromPath where you can directly provide the branchUrl
+// to resolve the docUrl on
+export const getOmOnBranch = <T>(docUrl: AutomergeUrl, branchUrl: AutomergeUrl | undefined, repo: Repo): Om<T> => {
+  const docUrlOnBranch = branchUrl ?  resolveUrlOnBranch(docUrl, branchUrl, repo)?.url : docUrl
+
+  if (!docUrlOnBranch) {
+    throw new Error(`Document ${docUrl} does not exist on branch ${branchUrl}`)
+  }
+
+  return getOm<T>(docUrlOnBranch, repo)
+};
+
+
 // TODO: provisional until we get rid of DocLinkWithFolderPath. also, this is in
 // "signals" (bad name) cuz it needs to be somewhere that's safe to access from
 // cli code

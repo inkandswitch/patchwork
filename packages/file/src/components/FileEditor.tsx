@@ -1,4 +1,10 @@
-import { getDR, getOm, ifLoaded, useDocReactive } from "@/doc-reactive";
+import {
+  getDR,
+  getOm,
+  ifLoaded,
+  useDocReactive,
+  waitForDR,
+} from "@/doc-reactive";
 import { TextAnchor } from "@/lib/textAnchors";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import { EditorProps } from "@/tools";
@@ -17,13 +23,20 @@ import { BuildRefreshButton } from "../../../jacquard/src/components/BuildRefres
 import {
   getLastBuildRun,
   getProjectBuildMetadataOm,
+  getProjectStateFromProjectInfo,
 } from "../../../jacquard/src/signals";
 import { FileDoc } from "../datatype";
 import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
-import { resolveUrlOnBranch } from "@/versionControl/signals";
+import { getOmOnBranch, resolveUrlOnBranch } from "@/versionControl/signals";
 import { JacquardBuildMetadata } from "../../../jacquard/src/datatype";
+import { getFolderDocWithChildrenOnBranch } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { useJacquardProjectInfoWithActiveBranch } from "../../../jacquard/src/hooks";
+import {
+  getProjectState,
+  getStalenessInfo,
+} from "../../../jacquard/src/getStalenessInfo";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -57,7 +70,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
 
   const buildMetadataInputsOnBranch = ifLoaded(
     useDocReactive(
-      "buildMetadataInputs",
+      "buildMetadataInputsOnBranch",
       useCallback(() => {
         getDR(buildMetadata);
         return buildMetadata?.inputs.map((input) =>
@@ -74,31 +87,31 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
     )
   );
 
-  const projectBuildMetadataOm = ifLoaded(
+  const jacquardProjectInfo = useJacquardProjectInfoWithActiveBranch(
+    getFakeDocPathForDocUrl(docUrl)
+  );
+
+  const projectState = ifLoaded(
     useDocReactive(
       useCallback(() => {
-        const buildMetadataUrlOnMain = getProjectBuildMetadataOm(
-          getFakeDocPathForDocUrl(mainDocUrl),
-          repo
-        )?.url;
+        waitForDR(jacquardProjectInfo);
 
-        // todo: handle case where main has no build data, but only exists on the branch
-        if (!buildMetadataUrlOnMain) {
+        if (!jacquardProjectInfo) {
           return;
         }
 
-        const currentBuildMetadataUrl = activeBranchUrl
-          ? resolveUrlOnBranch(buildMetadataUrlOnMain, activeBranchUrl, repo)
-              .url
-          : buildMetadataUrlOnMain;
-        if (!currentBuildMetadataUrl) {
-          return;
-        }
-
-        return getOm<JacquardBuildMetadata>(currentBuildMetadataUrl, repo);
-      }, [mainDocUrl, repo, getFakeDocPathForDocUrl, activeBranchUrl])
+        return getProjectStateFromProjectInfo(jacquardProjectInfo, repo);
+      }, [jacquardProjectInfo, repo])
     )
   );
+
+  const stalenessInfo = projectState
+    ? getStalenessInfo(projectState)
+    : undefined;
+
+  const isStale =
+    stalenessInfo?.docStatuses[mainDocUrl] &&
+    stalenessInfo?.docStatuses[mainDocUrl].length > 0;
 
   if (!doc) {
     return null;
@@ -154,9 +167,12 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
             )*/}
           </div>
 
-          {projectBuildMetadataOm && (
+          {isStale ? "stale" : ""}
+
+          {jacquardProjectInfo?.buildMetadataOm && isStale && (
             <BuildRefreshButton
-              projectBuildMetadataOm={projectBuildMetadataOm}
+              projectBuildMetadataOm={jacquardProjectInfo.buildMetadataOm}
+              projectState={projectState}
             />
           )}
 

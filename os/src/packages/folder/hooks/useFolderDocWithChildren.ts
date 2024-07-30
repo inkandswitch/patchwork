@@ -1,15 +1,21 @@
 import { getDR, ifLoaded, parallelMap, useDocReactive } from "@/doc-reactive";
 import { useUIStateOm } from "@/explorer/account";
-import { fakeDocPath, getOmOnBranchFromPath } from "@/versionControl/signals";
-import { AutomergeUrl, Doc } from "@automerge/automerge-repo";
+import {
+  fakeDocPath,
+  getOmOnBranch,
+  getOmOnBranchFromPath,
+} from "@/versionControl/signals";
+import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";
 import {
+  DocLink,
   DocLinkWithFolderPath,
   DocPath,
   FolderDoc,
   FolderDocWithChildren,
 } from "../datatype";
+import { last } from "lodash";
 
 export type FolderDocWithMetadata = {
   rootFolderUrl: AutomergeUrl;
@@ -33,12 +39,12 @@ const computeFlattenedDocLinks = ({
   return doc.docs.flatMap((docLink) =>
     docLink.type === "folder" && docLink.folderContents
       ? [
-        { ...docLink, folderPath: folderPath },
-        ...computeFlattenedDocLinks({
-          doc: docLink.folderContents,
-          folderPath: [...folderPath, docLink.url],
-        }) ?? [],
-      ]
+          { ...docLink, folderPath: folderPath },
+          ...(computeFlattenedDocLinks({
+            doc: docLink.folderContents,
+            folderPath: [...folderPath, docLink.url],
+          }) ?? []),
+        ]
       : { ...docLink, folderPath }
   );
 };
@@ -46,7 +52,7 @@ const computeFlattenedDocLinks = ({
 // TODO: reactive but not incremental
 function materializeFolderDoc(
   docPath: DocPath,
-  getDocOnBranch: (docPath: DocPath) => Doc<unknown>,
+  getDocOnBranch: (docPath: DocPath) => Doc<unknown>
 ): FolderDocWithChildren {
   const folder = getDocOnBranch(docPath) as Doc<FolderDoc>;
 
@@ -55,7 +61,10 @@ function materializeFolderDoc(
     docs:
       parallelMap(folder.docs, (link) => {
         if (link.type === "folder") {
-          const folderContents = materializeFolderDoc([...docPath, link], getDocOnBranch);
+          const folderContents = materializeFolderDoc(
+            [...docPath, link],
+            getDocOnBranch
+          );
           // cast is ok cuz if it's loading, we won't return result
           return { ...link, folderContents };
         } else {
@@ -69,8 +78,16 @@ export function getFolderDocWithChildren(
   rootFolderUrl: AutomergeUrl,
   getDocOnBranchFromPath: (docPath: DocPath) => Doc<unknown>
 ): FolderDocWithMetadata {
-  const rootDocPath = fakeDocPath({ url: rootFolderUrl, name: 'root', type: 'folder', folderPath: [] });
-  const docWithLinks = materializeFolderDoc(rootDocPath, getDocOnBranchFromPath);
+  const rootDocPath = fakeDocPath({
+    url: rootFolderUrl,
+    name: "root",
+    type: "folder",
+    folderPath: [],
+  });
+  const docWithLinks = materializeFolderDoc(
+    rootDocPath,
+    getDocOnBranchFromPath
+  );
   const flatDocLinks = computeFlattenedDocLinks({
     doc: docWithLinks,
     folderPath: [rootFolderUrl],
@@ -80,6 +97,17 @@ export function getFolderDocWithChildren(
     rootFolderUrl,
     flatDocLinks,
   };
+}
+
+export function getFolderDocWithChildrenOnBranch(
+  rootFolderUrl: AutomergeUrl,
+  branchUrl: AutomergeUrl | undefined,
+  repo: Repo
+): FolderDocWithMetadata {
+  return getFolderDocWithChildren(rootFolderUrl, (path) => {
+    const docLink = last(path) as DocLink;
+    return getOmOnBranch(docLink.url, branchUrl, repo).doc;
+  });
 }
 
 // This hook recursively traverses a tree of nested folders and loads folder contents.

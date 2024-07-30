@@ -1,10 +1,19 @@
 import { getDoc, getOm } from "@/doc-reactive";
 import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";
-import { getBranchScopeInfo } from "@/versionControl/signals";
+import {
+  getBranchScopeInfo,
+  getOmOnBranch,
+  getOmOnBranchFromPath,
+  resolveUrlOnBranch,
+} from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { BuildRun, JacquardBuildMetadata } from "./datatype";
+import { BranchDoc } from "@/sdk";
+import { JacquardProjectInfo } from "./hooks";
+import { getFolderDocWithChildrenOnBranch } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { getProjectState } from "./getStalenessInfo";
 
 export type BuildChangeMetadata = {
   buildDocUrl: AutomergeUrl;
@@ -137,4 +146,24 @@ export const getProjectBuildMetadataOm = (
   }
 
   return getOm<JacquardBuildMetadata>(buildMetadataDocLink.url, repo);
+};
+
+export const getProjectStateFromProjectInfo = (
+  { projectFolderOm, branchUrl, buildMetadataOm }: JacquardProjectInfo,
+  repo: Repo
+) => {
+  const projectFolderWithMetadata = getFolderDocWithChildrenOnBranch(
+    projectFolderOm.url,
+    branchUrl,
+    repo
+  );
+
+  return getProjectState({
+    folderDoc: projectFolderWithMetadata,
+    buildRuns: buildMetadataOm.doc.buildRuns,
+    filesReferencedInBuildsOnly: true,
+    getDocOnBranchFromUrl(url: AutomergeUrl) {
+      return getOmOnBranch(url, branchUrl, repo).doc;
+    },
+  });
 };

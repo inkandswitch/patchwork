@@ -30,7 +30,7 @@ export const BuildRefreshButton = ({
   const handleRefresh = () => {
     if (
       !projectBuildMetadataOm ||
-      projectBuildMetadataOm.doc.refreshState.type !== "idle"
+      (refreshState && refreshState.type !== "idle")
     ) {
       return;
     }
