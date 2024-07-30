@@ -125,7 +125,7 @@ export function getStalenessInfo(state: ProjectState): StalenessInfo {
     let status = [];
     for (let input of buildRun.inputs) {
       const inputReferenceInState = getReferenceFromDocUrl(state, input.docUrl);
-      if (!Automerge.equals(inputReferenceInState.heads, input.heads)) {
+      if (!headsMatch(inputReferenceInState.heads, input.heads)) {
         // orange arrow
         status.push({
           originalChangeOld: input,
