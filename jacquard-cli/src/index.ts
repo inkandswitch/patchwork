@@ -1,4 +1,8 @@
 #!/usr/bin/env bun
+/* 
+  use this line to inspect the CLI with a debugger
+  #!/usr/bin/env bun --inspect-wait 
+*/
 
 import fs from "fs";
 import commandLineArgs from "command-line-args";
