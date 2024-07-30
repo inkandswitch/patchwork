@@ -13,7 +13,10 @@ import {
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
 import React, { useCallback, useMemo, useState } from "react";
-import { BuildRefreshButton } from "../../../jacquard/src/components/BuildRefreshButton";
+import {
+  BuildRefreshButton,
+  DisabledBuildRefreshButton,
+} from "../../../jacquard/src/components/BuildRefreshButton";
 import {
   getLastBuildRun,
   getProjectStateFromProjectInfo,
@@ -25,6 +28,8 @@ import { TextFileEditor, isTextFile } from "./TextFileEditor";
 import { resolveUrlOnBranch } from "@/versionControl/signals";
 import { useJacquardProjectInfoWithActiveBranch } from "../../../jacquard/src/hooks";
 import { getStalenessInfo } from "../../../jacquard/src/getStalenessInfo";
+import { getRelativeTimeString } from "@/lib/dates";
+import { AlertTriangleIcon, BadgeCheckIcon } from "lucide-react";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -105,7 +110,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
     return null;
   }
 
-  const showRefreshButton =
+  const enableRefreshButton =
     jacquardProjectInfo?.buildMetadataOm &&
     (isStale ||
       (jacquardProjectInfo.buildMetadataOm.doc.refreshState &&
@@ -144,35 +149,23 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
 
   return (
     <div className="h-full flex flex-col">
-      {/* <div className="flex flex-col">
-        <div>docUrl: {docUrl}</div>
-        <div>mainDocUrl: {mainDocUrl}</div>
-      </div> */}
       {buildMetadata && (
-        <div className="bg-gray-100 pl-4 pt-3 pb-3 flex gap-2 items-center border-b border-gray-200">
-          <div>
-            Built by{" "}
-            <span className="font-mono text-gray-500">
-              {buildMetadata.command}
-            </span>{" "}
-            at {new Date(buildMetadata.timestamp).toLocaleString()}{" "}
-            {/*isStale && !docHeads && (
-              <span className="rounded px-1 bg-orange-300">stale</span>
-            )*/}
-          </div>
-
-          {isStale && "(stale)"}
-
-          {showRefreshButton && (
+        <div className="bg-gray-100 pl-4 py-1 text-sm flex gap-2 items-center border-b border-gray-200 cursor-default">
+          {enableRefreshButton ? (
             <BuildRefreshButton
               projectBuildMetadataOm={jacquardProjectInfo.buildMetadataOm}
               projectState={projectState}
               alignTooltip="start"
             />
+          ) : (
+            <DisabledBuildRefreshButton />
           )}
-
+          <div className="text-xs text-gray-500">
+            {isStale && <span>needs refresh</span>}
+            {!isStale && <span>up to date</span>}, last built{" "}
+            {getRelativeTimeString(buildMetadata.timestamp)}
+          </div>
           <div className="flex-1" />
-
           <div className="flex items-center mr-1">
             <Checkbox
               id="diff-overlay-checkbox"

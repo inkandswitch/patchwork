@@ -294,7 +294,7 @@ export const VersionControlBar = ({
           </SelectContent>
         </Select>
         {isInsideBranchScope && (
-          <div className="pl-2 text-xs text-gray-500">
+          <div className="pl-2 text-xs text-gray-500 cursor-default">
             (branch of{" "}
             <span
               className="underline cursor-pointer"

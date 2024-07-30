@@ -1,7 +1,13 @@
 import { Om } from "@/om";
 import { JacquardBuildMetadata } from "../datatype";
 import { Button } from "@/shadcn/ui/button";
-import { RefreshCw, CircleDashed, CheckCircle, Loader2 } from "lucide-react";
+import {
+  RefreshCw,
+  CircleDashed,
+  CheckCircle,
+  Loader2,
+  RefreshCcw,
+} from "lucide-react";
 import {
   TooltipProvider,
   Tooltip,
@@ -65,11 +71,11 @@ export const BuildRefreshButton = ({
         <TooltipTrigger>
           <Button
             variant="outline"
-            className="flex gap-2 w-fit"
+            className="flex gap-2 w-fit h-8"
             onClick={handleRefresh}
           >
             <RefreshCw
-              size={16}
+              size={14}
               className={
                 refreshState?.type === "processing" ||
                 refreshState?.type === "requesting"
@@ -77,6 +83,7 @@ export const BuildRefreshButton = ({
                   : ""
               }
             />
+            Refresh
             {refreshState?.type === "requesting"
               ? "waiting"
               : refreshState?.type === "processing"
@@ -118,6 +125,32 @@ export const BuildRefreshButton = ({
                 ))}
               </div>
             )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+export const DisabledBuildRefreshButton = () => {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            disabled={true}
+          >
+            <RefreshCw size={14} className="mr-1" />
+            Refresh
+          </Button>
+        </TooltipTrigger>
+
+        <TooltipContent side="bottom">
+          <div className="flex flex-col gap-2">
+            <div>This document is already up to date.</div>
           </div>
         </TooltipContent>
       </Tooltip>
