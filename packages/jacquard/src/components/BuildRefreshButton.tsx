@@ -71,22 +71,22 @@ export const BuildRefreshButton = ({
             <RefreshCw
               size={16}
               className={
-                projectBuildMetadataOm.doc.refreshState.type === "processing" ||
-                projectBuildMetadataOm.doc.refreshState.type === "requesting"
+                refreshState?.type === "processing" ||
+                refreshState?.type === "requesting"
                   ? "animate-spin"
                   : ""
               }
             />
-            {projectBuildMetadataOm?.doc.refreshState.type === "requesting"
+            {refreshState?.type === "requesting"
               ? "waiting"
-              : projectBuildMetadataOm?.doc.refreshState.type === "processing"
+              : refreshState?.type === "processing"
               ? `processing`
               : ""}
           </Button>
         </TooltipTrigger>
 
         <TooltipContent side="bottom" align={alignTooltip}>
-          {refreshState.type === "processing" &&
+          {refreshState?.type === "processing" &&
             refreshState.buildRuns.map(({ command, progress }) => (
               <div className="flex gap-2 items-center">
                 <ProgressIcon state={progress} />
@@ -94,8 +94,8 @@ export const BuildRefreshButton = ({
               </div>
             ))}
 
-          {(refreshState.type === "idle" ||
-            refreshState.type === "requesting") && (
+          {(refreshState?.type === "idle" ||
+            refreshState?.type === "requesting") && (
             <div className="flex flex-col gap-2">
               <div>
                 {refreshState.type === "idle"
