@@ -448,40 +448,36 @@ const pushFile = async ({
     // delay to not overload automerge repo by creating many handles
     sleep(500);
 
+    let url;
     if (isBinary) {
       const mimeType = mime.lookup(fileType);
-      const url = await uploadFile(fileContents, mimeType);
-
-      handle.change((doc) => {
-        doc.name = path.basename(filePath);
-        doc.type = fileType;
-        doc.content = { type: "link", url };
-
-        // init patchwork metadata
-        doc.branchMetadata = {
-          source: null,
-          branches: [],
-        };
-        doc.discussions = {};
-        doc.tags = [];
-        doc.changeGroupSummaries = {};
-      });
-    } else {
-      handle.change((doc) => {
-        doc.name = path.basename(filePath);
-        doc.type = fileType;
-        doc.content = { type: "text", value: fileContents };
-
-        // init patchwork metadata
-        doc.branchMetadata = {
-          source: null,
-          branches: [],
-        };
-        doc.discussions = {};
-        doc.tags = [];
-        doc.changeGroupSummaries = {};
-      });
+      url = await uploadFile(fileContents, mimeType);
     }
+
+    handle.change(
+      (doc) => {
+        doc.name = path.basename(filePath);
+        doc.type = fileType;
+
+        if (isBinary) {
+          doc.content = { type: "link", url };
+        } else {
+          doc.content = { type: "text", value: fileContents };
+        }
+
+        // init patchwork metadata
+        doc.branchMetadata = {
+          source: null,
+          branches: [],
+        };
+        doc.discussions = {};
+        doc.tags = [];
+        doc.changeGroupSummaries = {};
+      },
+      {
+        message: changeMetadata ? JSON.stringify(changeMetadata) : undefined,
+      }
+    );
 
     folderHandle.change((d) => {
       d.docs.push({
