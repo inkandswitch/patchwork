@@ -179,7 +179,7 @@ export const VersionControlBar = ({
               handleCreateJacquardBranch();
             } else if (value === "__makeIntoBranchScope") {
               ensureMetadataHandleIsBranchScope(
-                branchScopeVersionControlMetadataOm.handle,
+                branchScopeVersionControlMetadataOm.handle
               );
             } else if (value === "__moveChangesToBranch") {
               throw new Error("not implemented");
@@ -262,7 +262,7 @@ export const VersionControlBar = ({
                         )}
                       </div>
                     </SelectItem>
-                  ),
+                  )
               )}
               <SelectItem
                 value={"__newBranch"}
@@ -345,17 +345,7 @@ export const VersionControlBar = ({
           </label>
         </div>
       )}
-      <div className="flex items-center ml-4">
-        <label htmlFor="debugInfo" className="flex items-center">
-          <input
-            type="checkbox"
-            id="debugInfo"
-            checked={showDebugInfo}
-            onChange={(e) => setShowDebugInfo(e.target.checked)}
-          />
-          <span className="ml-2 font-mono text-xs">show debug info</span>
-        </label>
-      </div>
+
       {activeBranchOm && (
         <div className="flex items-center ml-4">
           <label htmlFor="compareWithMain" className="flex items-center">
@@ -370,14 +360,6 @@ export const VersionControlBar = ({
         </div>
       )}
 
-      {showDebugInfo && (
-        <div className="font-mono text-xs flex gap-2 items-center">
-          <div className="border p-2 rounded">
-            <div>clone/self - {cloneOrMainOm.url}</div>
-            <div>branch - {activeBranchOm?.url ?? "none"}</div>
-          </div>
-        </div>
-      )}
       {buildMetadata && (
         <div>
           Built:
@@ -391,13 +373,14 @@ export const VersionControlBar = ({
             <Button
               onClick={() => setSidebarMode("review")}
               variant="outline"
-              className={`h-8 text-x ${
+              className={`h-8 text-xs ${
                 highlightSidebarButton
                   ? "bg-yellow-200 hover:bg-yellow-400"
                   : ""
               }`}
             >
-              <MessageSquareIcon size={20} />
+              <MessageSquareIcon size={16} className="mr-2" />
+              Review
             </Button>
           </div>
         </div>
@@ -534,7 +517,7 @@ const BranchActions: React.FC<{
               },
               () => {
                 toast.error("Failed to copy link to clipboard");
-              },
+              }
             );
           }}
         >
