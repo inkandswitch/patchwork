@@ -111,31 +111,40 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
       continue;
     }
 
-    console.log("switch to branch:", next.branchUrl ?? "main");
+    try {
+      console.log("switch to branch:", next.branchUrl ?? "main");
 
-    await activateBranch(repo, { ...args, branchUrl: next.branchUrl });
+      await activateBranch(repo, { ...args, branchUrl: next.branchUrl });
 
-    console.log("done pull");
+      console.log("done pull");
 
-    await refresh(repo, {
-      ...args,
-      onProgress: (buildRuns) => {
-        next.buildMetadataOm.handle.change((doc) => {
-          doc.refreshState = {
-            type: "processing",
-            buildRuns: JSON.parse(JSON.stringify(buildRuns)), // turn automerge object into POJO before assigning it back to the doc
-          };
-        });
-      },
-    });
+      await refresh(repo, {
+        ...args,
+        onProgress: (buildRuns) => {
+          next.buildMetadataOm.handle.change((doc) => {
+            doc.refreshState = {
+              type: "processing",
+              buildRuns: JSON.parse(JSON.stringify(buildRuns)), // turn automerge object into POJO before assigning it back to the doc
+            };
+          });
+        },
+      });
 
-    await sleep(500);
+      await sleep(500);
 
-    console.log("refresh finished");
+      console.log("refresh finished");
 
-    next.buildMetadataOm.handle.change((doc) => {
-      doc.refreshState = { type: "idle" };
-    });
+      next.buildMetadataOm.handle.change((doc) => {
+        doc.refreshState = { type: "idle" };
+      });
+    } catch (e) {
+      console.error("error handling request", e);
+      // TODO: better error reporting
+      next.buildMetadataOm.handle.change((doc) => {
+        doc.refreshState = { type: "idle" };
+      });
+      await sleep(500);
+    }
   }
 }
 
