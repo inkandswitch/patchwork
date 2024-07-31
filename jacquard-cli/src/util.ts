@@ -6,10 +6,11 @@ import {
   DocHandle,
   StorageId,
 } from "@automerge/automerge-repo";
-import fs from "fs";
-import path from "path";
 import crypto from "crypto";
+import fs from "fs";
 import { isBinaryFileSync } from "isbinaryfile";
+import path from "path";
+import { FileContent } from "../../packages/file/src/datatype";
 
 export function getBuildMetadataDocUrl(folderDoc: Doc<FolderDoc>) {
   return folderDoc.docs.find((link) => link.name === "Build Metadata")?.url;
@@ -82,7 +83,7 @@ export const getJacquardConfig = () => {
 const ENDPOINT_URL = "https://file-server-txxa.onrender.com/file";
 
 export const uploadFile = async (
-  fileBuffer: Buffer,
+  fileBuffer: Uint8Array,
   mimeType: string | false
 ): Promise<string> => {
   try {
@@ -106,7 +107,7 @@ export const uploadFile = async (
   }
 };
 
-export const sha256 = (buffer: Buffer) =>
+export const sha256 = (buffer: Uint8Array) =>
   crypto.createHash("sha256").update(buffer).digest("hex");
 
 export const sleep = async (duration: number): Promise<void> => {
@@ -127,15 +128,27 @@ export const fetchFile = async (url: string): Promise<Uint8Array> => {
 export const addPrefix = (prefix: string | undefined, str: string) =>
   prefix ? `${prefix} ${str}` : str;
 
-export const isBinaryFile = (filePath: string) => {
-  // fits is a binary format for images often used in astronomy,
-  // the format has a human readable ASCII header which trips up the generic is binary function
-  // so we need to handle it as a special case
-  const BINARY_FILE_EXTENSIONS = [".fits"];
+const isBinaryFileJacquard = (filePath: string) => {
+  // extensions that are binary but not detected by isbinaryfile
+  const BINARY_FILE_EXTENSIONS = [
+    // fits is a binary format for images often used in astronomy,
+    // the format has a human readable ASCII header which trips up isbinaryfile
+    ".fits",
+  ];
   return (
     isBinaryFileSync(filePath) ||
     BINARY_FILE_EXTENSIONS.some((ext) => filePath.endsWith(ext))
   );
+};
+
+export const readFileContent = (
+  filePath: string
+): FileContent & { type: "binary" | "text" } => {
+  if (isBinaryFileJacquard(filePath)) {
+    return { type: "binary", value: fs.readFileSync(filePath) };
+  } else {
+    return { type: "text", value: fs.readFileSync(filePath, "utf8") };
+  }
 };
 
 export function formatFileSize(bytes: number): string {

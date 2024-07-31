@@ -20,7 +20,7 @@ import { findWithActiveBranchPromise } from "./findWithActiveBranch";
 import { BuildMetadata } from "./run";
 import {
   formatFileSize,
-  isBinaryFile,
+  readFileContent,
   sha256,
   sleep,
   uploadFile,
@@ -355,17 +355,12 @@ const pushFile = async ({
   mainUrl: AutomergeUrl;
   didChange: boolean;
 }> => {
-  const fileContents = isBinaryFile(filePath)
-    ? fs.readFileSync(filePath)
-    : fs.readFileSync(filePath, "utf-8");
-  const isBinary = fileContents instanceof Buffer;
+  const fileContent = readFileContent(filePath);
 
   const fileSize = fs.statSync(filePath).size;
   const formattedSize = formatFileSize(fileSize);
   console.log(
-    `Pushing ${
-      isBinary ? "binary" : "text"
-    } file (${formattedSize}): ${filePath}`
+    `Pushing ${fileContent.type} file (${formattedSize}): ${filePath}`
   );
 
   const fileType = path.extname(filePath).slice(1);
@@ -409,12 +404,12 @@ const pushFile = async ({
 
     await handle.whenReady();
 
-    if (isBinary) {
+    if (fileContent.type === "binary") {
       const doc = await handle.doc();
       if (!doc) {
         throw new Error(`Doc missing: ${handle.url}`);
       }
-      const hash = sha256(fileContents);
+      const hash = sha256(fileContent.value);
       if (!(doc.content.type === "link" && doc.content.url.endsWith(hash))) {
         didChange = true;
         handle = await findWithActiveBranchPromise<FileDoc>(
@@ -424,7 +419,7 @@ const pushFile = async ({
 
         const mimeType = mime.lookup(fileType);
         console.log("File changed, uploading...");
-        const url = await uploadFile(fileContents, mimeType);
+        const url = await uploadFile(fileContent.value, mimeType);
 
         handle.change(
           (doc) => {
@@ -445,17 +440,14 @@ const pushFile = async ({
       // notably: it's also an incremental update to support diffs.
       handle.change(
         (doc) => {
-          if (!Automerge.equals(doc.content, fileContents)) {
+          if (!Automerge.equals(doc.content, fileContent)) {
             console.log("File changed, updating...");
             didChange = true;
 
             if (doc.content.type === "text") {
-              updateText(doc, ["content", "value"], fileContents);
+              updateText(doc, ["content", "value"], fileContent.value);
             } else {
-              doc.content = {
-                type: "text",
-                value: fileContents,
-              };
+              doc.content = fileContent;
             }
           } else {
             console.log("File didn't change, skipping update");
@@ -477,9 +469,9 @@ const pushFile = async ({
     sleep(500);
 
     let url: string | undefined = undefined;
-    if (isBinary) {
+    if (fileContent.type === "binary") {
       const mimeType = mime.lookup(fileType);
-      url = await uploadFile(fileContents, mimeType);
+      url = await uploadFile(fileContent.value, mimeType);
     }
 
     handle.change(
@@ -490,8 +482,7 @@ const pushFile = async ({
         if (url) {
           doc.content = { type: "link", url };
         } else {
-          // TODO: JAH strict fix... can be Buffer?
-          doc.content = { type: "text", value: fileContents as string };
+          doc.content = fileContent;
         }
 
         // init patchwork metadata
