@@ -48,6 +48,7 @@ import {
   DropdownMenuItem,
 } from "@/shadcn/ui/dropdown-menu";
 import { Button } from "@/shadcn/ui/button";
+import { FitsFileDoc, FitsFileViewer, isFitsFile } from "./FitsFileViewer";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -155,6 +156,13 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
               {React.createElement(
                 PDFFileViewer,
                 props as EditorProps<PDFFileDoc, never>
+              )}
+            </div>
+          ) : isFitsFile(doc) ? (
+            <div className="overflow-auto h-full p-4">
+              {React.createElement(
+                FitsFileViewer,
+                props as EditorProps<FitsFileDoc, never>
               )}
             </div>
           ) : (
