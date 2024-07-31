@@ -1,15 +1,5 @@
-import * as A from "@automerge/automerge/next";
-import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import {
-  LegacyBranch,
-  Branchable,
-  HasVersionControlMetadata,
-  BranchDoc,
-} from "./schema";
 import { getStringCompletion } from "@/lib/llm";
-import { MarkdownDoc } from "../../../packages/essay/src";
-
-type Hash = string;
+import { Om } from "@/om";
 import {
   DataType,
   DocCloneMap,
@@ -17,7 +7,12 @@ import {
   getVersionControlMetadataHandle,
   lookupDataTypeId,
 } from "@/sdk";
-import { Om } from "@/om";
+import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
+import * as A from "@automerge/automerge/next";
+import { MarkdownDoc } from "../../../packages/essay/src";
+import { Branchable, BranchDoc, HasVersionControlMetadata } from "./schema";
+
+type Hash = string;
 
 export const createJacquardBranch = async <
   DocType extends HasVersionControlMetadata<unknown, unknown>
@@ -32,12 +27,18 @@ export const createJacquardBranch = async <
   branchScopeHandle: DocHandle<DocType>;
   dataTypeId: string;
   dataTypes: DataType<unknown, unknown, unknown>[];
-  createdBy: AutomergeUrl;
+  createdBy: AutomergeUrl | undefined;
 }): Promise<AutomergeUrl> => {
   const versionControlMetadataHandle = ensureMetadataHandleIsBranchScope(
     getVersionControlMetadataHandle(branchScopeHandle, repo)
   );
   const versionControlMetadataDoc = await versionControlMetadataHandle.doc();
+
+  if (!versionControlMetadataDoc) {
+    throw new Error(
+      `Version control metadata doc missing at ${versionControlMetadataHandle.url}`
+    );
+  }
 
   const branchHandle = repo.create<BranchDoc>();
 
@@ -84,11 +85,14 @@ export const cloneDocWithLinks = async (
   }
 
   // clone self
-  await handle.whenReady();
+  const doc = await handle.doc();
+  if (!doc) {
+    throw new Error(`Document missing at ${handle.url}`);
+  }
   const cloneHandle = repo.clone(handle);
   docCloneMap[handle.url] = {
     url: cloneHandle.url,
-    baseHeads: A.getHeads(handle.docSync()),
+    baseHeads: A.getHeads(doc),
   };
 
   // clone links

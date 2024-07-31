@@ -105,7 +105,7 @@ export const VersionControlBar = ({
 
   const handleCreateJacquardBranch = useCallback(async () => {
     const docPathForBranchScope = getFakeDocPathForDocUrl(branchScopeOm.url);
-    const docLinkForBranchScope = _.last(docPathForBranchScope);
+    const docLinkForBranchScope = _.last(docPathForBranchScope)!;
 
     const branchUrl = await createJacquardBranch({
       repo,
@@ -155,15 +155,19 @@ export const VersionControlBar = ({
   //   setIsHoveringYankToBranchOption(false);
   // };
 
-  const handleMergeBranch = () => {
+  const handleMergeBranch = useCallback((activeBranchOm: Om<BranchDoc>) => {
+    if (!account) {
+      throw new Error("Cannot merge branch without account information for `mergedBy`");
+    }
+
     mergeBranch({
       repo,
       branchOm: activeBranchOm,
-      mergedBy: account?.contactHandle?.url,
+      mergedBy: account.contactHandle.url,
     });
     setActiveBranchUrl(null);
     toast.success("Branch merged to main");
-  };
+  }, [account, repo, setActiveBranchUrl]);
 
   // const rebaseBranch = (draftUrl: AutomergeUrl) => {
   //   const draftHandle =
@@ -330,7 +334,7 @@ export const VersionControlBar = ({
                   return;
                 }
 
-                handleMergeBranch();
+                handleMergeBranch(activeBranchOm);
                 e.stopPropagation();
               }}
               variant="outline"
