@@ -355,6 +355,8 @@ const pushFile = async ({
     : fs.readFileSync(filePath, "utf-8");
   const isBinary = fileContents instanceof Buffer;
 
+  console.log(`Pushing ${isBinary ? "binary" : "text"} file: ${filePath}`);
+
   const fileType = path.extname(filePath).slice(1);
   const fileNameWithExtension = path.basename(filePath);
 
@@ -410,6 +412,7 @@ const pushFile = async ({
         );
 
         const mimeType = mime.lookup(fileType);
+        console.log("File changed, uploading...");
         const url = await uploadFile(fileContents, mimeType);
 
         handle.change(
@@ -422,6 +425,8 @@ const pushFile = async ({
               : undefined,
           }
         );
+      } else {
+        console.log("File didn't change, skipping upload");
       }
     } else {
       // TODO: this is a datatype-specific mapping from unix file to automerge doc!
@@ -430,6 +435,7 @@ const pushFile = async ({
       handle.change(
         (doc) => {
           if (!Automerge.equals(doc.content, fileContents)) {
+            console.log("File changed, updating...");
             didChange = true;
 
             if (doc.content.type === "text") {
@@ -440,6 +446,8 @@ const pushFile = async ({
                 value: fileContents,
               };
             }
+          } else {
+            console.log("File didn't change, skipping update");
           }
         },
         {
@@ -448,6 +456,7 @@ const pushFile = async ({
       );
     }
   } else {
+    console.log("Creating new file...");
     // Make a new doc in the folder
     handle = repo.create();
     mainUrl = handle.url;
