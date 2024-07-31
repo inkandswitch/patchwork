@@ -185,7 +185,7 @@ export const VersionControlEditor: React.FC<{
     return () => {
       window.removeEventListener("keydown", handleKeyPress, true);
     };
-  }, [selectedAnchors]);
+  }, [selectedAnchors, setCommentState, supportsInlineComments]);
 
   // init branch metadata when the doc loads if it doesn't have it already
   useEffect(() => {
@@ -221,7 +221,7 @@ export const VersionControlEditor: React.FC<{
       : annotations;
 
   // for now hide inline comments if side by side is enabled because there is not enought space
-  const hideInlineComments = !!sidebarMode || docViewMode;
+  const hideInlineComments = !!sidebarMode || !!docViewMode;
 
   const highlightSidebarButton =
     !sidebarMode &&
