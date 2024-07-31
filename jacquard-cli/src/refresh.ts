@@ -28,10 +28,8 @@ export async function refresh(
   }
 ) {
   const {
-    dir,
     projectFolderUrl,
     syncServerStorageId,
-    patchworkUrl,
     onProgress = () => {},
   } = args;
 
@@ -115,8 +113,6 @@ export async function refresh(
 
   // TODO: report what's gonna run (in unknown order)
 
-  let ranSomethingEver = false;
-
   while (true) {
     let stalenessInfo = await getCurrentStalenessInfo();
 
@@ -153,8 +149,7 @@ export async function refresh(
             {
               ...args,
               command: buildRun.command,
-            },
-            false // actually, let's wait now
+            }
           );
 
           if (buildRunWithProgress) {
@@ -163,7 +158,6 @@ export async function refresh(
           }
 
           ranSomethingThisLoop = true;
-          ranSomethingEver = true;
           break;
         }
       }
@@ -176,10 +170,7 @@ export async function refresh(
     }
   }
 
-  if (ranSomethingEver) {
-    // TODO: fake handles to wait for
-    await waitForSync([], syncServerStorageId);
-  }
+  console.log("JAH refresh() done");
 
   // TODO: stretch goals:
   //   "I'm going to run these commands in this order! here's the estimated time"

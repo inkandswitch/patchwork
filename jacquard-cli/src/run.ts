@@ -27,8 +27,6 @@ const JACQUARD_DECLARE_REGEX =
 export async function run(repo: Repo, args: CommandLineArgs, wait = true) {
   const {
     dir,
-    projectFolderUrl,
-    syncServerStorageId,
     inputs = [],
     outputs = [],
     command,
@@ -77,6 +75,7 @@ export async function run(repo: Repo, args: CommandLineArgs, wait = true) {
       console.error(data.toString());
     });
     child.on("close", (code) => {
+      console.log("JAH close");
       if (code !== 0) {
         reject(new Error(`Command failed with exit code ${code}`));
       } else {
@@ -89,6 +88,8 @@ export async function run(repo: Repo, args: CommandLineArgs, wait = true) {
       reject(error);
     });
   });
+
+  console.log("JAH spawn in run() done");
 
   const timestampEnd = Date.now();
 

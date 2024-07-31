@@ -137,7 +137,13 @@ type BuildStuff = {
 };
 
 // TODO put this in a config file
-const IGNORE_FILES_ENDING_IN = [".DS_Store", "__pycache__", ".git", ".mrg"];
+const IGNORE_FILES_ENDING_IN = [
+  ".DS_Store",
+  "__pycache__",
+  ".git",
+  ".mrg",
+  ".pixi",
+];
 
 async function pushDir({
   dir,
@@ -157,6 +163,8 @@ async function pushDir({
   folderHandle: DocHandle<FolderDoc>;
   buildStuff?: BuildStuff;
 }) {
+  console.log(`Pushing dir: ${dir}`);
+
   const files = fs.readdirSync(dir);
 
   for (const filePath of files.map((file) => path.join(dir, file))) {
@@ -340,6 +348,8 @@ const pushFile = async ({
   mainUrl: AutomergeUrl;
   didChange: boolean;
 }> => {
+  console.log(`Pushing file: ${filePath}`);
+
   const fileContents = isBinaryFile(filePath)
     ? fs.readFileSync(filePath)
     : fs.readFileSync(filePath, "utf-8");
