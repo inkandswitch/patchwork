@@ -104,8 +104,6 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
     const pending = ifLoaded(buildMetadataDocsWithPendingRefresh.value);
     const next = pending && pending[0];
 
-    console.log("check");
-
     if (!next) {
       await sleep(500);
       continue;
