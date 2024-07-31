@@ -6,6 +6,7 @@ import path from "path";
 import { CommandLineArgs } from "./index";
 import { push } from "./push";
 import { BuildMetadata } from "./run";
+import { addPrefix } from "./util";
 
 const FILE_REFRENCE_REGEX = /^<use (?<filePath>.*)\>$/;
 
@@ -14,7 +15,7 @@ export async function latex(
   filePath: string,
   args: CommandLineArgs
 ) {
-  const { dir, projectFolderUrl, syncServerStorageId } = args;
+  const { dir, runPrefix } = args;
 
   const inputs: string[] = [`./${filePath}`];
   const outputs: string[] = [`./${replaceExtension(filePath, "pdf")}`];
@@ -24,7 +25,11 @@ export async function latex(
   const timestampStart = Date.now();
 
   await new Promise((resolve, reject) => {
-    const child = spawn("tectonic", [filePath, "--keep-logs"]);
+    const child = spawn(
+      addPrefix(runPrefix, "tectonic"),
+      [filePath, "--keep-logs"],
+      { shell: true }
+    );
 
     child.stdout.on("data", (data) => {
       console.log(data.toString());

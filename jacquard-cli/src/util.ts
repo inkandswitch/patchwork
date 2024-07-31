@@ -57,6 +57,7 @@ type JacquardConfig = {
     storageId?: StorageId;
   };
   activeBranchUrl?: AutomergeUrl;
+  runPrefix?: string;
 };
 
 export const getJacquardConfig = () => {
@@ -121,3 +122,6 @@ export const fetchFile = async (url: string): Promise<Uint8Array> => {
   const arrayBuffer = await response.arrayBuffer();
   return new Uint8Array(arrayBuffer);
 };
+
+export const addPrefix = (prefix: string | undefined, str: string) =>
+  prefix ? `${prefix} ${str}` : str;

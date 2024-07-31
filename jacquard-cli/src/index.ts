@@ -32,6 +32,7 @@ export type CommandLineArgs = {
   outputs?: string[];
   command?: string;
   branchUrl?: string;
+  runPrefix?: string;
 };
 
 const main = async () => {
@@ -85,6 +86,11 @@ const main = async () => {
       name: "command",
       type: String,
     },
+    {
+      name: "runPrefix",
+      type: String,
+      default: jacquardConfig?.runPrefix,
+    },
   ];
 
   const args = commandLineArgs(allFlags, {
@@ -100,6 +106,8 @@ const main = async () => {
     syncServerUrl,
     syncServerStorageId,
     command,
+    branchUrl,
+    runPrefix,
   } = args;
 
   if (!projectFolderUrl && mainOptions.command == "pull") {

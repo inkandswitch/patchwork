@@ -5,6 +5,7 @@ import path from "path";
 import { CommandLineArgs } from "./index.js";
 import { latex } from "./latex.js";
 import { push } from "./push.js";
+import { addPrefix } from "./util.js";
 
 // TODO: this is an awful lot like BuildRun, but not; at the very least a naming
 // issue
@@ -31,6 +32,7 @@ export async function run(repo: Repo, args: CommandLineArgs, wait = true) {
     inputs = [],
     outputs = [],
     command,
+    runPrefix,
   } = args;
 
   if (!command) {
@@ -47,8 +49,7 @@ export async function run(repo: Repo, args: CommandLineArgs, wait = true) {
   const timestampStart = Date.now();
 
   await new Promise((resolve, reject) => {
-    const [cmd, ...args] = command.split(" ");
-    const child = spawn(cmd, args, { shell: true });
+    const child = spawn(addPrefix(runPrefix, command), { shell: true });
 
     child.stdout.on("data", (data) => {
       data
