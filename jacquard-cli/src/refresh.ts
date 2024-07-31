@@ -23,16 +23,18 @@ import { getBuildMetadataDocUrl, waitForSync } from "./util";
 
 export async function refresh(
   repo: Repo,
-  {
+  args: CommandLineArgs & {
+    onProgress?: (buildRuns: BuildRunWithProgress[]) => void;
+  }
+) {
+  const {
     dir,
     projectFolderUrl,
     syncServerStorageId,
     patchworkUrl,
     onProgress = () => {},
-  }: CommandLineArgs & {
-    onProgress?: (buildRuns: BuildRunWithProgress[]) => void;
-  }
-) {
+  } = args;
+
   if (!projectFolderUrl) {
     console.log("No project folder URL provided.");
     return;
@@ -149,10 +151,7 @@ export async function refresh(
           await run(
             repo,
             {
-              dir,
-              projectFolderUrl,
-              syncServerStorageId,
-              patchworkUrl,
+              ...args,
               command: buildRun.command,
             },
             false // actually, let's wait now

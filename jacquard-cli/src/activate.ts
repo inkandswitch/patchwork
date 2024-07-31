@@ -6,10 +6,9 @@ import { pull } from "./pull";
 
 // Activate a branch and represent its files on disk.
 // TODO: warn people if they have pending un-pushed changes on disk?
-export async function activateBranch(
-  repo: Repo,
-  { projectFolderUrl, dir, branchUrl }: CommandLineArgs
-) {
+export async function activateBranch(repo: Repo, args: CommandLineArgs) {
+  const { dir, branchUrl } = args;
+
   // Read the existing jacquard.json file
   const jacquardConfigPath = path.join(dir, "jacquard.json");
   let jacquardConfig: any = {};
@@ -29,5 +28,5 @@ export async function activateBranch(
   // Write the updated config back to jacquard.json
   fs.writeFileSync(jacquardConfigPath, JSON.stringify(jacquardConfig, null, 2));
 
-  await pull(repo, { projectFolderUrl, dir });
+  await pull(repo, args);
 }

@@ -23,10 +23,9 @@ type BuildMetadataDocWithBranchUrl = {
   buildMetadataOm: Om<JacquardBuildMetadata>;
 };
 
-export async function watchRefreshRequests(
-  repo: Repo,
-  { dir, projectFolderUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs
-) {
+export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
+  const { projectFolderUrl } = args;
+
   if (!projectFolderUrl) {
     console.log("No project folder URL provided.");
     return;
@@ -114,19 +113,12 @@ export async function watchRefreshRequests(
 
     console.log("switch to branch:", next.branchUrl ?? "main");
 
-    await activateBranch(repo, {
-      projectFolderUrl,
-      dir,
-      branchUrl: next.branchUrl,
-    });
+    await activateBranch(repo, { ...args, branchUrl: next.branchUrl });
 
     console.log("done pull");
 
     await refresh(repo, {
-      dir,
-      projectFolderUrl,
-      syncServerStorageId,
-      patchworkUrl,
+      ...args,
       onProgress: (buildRuns) => {
         next.buildMetadataOm.handle.change((doc) => {
           doc.refreshState = {

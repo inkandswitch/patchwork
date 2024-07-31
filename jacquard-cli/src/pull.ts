@@ -9,8 +9,10 @@ import { fetchFile } from "./util";
 
 export async function pull(
   repo: Repo,
-  { projectFolderUrl, dir }: CommandLineArgs
+  args: CommandLineArgs
 ) {
+  const { projectFolderUrl, dir } = args;
+
   if (!projectFolderUrl) {
     console.log("No project folder URL provided.");
     return;

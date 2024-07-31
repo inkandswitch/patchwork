@@ -46,10 +46,12 @@ const initVersionControlMetadata = (
 
 export async function push(
   repo: Repo,
-  { dir, projectFolderUrl, syncServerStorageId, patchworkUrl }: CommandLineArgs,
+  args: CommandLineArgs,
   buildMetadata?: BuildMetadata,
   wait = true
 ) {
+  const { dir, projectFolderUrl, patchworkUrl, syncServerStorageId } = args;
+
   let folderHandle: DocHandle<FolderDoc> = await findOrCreateFolderHandle(
     projectFolderUrl,
     repo

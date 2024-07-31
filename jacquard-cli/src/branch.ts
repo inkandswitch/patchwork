@@ -5,13 +5,12 @@ import {
   VersionControlSidecarDoc,
 } from "@/sdk";
 import { Repo } from "@automerge/automerge-repo";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { CommandLineArgs } from ".";
 import { getJacquardConfig } from "./util";
 
-export const listBranches = async (
-  repo: Repo,
-  { projectFolderUrl }: { projectFolderUrl?: AutomergeUrl }
-) => {
+export const listBranches = async (repo: Repo, args: CommandLineArgs) => {
+  const { projectFolderUrl } = args;
+
   if (!projectFolderUrl) {
     console.log("No project folder URL provided.");
     return;

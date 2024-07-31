@@ -20,13 +20,14 @@ import { getJacquardConfig } from "./util";
 import { watch } from "./watch";
 import { watchRefreshRequests } from "./watchRefreshRequests";
 
+// those marked non-optional here are those with defaults provided in allFlags below
 export type CommandLineArgs = {
   dir: string;
   projectFolderUrl?: AutomergeUrl;
-  test?: boolean;
-  syncServerUrl?: string;
-  syncServerStorageId?: StorageId;
-  patchworkUrl?: string;
+  test: boolean;
+  syncServerUrl: string;
+  syncServerStorageId: StorageId;
+  patchworkUrl: string;
   inputs?: string[];
   outputs?: string[];
   command?: string;
@@ -41,18 +42,29 @@ const main = async () => {
 
   const argv = mainOptions._unknown || [];
 
+  const jacquardConfig = getJacquardConfig();
+
   const allFlags = [
     { name: "dir", type: String, defaultValue: "." },
-    { name: "projectFolderUrl", type: String },
+    {
+      name: "projectFolderUrl",
+      type: String,
+      defaultValue: jacquardConfig?.projectFolderUrl,
+    },
     { name: "branchUrl", type: String },
     { name: "test", type: Boolean, defaultValue: false },
     {
       name: "syncServerUrl",
       type: String,
+      defaultValue:
+        jacquardConfig?.syncServer?.url ?? "wss://sync.automerge.org",
     },
     {
       name: "syncServerStorageId",
       type: String,
+      defaultValue:
+        jacquardConfig?.syncServer?.storageId ??
+        ("3760df37-a4c6-4f66-9ecd-732039a9385d" as StorageId),
     },
     {
       name: "patchworkUrl",
@@ -75,9 +87,7 @@ const main = async () => {
     },
   ];
 
-  const jacquardConfig = getJacquardConfig();
-
-  const options = commandLineArgs(allFlags, {
+  const args = commandLineArgs(allFlags, {
     argv,
     stopAtFirstUnknown:
       mainOptions.action === "run" || mainOptions.action === "latex", // allow run and latex to have rest arguments
@@ -86,17 +96,11 @@ const main = async () => {
   const {
     dir,
     test,
-    projectFolderUrl = jacquardConfig?.projectFolderUrl,
-    syncServerUrl = jacquardConfig?.syncServer?.url ??
-      "wss://sync.automerge.org",
-    syncServerStorageId = jacquardConfig?.syncServer?.storageId ??
-      ("3760df37-a4c6-4f66-9ecd-732039a9385d" as StorageId),
-    patchworkUrl,
-    inputs,
-    outputs,
+    projectFolderUrl,
+    syncServerUrl,
+    syncServerStorageId,
     command,
-    branchUrl,
-  } = options;
+  } = args;
 
   if (!projectFolderUrl && mainOptions.command == "pull") {
     console.error("No URL specified: use --projectFolderUrl <url>");
@@ -126,58 +130,42 @@ const main = async () => {
 
   switch (mainOptions.action) {
     case "branch": {
-      await listBranches(repo, { projectFolderUrl });
+      await listBranches(repo, args);
       break;
     }
     case "activate": {
-      await activateBranch(repo, { projectFolderUrl, branchUrl, dir });
+      await activateBranch(repo, args);
       break;
     }
     case "push":
-      await push(repo, {
-        dir,
-        projectFolderUrl,
-        syncServerStorageId,
-        patchworkUrl,
-      });
+      await push(repo, args);
       break;
 
     case "pull":
-      await pull(repo, { dir, projectFolderUrl, syncServerStorageId });
+      await pull(repo, args);
       break;
 
     case "run": {
       await run(repo, {
-        dir,
-        projectFolderUrl,
-        patchworkUrl,
-        inputs,
-        outputs,
+        ...args,
         command:
-          "_unknown" in options
-            ? (options._unknown as string[]).join(" ")
-            : command,
-        syncServerStorageId,
+          "_unknown" in args ? (args._unknown as string[]).join(" ") : command,
       });
       break;
     }
 
     case "refresh": {
-      await refresh(repo, { dir, projectFolderUrl, syncServerStorageId });
+      await refresh(repo, args);
       break;
     }
 
     case "watch": {
-      await watch(repo, { dir, projectFolderUrl, syncServerStorageId });
+      await watch(repo, args);
       break;
     }
 
     case "watch-requests": {
-      await watchRefreshRequests(repo, {
-        dir,
-        projectFolderUrl,
-        syncServerStorageId,
-      });
+      await watchRefreshRequests(repo, args);
       break;
     }
 

@@ -1,10 +1,10 @@
-import path from "path";
 import { uuid } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import { spawn } from "child_process";
-import { push } from "./push.js";
+import path from "path";
 import { CommandLineArgs } from "./index.js";
 import { latex } from "./latex.js";
+import { push } from "./push.js";
 
 // TODO: this is an awful lot like BuildRun, but not; at the very least a naming
 // issue
@@ -23,19 +23,16 @@ export type BuildMetadata = {
 const JACQUARD_DECLARE_REGEX =
   /jacquard: declare (?<type>(input|output)) (?<filePath>.*)/;
 
-export async function run(
-  repo: Repo,
-  {
+export async function run(repo: Repo, args: CommandLineArgs, wait = true) {
+  const {
     dir,
     projectFolderUrl,
     syncServerStorageId,
-    patchworkUrl,
     inputs = [],
     outputs = [],
     command,
-  }: CommandLineArgs,
-  wait = true
-) {
+  } = args;
+
   if (!command) {
     console.error("No command provided");
     process.exit(1);
@@ -44,11 +41,7 @@ export async function run(
   // hack to make latex subset of run
   const commandSplit = command.split(" ");
   if (commandSplit.length === 2 && commandSplit[0] === "latex") {
-    return await latex(repo, commandSplit[1], {
-      dir,
-      projectFolderUrl,
-      syncServerStorageId,
-    });
+    return await latex(repo, commandSplit[1], args);
   }
 
   const timestampStart = Date.now();
@@ -108,15 +101,5 @@ export async function run(
     duration: timestampEnd - timestampStart,
   };
 
-  await push(
-    repo,
-    {
-      dir,
-      projectFolderUrl,
-      syncServerStorageId,
-      patchworkUrl,
-    },
-    buildMetadata,
-    wait
-  );
+  await push(repo, args, buildMetadata, wait);
 }
