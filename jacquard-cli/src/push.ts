@@ -10,7 +10,6 @@ import {
   updateText,
 } from "@automerge/automerge-repo";
 import fs from "fs";
-import { isBinaryFileSync } from "isbinaryfile";
 import mime from "mime-types";
 import path from "path";
 import process from "process";
@@ -19,7 +18,7 @@ import { FileDoc } from "../../packages/file/src/datatype";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 import { findWithActiveBranchPromise } from "./findWithActiveBranch";
 import { BuildMetadata } from "./run";
-import { sha256, sleep, uploadFile, waitForSync } from "./util";
+import { isBinaryFile, sha256, sleep, uploadFile, waitForSync } from "./util";
 
 // NOTE: copied this from the version control code in our os folder.
 // couldn't get imports working from os to jacquard-cli so just copying the function for now.
@@ -85,8 +84,6 @@ export async function push(
     buildStuff,
   });
 
-  console.log("before we do build stuff", mainUrlsAndCloneHandlesByFileName);
-
   if (buildStuff) {
     const { buildMetadata, buildMetadataHandle } = buildStuff;
     buildMetadataHandle.change((doc) => {
@@ -95,8 +92,6 @@ export async function push(
         inputs: buildMetadata.inputs.map((inputPath) => {
           console.log({
             inputPath,
-            base: path.basename(inputPath),
-            mainUrlsAndCloneHandlesByFileName,
           });
           const { mainUrl, cloneHandle } =
             mainUrlsAndCloneHandlesByFileName[path.basename(inputPath)];
@@ -345,7 +340,7 @@ const pushFile = async ({
   mainUrl: AutomergeUrl;
   didChange: boolean;
 }> => {
-  const fileContents = isBinaryFileSync(filePath)
+  const fileContents = isBinaryFile(filePath)
     ? fs.readFileSync(filePath)
     : fs.readFileSync(filePath, "utf-8");
   const isBinary = fileContents instanceof Buffer;

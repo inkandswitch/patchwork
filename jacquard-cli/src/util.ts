@@ -9,6 +9,7 @@ import {
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { isBinaryFileSync } from "isbinaryfile";
 
 export function getBuildMetadataDocUrl(folderDoc: Doc<FolderDoc>) {
   return folderDoc.docs.find((link) => link.name === "Build Metadata")?.url;
@@ -125,3 +126,14 @@ export const fetchFile = async (url: string): Promise<Uint8Array> => {
 
 export const addPrefix = (prefix: string | undefined, str: string) =>
   prefix ? `${prefix} ${str}` : str;
+
+export const isBinaryFile = (filePath: string) => {
+  // fits is a binary format for images often used in astronomy,
+  // the format has a human readable ASCII header which trips up the generic is binary function
+  // so we need to handle it as a special case
+  if (filePath.endsWith(".fits")) {
+    return true;
+  }
+
+  return isBinaryFileSync(filePath);
+};
