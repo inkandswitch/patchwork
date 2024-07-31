@@ -19,6 +19,7 @@ import {
   getStalenessInfo,
   ProjectState,
 } from "../getStalenessInfo";
+import { canBeUndef } from "@/utils";
 
 export const BuildRefreshButton = ({
   projectBuildMetadataOm,
@@ -31,7 +32,8 @@ export const BuildRefreshButton = ({
 }) => {
   getProjectState;
 
-  const { refreshState } = projectBuildMetadataOm.doc;
+  // TODO: not sure why this can be undefined but empirically it can be
+  const refreshState = canBeUndef(projectBuildMetadataOm.doc.refreshState) || {type: "idle"};
 
   const handleRefresh = () => {
     if (
