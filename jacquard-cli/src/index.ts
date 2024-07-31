@@ -45,7 +45,7 @@ const main = async () => {
 
   const jacquardConfig = getJacquardConfig();
 
-  const allFlags = [
+  const allFlags: commandLineArgs.OptionDefinition[] = [
     { name: "dir", type: String, defaultValue: "." },
     {
       name: "projectFolderUrl",
@@ -89,7 +89,7 @@ const main = async () => {
     {
       name: "runPrefix",
       type: String,
-      default: jacquardConfig?.runPrefix,
+      defaultValue: jacquardConfig?.runPrefix,
     },
   ];
 
@@ -106,8 +106,6 @@ const main = async () => {
     syncServerUrl,
     syncServerStorageId,
     command,
-    branchUrl,
-    runPrefix,
   } = args;
 
   if (!projectFolderUrl && mainOptions.command == "pull") {
