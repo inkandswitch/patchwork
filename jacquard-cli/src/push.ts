@@ -317,6 +317,7 @@ export const ensureMetadataHandleIsBranchScope = (
 ) => {
   handle.change((d) => {
     if (!d.isBranchScope) {
+      // @ts-ignore
       d.isBranchScope = true;
       // @ts-expect-error TS not smart enough to figure this one out
       d.branches = [];
@@ -448,7 +449,7 @@ const pushFile = async ({
     // delay to not overload automerge repo by creating many handles
     sleep(500);
 
-    let url;
+    let url: string | undefined = undefined;
     if (isBinary) {
       const mimeType = mime.lookup(fileType);
       url = await uploadFile(fileContents, mimeType);
@@ -459,10 +460,11 @@ const pushFile = async ({
         doc.name = path.basename(filePath);
         doc.type = fileType;
 
-        if (isBinary) {
+        if (url) {
           doc.content = { type: "link", url };
         } else {
-          doc.content = { type: "text", value: fileContents };
+          // TODO: JAH strict fix... can be Buffer?
+          doc.content = { type: "text", value: fileContents as string };
         }
 
         // init patchwork metadata
