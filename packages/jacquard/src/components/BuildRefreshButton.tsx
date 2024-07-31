@@ -70,7 +70,7 @@ export const BuildRefreshButton = ({
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <Button
             variant="outline"
             className="flex gap-2 w-fit h-8 text-xs px-2"
@@ -108,7 +108,7 @@ export const BuildRefreshButton = ({
             {refreshState?.type === "processing" && (
               <div>
                 {refreshState.buildRuns.map(({ command, progress }) => (
-                  <div className="flex gap-2 items-center">
+                  <div key={command} className="flex gap-2 items-center">
                     <ProgressIcon state={progress} />
                     <div className="font-mono">{command}</div>
                   </div>
@@ -120,7 +120,7 @@ export const BuildRefreshButton = ({
               refreshState?.type === "requesting") && (
               <div>
                 {buildsToRun.map((build) => (
-                  <div className="flex gap-2 items-center">
+                  <div key={build.id} className="flex gap-2 items-center">
                     <ProgressIcon state="waiting" />
                     <div className="font-mono">{build.command}</div>
                   </div>
