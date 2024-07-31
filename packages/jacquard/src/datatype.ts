@@ -26,19 +26,13 @@ export type BuildRunWithProgress = Omit<BuildRun, "timestamp"> & {
 
 // todo: think about error handling and more detailed update reporting
 
-type IdleRefreshState = { type: "idle" };
-
-type RequestingRefreshState = { type: "requesting" };
-
-type ProcessingRefreshState = {
-  type: "processing";
-  buildRuns: BuildRunWithProgress[];
-};
-
 type RefreshState =
-  | IdleRefreshState
-  | RequestingRefreshState
-  | ProcessingRefreshState;
+  | { type: "idle" }
+  | { type: "requesting" }
+  | {
+      type: "processing";
+      buildRuns: BuildRunWithProgress[];
+    };
 
 export type JacquardBuildMetadata = HasVersionControlMetadata<
   unknown,
