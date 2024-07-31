@@ -29,7 +29,25 @@ import { resolveUrlOnBranch } from "@/versionControl/signals";
 import { useJacquardProjectInfoWithActiveBranch } from "../../../jacquard/src/hooks";
 import { getStalenessInfo } from "../../../jacquard/src/getStalenessInfo";
 import { getRelativeTimeString } from "@/lib/dates";
-import { AlertTriangleIcon, BadgeCheckIcon } from "lucide-react";
+import {
+  AlertTriangleIcon,
+  ArrowDownToLineIcon,
+  ArrowRightCircle,
+  ArrowRightFromLineIcon,
+  ArrowRightToLineIcon,
+  ArrowUpFromLineIcon,
+  BadgeCheckIcon,
+  FileIcon,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from "@/shadcn/ui/dropdown-menu";
+import { Button } from "@/shadcn/ui/button";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -165,8 +183,32 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
             {!isStale && <span>up to date</span>}, last built{" "}
             {getRelativeTimeString(buildMetadata.timestamp)}
           </div>
-          <div className="flex-1" />
-          <div className="flex items-center mr-1">
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 px-2 text-xs">
+                <FileIcon className="mr-2 h-4 w-4" />
+                Show just this file
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Display options</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <FileIcon className="mr-2 h-4 w-4" />
+                Show just this file
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <ArrowRightToLineIcon className="mr-2 h-4 w-4" />
+                Show with build inputs
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <ArrowRightFromLineIcon className="mr-2 h-4 w-4" />
+                Show with build outputs
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="flex items-center mr-1 ml-auto">
             <Checkbox
               id="diff-overlay-checkbox"
               className="mr-1"
