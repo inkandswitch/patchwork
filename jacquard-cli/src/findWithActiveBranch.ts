@@ -1,12 +1,10 @@
+import { waitForLoaded } from "@/doc-reactive";
+import { resolveUrlOnBranch } from "@/versionControl/signals";
 import {
   AutomergeUrl,
-  Repo,
-  isValidAutomergeUrl,
+  Repo
 } from "@automerge/automerge-repo";
-import { BranchDoc, DocCloneMap } from "@/sdk";
 import { getJacquardConfig } from "./util";
-import { getDoc, waitForLoaded } from "@/doc-reactive";
-import { resolveUrlOnBranch } from "@/versionControl/signals";
 
 /**
  * Doc-reactive. Like repo.find, but considers the active branch.

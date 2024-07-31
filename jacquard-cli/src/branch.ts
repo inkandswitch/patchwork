@@ -10,7 +10,7 @@ import { getJacquardConfig } from "./util";
 
 export const listBranches = async (
   repo: Repo,
-  { projectFolderUrl }: { projectFolderUrl: AutomergeUrl }
+  { projectFolderUrl }: { projectFolderUrl?: AutomergeUrl }
 ) => {
   if (!projectFolderUrl) {
     console.log("No project folder URL provided.");
@@ -36,7 +36,9 @@ export const listBranches = async (
     .find<VersionControlSidecarDoc>(versionControlMetadataUrl)
     .doc();
   if (!versionControlMetadataDoc) {
-    throw new Error(`Version control metadata doc missing: ${versionControlMetadataUrl}`);
+    throw new Error(
+      `Version control metadata doc missing: ${versionControlMetadataUrl}`
+    );
   }
 
   if (!versionControlMetadataDoc.isBranchScope) {
@@ -58,13 +60,13 @@ export const listBranches = async (
 
   const config = getJacquardConfig();
 
-  if (!config!.activeBranchUrl) {
+  if (!config?.activeBranchUrl) {
     console.log(`- \x1b[1mmain\x1b[0m`);
   } else {
     console.log(`- main`);
   }
   branches.forEach(async ({ branchDoc, url }) => {
-    const name = branchDoc?.name ?? '<branch doc missing>';
+    const name = branchDoc?.name ?? "<branch doc missing>";
     if (config?.activeBranchUrl === url) {
       console.log(`- \x1b[1m${name}\x1b[0m`);
     } else {

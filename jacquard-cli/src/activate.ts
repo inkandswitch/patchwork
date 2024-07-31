@@ -1,10 +1,7 @@
+import { Repo } from "@automerge/automerge-repo";
 import fs from "fs";
 import path from "path";
 import { CommandLineArgs } from ".";
-import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo";
-import { FolderDoc } from "@/packages/folder";
-import { FileDoc } from "../../packages/file/src/datatype";
-import { BranchDoc, DocCloneMap } from "@/sdk";
 import { pull } from "./pull";
 
 // Activate a branch and represent its files on disk.

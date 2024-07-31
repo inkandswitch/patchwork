@@ -1,6 +1,11 @@
 import { FolderDoc } from "@/packages/folder";
 import * as A from "@automerge/automerge";
-import { Doc, DocHandle, StorageId } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  Doc,
+  DocHandle,
+  StorageId,
+} from "@automerge/automerge-repo";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
@@ -45,6 +50,15 @@ export async function waitForSync(
   );
 }
 
+type JacquardConfig = {
+  projectFolderUrl?: AutomergeUrl;
+  syncServer?: {
+    url?: string;
+    storageId?: StorageId;
+  };
+  activeBranchUrl?: AutomergeUrl;
+};
+
 export const getJacquardConfig = () => {
   const currentDir = process.cwd();
 
@@ -53,7 +67,7 @@ export const getJacquardConfig = () => {
   if (fs.existsSync(configFilePath)) {
     try {
       const configFileContents = fs.readFileSync(configFilePath, "utf8");
-      return JSON.parse(configFileContents);
+      return JSON.parse(configFileContents) as JacquardConfig;
     } catch (error) {
       console.warn("invalid jacquard.json file");
       return null;

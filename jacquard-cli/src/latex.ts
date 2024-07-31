@@ -1,12 +1,11 @@
+import { uuid } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
+import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 import { CommandLineArgs } from "./index";
-import { spawn } from "child_process";
-import { pull } from "./pull";
 import { push } from "./push";
 import { BuildMetadata } from "./run";
-import { uuid } from "@automerge/automerge";
 
 const FILE_REFRENCE_REGEX = /^<use (?<filePath>.*)\>$/;
 

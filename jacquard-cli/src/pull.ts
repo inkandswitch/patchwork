@@ -1,12 +1,11 @@
+import { FolderDoc } from "@/packages/folder";
+import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import fs from "fs";
 import path from "path";
 import { CommandLineArgs } from ".";
-import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
-import { FolderDoc } from "@/packages/folder";
 import { FileDoc } from "../../packages/file/src/datatype";
-import { findWithActiveBranch, findWithActiveBranchPromise } from "./findWithActiveBranch";
+import { findWithActiveBranchPromise } from "./findWithActiveBranch";
 import { fetchFile } from "./util";
-import { waitForLoaded } from "@/doc-reactive";
 
 export async function pull(
   repo: Repo,

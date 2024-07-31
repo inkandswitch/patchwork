@@ -3,12 +3,12 @@ import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { getFolderDocWithChildren } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+import { omit } from "lodash";
 import { CommandLineArgs } from ".";
 import { FileDoc } from "../../packages/file/src/datatype";
 import {
-  BuildRun,
   BuildRunWithProgress,
-  JacquardBuildMetadata,
+  JacquardBuildMetadata
 } from "../../packages/jacquard/src/datatype";
 import {
   getProjectState,
@@ -20,7 +20,6 @@ import {
 } from "./findWithActiveBranch";
 import { run } from "./run";
 import { getBuildMetadataDocUrl, waitForSync } from "./util";
-import { omit } from "lodash";
 
 export async function refresh(
   repo: Repo,

@@ -1,23 +1,21 @@
 #!/usr/bin/env bun
-/* 
+/*
   use this line to inspect the CLI with a debugger
-  #!/usr/bin/env bun --inspect-wait 
+  #!/usr/bin/env bun --inspect-wait
 */
 
-import fs from "fs";
 import commandLineArgs from "command-line-args";
-import path from "path";
+import fs from "fs";
 
 import { AutomergeUrl, Repo, StorageId } from "@automerge/automerge-repo";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 
-import { push } from "./push";
-import { pull } from "./pull";
-import { run } from "./run";
-import { latex } from "./latex";
-import { listBranches } from "./branch";
 import { activateBranch } from "./activate";
+import { listBranches } from "./branch";
+import { pull } from "./pull";
+import { push } from "./push";
 import { refresh } from "./refresh";
+import { run } from "./run";
 import { getJacquardConfig } from "./util";
 import { watch } from "./watch";
 import { watchRefreshRequests } from "./watchRefreshRequests";
@@ -91,9 +89,8 @@ const main = async () => {
     projectFolderUrl = jacquardConfig?.projectFolderUrl,
     syncServerUrl = jacquardConfig?.syncServer?.url ??
       "wss://sync.automerge.org",
-    syncServerStorageId = jacquardConfig?.syncServer
-      ? jacquardConfig.syncServer.storageId
-      : "3760df37-a4c6-4f66-9ecd-732039a9385d",
+    syncServerStorageId = jacquardConfig?.syncServer?.storageId ??
+      ("3760df37-a4c6-4f66-9ecd-732039a9385d" as StorageId),
     patchworkUrl,
     inputs,
     outputs,
