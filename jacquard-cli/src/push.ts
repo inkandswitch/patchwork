@@ -18,7 +18,14 @@ import { FileDoc } from "../../packages/file/src/datatype";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 import { findWithActiveBranchPromise } from "./findWithActiveBranch";
 import { BuildMetadata } from "./run";
-import { isBinaryFile, sha256, sleep, uploadFile, waitForSync } from "./util";
+import {
+  formatFileSize,
+  isBinaryFile,
+  sha256,
+  sleep,
+  uploadFile,
+  waitForSync,
+} from "./util";
 
 // NOTE: copied this from the version control code in our os folder.
 // couldn't get imports working from os to jacquard-cli so just copying the function for now.
@@ -348,14 +355,18 @@ const pushFile = async ({
   mainUrl: AutomergeUrl;
   didChange: boolean;
 }> => {
-  console.log(`Pushing file: ${filePath}`);
-
   const fileContents = isBinaryFile(filePath)
     ? fs.readFileSync(filePath)
     : fs.readFileSync(filePath, "utf-8");
   const isBinary = fileContents instanceof Buffer;
 
-  console.log(`Pushing ${isBinary ? "binary" : "text"} file: ${filePath}`);
+  const fileSize = fs.statSync(filePath).size;
+  const formattedSize = formatFileSize(fileSize);
+  console.log(
+    `Pushing ${
+      isBinary ? "binary" : "text"
+    } file (${formattedSize}): ${filePath}`
+  );
 
   const fileType = path.extname(filePath).slice(1);
   const fileNameWithExtension = path.basename(filePath);

@@ -131,9 +131,20 @@ export const isBinaryFile = (filePath: string) => {
   // fits is a binary format for images often used in astronomy,
   // the format has a human readable ASCII header which trips up the generic is binary function
   // so we need to handle it as a special case
-  if (filePath.endsWith(".fits")) {
-    return true;
-  }
-
-  return isBinaryFileSync(filePath);
+  const BINARY_FILE_EXTENSIONS = [".fits"];
+  return (
+    isBinaryFileSync(filePath) ||
+    BINARY_FILE_EXTENSIONS.some((ext) => filePath.endsWith(ext))
+  );
 };
+
+export function formatFileSize(bytes: number): string {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let size = bytes;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+  return `${size.toFixed(1)} ${units[unitIndex]}`;
+}
