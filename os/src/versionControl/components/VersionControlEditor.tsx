@@ -26,6 +26,12 @@ import { ReviewSidebar } from "./ReviewSidebar";
 
 export type SidebarMode = "review" | "history" | "Bot";
 
+export type DocViewMode =
+  | "showFile"
+  | "showInputs"
+  | "showOutputs"
+  | "compareWithMain";
+
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
   docUrl: AutomergeUrl;
@@ -53,8 +59,7 @@ export const VersionControlEditor: React.FC<{
   // const [isHoveringYankToBranchOption, setIsHoveringYankToBranchOption] =
   //   useState(false);
   const [showChangesFlag, setShowChangesFlag] = useState<boolean>(true);
-  const [compareWithMainFlag, setCompareWithMainFlag] =
-    useState<boolean>(false);
+  const [docViewMode, setDocViewMode] = useState<DocViewMode>("showFile");
   // const dataTypes = useDataTypes();
 
   // Reset compare view settings every time you switch branches
@@ -216,7 +221,7 @@ export const VersionControlEditor: React.FC<{
       : annotations;
 
   // for now hide inline comments if side by side is enabled because there is not enought space
-  const hideInlineComments = !!sidebarMode || compareWithMainFlag;
+  const hideInlineComments = !!sidebarMode || docViewMode;
 
   const highlightSidebarButton =
     !sidebarMode &&
@@ -235,8 +240,8 @@ export const VersionControlEditor: React.FC<{
             setSidebarMode={setSidebarMode}
             showChangesFlag={showChangesFlag}
             setShowChangesFlag={setShowChangesFlag}
-            compareWithMainFlag={compareWithMainFlag}
-            setCompareWithMainFlag={setCompareWithMainFlag}
+            docViewMode={docViewMode}
+            setDocViewMode={setDocViewMode}
             highlightSidebarButton={highlightSidebarButton}
             getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
           />
@@ -248,7 +253,7 @@ export const VersionControlEditor: React.FC<{
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <div className="flex-grow items-stretch justify-stretch relative flex flex-col overflow-hidden">
             <div className="flex-1 min-h-0 relative">
-              {compareWithMainFlag ? (
+              {docViewMode === "compareWithMain" ? (
                 <SideBySide
                   key={cloneOrMainOm.url}
                   tool={tool}

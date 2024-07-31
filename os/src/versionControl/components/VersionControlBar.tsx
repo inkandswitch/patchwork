@@ -26,14 +26,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shadcn/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shadcn/ui/tooltip";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import _, { truncate } from "lodash";
 import {
+  ArrowRightFromLineIcon,
+  ArrowRightToLineIcon,
   ColumnsIcon,
   CrownIcon,
   Edit3Icon,
   FileDiffIcon,
+  FileIcon,
   GitBranchIcon,
   Link,
   MergeIcon,
@@ -46,13 +55,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { createJacquardBranch, mergeBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../signals";
-import { SidebarMode } from "./VersionControlEditor";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/shadcn/ui/tooltip";
+import { DocViewMode, SidebarMode } from "./VersionControlEditor";
 
 // interface MakeBranchOptions {
 //   name?: string;
@@ -69,8 +72,8 @@ export const VersionControlBar = ({
   setShowChangesFlag,
   highlightSidebarButton,
   getFakeDocPathForDocUrl,
-  compareWithMainFlag,
-  setCompareWithMainFlag,
+  docViewMode,
+  setDocViewMode,
 }: {
   docUrl: AutomergeUrl;
   datatypeId: string;
@@ -81,8 +84,8 @@ export const VersionControlBar = ({
   setShowChangesFlag: (flag: boolean) => void;
   highlightSidebarButton: boolean;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
-  compareWithMainFlag: boolean;
-  setCompareWithMainFlag: (flag: boolean) => void;
+  docViewMode: DocViewMode;
+  setDocViewMode: (docViewMode: DocViewMode) => void;
 }) => {
   const {
     branchScopeOm,
@@ -364,7 +367,60 @@ export const VersionControlBar = ({
           </div>
         )}
 
-        {activeBranchOm && (
+        <Select
+          onValueChange={(value) => {
+            setDocViewMode(value as ViewMode);
+          }}
+          value={docViewMode}
+        >
+          <SelectTrigger className="h-8 px-2 text-xs">
+            {docViewMode === "showFile" && (
+              <FileIcon className="mr-2 h-4 w-4" />
+            )}
+            {docViewMode === "showInputs" && (
+              <ArrowRightToLineIcon className="mr-2 h-4 w-4" />
+            )}
+            {docViewMode === "showOutputs" && (
+              <ArrowRightFromLineIcon className="mr-2 h-4 w-4" />
+            )}
+            {docViewMode === "compareWithMain" && (
+              <ColumnsIcon className="mr-2 h-4 w-4" />
+            )}
+            View
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="showFile">
+                <div className="flex gap-2">
+                  <FileIcon className="h-4 w-4" />
+                  Show just this file
+                </div>
+              </SelectItem>
+              <SelectItem value="showInputs">
+                <div className="flex gap-2">
+                  <ArrowRightToLineIcon className="h-4 w-4" />
+                  Show with build inputs
+                </div>
+              </SelectItem>
+              <SelectItem value="showOutputs">
+                <div className="flex gap-2">
+                  <ArrowRightFromLineIcon className="h-4 w-4" />
+                  Show with build outputs
+                </div>
+              </SelectItem>
+              {activeBranchOm && (
+                <SelectItem value="compareWithMain">
+                  <div className="flex gap-2">
+                    <ColumnsIcon className="h-4 w-4" />
+                    Compare with main
+                  </div>
+                </SelectItem>
+              )}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        {/*activeBranchOm && (
           <div>
             <TooltipProvider>
               <Tooltip>
@@ -388,7 +444,7 @@ export const VersionControlBar = ({
               </Tooltip>
             </TooltipProvider>
           </div>
-        )}
+        )*/}
 
         {activeBranchOm && (
           <BranchActions
