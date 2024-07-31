@@ -129,8 +129,6 @@ const generateImportMapPlugin = (): Plugin => ({
 });
 
 export default defineConfig({
-  base: "./",
-
   plugins: [
     topLevelAwait(),
     wasm(),
