@@ -85,12 +85,11 @@ export const BuildRefreshButton = ({
                   : ""
               }
             />
-            Refresh
             {refreshState?.type === "requesting"
-              ? "waiting"
+              ? "Waiting"
               : refreshState?.type === "processing"
-              ? `processing`
-              : ""}
+              ? `Processing`
+              : "Refresh"}
           </Button>
         </TooltipTrigger>
 
