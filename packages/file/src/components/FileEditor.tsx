@@ -216,8 +216,3 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
     </div>
   );
 };
-
-interface DocUrlAtHeads {
-  docUrl: AutomergeUrl;
-  heads: Automerge.Heads;
-}
