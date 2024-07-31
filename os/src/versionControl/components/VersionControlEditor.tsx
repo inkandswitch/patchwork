@@ -289,6 +289,7 @@ export const VersionControlEditor: React.FC<{
                   setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
                   setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
                   hideInlineComments={hideInlineComments}
+                  docViewMode={docViewMode}
                   setCommentState={setCommentState}
                   getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                   mainDocUrl={mainDocUrl}
@@ -426,6 +427,7 @@ const DocEditor = <T, V>({
   setCommentState,
   getFakeDocPathForDocUrl,
   mainDocUrl,
+  docViewMode,
   activeBranchUrl,
   highlightChanges,
 }: EditorPropsWithTool<T, V>) => {
@@ -450,6 +452,7 @@ const DocEditor = <T, V>({
       setCommentState={setCommentState}
       getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
       mainDocUrl={mainDocUrl}
+      docViewMode={docViewMode}
       activeBranchUrl={activeBranchUrl}
       highlightChanges={highlightChanges}
     />
