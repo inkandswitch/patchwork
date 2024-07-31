@@ -221,28 +221,3 @@ interface DocUrlAtHeads {
   docUrl: AutomergeUrl;
   heads: Automerge.Heads;
 }
-
-/* pass in a list of doc urls at some heads to monitor if the docs are still at these heads
- * returns true if the most recent versions of all documents is at the specified heads, otherwise false
- */
-const useIsStale = (docUrlsAtHeads: DocUrlAtHeads[]) => {
-  const urls = useMemo(
-    () => docUrlsAtHeads.map(({ docUrl }) => docUrl),
-    [docUrlsAtHeads]
-  );
-
-  const docsById = useDocuments(urls);
-
-  return useMemo(() => {
-    if (docUrlsAtHeads.length === 0) {
-      return false;
-    }
-
-    return docUrlsAtHeads.some(({ docUrl, heads }) => {
-      const { documentId } = parseAutomergeUrl(docUrl);
-      const doc = docsById[documentId];
-
-      return doc && !Automerge.equals(Automerge.getHeads(doc), heads);
-    });
-  }, [docsById, docUrlsAtHeads]);
-};
