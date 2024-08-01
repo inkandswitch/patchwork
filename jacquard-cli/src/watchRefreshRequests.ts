@@ -141,7 +141,15 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
         onProgress: (buildRuns) => {
           next.buildMetadataOm.handle.change((doc) => {
             if (doc.refreshState.type !== "processing") {
-              throw new Error("unexpected state... why are we not processing?");
+              // throw new Error("unexpected state... why are we not processing?");
+              console.log(
+                "WARNING: unexpected state... why are we not processing?"
+              );
+              console.log(
+                "Here's the current refresh state:",
+                doc.refreshState
+              );
+              return;
             }
             // turn automerge object into POJO before assigning it back to the doc
             doc.refreshState.buildRuns = JSON.parse(JSON.stringify(buildRuns));

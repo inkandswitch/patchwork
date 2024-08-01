@@ -8,7 +8,7 @@ import { CommandLineArgs } from ".";
 import { FileDoc } from "../../packages/file/src/datatype";
 import {
   BuildRunWithProgress,
-  JacquardBuildMetadata
+  JacquardBuildMetadata,
 } from "../../packages/jacquard/src/datatype";
 import {
   getProjectState,
@@ -27,11 +27,7 @@ export async function refresh(
     onProgress?: (buildRuns: BuildRunWithProgress[]) => void;
   }
 ) {
-  const {
-    projectFolderUrl,
-    syncServerStorageId,
-    onProgress = () => {},
-  } = args;
+  const { projectFolderUrl, syncServerStorageId, onProgress = () => {} } = args;
 
   if (!projectFolderUrl) {
     console.log("No project folder URL provided.");
@@ -144,20 +140,20 @@ export async function refresh(
 
           // all inputs are up to date, so we can run this build
           console.log(`running build ${buildRunId}: ${buildRun.command}`);
-          await run(
-            repo,
-            {
-              ...args,
-              command: buildRun.command,
-              onOutput: (output) => {
-                // don't console log in here lol!
-                if (buildRunWithProgress) {
-                  buildRunWithProgress.log.push(output);
-                  onProgress(buildRunsWithProgress);
-                }
-              },
-            }
-          );
+          await run(repo, {
+            ...args,
+            command: buildRun.command,
+            onOutput: (output) => {
+              // don't console log in here lol!
+              // skip this progress reporting for now - it's causing perf problems
+              // because: 1) logs are long strings, 2) we make a new copy of buildRuns inside of onProgress
+              // instead of mutating the existing one.
+              // if (buildRunWithProgress) {
+              //   buildRunWithProgress.log.push(output);
+              //   onProgress(buildRunsWithProgress);
+              // }
+            },
+          });
 
           if (buildRunWithProgress) {
             buildRunWithProgress.progress = "done";

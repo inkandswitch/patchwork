@@ -160,8 +160,11 @@ const ProcessingButtonLabel = (props: {
     };
   }, [processorHeartbeat]);
 
+  const PROCESSING_TIMEOUT_S = 30;
+
   useEffect(() => {
-    if (secsSinceHeartbeat >= 10) {
+    // This is a very conservative check - sometimes the watcher freezes
+    if (secsSinceHeartbeat >= PROCESSING_TIMEOUT_S) {
       projectBuildMetadataOm.handle.change((doc) => {
         doc.refreshState = { type: "requesting" };
       });
@@ -171,7 +174,9 @@ const ProcessingButtonLabel = (props: {
   if (secsSinceHeartbeat < 5) {
     return "Processing";
   } else {
-    return `Processing (Lost connection... ${10 - secsSinceHeartbeat})`;
+    return `Processing (Lost connection... ${
+      PROCESSING_TIMEOUT_S - secsSinceHeartbeat
+    })`;
   }
 };
 
