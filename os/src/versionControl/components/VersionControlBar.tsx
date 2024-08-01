@@ -476,24 +476,19 @@ export const VersionControlBar = ({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {/* TODO: shouldn't have datatype specific code here */}
-              {datatypeId === "file" && (
-                <>
-                  <SelectItem value="showFile">
-                    <div className="flex gap-2">
-                      <FileIcon className="h-4 w-4" />
-                      Show just this file
-                    </div>
-                  </SelectItem>
-                  {hasOutputFiles && (
-                    <SelectItem value="showOutputs">
-                      <div className="flex gap-2">
-                        <ArrowRightFromLineIcon className="h-4 w-4" />
-                        Show with build outputs
-                      </div>
-                    </SelectItem>
-                  )}
-                </>
+              <SelectItem value="showFile">
+                <div className="flex gap-2">
+                  <FileIcon className="h-4 w-4" />
+                  Show just this doc
+                </div>
+              </SelectItem>
+              {hasOutputFiles && (
+                <SelectItem value="showOutputs">
+                  <div className="flex gap-2">
+                    <ArrowRightFromLineIcon className="h-4 w-4" />
+                    Show with build outputs
+                  </div>
+                </SelectItem>
               )}
               {activeBranchOm && (
                 <SelectItem value="compareWithMain">
