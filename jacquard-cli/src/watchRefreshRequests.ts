@@ -17,6 +17,7 @@ import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 import { activateBranch } from "./activate";
 import { refresh } from "./refresh";
 import { sleep } from "./util";
+import os from "node:os";
 
 type BuildMetadataDocWithBranchUrl = {
   branchUrl?: AutomergeUrl;
@@ -116,14 +117,34 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
 
       console.log("done pull");
 
+      next.buildMetadataOm.handle.change((doc) => {
+        doc.refreshState = {
+          type: "processing",
+          processorHostname: os.hostname(),
+          processorHeartbeat: Date.now(),
+          buildRuns: null,
+        };
+      });
+
+      const heartbeatInterval = setInterval(() => {
+        next.buildMetadataOm.handle.change((doc) => {
+          if (doc.refreshState.type !== "processing") {
+            clearInterval(heartbeatInterval);
+            return;
+          }
+          doc.refreshState.processorHeartbeat = Date.now();
+        });
+      }, 1000);
+
       await refresh(repo, {
         ...args,
         onProgress: (buildRuns) => {
           next.buildMetadataOm.handle.change((doc) => {
-            doc.refreshState = {
-              type: "processing",
-              buildRuns: JSON.parse(JSON.stringify(buildRuns)), // turn automerge object into POJO before assigning it back to the doc
-            };
+            if (doc.refreshState.type !== "processing") {
+              throw new Error("unexpected state... why are we not processing?");
+            }
+            // turn automerge object into POJO before assigning it back to the doc
+            doc.refreshState.buildRuns = JSON.parse(JSON.stringify(buildRuns));
           });
         },
       });

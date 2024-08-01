@@ -81,17 +81,22 @@ export const BuildRefreshButton = ({
             <RefreshCw
               size={14}
               className={
-                refreshState?.type === "processing" ||
-                refreshState?.type === "requesting"
+                refreshState.type === "processing" ||
+                refreshState.type === "requesting"
                   ? "animate-spin"
                   : ""
               }
             />
-            {refreshState?.type === "requesting"
-              ? "Waiting"
-              : refreshState?.type === "processing"
-              ? `Processing`
-              : "Rebuild"}
+            {refreshState.type === "idle" ? (
+              "Rebuild"
+            ) : refreshState.type === "requesting" ? (
+              "Waiting"
+            ) : (
+              <ProcessingButtonLabel
+                projectBuildMetadataOm={projectBuildMetadataOm}
+                processorHeartbeat={refreshState.processorHeartbeat}
+              />
+            )}
           </Button>
         </TooltipTrigger>
 
@@ -133,6 +138,39 @@ export const BuildRefreshButton = ({
       </Tooltip>
     </TooltipProvider>
   );
+};
+
+const ProcessingButtonLabel = (props: {
+  projectBuildMetadataOm: Om<JacquardBuildMetadata>;
+  processorHeartbeat: number;
+}) => {
+  const { projectBuildMetadataOm, processorHeartbeat } = props;
+  const [secsSinceHeartbeat, setSecsSinceHeartbeat] = useState<number>(0);
+  useEffect(() => {
+    void processorHeartbeat;
+    const interval = setInterval(() => {
+      setSecsSinceHeartbeat((secs) => secs + 1);
+    }, 1000);
+
+    return () => {
+      setSecsSinceHeartbeat(0);
+      clearInterval(interval);
+    };
+  }, [processorHeartbeat]);
+
+  useEffect(() => {
+    if (secsSinceHeartbeat >= 10) {
+      projectBuildMetadataOm.handle.change((doc) => {
+        doc.refreshState = { type: "requesting" };
+      });
+    }
+  }, [projectBuildMetadataOm.handle, secsSinceHeartbeat]);
+
+  if (secsSinceHeartbeat < 5) {
+    return "Processing";
+  } else {
+    return `Processing (Lost connection... ${10 - secsSinceHeartbeat})`;
+  }
 };
 
 export const DisabledBuildRefreshButton = () => {

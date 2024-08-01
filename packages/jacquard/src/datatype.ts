@@ -31,7 +31,10 @@ type RefreshState =
   | { type: "requesting" }
   | {
       type: "processing";
-      buildRuns: BuildRunWithProgress[];
+      processorHostname: string;
+      processorHeartbeat: number;
+      /** "null" here means "we're processing, but don't know what yet" */
+      buildRuns: BuildRunWithProgress[] | null;
     };
 
 export type JacquardBuildMetadata = HasVersionControlMetadata<
