@@ -33,7 +33,9 @@ export const BuildRefreshButton = ({
   getProjectState;
 
   // TODO: not sure why this can be undefined but empirically it can be
-  const refreshState = canBeUndef(projectBuildMetadataOm.doc.refreshState) || {type: "idle"};
+  const refreshState = canBeUndef(projectBuildMetadataOm.doc.refreshState) || {
+    type: "idle",
+  };
 
   const handleRefresh = () => {
     if (
@@ -89,7 +91,7 @@ export const BuildRefreshButton = ({
               ? "Waiting"
               : refreshState?.type === "processing"
               ? `Processing`
-              : "Refresh"}
+              : "Rebuild"}
           </Button>
         </TooltipTrigger>
 
@@ -97,10 +99,10 @@ export const BuildRefreshButton = ({
           <div className="flex flex-col gap-2">
             <div>
               {refreshState.type === "idle"
-                ? "The following commands need to rerun"
+                ? "The following commands need to rerun:"
                 : refreshState.type === "requesting"
-                ? "Waiting for demon to start build"
-                : "Demon is running the commands"}
+                ? "Waiting to start build"
+                : "Running commands"}
             </div>
             <div className="w-full border-t border-gray-300"></div>
 
@@ -141,11 +143,11 @@ export const DisabledBuildRefreshButton = () => {
           <Button
             variant="outline"
             size="sm"
-            className="h-8 px-2 text-xs"
+            className="h-8 px-2 text-xs w-fit"
             disabled={true}
           >
             <RefreshCw size={14} className="mr-1" />
-            Refresh
+            Rebuild
           </Button>
         </TooltipTrigger>
 

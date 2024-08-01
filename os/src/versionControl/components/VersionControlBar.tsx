@@ -56,11 +56,21 @@ import { toast } from "sonner";
 import { createJacquardBranch, mergeBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../signals";
 import { DocViewMode, SidebarMode } from "./VersionControlEditor";
+import { useJacquardProjectInfoWithActiveBranch } from "@patchwork/jacquard/src/hooks";
+import { ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
+import { getStalenessInfo } from "@patchwork/jacquard/src/getStalenessInfo";
+import { getProjectStateFromProjectInfo } from "@patchwork/jacquard/src/signals";
+import {
+  BuildRefreshButton,
+  DisabledBuildRefreshButton,
+} from "@patchwork/jacquard/src/components/BuildRefreshButton";
 
 // interface MakeBranchOptions {
 //   name?: string;
 //   heads?: A.Heads;
 // }
+
+const VerticalSeparator = <div className="h-8 w-px bg-gray-300 mx-2" />;
 
 export const VersionControlBar = ({
   docUrl,
@@ -155,19 +165,55 @@ export const VersionControlBar = ({
   //   setIsHoveringYankToBranchOption(false);
   // };
 
-  const handleMergeBranch = useCallback((activeBranchOm: Om<BranchDoc>) => {
-    if (!account) {
-      throw new Error("Cannot merge branch without account information for `mergedBy`");
-    }
+  const jacquardProjectInfo = useJacquardProjectInfoWithActiveBranch(
+    getFakeDocPathForDocUrl(docUrl)
+  );
+  const projectState = ifLoaded(
+    useDocReactive(
+      useCallback(() => {
+        waitForDR(jacquardProjectInfo);
 
-    mergeBranch({
-      repo,
-      branchOm: activeBranchOm,
-      mergedBy: account.contactHandle.url,
-    });
-    setActiveBranchUrl(null);
-    toast.success("Branch merged to main");
-  }, [account, repo, setActiveBranchUrl]);
+        if (!jacquardProjectInfo) {
+          return;
+        }
+
+        return getProjectStateFromProjectInfo(jacquardProjectInfo, repo);
+      }, [jacquardProjectInfo, repo])
+    )
+  );
+
+  const stalenessInfo = projectState
+    ? getStalenessInfo(projectState)
+    : undefined;
+
+  const numStaleDocs = stalenessInfo
+    ? Object.values(stalenessInfo.docStatuses).reduce(
+        (acc, docStatus) => acc + docStatus.length,
+        0
+      )
+    : 0;
+
+  const enableRefreshButton =
+    jacquardProjectInfo?.buildMetadataOm && numStaleDocs > 0;
+
+  const handleMergeBranch = useCallback(
+    (activeBranchOm: Om<BranchDoc>) => {
+      if (!account) {
+        throw new Error(
+          "Cannot merge branch without account information for `mergedBy`"
+        );
+      }
+
+      mergeBranch({
+        repo,
+        branchOm: activeBranchOm,
+        mergedBy: account.contactHandle.url,
+      });
+      setActiveBranchUrl(null);
+      toast.success("Branch merged to main");
+    },
+    [account, repo, setActiveBranchUrl]
+  );
 
   // const rebaseBranch = (draftUrl: AutomergeUrl) => {
   //   const draftHandle =
@@ -183,8 +229,8 @@ export const VersionControlBar = ({
   // };
 
   return (
-    <div className="bg-gray-100 pl-4 py-2 flex gap-4 items-center border-b border-gray-200">
-      <div className="flex items-center">
+    <div className="bg-gray-100 pl-4 py-2 flex gap-2 border-b border-gray-200">
+      <div className="flex flex-col gap-0.5">
         <Select
           value={activeBranchOm?.url ?? null} // select doesn't like undefined
           onValueChange={(value) => {
@@ -302,7 +348,7 @@ export const VersionControlBar = ({
         </Select>
         {isInsideBranchScope && (
           <div className="pl-2 text-xs text-gray-500 cursor-default">
-            (branch of{" "}
+            branch of{" "}
             <span
               className="underline cursor-pointer"
               onClick={() =>
@@ -316,12 +362,11 @@ export const VersionControlBar = ({
               {/* TODO: only folders can contain documents, so far... */}
               {(branchScopeOm.doc as FolderDoc).title}
             </span>
-            )
           </div>
         )}
       </div>
 
-      <div className="flex gap-1 items-center">
+      <div className="flex gap-1">
         {activeBranchOm && (
           <div>
             <Button
@@ -345,127 +390,137 @@ export const VersionControlBar = ({
             </Button>
           </div>
         )}
+
         {activeBranchOm && (
-          <div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowChangesFlag(!showChangesFlag)}
-                    className={`h-8 px-2 text-xs ${
-                      showChangesFlag
-                        ? "shadow-inner shadow-gray-300 border-gray-400 "
-                        : "shadow-none"
-                    }`}
-                  >
-                    <FileDiffIcon className="h-4 w-4 mr-1" />
-                    Diff
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Highlight changes compared to main</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          <div className="mt-2 ml-1">
+            <BranchActions
+              activeBranchOm={activeBranchOm}
+              branchScopeVersionControlMetadataOm={
+                branchScopeVersionControlMetadataOm
+              }
+              setActiveBranchUrl={setActiveBranchUrl}
+            />
           </div>
         )}
+      </div>
 
-        {(activeBranchOm || datatypeId === "file") && (
-          <Select
-            onValueChange={(value) => {
-              setDocViewMode(value as DocViewMode);
-            }}
-            value={docViewMode}
-          >
-            <SelectTrigger className="h-8 px-2 text-xs">
-              {docViewMode === "showFile" && (
-                <FileIcon className="mr-2 h-4 w-4" />
-              )}
-              {docViewMode === "showInputs" && (
-                <ArrowRightToLineIcon className="mr-2 h-4 w-4" />
-              )}
-              {docViewMode === "showOutputs" && (
-                <ArrowRightFromLineIcon className="mr-2 h-4 w-4" />
-              )}
-              {docViewMode === "compareWithMain" && (
-                <ColumnsIcon className="mr-2 h-4 w-4" />
-              )}
-              View
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {/* TODO: shouldn't have datatype specific code here */}
-                {datatypeId === "file" && (
-                  <>
-                    <SelectItem value="showFile">
-                      <div className="flex gap-2">
-                        <FileIcon className="h-4 w-4" />
-                        Show just this file
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="showInputs">
-                      <div className="flex gap-2">
-                        <ArrowRightToLineIcon className="h-4 w-4" />
-                        Show with build inputs
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="showOutputs">
-                      <div className="flex gap-2">
-                        <ArrowRightFromLineIcon className="h-4 w-4" />
-                        Show with build outputs
-                      </div>
-                    </SelectItem>
-                  </>
-                )}
-                {activeBranchOm && (
-                  <SelectItem value="compareWithMain">
+      {VerticalSeparator}
+
+      {(activeBranchOm || datatypeId === "file") && (
+        <Select
+          onValueChange={(value) => {
+            setDocViewMode(value as DocViewMode);
+          }}
+          value={docViewMode}
+        >
+          <SelectTrigger className="h-8 px-2 text-xs w-20">
+            {docViewMode === "showFile" && (
+              <FileIcon className="mr-2 h-4 w-4" />
+            )}
+            {docViewMode === "showInputs" && (
+              <ArrowRightToLineIcon className="mr-2 h-4 w-4" />
+            )}
+            {docViewMode === "showOutputs" && (
+              <ArrowRightFromLineIcon className="mr-2 h-4 w-4" />
+            )}
+            {docViewMode === "compareWithMain" && (
+              <ColumnsIcon className="mr-2 h-4 w-4" />
+            )}
+            View
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {/* TODO: shouldn't have datatype specific code here */}
+              {datatypeId === "file" && (
+                <>
+                  <SelectItem value="showFile">
                     <div className="flex gap-2">
-                      <ColumnsIcon className="h-4 w-4" />
-                      Compare with main
+                      <FileIcon className="h-4 w-4" />
+                      Show just this file
                     </div>
                   </SelectItem>
-                )}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        )}
+                  <SelectItem value="showInputs">
+                    <div className="flex gap-2">
+                      <ArrowRightToLineIcon className="h-4 w-4" />
+                      Show with build inputs
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="showOutputs">
+                    <div className="flex gap-2">
+                      <ArrowRightFromLineIcon className="h-4 w-4" />
+                      Show with build outputs
+                    </div>
+                  </SelectItem>
+                </>
+              )}
+              {activeBranchOm && (
+                <SelectItem value="compareWithMain">
+                  <div className="flex gap-2">
+                    <ColumnsIcon className="h-4 w-4" />
+                    Compare with main
+                  </div>
+                </SelectItem>
+              )}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      )}
 
-        {/*activeBranchOm && (
-          <div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    onClick={() => setCompareWithMainFlag(!compareWithMainFlag)}
-                    className={`h-8 px-2 text-xs ${
-                      compareWithMainFlag
-                        ? "shadow-inner shadow-gray-300  border-gray-400 "
-                        : "shadow-none "
-                    }`}
-                  >
-                    <ColumnsIcon className="h-4 w-4 mr-1" />
-                    Compare
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Show side by side with main</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        )*/}
+      {activeBranchOm && (
+        <div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowChangesFlag(!showChangesFlag)}
+                  className={`h-8 px-2 text-xs ${
+                    showChangesFlag
+                      ? "shadow-inner shadow-gray-300 border-gray-400 "
+                      : "shadow-none"
+                  }`}
+                >
+                  <FileDiffIcon className="h-4 w-4 mr-1" />
+                  Highlight changes
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Highlight changes compared to main</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
 
-        {activeBranchOm && (
-          <BranchActions
-            activeBranchOm={activeBranchOm}
-            branchScopeVersionControlMetadataOm={
-              branchScopeVersionControlMetadataOm
-            }
-            setActiveBranchUrl={setActiveBranchUrl}
+      {VerticalSeparator}
+
+      <div className="flex flex-col gap-0.5">
+        {enableRefreshButton ? (
+          <BuildRefreshButton
+            projectBuildMetadataOm={jacquardProjectInfo.buildMetadataOm}
+            projectState={projectState}
+            alignTooltip="start"
           />
+        ) : (
+          <DisabledBuildRefreshButton />
         )}
+
+        <div className="text-xs text-gray-500">
+          {numStaleDocs > 0 && <span>{numStaleDocs} files to rebuild</span>}
+          {numStaleDocs === 0 && <span>project up to date</span>}
+          <span
+            className="underline cursor-pointer ml-1"
+            onClick={() =>
+              selectDocLink({
+                url: jacquardProjectInfo.buildMetadataOm.url,
+                name: "Build Metadata",
+                type: "jacquard-build-metadata",
+              })
+            }
+          >
+            see details
+          </span>
+        </div>
       </div>
 
       {!sidebarMode && (
@@ -560,7 +615,7 @@ const BranchActions: React.FC<{
       <DropdownMenuTrigger>
         <MoreHorizontal
           size={18}
-          className="mt-1 mr-21 text-gray-500 hover:text-gray-800"
+          className=" text-gray-500 hover:text-gray-800"
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="mr-4 w-72">

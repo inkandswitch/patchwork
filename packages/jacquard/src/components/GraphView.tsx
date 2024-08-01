@@ -15,7 +15,6 @@ import {
 } from "../getStalenessInfo";
 import { useJacquardProjectInfoWithActiveBranch } from "../hooks";
 import { getProjectStateFromProjectInfo } from "../signals";
-import { BuildRefreshButton } from "./BuildRefreshButton";
 
 export const GraphView = ({
   mainDocUrl,
@@ -46,17 +45,7 @@ export const GraphView = ({
   }
 
   return (
-    <div className="p-4 flex flex-col">
-      <div className="flex">
-        <div className="flex-1" />
-        {jacquardProjectInfo?.buildMetadataOm && (
-          <BuildRefreshButton
-            projectBuildMetadataOm={jacquardProjectInfo.buildMetadataOm}
-            projectState={projectState}
-            alignTooltip="end"
-          />
-        )}
-      </div>
+    <div className="p-4">
       <GraphvizView source={stateGraphSrc(projectState)} />
     </div>
   );
