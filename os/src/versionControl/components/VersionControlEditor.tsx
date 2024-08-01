@@ -23,14 +23,7 @@ import { VersionControlBar } from "./VersionControlBar";
 import { ifLoaded } from "@/doc-reactive";
 import { fakeDocPath } from "../signals";
 import { ReviewSidebar } from "./ReviewSidebar";
-
-export type SidebarMode = "review" | "history" | "Bot";
-
-export type DocViewMode =
-  | "showFile"
-  | "showInputs"
-  | "showOutputs"
-  | "compareWithMain";
+import { useDocumentUIState } from "@/explorer/account";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -47,19 +40,20 @@ export const VersionControlEditor: React.FC<{
   tool,
   addNewDocument,
   selectedDocLink,
-  flatDocLinks,
   getFakeDocPathForDocUrl,
 }) => {
   const [doc, changeDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
+
+  const [docUIState, changeDocUIState] = useDocumentUIState(
+    getFakeDocPathForDocUrl(mainDocUrl)
+  );
 
   // const uiStateHandle = useUIStateHandle();
   const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
   // const [isHoveringYankToBranchOption, setIsHoveringYankToBranchOption] =
   //   useState(false);
-  const [showChangesFlag, setShowChangesFlag] = useState<boolean>(true);
-  const [docViewMode, setDocViewMode] = useState<DocViewMode>("showFile");
   // const dataTypes = useDataTypes();
 
   // Reset compare view settings every time you switch branches
@@ -72,18 +66,6 @@ export const VersionControlEditor: React.FC<{
   //     setShowChangesFlag(true);
   //   }
   // }, [JSON.stringify(legacySelectedBranch)]);
-
-  const [sidebarMode, _setSidebarMode] = useState<SidebarMode | null>(null);
-
-  const setSidebarMode = (sidebarMode: SidebarMode | null) => {
-    // reset state from history mode
-    if (sidebarMode !== "history") {
-      // setDiffFromTimelineSidebar(undefined);
-      // setDocHeadsFromTimelineSidebar(undefined);
-    }
-
-    _setSidebarMode(sidebarMode);
-  };
 
   // const [diffFromTimelineSidebar, setDiffFromTimelineSidebar] =
   //   useState<DiffWithProvenance>();
@@ -152,7 +134,7 @@ export const VersionControlEditor: React.FC<{
     doc: cloneOrMainOm?.doc as A.Doc<HasVersionControlMetadata>,
     dataType,
     isCommentInputFocused,
-    diff: showChangesFlag ? diff : undefined,
+    diff: docUIState.highlightChanges ? diff : undefined,
   });
 
   // global comment keyboard shortcut
@@ -170,7 +152,7 @@ export const VersionControlEditor: React.FC<{
         event.stopPropagation();
 
         if (!supportsInlineComments || selectedAnchors.length === 0) {
-          setSidebarMode("review");
+          changeDocUIState((state) => (state.sidebarMode = "review"));
         }
 
         setCommentState({
@@ -185,7 +167,12 @@ export const VersionControlEditor: React.FC<{
     return () => {
       window.removeEventListener("keydown", handleKeyPress, true);
     };
-  }, [selectedAnchors, setCommentState, supportsInlineComments]);
+  }, [
+    selectedAnchors,
+    setCommentState,
+    supportsInlineComments,
+    changeDocUIState,
+  ]);
 
   // init branch metadata when the doc loads if it doesn't have it already
   useEffect(() => {
@@ -216,15 +203,16 @@ export const VersionControlEditor: React.FC<{
   //
   // As a short term workaround we filter out all comments if the timeline sidebar is active
   const visibleAnnotations =
-    sidebarMode === "history"
+    docUIState.sidebarMode === "history"
       ? annotations.filter((annotation) => annotation.type !== "highlighted")
       : annotations;
 
   // for now hide inline comments if side by side is enabled because there is not enought space
-  const hideInlineComments = !!sidebarMode || !!docViewMode;
+  const hideInlineComments =
+    !!docUIState.sidebarMode || !!docUIState.mainViewMode;
 
   const highlightSidebarButton =
-    !sidebarMode &&
+    !docUIState.sidebarMode &&
     annotations.some((a) => a.type === "highlighted" && a.isEmphasized) &&
     (!supportsInlineComments || hideInlineComments);
 
@@ -236,12 +224,6 @@ export const VersionControlEditor: React.FC<{
             docUrl={mainDocUrl}
             datatypeId={datatypeId}
             branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
-            sidebarMode={sidebarMode}
-            setSidebarMode={setSidebarMode}
-            showChangesFlag={showChangesFlag}
-            setShowChangesFlag={setShowChangesFlag}
-            docViewMode={docViewMode}
-            setDocViewMode={setDocViewMode}
             highlightSidebarButton={highlightSidebarButton}
             getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
           />
@@ -253,7 +235,7 @@ export const VersionControlEditor: React.FC<{
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <div className="flex-grow items-stretch justify-stretch relative flex flex-col overflow-hidden">
             <div className="flex-1 min-h-0 relative">
-              {docViewMode === "compareWithMain" ? (
+              {docUIState.mainViewMode === "compareWithMain" ? (
                 <SideBySide
                   key={cloneOrMainOm.url}
                   tool={tool}
@@ -273,7 +255,6 @@ export const VersionControlEditor: React.FC<{
                   activeBranchUrl={
                     branchScopeAndActiveBranchInfo.activeBranchOm?.url
                   }
-                  highlightChanges={showChangesFlag}
                 />
               ) : (
                 <DocEditor
@@ -289,14 +270,12 @@ export const VersionControlEditor: React.FC<{
                   setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
                   setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
                   hideInlineComments={hideInlineComments}
-                  docViewMode={docViewMode}
                   setCommentState={setCommentState}
                   getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                   mainDocUrl={mainDocUrl}
                   activeBranchUrl={
                     branchScopeAndActiveBranchInfo.activeBranchOm?.url
                   }
-                  highlightChanges={showChangesFlag}
                 />
               )}
             </div>
@@ -322,20 +301,24 @@ export const VersionControlEditor: React.FC<{
         />
       </div>
 
-      {sidebarMode && (
+      {docUIState.sidebarMode && (
         <div className="border-l border-gray-200 py-2 h-full flex flex-col relative bg-gray-50">
           <div
             className="-left-[33px] absolute cursor-pointer hover:bg-gray-100 border hover:border-gray-500 rounded-lg w-[24px] h-[24px] grid place-items-center"
-            onClick={() => setSidebarMode(null)}
+            onClick={() =>
+              changeDocUIState((state) => (state.sidebarMode = null))
+            }
           >
             <ChevronsRight size={16} />
           </div>
 
           <div className="px-2 pb-2 flex flex-col gap-2 text-sm font-semibold text-gray-600 border-b border-gray-200">
             <Tabs
-              value={sidebarMode}
+              value={docUIState.sidebarMode}
               onValueChange={(mode) =>
-                setSidebarMode(mode as "review" | "history")
+                changeDocUIState(
+                  (state) => (state.sidebarMode = mode as "review" | "history")
+                )
               }
             >
               <TabsList className="grid w-full grid-cols-3">
@@ -356,7 +339,7 @@ export const VersionControlEditor: React.FC<{
           </div>
 
           <div className="min-h-0 flex-grow w-96">
-            {sidebarMode === "history" && (
+            {docUIState.sidebarMode === "history" && (
               <div className="p-4 text-gray-600">
                 <p>History is not available in Jacquard Patchwork yet.</p>
               </div>
@@ -374,7 +357,7 @@ export const VersionControlEditor: React.FC<{
               />
             )} */}
 
-            {sidebarMode === "review" && (
+            {docUIState.sidebarMode === "review" && (
               <ReviewSidebar
                 doc={cloneOrMainOm.doc}
                 handle={cloneOrMainOm.handle}
@@ -427,9 +410,7 @@ const DocEditor = <T, V>({
   setCommentState,
   getFakeDocPathForDocUrl,
   mainDocUrl,
-  docViewMode,
   activeBranchUrl,
-  highlightChanges,
 }: EditorPropsWithTool<T, V>) => {
   if (!tool) {
     return;
@@ -452,9 +433,7 @@ const DocEditor = <T, V>({
       setCommentState={setCommentState}
       getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
       mainDocUrl={mainDocUrl}
-      docViewMode={docViewMode}
       activeBranchUrl={activeBranchUrl}
-      highlightChanges={highlightChanges}
     />
   );
 };

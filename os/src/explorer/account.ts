@@ -5,19 +5,30 @@ import {
   isValidAutomergeUrl,
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
-import { useDocument, useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useHandle,
+  useRepo,
+} from "@automerge/automerge-repo-react-hooks";
 import { EventEmitter } from "eventemitter3";
 
 import { useForceUpdate } from "@/hooks/useForceUpdate";
 import { ChangeFn } from "@automerge/automerge/next";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { uploadFile } from "./utils";
 
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { useFolderDocWithChildren } from "../packages/folder/hooks/useFolderDocWithChildren";
 import { typeOnlyAssert } from "@/utils";
-import { DocReactiveState, getDoc, getOm, ifLoaded, LoadingError, useDocReactive } from "@/doc-reactive";
+import {
+  DocReactiveState,
+  getDoc,
+  getOm,
+  ifLoaded,
+  LoadingError,
+  useDocReactive,
+} from "@/doc-reactive";
 import { Om } from "@/om";
 
 export type ModuleSettingsDoc = {
@@ -31,6 +42,20 @@ export interface AccountDoc {
   moduleSettingsUrl: AutomergeUrl;
 }
 
+export type SidebarMode = "review" | "history" | "Bot";
+
+export type MainViewMode =
+  | "showFile"
+  | "showInputs"
+  | "showOutputs"
+  | "compareWithMain";
+
+export type DocUIState = {
+  mainViewMode: MainViewMode;
+  sidebarMode?: SidebarMode;
+  highlightChanges: boolean;
+};
+
 export type UIStateDoc = {
   /** Folders that are toggled open in the user's sidebar.
    *  (If the object is here it counts as open; otherwise we default to closed)
@@ -41,6 +66,8 @@ export type UIStateDoc = {
    *  Map from branch scope path string (made via docPathString) to branch URL.
    */
   openBranches: { [docPathString: string]: AutomergeUrl };
+
+  docUIStates: { [docPathString: string]: DocUIState };
 };
 
 export function docPathString(docPath: DocPath): string {
@@ -323,7 +350,9 @@ export function useRootFolderDocWithChildren() {
   const repo = useRepo();
   useEffect(() => {
     if (accountDoc) {
-      (window as any).rootFolderHandle = repo.find<FolderDoc>(accountDoc.rootFolderUrl);
+      (window as any).rootFolderHandle = repo.find<FolderDoc>(
+        accountDoc.rootFolderUrl
+      );
     }
   }, [repo, accountDoc]);
 
@@ -346,15 +375,56 @@ export const useDatatypeSettings = (): ModuleSettingsDoc | undefined => {
   return datatypeSettingsDoc;
 };
 
+const DEFAULT_STATE: DocUIState = {
+  mainViewMode: "showFile",
+  sidebarMode: null,
+  highlightChanges: true,
+};
+
+export const useDocumentUIState = (
+  docPath: DocPath
+): [DocUIState, (fn: (state: DocUIState) => void) => void] => {
+  const key = docPathString(docPath);
+  const uiStateOm = ifLoaded(useUIStateOm());
+
+  // todo: don't update ui state if it was changed in another tab
+
+  return useMemo(() => {
+    const changeUiStateOfDoc = (fn: (viewState: DocUIState) => void) => {
+      uiStateOm.handle.change((uiState) => {
+        if (!uiState.docUIStates) {
+          uiState.docUIStates = {};
+        }
+
+        if (!uiState.docUIStates[key]) {
+          uiState.docUIStates[key] = DEFAULT_STATE;
+        }
+
+        fn(uiState.docUIStates[key]);
+      });
+    };
+
+    const docViewState: DocUIState =
+      (uiStateOm?.doc?.docUIStates && uiStateOm.doc.docUIStates[key]) ??
+      DEFAULT_STATE;
+
+    return [docViewState, changeUiStateOfDoc];
+  }, [key, uiStateOm]);
+};
+
 export const useUIStateOm = (): DocReactiveState<Om<UIStateDoc>> => {
   const repo = useRepo();
   const account = useCurrentAccount();
-  return useDocReactive(useCallback(() => {
-    if (!account) { throw new LoadingError(); }
-    const accountDoc = getDoc<AccountDoc>(account.handle.url, repo);
-    return getOm<UIStateDoc>(accountDoc.uiStateUrl, repo);
-  }, [account, repo]));
-}
+  return useDocReactive(
+    useCallback(() => {
+      if (!account) {
+        throw new LoadingError();
+      }
+      const accountDoc = getDoc<AccountDoc>(account.handle.url, repo);
+      return getOm<UIStateDoc>(accountDoc.uiStateUrl, repo);
+    }, [account, repo])
+  );
+};
 
 export const useUIStateHandle = (): DocHandle<UIStateDoc> | undefined => {
   return ifLoaded(useUIStateOm())?.handle;

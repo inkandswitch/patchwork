@@ -13,9 +13,9 @@ import {
 import { toast } from "sonner";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { LegacyBranch, HasVersionControlMetadata } from "../schema";
-import { SidebarMode } from "./VersionControlEditor";
 import Markdown from "react-markdown";
 import { isLLMActive } from "@/lib/llm";
+import { SidebarMode } from "@/explorer/account";
 
 export type HasBotChatHistory = {
   botChatHistory: ChatMessage[];
@@ -118,7 +118,7 @@ export const BotSidebar = ({
         content: ACCEPT_MESSAGE,
       });
     });
-    mergeBranch(selectedBranch!.url);  // TODO: JAH strict fix
+    mergeBranch(selectedBranch!.url); // TODO: JAH strict fix
   };
   const rejectSuggestion = () => {
     handle.change((d) => {
@@ -131,7 +131,7 @@ export const BotSidebar = ({
     // need to also do the update on the main doc because we're not merging the branch...
     const mainDocHandle = repo.find<
       HasVersionControlMetadata<unknown, unknown>
-    >(doc.branchMetadata.source!.url);  // TODO: JAH strict fix
+    >(doc.branchMetadata.source!.url); // TODO: JAH strict fix
     mainDocHandle.change((d) => {
       d.botChatHistory.push({
         role: "user",
@@ -139,7 +139,7 @@ export const BotSidebar = ({
       });
     });
 
-    deleteBranch(selectedBranch!.url);  // TODO: JAH strict fix
+    deleteBranch(selectedBranch!.url); // TODO: JAH strict fix
 
     setSelectedBranch(undefined);
   };
@@ -191,7 +191,7 @@ export const BotSidebar = ({
               return (
                 <div
                   key={index}
-                  className="text-sm text-gray-500 text-xs w-auto inline-block self-end mr-2"
+                  className="text-sm text-gray-500 w-auto inline-block self-end mr-2"
                 >
                   {message.content === ACCEPT_MESSAGE && (
                     <div className="flex items-center gap-2">

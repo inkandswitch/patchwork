@@ -8,12 +8,16 @@ import {
   HasVersionControlMetadata,
 } from "@/versionControl/schema";
 import { usePackageModulesInRootFolder } from "@/packages/pkg/usePackages";
-import { ActorId, AutomergeUrl, DocHandle, Heads } from "@automerge/automerge-repo";
+import {
+  ActorId,
+  AutomergeUrl,
+  DocHandle,
+  Heads,
+} from "@automerge/automerge-repo";
 import { DataType } from "./datatypes";
 import { IconType } from "./lib/icons";
 import * as PACKAGES from "./packages";
 import { DocPath } from "./packages/folder/datatype";
-import { DocViewMode } from "./versionControl/components/VersionControlEditor";
 
 export type Tool = {
   id: string;
@@ -63,11 +67,6 @@ export type EditorProps<A, V> = {
   // HACK
   mainDocUrl: AutomergeUrl;
   activeBranchUrl?: AutomergeUrl;
-  docViewMode?: DocViewMode;
-
-  // Hack, folder needs to know if highlight is enabled so it can conditionally pass down
-  // change annotations to the embedded file views
-  highlightChanges?: boolean;
 };
 
 export type AnnotationsViewProps<

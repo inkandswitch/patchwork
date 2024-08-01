@@ -15,6 +15,7 @@ import { FitsFileDoc, FitsFileViewer, isFitsFile } from "./FitsFileViewer";
 import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
+import { useDocumentUIState } from "@/explorer/account";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -26,10 +27,11 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
     docUrl,
     mainDocUrl,
     docHeads,
-    docViewMode,
     getFakeDocPathForDocUrl,
     activeBranchUrl,
   } = props;
+
+  const [docUIState] = useDocumentUIState(getFakeDocPathForDocUrl(mainDocUrl));
 
   const [_doc] = useDocument<FileDoc>(docUrl);
 
@@ -60,7 +62,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
       useCallback(() => {
         waitForDR(projectState);
         return getBuildRunsWithDocAsPrimaryInput(projectState, mainDocUrl);
-      }, [projectState, docUrl])
+      }, [projectState, mainDocUrl])
     )
   );
 
@@ -130,7 +132,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
           </>
         )}
       </div>
-      {docViewMode === "showOutputs" && (
+      {docUIState.mainViewMode === "showOutputs" && (
         <div className="flex-1 overflow-auto border-l border-gray-200">
           {outputFiles.map(({ docUrl, mainDocUrl }) => (
             <FileEditor

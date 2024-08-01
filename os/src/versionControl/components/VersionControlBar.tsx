@@ -1,4 +1,8 @@
-import { useCurrentAccount } from "@/explorer/account";
+import {
+  MainViewMode,
+  useCurrentAccount,
+  useDocumentUIState,
+} from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { getRelativeTimeString } from "@/lib/dates";
@@ -55,7 +59,6 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { createJacquardBranch, mergeBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../signals";
-import { DocViewMode, SidebarMode } from "./VersionControlEditor";
 import { useJacquardProjectInfoWithActiveBranch } from "@patchwork/jacquard/src/hooks";
 import { ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
 import { getStalenessInfo } from "@patchwork/jacquard/src/getStalenessInfo";
@@ -79,26 +82,14 @@ export const VersionControlBar = ({
   docUrl,
   datatypeId,
   branchScopeAndActiveBranchInfo,
-  sidebarMode,
-  setSidebarMode,
-  showChangesFlag,
-  setShowChangesFlag,
   highlightSidebarButton,
   getFakeDocPathForDocUrl,
-  docViewMode,
-  setDocViewMode,
 }: {
   docUrl: AutomergeUrl;
   datatypeId: string;
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
-  sidebarMode: SidebarMode | null;
-  setSidebarMode: (mode: SidebarMode) => void;
-  showChangesFlag: boolean;
-  setShowChangesFlag: (flag: boolean) => void;
   highlightSidebarButton: boolean;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
-  docViewMode: DocViewMode;
-  setDocViewMode: (docViewMode: DocViewMode) => void;
 }) => {
   const {
     branchScopeOm,
@@ -107,12 +98,15 @@ export const VersionControlBar = ({
     branchOms,
     isRealBranchScope,
     branchScopeVersionControlMetadataOm,
-    cloneOrMainOm,
   } = branchScopeAndActiveBranchInfo;
 
   const repo = useRepo();
   const dataTypes = useDataTypes();
   const account = useCurrentAccount();
+
+  const [docUIState, changeDocUIState] = useDocumentUIState(
+    getFakeDocPathForDocUrl(docUrl)
+  );
 
   const handleCreateJacquardBranch = useCallback(async () => {
     const docPathForBranchScope = getFakeDocPathForDocUrl(branchScopeOm.url);
@@ -455,21 +449,23 @@ export const VersionControlBar = ({
       {(activeBranchOm || datatypeId === "file") && (
         <Select
           onValueChange={(value) => {
-            setDocViewMode(value as DocViewMode);
+            changeDocUIState(
+              (state) => (state.mainViewMode = value as MainViewMode)
+            );
           }}
-          value={docViewMode}
+          value={docUIState.mainViewMode}
         >
           <SelectTrigger className="h-8 px-2 text-xs w-20">
-            {docViewMode === "showFile" && (
+            {docUIState.mainViewMode === "showFile" && (
               <FileIcon className="mr-2 h-4 w-4" />
             )}
-            {docViewMode === "showInputs" && (
+            {docUIState.mainViewMode === "showInputs" && (
               <ArrowRightToLineIcon className="mr-2 h-4 w-4" />
             )}
-            {docViewMode === "showOutputs" && (
+            {docUIState.mainViewMode === "showOutputs" && (
               <ArrowRightFromLineIcon className="mr-2 h-4 w-4" />
             )}
-            {docViewMode === "compareWithMain" && (
+            {docUIState.mainViewMode === "compareWithMain" && (
               <ColumnsIcon className="mr-2 h-4 w-4" />
             )}
             View
@@ -510,15 +506,22 @@ export const VersionControlBar = ({
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  onClick={() => setShowChangesFlag(!showChangesFlag)}
+                  onClick={() =>
+                    changeDocUIState(
+                      (state) =>
+                        (state.highlightChanges = !state.highlightChanges)
+                    )
+                  }
                   className={`h-8 px-2 text-xs ${
-                    showChangesFlag
+                    docUIState.highlightChanges
                       ? "shadow-inner shadow-gray-300 border-gray-400 "
                       : "shadow-none"
                   }`}
                 >
                   <FileDiffIcon className="h-4 w-4 mr-1" />
-                  Highlight changes
+                  <span className="whitespace-nowrap text-ellipsis">
+                    Highlight changes
+                  </span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -529,11 +532,13 @@ export const VersionControlBar = ({
         </div>
       )}
 
-      {!sidebarMode && (
+      {!docUIState.sidebarMode && (
         <div className="ml-auto mr-4">
           <div className="flex items-center gap-2">
             <Button
-              onClick={() => setSidebarMode("review")}
+              onClick={() =>
+                changeDocUIState((state) => (state.sidebarMode = "review"))
+              }
               variant="outline"
               className={`h-8 text-xs ${
                 highlightSidebarButton

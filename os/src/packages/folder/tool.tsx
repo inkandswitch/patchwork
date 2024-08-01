@@ -3,11 +3,16 @@ import * as A from "@automerge/automerge/next";
 import React, { useMemo, useState } from "react";
 
 import { useDataType } from "@/datatypes";
-import { useUIStateHandle } from "@/explorer/account";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { Icon, IconType } from "@/lib/icons";
-import { ifLoaded } from "@/doc-reactive";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shadcn/ui/select";
 import { EditorProps, Tool, useToolsForDataType } from "@/tools";
 import { useAnnotations } from "@/versionControl/annotations";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
@@ -17,26 +22,22 @@ import { AutomergeUrl } from "@automerge/automerge-repo";
 import { ErrorBoundary } from "react-error-boundary";
 import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shadcn/ui/select";
+import { useDocumentUIState } from "@/explorer/account";
 
 export const FolderViewerWithEmbeds: React.FC<
   EditorProps<unknown, unknown>
 > = ({
   docUrl,
+  mainDocUrl,
   docHeads,
   getFakeDocPathForDocUrl,
-  highlightChanges,
   activeBranchUrl,
 }: EditorProps<unknown, unknown>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
   const folderAtHeads = folder && docHeads ? A.view(folder, docHeads) : folder;
   const [hideUnchangedFiles, setHideUnchangedFiles] = useState(false);
+
+  const [docUIState] = useDocumentUIState(getFakeDocPathForDocUrl(mainDocUrl));
 
   if (!folder || !folderAtHeads) {
     return null;
@@ -73,7 +74,7 @@ export const FolderViewerWithEmbeds: React.FC<
             docLink={docLink}
             key={index}
             getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-            highlightChanges={highlightChanges ?? false}
+            highlightChanges={docUIState.highlightChanges ?? false}
             hideUnchangedFiles={hideUnchangedFiles}
           />
         ))}
