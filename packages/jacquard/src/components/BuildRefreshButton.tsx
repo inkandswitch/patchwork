@@ -108,10 +108,17 @@ export const BuildRefreshButton = ({
 
             {refreshState?.type === "processing" && (
               <div>
-                {refreshState.buildRuns.map(({ command, progress }) => (
-                  <div key={command} className="flex gap-2 items-center">
-                    <ProgressIcon state={progress} />
-                    <div className="font-mono">{command}</div>
+                {refreshState.buildRuns?.map(({ command, progress, log }) => (
+                  <div key={command} className="flex flex-col gap-2">
+                    <div className="flex gap-2 items-center">
+                      <ProgressIcon state={progress} />
+                      <div className="font-mono">{command}</div>
+                    </div>
+                    {progress === "running" && (
+                      <pre className="text-xs">
+                        {log?.join("").split("\n").slice(-5).join("\n")}
+                      </pre>
+                    )}
                   </div>
                 ))}
               </div>

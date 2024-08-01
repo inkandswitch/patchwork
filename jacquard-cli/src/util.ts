@@ -11,6 +11,8 @@ import fs from "fs";
 import { isBinaryFileSync } from "isbinaryfile";
 import path from "path";
 import { FileContent } from "../../packages/file/src/datatype";
+import { PassThrough } from "node:stream";
+import { inspect } from "node:util";
 
 export function getBuildMetadataDocUrl(folderDoc: Doc<FolderDoc>) {
   return folderDoc.docs.find((link) => link.name === "Build Metadata")?.url;
@@ -161,3 +163,92 @@ export function formatFileSize(bytes: number): string {
   }
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 }
+
+export async function interceptOutput<T>(
+  {
+    onStdout,
+    onStderr,
+  }: {
+    onStdout?: (data: Uint8Array | string) => void;
+    onStderr?: (data: Uint8Array | string) => void;
+  },
+  cb: () => Promise<T>
+): Promise<T> {
+  const originalStdout = process.stdout;
+  // @ts-ignore
+  process.stdout = new PassThrough();
+  process.stdout.pipe(originalStdout);
+  process.stdout.on("data", (data) => {
+    onStdout?.(data);
+  });
+
+  const originalStderr = process.stderr;
+  // @ts-ignore
+  process.stderr = new PassThrough();
+  process.stderr.pipe(originalStderr);
+  process.stderr.on("data", (data) => {
+    onStderr?.(data);
+  });
+
+  // At least in Bun, console.log and console.error don't ask for
+  // process.stdout/stderr, so we need to intercept them separately.
+
+  const originalConsoleLog = console.log;
+  console.log = (...args: any) => {
+    // TODO: imperfect stringification
+    const output = args.map(stringifyForConsole).join(" ") + "\n";
+    onStdout?.(output);
+    originalConsoleLog(...args);
+  };
+
+  const originalConsoleError = console.error;
+  console.error = (...args: any) => {
+    // TODO: imperfect stringification
+    const output = args.map(stringifyForConsole).join(" ") + "\n";
+    onStderr?.(output);
+    originalConsoleError(...args);
+  };
+
+  try {
+    return await cb();
+  } finally {
+    process.stdout.end();
+    process.stderr.end();
+    process.stdout = originalStdout;
+    process.stderr = originalStderr;
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
+  }
+}
+
+function stringifyForConsole(data: any): string {
+  if (typeof data === "string") {
+    return data;
+  } else {
+    return inspect(data, { depth: null, colors: true });
+  }
+}
+
+// a little test of interceptOutput...
+
+// const stdouts: string[] = [];
+// const stderrs: string[] = [];
+// interceptOutput(
+//   {
+//     onStdout: (data) => {
+//       stdouts.push(data.toString());
+//     },
+//     onStderr: (data) => {
+//       stderrs.push(data.toString());
+//     },
+//   },
+//   async () => {
+//     console.log("hello");
+//     process.stdout.write("world\n");
+//     console.error("error");
+//     process.stderr.write("error2\n");
+//     await Promise.resolve();
+//   }
+// );
+// console.log("stdouts", stdouts);
+// console.log("stderrs", stderrs);

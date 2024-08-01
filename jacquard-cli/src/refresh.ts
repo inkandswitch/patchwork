@@ -106,7 +106,7 @@ export async function refresh(
       throw new Error(`Build run missing from doc: ${buildRunId}`);
     }
 
-    return [{ ...omit(buildRun, ["timestamp"]), progress: "waiting" }];
+    return [{ ...omit(buildRun, ["timestamp"]), progress: "waiting", log: [] }];
   });
 
   onProgress(buildRunsWithProgress);
@@ -149,6 +149,13 @@ export async function refresh(
             {
               ...args,
               command: buildRun.command,
+              onOutput: (output) => {
+                // don't console log in here lol!
+                if (buildRunWithProgress) {
+                  buildRunWithProgress.log.push(output);
+                  onProgress(buildRunsWithProgress);
+                }
+              },
             }
           );
 

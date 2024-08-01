@@ -5,7 +5,7 @@ import path from "path";
 import { CommandLineArgs } from "./index.js";
 import { latex } from "./latex.js";
 import { push } from "./push.js";
-import { addPrefix } from "./util.js";
+import { addPrefix, interceptOutput } from "./util.js";
 
 // TODO: this is an awful lot like BuildRun, but not; at the very least a naming
 // issue
@@ -24,14 +24,12 @@ export type BuildMetadata = {
 const JACQUARD_DECLARE_REGEX =
   /jacquard: declare (?<type>(input|output)) (?<filePath>.*)/;
 
-export async function run(repo: Repo, args: CommandLineArgs, wait = true) {
-  const {
-    dir,
-    inputs = [],
-    outputs = [],
-    command,
-    runPrefix,
-  } = args;
+export async function run(
+  repo: Repo,
+  args: CommandLineArgs & { onOutput?: (output: string) => void },
+  wait = true
+) {
+  const { dir, inputs = [], outputs = [], command, runPrefix, onOutput } = args;
 
   if (!command) {
     console.error("No command provided");
@@ -44,64 +42,73 @@ export async function run(repo: Repo, args: CommandLineArgs, wait = true) {
     return await latex(repo, commandSplit[1], args);
   }
 
-  const timestampStart = Date.now();
+  await interceptOutput(
+    {
+      onStdout: (data) => {
+        onOutput?.(data.toString());
+      },
+      onStderr: (data) => {
+        onOutput?.(data.toString());
+      },
+    },
+    async () => {
+      const timestampStart = Date.now();
 
-  await new Promise((resolve, reject) => {
-    const child = spawn(addPrefix(runPrefix, command), { shell: true });
+      await new Promise((resolve, reject) => {
+        const child = spawn(addPrefix(runPrefix, command), { shell: true });
 
-    child.stdout.on("data", (data) => {
-      data
-        .toString()
-        .split("\n")
-        .forEach((line: string) => {
-          const match = line.match(JACQUARD_DECLARE_REGEX);
+        child.stdout.on("data", (data) => {
+          process.stdout.write(data.toString());
+          data
+            .toString()
+            .split("\n")
+            .forEach((line: string) => {
+              const match = line.match(JACQUARD_DECLARE_REGEX);
 
-          if (match) {
-            const { type, filePath } = match.groups!;
-            const relativePath = `./${path.relative(dir, filePath)}`;
+              if (match) {
+                const { type, filePath } = match.groups!;
+                const relativePath = `./${path.relative(dir, filePath)}`;
 
-            if (type === "input") {
-              inputs.push(relativePath);
-            } else {
-              outputs.push(relativePath);
-            }
+                if (type === "input") {
+                  inputs.push(relativePath);
+                } else {
+                  outputs.push(relativePath);
+                }
+              }
+            });
+        });
+
+        child.stderr.on("data", (data) => {
+          process.stderr.write(data.toString());
+        });
+
+        child.on("close", (code) => {
+          if (code !== 0) {
+            reject(new Error(`Command failed with exit code ${code}`));
           } else {
-            console.log(line);
+            resolve(true);
           }
         });
-    });
 
-    child.stderr.on("data", (data) => {
-      console.error(data.toString());
-    });
-    child.on("close", (code) => {
-      console.log("JAH close");
-      if (code !== 0) {
-        reject(new Error(`Command failed with exit code ${code}`));
-      } else {
-        resolve(true);
-      }
-    });
+        child.on("error", (error) => {
+          console.error(`Error executing command: ${error.message}`);
+          reject(error);
+        });
+      });
 
-    child.on("error", (error) => {
-      console.error(`Error executing command: ${error.message}`);
-      reject(error);
-    });
-  });
+      const timestampEnd = Date.now();
 
-  console.log("JAH spawn in run() done");
+      // todo: rethink how this works with multiple build rules
+      const buildMetadata: BuildMetadata = {
+        id: uuid(),
+        outputs,
+        command,
+        inputs,
+        timestamp: timestampEnd,
+        duration: timestampEnd - timestampStart,
+      };
 
-  const timestampEnd = Date.now();
-
-  // todo: rethink how this works with multiple build rules
-  const buildMetadata: BuildMetadata = {
-    id: uuid(),
-    outputs,
-    command,
-    inputs,
-    timestamp: timestampEnd,
-    duration: timestampEnd - timestampStart,
-  };
-
-  await push(repo, args, buildMetadata, wait);
+      await push(repo, args, buildMetadata, wait);
+    }
+  );
 }

@@ -22,6 +22,7 @@ export type BuildRun = {
 
 export type BuildRunWithProgress = Omit<BuildRun, "timestamp"> & {
   progress: "waiting" | "running" | "done";
+  log: string[];
 };
 
 // todo: think about error handling and more detailed update reporting
