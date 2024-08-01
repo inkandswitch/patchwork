@@ -59,7 +59,10 @@ import { DocViewMode, SidebarMode } from "./VersionControlEditor";
 import { useJacquardProjectInfoWithActiveBranch } from "@patchwork/jacquard/src/hooks";
 import { ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
 import { getStalenessInfo } from "@patchwork/jacquard/src/getStalenessInfo";
-import { getProjectStateFromProjectInfo } from "@patchwork/jacquard/src/signals";
+import {
+  getBuildRunsWithDocAsPrimaryInput,
+  getProjectStateFromProjectInfo,
+} from "@patchwork/jacquard/src/signals";
 import {
   BuildRefreshButton,
   DisabledBuildRefreshButton,
@@ -192,13 +195,16 @@ export const VersionControlBar = ({
       )
     : 0;
 
-  const buildRunWithFileAsInput =
-    projectState?.buildRuns.filter(
-      ({ inputs }) => inputs[0] && inputs[0].docUrl == docUrl
-      //inputs.some((input) => input.docUrl === docUrl)
-    ) ?? [];
+  const buildRunWithFileAsInput = ifLoaded(
+    useDocReactive(
+      useCallback(() => {
+        waitForDR(projectState);
+        return getBuildRunsWithDocAsPrimaryInput(projectState, docUrl);
+      }, [projectState, docUrl])
+    )
+  );
 
-  const hasOutputFiles = buildRunWithFileAsInput.length > 0;
+  const hasOutputFiles = buildRunWithFileAsInput?.length > 0;
 
   const enableRefreshButton =
     jacquardProjectInfo?.buildMetadataOm && numStaleDocs > 0;

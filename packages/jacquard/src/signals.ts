@@ -13,7 +13,7 @@ import { BuildRun, JacquardBuildMetadata } from "./datatype";
 import { BranchDoc } from "@/sdk";
 import { JacquardProjectInfo } from "./hooks";
 import { getFolderDocWithChildrenOnBranch } from "@/packages/folder/hooks/useFolderDocWithChildren";
-import { getProjectState } from "./getStalenessInfo";
+import { getProjectState, ProjectState } from "./getStalenessInfo";
 
 export type BuildChangeMetadata = {
   buildDocUrl: AutomergeUrl;
@@ -166,4 +166,20 @@ export const getProjectStateFromProjectInfo = (
       return getOmOnBranch(url, branchUrl, repo).doc;
     },
   });
+};
+
+export const getBuildRunsWithDocAsPrimaryInput = (
+  projectState: ProjectState,
+  docUrl: AutomergeUrl
+) => {
+  return (
+    projectState?.buildRuns.filter(
+      // right now we only count the first input which for python and latex is the main source file
+      // this is a hacky way to determine the primary input
+      // the reason to do this is that it feels weird for an image that's embedded in the latex doc
+      // the pdf as an build output of the image
+      ({ inputs }) => inputs[0] && inputs[0].docUrl == docUrl
+      //inputs.some((input) => input.docUrl === docUrl)
+    ) ?? []
+  );
 };

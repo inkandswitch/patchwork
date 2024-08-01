@@ -38,7 +38,8 @@ export const PDFFileViewer = ({
 
 const useBinaryDataOfDocFile = (doc: FileDoc | undefined) => {
   const urlRef = useRef<string>();
-  urlRef.current = doc && doc.content.type === "link" ? doc.content.url : undefined;
+  urlRef.current =
+    doc && doc.content.type === "link" ? doc.content.url : undefined;
 
   const [binaryData, setBinaryData] = useState<Uint8Array>();
 
@@ -114,7 +115,7 @@ export const PDFViewer = ({ data }: { data: Uint8Array }) => {
   }
 
   return (
-    <div className="w-full max-w-[calc(100%-2em)] my-4" ref={setContainerRef}>
+    <div className="w-full max-w-[calc(100%-2em)] m-4" ref={setContainerRef}>
       <Document
         file={inputToViewer}
         onLoadSuccess={onDocumentLoadSuccess}
