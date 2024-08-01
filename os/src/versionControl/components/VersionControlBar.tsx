@@ -300,7 +300,8 @@ export const VersionControlBar = ({
               {/* for now only show open branches here; maybe in future show a list of merged branches */}
               {branchOms.map(
                 (branchOm) =>
-                  branchOm && (
+                  branchOm &&
+                  !branchOm.doc.mergeMetadata && (
                     <SelectItem
                       key={branchOm.url}
                       className={`${
