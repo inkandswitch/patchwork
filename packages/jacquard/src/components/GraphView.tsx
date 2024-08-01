@@ -119,7 +119,7 @@ function stateGraphSrc(state: ProjectState) {
   for (let buildRun of state.buildRuns) {
     const status = stalenessInfo.buildRunStatuses[buildRun.id];
     lines.push(`${gvId(buildRun.id)} [
-      shape=plain
+      shape=ellipse
       label="${buildRun.command}"
       fontname="sans-serif"
       fontsize=10
