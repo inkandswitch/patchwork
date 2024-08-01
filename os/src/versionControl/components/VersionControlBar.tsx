@@ -433,18 +433,20 @@ export const VersionControlBar = ({
         <div className="text-xs text-gray-500">
           {numStaleDocs > 0 && <span>{numStaleDocs} files to rebuild</span>}
           {numStaleDocs === 0 && <span>project up to date</span>}
-          <span
-            className="underline cursor-pointer ml-1"
-            onClick={() =>
-              selectDocLink({
-                url: jacquardProjectInfo.buildMetadataOm.url,
-                name: "Build Metadata",
-                type: "jacquard-build-metadata",
-              })
-            }
-          >
-            see details
-          </span>
+          {datatypeId !== "jacquard-build-metadata" && (
+            <span
+              className="underline cursor-pointer ml-1"
+              onClick={() =>
+                selectDocLink({
+                  url: jacquardProjectInfo.buildMetadataMainDocUrl,
+                  name: "Build Metadata",
+                  type: "jacquard-build-metadata",
+                })
+              }
+            >
+              see details
+            </span>
+          )}
         </div>
       </div>
 

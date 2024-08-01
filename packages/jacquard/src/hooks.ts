@@ -15,6 +15,7 @@ export type JacquardProjectInfo = {
   branchUrl: AutomergeUrl | undefined;
   projectFolderOm: Om<FolderDoc>;
   buildMetadataOm: Om<JacquardBuildMetadata>;
+  buildMetadataMainDocUrl: AutomergeUrl;
 };
 
 export const useJacquardProjectInfoWithActiveBranch = (
@@ -58,6 +59,7 @@ export const useJacquardProjectInfoWithActiveBranch = (
           branchUrl: activeBranchOm?.url,
           projectFolderOm: maybeProjectFolderOm,
           buildMetadataOm: buildMetadataOm,
+          buildMetadataMainDocUrl: buildMetadataDocLink.url,
         };
       }, [docPath, uiStateOm, repo])
     )
