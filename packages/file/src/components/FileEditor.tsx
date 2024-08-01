@@ -24,6 +24,7 @@ import { TextFileEditor, isTextFile } from "./TextFileEditor";
 export const FileEditor = (props: EditorProps<unknown, unknown>) => {
   const {
     docUrl,
+    mainDocUrl,
     docHeads,
     docViewMode,
     getFakeDocPathForDocUrl,
@@ -37,7 +38,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
   const repo = useRepo();
 
   const jacquardProjectInfo = useJacquardProjectInfoWithActiveBranch(
-    getFakeDocPathForDocUrl(docUrl)
+    getFakeDocPathForDocUrl(mainDocUrl)
   );
 
   const projectState = ifLoaded(
@@ -58,7 +59,7 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
     useDocReactive(
       useCallback(() => {
         waitForDR(projectState);
-        return getBuildRunsWithDocAsPrimaryInput(projectState, docUrl);
+        return getBuildRunsWithDocAsPrimaryInput(projectState, mainDocUrl);
       }, [projectState, docUrl])
     )
   );
