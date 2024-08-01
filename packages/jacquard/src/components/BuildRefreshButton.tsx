@@ -1,25 +1,20 @@
 import { Om } from "@/om";
-import { JacquardBuildMetadata } from "../datatype";
 import { Button } from "@/shadcn/ui/button";
 import {
-  RefreshCw,
-  CircleDashed,
-  CheckCircle,
-  Loader2,
-  RefreshCcw,
-} from "lucide-react";
-import {
-  TooltipProvider,
   Tooltip,
-  TooltipTrigger,
   TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/shadcn/ui/tooltip";
+import { canBeUndef } from "@/utils";
+import { CheckCircle, CircleDashed, Loader2, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { JacquardBuildMetadata } from "../datatype";
 import {
   getProjectState,
   getStalenessInfo,
   ProjectState,
 } from "../getStalenessInfo";
-import { canBeUndef } from "@/utils";
 
 export const BuildRefreshButton = ({
   projectBuildMetadataOm,

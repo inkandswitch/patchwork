@@ -45,8 +45,13 @@ export const GraphView = ({
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 flex flex-col max-h-full">
       <GraphvizView source={stateGraphSrc(projectState)} />
+      {false &&
+        <pre className="text-sm overflow-y-auto">
+          {JSON.stringify(jacquardProjectInfo?.buildMetadataOm.doc.refreshState, null, 2)}
+        </pre>
+      }
     </div>
   );
 };
