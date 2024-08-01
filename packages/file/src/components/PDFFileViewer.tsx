@@ -120,7 +120,7 @@ export const PDFViewer = ({ data }: { data: Uint8Array }) => {
         file={inputToViewer}
         onLoadSuccess={onDocumentLoadSuccess}
         options={options}
-        className="flex flex-col items-center"
+        className="flex flex-col items-center gap-2"
       >
         {Array.from(new Array(numPages), (el, index) => (
           <Page
