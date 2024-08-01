@@ -111,8 +111,6 @@ export const VersionControlBar = ({
   const dataTypes = useDataTypes();
   const account = useCurrentAccount();
 
-  const [showDebugInfo, setShowDebugInfo] = useState(false);
-
   const handleCreateJacquardBranch = useCallback(async () => {
     const docPathForBranchScope = getFakeDocPathForDocUrl(branchScopeOm.url);
     const docLinkForBranchScope = _.last(docPathForBranchScope)!;
@@ -168,6 +166,7 @@ export const VersionControlBar = ({
   const jacquardProjectInfo = useJacquardProjectInfoWithActiveBranch(
     getFakeDocPathForDocUrl(docUrl)
   );
+
   const projectState = ifLoaded(
     useDocReactive(
       useCallback(() => {
@@ -192,6 +191,14 @@ export const VersionControlBar = ({
         0
       )
     : 0;
+
+  const buildRunWithFileAsInput =
+    projectState?.buildRuns.filter(
+      ({ inputs }) => inputs[0] && inputs[0].docUrl == docUrl
+      //inputs.some((input) => input.docUrl === docUrl)
+    ) ?? [];
+
+  const hasOutputFiles = buildRunWithFileAsInput.length > 0;
 
   const enableRefreshButton =
     jacquardProjectInfo?.buildMetadataOm && numStaleDocs > 0;
@@ -470,18 +477,14 @@ export const VersionControlBar = ({
                       Show just this file
                     </div>
                   </SelectItem>
-                  <SelectItem value="showInputs">
-                    <div className="flex gap-2">
-                      <ArrowRightToLineIcon className="h-4 w-4" />
-                      Show with build inputs
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="showOutputs">
-                    <div className="flex gap-2">
-                      <ArrowRightFromLineIcon className="h-4 w-4" />
-                      Show with build outputs
-                    </div>
-                  </SelectItem>
+                  {hasOutputFiles && (
+                    <SelectItem value="showOutputs">
+                      <div className="flex gap-2">
+                        <ArrowRightFromLineIcon className="h-4 w-4" />
+                        Show with build outputs
+                      </div>
+                    </SelectItem>
+                  )}
                 </>
               )}
               {activeBranchOm && (
