@@ -137,9 +137,22 @@ const isBinaryFileJacquard = (filePath: string) => {
     // the format has a human readable ASCII header which trips up isbinaryfile
     ".fits",
   ];
+
+  // files that are uploaded as text even if they are above the size limit
+  const WHITELIST_FILE_EXTENSION_BIG_TEXT = [".tex", ".py"];
+
+  const MAX_TEXT_FILE_SIZE = 100000;
+
+  const fileSize = fs.statSync(filePath).size;
+
+  const treateAsBinaryFileBecauseOfSize =
+    fileSize > MAX_TEXT_FILE_SIZE &&
+    WHITELIST_FILE_EXTENSION_BIG_TEXT.every((ext) => !filePath.endsWith(ext));
+
   return (
     isBinaryFileSync(filePath) ||
-    BINARY_FILE_EXTENSIONS.some((ext) => filePath.endsWith(ext))
+    BINARY_FILE_EXTENSIONS.some((ext) => filePath.endsWith(ext)) ||
+    treateAsBinaryFileBecauseOfSize
   );
 };
 
