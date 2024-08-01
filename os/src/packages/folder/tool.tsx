@@ -17,6 +17,13 @@ import { AutomergeUrl } from "@automerge/automerge-repo";
 import { ErrorBoundary } from "react-error-boundary";
 import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shadcn/ui/select";
 
 export const FolderViewerWithEmbeds: React.FC<
   EditorProps<unknown, unknown>
@@ -25,6 +32,7 @@ export const FolderViewerWithEmbeds: React.FC<
   docHeads,
   getFakeDocPathForDocUrl,
   highlightChanges,
+  activeBranchUrl,
 }: EditorProps<unknown, unknown>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
   const folderAtHeads = folder && docHeads ? A.view(folder, docHeads) : folder;
@@ -40,15 +48,24 @@ export const FolderViewerWithEmbeds: React.FC<
         <div className="text-gray-500 text-sm">
           {folderAtHeads.docs.length} documents
         </div>
-        <label htmlFor="hideUnchangedFiles" className="flex items-center">
-          <input
-            type="checkbox"
-            id="hideUnchangedFiles"
-            onChange={() => setHideUnchangedFiles(!hideUnchangedFiles)}
-            checked={hideUnchangedFiles}
-          />
-          <span className="ml-2 font-mono text-xs">hide unchanged files</span>
-        </label>
+        {activeBranchUrl && (
+          <Select
+            onValueChange={(value) =>
+              setHideUnchangedFiles(value === "changed")
+            }
+            defaultValue={hideUnchangedFiles ? "changed" : "all"}
+          >
+            <SelectTrigger className="w-[16rem]">
+              <SelectValue placeholder="Show" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All files</SelectItem>
+              <SelectItem value="changed">
+                Only files changed on branch
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        )}
       </div>
       <div className="flex flex-col gap-10 px-4 h-full overflow-y-auto pb-24">
         {folderAtHeads.docs.map((docLink, index) => (
