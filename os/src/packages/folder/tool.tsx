@@ -43,7 +43,7 @@ export const FolderViewerWithEmbeds: React.FC<
   }
 
   return (
-    <div className="p-2 h-full overflow-hidden">
+    <div className="p-2 h-full overflow-hidden flex flex-col gap-4">
       <div className="flex border-b border-gray-300 justify-between items-center p-2">
         <div className="text-gray-500 text-sm">
           {folderAtHeads.docs.length} documents
