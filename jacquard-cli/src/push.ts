@@ -88,7 +88,6 @@ export async function push(
     folderHandle,
     mainUrlsAndCloneHandlesByFileName,
     handlesToWaitOn,
-    buildStuff,
   });
 
   if (buildStuff) {
@@ -158,7 +157,6 @@ async function pushDir({
   repo,
   mainUrlsAndCloneHandlesByFileName,
   folderHandle,
-  buildStuff,
 }: {
   dir: string;
   handlesToWaitOn: DocHandle<unknown>[];
@@ -168,7 +166,6 @@ async function pushDir({
     { mainUrl: AutomergeUrl; cloneHandle: DocHandle<FileDoc> }
   >;
   folderHandle: DocHandle<FolderDoc>;
-  buildStuff?: BuildStuff;
 }) {
   console.log(`Pushing dir: ${dir}`);
 
@@ -216,14 +213,12 @@ async function pushDir({
         repo,
         mainUrlsAndCloneHandlesByFileName,
         folderHandle: subFolderHandle,
-        buildStuff,
       });
     } else {
       const { handle, mainUrl, didChange } = await pushFile({
         filePath,
         folderHandle,
         repo,
-        buildStuff,
       });
       mainUrlsAndCloneHandlesByFileName[path.basename(filePath)] = {
         mainUrl: mainUrl,
@@ -344,12 +339,10 @@ const pushFile = async ({
   filePath,
   folderHandle,
   repo,
-  buildStuff,
 }: {
   filePath: string;
   folderHandle: DocHandle<FolderDoc>;
   repo: Repo;
-  buildStuff?: BuildStuff;
 }): Promise<{
   handle: DocHandle<FileDoc>;
   mainUrl: AutomergeUrl;
