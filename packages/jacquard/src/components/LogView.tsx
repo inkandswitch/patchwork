@@ -12,7 +12,8 @@ export const LogView = ({
   const [latestDoc] = useDocument<JacquardBuildMetadata>(docUrl);
 
   const doc = useMemo(
-    () => (latestDoc && docHeads ? Automerge.view(latestDoc, docHeads) : latestDoc),
+    () =>
+      latestDoc && docHeads ? Automerge.view(latestDoc, docHeads) : latestDoc,
     [latestDoc, docHeads]
   );
 
@@ -39,7 +40,7 @@ export const LogView = ({
                 minute: "2-digit",
               })}
             </div>
-            <pre>{run.command}</pre>
+            <pre>{run.spec.command}</pre>
             <div className="cursor-default">
               <div className="text-sm font-medium">Inputs:</div>
               <div className="flex flex-wrap gap-2 text-xs">

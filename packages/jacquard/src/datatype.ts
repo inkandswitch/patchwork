@@ -12,11 +12,18 @@ export interface Reference {
   path: string;
 }
 
+export type BuildRunSpec = {
+  command: string;
+  autoDeps: Record<"stdoutDeclared" | "latex", boolean>;
+  explicitInputs: string[];
+  explicitOutputs: string[];
+};
+
 export type BuildRun = {
   id: string;
-  outputs: Reference[]; // TODO one output? multiple outputs?
-  command: string; // TODO more indirection here to a "task" of some kind?
+  spec: BuildRunSpec;
   inputs: Reference[];
+  outputs: Reference[];
   timestamp: number;
   duration: number;
 };

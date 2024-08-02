@@ -265,3 +265,8 @@ function stringifyForConsole(data: any): string {
 // );
 // console.log("stdouts", stdouts);
 // console.log("stderrs", stderrs);
+
+export const replaceExtension = (filePath: string, newExtension: string) => {
+  const extension = path.extname(filePath);
+  return `${filePath.slice(0, -extension.length)}.${newExtension}`;
+};

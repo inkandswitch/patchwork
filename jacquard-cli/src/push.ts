@@ -91,7 +91,7 @@ export async function push(
     buildMetadataHandle.change((doc) => {
       doc.buildRuns.push({
         id: Automerge.uuid(),
-        command: runResult.command,
+        spec: runResult.spec,
         timestamp: runResult.timestamp,
         duration: runResult.duration,
         inputs: runResult.inputs.map((inputPath) => {

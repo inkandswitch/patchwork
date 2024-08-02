@@ -15,7 +15,7 @@ import { listBranches } from "./branch";
 import { pull } from "./pull";
 import { push } from "./push";
 import { refresh } from "./refresh";
-import { run } from "./run";
+import { buildRunSpecFromArgs, run } from "./run";
 import { getJacquardConfig } from "./util";
 import { watch } from "./watch";
 import { watchRefreshRequests } from "./watchRefreshRequests";
@@ -33,6 +33,8 @@ export type CommandLineArgs = {
   command?: string;
   branchUrl?: string;
   runPrefix?: string;
+  latexDeps: boolean;
+  stdoutDeclaredDeps: boolean;
 };
 
 const main = async () => {
@@ -90,6 +92,16 @@ const main = async () => {
       name: "runPrefix",
       type: String,
       defaultValue: jacquardConfig?.runPrefix,
+    },
+    {
+      name: "latexDeps",
+      type: Boolean,
+      defaultValue: false,
+    },
+    {
+      name: "stdoutDeclaredDeps",
+      type: Boolean,
+      defaultValue: false,
     },
   ];
 
@@ -152,11 +164,13 @@ const main = async () => {
       break;
 
     case "run": {
-      await run(repo, {
+      const spec = buildRunSpecFromArgs({
         ...args,
         command:
           "_unknown" in args ? (args._unknown as string[]).join(" ") : command,
       });
+
+      await run(repo, spec, args);
       break;
     }
 

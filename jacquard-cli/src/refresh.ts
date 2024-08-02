@@ -20,6 +20,7 @@ import {
 } from "./findWithActiveBranch";
 import { run } from "./run";
 import { getBuildMetadataDocUrl, waitForSync } from "./util";
+import _ from "lodash";
 
 export async function refresh(
   repo: Repo,
@@ -139,10 +140,12 @@ export async function refresh(
           }
 
           // all inputs are up to date, so we can run this build
-          console.log(`running build ${buildRunId}: ${buildRun.command}`);
-          await run(repo, {
+          console.log(`running build ${buildRunId}: ${buildRun.spec.command}`);
+          // TODO: the _.cloneDeep here is to avoid a "Cannot create a reference
+          // to an existing document object" error – is there a more brain-dead
+          // way to avoid these?
+          await run(repo, _.cloneDeep(buildRun.spec), {
             ...args,
-            command: buildRun.command,
             onLogOutput: (output) => {
               // don't console log in here lol!
               // skip this progress reporting for now - it's causing perf problems

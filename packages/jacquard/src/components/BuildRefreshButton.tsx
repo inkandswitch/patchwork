@@ -108,29 +108,31 @@ export const BuildRefreshButton = ({
 
             {refreshState?.type === "processing" && (
               <div>
-                {refreshState.buildRuns?.map(({ command, progress, log }) => (
-                  <div key={command} className="flex flex-col gap-2">
-                    <div className="flex gap-2 items-center">
-                      <ProgressIcon state={progress} />
-                      <div className="font-mono">{command}</div>
+                {refreshState.buildRuns?.map(
+                  ({ id, spec: { command }, progress, log }) => (
+                    <div key={id} className="flex flex-col gap-2">
+                      <div className="flex gap-2 items-center">
+                        <ProgressIcon state={progress} />
+                        <div className="font-mono">{command}</div>
+                      </div>
+                      {progress === "running" && (
+                        <pre className="text-xs">
+                          {log?.join("").split("\n").slice(-5).join("\n")}
+                        </pre>
+                      )}
                     </div>
-                    {progress === "running" && (
-                      <pre className="text-xs">
-                        {log?.join("").split("\n").slice(-5).join("\n")}
-                      </pre>
-                    )}
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             )}
 
             {(refreshState?.type === "idle" ||
               refreshState?.type === "requesting") && (
               <div>
-                {buildsToRun.map((build) => (
-                  <div key={build.id} className="flex gap-2 items-center">
+                {buildsToRun.map(({ id, spec: { command } }) => (
+                  <div key={id} className="flex gap-2 items-center">
                     <ProgressIcon state="waiting" />
-                    <div className="font-mono">{build.command}</div>
+                    <div className="font-mono">{command}</div>
                   </div>
                 ))}
               </div>
