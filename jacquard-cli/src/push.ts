@@ -94,7 +94,7 @@ export async function push(
         command: runResult.command,
         timestamp: runResult.timestamp,
         duration: runResult.duration,
-        inputs: runResult.inputs.map((inputPath) => {
+        inputs: runResult.dependencies.inputs.map((inputPath) => {
           console.log({
             inputPath,
           });
@@ -106,7 +106,7 @@ export async function push(
             heads: A.getHeads(cloneHandle.docSync()!), // TODO: JAH strict fix
           };
         }),
-        outputs: runResult.outputs.map((outputPath) => {
+        outputs: runResult.dependencies.outputs.map((outputPath) => {
           const { mainUrl, cloneHandle } =
             mainUrlsAndCloneHandlesByFileName[path.basename(outputPath)];
           return {
@@ -143,6 +143,7 @@ const IGNORE_FILES_ENDING_IN = [
   ".git",
   ".mrg",
   ".pixi",
+  ".jacquard",
 ];
 
 async function pushDir({

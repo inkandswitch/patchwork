@@ -1,0 +1,91 @@
+\ProvidesPackage{jacquard}[2024/08/02 External References Tracker]
+
+\RequirePackage{atveryend}
+\RequirePackage{catchfile}
+\RequirePackage{graphicx}
+\RequirePackage{currfile}
+
+% Initialize the JSON file
+\newwrite\jsonfile
+\immediate\openout\jsonfile=.jacquard/runDependencies.json
+
+% Counter to keep track of the number of entries
+\newcounter{jsonInputCount}
+\setcounter{jsonInputCount}{0}
+
+% Counter to keep track of the number of entries
+\newcounter{jsonOutputCount}
+\setcounter{jsonOutputCount}{0}
+
+% Store entries in a token list to write them all at once at the end
+\newtoks\jsoninputentries
+\jsoninputentries={}
+
+\newtoks\jsonoutputentries
+\jsonoutputentries={}
+
+\newcommand{\writejsoninput}[1]{%
+  \ifnum\value{jsonInputCount}>0
+    \global\jsoninputentries=\expandafter{\the\jsoninputentries,}%
+  \fi
+  \global\jsoninputentries=\expandafter{\the\jsoninputentries
+    "#1"}%
+  \stepcounter{jsonInputCount}%
+}
+
+\newcommand{\writejsonoutput}[1]{%
+  \ifnum\value{jsonOutputCount}>0
+  \global\jsonoutputentries=\expandafter{\the\jsonoutputentries,}%
+  \fi
+  \global\jsonoutputentries=\expandafter{\the\jsonoutputentries
+  "#1"}%
+  \stepcounter{jsonOutputCount}%
+}
+
+% Hook into \include, \input, \bibliography, and \includegraphics commands to track files
+\let\oldinclude\include
+\let\oldinput\input
+\let\oldbibliography\bibliography
+\let\oldincludegraphics\includegraphics
+
+\renewcommand{\include}[1]{%
+  \writejsoninput{#1.tex}%
+  \oldinclude{#1}%
+}
+
+\renewcommand{\input}[1]{%
+  \writejsoninput{#1}%
+  \oldinput{#1}%
+}
+
+\renewcommand{\bibliography}[1]{%
+  \writejsoninput{#1}%
+  \oldbibliography{#1}%
+}
+
+\renewcommand{\includegraphics}[2][]{%
+  \writejsoninput{#2}%
+  \oldincludegraphics[#1]{#2}%
+}
+
+% Write the entries at the very end of the document
+\AtVeryEndDocument{%
+  \immediate\write\jsonfile{{
+    "inputs": [\the\jsoninputentries],%
+    "outputs": [\the\jsonoutputentries]
+  }}%
+  \immediate\closeout\jsonfile
+}
+
+% Capture the main file name
+\begingroup
+\edef\temp{\noexpand\writejsoninput{\jobname.tex}}%
+\expandafter\endgroup\temp
+
+% Capture output pdf
+\begingroup
+\edef\temp{\noexpand\writejsonoutput{\jobname.pdf}}%
+\expandafter\endgroup\temp
+
+
+\endinput

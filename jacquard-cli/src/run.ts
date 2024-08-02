@@ -1,8 +1,8 @@
+import fs from "fs";
 import { Repo } from "@automerge/automerge-repo";
 import { spawn } from "child_process";
 import path from "path";
 import { CommandLineArgs } from "./index.js";
-import { latex } from "./latex.js";
 import { push } from "./push.js";
 import { addPrefix, interceptOutput } from "./util.js";
 
@@ -11,19 +11,18 @@ import { addPrefix, interceptOutput } from "./util.js";
  * `run` communicates with `push`. As `push` uploads files to Automerge, this
  * will be transformed into a BuildRun.
  */
-export type RunResult = {
+
+export type RunDependencies = {
   outputs: string[];
   inputs: string[];
+};
+
+export type RunResult = {
   command: string;
   timestamp: number;
   duration: number;
+  dependencies: RunDependencies;
 };
-
-// TODO: maybe we set a JACQUARD_OUTPUTS_FILE env var, then the process writes
-// output declarations to that file rather than stdout?
-
-const JACQUARD_DECLARE_REGEX =
-  /jacquard: declare (?<type>(input|output)) (?<filePath>.*)/;
 
 export async function run(
   repo: Repo,
@@ -44,10 +43,17 @@ export async function run(
     process.exit(1);
   }
 
-  // hack to make latex subset of run
-  const commandSplit = command.split(" ");
-  if (commandSplit.length === 2 && commandSplit[0] === "latex") {
-    return await latex(repo, commandSplit[1], args);
+  const jacquardDir = path.join(dir, ".jacquard");
+  if (!fs.existsSync(jacquardDir)) {
+    fs.mkdirSync(jacquardDir, { recursive: true });
+  }
+
+  const runDependenciesFilePath = path.join(
+    jacquardDir,
+    "runDependencies.json"
+  );
+  if (fs.existsSync(runDependenciesFilePath)) {
+    fs.unlinkSync(runDependenciesFilePath);
   }
 
   await interceptOutput(
@@ -67,23 +73,6 @@ export async function run(
 
         child.stdout.on("data", (data) => {
           process.stdout.write(data.toString());
-          data
-            .toString()
-            .split("\n")
-            .forEach((line: string) => {
-              const match = line.match(JACQUARD_DECLARE_REGEX);
-
-              if (match) {
-                const { type, filePath } = match.groups!;
-                const relativePath = `./${path.relative(dir, filePath)}`;
-
-                if (type === "input") {
-                  inputs.push(relativePath);
-                } else {
-                  outputs.push(relativePath);
-                }
-              }
-            });
         });
 
         child.stderr.on("data", (data) => {
@@ -105,14 +94,24 @@ export async function run(
       });
 
       const timestampEnd = Date.now();
+      let dependencies: RunDependencies;
+      if (fs.existsSync(runDependenciesFilePath)) {
+        dependencies = JSON.parse(
+          fs.readFileSync(runDependenciesFilePath, "utf8")
+        ) as RunDependencies;
+      } else {
+        dependencies = { inputs: [], outputs: [] };
+      }
 
       // todo: rethink how this works with multiple build rules
       const buildMetadata: RunResult = {
-        outputs,
         command,
-        inputs,
         timestamp: timestampEnd,
         duration: timestampEnd - timestampStart,
+        dependencies: {
+          inputs: [...inputs, ...dependencies.inputs],
+          outputs: [...outputs, ...dependencies.outputs],
+        },
       };
 
       await push(repo, args, buildMetadata, wait);
