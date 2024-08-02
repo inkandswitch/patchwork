@@ -12,17 +12,17 @@ const FILE_REFRENCE_REGEX = /^<use (?<filePath>.*)\>$/;
 export async function latex(
   repo: Repo,
   filePath: string,
-  args: CommandLineArgs & { onLog?: (output: string) => void }
+  args: CommandLineArgs & { onLogOutput?: (output: string) => void }
 ) {
-  const { dir, runPrefix, onLog } = args;
+  const { dir, runPrefix, onLogOutput } = args;
 
   await interceptOutput(
     {
       onStdout: (data) => {
-        onLog?.(data.toString());
+        onLogOutput?.(data.toString());
       },
       onStderr: (data) => {
-        onLog?.(data.toString());
+        onLogOutput?.(data.toString());
       },
     },
     async () => {
@@ -61,39 +61,6 @@ export async function latex(
           reject(error);
         });
       });
-
-      // parse dependencies from build log
-
-      const logPath = replaceExtension(filePath, "log");
-      const logContent = fs.readFileSync(logPath, "utf8");
-
-      logContent.split("\n").map((line) => {
-        const match = line.match(FILE_REFRENCE_REGEX);
-
-        if (match) {
-          inputs.push(`./${match.groups!.filePath}`);
-        }
-      });
-
-      // hack: parse bib file references
-      // todo: find a more principled solution
-
-      const sourceContent = fs.readFileSync(filePath, "utf8");
-      const BIB_REF_REGEX = /\\bibliography\{(?<filePath>[^}]*)\}/g;
-      for (const match of sourceContent.matchAll(BIB_REF_REGEX)) {
-        const texFileDir = path.dirname(filePath);
-        const bibFilePath = match.groups!.filePath;
-        const bibFilePathWithExt = path.extname(bibFilePath)
-          ? bibFilePath
-          : `${bibFilePath}.bib`;
-        inputs.push(
-          `./${path.relative(dir, path.join(texFileDir, bibFilePathWithExt))}`
-        );
-      }
-
-      // delete build log
-
-      fs.unlinkSync(logPath);
 
       const timestampEnd = Date.now();
 
