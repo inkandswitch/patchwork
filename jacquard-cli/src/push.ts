@@ -65,14 +65,6 @@ export async function push(
     repo
   );
 
-  const buildStuff: BuildStuff | undefined = runResult && {
-    runResult,
-    buildMetadataHandle: await findOrCreateBuildMetadataHandle(
-      folderHandle,
-      repo
-    ),
-  };
-
   const mainUrlsAndCloneHandlesByFileName: Record<
     string,
     {
@@ -91,8 +83,11 @@ export async function push(
     handlesToWaitOn,
   });
 
-  if (buildStuff) {
-    const { runResult, buildMetadataHandle } = buildStuff;
+  if (runResult) {
+    const buildMetadataHandle = await findOrCreateBuildMetadataHandle(
+      folderHandle,
+      repo
+    );
     buildMetadataHandle.change((doc) => {
       doc.buildRuns.push({
         id: Automerge.uuid(),
@@ -140,11 +135,6 @@ export async function push(
     await waitForSync(handlesToWaitOn, syncServerStorageId);
   }
 }
-
-type BuildStuff = {
-  runResult: RunResult;
-  buildMetadataHandle: DocHandle<JacquardBuildMetadata>;
-};
 
 // TODO put this in a config file
 const IGNORE_FILES_ENDING_IN = [
