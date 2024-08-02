@@ -8,7 +8,7 @@ import {
 } from "@/shadcn/ui/tooltip";
 import { canBeUndef } from "@/utils";
 import { CheckCircle, CircleDashed, Loader2, RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { JacquardBuildMetadata } from "../datatype";
 import {
   getProjectState,
@@ -28,11 +28,15 @@ export const BuildRefreshButton = ({
   getProjectState;
 
   // TODO: not sure why this can be undefined but empirically it can be
-  const refreshState = canBeUndef(projectBuildMetadataOm.doc.refreshState) || {
-    type: "idle",
-  };
+  const refreshState = useMemo(
+    () =>
+      canBeUndef(projectBuildMetadataOm.doc.refreshState) || {
+        type: "idle",
+      },
+    [projectBuildMetadataOm.doc.refreshState]
+  );
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     if (
       !projectBuildMetadataOm ||
       (refreshState && refreshState.type !== "idle")
@@ -43,7 +47,25 @@ export const BuildRefreshButton = ({
     projectBuildMetadataOm.handle.change((doc) => {
       doc.refreshState = { type: "requesting" };
     });
-  };
+  }, [projectBuildMetadataOm, refreshState]);
+
+  useEffect(() => {
+    const onKeydown = (evt: KeyboardEvent) => {
+      const isMetaOrControlPressed = evt.ctrlKey || evt.metaKey;
+
+      // TODO: collides with a shortcut in AnnotationGroupView
+      if (evt.key === "Enter" && isMetaOrControlPressed) {
+        handleRefresh();
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", onKeydown);
+
+    return () => {
+      window.removeEventListener("keydown", onKeydown);
+    };
+  }, [handleRefresh]);
 
   const buildsToRun = projectState
     ? Object.entries(getStalenessInfo(projectState).buildRunStatuses).flatMap(

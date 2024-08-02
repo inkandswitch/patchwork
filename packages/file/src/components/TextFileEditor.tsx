@@ -1,3 +1,4 @@
+import { useHandleDef } from "@/hooks/useHandleDef";
 import {
   ResolvedTextAnchor,
   TextAnchor,
@@ -6,17 +7,17 @@ import {
   useResolvedAnnotationAtPath,
   useScrollAnnotationsIntoView,
 } from "@/lib/textAnchors";
+import { AnnotationWithUIState } from "@/sdk";
 import { EditorProps } from "@/tools";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { json } from "@codemirror/lang-json";
 import { python } from "@codemirror/lang-python";
+import { keymap } from "@codemirror/view";
 import { EditorView, basicSetup } from "codemirror";
 import { useEffect, useRef, useState } from "react";
-import { FileDoc, TextFileContent } from "../datatype";
-import { useHandleDef } from "@/hooks/useHandleDef";
 import { selectedAnchorsPlugin } from "../../../essay/src/codemirrorPlugins/setSelectedAnchors";
-import { AnnotationWithUIState } from "@/sdk";
+import { FileDoc, TextFileContent } from "../datatype";
 
 export type TextFileDoc = FileDoc & {
   content: TextFileContent;
@@ -62,10 +63,19 @@ export const TextFileEditor = ({
       return;
     }
 
+    const suppressModEnter = keymap.of([
+      {
+        key: "Mod-Enter",
+        preventDefault: true,
+        run: () => true,
+      },
+    ]);
+
     const doc = handle.docSync();
     const view = new EditorView({
       doc: doc!.content.value, // TODO: JAH strict fix
       extensions: [
+        suppressModEnter, // keep on top to take priority, or be classier someday
         basicSetup,
         automergeSyncPlugin({
           handle,
