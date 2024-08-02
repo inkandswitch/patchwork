@@ -381,17 +381,6 @@ const pushFile = async ({
     (link) => link.name === fileNameWithExtension
   );
 
-  const changeMetadata =
-    buildStuff &&
-    buildStuff.buildMetadata.outputs.some(
-      (o) => path.resolve(filePath) === path.resolve(o)
-    )
-      ? {
-          buildDocUrl: buildStuff.buildMetadataHandle.url,
-          buildId: buildStuff.buildMetadata.id,
-        }
-      : undefined;
-
   let handle: DocHandle<FileDoc>;
   let mainUrl: AutomergeUrl = undefined as any; // TODO: JAH strict fix - what happens if !existingDocLink below?
   let didChange = false;
@@ -421,16 +410,9 @@ const pushFile = async ({
         console.log("File changed, uploading...");
         const url = await uploadFile(fileContent.value, mimeType);
 
-        handle.change(
-          (doc) => {
-            doc.content = { type: "link", url };
-          },
-          {
-            message: changeMetadata
-              ? JSON.stringify(changeMetadata)
-              : undefined,
-          }
-        );
+        handle.change((doc) => {
+          doc.content = { type: "link", url };
+        });
       } else {
         console.log("File didn't change, skipping upload");
       }
@@ -438,25 +420,20 @@ const pushFile = async ({
       // TODO: this is a datatype-specific mapping from unix file to automerge doc!
       // needs to be specified somewhere datatype-specific I guess.
       // notably: it's also an incremental update to support diffs.
-      handle.change(
-        (doc) => {
-          if (!Automerge.equals(doc.content, fileContent)) {
-            console.log("File changed, updating...");
-            didChange = true;
+      handle.change((doc) => {
+        if (!Automerge.equals(doc.content, fileContent)) {
+          console.log("File changed, updating...");
+          didChange = true;
 
-            if (doc.content.type === "text") {
-              updateText(doc, ["content", "value"], fileContent.value);
-            } else {
-              doc.content = fileContent;
-            }
+          if (doc.content.type === "text") {
+            updateText(doc, ["content", "value"], fileContent.value);
           } else {
-            console.log("File didn't change, skipping update");
+            doc.content = fileContent;
           }
-        },
-        {
-          message: changeMetadata ? JSON.stringify(changeMetadata) : undefined,
+        } else {
+          console.log("File didn't change, skipping update");
         }
-      );
+      });
     }
   } else {
     console.log("Creating new file...");
@@ -474,30 +451,25 @@ const pushFile = async ({
       url = await uploadFile(fileContent.value, mimeType);
     }
 
-    handle.change(
-      (doc) => {
-        doc.name = path.basename(filePath);
-        doc.type = fileType;
+    handle.change((doc) => {
+      doc.name = path.basename(filePath);
+      doc.type = fileType;
 
-        if (url) {
-          doc.content = { type: "link", url };
-        } else {
-          doc.content = fileContent;
-        }
-
-        // init patchwork metadata
-        doc.branchMetadata = {
-          source: null,
-          branches: [],
-        };
-        doc.discussions = {};
-        doc.tags = [];
-        doc.changeGroupSummaries = {};
-      },
-      {
-        message: changeMetadata ? JSON.stringify(changeMetadata) : undefined,
+      if (url) {
+        doc.content = { type: "link", url };
+      } else {
+        doc.content = fileContent;
       }
-    );
+
+      // init patchwork metadata
+      doc.branchMetadata = {
+        source: null,
+        branches: [],
+      };
+      doc.discussions = {};
+      doc.tags = [];
+      doc.changeGroupSummaries = {};
+    });
 
     folderHandle.change((d) => {
       d.docs.push({
