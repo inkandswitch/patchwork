@@ -17,7 +17,7 @@ import { CommandLineArgs } from ".";
 import { FileDoc } from "../../packages/file/src/datatype";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 import { findWithActiveBranchPromise } from "./findWithActiveBranch";
-import { BuildMetadata } from "./run";
+import { RunResult } from "./run";
 import {
   formatFileSize,
   readFileContent,
@@ -53,7 +53,9 @@ const initVersionControlMetadata = (
 export async function push(
   repo: Repo,
   args: CommandLineArgs,
-  buildMetadata?: BuildMetadata,
+  /** Is this push coming after a run? If so, put the run result here so it can
+   * be uploaded. */
+  runResult?: RunResult,
   wait = true
 ) {
   const { dir, projectFolderUrl, patchworkUrl, syncServerStorageId } = args;
@@ -63,10 +65,9 @@ export async function push(
     repo
   );
 
-  const buildStuff: BuildStuff | undefined = buildMetadata && {
-    buildMetadata,
+  const buildStuff: BuildStuff | undefined = runResult && {
+    runResult,
     buildMetadataHandle: await findOrCreateBuildMetadataHandle(
-      buildMetadata,
       folderHandle,
       repo
     ),
@@ -91,11 +92,14 @@ export async function push(
   });
 
   if (buildStuff) {
-    const { buildMetadata, buildMetadataHandle } = buildStuff;
+    const { runResult, buildMetadataHandle } = buildStuff;
     buildMetadataHandle.change((doc) => {
       doc.buildRuns.push({
-        ...buildMetadata,
-        inputs: buildMetadata.inputs.map((inputPath) => {
+        id: Automerge.uuid(),
+        command: runResult.command,
+        timestamp: runResult.timestamp,
+        duration: runResult.duration,
+        inputs: runResult.inputs.map((inputPath) => {
           console.log({
             inputPath,
           });
@@ -107,7 +111,7 @@ export async function push(
             heads: A.getHeads(cloneHandle.docSync()!), // TODO: JAH strict fix
           };
         }),
-        outputs: buildMetadata.outputs.map((outputPath) => {
+        outputs: runResult.outputs.map((outputPath) => {
           const { mainUrl, cloneHandle } =
             mainUrlsAndCloneHandlesByFileName[path.basename(outputPath)];
           return {
@@ -138,7 +142,7 @@ export async function push(
 }
 
 type BuildStuff = {
-  buildMetadata: BuildMetadata;
+  runResult: RunResult;
   buildMetadataHandle: DocHandle<JacquardBuildMetadata>;
 };
 
@@ -266,7 +270,6 @@ async function findOrCreateFolderHandle(
 }
 
 async function findOrCreateBuildMetadataHandle(
-  buildMetadata: BuildMetadata,
   folderHandle: DocHandle<FolderDoc>,
   repo: Repo
 ) {

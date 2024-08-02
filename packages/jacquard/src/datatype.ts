@@ -18,6 +18,7 @@ export type BuildRun = {
   command: string; // TODO more indirection here to a "task" of some kind?
   inputs: Reference[];
   timestamp: number;
+  duration: number;
 };
 
 export type BuildRunWithProgress = Omit<BuildRun, "timestamp"> & {

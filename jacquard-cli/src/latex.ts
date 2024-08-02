@@ -1,11 +1,10 @@
-import { uuid } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 import { CommandLineArgs } from "./index";
 import { push } from "./push";
-import { BuildMetadata } from "./run";
+import { RunResult } from "./run";
 import { addPrefix, interceptOutput } from "./util";
 
 const FILE_REFRENCE_REGEX = /^<use (?<filePath>.*)\>$/;
@@ -98,8 +97,7 @@ export async function latex(
 
       const timestampEnd = Date.now();
 
-      const buildMetadata: BuildMetadata = {
-        id: uuid(),
+      const runResult: RunResult = {
         inputs,
         outputs,
         command: `latex ${filePath}`,
@@ -107,7 +105,7 @@ export async function latex(
         duration: timestampEnd - timestampStart,
       };
 
-      await push(repo, args, buildMetadata);
+      await push(repo, args, runResult);
     }
   );
 }

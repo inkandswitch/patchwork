@@ -1,4 +1,3 @@
-import { uuid } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import { spawn } from "child_process";
 import path from "path";
@@ -7,10 +6,12 @@ import { latex } from "./latex.js";
 import { push } from "./push.js";
 import { addPrefix, interceptOutput } from "./util.js";
 
-// TODO: this is an awful lot like BuildRun, but not; at the very least a naming
-// issue
-export type BuildMetadata = {
-  id: string;
+/**
+ * RunResult bundles information about how running a process went. It's how
+ * `run` communicates with `push`. As `push` uploads files to Automerge, this
+ * will be transformed into a BuildRun.
+ */
+export type RunResult = {
   outputs: string[];
   inputs: string[];
   command: string;
@@ -106,8 +107,7 @@ export async function run(
       const timestampEnd = Date.now();
 
       // todo: rethink how this works with multiple build rules
-      const buildMetadata: BuildMetadata = {
-        id: uuid(),
+      const buildMetadata: RunResult = {
         outputs,
         command,
         inputs,
