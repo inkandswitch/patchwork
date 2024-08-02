@@ -26,10 +26,17 @@ const JACQUARD_DECLARE_REGEX =
 
 export async function run(
   repo: Repo,
-  args: CommandLineArgs & { onOutput?: (output: string) => void },
+  args: CommandLineArgs & { onLogOutput?: (output: string) => void },
   wait = true
 ) {
-  const { dir, inputs = [], outputs = [], command, runPrefix, onOutput } = args;
+  const {
+    dir,
+    inputs = [],
+    outputs = [],
+    command,
+    runPrefix,
+    onLogOutput,
+  } = args;
 
   if (!command) {
     console.error("No command provided");
@@ -45,10 +52,10 @@ export async function run(
   await interceptOutput(
     {
       onStdout: (data) => {
-        onOutput?.(data.toString());
+        onLogOutput?.(data.toString());
       },
       onStderr: (data) => {
-        onOutput?.(data.toString());
+        onLogOutput?.(data.toString());
       },
     },
     async () => {

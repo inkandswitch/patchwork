@@ -143,7 +143,7 @@ export async function refresh(
           await run(repo, {
             ...args,
             command: buildRun.command,
-            onOutput: (output) => {
+            onLogOutput: (output) => {
               // don't console log in here lol!
               // skip this progress reporting for now - it's causing perf problems
               // because: 1) logs are long strings, 2) we make a new copy of buildRuns inside of onProgress

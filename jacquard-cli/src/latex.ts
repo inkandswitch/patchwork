@@ -13,17 +13,17 @@ const FILE_REFRENCE_REGEX = /^<use (?<filePath>.*)\>$/;
 export async function latex(
   repo: Repo,
   filePath: string,
-  args: CommandLineArgs & { onOutput?: (output: string) => void }
+  args: CommandLineArgs & { onLog?: (output: string) => void }
 ) {
-  const { dir, runPrefix, onOutput } = args;
+  const { dir, runPrefix, onLog } = args;
 
   await interceptOutput(
     {
       onStdout: (data) => {
-        onOutput?.(data.toString());
+        onLog?.(data.toString());
       },
       onStderr: (data) => {
-        onOutput?.(data.toString());
+        onLog?.(data.toString());
       },
     },
     async () => {
