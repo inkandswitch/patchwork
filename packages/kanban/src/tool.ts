@@ -6,5 +6,5 @@ export const kanbanTool: Tool = {
   id: "kanban",
   name: "Kanban",
   supportedDataTypes: ["kanban"],
-  editorComponent: KanbanBoard,
+  EditorComponent: KanbanBoard,
 };

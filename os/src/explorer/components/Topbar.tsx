@@ -119,7 +119,7 @@ export const Topbar: React.FC<TopbarProps> = ({
         >
           <TabsList>
             {tools
-              .filter((tool) => tool.editorComponent)
+              .filter((tool) => tool.EditorComponent)
               .map((tool) => (
                 <TabsTrigger
                   value={tool.id}

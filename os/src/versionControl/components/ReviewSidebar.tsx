@@ -45,7 +45,7 @@ export const ReviewSidebar = React.memo(
               <AnnotationGroupView
                 doc={doc}
                 handle={handle}
-                annotationsViewComponent={tool.annotationsViewComponent}
+                AnnotationsViewComponent={tool.AnnotationsViewComponent}
                 key={id}
                 annotationGroup={annotationGroup}
                 setIsHovered={(isHovered) => {

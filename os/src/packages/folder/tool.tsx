@@ -158,7 +158,7 @@ export const FolderEntryView = ({
             {cloneOrMainOm && tool && docLink.type !== "folder" && (
               <MountOnlyWhenVisible height={"16rem"}>
                 <ErrorBoundary FallbackComponent={ErrorFallback}>
-                  <tool.editorComponent
+                  <tool.EditorComponent
                     docUrl={cloneOrMainOm.url}
                     mainDocUrl={docLink.url}
                     getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
@@ -183,6 +183,6 @@ export const folderViewerWithEmbedsTool: Tool = {
   type: "patchwork:tool",
   id: "folder-embeds",
   name: "Embeds",
-  editorComponent: FolderViewerWithEmbeds,
+  EditorComponent: FolderViewerWithEmbeds,
   supportedDataTypes: ["folder"],
 };

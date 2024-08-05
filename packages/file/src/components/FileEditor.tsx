@@ -99,32 +99,24 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
       <div className="overflow-auto h-full flex-1">
         {" "}
         {isTextFile(doc) ? (
-          React.createElement(
-            TextFileEditor,
-            props as EditorProps<TextAnchor, string>
-          )
+          <TextFileEditor {...(props as EditorProps<TextAnchor, string>)} />
         ) : (
           <>
             {isImageFile(doc) ? (
               <div className="overflow-auto h-full p-4">
-                {React.createElement(
-                  ImageFileViewer,
-                  props as EditorProps<ImageFileDoc, never>
-                )}
+                <ImageFileViewer
+                  {...(props as EditorProps<ImageFileDoc, never>)}
+                />
               </div>
             ) : isPDFFile(doc) ? (
               <div className="overflow-auto h-full">
-                {React.createElement(
-                  PDFFileViewer,
-                  props as EditorProps<PDFFileDoc, never>
-                )}
+                <PDFFileViewer {...(props as EditorProps<PDFFileDoc, never>)} />
               </div>
             ) : isFitsFile(doc) ? (
               <div className="overflow-auto h-full p-4">
-                {React.createElement(
-                  FitsFileViewer,
-                  props as EditorProps<FitsFileDoc, never>
-                )}
+                <FitsFileViewer
+                  {...(props as EditorProps<FitsFileDoc, never>)}
+                />
               </div>
             ) : (
               <div className="p-4">No preview for file</div>

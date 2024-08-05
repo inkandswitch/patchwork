@@ -58,7 +58,7 @@ export const CommentsSidebar = ({
                 doc={doc}
                 handle={handle}
                 annotationGroup={annotationGroup}
-                annotationsViewComponent={EssayAnnotations}
+                AnnotationsViewComponent={EssayAnnotations}
                 setIsHovered={(isHovered) => {
                   setHoveredAnnotationGroupId?.(isHovered ? id : undefined);
                 }}

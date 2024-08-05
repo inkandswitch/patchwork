@@ -25,8 +25,8 @@ export type Tool = {
   supportedDataTypes: "*" | string[];
   name: string;
   icon?: IconType;
-  editorComponent: React.FC<EditorProps<unknown, unknown>>;
-  annotationsViewComponent?: React.FC<
+  EditorComponent: React.FC<EditorProps<unknown, unknown>>;
+  AnnotationsViewComponent?: React.FC<
     AnnotationsViewProps<
       HasVersionControlMetadata<unknown, unknown>,
       unknown,
@@ -41,7 +41,7 @@ export type Tool = {
    * Experiment: allow tools to specify a status bar component that will be rendered
    * below the primary tool that is selected
    */
-  statusBarComponent?: React.FC<EditorProps<unknown, unknown>>;
+  StatusBarComponent?: React.FC<EditorProps<unknown, unknown>>;
   sourceDocUrl?: AutomergeUrl;
 };
 

@@ -7,6 +7,6 @@ export const drawingTool: Tool = {
   id: "tldraw",
   name: "Drawing",
   supportedDataTypes: ["tldraw"],
-  editorComponent: TLDraw,
-  annotationsViewComponent: TLDrawAnnotations,
+  EditorComponent: TLDraw,
+  AnnotationsViewComponent: TLDrawAnnotations,
 };

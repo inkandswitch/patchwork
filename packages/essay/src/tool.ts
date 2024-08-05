@@ -7,7 +7,7 @@ export const essayEditorTool: Tool = {
   id: "essay",
   name: "Editor",
   supportedDataTypes: ["essay"],
-  editorComponent: EssayEditor,
-  annotationsViewComponent: EssayAnnotations,
+  EditorComponent: EssayEditor,
+  AnnotationsViewComponent: EssayAnnotations,
   supportsInlineComments: true,
 };

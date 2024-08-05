@@ -21,7 +21,7 @@ export interface AnnotationGroupViewProps {
   doc: HasVersionControlMetadata<unknown, unknown> & HasAssets;
   handle: DocHandle<HasVersionControlMetadata<unknown, unknown> & HasAssets>;
   annotationGroup: AnnotationGroupWithUIState<unknown, unknown>;
-  annotationsViewComponent: React.FC<
+  AnnotationsViewComponent: React.FC<
     AnnotationsViewProps<
       HasVersionControlMetadata<unknown, unknown>,
       unknown,
@@ -48,7 +48,7 @@ export const AnnotationGroupView = forwardRef<
       doc,
       handle,
       annotationGroup,
-      annotationsViewComponent,
+      AnnotationsViewComponent,
       setIsHovered,
       setIsSelected,
       hasNext,
@@ -263,13 +263,12 @@ export const AnnotationGroupView = forwardRef<
             }`}
           >
             {(!hideAnnotations || !annotationGroup.discussion) &&
-              (annotationsViewComponent ? (
-                React.createElement(annotationsViewComponent, {
-                  doc,
-                  handle,
-
-                  annotations: annotationGroup.annotations,
-                })
+              (AnnotationsViewComponent ? (
+                <AnnotationsViewComponent
+                  doc={doc}
+                  handle={handle}
+                  annotations={annotationGroup.annotations}
+                />
               ) : (
                 <div className="text-gray-500 text-xs italic">
                   No view available for this edit

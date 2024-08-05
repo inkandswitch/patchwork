@@ -8,7 +8,7 @@ export const buildMetadataGraphView: Tool = {
   id: "jacquard-build-metadata-graph-view",
   name: "Graph",
   supportedDataTypes: ["jacquard-build-metadata"],
-  editorComponent: GraphView,
+  EditorComponent: GraphView,
 };
 
 export const buildMetadataLogView: Tool = {
@@ -16,5 +16,5 @@ export const buildMetadataLogView: Tool = {
   id: "jacquard-build-metadata-log-view",
   name: "Log",
   supportedDataTypes: ["jacquard-build-metadata"],
-  editorComponent: LogView,
+  EditorComponent: LogView,
 };

@@ -53,5 +53,5 @@ export const packageEditorTool: Tool = {
   id: "pkg",
   name: "Package",
   supportedDataTypes: ["pkg"],
-  editorComponent: PackageEditor,
+  EditorComponent: PackageEditor,
 };

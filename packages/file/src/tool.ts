@@ -6,7 +6,7 @@ export const fileTool: Tool = {
   type: "patchwork:tool",
   id: "file",
   name: "File",
-  editorComponent: FileEditor,
-  annotationsViewComponent: TextFileAnnotations,
+  EditorComponent: FileEditor,
+  AnnotationsViewComponent: TextFileAnnotations,
   supportedDataTypes: ["file"],
 };

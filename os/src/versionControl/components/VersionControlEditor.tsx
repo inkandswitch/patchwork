@@ -416,7 +416,7 @@ const DocEditor = <T, V>({
     return;
   }
 
-  const Component = tool.editorComponent as React.FC<EditorProps<T, V>>;
+  const Component = tool.EditorComponent as React.FC<EditorProps<T, V>>;
 
   return (
     <Component

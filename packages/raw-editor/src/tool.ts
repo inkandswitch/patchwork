@@ -5,6 +5,6 @@ export const rawEditorTool: Tool = {
   type: "patchwork:tool",
   id: "raw",
   name: "Raw",
-  editorComponent: RawEditor,
+  EditorComponent: RawEditor,
   supportedDataTypes: "*",
 };

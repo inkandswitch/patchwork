@@ -12,7 +12,7 @@ export const StatusBar = (props: StatusBarProps) => {
   const { dataType } = props;
   const tools = useToolsForDataType(dataType);
   const toolsWithStatusBarComponent = useMemo(
-    () => tools.filter((tool) => tool.statusBarComponent),
+    () => tools.filter((tool) => tool.StatusBarComponent),
 
     [tools]
   );
@@ -39,13 +39,13 @@ const StatusBarItem = ({ editorProps, tool }: StatusBarItemProps) => {
       }`}
     >
       <ErrorBoundary
-        key={tool.statusBarComponent.toString()}
+        key={tool.StatusBarComponent.toString()}
         FallbackComponent={() => null}
         onError={(error) => {
           console.error("Statusbar item crashed with the error above ^");
         }}
       >
-        {React.createElement(tool.statusBarComponent, editorProps)}
+        <tool.StatusBarComponent {...editorProps} />
       </ErrorBoundary>
       {tool.sourceDocUrl ? (
         <div

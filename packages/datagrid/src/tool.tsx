@@ -2,7 +2,7 @@ import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 
 import { EditorProps, Tool } from "@/tools";
 import { next as A } from "@automerge/automerge";
-import Handsontable from 'handsontable';
+import Handsontable from "handsontable";
 import { HotTable } from "@handsontable/react";
 import "handsontable/dist/handsontable.full.min.css";
 import { registerAllModules } from "handsontable/registry";
@@ -27,19 +27,23 @@ export const DataGrid = ({
   annotations = [],
 }: EditorProps<DataGridDocAnchor, string>) => {
   const [latestDoc] = useDocument<DataGridDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const handle = useHandle<DataGridDoc>(docUrl)!;  // TODO: JAH strict fix
+  const handle = useHandle<DataGridDoc>(docUrl)!; // TODO: JAH strict fix
 
   const doc = useMemo(
     () => (latestDoc && docHeads ? A.view(latestDoc, docHeads) : latestDoc),
     [latestDoc, docHeads]
   );
 
-  const onBeforeHotChange = (changes: Array<Handsontable.CellChange | null>) => {
+  const onBeforeHotChange = (
+    changes: Array<Handsontable.CellChange | null>
+  ) => {
     handle.change((doc) => {
       changes.forEach((change) => {
-        if (!change) { return; }
+        if (!change) {
+          return;
+        }
         const [row, columnUntyped, , newValue] = change;
-        const column = columnUntyped as number;  // TODO: JAH strict fix
+        const column = columnUntyped as number; // TODO: JAH strict fix
         if (column > doc.data[0].length) {
           doc.data[0][column] = "";
         }
@@ -109,5 +113,5 @@ export const dataGridTool: Tool = {
   id: "datagrid",
   name: "Spreadsheet",
   supportedDataTypes: ["datagrid"],
-  editorComponent: DataGrid,
+  EditorComponent: DataGrid,
 };
