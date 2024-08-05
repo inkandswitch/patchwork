@@ -72,7 +72,7 @@ const main = async () => {
     {
       name: "patchworkUrl",
       type: String,
-      defaultValue: "http://localhost:5173",
+      defaultValue: "https://jacquard.patchwork.inkandswitch.com",
     },
     {
       name: "inputs",
