@@ -145,6 +145,9 @@ const IGNORE_FILES_ENDING_IN = [
   ".git",
   ".mrg",
   ".pixi",
+  "node_modules",
+  ".temp", // living-papers
+  ".cache", // living-papers
 ];
 
 async function pushDir({
