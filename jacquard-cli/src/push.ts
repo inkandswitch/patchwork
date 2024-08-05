@@ -165,7 +165,7 @@ async function pushDir({
 }) {
   console.log(`Pushing dir: ${dir}`);
 
-  const files = fs.readdirSync(dir);
+  const files = fs.readdirSync(dir).sort();
 
   for (const filePath of files.map((file) => path.join(dir, file))) {
     // TODO: do this in a more principled way
