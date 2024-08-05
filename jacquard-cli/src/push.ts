@@ -43,7 +43,9 @@ const initVersionControlMetadata = (
   doc.changeGroupSummaries = {};
 
   // init the separate metadata doc
-  const metadataHandle = repo.create<VersionControlSidecarDoc>();
+  const metadataHandle = repo.create<VersionControlSidecarDoc>({
+    isBranchScope: false,
+  });
   if (options.branchScope) {
     ensureMetadataHandleIsBranchScope(metadataHandle);
   }
