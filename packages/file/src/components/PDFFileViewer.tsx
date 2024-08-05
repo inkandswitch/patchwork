@@ -36,7 +36,7 @@ export const PDFFileViewer = ({
   return <PDFViewer data={binaryData} />;
 };
 
-const useBinaryDataOfDocFile = (doc: FileDoc | undefined) => {
+export const useBinaryDataOfDocFile = (doc: FileDoc | undefined) => {
   const urlRef = useRef<string>();
   urlRef.current =
     doc && doc.content.type === "link" ? doc.content.url : undefined;

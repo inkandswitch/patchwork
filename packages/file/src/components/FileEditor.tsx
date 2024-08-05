@@ -16,6 +16,7 @@ import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
 import { useDocumentUIState } from "@/explorer/account";
+import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -46,8 +47,6 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
   const projectState = ifLoaded(
     useDocReactive(
       useCallback(() => {
-        waitForDR(jacquardProjectInfo);
-
         if (!jacquardProjectInfo) {
           return;
         }
@@ -60,7 +59,9 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
   const buildRuns = ifLoaded(
     useDocReactive(
       useCallback(() => {
-        waitForDR(projectState);
+        if (!projectState) {
+          return;
+        }
         return getBuildRunsWithDocAsPrimaryInput(projectState, mainDocUrl);
       }, [projectState, mainDocUrl])
     )
@@ -70,7 +71,9 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
     useDocReactive(
       "buildMetadataInputsOnBranch",
       useCallback(() => {
-        waitForDR(buildRuns);
+        if (!buildRuns) {
+          return;
+        }
         return buildRuns.flatMap((buildRun) =>
           buildRun.outputs.map((output) =>
             activeBranchUrl
@@ -118,6 +121,12 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
                   {...(props as EditorProps<FitsFileDoc, never>)}
                 />
               </div>
+            ) : isHTMLFile(doc) ? (
+              <div className="overflow-auto h-full">
+                <HTMLFileViewer
+                  {...(props as EditorProps<HTMLFileDoc, never>)}
+                />
+              </div>
             ) : (
               <div className="p-4">No preview for file</div>
             )}
@@ -126,13 +135,15 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
       </div>
       {docUIState.mainViewMode === "showOutputs" && (
         <div className="flex-1 overflow-auto border-l border-gray-200">
-          {outputFiles.map(({ docUrl, mainDocUrl }) => (
-            <FileEditor
-              docUrl={docUrl}
-              mainDocUrl={mainDocUrl}
-              getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-            />
-          ))}
+          {outputFiles
+            ? outputFiles.map(({ docUrl, mainDocUrl }) => (
+                <FileEditor
+                  docUrl={docUrl}
+                  mainDocUrl={mainDocUrl}
+                  getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+                />
+              ))
+            : "Loading..."}
         </div>
       )}
     </div>
