@@ -5,6 +5,7 @@
     "lib": ["ES2021", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "strict": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -21,7 +22,6 @@
     },
 
     /* Linting */
-    // "strict": true,
     // "noUnusedLocals": true,
     // "noUnusedParameters": true,
     // "noFallthroughCasesInSwitch": true
