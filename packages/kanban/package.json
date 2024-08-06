@@ -7,7 +7,7 @@
   "scripts": {},
   "keywords": [],
   "dependencies": {
-    "@automerge/automerge": "^2.2.5",
+    "@automerge/automerge": "^2.2.8",
     "@automerge/automerge-repo": "^1.2.1",
     "@automerge/automerge-repo-react-hooks": "^1.2.1",
     "@firefox-devtools/react-contextmenu": "^5.1.1",

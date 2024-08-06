@@ -8,7 +8,7 @@
   "keywords": [],
   "author": "Ink & Switch",
   "dependencies": {
-    "@automerge/automerge": "^2.2.5",
+    "@automerge/automerge": "^2.2.8",
     "@automerge/automerge-codemirror": "^0.0.12",
     "@automerge/automerge-repo": "^1.2.1",
     "@automerge/automerge-repo-react-hooks": "^1.2.1",
