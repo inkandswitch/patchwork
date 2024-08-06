@@ -5,11 +5,7 @@ import {
   isValidAutomergeUrl,
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
-import {
-  useDocument,
-  useHandle,
-  useRepo,
-} from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { EventEmitter } from "eventemitter3";
 
 import { useForceUpdate } from "@/hooks/useForceUpdate";
@@ -290,12 +286,12 @@ export function useCurrentAccount(): Account | undefined {
     return () => {
       account.off("change", forceUpdate);
     };
-  }, [account]);
+  }, [account, forceUpdate]);
 
   // Add new fields to an old account doc that doesn't have one yet.
   // In the future, replace this with a more principled schema migration system.
+  const doc = account?.handle.docSync();
   useEffect(() => {
-    const doc = account?.handle.docSync();
     if (account && doc && doc.rootFolderUrl === undefined) {
       const rootFolderHandle = repo.create<FolderDoc>();
       rootFolderHandle.change((rootFolder) => {
@@ -326,7 +322,7 @@ export function useCurrentAccount(): Account | undefined {
         account.moduleSettingsUrl = moduleSettingsHandle.url;
       });
     }
-  }, [account?.handle.docSync()]);
+  }, [account, doc, repo]);
 
   return account;
 }
@@ -377,7 +373,6 @@ export const useDatatypeSettings = (): ModuleSettingsDoc | undefined => {
 
 const DEFAULT_STATE: DocUIState = {
   mainViewMode: "showFile",
-  sidebarMode: null,
   highlightChanges: true,
 };
 
@@ -391,6 +386,9 @@ export const useDocumentUIState = (
 
   return useMemo(() => {
     const changeUiStateOfDoc = (fn: (viewState: DocUIState) => void) => {
+      if (!uiStateOm) {
+        throw new Error("cannot change UI state if it's not loaded yet");
+      }
       uiStateOm.handle.change((uiState) => {
         if (!uiState.docUIStates) {
           uiState.docUIStates = {};
