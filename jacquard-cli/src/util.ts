@@ -28,7 +28,7 @@ export async function waitForSync(
   }
 
   console.log("Waiting for files to sync...");
-  return Promise.all(
+  await Promise.all(
     handlesToWaitOn.map(
       (handle) =>
         new Promise((resolve) => {
@@ -52,6 +52,7 @@ export async function waitForSync(
         })
     )
   );
+  console.log("  Files synced!");
 }
 
 type JacquardConfig = {

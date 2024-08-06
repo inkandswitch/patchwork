@@ -126,12 +126,11 @@ export async function push(
     console.log(`Updated files in existing folder ${projectFolderUrl}`);
   } else {
     console.log(`Created new folder at ${folderHandle.url}`);
+    const { documentId } = parseAutomergeUrl(folderHandle.url);
+    console.log(
+      `  View at: ${patchworkUrl}/#jacquard-project--${documentId}?type=folder`
+    );
   }
-
-  const { documentId } = parseAutomergeUrl(folderHandle.url);
-  console.log(
-    `View at: ${patchworkUrl}/#jacquard-project--${documentId}?type=folder`
-  );
 
   if (wait) {
     await waitForSync(handlesToWaitOn, syncServerStorageId);
