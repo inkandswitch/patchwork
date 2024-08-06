@@ -35,7 +35,7 @@ export type BuildRunWithProgress = Omit<BuildRun, "timestamp"> & {
 
 // todo: think about error handling and more detailed update reporting
 
-type RefreshState =
+export type RefreshState =
   | { type: "idle" }
   | { type: "requesting" }
   | {

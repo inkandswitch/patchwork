@@ -9,7 +9,7 @@ import {
 import { canBeUndef } from "@/utils";
 import { CheckCircle, CircleDashed, Loader2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { JacquardBuildMetadata } from "../datatype";
+import { JacquardBuildMetadata, RefreshState } from "../datatype";
 import {
   getProjectState,
   getStalenessInfo,
@@ -28,7 +28,7 @@ export const BuildRefreshButton = ({
   getProjectState;
 
   // TODO: not sure why this can be undefined but empirically it can be
-  const refreshState = useMemo(
+  const refreshState: RefreshState = useMemo(
     () =>
       canBeUndef(projectBuildMetadataOm.doc.refreshState) || {
         type: "idle",
