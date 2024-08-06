@@ -97,7 +97,7 @@ self.addEventListener("install", () => {
 });
 
 self.addEventListener("message", async (event) => {
-  console.log(`${PEER_ID}: Client messaged`, event.data);
+  // console.log(`${PEER_ID}: Client messaged`, event.data);
 
   switch (event.data.type) {
     case "PING":
