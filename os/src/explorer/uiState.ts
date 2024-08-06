@@ -73,14 +73,11 @@ export const useDocumentUIState = (
 ): [DocUIState, (fn: (state: DocUIState) => void) => void] => {
   const key = docPathString(docPath);
   const uiStateOm = ifLoaded(useUIStateOm());
+  const uiStateHandle = uiStateOm?.handle;
 
-  // todo: don't update ui state if it was changed in another tab
-  return useMemo(() => {
-    const changeDocUIState = (fn: (docUIState: DocUIState) => void) => {
-      if (!uiStateOm) {
-        throw new Error("cannot change UI state if it's not loaded yet");
-      }
-      uiStateOm.handle.change((uiState) => {
+  const changeDocUIState = useCallback(
+    (fn: (docUIState: DocUIState) => void) => {
+      uiStateHandle?.change((uiState) => {
         if (!uiState.docUIStates) {
           uiState.docUIStates = {};
         }
@@ -91,11 +88,15 @@ export const useDocumentUIState = (
 
         fn(uiState.docUIStates[key]);
       });
-    };
+    },
+    [key, uiStateHandle]
+  );
 
+  // todo: don't update ui state if it was changed in another tab
+  return useMemo(() => {
     const docUIState: DocUIState =
       uiStateOm?.doc?.docUIStates?.[key] ?? DEFAULT_STATE;
 
     return [docUIState, changeDocUIState];
-  }, [key, uiStateOm]);
+  }, [changeDocUIState, key, uiStateOm?.doc?.docUIStates]);
 };
