@@ -251,6 +251,7 @@ const createAccount = (
   const accountHandle = repo.create<AccountDoc>({
     contactUrl: contactHandle.url,
     rootFolderUrl: rootFolderHandle.url,
+    uiStateUrl: uiStateHandle.url,
   });
 
   return { accountHandle, contactHandle, rootFolderHandle };
