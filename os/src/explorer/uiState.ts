@@ -50,6 +50,24 @@ const DEFAULT_STATE: DocUIState = {
   highlightChanges: true,
 };
 
+export const useUIStateOm = (): DocReactiveState<Om<UIStateDoc>> => {
+  const repo = useRepo();
+  const account = useCurrentAccount();
+  return useDocReactive(
+    useCallback(() => {
+      if (!account) {
+        throw new LoadingError();
+      }
+      const accountDoc = getDoc<AccountDoc>(account.handle.url, repo);
+      return getOm<UIStateDoc>(accountDoc.uiStateUrl, repo);
+    }, [account, repo])
+  );
+};
+
+export const useUIStateHandle = (): DocHandle<UIStateDoc> | undefined => {
+  return ifLoaded(useUIStateOm())?.handle;
+};
+
 export const useDocumentUIState = (
   docPath: DocPath
 ): [DocUIState, (fn: (state: DocUIState) => void) => void] => {
@@ -80,22 +98,4 @@ export const useDocumentUIState = (
 
     return [docUIState, changeDocUIState];
   }, [key, uiStateOm]);
-};
-
-export const useUIStateOm = (): DocReactiveState<Om<UIStateDoc>> => {
-  const repo = useRepo();
-  const account = useCurrentAccount();
-  return useDocReactive(
-    useCallback(() => {
-      if (!account) {
-        throw new LoadingError();
-      }
-      const accountDoc = getDoc<AccountDoc>(account.handle.url, repo);
-      return getOm<UIStateDoc>(accountDoc.uiStateUrl, repo);
-    }, [account, repo])
-  );
-};
-
-export const useUIStateHandle = (): DocHandle<UIStateDoc> | undefined => {
-  return ifLoaded(useUIStateOm())?.handle;
 };
