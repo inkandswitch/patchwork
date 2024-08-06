@@ -1,4 +1,4 @@
-import { docPathString, UIStateDoc } from "@/explorer/account";
+import { docPathString, UIStateDoc } from "@/explorer/uiState";
 import { Om } from "@/om";
 import {
   DocLinkWithFolderPath,

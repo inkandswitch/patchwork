@@ -15,7 +15,7 @@ import { FitsFileDoc, FitsFileViewer, isFitsFile } from "./FitsFileViewer";
 import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
-import { useDocumentUIState } from "@/explorer/account";
+import { useDocumentUIState } from "@/explorer/uiState";
 import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
 
 // TODO: this should be split out into separate tools that

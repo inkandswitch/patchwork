@@ -1,5 +1,5 @@
 import { getDR, ifLoaded, parallelMap, useDocReactive } from "@/doc-reactive";
-import { useUIStateOm } from "@/explorer/account";
+import { useUIStateOm } from "@/explorer/uiState";
 import {
   fakeDocPath,
   getOmOnBranch,
@@ -116,11 +116,15 @@ export function useFolderDocWithChildren(
 ): FolderDocWithMetadata | undefined {
   const repo = useRepo();
   const uiStateOm = useUIStateOm();
-  return ifLoaded(useDocReactive(useCallback(() => {
-    if (!rootFolderUrl) return undefined;
-    const getDocOnBranchFromPath = (docPath: DocPath) => {
-      return getOmOnBranchFromPath(docPath, getDR(uiStateOm), repo).doc;
-    };
-    return getFolderDocWithChildren(rootFolderUrl, getDocOnBranchFromPath);
-  }, [rootFolderUrl, uiStateOm, repo])));
+  return ifLoaded(
+    useDocReactive(
+      useCallback(() => {
+        if (!rootFolderUrl) return undefined;
+        const getDocOnBranchFromPath = (docPath: DocPath) => {
+          return getOmOnBranchFromPath(docPath, getDR(uiStateOm), repo).doc;
+        };
+        return getFolderDocWithChildren(rootFolderUrl, getDocOnBranchFromPath);
+      }, [rootFolderUrl, uiStateOm, repo])
+    )
+  );
 }

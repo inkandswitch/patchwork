@@ -22,7 +22,7 @@ import { AutomergeUrl } from "@automerge/automerge-repo";
 import { ErrorBoundary } from "react-error-boundary";
 import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
-import { useDocumentUIState } from "@/explorer/account";
+import { useDocumentUIState } from "@/explorer/uiState";
 
 export const FolderViewerWithEmbeds: React.FC<
   EditorProps<unknown, unknown>

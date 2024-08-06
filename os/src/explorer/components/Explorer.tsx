@@ -27,8 +27,8 @@ import {
   useCurrentAccount,
   useCurrentAccountDoc,
   useRootFolderDocWithChildren,
-  useUIStateOm,
 } from "../account";
+import { useUIStateOm } from "../uiState";
 import { useSelectedDocLink } from "../hooks/useSelectedDocLink";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
 import { ErrorFallback } from "./ErrorFallback";
@@ -60,16 +60,16 @@ export const Explorer: React.FC = () => {
         throw new Error("getFakeDocPathForDocUrl: flatDocLinks not ready");
       }
       const docLinkWithFolderPath = flatDocLinks.find(
-        (link) => link.url === url,
+        (link) => link.url === url
       );
       if (!docLinkWithFolderPath) {
         throw new Error(
-          `getFakeDocPathForDocUrl: No doc found for url: ${url}`,
+          `getFakeDocPathForDocUrl: No doc found for url: ${url}`
         );
       }
       return fakeDocPath(docLinkWithFolderPath);
     },
-    [flatDocLinks],
+    [flatDocLinks]
   );
 
   const selectedDocUrl = selectedDocLink?.url;
@@ -88,7 +88,7 @@ export const Explorer: React.FC = () => {
     }
 
     return selectedDoc.branchMetadata.branches.find(
-      (b) => b.url === selectedBranchUrl,
+      (b) => b.url === selectedBranchUrl
     );
   }, [selectedBranchUrl, selectedDoc]);
 
@@ -105,7 +105,7 @@ export const Explorer: React.FC = () => {
     selectedDataType &&
     (selectedTool.supportedDataTypes === "*" ||
       selectedTool.supportedDataTypes.some(
-        (supportedDataType) => supportedDataType === selectedDataType?.id,
+        (supportedDataType) => supportedDataType === selectedDataType?.id
       ))
       ? selectedTool
       : toolModules[0];
@@ -166,8 +166,8 @@ export const Explorer: React.FC = () => {
         getBranchScopeAndActiveBranchInfo(
           parentFolderDocPath,
           getDR(uiStateOm),
-          repo,
-        ),
+          repo
+        )
       );
       const parentFolderBranchedOm = cloneOrMainOm as Om<FolderDoc>;
 
@@ -186,7 +186,7 @@ export const Explorer: React.FC = () => {
         folderPath: parentFolderDocPath.map((link) => link.url),
       });
     },
-    [dataTypes, repo, selectedDocLink, uiStateOm, selectDocLink, rootFolderUrl],
+    [dataTypes, repo, selectedDocLink, uiStateOm, selectDocLink, rootFolderUrl]
   );
 
   // TODO: this only reads the main branch
@@ -225,7 +225,7 @@ export const Explorer: React.FC = () => {
 
   const removeDocLink = async (link: DocLinkWithFolderPath) => {
     const folderHandle = repo.find<FolderDoc>(
-      link.folderPath[link.folderPath.length - 1],
+      link.folderPath[link.folderPath.length - 1]
     );
     const folderDoc = await folderHandle.doc();
     if (!folderDoc) {

@@ -1,8 +1,6 @@
-import {
-  MainViewMode,
-  useCurrentAccount,
-  useDocumentUIState,
-} from "@/explorer/account";
+import { useCurrentAccount } from "@/explorer/account";
+import { useDocumentUIState } from "@/explorer/uiState";
+import { MainViewMode } from "@/explorer/uiState";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { getRelativeTimeString } from "@/lib/dates";

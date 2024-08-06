@@ -43,13 +43,9 @@ import {
   Tree,
 } from "react-arborist";
 import { useDataType, useDataTypes } from "../../datatypes";
-import {
-  docPathString,
-  UIStateDoc,
-  useCurrentAccountDoc,
-  useDatatypeSettings,
-  useUIStateOm,
-} from "../account";
+import { useCurrentAccountDoc, useDatatypeSettings } from "../account";
+import { useUIStateOm } from "../uiState";
+import { docPathString, UIStateDoc } from "../uiState";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
 

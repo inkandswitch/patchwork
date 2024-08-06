@@ -1,5 +1,5 @@
 import { getDR, ifLoaded, useDocReactive } from "@/doc-reactive";
-import { useUIStateOm } from "@/explorer/account";
+import { useUIStateOm } from "@/explorer/uiState";
 import { DocPath } from "@/packages/folder/datatype";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";
@@ -21,19 +21,28 @@ export const useBranchScopeInfo = (
   docPath: DocPath | undefined
 ): BranchScopeInfo | undefined => {
   const repo = useRepo();
-  return ifLoaded(useDocReactive(useCallback(() => {
-    return docPath && getBranchScopeInfo(docPath, repo);
-  }, [docPath, repo])));
+  return ifLoaded(
+    useDocReactive(
+      useCallback(() => {
+        return docPath && getBranchScopeInfo(docPath, repo);
+      }, [docPath, repo])
+    )
+  );
 };
 
-export const useActiveBranchInfo = (
-  branchScopePath: DocPath | undefined
-) => {
+export const useActiveBranchInfo = (branchScopePath: DocPath | undefined) => {
   const repo = useRepo();
   const uiStateOm = useUIStateOm();
-  return ifLoaded(useDocReactive(useCallback(() => (
-    branchScopePath && getActiveBranchInfo(branchScopePath, getDR(uiStateOm), repo)
-  ), [uiStateOm, branchScopePath, repo])));
+  return ifLoaded(
+    useDocReactive(
+      useCallback(
+        () =>
+          branchScopePath &&
+          getActiveBranchInfo(branchScopePath, getDR(uiStateOm), repo),
+        [uiStateOm, branchScopePath, repo]
+      )
+    )
+  );
 };
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
@@ -43,7 +52,15 @@ export const useBranchScopeAndActiveBranchInfo = (
 ): BranchScopeAndActiveBranchInfo | undefined => {
   const repo = useRepo();
   const uiStateOm = useUIStateOm();
-  return ifLoaded(useDocReactive(useCallback(() => (
-    docPath && uiStateOm && getBranchScopeAndActiveBranchInfo(docPath, getDR(uiStateOm), repo)
-  ), [docPath, uiStateOm, repo])));
+  return ifLoaded(
+    useDocReactive(
+      useCallback(
+        () =>
+          docPath &&
+          uiStateOm &&
+          getBranchScopeAndActiveBranchInfo(docPath, getDR(uiStateOm), repo),
+        [docPath, uiStateOm, repo]
+      )
+    )
+  );
 };

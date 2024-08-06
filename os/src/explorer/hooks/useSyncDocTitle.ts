@@ -4,7 +4,7 @@ import { fakeDocPath, getOmOnBranchFromPath } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";
 import { useDataType } from "../../datatypes";
-import { useUIStateOm } from "../account";
+import { useUIStateOm } from "../uiState";
 
 // This hook keeps the name of the link synced with the title of the document.
 // The update is triggered every time the selected doc changes.
@@ -28,18 +28,35 @@ export const useSyncDocTitle = ({
   const uiStateOm = useUIStateOm();
   const selectedDocPath = selectedDocLink && fakeDocPath(selectedDocLink);
 
-  const selectedDoc = useDocReactive(useCallback(() => {
-    if (!selectedDocPath) { throw new LoadingError; }
-    return getOmOnBranchFromPath(selectedDocPath, getDR(uiStateOm), repo).doc;
-  }, [repo, selectedDocPath, uiStateOm]));
+  const selectedDoc = useDocReactive(
+    useCallback(() => {
+      if (!selectedDocPath) {
+        throw new LoadingError();
+      }
+      return getOmOnBranchFromPath(selectedDocPath, getDR(uiStateOm), repo).doc;
+    }, [repo, selectedDocPath, uiStateOm])
+  );
 
-  const parentFolderOm = useDocReactive(useCallback(() => {
-    if (!selectedDocPath) { throw new LoadingError; }
-    return getOmOnBranchFromPath<FolderDoc>(selectedDocPath.slice(0, -1), getDR(uiStateOm), repo);
-  }, [repo, selectedDocPath, uiStateOm]));
+  const parentFolderOm = useDocReactive(
+    useCallback(() => {
+      if (!selectedDocPath) {
+        throw new LoadingError();
+      }
+      return getOmOnBranchFromPath<FolderDoc>(
+        selectedDocPath.slice(0, -1),
+        getDR(uiStateOm),
+        repo
+      );
+    }, [repo, selectedDocPath, uiStateOm])
+  );
 
   useEffect(() => {
-    if (!selectedDocLink || !isLoaded(selectedDoc) || !dataType || !isLoaded(parentFolderOm)) {
+    if (
+      !selectedDocLink ||
+      !isLoaded(selectedDoc) ||
+      !dataType ||
+      !isLoaded(parentFolderOm)
+    ) {
       selectedDocTitleRef.current = undefined;
       return;
     }
@@ -84,5 +101,12 @@ export const useSyncDocTitle = ({
         });
       }
     });
-  }, [selectedDoc, dataType, selectedDocLink, repo, selectDocLink, parentFolderOm]);
+  }, [
+    selectedDoc,
+    dataType,
+    selectedDocLink,
+    repo,
+    selectDocLink,
+    parentFolderOm,
+  ]);
 };

@@ -15,7 +15,7 @@ import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { LegacyBranch, HasVersionControlMetadata } from "../schema";
 import Markdown from "react-markdown";
 import { isLLMActive } from "@/lib/llm";
-import { SidebarMode } from "@/explorer/account";
+import { SidebarMode } from "@/explorer/uiState";
 
 export type HasBotChatHistory = {
   botChatHistory: ChatMessage[];

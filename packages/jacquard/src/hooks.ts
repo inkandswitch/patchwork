@@ -1,5 +1,5 @@
 import { getDR, ifLoaded, useDocReactive } from "@/doc-reactive";
-import { useUIStateOm } from "@/explorer/account";
+import { useUIStateOm } from "@/explorer/uiState";
 import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";
 import {
