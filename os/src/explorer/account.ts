@@ -239,26 +239,18 @@ const createAccount = (
   contactHandle: DocHandle<ContactDoc>;
   rootFolderHandle: DocHandle<FolderDoc>;
 } => {
-  const accountHandle = repo.create<AccountDoc>();
-  const contactHandle = repo.create<ContactDoc>();
-  const rootFolderHandle = repo.create<FolderDoc>();
-  const uiStateHandle = repo.create<UIStateDoc>();
-
-  contactHandle.change((contact) => {
-    contact.type = "anonymous";
+  const contactHandle = repo.create<ContactDoc>({
+    type: "anonymous",
   });
-
-  rootFolderHandle.change((rootFolder) => {
-    rootFolder.docs = [];
+  const rootFolderHandle = repo.create<FolderDoc>({
+    docs: [],
   });
-
-  uiStateHandle.change((uiState) => {
-    uiState.openedFoldersInSidebar = [];
+  const uiStateHandle = repo.create<UIStateDoc>({
+    openedFoldersInSidebar: [],
   });
-
-  accountHandle.change((account) => {
-    account.contactUrl = contactHandle.url;
-    account.rootFolderUrl = rootFolderHandle.url;
+  const accountHandle = repo.create<AccountDoc>({
+    contactUrl: contactHandle.url,
+    rootFolderUrl: rootFolderHandle.url,
   });
 
   return { accountHandle, contactHandle, rootFolderHandle };
