@@ -38,7 +38,11 @@ export interface AccountDoc {
   moduleSettingsUrl: AutomergeUrl;
 }
 
-export type SidebarMode = "review" | "history" | "Bot";
+export type DocUIState = {
+  mainViewMode: MainViewMode;
+  sidebarMode?: SidebarMode;
+  highlightChanges: boolean;
+};
 
 export type MainViewMode =
   | "showFile"
@@ -46,11 +50,7 @@ export type MainViewMode =
   | "showOutputs"
   | "compareWithMain";
 
-export type DocUIState = {
-  mainViewMode: MainViewMode;
-  sidebarMode?: SidebarMode;
-  highlightChanges: boolean;
-};
+export type SidebarMode = "review" | "history" | "Bot";
 
 export type UIStateDoc = {
   /** Folders that are toggled open in the user's sidebar.
@@ -63,6 +63,7 @@ export type UIStateDoc = {
    */
   openBranches: { [docPathString: string]: AutomergeUrl };
 
+  /** Document-specific UI states */
   docUIStates: { [docPathString: string]: DocUIState };
 };
 
@@ -385,7 +386,7 @@ export const useDocumentUIState = (
   // todo: don't update ui state if it was changed in another tab
 
   return useMemo(() => {
-    const changeUiStateOfDoc = (fn: (viewState: DocUIState) => void) => {
+    const changeDocUIState = (fn: (docUIState: DocUIState) => void) => {
       if (!uiStateOm) {
         throw new Error("cannot change UI state if it's not loaded yet");
       }
@@ -402,11 +403,10 @@ export const useDocumentUIState = (
       });
     };
 
-    const docViewState: DocUIState =
-      (uiStateOm?.doc?.docUIStates && uiStateOm.doc.docUIStates[key]) ??
-      DEFAULT_STATE;
+    const docUIState: DocUIState =
+      uiStateOm?.doc?.docUIStates?.[key] ?? DEFAULT_STATE;
 
-    return [docViewState, changeUiStateOfDoc];
+    return [docUIState, changeDocUIState];
   }, [key, uiStateOm]);
 };
 
