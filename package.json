@@ -8,8 +8,6 @@
     "dev": "pnpm --filter os dev",
     "build": "pnpm --filter os build",
     "tsc": "tsc",
-    "tsconfig-strict": "cp tsconfig.strict.json tsconfig.json && git update-index --assume-unchanged tsconfig.json",
-    "tsconfig-lenient": "cp tsconfig.lenient.json tsconfig.json && git update-index --no-assume-unchanged tsconfig.json",
     "preinstall": "npx only-allow pnpm",
     "test": "pnpm --filter os test"
   },
