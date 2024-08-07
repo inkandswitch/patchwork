@@ -49,14 +49,25 @@ export type EditorProps<A, V> = {
   docUrl: AutomergeUrl;
   docHeads?: Heads;
   activeDiscussionIds?: string[];
-  annotations?: AnnotationWithUIState<A, V>[];
-  annotationGroups?: AnnotationGroupWithUIState<A, V>[];
-  actorIdToAuthor?: Record<ActorId, AutomergeUrl>; // todo: can we replace that with memoize?
 
+  /** These props are used to display annotations (diff highlights and comment highlights)
+   *  and report back to the environment which anchors are currently selected or hovered
+   */
+  annotations?: AnnotationWithUIState<A, V>[];
   setSelectedAnchors?: (anchors: A[]) => void;
   setHoveredAnchor?: (anchor: A | null) => void;
+
+  /** just some metadata to help render authors */
+  actorIdToAuthor?: Record<ActorId, AutomergeUrl>; // todo: can we replace that with memoize?
+
+  /** A typical editor only needs to deal with annotations, not annotation groups.
+   *  The exception is if you want to display comments in the editor itself,
+   *  as we do in the essay editor comments sidebar.
+   */
+  annotationGroups?: AnnotationGroupWithUIState<A, V>[];
   setSelectedAnnotationGroupId?: (groupId: string | undefined) => void;
   setHoveredAnnotationGroupId?: (groupId: string | undefined) => void;
+
   setCommentState?: (state: CommentState<A>) => void;
 
   hideInlineComments?: boolean;

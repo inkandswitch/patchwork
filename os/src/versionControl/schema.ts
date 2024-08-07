@@ -208,11 +208,11 @@ export interface HighlightAnnotation<A, V> {
   value: V;
 }
 
-export type Annotation<A, V> =
-  | AddAnnotation<A, V>
-  | DeleteAnnotation<A, V>
-  | ChangeAnnotation<A, V>
-  | HighlightAnnotation<A, V>;
+export type Annotation<Anchor, Value> =
+  | AddAnnotation<Anchor, Value>
+  | DeleteAnnotation<Anchor, Value>
+  | ChangeAnnotation<Anchor, Value>
+  | HighlightAnnotation<Anchor, Value>;
 
 export type AnnotationWithUIState<A, V> = Annotation<A, V> & {
   /** Whether the annotation should be visually emphasized in the UI (eg, with darker coloring).
