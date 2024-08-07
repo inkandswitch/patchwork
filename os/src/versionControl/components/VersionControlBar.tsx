@@ -1,5 +1,5 @@
 import { useCurrentAccount } from "@/explorer/account";
-import { useDocumentUIState } from "@/explorer/uiState";
+import { useDocUIState } from "@/explorer/uiState";
 import { MainViewMode } from "@/explorer/uiState";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
@@ -102,7 +102,7 @@ export const VersionControlBar = ({
   const dataTypes = useDataTypes();
   const account = useCurrentAccount();
 
-  const [docUIState, changeDocUIState] = useDocumentUIState(
+  const [docUIState, changeDocUIState] = useDocUIState(
     getFakeDocPathForDocUrl(docUrl)
   );
 

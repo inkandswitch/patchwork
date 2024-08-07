@@ -1,12 +1,31 @@
 import * as Automerge from "@automerge/automerge";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useResizeObserver } from "@wojtekmaj/react-hooks";
 import { pdfjs, Document, Page } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import { EditorProps } from "@/tools";
 import { FileDoc, LinkedFileContent } from "../datatype";
+import { useToolUIState } from "@/explorer/uiState";
+import { DocPath } from "@/packages/folder/datatype";
+import { clsx } from "clsx";
+import { fileTool } from "../tool";
+import { eventListenerEffect } from "@/utils";
+
+// react-pdf doesn't make this easy
+type OnPageRenderSuccess = NonNullable<
+  React.ComponentProps<typeof Page>["onRenderSuccess"]
+>;
+type OnDocumentLoadSuccess = NonNullable<
+  React.ComponentProps<typeof Document>["onLoadSuccess"]
+>;
 
 export type PDFFileDoc = FileDoc & {
   content: Uint8Array;
@@ -23,6 +42,7 @@ export const isPDFFile = (file: FileDoc): file is PDFFileDoc => {
 export const PDFFileViewer = ({
   docUrl,
   docHeads,
+  getFakeDocPathForDocUrl,
 }: EditorProps<PDFFileDoc, never>) => {
   const [_doc] = useDocument<PDFFileDoc>(docUrl);
 
@@ -33,11 +53,9 @@ export const PDFFileViewer = ({
     return;
   }
 
-  return (
-    <div className="overflow-auto h-full">
-      <PDFViewer data={binaryData} />
-    </div>
-  );
+  const docPath = getFakeDocPathForDocUrl(docUrl);
+
+  return <PDFViewer data={binaryData} docPath={docPath} />;
 };
 
 export const useBinaryDataOfDocFile = (doc: FileDoc | undefined) => {
@@ -96,47 +114,128 @@ const resizeObserverOptions = {};
 
 const maxWidth = 800;
 
-export const PDFViewer = ({ data }: { data: Uint8Array }) => {
-  const [numPages, setNumPages] = useState<number>();
-  const [containerRef, setContainerRef] = useState<HTMLElement | null>(null);
+export const PDFViewer = ({
+  data,
+  docPath,
+}: {
+  data: Uint8Array;
+  docPath: DocPath;
+}) => {
+  // TODO: why slice?
+  const file = useMemo(() => ({ data: data.slice(0) }), [data]);
+
+  /*******************************
+   * Loading states, page counts *
+   *******************************/
+
+  const [numPages, setNumPages] = useState<number | undefined>();
+  const [numPagesRendered, setNumPagesRendered] = useState<number>(0);
+
+  const isLoaded = numPages !== undefined;
+  const isRendered = numPages === numPagesRendered;
+
+  const onDocumentLoadSuccess: OnDocumentLoadSuccess = useCallback((pdfDoc) => {
+    setNumPages(pdfDoc.numPages);
+  }, []);
+
+  const onPageRenderSuccess: OnPageRenderSuccess = useCallback(() => {
+    setNumPagesRendered((old) => old + 1);
+  }, []);
+
+  /*******************
+   * Container width *
+   *******************/
+
+  const [containerElem, setContainerElem] = useState<HTMLElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>();
 
-  const inputToViewer = useMemo(() => ({ data: data.slice(0) }), [data]);
-
-  const onResize = useCallback<ResizeObserverCallback>((entries) => {
+  const onContainerResize = useCallback<ResizeObserverCallback>((entries) => {
     const [entry] = entries;
 
     if (entry) {
       setContainerWidth(entry.contentRect.width);
     }
   }, []);
+  useResizeObserver(containerElem, resizeObserverOptions, onContainerResize);
 
-  useResizeObserver(containerRef, resizeObserverOptions, onResize);
+  /*******************
+   * Scroll position *
+   *******************/
 
-  // todo: get TS to understand the expected type for this callback
-  function onDocumentLoadSuccess(pdfDocumentProxy: any): void {
-    setNumPages(pdfDocumentProxy.numPages);
-  }
+  const [viewportElem, setViewportElem] = useState<HTMLElement | null>(null);
+
+  const [toolUIState, changeToolUIState] = useToolUIState<{
+    scrollTop: number;
+  }>(docPath, fileTool.id, () => ({ scrollTop: 0 }));
+
+  const [didInitialScroll, setDidInitialScroll] = useState(false);
+
+  // Read scroll position from tool UI state (once)
+  useEffect(() => {
+    if (isRendered && !didInitialScroll && toolUIState && viewportElem) {
+      viewportElem.scrollTo(0, toolUIState.scrollTop);
+      setDidInitialScroll(true);
+    }
+  }, [didInitialScroll, isRendered, toolUIState, viewportElem]);
+
+  // Write scroll position to tool UI state
+  const writeScrollTimeoutRef = useRef<number | undefined>();
+  useEffect(() => {
+    if (isRendered && viewportElem) {
+      return eventListenerEffect(viewportElem, "scroll", () => {
+        if (writeScrollTimeoutRef.current) {
+          window.clearTimeout(writeScrollTimeoutRef.current);
+        }
+        writeScrollTimeoutRef.current = window.setTimeout(() => {
+          changeToolUIState((d) => {
+            d.scrollTop = viewportElem.scrollTop || 0;
+          });
+        }, 2000);
+      });
+    }
+  }, [changeToolUIState, isRendered, viewportElem]);
+
+  /******
+   * UI *
+   ******/
 
   return (
-    <div className="w-full max-w-[calc(100%-2em)] m-4" ref={setContainerRef}>
-      <Document
-        file={inputToViewer}
-        onLoadSuccess={onDocumentLoadSuccess}
-        options={options}
-        className="flex flex-col items-center gap-2"
+    <div
+      data-debug="VIEWPORT"
+      className="overflow-auto h-full"
+      ref={setViewportElem}
+    >
+      <div
+        data-debug="CONTAINER"
+        className="w-full max-w-[calc(100%-2em)] m-4"
+        ref={setContainerElem}
       >
-        {Array.from(new Array(numPages), (el, index) => (
-          <Page
-            key={`page_${index + 1}`}
-            pageNumber={index + 1}
-            width={
-              containerWidth ? Math.min(containerWidth, maxWidth) : maxWidth
-            }
-            className="border border-gray-200"
-          />
-        ))}
-      </Document>
+        {!isLoaded ? (
+          <div>Loading PDF...</div>
+        ) : !isRendered ? (
+          <div>Rendering PDF...</div>
+        ) : null}
+        <Document
+          file={file}
+          onLoadSuccess={onDocumentLoadSuccess}
+          options={options}
+          className={clsx("flex flex-col items-center gap-2", {
+            hidden: !isRendered,
+          })}
+        >
+          {Array.from(new Array(numPages), (el, index) => (
+            <Page
+              key={index}
+              pageNumber={index + 1}
+              width={
+                containerWidth ? Math.min(containerWidth, maxWidth) : maxWidth
+              }
+              className="border border-gray-200"
+              onRenderSuccess={onPageRenderSuccess}
+            />
+          ))}
+        </Document>
+      </div>
     </div>
   );
 };

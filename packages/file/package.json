@@ -22,6 +22,7 @@
     "@microlink/react-json-view": "^1.23.1",
     "@radix-ui/react-icons": "^1.3.0",
     "@wojtekmaj/react-hooks": "^1.21.0",
+    "clsx": "^2.1.1",
     "codemirror": "^6.0.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.284.0",

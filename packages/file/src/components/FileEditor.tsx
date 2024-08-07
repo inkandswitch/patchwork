@@ -15,7 +15,7 @@ import { FitsFileDoc, FitsFileViewer, isFitsFile } from "./FitsFileViewer";
 import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
-import { useDocumentUIState } from "@/explorer/uiState";
+import { useDocUIState } from "@/explorer/uiState";
 import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
 
 // TODO: this should be split out into separate tools that
@@ -32,7 +32,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
     activeBranchUrl,
   } = props;
 
-  const [docUIState] = useDocumentUIState(getFakeDocPathForDocUrl(mainDocUrl));
+  const [docUIState] = useDocUIState(getFakeDocPathForDocUrl(mainDocUrl));
 
   const [_doc] = useDocument<FileDoc>(docUrl);
 
