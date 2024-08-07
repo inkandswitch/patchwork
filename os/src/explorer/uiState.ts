@@ -104,7 +104,7 @@ const TAB_DOC_UI_STATE_SIGNALS: Record<
   Atom<DocUIState | undefined>
 > = {};
 
-export const useDocumentUIState = (
+export const useDocUIState = (
   docPath: DocPath
 ): [DocUIState, (fn: (state: DocUIState) => void) => void] => {
   const key = docPathString(docPath);

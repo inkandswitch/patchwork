@@ -23,7 +23,7 @@ import { VersionControlBar } from "./VersionControlBar";
 import { ifLoaded } from "@/doc-reactive";
 import { fakeDocPath } from "../signals";
 import { ReviewSidebar } from "./ReviewSidebar";
-import { useDocumentUIState } from "@/explorer/uiState";
+import { useDocUIState } from "@/explorer/uiState";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -45,7 +45,7 @@ export const VersionControlEditor: React.FC<{
   const [doc, changeDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
 
-  const [docUIState, changeDocUIState] = useDocumentUIState(
+  const [docUIState, changeDocUIState] = useDocUIState(
     getFakeDocPathForDocUrl(mainDocUrl)
   );
 

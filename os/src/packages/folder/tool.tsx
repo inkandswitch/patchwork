@@ -22,7 +22,7 @@ import { AutomergeUrl } from "@automerge/automerge-repo";
 import { ErrorBoundary } from "react-error-boundary";
 import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
-import { useDocumentUIState } from "@/explorer/uiState";
+import { useDocUIState } from "@/explorer/uiState";
 
 export const FolderViewerWithEmbeds: React.FC<
   EditorProps<unknown, unknown>
@@ -37,7 +37,7 @@ export const FolderViewerWithEmbeds: React.FC<
   const folderAtHeads = folder && docHeads ? A.view(folder, docHeads) : folder;
   const [hideUnchangedFiles, setHideUnchangedFiles] = useState(false);
 
-  const [docUIState] = useDocumentUIState(getFakeDocPathForDocUrl(mainDocUrl));
+  const [docUIState] = useDocUIState(getFakeDocPathForDocUrl(mainDocUrl));
 
   if (!folder || !folderAtHeads) {
     return null;
