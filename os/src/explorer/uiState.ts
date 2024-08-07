@@ -34,6 +34,7 @@ export type DocUIState = {
   mainViewMode: MainViewMode;
   sidebarMode?: SidebarMode;
   highlightChanges: boolean;
+  toolUIStates: Record<string, unknown>;
 };
 
 export type MainViewMode =
@@ -107,6 +108,10 @@ const TAB_DOC_UI_STATE_SIGNALS: Record<
 export const useDocUIState = (
   docPath: DocPath
 ): [DocUIState, (fn: (state: DocUIState) => void) => void] => {
+  // TODO(jah): I might prefer if this returned undefined until the doc loads.
+  // Currently, client code can't tell. (But I guess the real answer is to not
+  // use hooks like this anymore...)
+
   const key = docPathString(docPath);
   const uiStateOm = ifLoaded(useUIStateOm());
   const uiStateHandle = uiStateOm?.handle;
@@ -157,5 +162,29 @@ export function defaultDocUIState(): DocUIState {
   return {
     mainViewMode: "showFile",
     highlightChanges: true,
+    toolUIStates: {},
   };
 }
+
+export const useToolUIState = <T>(
+  docPath: DocPath,
+  toolId: string,
+  init: () => T
+): [T | undefined, (fn: (state: T) => void) => void] => {
+  const [docUIState, changeDocUIState] = useDocUIState(docPath);
+
+  const toolUIState = docUIState.toolUIStates?.[toolId] as T | undefined;
+  const setToolUIState = (fn: (state: T) => void) => {
+    changeDocUIState((docUIState) => {
+      if (!docUIState.toolUIStates) {
+        docUIState.toolUIStates = {};
+      }
+      if (!docUIState.toolUIStates[toolId]) {
+        docUIState.toolUIStates[toolId] = init();
+      }
+      fn(docUIState.toolUIStates[toolId] as T);
+    });
+  };
+
+  return [toolUIState, setToolUIState];
+};
