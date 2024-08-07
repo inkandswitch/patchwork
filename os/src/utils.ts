@@ -27,3 +27,12 @@ export function canBeUndef<T>(x: T): T | undefined {
 }
 
 export const tuple = <T extends any[]>(...args: T): T => args;
+
+export function eventListenerEffect<K extends keyof HTMLElementEventMap>(
+  elem: HTMLElement,
+  type: K,
+  listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any
+): () => void {
+  elem.addEventListener(type, listener);
+  return () => elem.removeEventListener(type, listener);
+}

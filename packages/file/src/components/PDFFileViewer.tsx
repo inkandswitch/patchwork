@@ -17,6 +17,7 @@ import { useToolUIState } from "@/explorer/uiState";
 import { DocPath } from "@/packages/folder/datatype";
 import { clsx } from "clsx";
 import { fileTool } from "../tool";
+import { eventListenerEffect } from "@/utils";
 
 // react-pdf doesn't make this easy
 type OnPageRenderSuccess = NonNullable<
@@ -180,15 +181,11 @@ export const PDFViewer = ({
   // Write scroll position to tool UI state
   useEffect(() => {
     if (isRendered && viewportElem) {
-      const onViewportScroll = () => {
+      return eventListenerEffect(viewportElem, "scroll", () => {
         changeToolUIState((d) => {
-          d.scrollTop = viewportElem?.scrollTop || 0;
+          d.scrollTop = viewportElem.scrollTop || 0;
         });
-      };
-      viewportElem.addEventListener("scroll", onViewportScroll);
-      return () => {
-        viewportElem.removeEventListener("scroll", onViewportScroll);
-      };
+      });
     }
   }, [changeToolUIState, isRendered, viewportElem]);
 
