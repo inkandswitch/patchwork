@@ -98,7 +98,6 @@ const generateImportMapPlugin = (): Plugin => ({
 
     // in build mode generate import map
     const generator = new Generator({
-      debug: false,
       env: ["browser", "module"],
     });
 
@@ -107,6 +106,10 @@ const generateImportMapPlugin = (): Plugin => ({
     }
 
     const importMap = generator.getMap();
+
+    if (!importMap.imports) {
+      throw new Error("No imports object in generated import map");
+    }
 
     for (const [name, url] of Object.entries(SHARED_MODULES)) {
       importMap.imports[name] = url;
