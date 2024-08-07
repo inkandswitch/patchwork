@@ -8,6 +8,11 @@ import "react-pdf/dist/esm/Page/TextLayer.css";
 import { EditorProps } from "@/tools";
 import { FileDoc, LinkedFileContent } from "../datatype";
 
+// react-pdf doesn't make this easy
+type OnDocumentLoadSuccess = NonNullable<
+  React.ComponentProps<typeof Document>["onLoadSuccess"]
+>;
+
 export type PDFFileDoc = FileDoc & {
   content: Uint8Array;
   type: "pdf";
@@ -114,9 +119,12 @@ export const PDFViewer = ({ data }: { data: Uint8Array }) => {
   useResizeObserver(containerRef, resizeObserverOptions, onResize);
 
   // todo: get TS to understand the expected type for this callback
-  function onDocumentLoadSuccess(pdfDocumentProxy: any): void {
-    setNumPages(pdfDocumentProxy.numPages);
-  }
+  const onDocumentLoadSuccess: OnDocumentLoadSuccess = useCallback(
+    (pdfDocumentProxy) => {
+      setNumPages(pdfDocumentProxy.numPages);
+    },
+    []
+  );
 
   return (
     <div className="w-full max-w-[calc(100%-2em)] m-4" ref={setContainerRef}>
