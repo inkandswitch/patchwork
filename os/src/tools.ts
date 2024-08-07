@@ -19,20 +19,26 @@ import { IconType } from "./lib/icons";
 import * as PACKAGES from "./packages";
 import { DocPath } from "./packages/folder/datatype";
 
-export type Tool = {
+// To construct well-typed tools, we need ToolTyped with specific type
+// parameters. But then we need Tool, which means "ToolTyped with unknown but
+// well-defined type parameters". This is what's known as an existential type,
+// which TypeScript doesn't have. In hackish but reasonable lieu of that, we
+// just stuff a bunch of unknowns in there.
+
+export type Tool = ToolTyped<
+  HasVersionControlMetadata<unknown, unknown>,
+  unknown,
+  unknown
+>;
+
+export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
   id: string;
   type: "patchwork:tool";
   supportedDataTypes: "*" | string[];
   name: string;
   icon?: IconType;
-  EditorComponent: React.FC<EditorProps<unknown, unknown>>;
-  AnnotationsViewComponent?: React.FC<
-    AnnotationsViewProps<
-      HasVersionControlMetadata<unknown, unknown>,
-      unknown,
-      unknown
-    >
-  >;
+  EditorComponent: React.FC<EditorProps<A, V>>;
+  AnnotationsViewComponent?: React.FC<AnnotationsViewProps<D, A, V>>;
   /** whether this tool has support for rendering comments inline or if it
    * relies exclusively on the review sidebar to show comments */
   supportsInlineComments?: boolean;
@@ -44,6 +50,13 @@ export type Tool = {
   StatusBarComponent?: React.FC<EditorProps<unknown, unknown>>;
   sourceDocUrl?: AutomergeUrl;
 };
+
+/** Forgets the type parameters of a ToolTyped so that it can be used as a Tool */
+export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
+  tool: ToolTyped<D, A, V>
+): Tool {
+  return tool as Tool;
+}
 
 export type EditorProps<A, V> = {
   docUrl: AutomergeUrl;
@@ -81,13 +94,13 @@ export type EditorProps<A, V> = {
 };
 
 export type AnnotationsViewProps<
-  D extends HasVersionControlMetadata<T, V>,
-  T,
-  V
+  D extends HasVersionControlMetadata<TAnchor, TAnchorValue>,
+  TAnchor,
+  TAnchorValue
 > = {
   doc: D;
   handle: DocHandle<D>;
-  annotations: Annotation<T, V>[];
+  annotations: Annotation<TAnchor, TAnchorValue>[];
 };
 
 const isTool = (value: any): value is Tool => {

@@ -1,8 +1,8 @@
-import { Tool } from "@/tools";
+import { makeTool } from "@/tools";
 import { EssayAnnotations } from "./components/EssayAnnotations";
 import { EssayEditor } from "./components/EssayEditor";
 
-export const essayEditorTool: Tool = {
+export const essayEditorTool = makeTool({
   type: "patchwork:tool",
   id: "essay",
   name: "Editor",
@@ -10,4 +10,4 @@ export const essayEditorTool: Tool = {
   EditorComponent: EssayEditor,
   AnnotationsViewComponent: EssayAnnotations,
   supportsInlineComments: true,
-};
+});

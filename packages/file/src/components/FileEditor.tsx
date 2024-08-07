@@ -23,7 +23,7 @@ import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
 // that gets passed in the content of the document so you can determine based on the content
 // if this tool supports the data type
 
-export const FileEditor = (props: EditorProps<unknown, unknown>) => {
+export const FileEditor = (props: EditorProps<any, any>) => {
   const {
     docUrl,
     mainDocUrl,
