@@ -36,6 +36,11 @@ export const ReviewSidebar = React.memo(
     setHoveredAnnotationGroupId,
     setCommentState,
   }: ReviewSidebarProps) => {
+    const editingComment = annotationGroups.some(
+      (group) =>
+        group.comment?.type === "create" || group.comment?.type === "edit"
+    );
+
     return (
       <div className="h-full flex flex-col">
         <div className="bg-gray-50 flex-1 p-2 flex flex-col z-20 m-h-[100%] overflow-y-auto overflow-x-visible">
@@ -82,6 +87,7 @@ export const ReviewSidebar = React.memo(
         <div className="bg-gray-50 z-10 px-2 py-4 flex flex-col gap-3 border-b border-gray-200 ">
           <Button
             variant="outline"
+            disabled={editingComment}
             onClick={() => {
               setCommentState({
                 type: "create",
@@ -90,7 +96,7 @@ export const ReviewSidebar = React.memo(
               });
             }}
           >
-            Comment {selectedAnchors.length > 0 ? "on selection" : ""}
+            Add comment {selectedAnchors.length > 0 ? "on selection" : ""}
             <span className="text-gray-400 ml-2 text-xs">(⌘ + shift + m)</span>
           </Button>
         </div>

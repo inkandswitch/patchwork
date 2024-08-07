@@ -455,26 +455,25 @@ const DiscussionCommentView = ({
         {isBeingEdited && (
           <div className="flex gap-1 justify-end">
             <Button
-              variant="ghost"
-              className="py-0 px-2"
+              variant="default"
               onClick={() => {
                 onChangeContent(updatedText);
                 setIsBeingEdited(false);
                 setUpdatedContent(undefined);
               }}
             >
-              <Check size={16} />
+              Comment
+              <span className="text-gray-400 ml-1 text-xs">(⌘ + ⏎)</span>
             </Button>
 
             <Button
-              variant="ghost"
-              className="py-0 px-2"
+              variant="secondary"
               onClick={() => {
                 setIsBeingEdited(false);
                 setUpdatedContent(undefined);
               }}
             >
-              <XIcon size={16} />
+              Cancel
             </Button>
           </div>
         )}

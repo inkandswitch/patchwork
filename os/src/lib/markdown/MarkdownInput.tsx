@@ -25,7 +25,9 @@ export const MarkdownInput = ({
   docWithAssetsHandle,
   autoFocus,
 }: MarkdownInputProps) => {
-  const [editorView, setEditorView] = useState<EditorView | undefined>(undefined);
+  const [editorView, setEditorView] = useState<EditorView | undefined>(
+    undefined
+  );
   const [container, setContainer] = useState<HTMLElement | null>(null);
   const [remountEditor, setRemountEditor] = useState<object>({});
   const plugins = useMarkdownPlugins({ docWithAssetsHandle });

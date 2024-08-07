@@ -151,7 +151,7 @@ export function useAnnotations({
       typeof commentState.target !== "string"
     ) {
       discussions.push({
-        anchors: commentState.target,
+        anchors: commentState.target ?? [],
       });
     }
 
@@ -194,6 +194,13 @@ export function useAnnotations({
         [];
 
       editAnnotations.forEach((editAnnotation) => {
+        if (discussion.anchors === undefined) {
+          console.error(
+            "Unexpected state: discussion has no anchors!",
+            discussion
+          );
+          return;
+        }
         if (
           discussion.anchors.some((anchor) =>
             doAnchorsOverlap(dataType, editAnnotation.anchor, anchor, doc)
@@ -255,15 +262,7 @@ export function useAnnotations({
       annotations: editAnnotations.concat(highlightAnnotations),
       annotationGroups: sortedAnnotationGroups,
     };
-  }, [
-    doc,
-    diff,
-    selectedState,
-    isCommentInputFocused,
-    dataType,
-    discussionsWithoutAnchors,
-    commentState,
-  ]);
+  }, [doc, diff, selectedState, isCommentInputFocused, dataType, commentState]);
 
   const {
     selectedAnchors,
