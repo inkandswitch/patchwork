@@ -22,7 +22,9 @@ export const ImageFileViewer = ({
   const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
 
   return (
-    <img src={doc?.content.url} className="w-full h-full object-contain" />
+    <div className="overflow-auto h-full p-4">
+      <img src={doc?.content.url} className="w-full h-full object-contain" />
+    </div>
   );
 };
 

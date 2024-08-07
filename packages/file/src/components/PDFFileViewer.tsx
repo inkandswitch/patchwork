@@ -33,7 +33,11 @@ export const PDFFileViewer = ({
     return;
   }
 
-  return <PDFViewer data={binaryData} />;
+  return (
+    <div className="overflow-auto h-full">
+      <PDFViewer data={binaryData} />
+    </div>
+  );
 };
 
 export const useBinaryDataOfDocFile = (doc: FileDoc | undefined) => {

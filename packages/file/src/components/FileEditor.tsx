@@ -106,27 +106,15 @@ export const FileEditor = (props: EditorProps<unknown, unknown>) => {
         ) : (
           <>
             {isImageFile(doc) ? (
-              <div className="overflow-auto h-full p-4">
-                <ImageFileViewer
-                  {...(props as EditorProps<ImageFileDoc, never>)}
-                />
-              </div>
+              <ImageFileViewer
+                {...(props as EditorProps<ImageFileDoc, never>)}
+              />
             ) : isPDFFile(doc) ? (
-              <div className="overflow-auto h-full">
-                <PDFFileViewer {...(props as EditorProps<PDFFileDoc, never>)} />
-              </div>
+              <PDFFileViewer {...(props as EditorProps<PDFFileDoc, never>)} />
             ) : isFitsFile(doc) ? (
-              <div className="overflow-auto h-full p-4">
-                <FitsFileViewer
-                  {...(props as EditorProps<FitsFileDoc, never>)}
-                />
-              </div>
+              <FitsFileViewer {...(props as EditorProps<FitsFileDoc, never>)} />
             ) : isHTMLFile(doc) ? (
-              <div className="overflow-auto h-full">
-                <HTMLFileViewer
-                  {...(props as EditorProps<HTMLFileDoc, never>)}
-                />
-              </div>
+              <HTMLFileViewer {...(props as EditorProps<HTMLFileDoc, never>)} />
             ) : (
               <div className="p-4">No preview for file</div>
             )}

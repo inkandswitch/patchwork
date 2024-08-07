@@ -6,7 +6,7 @@ import { EditorProps } from "@/tools";
 
 export type FitsFileDoc = FileDoc & {
   content: LinkedFileContent;
-  type: "fits"
+  type: "fits";
 };
 
 export const isFitsFile = (doc: FileDoc) => {
@@ -22,12 +22,14 @@ export const FitsFileViewer = ({
   const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
 
   if (!doc) {
-    return
+    return;
   }
 
-  const fileUrl = `https://js9.si.edu/js9/js9.html?url=${doc.content.url}`
+  const fileUrl = `https://js9.si.edu/js9/js9.html?url=${doc.content.url}`;
 
   return (
-    <iframe src={fileUrl} className="w-full h-full" />
+    <div className="overflow-auto h-full p-4">
+      <iframe src={fileUrl} className="w-full h-full" />
+    </div>
   );
 };

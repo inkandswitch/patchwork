@@ -31,12 +31,16 @@ export const HTMLFileViewer = ({
     return new TextDecoder().decode(binaryData);
   }, [binaryData]);
 
-  return textData ? (
-    <iframe
-      srcDoc={textData}
-      style={{ width: "100%", height: "100%", border: "none" }}
-    />
-  ) : (
-    <div>loading</div>
+  return (
+    <div className="overflow-auto h-full">
+      {textData ? (
+        <iframe
+          srcDoc={textData}
+          style={{ width: "100%", height: "100%", border: "none" }}
+        />
+      ) : (
+        <div>loading</div>
+      )}
+    </div>
   );
 };
