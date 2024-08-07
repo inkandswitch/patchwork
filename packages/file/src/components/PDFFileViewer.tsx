@@ -179,12 +179,18 @@ export const PDFViewer = ({
   }, [didInitialScroll, isRendered, toolUIState, viewportElem]);
 
   // Write scroll position to tool UI state
+  const writeScrollTimeoutRef = useRef<number | undefined>();
   useEffect(() => {
     if (isRendered && viewportElem) {
       return eventListenerEffect(viewportElem, "scroll", () => {
-        changeToolUIState((d) => {
-          d.scrollTop = viewportElem.scrollTop || 0;
-        });
+        if (writeScrollTimeoutRef.current) {
+          window.clearTimeout(writeScrollTimeoutRef.current);
+        }
+        writeScrollTimeoutRef.current = window.setTimeout(() => {
+          changeToolUIState((d) => {
+            d.scrollTop = viewportElem.scrollTop || 0;
+          });
+        }, 2000);
       });
     }
   }, [changeToolUIState, isRendered, viewportElem]);
