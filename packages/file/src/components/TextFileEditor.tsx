@@ -84,12 +84,16 @@ export const TextFileEditor = ({
         getPluginsByType(doc!.type), // TODO: JAH strict fix
         annotationsPlugin,
         EditorView.lineWrapping,
-        selectedAnchorsPlugin({
-          setSelectedAnchors,
-          annotationsRef,
-          doc,
-          path: ["content", "value"],
-        }),
+        ...(setSelectedAnchors && doc
+          ? [
+              selectedAnchorsPlugin({
+                setSelectedAnchors,
+                annotationsRef,
+                doc,
+                path: ["content", "value"],
+              }),
+            ]
+          : []),
       ],
       parent: container,
     });
