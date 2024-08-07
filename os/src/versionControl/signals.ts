@@ -102,7 +102,8 @@ export const getActiveBranchInfo = (
   repo: Repo
 ): ActiveBranchInfo => {
   const activeBranchUrl = canBeUndef(
-    uiStateOm.doc.openBranches[docPathString(branchScopePath)]
+    // We handle the case of doc.openBranches being undefined here for backwards compatibility
+    uiStateOm.doc.openBranches?.[docPathString(branchScopePath)]
   );
 
   const setActiveBranchUrl = (branchDocUrl: AutomergeUrl | null) => {
