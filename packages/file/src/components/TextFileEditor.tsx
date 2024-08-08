@@ -13,7 +13,7 @@ import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { json } from "@codemirror/lang-json";
 import { python } from "@codemirror/lang-python";
-import { keymap } from "@codemirror/view";
+import { keymap, lineNumbers } from "@codemirror/view";
 import { EditorView, basicSetup } from "codemirror";
 import { useEffect, useRef, useState } from "react";
 import { selectedAnchorsPlugin } from "../../../essay/src/codemirrorPlugins/setSelectedAnchors";
@@ -84,6 +84,7 @@ export const TextFileEditor = ({
         getPluginsByType(doc!.type), // TODO: JAH strict fix
         annotationsPlugin,
         EditorView.lineWrapping,
+        lineNumbers(),
         ...(setSelectedAnchors && doc
           ? [
               selectedAnchorsPlugin({
