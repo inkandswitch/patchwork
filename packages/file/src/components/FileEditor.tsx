@@ -126,9 +126,10 @@ export const FileEditor = (props: EditorProps<any, any>) => {
           {outputFiles
             ? outputFiles.map(({ docUrl, mainDocUrl }) => (
                 <FileEditor
+                  key={docUrl}
+                  {...props}
                   docUrl={docUrl}
                   mainDocUrl={mainDocUrl}
-                  getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                 />
               ))
             : "Loading..."}
