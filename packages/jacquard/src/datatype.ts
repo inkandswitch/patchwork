@@ -17,6 +17,7 @@ export type BuildRunSpec = {
   autoDeps: Record<"stdoutDeclared" | "latex", boolean>;
   explicitInputs: string[];
   explicitOutputs: string[];
+  name?: string;
 };
 
 export type BuildRun = {

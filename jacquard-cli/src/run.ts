@@ -165,5 +165,6 @@ export function buildRunSpecFromArgs(args: CommandLineArgs): BuildRunSpec {
     },
     explicitInputs: args.inputs ?? [],
     explicitOutputs: args.outputs ?? [],
+    name: args.name,
   };
 }

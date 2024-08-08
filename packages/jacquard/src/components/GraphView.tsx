@@ -45,7 +45,7 @@ export const GraphView = ({
   }
 
   return (
-    <div className="p-4 flex flex-col max-h-full">
+    <div className="p-4 flex flex-col h-full overflow-auto">
       <GraphvizView source={stateGraphSrc(projectState)} />
       {false && (
         <pre className="text-sm overflow-y-auto">
@@ -128,12 +128,17 @@ function stateGraphSrc(state: ProjectState) {
   for (let buildRun of state.buildRuns) {
     const status = stalenessInfo.buildRunStatuses[buildRun.id];
     lines.push(`${gvId(buildRun.id)} [
-      shape=ellipse
-      label="${buildRun.spec.command}"
+      shape=rect
+      style="rounded"
+      label="${buildRun.spec.name ?? buildRun.spec.command}"
       fontname="sans-serif"
       fontsize=10
       tooltip="${status.map(reasonToString).join("; ")}"
-      ${status.length > 0 ? 'style=filled fillcolor="#fdba74"' : ""}
+      ${
+        status.length > 0
+          ? 'style="rounded,filled" fillcolor="#fdba74"'
+          : 'style="rounded"'
+      }
     ];`);
     for (let input of buildRun.inputs) {
       const inputReferenceInState = getReferenceFromDocUrl(state, input.docUrl);
@@ -152,7 +157,6 @@ function stateGraphSrc(state: ProjectState) {
 
   const source = `digraph {
     graph [pad="0.2"];
-    rankdir="LR";
     ${lines.join("\n")}
   }`;
 

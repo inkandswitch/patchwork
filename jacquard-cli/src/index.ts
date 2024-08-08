@@ -35,6 +35,7 @@ export type CommandLineArgs = {
   runPrefix?: string;
   latexDeps: boolean;
   stdoutDeclaredDeps: boolean;
+  name?: string;
 };
 
 const main = async () => {
@@ -102,6 +103,10 @@ const main = async () => {
       name: "stdoutDeclaredDeps",
       type: Boolean,
       defaultValue: false,
+    },
+    {
+      name: "name",
+      type: String,
     },
   ];
 

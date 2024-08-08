@@ -137,6 +137,7 @@ const isBinaryFileJacquard = (filePath: string) => {
     // fits is a binary format for images often used in astronomy,
     // the format has a human readable ASCII header which trips up isbinaryfile
     ".fits",
+    ".html",
   ];
 
   // files that are uploaded as text even if they are above the size limit
