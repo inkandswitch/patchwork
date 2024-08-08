@@ -126,12 +126,19 @@ export const mergeBranch = async ({
   branchOm: Om<BranchDoc>;
   mergedBy: AutomergeUrl;
 }) => {
-  Object.entries(branchOm.doc.clones).forEach(([originalDocUrl, { url }]) => {
-    const originalHandle = repo.find(originalDocUrl as AutomergeUrl);
-    const cloneHandle = repo.find(url);
+  await Promise.all(
+    Object.entries(branchOm.doc.clones).map(
+      async ([originalDocUrl, { url }]) => {
+        const originalHandle = repo.find(originalDocUrl as AutomergeUrl);
+        const cloneHandle = repo.find(url);
 
-    originalHandle.merge(cloneHandle);
-  });
+        await originalHandle.whenReady();
+        await cloneHandle.whenReady();
+
+        originalHandle.merge(cloneHandle);
+      }
+    )
+  );
 
   // todo: handle creation and deletion of documents
   branchOm.handle.change((branch) => {
