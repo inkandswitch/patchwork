@@ -63,6 +63,7 @@ export const Explorer: React.FC = () => {
         (link) => link.url === url
       );
       if (!docLinkWithFolderPath) {
+        console.warn("can't find", url, "in", flatDocLinks);
         throw new Error(
           `getFakeDocPathForDocUrl: No doc found for url: ${url}`
         );

@@ -43,6 +43,7 @@ export const PDFFileViewer = ({
   docUrl,
   docHeads,
   getFakeDocPathForDocUrl,
+  mainDocUrl,
 }: EditorProps<PDFFileDoc, never>) => {
   const [_doc] = useDocument<PDFFileDoc>(docUrl);
 
@@ -53,7 +54,7 @@ export const PDFFileViewer = ({
     return;
   }
 
-  const docPath = getFakeDocPathForDocUrl(docUrl);
+  const docPath = getFakeDocPathForDocUrl(mainDocUrl);
 
   return <PDFViewer data={binaryData} docPath={docPath} />;
 };
