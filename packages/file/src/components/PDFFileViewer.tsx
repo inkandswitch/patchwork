@@ -191,7 +191,7 @@ export const PDFViewer = ({
           changeToolUIState((d) => {
             d.scrollTop = viewportElem.scrollTop || 0;
           });
-        }, 2000);
+        }, 1000);
       });
     }
   }, [changeToolUIState, isRendered, viewportElem]);
