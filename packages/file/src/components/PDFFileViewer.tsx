@@ -188,7 +188,7 @@ export const PDFViewer = ({
   useEffect(() => {
     if (isRendered && viewportElem) {
       return eventListenerEffect(viewportElem, "scroll", () => {
-        if (writeScrollTimeoutRef.current) {
+        if (writeScrollTimeoutRef.current !== undefined) {
           window.clearTimeout(writeScrollTimeoutRef.current);
         }
         writeScrollTimeoutRef.current = window.setTimeout(() => {
