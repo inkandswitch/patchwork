@@ -181,6 +181,9 @@ importers:
       '@codemirror/lang-yaml':
         specifier: ^6.1.1
         version: 6.1.1(@codemirror/view@6.28.6)
+      '@codemirror/state':
+        specifier: ^6.4.1
+        version: 6.4.1
       '@codemirror/view':
         specifier: ^6.28.6
         version: 6.28.6
