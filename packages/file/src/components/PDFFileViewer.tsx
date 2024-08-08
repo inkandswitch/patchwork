@@ -137,7 +137,7 @@ export const PDFViewer = ({
   const [numPagesRendered, setNumPagesRendered] = useState<number>(0);
 
   const isLoaded = numPages !== undefined;
-  const isRendered = numPages === numPagesRendered;
+  const isRendered = isLoaded && numPages <= numPagesRendered;
 
   const onDocumentLoadSuccess: OnDocumentLoadSuccess = useCallback((pdfDoc) => {
     setNumPages(pdfDoc.numPages);
@@ -218,7 +218,9 @@ export const PDFViewer = ({
         {!isLoaded ? (
           <div>Loading PDF...</div>
         ) : !isRendered ? (
-          <div>Rendering PDF...</div>
+          <div>
+            Rendering PDF... ({numPagesRendered} / {numPages})
+          </div>
         ) : null}
         <Document
           file={file}
