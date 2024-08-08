@@ -5,6 +5,7 @@ import {
 } from "@/versionControl/utils";
 import * as Automerge from "@automerge/automerge/next";
 import { get, isEqual, last } from "lodash";
+import { diffWords } from "diff";
 
 export type TextAnchor = {
   fromCursor: Automerge.Cursor;
@@ -61,48 +62,55 @@ export const textAnchorsAtPath = <D extends Automerge.Doc<unknown>>(
     let offset = 0;
 
     for (let i = 0; i < filteredPatches.length; i++) {
-      const patch = filteredPatches[i];
+      let patch = filteredPatches[i];
+      let nextPatch = filteredPatches[i + 1];
+
+      // swap del and splice so we don't have to handle the cases [del, splice] and [splice, del]
+      // separately in the rest of the code
+      if (
+        patch.action === "del" &&
+        nextPatch &&
+        nextPatch.action === "splice" &&
+        last(patch.path) === last(nextPatch.path)
+      ) {
+        const _patch = patch;
+        patch = nextPatch;
+        nextPatch = filteredPatches[i + 1] = _patch;
+      }
 
       switch (patch.action) {
         case "splice": {
-          const patchStart = last(patch.path) as number;
-          const patchEnd = Math.min(
+          const fromPos = last(patch.path) as number;
+          const toPos = Math.min(
             (last(patch.path) as number) + patch.value.length,
             content.length - 1
           );
-          const fromCursor = getCursorSafely(doc, path, patchStart);
-          const toCursor = getCursorSafely(doc, path, patchEnd);
+
+          const fromCursor = Automerge.getCursor(doc, path, fromPos);
+          const toCursor = Automerge.getCursor(doc, path, toPos);
 
           if (!fromCursor || !toCursor) {
             console.warn("Failed to get cursor for patch", patch);
             break;
           }
 
-          const nextPatch = filteredPatches[i + 1];
           if (
             nextPatch &&
-            'length' in nextPatch &&
-            nextPatch.length !== undefined &&  // TODO: JAH strict fix
             nextPatch.action === "del" &&
-            last(patch.path) === patchEnd
+            (last(nextPatch.path) === toPos || last(nextPatch.path) === fromPos)
           ) {
-            const before = contentBefore.slice(
-              patchStart - offset,
-              patchStart - offset + nextPatch.length
+            const nextPatchLength = nextPatch.length ?? 1;
+            const deleted = contentBefore.slice(
+              fromPos - offset,
+              fromPos - offset + nextPatchLength
+            );
+            const inserted = patch.value;
+
+            annotations.push(
+              ...diffText(deleted, inserted, doc, path, fromPos)
             );
 
-            annotations.push({
-              type: "changed",
-              before,
-              after: patch.value,
-              anchor: {
-                fromCursor: fromCursor,
-                toCursor: toCursor,
-              },
-            });
-
-            offset += patch.value.length - nextPatch.length;
-
+            offset += patch.value.length - nextPatchLength;
             i += 1;
           } else {
             annotations.push({
@@ -112,6 +120,14 @@ export const textAnchorsAtPath = <D extends Automerge.Doc<unknown>>(
                 fromCursor: fromCursor,
                 toCursor: toCursor,
               },
+              inversePatches: [
+                {
+                  action: "del",
+                  path,
+                  cursor: fromCursor,
+                  length: patch.value.length,
+                },
+              ],
             });
 
             offset += patch.value.length;
@@ -119,24 +135,26 @@ export const textAnchorsAtPath = <D extends Automerge.Doc<unknown>>(
           break;
         }
         case "del": {
-          if (!('length' in patch && patch.length !== undefined)) {
-            // TODO: JAH strict fix
-            break;
-          }
-
           const patchStart = last(patch.path) as number;
-          const patchEnd = (last(patch.path) as number) + 1;
-          const fromCursor = getCursorSafely(doc, path, patchStart);
-          const toCursor = getCursorSafely(doc, path, patchEnd);
 
-          const deleted = contentBefore.slice(
-            patchStart - offset,
-            patchStart - offset + patch.length
+          // the right solution would be to resolve the cursor in docBefore
+          // but cursor resolution always uses the latest doc even if you pass in an older version of the doc
+          // so instead we make sure that the index is within the lenght of the current doc
+          const cursor = getCursorSafely(
+            doc,
+            path,
+            Math.min(patchStart, content.length - 1)
           );
 
-          offset -= patch.length;
+          const patchLength = patch.length ?? 1; // length is undefined if only one character is deleted
+          const deleted = contentBefore.slice(
+            patchStart - offset,
+            patchStart - offset + patchLength
+          );
 
-          if (!fromCursor || !toCursor) {
+          offset -= patchLength;
+
+          if (!cursor) {
             console.warn("Failed to get cursor for patch", patch);
             break;
           }
@@ -145,9 +163,17 @@ export const textAnchorsAtPath = <D extends Automerge.Doc<unknown>>(
             type: "deleted",
             deleted,
             anchor: {
-              fromCursor: fromCursor,
-              toCursor: toCursor,
+              fromCursor: cursor,
+              toCursor: cursor,
             },
+            inversePatches: [
+              {
+                action: "splice",
+                path,
+                cursor,
+                value: deleted,
+              },
+            ],
           });
           break;
         }
@@ -192,3 +218,117 @@ export const textAnchorsAtPath = <D extends Automerge.Doc<unknown>>(
     return getCursorPositionSafely(doc, path, anchor.fromCursor) || -1;
   },
 });
+
+const diffText = (
+  before: string,
+  after: string,
+  doc: Automerge.Doc<unknown>,
+  path: Automerge.Prop[],
+  offset: number
+): Annotation<TextAnchor, string>[] => {
+  const annotations: Annotation<TextAnchor, string>[] = [];
+  const parts = diffWords(before, after);
+  for (let i = 0; i < parts.length; i++) {
+    let deleted = "";
+    let added = "";
+
+    for (; i < parts.length; i++) {
+      const part = parts[i];
+
+      if (part.added) {
+        added += part.value;
+        offset += part.value.length;
+      } else if (part.removed) {
+        deleted += part.value;
+      } else {
+        if (part.value.trim() === "") {
+          added += part.value;
+          deleted += part.value;
+          offset += part.value.length;
+        } else if (deleted === "" && added === "") {
+          offset += part.value.length;
+        } else {
+          i--;
+          break;
+        }
+      }
+
+      const nextPart = parts[i + 1];
+      if (
+        nextPart &&
+        !nextPart.added &&
+        !nextPart.removed &&
+        nextPart.value.trim() !== ""
+      ) {
+        break;
+      }
+    }
+
+    if (deleted.length > 0 && added.length > 0) {
+      const anchor = {
+        fromCursor: Automerge.getCursor(doc, path, offset - added.length),
+        toCursor: Automerge.getCursor(doc, path, offset),
+      };
+
+      annotations.push({
+        type: "changed",
+        anchor,
+        before: deleted,
+        after: added,
+        inversePatches: [
+          {
+            action: "del",
+            path,
+            cursor: anchor.fromCursor,
+            length: added.length,
+          },
+          {
+            action: "splice",
+            path,
+            cursor: anchor.fromCursor,
+            value: deleted,
+          },
+        ],
+      });
+    } else if (deleted.length > 0) {
+      const cursor = Automerge.getCursor(doc, path, offset);
+
+      annotations.push({
+        type: "deleted",
+        anchor: {
+          fromCursor: cursor,
+          toCursor: cursor,
+        },
+        deleted,
+        inversePatches: [
+          {
+            action: "splice",
+            path,
+            cursor,
+            value: deleted,
+          },
+        ],
+      });
+    } else if (added.length > 0) {
+      const anchor = {
+        fromCursor: Automerge.getCursor(doc, path, offset - added.length),
+        toCursor: Automerge.getCursor(doc, path, offset),
+      };
+      annotations.push({
+        type: "added",
+        anchor,
+        added,
+        inversePatches: [
+          {
+            action: "del",
+            path,
+            cursor: anchor.fromCursor,
+            length: added.length,
+          },
+        ],
+      });
+    }
+  }
+
+  return annotations;
+};

@@ -1,11 +1,10 @@
-import React from "react";
-import { Button } from "@/shadcn/ui/button";
 import { HasAssets } from "@/assets";
 import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { getRelativeTimeString } from "@/lib/dates";
 import { MarkdownInput } from "@/lib/markdown";
-import { AnnotationsViewProps, Tool } from "@/tools";
+import { Button } from "@/shadcn/ui/button";
+import { AnnotationsViewProps } from "@/tools";
 import {
   AnnotationGroupWithUIState,
   CommentState,
@@ -13,9 +12,10 @@ import {
 } from "@/versionControl/schema";
 import { next as A, uuid } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
-import { Check, MessageCircle, PencilIcon, XIcon } from "lucide-react";
-import { forwardRef, useEffect, useRef, useState } from "react";
+import { Check, MessageCircle, PencilIcon } from "lucide-react";
+import React, { forwardRef, useEffect, useRef, useState } from "react";
 import { getAnnotationGroupId } from "../annotations";
+import { applyCursorPatches, CursorPatch } from "../cursorPatch";
 
 export interface AnnotationGroupViewProps {
   doc: HasVersionControlMetadata<unknown, unknown> & HasAssets;
@@ -77,6 +77,18 @@ export const AnnotationGroupView = forwardRef<
       } else if (ref) {
         ref.current = element;
       }
+    };
+
+    const onRevert = () => {
+      const patches = annotationGroup.annotations.flatMap((annotation) =>
+        "inversePatches" in annotation && annotation.inversePatches
+          ? annotation.inversePatches
+          : ([] as CursorPatch[])
+      );
+
+      handle.change((doc) => {
+        applyCursorPatches(doc, patches);
+      });
     };
 
     const onResolveDiscussion = () => {
@@ -168,7 +180,7 @@ export const AnnotationGroupView = forwardRef<
      * j / ctrl + n / cmd + n: select next discussion
      * cmd + r / ctrl + r : resolve
      * cmd + enter / ctrl + enter : reply
-     * cmd + z / ctrl + z : revert
+     * cmd + backspace / ctrl + backspace : revert
      */
     useEffect(() => {
       if (!isExpanded) {
@@ -192,6 +204,12 @@ export const AnnotationGroupView = forwardRef<
 
         if (evt.key === "r" && isMetaOrControlPressed) {
           onStartResolve();
+          evt.preventDefault();
+          evt.stopPropagation();
+        }
+
+        if (evt.key === "Backspace" && isRevertable && isMetaOrControlPressed) {
+          onRevert();
           evt.preventDefault();
           evt.stopPropagation();
         }
@@ -226,6 +244,17 @@ export const AnnotationGroupView = forwardRef<
         localRef.current?.scrollIntoView({ behavior: "smooth" });
       }
     }, [isExpanded, enableScrollSync]);
+
+    const isRevertable =
+      // all change annotations have inverse patches
+      annotationGroup.annotations.every(
+        (annotation) =>
+          annotation.type === "highlighted" || annotation.inversePatches
+      ) &&
+      // ... and the annotation group consists not only of highlight annotations
+      annotationGroup.annotations.some(
+        (annotation) => annotation.type !== "highlighted"
+      );
 
     return (
       <div
@@ -347,6 +376,21 @@ export const AnnotationGroupView = forwardRef<
                 </div>
                 <span className="text-gray-400 text-xs w-full text-center">
                   (⌘ + R)
+                </span>
+              </Button>
+            )}
+
+            {isRevertable && (
+              <Button
+                variant="ghost"
+                className="select-none px-2 flex flex-col w-fi"
+                onClick={onRevert}
+              >
+                <div className="flex text-gray-600 gap-2">
+                  <Check size={16} /> Revert
+                </div>
+                <span className="text-gray-400 text-xs w-full text-center">
+                  (⌘ + ⌫)
                 </span>
               </Button>
             )}

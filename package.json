@@ -11,7 +11,9 @@
     "preinstall": "npx only-allow pnpm",
     "test": "pnpm --filter os test"
   },
-  "keywords": [],
+"keywords": [],
   "author": "Ink & Switch",
-  "devDependencies": {}
+  "devDependencies": {
+    "vitest": "^2.0.5"
+  }
 }

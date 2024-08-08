@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/raw-editor",
+  "name": "@patchwork/folder-list-view",
   "version": "0.0.1",
   "description": "A raw view and editor for any Automerge document",
   "type": "module",

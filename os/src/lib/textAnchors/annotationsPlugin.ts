@@ -137,10 +137,6 @@ const annotationDecorations = EditorView.decorations.compute(
 
     const decorations = annotations.flatMap((annotation) => {
       const { fromPos, toPos } = annotation.anchor;
-      if (fromPos >= toPos) {
-        return [];
-      }
-
       switch (annotation.type) {
         case "added": {
           const decoration = annotation.isEmphasized

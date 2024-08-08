@@ -56,7 +56,11 @@ export const PDFFileViewer = ({
 
   const docPath = getFakeDocPathForDocUrl(mainDocUrl);
 
-  return <PDFViewer data={binaryData} docPath={docPath} />;
+  return (
+    <div className="overflow-auto h-full">
+      <PDFViewer data={binaryData} docPath={docPath} />
+    </div>
+  );
 };
 
 export const useBinaryDataOfDocFile = (doc: FileDoc | undefined) => {

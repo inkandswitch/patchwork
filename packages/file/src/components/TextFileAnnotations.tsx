@@ -7,16 +7,16 @@ export const TextFileAnnotations = ({
   annotations,
 }: AnnotationsViewProps<FileDoc, TextAnchor, string>) => {
   return (
-    <div className="px-2 bg-white rounded-sm">
+    <div className="px-2 bg-white rounded-sm cursor-default">
       {annotations.map((annotation, index) => {
         switch (annotation.type) {
           case "added":
             return (
               <div
-                className="text-md whitespace-nowrap overflow-ellipsis overflow-hidden"
+                className="text-sm whitespace-nowrap overflow-ellipsis overflow-hidden"
                 key={index}
               >
-                <span className="font-serif bg-green-50 border-b border-green-400">
+                <span className="font-mono bg-green-50 border-b border-green-400">
                   {annotation.added.replace(/ /g, "\u00A0")}
                 </span>
               </div>
@@ -25,25 +25,31 @@ export const TextFileAnnotations = ({
           case "deleted":
             return (
               <div
-                className="text-md whitespace-nowrap overflow-ellipsis overflow-hidden"
+                className="text-sm whitespace-nowrap overflow-ellipsis overflow-hidden"
                 key={index}
               >
-                <span className="font-serif bg-red-50 border-b border-red-400">
-                  {annotation.deleted}
-                </span>
+                {annotation.deleted.trim() !== "" ? (
+                  <span className="font-mono bg-red-50 border-b border-red-400">
+                    {annotation.deleted}
+                  </span>
+                ) : (
+                  <span className="font-sans bg-red-50 text-xs italic text-gray-500">
+                    deleted spaces
+                  </span>
+                )}
               </div>
             );
 
           case "changed":
             return (
-              <div className="text-md" key={index}>
-                <span className="font-serif bg-red-50 border-b border-red-400">
+              <div className="text-sm" key={index}>
+                <span className="font-mono bg-red-50 border-b border-red-400">
                   {truncate(annotation.before.replace(/ /g, "\u00A0"), {
                     length: 45,
                   })}
                 </span>{" "}
                 →{" "}
-                <span className="font-serif bg-green-50 border-b border-green-400">
+                <span className="font-mono bg-green-50 border-b border-green-400">
                   {truncate(annotation.after.replace(/ /g, "\u00A0"), {
                     length: 45,
                   })}
@@ -66,10 +72,10 @@ export const TextFileAnnotations = ({
 
             return (
               <div
-                className="text-md whitespace-nowrap overflow-ellipsis overflow-hidden"
+                className="text-sm whitespace-nowrap overflow-ellipsis overflow-hidden"
                 key={index}
               >
-                <span className="font-serif bg-yellow-50 border-b border-yellow-400">
+                <span className="font-mono bg-yellow-50 border-b border-yellow-400">
                   {annotation.value}
                 </span>
               </div>

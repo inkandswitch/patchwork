@@ -3,6 +3,7 @@ import * as A from "@automerge/automerge/next";
 import { TextPatch } from "./utils";
 import { HasAssets } from "@/assets";
 import { HasBotChatHistory } from "./components/BotSidebar";
+import { CursorPatch as CursorPatch } from "./cursorPatch";
 
 // This is a separate doc to store version control metadata.
 // Eventually we envision all VC metadata living in here.
@@ -183,30 +184,33 @@ export type HasVersionControlMetadata<
 
 export type AnnotationId = string & { __annotationId: true };
 
-interface AddAnnotation<A, V> {
+export type AddAnnotation<A, V> = {
   type: "added";
   anchor: A;
   added: V;
-}
+  inversePatches?: CursorPatch[];
+};
 
-interface DeleteAnnotation<A, V> {
+export type DeleteAnnotation<A, V> = {
   type: "deleted";
   anchor: A;
   deleted: V;
-}
+  inversePatches?: CursorPatch[];
+};
 
-interface ChangeAnnotation<A, V> {
+export type ChangeAnnotation<A, V> = {
   type: "changed";
   anchor: A;
   before: V;
   after: V;
-}
+  inversePatches?: CursorPatch[];
+};
 
-export interface HighlightAnnotation<A, V> {
+export type HighlightAnnotation<A, V> = {
   type: "highlighted";
   anchor: A;
   value: V;
-}
+};
 
 export type Annotation<Anchor, Value> =
   | AddAnnotation<Anchor, Value>

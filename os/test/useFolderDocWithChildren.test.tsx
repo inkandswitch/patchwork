@@ -35,9 +35,13 @@ describe("useFolderDocWithChildren", () => {
     onDoc,
   }: {
     rootFolderUrl: AutomergeUrl;
-    onDoc: (arg: {
-      doc: FolderDocWithChildren;
-    } | undefined) => void;
+    onDoc: (
+      arg:
+        | {
+            doc: FolderDocWithChildren;
+          }
+        | undefined
+    ) => void;
   }) => {
     const doc = useFolderDocWithChildren(rootFolderUrl);
     onDoc(doc);

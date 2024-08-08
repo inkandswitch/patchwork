@@ -1,11 +1,11 @@
 import { useCurrentAccount } from "@/explorer/account";
-import { useDocUIState } from "@/explorer/uiState";
 import { MainViewMode } from "@/explorer/uiState";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { getRelativeTimeString } from "@/lib/dates";
 import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";
+import { useDocUIState } from "@/explorer/uiState";
 import {
   BranchDoc,
   ensureMetadataHandleIsBranchScope,
