@@ -6,9 +6,11 @@
 
 import commandLineArgs from "command-line-args";
 import fs from "fs";
+import path from "path";
 
 import { AutomergeUrl, Repo, StorageId } from "@automerge/automerge-repo";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
+import { NodeFSStorageAdapter } from "@automerge/automerge-repo-storage-nodefs";
 
 import { activateBranch } from "./activate";
 import { listBranches } from "./branch";
@@ -141,9 +143,16 @@ const main = async () => {
     process.exit(1);
   }
 
+  const jacquardFolder = path.join(dir, ".jacquard");
+  if (!fs.existsSync(jacquardFolder)) {
+    fs.mkdirSync(jacquardFolder, { recursive: true });
+    console.log(`Created .jacquard folder in ${dir}`);
+  }
+
   /* just an aside to myself but this stuff above is kind of gross and i should fix it */
   const repo = new Repo({
     network: test ? [] : [new BrowserWebSocketClientAdapter(syncServerUrl)],
+    storage: new NodeFSStorageAdapter(path.join(dir, ".jacquard/repo")),
     enableRemoteHeadsGossiping: true,
   });
 

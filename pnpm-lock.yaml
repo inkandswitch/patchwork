@@ -23,6 +23,9 @@ importers:
       '@automerge/automerge-repo-network-websocket':
         specifier: ^1.2.1
         version: 1.2.1(@swc/core@1.7.6)(@types/node@20.14.12)(typescript@5.5.4)
+      '@automerge/automerge-repo-storage-nodefs':
+        specifier: ^1.2.1
+        version: 1.2.1(@swc/core@1.7.6)(@types/node@20.14.12)(typescript@5.5.4)
       command-line-args:
         specifier: ^5.2.1
         version: 5.2.1
@@ -52,7 +55,7 @@ importers:
         specifier: ^20.14.12
         version: 20.14.12
 
-  os: {dependencies: {'@automerge/automerge': {specifier: ^2.2.8, version: 2.2.8}, '@automerge/automerge-codemirror': {specifier: ^0.0.12, version: 0.0.12(@lezer/common@1.2.1)}, '@automerge/automerge-repo': {specifier: ^1.2.1, version: 1.2.1(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)}, '@automerge/automerge-repo-network-messagechannel': {specifier: ^1.2.1, version: 1.2.1(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)}, '@automerge/automerge-repo-network-websocket': {specifier: ^1.2.1, version: 1.2.1(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)}, '@automerge/automerge-repo-react-hooks': {specifier: ^1.2.1, version: 1.2.1(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)}, '@automerge/automerge-repo-storage-indexeddb': {specifier: ^1.2.1, version: 1.2.1(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)}, '@codemirror/autocomplete': {specifier: ^6.17.0, version: 6.17.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.28.6)(@lezer/common@1.2.1)}, '@codemirror/commands': {specifier: ^6.6.0, version: 6.6.0}, '@codemirror/lang-markdown': {specifier: ^6.2.5, version: 6.2.5}, '@codemirror/language': {specifier: ^6.10.2, version: 6.10.2}, '@codemirror/language-data': {specifier: ^6.5.1, version: 6.5.1(@codemirror/view@6.28.6)}, '@codemirror/search': {specifier: ^6.5.6, version: 6.5.6}, '@codemirror/state': {specifier: ^6.4.1, version: 6.4.1}, '@codemirror/view': {specifier: ^6.28.6, version: 6.28.6}, '@lezer/common': {specifier: ^1.2.1, version: 1.2.1}, '@lezer/highlight': {specifier: ^1.2.0, version: 1.2.0}, '@patchwork/datagrid': {specifier: workspace:*, version: link:../packages/datagrid}, '@patchwork/essay': {specifier: workspace:*, version: link:../packages/essay}, '@patchwork/file': {specifier: workspace:*, version: link:../packages/file}, '@patchwork/jacquard': {specifier: workspace:*, version: link:../packages/jacquard}, '@patchwork/kanban': {specifier: workspace:*, version: link:../packages/kanban}, '@patchwork/tldraw': {specifier: workspace:*, version: link:../packages/tldraw}, '@radix-ui/react-avatar': {specifier: ^1.1.0, version: 1.1.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-checkbox': {specifier: ^1.1.1, version: 1.1.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-context-menu': {specifier: ^2.2.1, version: 2.2.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-dialog': {specifier: ^1.1.1, version: 1.1.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-dropdown-menu': {specifier: ^2.1.1, version: 2.1.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-label': {specifier: ^2.1.0, version: 2.1.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-popover': {specifier: ^1.1.1, version: 1.1.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-progress': {specifier: ^1.1.0, version: 1.1.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-select': {specifier: ^2.1.1, version: 2.1.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-slider': {specifier: ^1.2.0, version: 1.2.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-slot': {specifier: ^1.1.0, version: 1.1.0(@types/react@18.3.3)(react@18.3.1)}, '@radix-ui/react-switch': {specifier: ^1.1.0, version: 1.1.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-tabs': {specifier: ^1.1.0, version: 1.1.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-tooltip': {specifier: ^1.1.2, version: 1.1.2(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@tailwindcss/container-queries': {specifier: ^0.1.1, version: 0.1.1(tailwindcss@3.4.6(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)))}, '@tldraw/tldraw': {specifier: 2.0.0-alpha.17, version: 2.0.0-alpha.17(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@xstate/react': {specifier: ^4.1.1, version: 4.1.1(@types/react@18.3.3)(react@18.3.1)(xstate@5.15.0)}, class-variance-authority: {specifier: ^0.7.0, version: 0.7.0}, clsx: {specifier: ^2.1.1, version: 2.1.1}, cmdk: {specifier: ^0.2.1, version: 0.2.1(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, diff: {specifier: ^5.2.0, version: 5.2.0}, esbuild: {specifier: ^0.23.0, version: 0.23.0}, eventemitter3: {specifier: ^5.0.1, version: 5.0.1}, lodash: {specifier: ^4.17.21, version: 4.17.21}, lucide-react: {specifier: ^0.284.0, version: 0.284.0(react@18.3.1)}, next-themes: {specifier: ^0.2.1, version: 0.2.1(next@14.2.5(@babel/core@7.24.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, openai: {specifier: ^4.53.0, version: 4.53.0(encoding@0.1.13)}, query-string: {specifier: ^8.2.0, version: 8.2.0}, react: {specifier: ^18.3.1, version: 18.3.1}, react-arborist: {specifier: ^3.4.0, version: 3.4.0(@types/hoist-non-react-statics@3.3.5)(@types/node@20.14.12)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, react-dom: {specifier: ^18.3.1, version: 18.3.1(react@18.3.1)}, react-error-boundary: {specifier: ^4.0.13, version: 4.0.13(react@18.3.1)}, react-markdown: {specifier: ^9.0.1, version: 9.0.1(@types/react@18.3.3)(react@18.3.1)}, signia: {specifier: ^0.1.5, version: 0.1.5}, signia-react: {specifier: ^0.1.5, version: 0.1.5(react@18.3.1)}, sonner: {specifier: ^1.5.0, version: 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, tailwind-merge: {specifier: ^1.14.0, version: 1.14.0}, tailwindcss-animate: {specifier: ^1.0.7, version: 1.0.7(tailwindcss@3.4.6(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)))}, use-resize-observer: {specifier: ^9.1.0, version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, xstate: {specifier: ^5.15.0, version: 5.15.0}}, devDependencies: {'@jspm/generator': {specifier: ^2.1.3, version: 2.1.3}, '@testing-library/react': {specifier: ^15.0.7, version: 15.0.7(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@types/diff': {specifier: ^5.2.1, version: 5.2.1}, '@types/lodash': {specifier: ^4.17.7, version: 4.17.7}, '@types/node': {specifier: ^20.14.12, version: 20.14.12}, '@types/react': {specifier: ^18.3.3, version: 18.3.3}, '@types/react-dom': {specifier: ^18.3.0, version: 18.3.0}, '@typescript-eslint/eslint-plugin': {specifier: ^6.21.0, version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)}, '@typescript-eslint/parser': {specifier: ^6.21.0, version: 6.21.0(eslint@8.57.0)(typescript@5.5.4)}, '@vitejs/plugin-react': {specifier: ^4.3.1, version: 4.3.1(vite@5.3.4(@types/node@20.14.12))}, concurrently: {specifier: ^8.2.2, version: 8.2.2}, eslint: {specifier: ^8.57.0, version: 8.57.0}, eslint-plugin-react-hooks: {specifier: ^4.6.2, version: 4.6.2(eslint@8.57.0)}, eslint-plugin-react-refresh: {specifier: ^0.4.9, version: 0.4.9(eslint@8.57.0)}, glob: {specifier: ^10.4.5, version: 10.4.5}, http-server: {specifier: ^14.1.1, version: 14.1.1}, jsdom: {specifier: ^22.1.0, version: 22.1.0(canvas@2.11.2(encoding@0.1.13))}, pnpm: {specifier: ^8.15.9, version: 8.15.9}, tailwindcss: {specifier: ^3.4.6, version: 3.4.6(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))}, typescript: {specifier: ^5.5.4, version: 5.5.4}, vite: {specifier: ^5.3.4, version: 5.3.4(@types/node@20.14.12)}, vite-plugin-top-level-await: {specifier: ^1.4.2, version: 1.4.2(@swc/helpers@0.5.12)(rollup@4.20.0)(vite@5.3.4(@types/node@20.14.12))}, vite-plugin-wasm: {specifier: ^3.3.0, version: 3.3.0(vite@5.3.4(@types/node@20.14.12))}, vitest: {specifier: ^2.0.5, version: 2.0.5(@types/node@20.14.12)(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))}}}
+  os: {dependencies: {'@automerge/automerge': {specifier: ^2.2.8, version: 2.2.8}, '@automerge/automerge-codemirror': {specifier: ^0.0.12, version: 0.0.12(@lezer/common@1.2.1)}, '@automerge/automerge-repo': {specifier: ^1.2.1, version: 1.2.1(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)}, '@automerge/automerge-repo-network-messagechannel': {specifier: ^1.2.1, version: 1.2.1(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)}, '@automerge/automerge-repo-network-websocket': {specifier: ^1.2.1, version: 1.2.1(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)}, '@automerge/automerge-repo-react-hooks': {specifier: ^1.2.1, version: 1.2.1(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)}, '@automerge/automerge-repo-storage-indexeddb': {specifier: ^1.2.1, version: 1.2.1(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)}, '@codemirror/autocomplete': {specifier: ^6.17.0, version: 6.17.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.28.6)(@lezer/common@1.2.1)}, '@codemirror/commands': {specifier: ^6.6.0, version: 6.6.0}, '@codemirror/lang-markdown': {specifier: ^6.2.5, version: 6.2.5}, '@codemirror/language': {specifier: ^6.10.2, version: 6.10.2}, '@codemirror/language-data': {specifier: ^6.5.1, version: 6.5.1(@codemirror/view@6.28.6)}, '@codemirror/search': {specifier: ^6.5.6, version: 6.5.6}, '@codemirror/state': {specifier: ^6.4.1, version: 6.4.1}, '@codemirror/view': {specifier: ^6.28.6, version: 6.28.6}, '@lezer/common': {specifier: ^1.2.1, version: 1.2.1}, '@lezer/highlight': {specifier: ^1.2.0, version: 1.2.0}, '@patchwork/datagrid': {specifier: workspace:*, version: link:../packages/datagrid}, '@patchwork/essay': {specifier: workspace:*, version: link:../packages/essay}, '@patchwork/file': {specifier: workspace:*, version: link:../packages/file}, '@patchwork/jacquard': {specifier: workspace:*, version: link:../packages/jacquard}, '@patchwork/kanban': {specifier: workspace:*, version: link:../packages/kanban}, '@patchwork/tldraw': {specifier: workspace:*, version: link:../packages/tldraw}, '@radix-ui/react-avatar': {specifier: ^1.1.0, version: 1.1.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-checkbox': {specifier: ^1.1.1, version: 1.1.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-context-menu': {specifier: ^2.2.1, version: 2.2.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-dialog': {specifier: ^1.1.1, version: 1.1.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-dropdown-menu': {specifier: ^2.1.1, version: 2.1.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-label': {specifier: ^2.1.0, version: 2.1.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-popover': {specifier: ^1.1.1, version: 1.1.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-progress': {specifier: ^1.1.0, version: 1.1.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-select': {specifier: ^2.1.1, version: 2.1.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-slider': {specifier: ^1.2.0, version: 1.2.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-slot': {specifier: ^1.1.0, version: 1.1.0(@types/react@18.3.3)(react@18.3.1)}, '@radix-ui/react-switch': {specifier: ^1.1.0, version: 1.1.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-tabs': {specifier: ^1.1.0, version: 1.1.0(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@radix-ui/react-tooltip': {specifier: ^1.1.2, version: 1.1.2(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@tailwindcss/container-queries': {specifier: ^0.1.1, version: 0.1.1(tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)))}, '@tldraw/tldraw': {specifier: 2.0.0-alpha.17, version: 2.0.0-alpha.17(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@xstate/react': {specifier: ^4.1.1, version: 4.1.1(@types/react@18.3.3)(react@18.3.1)(xstate@5.15.0)}, class-variance-authority: {specifier: ^0.7.0, version: 0.7.0}, clsx: {specifier: ^2.1.1, version: 2.1.1}, cmdk: {specifier: ^0.2.1, version: 0.2.1(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, diff: {specifier: ^5.2.0, version: 5.2.0}, esbuild: {specifier: ^0.23.0, version: 0.23.0}, eventemitter3: {specifier: ^5.0.1, version: 5.0.1}, lodash: {specifier: ^4.17.21, version: 4.17.21}, lucide-react: {specifier: ^0.284.0, version: 0.284.0(react@18.3.1)}, next-themes: {specifier: ^0.2.1, version: 0.2.1(next@14.2.5(@babel/core@7.24.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, openai: {specifier: ^4.53.0, version: 4.53.0(encoding@0.1.13)}, query-string: {specifier: ^8.2.0, version: 8.2.0}, react: {specifier: ^18.3.1, version: 18.3.1}, react-arborist: {specifier: ^3.4.0, version: 3.4.0(@types/hoist-non-react-statics@3.3.5)(@types/node@20.14.12)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, react-dom: {specifier: ^18.3.1, version: 18.3.1(react@18.3.1)}, react-error-boundary: {specifier: ^4.0.13, version: 4.0.13(react@18.3.1)}, react-markdown: {specifier: ^9.0.1, version: 9.0.1(@types/react@18.3.3)(react@18.3.1)}, signia: {specifier: ^0.1.5, version: 0.1.5}, signia-react: {specifier: ^0.1.5, version: 0.1.5(react@18.3.1)}, sonner: {specifier: ^1.5.0, version: 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, tailwind-merge: {specifier: ^1.14.0, version: 1.14.0}, tailwindcss-animate: {specifier: ^1.0.7, version: 1.0.7(tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)))}, use-resize-observer: {specifier: ^9.1.0, version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, xstate: {specifier: ^5.15.0, version: 5.15.0}}, devDependencies: {'@jspm/generator': {specifier: ^2.1.3, version: 2.1.3}, '@testing-library/react': {specifier: ^15.0.7, version: 15.0.7(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@types/diff': {specifier: ^5.2.1, version: 5.2.1}, '@types/lodash': {specifier: ^4.17.7, version: 4.17.7}, '@types/node': {specifier: ^20.14.12, version: 20.14.12}, '@types/react': {specifier: ^18.3.3, version: 18.3.3}, '@types/react-dom': {specifier: ^18.3.0, version: 18.3.0}, '@typescript-eslint/eslint-plugin': {specifier: ^6.21.0, version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)}, '@typescript-eslint/parser': {specifier: ^6.21.0, version: 6.21.0(eslint@8.57.0)(typescript@5.5.4)}, '@vitejs/plugin-react': {specifier: ^4.3.1, version: 4.3.1(vite@5.3.4(@types/node@20.14.12))}, concurrently: {specifier: ^8.2.2, version: 8.2.2}, eslint: {specifier: ^8.57.0, version: 8.57.0}, eslint-plugin-react-hooks: {specifier: ^4.6.2, version: 4.6.2(eslint@8.57.0)}, eslint-plugin-react-refresh: {specifier: ^0.4.9, version: 0.4.9(eslint@8.57.0)}, glob: {specifier: ^10.4.5, version: 10.4.5}, http-server: {specifier: ^14.1.1, version: 14.1.1}, jsdom: {specifier: ^22.1.0, version: 22.1.0(canvas@2.11.2(encoding@0.1.13))}, pnpm: {specifier: ^8.15.9, version: 8.15.9}, tailwindcss: {specifier: ^3.4.6, version: 3.4.7(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))}, typescript: {specifier: ^5.5.4, version: 5.5.4}, vite: {specifier: ^5.3.4, version: 5.3.4(@types/node@20.14.12)}, vite-plugin-top-level-await: {specifier: ^1.4.2, version: 1.4.2(@swc/helpers@0.5.12)(rollup@4.20.0)(vite@5.3.4(@types/node@20.14.12))}, vite-plugin-wasm: {specifier: ^3.3.0, version: 3.3.0(vite@5.3.4(@types/node@20.14.12))}, vitest: {specifier: ^2.0.5, version: 2.0.5(@types/node@20.14.12)(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))}}}
 
   packages/datagrid:
     dependencies:
@@ -581,6 +584,9 @@ packages:
 
   '@automerge/automerge-repo-storage-indexeddb@1.2.1':
     resolution: {integrity: sha512-u+9eZZJK7DAr541buF4ut1ipkuiKRoaAtoFYo/ilq7zOLO7JX+GQOFx/8eKKRDlGt/AHTcDaFktkcaX0vKahQQ==}
+
+  '@automerge/automerge-repo-storage-nodefs@1.2.1':
+    resolution: {integrity: sha512-MEbz4vul3frdl+zWDQE3ELBNjiC78QSOEb4reeEgCiGcoimLKxUmHvlQLxpiR209tw72Tf6RRFtvwoqV1I8TKw==}
 
   '@automerge/automerge-repo@1.2.1':
     resolution: {integrity: sha512-uEBr4bM01aSWkEt2tDKQxfW0Pahz2zbTTn4sRJfeKJlAg2SLr4QepFJ+3Tp4CNEkkU485olfnKYf6gt7uilMZQ==}
@@ -2715,22 +2721,10 @@ packages:
     peerDependencies:
       '@svgr/core': '*'
 
-  '@swc/core-darwin-arm64@1.7.1':
-    resolution: {integrity: sha512-CuifMhtBNdIq6sHElOcu8E8SOO0BUlLyRw52wC+aiHrb5gR+iGlbi4L9sUhbR5bWoxD0Bz9ZJcE5uUhcLP+lJQ==}
-    engines: {node: '>=10'}
-    cpu: [arm64]
-    os: [darwin]
-
   '@swc/core-darwin-arm64@1.7.6':
     resolution: {integrity: sha512-6lYHey84ZzsdtC7UuPheM4Rm0Inzxm6Sb8U6dmKc4eCx8JL0LfWG4LC5RsdsrTxnjTsbriWlnhZBffh8ijUHIQ==}
     engines: {node: '>=10'}
     cpu: [arm64]
-    os: [darwin]
-
-  '@swc/core-darwin-x64@1.7.1':
-    resolution: {integrity: sha512-IKtddGei7qGISSggN9WGmzoyRcLS0enT905K9GPB+7W5k8SxtNP3Yt2TKcKvfF8hzICk986kKt8Fl/QOTXV9mA==}
-    engines: {node: '>=10'}
-    cpu: [x64]
     os: [darwin]
 
   '@swc/core-darwin-x64@1.7.6':
@@ -2739,32 +2733,14 @@ packages:
     cpu: [x64]
     os: [darwin]
 
-  '@swc/core-linux-arm-gnueabihf@1.7.1':
-    resolution: {integrity: sha512-GQJydSLM7OVsxcFPJKe22D/h4Vl7FhDsPCTlEaPo+dz7yc2AdoQFJRPSFIRlBz0qm5CxXycDxU9yfH4Omzfxmg==}
-    engines: {node: '>=10'}
-    cpu: [arm]
-    os: [linux]
-
   '@swc/core-linux-arm-gnueabihf@1.7.6':
     resolution: {integrity: sha512-2WxYTqFaOx48GKC2cbO1/IntA+w+kfCFy436Ij7qRqqtV/WAvTM9TC1OmiFbqq436rSot52qYmX8fkwdB5UcLQ==}
     engines: {node: '>=10'}
     cpu: [arm]
     os: [linux]
 
-  '@swc/core-linux-arm64-gnu@1.7.1':
-    resolution: {integrity: sha512-Tp94iklMBAgtvlMVWbp9O+qADhNebS90zG835IucKEQB5rd3fEfWtiLP/3vz4hixJT63+yyeXQYs/Hld3vm7HQ==}
-    engines: {node: '>=10'}
-    cpu: [arm64]
-    os: [linux]
-
   '@swc/core-linux-arm64-gnu@1.7.6':
     resolution: {integrity: sha512-TBEGMSe0LhvPe4S7E68c7VzgT3OMu4VTmBLS7B2aHv4v8uZO92Khpp7L0WqgYU1y5eMjk+XLDLi4kokiNHv/Hg==}
-    engines: {node: '>=10'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@swc/core-linux-arm64-musl@1.7.1':
-    resolution: {integrity: sha512-rbauhgFzeXNmg1jPUeiVkEMcoSHP0HvTklUOn1sUc4U0tu73uvPZI2e3TU1fo6sxE6FJeDJHZORatf+pAEo0fQ==}
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
@@ -2775,20 +2751,8 @@ packages:
     cpu: [arm64]
     os: [linux]
 
-  '@swc/core-linux-x64-gnu@1.7.1':
-    resolution: {integrity: sha512-941tua/RtD/5GxHZOdLiRp/RIloqIlkJKy9ogbdSEI9VJ3Z5x1LznvxHfOI1mTifJMBwNSJLxtL9snUwxwLgEg==}
-    engines: {node: '>=10'}
-    cpu: [x64]
-    os: [linux]
-
   '@swc/core-linux-x64-gnu@1.7.6':
     resolution: {integrity: sha512-61AYVzhjuNQAVIKKWOJu3H0/pFD28RYJGxnGg3YMhvRLRyuWNyY5Nyyj2WkKcz/ON+g38Arlz00NT1LDIViRLg==}
-    engines: {node: '>=10'}
-    cpu: [x64]
-    os: [linux]
-
-  '@swc/core-linux-x64-musl@1.7.1':
-    resolution: {integrity: sha512-Iuh0XnOQcoeDsJvh8eO73fVldMU/ucZs2qBxr/9TkgpiGBdaluKxymo2MBBopmxqfBwxEdHUa0TDLgEFyZK6bw==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
@@ -2799,22 +2763,10 @@ packages:
     cpu: [x64]
     os: [linux]
 
-  '@swc/core-win32-arm64-msvc@1.7.1':
-    resolution: {integrity: sha512-H7Q44RZvDCPrKit202+NK014eOjd2VcsVxUX7Dk5D55sqgWgWskzGo7PzrosjiFgw5iVmpm4gDeaXCIS0FCE5A==}
-    engines: {node: '>=10'}
-    cpu: [arm64]
-    os: [win32]
-
   '@swc/core-win32-arm64-msvc@1.7.6':
     resolution: {integrity: sha512-Aqsd9afykVMuekzjm4X4TDqwxmG4CrzoOSFe0hZrn9SMio72l5eAPnMtYoe5LsIqtjV8MNprLfXaNbjHjTegmA==}
     engines: {node: '>=10'}
     cpu: [arm64]
-    os: [win32]
-
-  '@swc/core-win32-ia32-msvc@1.7.1':
-    resolution: {integrity: sha512-zbvjPX2hBu+uCEAvqQBc86yBLtWhRSkh4uLGWUQylCHi1CccRfBww9S4RjXzXxK9bCgZSWbXUmfzJTiFuuhgHQ==}
-    engines: {node: '>=10'}
-    cpu: [ia32]
     os: [win32]
 
   '@swc/core-win32-ia32-msvc@1.7.6':
@@ -2823,26 +2775,11 @@ packages:
     cpu: [ia32]
     os: [win32]
 
-  '@swc/core-win32-x64-msvc@1.7.1':
-    resolution: {integrity: sha512-pVh/IIdKujW8QxNIAI/van8nOB6sb1fi7QMSteSxjOkL0GGDWpx7t3qm1rDboCdS+9iUXEHv+8UJnpya1ko+Dw==}
-    engines: {node: '>=10'}
-    cpu: [x64]
-    os: [win32]
-
   '@swc/core-win32-x64-msvc@1.7.6':
     resolution: {integrity: sha512-izeoB8glCSe6IIDQmrVm6bvR9muk9TeKgmtY7b6l1BwL4BFnTUk4dMmpbntT90bEVQn3JPCaPtUG4HfL8VuyuA==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [win32]
-
-  '@swc/core@1.7.1':
-    resolution: {integrity: sha512-M4gxJcvzZCH+QQJGVJDF3kT46C05IUPTFcA1wA65WAdg87MDzpr1mwtB/FmPsdcRFRbJIxET6uCsWgubn+KnJQ==}
-    engines: {node: '>=10'}
-    peerDependencies:
-      '@swc/helpers': '*'
-    peerDependenciesMeta:
-      '@swc/helpers':
-        optional: true
 
   '@swc/core@1.7.6':
     resolution: {integrity: sha512-FZxyao9eQks1MRmUshgsZTmlg/HB2oXK5fghkoWJm/1CU2q2kaJlVDll2as5j+rmWiwkp0Gidlq8wlXcEEAO+g==}
@@ -3654,9 +3591,6 @@ packages:
 
   caniuse-lite@1.0.30001643:
     resolution: {integrity: sha512-ERgWGNleEilSrHM6iUz/zJNSQTP8Mr21wDWpdgvRwcTXGAq6jMtOUPP4dqFPTdKqZ2wKTdtB+uucZ3MRpAUSmg==}
-
-  caniuse-lite@1.0.30001649:
-    resolution: {integrity: sha512-fJegqZZ0ZX8HOWr6rcafGr72+xcgJKI9oWfDW5DrD7ExUtgZC7a7R7ZYmZqplh7XDocFdGeIFn7roAxhOeYrPQ==}
 
   caniuse-lite@1.0.30001650:
     resolution: {integrity: sha512-fgEc7hP/LB7iicdXHUI9VsBsMZmUmlVJeQP2qqQW+3lkqVhbmjEU8zp+h5stWeilX+G7uXuIUIIlWlDw9jdt8g==}
@@ -5962,6 +5896,10 @@ packages:
     deprecated: Rimraf versions prior to v4 are no longer supported
     hasBin: true
 
+  rimraf@5.0.10:
+    resolution: {integrity: sha512-l0OE8wL34P4nJH/H2ffoaniAokM2qSmrtXHmlpvYr5AVVX8msAyW0l8NVJFDxlSK4u3Uh/f41cQheDVdnYijwQ==}
+    hasBin: true
+
   rollup-plugin-postcss@4.0.2:
     resolution: {integrity: sha512-05EaY6zvZdmvPUDi3uCcAQoESDcYnv8ogJJQRp6V5kZ6J6P7uAVJlrTZcaaA20wTH527YTnKfkAoPxWI/jPp4w==}
     engines: {node: '>=10'}
@@ -6884,6 +6822,17 @@ snapshots:
       - supports-color
       - typescript
 
+  '@automerge/automerge-repo-storage-nodefs@1.2.1(@swc/core@1.7.6)(@types/node@20.14.12)(typescript@5.5.4)':
+    dependencies:
+      '@automerge/automerge-repo': 1.2.1(@swc/core@1.7.6)(@types/node@20.14.12)(typescript@5.5.4)
+      rimraf: 5.0.10
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - supports-color
+      - typescript
+
   '@automerge/automerge-repo@1.2.1(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)':
     dependencies:
       '@automerge/automerge': 2.2.8
@@ -7236,7 +7185,7 @@ snapshots:
       '@babel/helper-split-export-declaration': 7.24.7
       '@babel/parser': 7.24.8
       '@babel/types': 7.24.9
-      debug: 4.3.5
+      debug: 4.3.6
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -9368,82 +9317,35 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@swc/core-darwin-arm64@1.7.1':
-    optional: true
-
   '@swc/core-darwin-arm64@1.7.6':
-    optional: true
-
-  '@swc/core-darwin-x64@1.7.1':
     optional: true
 
   '@swc/core-darwin-x64@1.7.6':
     optional: true
 
-  '@swc/core-linux-arm-gnueabihf@1.7.1':
-    optional: true
-
   '@swc/core-linux-arm-gnueabihf@1.7.6':
-    optional: true
-
-  '@swc/core-linux-arm64-gnu@1.7.1':
     optional: true
 
   '@swc/core-linux-arm64-gnu@1.7.6':
     optional: true
 
-  '@swc/core-linux-arm64-musl@1.7.1':
-    optional: true
-
   '@swc/core-linux-arm64-musl@1.7.6':
-    optional: true
-
-  '@swc/core-linux-x64-gnu@1.7.1':
     optional: true
 
   '@swc/core-linux-x64-gnu@1.7.6':
     optional: true
 
-  '@swc/core-linux-x64-musl@1.7.1':
-    optional: true
-
   '@swc/core-linux-x64-musl@1.7.6':
-    optional: true
-
-  '@swc/core-win32-arm64-msvc@1.7.1':
     optional: true
 
   '@swc/core-win32-arm64-msvc@1.7.6':
     optional: true
 
-  '@swc/core-win32-ia32-msvc@1.7.1':
-    optional: true
-
   '@swc/core-win32-ia32-msvc@1.7.6':
-    optional: true
-
-  '@swc/core-win32-x64-msvc@1.7.1':
     optional: true
 
   '@swc/core-win32-x64-msvc@1.7.6':
     optional: true
-
-  '@swc/core@1.7.1(@swc/helpers@0.5.12)':
-    dependencies:
-      '@swc/counter': 0.1.3
-      '@swc/types': 0.1.12
-    optionalDependencies:
-      '@swc/core-darwin-arm64': 1.7.1
-      '@swc/core-darwin-x64': 1.7.1
-      '@swc/core-linux-arm-gnueabihf': 1.7.1
-      '@swc/core-linux-arm64-gnu': 1.7.1
-      '@swc/core-linux-arm64-musl': 1.7.1
-      '@swc/core-linux-x64-gnu': 1.7.1
-      '@swc/core-linux-x64-musl': 1.7.1
-      '@swc/core-win32-arm64-msvc': 1.7.1
-      '@swc/core-win32-ia32-msvc': 1.7.1
-      '@swc/core-win32-x64-msvc': 1.7.1
-      '@swc/helpers': 0.5.12
 
   '@swc/core@1.7.6(@swc/helpers@0.5.12)':
     dependencies:
@@ -9461,7 +9363,6 @@ snapshots:
       '@swc/core-win32-ia32-msvc': 1.7.6
       '@swc/core-win32-x64-msvc': 1.7.6
       '@swc/helpers': 0.5.12
-    optional: true
 
   '@swc/counter@0.1.3': {}
 
@@ -9478,9 +9379,9 @@ snapshots:
     dependencies:
       '@swc/counter': 0.1.3
 
-  '@tailwindcss/container-queries@0.1.1(tailwindcss@3.4.6(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)))':
+  '@tailwindcss/container-queries@0.1.1(tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)))':
     dependencies:
-      tailwindcss: 3.4.6(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))
+      tailwindcss: 3.4.7(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))
 
   '@tailwindcss/forms@0.5.7(tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@22.1.0)(typescript@5.5.4)))':
     dependencies:
@@ -10202,7 +10103,7 @@ snapshots:
 
   agent-base@6.0.2:
     dependencies:
-      debug: 4.3.5
+      debug: 4.3.6
     transitivePeerDependencies:
       - supports-color
 
@@ -10334,7 +10235,7 @@ snapshots:
 
   browserslist@4.23.3:
     dependencies:
-      caniuse-lite: 1.0.30001649
+      caniuse-lite: 1.0.30001650
       electron-to-chromium: 1.5.5
       node-releases: 2.0.18
       update-browserslist-db: 1.1.0(browserslist@4.23.3)
@@ -10403,8 +10304,6 @@ snapshots:
       lodash.uniq: 4.5.0
 
   caniuse-lite@1.0.30001643: {}
-
-  caniuse-lite@1.0.30001649: {}
 
   caniuse-lite@1.0.30001650: {}
 
@@ -12406,14 +12305,6 @@ snapshots:
       postcss: 8.4.39
       ts-node: 10.9.2(@swc/core@1.7.6)(@types/node@20.14.12)(typescript@5.5.4)
 
-  postcss-load-config@4.0.2(postcss@8.4.39)(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)):
-    dependencies:
-      lilconfig: 3.1.2
-      yaml: 2.4.5
-    optionalDependencies:
-      postcss: 8.4.39
-      ts-node: 10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)
-
   postcss-load-config@4.0.2(postcss@8.4.39)(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@20.14.12)(typescript@5.5.4)):
     dependencies:
       lilconfig: 3.1.2
@@ -12421,6 +12312,14 @@ snapshots:
     optionalDependencies:
       postcss: 8.4.39
       ts-node: 10.9.2(@swc/core@1.7.6)(@types/node@20.14.12)(typescript@5.5.4)
+
+  postcss-load-config@4.0.2(postcss@8.4.41)(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)):
+    dependencies:
+      lilconfig: 3.1.2
+      yaml: 2.4.5
+    optionalDependencies:
+      postcss: 8.4.41
+      ts-node: 10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)
 
   postcss-load-config@4.0.2(postcss@8.4.41)(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@22.1.0)(typescript@5.5.4)):
     dependencies:
@@ -13065,6 +12964,10 @@ snapshots:
     dependencies:
       glob: 7.2.3
 
+  rimraf@5.0.10:
+    dependencies:
+      glob: 10.4.5
+
   rollup-plugin-postcss@4.0.2(postcss@8.4.39)(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@20.14.12)(typescript@5.5.4)):
     dependencies:
       chalk: 4.1.2
@@ -13387,36 +13290,9 @@ snapshots:
 
   tailwind-merge@1.14.0: {}
 
-  tailwindcss-animate@1.0.7(tailwindcss@3.4.6(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))):
+  tailwindcss-animate@1.0.7(tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))):
     dependencies:
-      tailwindcss: 3.4.6(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))
-
-  tailwindcss@3.4.6(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)):
-    dependencies:
-      '@alloc/quick-lru': 5.2.0
-      arg: 5.0.2
-      chokidar: 3.6.0
-      didyoumean: 1.2.2
-      dlv: 1.1.3
-      fast-glob: 3.3.2
-      glob-parent: 6.0.2
-      is-glob: 4.0.3
-      jiti: 1.21.6
-      lilconfig: 2.1.0
-      micromatch: 4.0.7
-      normalize-path: 3.0.0
-      object-hash: 3.0.0
-      picocolors: 1.0.1
-      postcss: 8.4.39
-      postcss-import: 15.1.0(postcss@8.4.39)
-      postcss-js: 4.0.1(postcss@8.4.39)
-      postcss-load-config: 4.0.2(postcss@8.4.39)(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))
-      postcss-nested: 6.2.0(postcss@8.4.39)
-      postcss-selector-parser: 6.1.1
-      resolve: 1.22.8
-      sucrase: 3.35.0
-    transitivePeerDependencies:
-      - ts-node
+      tailwindcss: 3.4.7(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))
 
   tailwindcss@3.4.6(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@20.14.12)(typescript@5.5.4)):
     dependencies:
@@ -13439,6 +13315,33 @@ snapshots:
       postcss-js: 4.0.1(postcss@8.4.39)
       postcss-load-config: 4.0.2(postcss@8.4.39)(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@20.14.12)(typescript@5.5.4))
       postcss-nested: 6.2.0(postcss@8.4.39)
+      postcss-selector-parser: 6.1.1
+      resolve: 1.22.8
+      sucrase: 3.35.0
+    transitivePeerDependencies:
+      - ts-node
+
+  tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4)):
+    dependencies:
+      '@alloc/quick-lru': 5.2.0
+      arg: 5.0.2
+      chokidar: 3.6.0
+      didyoumean: 1.2.2
+      dlv: 1.1.3
+      fast-glob: 3.3.2
+      glob-parent: 6.0.2
+      is-glob: 4.0.3
+      jiti: 1.21.6
+      lilconfig: 2.1.0
+      micromatch: 4.0.7
+      normalize-path: 3.0.0
+      object-hash: 3.0.0
+      picocolors: 1.0.1
+      postcss: 8.4.41
+      postcss-import: 15.1.0(postcss@8.4.41)
+      postcss-js: 4.0.1(postcss@8.4.41)
+      postcss-load-config: 4.0.2(postcss@8.4.41)(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))
+      postcss-nested: 6.2.0(postcss@8.4.41)
       postcss-selector-parser: 6.1.1
       resolve: 1.22.8
       sucrase: 3.35.0
@@ -13809,7 +13712,7 @@ snapshots:
   vite-plugin-top-level-await@1.4.2(@swc/helpers@0.5.12)(rollup@4.20.0)(vite@5.3.4(@types/node@20.14.12)):
     dependencies:
       '@rollup/plugin-virtual': 3.0.2(rollup@4.20.0)
-      '@swc/core': 1.7.1(@swc/helpers@0.5.12)
+      '@swc/core': 1.7.6(@swc/helpers@0.5.12)
       uuid: 10.0.0
       vite: 5.3.4(@types/node@20.14.12)
     transitivePeerDependencies:
