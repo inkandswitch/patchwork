@@ -11,7 +11,7 @@ import { getAnnotationGroupId } from "@/versionControl/annotations";
 import { AnnotationGroupView } from "@/versionControl/components/AnnotationGroupView";
 import { DocHandle } from "@automerge/automerge-repo";
 import { MessageCircle } from "lucide-react";
-import { TextSelection } from "./CodeMirrorEditor";
+import { TextSelection } from "./MarkdownDocEditor";
 import { CommentState } from "@/versionControl/schema";
 import { MarkdownDoc } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";

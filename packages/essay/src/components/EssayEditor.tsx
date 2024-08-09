@@ -5,7 +5,7 @@ import {
   useHandle,
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
-import { MarkdownDocEditor, TextSelection } from "./CodeMirrorEditor";
+import { MarkdownDocEditor, TextSelection } from "./MarkdownDocEditor";
 
 import { MarkdownDoc } from "../datatype";
 import { useEffect, useMemo, useState } from "react";

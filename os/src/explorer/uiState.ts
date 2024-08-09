@@ -105,13 +105,9 @@ const TAB_DOC_UI_STATE_SIGNALS: Record<
   Atom<DocUIState | undefined>
 > = {};
 
-export const useDocUIState = (
+export const useDocUIStateOrUndefined = (
   docPath: DocPath
-): [DocUIState, (fn: (state: DocUIState) => void) => void] => {
-  // TODO(jah): I might prefer if this returned undefined until the doc loads.
-  // Currently, client code can't tell. (But I guess the real answer is to not
-  // use hooks like this anymore...)
-
+): [DocUIState | undefined, (fn: (state: DocUIState) => void) => void] => {
   const key = docPathString(docPath);
   const uiStateOm = ifLoaded(useUIStateOm());
   const uiStateHandle = uiStateOm?.handle;
@@ -152,8 +148,19 @@ export const useDocUIState = (
   );
 
   return useMemo(
-    () => [tabDocUIState ?? defaultDocUIState(), changeDocUIState],
-    [changeDocUIState, tabDocUIState]
+    () => [tabDocUIState, changeDocUIState],
+    [tabDocUIState, changeDocUIState]
+  );
+};
+
+export const useDocUIState = (
+  docPath: DocPath
+): [DocUIState, (fn: (state: DocUIState) => void) => void] => {
+  const [tabDocUIState, changeTabDocUIState] =
+    useDocUIStateOrUndefined(docPath);
+  return useMemo(
+    () => [tabDocUIState ?? defaultDocUIState(), changeTabDocUIState],
+    [changeTabDocUIState, tabDocUIState]
   );
 };
 
@@ -171,9 +178,13 @@ export const useToolUIState = <T>(
   toolId: string,
   init: () => T
 ): [T | undefined, (fn: (state: T) => void) => void] => {
-  const [docUIState, changeDocUIState] = useDocUIState(docPath);
+  const [docUIState, changeDocUIState] = useDocUIStateOrUndefined(docPath);
 
-  const toolUIState = docUIState.toolUIStates?.[toolId] as T | undefined;
+  const toolUIState = docUIState
+    ? // We're loaded – if the tool UI state hasn't been defined yet, use the default from init
+      (docUIState.toolUIStates?.[toolId] as T | undefined) ?? init()
+    : // We're still loading – return undefined
+      undefined;
   const setToolUIState = (fn: (state: T) => void) => {
     changeDocUIState((docUIState) => {
       if (!docUIState.toolUIStates) {

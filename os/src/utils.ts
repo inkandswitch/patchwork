@@ -1,3 +1,5 @@
+import { MutableRefObject, useRef } from "react";
+
 export type Entries<T> = {
   [K in keyof T]: [K, T[K]];
 }[keyof T][];
@@ -35,4 +37,14 @@ export function eventListenerEffect<K extends keyof HTMLElementEventMap>(
 ): () => void {
   elem.addEventListener(type, listener);
   return () => elem.removeEventListener(type, listener);
+}
+
+/** Define a ref that's always kept in sync with a certain value so a callback
+ * can use the up-to-date value without having to be redefined when the value
+ * changes.
+ */
+export function useRefForCallback<T>(value: T): MutableRefObject<T> {
+  const ref = useRef(value);
+  ref.current = value;
+  return ref;
 }
