@@ -306,7 +306,7 @@ export const VersionControlEditor: React.FC<{
           <div
             className="-left-[33px] absolute cursor-pointer hover:bg-gray-100 border hover:border-gray-500 rounded-lg w-[24px] h-[24px] grid place-items-center"
             onClick={() =>
-              changeDocUIState((state) => (state.sidebarMode = null))
+              changeDocUIState((state) => delete state.sidebarMode)
             }
           >
             <ChevronsRight size={16} />
