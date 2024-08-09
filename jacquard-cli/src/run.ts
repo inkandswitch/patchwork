@@ -165,6 +165,10 @@ export function buildRunSpecFromArgs(args: CommandLineArgs): BuildRunSpec {
     },
     explicitInputs: args.inputs ?? [],
     explicitOutputs: args.outputs ?? [],
-    name: args.name,
+    // TODO: this silly dance is because we can't put undefined values into
+    // Automerge; is there a better way?
+    ...(args.name && {
+      name: args.name,
+    }),
   };
 }
