@@ -49,7 +49,6 @@ export const VersionControlEditor: React.FC<{
     getFakeDocPathForDocUrl(mainDocUrl)
   );
 
-  // const uiStateHandle = useUIStateHandle();
   const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
   // const [isHoveringYankToBranchOption, setIsHoveringYankToBranchOption] =

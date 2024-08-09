@@ -63,10 +63,6 @@ export const useUIStateOm = (): DocReactiveState<Om<UIStateDoc>> => {
   );
 };
 
-export const useUIStateHandle = (): DocHandle<UIStateDoc> | undefined => {
-  return ifLoaded(useUIStateOm())?.handle;
-};
-
 // Each tab maintains local versions of document UI state. These are initialized
 // from Automerge & changes are synchronized between components using Signia.
 // (Changes are also persisted back to Automerge, but they won't affect other
