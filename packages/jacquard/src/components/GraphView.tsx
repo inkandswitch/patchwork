@@ -6,6 +6,23 @@ import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { instance } from "@viz-js/viz";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { JacquardBuildMetadata } from "../datatype";
+
+const rawSvgIcons = import.meta.glob("../file-icon-vectors/*.svg", {
+  eager: true,
+  import: "default",
+});
+
+let svgIconsByFileExtension: Record<string, string> = {};
+
+for (let [key, value] of Object.entries(rawSvgIcons)) {
+  const fileExtension =
+    key
+      .split("/")
+      .pop()
+      ?.replace(/\.svg$/, "") || "";
+  svgIconsByFileExtension[fileExtension] = value as string;
+}
+
 import {
   getReferenceFromDocUrl,
   getStalenessInfo,
@@ -88,11 +105,63 @@ const GraphvizView = ({ source }: { source: string }) => {
             ?.slice(1)
             .replaceAll("_", ":");
 
-          if (!isValidAutomergeUrl(possibleAutomergeUrl)) {
+          const nodeType = isValidAutomergeUrl(possibleAutomergeUrl)
+            ? "doc"
+            : "build";
+
+          if (nodeType === "build") {
+            (node as SVGElement).style.cursor = "default";
             return;
           }
 
           (node as SVGElement).style.cursor = "pointer";
+
+          // Get the filename from the child text node
+          const labelElement = node.querySelector("text");
+
+          // Determine the file extension
+          const fileExtension =
+            (labelElement?.textContent ?? "").split(".").pop()?.toLowerCase() ||
+            "";
+
+          // Render file icon SVG
+          const iconImage = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "image"
+          );
+          iconImage.setAttribute(
+            "href",
+            svgIconsByFileExtension[fileExtension] ??
+              svgIconsByFileExtension["blank"]
+          );
+          iconImage.setAttribute("width", "24");
+          iconImage.setAttribute("height", "24");
+
+          // Get the bounding box of the node
+          const nodeBBox = (node as SVGGraphicsElement).getBBox();
+
+          // Position the icon near the top-left corner of the node
+          const iconX = nodeBBox.x - 12; // 12 is half the icon width
+          const iconY = nodeBBox.y - 12; // 12 is half the icon height
+
+          iconImage.setAttribute("x", iconX.toString());
+          iconImage.setAttribute("y", iconY.toString());
+
+          node.appendChild(iconImage);
+
+          // Add hover effect
+          const path = node.querySelector("path");
+          if (path) {
+            const originalFill = (path as SVGPathElement).style.fill;
+
+            node.addEventListener("mouseenter", () => {
+              (path as SVGPathElement).style.fill = "#f3f4f6"; // Light gray
+            });
+
+            node.addEventListener("mouseleave", () => {
+              (path as SVGPathElement).style.fill = originalFill; // Reset to original color
+            });
+          }
 
           node.addEventListener("click", (e) => {
             const docUrl = possibleAutomergeUrl as AutomergeUrl;
@@ -117,46 +186,62 @@ function stateGraphSrc(state: ProjectState) {
   for (let reference of state.references) {
     const status = stalenessInfo.docStatuses[reference.docUrl];
     lines.push(`${gvId(reference.docUrl)} [
-      shape=plain
+      shape=rect
       label="${reference.path}"
       fontsize=10
-      fontname="sans-serif"
+      fontname="Merriweather Sans, sans-serif"
+      height=0.3
       tooltip="${status.map(reasonToString).join("; ")}"
-      ${status.length > 0 ? 'style=filled fillcolor="#fdba74"' : ""}
+      ${
+        status.length > 0
+          ? 'style="filled,rounded" fillcolor="#fcc" color="#c00"'
+          : 'style="filled,rounded" fillcolor="#ffffff" color="#cccccc"'
+      }
+      margin="0.3,0.1"
     ];`);
   }
   for (let buildRun of state.buildRuns) {
     const status = stalenessInfo.buildRunStatuses[buildRun.id];
     lines.push(`${gvId(buildRun.id)} [
       shape=rect
-      style="rounded"
-      label="${buildRun.spec.name ?? buildRun.spec.command}"
-      fontname="sans-serif"
-      fontsize=10
-      tooltip="${status.map(reasonToString).join("; ")}"
-      ${
-        status.length > 0
-          ? 'style="rounded,filled" fillcolor="#fdba74"'
-          : 'style="rounded"'
+      label="⚙️ ${buildRun.spec.name ?? buildRun.spec.command}"
+      fontname=${
+        buildRun.spec.name
+          ? '"Merriweather Sans, sans-serif"'
+          : '"Courier, monospace"'
       }
+      fontsize=${buildRun.spec.name ? 12 : 10}
+      tooltip="${status.map(reasonToString).join("; ")}"
+      margin="0.2,0.1"
+      style="filled"
+      fillcolor=${status.length > 0 ? '"#fcc"' : '"#d7ebf5"'}
+      color=${status.length > 0 ? '"#c00"' : '"#bbb"'}
+      penwidth=1.5
+
     ];`);
     for (let input of buildRun.inputs) {
       const inputReferenceInState = getReferenceFromDocUrl(state, input.docUrl);
       const outOfDate = !headsMatch(inputReferenceInState.heads, input.heads);
       lines.push(`${gvId(input.docUrl)} -> ${gvId(buildRun.id)} [
-        color=${outOfDate ? '"#fdba74"' : '"#AAAAAA"'}
+        color=${outOfDate ? '"#fcc"' : '"#888"'}
         style=${outOfDate ? '"dashed"' : '"solid"'}
+        penwidth=0.5
+        arrowsize=0.7
+        arrowhead="vee"
       ];`);
     }
     for (let output of buildRun.outputs) {
       lines.push(`${gvId(buildRun.id)} -> ${gvId(output.docUrl)} [
-        color="#A9A9A9"
+        color="#888"
+        penwidth=0.5
+        arrowsize=0.7
+        arrowhead="vee"
       ];`);
     }
   }
 
   const source = `digraph {
-    graph [pad="0.2"];
+    graph [pad="0.3"];
     ${lines.join("\n")}
   }`;
 
