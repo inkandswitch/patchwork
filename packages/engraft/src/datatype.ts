@@ -3,26 +3,33 @@ import {
   HasVersionControlMetadata,
   initVersionControlMetadata,
 } from "@/versionControl/schema";
+import { makeFancyContext } from "@engraft/fancy-setup";
 import { ToolProgram } from "@engraft/hostkit";
 
+const context = makeFancyContext();
+
 export type EngraftDoc = HasVersionControlMetadata<undefined, undefined> & {
-  program: ToolProgram | null;
+  title: string;
+  program: ToolProgram;
 };
 
 export const engraftDataType: DataType<EngraftDoc, unknown, unknown> = {
   type: "patchwork:dataType",
   id: "engraft",
-  name: "Engraft",
-  icon: "Text", // TODO
+  name: "Engraft program",
+  icon: "Sprout",
   init: (doc, repo) => {
-    doc.program = null;
+    doc.program = context.makeSlotWithCode("");
+    doc.title = "Untitled Engraft Program";
     initVersionControlMetadata(doc, repo);
   },
   getTitle: async (doc) => {
-    // TODO
-    return "Untitled Engraft Program";
+    return doc.title;
+  },
+  setTitle: async (doc, title) => {
+    doc.title = title;
   },
   markCopy: (doc) => {
-    // TODO
+    doc.title = "Copy of " + doc.title;
   },
 };
