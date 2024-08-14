@@ -3,7 +3,8 @@ import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { EditorProps } from "@/tools";
 import { useMemo } from "react";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { JacquardBuildMetadata } from "../datatype";
+import { BuildRunSpec, JacquardBuildMetadata } from "../datatype";
+import { CopyButton } from "@/versionControl/components/CopyButton";
 
 export const LogView = ({
   docUrl,
@@ -73,8 +74,40 @@ export const LogView = ({
                 ))}
               </div>
             </div>
+            <details>
+              <summary className="text-sm font-medium cursor-pointer">
+                More info
+              </summary>
+              <div className="pl-6">
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-medium">CLI:</div>
+                  <div className="text-xs font-mono">
+                    {runSpecToCommand(run.spec)}
+                  </div>
+                  <CopyButton text={runSpecToCommand(run.spec)} size={16} />
+                </div>
+              </div>
+            </details>
           </div>
         ))}
     </div>
   );
 };
+
+/** the opposite of buildRunSpecFromArgs, basically */
+function runSpecToCommand(spec: BuildRunSpec): string {
+  // TODO: poor escaping for shell
+  return [
+    `jacquard run`,
+    `--command "${spec.command}"`,
+    spec.autoDeps.stdoutDeclared && "--stdoutDeclaredDeps",
+    spec.autoDeps.latex && "--latexDeps",
+    spec.explicitInputs.length > 0 &&
+      `--inputs ${spec.explicitInputs.map((s) => `"${s}"`).join(" ")}`,
+    spec.explicitOutputs.length > 0 &&
+      `--outputs ${spec.explicitOutputs.map((s) => `"${s}"`).join(" ")}`,
+    spec.name && `--name "${spec.name}"`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
