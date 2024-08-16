@@ -1,12 +1,40 @@
 import { EditorProps } from "@/tools";
 import { EngraftDoc } from "../datatype";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { ToolWithView } from "@engraft/hostkit";
+import {
+  useDocument,
+  useDocuments,
+  useRepo,
+} from "@automerge/automerge-repo-react-hooks";
+import {
+  EngraftPromise,
+  ToolOutput,
+  ToolWithView,
+  VarBinding,
+} from "@engraft/hostkit";
 import { makeFancyContext } from "@engraft/fancy-setup";
 import { useCallback, useState } from "react";
 import { ToolProgram, Updater } from "@engraft/hostkit";
 import { isEqual, isObject } from "lodash";
 import { useHandleDef } from "@/hooks/useHandleDef";
+import { Button } from "@/shadcn/ui/button";
+import {
+  getDoc,
+  getDocState,
+  ifLoaded,
+  LoadingError,
+  parallelMap,
+  throwIfMissing,
+  useDocReactive,
+} from "@/doc-reactive";
+import { parseUrl } from "@/explorer/hooks/useSelectedDocLink";
+import {
+  AutomergeUrl,
+  isValidAutomergeUrl,
+  parseAutomergeUrl,
+} from "@automerge/automerge-repo";
+import { useRootFolderDocWithChildren } from "@/explorer/account";
+import { FolderDocWithChildren } from "@/packages/folder";
+import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 
 // TODO
 const context = makeFancyContext();
@@ -210,11 +238,69 @@ function removeUndefineds(val: any): any {
   }
 }
 
+function getDocName(
+  url: AutomergeUrl,
+  rootFolderDocWithChildren: FolderDocWithMetadata | undefined
+): string {
+  const docLink = rootFolderDocWithChildren?.flatDocLinks.find(
+    (link) => link.url === url
+  );
+  const automergeId = parseAutomergeUrl(url).documentId;
+  return docLink?.name || automergeId;
+}
+
+export function findAutomergeUrl(str: string): AutomergeUrl | null {
+  const idMatch = str.match(/([a-zA-Z0-9]{28})/);
+  if (idMatch && idMatch[1]) {
+    const url = `automerge:${idMatch[1]}`;
+    if (isValidAutomergeUrl(url)) {
+      return url;
+    }
+  }
+  return null;
+}
+
 export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
   const [doc, changeDoc] = useDocument<EngraftDoc>(props.docUrl);
   const handle = useHandleDef<EngraftDoc>(props.docUrl);
 
-  const program = doc ? doc.program || initialProgram : null;
+  const rootFolderDocWithChildren = useRootFolderDocWithChildren();
+
+  const repo = useRepo();
+  const varBindings = ifLoaded(
+    useDocReactive(
+      useCallback(() => {
+        if (!doc) {
+          return {};
+        }
+        const outputPs: EngraftPromise<ToolOutput>[] = parallelMap(
+          doc.inputUrls,
+          (url) => {
+            const docState = getDocState<unknown>(url, repo);
+            throwIfMissing(docState);
+            return docState instanceof LoadingError
+              ? EngraftPromise.unresolved()
+              : EngraftPromise.resolve({ value: docState });
+          }
+        );
+
+        let varBindings: { [id: string]: VarBinding } = {};
+        for (const [i, url] of doc.inputUrls.entries()) {
+          const automergeId = parseAutomergeUrl(url).documentId;
+          // TODO: underscore hack oh no
+          const id = `IDautomerge${automergeId.replace(/\d/g, "_")}000000`;
+          varBindings[id] = {
+            var_: {
+              id,
+              label: getDocName(url, rootFolderDocWithChildren),
+            },
+            outputP: outputPs[i],
+          };
+        }
+        return varBindings;
+      }, [doc, repo, rootFolderDocWithChildren])
+    )
+  );
 
   const updateProgram: Updater<ToolProgram> = useCallback((update) => {
     const doc = handle.docSync();
@@ -228,23 +314,62 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
     });
   }, []);
 
-  if (!program) {
+  if (!doc || !varBindings) {
     return <div>loading</div>;
   }
 
+  const program = doc.program;
   const programIsEmpty = isEqual(program, context.makeSlotWithCode(""));
 
   return (
-    <div className="p-4">
-      <ToolWithView
-        program={program}
-        updateProgram={updateProgram}
-        reportOutputState={noOp}
-        varBindings={empty}
-        expand={true}
-        context={context}
-      />
-      {programIsEmpty && <span className="pl-4">↑ start here!</span>}
+    <div className="overflow-scroll w-full h-full">
+      <div className="p-4 flex flex-col items-start gap-2">
+        <ToolWithView
+          program={program}
+          updateProgram={updateProgram}
+          reportOutputState={noOp}
+          varBindings={varBindings}
+          expand={true}
+          context={context}
+        />
+        {programIsEmpty && <span className="pl-4">↑ start here!</span>}
+        <div className="border rounded-lg p-4 text-gray-600 text-sm flex flex-col gap-2">
+          <div>
+            {doc.inputUrls.map((depUrl, i) => (
+              <div
+                key={i}
+                className="hover:line-through cursor-pointer"
+                onClick={() => {
+                  changeDoc((proxy) => {
+                    proxy.inputUrls.splice(i, 1);
+                  });
+                }}
+              >
+                {getDocName(depUrl, rootFolderDocWithChildren)}
+              </div>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            className="flex gap-2 w-fit h-8 text-xs px-2"
+            onClick={() => {
+              changeDoc((doc) => {
+                let input = prompt("Paste in an Automerge doc URL:");
+                if (!input) {
+                  return;
+                }
+                const url = findAutomergeUrl(input);
+                if (!url) {
+                  return;
+                }
+                doc.inputUrls.push(url);
+              });
+            }}
+          >
+            Add new input
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

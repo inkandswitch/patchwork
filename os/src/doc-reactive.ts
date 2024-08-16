@@ -298,7 +298,7 @@ function getDocSignal<T>(
  * missing, this will be reflected in the return value – this function will not
  * throw.
  */
-export function getDocState<T = Doc<unknown>>(
+export function getDocState<T = unknown>(
   url: AutomergeUrl,
   repo: Repo,
   heads?: Automerge.Heads
@@ -310,7 +310,7 @@ export function getDocState<T = Doc<unknown>>(
  * Get the value of a doc in a reactive context. If the doc is loading or
  * missing, this will throw an error which will be caught by useDocReactive.
  */
-export function getDoc<T = Doc<unknown>>(
+export function getDoc<T = unknown>(
   url: AutomergeUrl,
   repo: Repo,
   heads?: Automerge.Heads

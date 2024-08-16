@@ -3,6 +3,7 @@ import {
   HasVersionControlMetadata,
   initVersionControlMetadata,
 } from "@/versionControl/schema";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 import { makeFancyContext } from "@engraft/fancy-setup";
 import { ToolProgram } from "@engraft/hostkit";
 
@@ -11,6 +12,7 @@ const context = makeFancyContext();
 export type EngraftDoc = HasVersionControlMetadata<undefined, undefined> & {
   title: string;
   program: ToolProgram;
+  inputUrls: AutomergeUrl[];
 };
 
 export const engraftDataType: DataType<EngraftDoc, unknown, unknown> = {
