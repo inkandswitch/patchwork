@@ -13,6 +13,7 @@ export type EngraftDoc = HasVersionControlMetadata<undefined, undefined> & {
   title: string;
   program: ToolProgram;
   inputUrls: AutomergeUrl[];
+  outputUrl: AutomergeUrl | null;
 };
 
 export const engraftDataType: DataType<EngraftDoc, unknown, unknown> = {
@@ -25,6 +26,7 @@ export const engraftDataType: DataType<EngraftDoc, unknown, unknown> = {
     doc.program = context.makeSlotWithCode("");
     doc.title = "Untitled Engraft Program";
     doc.inputUrls = [];
+    doc.outputUrl = null;
     initVersionControlMetadata(doc, repo);
   },
   getTitle: async (doc) => {
