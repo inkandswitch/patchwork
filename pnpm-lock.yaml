@@ -135,6 +135,9 @@ importers:
       '@lezer/common':
         specifier: ^1.2.1
         version: 1.2.1
+      '@tailwindcss/container-queries':
+        specifier: ^0.1.1
+        version: 0.1.1(tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@22.1.0)(typescript@5.5.4)))
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
@@ -150,6 +153,12 @@ importers:
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
+      tailwindcss:
+        specifier: ^3.4.6
+        version: 3.4.7(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@22.1.0)(typescript@5.5.4))
+      tailwindcss-animate:
+        specifier: ^1.0.7
+        version: 1.0.7(tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@22.1.0)(typescript@5.5.4)))
     devDependencies:
       '@types/lodash':
         specifier: ^4.17.7
@@ -11394,6 +11403,10 @@ snapshots:
     dependencies:
       tailwindcss: 3.4.7(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))
 
+  '@tailwindcss/container-queries@0.1.1(tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@22.1.0)(typescript@5.5.4)))':
+    dependencies:
+      tailwindcss: 3.4.7(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@22.1.0)(typescript@5.5.4))
+
   '@tailwindcss/forms@0.5.7(tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@22.1.0)(typescript@5.5.4)))':
     dependencies:
       mini-svg-data-uri: 1.4.4
@@ -16385,6 +16398,10 @@ snapshots:
   tailwindcss-animate@1.0.7(tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))):
     dependencies:
       tailwindcss: 3.4.7(ts-node@10.9.2(@swc/core@1.7.6(@swc/helpers@0.5.12))(@types/node@20.14.12)(typescript@5.5.4))
+
+  tailwindcss-animate@1.0.7(tailwindcss@3.4.7(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@22.1.0)(typescript@5.5.4))):
+    dependencies:
+      tailwindcss: 3.4.7(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@22.1.0)(typescript@5.5.4))
 
   tailwindcss@3.4.6(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@20.14.12)(typescript@5.5.4)):
     dependencies:
