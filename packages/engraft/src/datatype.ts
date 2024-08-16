@@ -21,8 +21,10 @@ export const engraftDataType: DataType<EngraftDoc, unknown, unknown> = {
   name: "Engraft program",
   icon: "Sprout",
   init: (doc, repo) => {
+    // TODO: it is bad that initialization isn't type-safe
     doc.program = context.makeSlotWithCode("");
     doc.title = "Untitled Engraft Program";
+    doc.inputUrls = [];
     initVersionControlMetadata(doc, repo);
   },
   getTitle: async (doc) => {
