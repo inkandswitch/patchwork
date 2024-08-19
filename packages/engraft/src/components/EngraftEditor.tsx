@@ -76,14 +76,15 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
   const rootFolderDocWithChildren = useRootFolderDocWithChildren();
 
   const repo = useRepo();
+  const inputUrls = doc?.inputUrls;
   const varBindings = ifLoaded(
     useDocReactive(
       useCallback(() => {
-        if (!doc) {
+        if (!inputUrls) {
           return {};
         }
         const outputPs: EngraftPromise<ToolOutput>[] = parallelMap(
-          doc.inputUrls,
+          inputUrls,
           (url) => {
             const docState = getDocState<unknown>(url, repo);
             throwIfMissing(docState);
@@ -94,7 +95,7 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
         );
 
         let varBindings: { [id: string]: VarBinding } = {};
-        for (const [i, url] of doc.inputUrls.entries()) {
+        for (const [i, url] of inputUrls.entries()) {
           const automergeId = parseAutomergeUrl(url).documentId;
           // TODO: underscore hack oh no
           const id = `IDautomerge${automergeId.replace(/\d/g, "_")}000000`;
@@ -107,7 +108,7 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
           };
         }
         return varBindings;
-      }, [doc, repo, rootFolderDocWithChildren])
+      }, [inputUrls, repo, rootFolderDocWithChildren])
     )
   );
 
