@@ -126,12 +126,15 @@ importers:
       '@codemirror/view':
         specifier: ^6.28.6
         version: 6.28.6
-      '@engraft/fancy-setup':
+      '@engraft/basic-setup':
         specifier: ^0.0.8
-        version: 0.0.8(@babel/core@7.25.2)(@codemirror/view@6.28.6)(@lezer/common@1.2.1)(@types/react@18.3.3)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)
+        version: 0.0.8(@babel/core@7.25.2)(@lezer/common@1.2.1)(@types/react@18.3.3)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)
       '@engraft/hostkit':
         specifier: ^0.0.8
         version: 0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@engraft/tool-python':
+        specifier: ^0.0.8
+        version: 0.0.8(@codemirror/view@6.28.6)(@lezer/common@1.2.1)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@lezer/common':
         specifier: ^1.2.1
         version: 1.2.1
@@ -1084,9 +1087,6 @@ packages:
   '@engraft/core@0.0.8':
     resolution: {integrity: sha512-TilsQQnnxCpgTLxiLMjKSplQiWE0MUZjmsDTTb6ZJFJ5N8T3aFXKI5GTC2lyRbZJ1yZAs6aTygspdUDklu0m1g==}
 
-  '@engraft/fancy-setup@0.0.8':
-    resolution: {integrity: sha512-qV4U5T/343sHCH+/TBwLZtkmV1j9afllIe2DEkKKC9CtvML6DHOoXBS/WiPFqPmtl4VF/Q1H3HEWePRhS/FOdg==}
-
   '@engraft/hostkit@0.0.8':
     resolution: {integrity: sha512-VHRe3JnVaLv3fbNwsQZkeMm0DkGOMxf2+stjsH3yNmpvH3/Re3fu+QoLkvp7NG71ZNoA7t9atiwgLlpwuFiwhg==}
     peerDependencies:
@@ -1125,11 +1125,6 @@ packages:
     peerDependencies:
       react: ^15.3.0 || ^16.0.0-alpha || ^17.0.0 || ^18.0.0-rc
       react-dom: ^15.3.0 || ^16.0.0-alpha || ^17.0.0 || ^18.0.0-rc
-
-  '@engraft/tool-example-datasets@0.0.8':
-    resolution: {integrity: sha512-1wqHu4V0nwdwg0Sy7UHO1GxyjIz8BFqaB9DS1k37Lw+UGCY/qPoNNgsYRP1fKocQZPxX6Yjufb6CRjEiy8rEmw==}
-    peerDependencies:
-      react: ^15.3.0 || ^16.0.0-alpha || ^17.0.0 || ^18.0.0-rc
 
   '@engraft/tool-extractor@0.0.8':
     resolution: {integrity: sha512-c8Q00Z2MJ+i2TJC2WuEW2zs8f9/4VvvIN5Z1ky7V0z8O4oopOeMNYllrmv3zUfw2WWjukoTU2TUfB6q2TUhbKw==}
@@ -1227,12 +1222,6 @@ packages:
       react: ^15.3.0 || ^16.0.0-alpha || ^17.0.0 || ^18.0.0-rc
       react-dom: ^15.3.0 || ^16.0.0-alpha || ^17.0.0 || ^18.0.0-rc
 
-  '@engraft/tool-voyager@0.0.8':
-    resolution: {integrity: sha512-XiZ1ojeNisE6pM5i4+k+HdkpjhHjrIy9fDpisPsvvSwKI8r29mdneOEWsvp5yzybfCLq9MqgBDPkJAhK6A+fyg==}
-    peerDependencies:
-      react: ^15.3.0 || ^16.0.0-alpha || ^17.0.0 || ^18.0.0-rc
-      react-dom: ^15.3.0 || ^16.0.0-alpha || ^17.0.0 || ^18.0.0-rc
-
   '@engraft/toolkit@0.0.8':
     resolution: {integrity: sha512-ZSP/NINESRJfSk+8kFRHFbAVHemSV00PZ1S3mIOrB4WyvJcJ5mAOWX7QGWwxOOr3DOkMBkex0DPVG3vw7+75Gw==}
     peerDependencies:
@@ -1245,9 +1234,6 @@ packages:
 
   '@engraft/update-proxy@0.0.8':
     resolution: {integrity: sha512-6o/65Kc771BGuIuNazWUoVpgBgd7U5R6brnCSUJ80bEEx2UTS6lIif6T+qc2wQc0jwD5BYyt0ZYc4NYIAtlEBQ==}
-
-  '@engraft/vendor-voyager@0.0.8':
-    resolution: {integrity: sha512-g1FNq0hKmerFk0WONfFiFBvppkEFY7qL0V0A1kU1uh1PaCq3sp6wAoWKb6oyv8wUXdpK54iSnh3mhg6KDqZuaQ==}
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -9033,27 +9019,6 @@ snapshots:
       - '@ava/typescript'
       - supports-color
 
-  '@engraft/fancy-setup@0.0.8(@babel/core@7.25.2)(@codemirror/view@6.28.6)(@lezer/common@1.2.1)(@types/react@18.3.3)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)':
-    dependencies:
-      '@engraft/basic-setup': 0.0.8(@babel/core@7.25.2)(@lezer/common@1.2.1)(@types/react@18.3.3)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)
-      '@engraft/core': 0.0.8
-      '@engraft/tool-example-datasets': 0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@engraft/tool-python': 0.0.8(@codemirror/view@6.28.6)(@lezer/common@1.2.1)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@engraft/tool-voyager': 0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    transitivePeerDependencies:
-      - '@ava/typescript'
-      - '@babel/core'
-      - '@codemirror/view'
-      - '@lezer/common'
-      - '@types/react'
-      - bufferutil
-      - encoding
-      - react
-      - react-dom
-      - react-is
-      - supports-color
-      - utf-8-validate
-
   '@engraft/hostkit@0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@engraft/core': 0.0.8
@@ -9147,16 +9112,6 @@ snapshots:
     transitivePeerDependencies:
       - '@ava/typescript'
       - react-is
-      - supports-color
-
-  '@engraft/tool-example-datasets@0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@engraft/toolkit': 0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      d3-dsv: 3.0.1
-      react: 18.3.1
-    transitivePeerDependencies:
-      - '@ava/typescript'
-      - react-dom
       - supports-color
 
   '@engraft/tool-extractor@0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
@@ -9374,18 +9329,6 @@ snapshots:
       - '@ava/typescript'
       - supports-color
 
-  '@engraft/tool-voyager@0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@engraft/shared': 0.0.8
-      '@engraft/toolkit': 0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@engraft/vendor-voyager': 0.0.8
-      lodash: 4.17.21
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-    transitivePeerDependencies:
-      - '@ava/typescript'
-      - supports-color
-
   '@engraft/toolkit@0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@engraft/core': 0.0.8
@@ -9409,8 +9352,6 @@ snapshots:
   '@engraft/update-proxy@0.0.8':
     dependencies:
       immutability-helper: 3.1.1
-
-  '@engraft/vendor-voyager@0.0.8': {}
 
   '@esbuild/aix-ppc64@0.21.5':
     optional: true

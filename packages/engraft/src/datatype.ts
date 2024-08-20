@@ -4,10 +4,12 @@ import {
   initVersionControlMetadata,
 } from "@/versionControl/schema";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { makeFancyContext } from "@engraft/fancy-setup";
+import { makeBasicContext } from "@engraft/basic-setup";
+import PythonTool from "@engraft/tool-python";
 import { ToolProgram } from "@engraft/hostkit";
 
-const context = makeFancyContext();
+export const engraftContext = makeBasicContext();
+engraftContext.dispatcher.registerTool(PythonTool);
 
 export type EngraftDoc = HasVersionControlMetadata<undefined, undefined> & {
   title: string;
@@ -23,7 +25,7 @@ export const engraftDataType: DataType<EngraftDoc, unknown, unknown> = {
   icon: "Sprout",
   init: (doc, repo) => {
     // TODO: it is bad that initialization isn't type-safe
-    doc.program = context.makeSlotWithCode("");
+    doc.program = engraftContext.makeSlotWithCode("");
     doc.title = "Untitled Engraft Program";
     doc.inputUrls = [];
     doc.outputUrl = null;

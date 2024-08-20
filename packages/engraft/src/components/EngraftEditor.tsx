@@ -18,7 +18,6 @@ import {
   updateText,
 } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { makeFancyContext } from "@engraft/fancy-setup";
 import {
   EngraftPromise,
   PromiseState,
@@ -30,13 +29,11 @@ import {
 } from "@engraft/hostkit";
 import { isEqual, isObject } from "lodash";
 import { useCallback } from "react";
-import { EngraftDoc } from "../datatype";
+import { engraftContext, EngraftDoc } from "../datatype";
 import {
   applyUpdateAsChangeToObject,
   removeUndefineds,
 } from "../engraft-automerge";
-
-const context = makeFancyContext();
 
 function getDocName(
   url: AutomergeUrl,
@@ -154,7 +151,7 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
   }
 
   const program = doc.program;
-  const programIsEmpty = isEqual(program, context.makeSlotWithCode(""));
+  const programIsEmpty = isEqual(program, engraftContext.makeSlotWithCode(""));
 
   return (
     <div className="overflow-scroll w-full h-full">
@@ -248,7 +245,7 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
           reportOutputState={onOutputState}
           varBindings={varBindings}
           expand={true}
-          context={context}
+          context={engraftContext}
         />
         {programIsEmpty && <span className="pl-4">↑ start here!</span>}
       </div>
