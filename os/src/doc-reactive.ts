@@ -40,11 +40,11 @@ import { useDebugValue, useMemo } from "react";
 /* App-facing API: Generic stuff */
 /*********************************/
 
-export type DocReactiveState<T> = T | LoadingError | MissingError;
+export type DocReactiveState<T> = T | DocLoading | DocMissingError;
 export type DocReactiveSignal<T> = Signal<DocReactiveState<T>>;
 
 // TODO: This isn't really an "error"; it's a normal state. Could rename?
-export class LoadingError extends Error {
+export class DocLoading extends Error {
   isLoadingError = true; // here for weird typing reasons
 
   constructor(readonly url?: AutomergeUrl) {
@@ -53,7 +53,7 @@ export class LoadingError extends Error {
 }
 
 // This is a real error tho!
-export class MissingError extends Error {
+export class DocMissingError extends Error {
   isMissingError = true; // here for weird typing reasons
 
   constructor(readonly url?: AutomergeUrl) {
@@ -88,13 +88,12 @@ export function useDocReactive<T>(
   return value;
 }
 
-
 /**
  * Turn a reactive doc into a signal
  * This is useful when using reactive docs outside of react
  */
 export function docReactiveSignal<T>(cb: () => T): DocReactiveSignal<T> {
-  return computed("docReactiveSignal", () => docReactiveValueToState(cb))
+  return computed("docReactiveSignal", () => docReactiveValueToState(cb));
 }
 
 /**
@@ -110,10 +109,10 @@ export function waitForLoaded<T>(cb: () => T): Promise<T> {
     let firstRun = true;
     let workedOnFirstRun = false;
     const unsubscribe = react(`wait for ${signal.name} to be defined`, () => {
-      if (signal.value instanceof LoadingError) {
+      if (signal.value instanceof DocLoading) {
         // still loading, keep waiting
         return;
-      } else if (signal.value instanceof MissingError) {
+      } else if (signal.value instanceof DocMissingError) {
         // missing, throw an error
         throw signal.value;
       } else {
@@ -138,8 +137,8 @@ export function waitForLoaded<T>(cb: () => T): Promise<T> {
  */
 export function throwIfMissing<T>(
   value: DocReactiveState<T>
-): asserts value is T | LoadingError {
-  if (value instanceof MissingError) {
+): asserts value is T | DocLoading {
+  if (value instanceof DocMissingError) {
     throw value;
   }
 }
@@ -148,14 +147,14 @@ export function throwIfMissing<T>(
  * Check if a doc-reactive state is loaded. This is useful for type narrowing.
  */
 export function isLoaded<T>(value: DocReactiveState<T>): value is T {
-  return !(value instanceof LoadingError || value instanceof MissingError);
+  return !(value instanceof DocLoading || value instanceof DocMissingError);
 }
 
 /**
  * Turn error states into `undefined`, for integration with legacy code.
  */
 export function ifLoaded<T>(value: DocReactiveState<T>): T | undefined {
-  if (value instanceof LoadingError || value instanceof MissingError) {
+  if (value instanceof DocLoading || value instanceof DocMissingError) {
     return undefined;
   }
   return value;
@@ -165,10 +164,8 @@ export function ifLoaded<T>(value: DocReactiveState<T>): T | undefined {
  * Used in a reactive context to give a doc-reactive state a chance to throw a
  * LoadingError / MissingError. This is useful for type narrowing.
  */
-export function waitForDR<T>(
-  value: DocReactiveState<T>
-): asserts value is T {
-  if (value instanceof LoadingError || value instanceof MissingError) {
+export function waitForDR<T>(value: DocReactiveState<T>): asserts value is T {
+  if (value instanceof DocLoading || value instanceof DocMissingError) {
     throw value;
   }
 }
@@ -190,13 +187,13 @@ export function getDR<T>(value: DocReactiveState<T>): T {
  * to Promise.all in async code.
  */
 export function parallel<T>(cbs: (() => T)[]): T[] {
-  let loadingError: LoadingError | undefined = undefined;
+  let loadingError: DocLoading | undefined = undefined;
   const results: T[] = [];
   for (const cb of cbs) {
     try {
       results.push(cb());
     } catch (e) {
-      if (e instanceof LoadingError) {
+      if (e instanceof DocLoading) {
         loadingError = e;
       } else {
         throw e;
@@ -219,6 +216,17 @@ export function parallelMap<T, U>(values: T[], fn: (value: T) => U): U[] {
   return parallel(values.map((value) => () => fn(value)));
 }
 
+// Given a promise and a timeout, returns a promise which
+// rejects if the promise doesn't resolve within the timeout
+function timeoutPromise<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout")), ms)
+    ),
+  ]);
+}
+
 /**********************************/
 /* Reactive values for docs & oms */
 /**********************************/
@@ -230,6 +238,8 @@ const DOC_SIGNAL_CACHE = new Map<
   string,
   Signal<DocReactiveState<Doc<unknown>>>
 >();
+
+const DOC_LOADING_TIMEOUT = 3000;
 
 function getDocSignal<T>(
   url: AutomergeUrl,
@@ -249,15 +259,25 @@ function getDocSignal<T>(
 
   const signal = atom<DocReactiveState<Doc<T>>>(
     `getDocSig:${url}`,
-    new LoadingError(url)
+    new DocLoading(url)
   );
 
   const handle = repo.find<T>(url);
-  handle.doc().then((doc) => {
-    signal.set(
-      doc ? (heads ? Automerge.view(doc, heads) : doc) : new MissingError(url)
-    );
-  });
+
+  // TODO: should we allow configuring this timeout behavior?
+  timeoutPromise(handle.doc(), DOC_LOADING_TIMEOUT)
+    .then((doc) => {
+      signal.set(
+        doc
+          ? heads
+            ? Automerge.view(doc, heads)
+            : doc
+          : new DocMissingError(url)
+      );
+    })
+    .catch(() => {
+      signal.set(new DocMissingError(url));
+    });
 
   // don't subscribe to changes if we view the doc at some heads
   if (!heads) {
@@ -265,7 +285,7 @@ function getDocSignal<T>(
       signal.set(ev.doc);
     });
     handle.on("delete", () => {
-      signal.set(new MissingError(url));
+      signal.set(new DocMissingError(url));
     });
   }
 
@@ -359,7 +379,7 @@ function mapDocReactive<T, U>(
   value: DocReactiveState<T>,
   fn: (value: T) => U
 ): DocReactiveState<U> {
-  if (value instanceof LoadingError || value instanceof MissingError) {
+  if (value instanceof DocLoading || value instanceof DocMissingError) {
     return value;
   }
   return fn(value);
@@ -373,7 +393,7 @@ function docReactiveValueToState<T>(cb: () => T): DocReactiveState<T> {
   try {
     return cb();
   } catch (e) {
-    if (e instanceof LoadingError || e instanceof MissingError) {
+    if (e instanceof DocLoading || e instanceof DocMissingError) {
       return e;
     }
     throw e;

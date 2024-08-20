@@ -3,7 +3,7 @@ import {
   getDoc,
   getOm,
   ifLoaded,
-  LoadingError,
+  DocLoading,
   useDocReactive,
 } from "@/doc-reactive";
 import { Om } from "@/om";
@@ -55,7 +55,7 @@ export const useUIStateOm = (): DocReactiveState<Om<UIStateDoc>> => {
   return useDocReactive(
     useCallback(() => {
       if (!account) {
-        throw new LoadingError();
+        throw new DocLoading();
       }
       const accountDoc = getDoc<AccountDoc>(account.handle.url, repo);
       return getOm<UIStateDoc>(accountDoc.uiStateUrl, repo);

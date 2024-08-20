@@ -1,4 +1,11 @@
-import { getDR, ifLoaded, parallelMap, useDocReactive } from "@/doc-reactive";
+import {
+  getDR,
+  ifLoaded,
+  DocLoading,
+  parallelMap,
+  useDocReactive,
+  DocMissingError,
+} from "@/doc-reactive";
 import { useUIStateOm } from "@/explorer/uiState";
 import {
   fakeDocPath,
@@ -54,24 +61,40 @@ function materializeFolderDoc(
   docPath: DocPath,
   getDocOnBranch: (docPath: DocPath) => Doc<unknown>
 ): FolderDocWithChildren {
-  const folder = getDocOnBranch(docPath) as Doc<FolderDoc>;
+  try {
+    const folder = getDocOnBranch(docPath) as Doc<FolderDoc>;
 
-  return {
-    ...folder,
-    docs:
-      parallelMap(folder.docs, (link) => {
-        if (link.type === "folder") {
-          const folderContents = materializeFolderDoc(
-            [...docPath, link],
-            getDocOnBranch
-          );
-          // cast is ok cuz if it's loading, we won't return result
-          return { ...link, folderContents };
-        } else {
-          return link;
-        }
-      }) ?? [],
-  };
+    return {
+      ...folder,
+      docs:
+        parallelMap(folder.docs, (link) => {
+          if (link.type === "folder") {
+            const folderContents = materializeFolderDoc(
+              [...docPath, link],
+              getDocOnBranch
+            );
+            // cast is ok cuz if it's loading, we won't return result
+            return { ...link, folderContents };
+          } else {
+            return link;
+          }
+        }) ?? [],
+    };
+  } catch (e) {
+    // If the doc is missing, return dummy data to unblock rendering something in the UI.
+    // TODO: we could return an explicit marker that the doc is still loading and
+    // figure out how to render that in the UI.
+    if (e instanceof DocMissingError) {
+      return {
+        title: "Loading...",
+        docs: [],
+      } as unknown as FolderDocWithChildren;
+    }
+
+    // Any other error gets forwarded up -- including DocLoading, which is just an indicator
+    // to the reactive system that a doc is still loading.
+    throw e;
+  }
 }
 
 export function getFolderDocWithChildren(
