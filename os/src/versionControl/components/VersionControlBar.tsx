@@ -1,4 +1,4 @@
-import { ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
+import { ifLoaded, useDocReactive } from "@/doc-reactive";
 import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
@@ -43,8 +43,14 @@ import {
   BuildRefreshButton,
   DisabledBuildRefreshButton,
 } from "@patchwork/jacquard/src/components/BuildRefreshButton";
-import { getStalenessInfo } from "@patchwork/jacquard/src/getStalenessInfo";
-import { useJacquardProjectInfoWithActiveBranch } from "@patchwork/jacquard/src/hooks";
+import {
+  getStalenessInfo,
+  ProjectState,
+} from "@patchwork/jacquard/src/getStalenessInfo";
+import {
+  JacquardProjectInfo,
+  useJacquardProjectInfoWithActiveBranch,
+} from "@patchwork/jacquard/src/hooks";
 import {
   getBuildRunsWithDocAsPrimaryInput,
   getProjectStateFromProjectInfo,
@@ -175,48 +181,28 @@ export const VersionControlBar = ({
 
   const projectState = ifLoaded(
     useDocReactive(
-      useCallback(() => {
-        waitForDR(jacquardProjectInfo);
-
-        if (!jacquardProjectInfo) {
-          return;
-        }
-
-        return getProjectStateFromProjectInfo(jacquardProjectInfo, repo);
-      }, [jacquardProjectInfo, repo])
+      useCallback(
+        () =>
+          jacquardProjectInfo &&
+          getProjectStateFromProjectInfo(jacquardProjectInfo, repo),
+        [jacquardProjectInfo, repo]
+      )
     )
   );
 
-  const stalenessInfo = projectState
-    ? getStalenessInfo(projectState)
-    : undefined;
-
-  const numStaleDocs = stalenessInfo
-    ? Object.values(stalenessInfo.docStatuses).reduce(
-        (acc, docStatus) => acc + docStatus.length,
-        0
-      )
-    : 0;
-
   const buildRunWithFileAsInput = ifLoaded(
     useDocReactive(
-      useCallback(() => {
-        waitForDR(projectState);
-
-        if (!projectState) {
-          return;
-        }
-
-        return getBuildRunsWithDocAsPrimaryInput(projectState, docUrl);
-      }, [projectState, docUrl])
+      useCallback(
+        () =>
+          projectState &&
+          getBuildRunsWithDocAsPrimaryInput(projectState, docUrl),
+        [projectState, docUrl]
+      )
     )
   );
 
   const hasOutputFiles =
     buildRunWithFileAsInput && buildRunWithFileAsInput.length > 0;
-
-  const enableRefreshButton =
-    jacquardProjectInfo?.buildMetadataOm && numStaleDocs > 0;
 
   const handleMergeBranch = useCallback(
     (activeBranchOm: Om<BranchDoc>) => {
@@ -306,7 +292,7 @@ export const VersionControlBar = ({
           <SelectContent className="w-72">
             {isRealBranchScope && (
               <SelectItem
-                value={"__main"}
+                value="__main"
                 className={!activeBranchOm ? "font-medium" : ""}
               >
                 <CrownIcon className="inline mr-1" size={12} />
@@ -434,45 +420,20 @@ export const VersionControlBar = ({
         )}
       </div>
 
-      {VerticalSeparator}
-
-      <div className="flex flex-col gap-0.5">
-        {enableRefreshButton ? (
-          <BuildRefreshButton
-            projectBuildMetadataOm={jacquardProjectInfo.buildMetadataOm}
+      {jacquardProjectInfo && projectState && (
+        <>
+          {VerticalSeparator}
+          <JacquardSection
+            jacquardProjectInfo={jacquardProjectInfo}
             projectState={projectState}
-            alignTooltip="start"
+            datatypeId={datatypeId}
           />
-        ) : (
-          <DisabledBuildRefreshButton />
-        )}
-
-        {jacquardProjectInfo && (
-          <>
-            <div className="text-xs text-gray-500">
-              {numStaleDocs > 0 && <span>{numStaleDocs} files to rebuild</span>}
-              {numStaleDocs === 0 && <span>project up to date</span>}
-              {datatypeId !== "jacquard-build-metadata" && (
-                <span
-                  className="underline cursor-pointer ml-1"
-                  onClick={() =>
-                    selectDocLink({
-                      url: jacquardProjectInfo.buildMetadataMainDocUrl,
-                      name: "Build Metadata",
-                      type: "jacquard-build-metadata",
-                    })
-                  }
-                >
-                  see details
-                </span>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+        </>
+      )}
 
       {VerticalSeparator}
 
+      {/* View mode selector */}
       {(activeBranchOm || datatypeId === "file") && (
         <Select
           onValueChange={(value) => {
@@ -526,6 +487,7 @@ export const VersionControlBar = ({
         </Select>
       )}
 
+      {/* "Highlight changes" button */}
       {diffMode !== undefined && (
         <>
           <TooltipProvider>
@@ -595,6 +557,7 @@ export const VersionControlBar = ({
         </>
       )}
 
+      {/* "Review" sidebar toggle */}
       {!docUIState.sidebarMode && (
         <div className="ml-auto mr-4">
           <div className="flex items-center gap-2">
@@ -761,5 +724,66 @@ const BranchActions: React.FC<{
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+};
+
+const JacquardSection = ({
+  jacquardProjectInfo,
+  projectState,
+  datatypeId,
+}: {
+  jacquardProjectInfo: JacquardProjectInfo;
+  projectState: ProjectState;
+  datatypeId: string;
+}) => {
+  const stalenessInfo = projectState
+    ? getStalenessInfo(projectState)
+    : undefined;
+
+  const numStaleDocs = stalenessInfo
+    ? Object.values(stalenessInfo.docStatuses).reduce(
+        (acc, docStatus) => acc + docStatus.length,
+        0
+      )
+    : 0;
+
+  const enableRefreshButton =
+    jacquardProjectInfo?.buildMetadataOm && numStaleDocs > 0;
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      {enableRefreshButton ? (
+        <BuildRefreshButton
+          projectBuildMetadataOm={jacquardProjectInfo.buildMetadataOm}
+          projectState={projectState}
+          alignTooltip="start"
+        />
+      ) : (
+        <DisabledBuildRefreshButton />
+      )}
+
+      <div className="text-xs text-gray-500">
+        {numStaleDocs > 0 && (
+          <span>
+            {numStaleDocs} file{numStaleDocs > 1 && "s"} to rebuild
+          </span>
+        )}
+        {numStaleDocs === 0 && <span>project up to date</span>}
+        {datatypeId !== "jacquard-build-metadata" && (
+          <span
+            className="underline cursor-pointer ml-1"
+            onClick={() =>
+              selectDocLink({
+                url: jacquardProjectInfo.buildMetadataMainDocUrl,
+                name: "Build Metadata",
+                type: "jacquard-build-metadata",
+              })
+            }
+          >
+            see details
+          </span>
+        )}
+      </div>
+    </div>
   );
 };
