@@ -172,8 +172,12 @@ export const getChangesFromMergedBranch = ({
   mainHeads: A.Heads;
   baseHeads: A.Heads;
 }): Set<Hash> => {
+  const changeMap = new Map(
+    decodedChangesForDoc.map((change) => [change.hash, change])
+  );
+
   const changesInMain = getHashesBetweenHeads({
-    decodedChanges: decodedChangesForDoc,
+    changeMap,
     // This is a bit subtle so it's worth explaining.
     // We can't let changes from the branch be included in the "changes in main"
     // So we start a search backwards from our "to heads" which is latest main;
@@ -182,7 +186,7 @@ export const getChangesFromMergedBranch = ({
     toHeads: mainHeads,
   });
   const changesInBranch = getHashesBetweenHeads({
-    decodedChanges: decodedChangesForDoc,
+    changeMap,
     fromHeads: baseHeads,
     toHeads: branchHeads,
   });
@@ -191,11 +195,11 @@ export const getChangesFromMergedBranch = ({
 };
 
 const getHashesBetweenHeads = ({
-  decodedChanges,
+  changeMap,
   fromHeads,
   toHeads,
 }: {
-  decodedChanges: A.DecodedChange[];
+  changeMap: Map<Hash, A.DecodedChange>;
   fromHeads: A.Heads;
   toHeads: A.Heads;
 }): Set<Hash> => {
@@ -204,11 +208,12 @@ const getHashesBetweenHeads = ({
 
   while (workQueue.length > 0) {
     const hash = workQueue.shift();
-    const change = decodedChanges.find((change) => change.hash === hash);
+    const change = changeMap.get(hash);
     if (!change) {
       throw new Error("Change not found in changes");
     }
     // todo: is this right? any head in the from heads stops the traversal?
+    // Most of the time the heads is a single-element array so it doesn't matter.
     if (fromHeads.includes(change.hash)) {
       break;
     }
