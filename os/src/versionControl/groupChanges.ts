@@ -432,7 +432,15 @@ const getGroupedChangesMemo = <T extends Branchable>({
       options,
     });
   }
-  const newChanges = changes.slice(memoizedGroups.changeCount);
+
+  const includeChangeInHistoryForThisDoc = options.includeChangeInHistory
+    ? options.includeChangeInHistory(doc)
+    : () => true;
+
+  const newChanges = changes
+    .slice(memoizedGroups.changeCount)
+    .filter(includeChangeInHistoryForThisDoc);
+
   // incrementally update the previous groups
   const lastGroup =
     memoizedGroups.changeGroups[memoizedGroups.changeGroups.length - 1];
