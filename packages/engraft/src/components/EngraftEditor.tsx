@@ -1,7 +1,7 @@
 import {
   getDocState,
   ifLoaded,
-  LoadingError,
+  DocLoading,
   parallelMap,
   throwIfMissing,
   useDocReactive,
@@ -85,7 +85,7 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
           (url) => {
             const docState = getDocState<unknown>(url, repo);
             throwIfMissing(docState);
-            return docState instanceof LoadingError
+            return docState instanceof DocLoading
               ? EngraftPromise.unresolved()
               : EngraftPromise.resolve({ value: docState });
           }
