@@ -5,12 +5,15 @@ import { useMemo } from "react";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { BuildRunSpec, JacquardBuildMetadata } from "../datatype";
 import { CopyButton } from "@/versionControl/components/CopyButton";
+import { Trash2Icon } from "lucide-react";
+import { Button } from "@/shadcn/ui/button";
 
 export const LogView = ({
   docUrl,
   docHeads,
 }: EditorProps<JacquardBuildMetadata, never>) => {
-  const [latestDoc] = useDocument<JacquardBuildMetadata>(docUrl);
+  const [latestDoc, changeLatestDoc] =
+    useDocument<JacquardBuildMetadata>(docUrl);
 
   const doc = useMemo(
     () =>
@@ -29,7 +32,7 @@ export const LogView = ({
         .reverse()
         .map((run, index) => (
           <div
-            key={index}
+            key={run.timestamp}
             className="p-3 border-b border-gray-300 flex flex-col gap-1"
           >
             <div className="text-xs text-gray-500">
@@ -86,6 +89,19 @@ export const LogView = ({
                   </div>
                   <CopyButton text={runSpecToCommand(run.spec)} size={16} />
                 </div>
+                {doc === latestDoc && (
+                  <Button
+                    variant="destructive"
+                    className="flex gap-2 w-fit h-8 text-xs px-2"
+                    onClick={() => {
+                      changeLatestDoc((doc) => {
+                        delete doc.buildRuns[index];
+                      });
+                    }}
+                  >
+                    <Trash2Icon size={14} /> Remove build run from log
+                  </Button>
+                )}
               </div>
             </details>
           </div>
@@ -97,6 +113,7 @@ export const LogView = ({
 /** the opposite of buildRunSpecFromArgs, basically */
 function runSpecToCommand(spec: BuildRunSpec): string {
   // TODO: poor escaping for shell
+  // TODO: trouble to keep this in sync
   return [
     `jacquard run`,
     `--command "${spec.command}"`,
