@@ -148,6 +148,7 @@ const IGNORE_FILES_ENDING_IN = [
   ".temp", // living-papers
   ".cache", // living-papers
   ".jacquard",
+  ".env",
 ];
 
 async function pushDir({
