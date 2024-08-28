@@ -16,6 +16,12 @@ import { DocPath } from "@/packages/folder/datatype";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { Input } from "@/shadcn/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shadcn/ui/tooltip";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import {
   fakeDocPath,
@@ -28,9 +34,16 @@ import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { structuredClone } from "@tldraw/tldraw";
 import { capitalize, uniqBy } from "lodash";
-import { ChevronsLeft, FolderInput, GitBranchIcon } from "lucide-react";
+import {
+  AlertCircle,
+  ChevronsLeft,
+  FolderInput,
+  GitBranchIcon,
+} from "lucide-react";
 import React, {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -44,14 +57,27 @@ import {
 } from "react-arborist";
 import { useDataType, useDataTypes } from "../../datatypes";
 import { useCurrentAccountDoc, useDatatypeSettings } from "../account";
-import { useUIStateOm } from "../uiState";
-import { docPathString, UIStateDoc } from "../uiState";
+import { docPathString, UIStateDoc, useUIStateOm } from "../uiState";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
+
+const FlatDocLinksContext = createContext<DocLinkWithFolderPath[]>([]);
 
 const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const { node, style, dragHandle } = props;
   const dataType = useDataType(node.data.type);
+
+  const flatDocLinks = useContext(FlatDocLinksContext);
+
+  const redundantWith = useMemo(() => {
+    if (node.data.folderPath.length > 1) {
+      return;
+    }
+
+    return flatDocLinks.find((docLink) => {
+      return docLink.url === node.data.url && docLink.folderPath.length > 1;
+    });
+  }, [flatDocLinks, node.data]);
 
   const docPath = fakeDocPath(node.data);
   const repo = useRepo();
@@ -128,6 +154,25 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
               <GitBranchIcon size={14} className="ml-1" />
               {activeBranchName}
             </div>
+          )}
+          {redundantWith && (
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger className="ml-1">
+                  <div className="ml-1">
+                    <AlertCircle size={14} />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="text-xs text-gray-500">
+                  In{" "}
+                  {
+                    flatDocLinks.find(
+                      (docLink) => docLink.url === redundantWith.folderPath[1]
+                    )?.name
+                  }
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       )}
@@ -541,49 +586,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <FillFlexParent>
           {({ width, height }) => {
             return (
-              <Tree
-                data={dataForTree}
-                width={width}
-                height={height}
-                openByDefault={false}
-                searchTerm={searchQuery}
-                rowHeight={28}
-                selection={treeSelection}
-                idAccessor={idAccessor}
-                onSelect={(selections) => {
-                  if (
-                    !selections ||
-                    selections.length === 0 ||
-                    // ignore on select if the selection hasn't changed
-                    // this can happens when the tree component is being initialized
-                    selections[0].id === treeSelection
-                  ) {
-                    return false;
-                  }
-                  const newlySelectedDocLink = selections[0].data;
-                  if (isValidAutomergeUrl(newlySelectedDocLink.url)) {
-                    selectDocLink(newlySelectedDocLink);
-                  }
-                }}
-                // For now, don't allow deleting w/ backspace key in the sidebar—
-                // it's too unsafe without undo.
-                // onDelete={({ ids }) => {
-                //   for (const id of ids) {
-                //     deleteFromAccountDocList(id as AutomergeUrl);
-                //   }
-                // }}
-                onMove={onMove}
-                // Notably toggle state is "uncontrolled" state that the component manages privately --
-                // after initial mount, the component stores in-memory state privately, and we also
-                // send all updates to automerge in order to rehydrate on next page load or next mount.
-                // That seems fine for this state where it's not a huge problem if the component desyncs
-                // from the automerge doc.
-                initialOpenState={initialOpenState}
-                onToggle={onToggle}
-                onRename={onRename}
-              >
-                {Node}
-              </Tree>
+              <FlatDocLinksContext.Provider value={flatDocLinks}>
+                <Tree
+                  data={dataForTree}
+                  width={width}
+                  height={height}
+                  openByDefault={false}
+                  searchTerm={searchQuery}
+                  rowHeight={28}
+                  selection={treeSelection}
+                  idAccessor={idAccessor}
+                  onSelect={(selections) => {
+                    if (
+                      !selections ||
+                      selections.length === 0 ||
+                      // ignore on select if the selection hasn't changed
+                      // this can happens when the tree component is being initialized
+                      selections[0].id === treeSelection
+                    ) {
+                      return false;
+                    }
+                    const newlySelectedDocLink = selections[0].data;
+                    if (isValidAutomergeUrl(newlySelectedDocLink.url)) {
+                      selectDocLink(newlySelectedDocLink);
+                    }
+                  }}
+                  // For now, don't allow deleting w/ backspace key in the sidebar—
+                  // it's too unsafe without undo.
+                  // onDelete={({ ids }) => {
+                  //   for (const id of ids) {
+                  //     deleteFromAccountDocList(id as AutomergeUrl);
+                  //   }
+                  // }}
+                  onMove={onMove}
+                  // Notably toggle state is "uncontrolled" state that the component manages privately --
+                  // after initial mount, the component stores in-memory state privately, and we also
+                  // send all updates to automerge in order to rehydrate on next page load or next mount.
+                  // That seems fine for this state where it's not a huge problem if the component desyncs
+                  // from the automerge doc.
+                  initialOpenState={initialOpenState}
+                  onToggle={onToggle}
+                  onRename={onRename}
+                >
+                  {Node}
+                </Tree>
+              </FlatDocLinksContext.Provider>
             );
           }}
         </FillFlexParent>
