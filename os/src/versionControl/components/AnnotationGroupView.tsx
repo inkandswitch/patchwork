@@ -13,7 +13,14 @@ import {
 import { next as A, uuid } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { Check, MessageCircle, PencilIcon } from "lucide-react";
-import React, { forwardRef, useEffect, useRef, useState } from "react";
+import React, {
+  forwardRef,
+  MutableRefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { getAnnotationGroupId } from "../annotations";
 import { applyCursorPatches, CursorPatch } from "../cursorPatch";
 
@@ -21,7 +28,7 @@ export interface AnnotationGroupViewProps {
   doc: HasVersionControlMetadata<unknown, unknown> & HasAssets;
   handle: DocHandle<HasVersionControlMetadata<unknown, unknown> & HasAssets>;
   annotationGroup: AnnotationGroupWithUIState<unknown, unknown>;
-  AnnotationsViewComponent: React.FC<
+  AnnotationsViewComponent?: React.FC<
     AnnotationsViewProps<
       HasVersionControlMetadata<unknown, unknown>,
       unknown,
@@ -34,9 +41,10 @@ export interface AnnotationGroupViewProps {
   hasPrev: boolean;
   setIsHovered: (isHovered: boolean) => void;
   setIsSelected: (isSelected: boolean) => void;
-  setCommentState?: (state: CommentState<unknown>) => void;
+  setCommentState: (state: CommentState<unknown> | undefined) => void;
+  readonly?: boolean;
   enableScrollSync?: boolean; // todo: this shouldn't be a flag
-  hideAnnotations?: boolean;
+  hideInlineCommentAnnotations?: boolean;
 }
 
 export const AnnotationGroupView = forwardRef<
@@ -57,29 +65,45 @@ export const AnnotationGroupView = forwardRef<
       onSelectPrev,
       setCommentState,
       enableScrollSync,
-      hideAnnotations,
+      hideInlineCommentAnnotations,
+      readonly = false,
     }: AnnotationGroupViewProps,
     ref
   ) => {
-    const [height, setHeight] = useState();
+    const account = useCurrentAccount();
+    const [height, setHeight] = useState<number>();
     const [isBeingResolved, setIsBeingResolved] = useState(false);
-    const localRef = useRef(null); // Use useRef to create a local ref
+    const localRef: MutableRefObject<HTMLDivElement | null> = useRef(null); // Use useRef to create a local ref
+
     const isExpanded = annotationGroup.state === "expanded";
     const isFocused = annotationGroup.state !== "neutral";
-    const account = useCurrentAccount();
+    const isRevertable =
+      // all change annotations have inverse patches
+      annotationGroup.annotations.every(
+        (annotation) =>
+          annotation.type === "highlighted" || annotation.inversePatches
+      ) &&
+      // ... and the annotation group consists not only of highlight annotations
+      annotationGroup.annotations.some(
+        (annotation) => annotation.type !== "highlighted"
+      );
+    const hasComment = annotationGroup.discussion || annotationGroup.comment;
 
-    const setRef = (element: HTMLDivElement) => {
-      localRef.current = element; // Assign the element to the local ref
+    const setRef = useCallback(
+      (element: HTMLDivElement) => {
+        localRef.current = element; // Assign the element to the local ref
 
-      // Forward the ref to the parent
-      if (typeof ref === "function") {
-        ref(element);
-      } else if (ref) {
-        ref.current = element;
-      }
-    };
+        // Forward the ref to the parent
+        if (typeof ref === "function") {
+          ref(element);
+        } else if (ref) {
+          ref.current = element;
+        }
+      },
+      [ref]
+    );
 
-    const onRevert = () => {
+    const onRevert = useCallback(() => {
       const patches = annotationGroup.annotations.flatMap((annotation) =>
         "inversePatches" in annotation && annotation.inversePatches
           ? annotation.inversePatches
@@ -89,11 +113,16 @@ export const AnnotationGroupView = forwardRef<
       handle.change((doc) => {
         applyCursorPatches(doc, patches);
       });
-    };
+    }, [annotationGroup.annotations, handle]);
 
-    const onResolveDiscussion = () => {
+    const onResolveDiscussion = useCallback(() => {
       handle.change((doc) => {
-        doc.discussions[annotationGroup.discussion.id].resolved = true;
+        const discussionId = annotationGroup.discussion?.id;
+        if (!discussionId) {
+          return;
+        }
+
+        doc.discussions[discussionId].resolved = true;
       });
 
       if (hasNext) {
@@ -101,78 +130,108 @@ export const AnnotationGroupView = forwardRef<
       } else if (hasPrev) {
         onSelectPrev();
       }
-    };
+    }, [
+      annotationGroup.discussion?.id,
+      handle,
+      hasNext,
+      hasPrev,
+      onSelectNext,
+      onSelectPrev,
+    ]);
 
-    const onStartResolve = () => {
+    const onStartResolve = useCallback(() => {
+      if (!localRef.current?.clientHeight) {
+        return;
+      }
+
       setHeight(localRef.current.clientHeight);
       // delay, so height is set first for transition
       requestAnimationFrame(() => {
         setIsBeingResolved(true);
       });
-    };
+    }, []);
 
-    const onReply = () => {
+    const onReply = useCallback(() => {
+      if (!setCommentState) {
+        return;
+      }
+
       setCommentState({
         type: "create",
         target: getAnnotationGroupId(annotationGroup),
       });
-    };
+    }, [annotationGroup, setCommentState]);
 
-    const onUpdateCommentContentWithId = (id: string, content: string) => {
-      handle.change((doc) => {
-        const index = doc.discussions[
-          annotationGroup.discussion.id
-        ].comments.findIndex((comment) => comment.id === id);
+    const onUpdateCommentContentWithId = useCallback(
+      (id: string, content: string) => {
+        const discussionId = annotationGroup.discussion?.id;
 
-        A.updateText(
-          doc,
-          [
-            "discussions",
-            annotationGroup.discussion.id,
-            "comments",
-            index,
-            "content",
-          ],
-          content
-        );
-      });
-    };
-
-    const addCommentToAnnotationGroup = (content: string) => {
-      handle.change((doc) => {
-        let discussions = doc.discussions;
-
-        // convert docs without discussions
-        if (!discussions) {
-          doc.discussions = {};
-          discussions = doc.discussions;
+        if (!discussionId) {
+          return;
         }
 
-        let discussionId: string;
+        handle.change((doc) => {
+          const index = doc.discussions[discussionId].comments.findIndex(
+            (comment) => comment.id === id
+          );
 
-        if (annotationGroup.discussion?.id) {
-          discussionId = annotationGroup.discussion?.id;
-        } else {
-          discussionId = uuid();
-          discussions[discussionId] = {
-            id: discussionId,
-            heads: A.getHeads(doc),
-            comments: [],
-            resolved: false,
-            anchors: annotationGroup.annotations.map(
-              (annotation) => annotation.anchor
-            ),
-          };
-        }
-
-        discussions[discussionId].comments.push({
-          id: uuid(),
-          content,
-          contactUrl: account.contactHandle.url,
-          timestamp: Date.now(),
+          A.updateText(
+            doc,
+            ["discussions", discussionId, "comments", index, "content"],
+            content
+          );
         });
-      });
-    };
+      },
+      [annotationGroup.discussion?.id, handle]
+    );
+
+    const addCommentToAnnotationGroup = useCallback(
+      (content: string) => {
+        if (!account) {
+          return;
+        }
+
+        handle.change((doc) => {
+          let discussions = doc.discussions;
+
+          // convert docs without discussions
+          if (!discussions) {
+            doc.discussions = {};
+            discussions = doc.discussions;
+          }
+
+          let discussionId: string;
+
+          if (annotationGroup.discussion?.id) {
+            discussionId = annotationGroup.discussion?.id;
+          } else {
+            discussionId = uuid();
+            discussions[discussionId] = {
+              id: discussionId,
+              heads: A.getHeads(doc),
+              comments: [],
+              resolved: false,
+              anchors: annotationGroup.annotations.map(
+                (annotation) => annotation.anchor
+              ),
+            };
+          }
+
+          discussions[discussionId].comments.push({
+            id: uuid(),
+            content,
+            contactUrl: account.contactHandle.url,
+            timestamp: Date.now(),
+          });
+        });
+      },
+      [
+        account,
+        annotationGroup.annotations,
+        annotationGroup.discussion?.id,
+        handle,
+      ]
+    );
 
     // handle keyboard shortcuts
     /*
@@ -202,25 +261,31 @@ export const AnnotationGroupView = forwardRef<
           return;
         }
 
-        if (evt.key === "r" && isMetaOrControlPressed) {
-          onStartResolve();
-          evt.preventDefault();
-          evt.stopPropagation();
-        }
+        if (!readonly) {
+          if (evt.key === "r" && isMetaOrControlPressed) {
+            onStartResolve();
+            evt.preventDefault();
+            evt.stopPropagation();
+          }
 
-        if (evt.key === "Backspace" && isRevertable && isMetaOrControlPressed) {
-          onRevert();
-          evt.preventDefault();
-          evt.stopPropagation();
-        }
+          if (
+            evt.key === "Backspace" &&
+            isRevertable &&
+            isMetaOrControlPressed
+          ) {
+            onRevert();
+            evt.preventDefault();
+            evt.stopPropagation();
+          }
 
-        if (evt.key === "Enter" && isMetaOrControlPressed) {
-          setCommentState({
-            type: "create",
-            target: getAnnotationGroupId(annotationGroup),
-          });
-          evt.preventDefault();
-          evt.stopPropagation();
+          if (evt.key === "Enter" && isMetaOrControlPressed) {
+            setCommentState({
+              type: "create",
+              target: getAnnotationGroupId(annotationGroup),
+            });
+            evt.preventDefault();
+            evt.stopPropagation();
+          }
         }
       };
 
@@ -229,7 +294,17 @@ export const AnnotationGroupView = forwardRef<
       return () => {
         window.removeEventListener("keydown", onKeydown);
       };
-    }, [isExpanded, onSelectNext, onSelectPrev]);
+    }, [
+      readonly,
+      isRevertable,
+      isExpanded,
+      onSelectNext,
+      onSelectPrev,
+      onStartResolve,
+      onRevert,
+      setCommentState,
+      annotationGroup,
+    ]);
 
     // Scroll this annotation group into view when it's expanded.
     // This handles two distinct interactions:
@@ -244,17 +319,6 @@ export const AnnotationGroupView = forwardRef<
         localRef.current?.scrollIntoView({ behavior: "smooth" });
       }
     }, [isExpanded, enableScrollSync]);
-
-    const isRevertable =
-      // all change annotations have inverse patches
-      annotationGroup.annotations.every(
-        (annotation) =>
-          annotation.type === "highlighted" || annotation.inversePatches
-      ) &&
-      // ... and the annotation group consists not only of highlight annotations
-      annotationGroup.annotations.some(
-        (annotation) => annotation.type !== "highlighted"
-      );
 
     return (
       <div
@@ -291,7 +355,7 @@ export const AnnotationGroupView = forwardRef<
                 : ""
             }`}
           >
-            {(!hideAnnotations || !annotationGroup.discussion) &&
+            {(!hideInlineCommentAnnotations || !hasComment) &&
               (AnnotationsViewComponent ? (
                 <AnnotationsViewComponent
                   doc={doc}
@@ -303,13 +367,15 @@ export const AnnotationGroupView = forwardRef<
                   No view available for this edit
                 </div>
               ))}
+
             <div className="mx-1.5 cursor-default">
-              {annotationGroup.discussion?.comments.map((comment, index) => (
+              {annotationGroup.discussion?.comments.map((comment) => (
                 <DiscussionCommentView
                   contactUrl={comment.contactUrl}
                   timestamp={comment.timestamp}
                   content={comment.content}
                   key={comment.id}
+                  readonly={readonly}
                   docWithAssetsHandle={handle}
                   onChangeContent={(content) =>
                     onUpdateCommentContentWithId(comment.id, content)
@@ -328,73 +394,77 @@ export const AnnotationGroupView = forwardRef<
                 />
               ))}
             </div>
-
-            {annotationGroup.comment?.type === "create" && (
-              <DiscussionCommentView
-                contactUrl={account?.contactHandle.url}
-                docWithAssetsHandle={handle}
-                onChangeContent={(content) => {
-                  setCommentState(undefined);
-                  addCommentToAnnotationGroup(content);
-                }}
-                isBeingEdited={true}
-                setIsBeingEdited={() => {
-                  setCommentState(undefined);
-                }}
-              />
-            )}
+            {!readonly &&
+              annotationGroup.comment?.type === "create" &&
+              account && (
+                <DiscussionCommentView
+                  contactUrl={account.contactHandle.url}
+                  docWithAssetsHandle={handle}
+                  onChangeContent={(content) => {
+                    setCommentState(undefined);
+                    addCommentToAnnotationGroup(content);
+                  }}
+                  readonly={readonly}
+                  isBeingEdited={true}
+                  setIsBeingEdited={() => {
+                    setCommentState(undefined);
+                  }}
+                />
+              )}
           </div>
 
-          <div
-            className={`overflow-hidden transition-all flex items-center gap-2 ${
-              isExpanded && !annotationGroup.comment
-                ? "h-[43px] opacity-100 mt-2"
-                : "h-[0px] opacity-0"
-            }`}
-          >
-            <Button
-              variant="ghost"
-              className="select-none px-2 flex flex-col w-fi"
-              onClick={onReply}
+          {!readonly && (
+            <div
+              className={`overflow-hidden transition-all flex items-center gap-2 ${
+                isExpanded && !annotationGroup.comment
+                  ? "h-[43px] opacity-100 mt-2"
+                  : "h-[0px] opacity-0"
+              }`}
             >
-              <div className="flex text-gray-600 gap-2">
-                <MessageCircle size={16} /> Reply
-              </div>
-              <span className="text-gray-400 text-xs w-full text-center">
-                (⌘ + ⏎)
-              </span>
-            </Button>
-
-            {annotationGroup.discussion && (
               <Button
                 variant="ghost"
                 className="select-none px-2 flex flex-col w-fi"
-                onClick={onStartResolve}
+                onClick={onReply}
               >
                 <div className="flex text-gray-600 gap-2">
-                  <Check size={16} /> Resolve
+                  <MessageCircle size={16} /> Reply
                 </div>
                 <span className="text-gray-400 text-xs w-full text-center">
-                  (⌘ + R)
+                  (⌘ + ⏎)
                 </span>
               </Button>
-            )}
 
-            {isRevertable && (
-              <Button
-                variant="ghost"
-                className="select-none px-2 flex flex-col w-fi"
-                onClick={onRevert}
-              >
-                <div className="flex text-gray-600 gap-2">
-                  <Check size={16} /> Revert
-                </div>
-                <span className="text-gray-400 text-xs w-full text-center">
-                  (⌘ + ⌫)
-                </span>
-              </Button>
-            )}
-          </div>
+              {annotationGroup.discussion && (
+                <Button
+                  variant="ghost"
+                  className="select-none px-2 flex flex-col w-fi"
+                  onClick={onStartResolve}
+                >
+                  <div className="flex text-gray-600 gap-2">
+                    <Check size={16} /> Resolve
+                  </div>
+                  <span className="text-gray-400 text-xs w-full text-center">
+                    (⌘ + R)
+                  </span>
+                </Button>
+              )}
+
+              {isRevertable && (
+                <Button
+                  variant="ghost"
+                  className="select-none px-2 flex flex-col w-fi"
+                  onClick={onRevert}
+                >
+                  <div className="flex text-gray-600 gap-2">
+                    <Check size={16} /> Revert
+                  </div>
+                  <span className="text-gray-400 text-xs w-full text-center">
+                    (⌘ + ⌫)
+                  </span>
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -408,6 +478,7 @@ const DiscussionCommentView = ({
   onChangeContent,
   isBeingEdited,
   setIsBeingEdited,
+  readonly,
 }: {
   contactUrl: AutomergeUrl;
   timestamp?: number;
@@ -416,6 +487,7 @@ const DiscussionCommentView = ({
   docWithAssetsHandle: DocHandle<HasAssets>;
   isBeingEdited: boolean;
   setIsBeingEdited: (isBeingEdited: boolean) => void;
+  readonly: boolean;
 }) => {
   const [isBeingHovered, setIsBeingHovered] = useState(false);
   const [updatedText, setUpdatedContent] = useState<string>();
@@ -438,7 +510,7 @@ const DiscussionCommentView = ({
           )}
         </div>
 
-        {isOwnComment && (
+        {isOwnComment && !readonly && (
           <Button
             variant="ghost"
             size="sm"
@@ -482,7 +554,7 @@ const DiscussionCommentView = ({
             if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
               event.preventDefault();
               event.stopPropagation();
-              onChangeContent(updatedText);
+              onChangeContent(updatedText ?? "");
               setIsBeingEdited(false);
               return;
             }
@@ -501,7 +573,7 @@ const DiscussionCommentView = ({
             <Button
               variant="default"
               onClick={() => {
-                onChangeContent(updatedText);
+                onChangeContent(updatedText ?? "");
                 setIsBeingEdited(false);
                 setUpdatedContent(undefined);
               }}

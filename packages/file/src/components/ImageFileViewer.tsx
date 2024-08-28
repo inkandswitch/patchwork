@@ -19,7 +19,10 @@ export const ImageFileViewer = ({
 }: EditorProps<ImageFileDoc, never>) => {
   const [_doc] = useDocument<ImageFileDoc>(docUrl);
 
-  const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
+  const doc = useMemo(
+    () => (_doc && docHeads ? Automerge.view(_doc, docHeads) : _doc),
+    [docHeads, _doc]
+  );
 
   return (
     <div className="overflow-auto h-full p-4">

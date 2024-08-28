@@ -81,10 +81,11 @@ const getTitle = async (doc: MarkdownDoc) => {
 
 const includeChangeInHistory = (doc: MarkdownDoc) => {
   const contentObjID = A.getObjectId(doc, "content");
-  const commentsObjID = A.getObjectId(doc, "commentThreads");
+  // filter out comment changes for now because we don't show them in the history
+  // const commentsObjID = A.getObjectId(doc, "commentThreads");
   return (decodedChange: DecodedChangeWithMetadata) => {
     return decodedChange.ops.some(
-      (op) => op.obj === contentObjID || op.obj === commentsObjID
+      (op) => op.obj === contentObjID //|| op.obj === commentsObjID
     );
   };
 };
@@ -141,7 +142,8 @@ const fileExportMethods: FileExportMethod<MarkdownDoc>[] = [
 
       const zip = new JSZip();
       zip.file("index.md", doc.content);
-      for (const [filename, file] of Object.entries(assetsDoc!.files)) {  // TODO: JAH strict fix
+      for (const [filename, file] of Object.entries(assetsDoc!.files)) {
+        // TODO: JAH strict fix
         zip.file(`assets/${filename}`, file.contents);
       }
 

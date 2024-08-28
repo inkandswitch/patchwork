@@ -93,7 +93,6 @@ export type ActiveBranchInfo = {
    * undefined means "main"
    */
   activeBranchOm: Om<BranchDoc> | undefined;
-  setActiveBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
 };
 
 export const getActiveBranchInfo = (
@@ -106,24 +105,8 @@ export const getActiveBranchInfo = (
     uiStateOm.doc.openBranches?.[docPathString(branchScopePath)]
   );
 
-  const setActiveBranchUrl = (branchDocUrl: AutomergeUrl | null) => {
-    uiStateOm.handle.change((uiStateDoc) => {
-      // handle old uiState docs
-      if (!uiStateDoc.openBranches || Array.isArray(uiStateDoc.openBranches)) {
-        uiStateDoc.openBranches = {};
-      }
-
-      if (branchDocUrl) {
-        uiStateDoc.openBranches[docPathString(branchScopePath)] = branchDocUrl;
-      } else {
-        delete uiStateDoc.openBranches[docPathString(branchScopePath)];
-      }
-    });
-  };
-
   return {
     activeBranchOm: activeBranchUrl && getOm<BranchDoc>(activeBranchUrl, repo),
-    setActiveBranchUrl,
   };
 };
 
@@ -143,9 +126,12 @@ export const resolveUrlOnBranch = (
 
 export type BranchScopeAndActiveBranchInfo = BranchScopeInfo &
   ActiveBranchInfo & {
-    baseHeads: Automerge.Heads | undefined;
+    baseHeads: Automerge.Heads;
+    originalUrl: AutomergeUrl;
     cloneOrMainOm: Om<HasVersionControlMetadata>;
   };
+
+const EMPTY_HEADS: Automerge.Heads = [];
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.
@@ -173,7 +159,8 @@ export const getBranchScopeAndActiveBranchInfo = (
     ...branchScopeInfo,
     ...activeBranchInfo,
     cloneOrMainOm,
-    baseHeads,
+    baseHeads: baseHeads ?? EMPTY_HEADS,
+    originalUrl: lastLink.url,
   };
 };
 

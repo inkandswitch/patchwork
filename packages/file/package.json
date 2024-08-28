@@ -13,8 +13,8 @@
   "dependencies": {
     "@automerge/automerge": "^2.2.8",
     "@automerge/automerge-codemirror": "^0.0.12",
-    "@automerge/automerge-repo": "^1.2.1",
-    "@automerge/automerge-repo-react-hooks": "^1.2.1",
+    "@automerge/automerge-repo": "2.0.0-alpha.7",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/lang-python": "^6.1.6",
     "@codemirror/lang-yaml": "^6.1.1",

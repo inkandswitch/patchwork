@@ -11,6 +11,8 @@ import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
 import { MarkdownDoc } from "../../../packages/essay/src";
 import { Branchable, BranchDoc, HasVersionControlMetadata } from "./schema";
+import { docPathString, UIStateDoc } from "@/explorer/uiState";
+import { DocPath } from "@/packages/folder/datatype";
 
 type Hash = string;
 
@@ -126,6 +128,8 @@ export const mergeBranch = async ({
   branchOm: Om<BranchDoc>;
   mergedBy: AutomergeUrl;
 }) => {
+  const mergeHeadsByDocUrl: Record<string, A.Heads> = {};
+
   await Promise.all(
     Object.entries(branchOm.doc.clones).map(
       async ([originalDocUrl, { url }]) => {
@@ -134,6 +138,8 @@ export const mergeBranch = async ({
 
         await originalHandle.whenReady();
         await cloneHandle.whenReady();
+
+        mergeHeadsByDocUrl[originalDocUrl] = A.getHeads(cloneHandle.docSync()!); // todo: ts strict
 
         originalHandle.merge(cloneHandle);
       }
@@ -145,6 +151,7 @@ export const mergeBranch = async ({
     branch.mergeMetadata = {
       mergedAt: Date.now(),
       mergedBy,
+      mergeHeadsByDocUrl,
     };
   });
 };
@@ -225,8 +232,12 @@ export const getChangesFromMergedBranch = ({
   mainHeads: A.Heads;
   baseHeads: A.Heads;
 }): Set<Hash> => {
+  const changeMap = new Map(
+    decodedChangesForDoc.map((change) => [change.hash, change])
+  );
+
   const changesInMain = getHashesBetweenHeads({
-    decodedChanges: decodedChangesForDoc,
+    changeMap,
     // This is a bit subtle so it's worth explaining.
     // We can't let changes from the branch be included in the "changes in main"
     // So we start a search backwards from our "to heads" which is latest main;
@@ -235,7 +246,7 @@ export const getChangesFromMergedBranch = ({
     toHeads: mainHeads,
   });
   const changesInBranch = getHashesBetweenHeads({
-    decodedChanges: decodedChangesForDoc,
+    changeMap,
     fromHeads: baseHeads,
     toHeads: branchHeads,
   });
@@ -244,11 +255,11 @@ export const getChangesFromMergedBranch = ({
 };
 
 const getHashesBetweenHeads = ({
-  decodedChanges,
+  changeMap,
   fromHeads,
   toHeads,
 }: {
-  decodedChanges: A.DecodedChange[];
+  changeMap: Map<Hash, A.DecodedChange>;
   fromHeads: A.Heads;
   toHeads: A.Heads;
 }): Set<Hash> => {
@@ -257,11 +268,12 @@ const getHashesBetweenHeads = ({
 
   while (workQueue.length > 0) {
     const hash = workQueue.shift();
-    const change = decodedChanges.find((change) => change.hash === hash);
+    const change = changeMap.get(hash);
     if (!change) {
       throw new Error("Change not found in changes");
     }
     // todo: is this right? any head in the from heads stops the traversal?
+    // Most of the time the heads is a single-element array so it doesn't matter.
     if (fromHeads.includes(change.hash)) {
       break;
     }
@@ -270,4 +282,23 @@ const getHashesBetweenHeads = ({
   }
 
   return hashes;
+};
+
+export const setActiveBranchUrl = (
+  uiStateOm: Om<UIStateDoc>,
+  branchScopePath: DocPath,
+  branchDocUrl: AutomergeUrl | null
+) => {
+  uiStateOm.handle.change((uiStateDoc) => {
+    // handle old uiState docs
+    if (!uiStateDoc.openBranches || Array.isArray(uiStateDoc.openBranches)) {
+      uiStateDoc.openBranches = {};
+    }
+
+    if (branchDocUrl) {
+      uiStateDoc.openBranches[docPathString(branchScopePath)] = branchDocUrl;
+    } else {
+      delete uiStateDoc.openBranches[docPathString(branchScopePath)];
+    }
+  });
 };

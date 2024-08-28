@@ -47,7 +47,10 @@ export const PDFFileViewer = ({
 }: EditorProps<PDFFileDoc, never>) => {
   const [_doc] = useDocument<PDFFileDoc>(docUrl);
 
-  const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
+  const doc = useMemo(
+    () => (_doc && docHeads ? Automerge.view(_doc, docHeads) : _doc),
+    [docHeads, _doc]
+  );
   const binaryData = useBinaryDataOfDocFile(doc);
 
   if (!doc || !binaryData) {

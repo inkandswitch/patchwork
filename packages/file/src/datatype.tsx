@@ -1,7 +1,15 @@
-import { ChangeGroup, noGrouping, type DataType } from "@/sdk";
+import * as Automerge from "@automerge/automerge";
+import {
+  ChangeGroup,
+  DecodedChangeWithMetadata,
+  noGrouping,
+  type DataType,
+} from "@/sdk";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { isImageFile, useBinaryUrl } from "./components/ImageFileViewer";
 import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
+import { pick } from "lodash";
+import { TextPatch } from "@/versionControl/utils";
 
 // SCHEMA
 
@@ -54,27 +62,6 @@ export const init = (doc: any) => {
   throw new Error("can't create empty file");
 };
 
-export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
-  type: "patchwork:dataType",
-  id: "file",
-  name: "File",
-  icon: "File", // todo: this should be a function, to be type specific
-  init,
-  getTitle,
-  setTitle,
-  markCopy,
-  disableManualCreation: true,
-  // todo: long term we probably want something different but this lets
-  // us see each change directly
-  groupChanges: noGrouping,
-
-  fallbackSummaryForChangeGroup(changeGroup) {
-    return <ChangeGroupView changeGroup={changeGroup} />;
-  },
-
-  ...textAnchorsAtPath(["content", "value"]),
-};
-
 const ChangeGroupView = ({
   changeGroup,
 }: {
@@ -90,4 +77,68 @@ const ChangeGroupView = ({
   }
 
   return <img src={binaryUrl} className="w-full h-full object-contain" />;
+};
+
+const promptForAIChangeGroupSummary = ({
+  docBefore,
+  docAfter,
+}: {
+  docBefore: FileDoc;
+  docAfter: FileDoc;
+}) => {
+  // TODO: refactor so we don't need to call an LLM in this case
+  if (docAfter.content.type !== "text") {
+    return "Respond with just this text: 'can't summarize non-text changes'";
+  }
+  return `
+Summarize the changes in this diff in a few words.
+
+Only return a few words, not a full description. No bullet points.
+
+Here are some good examples of descriptive summaries:
+
+wrote initial outline
+changed title
+small wording changes
+turned outline into prose
+lots of small edits
+total rewrite
+a few small tweaks
+reworded a paragraph
+
+<docBefore>
+${docBefore.content?.type === "text" ? docBefore.content.value : ""}
+</docBefore>
+
+<docAfter>
+${docAfter.content.value}
+</docAfter>
+`;
+};
+
+const includePatchInChangeGroup = (patch: Automerge.Patch | TextPatch) =>
+  patch.path[0] === "content";
+
+export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
+  type: "patchwork:dataType",
+  id: "file",
+  name: "File",
+  icon: "File", // todo: this should be a function, to be type specific
+  init,
+  getTitle,
+  setTitle,
+  markCopy,
+  promptForAIChangeGroupSummary,
+  disableManualCreation: true,
+  // todo: long term we probably want something different but this lets
+  // us see each change directly
+  // groupChanges: noGrouping,
+
+  /*fallbackSummaryForChangeGroup(changeGroup) {
+    return <ChangeGroupView changeGroup={changeGroup} />;
+  },*/
+
+  includePatchInChangeGroup,
+
+  ...textAnchorsAtPath(["content", "value"]),
 };

@@ -15,11 +15,11 @@ import { TextSelection } from "./MarkdownDocEditor";
 import { CommentState } from "@/versionControl/schema";
 import { MarkdownDoc } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";
-import { TextAnchor } from "@/lib/textAnchors";
 
 export const CommentsSidebar = ({
   doc,
   handle,
+  readonly,
   selection,
   hasEditorFocus,
   hideInlineComments,
@@ -30,13 +30,14 @@ export const CommentsSidebar = ({
 }: {
   doc: MarkdownDoc;
   handle: DocHandle<MarkdownDoc>;
+  readonly?: boolean;
   selection: TextSelection | undefined;
   hasEditorFocus: boolean;
   hideInlineComments: boolean;
   annotationGroupsWithPosition: AnnotationGroupWithPosition[];
   setSelectedAnnotationGroupId: ((id: string | undefined) => void) | undefined;
   setHoveredAnnotationGroupId: ((id: string | undefined) => void) | undefined;
-  setCommentState: ((state: CommentState<TextAnchor>) => void) | undefined;
+  setCommentState: (state: CommentState<unknown> | undefined) => void;
 }) => {
   return (
     <div className="relative">
@@ -57,6 +58,7 @@ export const CommentsSidebar = ({
               <AnnotationGroupView
                 doc={doc}
                 handle={handle}
+                readonly={readonly}
                 annotationGroup={annotationGroup}
                 AnnotationsViewComponent={EssayAnnotations}
                 setIsHovered={(isHovered) => {
@@ -86,7 +88,7 @@ export const CommentsSidebar = ({
                 hasNext={index < annotationGroupsWithPosition.length - 1}
                 hasPrev={index > 0}
                 setCommentState={setCommentState}
-                hideAnnotations={true}
+                hideInlineCommentAnnotations={true}
               />
             </div>
           );

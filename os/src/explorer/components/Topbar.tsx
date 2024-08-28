@@ -10,7 +10,6 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import React, { useRef } from "react";
-import { toast } from "sonner";
 import { saveFile } from "../utils";
 import { AccountPicker } from "./AccountPicker";
 import {
@@ -35,6 +34,7 @@ import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { getHeads } from "@automerge/automerge";
 import { useDataType } from "../../datatypes";
 import { getUrlSafeName } from "../hooks/useSelectedDocLink";
+import { useToast } from "@/shadcn/ui/use-toast";
 
 type TopbarProps = {
   showSidebar: boolean;
@@ -65,6 +65,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   removeDocLink,
 }) => {
   const repo = useRepo();
+  const { toast } = useToast();
 
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocName = selectedDocLink?.name;
@@ -145,7 +146,7 @@ export const Topbar: React.FC<TopbarProps> = ({
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
-                toast.success("Copied to clipboard");
+                toast({ title: "Copied to clipboard" });
               }}
             >
               <ShareIcon

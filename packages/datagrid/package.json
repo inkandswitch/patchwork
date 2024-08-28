@@ -9,8 +9,8 @@
   "author": "Ink & Switch",
   "dependencies": {
     "@automerge/automerge": "^2.2.8",
-    "@automerge/automerge-repo": "^1.2.1",
-    "@automerge/automerge-repo-react-hooks": "^1.2.1",
+    "@automerge/automerge-repo": "2.0.0-alpha.7",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
     "@handsontable/react": "^14.4.0",
     "handsontable": "^14.4.0",
     "hyperformula": "^2.7.1",

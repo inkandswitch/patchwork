@@ -82,7 +82,7 @@ export const includeChangeInHistory = (doc: TLDrawDoc) => {
     "branchMetadata",
     "tags",
     "diffBase",
-    "discussions",
+    //"discussions", filter out comment changes for now because we don't surface them in the history
     "changeGroupSummaries",
   ].map((path) => A.getObjectId(doc, path));
 

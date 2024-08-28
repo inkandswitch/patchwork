@@ -164,7 +164,7 @@
 
 /* draw a vertical line for the timeline */
 .timeline-line {
-  @apply absolute;
+  @apply fixed;
   @apply w-full;
   @apply h-full;
 }

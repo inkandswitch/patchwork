@@ -3,7 +3,6 @@ import { Om } from "@/om";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { Button } from "@/shadcn/ui/button";
-import { Toaster } from "@/shadcn/ui/sonner";
 import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
 import {
   HasVersionControlMetadata,
@@ -35,6 +34,7 @@ import { ErrorFallback } from "./ErrorFallback";
 import { LoadingScreen } from "./LoadingScreen";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { Toaster } from "@/shadcn/ui/toaster";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();

@@ -10,7 +10,11 @@ import { CursorPatch as CursorPatch } from "./cursorPatch";
 // But for now, we have some metadata living in docs themselves, and
 // some living in this sidecar.
 // TODO: "Sidecar" in here is provisional until we remove old branches
-export type VersionControlSidecarDoc =
+
+export type VersionControlSidecarDoc = BranchScopeMetadata &
+  HasChangeGroupSummaries;
+
+type BranchScopeMetadata =
   | {
       isBranchScope: false;
     }
@@ -19,7 +23,7 @@ export type VersionControlSidecarDoc =
       branches: AutomergeUrl[];
     };
 
-type HasLinkToVersionControlSidecar = {
+export type HasLinkToVersionControlSidecar = {
   versionControlMetadataUrl: AutomergeUrl;
 };
 
@@ -32,7 +36,7 @@ export type DocCloneMap = {
 };
 
 // Represents a branch across multiple documents
-export type BranchDoc = {
+export type UnmergedBranchDoc = {
   /* A mapping of URLs of "main" docs to clones representing that doc on this branch */
   clones: DocCloneMap;
 
@@ -44,16 +48,23 @@ export type BranchDoc = {
   /** author contact doc URL for branch creator */
   createdBy?: AutomergeUrl;
 
-  mergeMetadata?: {
+  mergeMetadata: undefined;
+};
+
+export type MergedBranchDoc = Omit<UnmergedBranchDoc, "mergeMetadata"> & {
+  mergeMetadata: {
     /** timestamp when the branch was merged */
     mergedAt: number;
+
     /** Heads of the branch at the point it was merged */
-    // TODO: record merge heads per doc on branch
-    // mergeHeads: A.Heads;
+    mergeHeadsByDocUrl: Record<AutomergeUrl, A.Heads>;
+
     /** author contact doc URL for branch merger */
     mergedBy: AutomergeUrl;
   };
 };
+
+export type BranchDoc = UnmergedBranchDoc | MergedBranchDoc;
 
 export type LegacyBranch = {
   name: string;
@@ -117,7 +128,7 @@ export type DiffWithProvenance = {
 export type DiscussionComment = {
   id: string;
   content: string;
-  contactUrl?: AutomergeUrl;
+  contactUrl: AutomergeUrl;
   timestamp: number;
 };
 
@@ -252,6 +263,7 @@ export const initVersionControlMetadataDoc = (doc: any, repo: Repo) => {
   const metadataHandle = repo.create<VersionControlSidecarDoc>();
   metadataHandle.change((d) => {
     d.isBranchScope = false;
+    d.changeGroupSummaries = {};
   });
   doc.versionControlMetadataUrl = metadataHandle.url;
 };

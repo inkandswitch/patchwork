@@ -1,15 +1,16 @@
 import {
   ChangeGroup,
   DecodedChangeWithMetadata,
+  PendingChangeGroup,
 } from "@/versionControl/groupChanges";
-import { Annotation, DocCloneMap } from "@/versionControl/schema";
+import { Annotation } from "@/versionControl/schema";
 import { TextPatch } from "@/versionControl/utils";
 import { next as A, Doc } from "@automerge/automerge";
-import { AutomergeUrl, Repo, DocHandle } from "@automerge/automerge-repo";
+import { Repo } from "@automerge/automerge-repo";
 import { ReactElement, useMemo } from "react";
-import * as PACKAGES from "./packages";
 import { FileExportMethod } from "./fileExports";
 import { IconType } from "./lib/icons";
+import * as PACKAGES from "./packages";
 import { DocLink } from "./packages/folder";
 
 export type CoreDataType<D> = {
@@ -110,7 +111,7 @@ export type VersionedDataType<D, T, V> = {
    * Specifies how changes are grouped for more details look in: groupChange.ts
    */
   groupChanges?: (
-    currentGroup: ChangeGroup<D>,
+    currentGroup: PendingChangeGroup<D>,
     newChange: DecodedChangeWithMetadata
   ) => boolean;
 

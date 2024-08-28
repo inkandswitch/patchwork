@@ -81,7 +81,7 @@ export type EditorProps<A, V> = {
   setSelectedAnnotationGroupId?: (groupId: string | undefined) => void;
   setHoveredAnnotationGroupId?: (groupId: string | undefined) => void;
 
-  setCommentState?: (state: CommentState<A>) => void;
+  setCommentState: (state: CommentState<A> | undefined) => void;
 
   hideInlineComments?: boolean;
 

@@ -54,7 +54,6 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { useCallback, useState } from "react";
-import { toast } from "sonner";
 import { createJacquardBranch, mergeBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../signals";
 import { useJacquardProjectInfoWithActiveBranch } from "@patchwork/jacquard/src/hooks";
@@ -68,6 +67,7 @@ import {
   BuildRefreshButton,
   DisabledBuildRefreshButton,
 } from "@patchwork/jacquard/src/components/BuildRefreshButton";
+import { useToast } from "@/shadcn/ui/use-toast";
 
 // interface MakeBranchOptions {
 //   name?: string;
@@ -82,22 +82,24 @@ export const VersionControlBar = ({
   branchScopeAndActiveBranchInfo,
   highlightSidebarButton,
   getFakeDocPathForDocUrl,
+  onSelectBranchUrl,
 }: {
   docUrl: AutomergeUrl;
   datatypeId: string;
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
   highlightSidebarButton: boolean;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
+  onSelectBranchUrl: (branchUrl: AutomergeUrl | null) => void;
 }) => {
   const {
     branchScopeOm,
-    setActiveBranchUrl,
     activeBranchOm,
     branchOms,
     isRealBranchScope,
     branchScopeVersionControlMetadataOm,
   } = branchScopeAndActiveBranchInfo;
 
+  const { toast } = useToast();
   const repo = useRepo();
   const dataTypes = useDataTypes();
   const account = useCurrentAccount();
@@ -117,8 +119,8 @@ export const VersionControlBar = ({
       dataTypes,
       createdBy: account?.contactHandle?.url,
     });
-    setActiveBranchUrl(branchUrl);
-    toast("Created a new branch");
+    onSelectBranchUrl(branchUrl);
+    toast({ title: "Created a new branch" });
   }, [
     account?.contactHandle?.url,
     branchScopeOm?.handle,
@@ -126,7 +128,8 @@ export const VersionControlBar = ({
     dataTypes,
     getFakeDocPathForDocUrl,
     repo,
-    setActiveBranchUrl,
+    onSelectBranchUrl,
+    toast,
   ]);
 
   const isInsideBranchScope =
@@ -214,10 +217,10 @@ export const VersionControlBar = ({
         branchOm: activeBranchOm,
         mergedBy: account.contactHandle.url,
       });
-      setActiveBranchUrl(null);
-      toast.success("Branch merged to main");
+      onSelectBranchUrl(null);
+      toast({ title: "Branch merged to main" });
     },
-    [account, repo, setActiveBranchUrl]
+    [account, repo, onSelectBranchUrl, toast]
   );
 
   // const rebaseBranch = (draftUrl: AutomergeUrl) => {
@@ -251,11 +254,11 @@ export const VersionControlBar = ({
               const selectedBranchUrl = value as AutomergeUrl | null;
 
               if (selectedBranchUrl) {
-                setActiveBranchUrl(selectedBranchUrl);
-                toast(`Switched to branch`);
+                onSelectBranchUrl(selectedBranchUrl);
+                toast({ title: "Switched to branch" });
               } else {
-                setActiveBranchUrl(null);
-                toast("Switched to Main");
+                onSelectBranchUrl(null);
+                toast({ title: "Switched to Main" });
               }
             }
           }}
@@ -404,7 +407,7 @@ export const VersionControlBar = ({
               branchScopeVersionControlMetadataOm={
                 branchScopeVersionControlMetadataOm
               }
-              setActiveBranchUrl={setActiveBranchUrl}
+              onSelectBranchUrl={onSelectBranchUrl}
             />
           </div>
         )}
@@ -558,12 +561,13 @@ export const VersionControlBar = ({
 const BranchActions: React.FC<{
   activeBranchOm: Om<BranchDoc>;
   branchScopeVersionControlMetadataOm: Om<VersionControlSidecarDoc>;
-  setActiveBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
+  onSelectBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
 }> = ({
   activeBranchOm,
   branchScopeVersionControlMetadataOm,
-  setActiveBranchUrl,
+  onSelectBranchUrl,
 }) => {
+  const { toast } = useToast();
   const handleRenameBranch = useCallback(() => {
     const newName = prompt("Enter the new name for this branch:");
     const newNameTrimmed = newName?.trim();
@@ -586,13 +590,13 @@ const BranchActions: React.FC<{
       d.branches = d.branches.filter((b) => b !== activeBranchOm.url);
     });
 
-    setActiveBranchUrl(null);
+    onSelectBranchUrl(null);
 
-    toast("Deleted branch");
+    toast({ title: "Deleted branch" });
   }, [
     activeBranchOm.url,
     branchScopeVersionControlMetadataOm?.handle,
-    setActiveBranchUrl,
+    onSelectBranchUrl,
   ]);
 
   // const branchHeads = useMemo(
@@ -679,10 +683,13 @@ const BranchActions: React.FC<{
           onClick={() => {
             navigator.clipboard.writeText(activeBranchOm.url).then(
               () => {
-                toast("Link copied to clipboard");
+                toast({ title: "Link copied to clipboard" });
               },
               () => {
-                toast.error("Failed to copy link to clipboard");
+                toast({
+                  title: "Failed to copy link to clipboard",
+                  variant: "destructive",
+                });
               }
             );
           }}

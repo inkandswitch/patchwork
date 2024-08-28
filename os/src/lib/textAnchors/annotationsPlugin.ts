@@ -139,6 +139,20 @@ const annotationDecorations = EditorView.decorations.compute(
       const { fromPos, toPos } = annotation.anchor;
       switch (annotation.type) {
         case "added": {
+          // In general we shouldn't construct invalid annotation ranges,
+          // but this case can happen if a users inserts one character at the end of the text.
+          //
+          // Why does this happen?
+          // Cursors positions are interpreted as pointing before the character
+          // We can't do this at the end of the text, because there is no next character
+          // so instead we point to the last character. In the case of a single character
+          // being inserted this means that both the from and the to position point to the same character
+          //
+          // todo: remove once we can point to sides of characters with cursors
+          if (fromPos == toPos) {
+            return [];
+          }
+
           const decoration = annotation.isEmphasized
             ? spliceDecorationActive
             : spliceDecoration;
@@ -154,6 +168,12 @@ const annotationDecorations = EditorView.decorations.compute(
         }
 
         case "changed": {
+          // same case as added
+          // todo: remove once we can point to sides of characters with cursors
+          if (fromPos == toPos) {
+            return [];
+          }
+
           const decoration = annotation.isEmphasized
             ? spliceDecorationActive
             : spliceDecoration;

@@ -1,5 +1,9 @@
 import { DocHandle } from "@automerge/automerge-repo";
-import { useDocument, useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useHandle,
+  useRepo,
+} from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useState } from "react";
 
 import { useCurrentAccount } from "@/explorer/account";
@@ -69,7 +73,7 @@ export const TLDraw = ({
       ) : (
         <EditableTLDraw
           userId={userId}
-          doc={doc!}  // TODO: JAH strict fix
+          doc={doc!} // TODO: JAH strict fix
           annotations={annotations}
           handle={handle}
           camera={camera ?? localCamera}
@@ -148,6 +152,7 @@ const ReadOnlyTLDraw = ({
 
   return (
     <Tldraw
+      className="border-2 border-dashed border-gray-400"
       store={store}
       autoFocus
       onMount={(editor) => {

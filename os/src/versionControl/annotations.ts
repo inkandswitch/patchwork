@@ -56,11 +56,17 @@ export function useAnnotations({
   hoveredAnnotationGroupId: string | undefined;
   setHoveredAnnotationGroupId: (id: string | undefined) => void;
   setSelectedAnnotationGroupId: (id: string | undefined) => void;
-  setCommentState: (state: CommentState<unknown>) => void;
+  setCommentState: (state: CommentState<unknown> | undefined) => void;
 } {
-  const [commentState, setCommentState] = useState<CommentState<unknown>>();
-  const [hoveredState, setHoveredState] = useState<HoverState<unknown>>();
-  const [selectedState, setSelectedState] = useState<SelectionState<unknown>>();
+  const [commentState, setCommentState] = useState<
+    CommentState<unknown> | undefined
+  >();
+  const [hoveredState, setHoveredState] = useState<
+    HoverState<unknown> | undefined
+  >();
+  const [selectedState, setSelectedState] = useState<
+    SelectionState<unknown> | undefined
+  >();
 
   const setHoveredAnchor = useStaticCallback((anchor: unknown) => {
     // ingore set if it doesn't change the current state

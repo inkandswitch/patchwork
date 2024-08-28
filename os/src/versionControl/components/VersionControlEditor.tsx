@@ -11,19 +11,21 @@ import {
   HistoryIcon,
   MessageSquareIcon,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useDataType } from "../../datatypes";
 import { useAnnotations } from "../annotations";
 import { useBranchScopeAndActiveBranchInfo } from "../hooks";
-import { HasVersionControlMetadata } from "../schema";
+import { DiffWithProvenance, HasVersionControlMetadata } from "../schema";
 import { diffWithProvenance, useActorIdToAuthorMap } from "../utils";
 import { StatusBar } from "./Statusbar";
 import { VersionControlBar } from "./VersionControlBar";
 import { ifLoaded } from "@/doc-reactive";
 import { fakeDocPath } from "../signals";
 import { ReviewSidebar } from "./ReviewSidebar";
-import { useDocUIState } from "@/explorer/uiState";
+import { useDocUIState, useUIStateOm } from "@/explorer/uiState";
+import { TimelineSidebar } from "./TimelineSidebar";
+import { setActiveBranchUrl } from "../branches";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -49,6 +51,8 @@ export const VersionControlEditor: React.FC<{
     getFakeDocPathForDocUrl(mainDocUrl)
   );
 
+  const uiStateOm = ifLoaded(useUIStateOm());
+
   const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
   // const [isHoveringYankToBranchOption, setIsHoveringYankToBranchOption] =
@@ -66,10 +70,12 @@ export const VersionControlEditor: React.FC<{
   //   }
   // }, [JSON.stringify(legacySelectedBranch)]);
 
-  // const [diffFromTimelineSidebar, setDiffFromTimelineSidebar] =
-  //   useState<DiffWithProvenance>();
-  // const [docHeadsFromTimelineSidebar, setDocHeadsFromTimelineSidebar] =
-  //   useState<A.Heads>();
+  const [diffFromTimelineSidebar, setDiffFromTimelineSidebar] =
+    useState<DiffWithProvenance>();
+  const [docHeadsFromTimelineSidebar, setDocHeadsFromTimelineSidebar] =
+    useState<A.Heads>();
+
+  const docHeads = docHeadsFromTimelineSidebar ?? undefined;
 
   useEffect(() => {
     if (!doc || sessionStartHeads) {
@@ -79,7 +85,7 @@ export const VersionControlEditor: React.FC<{
     setSessionStartHeads(A.getHeads(doc));
   }, [doc, sessionStartHeads]);
 
-  // const currentEditSessionDiff = useMemo(() => {
+  // const currentEditSessionf = useMemo(() => {
   //   if (!doc || !sessionStartHeads || !isHoveringYankToBranchOption) {
   //     return undefined;
   //   }
@@ -97,26 +103,34 @@ export const VersionControlEditor: React.FC<{
 
   const actorIdToAuthor = useActorIdToAuthorMap(mainDocUrl);
 
-  const docPath = fakeDocPath(selectedDocLink);
+  const docPath = useMemo(
+    () => fakeDocPath(selectedDocLink),
+    [selectedDocLink]
+  );
 
   const branchScopeAndActiveBranchInfo = ifLoaded(
     useBranchScopeAndActiveBranchInfo(docPath)
   );
+
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
+  const cloneOrMainDocAtHeads =
+    cloneOrMainOm?.doc && docHeadsFromTimelineSidebar
+      ? A.view(cloneOrMainOm.doc, docHeadsFromTimelineSidebar)
+      : cloneOrMainOm?.doc;
   const baseHeads = branchScopeAndActiveBranchInfo?.baseHeads;
 
   const branchDiff = useMemo(() => {
-    if (baseHeads && cloneOrMainOm) {
+    // only compute branch diff if we are on a branch
+    if (baseHeads && cloneOrMainOm && cloneOrMainOm.url !== mainDocUrl) {
       return diffWithProvenance(
         cloneOrMainOm.doc,
         baseHeads,
         A.getHeads(cloneOrMainOm.doc)
       );
     }
-  }, [baseHeads, cloneOrMainOm]);
+  }, [mainDocUrl, baseHeads, cloneOrMainOm]);
 
-  // todo: handle other cases like diff from the timeline
-  const diff = branchDiff;
+  const diff = diffFromTimelineSidebar ?? branchDiff;
 
   const dataType = useDataType(datatypeId);
 
@@ -130,11 +144,35 @@ export const VersionControlEditor: React.FC<{
     setSelectedAnnotationGroupId,
     setCommentState,
   } = useAnnotations({
-    doc: cloneOrMainOm?.doc as A.Doc<HasVersionControlMetadata>,
+    doc: cloneOrMainDocAtHeads as A.Doc<HasVersionControlMetadata>,
     dataType,
     isCommentInputFocused,
     diff: docUIState.highlightChanges ? diff : undefined,
   });
+
+  const onSelectBranchUrl = useCallback(
+    (branchUrl: AutomergeUrl | null) => {
+      if (!branchScopeAndActiveBranchInfo || !uiStateOm) {
+        return;
+      }
+
+      const { branchScopePath } = branchScopeAndActiveBranchInfo;
+
+      setDiffFromTimelineSidebar(undefined);
+      setDocHeadsFromTimelineSidebar(undefined);
+      setActiveBranchUrl(uiStateOm, branchScopePath, branchUrl);
+    },
+    [branchScopeAndActiveBranchInfo, uiStateOm]
+  );
+
+  const onChangeSidebarMode = useCallback(
+    (mode: string) => {
+      changeDocUIState(
+        (state) => (state.sidebarMode = mode as "review" | "history")
+      );
+    },
+    [changeDocUIState]
+  );
 
   // global comment keyboard shortcut
   // with cmd + shift + m a new comment is created
@@ -193,22 +231,10 @@ export const VersionControlEditor: React.FC<{
 
   // ---- ANYTHING RELYING ON doc SHOULD GO BELOW HERE ----
 
-  // const branches = doc.branchMetadata.branches ?? [];
-
-  // Currently we can't filter out comments that didn't exist in a previous version of the document
-  // this leads to seemingly random places in the document being highlighted. The problem is that
-  // the cursor api doesn't provide a way to detect if the op was present it always gives the closest
-  // position to that op in the current document.
-  //
-  // As a short term workaround we filter out all comments if the timeline sidebar is active
-  const visibleAnnotations =
-    docUIState.sidebarMode === "history"
-      ? annotations.filter((annotation) => annotation.type !== "highlighted")
-      : annotations;
-
   // for now hide inline comments if side by side is enabled because there is not enought space
   const hideInlineComments =
-    !!docUIState.sidebarMode || !!docUIState.mainViewMode;
+    docUIState.sidebarMode === "review" ||
+    docUIState.mainViewMode === "compareWithMain";
 
   const highlightSidebarButton =
     !docUIState.sidebarMode &&
@@ -225,6 +251,7 @@ export const VersionControlEditor: React.FC<{
             branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
             highlightSidebarButton={highlightSidebarButton}
             getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+            onSelectBranchUrl={onSelectBranchUrl}
           />
         ) : (
           <div>Loading version control information...</div>
@@ -239,8 +266,8 @@ export const VersionControlEditor: React.FC<{
                   key={cloneOrMainOm.url}
                   tool={tool}
                   docUrl={cloneOrMainOm.url}
-                  docHeads={undefined}
-                  annotations={visibleAnnotations}
+                  docHeads={docHeads}
+                  annotations={annotations}
                   annotationGroups={annotationGroups}
                   actorIdToAuthor={actorIdToAuthor}
                   setSelectedAnchors={setSelectedAnchors}
@@ -260,8 +287,8 @@ export const VersionControlEditor: React.FC<{
                   key={cloneOrMainOm.url}
                   tool={tool}
                   docUrl={cloneOrMainOm.url}
-                  docHeads={undefined}
-                  annotations={visibleAnnotations}
+                  docHeads={docHeads}
+                  annotations={annotations}
                   annotationGroups={annotationGroups}
                   actorIdToAuthor={actorIdToAuthor}
                   setSelectedAnchors={setSelectedAnchors}
@@ -285,7 +312,7 @@ export const VersionControlEditor: React.FC<{
           key={cloneOrMainOm.url}
           docUrl={cloneOrMainOm.url}
           docHeads={undefined}
-          annotations={visibleAnnotations}
+          annotations={annotations}
           annotationGroups={annotationGroups}
           actorIdToAuthor={actorIdToAuthor}
           setSelectedAnchors={setSelectedAnchors}
@@ -314,16 +341,12 @@ export const VersionControlEditor: React.FC<{
           <div className="px-2 pb-2 flex flex-col gap-2 text-sm font-semibold text-gray-600 border-b border-gray-200">
             <Tabs
               value={docUIState.sidebarMode}
-              onValueChange={(mode) =>
-                changeDocUIState(
-                  (state) => (state.sidebarMode = mode as "review" | "history")
-                )
-              }
+              onValueChange={onChangeSidebarMode}
             >
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="review">
                   <MessageSquareIcon size={16} className="mr-2" />
-                  Review ({annotationGroups.length})
+                  Review
                 </TabsTrigger>
                 <TabsTrigger value="history">
                   <HistoryIcon size={16} className="mr-2" />
@@ -338,38 +361,36 @@ export const VersionControlEditor: React.FC<{
           </div>
 
           <div className="min-h-0 flex-grow w-96">
-            {docUIState.sidebarMode === "history" && (
-              <div className="p-4 text-gray-600">
-                <p>History is not available in Jacquard Patchwork yet.</p>
-              </div>
-            )}
-            {/* {sidebarMode === "history" && (
+            {docUIState.sidebarMode === "history" && dataType && (
               <TimelineSidebar
                 // set key to trigger re-mount on branch change
-                key={selectedCloneUrl}
+                key={cloneOrMainOm.url}
                 dataType={dataType}
-                docUrl={selectedCloneUrl}
+                docUrl={cloneOrMainOm.url}
                 setDocHeads={setDocHeadsFromTimelineSidebar}
                 setDiff={setDiffFromTimelineSidebar}
-                selectedBranch={legacySelectedBranch}
-                setSelectedBranch={setSelectedBranch}
-              />
-            )} */}
-
-            {docUIState.sidebarMode === "review" && (
-              <ReviewSidebar
-                doc={cloneOrMainOm.doc}
-                handle={cloneOrMainOm.handle}
-                tool={tool}
-                annotationGroups={annotationGroups}
-                selectedAnchors={selectedAnchors}
-                setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
-                setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
-                isCommentInputFocused={isCommentInputFocused}
-                setIsCommentInputFocused={setIsCommentInputFocused}
-                setCommentState={setCommentState}
+                branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
+                onSelectBranchUrl={onSelectBranchUrl}
               />
             )}
+
+            {docUIState.sidebarMode === "review" &&
+              cloneOrMainDocAtHeads &&
+              cloneOrMainOm && (
+                <ReviewSidebar
+                  doc={cloneOrMainDocAtHeads}
+                  handle={cloneOrMainOm.handle}
+                  readonly={!!docHeadsFromTimelineSidebar}
+                  tool={tool}
+                  annotationGroups={annotationGroups}
+                  selectedAnchors={selectedAnchors}
+                  setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
+                  setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
+                  isCommentInputFocused={isCommentInputFocused}
+                  setIsCommentInputFocused={setIsCommentInputFocused}
+                  setCommentState={setCommentState}
+                />
+              )}
             {/* {sidebarMode === "Bot" && (
               <BotSidebar
                 doc={activeDoc}
@@ -457,6 +478,8 @@ export const SideBySide = <T, V>(props: SideBySideProps<T, V>) => {
           <DocEditor
             {...props}
             docUrl={mainDocUrl}
+            // note: we don't want to pass in docheads here, the doc heads in the parent
+            // should not affect the heads we show for main
             docHeads={undefined}
             annotations={[]}
             annotationGroups={[]}

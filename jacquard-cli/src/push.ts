@@ -29,7 +29,7 @@ import {
 
 // NOTE: copied this from the version control code in our os folder.
 // couldn't get imports working from os to jacquard-cli so just copying the function for now.
-const initVersionControlMetadata = (
+const initVersionControlMetadataDoc = (
   doc: any,
   repo: Repo,
   options: { branchScope: boolean }
@@ -45,6 +45,7 @@ const initVersionControlMetadata = (
   // init the separate metadata doc
   const metadataHandle = repo.create<VersionControlSidecarDoc>({
     isBranchScope: false,
+    changeGroupSummaries: {},
   });
   if (options.branchScope) {
     ensureMetadataHandleIsBranchScope(metadataHandle);
@@ -197,7 +198,7 @@ async function pushDir({
         subFolderHandle.change((doc) => {
           doc.title = path.basename(filePath);
           doc.docs = [];
-          initVersionControlMetadata(doc, repo, { branchScope: false });
+          initVersionControlMetadataDoc(doc, repo, { branchScope: false });
         });
         folderHandle.change((d) => {
           d.docs.push({
@@ -255,7 +256,7 @@ async function findOrCreateFolderHandle(
     folderHandle.change((d) => {
       d.title = projectName;
       d.docs = [];
-      initVersionControlMetadata(d, repo, { branchScope: true });
+      initVersionControlMetadataDoc(d, repo, { branchScope: true });
     });
     fs.writeFileSync(
       "jacquard.json",
@@ -454,13 +455,12 @@ const pushFile = async ({
       }
 
       // init patchwork metadata
-      doc.branchMetadata = {
-        source: null,
-        branches: [],
-      };
+      // legacy inline metadata
       doc.discussions = {};
       doc.tags = [];
-      doc.changeGroupSummaries = {};
+
+      // new sidecar metadata in separate doc
+      initVersionControlMetadataDoc(doc, repo, { branchScope: false });
     });
 
     folderHandle.change((d) => {

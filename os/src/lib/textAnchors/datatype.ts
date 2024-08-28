@@ -48,7 +48,7 @@ export const textAnchorsAtPath = <D extends Automerge.Doc<unknown>>(
     const annotations: Annotation<TextAnchor, string>[] = [];
 
     const content: string = get(doc, path);
-    const contentBefore: string = get(docBefore, path);
+    const contentBefore: string = get(docBefore, path) ?? ""; // on the initial change there is no content yet so we fall back to the empty string
 
     // We keep track of the offset between doc and docBefore.
     //
@@ -267,7 +267,11 @@ const diffText = (
     if (deleted.length > 0 && added.length > 0) {
       const anchor = {
         fromCursor: Automerge.getCursor(doc, path, offset - added.length),
-        toCursor: Automerge.getCursor(doc, path, offset),
+        toCursor: Automerge.getCursor(
+          doc,
+          path,
+          Math.min(offset, get(doc, path).length - 1)
+        ),
       };
 
       annotations.push({

@@ -15,6 +15,7 @@ import {
   getCursorPositionSafely,
   getCursorSafely,
 } from "@/versionControl/utils";
+import * as Automerge from "@automerge/automerge";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { Cursor } from "@automerge/automerge/next";
@@ -35,13 +36,14 @@ export type TextFileDoc = FileDoc & {
 };
 
 export const isTextFile = (doc: FileDoc) => {
-  return doc.content.type === "text";
+  return doc && doc.content && doc.content.type === "text";
 };
 
 const pathToText = ["content", "value"];
 
 export const TextFileEditor = ({
   docUrl,
+  docHeads,
   annotations,
   setSelectedAnchors,
   getFakeDocPathForDocUrl,
@@ -55,8 +57,11 @@ export const TextFileEditor = ({
   // better at it. Anyway, for now I'm just using this.
   const containerRef = useRef<HTMLDivElement>(null);
   const [editor, setEditor] = useState<EditorView>();
-  const [fileDoc] = useDocument<TextFileDoc>(docUrl);
+  const [_fileDoc] = useDocument<TextFileDoc>(docUrl);
   const handle = useHandleDef<TextFileDoc>(docUrl);
+
+  const fileDoc =
+    docHeads && _fileDoc ? Automerge.view(_fileDoc, docHeads) : _fileDoc;
 
   const resolvedAnnotations = useResolvedAnnotationAtPath({
     doc: fileDoc,
@@ -85,6 +90,8 @@ export const TextFileEditor = ({
     () => getFakeDocPathForDocUrl(mainDocUrl),
     [getFakeDocPathForDocUrl, mainDocUrl]
   );
+
+  const readOnly = docHeads !== undefined;
 
   const [toolUIState, changeToolUIState] = useToolUIState<{
     scrollTopCursor?: Cursor;
@@ -115,6 +122,7 @@ export const TextFileEditor = ({
 
     return [
       getPluginsByType(fileDoc.type),
+      ...(readOnly ? [EditorView.editable.of(false)] : []),
       ...(setSelectedAnchors
         ? [
             selectedAnchorsPlugin({
@@ -126,7 +134,7 @@ export const TextFileEditor = ({
           ]
         : []),
     ];
-  }, [fileDoc, setSelectedAnchors]);
+  }, [fileDoc, setSelectedAnchors, readOnly]);
 
   const allExtensions = useMemo(() => {
     return [...stableExtensions, ...docDependentExtensions];
@@ -144,16 +152,18 @@ export const TextFileEditor = ({
       <CodeMirror
         ref={containerRef}
         setEditorView={setEditor}
+        key={JSON.stringify(docHeads)} // remount component whenever the passed in heads change
         initialDoc={fileDoc.content.value}
         extensions={allExtensions}
         editorViewConfig={{
           scrollTo: scrollTo({ toolUIState, fileDoc }),
         }}
-        className={clsx("codemirror-editor h-full overflow-auto", {
-          // Scroll position initialization should occur without an animation,
-          // then we set scroll-smooth for future scrolls
-          "scroll-smooth": !!editor,
-        })}
+        className={clsx(
+          "codemirror-editor h-full overflow-auto scroll-instant",
+          {
+            "border-2 border-dashed border-gray-400": readOnly,
+          }
+        )}
       />
     )
   );

@@ -112,7 +112,11 @@ export const FolderEntryView = ({
       return;
     }
     const { cloneOrMainOm, baseHeads } = branchScopeAndActiveBranchInfo;
-    if (baseHeads && cloneOrMainOm && highlightChanges) {
+    if (
+      cloneOrMainOm &&
+      docLink.url !== cloneOrMainOm.url && // only show diff if we are looking at a document on a branch
+      highlightChanges
+    ) {
       return diffWithProvenance(
         cloneOrMainOm.doc,
         baseHeads,
