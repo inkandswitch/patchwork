@@ -11,6 +11,11 @@
     "preinstall": "npx only-allow pnpm",
     "test": "pnpm --filter os test"
   },
+  "pnpm": {
+    "overrides": {
+      "@automerge/automerge": "2.2.9-alpha.2"
+    }
+  },
 "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {

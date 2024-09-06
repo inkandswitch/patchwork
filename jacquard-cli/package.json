@@ -11,7 +11,7 @@
   },
   "author": "Ink & Switch",
   "dependencies": {
-    "@automerge/automerge": "^2.2.8",
+    "@automerge/automerge": "2.2.9-alpha.2",
     "@automerge/automerge-repo": "2.0.0-alpha.7",
     "@automerge/automerge-repo-network-websocket": "2.0.0-alpha.7",
     "@automerge/automerge-repo-storage-nodefs": "^1.2.1",
