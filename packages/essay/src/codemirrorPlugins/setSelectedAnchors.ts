@@ -1,17 +1,18 @@
-import { EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
-import * as A from "@automerge/automerge/next";
 import { TextAnchor } from "@/lib/textAnchors";
 import { AnnotationWithUIState } from "@/versionControl/schema";
+import { DocHandle } from "@automerge/automerge-repo";
+import * as A from "@automerge/automerge/next";
+import { ViewPlugin, ViewUpdate } from "@codemirror/view";
 
 export function selectedAnchorsPlugin({
   setSelectedAnchors,
   annotationsRef,
-  doc,
+  handle,
   path,
 }: {
   setSelectedAnchors: (anchors: TextAnchor[]) => void;
   annotationsRef: React.MutableRefObject<AnnotationWithUIState<any, string>[]>;
-  doc: A.Doc<any>;
+  handle: DocHandle<unknown>;
   path: A.Prop[];
 }) {
   return ViewPlugin.fromClass(
@@ -44,6 +45,11 @@ export function selectedAnchorsPlugin({
               }))
             );
           } else {
+            const doc = handle.docSync();
+            if (!doc) {
+              return;
+            }
+
             const docLength = update.view.state.doc.length;
             setSelectedAnchors([
               {

@@ -1,18 +1,11 @@
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 
 import { useDataType } from "@/datatypes";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { Icon, IconType } from "@/lib/icons";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shadcn/ui/select";
 import { EditorProps, Tool, useToolsForDataType } from "@/tools";
 import { useAnnotations } from "@/versionControl/annotations";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
@@ -28,14 +21,13 @@ export const FolderViewerWithEmbeds: React.FC<
   EditorProps<unknown, unknown>
 > = ({
   docUrl,
-  mainDocUrl,
   docHeads,
   getFakeDocPathForDocUrl,
-  activeBranchUrl,
+  mainDocUrl,
+  collapseContentWithoutAnnotations,
 }: EditorProps<unknown, unknown>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
   const folderAtHeads = folder && docHeads ? A.view(folder, docHeads) : folder;
-  const [hideUnchangedFiles, setHideUnchangedFiles] = useState(false);
 
   const [docUIState] = useDocUIState(getFakeDocPathForDocUrl(mainDocUrl));
 
@@ -49,24 +41,6 @@ export const FolderViewerWithEmbeds: React.FC<
         <div className="text-gray-500 text-sm">
           {folderAtHeads.docs.length} documents
         </div>
-        {activeBranchUrl && (
-          <Select
-            onValueChange={(value) =>
-              setHideUnchangedFiles(value === "changed")
-            }
-            defaultValue={hideUnchangedFiles ? "changed" : "all"}
-          >
-            <SelectTrigger className="w-[16rem]">
-              <SelectValue placeholder="Show" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All files</SelectItem>
-              <SelectItem value="changed">
-                Only files changed on branch
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        )}
       </div>
       <div className="flex flex-col gap-10 px-4 h-full overflow-y-auto pb-24">
         {folderAtHeads.docs.map((docLink, index) => (
@@ -74,8 +48,10 @@ export const FolderViewerWithEmbeds: React.FC<
             docLink={docLink}
             key={index}
             getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-            highlightChanges={docUIState.highlightChanges ?? false}
-            hideUnchangedFiles={hideUnchangedFiles}
+            collapseContentWithoutChanges={
+              collapseContentWithoutAnnotations ?? false
+            }
+            highlightChanges={docUIState.highlightChanges}
           />
         ))}
       </div>
@@ -84,17 +60,17 @@ export const FolderViewerWithEmbeds: React.FC<
 };
 
 type FolderEntryView = {
-  highlightChanges: boolean;
   docLink: DocLink;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
-  hideUnchangedFiles: boolean;
+  collapseContentWithoutChanges: boolean;
+  highlightChanges: boolean;
 };
 
 export const FolderEntryView = ({
-  hideUnchangedFiles,
-  highlightChanges,
   docLink,
   getFakeDocPathForDocUrl,
+  collapseContentWithoutChanges,
+  highlightChanges,
 }: FolderEntryView) => {
   const docPath = getFakeDocPathForDocUrl(docLink.url);
   const branchScopeAndActiveBranchInfo =
@@ -112,32 +88,44 @@ export const FolderEntryView = ({
       return;
     }
     const { cloneOrMainOm, baseHeads } = branchScopeAndActiveBranchInfo;
-    if (
-      cloneOrMainOm &&
-      docLink.url !== cloneOrMainOm.url && // only show diff if we are looking at a document on a branch
-      highlightChanges
-    ) {
+    if (cloneOrMainOm && docLink.url !== cloneOrMainOm.url) {
       return diffWithProvenance(
         cloneOrMainOm.doc,
         baseHeads,
         A.getHeads(cloneOrMainOm.doc)
       );
     }
-  }, [branchScopeAndActiveBranchInfo, highlightChanges]);
+  }, [branchScopeAndActiveBranchInfo, docLink.url]);
 
   const annotationProps = useAnnotations({
     doc: cloneOrMainOm?.doc as A.Doc<HasVersionControlMetadata>,
     dataType,
     isCommentInputFocused: false,
-    diff,
+    diff: highlightChanges ? diff : undefined,
   });
 
-  if (hideUnchangedFiles && (!diff || diff.patches.length === 0)) {
+  if (
+    collapseContentWithoutChanges &&
+    annotationProps.annotations.length === 0
+  ) {
     return null;
   }
 
+  const toolView =
+    cloneOrMainOm && tool && docLink.type !== "folder" ? (
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <tool.EditorComponent
+          docUrl={cloneOrMainOm.url}
+          mainDocUrl={docLink.url}
+          getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+          collapseContentWithoutAnnotations={collapseContentWithoutChanges}
+          {...annotationProps}
+        />
+      </ErrorBoundary>
+    ) : undefined;
+
   return (
-    <div className="h-72">
+    <div>
       {!tool ? (
         <div className="flex gap-2 items-center font-medium mb-1">
           Unknown type: {docLink.type}
@@ -157,20 +145,17 @@ export const FolderEntryView = ({
             </button>
           </div>
 
-          <div className="h-64 border border-gray-300">
+          <div className="border border-gray-300">
             {!tool && <div>No editor available</div>}
-            {cloneOrMainOm && tool && docLink.type !== "folder" && (
-              <MountOnlyWhenVisible height={"16rem"}>
-                <ErrorBoundary FallbackComponent={ErrorFallback}>
-                  <tool.EditorComponent
-                    docUrl={cloneOrMainOm.url}
-                    mainDocUrl={docLink.url}
-                    getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-                    {...annotationProps}
-                  />
-                </ErrorBoundary>
-              </MountOnlyWhenVisible>
-            )}
+            {toolView &&
+              (tool.supportsCollapseContentWithoutAnnotations &&
+              collapseContentWithoutChanges ? (
+                toolView
+              ) : (
+                <MountOnlyWhenVisible height={"16rem"}>
+                  {toolView}
+                </MountOnlyWhenVisible>
+              ))}
             {docLink.type === "folder" && (
               <div className="bg-gray-50 justify-center items-center flex h-full">
                 Click "open" to see nested folder contents
@@ -189,4 +174,5 @@ export const folderViewerWithEmbedsTool: Tool = {
   name: "Embeds",
   EditorComponent: FolderViewerWithEmbeds,
   supportedDataTypes: ["folder"],
+  supportsCollapseContentWithoutAnnotations: true,
 };

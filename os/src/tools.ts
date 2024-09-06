@@ -43,6 +43,10 @@ export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
    * relies exclusively on the review sidebar to show comments */
   supportsInlineComments?: boolean;
 
+  /** wether this tool supports a display mode where parts of the document without annotations are collapsed
+   * what this means exactly for a specific datatype is up to the tool to decide */
+  supportsCollapseContentWithoutAnnotations?: boolean;
+
   /**
    * Experiment: allow tools to specify a status bar component that will be rendered
    * below the primary tool that is selected
@@ -84,6 +88,7 @@ export type EditorProps<A, V> = {
   setCommentState: (state: CommentState<A> | undefined) => void;
 
   hideInlineComments?: boolean;
+  collapseContentWithoutAnnotations?: boolean;
 
   // TODO: will be replaced when we have real doc paths everywhere
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;

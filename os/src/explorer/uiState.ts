@@ -34,6 +34,7 @@ export type DocUIState = {
   mainViewMode: MainViewMode;
   sidebarMode?: SidebarMode;
   highlightChanges: boolean;
+  collapseContentWithoutAnnotations: boolean;
   toolUIStates: Record<string, unknown>;
 };
 
@@ -165,6 +166,7 @@ export function defaultDocUIState(): DocUIState {
   return {
     mainViewMode: "showFile",
     highlightChanges: true,
+    collapseContentWithoutAnnotations: false,
     toolUIStates: {},
   };
 }

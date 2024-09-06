@@ -1,33 +1,23 @@
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import {
-  useDocument,
-  useHandle,
-  useRepo,
-} from "@automerge/automerge-repo-react-hooks";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { MarkdownDocEditor, TextSelection } from "./MarkdownDocEditor";
 
+import { useEffect, useState } from "react";
 import { MarkdownDoc } from "../datatype";
-import { useEffect, useMemo, useState } from "react";
 
 import { EditorView } from "@codemirror/view";
 
 // TODO: audit the CSS being imported here;
 // it should be all 1) specific to TEE, 2) not dependent on viewport / media queries
 import { EditorProps } from "@/tools";
-import { AnnotationWithUIState } from "@/versionControl/schema";
-import { getCursorPositionSafely } from "@/versionControl/utils";
-import { isEqual, uniq } from "lodash";
+import { uniq } from "lodash";
 import "../index.css";
 
+import { useHandleDef } from "@/hooks/useHandleDef";
+import { TextAnchor, useResolvedAnnotationAtPath } from "@/lib/textAnchors";
 import { useAnnotationGroupsWithPosition } from "../utils";
 import { CommentsSidebar } from "./CommentsSidebar";
-import {
-  ResolvedTextAnchor,
-  TextAnchor,
-  useResolvedAnnotationAtPath,
-} from "@/lib/textAnchors";
-import { useHandleDef } from "@/hooks/useHandleDef";
 
 export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const {
@@ -41,6 +31,7 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
     setSelectedAnnotationGroupId,
     setHoveredAnnotationGroupId,
     setCommentState,
+    collapseContentWithoutAnnotations,
   } = props;
 
   const [hasEditorFocus, setHasEditorFocus] = useState(false);
@@ -94,7 +85,7 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
          */}
         <div className="flex @xl:mt-4 @xl:mr-2 @xl:mb-8 @xl:ml-[-100px] @4xl:ml-[-200px] w-full @xl:w-4/5  max-w-[722px]">
           <div
-            className={`w-full bg-white box-border @xl:rounded-md px-10 py-4 transition-all duration-500 ${
+            className={`w-full bg-white box-border @xl:rounded-md py-4 transition-all duration-500 ${
               readOnly
                 ? "border-2 border-dashed border-gray-400"
                 : "border border-gray-200 "
@@ -110,6 +101,9 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
               annotations={resolvedAnnotations}
               readOnly={readOnly}
               docHeads={docHeads}
+              collapseContentWithoutAnnotations={
+                collapseContentWithoutAnnotations
+              }
             />
           </div>
         </div>

@@ -1,14 +1,19 @@
+import { ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
 import { useCurrentAccount } from "@/explorer/account";
-import { MainViewMode } from "@/explorer/uiState";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
+import {
+  AnnotationMode,
+  MainViewMode,
+  useDocUIState,
+} from "@/explorer/uiState";
 import { getRelativeTimeString } from "@/lib/dates";
 import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";
-import { useDocUIState } from "@/explorer/uiState";
 import {
   BranchDoc,
   ensureMetadataHandleIsBranchScope,
+  Tool,
   useDataTypes,
   VersionControlSidecarDoc,
 } from "@/sdk";
@@ -28,18 +33,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shadcn/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/shadcn/ui/tooltip";
+import { useToast } from "@/shadcn/ui/use-toast";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import {
+  BuildRefreshButton,
+  DisabledBuildRefreshButton,
+} from "@patchwork/jacquard/src/components/BuildRefreshButton";
+import { getStalenessInfo } from "@patchwork/jacquard/src/getStalenessInfo";
+import { useJacquardProjectInfoWithActiveBranch } from "@patchwork/jacquard/src/hooks";
+import {
+  getBuildRunsWithDocAsPrimaryInput,
+  getProjectStateFromProjectInfo,
+} from "@patchwork/jacquard/src/signals";
 import _, { truncate } from "lodash";
 import {
   ArrowRightFromLineIcon,
   ArrowRightToLineIcon,
+  BanIcon,
+  ChevronsDownUpIcon,
   ColumnsIcon,
   CrownIcon,
   Edit3Icon,
@@ -56,18 +68,12 @@ import {
 import { useCallback, useState } from "react";
 import { createJacquardBranch, mergeBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../signals";
-import { useJacquardProjectInfoWithActiveBranch } from "@patchwork/jacquard/src/hooks";
-import { ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
-import { getStalenessInfo } from "@patchwork/jacquard/src/getStalenessInfo";
 import {
-  getBuildRunsWithDocAsPrimaryInput,
-  getProjectStateFromProjectInfo,
-} from "@patchwork/jacquard/src/signals";
-import {
-  BuildRefreshButton,
-  DisabledBuildRefreshButton,
-} from "@patchwork/jacquard/src/components/BuildRefreshButton";
-import { useToast } from "@/shadcn/ui/use-toast";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shadcn/ui/tooltip";
 
 // interface MakeBranchOptions {
 //   name?: string;
@@ -79,17 +85,21 @@ const VerticalSeparator = <div className="h-8 w-px bg-gray-300 mx-2" />;
 export const VersionControlBar = ({
   docUrl,
   datatypeId,
+  tool,
   branchScopeAndActiveBranchInfo,
   highlightSidebarButton,
   getFakeDocPathForDocUrl,
   onSelectBranchUrl,
+  diffMode,
 }: {
   docUrl: AutomergeUrl;
   datatypeId: string;
+  tool: Tool;
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
   highlightSidebarButton: boolean;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
   onSelectBranchUrl: (branchUrl: AutomergeUrl | null) => void;
+  diffMode?: "branch" | "history";
 }) => {
   const {
     branchScopeOm,
@@ -501,8 +511,8 @@ export const VersionControlBar = ({
         </Select>
       )}
 
-      {activeBranchOm && (
-        <div>
+      {diffMode !== undefined && (
+        <>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -527,11 +537,47 @@ export const VersionControlBar = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Highlight changes compared to main</p>
+                {diffMode === "history" && (
+                  <p>Highlight changes compared to main</p>
+                )}
+                {diffMode === "branch" && (
+                  <p>Highlight changes from history selection</p>
+                )}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </div>
+          {tool.supportsCollapseContentWithoutAnnotations && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      changeDocUIState(
+                        (state) =>
+                          (state.collapseContentWithoutAnnotations =
+                            !state.collapseContentWithoutAnnotations)
+                      )
+                    }
+                    className={`h-8 px-2 text-xs ${
+                      docUIState.collapseContentWithoutAnnotations
+                        ? "shadow-inner shadow-gray-300 border-gray-400 "
+                        : "shadow-none"
+                    }`}
+                  >
+                    <ChevronsDownUpIcon className="h-4 w-4 mr-1" />
+                    <span className="whitespace-nowrap text-ellipsis">
+                      Collapse
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Collapse content without highlights</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </>
       )}
 
       {!docUIState.sidebarMode && (

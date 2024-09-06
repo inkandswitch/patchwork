@@ -13,9 +13,6 @@ const MARKDOWN_STYLES = {
   ".cm-scroller": {
     height: "100%",
   },
-  ".cm-gutters": {
-    display: "none",
-  },
   ".cm-content": {
     height: "100%",
     margin: "0",
@@ -31,6 +28,7 @@ const MARKDOWN_STYLES = {
   ".cm-activeLine": {
     backgroundColor: "inherit",
   },
+
   ".frontmatter, .frontmatter *": {
     fontSize: "14px",
     fontFamily: "monospace",
@@ -38,6 +36,33 @@ const MARKDOWN_STYLES = {
     textDecoration: "none",
     fontWeight: "normal",
     lineHeight: "0.8em",
+  },
+
+  ".cm-gutters": {
+    borderRight: "0",
+  },
+
+  ".cm-folded-range-gutter-line-number": {
+    display: "none",
+  },
+
+  ".cm-folded-range-gutter": {
+    background: "white",
+    borderRight: "0px",
+    width: "40px",
+  },
+
+  ".cm-folded-line-widget": {
+    background: "white",
+    border: "0px",
+  },
+
+  ".cm-folded-range": {
+    background: "white",
+  },
+
+  ".cm-line": {
+    paddingRight: "40px",
   },
 };
 

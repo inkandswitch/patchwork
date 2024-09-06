@@ -1,12 +1,10 @@
 import { Extension, StateEffect } from "@codemirror/state";
 import { EditorViewConfig } from "@codemirror/view";
 import { EditorView } from "codemirror";
-import { forwardRef, memo, useEffect, useRef, useState } from "react";
+import { forwardRef, memo, useEffect, useMemo, useRef, useState } from "react";
 import { mergeRefs } from "react-merge-refs";
 
-/** A minimal React component for rendering a CodeMirror editor. Currently only
- * used for TextFileEditor, but if people think it's nice, it could be worked
- * into more uses of CodeMirror. */
+/** A minimal React component for rendering a CodeMirror editor */
 export const CodeMirror = memo(
   forwardRef<
     HTMLDivElement,
@@ -40,18 +38,39 @@ export const CodeMirror = memo(
 
     const [div, setDiv] = useState<HTMLDivElement | null>();
     const viewRef = useRef<EditorView>();
+    const [editorCrashed, setEditorCrashed] = useState<boolean>(false);
+
+    const allExtensions = useMemo(
+      () => [
+        extensions,
+        EditorView.exceptionSink.of((exception) => {
+          console.error(
+            "Encountered an error in the editor; crashing to notify the user and avoid data loss."
+          );
+          console.error(exception);
+          setEditorCrashed(true);
+
+          if (viewRef.current) {
+            viewRef.current.destroy();
+          }
+        }),
+      ],
+      [extensions]
+    );
 
     // Initialize the editor
     useEffect(() => {
       if (div && initialDoc && !viewRef.current) {
         // This body will only run once in the component's lifetime
-        viewRef.current = new EditorView({
+        const view = (viewRef.current = new EditorView({
           parent: div,
           doc: initialDoc,
-          extensions,
+          extensions: allExtensions,
           ...editorViewConfig,
-        });
+        }));
         setEditorView?.(viewRef.current);
+
+        console.log("register error handler");
       }
     });
 
@@ -59,10 +78,28 @@ export const CodeMirror = memo(
     useEffect(() => {
       if (viewRef.current) {
         viewRef.current.dispatch({
-          effects: StateEffect.reconfigure.of(extensions),
+          effects: StateEffect.reconfigure.of(allExtensions),
         });
       }
-    }, [extensions]);
+    }, [allExtensions]);
+
+    if (editorCrashed) {
+      return (
+        <div className="bg-red-100 p-4">
+          <p className="mb-2">⛔️ Error: editor crashed!</p>
+          {import.meta.env.MODE === "development" && (
+            <p className="mb-2">Probably due to hot reload in dev.</p>
+          )}
+          <p className="mb-2">
+            We're sorry for the inconvenience. Please reload to keep working.
+            Your data was most likely saved before the crash.
+          </p>
+          <p className="mb-2">
+            If you'd like you can screenshot the dev console as a bug report.
+          </p>
+        </div>
+      );
+    }
 
     return <div ref={mergeRefs([ref, setDiv])} {...divProps} />;
   })

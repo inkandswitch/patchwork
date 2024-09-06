@@ -1,8 +1,8 @@
-import { Decoration, EditorView, WidgetType } from "@codemirror/view";
-import { StateEffect, StateField } from "@codemirror/state";
-
-import { AnnotationWithUIState } from "@/versionControl/schema";
 import { ResolvedTextAnchor } from "@/lib/textAnchors";
+import { AnnotationWithUIState } from "@/versionControl/schema";
+import { StateEffect, StateField } from "@codemirror/state";
+import { Decoration, EditorView, WidgetType } from "@codemirror/view";
+import { foldAwareLineNumberGutter } from "./foldLinesWithoutChanges";
 
 export const ANNOTATION_STYLES = {
   ".cm-patch-splice": {
@@ -31,12 +31,23 @@ export const ANNOTATION_STYLES = {
   ".cm-comment-thread.active .cm-comment-thread": {
     backgroundColor: "rgb(255 227 135)",
   },
+  ".cm-folded-range": {
+    background: "#f3f4f6",
+    borderTop: "1px solid #e5e7eb",
+    borderBottom: "1px solid #e5e7eb",
+    padding: 0,
+    height: "40px",
+  },
+  // hack: codemirror inserts widget buffer element that throws off the spacing
+  ".cm-folded-range .cm-widgetBuffer": {
+    display: "none",
+  },
 };
 
 export const setAnnotationsEffect =
   StateEffect.define<AnnotationWithUIState<ResolvedTextAnchor, string>[]>();
 
-const annotationsField = StateField.define<
+export const annotationsField = StateField.define<
   AnnotationWithUIState<ResolvedTextAnchor, string>[]
 >({
   create() {
@@ -45,7 +56,7 @@ const annotationsField = StateField.define<
   update(patches, tr) {
     for (const e of tr.effects) {
       if (e.is(setAnnotationsEffect)) {
-        return e.value;
+        return e.value.sort((a, b) => a.anchor.fromPos - b.anchor.fromPos);
       }
     }
     return patches;
@@ -130,7 +141,7 @@ const makeDeleteDecoration = (deletedText: string, isActive: boolean) =>
     side: 1,
   });
 
-const annotationDecorations = EditorView.decorations.compute(
+export const annotationDecorations = EditorView.decorations.compute(
   [annotationsField],
   (state) => {
     const annotations = state.field(annotationsField);
@@ -193,10 +204,9 @@ const annotationDecorations = EditorView.decorations.compute(
           return [decoration.range(fromPos, toPos)];
         }
       }
-      return [];
     });
 
-    return Decoration.set(decorations, true);
+    return Decoration.set(decorations);
   }
 );
 
@@ -204,4 +214,5 @@ export const annotationsPlugin = [
   EditorView.theme(ANNOTATION_STYLES),
   annotationDecorations,
   annotationsField,
+  foldAwareLineNumberGutter,
 ];

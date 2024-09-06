@@ -1,4 +1,6 @@
+import { ifLoaded } from "@/doc-reactive";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
+import { useDocUIState, useUIStateOm } from "@/explorer/uiState";
 import { DocLinkWithFolderPath, DocPath } from "@/packages/folder/datatype";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { EditorProps, Tool } from "@/tools";
@@ -15,17 +17,15 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useDataType } from "../../datatypes";
 import { useAnnotations } from "../annotations";
+import { setActiveBranchUrl } from "../branches";
 import { useBranchScopeAndActiveBranchInfo } from "../hooks";
 import { DiffWithProvenance, HasVersionControlMetadata } from "../schema";
-import { diffWithProvenance, useActorIdToAuthorMap } from "../utils";
-import { StatusBar } from "./Statusbar";
-import { VersionControlBar } from "./VersionControlBar";
-import { ifLoaded } from "@/doc-reactive";
 import { fakeDocPath } from "../signals";
+import { diffWithProvenance, useActorIdToAuthorMap } from "../utils";
 import { ReviewSidebar } from "./ReviewSidebar";
-import { useDocUIState, useUIStateOm } from "@/explorer/uiState";
+import { StatusBar } from "./Statusbar";
 import { TimelineSidebar } from "./TimelineSidebar";
-import { setActiveBranchUrl } from "../branches";
+import { VersionControlBar } from "./VersionControlBar";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -236,6 +236,10 @@ export const VersionControlEditor: React.FC<{
     docUIState.sidebarMode === "review" ||
     docUIState.mainViewMode === "compareWithMain";
 
+  const collapseContentWithoutAnnotations =
+    (docHeads || cloneOrMainOm.url !== mainDocUrl) &&
+    docUIState.collapseContentWithoutAnnotations;
+
   const highlightSidebarButton =
     !docUIState.sidebarMode &&
     annotations.some((a) => a.type === "highlighted" && a.isEmphasized) &&
@@ -248,10 +252,18 @@ export const VersionControlEditor: React.FC<{
           <VersionControlBar
             docUrl={mainDocUrl}
             datatypeId={datatypeId}
+            tool={tool}
             branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
             highlightSidebarButton={highlightSidebarButton}
             getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
             onSelectBranchUrl={onSelectBranchUrl}
+            diffMode={
+              branchScopeAndActiveBranchInfo.activeBranchOm
+                ? "branch"
+                : diffFromTimelineSidebar
+                ? "history"
+                : undefined
+            }
           />
         ) : (
           <div>Loading version control information...</div>
@@ -275,6 +287,9 @@ export const VersionControlEditor: React.FC<{
                   setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
                   setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
                   hideInlineComments={hideInlineComments}
+                  collapseContentWithoutAnnotations={
+                    collapseContentWithoutAnnotations
+                  }
                   setCommentState={setCommentState}
                   getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                   mainDocUrl={mainDocUrl}
@@ -296,6 +311,9 @@ export const VersionControlEditor: React.FC<{
                   setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
                   setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
                   hideInlineComments={hideInlineComments}
+                  collapseContentWithoutAnnotations={
+                    collapseContentWithoutAnnotations
+                  }
                   setCommentState={setCommentState}
                   getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                   mainDocUrl={mainDocUrl}
@@ -431,6 +449,7 @@ const DocEditor = <T, V>({
   getFakeDocPathForDocUrl,
   mainDocUrl,
   activeBranchUrl,
+  collapseContentWithoutAnnotations,
 }: EditorPropsWithTool<T, V>) => {
   if (!tool) {
     return;
@@ -446,6 +465,7 @@ const DocEditor = <T, V>({
       annotationGroups={annotationGroups}
       actorIdToAuthor={actorIdToAuthor}
       hideInlineComments={hideInlineComments}
+      collapseContentWithoutAnnotations={collapseContentWithoutAnnotations}
       setSelectedAnchors={setSelectedAnchors}
       setHoveredAnchor={setHoveredAnchor}
       setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}

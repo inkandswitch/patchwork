@@ -1,9 +1,10 @@
 import { useToolUIState } from "@/explorer/uiState";
 import { useHandleDef } from "@/hooks/useHandleDef";
 import {
+  annotationsPlugin,
+  hideLinesWithoutAnnotations,
   ResolvedTextAnchor,
   TextAnchor,
-  annotationsPlugin,
   useAnnotationsInEditor,
   useResolvedAnnotationAtPath,
   useScrollAnnotationsIntoView,
@@ -19,17 +20,31 @@ import * as Automerge from "@automerge/automerge";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { Cursor } from "@automerge/automerge/next";
+import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { json } from "@codemirror/lang-json";
 import { python } from "@codemirror/lang-python";
+import {
+  bracketMatching,
+  defaultHighlightStyle,
+  syntaxHighlighting,
+  indentOnInput,
+} from "@codemirror/language";
 import { Extension } from "@codemirror/state";
-import { keymap, lineNumbers } from "@codemirror/view";
+import { searchKeymap } from "@codemirror/search";
+import {
+  drawSelection,
+  dropCursor,
+  highlightSpecialChars,
+  keymap,
+} from "@codemirror/view";
 import clsx from "clsx";
-import { EditorView, basicSetup } from "codemirror";
+import { EditorView } from "codemirror";
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import { tool } from "..";
 import { selectedAnchorsPlugin } from "../../../essay/src/codemirrorPlugins/setSelectedAnchors";
 import { FileDoc, TextFileContent } from "../datatype";
-import { CodeMirror } from "./CodeMirror";
+import { CodeMirror } from "../../../../os/src/lib/CodeMirror";
 
 export type TextFileDoc = FileDoc & {
   content: TextFileContent;
@@ -48,6 +63,7 @@ export const TextFileEditor = ({
   setSelectedAnchors,
   getFakeDocPathForDocUrl,
   mainDocUrl,
+  collapseContentWithoutAnnotations,
 }: EditorProps<TextAnchor, string>) => {
   // TODO: Only reason we need containerRef is for scrollObserverPlugin.
   // Ideally, scrollObserverPlugin would use DOM information from CodeMirror
@@ -103,17 +119,42 @@ export const TextFileEditor = ({
   const stableExtensions: Extension = useMemo(() => {
     return [
       suppressModEnter, // keep on top to take priority, or be classier someday
-      basicSetup,
+
+      // some default plugins
+      highlightSpecialChars(),
+      history(),
+      drawSelection(),
+      syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+      bracketMatching(),
+      dropCursor(),
+      indentOnInput(),
+      closeBrackets(),
+      EditorView.lineWrapping,
+      keymap.of([
+        ...defaultKeymap,
+        ...closeBracketsKeymap,
+        ...historyKeymap,
+        ...searchKeymap,
+      ]),
+
       automergeSyncPlugin({
         handle,
         path: pathToText,
       }),
       annotationsPlugin,
-      EditorView.lineWrapping,
-      lineNumbers(),
       scrollObserverPlugin({ containerRef, fileDocRef, changeToolUIStateRef }),
+      [
+        ...(collapseContentWithoutAnnotations
+          ? [hideLinesWithoutAnnotations]
+          : []),
+      ],
     ];
-  }, [changeToolUIStateRef, fileDocRef, handle]);
+  }, [
+    changeToolUIStateRef,
+    fileDocRef,
+    handle,
+    collapseContentWithoutAnnotations,
+  ]);
 
   const docDependentExtensions = useMemo(() => {
     if (!fileDoc) {
@@ -128,13 +169,13 @@ export const TextFileEditor = ({
             selectedAnchorsPlugin({
               setSelectedAnchors,
               annotationsRef,
-              doc: fileDoc,
+              handle,
               path: pathToText,
             }),
           ]
         : []),
     ];
-  }, [fileDoc, setSelectedAnchors, readOnly]);
+  }, [fileDoc, readOnly, setSelectedAnchors, handle]);
 
   const allExtensions = useMemo(() => {
     return [...stableExtensions, ...docDependentExtensions];

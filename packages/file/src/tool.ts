@@ -9,4 +9,5 @@ export const fileTool = makeTool({
   EditorComponent: FileEditor,
   AnnotationsViewComponent: TextFileAnnotations,
   supportedDataTypes: ["file"],
+  supportsCollapseContentWithoutAnnotations: true,
 });

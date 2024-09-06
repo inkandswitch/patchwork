@@ -10,4 +10,5 @@ export const essayEditorTool = makeTool({
   EditorComponent: EssayEditor,
   AnnotationsViewComponent: EssayAnnotations,
   supportsInlineComments: true,
+  supportsCollapseContentWithoutAnnotations: true,
 });
