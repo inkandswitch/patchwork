@@ -34,6 +34,7 @@ export type PDFFileDoc = FileDoc & {
 
 export const isPDFFile = (file: FileDoc): file is PDFFileDoc => {
   return (
+    file &&
     (file.content.type === "binary" || file.content.type === "link") &&
     file.type === "pdf"
   );
