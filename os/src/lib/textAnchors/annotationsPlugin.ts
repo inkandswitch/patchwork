@@ -206,7 +206,7 @@ export const annotationDecorations = EditorView.decorations.compute(
       }
     });
 
-    return Decoration.set(decorations);
+    return Decoration.set(decorations.sort((a, b) => a.from - b.from));
   }
 );
 
