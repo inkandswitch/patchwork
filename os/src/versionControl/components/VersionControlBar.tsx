@@ -567,12 +567,12 @@ export const VersionControlBar = ({
                   >
                     <ChevronsDownUpIcon className="h-4 w-4 mr-1" />
                     <span className="whitespace-nowrap text-ellipsis">
-                      Collapse
+                      Focus
                     </span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Collapse content without highlights</p>
+                  <p>Only show changed and commented sections</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
