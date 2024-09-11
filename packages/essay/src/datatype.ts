@@ -128,14 +128,14 @@ ${JSON.stringify(pick(docAfter, ["content", "commentThreads"]), null, 2)}`;
 const fileExportMethods: FileExportMethod<MarkdownDoc>[] = [
   {
     id: "markdown",
-    name: "Markdown",
+    exportMethodName: "Markdown",
     export: (doc) => asMarkdownFile(doc),
     contentType: "text/markdown",
-    extension: "md",
+    fileExtension: "md",
   },
   {
     id: "markdown-with-assets",
-    name: "Markdown + Assets (.zip)",
+    exportMethodName: "Markdown + Assets (.zip)",
     export: async (doc, repo) => {
       // export a zip file with the markdown file and the assets folder
       const assetsDoc = await repo.find<AssetsDoc>(doc.assetsDocUrl).doc();
@@ -151,7 +151,7 @@ const fileExportMethods: FileExportMethod<MarkdownDoc>[] = [
       return new Blob([uintarray], { type: "application/zip" });
     },
     contentType: "application/zip",
-    extension: "zip",
+    fileExtension: "zip",
   },
 ];
 

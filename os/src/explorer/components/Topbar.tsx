@@ -220,18 +220,35 @@ export const Topbar: React.FC<TopbarProps> = ({
                 <DropdownMenuItem
                   key={index}
                   onClick={async () => {
+                    // TODO move this exporting logic into a more centralized place?
+                    // but for now this is the only place it's called, so seems fine...
+
                     if (!selectedDoc || !selectedDocLink) {
                       // TODO: JAH strict fix lazy
                       throw new Error("something unexpected is missing idk");
                     }
                     const blob = await method.export(selectedDoc, repo);
-                    const filename = `${getUrlSafeName(selectedDocLink.name)}.${
-                      method.extension
+                    const defaultFilename = `${getUrlSafeName(
+                      selectedDocLink.name
+                    )}.${
+                      typeof method.fileExtension === "function"
+                        ? method.fileExtension(selectedDoc!)
+                        : method.fileExtension
                     }`;
+                    const filename = method.filename
+                      ? method.filename(selectedDoc!)
+                      : defaultFilename;
+
+                    console.log({ defaultFilename, filename });
+                    const contentType =
+                      typeof method.contentType === "function"
+                        ? method.contentType(selectedDoc!)
+                        : method.contentType;
+
                     saveFile(blob, filename, [
                       {
                         accept: {
-                          [method.contentType]: [`.${method.extension}`],
+                          [contentType]: [`.${method.fileExtension}`],
                         },
                       },
                     ]);
@@ -241,7 +258,10 @@ export const Topbar: React.FC<TopbarProps> = ({
                     size={14}
                     className="inline-block text-gray-500 mr-2"
                   />{" "}
-                  Export as {method.name}
+                  Export as{" "}
+                  {typeof method.exportMethodName === "function"
+                    ? method.exportMethodName(selectedDoc!)
+                    : method.exportMethodName}
                 </DropdownMenuItem>
               ))}
 

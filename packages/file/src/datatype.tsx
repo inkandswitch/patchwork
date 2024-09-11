@@ -10,6 +10,7 @@ import { isImageFile, useBinaryUrl } from "./components/ImageFileViewer";
 import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
 import { pick } from "lodash";
 import { TextPatch } from "@/versionControl/utils";
+import { FileExportMethod } from "@/fileExports";
 
 // SCHEMA
 
@@ -119,6 +120,42 @@ ${docAfter.content.value}
 const includePatchInChangeGroup = (patch: Automerge.Patch | TextPatch) =>
   patch.path[0] === "content";
 
+const fileExportMethods: FileExportMethod<FileDoc>[] = [
+  {
+    id: "export-as-file",
+    exportMethodName: (doc) => {
+      const parts = doc.name.split(".");
+      return parts.length > 1 ? "." + parts[parts.length - 1] : "file";
+    },
+    export: async (doc) => {
+      if (doc.content.type === "binary") {
+        return new Blob([doc.content.value], {
+          type: "application/octet-stream",
+        });
+      } else if (doc.content.type === "text") {
+        return new Blob([doc.content.value], { type: "text/plain" });
+      } else {
+        if (doc.content.type === "link") {
+          const response = await fetch(doc.content.url);
+          const blob = await response.blob();
+          return blob;
+        } else {
+          throw new Error("Unsupported content type for export");
+        }
+      }
+    },
+    // TODO: in the future we might want to make this content type more specific and accurate
+    // based on the actual content of the file. but for now we don't have convenient access
+    // to a mimetype, and this isn't used for too much anyway.
+    contentType: (doc) => "application/octet-stream",
+    fileExtension: (doc) => {
+      const parts = doc.name.split(".");
+      return parts.length > 1 ? parts[parts.length - 1] : "";
+    },
+    filename: (doc) => doc.name,
+  },
+];
+
 export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
   type: "patchwork:dataType",
   id: "file",
@@ -139,6 +176,7 @@ export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
   },*/
 
   includePatchInChangeGroup,
+  fileExportMethods,
 
   ...textAnchorsAtPath(["content", "value"]),
 };
