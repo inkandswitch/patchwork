@@ -24,6 +24,7 @@ import {
   TextAnchor,
   useScrollAnnotationsIntoView,
 } from "@/lib/textAnchors";
+import { useDedupe } from "@/versionControl/hooks";
 import { AnnotationWithUIState } from "@/versionControl/schema";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { get, isEqual } from "lodash";
@@ -77,6 +78,8 @@ export function MarkdownDocEditor({
   useScrollAnnotationsIntoView({ annotations, editor: editorRoot.current });
   useAnnotationsInEditor({ annotations, editor: editorRoot.current });
 
+  const pathDeduped = useDedupe(path, (a, b) => isEqual(a, b));
+
   const extensions = useMemo(() => {
     let previousHasFocus = false;
 
@@ -93,7 +96,7 @@ export function MarkdownDocEditor({
 
       automergeSyncPlugin({
         handle,
-        path,
+        path: pathDeduped,
       }),
       frontmatterPlugin,
       annotationsPlugin,
@@ -104,7 +107,7 @@ export function MarkdownDocEditor({
         setSelectedAnchors,
         annotationsRef,
         handle,
-        path,
+        path: pathDeduped,
       }),
       collapseContentWithoutAnnotations ? hideLinesWithoutAnnotations : [],
       EditorView.updateListener.of((update) => {
@@ -140,7 +143,7 @@ export function MarkdownDocEditor({
     collapseContentWithoutAnnotations,
     handle,
     markdownPlugins,
-    path,
+    pathDeduped,
     readOnly,
     setHasFocus,
     setSelectedAnchors,
