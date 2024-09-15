@@ -20,7 +20,7 @@ import {
 import _ from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { dataTypes, dataTypeById } from "../../datatypes";
+import { dataTypeById } from "../../datatypes";
 import { useTool, useToolsForDataType } from "../../tools";
 import {
   useCurrentAccount,
@@ -124,7 +124,7 @@ export const Explorer: React.FC = () => {
         throw new Error("uiStateHandle not ready");
       }
 
-      const dataType = dataTypes.find(({ id }) => id === type);
+      const dataType = dataTypeById(type);
 
       if (!dataType) {
         throw new Error(`Unsupported document type: ${type}`);

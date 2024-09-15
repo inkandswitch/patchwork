@@ -386,7 +386,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     name,
   }) => {
     const docLink = flatDocLinks.find((doc) => doc.url === node.data.url);
-    const dataType = dataTypes.find(({ id }) => id === docLink?.type)!; // TODO: JAH strict fix
+    const dataType = dataTypeById(docLink?.type)!; // TODO: JAH strict fix
 
     if (!dataType?.setTitle) {
       alert(

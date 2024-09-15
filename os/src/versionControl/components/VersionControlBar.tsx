@@ -14,7 +14,6 @@ import {
   BranchDoc,
   ensureMetadataHandleIsBranchScope,
   Tool,
-  dataTypes,
   VersionControlSidecarDoc,
 } from "@/sdk";
 import { Button } from "@/shadcn/ui/button";
@@ -125,7 +124,6 @@ export const VersionControlBar = ({
       repo,
       branchScopeHandle: branchScopeOm.handle,
       dataTypeId: docLinkForBranchScope?.type,
-      dataTypes,
       createdBy: account?.contactHandle?.url,
     });
     onSelectBranchUrl(branchUrl);
@@ -134,7 +132,6 @@ export const VersionControlBar = ({
     account?.contactHandle?.url,
     branchScopeOm?.handle,
     branchScopeOm?.url,
-    dataTypes,
     getFakeDocPathForDocUrl,
     repo,
     onSelectBranchUrl,

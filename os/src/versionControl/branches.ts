@@ -22,13 +22,11 @@ export const createJacquardBranch = async <
   repo,
   branchScopeHandle,
   dataTypeId,
-  dataTypes,
   createdBy,
 }: {
   repo: Repo;
   branchScopeHandle: DocHandle<DocType>;
   dataTypeId: string;
-  dataTypes: DataType<unknown, unknown, unknown>[];
   createdBy: AutomergeUrl | undefined;
 }): Promise<AutomergeUrl> => {
   const versionControlMetadataHandle = ensureMetadataHandleIsBranchScope(
@@ -45,13 +43,7 @@ export const createJacquardBranch = async <
   const branchHandle = repo.create<BranchDoc>();
 
   const clonesMap = {};
-  await cloneDocWithLinks(
-    repo,
-    branchScopeHandle,
-    dataTypeId,
-    dataTypes,
-    clonesMap
-  );
+  await cloneDocWithLinks(repo, branchScopeHandle, dataTypeId, clonesMap);
 
   console.log("clonesMap", clonesMap);
 
@@ -76,7 +68,6 @@ export const cloneDocWithLinks = async (
   repo: Repo,
   handle: DocHandle<unknown>,
   dataTypeId: string,
-  dataTypes: DataType<unknown, unknown, unknown>[],
   docCloneMap: DocCloneMap
 ): Promise<void> => {
   console.log("cloning", handle.url);
@@ -107,13 +98,7 @@ export const cloneDocWithLinks = async (
     await Promise.all(
       links_.map(async (link) => {
         const handle = repo.find(link.url);
-        await cloneDocWithLinks(
-          repo,
-          handle,
-          link.type,
-          dataTypes,
-          docCloneMap
-        );
+        await cloneDocWithLinks(repo, handle, link.type, docCloneMap);
       })
     );
   }

@@ -324,7 +324,7 @@ export const AccountPicker = ({
 
               <div className="flex flex-col gap-2 py-2">
                 {moduleSettingsDoc &&
-                  Object.values(dataTypes).map((dataType) => {
+                  dataTypes.map((dataType) => {
                     const isEnabled =
                       moduleSettingsDoc.enabledDatatypeIds[dataType.id];
 
