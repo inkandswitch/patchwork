@@ -5,7 +5,7 @@ import {
   DocCloneMap,
   ensureMetadataHandleIsBranchScope,
   getVersionControlMetadataHandle,
-  lookupDataTypeId,
+  dataTypeById,
 } from "@/sdk";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
@@ -98,8 +98,8 @@ export const cloneDocWithLinks = async (
   };
 
   // clone links
-  const links = lookupDataTypeId(dataTypeId, dataTypes)?.links;
-  console.log("links func", links, lookupDataTypeId(dataTypeId, dataTypes));
+  const links = dataTypeById(dataTypeId)?.links;
+  console.log("links func", links, dataTypeById(dataTypeId));
   if (links) {
     const doc = await handle.doc();
     const links_ = links(doc);

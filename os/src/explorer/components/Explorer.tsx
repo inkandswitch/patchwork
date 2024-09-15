@@ -20,7 +20,7 @@ import {
 import _ from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { useDataType, useDataTypes } from "../../datatypes";
+import { dataTypes, dataTypeById } from "../../datatypes";
 import { useTool, useToolsForDataType } from "../../tools";
 import {
   useCurrentAccount,
@@ -38,7 +38,6 @@ import { Toaster } from "@/shadcn/ui/toaster";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();
-  const dataTypes = useDataTypes();
   const currentAccount = useCurrentAccount();
   const [accountDoc] = useCurrentAccountDoc();
 
@@ -93,7 +92,7 @@ export const Explorer: React.FC = () => {
     );
   }, [selectedBranchUrl, selectedDoc]);
 
-  const selectedDataType = useDataType(selectedDataTypeId);
+  const selectedDataType = dataTypeById(selectedDataTypeId);
   const tools = useToolsForDataType(selectedDataType);
   const [selectedToolId, setSelectedToolId] = useState<string>();
   const toolModules = useToolsForDataType(selectedDataType);
@@ -187,7 +186,7 @@ export const Explorer: React.FC = () => {
         folderPath: parentFolderDocPath.map((link) => link.url),
       });
     },
-    [dataTypes, repo, selectedDocLink, uiStateOm, selectDocLink, rootFolderUrl]
+    [repo, selectedDocLink, uiStateOm, selectDocLink, rootFolderUrl]
   );
 
   // TODO: this only reads the main branch

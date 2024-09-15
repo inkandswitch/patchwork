@@ -14,7 +14,7 @@ import {
   BranchDoc,
   ensureMetadataHandleIsBranchScope,
   Tool,
-  useDataTypes,
+  dataTypes,
   VersionControlSidecarDoc,
 } from "@/sdk";
 import { Button } from "@/shadcn/ui/button";
@@ -111,7 +111,6 @@ export const VersionControlBar = ({
 
   const { toast } = useToast();
   const repo = useRepo();
-  const dataTypes = useDataTypes();
   const account = useCurrentAccount();
 
   const [docUIState, changeDocUIState] = useDocUIState(

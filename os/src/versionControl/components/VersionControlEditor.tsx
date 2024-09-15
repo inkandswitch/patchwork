@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { useDataType } from "../../datatypes";
+import { dataTypeById } from "../../datatypes";
 import { useAnnotations } from "../annotations";
 import { setActiveBranchUrl } from "../branches";
 import { useBranchScopeAndActiveBranchInfo } from "../hooks";
@@ -132,7 +132,7 @@ export const VersionControlEditor: React.FC<{
 
   const diff = diffFromTimelineSidebar ?? branchDiff;
 
-  const dataType = useDataType(datatypeId);
+  const dataType = dataTypeById(datatypeId);
 
   const {
     annotations,

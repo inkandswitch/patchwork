@@ -131,27 +131,11 @@ const isDataType = (
   return "type" in value && value.type === "patchwork:dataType";
 };
 
-export const useDataTypes = (): DataType<unknown, unknown, unknown>[] => {
-  return useMemo(
-    () =>
-      Object.values(PACKAGES).flatMap((module) =>
-        Object.values(module).filter(isDataType)
-      ),
-    []
-  );
-};
+export const dataTypes = Object.values(PACKAGES).flatMap((module) =>
+  Object.values(module).filter(isDataType)
+);
 
-export const useDataType = <D, T, V>(
-  id: string | undefined
-): DataType<D, T, V> | undefined => {
-  const dataTypes = useDataTypes();
-  return lookupDataTypeId<D, T, V>(id, dataTypes);
-};
-
-export const lookupDataTypeId = <D, T, V>(
-  id: string | undefined,
-  dataTypes: DataType<unknown, unknown, unknown>[]
-) => {
+export const dataTypeById = <D, T, V>(id: string | undefined) => {
   return dataTypes.find((dataType) => dataType.id == id) as
     | DataType<D, T, V>
     | undefined;

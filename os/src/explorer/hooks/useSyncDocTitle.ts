@@ -3,7 +3,7 @@ import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { fakeDocPath, getOmOnBranchFromPath } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";
-import { useDataType } from "../../datatypes";
+import { dataTypeById } from "../../datatypes";
 import { useUIStateOm } from "../uiState";
 
 // This hook keeps the name of the link synced with the title of the document.
@@ -24,7 +24,7 @@ export const useSyncDocTitle = ({
   // counter is incremented each time the title is re computed so we can detect async operations that should be aborted because they are based on old state
   const counterRef = useRef(0);
   const selectedDocTitleRef = useRef<{ url: AutomergeUrl; title?: string }>();
-  const dataType = useDataType(selectedDocLink?.type);
+  const dataType = dataTypeById(selectedDocLink?.type);
   const uiStateOm = useUIStateOm();
   const selectedDocPath = selectedDocLink && fakeDocPath(selectedDocLink);
 

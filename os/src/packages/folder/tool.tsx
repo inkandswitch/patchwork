@@ -2,7 +2,7 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import React, { useMemo } from "react";
 
-import { useDataType } from "@/datatypes";
+import { dataTypeById } from "@/datatypes";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { Icon, IconType } from "@/lib/icons";
@@ -77,7 +77,7 @@ export const FolderEntryView = ({
     useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
-  const dataType = useDataType(docLink.type);
+  const dataType = dataTypeById(docLink.type);
   const tool = useToolsForDataType(docLink.type)[0];
 
   const icon = tool?.icon ?? dataType?.icon;

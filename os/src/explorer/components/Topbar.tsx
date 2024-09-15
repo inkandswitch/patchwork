@@ -32,7 +32,7 @@ import { genericExportMethods } from "@/fileExports";
 import { Tool } from "@/tools";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { getHeads } from "@automerge/automerge";
-import { useDataType } from "../../datatypes";
+import { dataTypeById } from "../../datatypes";
 import { getUrlSafeName } from "../hooks/useSelectedDocLink";
 import { useToast } from "@/shadcn/ui/use-toast";
 
@@ -73,7 +73,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   const selectedDataTypeRef = useRef<string>();
   selectedDataTypeRef.current = selectedDataTypeId;
 
-  const selectedDataType = useDataType(selectedDataTypeId);
+  const selectedDataType = dataTypeById(selectedDataTypeId);
 
   return (
     <div className="h-10 bg-gray-100 flex items-center flex-shrink-0 border-b border-gray-300">

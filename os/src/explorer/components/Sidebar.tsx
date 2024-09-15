@@ -55,7 +55,7 @@ import {
   RenameHandler,
   Tree,
 } from "react-arborist";
-import { useDataType, useDataTypes } from "../../datatypes";
+import { dataTypes, dataTypeById } from "../../datatypes";
 import { useCurrentAccountDoc, useDatatypeSettings } from "../account";
 import { docPathString, UIStateDoc, useUIStateOm } from "../uiState";
 import { AccountPicker } from "./AccountPicker";
@@ -65,7 +65,7 @@ const FlatDocLinksContext = createContext<DocLinkWithFolderPath[]>([]);
 
 const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const { node, style, dragHandle } = props;
-  const dataType = useDataType(node.data.type);
+  const dataType = dataTypeById(node.data.type);
 
   const flatDocLinks = useContext(FlatDocLinksContext);
 
@@ -245,7 +245,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   rootFolderDoc,
 }) => {
   const repo = useRepo();
-  const dataTypes = useDataTypes();
 
   const {
     doc: rootFolderDocWithChildren,
