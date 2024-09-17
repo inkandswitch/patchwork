@@ -142,140 +142,151 @@ export const Topbar: React.FC<TopbarProps> = ({
               className="mt-1 mr-21 text-gray-500 hover:text-gray-800"
             />
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="mr-4">
-            <DropdownMenuItem
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                toast({ title: "Copied to clipboard" });
-              }}
-            >
-              <ShareIcon
-                className="inline-block text-gray-500 mr-2"
-                size={14}
-              />{" "}
-              Copy share URL
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={async () => {
-                if (
-                  !selectedDocHandle ||
-                  !selectedDataType ||
-                  !selectedDocLink
-                ) {
-                  // TODO: JAH strict fix lazy
-                  throw new Error("something unexpected is missing idk");
-                }
-                const newHandle =
-                  repo.clone<HasVersionControlMetadata<unknown, unknown>>(
-                    selectedDocHandle
-                  );
-                newHandle.change((doc: any) => {
-                  selectedDataType.markCopy(doc);
-                  doc.branchMetadata.source = {
-                    url: selectedDocUrl,
-                    branchHeads: getHeads(selectedDocHandle.docSync()!), // TODO: JAH strict fix
+          {selectedDoc && (
+            <DropdownMenuContent className="mr-4">
+              <DropdownMenuItem
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast({ title: "Copied to clipboard" });
+                }}
+              >
+                <ShareIcon
+                  className="inline-block text-gray-500 mr-2"
+                  size={14}
+                />{" "}
+                Copy share URL
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async () => {
+                  if (
+                    !selectedDocHandle ||
+                    !selectedDataType ||
+                    !selectedDocLink
+                  ) {
+                    // TODO: JAH strict fix lazy
+                    throw new Error("something unexpected is missing idk");
+                  }
+                  const newHandle =
+                    repo.clone<HasVersionControlMetadata<unknown, unknown>>(
+                      selectedDocHandle
+                    );
+                  newHandle.change((doc: any) => {
+                    selectedDataType.markCopy(doc);
+                    doc.branchMetadata.source = {
+                      url: selectedDocUrl,
+                      branchHeads: getHeads(selectedDocHandle.docSync()!), // TODO: JAH strict fix
+                    };
+                  });
+
+                  const newDocLink: DocLink = {
+                    url: newHandle.url,
+                    name: await selectedDataType.getTitle(
+                      newHandle.docSync(),
+                      repo
+                    ),
+                    type: selectedDocLink.type,
                   };
-                });
 
-                const newDocLink: DocLink = {
-                  url: newHandle.url,
-                  name: await selectedDataType.getTitle(
-                    newHandle.docSync(),
-                    repo
-                  ),
-                  type: selectedDocLink.type,
-                };
+                  const folderHandle = repo.find<FolderDoc>(
+                    selectedDocLink.folderPath[
+                      selectedDocLink.folderPath.length - 1
+                    ]
+                  );
+                  await folderHandle.whenReady();
 
-                const folderHandle = repo.find<FolderDoc>(
-                  selectedDocLink.folderPath[
-                    selectedDocLink.folderPath.length - 1
-                  ]
-                );
-                await folderHandle.whenReady();
+                  const index = folderHandle
+                    .docSync()! // TODO: JAH strict fix
+                    .docs.findIndex((doc) => doc.url === selectedDocUrl);
+                  folderHandle.change((doc) =>
+                    doc.docs.splice(index + 1, 0, newDocLink)
+                  );
 
-                const index = folderHandle
-                  .docSync()! // TODO: JAH strict fix
-                  .docs.findIndex((doc) => doc.url === selectedDocUrl);
-                folderHandle.change((doc) =>
-                  doc.docs.splice(index + 1, 0, newDocLink)
-                );
+                  // TODO: we used to have a setTimeout here, see if we need to bring it back.
+                  selectDocLink({
+                    ...newDocLink,
+                    folderPath: selectedDocLink.folderPath,
+                  });
+                }}
+              >
+                <GitForkIcon
+                  className="inline-block text-gray-500 mr-2"
+                  size={14}
+                />{" "}
+                Make a copy
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {(selectedDataType?.fileExportMethods ?? [])
+                .concat(genericExportMethods)
+                .map((method, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    onClick={async () => {
+                      // TODO move this exporting logic into a more centralized place?
+                      // but for now this is the only place it's called, so seems fine...
 
-                // TODO: we used to have a setTimeout here, see if we need to bring it back.
-                selectDocLink({
-                  ...newDocLink,
-                  folderPath: selectedDocLink.folderPath,
-                });
-              }}
-            >
-              <GitForkIcon
-                className="inline-block text-gray-500 mr-2"
-                size={14}
-              />{" "}
-              Make a copy
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {(selectedDataType?.fileExportMethods ?? [])
-              .concat(genericExportMethods)
-              .map((method, index) => (
-                <DropdownMenuItem
-                  key={index}
-                  onClick={async () => {
-                    // TODO move this exporting logic into a more centralized place?
-                    // but for now this is the only place it's called, so seems fine...
+                      if (!selectedDoc || !selectedDocLink) {
+                        // TODO: JAH strict fix lazy
+                        throw new Error("something unexpected is missing idk");
+                      }
+                      const blob = await method.export(selectedDoc, repo);
+                      const defaultFilename = `${getUrlSafeName(
+                        selectedDocLink.name
+                      )}.${
+                        typeof method.fileExtension === "function"
+                          ? method.fileExtension(selectedDoc!)
+                          : method.fileExtension
+                      }`;
+                      const filename = method.filename
+                        ? method.filename(selectedDoc!)
+                        : defaultFilename;
 
-                    if (!selectedDoc || !selectedDocLink) {
-                      // TODO: JAH strict fix lazy
-                      throw new Error("something unexpected is missing idk");
-                    }
-                    const blob = await method.export(selectedDoc, repo);
-                    const defaultFilename = `${getUrlSafeName(
-                      selectedDocLink.name
-                    )}.${
-                      typeof method.fileExtension === "function"
-                        ? method.fileExtension(selectedDoc!)
-                        : method.fileExtension
-                    }`;
-                    const filename = method.filename
-                      ? method.filename(selectedDoc!)
-                      : defaultFilename;
+                      console.log({ defaultFilename, filename });
+                      const contentType =
+                        typeof method.contentType === "function"
+                          ? method.contentType(selectedDoc!)
+                          : method.contentType;
 
-                    console.log({ defaultFilename, filename });
-                    const contentType =
-                      typeof method.contentType === "function"
-                        ? method.contentType(selectedDoc!)
-                        : method.contentType;
-
-                    saveFile(blob, filename, [
-                      {
-                        accept: {
-                          [contentType]: [`.${method.fileExtension}`],
+                      saveFile(blob, filename, [
+                        {
+                          accept: {
+                            [contentType]: [`.${method.fileExtension}`],
+                          },
                         },
-                      },
-                    ]);
-                  }}
-                >
-                  <Download
-                    size={14}
-                    className="inline-block text-gray-500 mr-2"
-                  />{" "}
-                  Export as{" "}
-                  {typeof method.exportMethodName === "function"
-                    ? method.exportMethodName(selectedDoc!)
-                    : method.exportMethodName}
-                </DropdownMenuItem>
-              ))}
+                      ]);
+                    }}
+                  >
+                    <Download
+                      size={14}
+                      className="inline-block text-gray-500 mr-2"
+                    />{" "}
+                    Export as{" "}
+                    {typeof method.exportMethodName === "function"
+                      ? method.exportMethodName(selectedDoc)
+                      : method.exportMethodName}
+                  </DropdownMenuItem>
+                ))}
 
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => selectedDocLink && removeDocLink(selectedDocLink)}
-            >
-              <Trash2Icon
-                className="inline-block text-gray-500 mr-2"
-                size={14}
-              />{" "}
-              Remove doc from folder
-            </DropdownMenuItem>
-          </DropdownMenuContent>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() =>
+                  selectedDocLink && removeDocLink(selectedDocLink)
+                }
+              >
+                <Trash2Icon
+                  className="inline-block text-gray-500 mr-2"
+                  size={14}
+                />{" "}
+                Remove doc from folder
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          )}
+          {!selectedDoc && (
+            <DropdownMenuContent className="mr-4 p-4">
+              <div className="text-gray-500 text-xs">
+                Open a document to see actions
+              </div>
+            </DropdownMenuContent>
+          )}
         </DropdownMenu>
       </div>
 
