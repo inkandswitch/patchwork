@@ -85,6 +85,16 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const activeBranchName = ifLoaded(
     useDocReactive(
       useCallback(() => {
+        // For performance reasons, we only show the active branch on certain nodes to
+        // avoid eagerly loading too much data.
+        // - We show it for the currently selected sidebar entry, which should already have data loaded
+        // - We show it for folders, because a folder can be a branch scope for its contents,
+        //   and it's helpful to see the branch name on the folder to indicate that it's a branch scope.
+        const showActiveBranchName =
+          node.data.type === "folder" || node.isSelected;
+        if (!showActiveBranchName) {
+          return undefined;
+        }
         const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
         const versionControlMetadataDoc = getVersionControlMetadataOm(
           doc,
@@ -98,7 +108,14 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
           );
           return activeBranchOm?.doc.name ?? "Main";
         }
-      }, [docPath, node.data.url, repo, uiStateOm])
+      }, [
+        docPath,
+        node.data.url,
+        node.data.type,
+        node.isSelected,
+        repo,
+        uiStateOm,
+      ])
     )
   );
 
