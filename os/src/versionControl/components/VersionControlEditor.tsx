@@ -26,6 +26,7 @@ import { ReviewSidebar } from "./ReviewSidebar";
 import { StatusBar } from "./Statusbar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
+import { LoadingScreen } from "@/explorer/components/LoadingScreen";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -226,8 +227,9 @@ export const VersionControlEditor: React.FC<{
 
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
 
-  if (!cloneOrMainOm || !datatypeId || !doc?.branchMetadata)
-    return <div>Loading...</div>;
+  if (!cloneOrMainOm || !datatypeId || !doc?.branchMetadata) {
+    return <LoadingScreen docUrl={mainDocUrl} handle={cloneOrMainOm?.handle} />;
+  }
 
   // ---- ANYTHING RELYING ON doc SHOULD GO BELOW HERE ----
 
