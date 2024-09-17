@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { dataTypeById } from "../../datatypes";
+import { dataTypeById } from "@/allTheDataTypes";
 import { useAnnotations } from "../annotations";
 import { setActiveBranchUrl } from "../branches";
 import { useBranchScopeAndActiveBranchInfo } from "../hooks";

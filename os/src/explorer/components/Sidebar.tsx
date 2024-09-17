@@ -55,7 +55,7 @@ import {
   RenameHandler,
   Tree,
 } from "react-arborist";
-import { dataTypes, dataTypeById } from "../../datatypes";
+import { allTheDataTypes, dataTypeById } from "@/allTheDataTypes";
 import { useCurrentAccountDoc, useDatatypeSettings } from "../account";
 import { docPathString, UIStateDoc, useUIStateOm } from "../uiState";
 import { AccountPicker } from "./AccountPicker";
@@ -505,7 +505,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
       <div className="py-2  border-b border-gray-200">
-        {dataTypes.map((dataType) => {
+        {allTheDataTypes.map((dataType) => {
           const { id } = dataType;
           const isEnabled = datatypeSettings?.enabledDatatypeIds[id];
           if (

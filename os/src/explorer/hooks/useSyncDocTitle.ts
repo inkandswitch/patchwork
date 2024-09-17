@@ -3,7 +3,7 @@ import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { fakeDocPath, getOmOnBranchFromPath } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";
-import { dataTypeById } from "../../datatypes";
+import { dataTypeById } from "@/allTheDataTypes";
 import { useUIStateOm } from "../uiState";
 
 // This hook keeps the name of the link synced with the title of the document.

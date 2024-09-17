@@ -20,8 +20,8 @@ import {
 import _ from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { dataTypeById } from "../../datatypes";
-import { useTool, useToolsForDataType } from "../../tools";
+import { dataTypeById } from "@/allTheDataTypes";
+import { useTool, useToolsForDataType } from "@/allTheTools";
 import {
   useCurrentAccount,
   useCurrentAccountDoc,

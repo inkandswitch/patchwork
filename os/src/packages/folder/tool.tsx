@@ -2,11 +2,11 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import React, { useMemo } from "react";
 
-import { dataTypeById } from "@/datatypes";
+import { dataTypeById } from "@/allTheDataTypes";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { Icon, IconType } from "@/lib/icons";
-import { EditorProps, Tool, useToolsForDataType } from "@/tools";
+import { EditorProps, Tool } from "@/tools";
 import { useAnnotations } from "@/versionControl/annotations";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
@@ -16,6 +16,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
 import { useDocUIState } from "@/explorer/uiState";
+import { useToolsForDataType } from "@/allTheTools";
 
 export const FolderViewerWithEmbeds: React.FC<
   EditorProps<unknown, unknown>

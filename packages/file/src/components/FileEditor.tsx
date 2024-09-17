@@ -12,11 +12,12 @@ import {
 } from "../../../jacquard/src/signals";
 import { FileDoc } from "../datatype";
 import { FitsFileDoc, FitsFileViewer, isFitsFile } from "./FitsFileViewer";
-import { ImageFileDoc, ImageFileViewer, isImageFile } from "./ImageFileViewer";
+import { ImageFileDoc, ImageFileViewer } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
 import { useDocUIState } from "@/explorer/uiState";
 import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
+import { isImageFile } from "../utils";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function

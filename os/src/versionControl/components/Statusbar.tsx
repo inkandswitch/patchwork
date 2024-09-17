@@ -1,7 +1,8 @@
-import { EditorProps, Tool, useToolsForDataType } from "@/tools";
+import { EditorProps, Tool } from "@/tools";
 import { type DataType } from "@/sdk";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { ErrorBoundary } from "react-error-boundary";
+import { useToolsForDataType } from "@/allTheTools";
 
 type StatusBarProps = EditorProps<unknown, unknown> & {
   dataType: DataType<unknown, unknown, unknown> | undefined;

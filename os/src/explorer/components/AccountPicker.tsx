@@ -33,7 +33,7 @@ import {
   TooltipTrigger,
 } from "@/shadcn/ui/tooltip";
 import { ContactAvatar } from "./ContactAvatar";
-import { dataTypes } from "../../datatypes";
+import { allTheDataTypes } from "@/allTheDataTypes";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import { Icon } from "@/lib/icons";
 
@@ -324,7 +324,7 @@ export const AccountPicker = ({
 
               <div className="flex flex-col gap-2 py-2">
                 {moduleSettingsDoc &&
-                  dataTypes.map((dataType) => {
+                  allTheDataTypes.map((dataType) => {
                     const isEnabled =
                       moduleSettingsDoc.enabledDatatypeIds[dataType.id];
 

@@ -3,9 +3,10 @@ import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import React, { useCallback, useState } from "react";
 import styles from "../folder-list-view.module.css";
 
-import { selectDocLink, Icon, EditorProps, dataTypeById } from "@patchwork/sdk";
+import { selectDocLink, Icon, EditorProps } from "@patchwork/sdk";
 import { DocLink, FolderDoc } from "@/packages/folder/datatype";
 import { IconType } from "@/lib/icons";
+import { dataTypeById } from "@/allTheDataTypes";
 
 const FolderListItem: React.FC<{ docLink: DocLink }> = ({ docLink }) => {
   const dataType = dataTypeById(docLink.type);

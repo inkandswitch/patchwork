@@ -1,5 +1,3 @@
-import React, { useEffect, useMemo, useState } from "react";
-
 import {
   Annotation,
   AnnotationGroupWithUIState,
@@ -7,16 +5,14 @@ import {
   CommentState,
   HasVersionControlMetadata,
 } from "@/versionControl/schema";
-import { usePackageModulesInRootFolder } from "@/packages/pkg/usePackages";
 import {
   ActorId,
   AutomergeUrl,
   DocHandle,
   Heads,
 } from "@automerge/automerge-repo";
-import { DataType } from "./datatypes";
+import React from "react";
 import { IconType } from "./lib/icons";
-import * as PACKAGES from "./packages";
 import { DocPath } from "./packages/folder/datatype";
 
 // To construct well-typed tools, we need ToolTyped with specific type
@@ -106,63 +102,4 @@ export type AnnotationsViewProps<
   doc: D;
   handle: DocHandle<D>;
   annotations: Annotation<TAnchor, TAnchorValue>[];
-};
-
-const isTool = (value: any): value is Tool => {
-  return "type" in value && value.type === "patchwork:tool";
-};
-
-export const useTools = (): Tool[] => {
-  const [builtInTools, setBuiltInTools] = useState<Tool[]>([]);
-  const [dynamicTools, setDynamicTools] = useState<Tool[]>([]);
-  const modules = usePackageModulesInRootFolder();
-
-  // add exported tools in packages to tools
-  useEffect(() => {
-    setDynamicTools(
-      Object.values(modules).flatMap(({ module, sourceDocUrl }) =>
-        Object.values(module).flatMap((tool) => {
-          console.log(tool);
-          return isTool(tool) ? [{ ...tool, sourceDocUrl }] : [];
-        })
-      )
-    );
-  }, [modules]);
-
-  // load packages asynchronously to break the dependency loop tools -> packages -> tools
-  useEffect(() => {
-    setBuiltInTools(
-      Object.values(PACKAGES).flatMap((module) =>
-        Object.values(module).filter(isTool)
-      )
-    );
-  }, []);
-
-  return builtInTools.concat(dynamicTools);
-};
-
-export const useToolsForDataType = (
-  dataType: DataType<unknown, unknown, unknown> | string | undefined
-): Tool[] => {
-  const tools = useTools();
-
-  return useMemo(() => {
-    if (!dataType) {
-      return [];
-    }
-
-    return tools.filter((tool) => {
-      return (
-        tool.supportedDataTypes === "*" ||
-        (typeof dataType === "string"
-          ? tool.supportedDataTypes.some((d) => d === dataType)
-          : tool.supportedDataTypes.includes(dataType.id))
-      );
-    });
-  }, [tools, dataType]);
-};
-
-export const useTool = (id: string | undefined): Tool | undefined => {
-  const tools = useTools();
-  return tools.find((tool) => tool.id === id);
 };

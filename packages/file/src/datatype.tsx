@@ -1,16 +1,10 @@
-import * as Automerge from "@automerge/automerge";
-import {
-  ChangeGroup,
-  DecodedChangeWithMetadata,
-  noGrouping,
-  type DataType,
-} from "@/sdk";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { isImageFile, useBinaryUrl } from "./components/ImageFileViewer";
-import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
-import { pick } from "lodash";
-import { TextPatch } from "@/versionControl/utils";
 import { FileExportMethod } from "@/fileExports";
+import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
+import { ChangeGroup, type DataType } from "@/sdk";
+import { HasVersionControlMetadata } from "@/versionControl/schema";
+import { TextPatch } from "@/versionControl/utils";
+import * as Automerge from "@automerge/automerge";
+import { isImageFile, useBinaryUrl } from "./utils";
 
 // SCHEMA
 

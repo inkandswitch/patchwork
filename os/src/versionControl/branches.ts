@@ -5,7 +5,6 @@ import {
   DocCloneMap,
   ensureMetadataHandleIsBranchScope,
   getVersionControlMetadataHandle,
-  dataTypeById,
 } from "@/sdk";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
@@ -13,6 +12,7 @@ import { MarkdownDoc } from "../../../packages/essay/src";
 import { Branchable, BranchDoc, HasVersionControlMetadata } from "./schema";
 import { docPathString, UIStateDoc } from "@/explorer/uiState";
 import { DocPath } from "@/packages/folder/datatype";
+import { dataTypeById } from "@/allTheDataTypes";
 
 type Hash = string;
 

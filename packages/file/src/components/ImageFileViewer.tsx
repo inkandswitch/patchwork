@@ -9,10 +9,6 @@ export type ImageFileDoc = FileDoc & {
   type: "svg" | "png" | "jpg" | "jpeg" | "gif" | "webp" | "bmp";
 };
 
-export const isImageFile = (doc: FileDoc) => {
-  return ["svg", "png", "jpg", "jpeg", "gif", "webp", "bmp"].includes(doc.type);
-};
-
 export const ImageFileViewer = ({
   docUrl,
   docHeads,
@@ -29,14 +25,4 @@ export const ImageFileViewer = ({
       <img src={doc?.content.url} className="w-full h-full object-contain" />
     </div>
   );
-};
-
-export const useBinaryUrl = (value: Uint8Array | undefined) => {
-  return useMemo(() => {
-    if (!(value instanceof Uint8Array)) {
-      return;
-    }
-
-    return URL.createObjectURL(new Blob([value]));
-  }, [value]);
 };
