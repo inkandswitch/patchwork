@@ -31,7 +31,7 @@ export const LoadingScreen = ({
       <div>
         <div className="text-sm mb-4 font-light">
           {docUrl && handle && `Loading ${docUrl}: ${handle.state}...`}
-          {!docUrl || (!handle && `Loading...`)}
+          {(!docUrl || !handle) && `Loading...`}
         </div>
         <Progress
           color="blue"
