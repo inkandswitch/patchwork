@@ -246,7 +246,15 @@ export interface AnnotationPosition<A, V> {
   annotation: Annotation<A, V>;
 }
 
-export const initVersionControlMetadata = (doc: any, repo: Repo) => {
+type VersionControlMetadataDocOptions = {
+  branchScope?: boolean;
+};
+
+export const initVersionControlMetadata = (
+  doc: any,
+  repo: Repo,
+  options?: VersionControlMetadataDocOptions
+) => {
   doc.branchMetadata = {
     source: null,
     branches: [],
@@ -255,16 +263,26 @@ export const initVersionControlMetadata = (doc: any, repo: Repo) => {
   doc.tags = [];
   doc.changeGroupSummaries = {};
 
-  initVersionControlMetadataDoc(doc, repo);
+  initVersionControlMetadataDoc(doc, repo, options);
 };
 
-export const initVersionControlMetadataDoc = (doc: any, repo: Repo) => {
+export const initVersionControlMetadataDoc = (
+  doc: any,
+  repo: Repo,
+  options: VersionControlMetadataDocOptions = { branchScope: false }
+) => {
   // init the separate metadata doc
-  const metadataHandle = repo.create<VersionControlSidecarDoc>();
+  const metadataHandle = repo.create<VersionControlSidecarDoc>({
+    isBranchScope: false,
+    changeGroupSummaries: {},
+  });
   metadataHandle.change((d) => {
     d.isBranchScope = false;
     d.changeGroupSummaries = {};
   });
+  if (options.branchScope) {
+    ensureMetadataHandleIsBranchScope(metadataHandle);
+  }
   doc.versionControlMetadataUrl = metadataHandle.url;
 };
 
