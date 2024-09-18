@@ -263,10 +263,10 @@ export const initVersionControlMetadata = (
   doc.tags = [];
   doc.changeGroupSummaries = {};
 
-  initVersionControlMetadataDoc(doc, repo, options);
+  initVersionControlSidecarDoc(doc, repo, options);
 };
 
-export const initVersionControlMetadataDoc = (
+export const initVersionControlSidecarDoc = (
   doc: any,
   repo: Repo,
   options: VersionControlMetadataDocOptions = { branchScope: false }
@@ -294,7 +294,7 @@ export const getVersionControlMetadataHandle = (
   let versionControlMetadataUrl = doc.versionControlMetadataUrl;
   if (!versionControlMetadataUrl) {
     handle.change((d) => {
-      initVersionControlMetadataDoc(d, repo);
+      initVersionControlSidecarDoc(d, repo);
       versionControlMetadataUrl = d.versionControlMetadataUrl;
     });
   }

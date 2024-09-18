@@ -6,7 +6,7 @@ import { ChangeGroup } from "./groupChanges";
 import {
   HasChangeGroupSummaries,
   HasLinkToVersionControlSidecar,
-  initVersionControlMetadataDoc,
+  initVersionControlSidecarDoc,
 } from "./schema";
 export const populateChangeGroupSummaries = async <
   T extends HasLinkToVersionControlSidecar
@@ -30,7 +30,7 @@ export const populateChangeGroupSummaries = async <
   if (!versionControlMetadataUrl) {
     // init sidecar doc for backwards compatibility
     handle.change((doc) => {
-      initVersionControlMetadataDoc(doc, repo);
+      initVersionControlSidecarDoc(doc, repo);
     });
     versionControlMetadataUrl = handle.docSync()?.versionControlMetadataUrl;
   }
