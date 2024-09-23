@@ -75,6 +75,8 @@ export const Topbar: React.FC<TopbarProps> = ({
 
   const selectedDataType = dataTypeById(selectedDataTypeId);
 
+  const toolsWithEditorComponent = tools.filter((tool) => tool.EditorComponent);
+
   return (
     <div className="h-10 bg-gray-100 flex items-center flex-shrink-0 border-b border-gray-300">
       {!showSidebar && (
@@ -112,24 +114,18 @@ export const Topbar: React.FC<TopbarProps> = ({
         )}
       </div>
 
-      {tools.length > 1 && selectedDocLink && (
+      {toolsWithEditorComponent.length > 1 && selectedDocLink && (
         <Tabs
           value={tool?.id}
           className="ml-auto"
           onValueChange={setToolModuleId}
         >
           <TabsList>
-            {tools
-              .filter((tool) => tool.EditorComponent)
-              .map((tool) => (
-                <TabsTrigger
-                  value={tool.id}
-                  className="px-2 py-1"
-                  key={tool.id}
-                >
-                  {tool.name}
-                </TabsTrigger>
-              ))}
+            {toolsWithEditorComponent.map((tool) => (
+              <TabsTrigger value={tool.id} className="px-2 py-1" key={tool.id}>
+                {tool.name}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
       )}

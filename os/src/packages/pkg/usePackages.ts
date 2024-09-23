@@ -46,7 +46,7 @@ const usePackageModulesInRootFolderForReal = (): Package[] => {
         Object.entries(packageDocs).map(async ([docId, packageDoc]) => {
           const { packageJSON } = packageDoc;
           const heads = A.getHeads(packageDoc).join(",");
-          const moduleUrl = `https://automerge/${docId}/fileContents/${packageJSON.main}?heads=${heads}`;
+          const moduleUrl = `/automerge/${docId}/fileContents/${packageJSON.main}?heads=${heads}`;
 
           return {
             module: await import(/* @vite-ignore */ moduleUrl),
