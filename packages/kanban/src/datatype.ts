@@ -1,4 +1,4 @@
-import { type DataType } from "@/sdk";
+import { initFrom, type DataType } from "@/sdk";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { uuid } from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
@@ -43,36 +43,38 @@ const getTitle = async (doc: KanbanBoardDoc) => {
   return doc.title || "Untitled Kanban Board";
 };
 
-export const init = (doc: any) => {
-  doc.title = "Untitled Kanban Board";
-  doc.cards = [];
-  doc.lanes = [
-    {
-      id: uuid(),
-      title: "Backlog",
-      cardIds: [],
-    },
-    {
-      id: uuid(),
-      title: "To Do",
-      cardIds: [],
-    },
-    {
-      id: uuid(),
-      title: "In Progress",
-      cardIds: [],
-    },
-    {
-      id: uuid(),
-      title: "Done",
-      cardIds: [],
-    },
-    {
-      id: uuid(),
-      title: "Canceled",
-      cardIds: [],
-    },
-  ];
+export const init = (doc: KanbanBoardDoc) => {
+  initFrom(doc, {
+    title: "Untitled Kanban Board",
+    lanes: [
+      {
+        id: uuid(),
+        title: "Backlog",
+        cardIds: [],
+      },
+      {
+        id: uuid(),
+        title: "To Do",
+        cardIds: [],
+      },
+      {
+        id: uuid(),
+        title: "In Progress",
+        cardIds: [],
+      },
+      {
+        id: uuid(),
+        title: "Done",
+        cardIds: [],
+      },
+      {
+        id: uuid(),
+        title: "Canceled",
+        cardIds: [],
+      },
+    ],
+    cards: [],
+  });
 };
 
 export const kanbanBoardDatatype: DataType<KanbanBoardDoc, never, never> = {

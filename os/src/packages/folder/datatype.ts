@@ -1,4 +1,4 @@
-import { initVersionControlMetadata, type DataType } from "@/sdk";
+import { initFrom, initVersionControlMetadata, type DataType } from "@/sdk";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 
@@ -38,10 +38,12 @@ export type FolderDoc = {
 
 // FUNCTIONS
 
-export const init = (doc: any, repo: Repo) => {
+export const init = (doc: FolderDoc, repo: Repo) => {
   initVersionControlMetadata(doc, repo);
-  doc.title = "Untitled Folder";
-  doc.docs = [];
+  initFrom(doc, {
+    title: "Untitled Folder",
+    docs: [],
+  });
 };
 
 // When a copy of the document has been made,

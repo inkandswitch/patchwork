@@ -3,7 +3,7 @@ import {
   DecodedChangeWithMetadata,
   PendingChangeGroup,
 } from "@/versionControl/groupChanges";
-import { Annotation } from "@/versionControl/schema";
+import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
 import { TextPatch } from "@/versionControl/utils";
 import { next as A, Doc } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
@@ -139,4 +139,13 @@ export const dataTypeById = <D, T, V>(id: string | undefined) => {
   return dataTypes.find((dataType) => dataType.id == id) as
     | DataType<D, T, V>
     | undefined;
+};
+
+/** Kinda hacky utility function to initialize an object in
+ * handle.change in a type-safe way. */
+export const initFrom = <D extends object>(
+  doc: D,
+  init: Omit<D, keyof HasVersionControlMetadata<unknown, unknown>>
+) => {
+  Object.assign(doc, init);
 };

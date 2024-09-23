@@ -26,6 +26,7 @@ import {
   uploadFile,
   waitForSync,
 } from "./util";
+import { initFrom } from "@/datatypes";
 
 export async function push(
   repo: Repo,
@@ -272,13 +273,15 @@ async function findOrCreateBuildMetadataHandle(
   } else {
     buildMetadataHandle = repo.create();
     buildMetadataHandle.change((doc) => {
-      doc.title = "Build Metadata";
-      doc.buildRuns = [];
-      doc.refreshState = { type: "idle" };
-      // todo: find a better solution
-      // in the build metadata viewer we need access to the project folder to compute
-      // the build graph with staleness. Maybe the build metadata should be part of the folder?
-      doc.projectFolderUrl = folderHandle.url;
+      initFrom(doc, {
+        title: "Build Metadata",
+        buildRuns: [],
+        refreshState: { type: "idle" },
+        // todo: find a better solution
+        // in the build metadata viewer we need access to the project folder to compute
+        // the build graph with staleness. Maybe the build metadata should be part of the folder?
+        projectFolderUrl: folderHandle.url,
+      });
     });
     folderHandle.change((d) => {
       d.docs.push({

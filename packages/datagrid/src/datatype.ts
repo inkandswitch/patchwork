@@ -2,7 +2,7 @@ import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
 import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
 import { next as A } from "@automerge/automerge";
 import { pick } from "lodash";
-import { type DataType } from "@/sdk";
+import { initFrom, type DataType } from "@/sdk";
 import { TextPatch } from "@/versionControl/utils";
 
 // SCHEMA
@@ -41,14 +41,16 @@ const getTitle = async (doc: DataGridDoc) => {
   return doc.title || "Mystery Data Grid";
 };
 
-export const init = (doc: any) => {
-  doc.title = "Untitled Spreadsheet";
+export const init = (doc: DataGridDoc) => {
   const rows = 100;
   const cols = 26;
   const defaultValue = "";
-  doc.data = Array.from({ length: rows }, () =>
-    Array.from({ length: cols }, () => defaultValue)
-  );
+  initFrom(doc, {
+    title: "Untitled Spreadsheet",
+    data: Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => defaultValue)
+    ),
+  });
 };
 
 export const includeChangeInHistory = (doc: DataGridDoc) => {
