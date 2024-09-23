@@ -23,7 +23,6 @@ import { DiffWithProvenance, HasVersionControlMetadata } from "../schema";
 import { fakeDocPath } from "../signals";
 import { diffWithProvenance, useActorIdToAuthorMap } from "../utils";
 import { ReviewSidebar } from "./ReviewSidebar";
-import { StatusBar } from "./Statusbar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
 import { LoadingScreen } from "@/explorer/components/LoadingScreen";
@@ -327,24 +326,6 @@ export const VersionControlEditor: React.FC<{
             </div>
           </div>
         </ErrorBoundary>
-        <StatusBar
-          dataType={dataType}
-          key={cloneOrMainOm.url}
-          docUrl={cloneOrMainOm.url}
-          docHeads={undefined}
-          annotations={annotations}
-          annotationGroups={annotationGroups}
-          actorIdToAuthor={actorIdToAuthor}
-          setSelectedAnchors={setSelectedAnchors}
-          setHoveredAnchor={setHoveredAnchor}
-          setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
-          setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
-          hideInlineComments={hideInlineComments}
-          setCommentState={setCommentState}
-          addNewDocument={addNewDocument}
-          getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-          mainDocUrl={mainDocUrl}
-        />
       </div>
 
       {docUIState.sidebarMode && (

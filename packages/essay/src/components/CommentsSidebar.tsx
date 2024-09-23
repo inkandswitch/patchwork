@@ -37,7 +37,7 @@ export const CommentsSidebar = ({
   annotationGroupsWithPosition: AnnotationGroupWithPosition[];
   setSelectedAnnotationGroupId: ((id: string | undefined) => void) | undefined;
   setHoveredAnnotationGroupId: ((id: string | undefined) => void) | undefined;
-  setCommentState: (state: CommentState<unknown> | undefined) => void;
+  setCommentState?: (state: CommentState<unknown> | undefined) => void;
 }) => {
   return (
     <div className="relative">

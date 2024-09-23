@@ -135,7 +135,7 @@ export const parseUrl = (url: URL): Omit<DocLink, "name"> | null => {
 
   return {
     url: docUrl,
-    type: datatypeId!,  // TODO: JAH strict fix
+    type: datatypeId!, // TODO: JAH strict fix
     branchUrl: branchUrl as AutomergeUrl,
     branchName,
   };
@@ -174,8 +174,9 @@ export const useSelectedDocLink = ({
     urlParams?.url
   );
 
+  // TODO: adapt to multi doc branches
   // lookup the branch name
-  const branchUrl = urlParams?.branchUrl;
+  /*const branchUrl = urlParams?.branchUrl;
   const branchMetadata = doc?.branchMetadata;
   const branchName = useMemo(() => {
     if (!branchMetadata || !branchUrl) {
@@ -185,7 +186,7 @@ export const useSelectedDocLink = ({
     const branch = doc.branchMetadata.branches.find((b) => b.url === branchUrl);
 
     return branch?.name;
-  }, [branchMetadata, branchUrl]);
+  }, [branchMetadata, branchUrl]);*/
 
   // NOTE: this should not be externally exposed, it's just a way to store
   // the folder path to the selection outside the URL.
@@ -231,16 +232,9 @@ export const useSelectedDocLink = ({
 
     const link = linkInPath ?? matches[0];
 
-    return link && urlParams.branchUrl
-      ? {
-          ...link,
-          branchUrl: urlParams.branchUrl,
-          branchName,
-        }
-      : link;
+    return link;
   }, [
     urlParams,
-    branchName,
     folderDocWithMetadata?.flatDocLinks,
     selectedDocLinkDangerouslyBypassingURL,
   ]);
@@ -258,11 +252,7 @@ export const useSelectedDocLink = ({
 
   // Add the doc to our collection if we don't have it
   useEffect(() => {
-    if (
-      !folderDocWithMetadata ||
-      !urlParams?.url ||
-      !urlParams?.type
-    ) {
+    if (!folderDocWithMetadata || !urlParams?.url || !urlParams?.type) {
       return;
     }
     if (
@@ -298,8 +288,9 @@ export const useSelectedDocLink = ({
   }, [currentUrl, urlParams]);
 
   // sync the branch name with the url
-  useEffect(() => {
-    if (!urlParams || !selectedDocLink) {  // TODO: JAH strict fix
+  /*useEffect(() => {
+    if (!urlParams || !selectedDocLink) {
+      // TODO: JAH strict fix
       return;
     }
 
@@ -318,7 +309,7 @@ export const useSelectedDocLink = ({
         branchName: undefined,
       });
     }
-  }, [branchName, selectedDocLink, urlParams]);
+  }, [branchName, selectedDocLink, urlParams]);*/
 
   useEffect(() => {
     if (!selectedDocLink) {

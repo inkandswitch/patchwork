@@ -30,14 +30,11 @@ export const DiscussionInput = function <
   const account = useCurrentAccount();
   const [commentBoxContent, setCommentBoxContent] = useState("");
 
-  const currentlyActiveHeads = changelogSelection
-    ? structuredClone(
-        changelogItems.find((i) => i.id === changelogSelection.to.itemId)?.heads
-      )
-    : A.getHeads(doc);
+  // only allow comments on most recent version
+  const isInputDisabled = changelogSelection !== undefined;
 
   const createDiscussion = () => {
-    if (commentBoxContent === "") {
+    if (commentBoxContent === "" || !account) {
       return;
     }
 
@@ -47,7 +44,7 @@ export const DiscussionInput = function <
       id: uuid(),
       content: commentBoxContent,
       timestamp: Date.now(),
-      contactUrl: account?.contactHandle?.url,
+      contactUrl: account.contactHandle.url,
     };
     const discussionId = uuid();
 
@@ -58,7 +55,7 @@ export const DiscussionInput = function <
 
       doc.discussions[discussionId] = {
         id: discussionId,
-        heads: currentlyActiveHeads,
+        heads: A.getHeads(doc),
         resolved: false,
         comments: [comment],
         anchors: [],
@@ -83,13 +80,17 @@ export const DiscussionInput = function <
           <div className="p-1" onKeyDownCapture={onKeyDown}>
             <MarkdownInput
               value={commentBoxContent}
-              onChange={setCommentBoxContent}
+              onChange={changelogSelection ? undefined : setCommentBoxContent}
               docWithAssetsHandle={handle}
             />
           </div>
           <div className="flex justify-end mt-2 text-sm">
             <div className="flex items-center">
-              <Button variant="ghost" onClick={createDiscussion}>
+              <Button
+                variant="ghost"
+                onClick={createDiscussion}
+                disabled={isInputDisabled}
+              >
                 <SendHorizontalIcon size={14} className="mr-1" />
                 Write a note
                 <span className="text-gray-400 text-xs ml-2">(⌘+enter)</span>

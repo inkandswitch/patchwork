@@ -1,8 +1,11 @@
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
 import { TextPatch } from "./utils";
-import { HasAssets } from "@/assets";
-import { HasBotChatHistory } from "./components/BotSidebar";
+import { HasAssets, withHasAssets } from "@/assets";
+import {
+  HasBotChatHistory,
+  withHasBotChatHistory,
+} from "./components/BotSidebar";
 import { CursorPatch as CursorPatch } from "./cursorPatch";
 
 // This is a separate doc to store version control metadata.
@@ -26,6 +29,14 @@ type BranchScopeMetadata =
 export type HasLinkToVersionControlSidecar = {
   versionControlMetadataUrl: AutomergeUrl;
 };
+
+export const withHasLinkToVersionControlSidecar = <D>(
+  doc: D,
+  versionControlMetadataUrl: AutomergeUrl
+): D & HasLinkToVersionControlSidecar => ({
+  ...doc,
+  versionControlMetadataUrl,
+});
 
 export type DocCloneMap = {
   [key: string]: {
@@ -66,6 +77,8 @@ export type MergedBranchDoc = Omit<UnmergedBranchDoc, "mergeMetadata"> & {
 
 export type BranchDoc = UnmergedBranchDoc | MergedBranchDoc;
 
+// TODO: delete LegacyBranch and Branchable, these are no longer used
+
 export type LegacyBranch = {
   name: string;
   /** URL pointing to the clone doc */
@@ -98,21 +111,6 @@ export type Branchable = {
     /* A pointer to copies of this doc */
     branches: Array<LegacyBranch>;
   };
-};
-
-export type Tag = {
-  name: string;
-  heads: A.Heads;
-  createdAt: number;
-  createdBy?: AutomergeUrl;
-};
-export type Taggable = {
-  // TODO: should we model this as a map instead?
-  tags: Tag[];
-};
-
-export type Diffable = {
-  diffBase: A.Heads;
 };
 
 // A data structure that lets us pass around diffs while remembering
@@ -167,6 +165,13 @@ export type Discussable<T> = {
   discussions: { [key: string]: Discussion<T> };
 };
 
+export const withDiscussable = <D = unknown, T = unknown>(
+  doc: D
+): D & Discussable<T> => ({
+  ...doc,
+  discussions: {},
+});
+
 export type HasChangeGroupSummaries = {
   changeGroupSummaries: {
     [key: string]: {
@@ -175,13 +180,17 @@ export type HasChangeGroupSummaries = {
   };
 };
 
+export const withHasChangeGroupSummaries = <D>(
+  doc: D
+): D & HasChangeGroupSummaries => ({
+  ...doc,
+  changeGroupSummaries: {},
+});
+
 export type HasVersionControlMetadata<
   TAnchor = unknown,
   TAnchorValue = unknown
 > = HasChangeGroupSummaries &
-  Branchable &
-  Taggable &
-  Diffable &
   Discussable<TAnchor> &
   // @Paul 5/24/24
   // todo: we should rethink how to structure core interfaces
@@ -192,6 +201,32 @@ export type HasVersionControlMetadata<
   HasAssets &
   HasBotChatHistory &
   HasLinkToVersionControlSidecar;
+
+export const withHasVersionControlMetadata = <
+  D = unknown,
+  T = unknown,
+  V = unknown
+>(
+  doc: D,
+  {
+    versionControlMetadataUrl,
+    assetsDocUrl,
+  }: {
+    versionControlMetadataUrl: AutomergeUrl;
+    assetsDocUrl: AutomergeUrl;
+  }
+): D & HasVersionControlMetadata<T, V> =>
+  withHasAssets(
+    withHasLinkToVersionControlSidecar(
+      withHasBotChatHistory(
+        withHasChangeGroupSummaries(
+          withDiscussable(withHasChangeGroupSummaries(doc))
+        )
+      ),
+      versionControlMetadataUrl
+    ),
+    assetsDocUrl
+  );
 
 export type AnnotationId = string & { __annotationId: true };
 

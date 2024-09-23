@@ -10,7 +10,7 @@ import {
   isSupportedDatatype,
   makeBotTextEdits,
 } from "../bots";
-import { toast } from "sonner";
+import { useToast } from "@/shadcn/ui/use-toast";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { LegacyBranch, HasVersionControlMetadata } from "../schema";
 import Markdown from "react-markdown";
@@ -19,6 +19,15 @@ import { SidebarMode } from "@/explorer/uiState";
 
 export type HasBotChatHistory = {
   botChatHistory: ChatMessage[];
+};
+
+export const withHasBotChatHistory = <D extends object>(
+  doc: D
+): D & HasBotChatHistory => {
+  return {
+    ...doc,
+    botChatHistory: [],
+  };
 };
 
 // A string which will be visible to the bot representing user acceptance of edits.
@@ -49,6 +58,7 @@ export const BotSidebar = ({
   const [pendingMessage, setPendingMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!doc.botChatHistory) {
@@ -86,7 +96,7 @@ export const BotSidebar = ({
         setSelectedBranch(branch);
       }
     } catch (e) {
-      toast.error("Error performing edit");
+      toast({ title: "Error performing edit", variant: "destructive" });
     }
     setLoading(false);
   };
@@ -131,6 +141,8 @@ export const BotSidebar = ({
     // need to also do the update on the main doc because we're not merging the branch...
     const mainDocHandle = repo.find<
       HasVersionControlMetadata<unknown, unknown>
+
+      //@ts-expect-error todo: adapt to multi doc branches
     >(doc.branchMetadata.source!.url); // TODO: JAH strict fix
     mainDocHandle.change((d) => {
       d.botChatHistory.push({

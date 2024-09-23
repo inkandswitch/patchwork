@@ -3,11 +3,9 @@ import { Om } from "@/om";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { Button } from "@/shadcn/ui/button";
+import { Toaster } from "@/shadcn/ui/toaster";
 import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
-import {
-  HasVersionControlMetadata,
-  LegacyBranch,
-} from "@/versionControl/schema";
+import { HasVersionControlMetadata } from "@/versionControl/schema";
 import {
   fakeDocPath,
   getBranchScopeAndActiveBranchInfo,
@@ -18,7 +16,7 @@ import {
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
 import _ from "lodash";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { dataTypeById } from "@/allTheDataTypes";
 import { useTool, useToolsForDataType } from "@/allTheTools";
@@ -27,14 +25,13 @@ import {
   useCurrentAccountDoc,
   useRootFolderDocWithChildren,
 } from "../account";
-import { useUIStateOm } from "../uiState";
 import { useSelectedDocLink } from "../hooks/useSelectedDocLink";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
+import { useUIStateOm } from "../uiState";
 import { ErrorFallback } from "./ErrorFallback";
 import { LoadingScreen } from "./LoadingScreen";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
-import { Toaster } from "@/shadcn/ui/toaster";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();
@@ -80,17 +77,6 @@ export const Explorer: React.FC = () => {
 
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
-  const selectedBranchUrl = selectedDocLink?.branchUrl;
-
-  const selectedBranch = useMemo<LegacyBranch | undefined>(() => {
-    if (!selectedBranchUrl || !selectedDoc) {
-      return;
-    }
-
-    return selectedDoc.branchMetadata.branches.find(
-      (b) => b.url === selectedBranchUrl
-    );
-  }, [selectedBranchUrl, selectedDoc]);
 
   const selectedDataType = dataTypeById(selectedDataTypeId);
   const tools = useToolsForDataType(selectedDataType);

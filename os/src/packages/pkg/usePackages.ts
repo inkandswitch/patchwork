@@ -1,18 +1,12 @@
 import { useRootFolderDocWithChildren } from "@/explorer/account";
-import {
-  AutomergeUrl,
-  DocumentId,
-  parseAutomergeUrl,
-} from "@automerge/automerge-repo";
-import { useDocuments } from "@automerge/automerge-repo-react-hooks";
-import { useMemo, useRef, useEffect, useState } from "react";
 import { next as A } from "@automerge/automerge";
+import { DocumentId } from "@automerge/automerge-repo";
+import { useDocuments } from "@automerge/automerge-repo-react-hooks";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PackageDoc } from "./datatype";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
 
 type Package = {
   module: any;
-  sourceDocUrl?: AutomergeUrl;
 };
 
 const NO_PACKAGES: Package[] = [];
@@ -44,54 +38,18 @@ const usePackageModulesInRootFolderForReal = (): Package[] => {
   );
   const packageDocs = useDocuments<PackageDoc>(packageDocUrls);
 
-  const branchUrls = useMemo(
-    () =>
-      (
-        Object.values(packageDocs) as HasVersionControlMetadata<
-          unknown,
-          unknown
-        >[]
-      ).flatMap((doc) =>
-        doc.branchMetadata?.branches
-          .filter((branch) => !branch.mergeMetadata)
-          .map((branch) => branch.url)
-      ),
-    [packageDocs]
-  );
-
-  const packageDocsOnBranches = useDocuments<PackageDoc>(branchUrls);
-
-  const allPackageDocs = useMemo(
-    () => ({ ...packageDocs, ...packageDocsOnBranches }),
-    [packageDocs, packageDocsOnBranches]
-  );
-
   const packageDocsRef = useRef<Record<DocumentId, PackageDoc>>();
   packageDocsRef.current = packageDocs;
   useEffect(() => {
     (async () => {
       const modules = await Promise.all(
-        Object.entries(allPackageDocs).map(async ([docId, packageDoc]) => {
+        Object.entries(packageDocs).map(async ([docId, packageDoc]) => {
           const { packageJSON } = packageDoc;
           const heads = A.getHeads(packageDoc).join(",");
           const moduleUrl = `https://automerge/${docId}/fileContents/${packageJSON.main}?heads=${heads}`;
 
-          let sourcePackage: PackageDoc | undefined;
-          if (packageDoc.branchMetadata?.source) {
-            const { documentId } = parseAutomergeUrl(
-              packageDoc.branchMetadata.source.url
-            );
-
-            sourcePackage = packageDocs[documentId];
-          }
-
           return {
             module: await import(/* @vite-ignore */ moduleUrl),
-            sourceDocUrl: sourcePackage
-              ? sourcePackage.branchMetadata.branches.find((branch) =>
-                  branch.url.includes(docId)
-                ).url
-              : undefined,
           };
         })
       );
@@ -103,7 +61,7 @@ const usePackageModulesInRootFolderForReal = (): Package[] => {
 
       setModules(modules);
     })();
-  }, [allPackageDocs]);
+  }, [packageDocs]);
 
   return modules;
 };

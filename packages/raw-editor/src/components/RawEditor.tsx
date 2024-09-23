@@ -5,7 +5,11 @@ import ReactJson, { InteractionProps } from "@microlink/react-json-view";
 import { useCallback, useState } from "react";
 import styles from "../rawEditor.module.css";
 
-export const RawEditor = ({ docUrl: originalDocumentUrl }: { docUrl: AutomergeUrl }) => {
+export const RawEditor = ({
+  docUrl: originalDocumentUrl,
+}: {
+  docUrl: AutomergeUrl;
+}) => {
   const [documentUrl, changeDocumentUrl] = useState(originalDocumentUrl);
   const [history, setHistory] = useState<AutomergeUrl[]>([]); // TODO: make these actual navigation effects? knapsack's design makes this tricky.
 
@@ -24,14 +28,20 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }: { docUrl: AutomergeUr
     ({ namespace, new_value, name }: InteractionProps) => {
       changeDoc(function (doc) {
         let current: any = doc;
-        for (
-          let _i = 0, namespace_1 = namespace;
-          _i < namespace_1.length;
-          _i++
-        ) {
-          const key = namespace_1[_i];
+
+        for (const key of namespace) {
+          if (key === null) {
+            console.error("faild to update property");
+            return;
+          }
           current = current[key];
         }
+
+        if (!name) {
+          console.error("failed to update property");
+          return;
+        }
+
         current[name] = new_value;
       });
     },
@@ -46,14 +56,20 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }: { docUrl: AutomergeUr
     function ({ namespace, name }: InteractionProps) {
       changeDoc(function (doc) {
         let current: any = doc;
-        for (
-          let _i = 0, namespace_2 = namespace;
-          _i < namespace_2.length;
-          _i++
-        ) {
-          const key = namespace_2[_i];
+
+        for (const key of namespace) {
+          if (key === null) {
+            console.error("faild to delete property");
+            return;
+          }
           current = current[key];
         }
+
+        if (!name) {
+          console.error("failed to delete property");
+          return;
+        }
+
         delete current[name];
       });
     },

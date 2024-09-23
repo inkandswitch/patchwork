@@ -158,6 +158,8 @@ export const deleteBranch = <DocType extends Branchable>({
   });
 };
 
+// todo: adapt to multi doc branches
+/*
 export const suggestBranchName = async ({
   doc,
   branchDoc,
@@ -192,7 +194,7 @@ ${JSON.stringify(afterDoc)}
   const result = await getStringCompletion(prompt);
 
   return result;
-};
+}; */
 
 /** Returns 2 lists of change hashes present in one branch but not the other
  *  Framed in terms of "branch" and "main" but works fine for any 2 branches
@@ -251,8 +253,8 @@ const getHashesBetweenHeads = ({
   const hashes = new Set<Hash>();
   const workQueue = structuredClone(toHeads);
 
-  while (workQueue.length > 0) {
-    const hash = workQueue.shift();
+  let hash;
+  while ((hash = workQueue.shift())) {
     const change = changeMap.get(hash);
     if (!change) {
       throw new Error("Change not found in changes");

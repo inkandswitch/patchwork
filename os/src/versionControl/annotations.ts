@@ -97,15 +97,21 @@ export function useAnnotations({
     );
   });
 
-  const setSelectedAnnotationGroupId = useStaticCallback((id: string) => {
-    setSelectedState({ type: "annotationGroup", id });
-  });
+  const setSelectedAnnotationGroupId = useStaticCallback(
+    (id: string | undefined) => {
+      setSelectedState(
+        id !== undefined ? { type: "annotationGroup", id } : undefined
+      );
+    }
+  );
 
-  const setHoveredAnnotationGroupId = useStaticCallback((id: string) => {
-    setHoveredState(
-      id !== undefined ? { type: "annotationGroup", id } : undefined
-    );
-  });
+  const setHoveredAnnotationGroupId = useStaticCallback(
+    (id: string | undefined) => {
+      setHoveredState(
+        id !== undefined ? { type: "annotationGroup", id } : undefined
+      );
+    }
+  );
 
   const hoveredAnnotationGroupId = useMemo(
     () =>
@@ -363,7 +369,7 @@ export function useAnnotations({
       selectedAnnotationGroupIds,
       expandedAnnotationGroupId,
     };
-  }, [hoveredState, selectedState, annotations, annotationGroups]);
+  }, [hoveredState, selectedState, annotationGroups]);
 
   const annotationsWithUIState: AnnotationWithUIState<unknown, unknown>[] =
     useMemo(
@@ -382,7 +388,7 @@ export function useAnnotations({
             JSON.stringify(annotation.anchor)
           ),
         })),
-      [annotations, selectedAnchors]
+      [annotations, hoveredAnchors, selectedAnchors]
     );
 
   const annotationGroupsWithState: AnnotationGroupWithUIState<
@@ -404,7 +410,7 @@ export function useAnnotations({
                 commentState.target === getAnnotationGroupId(annotationGroup) ||
                 // ... or target anchors ?
                 (Array.isArray(commentState.target) &&
-                  commentState.target.every((anchor, index) =>
+                  commentState.target.every((anchor) =>
                     annotationGroup.annotations.some((annotation) =>
                       isEqual(annotation.anchor, anchor)
                     )
@@ -437,7 +443,12 @@ export function useAnnotations({
             : undefined,
         };
       }),
-    [annotationGroups, expandedAnnotationGroupId, selectedAnnotationGroupIds]
+    [
+      annotationGroups,
+      commentState,
+      expandedAnnotationGroupId,
+      selectedAnnotationGroupIds,
+    ]
   );
 
   return {

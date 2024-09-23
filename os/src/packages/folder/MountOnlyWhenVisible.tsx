@@ -1,6 +1,12 @@
-import React, { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 
-export const MountOnlyWhenVisible = ({ children, height = "200px" }: { children: ReactNode, height: string }) => {
+export const MountOnlyWhenVisible = ({
+  children,
+  height = "200px",
+}: {
+  children: ReactNode;
+  height: string;
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef(null);
 
@@ -28,14 +34,6 @@ export const MountOnlyWhenVisible = ({ children, height = "200px" }: { children:
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (isVisible) {
-      console.log("isVisible");
-    } else {
-      console.log("isNotVisible");
-    }
-  }, [isVisible]);
 
   return (
     <div ref={ref} style={{ height, minHeight: height }}>

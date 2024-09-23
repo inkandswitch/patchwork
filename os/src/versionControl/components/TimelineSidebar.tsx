@@ -20,24 +20,20 @@ import {
   CrownIcon,
   GitBranchIcon,
   GitBranchPlusIcon,
-  MilestoneIcon,
 } from "lucide-react";
 import {
   DiffWithProvenance,
   Discussion,
-  HasChangeGroupSummaries,
   HasVersionControlMetadata,
-  Tag,
   VersionControlSidecarDoc,
-  HasLinkToVersionControlSidecar,
 } from "../schema";
 
 import { useAutoPopulateChangeGroupSummaries } from "@/versionControl/changeGroupSummaries";
 import { DiscussionInput } from "./DiscussionInput";
 
 import { HasAssets } from "@/assets";
-import { type DataType } from "@/sdk";
 import { MarkdownInput } from "@/lib/markdown";
+import { type DataType } from "@/sdk";
 import { DocHandle } from "@automerge/automerge-repo";
 import {
   BranchScopeAndActiveBranchInfoWithoutDoc,
@@ -382,13 +378,6 @@ export const TimelineSidebar: React.FC<{
                             selected={selected}
                           />
                         );
-                      case "tag":
-                        return (
-                          <MilestoneItem
-                            milestone={item.tag}
-                            selected={selected}
-                          />
-                        );
                       case "branchCreatedFromThisDoc":
                         return (
                           <BranchCreatedItem
@@ -421,7 +410,7 @@ export const TimelineSidebar: React.FC<{
                           />
                         );
                       default: {
-                        // Ensure we've handled all types
+                        // Ensure we've handled all types, if an
                         const exhaustiveCheck: never = item;
                         return exhaustiveCheck;
                       }
@@ -787,30 +776,6 @@ const BranchMergedItem: React.FC<{
         </div>
       </ItemContent>
     </ItemView>
-  );
-};
-
-const MilestoneItem = ({
-  milestone,
-  selected,
-}: {
-  milestone: Tag;
-  selected: boolean;
-}) => {
-  return (
-    <div
-      className={`timeline-item w-full outline outline-2 outline-gray-50 cursor-pointer items-center flex gap-1 rounded-full -ml-1 pl-1 border-1.5 border-gray-300 shadow-sm ${
-        selected ? "bg-gray-200" : "bg-gray-100"
-      }`}
-    >
-      <div className="flex h-[16px] w-[16px] items-center justify-center rounded-full bg-orange-500 outline outline-2 outline-gray-100">
-        <MilestoneIcon className="h-[12px] w-[12px] text-white" />
-      </div>
-
-      <div className="flex-1 p-1 text-sm ">
-        <div className="font-semibold">{milestone.name}</div>
-      </div>
-    </div>
   );
 };
 

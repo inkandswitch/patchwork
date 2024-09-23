@@ -17,6 +17,12 @@ import { FolderDoc } from "@/packages/folder";
 import { useFolderDocWithChildren } from "../packages/folder/hooks/useFolderDocWithChildren";
 import { typeOnlyAssert } from "@/utils";
 import { UIStateDoc } from "./uiState";
+import {
+  VersionControlSidecarDoc,
+  withHasChangeGroupSummaries,
+  withHasVersionControlMetadata,
+} from "@/sdk";
+import { AssetsDoc } from "@/assets";
 
 export type ModuleSettingsDoc = {
   enabledDatatypeIds: { [id: string]: boolean };
@@ -200,16 +206,42 @@ const createAccount = (
   const contactHandle = repo.create<ContactDoc>({
     type: "anonymous",
   });
-  const rootFolderHandle = repo.create<FolderDoc>({
-    docs: [],
-  });
+
+  const versionControlMetadataDocHandle = repo.create<VersionControlSidecarDoc>(
+    withHasChangeGroupSummaries({
+      isBranchScope: false,
+    })
+  );
+
+  const assetsDocHandle = repo.create<AssetsDoc>({ files: {} });
+
+  const rootFolderHandle = repo.create<FolderDoc>(
+    withHasVersionControlMetadata(
+      {
+        title: "root",
+        docs: [],
+      },
+      {
+        versionControlMetadataUrl: versionControlMetadataDocHandle.url,
+        assetsDocUrl: assetsDocHandle.url,
+      }
+    )
+  );
   const uiStateHandle = repo.create<UIStateDoc>({
     openedFoldersInSidebar: [],
+    openBranches: {},
+    docUIStates: {},
   });
+
+  const moduleSettingsDocHandle = repo.create<ModuleSettingsDoc>({
+    enabledDatatypeIds: {},
+  });
+
   const accountHandle = repo.create<AccountDoc>({
     contactUrl: contactHandle.url,
     rootFolderUrl: rootFolderHandle.url,
     uiStateUrl: uiStateHandle.url,
+    moduleSettingsUrl: moduleSettingsDocHandle.url,
   });
 
   return { accountHandle, contactHandle, rootFolderHandle };

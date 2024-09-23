@@ -83,11 +83,6 @@ export type HeadsMarkerBase = {
   hideHistoryBeforeThis?: boolean;
 };
 
-export type TagMarker = {
-  type: "tag";
-  tag: Tag;
-} & HeadsMarkerBase;
-
 export type OtherBranchMergedMarker<T> = {
   type: "otherBranchMergedIntoThisDoc";
   branchOm: Om<MergedBranchDoc>;
@@ -111,7 +106,6 @@ export type DiscussionThreadMarker = {
 } & HeadsMarkerBase;
 
 export type HeadsMarker<T> =
-  | TagMarker
   | OtherBranchMergedMarker<T>
   | BranchCreatedMarker
   | OriginBranchMarker
@@ -335,17 +329,6 @@ export const getMarkersForDoc = <T extends HasVersionControlMetadata>(
       : [];
 
   markers = markers.concat(branchCreatedMarkers);
-
-  /** Mark tags aka milestones */
-  markers = markers.concat(
-    (doc.tags ?? []).map((tag: Tag) => ({
-      id: `tag-${tag.heads[0]}-${tag.name}`,
-      heads: tag.heads,
-      type: "tag" as const,
-      tag,
-      users: tag.createdBy ? [tag.createdBy] : [],
-    }))
-  );
 
   return markers;
 };
