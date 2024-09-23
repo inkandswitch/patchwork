@@ -15,6 +15,7 @@ import { TextSelection } from "./MarkdownDocEditor";
 import { CommentState } from "@/versionControl/schema";
 import { MarkdownDoc } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";
+import { TextAnchor } from "@/lib/textAnchors";
 
 export const CommentsSidebar = ({
   doc,
@@ -37,7 +38,7 @@ export const CommentsSidebar = ({
   annotationGroupsWithPosition: AnnotationGroupWithPosition[];
   setSelectedAnnotationGroupId: ((id: string | undefined) => void) | undefined;
   setHoveredAnnotationGroupId: ((id: string | undefined) => void) | undefined;
-  setCommentState?: (state: CommentState<unknown> | undefined) => void;
+  setCommentState?: (state: CommentState<TextAnchor> | undefined) => void;
 }) => {
   return (
     <div className="relative">

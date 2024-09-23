@@ -211,22 +211,9 @@ export const VersionControlEditor: React.FC<{
     changeDocUIState,
   ]);
 
-  // init branch metadata when the doc loads if it doesn't have it already
-  useEffect(() => {
-    if (doc && !doc.branchMetadata) {
-      changeDoc(
-        (doc) =>
-          (doc.branchMetadata = {
-            source: null,
-            branches: [],
-          })
-      );
-    }
-  }, [doc, changeDoc]);
-
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
 
-  if (!cloneOrMainOm || !datatypeId || !doc?.branchMetadata) {
+  if (!cloneOrMainOm || !datatypeId) {
     return <LoadingScreen docUrl={mainDocUrl} handle={cloneOrMainOm?.handle} />;
   }
 

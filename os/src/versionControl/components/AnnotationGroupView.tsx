@@ -39,7 +39,7 @@ export interface AnnotationGroupViewProps<
   hasPrev: boolean;
   setIsHovered: (isHovered: boolean) => void;
   setIsSelected: (isSelected: boolean) => void;
-  setCommentState?: (state: CommentState<unknown> | undefined) => void;
+  setCommentState?: (state: CommentState<T> | undefined) => void;
   readonly?: boolean;
   enableScrollSync?: boolean; // todo: this shouldn't be a flag
   hideInlineCommentAnnotations?: boolean;

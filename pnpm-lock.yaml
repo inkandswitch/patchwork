@@ -109,11 +109,11 @@ importers:
         specifier: ^0.0.12
         version: 0.0.12(@lezer/common@1.2.1)
       '@automerge/automerge-repo':
-        specifier: ^1.2.1
-        version: 1.2.1(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4)
+        specifier: 2.0.0-alpha.7
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)
       '@automerge/automerge-repo-react-hooks':
-        specifier: ^1.2.1
-        version: 1.2.1(@swc/core@1.7.14)(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        specifier: 2.0.0-alpha.7
+        version: 2.0.0-alpha.7(@swc/core@1.7.14)(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@codemirror/lang-markdown':
         specifier: ^6.2.5
         version: 6.2.5
@@ -675,12 +675,6 @@ packages:
 
   '@automerge/automerge-repo-network-websocket@2.0.0-alpha.7':
     resolution: {integrity: sha512-BFTuBTP/hIk3Izw7mCPfQIj24k90LBt/Ybh0gsyZ3UVPCJY/hbRTsTw1az3oHzFKnxxwIsmqExaCaQKn5uSyQA==}
-
-  '@automerge/automerge-repo-react-hooks@1.2.1':
-    resolution: {integrity: sha512-xRRPFRp7dMLZZoIPuczI6ll8U6Qo4NkLAstIHZloGcVefSEOLXRRObMwkITbVaRCEM2zyRLG0MfA9T4dA1JYFQ==}
-    peerDependencies:
-      react: '>16.8.0'
-      react-dom: '>16.8.0'
 
   '@automerge/automerge-repo-react-hooks@2.0.0-alpha.7':
     resolution: {integrity: sha512-auVUbA9InVQnHwwg+k8jZvsBkHKZO1ZCS/xqCEPHUy/Jkmu8/WcT/XGPDMEuHxExxiem6szldO1wJG92HwZPCA==}
@@ -7941,21 +7935,6 @@ snapshots:
       - supports-color
       - typescript
       - utf-8-validate
-
-  '@automerge/automerge-repo-react-hooks@1.2.1(@swc/core@1.7.14)(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)':
-    dependencies:
-      '@automerge/automerge': 2.2.9-alpha.2
-      '@automerge/automerge-repo': 1.2.1(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4)
-      eventemitter3: 5.0.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-usestateref: 1.0.9(react@18.3.1)
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - supports-color
-      - typescript
 
   '@automerge/automerge-repo-react-hooks@2.0.0-alpha.7(@swc/core@1.7.14)(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)':
     dependencies:

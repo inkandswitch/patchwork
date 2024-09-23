@@ -31,7 +31,6 @@ import {
   Discussion,
   HasVersionControlMetadata,
   MergedBranchDoc,
-  Tag,
 } from "./schema";
 import { TextPatch, diffWithProvenance } from "./utils";
 

@@ -1,18 +1,15 @@
-import { getStringCompletion } from "@/lib/llm";
+import { dataTypeById } from "@/allTheDataTypes";
+import { docPathString, UIStateDoc } from "@/explorer/uiState";
 import { Om } from "@/om";
+import { DocPath } from "@/packages/folder/datatype";
 import {
-  DataType,
   DocCloneMap,
   ensureMetadataHandleIsBranchScope,
   getVersionControlMetadataHandle,
 } from "@/sdk";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
-import { MarkdownDoc } from "../../../packages/essay/src";
-import { Branchable, BranchDoc, HasVersionControlMetadata } from "./schema";
-import { docPathString, UIStateDoc } from "@/explorer/uiState";
-import { DocPath } from "@/packages/folder/datatype";
-import { dataTypeById } from "@/allTheDataTypes";
+import { BranchDoc, HasVersionControlMetadata } from "./schema";
 
 type Hash = string;
 
@@ -138,23 +135,6 @@ export const mergeBranch = async ({
       mergedBy,
       mergeHeadsByDocUrl,
     };
-  });
-};
-
-export const deleteBranch = <DocType extends Branchable>({
-  docHandle,
-  branchUrl,
-}: {
-  docHandle: DocHandle<DocType>;
-  branchUrl: AutomergeUrl;
-}) => {
-  docHandle.change((doc) => {
-    const index = doc.branchMetadata.branches.findIndex(
-      (copy) => copy.url === branchUrl
-    );
-    if (index !== -1) {
-      doc.branchMetadata.branches.splice(index, 1);
-    }
   });
 };
 

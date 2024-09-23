@@ -2,17 +2,14 @@ import { ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
 import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
-import {
-  AnnotationMode,
-  MainViewMode,
-  useDocUIState,
-} from "@/explorer/uiState";
+import { MainViewMode, useDocUIState } from "@/explorer/uiState";
 import { getRelativeTimeString } from "@/lib/dates";
 import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";
 import {
   BranchDoc,
   ensureMetadataHandleIsBranchScope,
+  initVersionControlSidecarDoc,
   Tool,
   VersionControlSidecarDoc,
 } from "@/sdk";
@@ -34,7 +31,7 @@ import {
 } from "@/shadcn/ui/select";
 import { useToast } from "@/shadcn/ui/use-toast";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import {
   BuildRefreshButton,
   DisabledBuildRefreshButton,
@@ -104,6 +101,7 @@ export const VersionControlBar = ({
     branchScopeOm,
     activeBranchOm,
     branchOms,
+    cloneOrMainOm,
     isRealBranchScope,
     branchScopeVersionControlMetadataOm,
   } = branchScopeAndActiveBranchInfo;
@@ -200,12 +198,18 @@ export const VersionControlBar = ({
     useDocReactive(
       useCallback(() => {
         waitForDR(projectState);
+
+        if (!projectState) {
+          return;
+        }
+
         return getBuildRunsWithDocAsPrimaryInput(projectState, docUrl);
       }, [projectState, docUrl])
     )
   );
 
-  const hasOutputFiles = buildRunWithFileAsInput?.length > 0;
+  const hasOutputFiles =
+    buildRunWithFileAsInput && buildRunWithFileAsInput.length > 0;
 
   const enableRefreshButton =
     jacquardProjectInfo?.buildMetadataOm && numStaleDocs > 0;
@@ -246,18 +250,25 @@ export const VersionControlBar = ({
     <div className="bg-gray-100 pl-4 py-2 flex gap-2 border-b border-gray-200">
       <div className="flex flex-col gap-0.5">
         <Select
-          value={activeBranchOm?.url ?? null} // select doesn't like undefined
+          value={activeBranchOm?.url ?? "__main"} // select doesn't like undefined
           onValueChange={(value) => {
             if (value === "__newBranch") {
               handleCreateJacquardBranch();
             } else if (value === "__makeIntoBranchScope") {
-              ensureMetadataHandleIsBranchScope(
-                branchScopeVersionControlMetadataOm.handle
-              );
+              if (!branchScopeVersionControlMetadataOm) {
+                initVersionControlSidecarDoc(cloneOrMainOm, repo, {
+                  branchScope: true,
+                });
+              } else {
+                ensureMetadataHandleIsBranchScope(
+                  branchScopeVersionControlMetadataOm.handle
+                );
+              }
             } else if (value === "__moveChangesToBranch") {
               throw new Error("not implemented");
             } else {
-              const selectedBranchUrl = value as AutomergeUrl | null;
+              const selectedBranchUrl =
+                value === "__main" ? null : (value as AutomergeUrl);
 
               if (selectedBranchUrl) {
                 onSelectBranchUrl(selectedBranchUrl);
@@ -291,7 +302,7 @@ export const VersionControlBar = ({
           <SelectContent className="w-72">
             {isRealBranchScope && (
               <SelectItem
-                value={null}
+                value={"__main"}
                 className={!activeBranchOm ? "font-medium" : ""}
               >
                 <CrownIcon className="inline mr-1" size={12} />
@@ -406,7 +417,7 @@ export const VersionControlBar = ({
           </div>
         )}
 
-        {activeBranchOm && (
+        {activeBranchOm && branchScopeVersionControlMetadataOm && (
           <div className="mt-2 ml-1">
             <BranchActions
               activeBranchOm={activeBranchOm}
@@ -432,24 +443,28 @@ export const VersionControlBar = ({
           <DisabledBuildRefreshButton />
         )}
 
-        <div className="text-xs text-gray-500">
-          {numStaleDocs > 0 && <span>{numStaleDocs} files to rebuild</span>}
-          {numStaleDocs === 0 && <span>project up to date</span>}
-          {datatypeId !== "jacquard-build-metadata" && (
-            <span
-              className="underline cursor-pointer ml-1"
-              onClick={() =>
-                selectDocLink({
-                  url: jacquardProjectInfo.buildMetadataMainDocUrl,
-                  name: "Build Metadata",
-                  type: "jacquard-build-metadata",
-                })
-              }
-            >
-              see details
-            </span>
-          )}
-        </div>
+        {jacquardProjectInfo && (
+          <>
+            <div className="text-xs text-gray-500">
+              {numStaleDocs > 0 && <span>{numStaleDocs} files to rebuild</span>}
+              {numStaleDocs === 0 && <span>project up to date</span>}
+              {datatypeId !== "jacquard-build-metadata" && (
+                <span
+                  className="underline cursor-pointer ml-1"
+                  onClick={() =>
+                    selectDocLink({
+                      url: jacquardProjectInfo.buildMetadataMainDocUrl,
+                      name: "Build Metadata",
+                      type: "jacquard-build-metadata",
+                    })
+                  }
+                >
+                  see details
+                </span>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {VerticalSeparator}
@@ -637,8 +652,9 @@ const BranchActions: React.FC<{
     toast({ title: "Deleted branch" });
   }, [
     activeBranchOm.url,
-    branchScopeVersionControlMetadataOm?.handle,
+    branchScopeVersionControlMetadataOm.handle,
     onSelectBranchUrl,
+    toast,
   ]);
 
   // const branchHeads = useMemo(

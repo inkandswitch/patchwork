@@ -77,7 +77,7 @@ export type MergedBranchDoc = Omit<UnmergedBranchDoc, "mergeMetadata"> & {
 
 export type BranchDoc = UnmergedBranchDoc | MergedBranchDoc;
 
-// TODO: delete LegacyBranch and Branchable, these are no longer used
+// TODO: delete LegacyBranch, some code that currently doesn't work (like the bot code) still reference this type
 
 export type LegacyBranch = {
   name: string;
@@ -97,19 +97,6 @@ export type LegacyBranch = {
     mergeHeads: A.Heads;
     /** author contact doc URL for branch merger */
     mergedBy: AutomergeUrl;
-  };
-};
-
-export type Branchable = {
-  branchMetadata: {
-    /* A pointer to the source where this was copied from */
-    source: {
-      url: AutomergeUrl;
-      branchHeads: A.Heads; // the heads at which this branch was forked off
-    } | null;
-
-    /* A pointer to copies of this doc */
-    branches: Array<LegacyBranch>;
   };
 };
 
@@ -290,10 +277,6 @@ export const initVersionControlMetadata = (
   repo: Repo,
   options?: VersionControlMetadataDocOptions
 ) => {
-  doc.branchMetadata = {
-    source: null,
-    branches: [],
-  };
   doc.discussions = {};
   doc.tags = [];
   doc.changeGroupSummaries = {};
@@ -326,6 +309,11 @@ export const getVersionControlMetadataHandle = (
   repo: Repo
 ): DocHandle<VersionControlSidecarDoc> => {
   const doc = handle.docSync();
+
+  if (!doc) {
+    throw new Error(`document is not available ${handle.url}`);
+  }
+
   let versionControlMetadataUrl = doc.versionControlMetadataUrl;
   if (!versionControlMetadataUrl) {
     handle.change((d) => {
@@ -341,6 +329,7 @@ export const ensureMetadataHandleIsBranchScope = (
 ) => {
   handle.change((d) => {
     if (!d.isBranchScope) {
+      // @ts-expect-error TS not smart enough to figure this one out
       d.isBranchScope = true;
       // @ts-expect-error TS not smart enough to figure this one out
       d.branches = [];

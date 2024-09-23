@@ -42,13 +42,6 @@ export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
   /** wether this tool supports a display mode where parts of the document without annotations are collapsed
    * what this means exactly for a specific datatype is up to the tool to decide */
   supportsCollapseContentWithoutAnnotations?: boolean;
-
-  /**
-   * Experiment: allow tools to specify a status bar component that will be rendered
-   * below the primary tool that is selected
-   */
-  StatusBarComponent?: React.FC<EditorProps<unknown, unknown>>;
-  sourceDocUrl?: AutomergeUrl;
 };
 
 /** Forgets the type parameters of a ToolTyped so that it can be used as a Tool */

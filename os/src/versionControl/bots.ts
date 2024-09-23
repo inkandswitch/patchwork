@@ -1,8 +1,8 @@
-import { DEFAULT_MODEL, getOpenaiClient, openaiClient } from "@/lib/llm";
+import { DEFAULT_MODEL, getOpenaiClient } from "@/lib/llm";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { Doc, splice } from "@automerge/automerge/next";
 import { type DataType } from "@/sdk";
-import { LegacyBranch, HasVersionControlMetadata } from "./schema";
+import { HasVersionControlMetadata, LegacyBranch } from "./schema";
 import { HasBotChatHistory } from "./components/BotSidebar";
 
 // These types are a superset of OpenAI's API so we can directly store a chat history
@@ -117,9 +117,11 @@ Include a short commit message of 2-8 words summarizing the change in specific t
 };
 
 const SUPPORTED_DATATYPES = Object.keys(DATATYPE_CONFIGS);
-export const isSupportedDatatype = (datatype: string): datatype is keyof typeof DATATYPE_CONFIGS => {
+export const isSupportedDatatype = (
+  datatype: string
+): datatype is keyof typeof DATATYPE_CONFIGS => {
   return SUPPORTED_DATATYPES.includes(datatype);
-}
+};
 
 export const makeBotTextEdits = async ({
   targetDocHandle,
@@ -148,7 +150,7 @@ If you call a tool, only make a single call.`,
     {
       role: "user",
       content: `Current document contents:
-${getPath(targetDocHandle.docSync()!, path)}`,  // TODO: JAH strict fix
+${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
     },
   ];
 
@@ -214,7 +216,9 @@ ${getPath(targetDocHandle.docSync()!, path)}`,  // TODO: JAH strict fix
     // This is because we can't know the branch URL until we create the branch,
     // but we want the branch URL to exist on both the main doc and the branch even if
     // the branch is never merged. So we just do the change on both docs.
-    const updateBranchUrlForAssistantMessage = (docHandle: DocHandle<HasBotChatHistory>) => {
+    const updateBranchUrlForAssistantMessage = (
+      docHandle: DocHandle<HasBotChatHistory>
+    ) => {
       docHandle.change((d) => {
         const lastAssistantMessage = d.botChatHistory
           .slice()

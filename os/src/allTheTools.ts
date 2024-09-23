@@ -16,10 +16,10 @@ export const useTools = (): Tool[] => {
   // add exported tools in packages to tools
   useEffect(() => {
     setDynamicTools(
-      Object.values(modules).flatMap(({ module, sourceDocUrl }) =>
+      Object.values(modules).flatMap(({ module }) =>
         Object.values(module).flatMap((tool) => {
           console.log(tool);
-          return isTool(tool) ? [{ ...tool, sourceDocUrl }] : [];
+          return isTool(tool) ? [{ ...tool }] : [];
         })
       )
     );
