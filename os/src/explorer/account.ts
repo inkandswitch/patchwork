@@ -56,7 +56,7 @@ interface ContactProps {
   avatar: File;
 }
 
-class Account extends EventEmitter<AccountEvents> {
+export class Account extends EventEmitter<AccountEvents> {
   #repo: Repo;
   #handle: DocHandle<AccountDoc>;
   #contactHandle: DocHandle<ContactDoc>;

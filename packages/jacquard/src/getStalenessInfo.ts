@@ -1,12 +1,10 @@
-import { parallelMap } from "@/doc-reactive";
-import {
-  FolderDocWithMetadata
-} from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { objectEntries } from "@/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { FileDoc } from "../../file/src/datatype";
 import { BuildRun, Reference } from "./datatype";
+import { parallelMap } from "@/async-signals";
 
 export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
   // TODO: we should be able to use equality to check if heads match, but
@@ -156,15 +154,23 @@ export function getStalenessInfo(state: ProjectState): StalenessInfo {
   return { docStatuses, buildRunStatuses };
 }
 
-export function getBuildRunOutputtingDocUrl(state: ProjectState, docUrl: AutomergeUrl): BuildRun | undefined {
+export function getBuildRunOutputtingDocUrl(
+  state: ProjectState,
+  docUrl: AutomergeUrl
+): BuildRun | undefined {
   const found = state.buildRuns.find((buildRun) =>
     buildRun.outputs.some((output) => output.docUrl === docUrl)
   );
   return found;
 }
 
-export function getReferenceFromDocUrl(state: ProjectState, docUrl: AutomergeUrl): Reference {
-  const found = state.references.find((reference) => reference.docUrl === docUrl);
+export function getReferenceFromDocUrl(
+  state: ProjectState,
+  docUrl: AutomergeUrl
+): Reference {
+  const found = state.references.find(
+    (reference) => reference.docUrl === docUrl
+  );
   if (!found) {
     throw new Error(`Could not find reference for ${docUrl}`);
   }

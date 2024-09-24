@@ -1,19 +1,12 @@
-import {
-  DocReactiveState,
-  getDoc,
-  getOm,
-  ifLoaded,
-  DocLoading,
-  useDocReactive,
-} from "@/doc-reactive";
+import { getDoc, getOm, PendingException, useAsyncCall } from "@/async-signals";
 import { Om } from "@/om";
 import { DocPath } from "@/packages/folder/datatype";
-import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
+import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { useMemo, useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Atom, atom } from "signia";
 import { useValue } from "signia-react";
-import { AccountDoc, useCurrentAccount } from "./account";
+import { Account, AccountDoc, useCurrentAccount } from "./account";
 
 export type UIStateDoc = {
   /** Folders that are toggled open in the user's sidebar.
@@ -50,18 +43,18 @@ export function docPathString(docPath: DocPath): string {
   return docPath.map((link) => link.url).join("/");
 }
 
-export const useUIStateOm = (): DocReactiveState<Om<UIStateDoc>> => {
+export const getUIStateOm = (repo: Repo, account: Account | undefined) => {
+  if (!account) {
+    throw new PendingException();
+  }
+  const accountDoc = getDoc<AccountDoc>(account.handle.url, repo);
+  return getOm<UIStateDoc>(accountDoc.uiStateUrl, repo);
+};
+
+export const useUIStateOm = (): Om<UIStateDoc> | undefined => {
   const repo = useRepo();
   const account = useCurrentAccount();
-  return useDocReactive(
-    useCallback(() => {
-      if (!account) {
-        throw new DocLoading();
-      }
-      const accountDoc = getDoc<AccountDoc>(account.handle.url, repo);
-      return getOm<UIStateDoc>(accountDoc.uiStateUrl, repo);
-    }, [account, repo])
-  );
+  return useAsyncCall(getUIStateOm, repo, account).ifPending(undefined);
 };
 
 // Each tab maintains local versions of document UI state. These are initialized
@@ -106,7 +99,7 @@ export const useDocUIStateOrUndefined = (
   docPath: DocPath
 ): [DocUIState | undefined, (fn: (state: DocUIState) => void) => void] => {
   const key = docPathString(docPath);
-  const uiStateOm = ifLoaded(useUIStateOm());
+  const uiStateOm = useUIStateOm();
   const uiStateHandle = uiStateOm?.handle;
   const tabDocUIStateAtom = getTabDocUIStateAtom(key, uiStateHandle);
   const tabDocUIState = useValue(tabDocUIStateAtom);

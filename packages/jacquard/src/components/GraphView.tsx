@@ -1,4 +1,3 @@
-import { ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { EditorProps } from "@/tools";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
@@ -32,6 +31,7 @@ import {
 } from "../getStalenessInfo";
 import { useJacquardProjectInfoWithActiveBranch } from "../hooks";
 import { getProjectStateFromProjectInfo } from "../signals";
+import { useAsyncComputed, waitUntilPresent } from "@/async-signals";
 
 export const GraphView = ({
   mainDocUrl,
@@ -43,38 +43,33 @@ export const GraphView = ({
     getFakeDocPathForDocUrl(mainDocUrl)
   );
 
-  const projectState = ifLoaded(
-    useDocReactive(
-      useCallback(() => {
-        waitForDR(jacquardProjectInfo);
+  return useAsyncComputed(
+    useCallback(() => {
+      waitUntilPresent(jacquardProjectInfo);
 
-        if (!jacquardProjectInfo) {
-          return;
-        }
+      console.log("A");
+      const projectState = getProjectStateFromProjectInfo(
+        jacquardProjectInfo,
+        repo
+      );
+      console.log("B");
 
-        return getProjectStateFromProjectInfo(jacquardProjectInfo, repo);
-      }, [jacquardProjectInfo, repo])
-    )
-  );
-
-  if (!projectState) {
-    return;
-  }
-
-  return (
-    <div className="p-4 flex flex-col h-full overflow-auto">
-      <GraphvizView source={stateGraphSrc(projectState)} />
-      {false && (
-        <pre className="text-sm overflow-y-auto">
-          {JSON.stringify(
-            jacquardProjectInfo?.buildMetadataOm.doc.refreshState,
-            null,
-            2
+      return (
+        <div className="p-4 flex flex-col h-full overflow-auto">
+          <GraphvizView source={stateGraphSrc(projectState)} />
+          {false && (
+            <pre className="text-sm overflow-y-auto">
+              {JSON.stringify(
+                jacquardProjectInfo?.buildMetadataOm.doc.refreshState,
+                null,
+                2
+              )}
+            </pre>
           )}
-        </pre>
-      )}
-    </div>
-  );
+        </div>
+      );
+    }, [jacquardProjectInfo, repo])
+  ).ifPending(undefined);
 };
 
 const GraphvizView = ({ source }: { source: string }) => {

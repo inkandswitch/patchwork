@@ -1,10 +1,4 @@
-import {
-  docReactiveSignal,
-  getDoc,
-  getOm,
-  ifLoaded,
-  parallelMap,
-} from "@/doc-reactive";
+import { asyncComputed, getDoc, getOm, parallelMap } from "@/async-signals";
 import { Om } from "@/om";
 import { FolderDoc } from "@/packages/folder";
 import {
@@ -12,12 +6,12 @@ import {
   resolveUrlOnBranch,
 } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+import os from "node:os";
 import { CommandLineArgs } from ".";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 import { activateBranch } from "./activate";
 import { refresh } from "./refresh";
 import { sleep } from "./util";
-import os from "node:os";
 
 type BuildMetadataDocWithBranchUrl = {
   branchUrl?: AutomergeUrl;
@@ -46,9 +40,9 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
     );
   }
 
-  const buildMetadataDocsWithPendingRefresh = docReactiveSignal<
+  const buildMetadataDocsWithPendingRefresh = asyncComputed<
     BuildMetadataDocWithBranchUrl[]
-  >(() => {
+  >("", () => {
     const projectFolder = getDoc<FolderDoc>(projectFolderHandle.url, repo);
 
     const versionControlMetadataOm = getVersionControlMetadataOm(
@@ -102,7 +96,8 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
   console.log("waiting for requests ...");
 
   while (true) {
-    const pending = ifLoaded(buildMetadataDocsWithPendingRefresh.value);
+    const pending =
+      buildMetadataDocsWithPendingRefresh.value.ifPending(undefined);
     const next = pending && pending[0];
 
     if (!next) {

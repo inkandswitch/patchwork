@@ -1,4 +1,4 @@
-import { ifLoaded, useDocReactive } from "@/doc-reactive";
+import { useAsyncComputed, waitUntilPresent } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
@@ -179,27 +179,20 @@ export const VersionControlBar = ({
     getFakeDocPathForDocUrl(docUrl)
   );
 
-  const projectState = ifLoaded(
-    useDocReactive(
-      useCallback(
-        () =>
-          jacquardProjectInfo &&
-          getProjectStateFromProjectInfo(jacquardProjectInfo, repo),
-        [jacquardProjectInfo, repo]
-      )
-    )
-  );
+  const projectState = useAsyncComputed(
+    useCallback(() => {
+      waitUntilPresent(jacquardProjectInfo);
+      return getProjectStateFromProjectInfo(jacquardProjectInfo, repo);
+    }, [jacquardProjectInfo, repo])
+  ).ifPending(undefined);
 
-  const buildRunWithFileAsInput = ifLoaded(
-    useDocReactive(
-      useCallback(
-        () =>
-          projectState &&
-          getBuildRunsWithDocAsPrimaryInput(projectState, docUrl),
-        [projectState, docUrl]
-      )
+  const buildRunWithFileAsInput = useAsyncComputed(
+    useCallback(
+      () =>
+        projectState && getBuildRunsWithDocAsPrimaryInput(projectState, docUrl),
+      [projectState, docUrl]
     )
-  );
+  ).ifPending(undefined);
 
   const hasOutputFiles =
     buildRunWithFileAsInput && buildRunWithFileAsInput.length > 0;
@@ -736,9 +729,7 @@ const JacquardSection = ({
   projectState: ProjectState;
   datatypeId: string;
 }) => {
-  const stalenessInfo = projectState
-    ? getStalenessInfo(projectState)
-    : undefined;
+  const stalenessInfo = getStalenessInfo(projectState);
 
   const numStaleDocs = stalenessInfo
     ? Object.values(stalenessInfo.docStatuses).reduce(

@@ -1,9 +1,12 @@
-import { getDR, waitForLoaded } from "@/doc-reactive";
+import { asyncComputedPromise } from "@/async-signals";
+import { dataTypeById } from "@/datatypes";
 import { Om } from "@/om";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
+import { useDataTypes, useTools } from "@/patchworkContext";
 import { Button } from "@/shadcn/ui/button";
 import { Toaster } from "@/shadcn/ui/toaster";
+import { toolById, toolsForDataType } from "@/tools";
 import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import {
@@ -30,9 +33,6 @@ import { ErrorFallback } from "./ErrorFallback";
 import { LoadingScreen } from "./LoadingScreen";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
-import { useDataTypes, useTools } from "@/patchworkContext";
-import { dataTypeById } from "@/datatypes";
-import { toolById, toolsForDataType } from "@/tools";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();
@@ -100,6 +100,7 @@ export const Explorer: React.FC = () => {
       : tools[0];
 
   const uiStateOm = useUIStateOm();
+  const account = useCurrentAccount();
 
   const addNewDocument = useCallback(
     async ({
@@ -151,12 +152,8 @@ export const Explorer: React.FC = () => {
         parentFolderDocPath = _.initial(fakeDocPath(selectedDocLink));
       }
 
-      const { cloneOrMainOm } = await waitForLoaded(() =>
-        getBranchScopeAndActiveBranchInfo(
-          parentFolderDocPath,
-          getDR(uiStateOm),
-          repo
-        )
+      const { cloneOrMainOm } = await asyncComputedPromise(() =>
+        getBranchScopeAndActiveBranchInfo(parentFolderDocPath, account, repo)
       );
       const parentFolderBranchedOm = cloneOrMainOm as Om<FolderDoc>;
 
@@ -175,7 +172,15 @@ export const Explorer: React.FC = () => {
         folderPath: parentFolderDocPath.map((link) => link.url),
       });
     },
-    [uiStateOm, dataTypes, repo, selectedDocLink, selectDocLink, rootFolderUrl]
+    [
+      uiStateOm,
+      dataTypes,
+      repo,
+      selectedDocLink,
+      selectDocLink,
+      rootFolderUrl,
+      account,
+    ]
   );
 
   // TODO: this only reads the main branch

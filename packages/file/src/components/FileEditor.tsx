@@ -1,23 +1,23 @@
-import { ifLoaded, useDocReactive, waitForDR } from "@/doc-reactive";
+import { useAsyncComputed } from "@/async-signals";
+import { useDocUIState } from "@/explorer/uiState";
 import { TextAnchor } from "@/lib/textAnchors";
 import { EditorProps } from "@/tools";
 import { resolveUrlOnBranch } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import { useJacquardProjectInfoWithActiveBranch } from "../../../jacquard/src/hooks";
 import {
   getBuildRunsWithDocAsPrimaryInput,
   getProjectStateFromProjectInfo,
 } from "../../../jacquard/src/signals";
 import { FileDoc } from "../datatype";
+import { isImageFile } from "../utils";
 import { FitsFileDoc, FitsFileViewer, isFitsFile } from "./FitsFileViewer";
+import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
 import { ImageFileDoc, ImageFileViewer } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
-import { useDocUIState } from "@/explorer/uiState";
-import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
-import { isImageFile } from "../utils";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -45,54 +45,43 @@ export const FileEditor = (props: EditorProps<any, any>) => {
     getFakeDocPathForDocUrl(mainDocUrl)
   );
 
-  const projectState = ifLoaded(
-    useDocReactive(
-      useCallback(() => {
-        if (!jacquardProjectInfo) {
-          return;
-        }
+  const projectState = useAsyncComputed(
+    useCallback(() => {
+      if (!jacquardProjectInfo) {
+        return;
+      }
+      return getProjectStateFromProjectInfo(jacquardProjectInfo, repo);
+    }, [jacquardProjectInfo, repo])
+  ).ifPending(undefined);
 
-        return getProjectStateFromProjectInfo(jacquardProjectInfo, repo);
-      }, [jacquardProjectInfo, repo])
-    )
-  );
+  const buildRuns = useAsyncComputed(
+    useCallback(() => {
+      if (!projectState) {
+        return;
+      }
+      return getBuildRunsWithDocAsPrimaryInput(projectState, mainDocUrl);
+    }, [projectState, mainDocUrl])
+  ).ifPending(undefined);
 
-  const buildRuns = ifLoaded(
-    useDocReactive(
-      useCallback(() => {
-        if (!projectState) {
-          return;
-        }
-        return getBuildRunsWithDocAsPrimaryInput(projectState, mainDocUrl);
-      }, [projectState, mainDocUrl])
-    )
-  );
-
-  const outputFiles = ifLoaded(
-    useDocReactive(
-      "buildMetadataInputsOnBranch",
-      useCallback(() => {
-        if (!buildRuns) {
-          return;
-        }
-        return buildRuns.flatMap((buildRun) =>
-          buildRun.outputs.map((output) =>
-            activeBranchUrl
-              ? {
-                  ...output,
-                  docUrl: resolveUrlOnBranch(
-                    output.docUrl,
-                    activeBranchUrl,
-                    repo
-                  ).url,
-                  mainDocUrl: output.docUrl,
-                }
-              : { ...output, mainDocUrl: output.docUrl }
-          )
-        );
-      }, [activeBranchUrl, repo, buildRuns])
-    )
-  );
+  const outputFiles = useAsyncComputed(
+    useCallback(() => {
+      if (!buildRuns) {
+        return;
+      }
+      return buildRuns.flatMap((buildRun) =>
+        buildRun.outputs.map((output) =>
+          activeBranchUrl
+            ? {
+                ...output,
+                docUrl: resolveUrlOnBranch(output.docUrl, activeBranchUrl, repo)
+                  .url,
+                mainDocUrl: output.docUrl,
+              }
+            : { ...output, mainDocUrl: output.docUrl }
+        )
+      );
+    }, [activeBranchUrl, repo, buildRuns])
+  ).ifPending(undefined);
 
   if (!doc) {
     return null;

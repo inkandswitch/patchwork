@@ -1,11 +1,12 @@
-import { getDR, isLoaded, DocLoading, useDocReactive } from "@/doc-reactive";
+import { useAsyncComputed, waitUntilPresent } from "@/async-signals";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
-import { fakeDocPath, getOmOnBranchFromPath } from "@/versionControl/signals";
-import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { useCallback, useEffect, useRef } from "react";
-import { useUIStateOm } from "../uiState";
 import { useDataTypes } from "@/patchworkContext";
 import { dataTypeById } from "@/sdk";
+import { fakeDocPath } from "@/versionControl/signals";
+import { getOmOnBranchFromPath } from "@/versionControl/signals";
+import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+import { useCallback, useEffect, useRef } from "react";
+import { useCurrentAccount } from "../account";
 
 // This hook keeps the name of the link synced with the title of the document.
 // The update is triggered every time the selected doc changes.
@@ -27,38 +28,29 @@ export const useSyncDocTitle = ({
   const selectedDocTitleRef = useRef<{ url: AutomergeUrl; title?: string }>();
   const dataTypes = useDataTypes();
   const dataType = dataTypeById(dataTypes, selectedDocLink?.type);
-  const uiStateOm = useUIStateOm();
+  const account = useCurrentAccount();
   const selectedDocPath = selectedDocLink && fakeDocPath(selectedDocLink);
 
-  const selectedDoc = useDocReactive(
+  const selectedDoc = useAsyncComputed(
     useCallback(() => {
-      if (!selectedDocPath) {
-        throw new DocLoading();
-      }
-      return getOmOnBranchFromPath(selectedDocPath, getDR(uiStateOm), repo).doc;
-    }, [repo, selectedDocPath, uiStateOm])
-  );
+      waitUntilPresent(selectedDocPath);
+      return getOmOnBranchFromPath(selectedDocPath, account, repo).doc;
+    }, [account, repo, selectedDocPath])
+  ).ifPending(undefined);
 
-  const parentFolderOm = useDocReactive(
+  const parentFolderOm = useAsyncComputed(
     useCallback(() => {
-      if (!selectedDocPath) {
-        throw new DocLoading();
-      }
+      waitUntilPresent(selectedDocPath);
       return getOmOnBranchFromPath<FolderDoc>(
         selectedDocPath.slice(0, -1),
-        getDR(uiStateOm),
+        account,
         repo
       );
-    }, [repo, selectedDocPath, uiStateOm])
-  );
+    }, [account, repo, selectedDocPath])
+  ).ifPending(undefined);
 
   useEffect(() => {
-    if (
-      !selectedDocLink ||
-      !isLoaded(selectedDoc) ||
-      !dataType ||
-      !isLoaded(parentFolderOm)
-    ) {
+    if (!selectedDocLink || !selectedDoc || !dataType || !parentFolderOm) {
       selectedDocTitleRef.current = undefined;
       return;
     }

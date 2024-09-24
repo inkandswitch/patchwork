@@ -1,18 +1,19 @@
-import { docPathString, UIStateDoc } from "@/explorer/uiState";
+import { Account } from "@/explorer/account";
+import { docPathString, getUIStateOm } from "@/explorer/uiState";
 import { Om } from "@/om";
 import {
   DocLinkWithFolderPath,
   type DocPath,
 } from "@/packages/folder/datatype";
-import { getDoc, getOm, parallelMap } from "@/doc-reactive";
+import { canBeUndef } from "@/utils";
 import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
+import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+import { getDoc, getOm, parallelMap } from "../async-signals";
 import {
   BranchDoc,
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
 } from "./schema";
-import { canBeUndef } from "@/utils";
 
 export const getVersionControlMetadataOm = (
   doc: Automerge.Doc<HasVersionControlMetadata>,
@@ -97,9 +98,10 @@ export type ActiveBranchInfo = {
 
 export const getActiveBranchInfo = (
   branchScopePath: DocPath,
-  uiStateOm: Om<UIStateDoc>,
+  account: Account | undefined,
   repo: Repo
 ): ActiveBranchInfo => {
+  const uiStateOm = getUIStateOm(repo, account);
   const activeBranchUrl = canBeUndef(
     // We handle the case of doc.openBranches being undefined here for backwards compatibility
     uiStateOm.doc.openBranches?.[docPathString(branchScopePath)]
@@ -137,13 +139,13 @@ const EMPTY_HEADS: Automerge.Heads = [];
 // and uses that to figure out what branch is active in the branch scope.
 export const getBranchScopeAndActiveBranchInfo = (
   docPath: DocPath,
-  uiStateOm: Om<UIStateDoc>,
+  account: Account | undefined,
   repo: Repo
 ): BranchScopeAndActiveBranchInfo => {
   const branchScopeInfo = getBranchScopeInfo(docPath, repo);
   const activeBranchInfo = getActiveBranchInfo(
     branchScopeInfo.branchScopePath,
-    uiStateOm,
+    account,
     repo
   );
 
@@ -169,10 +171,10 @@ export const getBranchScopeAndActiveBranchInfo = (
  */
 export const getOmOnBranchFromPath = <T>(
   docPath: DocPath,
-  uiStateOm: Om<UIStateDoc>,
+  account: Account | undefined,
   repo: Repo
 ): Om<T> => {
-  return getBranchScopeAndActiveBranchInfo(docPath, uiStateOm, repo)
+  return getBranchScopeAndActiveBranchInfo(docPath, account, repo)
     .cloneOrMainOm as Om<T>;
 };
 

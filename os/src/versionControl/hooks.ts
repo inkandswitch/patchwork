@@ -1,5 +1,5 @@
-import { getDR, ifLoaded, useDocReactive } from "@/doc-reactive";
-import { useUIStateOm } from "@/explorer/uiState";
+import { useAsyncComputed } from "@/async-signals";
+import { useCurrentAccount } from "@/explorer/account";
 import { DocPath } from "@/packages/folder/datatype";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback, useMemo, useRef } from "react";
@@ -21,28 +21,23 @@ export const useBranchScopeInfo = (
   docPath: DocPath | undefined
 ): BranchScopeInfo | undefined => {
   const repo = useRepo();
-  return ifLoaded(
-    useDocReactive(
-      useCallback(() => {
-        return docPath && getBranchScopeInfo(docPath, repo);
-      }, [docPath, repo])
-    )
-  );
+  return useAsyncComputed(
+    useCallback(() => {
+      return docPath && getBranchScopeInfo(docPath, repo);
+    }, [docPath, repo])
+  ).ifPending(undefined);
 };
 
 export const useActiveBranchInfo = (branchScopePath: DocPath | undefined) => {
   const repo = useRepo();
-  const uiStateOm = useUIStateOm();
-  return ifLoaded(
-    useDocReactive(
-      useCallback(
-        () =>
-          branchScopePath &&
-          getActiveBranchInfo(branchScopePath, getDR(uiStateOm), repo),
-        [uiStateOm, branchScopePath, repo]
-      )
+  const account = useCurrentAccount();
+  return useAsyncComputed(
+    useCallback(
+      () =>
+        branchScopePath && getActiveBranchInfo(branchScopePath, account, repo),
+      [branchScopePath, account, repo]
     )
-  );
+  ).ifPending(undefined);
 };
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
@@ -51,19 +46,14 @@ export const useBranchScopeAndActiveBranchInfo = (
   docPath: DocPath | undefined
 ): BranchScopeAndActiveBranchInfo | undefined => {
   const repo = useRepo();
-  const uiStateOm = useUIStateOm();
-
-  const branchScopeAndActiveBranchInfo = ifLoaded(
-    useDocReactive(
-      useCallback(
-        () =>
-          docPath &&
-          uiStateOm &&
-          getBranchScopeAndActiveBranchInfo(docPath, getDR(uiStateOm), repo),
-        [docPath, uiStateOm, repo]
-      )
+  const account = useCurrentAccount();
+  const branchScopeAndActiveBranchInfo = useAsyncComputed(
+    useCallback(
+      () =>
+        docPath && getBranchScopeAndActiveBranchInfo(docPath, account, repo),
+      [docPath, account, repo]
     )
-  );
+  ).ifPending(undefined);
 
   // This is really gnarly, but BranchScopeAndActiveBranchInfo has two
   // properties "branchOms" and "branchScopePath" that are recreated as new object
@@ -161,18 +151,3 @@ export function useDedupe<T>(t: T, eq: (x: T, y: T) => boolean): T {
 
   return lastT.current;
 }
-
-const useComparatorMemo = <T>(
-  factory: () => T,
-  isEqual: (prevValue: T) => boolean
-): T => {
-  const memoizedValue = useRef<T>(factory());
-
-  return useMemo<T>(() => {
-    if (!isEqual(memoizedValue.current)) {
-      memoizedValue.current = factory();
-    }
-
-    return memoizedValue.current;
-  }, [factory, isEqual]);
-};

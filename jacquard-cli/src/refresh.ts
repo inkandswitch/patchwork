@@ -1,9 +1,9 @@
-import { getDoc, waitForLoaded } from "@/doc-reactive";
+import { asyncComputedPromise, getDoc } from "@/async-signals";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { getFolderDocWithChildren } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { omit } from "lodash";
+import _, { omit } from "lodash";
 import { CommandLineArgs } from ".";
 import { FileDoc } from "../../packages/file/src/datatype";
 import {
@@ -19,8 +19,7 @@ import {
   findWithActiveBranchPromise,
 } from "./findWithActiveBranch";
 import { run } from "./run";
-import { getBuildMetadataDocUrl, waitForSync } from "./util";
-import _ from "lodash";
+import { getBuildMetadataDocUrl } from "./util";
 
 export async function refresh(
   repo: Repo,
@@ -65,7 +64,7 @@ export async function refresh(
   }
 
   const getCurrentStalenessInfo = async () => {
-    const projectState = await waitForLoaded(() => {
+    const projectState = await asyncComputedPromise(() => {
       const getDocOnBranchFromUrl = (fileUrl: AutomergeUrl) => {
         const fileHandle = findWithActiveBranch<FileDoc>(fileUrl, repo);
         return getDoc<any>(fileHandle.url, repo);

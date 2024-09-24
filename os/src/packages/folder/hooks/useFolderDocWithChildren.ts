@@ -1,12 +1,9 @@
 import {
-  getDR,
-  ifLoaded,
-  DocLoading,
-  parallelMap,
-  useDocReactive,
   DocMissingError,
-} from "@/doc-reactive";
-import { useUIStateOm } from "@/explorer/uiState";
+  parallelMap,
+  useAsyncComputed,
+} from "@/async-signals";
+import { useCurrentAccount } from "@/explorer/account";
 import {
   fakeDocPath,
   getOmOnBranch,
@@ -14,6 +11,7 @@ import {
 } from "@/versionControl/signals";
 import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import { last } from "lodash";
 import { useCallback } from "react";
 import {
   DocLink,
@@ -22,7 +20,6 @@ import {
   FolderDoc,
   FolderDocWithChildren,
 } from "../datatype";
-import { last } from "lodash";
 
 export type FolderDocWithMetadata = {
   rootFolderUrl: AutomergeUrl;
@@ -138,16 +135,14 @@ export function useFolderDocWithChildren(
   rootFolderUrl: AutomergeUrl | undefined
 ): FolderDocWithMetadata | undefined {
   const repo = useRepo();
-  const uiStateOm = useUIStateOm();
-  return ifLoaded(
-    useDocReactive(
-      useCallback(() => {
-        if (!rootFolderUrl) return undefined;
-        const getDocOnBranchFromPath = (docPath: DocPath) => {
-          return getOmOnBranchFromPath(docPath, getDR(uiStateOm), repo).doc;
-        };
-        return getFolderDocWithChildren(rootFolderUrl, getDocOnBranchFromPath);
-      }, [rootFolderUrl, uiStateOm, repo])
-    )
-  );
+  const account = useCurrentAccount();
+  return useAsyncComputed(
+    useCallback(() => {
+      if (!rootFolderUrl) return undefined;
+      const getDocOnBranchFromPath = (docPath: DocPath) => {
+        return getOmOnBranchFromPath(docPath, account, repo).doc;
+      };
+      return getFolderDocWithChildren(rootFolderUrl, getDocOnBranchFromPath);
+    }, [rootFolderUrl, account, repo])
+  ).ifPending(undefined);
 }

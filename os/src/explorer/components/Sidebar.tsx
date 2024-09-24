@@ -1,10 +1,5 @@
-import {
-  getDoc,
-  getDR,
-  ifLoaded,
-  useDocReactive,
-  waitForLoaded,
-} from "@/doc-reactive";
+import { asyncComputedPromise, getDoc } from "@/async-signals";
+import { useAsyncComputed } from "@/async-signals/react";
 import { Icon, IconType } from "@/lib/icons";
 import {
   DocLink,
@@ -14,6 +9,8 @@ import {
 } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { useDataTypes } from "@/patchworkContext";
+import { dataTypeById } from "@/sdk";
 import { Input } from "@/shadcn/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 import {
@@ -42,7 +39,6 @@ import {
 } from "lucide-react";
 import React, {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -55,12 +51,14 @@ import {
   RenameHandler,
   Tree,
 } from "react-arborist";
-import { useCurrentAccountDoc, useDatatypeSettings } from "../account";
-import { docPathString, UIStateDoc, useUIStateOm } from "../uiState";
+import {
+  useCurrentAccount,
+  useCurrentAccountDoc,
+  useDatatypeSettings,
+} from "../account";
+import { docPathString, UIStateDoc } from "../uiState";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
-import { useDataTypes } from "@/patchworkContext";
-import { dataTypeById } from "@/sdk";
 
 const FlatDocLinksContext = createContext<DocLinkWithFolderPath[]>([]);
 
@@ -81,48 +79,7 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
     });
   }, [flatDocLinks, node.data]);
 
-  const docPath = fakeDocPath(node.data);
-  const repo = useRepo();
-  const uiStateOm = useUIStateOm();
-  const activeBranchName = ifLoaded(
-    useDocReactive(
-      useCallback(() => {
-        // For performance reasons, we only show the active branch on certain nodes to
-        // avoid eagerly loading too much data.
-        // - We show it for the currently selected sidebar entry, which should already have data loaded
-        // - We show it for folders, because a folder can be a branch scope for its contents,
-        //   and it's helpful to see the branch name on the folder to indicate that it's a branch scope.
-        const showActiveBranchName =
-          node.data.type === "folder" || node.isSelected;
-        if (!showActiveBranchName) {
-          return undefined;
-        }
-        const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
-        const versionControlMetadataDoc = getVersionControlMetadataOm(
-          doc,
-          repo
-        )?.doc;
-        if (versionControlMetadataDoc?.isBranchScope) {
-          const { activeBranchOm } = getActiveBranchInfo(
-            docPath,
-            getDR(uiStateOm),
-            repo
-          );
-          return activeBranchOm?.doc.name ?? "Main";
-        }
-      }, [
-        docPath,
-        node.data.url,
-        node.data.type,
-        node.isSelected,
-        repo,
-        uiStateOm,
-      ])
-    )
-  );
-
   let icon;
-
   if (node.data.type === "folder") {
     if (node.isOpen) {
       icon = "ChevronDown";
@@ -168,12 +125,7 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
               {node.children?.length || 0}
             </div>
           )}
-          {activeBranchName && (
-            <div className="text-xs text-gray-500 flex items-center gap-1">
-              <GitBranchIcon size={14} className="ml-1" />
-              {activeBranchName}
-            </div>
-          )}
+          <NodeActiveBranchInfo {...props} />
           {redundantWith && (
             <TooltipProvider delayDuration={0}>
               <Tooltip>
@@ -198,6 +150,49 @@ const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
       {node.isEditing && <Edit {...props} />}
     </div>
   );
+};
+
+const NodeActiveBranchInfo = (
+  props: NodeRendererProps<DocLinkWithFolderPath>
+) => {
+  const { node } = props;
+
+  const docPath = fakeDocPath(node.data);
+  const repo = useRepo();
+  const account = useCurrentAccount();
+
+  return useAsyncComputed(() => {
+    // For performance reasons, we only show the active branch on
+    // certain nodes to avoid eagerly loading too much data.
+    // - We show it for the currently selected sidebar entry, which
+    //   should already have data loaded
+    // - We show it for folders, because a folder can be a branch
+    //   scope for its contents, and it's helpful to see the branch
+    //   name on the folder to indicate that it's a branch scope.
+    const showActiveBranchName = node.data.type === "folder" || node.isSelected;
+    if (!showActiveBranchName) {
+      return undefined;
+    }
+    const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
+    const versionControlMetadataDoc = getVersionControlMetadataOm(
+      doc,
+      repo
+    )?.doc;
+    if (versionControlMetadataDoc?.isBranchScope) {
+      const { activeBranchOm } = getActiveBranchInfo(docPath, account, repo);
+      const activeBranchName = activeBranchOm?.doc.name ?? "Main";
+      return (
+        <div className="text-xs text-gray-500 flex items-center gap-1">
+          <GitBranchIcon size={14} className="ml-1" />
+          {activeBranchName}
+        </div>
+      );
+    }
+  }).ifPending(() => (
+    <div className="text-xs text-gray-300 flex items-center gap-1">
+      <GitBranchIcon size={14} className="ml-1" />
+    </div>
+  ));
 };
 
 const Edit = ({ node }: NodeRendererProps<DocLinkWithFolderPath>) => {
@@ -296,7 +291,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     accountDoc?.uiStateUrl
   );
 
-  const uiStateOm = useUIStateOm();
+  const account = useCurrentAccount();
 
   const onMove: MoveHandler<DocLinkWithFolderPath> = async ({
     parentNode,
@@ -322,8 +317,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       const srcUrl = dragNode.data.url;
       const srcPath = fakeDocPath(dragNode.data);
       const srcParentPath = srcPath.slice(0, -1);
-      const srcParentOm = await waitForLoaded(() =>
-        getOmOnBranchFromPath<FolderDoc>(srcParentPath, getDR(uiStateOm), repo)
+      const srcParentOm = await asyncComputedPromise(() =>
+        getOmOnBranchFromPath<FolderDoc>(srcParentPath, account, repo)
       );
       const dragItemIndex = srcParentOm.doc.docs.findIndex(
         (item) => item.url === dragNode.data.url
@@ -341,16 +336,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               folderPath: [],
             })
           : fakeDocPath(parentNode.data);
-      const dstParentOm = await waitForLoaded(() =>
-        getOmOnBranchFromPath<FolderDoc>(dstParentPath, getDR(uiStateOm), repo)
+      const dstParentOm = await asyncComputedPromise(() =>
+        getOmOnBranchFromPath<FolderDoc>(dstParentPath, account, repo)
       );
 
       // Time for the subtlety listed under #3 above...
       let overrideUrl: AutomergeUrl | undefined;
-      await waitForLoaded(() => {
+      await asyncComputedPromise(() => {
         const srcBranchInfo = getBranchScopeAndActiveBranchInfo(
           srcPath,
-          getDR(uiStateOm),
+          account,
           repo
         );
         if (
@@ -359,7 +354,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) {
           const dstBranchInfo = getBranchScopeAndActiveBranchInfo(
             dstParentPath,
-            getDR(uiStateOm),
+            account,
             repo
           );
           if (
@@ -422,12 +417,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
 
     const docPath = fakeDocPath(node.data);
-    const docOm = await waitForLoaded(() =>
-      getOmOnBranchFromPath<FolderDoc>(docPath, getDR(uiStateOm), repo)
+    const docOm = await asyncComputedPromise(() =>
+      getOmOnBranchFromPath<FolderDoc>(docPath, account, repo)
     );
     const parentPath = docPath.slice(0, -1);
-    const parentOm = await waitForLoaded(() =>
-      getOmOnBranchFromPath<FolderDoc>(parentPath, getDR(uiStateOm), repo)
+    const parentOm = await asyncComputedPromise(() =>
+      getOmOnBranchFromPath<FolderDoc>(parentPath, account, repo)
     );
 
     // rename doc link

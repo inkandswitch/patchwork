@@ -1,7 +1,8 @@
-import { ifLoaded } from "@/doc-reactive";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
+import { LoadingScreen } from "@/explorer/components/LoadingScreen";
 import { useDocUIState, useUIStateOm } from "@/explorer/uiState";
 import { DocLinkWithFolderPath, DocPath } from "@/packages/folder/datatype";
+import { useDataTypes } from "@/patchworkContext";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { EditorProps, Tool } from "@/tools";
 import { AutomergeUrl } from "@automerge/automerge-repo";
@@ -19,14 +20,12 @@ import { useAnnotations } from "../annotations";
 import { setActiveBranchUrl } from "../branches";
 import { useBranchScopeAndActiveBranchInfo } from "../hooks";
 import { DiffWithProvenance, HasVersionControlMetadata } from "../schema";
-import { fakeDocPath } from "../signals";
 import { diffWithProvenance, useActorIdToAuthorMap } from "../utils";
 import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
-import { LoadingScreen } from "@/explorer/components/LoadingScreen";
-import { useDataTypes } from "@/patchworkContext";
-import { dataTypeById } from "@/sdk";
+import { dataTypeById } from "@/datatypes";
+import { fakeDocPath } from "../signals";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -52,7 +51,7 @@ export const VersionControlEditor: React.FC<{
     getFakeDocPathForDocUrl(mainDocUrl)
   );
 
-  const uiStateOm = ifLoaded(useUIStateOm());
+  const uiStateOm = useUIStateOm();
 
   const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
@@ -109,9 +108,8 @@ export const VersionControlEditor: React.FC<{
     [selectedDocLink]
   );
 
-  const branchScopeAndActiveBranchInfo = ifLoaded(
-    useBranchScopeAndActiveBranchInfo(docPath)
-  );
+  const branchScopeAndActiveBranchInfo =
+    useBranchScopeAndActiveBranchInfo(docPath);
 
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
   const cloneOrMainDocAtHeads =

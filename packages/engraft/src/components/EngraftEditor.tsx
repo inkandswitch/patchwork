@@ -1,11 +1,3 @@
-import {
-  getDocState,
-  ifLoaded,
-  DocLoading,
-  parallelMap,
-  throwIfMissing,
-  useDocReactive,
-} from "@/doc-reactive";
 import { useRootFolderDocWithChildren } from "@/explorer/account";
 import { useHandleDef } from "@/hooks/useHandleDef";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
@@ -34,6 +26,7 @@ import {
   applyUpdateAsChangeToObject,
   removeUndefineds,
 } from "../engraft-automerge";
+import { getDocState, parallelMap, useAsyncComputed } from "@/async-signals";
 
 function getDocName(
   url: AutomergeUrl,
@@ -74,40 +67,40 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
 
   const repo = useRepo();
   const inputUrls = doc?.inputUrls;
-  const varBindings = ifLoaded(
-    useDocReactive(
-      useCallback(() => {
-        if (!inputUrls) {
-          return {};
+  const varBindings = useAsyncComputed(
+    useCallback(() => {
+      if (!inputUrls) {
+        return {};
+      }
+      const outputPs: EngraftPromise<ToolOutput>[] = parallelMap(
+        inputUrls,
+        (url) => {
+          // TODO: hacky code I think
+          const docState = getDocState<unknown>(url, repo).ifPending(
+            EngraftPromise.unresolved<ToolOutput>()
+          );
+          return docState instanceof EngraftPromise
+            ? docState
+            : EngraftPromise.resolve({ value: docState });
         }
-        const outputPs: EngraftPromise<ToolOutput>[] = parallelMap(
-          inputUrls,
-          (url) => {
-            const docState = getDocState<unknown>(url, repo);
-            throwIfMissing(docState);
-            return docState instanceof DocLoading
-              ? EngraftPromise.unresolved()
-              : EngraftPromise.resolve({ value: docState });
-          }
-        );
+      );
 
-        let varBindings: { [id: string]: VarBinding } = {};
-        for (const [i, url] of inputUrls.entries()) {
-          const automergeId = parseAutomergeUrl(url).documentId;
-          // TODO: underscore hack oh no
-          const id = `IDautomerge${automergeId.replace(/\d/g, "_")}000000`;
-          varBindings[id] = {
-            var_: {
-              id,
-              label: getDocName(url, rootFolderDocWithChildren),
-            },
-            outputP: outputPs[i],
-          };
-        }
-        return varBindings;
-      }, [inputUrls, repo, rootFolderDocWithChildren])
-    )
-  );
+      let varBindings: { [id: string]: VarBinding } = {};
+      for (const [i, url] of inputUrls.entries()) {
+        const automergeId = parseAutomergeUrl(url).documentId;
+        // TODO: underscore hack oh no
+        const id = `IDautomerge${automergeId.replace(/\d/g, "_")}000000`;
+        varBindings[id] = {
+          var_: {
+            id,
+            label: getDocName(url, rootFolderDocWithChildren),
+          },
+          outputP: outputPs[i],
+        };
+      }
+      return varBindings;
+    }, [inputUrls, repo, rootFolderDocWithChildren])
+  ).ifPending(undefined);
 
   const updateProgram: Updater<ToolProgram> = useCallback((update) => {
     const doc = handle.docSync();
