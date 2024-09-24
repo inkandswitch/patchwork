@@ -122,7 +122,21 @@ export type VersionedDataType<D, T, V> = {
   links?: (doc: D) => DocLink[];
 };
 
-export type DataType<D, T, V> = CoreDataType<D> & VersionedDataType<D, T, V>;
+export type DataType<D = unknown, T = unknown, V = unknown> = CoreDataType<D> &
+  VersionedDataType<D, T, V>;
+
+export const isDataType = (value: any): value is DataType => {
+  return "type" in value && value.type === "patchwork:dataType";
+};
+
+export const dataTypeById = <D, T, V>(
+  dataTypes: DataType[],
+  id: string | undefined
+) => {
+  return dataTypes.find((dataType) => dataType.id == id) as
+    | DataType<D, T, V>
+    | undefined;
+};
 
 /** Kinda hacky utility function to initialize an object in
  * handle.change in a type-safe way. */

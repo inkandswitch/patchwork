@@ -47,7 +47,7 @@ export const BotSidebar = ({
 }: {
   doc: Doc<HasVersionControlMetadata<unknown, unknown>>;
   handle: DocHandle<HasVersionControlMetadata<unknown, unknown>>;
-  dataType: DataType<unknown, unknown, unknown>;
+  dataType: DataType;
   selectedBranch: LegacyBranch | undefined;
   setSelectedBranch: (branch: LegacyBranch | undefined) => void;
   setSidebarMode: (mode: SidebarMode) => void;

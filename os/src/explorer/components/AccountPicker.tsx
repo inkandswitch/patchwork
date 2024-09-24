@@ -33,9 +33,9 @@ import {
   TooltipTrigger,
 } from "@/shadcn/ui/tooltip";
 import { ContactAvatar } from "./ContactAvatar";
-import { allTheDataTypes } from "@/allTheDataTypes";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import { Icon } from "@/lib/icons";
+import { useDataTypes } from "@/patchworkContext";
 
 // 1MB in bytes
 const MAX_AVATAR_SIZE = 1024 * 1024;
@@ -146,6 +146,8 @@ export const AccountPicker = ({
       contactToLogin?.type === "registered");
 
   const isLoggedIn = self?.type === "registered";
+
+  const dataTypes = useDataTypes();
 
   return (
     <Dialog>
@@ -324,7 +326,7 @@ export const AccountPicker = ({
 
               <div className="flex flex-col gap-2 py-2">
                 {moduleSettingsDoc &&
-                  allTheDataTypes.map((dataType) => {
+                  dataTypes.map((dataType) => {
                     const isEnabled =
                       moduleSettingsDoc.enabledDatatypeIds[dataType.id];
 

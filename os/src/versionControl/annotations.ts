@@ -44,7 +44,7 @@ export function useAnnotations({
   isCommentInputFocused,
 }: {
   doc: A.Doc<HasVersionControlMetadata<unknown, unknown>>;
-  dataType: DataType<unknown, unknown, unknown> | undefined;
+  dataType: DataType | undefined;
   diff?: DiffWithProvenance;
   isCommentInputFocused: boolean;
 }): {
@@ -466,7 +466,7 @@ export function useAnnotations({
 }
 
 export const doAnchorsOverlap = (
-  datatype: DataType<unknown, unknown, unknown>,
+  datatype: DataType,
   a: unknown,
   b: unknown,
   doc: HasVersionControlMetadata<unknown, unknown>
@@ -476,7 +476,7 @@ export const doAnchorsOverlap = (
 };
 
 export const areAnchorSelectionsEqual = (
-  datatype: DataType<unknown, unknown, unknown>,
+  datatype: DataType,
   a: unknown[],
   b: unknown[],
   doc: HasVersionControlMetadata<unknown, unknown>

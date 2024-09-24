@@ -11,6 +11,7 @@ import {
   ensureMetadataHandleIsBranchScope,
   initVersionControlSidecarDoc,
   Tool,
+  useDataTypes,
   VersionControlSidecarDoc,
 } from "@/sdk";
 import { Button } from "@/shadcn/ui/button";
@@ -29,9 +30,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shadcn/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shadcn/ui/tooltip";
 import { useToast } from "@/shadcn/ui/use-toast";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
+import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import {
   BuildRefreshButton,
   DisabledBuildRefreshButton,
@@ -46,7 +53,6 @@ import _, { truncate } from "lodash";
 import {
   ArrowRightFromLineIcon,
   ArrowRightToLineIcon,
-  BanIcon,
   ChevronsDownUpIcon,
   ColumnsIcon,
   CrownIcon,
@@ -64,12 +70,6 @@ import {
 import { useCallback, useState } from "react";
 import { createJacquardBranch, mergeBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../signals";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/shadcn/ui/tooltip";
 
 // interface MakeBranchOptions {
 //   name?: string;
@@ -114,6 +114,8 @@ export const VersionControlBar = ({
     getFakeDocPathForDocUrl(docUrl)
   );
 
+  const dataTypes = useDataTypes();
+
   const handleCreateJacquardBranch = useCallback(async () => {
     const docPathForBranchScope = getFakeDocPathForDocUrl(branchScopeOm.url);
     const docLinkForBranchScope = _.last(docPathForBranchScope)!;
@@ -122,16 +124,18 @@ export const VersionControlBar = ({
       repo,
       branchScopeHandle: branchScopeOm.handle,
       dataTypeId: docLinkForBranchScope?.type,
+      dataTypes,
       createdBy: account?.contactHandle?.url,
     });
     onSelectBranchUrl(branchUrl);
     toast({ title: "Created a new branch" });
   }, [
-    account?.contactHandle?.url,
-    branchScopeOm?.handle,
-    branchScopeOm?.url,
     getFakeDocPathForDocUrl,
+    branchScopeOm.url,
+    branchScopeOm.handle,
     repo,
+    dataTypes,
+    account?.contactHandle?.url,
     onSelectBranchUrl,
     toast,
   ]);

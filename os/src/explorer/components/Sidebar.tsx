@@ -55,17 +55,19 @@ import {
   RenameHandler,
   Tree,
 } from "react-arborist";
-import { allTheDataTypes, dataTypeById } from "@/allTheDataTypes";
 import { useCurrentAccountDoc, useDatatypeSettings } from "../account";
 import { docPathString, UIStateDoc, useUIStateOm } from "../uiState";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
+import { useDataTypes } from "@/patchworkContext";
+import { dataTypeById } from "@/sdk";
 
 const FlatDocLinksContext = createContext<DocLinkWithFolderPath[]>([]);
 
 const Node = (props: NodeRendererProps<DocLinkWithFolderPath>) => {
   const { node, style, dragHandle } = props;
-  const dataType = dataTypeById(node.data.type);
+  const dataTypes = useDataTypes();
+  const dataType = dataTypeById(dataTypes, node.data.type);
 
   const flatDocLinks = useContext(FlatDocLinksContext);
 
@@ -262,6 +264,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   rootFolderDoc,
 }) => {
   const repo = useRepo();
+  const dataTypes = useDataTypes();
 
   const {
     doc: rootFolderDocWithChildren,
@@ -403,7 +406,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     name,
   }) => {
     const docLink = flatDocLinks.find((doc) => doc.url === node.data.url);
-    const dataType = dataTypeById(docLink?.type)!; // TODO: JAH strict fix
+    const dataType = dataTypeById(dataTypes, docLink?.type)!; // TODO: JAH strict fix
 
     if (!dataType?.setTitle) {
       alert(
@@ -505,7 +508,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
       <div className="py-2  border-b border-gray-200">
-        {allTheDataTypes.map((dataType) => {
+        {dataTypes.map((dataType) => {
           const { id } = dataType;
           const isEnabled = datatypeSettings?.enabledDatatypeIds[id];
           if (

@@ -2,11 +2,10 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import React, { useMemo } from "react";
 
-import { dataTypeById } from "@/allTheDataTypes";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
 import { Icon, IconType } from "@/lib/icons";
-import { EditorProps, Tool } from "@/tools";
+import { EditorProps, Tool, toolsForDataType } from "@/tools";
 import { useAnnotations } from "@/versionControl/annotations";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
@@ -16,7 +15,8 @@ import { ErrorBoundary } from "react-error-boundary";
 import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
 import { useDocUIState } from "@/explorer/uiState";
-import { useToolsForDataType } from "@/allTheTools";
+import { useDataTypes, useTools } from "@/patchworkContext";
+import { dataTypeById } from "@/sdk";
 
 export const FolderViewerWithEmbeds: React.FC<
   EditorProps<unknown, unknown>
@@ -78,8 +78,11 @@ export const FolderEntryView = ({
     useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
-  const dataType = dataTypeById(docLink.type);
-  const tool = useToolsForDataType(docLink.type)[0];
+  const dataTypes = useDataTypes();
+  const dataType = dataTypeById(dataTypes, docLink.type);
+
+  const tools = useTools();
+  const tool = toolsForDataType(tools, docLink.type)[0];
 
   const icon = tool?.icon ?? dataType?.icon;
 

@@ -14,6 +14,7 @@ import {
 import React from "react";
 import { IconType } from "./lib/icons";
 import { DocPath } from "./packages/folder/datatype";
+import { DataType } from "./datatypes";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -50,6 +51,35 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
 ): Tool {
   return tool as Tool;
 }
+
+export const isTool = (value: any): value is Tool => {
+  return "type" in value && value.type === "patchwork:tool";
+};
+
+export const toolsForDataType = (
+  tools: Tool[],
+  dataType: DataType | string | undefined
+): Tool[] => {
+  if (!dataType) {
+    return [];
+  }
+
+  return tools.filter((tool) => {
+    return (
+      tool.supportedDataTypes === "*" ||
+      (typeof dataType === "string"
+        ? tool.supportedDataTypes.some((d) => d === dataType)
+        : tool.supportedDataTypes.includes(dataType.id))
+    );
+  });
+};
+
+export const toolById = (
+  tools: Tool[],
+  id: string | undefined
+): Tool | undefined => {
+  return tools.find((tool) => tool.id === id);
+};
 
 export type EditorProps<A, V> = {
   docUrl: AutomergeUrl;

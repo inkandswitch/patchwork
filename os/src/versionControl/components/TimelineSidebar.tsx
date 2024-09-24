@@ -148,7 +148,7 @@ export type ChangelogSelection =
   | undefined;
 
 export const TimelineSidebar: React.FC<{
-  dataType: DataType<unknown, unknown, unknown>;
+  dataType: DataType;
   docUrl: AutomergeUrl;
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
   setDocHeads: (heads: Heads | undefined) => void;

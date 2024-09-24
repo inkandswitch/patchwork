@@ -18,8 +18,6 @@ import {
 import _ from "lodash";
 import React, { useCallback, useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { dataTypeById } from "@/allTheDataTypes";
-import { useTool, useToolsForDataType } from "@/allTheTools";
 import {
   useCurrentAccount,
   useCurrentAccountDoc,
@@ -32,6 +30,9 @@ import { ErrorFallback } from "./ErrorFallback";
 import { LoadingScreen } from "./LoadingScreen";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { useDataTypes, useTools } from "@/patchworkContext";
+import { dataTypeById } from "@/datatypes";
+import { toolById, toolsForDataType } from "@/tools";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();
@@ -78,11 +79,13 @@ export const Explorer: React.FC = () => {
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
 
-  const selectedDataType = dataTypeById(selectedDataTypeId);
-  const tools = useToolsForDataType(selectedDataType);
+  const dataTypes = useDataTypes();
+  const allTools = useTools();
+
+  const selectedDataType = dataTypeById(dataTypes, selectedDataTypeId);
+  const tools = toolsForDataType(allTools, selectedDataType);
   const [selectedToolId, setSelectedToolId] = useState<string>();
-  const toolModules = useToolsForDataType(selectedDataType);
-  const selectedTool = useTool(selectedToolId);
+  const selectedTool = toolById(allTools, selectedToolId);
 
   const currentTool =
     // make sure the current tool is reset to the fallback tool
@@ -94,7 +97,7 @@ export const Explorer: React.FC = () => {
         (supportedDataType) => supportedDataType === selectedDataType?.id
       ))
       ? selectedTool
-      : toolModules[0];
+      : tools[0];
 
   const uiStateOm = useUIStateOm();
 
@@ -110,7 +113,7 @@ export const Explorer: React.FC = () => {
         throw new Error("uiStateHandle not ready");
       }
 
-      const dataType = dataTypeById(type);
+      const dataType = dataTypeById(dataTypes, type);
 
       if (!dataType) {
         throw new Error(`Unsupported document type: ${type}`);
@@ -172,7 +175,7 @@ export const Explorer: React.FC = () => {
         folderPath: parentFolderDocPath.map((link) => link.url),
       });
     },
-    [repo, selectedDocLink, uiStateOm, selectDocLink, rootFolderUrl]
+    [uiStateOm, dataTypes, repo, selectedDocLink, selectDocLink, rootFolderUrl]
   );
 
   // TODO: this only reads the main branch

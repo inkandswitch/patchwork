@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { dataTypeById } from "@/allTheDataTypes";
 import { useAnnotations } from "../annotations";
 import { setActiveBranchUrl } from "../branches";
 import { useBranchScopeAndActiveBranchInfo } from "../hooks";
@@ -26,6 +25,8 @@ import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
 import { LoadingScreen } from "@/explorer/components/LoadingScreen";
+import { useDataTypes } from "@/patchworkContext";
+import { dataTypeById } from "@/sdk";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -132,7 +133,8 @@ export const VersionControlEditor: React.FC<{
 
   const diff = diffFromTimelineSidebar ?? branchDiff;
 
-  const dataType = dataTypeById(datatypeId);
+  const dataTypes = useDataTypes();
+  const dataType = dataTypeById(dataTypes, datatypeId);
 
   const {
     annotations,

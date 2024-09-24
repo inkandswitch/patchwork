@@ -131,7 +131,7 @@ export const makeBotTextEdits = async ({
 }: {
   targetDocHandle: DocHandle<any>;
   chatHistory: ChatMessage[];
-  dataType: DataType<unknown, unknown, unknown>;
+  dataType: DataType;
   repo: Repo;
 }): Promise<LegacyBranch | null> => {
   if (!isSupportedDatatype(dataType.id)) {

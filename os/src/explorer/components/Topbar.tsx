@@ -32,9 +32,10 @@ import { genericExportMethods } from "@/fileExports";
 import { Tool } from "@/tools";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { getHeads } from "@automerge/automerge";
-import { dataTypeById } from "@/allTheDataTypes";
 import { getUrlSafeName } from "../hooks/useSelectedDocLink";
 import { useToast } from "@/shadcn/ui/use-toast";
+import { useDataTypes } from "@/patchworkContext";
+import { dataTypeById } from "@/sdk";
 
 type TopbarProps = {
   showSidebar: boolean;
@@ -73,7 +74,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   const selectedDataTypeRef = useRef<string>();
   selectedDataTypeRef.current = selectedDataTypeId;
 
-  const selectedDataType = dataTypeById(selectedDataTypeId);
+  const dataTypes = useDataTypes();
+  const selectedDataType = dataTypeById(dataTypes, selectedDataTypeId);
 
   const toolsWithEditorComponent = tools.filter((tool) => tool.EditorComponent);
 

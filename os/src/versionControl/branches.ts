@@ -1,8 +1,9 @@
-import { dataTypeById } from "@/allTheDataTypes";
 import { docPathString, UIStateDoc } from "@/explorer/uiState";
 import { Om } from "@/om";
 import { DocPath } from "@/packages/folder/datatype";
 import {
+  DataType,
+  dataTypeById,
   DocCloneMap,
   ensureMetadataHandleIsBranchScope,
   getVersionControlMetadataHandle,
@@ -19,11 +20,13 @@ export const createJacquardBranch = async <
   repo,
   branchScopeHandle,
   dataTypeId,
+  dataTypes,
   createdBy,
 }: {
   repo: Repo;
   branchScopeHandle: DocHandle<DocType>;
   dataTypeId: string;
+  dataTypes: DataType[];
   createdBy: AutomergeUrl | undefined;
 }): Promise<AutomergeUrl> => {
   const versionControlMetadataHandle = ensureMetadataHandleIsBranchScope(
@@ -40,7 +43,13 @@ export const createJacquardBranch = async <
   const branchHandle = repo.create<BranchDoc>();
 
   const clonesMap = {};
-  await cloneDocWithLinks(repo, branchScopeHandle, dataTypeId, clonesMap);
+  await cloneDocWithLinks(
+    repo,
+    branchScopeHandle,
+    dataTypeId,
+    dataTypes,
+    clonesMap
+  );
 
   console.log("clonesMap", clonesMap);
 
@@ -65,6 +74,7 @@ export const cloneDocWithLinks = async (
   repo: Repo,
   handle: DocHandle<unknown>,
   dataTypeId: string,
+  dataTypes: DataType[],
   docCloneMap: DocCloneMap
 ): Promise<void> => {
   console.log("cloning", handle.url);
@@ -86,8 +96,8 @@ export const cloneDocWithLinks = async (
   };
 
   // clone links
-  const links = dataTypeById(dataTypeId)?.links;
-  console.log("links func", links, dataTypeById(dataTypeId));
+  const links = dataTypeById(dataTypes, dataTypeId)?.links;
+  console.log("links func", links, dataTypeById(dataTypes, dataTypeId));
   if (links) {
     const doc = await handle.doc();
     const links_ = links(doc);
@@ -95,7 +105,13 @@ export const cloneDocWithLinks = async (
     await Promise.all(
       links_.map(async (link) => {
         const handle = repo.find(link.url);
-        await cloneDocWithLinks(repo, handle, link.type, docCloneMap);
+        await cloneDocWithLinks(
+          repo,
+          handle,
+          link.type,
+          dataTypes,
+          docCloneMap
+        );
       })
     );
   }
