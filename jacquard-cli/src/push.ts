@@ -1,3 +1,4 @@
+import { dataTypeById, initFrom } from "@/datatypes";
 import { FolderDoc } from "@/packages/folder";
 import { initVersionControlMetadata } from "@/versionControl/schema.ts";
 import * as Automerge from "@automerge/automerge";
@@ -7,26 +8,21 @@ import {
   DocHandle,
   Repo,
   parseAutomergeUrl,
-  updateText,
 } from "@automerge/automerge-repo";
 import fs from "fs";
-import mime from "mime-types";
 import path from "path";
 import process from "process";
 import { CommandLineArgs } from ".";
-import { FileDoc } from "../../packages/file/src/datatype";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 import { findWithActiveBranchPromise } from "./findWithActiveBranch";
 import { RunResult } from "./run";
 import {
+  dataTypes,
   formatFileSize,
   readFileContent,
-  sha256,
   sleep,
-  uploadFile,
   waitForSync,
 } from "./util";
-import { initFrom } from "@/datatypes";
 
 export async function push(
   repo: Repo,
@@ -47,7 +43,7 @@ export async function push(
     string,
     {
       mainUrl: AutomergeUrl;
-      cloneHandle: DocHandle<FileDoc>;
+      cloneHandle: DocHandle<unknown>;
     }
   > = {};
 
@@ -139,7 +135,7 @@ async function pushDir({
   repo: Repo;
   mainUrlsAndCloneHandlesByFileName: Record<
     string,
-    { mainUrl: AutomergeUrl; cloneHandle: DocHandle<FileDoc> }
+    { mainUrl: AutomergeUrl; cloneHandle: DocHandle<unknown> }
   >;
   folderHandle: DocHandle<FolderDoc>;
 }) {
@@ -303,7 +299,7 @@ const pushFile = async ({
   folderHandle: DocHandle<FolderDoc>;
   repo: Repo;
 }): Promise<{
-  handle: DocHandle<FileDoc>;
+  handle: DocHandle<unknown>;
   mainUrl: AutomergeUrl;
   didChange: boolean;
 }> => {
@@ -315,8 +311,8 @@ const pushFile = async ({
     `Pushing ${fileContent.type} file (${formattedSize}): ${filePath}`
   );
 
-  const fileType = path.extname(filePath).slice(1);
-  const fileNameWithExtension = path.basename(filePath);
+  const fileExtension = path.extname(filePath).slice(1);
+  const fileName = path.basename(filePath);
 
   const folderDoc = await folderHandle.doc();
   if (!folderDoc) {
@@ -329,102 +325,64 @@ const pushFile = async ({
     );
   }
 
-  const existingDocLink = folderDoc.docs.find(
-    (link) => link.name === fileNameWithExtension
-  );
+  const existingDocLink = folderDoc.docs.find((link) => link.name === fileName);
 
-  let handle: DocHandle<FileDoc>;
-  let mainUrl: AutomergeUrl = undefined as any; // TODO: JAH strict fix - what happens if !existingDocLink below?
-  let didChange = false;
   if (existingDocLink) {
-    handle = await findWithActiveBranchPromise<FileDoc>(
-      existingDocLink.url,
-      repo
-    );
-    mainUrl = existingDocLink.url;
+    const handle = await findWithActiveBranchPromise(existingDocLink.url, repo);
+    const mainUrl = existingDocLink.url;
 
-    await handle.whenReady();
-
-    if (fileContent.type === "binary") {
-      const doc = await handle.doc();
-      if (!doc) {
-        throw new Error(`Doc missing: ${handle.url}`);
-      }
-      const hash = sha256(fileContent.value);
-      if (!(doc.content.type === "link" && doc.content.url.endsWith(hash))) {
-        didChange = true;
-        handle = await findWithActiveBranchPromise<FileDoc>(
-          existingDocLink.url,
-          repo
-        );
-
-        const mimeType = mime.lookup(fileType);
-        console.log("File changed, uploading...");
-        const url = await uploadFile(fileContent.value, mimeType);
-
-        handle.change((doc) => {
-          doc.content = { type: "link", url };
-        });
-      } else {
-        console.log("File didn't change, skipping upload");
-      }
-    } else {
-      // TODO: this is a datatype-specific mapping from unix file to automerge doc!
-      // needs to be specified somewhere datatype-specific I guess.
-      // notably: it's also an incremental update to support diffs.
-      handle.change((doc) => {
-        if (!Automerge.equals(doc.content, fileContent)) {
-          console.log("File changed, updating...");
-          didChange = true;
-
-          if (doc.content.type === "text") {
-            updateText(doc, ["content", "value"], fileContent.value);
-          } else {
-            doc.content = fileContent;
-          }
-        } else {
-          console.log("File didn't change, skipping update");
-        }
-      });
+    const dataTypeId = existingDocLink.type;
+    const dataType = dataTypeById(dataTypes, dataTypeId);
+    if (!dataType) {
+      throw new Error(
+        `cannot update ${filePath} with unknown type ${dataTypeId}`
+      );
     }
+    if (!dataType.updateDocFromUnixFile) {
+      throw new Error(
+        `cannot update ${filePath} of non-file type ${dataTypeId}`
+      );
+    }
+
+    const { didChange } = await dataType.updateDocFromUnixFile(
+      fileContent.value,
+      handle
+    );
+
+    return { handle, mainUrl, didChange };
   } else {
     console.log("Creating new file...");
+
+    const dataType =
+      dataTypes.find((dt) => dt.unixFileExtensions?.includes(fileExtension)) ??
+      dataTypes.find((dt) => dt.unixFileExtensions?.includes("*"));
+
+    if (!dataType) {
+      throw new Error(`Unable to find datatype for ${fileExtension} or *`);
+    }
+    if (!dataType.initDocFromUnixFile) {
+      throw new Error(
+        `datatype ${dataType.id} does not have initDocFromUnixFile`
+      );
+    }
+
     // Make a new doc in the folder
-    handle = repo.create();
-    mainUrl = handle.url;
-    didChange = true;
+    const handle = repo.create();
+    await dataType.initDocFromUnixFile(fileContent.value, fileName, handle);
+    const mainUrl = handle.url;
+    const didChange = true;
 
     // delay to not overload automerge repo by creating many handles
     sleep(500);
 
-    let url: string | undefined = undefined;
-    if (fileContent.type === "binary") {
-      const mimeType = mime.lookup(fileType);
-      url = await uploadFile(fileContent.value, mimeType);
-    }
-
-    handle.change((doc) => {
-      doc.name = path.basename(filePath);
-      doc.type = fileType;
-
-      if (url) {
-        doc.content = { type: "link", url };
-      } else {
-        doc.content = fileContent;
-      }
-
-      // new sidecar metadata in separate doc
-      initVersionControlMetadata(doc, repo, { branchScope: false });
-    });
-
     folderHandle.change((d) => {
       d.docs.push({
-        name: fileNameWithExtension,
+        name: fileName,
         url: handle.url, // this is ok cuz it's a new doc, not a clone
-        type: "file",
+        type: dataType.id,
       });
     });
-  }
 
-  return { handle, mainUrl, didChange };
+    return { handle, mainUrl, didChange };
+  }
 };

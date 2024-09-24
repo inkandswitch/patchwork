@@ -279,12 +279,23 @@ function unionBounds(boundsA: Bounds, boundsB: Bounds): Bounds {
   return { x: minX, y: minY, w: width, h: height };
 }
 
-const editor = new Editor({
-  store: createTLStore({ shapeUtils: defaultShapeUtils }),
-  shapeUtils: defaultShapeUtils,
-  tools: [],
-  getContainer: () => document.body,
-});
+// HACK: `new Editor` doesn't work on the server cuz deep in tldraw
+// they do cancelAnimationFrame (etc?). Not sure what expectations
+// should be about datatype methods running on the server, but for
+// now let's just make this lazy.
+let EDITOR: Editor | null = null;
+const getEditor = () => {
+  if (!EDITOR) {
+    EDITOR = new Editor({
+      store: createTLStore({ shapeUtils: defaultShapeUtils }),
+      shapeUtils: defaultShapeUtils,
+      tools: [],
+      getContainer: () => document.body,
+    });
+  }
+
+  return EDITOR;
+};
 
 const getBounds = (shape: TLShape): Bounds => {
   let geometry;
@@ -292,7 +303,7 @@ const getBounds = (shape: TLShape): Bounds => {
   // hack: getGeometry throws an error for some shape types because we don't have a proper editor instance here.
   // we just create an empty editor so we can call the getGeometry function
   try {
-    geometry = editor.shapeUtils[shape.type]!.getGeometry(shape); // TODO: JAH strict fix
+    geometry = getEditor().shapeUtils[shape.type]!.getGeometry(shape); // TODO: JAH strict fix
   } catch (err) {
     return { x: 0, y: 0, w: 0, h: 0 };
   }

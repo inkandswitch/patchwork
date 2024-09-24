@@ -1,7 +1,7 @@
 import { AssetsDoc } from "@/assets";
 import { FileExportMethod } from "@/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
-import { type DataType } from "@/sdk";
+import { initFrom, type DataType } from "@/sdk";
 import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
 import {
   HasVersionControlMetadata,
@@ -9,8 +9,8 @@ import {
 } from "@/versionControl/schema";
 import { TextPatch } from "@/versionControl/utils";
 import { next as A } from "@automerge/automerge";
-import { Repo } from "@automerge/automerge-repo";
-import { splice } from "@automerge/automerge/next";
+import { DocHandle, Repo } from "@automerge/automerge-repo";
+import { splice, updateText } from "@automerge/automerge/next";
 import JSZip from "jszip";
 import { pick } from "lodash";
 
@@ -21,6 +21,8 @@ import { pick } from "lodash";
 // unclear if comments should be part of the doc or the content
 export type MarkdownDoc = HasVersionControlMetadata<TextAnchor, string> & {
   content: string;
+  /** If an essay came from Jacquard-pushing a markdown file, this is its filename */
+  unixFileName?: string;
 };
 
 // FUNCTIONS
@@ -55,6 +57,10 @@ const asMarkdownFile = (doc: MarkdownDoc): Blob => {
 // then looks for the first H1.
 
 const getTitle = async (doc: MarkdownDoc) => {
+  if (doc.unixFileName) {
+    return doc.unixFileName;
+  }
+
   const content = doc.content;
   const frontmatterRegex = /---\n([\s\S]+?)\n---/;
   const frontmatterMatch = content.match(frontmatterRegex);
@@ -76,7 +82,7 @@ const getTitle = async (doc: MarkdownDoc) => {
     title = titleFallbackMatch ? titleFallbackMatch[2] : "Untitled";
   }
 
-  return `${title} ${subtitle && `: ${subtitle}`}`;
+  return `${title}${subtitle && `: ${subtitle}`}`;
 };
 
 const includeChangeInHistory = (doc: MarkdownDoc) => {
@@ -155,6 +161,57 @@ const fileExportMethods: FileExportMethod<MarkdownDoc>[] = [
   },
 ];
 
+const docToUnixFile = async (doc: MarkdownDoc) => {
+  return {
+    content: doc.content,
+    fileName: doc.unixFileName,
+  };
+};
+
+const initDocFromUnixFile = async (
+  content: string | Uint8Array,
+  unixFileName: string,
+  handle: DocHandle<MarkdownDoc>
+): Promise<void> => {
+  if (typeof content !== "string") {
+    // TODO: better handling?
+    throw new Error("Expected content to be a string");
+  }
+
+  handle.change((doc) => {
+    initFrom(doc, {
+      content,
+      unixFileName,
+    });
+  });
+};
+
+const updateDocFromUnixFile = async (
+  content: string | Uint8Array,
+  handle: DocHandle<MarkdownDoc>
+) => {
+  if (typeof content !== "string") {
+    // TODO: better handling?
+    throw new Error("Expected content to be a string");
+  }
+
+  const doc = await handle.doc();
+  if (!doc) {
+    throw new Error("Document not found");
+  }
+
+  if (doc.content === content) {
+    console.log("File didn't change, skipping update");
+    return { didChange: false };
+  }
+
+  handle.change((doc) => {
+    updateText(doc, ["content"], content);
+  });
+
+  return { didChange: true };
+};
+
 export const markdownDataType: DataType<MarkdownDoc, TextAnchor, string> = {
   type: "patchwork:dataType",
   id: "essay",
@@ -168,4 +225,8 @@ export const markdownDataType: DataType<MarkdownDoc, TextAnchor, string> = {
   promptForAIChangeGroupSummary,
   fileExportMethods,
   ...textAnchorsAtPath(["content"]),
+  docToUnixFile,
+  initDocFromUnixFile,
+  updateDocFromUnixFile,
+  unixFileExtensions: ["md"],
 };

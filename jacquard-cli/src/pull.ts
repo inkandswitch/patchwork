@@ -1,16 +1,13 @@
-import { FolderDoc } from "@/packages/folder";
+import { DocLink, FolderDoc } from "@/packages/folder";
+import { dataTypeById } from "@/sdk";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import fs from "fs";
 import path from "path";
 import { CommandLineArgs } from ".";
-import { FileDoc } from "../../packages/file/src/datatype";
 import { findWithActiveBranchPromise } from "./findWithActiveBranch";
-import { fetchFile } from "./util";
+import { dataTypes } from "./util";
 
-export async function pull(
-  repo: Repo,
-  args: CommandLineArgs
-) {
+export async function pull(repo: Repo, args: CommandLineArgs) {
   const { projectFolderUrl, dir } = args;
 
   if (!projectFolderUrl) {
@@ -29,7 +26,10 @@ async function pullFolder({
   dir: string;
   repo: Repo;
 }) {
-  const folderHandle = await findWithActiveBranchPromise<FolderDoc>(folderUrl, repo);
+  const folderHandle = await findWithActiveBranchPromise<FolderDoc>(
+    folderUrl,
+    repo
+  );
   const doc = await folderHandle.doc();
 
   if (!doc) {
@@ -44,52 +44,61 @@ async function pullFolder({
         return;
       }
 
-      switch (docLink.type) {
-        case "file":
-          await pullFile({ fileUrl: docLink.url, dir, repo });
-          break;
-        case "folder":
-          // Create the folder on disk if it doesn't exist
-          if (!fs.existsSync(path.join(dir, docLink.name))) {
-            fs.mkdirSync(path.join(dir, docLink.name), { recursive: true });
-          }
+      if (docLink.type === "folder") {
+        const newDir = path.join(dir, docLink.name);
 
-          // then pull the contents of the folder
-          await pullFolder({
-            folderUrl: docLink.url,
-            dir: path.join(dir, docLink.name),
-            repo,
-          });
-          break;
-        default:
-          console.log(`skipping non-file doc: ${docLink.name}`);
-          return;
+        // Create the folder on disk if it doesn't exist
+        if (!fs.existsSync(newDir)) {
+          fs.mkdirSync(newDir, { recursive: true });
+        }
+
+        // then pull the contents of the folder
+        await pullFolder({
+          folderUrl: docLink.url,
+          dir: newDir,
+          repo,
+        });
+      } else {
+        await pullDoc({ docLink, dir, repo });
       }
     })
   );
 }
 
-async function pullFile({
-  fileUrl,
+async function pullDoc({
+  docLink,
   dir,
   repo,
 }: {
-  fileUrl: AutomergeUrl;
+  docLink: DocLink;
   dir: string;
   repo: Repo;
 }) {
-  const fileHandle = await findWithActiveBranchPromise<FileDoc>(fileUrl, repo);
-  const fileDoc = await fileHandle.doc();
+  const dataTypeId = docLink.type;
+  const filePath = path.join(dir, docLink.name);
 
-  if (!fileDoc) {
-    console.error(`Could not find ${fileUrl}: ${fileHandle.state}`);
+  const dataType = dataTypeById(dataTypes, dataTypeId);
+  if (!dataType) {
+    console.error(`skipping doc ${filePath} with unknown type ${dataTypeId}`);
+    return;
+  }
+  if (!dataType.docToUnixFile) {
+    console.log(`skipping doc ${filePath} of non-file type ${dataTypeId}`);
     return;
   }
 
-  const content =
-    fileDoc.content.type === "link"
-      ? await fetchFile(fileDoc.content.url)
-      : fileDoc.content.value;
+  const handle = await findWithActiveBranchPromise(docLink.url, repo);
+  const doc = await handle.doc();
+  if (!doc) {
+    console.error(
+      `skipping doc ${filePath} that could not be found (${handle.state})`
+    );
+    return;
+  }
 
-  fs.writeFileSync(path.join(dir, fileDoc.name), content);
+  const unixFile = await dataType.docToUnixFile(doc);
+  fs.writeFileSync(
+    unixFile.fileName ? path.join(dir, unixFile.fileName) : filePath,
+    unixFile.content
+  );
 }

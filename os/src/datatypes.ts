@@ -6,7 +6,7 @@ import {
 import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
 import { TextPatch } from "@/versionControl/utils";
 import { next as A, Doc } from "@automerge/automerge";
-import { Repo } from "@automerge/automerge-repo";
+import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { ReactElement } from "react";
 import { FileExportMethod } from "./fileExports";
 import { IconType } from "./lib/icons";
@@ -29,6 +29,24 @@ export type CoreDataType<D> = {
 
   /* If this flag is enabled the data type won't show up in the new document menu */
   disableManualCreation?: boolean;
+
+  // UNIX SYNC (for Jacquard)
+  // Pulling
+  docToUnixFile?: (doc: D) => Promise<{
+    content: string | Uint8Array;
+    fileName?: string; // defaults to name provided in DocLink
+  }>;
+  // Pushing
+  initDocFromUnixFile?: (
+    content: string | Uint8Array,
+    fileName: string,
+    handle: DocHandle<D>
+  ) => Promise<void>;
+  updateDocFromUnixFile?: (
+    content: string | Uint8Array,
+    handle: DocHandle<D>
+  ) => Promise<{ didChange: boolean }>;
+  unixFileExtensions?: string[];
 };
 
 export type VersionedDataType<D, T, V> = {
@@ -146,3 +164,19 @@ export const initFrom = <D extends object>(
 ) => {
   Object.assign(doc, init);
 };
+
+// experimental "LoadedDocHandle"
+
+// export type LoadedDocHandle<D> = Omit<DocHandle<D>, "docSync"> & {
+//   docSync: () => Readonly<D>;
+// };
+
+// export const loadHandle = async <D>(
+//   handle: DocHandle<D>
+// ): Promise<LoadedDocHandle<D> | undefined> => {
+//   const doc = await handle.doc();
+//   if (!doc) {
+//     return undefined;
+//   }
+//   return handle as LoadedDocHandle<D>;
+// };

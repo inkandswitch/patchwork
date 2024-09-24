@@ -18,7 +18,6 @@
     "@codemirror/state": "^6.4.1",
     "@codemirror/view": "^6.28.6",
     "@lezer/common": "^1.2.1",
-    "@tldraw/tldraw": "2.0.0-alpha.17",
     "clsx": "^2.1.1",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",

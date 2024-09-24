@@ -9,7 +9,7 @@
     "build": "pnpm --filter os build",
     "tsc": "tsc",
     "preinstall": "npx only-allow pnpm",
-    "test": "pnpm --filter os test"
+    "test": "pnpm --filter \"./{os,jacquard-cli}\" test"
   },
   "pnpm": {
     "overrides": {

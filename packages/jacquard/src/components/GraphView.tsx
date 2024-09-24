@@ -6,20 +6,26 @@ import { instance } from "@viz-js/viz";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { JacquardBuildMetadata } from "../datatype";
 
-const rawSvgIcons = import.meta.glob("../file-icon-vectors/*.svg", {
-  eager: true,
-  import: "default",
-});
-
 let svgIconsByFileExtension: Record<string, string> = {};
 
-for (let [key, value] of Object.entries(rawSvgIcons)) {
-  const fileExtension =
-    key
-      .split("/")
-      .pop()
-      ?.replace(/\.svg$/, "") || "";
-  svgIconsByFileExtension[fileExtension] = value as string;
+// HACK: import.meta.glob doesn't work on the server. Ideally we
+// wouldn't import view code from the server at all, but right now
+// getting datatypes goes through packages indices and package
+// indices import view code. This works for now.
+if (typeof window !== "undefined") {
+  const rawSvgIcons = import.meta.glob("../file-icon-vectors/*.svg", {
+    eager: true,
+    import: "default",
+  });
+
+  for (let [key, value] of Object.entries(rawSvgIcons)) {
+    const fileExtension =
+      key
+        .split("/")
+        .pop()
+        ?.replace(/\.svg$/, "") || "";
+    svgIconsByFileExtension[fileExtension] = value as string;
+  }
 }
 
 import {

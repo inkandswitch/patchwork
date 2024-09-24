@@ -6,13 +6,15 @@ import {
   DocHandle,
   StorageId,
 } from "@automerge/automerge-repo";
-import crypto from "crypto";
 import fs from "fs";
 import { isBinaryFileSync } from "isbinaryfile";
-import path from "path";
-import { FileContent } from "../../packages/file/src/datatype";
 import { PassThrough } from "node:stream";
 import { inspect } from "node:util";
+import path from "path";
+import { FileContent } from "../../packages/file/src/datatype";
+import { builtInDataTypesSafe } from "@/builtInDataTypesSafe";
+
+export const dataTypes = builtInDataTypesSafe;
 
 export function getBuildMetadataDocUrl(folderDoc: Doc<FolderDoc>) {
   return folderDoc.docs.find((link) => link.name === "Build Metadata")?.url;
@@ -83,49 +85,10 @@ export const getJacquardConfig = () => {
   }
 };
 
-const ENDPOINT_URL = "https://file-server-txxa.onrender.com/file";
-
-export const uploadFile = async (
-  fileBuffer: Uint8Array,
-  mimeType: string | false
-): Promise<string> => {
-  try {
-    const response = await fetch(ENDPOINT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": mimeType || "application/octet-stream",
-      },
-      body: fileBuffer,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload file: ${response.statusText}`);
-    }
-
-    const responseData = await response.json();
-    return responseData.url as string;
-  } catch (error) {
-    console.error("Error uploading file:", error);
-    throw error;
-  }
-};
-
-export const sha256 = (buffer: Uint8Array) =>
-  crypto.createHash("sha256").update(buffer).digest("hex");
-
 export const sleep = async (duration: number): Promise<void> => {
   return new Promise((resolve) => {
     setTimeout(() => resolve(), duration);
   });
-};
-
-export const fetchFile = async (url: string): Promise<Uint8Array> => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch file: ${response.statusText}`);
-  }
-  const arrayBuffer = await response.arrayBuffer();
-  return new Uint8Array(arrayBuffer);
 };
 
 export const addPrefix = (prefix: string | undefined, str: string) =>
@@ -149,7 +112,7 @@ const isBinaryFileJacquard = (filePath: string) => {
 
   const treateAsBinaryFileBecauseOfSize =
     fileSize > MAX_TEXT_FILE_SIZE &&
-    WHITELIST_FILE_EXTENSION_BIG_TEXT.every((ext) => !filePath.endsWith(ext));
+    !WHITELIST_FILE_EXTENSION_BIG_TEXT.some((ext) => filePath.endsWith(ext));
 
   return (
     isBinaryFileSync(filePath) ||

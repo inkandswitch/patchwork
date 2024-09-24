@@ -29,8 +29,7 @@ import {
 } from "@/versionControl/signals";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { structuredClone } from "@tldraw/tldraw";
-import { capitalize, uniqBy } from "lodash";
+import { capitalize, clone, uniqBy } from "lodash";
 import {
   AlertCircle,
   ChevronsLeft,
@@ -377,7 +376,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       let removedItem: DocLink;
       srcParentOm.handle.change((d) => {
         const spliceResult = d.docs.splice(dragItemIndex, 1);
-        removedItem = structuredClone({ ...spliceResult[0] });
+        removedItem = clone({ ...spliceResult[0] });
       });
       dstParentOm.handle.change((d) => {
         if (overrideUrl) {

@@ -5,11 +5,10 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import {
   EditorProps,
   Icon,
-  useDataTypes,
   selectDocLink,
   dataTypeById,
+  useDataTypes,
 } from "@patchwork/sdk";
-import React from "react";
 import styles from "../folder-list-view.module.css";
 
 const FolderListItem: React.FC<{ docLink: DocLink }> = ({ docLink }) => {

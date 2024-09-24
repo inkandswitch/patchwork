@@ -1,9 +1,13 @@
 import { FileExportMethod } from "@/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
-import { ChangeGroup, type DataType } from "@/sdk";
+import { ChangeGroup, initFrom, type DataType } from "@/sdk";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { TextPatch } from "@/versionControl/utils";
 import * as Automerge from "@automerge/automerge";
+import { DocHandle, updateText } from "@automerge/automerge-repo";
+import crypto from "crypto";
+import mime from "mime-types";
+import path from "path";
 import { isImageFile, useBinaryUrl } from "./utils";
 
 // SCHEMA
@@ -51,7 +55,7 @@ const getTitle = async (doc: FileDoc) => {
   return doc.name || "Untitled File";
 };
 
-export const init = (doc: any) => {
+export const init = (doc: FileDoc) => {
   // todo: should only be able to create this by importing a file
   // or by creating a specific type
   throw new Error("can't create empty file");
@@ -150,6 +154,119 @@ const fileExportMethods: FileExportMethod<FileDoc>[] = [
   },
 ];
 
+const ENDPOINT_URL = "https://file-server-txxa.onrender.com/file";
+
+const uploadFile = async (
+  fileBuffer: Uint8Array,
+  mimeType: string | false
+): Promise<string> => {
+  try {
+    const response = await fetch(ENDPOINT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": mimeType || "application/octet-stream",
+      },
+      body: fileBuffer,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload file: ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    return responseData.url as string;
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    throw error;
+  }
+};
+
+export const sha256 = (buffer: Uint8Array) =>
+  crypto.createHash("sha256").update(buffer).digest("hex");
+
+const docToUnixFile = async (doc: FileDoc) => {
+  if (doc.content.type === "link") {
+    const response = await fetch(doc.content.url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.statusText}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    return { content: new Uint8Array(arrayBuffer) };
+  } else {
+    return { content: doc.content.value };
+  }
+};
+
+const initDocFromUnixFile = async (
+  content: string | Uint8Array,
+  fileName: string,
+  handle: DocHandle<FileDoc>
+): Promise<void> => {
+  const fileExtension = path.extname(fileName).slice(1);
+
+  handle.change((doc) => {
+    initFrom(doc, {
+      name: fileName,
+      type: fileExtension,
+      // TODO: kinda hacky
+      content: { type: "text", value: "" },
+    });
+  });
+
+  await updateDocFromUnixFile(content, handle);
+};
+
+const updateDocFromUnixFile = async (
+  content: string | Uint8Array,
+  handle: DocHandle<FileDoc>
+) => {
+  const doc = await handle.doc();
+  if (!doc) {
+    throw new Error("Document not found");
+  }
+
+  const fileExtension = path.extname(doc.name).slice(1);
+
+  // TODO: Buffer is supposed to be a subclass of Uint8Array but
+  // maybe (with vitest?) it isn't?
+  if (content instanceof Buffer || content instanceof Uint8Array) {
+    // BINARY DATA
+
+    // check if's a link and hasn't changed
+    if (doc.content.type === "link") {
+      const hash = sha256(content);
+      if (doc.content.url.endsWith(hash)) {
+        console.log("File didn't change, skipping upload");
+        return { didChange: false };
+      }
+    }
+
+    const mimeType = mime.lookup(fileExtension);
+    const url = await uploadFile(content, mimeType);
+    handle.change((doc) => {
+      doc.content = { type: "link", url };
+    });
+  } else {
+    // TEXT DATA
+
+    //  check if it's text and hasn't changed
+    if (doc.content.type === "text" && doc.content.value === content) {
+      console.log("File didn't change, skipping update");
+      return { didChange: false };
+    }
+
+    handle.change((doc) => {
+      if (doc.content.type === "text") {
+        updateText(doc, ["content", "value"], content);
+      } else {
+        doc.content = { type: "text", value: content };
+      }
+    });
+  }
+
+  return { didChange: true };
+};
+
 export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
   type: "patchwork:dataType",
   id: "file",
@@ -173,4 +290,9 @@ export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
   fileExportMethods,
 
   ...textAnchorsAtPath(["content", "value"]),
+
+  docToUnixFile,
+  initDocFromUnixFile,
+  updateDocFromUnixFile,
+  unixFileExtensions: ["*"],
 };
