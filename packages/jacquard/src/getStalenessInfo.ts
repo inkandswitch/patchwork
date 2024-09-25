@@ -4,7 +4,7 @@ import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { FileDoc } from "../../file/src/datatype";
 import { BuildRun, Reference } from "./datatype";
-import { fetchParallelMap } from "@/async-signals";
+import { fetchMap } from "@/async-signals";
 
 export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
   // TODO: we should be able to use equality to check if heads match, but
@@ -47,7 +47,7 @@ export const fetchProjectState = ({
   );
 
   let files: Record<AutomergeUrl, Automerge.Doc<FileDoc>> = {};
-  fetchParallelMap(fileUrls, (url) => {
+  fetchMap(fileUrls, (url) => {
     files[url] = fetchDocOnBranchFromUrl(url) as Automerge.Doc<FileDoc>;
   });
 

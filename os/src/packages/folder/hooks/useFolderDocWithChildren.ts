@@ -1,8 +1,4 @@
-import {
-  DocMissingError,
-  fetchParallelMap,
-  useAsyncComputed,
-} from "@/async-signals";
+import { DocMissingError, fetchMap, useAsyncComputed } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
 import {
   fakeDocPath,
@@ -64,7 +60,7 @@ function fetchMaterializeFolderDoc(
     return {
       ...folder,
       docs:
-        fetchParallelMap(folder.docs, (link) => {
+        fetchMap(folder.docs, (link) => {
           if (link.type === "folder") {
             const folderContents = fetchMaterializeFolderDoc(
               [...docPath, link],

@@ -136,10 +136,9 @@ export function asyncComputedPromise<T>(cb: () => T): Promise<T> {
 
 /**
  * Allows an array of callbacks to be run in parallel. If any of them
- * throws a PendingException, `parallel` will throw a
- * PendingException, but not until giving the other callbacks a
- * chance to run so they can make progress. This is analogous to
- * Promise.all in async code.
+ * are pending, the overall result will be pending, but first every
+ * callback will be given the chance to make progress. This is
+ * analogous to Promise.all in async code.
  */
 export function fetchParallel<T>(cbs: (() => T)[]): T[] {
   // Run all the callbacks – no throwing here!
@@ -153,14 +152,19 @@ export function fetchParallel<T>(cbs: (() => T)[]): T[] {
 }
 
 /**
- * Maps a function across an array in parallel. If any of the
- * executions throws a PendingException, `parallel` will throw a
- * PendingException, but not until giving the other executions a
- * chance to run so they can make progress. This is analogous to a
- * use of `Promise.all` with `.map` in async code.
+ * Maps a function across an array in parallel, in the manner of
+ * fetchParallel.
  */
-export function fetchParallelMap<T, U>(values: T[], fn: (value: T) => U): U[] {
+export function fetchMap<T, U>(values: T[], fn: (value: T) => U): U[] {
   return fetchParallel(values.map((value) => () => fn(value)));
+}
+
+/**
+ * Flat-maps a function across an array in parallel, in the manner of
+ * fetchParallel.
+ */
+export function fetchFlatMap<T, U>(values: T[], fn: (value: T) => U[]): U[] {
+  return fetchParallel(values.map((value) => () => fn(value))).flat();
 }
 
 /**

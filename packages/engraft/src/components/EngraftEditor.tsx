@@ -26,11 +26,7 @@ import {
   applyUpdateAsChangeToObject,
   removeUndefineds,
 } from "../engraft-automerge";
-import {
-  getDocState,
-  fetchParallelMap,
-  useAsyncComputed,
-} from "@/async-signals";
+import { getDocState, fetchMap, useAsyncComputed } from "@/async-signals";
 
 function getDocName(
   url: AutomergeUrl,
@@ -76,7 +72,7 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
       if (!inputUrls) {
         return {};
       }
-      const outputPs: EngraftPromise<ToolOutput>[] = fetchParallelMap(
+      const outputPs: EngraftPromise<ToolOutput>[] = fetchMap(
         inputUrls,
         (url) => {
           // TODO: hacky code I think

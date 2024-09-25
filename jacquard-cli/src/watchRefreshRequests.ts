@@ -1,9 +1,4 @@
-import {
-  asyncComputed,
-  fetchDoc,
-  fetchOm,
-  fetchParallelMap,
-} from "@/async-signals";
+import { asyncComputed, fetchDoc, fetchOm, fetchMap } from "@/async-signals";
 import { Om } from "@/om";
 import { FolderDoc } from "@/packages/folder";
 import {
@@ -81,7 +76,7 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
 
     // check branches
 
-    fetchParallelMap(versionControlMetadataOm.doc.branches, (branchUrl) => {
+    fetchMap(versionControlMetadataOm.doc.branches, (branchUrl) => {
       const branchBuildMetadataDocUrl = fetchResolveUrlOnBranch(
         mainBuildMetadataOm.url,
         branchUrl,

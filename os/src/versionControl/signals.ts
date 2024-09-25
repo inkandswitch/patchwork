@@ -8,7 +8,7 @@ import {
 import { canBeUndef } from "@/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { fetchDoc, fetchOm, fetchParallelMap } from "../async-signals";
+import { fetchDoc, fetchOm, fetchMap } from "../async-signals";
 import {
   BranchDoc,
   HasVersionControlMetadata,
@@ -47,7 +47,7 @@ export const fetchBranchScopeInfo = (
 ): BranchScopeInfo => {
   // we need the metadata docs of all parent folders which requires an async op to load
   // to work with them in the useMemo hook below we fetch them with useDocuments
-  const linkInfos = fetchParallelMap(docPath, (link) => {
+  const linkInfos = fetchMap(docPath, (link) => {
     const linkOm = fetchOm<HasVersionControlMetadata>(link.url, repo);
     const versionControlMetadataOm = fetchVersionControlMetadataOm(
       linkOm.doc,
@@ -64,7 +64,7 @@ export const fetchBranchScopeInfo = (
       versionControlMetadataOm &&
       versionControlMetadataOm.doc.isBranchScope
     ) {
-      const branchOms = fetchParallelMap(
+      const branchOms = fetchMap(
         versionControlMetadataOm.doc.branches,
         (branchUrl) => fetchOm<BranchDoc>(branchUrl, repo)
       );
