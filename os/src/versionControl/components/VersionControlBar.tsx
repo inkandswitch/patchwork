@@ -53,7 +53,7 @@ import {
 } from "@patchwork/jacquard/src/hooks";
 import {
   getBuildRunsWithDocAsPrimaryInput,
-  getProjectStateFromProjectInfo,
+  fetchProjectStateFromProjectInfo,
 } from "@patchwork/jacquard/src/signals";
 import _, { truncate } from "lodash";
 import {
@@ -182,7 +182,7 @@ export const VersionControlBar = ({
   const projectState = useAsyncComputed(
     useCallback(() => {
       waitUntilPresent(jacquardProjectInfo);
-      return getProjectStateFromProjectInfo(jacquardProjectInfo, repo);
+      return fetchProjectStateFromProjectInfo(jacquardProjectInfo, repo);
     }, [jacquardProjectInfo, repo])
   ).ifPending(undefined);
 

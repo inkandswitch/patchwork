@@ -3,7 +3,7 @@ import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { useDataTypes } from "@/patchworkContext";
 import { dataTypeById } from "@/sdk";
 import { fakeDocPath } from "@/versionControl/signals";
-import { getOmOnBranchFromPath } from "@/versionControl/signals";
+import { fetchOmOnBranchFromPath } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";
 import { useCurrentAccount } from "../account";
@@ -34,14 +34,14 @@ export const useSyncDocTitle = ({
   const selectedDoc = useAsyncComputed(
     useCallback(() => {
       waitUntilPresent(selectedDocPath);
-      return getOmOnBranchFromPath(selectedDocPath, account, repo).doc;
+      return fetchOmOnBranchFromPath(selectedDocPath, account, repo).doc;
     }, [account, repo, selectedDocPath])
   ).ifPending(undefined);
 
   const parentFolderOm = useAsyncComputed(
     useCallback(() => {
       waitUntilPresent(selectedDocPath);
-      return getOmOnBranchFromPath<FolderDoc>(
+      return fetchOmOnBranchFromPath<FolderDoc>(
         selectedDocPath.slice(0, -1),
         account,
         repo

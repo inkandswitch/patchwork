@@ -1,13 +1,13 @@
 import {
   DocMissingError,
-  parallelMap,
+  fetchParallelMap,
   useAsyncComputed,
 } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
 import {
   fakeDocPath,
-  getOmOnBranch,
-  getOmOnBranchFromPath,
+  fetchOmOnBranch,
+  fetchOmOnBranchFromPath,
 } from "@/versionControl/signals";
 import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -54,7 +54,7 @@ const computeFlattenedDocLinks = ({
 };
 
 // TODO: reactive but not incremental
-function materializeFolderDoc(
+function fetchMaterializeFolderDoc(
   docPath: DocPath,
   getDocOnBranch: (docPath: DocPath) => Doc<unknown>
 ): FolderDocWithChildren {
@@ -64,9 +64,9 @@ function materializeFolderDoc(
     return {
       ...folder,
       docs:
-        parallelMap(folder.docs, (link) => {
+        fetchParallelMap(folder.docs, (link) => {
           if (link.type === "folder") {
-            const folderContents = materializeFolderDoc(
+            const folderContents = fetchMaterializeFolderDoc(
               [...docPath, link],
               getDocOnBranch
             );
@@ -94,7 +94,7 @@ function materializeFolderDoc(
   }
 }
 
-export function getFolderDocWithChildren(
+export function fetchFolderDocWithChildren(
   rootFolderUrl: AutomergeUrl,
   getDocOnBranchFromPath: (docPath: DocPath) => Doc<unknown>
 ): FolderDocWithMetadata {
@@ -104,7 +104,7 @@ export function getFolderDocWithChildren(
     type: "folder",
     folderPath: [],
   });
-  const docWithLinks = materializeFolderDoc(
+  const docWithLinks = fetchMaterializeFolderDoc(
     rootDocPath,
     getDocOnBranchFromPath
   );
@@ -119,14 +119,14 @@ export function getFolderDocWithChildren(
   };
 }
 
-export function getFolderDocWithChildrenOnBranch(
+export function fetchFolderDocWithChildrenOnBranch(
   rootFolderUrl: AutomergeUrl,
   branchUrl: AutomergeUrl | undefined,
   repo: Repo
 ): FolderDocWithMetadata {
-  return getFolderDocWithChildren(rootFolderUrl, (path) => {
+  return fetchFolderDocWithChildren(rootFolderUrl, (path) => {
     const docLink = last(path) as DocLink;
-    return getOmOnBranch(docLink.url, branchUrl, repo).doc;
+    return fetchOmOnBranch(docLink.url, branchUrl, repo).doc;
   });
 }
 
@@ -140,9 +140,9 @@ export function useFolderDocWithChildren(
     useCallback(() => {
       if (!rootFolderUrl) return undefined;
       const getDocOnBranchFromPath = (docPath: DocPath) => {
-        return getOmOnBranchFromPath(docPath, account, repo).doc;
+        return fetchOmOnBranchFromPath(docPath, account, repo).doc;
       };
-      return getFolderDocWithChildren(rootFolderUrl, getDocOnBranchFromPath);
+      return fetchFolderDocWithChildren(rootFolderUrl, getDocOnBranchFromPath);
     }, [rootFolderUrl, account, repo])
   ).ifPending(undefined);
 }

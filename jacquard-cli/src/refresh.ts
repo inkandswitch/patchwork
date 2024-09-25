@@ -1,7 +1,7 @@
-import { asyncComputedPromise, getDoc } from "@/async-signals";
+import { asyncComputedPromise, fetchDoc } from "@/async-signals";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
-import { getFolderDocWithChildren } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { fetchFolderDocWithChildren } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import _, { omit } from "lodash";
 import { CommandLineArgs } from ".";
@@ -11,11 +11,11 @@ import {
   JacquardBuildMetadata,
 } from "../../packages/jacquard/src/datatype";
 import {
-  getProjectState,
+  fetchProjectState,
   getStalenessInfo,
 } from "../../packages/jacquard/src/getStalenessInfo";
 import {
-  findWithActiveBranch,
+  fetchFindWithActiveBranch,
   findWithActiveBranchPromise,
 } from "./findWithActiveBranch";
 import { run } from "./run";
@@ -65,22 +65,22 @@ export async function refresh(
 
   const getCurrentStalenessInfo = async () => {
     const projectState = await asyncComputedPromise(() => {
-      const getDocOnBranchFromUrl = (fileUrl: AutomergeUrl) => {
-        const fileHandle = findWithActiveBranch<FileDoc>(fileUrl, repo);
-        return getDoc<any>(fileHandle.url, repo);
+      const fetchDocOnBranchFromUrl = (fileUrl: AutomergeUrl) => {
+        const fileHandle = fetchFindWithActiveBranch<FileDoc>(fileUrl, repo);
+        return fetchDoc<any>(fileHandle.url, repo);
       };
 
-      const folderDoc = getFolderDocWithChildren(
+      const folderDoc = fetchFolderDocWithChildren(
         projectFolderUrl,
         (docPath: DocPath) =>
-          getDocOnBranchFromUrl(docPath[docPath.length - 1].url)
+          fetchDocOnBranchFromUrl(docPath[docPath.length - 1].url)
       );
 
-      return getProjectState({
+      return fetchProjectState({
         folderDoc,
         buildRuns: buildMetadataDoc.buildRuns,
         filesReferencedInBuildsOnly: true,
-        getDocOnBranchFromUrl,
+        fetchDocOnBranchFromUrl: fetchDocOnBranchFromUrl,
       });
     });
 

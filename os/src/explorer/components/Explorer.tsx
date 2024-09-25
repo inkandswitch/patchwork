@@ -11,7 +11,7 @@ import { VersionControlEditor } from "@/versionControl/components/VersionControl
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import {
   fakeDocPath,
-  getBranchScopeAndActiveBranchInfo,
+  fetchBranchScopeAndActiveBranchInfo,
 } from "@/versionControl/signals";
 import {
   useDocument,
@@ -153,7 +153,7 @@ export const Explorer: React.FC = () => {
       }
 
       const { cloneOrMainOm } = await asyncComputedPromise(() =>
-        getBranchScopeAndActiveBranchInfo(parentFolderDocPath, account, repo)
+        fetchBranchScopeAndActiveBranchInfo(parentFolderDocPath, account, repo)
       );
       const parentFolderBranchedOm = cloneOrMainOm as Om<FolderDoc>;
 

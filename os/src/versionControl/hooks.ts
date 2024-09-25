@@ -6,9 +6,9 @@ import { useCallback, useMemo, useRef } from "react";
 import {
   BranchScopeAndActiveBranchInfo,
   BranchScopeInfo,
-  getActiveBranchInfo,
-  getBranchScopeAndActiveBranchInfo,
-  getBranchScopeInfo,
+  fetchActiveBranchInfo,
+  fetchBranchScopeAndActiveBranchInfo,
+  fetchBranchScopeInfo,
 } from "./signals";
 
 // Given a doc path representing current selected doc,
@@ -23,7 +23,7 @@ export const useBranchScopeInfo = (
   const repo = useRepo();
   return useAsyncComputed(
     useCallback(() => {
-      return docPath && getBranchScopeInfo(docPath, repo);
+      return docPath && fetchBranchScopeInfo(docPath, repo);
     }, [docPath, repo])
   ).ifPending(undefined);
 };
@@ -34,7 +34,8 @@ export const useActiveBranchInfo = (branchScopePath: DocPath | undefined) => {
   return useAsyncComputed(
     useCallback(
       () =>
-        branchScopePath && getActiveBranchInfo(branchScopePath, account, repo),
+        branchScopePath &&
+        fetchActiveBranchInfo(branchScopePath, account, repo),
       [branchScopePath, account, repo]
     )
   ).ifPending(undefined);
@@ -50,7 +51,7 @@ export const useBranchScopeAndActiveBranchInfo = (
   const branchScopeAndActiveBranchInfo = useAsyncComputed(
     useCallback(
       () =>
-        docPath && getBranchScopeAndActiveBranchInfo(docPath, account, repo),
+        docPath && fetchBranchScopeAndActiveBranchInfo(docPath, account, repo),
       [docPath, account, repo]
     )
   ).ifPending(undefined);

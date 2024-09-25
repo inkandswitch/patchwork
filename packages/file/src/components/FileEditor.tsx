@@ -2,14 +2,14 @@ import { useAsyncComputed } from "@/async-signals";
 import { useDocUIState } from "@/explorer/uiState";
 import { TextAnchor } from "@/lib/textAnchors";
 import { EditorProps } from "@/tools";
-import { resolveUrlOnBranch } from "@/versionControl/signals";
+import { fetchResolveUrlOnBranch } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";
 import { useJacquardProjectInfoWithActiveBranch } from "../../../jacquard/src/hooks";
 import {
   getBuildRunsWithDocAsPrimaryInput,
-  getProjectStateFromProjectInfo,
+  fetchProjectStateFromProjectInfo,
 } from "../../../jacquard/src/signals";
 import { FileDoc } from "../datatype";
 import { isImageFile } from "../utils";
@@ -50,7 +50,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
       if (!jacquardProjectInfo) {
         return;
       }
-      return getProjectStateFromProjectInfo(jacquardProjectInfo, repo);
+      return fetchProjectStateFromProjectInfo(jacquardProjectInfo, repo);
     }, [jacquardProjectInfo, repo])
   ).ifPending(undefined);
 
@@ -73,8 +73,11 @@ export const FileEditor = (props: EditorProps<any, any>) => {
           activeBranchUrl
             ? {
                 ...output,
-                docUrl: resolveUrlOnBranch(output.docUrl, activeBranchUrl, repo)
-                  .url,
+                docUrl: fetchResolveUrlOnBranch(
+                  output.docUrl,
+                  activeBranchUrl,
+                  repo
+                ).url,
                 mainDocUrl: output.docUrl,
               }
             : { ...output, mainDocUrl: output.docUrl }

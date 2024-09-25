@@ -1,4 +1,9 @@
-import { getDoc, getOm, PendingException, useAsyncCall } from "@/async-signals";
+import {
+  fetchDoc,
+  fetchOm,
+  PendingException,
+  useAsyncCall,
+} from "@/async-signals";
 import { Om } from "@/om";
 import { DocPath } from "@/packages/folder/datatype";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
@@ -43,18 +48,18 @@ export function docPathString(docPath: DocPath): string {
   return docPath.map((link) => link.url).join("/");
 }
 
-export const getUIStateOm = (repo: Repo, account: Account | undefined) => {
+export const fetchUIStateOm = (repo: Repo, account: Account | undefined) => {
   if (!account) {
     throw new PendingException();
   }
-  const accountDoc = getDoc<AccountDoc>(account.handle.url, repo);
-  return getOm<UIStateDoc>(accountDoc.uiStateUrl, repo);
+  const accountDoc = fetchDoc<AccountDoc>(account.handle.url, repo);
+  return fetchOm<UIStateDoc>(accountDoc.uiStateUrl, repo);
 };
 
 export const useUIStateOm = (): Om<UIStateDoc> | undefined => {
   const repo = useRepo();
   const account = useCurrentAccount();
-  return useAsyncCall(getUIStateOm, repo, account).ifPending(undefined);
+  return useAsyncCall(fetchUIStateOm, repo, account).ifPending(undefined);
 };
 
 // Each tab maintains local versions of document UI state. These are initialized

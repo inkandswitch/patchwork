@@ -1,4 +1,4 @@
-import { asyncComputedPromise, getDoc } from "@/async-signals";
+import { asyncComputedPromise, fetchDoc } from "@/async-signals";
 import { useAsyncComputed } from "@/async-signals/react";
 import { Icon, IconType } from "@/lib/icons";
 import {
@@ -22,10 +22,10 @@ import {
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import {
   fakeDocPath,
-  getActiveBranchInfo,
-  getBranchScopeAndActiveBranchInfo,
-  getOmOnBranchFromPath,
-  getVersionControlMetadataOm,
+  fetchActiveBranchInfo,
+  fetchBranchScopeAndActiveBranchInfo,
+  fetchOmOnBranchFromPath,
+  fetchVersionControlMetadataOm,
 } from "@/versionControl/signals";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -172,13 +172,13 @@ const NodeActiveBranchInfo = (
     if (!showActiveBranchName) {
       return undefined;
     }
-    const doc = getDoc<HasVersionControlMetadata>(node.data.url, repo);
-    const versionControlMetadataDoc = getVersionControlMetadataOm(
+    const doc = fetchDoc<HasVersionControlMetadata>(node.data.url, repo);
+    const versionControlMetadataDoc = fetchVersionControlMetadataOm(
       doc,
       repo
     )?.doc;
     if (versionControlMetadataDoc?.isBranchScope) {
-      const { activeBranchOm } = getActiveBranchInfo(docPath, account, repo);
+      const { activeBranchOm } = fetchActiveBranchInfo(docPath, account, repo);
       const activeBranchName = activeBranchOm?.doc.name ?? "Main";
       return (
         <div className="text-xs text-gray-500 flex items-center gap-1">
@@ -317,7 +317,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       const srcPath = fakeDocPath(dragNode.data);
       const srcParentPath = srcPath.slice(0, -1);
       const srcParentOm = await asyncComputedPromise(() =>
-        getOmOnBranchFromPath<FolderDoc>(srcParentPath, account, repo)
+        fetchOmOnBranchFromPath<FolderDoc>(srcParentPath, account, repo)
       );
       const dragItemIndex = srcParentOm.doc.docs.findIndex(
         (item) => item.url === dragNode.data.url
@@ -336,13 +336,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })
           : fakeDocPath(parentNode.data);
       const dstParentOm = await asyncComputedPromise(() =>
-        getOmOnBranchFromPath<FolderDoc>(dstParentPath, account, repo)
+        fetchOmOnBranchFromPath<FolderDoc>(dstParentPath, account, repo)
       );
 
       // Time for the subtlety listed under #3 above...
       let overrideUrl: AutomergeUrl | undefined;
       await asyncComputedPromise(() => {
-        const srcBranchInfo = getBranchScopeAndActiveBranchInfo(
+        const srcBranchInfo = fetchBranchScopeAndActiveBranchInfo(
           srcPath,
           account,
           repo
@@ -351,7 +351,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           srcBranchInfo.activeBranchOm && // we're on a branch
           srcBranchInfo.branchScopeOm.url !== srcUrl // the branch scope lies above
         ) {
-          const dstBranchInfo = getBranchScopeAndActiveBranchInfo(
+          const dstBranchInfo = fetchBranchScopeAndActiveBranchInfo(
             dstParentPath,
             account,
             repo
@@ -417,11 +417,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     const docPath = fakeDocPath(node.data);
     const docOm = await asyncComputedPromise(() =>
-      getOmOnBranchFromPath<FolderDoc>(docPath, account, repo)
+      fetchOmOnBranchFromPath<FolderDoc>(docPath, account, repo)
     );
     const parentPath = docPath.slice(0, -1);
     const parentOm = await asyncComputedPromise(() =>
-      getOmOnBranchFromPath<FolderDoc>(parentPath, account, repo)
+      fetchOmOnBranchFromPath<FolderDoc>(parentPath, account, repo)
     );
 
     // rename doc link

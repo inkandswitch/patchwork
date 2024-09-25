@@ -3,8 +3,8 @@ import { useCurrentAccount } from "@/explorer/account";
 import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";
 import {
-  getBranchScopeAndActiveBranchInfo,
-  getOmOnBranch,
+  fetchBranchScopeAndActiveBranchInfo,
+  fetchOmOnBranch,
 } from "@/versionControl/signals";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -32,7 +32,7 @@ export const useJacquardProjectInfoWithActiveBranch = (
         activeBranchOm,
         branchScopeOm,
         branchScopeVersionControlMetadataOm,
-      } = getBranchScopeAndActiveBranchInfo(docPath, account, repo);
+      } = fetchBranchScopeAndActiveBranchInfo(docPath, account, repo);
 
       const maybeProjectFolderOm = branchScopeOm as Om<FolderDoc>;
 
@@ -48,7 +48,7 @@ export const useJacquardProjectInfoWithActiveBranch = (
         return;
       }
 
-      const buildMetadataOm = getOmOnBranch<JacquardBuildMetadata>(
+      const buildMetadataOm = fetchOmOnBranch<JacquardBuildMetadata>(
         buildMetadataDocLink.url,
         activeBranchOm?.url,
         repo

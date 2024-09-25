@@ -1,8 +1,25 @@
 import { atom, computed, react, Signal } from "signia";
 
-/*********************************/
-/* App-facing API: Generic stuff */
-/*********************************/
+/**
+ * async-signals is a little library for computing values that depend
+ * on changing values, where the values and computations might be
+ * asynchronous. The motivating use-case is computations that depend
+ * on possibly-changing Automerge documents.
+ *
+ * Structurally, it's a pretty thin wrapper on Signia signals. The
+ * wrapping is needed to handle asynchronous stuff: pending values
+ * and error states. In short:
+ *  > AsyncSignal<T> = Signal<AsyncState<T>>.
+ *
+ * Convention: Some functions are meant to be used only inside of
+ * async-signal callbacks – they will throw PendingException to mark
+ * that they're pending. Such functions are marked with a "fetch"
+ * prefix.
+ */
+
+/******************/
+/* App-facing API */
+/******************/
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export module AsyncState {
@@ -14,7 +31,7 @@ export module AsyncState {
      * pending. If the state is rejected, this will throw the error
      * so the computed async-signal will likewise be rejected.
      */
-    abstract value: T;
+    abstract fetch: T;
 
     /**
      * Get an AsyncState's value, probably outside an async-signal
@@ -28,7 +45,7 @@ export module AsyncState {
     constructor(readonly description?: string) {
       super();
     }
-    get value(): never {
+    get fetch(): never {
       throw new PendingException(this.description);
     }
     ifPending<U>(onPending: U | (() => U)): U {
@@ -43,7 +60,7 @@ export module AsyncState {
     constructor(readonly _value: T) {
       super();
     }
-    get value() {
+    get fetch() {
       return this._value;
     }
     ifPending() {
@@ -56,7 +73,7 @@ export module AsyncState {
     constructor(readonly error: unknown) {
       super();
     }
-    get value(): never {
+    get fetch(): never {
       throw this.error;
     }
     ifPending(): never {
@@ -106,7 +123,7 @@ export function asyncComputedPromise<T>(cb: () => T): Promise<T> {
         if (signal.value instanceof AsyncState.Rejected) {
           reject(signal.value.error);
         } else {
-          resolve(signal.value.value);
+          resolve(signal.value.fetch);
         }
       }
     });
@@ -124,13 +141,13 @@ export function asyncComputedPromise<T>(cb: () => T): Promise<T> {
  * chance to run so they can make progress. This is analogous to
  * Promise.all in async code.
  */
-export function parallel<T>(cbs: (() => T)[]): T[] {
+export function fetchParallel<T>(cbs: (() => T)[]): T[] {
   // Run all the callbacks – no throwing here!
   const states = cbs.map(asyncSignalCallbackToState);
   const values: T[] = [];
   for (const state of states) {
     // This part might throw
-    values.push(state.value);
+    values.push(state.fetch);
   }
   return values;
 }
@@ -142,8 +159,8 @@ export function parallel<T>(cbs: (() => T)[]): T[] {
  * chance to run so they can make progress. This is analogous to a
  * use of `Promise.all` with `.map` in async code.
  */
-export function parallelMap<T, U>(values: T[], fn: (value: T) => U): U[] {
-  return parallel(values.map((value) => () => fn(value)));
+export function fetchParallelMap<T, U>(values: T[], fn: (value: T) => U): U[] {
+  return fetchParallel(values.map((value) => () => fn(value)));
 }
 
 /**
@@ -172,6 +189,19 @@ export function asyncComputedFromPromise<T>(
   return signal;
 }
 
+/**
+ * For use inside an async-signal callback. Interpret a missing
+ * (falsey) value as a pending value.
+ */
+export function waitUntilPresent(
+  condition: any,
+  description?: string
+): asserts condition {
+  if (!condition) {
+    throw new PendingException(description);
+  }
+}
+
 /**********************/
 /* Internal utilities */
 /**********************/
@@ -197,18 +227,5 @@ function asyncSignalCallbackToState<T>(cb: () => T): AsyncState<T> {
     } else {
       return new AsyncState.Rejected(e);
     }
-  }
-}
-
-/**
- * For use inside an async-signal callback. Interpret a missing
- * (falsey) value as a pending value.
- */
-export function waitUntilPresent(
-  condition: any,
-  description?: string
-): asserts condition {
-  if (!condition) {
-    throw new PendingException(description);
   }
 }

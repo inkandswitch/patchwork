@@ -1,9 +1,14 @@
-import { asyncComputed, getDoc, getOm, parallelMap } from "@/async-signals";
+import {
+  asyncComputed,
+  fetchDoc,
+  fetchOm,
+  fetchParallelMap,
+} from "@/async-signals";
 import { Om } from "@/om";
 import { FolderDoc } from "@/packages/folder";
 import {
-  getVersionControlMetadataOm,
-  resolveUrlOnBranch,
+  fetchVersionControlMetadataOm,
+  fetchResolveUrlOnBranch,
 } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import os from "node:os";
@@ -43,9 +48,9 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
   const buildMetadataDocsWithPendingRefresh = asyncComputed<
     BuildMetadataDocWithBranchUrl[]
   >("", () => {
-    const projectFolder = getDoc<FolderDoc>(projectFolderHandle.url, repo);
+    const projectFolder = fetchDoc<FolderDoc>(projectFolderHandle.url, repo);
 
-    const versionControlMetadataOm = getVersionControlMetadataOm(
+    const versionControlMetadataOm = fetchVersionControlMetadataOm(
       projectFolder,
       repo
     );
@@ -53,7 +58,10 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
     const pending: BuildMetadataDocWithBranchUrl[] = [];
 
     // check build metadata on main
-    const mainBuildMetadataOm = getBuildMetadataOmOfFolder(projectFolder, repo);
+    const mainBuildMetadataOm = fetchBuildMetadataOmOfFolder(
+      projectFolder,
+      repo
+    );
 
     if (!mainBuildMetadataOm) {
       console.log("skip has no build metadata");
@@ -73,14 +81,14 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
 
     // check branches
 
-    parallelMap(versionControlMetadataOm.doc.branches, (branchUrl) => {
-      const branchBuildMetadataDocUrl = resolveUrlOnBranch(
+    fetchParallelMap(versionControlMetadataOm.doc.branches, (branchUrl) => {
+      const branchBuildMetadataDocUrl = fetchResolveUrlOnBranch(
         mainBuildMetadataOm.url,
         branchUrl,
         repo
       ).url;
 
-      const branchBuildMetadataOm = getOm<JacquardBuildMetadata>(
+      const branchBuildMetadataOm = fetchOm<JacquardBuildMetadata>(
         branchBuildMetadataDocUrl,
         repo
       );
@@ -170,7 +178,7 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
   }
 }
 
-const getBuildMetadataOmOfFolder = (projectFolder: FolderDoc, repo: Repo) => {
+const fetchBuildMetadataOmOfFolder = (projectFolder: FolderDoc, repo: Repo) => {
   const buildMetadataDocLink = projectFolder.docs.find(
     (docLink) => docLink.type === "jacquard-build-metadata"
   );
@@ -179,5 +187,5 @@ const getBuildMetadataOmOfFolder = (projectFolder: FolderDoc, repo: Repo) => {
     return;
   }
 
-  return getOm<JacquardBuildMetadata>(buildMetadataDocLink.url, repo);
+  return fetchOm<JacquardBuildMetadata>(buildMetadataDocLink.url, repo);
 };

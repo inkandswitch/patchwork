@@ -36,7 +36,7 @@ import {
   reasonToString,
 } from "../getStalenessInfo";
 import { useJacquardProjectInfoWithActiveBranch } from "../hooks";
-import { getProjectStateFromProjectInfo } from "../signals";
+import { fetchProjectStateFromProjectInfo } from "../signals";
 import { useAsyncComputed, waitUntilPresent } from "@/async-signals";
 
 export const GraphView = ({
@@ -53,7 +53,7 @@ export const GraphView = ({
     useCallback(() => {
       waitUntilPresent(jacquardProjectInfo);
 
-      const projectState = getProjectStateFromProjectInfo(
+      const projectState = fetchProjectStateFromProjectInfo(
         jacquardProjectInfo,
         repo
       );

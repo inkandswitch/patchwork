@@ -89,7 +89,7 @@ export function initialDocSignal<T>(
 ): AsyncSignal<Doc<T>> {
   const rawSignal = asyncComputedFromPromise(handle.doc());
   return asyncComputed(`initialDocSignal:${handle.url}`, () => {
-    const doc = rawSignal.value.value;
+    const doc = rawSignal.value.fetch;
     if (!doc) {
       throw new DocMissingError(handle.url);
     }
@@ -114,12 +114,12 @@ export function getDocState<T = unknown>(
  * Get the value of a doc in a reactive context. If the doc is loading or
  * missing, this will throw an error.
  */
-export function getDoc<T = unknown>(
+export function fetchDoc<T = unknown>(
   url: AutomergeUrl,
   repo: Repo,
   heads?: Automerge.Heads
 ): Doc<T> {
-  return getDocState<T>(url, repo, heads).value;
+  return getDocState<T>(url, repo, heads).fetch;
 }
 
 const OM_SIGNAL_CACHE = new Map<string, AsyncSignal<Om<unknown>>>();
@@ -140,7 +140,7 @@ function getOmSignal<T>(
   const id = parseAutomergeUrl(url).documentId;
   const handle = repo.find<T>(id);
   const omSignal = asyncComputed(`getOmSig:${url}`, () => {
-    return { url, id, handle, doc: docSignal.value.value };
+    return { url, id, handle, doc: docSignal.value.fetch };
   });
 
   OM_SIGNAL_CACHE.set(KEY, omSignal);
@@ -164,10 +164,10 @@ export function getOmState<T>(
  * Get the value of an Om in a computation. If the doc is loading or missing,
  * this will throw an error which will be caught by useDocReactive.
  */
-export function getOm<T>(
+export function fetchOm<T>(
   url: AutomergeUrl,
   repo: Repo,
   heads?: Automerge.Heads
 ): Om<T> {
-  return getOmState<T>(url, repo, heads).value;
+  return getOmState<T>(url, repo, heads).fetch;
 }

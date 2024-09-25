@@ -1,25 +1,25 @@
-import { getFolderDocWithChildrenOnBranch } from "@/packages/folder/hooks/useFolderDocWithChildren";
-import { getOmOnBranch } from "@/versionControl/signals";
+import { fetchFolderDocWithChildrenOnBranch } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { fetchOmOnBranch } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { getProjectState, ProjectState } from "./getStalenessInfo";
+import { fetchProjectState, ProjectState } from "./getStalenessInfo";
 import { JacquardProjectInfo } from "./hooks";
 
-export const getProjectStateFromProjectInfo = (
+export const fetchProjectStateFromProjectInfo = (
   { projectFolderOm, branchUrl, buildMetadataOm }: JacquardProjectInfo,
   repo: Repo
 ) => {
-  const projectFolderWithMetadata = getFolderDocWithChildrenOnBranch(
+  const projectFolderWithMetadata = fetchFolderDocWithChildrenOnBranch(
     projectFolderOm.url,
     branchUrl,
     repo
   );
 
-  return getProjectState({
+  return fetchProjectState({
     folderDoc: projectFolderWithMetadata,
     buildRuns: buildMetadataOm.doc.buildRuns,
     filesReferencedInBuildsOnly: true,
-    getDocOnBranchFromUrl(url: AutomergeUrl) {
-      return getOmOnBranch(url, branchUrl, repo).doc;
+    fetchDocOnBranchFromUrl(url: AutomergeUrl) {
+      return fetchOmOnBranch(url, branchUrl, repo).doc;
     },
   });
 };

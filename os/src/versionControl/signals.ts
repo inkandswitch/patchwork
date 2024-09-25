@@ -1,5 +1,5 @@
 import { Account } from "@/explorer/account";
-import { docPathString, getUIStateOm } from "@/explorer/uiState";
+import { docPathString, fetchUIStateOm } from "@/explorer/uiState";
 import { Om } from "@/om";
 import {
   DocLinkWithFolderPath,
@@ -8,21 +8,21 @@ import {
 import { canBeUndef } from "@/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { getDoc, getOm, parallelMap } from "../async-signals";
+import { fetchDoc, fetchOm, fetchParallelMap } from "../async-signals";
 import {
   BranchDoc,
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
 } from "./schema";
 
-export const getVersionControlMetadataOm = (
+export const fetchVersionControlMetadataOm = (
   doc: Automerge.Doc<HasVersionControlMetadata>,
   repo: Repo
 ): Om<VersionControlSidecarDoc> | undefined => {
   const versionControlMetadataUrl = canBeUndef(doc.versionControlMetadataUrl);
   return (
     versionControlMetadataUrl &&
-    getOm<VersionControlSidecarDoc>(versionControlMetadataUrl, repo)
+    fetchOm<VersionControlSidecarDoc>(versionControlMetadataUrl, repo)
   );
 };
 
@@ -41,15 +41,15 @@ export type BranchScopeInfo = {
 
 // Given a doc path representing current selected doc,
 // resolve a branch scope and return relevant information about branches
-export const getBranchScopeInfo = (
+export const fetchBranchScopeInfo = (
   docPath: DocPath,
   repo: Repo
 ): BranchScopeInfo => {
   // we need the metadata docs of all parent folders which requires an async op to load
   // to work with them in the useMemo hook below we fetch them with useDocuments
-  const linkInfos = parallelMap(docPath, (link) => {
-    const linkOm = getOm<HasVersionControlMetadata>(link.url, repo);
-    const versionControlMetadataOm = getVersionControlMetadataOm(
+  const linkInfos = fetchParallelMap(docPath, (link) => {
+    const linkOm = fetchOm<HasVersionControlMetadata>(link.url, repo);
+    const versionControlMetadataOm = fetchVersionControlMetadataOm(
       linkOm.doc,
       repo
     );
@@ -64,9 +64,9 @@ export const getBranchScopeInfo = (
       versionControlMetadataOm &&
       versionControlMetadataOm.doc.isBranchScope
     ) {
-      const branchOms = parallelMap(
+      const branchOms = fetchParallelMap(
         versionControlMetadataOm.doc.branches,
-        (branchUrl) => getOm<BranchDoc>(branchUrl, repo)
+        (branchUrl) => fetchOm<BranchDoc>(branchUrl, repo)
       );
       return {
         branchScopeOm: linkInfo.linkOm,
@@ -96,23 +96,24 @@ export type ActiveBranchInfo = {
   activeBranchOm: Om<BranchDoc> | undefined;
 };
 
-export const getActiveBranchInfo = (
+export const fetchActiveBranchInfo = (
   branchScopePath: DocPath,
   account: Account | undefined,
   repo: Repo
 ): ActiveBranchInfo => {
-  const uiStateOm = getUIStateOm(repo, account);
+  const uiStateOm = fetchUIStateOm(repo, account);
   const activeBranchUrl = canBeUndef(
     // We handle the case of doc.openBranches being undefined here for backwards compatibility
     uiStateOm.doc.openBranches?.[docPathString(branchScopePath)]
   );
 
   return {
-    activeBranchOm: activeBranchUrl && getOm<BranchDoc>(activeBranchUrl, repo),
+    activeBranchOm:
+      activeBranchUrl && fetchOm<BranchDoc>(activeBranchUrl, repo),
   };
 };
 
-export const resolveUrlOnBranch = (
+export const fetchResolveUrlOnBranch = (
   url: AutomergeUrl,
   activeBranchUrl: AutomergeUrl | undefined, // undefined means "main"
   repo: Repo
@@ -121,7 +122,7 @@ export const resolveUrlOnBranch = (
   baseHeads: Automerge.Heads | undefined;
 } => {
   const activeBranchDoc =
-    activeBranchUrl && getDoc<BranchDoc>(activeBranchUrl, repo);
+    activeBranchUrl && fetchDoc<BranchDoc>(activeBranchUrl, repo);
   const cloneEntry = activeBranchDoc?.clones[url];
   return cloneEntry ?? { url, baseHeads: undefined };
 };
@@ -137,25 +138,25 @@ const EMPTY_HEADS: Automerge.Heads = [];
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.
-export const getBranchScopeAndActiveBranchInfo = (
+export const fetchBranchScopeAndActiveBranchInfo = (
   docPath: DocPath,
   account: Account | undefined,
   repo: Repo
 ): BranchScopeAndActiveBranchInfo => {
-  const branchScopeInfo = getBranchScopeInfo(docPath, repo);
-  const activeBranchInfo = getActiveBranchInfo(
+  const branchScopeInfo = fetchBranchScopeInfo(docPath, repo);
+  const activeBranchInfo = fetchActiveBranchInfo(
     branchScopeInfo.branchScopePath,
     account,
     repo
   );
 
   const lastLink = docPath[docPath.length - 1];
-  const { url, baseHeads } = resolveUrlOnBranch(
+  const { url, baseHeads } = fetchResolveUrlOnBranch(
     lastLink.url,
     activeBranchInfo.activeBranchOm?.url,
     repo
   );
-  const cloneOrMainOm = getOm<HasVersionControlMetadata>(url, repo);
+  const cloneOrMainOm = fetchOm<HasVersionControlMetadata>(url, repo);
 
   return {
     ...branchScopeInfo,
@@ -169,31 +170,31 @@ export const getBranchScopeAndActiveBranchInfo = (
 /**
  * Get the Om at the docPath, accounting for active branches stored in the UI state.
  */
-export const getOmOnBranchFromPath = <T>(
+export const fetchOmOnBranchFromPath = <T>(
   docPath: DocPath,
   account: Account | undefined,
   repo: Repo
 ): Om<T> => {
-  return getBranchScopeAndActiveBranchInfo(docPath, account, repo)
+  return fetchBranchScopeAndActiveBranchInfo(docPath, account, repo)
     .cloneOrMainOm as Om<T>;
 };
 
 // This is an alternative to getOmOnBranchFromPath where you can directly provide the branchUrl
 // to resolve the docUrl on
-export const getOmOnBranch = <T>(
+export const fetchOmOnBranch = <T>(
   docUrl: AutomergeUrl,
   branchUrl: AutomergeUrl | undefined,
   repo: Repo
 ): Om<T> => {
   const docUrlOnBranch = branchUrl
-    ? resolveUrlOnBranch(docUrl, branchUrl, repo)?.url
+    ? fetchResolveUrlOnBranch(docUrl, branchUrl, repo)?.url
     : docUrl;
 
   if (!docUrlOnBranch) {
     throw new Error(`Document ${docUrl} does not exist on branch ${branchUrl}`);
   }
 
-  return getOm<T>(docUrlOnBranch, repo);
+  return fetchOm<T>(docUrlOnBranch, repo);
 };
 
 // TODO: provisional until we get rid of DocLinkWithFolderPath. also, this is in

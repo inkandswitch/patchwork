@@ -4,7 +4,7 @@ import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { FileDoc } from "../../file/src/datatype";
 import { BuildRun, Reference } from "./datatype";
-import { parallelMap } from "@/async-signals";
+import { fetchParallelMap } from "@/async-signals";
 
 export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
   // TODO: we should be able to use equality to check if heads match, but
@@ -23,16 +23,16 @@ export type ProjectState = {
   buildRuns: BuildRun[];
 };
 
-export const getProjectState = ({
+export const fetchProjectState = ({
   folderDoc,
   buildRuns,
   filesReferencedInBuildsOnly,
-  getDocOnBranchFromUrl,
+  fetchDocOnBranchFromUrl,
 }: {
   folderDoc: FolderDocWithMetadata;
   buildRuns: BuildRun[];
   filesReferencedInBuildsOnly?: boolean;
-  getDocOnBranchFromUrl: (url: AutomergeUrl) => Automerge.Doc<unknown>;
+  fetchDocOnBranchFromUrl: (url: AutomergeUrl) => Automerge.Doc<unknown>;
 }): ProjectState => {
   const fileUrls = folderDoc.flatDocLinks.flatMap(({ url }) =>
     !filesReferencedInBuildsOnly ||
@@ -47,8 +47,8 @@ export const getProjectState = ({
   );
 
   let files: Record<AutomergeUrl, Automerge.Doc<FileDoc>> = {};
-  parallelMap(fileUrls, (url) => {
-    files[url] = getDocOnBranchFromUrl(url) as Automerge.Doc<FileDoc>;
+  fetchParallelMap(fileUrls, (url) => {
+    files[url] = fetchDocOnBranchFromUrl(url) as Automerge.Doc<FileDoc>;
   });
 
   const references = objectEntries(files).map(([docUrl, doc]) => ({
