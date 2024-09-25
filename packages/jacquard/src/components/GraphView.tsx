@@ -53,12 +53,10 @@ export const GraphView = ({
     useCallback(() => {
       waitUntilPresent(jacquardProjectInfo);
 
-      console.log("A");
       const projectState = getProjectStateFromProjectInfo(
         jacquardProjectInfo,
         repo
       );
-      console.log("B");
 
       return (
         <div className="p-4 flex flex-col h-full overflow-auto">
