@@ -1,4 +1,4 @@
-import { useAsyncComputed } from "@/async-signals";
+import { fetchFlatMap, fetchMap, useAsyncComputed } from "@/async-signals";
 import { useDocUIState } from "@/explorer/uiState";
 import { TextAnchor } from "@/lib/textAnchors";
 import { EditorProps } from "@/tools";
@@ -45,31 +45,21 @@ export const FileEditor = (props: EditorProps<any, any>) => {
     getFakeDocPathForDocUrl(mainDocUrl)
   );
 
-  const projectState = useAsyncComputed(
+  const outputFiles = useAsyncComputed(
     useCallback(() => {
       if (!jacquardProjectInfo) {
         return;
       }
-      return fetchProjectStateFromProjectInfo(jacquardProjectInfo, repo);
-    }, [jacquardProjectInfo, repo])
-  ).ifPending(undefined);
-
-  const buildRuns = useAsyncComputed(
-    useCallback(() => {
-      if (!projectState) {
-        return;
-      }
-      return getBuildRunsWithDocAsPrimaryInput(projectState, mainDocUrl);
-    }, [projectState, mainDocUrl])
-  ).ifPending(undefined);
-
-  const outputFiles = useAsyncComputed(
-    useCallback(() => {
-      if (!buildRuns) {
-        return;
-      }
-      return buildRuns.flatMap((buildRun) =>
-        buildRun.outputs.map((output) =>
+      const projectState = fetchProjectStateFromProjectInfo(
+        jacquardProjectInfo,
+        repo
+      );
+      const buildRuns = getBuildRunsWithDocAsPrimaryInput(
+        projectState,
+        mainDocUrl
+      );
+      return fetchFlatMap(buildRuns, (buildRun) =>
+        fetchMap(buildRun.outputs, (output) =>
           activeBranchUrl
             ? {
                 ...output,
@@ -83,7 +73,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
             : { ...output, mainDocUrl: output.docUrl }
         )
       );
-    }, [activeBranchUrl, repo, buildRuns])
+    }, [jacquardProjectInfo, repo, mainDocUrl, activeBranchUrl])
   ).ifPending(undefined);
 
   if (!doc) {

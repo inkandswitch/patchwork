@@ -5,10 +5,7 @@ import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback, useMemo, useRef } from "react";
 import {
   BranchScopeAndActiveBranchInfo,
-  BranchScopeInfo,
-  fetchActiveBranchInfo,
   fetchBranchScopeAndActiveBranchInfo,
-  fetchBranchScopeInfo,
 } from "./signals";
 
 // Given a doc path representing current selected doc,
@@ -16,30 +13,6 @@ import {
 
 // For now, these hooks will follow the traditional "accept & return undefined"
 // pattern. This is, god-willing, transitional.
-
-export const useBranchScopeInfo = (
-  docPath: DocPath | undefined
-): BranchScopeInfo | undefined => {
-  const repo = useRepo();
-  return useAsyncComputed(
-    useCallback(() => {
-      return docPath && fetchBranchScopeInfo(docPath, repo);
-    }, [docPath, repo])
-  ).ifPending(undefined);
-};
-
-export const useActiveBranchInfo = (branchScopePath: DocPath | undefined) => {
-  const repo = useRepo();
-  const account = useCurrentAccount();
-  return useAsyncComputed(
-    useCallback(
-      () =>
-        branchScopePath &&
-        fetchActiveBranchInfo(branchScopePath, account, repo),
-      [branchScopePath, account, repo]
-    )
-  ).ifPending(undefined);
-};
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.

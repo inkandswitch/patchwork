@@ -73,7 +73,7 @@ import {
   PlusIcon,
   Trash2Icon,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createJacquardBranch, mergeBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../signals";
 
@@ -186,13 +186,11 @@ export const VersionControlBar = ({
     }, [jacquardProjectInfo, repo])
   ).ifPending(undefined);
 
-  const buildRunWithFileAsInput = useAsyncComputed(
-    useCallback(
-      () =>
-        projectState && getBuildRunsWithDocAsPrimaryInput(projectState, docUrl),
-      [projectState, docUrl]
-    )
-  ).ifPending(undefined);
+  const buildRunWithFileAsInput = useMemo(
+    () =>
+      projectState && getBuildRunsWithDocAsPrimaryInput(projectState, docUrl),
+    [projectState, docUrl]
+  );
 
   const hasOutputFiles =
     buildRunWithFileAsInput && buildRunWithFileAsInput.length > 0;
@@ -229,39 +227,51 @@ export const VersionControlBar = ({
   //   toast("Incorporated updates from main");
   // };
 
+  const onSelectValueChange = useCallback(
+    (value: string) => {
+      if (value === "__newBranch") {
+        handleCreateJacquardBranch();
+      } else if (value === "__makeIntoBranchScope") {
+        if (!branchScopeVersionControlMetadataOm) {
+          initVersionControlSidecarDoc(cloneOrMainOm, repo, {
+            branchScope: true,
+          });
+        } else {
+          ensureMetadataHandleIsBranchScope(
+            branchScopeVersionControlMetadataOm.handle
+          );
+        }
+      } else if (value === "__moveChangesToBranch") {
+        throw new Error("not implemented");
+      } else {
+        const selectedBranchUrl =
+          value === "__main" ? null : (value as AutomergeUrl);
+
+        if (selectedBranchUrl) {
+          onSelectBranchUrl(selectedBranchUrl);
+          toast({ title: "Switched to branch" });
+        } else {
+          onSelectBranchUrl(null);
+          toast({ title: "Switched to Main" });
+        }
+      }
+    },
+    [
+      handleCreateJacquardBranch,
+      branchScopeVersionControlMetadataOm,
+      cloneOrMainOm,
+      repo,
+      onSelectBranchUrl,
+      toast,
+    ]
+  );
+
   return (
     <div className="bg-gray-100 pl-4 py-2 flex gap-2 border-b border-gray-200">
       <div className="flex flex-col gap-0.5">
         <Select
           value={activeBranchOm?.url ?? "__main"} // select doesn't like undefined
-          onValueChange={(value) => {
-            if (value === "__newBranch") {
-              handleCreateJacquardBranch();
-            } else if (value === "__makeIntoBranchScope") {
-              if (!branchScopeVersionControlMetadataOm) {
-                initVersionControlSidecarDoc(cloneOrMainOm, repo, {
-                  branchScope: true,
-                });
-              } else {
-                ensureMetadataHandleIsBranchScope(
-                  branchScopeVersionControlMetadataOm.handle
-                );
-              }
-            } else if (value === "__moveChangesToBranch") {
-              throw new Error("not implemented");
-            } else {
-              const selectedBranchUrl =
-                value === "__main" ? null : (value as AutomergeUrl);
-
-              if (selectedBranchUrl) {
-                onSelectBranchUrl(selectedBranchUrl);
-                toast({ title: "Switched to branch" });
-              } else {
-                onSelectBranchUrl(null);
-                toast({ title: "Switched to Main" });
-              }
-            }
-          }}
+          onValueChange={onSelectValueChange}
         >
           <SelectTrigger className="h-8 text-sm w-[14rem] font-medium">
             <SelectValue>
