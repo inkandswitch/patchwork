@@ -160,9 +160,7 @@ export function MarkdownDocEditor({
         key={JSON.stringify(docHeads)} // remount component whenever the passed in heads change
         initialDoc={content}
         extensions={extensions}
-        className={clsx(
-          "codemirror-editor h-full overflow-auto scroll-instant"
-        )}
+        className={clsx("codemirror-editor h-full scroll-instant")}
       />
     </div>
   );
