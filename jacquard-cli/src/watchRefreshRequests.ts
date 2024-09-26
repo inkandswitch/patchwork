@@ -3,7 +3,7 @@ import { Om } from "@/om";
 import { FolderDoc } from "@/packages/folder";
 import {
   fetchVersionControlMetadataOm,
-  fetchResolveUrlOnBranch,
+  fetchResolveUrlOnFixedBranch,
 } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import os from "node:os";
@@ -77,7 +77,7 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
     // check branches
 
     fetchMap(versionControlMetadataOm.doc.branches, (branchUrl) => {
-      const branchBuildMetadataDocUrl = fetchResolveUrlOnBranch(
+      const branchBuildMetadataDocUrl = fetchResolveUrlOnFixedBranch(
         mainBuildMetadataOm.url,
         branchUrl,
         repo

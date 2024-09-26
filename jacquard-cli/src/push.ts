@@ -14,11 +14,11 @@ import path from "path";
 import process from "process";
 import { CommandLineArgs } from ".";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
-import { findWithActiveBranchPromise } from "./findWithActiveBranch";
 import { RunResult } from "./run";
 import {
   dataTypes,
   formatFileSize,
+  omOnActiveBranchPromise,
   readFileContent,
   sleep,
   waitForSync,
@@ -160,10 +160,9 @@ async function pushDir({
       );
       let subFolderHandle: DocHandle<FolderDoc>;
       if (existingDocLink) {
-        subFolderHandle = await findWithActiveBranchPromise<FolderDoc>(
-          existingDocLink.url,
-          repo
-        );
+        subFolderHandle = (
+          await omOnActiveBranchPromise<FolderDoc>(existingDocLink.url, repo)
+        ).handle;
       } else {
         subFolderHandle = repo.create<FolderDoc>();
         subFolderHandle.change((doc) => {
@@ -209,15 +208,9 @@ async function findOrCreateFolderHandle(
 ) {
   let folderHandle: DocHandle<FolderDoc>;
   if (projectFolderUrl !== undefined) {
-    folderHandle = await findWithActiveBranchPromise<FolderDoc>(
-      projectFolderUrl,
-      repo
-    );
-    await folderHandle.doc();
-    if (folderHandle.docSync() === undefined) {
-      console.error(`Could not find doc at ${projectFolderUrl}`);
-      process.exit(1);
-    }
+    folderHandle = (
+      await omOnActiveBranchPromise<FolderDoc>(projectFolderUrl, repo)
+    ).handle;
   } else {
     // assign a folder name based on the local FS name for this folder
     const projectName = path.basename(process.cwd());
@@ -260,11 +253,12 @@ async function findOrCreateBuildMetadataHandle(
   )?.url;
 
   if (buildMetadataDocUrl) {
-    buildMetadataHandle =
-      await findWithActiveBranchPromise<JacquardBuildMetadata>(
+    buildMetadataHandle = (
+      await omOnActiveBranchPromise<JacquardBuildMetadata>(
         buildMetadataDocUrl,
         repo
-      );
+      )
+    ).handle;
     await buildMetadataHandle.whenReady();
   } else {
     buildMetadataHandle = repo.create();
@@ -328,7 +322,8 @@ const pushFile = async ({
   const existingDocLink = folderDoc.docs.find((link) => link.name === fileName);
 
   if (existingDocLink) {
-    const handle = await findWithActiveBranchPromise(existingDocLink.url, repo);
+    const handle = (await omOnActiveBranchPromise(existingDocLink.url, repo))
+      .handle;
     const mainUrl = existingDocLink.url;
 
     const dataTypeId = existingDocLink.type;

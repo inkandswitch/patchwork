@@ -1,7 +1,5 @@
-import * as Automerge from "@automerge/automerge";
 import { asyncComputedPromise } from "@/async-signals";
 import { dataTypeById } from "@/datatypes";
-import { Om } from "@/om";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { useDataTypes, useTools } from "@/patchworkContext";
@@ -10,10 +8,8 @@ import { Toaster } from "@/shadcn/ui/toaster";
 import { toolById, toolsForDataType } from "@/tools";
 import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
-import {
-  fakeDocPath,
-  fetchBranchScopeAndActiveBranchInfo,
-} from "@/versionControl/signals";
+import { fakeDocPath, fetchOmOnBranchFromPath } from "@/versionControl/signals";
+import * as Automerge from "@automerge/automerge";
 import {
   useDocument,
   useHandle,
@@ -156,10 +152,9 @@ export const Explorer: React.FC = () => {
         parentFolderDocPath = _.initial(fakeDocPath(selectedDocLink));
       }
 
-      const { cloneOrMainOm } = await asyncComputedPromise(() =>
-        fetchBranchScopeAndActiveBranchInfo(parentFolderDocPath, account, repo)
+      const parentFolderBranchedOm = await asyncComputedPromise(() =>
+        fetchOmOnBranchFromPath<FolderDoc>(parentFolderDocPath, account, repo)
       );
-      const parentFolderBranchedOm = cloneOrMainOm as Om<FolderDoc>;
 
       const newDocLink = {
         url: newDocHandle.url,

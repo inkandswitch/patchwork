@@ -14,12 +14,12 @@ import {
   fetchProjectState,
   getStalenessInfo,
 } from "../../packages/jacquard/src/getStalenessInfo";
-import {
-  fetchFindWithActiveBranch,
-  findWithActiveBranchPromise,
-} from "./findWithActiveBranch";
 import { run } from "./run";
-import { getBuildMetadataDocUrl } from "./util";
+import {
+  fetchOmOnActiveBranch,
+  getBuildMetadataDocUrl,
+  omOnActiveBranchPromise,
+} from "./util";
 
 export async function refresh(
   repo: Repo,
@@ -35,40 +35,26 @@ export async function refresh(
   }
 
   // get build metadata
-  const folderHandle = await findWithActiveBranchPromise<FolderDoc>(
+  const folderOm = await omOnActiveBranchPromise<FolderDoc>(
     projectFolderUrl,
     repo
   );
 
-  const folderDoc = await folderHandle.doc();
-  if (folderDoc === undefined) {
-    console.error(`Could not find doc at ${projectFolderUrl}`);
-    process.exit(1);
-  }
-
-  const buildMetadataDocUrl = getBuildMetadataDocUrl(folderDoc);
+  const buildMetadataDocUrl = getBuildMetadataDocUrl(folderOm.doc);
   if (!buildMetadataDocUrl) {
     console.error(`Project has no build metadata`);
     process.exit(1);
   }
 
-  const buildMetadataHandle =
-    await findWithActiveBranchPromise<JacquardBuildMetadata>(
-      buildMetadataDocUrl,
-      repo
-    );
-
-  const buildMetadataDoc = await buildMetadataHandle.doc();
-  if (!buildMetadataDoc) {
-    throw new Error(`Build metadata doc missing: ${buildMetadataDocUrl}`);
-  }
+  const buildMetadataOm = await omOnActiveBranchPromise<JacquardBuildMetadata>(
+    buildMetadataDocUrl,
+    repo
+  );
 
   const getCurrentStalenessInfo = async () => {
     const projectState = await asyncComputedPromise(() => {
-      const fetchDocOnBranchFromUrl = (fileUrl: AutomergeUrl) => {
-        const fileHandle = fetchFindWithActiveBranch<FileDoc>(fileUrl, repo);
-        return fetchDoc<any>(fileHandle.url, repo);
-      };
+      const fetchDocOnBranchFromUrl = (fileUrl: AutomergeUrl) =>
+        fetchOmOnActiveBranch<FileDoc>(fileUrl, repo).doc;
 
       const folderDoc = fetchFolderDocWithChildren(
         projectFolderUrl,
@@ -78,7 +64,7 @@ export async function refresh(
 
       return fetchProjectState({
         folderDoc,
-        buildRuns: buildMetadataDoc.buildRuns,
+        buildRuns: buildMetadataOm.doc.buildRuns,
         filesReferencedInBuildsOnly: true,
         fetchDocOnBranchFromUrl,
       });
@@ -95,7 +81,7 @@ export async function refresh(
       return [];
     }
 
-    const buildRun = buildMetadataDoc.buildRuns.find(
+    const buildRun = buildMetadataOm.doc.buildRuns.find(
       ({ id }) => id === buildRunId
     );
     if (!buildRun) {
@@ -119,7 +105,7 @@ export async function refresh(
     )) {
       if (status.length > 0) {
         // we are stale
-        const buildRun = buildMetadataDoc.buildRuns.find(
+        const buildRun = buildMetadataOm.doc.buildRuns.find(
           ({ id }) => id === buildRunId
         );
         if (!buildRun) {

@@ -113,7 +113,7 @@ export const fetchActiveBranchInfo = (
   };
 };
 
-export const fetchResolveUrlOnBranch = (
+export const fetchResolveUrlOnFixedBranch = (
   url: AutomergeUrl,
   activeBranchUrl: AutomergeUrl | undefined, // undefined means "main"
   repo: Repo
@@ -151,7 +151,7 @@ export const fetchBranchScopeAndActiveBranchInfo = (
   );
 
   const lastLink = docPath[docPath.length - 1];
-  const { url, baseHeads } = fetchResolveUrlOnBranch(
+  const { url, baseHeads } = fetchResolveUrlOnFixedBranch(
     lastLink.url,
     activeBranchInfo.activeBranchOm?.url,
     repo
@@ -179,15 +179,16 @@ export const fetchOmOnBranchFromPath = <T>(
     .cloneOrMainOm as Om<T>;
 };
 
-// This is an alternative to getOmOnBranchFromPath where you can directly provide the branchUrl
-// to resolve the docUrl on
-export const fetchOmOnBranch = <T>(
+/**
+ * Get the Om at the docUrl, accounting for a specified branch.
+ */
+export const fetchOmOnFixedBranch = <T>(
   docUrl: AutomergeUrl,
   branchUrl: AutomergeUrl | undefined,
   repo: Repo
 ): Om<T> => {
   const docUrlOnBranch = branchUrl
-    ? fetchResolveUrlOnBranch(docUrl, branchUrl, repo)?.url
+    ? fetchResolveUrlOnFixedBranch(docUrl, branchUrl, repo)?.url
     : docUrl;
 
   if (!docUrlOnBranch) {

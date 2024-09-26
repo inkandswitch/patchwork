@@ -4,6 +4,7 @@ import {
   AutomergeUrl,
   Doc,
   DocHandle,
+  Repo,
   StorageId,
 } from "@automerge/automerge-repo";
 import fs from "fs";
@@ -13,6 +14,8 @@ import { inspect } from "node:util";
 import path from "path";
 import { FileContent } from "../../packages/file/src/datatype";
 import { builtInDataTypesSafe } from "@/builtInDataTypesSafe";
+import { fetchOmOnFixedBranch } from "@/versionControl/signals";
+import { asyncComputedPromise } from "@/async-signals";
 
 export const dataTypes = builtInDataTypesSafe;
 
@@ -234,4 +237,20 @@ function stringifyForConsole(data: any): string {
 export const replaceExtension = (filePath: string, newExtension: string) => {
   const extension = path.extname(filePath);
   return `${filePath.slice(0, -extension.length)}.${newExtension}`;
+};
+
+/**
+ * Doc-reactive. Like repo.find, but considers the active branch.
+ */
+export const fetchOmOnActiveBranch = <T>(docUrl: AutomergeUrl, repo: Repo) => {
+  const config = getJacquardConfig();
+  const branchUrl = config?.activeBranchUrl;
+  return fetchOmOnFixedBranch<T>(docUrl, branchUrl, repo);
+};
+
+export const omOnActiveBranchPromise = async <T>(
+  docUrl: AutomergeUrl,
+  repo: Repo
+) => {
+  return asyncComputedPromise(() => fetchOmOnActiveBranch<T>(docUrl, repo));
 };

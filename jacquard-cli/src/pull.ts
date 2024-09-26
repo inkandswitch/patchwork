@@ -4,8 +4,7 @@ import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import fs from "fs";
 import path from "path";
 import { CommandLineArgs } from ".";
-import { findWithActiveBranchPromise } from "./findWithActiveBranch";
-import { dataTypes } from "./util";
+import { dataTypes, omOnActiveBranchPromise } from "./util";
 
 export async function pull(repo: Repo, args: CommandLineArgs) {
   const { projectFolderUrl, dir } = args;
@@ -26,19 +25,10 @@ async function pullFolder({
   dir: string;
   repo: Repo;
 }) {
-  const folderHandle = await findWithActiveBranchPromise<FolderDoc>(
-    folderUrl,
-    repo
-  );
-  const doc = await folderHandle.doc();
-
-  if (!doc) {
-    console.error(`Could not find ${folderHandle.url}: ${folderHandle.state}`);
-    process.exit(1);
-  }
+  const folderOm = await omOnActiveBranchPromise<FolderDoc>(folderUrl, repo);
 
   await Promise.all(
-    doc.docs.map(async (docLink) => {
+    folderOm.doc.docs.map(async (docLink) => {
       // skip jacquard.json
       if (docLink.name === "jacquard.json") {
         return;
@@ -87,16 +77,9 @@ async function pullDoc({
     return;
   }
 
-  const handle = await findWithActiveBranchPromise(docLink.url, repo);
-  const doc = await handle.doc();
-  if (!doc) {
-    console.error(
-      `skipping doc ${filePath} that could not be found (${handle.state})`
-    );
-    return;
-  }
+  const docOm = await omOnActiveBranchPromise(docLink.url, repo);
 
-  const unixFile = await dataType.docToUnixFile(doc);
+  const unixFile = await dataType.docToUnixFile(docOm.doc);
   fs.writeFileSync(
     unixFile.fileName ? path.join(dir, unixFile.fileName) : filePath,
     unixFile.content

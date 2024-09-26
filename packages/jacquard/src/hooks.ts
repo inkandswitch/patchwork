@@ -3,7 +3,7 @@ import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";
 import {
   fetchBranchScopeAndActiveBranchInfo,
-  fetchOmOnBranch,
+  fetchOmOnFixedBranch,
 } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { JacquardBuildMetadata } from "./datatype";
@@ -47,7 +47,7 @@ export const fetchJacquardProjectInfoWithActiveBranch = (
     return;
   }
 
-  const buildMetadataOm = fetchOmOnBranch<JacquardBuildMetadata>(
+  const buildMetadataOm = fetchOmOnFixedBranch<JacquardBuildMetadata>(
     buildMetadataDocLink.url,
     activeBranchOm?.url,
     repo

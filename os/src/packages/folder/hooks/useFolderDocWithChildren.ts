@@ -2,7 +2,7 @@ import { DocMissingError, fetchMap, useAsyncComputed } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
 import {
   fakeDocPath,
-  fetchOmOnBranch,
+  fetchOmOnFixedBranch,
   fetchOmOnBranchFromPath,
 } from "@/versionControl/signals";
 import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
@@ -115,14 +115,14 @@ export function fetchFolderDocWithChildren(
   };
 }
 
-export function fetchFolderDocWithChildrenOnBranch(
+export function fetchFolderDocWithChildrenOnFixedBranch(
   rootFolderUrl: AutomergeUrl,
   branchUrl: AutomergeUrl | undefined,
   repo: Repo
 ): FolderDocWithMetadata {
   return fetchFolderDocWithChildren(rootFolderUrl, (path) => {
     const docLink = last(path) as DocLink;
-    return fetchOmOnBranch(docLink.url, branchUrl, repo).doc;
+    return fetchOmOnFixedBranch(docLink.url, branchUrl, repo).doc;
   });
 }
 

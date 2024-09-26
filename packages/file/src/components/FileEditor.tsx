@@ -7,7 +7,7 @@ import {
 import { useDocUIState } from "@/explorer/uiState";
 import { TextAnchor } from "@/lib/textAnchors";
 import { EditorProps } from "@/tools";
-import { fetchResolveUrlOnBranch } from "@/versionControl/signals";
+import { fetchResolveUrlOnFixedBranch } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";
@@ -72,7 +72,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
           activeBranchUrl
             ? {
                 ...output,
-                docUrl: fetchResolveUrlOnBranch(
+                docUrl: fetchResolveUrlOnFixedBranch(
                   output.docUrl,
                   activeBranchUrl,
                   repo
