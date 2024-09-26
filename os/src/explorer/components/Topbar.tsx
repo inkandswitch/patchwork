@@ -1,3 +1,4 @@
+import * as Automerge from "@automerge/automerge";
 import { DocLink, DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { Doc, DocHandle, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -51,6 +52,7 @@ type TopbarProps = {
   tools: Tool[];
   tool: Tool;
   setToolId: (id: string) => void;
+  docHeadsFromTimelineSidebar: Automerge.Heads;
 };
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -64,6 +66,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   tool,
   setToolId: setToolModuleId,
   removeDocLink,
+  docHeadsFromTimelineSidebar,
 }) => {
   const repo = useRepo();
   const { toast } = useToast();
@@ -164,19 +167,50 @@ export const Topbar: React.FC<TopbarProps> = ({
                     // TODO: JAH strict fix lazy
                     throw new Error("something unexpected is missing idk");
                   }
-                  const newHandle =
-                    repo.clone<HasVersionControlMetadata<unknown, unknown>>(
-                      selectedDocHandle
+
+                  let newHandle: DocHandle<HasVersionControlMetadata>;
+
+                  if (docHeadsFromTimelineSidebar) {
+                    newHandle = repo.create<HasVersionControlMetadata>();
+
+                    const originalDoc = await selectedDocHandle.doc();
+
+                    if (!originalDoc) {
+                      throw new Error("can't load doc");
+                    }
+
+                    const changes = Automerge.getAllChanges(originalDoc);
+
+                    let cutOff = 0;
+                    for (const change of changes) {
+                      cutOff += 1;
+                      const decodeChange = Automerge.decodeChange(change);
+
+                      if (
+                        decodeChange.hash === docHeadsFromTimelineSidebar[0]
+                      ) {
+                        break;
+                      }
+                    }
+
+                    const [docAtHeads] = Automerge.applyChanges(
+                      Automerge.init<HasVersionControlMetadata>(),
+                      changes.slice(0, cutOff)
                     );
-                  newHandle.change((doc: any) => {
+
+                    newHandle.update((doc) => Automerge.merge(doc, docAtHeads));
+                  } else {
+                    newHandle =
+                      repo.clone<HasVersionControlMetadata<unknown, unknown>>(
+                        selectedDocHandle
+                      );
+                  }
+
+                  newHandle.change((doc) => {
                     selectedDataType.markCopy(doc);
-                    doc.branchMetadata.source = {
-                      url: selectedDocUrl,
-                      branchHeads: getHeads(selectedDocHandle.docSync()!), // TODO: JAH strict fix
-                    };
                   });
 
-                  const newDocLink: DocLink = {
+                  const newDocLink = {
                     url: newHandle.url,
                     name: await selectedDataType.getTitle(
                       newHandle.docSync(),
@@ -185,19 +219,21 @@ export const Topbar: React.FC<TopbarProps> = ({
                     type: selectedDocLink.type,
                   };
 
-                  const folderHandle = repo.find<FolderDoc>(
-                    selectedDocLink.folderPath[
-                      selectedDocLink.folderPath.length - 1
-                    ]
-                  );
-                  await folderHandle.whenReady();
+                  if (!docHeadsFromTimelineSidebar) {
+                    const folderHandle = repo.find<FolderDoc>(
+                      selectedDocLink.folderPath[
+                        selectedDocLink.folderPath.length - 1
+                      ]
+                    );
+                    await folderHandle.whenReady();
 
-                  const index = folderHandle
-                    .docSync()! // TODO: JAH strict fix
-                    .docs.findIndex((doc) => doc.url === selectedDocUrl);
-                  folderHandle.change((doc) =>
-                    doc.docs.splice(index + 1, 0, newDocLink)
-                  );
+                    const index = folderHandle
+                      .docSync()! // TODO: JAH strict fix
+                      .docs.findIndex((doc) => doc.url === selectedDocUrl);
+                    folderHandle.change((doc) =>
+                      doc.docs.splice(index + 1, 0, newDocLink)
+                    );
+                  }
 
                   // TODO: we used to have a setTimeout here, see if we need to bring it back.
                   selectDocLink({
@@ -210,7 +246,9 @@ export const Topbar: React.FC<TopbarProps> = ({
                   className="inline-block text-gray-500 mr-2"
                   size={14}
                 />{" "}
-                Make a copy
+                {!docHeadsFromTimelineSidebar
+                  ? "Make a copy of latest version"
+                  : "Make a copy of visible version"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {(selectedDataType?.fileExportMethods ?? [])

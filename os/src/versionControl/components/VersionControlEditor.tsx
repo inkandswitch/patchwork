@@ -36,15 +36,18 @@ export const VersionControlEditor: React.FC<{
   selectedDocLink: DocLinkWithFolderPath;
   flatDocLinks: DocLinkWithFolderPath[];
   getFakeDocPathForDocUrl: (url: AutomergeUrl) => DocPath;
+  docHeadsFromTimelineSidebar: A.Heads | undefined;
+  setDocHeadsFromTimelineSidebar: (heads: A.Heads | undefined) => void;
 }> = ({
   docUrl: mainDocUrl,
   datatypeId,
   tool,
-  addNewDocument,
   selectedDocLink,
   getFakeDocPathForDocUrl,
+  docHeadsFromTimelineSidebar,
+  setDocHeadsFromTimelineSidebar,
 }) => {
-  const [doc, changeDoc] =
+  const [doc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
 
   const [docUIState, changeDocUIState] = useDocUIState(
@@ -72,8 +75,6 @@ export const VersionControlEditor: React.FC<{
 
   const [diffFromTimelineSidebar, setDiffFromTimelineSidebar] =
     useState<DiffWithProvenance>();
-  const [docHeadsFromTimelineSidebar, setDocHeadsFromTimelineSidebar] =
-    useState<A.Heads>();
 
   const docHeads = docHeadsFromTimelineSidebar ?? undefined;
 
@@ -133,6 +134,24 @@ export const VersionControlEditor: React.FC<{
 
   const dataTypes = useDataTypes();
   const dataType = dataTypeById(dataTypes, datatypeId);
+
+  const branchOms = branchScopeAndActiveBranchInfo?.branchOms;
+  const branchScopeUrl = branchScopeAndActiveBranchInfo?.branchScopeOm?.url;
+
+  // hack: convert old branches that don't have a back link to the branchScope
+  useEffect(() => {
+    if (!branchScopeUrl || !branchOms) {
+      return;
+    }
+
+    branchOms.forEach(({ doc, handle }) => {
+      if (!doc.branchScopeUrl) {
+        handle.change((doc) => {
+          doc.branchScopeUrl = branchScopeUrl;
+        });
+      }
+    });
+  }, [branchScopeUrl, branchOms]);
 
   const {
     annotations,

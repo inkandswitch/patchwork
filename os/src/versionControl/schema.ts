@@ -59,7 +59,10 @@ export type UnmergedBranchDoc = {
   /** author contact doc URL for branch creator */
   createdBy?: AutomergeUrl;
 
-  mergeMetadata: undefined;
+  /**  doc on which the branch scope was created */
+  branchScopeUrl: AutomergeUrl;
+
+  mergeMetadata: null;
 };
 
 export type MergedBranchDoc = Omit<UnmergedBranchDoc, "mergeMetadata"> & {

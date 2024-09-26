@@ -1,3 +1,4 @@
+import * as Automerge from "@automerge/automerge";
 import { asyncComputedPromise } from "@/async-signals";
 import { dataTypeById } from "@/datatypes";
 import { Om } from "@/om";
@@ -101,6 +102,9 @@ export const Explorer: React.FC = () => {
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();
+
+  const [docHeadsFromTimelineSidebar, setDocHeadsFromTimelineSidebar] =
+    useState<Automerge.Heads>();
 
   const addNewDocument = useCallback(
     async ({
@@ -294,6 +298,7 @@ export const Explorer: React.FC = () => {
               setToolId={setSelectedToolId}
               tool={currentTool}
               tools={tools}
+              docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
             />
             <div className="flex-grow overflow-hidden z-0">
               {!selectedDocUrl && (
@@ -335,6 +340,10 @@ export const Explorer: React.FC = () => {
                   addNewDocument={addNewDocument}
                   flatDocLinks={flatDocLinks}
                   getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
+                  docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
+                  setDocHeadsFromTimelineSidebar={
+                    setDocHeadsFromTimelineSidebar
+                  }
                 />
               )}
             </div>

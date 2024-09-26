@@ -40,8 +40,6 @@ export const createJacquardBranch = async <
     );
   }
 
-  const branchHandle = repo.create<BranchDoc>();
-
   const clonesMap = {};
   await cloneDocWithLinks(
     repo,
@@ -51,16 +49,13 @@ export const createJacquardBranch = async <
     clonesMap
   );
 
-  console.log("clonesMap", clonesMap);
-
-  branchHandle.change((doc) => {
-    doc.name = `Branch #${
-      (versionControlMetadataDoc.branches?.length ?? 0) + 1
-    }`;
-
-    doc.createdAt = Date.now();
-    doc.createdBy = createdBy;
-    doc.clones = clonesMap;
+  const branchHandle = repo.create<BranchDoc>({
+    name: `Branch #${(versionControlMetadataDoc.branches?.length ?? 0) + 1}`,
+    createdAt: Date.now(),
+    createdBy,
+    clones: clonesMap,
+    branchScopeUrl: branchScopeHandle.url,
+    mergeMetadata: null,
   });
 
   versionControlMetadataHandle.change((doc) => {
