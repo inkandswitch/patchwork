@@ -52,10 +52,10 @@ const computeFlattenedDocLinks = ({
 // TODO: reactive but not incremental
 function fetchMaterializeFolderDoc(
   docPath: DocPath,
-  getDocOnBranch: (docPath: DocPath) => Doc<unknown>
+  fetchDocOnBranch: (docPath: DocPath) => Doc<unknown>
 ): FolderDocWithChildren {
   try {
-    const folder = getDocOnBranch(docPath) as Doc<FolderDoc>;
+    const folder = fetchDocOnBranch(docPath) as Doc<FolderDoc>;
 
     return {
       ...folder,
@@ -64,7 +64,7 @@ function fetchMaterializeFolderDoc(
           if (link.type === "folder") {
             const folderContents = fetchMaterializeFolderDoc(
               [...docPath, link],
-              getDocOnBranch
+              fetchDocOnBranch
             );
             // cast is ok cuz if it's loading, we won't return result
             return { ...link, folderContents };
