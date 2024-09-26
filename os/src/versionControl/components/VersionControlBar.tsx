@@ -1,4 +1,4 @@
-import { useAsyncComputed, waitUntilPresent } from "@/async-signals";
+import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
@@ -48,12 +48,12 @@ import {
   ProjectState,
 } from "@patchwork/jacquard/src/getStalenessInfo";
 import {
+  fetchJacquardProjectInfoWithActiveBranch,
   JacquardProjectInfo,
-  useJacquardProjectInfoWithActiveBranch,
 } from "@patchwork/jacquard/src/hooks";
 import {
-  getBuildRunsWithDocAsPrimaryInput,
   fetchProjectStateFromProjectInfo,
+  getBuildRunsWithDocAsPrimaryInput,
 } from "@patchwork/jacquard/src/signals";
 import _, { truncate } from "lodash";
 import {
@@ -175,13 +175,20 @@ export const VersionControlBar = ({
   //   setIsHoveringYankToBranchOption(false);
   // };
 
-  const jacquardProjectInfo = useJacquardProjectInfoWithActiveBranch(
-    getFakeDocPathForDocUrl(docUrl)
-  );
+  const jacquardProjectInfo = useAsyncComputed(
+    useCallback(() => {
+      fetchAwaitMissing(account);
+      return fetchJacquardProjectInfoWithActiveBranch(
+        getFakeDocPathForDocUrl(docUrl),
+        account,
+        repo
+      );
+    }, [account, docUrl, getFakeDocPathForDocUrl, repo])
+  ).ifPending(undefined);
 
   const projectState = useAsyncComputed(
     useCallback(() => {
-      waitUntilPresent(jacquardProjectInfo);
+      fetchAwaitMissing(jacquardProjectInfo);
       return fetchProjectStateFromProjectInfo(jacquardProjectInfo, repo);
     }, [jacquardProjectInfo, repo])
   ).ifPending(undefined);

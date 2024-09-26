@@ -8,14 +8,13 @@ import {
   fetchBranchScopeAndActiveBranchInfo,
 } from "./signals";
 
-// Given a doc path representing current selected doc,
-// resolve a branch scope and return relevant information about branches
-
-// For now, these hooks will follow the traditional "accept & return undefined"
-// pattern. This is, god-willing, transitional.
-
-// This hook goes a bit further than useBranchScope. It asks for the UI state,
-// and uses that to figure out what branch is active in the branch scope.
+/**
+ * Given a doc path representing current selected doc, resolve a
+ * branch scope and return relevant information about branches. This
+ * is a `use` instead of a `fetch` because it needs to do some
+ * de-duping to return referentially stable objects. (async-signals
+ * can't do that, yet.)
+ */
 export const useBranchScopeAndActiveBranchInfo = (
   docPath: DocPath | undefined
 ): BranchScopeAndActiveBranchInfo | undefined => {

@@ -1,4 +1,9 @@
-import { fetchFlatMap, fetchMap, useAsyncComputed } from "@/async-signals";
+import {
+  fetchFlatMap,
+  fetchMap,
+  useAsyncComputed,
+  fetchAwaitMissing,
+} from "@/async-signals";
 import { useDocUIState } from "@/explorer/uiState";
 import { TextAnchor } from "@/lib/textAnchors";
 import { EditorProps } from "@/tools";
@@ -6,7 +11,7 @@ import { fetchResolveUrlOnBranch } from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";
-import { useJacquardProjectInfoWithActiveBranch } from "../../../jacquard/src/hooks";
+import { fetchJacquardProjectInfoWithActiveBranch } from "../../../jacquard/src/hooks";
 import {
   getBuildRunsWithDocAsPrimaryInput,
   fetchProjectStateFromProjectInfo,
@@ -18,6 +23,7 @@ import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
 import { ImageFileDoc, ImageFileViewer } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
+import { useCurrentAccount } from "@/explorer/account";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -40,13 +46,16 @@ export const FileEditor = (props: EditorProps<any, any>) => {
   const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
 
   const repo = useRepo();
-
-  const jacquardProjectInfo = useJacquardProjectInfoWithActiveBranch(
-    getFakeDocPathForDocUrl(mainDocUrl)
-  );
+  const account = useCurrentAccount();
 
   const outputFiles = useAsyncComputed(
     useCallback(() => {
+      fetchAwaitMissing(account);
+      const jacquardProjectInfo = fetchJacquardProjectInfoWithActiveBranch(
+        getFakeDocPathForDocUrl(mainDocUrl),
+        account,
+        repo
+      );
       if (!jacquardProjectInfo) {
         return;
       }
@@ -73,7 +82,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
             : { ...output, mainDocUrl: output.docUrl }
         )
       );
-    }, [jacquardProjectInfo, repo, mainDocUrl, activeBranchUrl])
+    }, [account, getFakeDocPathForDocUrl, mainDocUrl, repo, activeBranchUrl])
   ).ifPending(undefined);
 
   if (!doc) {

@@ -197,7 +197,7 @@ export function asyncComputedFromPromise<T>(
  * For use inside an async-signal callback. Interpret a missing
  * (falsey) value as a pending value.
  */
-export function waitUntilPresent(
+export function fetchAwaitMissing(
   condition: any,
   description?: string
 ): asserts condition {

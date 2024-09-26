@@ -247,6 +247,10 @@ const createAccount = (
   return { accountHandle, contactHandle, rootFolderHandle };
 };
 
+/**
+ * Returns `undefined` if account information is pending; otherwise
+ * there should always be an account.
+ */
 export function useCurrentAccount(): Account | undefined {
   const repo = useRepo();
   const [account, setAccount] = useState<Account | undefined>(undefined);

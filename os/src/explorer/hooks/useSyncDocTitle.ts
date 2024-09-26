@@ -1,4 +1,4 @@
-import { useAsyncComputed, waitUntilPresent } from "@/async-signals";
+import { useAsyncComputed, fetchAwaitMissing } from "@/async-signals";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { useDataTypes } from "@/patchworkContext";
 import { dataTypeById } from "@/sdk";
@@ -33,14 +33,14 @@ export const useSyncDocTitle = ({
 
   const selectedDoc = useAsyncComputed(
     useCallback(() => {
-      waitUntilPresent(selectedDocPath);
+      fetchAwaitMissing(selectedDocPath);
       return fetchOmOnBranchFromPath(selectedDocPath, account, repo).doc;
     }, [account, repo, selectedDocPath])
   ).ifPending(undefined);
 
   const parentFolderOm = useAsyncComputed(
     useCallback(() => {
-      waitUntilPresent(selectedDocPath);
+      fetchAwaitMissing(selectedDocPath);
       return fetchOmOnBranchFromPath<FolderDoc>(
         selectedDocPath.slice(0, -1),
         account,

@@ -35,29 +35,33 @@ import {
   ProjectState,
   reasonToString,
 } from "../getStalenessInfo";
-import { useJacquardProjectInfoWithActiveBranch } from "../hooks";
+import { fetchJacquardProjectInfoWithActiveBranch } from "../hooks";
 import { fetchProjectStateFromProjectInfo } from "../signals";
-import { useAsyncComputed, waitUntilPresent } from "@/async-signals";
+import { useAsyncComputed, fetchAwaitMissing } from "@/async-signals";
+import { useCurrentAccount } from "@/explorer/account";
 
 export const GraphView = ({
   mainDocUrl,
   getFakeDocPathForDocUrl,
 }: EditorProps<JacquardBuildMetadata, never>) => {
   const repo = useRepo();
-
-  const jacquardProjectInfo = useJacquardProjectInfoWithActiveBranch(
-    getFakeDocPathForDocUrl(mainDocUrl)
-  );
+  const account = useCurrentAccount();
 
   return useAsyncComputed(
     useCallback(() => {
-      waitUntilPresent(jacquardProjectInfo);
-
+      fetchAwaitMissing(account);
+      const jacquardProjectInfo = fetchJacquardProjectInfoWithActiveBranch(
+        getFakeDocPathForDocUrl(mainDocUrl),
+        account,
+        repo
+      );
+      if (!jacquardProjectInfo) {
+        return "Cannot find Jacquard project info";
+      }
       const projectState = fetchProjectStateFromProjectInfo(
         jacquardProjectInfo,
         repo
       );
-
       return (
         <div className="p-4 flex flex-col h-full overflow-auto">
           <GraphvizView source={stateGraphSrc(projectState)} />
@@ -72,7 +76,7 @@ export const GraphView = ({
           )}
         </div>
       );
-    }, [jacquardProjectInfo, repo])
+    }, [account, getFakeDocPathForDocUrl, mainDocUrl, repo])
   ).ifPending(undefined);
 };
 
