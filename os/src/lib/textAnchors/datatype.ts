@@ -116,10 +116,7 @@ export const textAnchorsAtPath = <D extends Automerge.Doc<unknown>>(
             annotations.push({
               type: "added",
               added: patch.value,
-              anchor: {
-                fromCursor: fromCursor,
-                toCursor: toCursor,
-              },
+              anchor: { fromCursor, toCursor },
               inversePatches: [
                 {
                   action: "del",

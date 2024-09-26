@@ -80,7 +80,7 @@ export async function refresh(
         folderDoc,
         buildRuns: buildMetadataDoc.buildRuns,
         filesReferencedInBuildsOnly: true,
-        fetchDocOnBranchFromUrl: fetchDocOnBranchFromUrl,
+        fetchDocOnBranchFromUrl,
       });
     });
 

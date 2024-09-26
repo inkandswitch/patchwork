@@ -193,7 +193,7 @@ async function pushDir({
         repo,
       });
       mainUrlsAndCloneHandlesByFileName[path.basename(filePath)] = {
-        mainUrl: mainUrl,
+        mainUrl,
         cloneHandle: handle,
       };
       if (didChange) {

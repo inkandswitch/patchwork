@@ -39,7 +39,7 @@ const computeFlattenedDocLinks = ({
   return doc.docs.flatMap((docLink) =>
     docLink.type === "folder" && docLink.folderContents
       ? [
-          { ...docLink, folderPath: folderPath },
+          { ...docLink, folderPath },
           ...(computeFlattenedDocLinks({
             doc: docLink.folderContents,
             folderPath: [...folderPath, docLink.url],

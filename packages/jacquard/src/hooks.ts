@@ -56,7 +56,7 @@ export const fetchJacquardProjectInfoWithActiveBranch = (
   return {
     branchUrl: activeBranchOm?.url,
     projectFolderOm: maybeProjectFolderOm,
-    buildMetadataOm: buildMetadataOm,
+    buildMetadataOm,
     buildMetadataMainDocUrl: buildMetadataDocLink.url,
   };
 };

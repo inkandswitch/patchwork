@@ -524,10 +524,7 @@ const getGroupedChangesMemo = <T>({
         options,
       });
     } else {
-      revisedLastGroup = addChangeToGroup({
-        group: revisedLastGroup,
-        change: change,
-      });
+      revisedLastGroup = addChangeToGroup({ group: revisedLastGroup, change });
     }
   }
 
@@ -693,7 +690,7 @@ export const getGroupedChanges = <T>({
         decodedChangesForDoc: changes,
         branchHeads: mergeHeads,
         mainHeads: getHeads(doc),
-        baseHeads: baseHeads,
+        baseHeads,
       }),
       mergeMetadata: {
         mergedAt,
