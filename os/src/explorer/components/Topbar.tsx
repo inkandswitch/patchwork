@@ -52,7 +52,7 @@ type TopbarProps = {
   tools: Tool[];
   tool: Tool;
   setToolId: (id: string) => void;
-  docHeadsFromTimelineSidebar: Automerge.Heads;
+  docHeadsFromTimelineSidebar?: Automerge.Heads;
 };
 
 export const Topbar: React.FC<TopbarProps> = ({
