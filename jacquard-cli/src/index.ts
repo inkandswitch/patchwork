@@ -152,7 +152,8 @@ const main = async () => {
   /* just an aside to myself but this stuff above is kind of gross and i should fix it */
   const repo = new Repo({
     network: test ? [] : [new BrowserWebSocketClientAdapter(syncServerUrl)],
-    storage: new NodeFSStorageAdapter(path.join(dir, ".jacquard/repo")),
+    // TODO: storage disabled cuz `pull` will just pull from the local version
+    // storage: new NodeFSStorageAdapter(path.join(dir, ".jacquard/repo")),
     enableRemoteHeadsGossiping: true,
   });
 
