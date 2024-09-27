@@ -82,21 +82,6 @@ function getDocSignal<T>(
   return signal;
 }
 
-/** WARNING: Don't use in a reactive context. */
-export function initialDocSignal<T>(
-  handle: DocHandle<T>,
-  heads?: Automerge.Heads
-): AsyncSignal<Doc<T>> {
-  const rawSignal = asyncComputedFromPromise(handle.doc());
-  return asyncComputed(`initialDocSignal:${handle.url}`, () => {
-    const doc = rawSignal.value.fetch;
-    if (!doc) {
-      throw new DocMissingError(handle.url);
-    }
-    return heads ? Automerge.view(doc, heads) : doc;
-  });
-}
-
 /**
  * Get the state of a doc in a reactive context. If the doc is loading or
  * missing, this will be reflected in the return value – this function will not
