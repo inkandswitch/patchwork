@@ -340,8 +340,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       );
 
       // Time for the subtlety listed under #3 above...
-      let overrideUrl: AutomergeUrl | undefined;
-      await asyncComputedPromise(() => {
+      const overrideUrl = await asyncComputedPromise(() => {
         const srcBranchInfo = fetchBranchScopeAndActiveBranchInfo(
           srcPath,
           account,
@@ -360,7 +359,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             dstBranchInfo.activeBranchOm?.url !==
             srcBranchInfo.activeBranchOm.url
           ) {
-            overrideUrl = srcBranchInfo.cloneOrMainOm.url;
+            return srcBranchInfo.cloneOrMainOm.url;
           }
         }
       });
