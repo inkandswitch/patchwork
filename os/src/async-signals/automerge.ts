@@ -104,7 +104,7 @@ export function fetchDoc<T = unknown>(
   repo: Repo,
   heads?: Automerge.Heads
 ): Doc<T> {
-  return getDocState<T>(url, repo, heads).fetch;
+  return getDocState<T>(url, repo, heads).fetch();
 }
 
 const OM_SIGNAL_CACHE = new Map<string, AsyncSignal<Om<unknown>>>();
@@ -125,7 +125,7 @@ function getOmSignal<T>(
   const id = parseAutomergeUrl(url).documentId;
   const handle = repo.find<T>(id);
   const omSignal = asyncComputed(`getOmSig:${url}`, () => {
-    return { url, id, handle, doc: docSignal.value.fetch };
+    return { url, id, handle, doc: docSignal.value.fetch() };
   });
 
   OM_SIGNAL_CACHE.set(KEY, omSignal);
@@ -154,5 +154,5 @@ export function fetchOm<T>(
   repo: Repo,
   heads?: Automerge.Heads
 ): Om<T> {
-  return getOmState<T>(url, repo, heads).fetch;
+  return getOmState<T>(url, repo, heads).fetch();
 }

@@ -31,7 +31,7 @@ export module AsyncState {
      * pending. If the state is rejected, this will throw the error
      * so the computed async-signal will likewise be rejected.
      */
-    abstract fetch: T;
+    abstract fetch(): T;
 
     /**
      * Get an AsyncState's value, probably outside an async-signal
@@ -45,7 +45,7 @@ export module AsyncState {
     constructor(readonly description?: string) {
       super();
     }
-    get fetch(): never {
+    fetch(): never {
       throw new PendingException(this.description);
     }
     ifPending<U>(onPending: U | (() => U)): U {
@@ -60,7 +60,7 @@ export module AsyncState {
     constructor(readonly _value: T) {
       super();
     }
-    get fetch() {
+    fetch() {
       return this._value;
     }
     ifPending() {
@@ -73,7 +73,7 @@ export module AsyncState {
     constructor(readonly error: unknown) {
       super();
     }
-    get fetch(): never {
+    fetch(): never {
       throw this.error;
     }
     ifPending(): never {
@@ -123,7 +123,7 @@ export function asyncComputedPromise<T>(cb: () => T): Promise<T> {
         if (signal.value instanceof AsyncState.Rejected) {
           reject(signal.value.error);
         } else {
-          resolve(signal.value.fetch);
+          resolve(signal.value.fetch());
         }
       }
     });
@@ -146,7 +146,7 @@ export function fetchParallel<T>(cbs: (() => T)[]): T[] {
   const values: T[] = [];
   for (const state of states) {
     // This part might throw
-    values.push(state.fetch);
+    values.push(state.fetch());
   }
   return values;
 }
