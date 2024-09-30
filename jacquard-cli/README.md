@@ -7,12 +7,10 @@ https://github.com/inkandswitch/trailhead
 
 ## Installation
 
-IMPORTANT: we use yarn for dependencies here even though it's in a pnpm monorepo...
-
 Make sure you have [bun](https://bun.sh/) installed. Then install dependencies and link `jacquard` utility so it's usable across your system:
 
 ```
-$ yarn
+$ pnpm
 $ npm link
 ```
 

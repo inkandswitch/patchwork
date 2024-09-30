@@ -190,7 +190,7 @@ function stateGraphSrc(state: ProjectState) {
     const status = stalenessInfo.docStatuses[reference.docUrl];
     lines.push(`${gvId(reference.docUrl)} [
       shape=rect
-      label="${reference.path}"
+      label=${JSON.stringify(reference.path)}
       fontsize=10
       fontname="Merriweather Sans, sans-serif"
       height=0.3
@@ -207,7 +207,7 @@ function stateGraphSrc(state: ProjectState) {
     const status = stalenessInfo.buildRunStatuses[buildRun.id];
     lines.push(`${gvId(buildRun.id)} [
       shape=rect
-      label="⚙️ ${buildRun.spec.name ?? buildRun.spec.command}"
+      label=${JSON.stringify("⚙️ " + (buildRun.spec.name ?? buildRun.spec.command))}
       fontname=${
         buildRun.spec.name
           ? '"Merriweather Sans, sans-serif"'
