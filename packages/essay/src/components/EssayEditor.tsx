@@ -31,7 +31,7 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
     setSelectedAnnotationGroupId,
     setHoveredAnnotationGroupId,
     setCommentState,
-    collapseContentWithoutAnnotations,
+    collapseContentWithoutChanges: collapseContentWithoutAnnotations,
   } = props;
 
   const [hasEditorFocus, setHasEditorFocus] = useState(false);

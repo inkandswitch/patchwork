@@ -63,7 +63,7 @@ export const TextFileEditor = ({
   setSelectedAnchors,
   getFakeDocPathForDocUrl,
   mainDocUrl,
-  collapseContentWithoutAnnotations,
+  collapseContentWithoutChanges: collapseContentWithoutAnnotations,
 }: EditorProps<TextAnchor, string>) => {
   // TODO: Only reason we need containerRef is for scrollObserverPlugin.
   // Ideally, scrollObserverPlugin would use DOM information from CodeMirror

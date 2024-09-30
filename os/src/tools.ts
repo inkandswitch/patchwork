@@ -107,7 +107,7 @@ export type EditorProps<A, V> = {
   setCommentState?: (state: CommentState<A> | undefined) => void;
 
   hideInlineComments?: boolean;
-  collapseContentWithoutAnnotations?: boolean;
+  collapseContentWithoutChanges?: boolean;
 
   // TODO: will be replaced when we have real doc paths everywhere
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;

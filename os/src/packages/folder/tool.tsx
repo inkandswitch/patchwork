@@ -25,7 +25,7 @@ export const FolderViewerWithEmbeds: React.FC<
   docHeads,
   getFakeDocPathForDocUrl,
   mainDocUrl,
-  collapseContentWithoutAnnotations,
+  collapseContentWithoutChanges: collapseContentWithoutAnnotations,
 }: EditorProps<unknown, unknown>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
   const folderAtHeads = folder && docHeads ? A.view(folder, docHeads) : folder;
@@ -108,6 +108,25 @@ export const FolderEntryView = ({
     diff: highlightChanges ? diff : undefined,
   });
 
+  const annotationPropsWithFilteredAnnotations = useMemo(
+    () => ({
+      ...annotationProps,
+      annotations: collapseContentWithoutChanges
+        ? annotationProps.annotations.filter(
+            (annotation) => annotation.type !== "highlighted"
+          )
+        : annotationProps.annotations,
+      annotationGroups: collapseContentWithoutChanges
+        ? annotationProps.annotationGroups.filter((annotationGroup) =>
+            annotationGroup.annotations.some(
+              (annotation) => annotation.type !== "highlighted"
+            )
+          )
+        : annotationProps.annotationGroups,
+    }),
+    [annotationProps, collapseContentWithoutChanges]
+  );
+
   if (
     collapseContentWithoutChanges &&
     annotationProps.annotations.length === 0
@@ -122,8 +141,8 @@ export const FolderEntryView = ({
           docUrl={cloneOrMainOm.url}
           mainDocUrl={docLink.url}
           getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-          collapseContentWithoutAnnotations={collapseContentWithoutChanges}
-          {...annotationProps}
+          collapseContentWithoutChanges={collapseContentWithoutChanges}
+          {...annotationPropsWithFilteredAnnotations}
         />
       </ErrorBoundary>
     ) : undefined;

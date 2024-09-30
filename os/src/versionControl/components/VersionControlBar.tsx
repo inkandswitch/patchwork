@@ -506,10 +506,13 @@ export const VersionControlBar = ({
                 <Button
                   variant="outline"
                   onClick={() =>
-                    changeDocUIState(
-                      (state) =>
-                        (state.highlightChanges = !state.highlightChanges)
-                    )
+                    changeDocUIState((state) => {
+                      if (state.highlightChanges) {
+                        state.collapseContentWithoutChanges = false;
+                      }
+
+                      state.highlightChanges = !state.highlightChanges;
+                    })
                   }
                   className={`h-8 px-2 text-xs ${
                     docUIState.highlightChanges
@@ -524,10 +527,10 @@ export const VersionControlBar = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {diffMode === "history" && (
+                {diffMode === "branch" && (
                   <p>Highlight changes compared to main</p>
                 )}
-                {diffMode === "branch" && (
+                {diffMode === "history" && (
                   <p>Highlight changes from history selection</p>
                 )}
               </TooltipContent>
@@ -540,14 +543,17 @@ export const VersionControlBar = ({
                   <Button
                     variant="outline"
                     onClick={() =>
-                      changeDocUIState(
-                        (state) =>
-                          (state.collapseContentWithoutAnnotations =
-                            !state.collapseContentWithoutAnnotations)
-                      )
+                      changeDocUIState((state) => {
+                        if (!state.collapseContentWithoutChanges) {
+                          state.highlightChanges = true;
+                        }
+
+                        state.collapseContentWithoutChanges =
+                          !state.collapseContentWithoutChanges;
+                      })
                     }
                     className={`h-8 px-2 text-xs ${
-                      docUIState.collapseContentWithoutAnnotations
+                      docUIState.collapseContentWithoutChanges
                         ? "shadow-inner shadow-gray-300 border-gray-400 "
                         : "shadow-none"
                     }`}
@@ -559,7 +565,7 @@ export const VersionControlBar = ({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Only show changed and commented sections</p>
+                  <p>Only show changed sections</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -573,7 +579,9 @@ export const VersionControlBar = ({
           <div className="flex items-center gap-2">
             <Button
               onClick={() =>
-                changeDocUIState((state) => (state.sidebarMode = "review"))
+                changeDocUIState((state) => {
+                  state.sidebarMode = "review";
+                })
               }
               variant="outline"
               className={`h-8 text-xs ${

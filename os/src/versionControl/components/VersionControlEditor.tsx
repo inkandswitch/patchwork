@@ -153,6 +153,10 @@ export const VersionControlEditor: React.FC<{
     });
   }, [branchScopeUrl, branchOms]);
 
+  const collapseContentWithoutChanges =
+    (docHeads || cloneOrMainOm?.url !== mainDocUrl) &&
+    docUIState.collapseContentWithoutChanges;
+
   const {
     annotations,
     annotationGroups,
@@ -169,6 +173,26 @@ export const VersionControlEditor: React.FC<{
     diff: docUIState.highlightChanges ? diff : undefined,
   });
 
+  const filteredAnnotations = useMemo(
+    () =>
+      collapseContentWithoutChanges
+        ? annotations.filter((annotation) => annotation.type !== "highlighted")
+        : annotations,
+    [annotations, collapseContentWithoutChanges]
+  );
+
+  const filteredAnnotationGroups = useMemo(
+    () =>
+      collapseContentWithoutChanges
+        ? annotationGroups.filter((annotationGroup) =>
+            annotationGroup.annotations.some(
+              (annotation) => annotation.type !== "highlighted"
+            )
+          )
+        : annotationGroups,
+    [annotationGroups, collapseContentWithoutChanges]
+  );
+
   const onSelectBranchUrl = useCallback(
     (branchUrl: AutomergeUrl | null) => {
       if (!branchScopeAndActiveBranchInfo || !uiStateOm) {
@@ -181,7 +205,7 @@ export const VersionControlEditor: React.FC<{
       setDocHeadsFromTimelineSidebar(undefined);
       setActiveBranchUrl(uiStateOm, branchScopePath, branchUrl);
     },
-    [branchScopeAndActiveBranchInfo, uiStateOm]
+    [branchScopeAndActiveBranchInfo, setDocHeadsFromTimelineSidebar, uiStateOm]
   );
 
   const onChangeSidebarMode = useCallback(
@@ -243,10 +267,6 @@ export const VersionControlEditor: React.FC<{
     docUIState.sidebarMode === "review" ||
     docUIState.mainViewMode === "compareWithMain";
 
-  const collapseContentWithoutAnnotations =
-    (docHeads || cloneOrMainOm.url !== mainDocUrl) &&
-    docUIState.collapseContentWithoutAnnotations;
-
   const highlightSidebarButton =
     !docUIState.sidebarMode &&
     annotations.some((a) => a.type === "highlighted" && a.isEmphasized) &&
@@ -265,7 +285,8 @@ export const VersionControlEditor: React.FC<{
             getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
             onSelectBranchUrl={onSelectBranchUrl}
             diffMode={
-              branchScopeAndActiveBranchInfo.activeBranchOm
+              branchScopeAndActiveBranchInfo.activeBranchOm &&
+              !diffFromTimelineSidebar
                 ? "branch"
                 : diffFromTimelineSidebar
                 ? "history"
@@ -286,17 +307,15 @@ export const VersionControlEditor: React.FC<{
                   tool={tool}
                   docUrl={cloneOrMainOm.url}
                   docHeads={docHeads}
-                  annotations={annotations}
-                  annotationGroups={annotationGroups}
+                  annotations={filteredAnnotations}
+                  annotationGroups={filteredAnnotationGroups}
                   actorIdToAuthor={actorIdToAuthor}
                   setSelectedAnchors={setSelectedAnchors}
                   setHoveredAnchor={setHoveredAnchor}
                   setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
                   setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
                   hideInlineComments={hideInlineComments}
-                  collapseContentWithoutAnnotations={
-                    collapseContentWithoutAnnotations
-                  }
+                  collapseContentWithoutChanges={collapseContentWithoutChanges}
                   setCommentState={setCommentState}
                   getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                   mainDocUrl={mainDocUrl}
@@ -310,17 +329,15 @@ export const VersionControlEditor: React.FC<{
                   tool={tool}
                   docUrl={cloneOrMainOm.url}
                   docHeads={docHeads}
-                  annotations={annotations}
-                  annotationGroups={annotationGroups}
+                  annotations={filteredAnnotations}
+                  annotationGroups={filteredAnnotationGroups}
                   actorIdToAuthor={actorIdToAuthor}
                   setSelectedAnchors={setSelectedAnchors}
                   setHoveredAnchor={setHoveredAnchor}
                   setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
                   setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
                   hideInlineComments={hideInlineComments}
-                  collapseContentWithoutAnnotations={
-                    collapseContentWithoutAnnotations
-                  }
+                  collapseContentWithoutChanges={collapseContentWithoutChanges}
                   setCommentState={setCommentState}
                   getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
                   mainDocUrl={mainDocUrl}
@@ -389,7 +406,7 @@ export const VersionControlEditor: React.FC<{
                   handle={cloneOrMainOm.handle}
                   readonly={!!docHeadsFromTimelineSidebar}
                   tool={tool}
-                  annotationGroups={annotationGroups}
+                  annotationGroups={filteredAnnotationGroups}
                   selectedAnchors={selectedAnchors}
                   setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
                   setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
@@ -438,7 +455,7 @@ const DocEditor = <T, V>({
   getFakeDocPathForDocUrl,
   mainDocUrl,
   activeBranchUrl,
-  collapseContentWithoutAnnotations,
+  collapseContentWithoutChanges,
 }: EditorPropsWithTool<T, V>) => {
   if (!tool) {
     return;
@@ -454,7 +471,7 @@ const DocEditor = <T, V>({
       annotationGroups={annotationGroups}
       actorIdToAuthor={actorIdToAuthor}
       hideInlineComments={hideInlineComments}
-      collapseContentWithoutAnnotations={collapseContentWithoutAnnotations}
+      collapseContentWithoutChanges={collapseContentWithoutChanges}
       setSelectedAnchors={setSelectedAnchors}
       setHoveredAnchor={setHoveredAnchor}
       setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
