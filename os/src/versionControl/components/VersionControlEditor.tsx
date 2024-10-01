@@ -6,7 +6,6 @@ import { useDataTypes } from "@/hooks/useDataTypes";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { EditorProps, Tool } from "@/tools";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import {
   BotIcon,
@@ -29,7 +28,7 @@ import { fakeDocPath } from "../signals";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
-  docUrl: AutomergeUrl;
+  mainDocUrl: AutomergeUrl;
   datatypeId: string;
   tool: Tool;
   addNewDocument: (doc: { type: string; change?: (doc: any) => void }) => void;
@@ -39,7 +38,7 @@ export const VersionControlEditor: React.FC<{
   docHeadsFromTimelineSidebar: A.Heads | undefined;
   setDocHeadsFromTimelineSidebar: (heads: A.Heads | undefined) => void;
 }> = ({
-  docUrl: mainDocUrl,
+  mainDocUrl,
   datatypeId,
   tool,
   selectedDocLink,
@@ -47,16 +46,13 @@ export const VersionControlEditor: React.FC<{
   docHeadsFromTimelineSidebar,
   setDocHeadsFromTimelineSidebar,
 }) => {
-  const [doc] =
-    useDocument<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
-
   const [docUIState, changeDocUIState] = useDocUIState(
     getFakeDocPathForDocUrl(mainDocUrl)
   );
 
   const uiStateOm = useUIStateOm();
 
-  const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
+  // const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
   // const [isHoveringYankToBranchOption, setIsHoveringYankToBranchOption] =
   //   useState(false);
@@ -78,13 +74,13 @@ export const VersionControlEditor: React.FC<{
 
   const docHeads = docHeadsFromTimelineSidebar ?? undefined;
 
-  useEffect(() => {
-    if (!doc || sessionStartHeads) {
-      return;
-    }
-
-    setSessionStartHeads(A.getHeads(doc));
-  }, [doc, sessionStartHeads]);
+  // useEffect(() => {
+  //   if (!doc || sessionStartHeads) {
+  //     return;
+  //   }
+  //
+  //   setSessionStartHeads(A.getHeads(doc));
+  // }, [doc, sessionStartHeads]);
 
   // const currentEditSessionf = useMemo(() => {
   //   if (!doc || !sessionStartHeads || !isHoveringYankToBranchOption) {
@@ -102,6 +98,7 @@ export const VersionControlEditor: React.FC<{
   //   };
   // }, [doc, sessionStartHeads, isHoveringYankToBranchOption]);
 
+  // TODO: IDK what this is, but should it use a branched doc?
   const actorIdToAuthor = useActorIdToAuthorMap(mainDocUrl);
 
   const docPath = useMemo(

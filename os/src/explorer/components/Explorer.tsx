@@ -330,7 +330,7 @@ export const Explorer: React.FC = () => {
                 <VersionControlEditor
                   selectedDocLink={selectedDocLink}
                   datatypeId={selectedDocLink?.type}
-                  docUrl={selectedDocUrl}
+                  mainDocUrl={selectedDocUrl}
                   key={selectedDocUrl}
                   tool={currentTool}
                   addNewDocument={addNewDocument}
