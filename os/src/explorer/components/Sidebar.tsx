@@ -32,6 +32,7 @@ import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { capitalize, clone, uniqBy } from "lodash";
 import {
   AlertCircle,
+  AlertTriangle,
   ChevronsLeft,
   FolderInput,
   GitBranchIcon,
@@ -187,11 +188,13 @@ const NodeActiveBranchInfo = (
         </div>
       );
     }
-  }).ifPending(() => (
-    <div className="text-xs text-gray-300 flex items-center gap-1">
-      <GitBranchIcon size={14} className="ml-1" />
-    </div>
-  )).value;
+  })
+    .ifPending(() => (
+      <div className="text-xs text-gray-300 flex items-center gap-1">
+        <GitBranchIcon size={14} className="ml-1" />
+      </div>
+    ))
+    .ifRejected(() => <div></div>).value;
 };
 
 const Edit = ({ node }: NodeRendererProps<DocLinkWithFolderPath>) => {
