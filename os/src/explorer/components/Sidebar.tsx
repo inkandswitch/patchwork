@@ -9,7 +9,7 @@ import {
 } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
-import { useDataTypes } from "@/patchworkContext";
+import { useDataTypes } from "@/hooks/useDataTypes";
 import { dataTypeById } from "@/sdk";
 import { Input } from "@/shadcn/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";

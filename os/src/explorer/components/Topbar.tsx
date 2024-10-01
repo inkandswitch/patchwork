@@ -35,7 +35,7 @@ import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { getHeads } from "@automerge/automerge";
 import { getUrlSafeName } from "../hooks/useSelectedDocLink";
 import { useToast } from "@/shadcn/ui/use-toast";
-import { useDataTypes } from "@/patchworkContext";
+import { useDataTypes } from "@/hooks/useDataTypes";
 import { dataTypeById } from "@/sdk";
 
 type TopbarProps = {

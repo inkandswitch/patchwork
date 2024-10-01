@@ -15,7 +15,8 @@ import { ErrorBoundary } from "react-error-boundary";
 import { DocLink, DocPath, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
 import { useDocUIState } from "@/explorer/uiState";
-import { useDataTypes, useTools } from "@/patchworkContext";
+import { useDataTypes } from "@/hooks/useDataTypes";
+import { useTools } from "@/hooks/useTools";
 import { dataTypeById } from "@/sdk";
 
 export const FolderViewerWithEmbeds: React.FC<

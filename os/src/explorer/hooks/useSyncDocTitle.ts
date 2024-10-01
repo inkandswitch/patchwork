@@ -1,6 +1,6 @@
 import { useAsyncComputed, fetchAwaitMissing } from "@/async-signals";
 import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
-import { useDataTypes } from "@/patchworkContext";
+import { useDataTypes } from "@/hooks/useDataTypes";
 import { dataTypeById } from "@/sdk";
 import { fakeDocPath } from "@/versionControl/signals";
 import { fetchOmOnBranchFromPath } from "@/versionControl/signals";

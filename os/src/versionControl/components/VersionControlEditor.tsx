@@ -2,7 +2,7 @@ import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { LoadingScreen } from "@/explorer/components/LoadingScreen";
 import { useDocUIState, useUIStateOm } from "@/explorer/uiState";
 import { DocLinkWithFolderPath, DocPath } from "@/packages/folder/datatype";
-import { useDataTypes } from "@/patchworkContext";
+import { useDataTypes } from "@/hooks/useDataTypes";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { EditorProps, Tool } from "@/tools";
 import { AutomergeUrl } from "@automerge/automerge-repo";
