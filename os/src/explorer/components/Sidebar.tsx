@@ -191,7 +191,7 @@ const NodeActiveBranchInfo = (
     <div className="text-xs text-gray-300 flex items-center gap-1">
       <GitBranchIcon size={14} className="ml-1" />
     </div>
-  ));
+  )).value;
 };
 
 const Edit = ({ node }: NodeRendererProps<DocLinkWithFolderPath>) => {

@@ -59,7 +59,7 @@ export const fetchUIStateOm = (repo: Repo, account: Account | undefined) => {
 export const useUIStateOm = (): Om<UIStateDoc> | undefined => {
   const repo = useRepo();
   const account = useCurrentAccount();
-  return useAsyncCall(fetchUIStateOm, repo, account).ifPending(undefined);
+  return useAsyncCall(fetchUIStateOm, repo, account).ifPending(undefined).value;
 };
 
 // Each tab maintains local versions of document UI state. These are initialized

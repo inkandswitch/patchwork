@@ -215,14 +215,14 @@ export const VersionControlBar = ({
         repo
       );
     }, [account, docUrl, getFakeDocPathForDocUrl, repo])
-  ).ifPending(undefined);
+  ).ifPending(undefined).value;
 
   const projectState = useAsyncComputed(
     useCallback(() => {
       fetchAwaitMissing(jacquardProjectInfo);
       return fetchProjectStateFromProjectInfo(jacquardProjectInfo, repo);
     }, [jacquardProjectInfo, repo])
-  ).ifPending(undefined);
+  ).ifPending(undefined).value;
 
   const buildRunWithFileAsInput = useMemo(
     () =>

@@ -36,7 +36,7 @@ export const useSyncDocTitle = ({
       fetchAwaitMissing(selectedDocPath);
       return fetchOmOnBranchFromPath(selectedDocPath, account, repo).doc;
     }, [account, repo, selectedDocPath])
-  ).ifPending(undefined);
+  ).ifPending(undefined).value;
 
   const parentFolderOm = useAsyncComputed(
     useCallback(() => {
@@ -47,7 +47,7 @@ export const useSyncDocTitle = ({
         repo
       );
     }, [account, repo, selectedDocPath])
-  ).ifPending(undefined);
+  ).ifPending(undefined).value;
 
   useEffect(() => {
     if (!selectedDocLink || !selectedDoc || !dataType || !parentFolderOm) {

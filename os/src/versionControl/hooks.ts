@@ -26,7 +26,7 @@ export const useBranchScopeAndActiveBranchInfo = (
         docPath && fetchBranchScopeAndActiveBranchInfo(docPath, account, repo),
       [docPath, account, repo]
     )
-  ).ifPending(undefined);
+  ).ifPending(undefined).value;
 
   // This is really gnarly, but BranchScopeAndActiveBranchInfo has two
   // properties "branchOms" and "branchScopePath" that are recreated as new object

@@ -100,7 +100,7 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
       }
       return varBindings;
     }, [inputUrls, repo, rootFolderDocWithChildren])
-  ).ifPending(undefined);
+  ).ifPending(undefined).value;
 
   const updateProgram: Updater<ToolProgram> = useCallback((update) => {
     const doc = handle.docSync();

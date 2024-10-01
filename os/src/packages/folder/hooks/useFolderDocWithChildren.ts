@@ -140,5 +140,5 @@ export function useFolderDocWithChildren(
       };
       return fetchFolderDocWithChildren(rootFolderUrl, getDocOnBranchFromPath);
     }, [rootFolderUrl, account, repo])
-  ).ifPending(undefined);
+  ).ifPending(undefined).value;
 }

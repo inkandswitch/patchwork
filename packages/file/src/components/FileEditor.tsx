@@ -83,7 +83,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
         )
       );
     }, [account, getFakeDocPathForDocUrl, mainDocUrl, repo, activeBranchUrl])
-  ).ifPending(undefined);
+  ).ifPending(undefined).value;
 
   if (!doc) {
     return null;

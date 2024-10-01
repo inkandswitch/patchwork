@@ -100,7 +100,7 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
 
   while (true) {
     const pending =
-      buildMetadataDocsWithPendingRefresh.value.ifPending(undefined);
+      buildMetadataDocsWithPendingRefresh.value.ifPending(undefined).value;
     const next = pending && pending[0];
 
     if (!next) {

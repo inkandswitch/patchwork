@@ -23,7 +23,7 @@ import { atom, computed, react, Signal } from "signia";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export module AsyncState {
-  abstract class Base<T> {
+  interface IAsyncState<T> {
     /**
      * Get an AsyncState's value, probably inside an async-signal
      * callback. If the state is pending, this will throw a
@@ -31,65 +31,90 @@ export module AsyncState {
      * pending. If the state is rejected, this will throw the error
      * so the computed async-signal will likewise be rejected.
      */
-    abstract fetch(): T;
-
+    fetch(): T;
     /**
-     * Get an AsyncState's value, probably outside an async-signal
-     * callback, using a provided callback if the state is pending.
+     * Provide a default/handler to fulfill pending states.
      */
-    abstract ifPending<U>(onPending: U | (() => U)): T | U;
+    ifPending<U>(onPending: U | (() => U)): Fulfilled<T | U> | Rejected;
+    /**
+     * Provide a default/handler to fulfill rejected states.
+     */
+    ifRejected<U>(
+      onError: U | ((err: unknown) => U)
+    ): Pending | Fulfilled<T | U>;
   }
 
-  export class Pending<T> extends Base<T> {
+  export class Pending implements IAsyncState<unknown> {
     state = "pending" as const;
-    constructor(readonly description?: string) {
-      super();
-    }
+    constructor(readonly description?: string) {}
     fetch(): never {
       throw new PendingException(this.description);
     }
-    ifPending<U>(onPending: U | (() => U)): U {
-      return typeof onPending === "function"
-        ? (onPending as () => U)()
-        : onPending;
+    ifPending<U>(onPending: U | (() => U)): Fulfilled<U> {
+      const value =
+        typeof onPending === "function" ? (onPending as () => U)() : onPending;
+      return new Fulfilled(value);
+    }
+    ifRejected(): Pending {
+      return this;
     }
   }
 
-  export class Fulfilled<T> extends Base<T> {
+  export class Fulfilled<T> implements IAsyncState<T> {
     state = "fulfilled" as const;
-    constructor(readonly _value: T) {
-      super();
-    }
+    constructor(readonly _value: T) {}
     fetch() {
       return this._value;
     }
-    ifPending() {
+    ifPending(): Fulfilled<T> {
+      return this;
+    }
+    ifRejected(): Fulfilled<T> {
+      return this;
+    }
+    /**
+     * Return the value of a fulfilled state.
+     */
+    get value() {
+      // Note: Keep this (& valueSafe) as a property; that way
+      // prettier will keep things more compact.
+      return this._value;
+    }
+    /**
+     * Return the value of a fulfilled state.
+     */
+    get valueSafe() {
       return this._value;
     }
   }
 
-  export class Rejected<T> extends Base<T> {
+  export class Rejected implements IAsyncState<unknown> {
     state = "rejected" as const;
-    constructor(readonly error: unknown) {
-      super();
-    }
+    constructor(readonly error: unknown) {}
     fetch(): never {
       throw this.error;
     }
-    ifPending(): never {
+    ifPending(): Rejected {
+      return this;
+    }
+    ifRejected<U>(onError: U | ((err: unknown) => U)) {
+      const value =
+        typeof onError === "function" ? (onError as () => U)() : onError;
+      return new Fulfilled(value);
+    }
+    /**
+     * Throw the error of a rejected state.
+     */
+    get value(): never {
       throw this.error;
     }
   }
 }
 
 export type AsyncState<T> =
-  | AsyncState.Pending<T>
+  | AsyncState.Pending
   | AsyncState.Fulfilled<T>
-  | AsyncState.Rejected<T>;
-
-export type AsyncStateUnrejected<T> =
-  | AsyncState.Pending<T>
-  | AsyncState.Fulfilled<T>;
+  | AsyncState.Rejected;
 
 export type AsyncSignal<T> = Signal<AsyncState<T>>;
 

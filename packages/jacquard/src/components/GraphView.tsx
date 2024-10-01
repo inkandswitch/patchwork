@@ -77,7 +77,7 @@ export const GraphView = ({
         </div>
       );
     }, [account, getFakeDocPathForDocUrl, mainDocUrl, repo])
-  ).ifPending(undefined);
+  ).ifPending(undefined).value;
 };
 
 const GraphvizView = ({ source }: { source: string }) => {
