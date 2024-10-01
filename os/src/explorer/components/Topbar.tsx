@@ -29,7 +29,7 @@ import {
 } from "@/shadcn/ui/dropdown-menu";
 
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
-import { genericExportMethods } from "@/fileExports";
+import { FileExportMethod, genericExportMethods } from "@/fileExports";
 import { Tool } from "@/tools";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { getHeads } from "@automerge/automerge";
@@ -81,6 +81,110 @@ export const Topbar: React.FC<TopbarProps> = ({
   const selectedDataType = dataTypeById(dataTypes, selectedDataTypeId);
 
   const toolsWithEditorComponent = tools.filter((tool) => tool.EditorComponent);
+
+  const onClickMakeCopy = async () => {
+    if (!selectedDocHandle || !selectedDataType || !selectedDocLink) {
+      // TODO: JAH strict fix lazy
+      throw new Error("something unexpected is missing idk");
+    }
+
+    let newHandle: DocHandle<HasVersionControlMetadata>;
+
+    if (docHeadsFromTimelineSidebar) {
+      newHandle = repo.create<HasVersionControlMetadata>();
+
+      const originalDoc = await selectedDocHandle.doc();
+
+      if (!originalDoc) {
+        throw new Error("can't load doc");
+      }
+
+      const changes = Automerge.getAllChanges(originalDoc);
+
+      let cutOff = 0;
+      for (const change of changes) {
+        cutOff += 1;
+        const decodeChange = Automerge.decodeChange(change);
+
+        if (decodeChange.hash === docHeadsFromTimelineSidebar[0]) {
+          break;
+        }
+      }
+
+      const [docAtHeads] = Automerge.applyChanges(
+        Automerge.init<HasVersionControlMetadata>(),
+        changes.slice(0, cutOff)
+      );
+
+      newHandle.update((doc) => Automerge.merge(doc, docAtHeads));
+    } else {
+      newHandle =
+        repo.clone<HasVersionControlMetadata<unknown, unknown>>(
+          selectedDocHandle
+        );
+    }
+
+    newHandle.change((doc) => {
+      selectedDataType.markCopy(doc);
+    });
+
+    const newDocLink = {
+      url: newHandle.url,
+      name: await selectedDataType.getTitle(newHandle.docSync(), repo),
+      type: selectedDocLink.type,
+    };
+
+    if (!docHeadsFromTimelineSidebar) {
+      const folderHandle = repo.find<FolderDoc>(
+        selectedDocLink.folderPath[selectedDocLink.folderPath.length - 1]
+      );
+      await folderHandle.whenReady();
+
+      const index = folderHandle
+        .docSync()! // TODO: JAH strict fix
+        .docs.findIndex((doc) => doc.url === selectedDocUrl);
+      folderHandle.change((doc) => doc.docs.splice(index + 1, 0, newDocLink));
+    }
+
+    // TODO: we used to have a setTimeout here, see if we need to bring it back.
+    selectDocLink({
+      ...newDocLink,
+      folderPath: selectedDocLink.folderPath,
+    });
+  };
+
+  const onClickExport = async (method: FileExportMethod<unknown>) => {
+    // TODO move this exporting logic into a more centralized place?
+    // but for now this is the only place it's called, so seems fine...
+
+    if (!selectedDoc || !selectedDocLink) {
+      // TODO: JAH strict fix lazy
+      throw new Error("something unexpected is missing idk");
+    }
+    const blob = await method.export(selectedDoc, repo);
+    const defaultFilename = `${getUrlSafeName(selectedDocLink.name)}.${
+      typeof method.fileExtension === "function"
+        ? method.fileExtension(selectedDoc!)
+        : method.fileExtension
+    }`;
+    const filename = method.filename
+      ? method.filename(selectedDoc!)
+      : defaultFilename;
+
+    console.log({ defaultFilename, filename });
+    const contentType =
+      typeof method.contentType === "function"
+        ? method.contentType(selectedDoc!)
+        : method.contentType;
+
+    saveFile(blob, filename, [
+      {
+        accept: {
+          [contentType]: [`.${method.fileExtension}`],
+        },
+      },
+    ]);
+  };
 
   return (
     <div className="h-10 bg-gray-100 flex items-center flex-shrink-0 border-b border-gray-300">
@@ -157,91 +261,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 />{" "}
                 Copy share URL
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={async () => {
-                  if (
-                    !selectedDocHandle ||
-                    !selectedDataType ||
-                    !selectedDocLink
-                  ) {
-                    // TODO: JAH strict fix lazy
-                    throw new Error("something unexpected is missing idk");
-                  }
-
-                  let newHandle: DocHandle<HasVersionControlMetadata>;
-
-                  if (docHeadsFromTimelineSidebar) {
-                    newHandle = repo.create<HasVersionControlMetadata>();
-
-                    const originalDoc = await selectedDocHandle.doc();
-
-                    if (!originalDoc) {
-                      throw new Error("can't load doc");
-                    }
-
-                    const changes = Automerge.getAllChanges(originalDoc);
-
-                    let cutOff = 0;
-                    for (const change of changes) {
-                      cutOff += 1;
-                      const decodeChange = Automerge.decodeChange(change);
-
-                      if (
-                        decodeChange.hash === docHeadsFromTimelineSidebar[0]
-                      ) {
-                        break;
-                      }
-                    }
-
-                    const [docAtHeads] = Automerge.applyChanges(
-                      Automerge.init<HasVersionControlMetadata>(),
-                      changes.slice(0, cutOff)
-                    );
-
-                    newHandle.update((doc) => Automerge.merge(doc, docAtHeads));
-                  } else {
-                    newHandle =
-                      repo.clone<HasVersionControlMetadata<unknown, unknown>>(
-                        selectedDocHandle
-                      );
-                  }
-
-                  newHandle.change((doc) => {
-                    selectedDataType.markCopy(doc);
-                  });
-
-                  const newDocLink = {
-                    url: newHandle.url,
-                    name: await selectedDataType.getTitle(
-                      newHandle.docSync(),
-                      repo
-                    ),
-                    type: selectedDocLink.type,
-                  };
-
-                  if (!docHeadsFromTimelineSidebar) {
-                    const folderHandle = repo.find<FolderDoc>(
-                      selectedDocLink.folderPath[
-                        selectedDocLink.folderPath.length - 1
-                      ]
-                    );
-                    await folderHandle.whenReady();
-
-                    const index = folderHandle
-                      .docSync()! // TODO: JAH strict fix
-                      .docs.findIndex((doc) => doc.url === selectedDocUrl);
-                    folderHandle.change((doc) =>
-                      doc.docs.splice(index + 1, 0, newDocLink)
-                    );
-                  }
-
-                  // TODO: we used to have a setTimeout here, see if we need to bring it back.
-                  selectDocLink({
-                    ...newDocLink,
-                    folderPath: selectedDocLink.folderPath,
-                  });
-                }}
-              >
+              <DropdownMenuItem onClick={onClickMakeCopy}>
                 <GitForkIcon
                   className="inline-block text-gray-500 mr-2"
                   size={14}
@@ -256,40 +276,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 .map((method, index) => (
                   <DropdownMenuItem
                     key={index}
-                    onClick={async () => {
-                      // TODO move this exporting logic into a more centralized place?
-                      // but for now this is the only place it's called, so seems fine...
-
-                      if (!selectedDoc || !selectedDocLink) {
-                        // TODO: JAH strict fix lazy
-                        throw new Error("something unexpected is missing idk");
-                      }
-                      const blob = await method.export(selectedDoc, repo);
-                      const defaultFilename = `${getUrlSafeName(
-                        selectedDocLink.name
-                      )}.${
-                        typeof method.fileExtension === "function"
-                          ? method.fileExtension(selectedDoc!)
-                          : method.fileExtension
-                      }`;
-                      const filename = method.filename
-                        ? method.filename(selectedDoc!)
-                        : defaultFilename;
-
-                      console.log({ defaultFilename, filename });
-                      const contentType =
-                        typeof method.contentType === "function"
-                          ? method.contentType(selectedDoc!)
-                          : method.contentType;
-
-                      saveFile(blob, filename, [
-                        {
-                          accept: {
-                            [contentType]: [`.${method.fileExtension}`],
-                          },
-                        },
-                      ]);
-                    }}
+                    onClick={() => onClickExport(method)}
                   >
                     <Download
                       size={14}
