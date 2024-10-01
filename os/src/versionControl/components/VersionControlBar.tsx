@@ -76,7 +76,7 @@ import {
   ChevronRightIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { createJacquardBranch, mergeBranch } from "../branches";
+import { createBranch } from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../signals";
 
 // interface MakeBranchOptions {
@@ -122,8 +122,10 @@ export const VersionControlBar = ({
   branchScopeAndActiveBranchInfo,
   highlightSidebarButton,
   getFakeDocPathForDocUrl,
-  onSelectBranchUrl,
   diffMode,
+  onSelectBranch,
+  onMergeBranch,
+  onDeleteBranch,
 }: {
   docUrl: AutomergeUrl;
   datatypeId: string;
@@ -131,8 +133,10 @@ export const VersionControlBar = ({
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
   highlightSidebarButton: boolean;
   getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
-  onSelectBranchUrl: (branchUrl: AutomergeUrl | null) => void;
   diffMode?: "branch" | "history";
+  onSelectBranch: (branchUrl: AutomergeUrl | null) => void;
+  onMergeBranch: (branchUrl: AutomergeUrl) => void;
+  onDeleteBranch: (branchUrl: AutomergeUrl) => void;
 }) => {
   const {
     branchScopeOm,
@@ -153,18 +157,18 @@ export const VersionControlBar = ({
 
   const dataTypes = useDataTypes();
 
-  const handleCreateJacquardBranch = useCallback(async () => {
+  const handleCreateBranch = useCallback(async () => {
     const docPathForBranchScope = getFakeDocPathForDocUrl(branchScopeOm.url);
     const docLinkForBranchScope = _.last(docPathForBranchScope)!;
 
-    const branchUrl = await createJacquardBranch({
+    const branchUrl = await createBranch({
       repo,
       branchScopeHandle: branchScopeOm.handle,
       dataTypeId: docLinkForBranchScope?.type,
       dataTypes,
       createdBy: account?.contactHandle?.url,
     });
-    onSelectBranchUrl(branchUrl);
+    onSelectBranch(branchUrl);
     toast({ title: "Created a new branch" });
   }, [
     getFakeDocPathForDocUrl,
@@ -173,7 +177,7 @@ export const VersionControlBar = ({
     repo,
     dataTypes,
     account?.contactHandle?.url,
-    onSelectBranchUrl,
+    onSelectBranch,
     toast,
   ]);
 
@@ -233,25 +237,6 @@ export const VersionControlBar = ({
   const hasOutputFiles =
     buildRunWithFileAsInput && buildRunWithFileAsInput.length > 0;
 
-  const handleMergeBranch = useCallback(
-    (activeBranchOm: Om<BranchDoc>) => {
-      if (!account) {
-        throw new Error(
-          "Cannot merge branch without account information for `mergedBy`"
-        );
-      }
-
-      mergeBranch({
-        repo,
-        branchOm: activeBranchOm,
-        mergedBy: account.contactHandle.url,
-      });
-      onSelectBranchUrl(null);
-      toast({ title: "Branch merged to main" });
-    },
-    [account, repo, onSelectBranchUrl, toast]
-  );
-
   // const rebaseBranch = (draftUrl: AutomergeUrl) => {
   //   const draftHandle =
   //     repo.find<HasVersionControlMetadata<unknown, unknown>>(draftUrl);
@@ -277,7 +262,7 @@ export const VersionControlBar = ({
   const onSelectValueChange = useCallback(
     (value: string) => {
       if (value === "__newBranch") {
-        handleCreateJacquardBranch();
+        handleCreateBranch();
       } else if (value === "__makeIntoBranchScope") {
         if (!branchScopeVersionControlMetadataOm) {
           initVersionControlSidecarDoc(cloneOrMainOm, repo, {
@@ -295,20 +280,20 @@ export const VersionControlBar = ({
           value === "__main" ? null : (value as AutomergeUrl);
 
         if (selectedBranchUrl) {
-          onSelectBranchUrl(selectedBranchUrl);
+          onSelectBranch(selectedBranchUrl);
           toast({ title: "Switched to branch" });
         } else {
-          onSelectBranchUrl(null);
+          onSelectBranch(null);
           toast({ title: "Switched to Main" });
         }
       }
     },
     [
-      handleCreateJacquardBranch,
+      handleCreateBranch,
       branchScopeVersionControlMetadataOm,
       cloneOrMainOm,
       repo,
-      onSelectBranchUrl,
+      onSelectBranch,
       toast,
     ]
   );
@@ -455,7 +440,7 @@ export const VersionControlBar = ({
                   return;
                 }
 
-                handleMergeBranch(activeBranchOm);
+                onMergeBranch(activeBranchOm.url);
                 e.stopPropagation();
               }}
               variant="outline"
@@ -474,7 +459,8 @@ export const VersionControlBar = ({
               branchScopeVersionControlMetadataOm={
                 branchScopeVersionControlMetadataOm
               }
-              onSelectBranchUrl={onSelectBranchUrl}
+              onSelectBranch={onSelectBranch}
+              onDeleteBranch={onDeleteBranch}
             />
           </div>
         )}
@@ -653,12 +639,9 @@ export const VersionControlBar = ({
 const BranchActions: React.FC<{
   activeBranchOm: Om<BranchDoc>;
   branchScopeVersionControlMetadataOm: Om<VersionControlSidecarDoc>;
-  onSelectBranchUrl: (branchDocUrl: AutomergeUrl | null) => void;
-}> = ({
-  activeBranchOm,
-  branchScopeVersionControlMetadataOm,
-  onSelectBranchUrl,
-}) => {
+  onSelectBranch: (branchDocUrl: AutomergeUrl | null) => void;
+  onDeleteBranch: (branchDocUrl: AutomergeUrl) => void;
+}> = ({ activeBranchOm, onDeleteBranch }) => {
   const { toast } = useToast();
   const handleRenameBranch = useCallback(() => {
     const newName = prompt("Enter the new name for this branch:");
@@ -670,27 +653,13 @@ const BranchActions: React.FC<{
     }
   }, [activeBranchOm.handle]);
 
-  const handleDeleteBranch = useCallback(() => {
+  const handleDeleteBranchClick = useCallback(() => {
     if (!window.confirm("Are you sure you want to delete this branch?")) {
       return;
     }
 
-    branchScopeVersionControlMetadataOm.handle.change((d) => {
-      if (!d.isBranchScope) {
-        throw new Error("internal error");
-      }
-      d.branches = d.branches.filter((b) => b !== activeBranchOm.url);
-    });
-
-    onSelectBranchUrl(null);
-
-    toast({ title: "Deleted branch" });
-  }, [
-    activeBranchOm.url,
-    branchScopeVersionControlMetadataOm.handle,
-    onSelectBranchUrl,
-    toast,
-  ]);
+    onDeleteBranch(activeBranchOm.url);
+  }, [activeBranchOm.url, onDeleteBranch]);
 
   // const branchHeads = useMemo(
   //   () => (branchDoc ? JSON.stringify(A.getHeads(branchDoc)) : undefined),
@@ -749,7 +718,7 @@ const BranchActions: React.FC<{
           <GitMergeIcon className="inline-block text-gray-500 mr-2" size={14} />{" "}
           Merge branch
         </DropdownMenuItem> */}
-        <DropdownMenuItem onClick={handleDeleteBranch}>
+        <DropdownMenuItem onClick={handleDeleteBranchClick}>
           <Trash2Icon className="inline-block text-gray-500 mr-2" size={14} />{" "}
           Delete branch
         </DropdownMenuItem>

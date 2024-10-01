@@ -80,29 +80,6 @@ export type MergedBranchDoc = Omit<UnmergedBranchDoc, "mergeMetadata"> & {
 
 export type BranchDoc = UnmergedBranchDoc | MergedBranchDoc;
 
-// TODO: delete LegacyBranch, some code that currently doesn't work (like the bot code) still reference this type
-
-export type LegacyBranch = {
-  name: string;
-  /** URL pointing to the clone doc */
-  url: AutomergeUrl;
-  /** timestamp when the branch was created */
-  createdAt: number;
-  /** Heads when the branch was created */
-  branchHeads: A.Heads;
-  /** author contact doc URL for branch creator */
-  createdBy?: AutomergeUrl;
-
-  mergeMetadata?: {
-    /** timestamp when the branch was merged */
-    mergedAt: number;
-    /** Heads of the branch at the point it was merged */
-    mergeHeads: A.Heads;
-    /** author contact doc URL for branch merger */
-    mergedBy: AutomergeUrl;
-  };
-};
-
 // A data structure that lets us pass around diffs while remembering
 // where they came from
 export type DiffWithProvenance = {

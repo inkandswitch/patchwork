@@ -6,6 +6,7 @@ import { useDataTypes } from "@/hooks/useDataTypes";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { EditorProps, Tool } from "@/tools";
 import { AutomergeUrl } from "@automerge/automerge-repo";
+import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import {
   BotIcon,
@@ -16,15 +17,23 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useAnnotations } from "../annotations";
-import { setActiveBranchUrl } from "../branches";
+import { mergeBranch, setActiveBranchUrl } from "../branches";
 import { useBranchScopeAndActiveBranchInfo } from "../hooks";
-import { DiffWithProvenance, HasVersionControlMetadata } from "../schema";
+import {
+  BranchDoc,
+  DiffWithProvenance,
+  HasVersionControlMetadata,
+} from "../schema";
 import { diffWithProvenance, useActorIdToAuthorMap } from "../utils";
 import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
 import { dataTypeById } from "@/datatypes";
 import { fakeDocPath } from "../signals";
+import { BotSidebar } from "./BotSidebar";
+import { useCurrentAccount } from "@/explorer/account";
+import { useToast } from "@/shadcn/ui/use-toast";
+import { Om } from "@/om";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -52,51 +61,12 @@ export const VersionControlEditor: React.FC<{
 
   const uiStateOm = useUIStateOm();
 
-  // const [sessionStartHeads, setSessionStartHeads] = useState<A.Heads>();
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
-  // const [isHoveringYankToBranchOption, setIsHoveringYankToBranchOption] =
-  //   useState(false);
-  // const dataTypes = useDataTypes();
-
-  // Reset compare view settings every time you switch branches
-  // useEffect(() => {
-  //   if (!legacySelectedBranch) {
-  //     setCompareWithMainFlag(false);
-  //     setShowChangesFlag(false);
-  //   } else {
-  //     setCompareWithMainFlag(false);
-  //     setShowChangesFlag(true);
-  //   }
-  // }, [JSON.stringify(legacySelectedBranch)]);
 
   const [diffFromTimelineSidebar, setDiffFromTimelineSidebar] =
     useState<DiffWithProvenance>();
 
   const docHeads = docHeadsFromTimelineSidebar ?? undefined;
-
-  // useEffect(() => {
-  //   if (!doc || sessionStartHeads) {
-  //     return;
-  //   }
-  //
-  //   setSessionStartHeads(A.getHeads(doc));
-  // }, [doc, sessionStartHeads]);
-
-  // const currentEditSessionf = useMemo(() => {
-  //   if (!doc || !sessionStartHeads || !isHoveringYankToBranchOption) {
-  //     return undefined;
-  //   }
-
-  //   const diff = diffWithProvenance(doc, sessionStartHeads, A.getHeads(doc));
-
-  //   // todo: generalize
-  //   return {
-  //     ...diff,
-  //     patches: combinePatches(
-  //       diff.patches.filter((patch) => patch.path[0] === "content")
-  //     ),
-  //   };
-  // }, [doc, sessionStartHeads, isHoveringYankToBranchOption]);
 
   // TODO: IDK what this is, but should it use a branched doc?
   const actorIdToAuthor = useActorIdToAuthorMap(mainDocUrl);
@@ -190,7 +160,7 @@ export const VersionControlEditor: React.FC<{
     [annotationGroups, collapseContentWithoutChanges]
   );
 
-  const onSelectBranchUrl = useCallback(
+  const onSelectBranch = useCallback(
     (branchUrl: AutomergeUrl | null) => {
       if (!branchScopeAndActiveBranchInfo || !uiStateOm) {
         return;
@@ -208,7 +178,7 @@ export const VersionControlEditor: React.FC<{
   const onChangeSidebarMode = useCallback(
     (mode: string) => {
       changeDocUIState(
-        (state) => (state.sidebarMode = mode as "review" | "history")
+        (state) => (state.sidebarMode = mode as "review" | "history" | "bot")
       );
     },
     [changeDocUIState]
@@ -251,6 +221,57 @@ export const VersionControlEditor: React.FC<{
     changeDocUIState,
   ]);
 
+  const account = useCurrentAccount();
+  const { toast } = useToast();
+  const repo = useRepo();
+
+  const onMergeBranch = useCallback(
+    async (branchUrl: AutomergeUrl) => {
+      if (!account) {
+        throw new Error(
+          "Cannot merge branch without account information for `mergedBy`"
+        );
+      }
+
+      const branchHandle = repo.find<BranchDoc>(branchUrl);
+
+      await mergeBranch({
+        repo,
+        branchHandle,
+        mergedBy: account.contactHandle.url,
+      });
+      onSelectBranch(null);
+      toast({ title: "Branch merged to main" });
+    },
+    [account, repo, onSelectBranch, toast]
+  );
+
+  const onDeleteBranch = useCallback(
+    (branchUrl: AutomergeUrl) => {
+      if (!branchScopeAndActiveBranchInfo) {
+        throw new Error("Cannot delete branch without necessary information");
+      }
+
+      const { branchScopeVersionControlMetadataOm } =
+        branchScopeAndActiveBranchInfo;
+
+      if (!branchScopeVersionControlMetadataOm) {
+        throw new Error("Cannot delete branch without branch scope metadata");
+      }
+
+      branchScopeVersionControlMetadataOm.handle.change((d) => {
+        if (!d.isBranchScope) {
+          throw new Error("internal error");
+        }
+        d.branches = d.branches.filter((b) => b !== branchUrl);
+      });
+
+      onSelectBranch(null);
+      toast({ title: "Branch deleted" });
+    },
+    [branchScopeAndActiveBranchInfo, onSelectBranch, toast]
+  );
+
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
 
   if (!cloneOrMainOm || !datatypeId) {
@@ -280,7 +301,7 @@ export const VersionControlEditor: React.FC<{
             branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
             highlightSidebarButton={highlightSidebarButton}
             getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-            onSelectBranchUrl={onSelectBranchUrl}
+            onSelectBranch={onSelectBranch}
             diffMode={
               branchScopeAndActiveBranchInfo.activeBranchOm &&
               !diffFromTimelineSidebar
@@ -289,6 +310,8 @@ export const VersionControlEditor: React.FC<{
                 ? "history"
                 : undefined
             }
+            onMergeBranch={onMergeBranch}
+            onDeleteBranch={onDeleteBranch}
           />
         ) : (
           <div>Loading version control information...</div>
@@ -373,7 +396,7 @@ export const VersionControlEditor: React.FC<{
                   <HistoryIcon size={16} className="mr-2" />
                   History
                 </TabsTrigger>
-                <TabsTrigger value="Bot">
+                <TabsTrigger value="bot">
                   <BotIcon size={16} className="mr-2" />
                   Bot
                 </TabsTrigger>
@@ -391,7 +414,7 @@ export const VersionControlEditor: React.FC<{
                 setDocHeads={setDocHeadsFromTimelineSidebar}
                 setDiff={setDiffFromTimelineSidebar}
                 branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
-                onSelectBranchUrl={onSelectBranchUrl}
+                onSelectBranchUrl={onSelectBranch}
               />
             )}
 
@@ -412,18 +435,24 @@ export const VersionControlEditor: React.FC<{
                   setCommentState={setCommentState}
                 />
               )}
-            {/* {sidebarMode === "Bot" && (
-              <BotSidebar
-                doc={activeDoc}
-                handle={activeHandle}
-                dataType={dataType}
-                selectedBranch={legacySelectedBranch}
-                setSelectedBranch={setSelectedBranch}
-                setSidebarMode={setSidebarMode}
-                mergeBranch={handleMergeBranch}
-                deleteBranch={handleDeleteBranch}
-              />
-            )} */}
+            {docUIState.sidebarMode === "bot" &&
+              cloneOrMainDocAtHeads &&
+              cloneOrMainOm &&
+              dataType && (
+                <BotSidebar
+                  doc={cloneOrMainDocAtHeads}
+                  handle={cloneOrMainOm.handle}
+                  mainDocUrl={mainDocUrl}
+                  dataType={dataType}
+                  selectedBranchUrl={
+                    branchScopeAndActiveBranchInfo.activeBranchOm?.url
+                  }
+                  setSelectedBranch={onSelectBranch}
+                  setSidebarMode={onChangeSidebarMode}
+                  onMergeBranch={onMergeBranch}
+                  onDeleteBranch={onDeleteBranch}
+                />
+              )}
           </div>
         </div>
       )}

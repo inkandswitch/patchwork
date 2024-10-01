@@ -10,11 +10,15 @@ import {
 } from "@/sdk";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
-import { BranchDoc, HasVersionControlMetadata } from "./schema";
+import {
+  BranchDoc,
+  HasVersionControlMetadata,
+  VersionControlSidecarDoc,
+} from "./schema";
 
 type Hash = string;
 
-export const createJacquardBranch = async <
+export const createBranch = async <
   DocType extends HasVersionControlMetadata<unknown, unknown>
 >({
   repo,
@@ -22,12 +26,14 @@ export const createJacquardBranch = async <
   dataTypeId,
   dataTypes,
   createdBy,
+  name,
 }: {
   repo: Repo;
   branchScopeHandle: DocHandle<DocType>;
   dataTypeId: string;
   dataTypes: DataType[];
   createdBy: AutomergeUrl | undefined;
+  name?: string;
 }): Promise<AutomergeUrl> => {
   const versionControlMetadataHandle = ensureMetadataHandleIsBranchScope(
     getVersionControlMetadataHandle(branchScopeHandle, repo)
@@ -50,7 +56,9 @@ export const createJacquardBranch = async <
   );
 
   const branchHandle = repo.create<BranchDoc>({
-    name: `Branch #${(versionControlMetadataDoc.branches?.length ?? 0) + 1}`,
+    name:
+      name ??
+      `Branch #${(versionControlMetadataDoc.branches?.length ?? 0) + 1}`,
     createdAt: Date.now(),
     createdBy,
     clones: clonesMap,
@@ -114,33 +122,37 @@ export const cloneDocWithLinks = async (
 
 export const mergeBranch = async ({
   repo,
-  branchOm,
+  branchHandle,
   mergedBy,
 }: {
   repo: Repo;
-  branchOm: Om<BranchDoc>;
+  branchHandle: DocHandle<BranchDoc>;
   mergedBy: AutomergeUrl;
 }) => {
   const mergeHeadsByDocUrl: Record<string, A.Heads> = {};
 
+  const doc = await branchHandle.doc();
+
+  if (!doc) {
+    throw new Error(`can't load branch ${branchHandle.url}`);
+  }
+
   await Promise.all(
-    Object.entries(branchOm.doc.clones).map(
-      async ([originalDocUrl, { url }]) => {
-        const originalHandle = repo.find(originalDocUrl as AutomergeUrl);
-        const cloneHandle = repo.find(url);
+    Object.entries(doc.clones).map(async ([originalDocUrl, { url }]) => {
+      const originalHandle = repo.find(originalDocUrl as AutomergeUrl);
+      const cloneHandle = repo.find(url);
 
-        await originalHandle.whenReady();
-        await cloneHandle.whenReady();
+      await originalHandle.whenReady();
+      await cloneHandle.whenReady();
 
-        mergeHeadsByDocUrl[originalDocUrl] = A.getHeads(cloneHandle.docSync()!); // todo: ts strict
+      mergeHeadsByDocUrl[originalDocUrl] = A.getHeads(cloneHandle.docSync()!); // todo: ts strict
 
-        originalHandle.merge(cloneHandle);
-      }
-    )
+      originalHandle.merge(cloneHandle);
+    })
   );
 
   // todo: handle creation and deletion of documents
-  branchOm.handle.change((branch) => {
+  branchHandle.change((branch) => {
     branch.mergeMetadata = {
       mergedAt: Date.now(),
       mergedBy,

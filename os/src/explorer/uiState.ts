@@ -42,7 +42,7 @@ export type MainViewMode =
   | "showOutputs"
   | "compareWithMain";
 
-export type SidebarMode = "review" | "history" | "Bot";
+export type SidebarMode = "review" | "history" | "bot";
 
 export function docPathString(docPath: DocPath): string {
   return docPath.map((link) => link.url).join("/");

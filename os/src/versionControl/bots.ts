@@ -2,8 +2,9 @@ import { DEFAULT_MODEL, getOpenaiClient } from "@/lib/llm";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { Doc, splice } from "@automerge/automerge/next";
 import { type DataType } from "@/sdk";
-import { HasVersionControlMetadata, LegacyBranch } from "./schema";
+import { BranchDoc, UnmergedBranchDoc } from "./schema";
 import { HasBotChatHistory } from "./components/BotSidebar";
+import { createBranch } from "./branches";
 
 // These types are a superset of OpenAI's API so we can directly store a chat history
 // and pass it to OpenAI without further modification.
@@ -67,7 +68,9 @@ const DATATYPE_CONFIGS = {
   essay: {
     instructions: `The user will give you some text.
 Your job is to edit the text given their specified task below.
-First ask them a clarifying question or two if there is any ambiguity in their request.
+First ask them a clarifying question or two if there is significant ambiguity in their request.
+Do not ask for clarification if the request is clear.
+Specifically, do not ask if the user wants their request applied to the entire document or just one part.
 Then use a tool call to make the edits to the document.
 In your reasoning, concisely explain in a short sentence why the edit is necessary given the task specification.
 Keep your before and after regions short. If you're only editing one word, you only need to include that word.
@@ -133,7 +136,7 @@ export const makeBotTextEdits = async ({
   chatHistory: ChatMessage[];
   dataType: DataType;
   repo: Repo;
-}): Promise<LegacyBranch | null> => {
+}): Promise<AutomergeUrl | null> => {
   if (!isSupportedDatatype(dataType.id)) {
     throw new Error(`Unsupported datatype: ${dataType.id}`);
   }
@@ -199,17 +202,14 @@ ${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
     }
 
     // Now we create a new branch to hold the edits
-    //@ts-expect-error switch this to new Jacquard branches
-    const branch = createBranch({
+    const branchUrl = await createBranch({
       name: parsed.commitMessage,
       createdBy: EDITOR_BOT_CONTACT_URL,
       repo,
-      handle: targetDocHandle,
+      branchScopeHandle: targetDocHandle,
+      dataTypeId: dataType.id,
+      dataTypes: [dataType],
     });
-
-    const branchHandle = repo.find<HasVersionControlMetadata<unknown, unknown>>(
-      branch.url
-    );
 
     // This is some gross stuff because we don't have cherry-picking --
     // We need to update the branchurl on the last message on both the main doc and branch.
@@ -225,15 +225,28 @@ ${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
           .reverse()
           .find((msg) => msg.role === "assistant") as AssistantMessage;
         if (lastAssistantMessage) {
-          lastAssistantMessage.branchUrl = branch.url;
+          lastAssistantMessage.branchUrl = branchUrl;
         }
       });
     };
+    // Update on the original doc
     updateBranchUrlForAssistantMessage(targetDocHandle);
-    updateBranchUrlForAssistantMessage(branchHandle);
+
+    // Update on the newly created clone
+    const branchMetadataHandle = repo.find<BranchDoc>(branchUrl);
+    const branchMetadataDoc = await branchMetadataHandle.doc();
+    if (!branchMetadataDoc) {
+      throw new Error(`Branch metadata doc missing at ${branchUrl}`);
+    }
+    const cloneUrl = branchMetadataDoc.clones[targetDocHandle.url]?.url;
+    if (!cloneUrl) {
+      throw new Error(`Clone URL missing for ${targetDocHandle.url}`);
+    }
+    const cloneHandle = repo.find<HasBotChatHistory>(cloneUrl);
+    updateBranchUrlForAssistantMessage(cloneHandle);
 
     for (const edit of parsed.edits) {
-      branchHandle.change(
+      cloneHandle.change(
         (doc) => {
           const from = getPath(doc, path).indexOf(edit.before);
 
@@ -252,7 +265,7 @@ ${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
       );
     }
 
-    return branch;
+    return branchUrl;
   } catch (e) {
     console.error(e);
     throw new Error(`Failed to parse output: ${assistantMessage}`);
