@@ -24,7 +24,7 @@ import {
   useCurrentAccountDoc,
   useRootFolderDocWithChildren,
 } from "../account";
-import { useSelectedDocLink } from "../hooks/useSelectedDocLink";
+import { useRouter } from "../hooks/useRouter";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
 import { useUIStateOm } from "../uiState";
 import { ErrorFallback } from "./ErrorFallback";
@@ -44,11 +44,6 @@ export const Explorer: React.FC = () => {
 
   const [showSidebar, setShowSidebar] = useState(true);
 
-  const { selectedDocLink, selectDocLink } = useSelectedDocLink({
-    folderDocWithMetadata: rootFolderData,
-    repo,
-  });
-
   const getFakeDocPathForDocUrl = useCallback(
     (url: string) => {
       if (!flatDocLinks) {
@@ -67,6 +62,10 @@ export const Explorer: React.FC = () => {
     },
     [flatDocLinks]
   );
+
+  const { selectedDocLink, selectDocLink } = useRouter({
+    rootFolderDocWithMetadata: rootFolderData,
+  });
 
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocHandle =

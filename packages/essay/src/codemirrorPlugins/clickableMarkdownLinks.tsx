@@ -1,7 +1,12 @@
 import { syntaxTree } from "@codemirror/language";
-import { Decoration, EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
+import {
+  Decoration,
+  EditorView,
+  ViewPlugin,
+  ViewUpdate,
+} from "@codemirror/view";
 import { StateField, StateEffect } from "@codemirror/state";
-import { parseUrl, selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
+import { parseUrl, selectDocLink } from "@/explorer/hooks/useRouter";
 
 type Link = {
   url: string;
@@ -106,7 +111,9 @@ export const clickableMarkdownLinksPlugin = [
               x: event.clientX,
               y: event.clientY,
             });
-            if (!pos) { return; }  // TODO: JAH strict fix
+            if (!pos) {
+              return;
+            } // TODO: JAH strict fix
 
             const link = this.getLinkAtPos(pos);
 
@@ -135,12 +142,16 @@ export const clickableMarkdownLinksPlugin = [
 
         mousemove(event, view) {
           const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
-          if (!pos) { return; }  // TODO: JAH strict fix
+          if (!pos) {
+            return;
+          } // TODO: JAH strict fix
           const link = this.getLinkAtPos(pos);
 
           // ensure that mouse actually points inside of link and not beside it
           const rect = view.coordsAtPos(pos - 1);
-          if (!rect) { return; }  // strict mode when
+          if (!rect) {
+            return;
+          } // strict mode when
           const distance = Math.abs(rect.left - event.clientX);
           if (link && distance < 20) {
             if (view.state.field(hoveredLinkField) !== link) {

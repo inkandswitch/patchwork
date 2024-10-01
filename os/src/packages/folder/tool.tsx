@@ -3,7 +3,7 @@ import * as A from "@automerge/automerge/next";
 import React, { useMemo } from "react";
 
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
-import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
+import { selectDocLink } from "@/explorer/hooks/useRouter";
 import { Icon, IconType } from "@/lib/icons";
 import { EditorProps, Tool, toolsForDataType } from "@/tools";
 import { useAnnotations } from "@/versionControl/annotations";

@@ -1,7 +1,7 @@
 import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
-import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
+import { selectDocLink } from "@/explorer/hooks/useRouter";
 import { MainViewMode, useDocUIState } from "@/explorer/uiState";
 import { getRelativeTimeString } from "@/lib/dates";
 import { Om } from "@/om";
@@ -72,6 +72,8 @@ import {
   MoreHorizontal,
   PlusIcon,
   Trash2Icon,
+  ChevronDownIcon,
+  ChevronRightIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { createJacquardBranch, mergeBranch } from "../branches";
@@ -83,6 +85,35 @@ import { BranchScopeAndActiveBranchInfo } from "../signals";
 // }
 
 const VerticalSeparator = <div className="h-8 w-px bg-gray-300 mx-2" />;
+
+const BranchSelectItem: React.FC<{
+  branchOm: Om<BranchDoc>;
+  isActive: boolean;
+}> = ({ branchOm, isActive }) => {
+  return (
+    <SelectItem
+      key={branchOm.url}
+      className={`${isActive ? "font-medium" : ""}`}
+      value={branchOm.url}
+    >
+      <div>{branchOm.doc.name}</div>
+      <div className="ml-auto text-xs text-gray-600 flex gap-1">
+        {branchOm.doc.createdAt && (
+          <div>{getRelativeTimeString(branchOm.doc.createdAt)}</div>
+        )}
+        <span>by</span>
+        {branchOm.doc.createdBy && (
+          <ContactAvatar
+            url={branchOm.doc.createdBy}
+            size="sm"
+            showName
+            showImage={false}
+          />
+        )}
+      </div>
+    </SelectItem>
+  );
+};
 
 export const VersionControlBar = ({
   docUrl,
@@ -234,6 +265,15 @@ export const VersionControlBar = ({
   //   toast("Incorporated updates from main");
   // };
 
+  const activeBranches = branchOms.filter(
+    (branchOm) => branchOm && !branchOm.doc.mergeMetadata
+  );
+  const mergedBranches = branchOms.filter(
+    (branchOm) => branchOm && branchOm.doc.mergeMetadata
+  );
+
+  const [showMergedBranches, setShowMergedBranches] = useState(false);
+
   const onSelectValueChange = useCallback(
     (value: string) => {
       if (value === "__newBranch") {
@@ -300,76 +340,84 @@ export const VersionControlBar = ({
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="w-72">
-            {isRealBranchScope && (
-              <SelectItem
-                value="__main"
-                className={!activeBranchOm ? "font-medium" : ""}
-              >
-                <CrownIcon className="inline mr-1" size={12} />
-                Main
-              </SelectItem>
-            )}
-            <SelectGroup>
-              <SelectLabel className="-ml-5">
-                <GitBranchIcon className="inline mr-1" size={12} />
-                Branches
-              </SelectLabel>
+            <SelectItem
+              value={"__newBranch"}
+              key={"__newBranch"}
+              className="font-regular"
+            >
+              <PlusIcon className="inline mr-1" size={12} />
+              Create new branch
+            </SelectItem>
 
-              {/* for now only show open branches here; maybe in future show a list of merged branches */}
-              {branchOms.map(
-                (branchOm) =>
-                  branchOm &&
-                  !branchOm.doc.mergeMetadata && (
-                    <SelectItem
-                      key={branchOm.url}
-                      className={`${
-                        activeBranchOm?.url === branchOm.url
-                          ? "font-medium"
-                          : ""
-                      }`}
-                      value={branchOm.url}
-                    >
-                      <div>{branchOm.doc.name}</div>
-                      <div className="ml-auto text-xs text-gray-600 flex gap-1">
-                        {branchOm.doc.createdAt && (
-                          <div>
-                            {getRelativeTimeString(branchOm.doc.createdAt)}
-                          </div>
-                        )}
-                        <span>by</span>
-                        {branchOm.doc.createdBy && (
-                          <ContactAvatar
-                            url={branchOm.doc.createdBy}
-                            size="sm"
-                            showName
-                            showImage={false}
-                          />
-                        )}
-                      </div>
-                    </SelectItem>
-                  )
-              )}
-              <SelectItem
-                value={"__newBranch"}
-                key={"__newBranch"}
-                className="font-regular"
-              >
-                <PlusIcon className="inline mr-1" size={12} />
-                Create new branch
-              </SelectItem>
-              {!isRealBranchScope && (
+            <SelectGroup>
+              <SelectLabel className="-ml-5 mt-2">
+                Active Branches (
+                {activeBranches.length + (isRealBranchScope ? 1 : 0)})
+              </SelectLabel>
+              {isRealBranchScope && (
                 <SelectItem
-                  value={"__makeIntoBranchScope"}
-                  key={"__makeIntoBranchScope"}
-                  className="font-regular"
+                  value="__main"
+                  className={!activeBranchOm ? "font-medium" : ""}
                 >
-                  <div className="opacity-50">
-                    <PlusIcon className="inline mr-1" size={12} />
-                    Convert to main branch
-                  </div>
+                  <CrownIcon className="inline mr-1" size={12} />
+                  Main
                 </SelectItem>
               )}
             </SelectGroup>
+
+            <SelectGroup>
+              {activeBranches.map((branchOm) => (
+                <BranchSelectItem
+                  key={branchOm.url}
+                  branchOm={branchOm}
+                  isActive={activeBranchOm?.url === branchOm.url}
+                />
+              ))}
+            </SelectGroup>
+
+            {mergedBranches.length > 0 && (
+              <SelectGroup>
+                <SelectLabel
+                  className="-ml-5 mt-2 cursor-pointer flex items-center"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowMergedBranches(!showMergedBranches);
+                  }}
+                >
+                  {showMergedBranches ? (
+                    <ChevronDownIcon className="inline mr-1" size={12} />
+                  ) : (
+                    <ChevronRightIcon className="inline mr-1" size={12} />
+                  )}
+                  <MergeIcon className="inline mr-1" size={12} />
+                  Merged Branches ({mergedBranches.length})
+                </SelectLabel>
+                {showMergedBranches && (
+                  <div className="mt-1">
+                    {mergedBranches.map((branchOm) => (
+                      <BranchSelectItem
+                        key={branchOm.url}
+                        branchOm={branchOm}
+                        isActive={false}
+                      />
+                    ))}
+                  </div>
+                )}
+              </SelectGroup>
+            )}
+
+            {!isRealBranchScope && (
+              <SelectItem
+                value={"__makeIntoBranchScope"}
+                key={"__makeIntoBranchScope"}
+                className="font-regular mt-2"
+              >
+                <div className="opacity-50">
+                  <PlusIcon className="inline mr-1" size={12} />
+                  Convert to main branch
+                </div>
+              </SelectItem>
+            )}
           </SelectContent>
         </Select>
         {isInsideBranchScope && (
@@ -381,11 +429,10 @@ export const VersionControlBar = ({
                 selectDocLink({
                   url: branchScopeOm?.url,
                   name: "fake",
-                  type: "folder", // TODO: figure out what to do if we have non folder branch scopes
+                  type: "folder",
                 })
               }
             >
-              {/* TODO: only folders can contain documents, so far... */}
               {(branchScopeOm.doc as FolderDoc).title}
             </span>
           </div>
@@ -396,6 +443,9 @@ export const VersionControlBar = ({
         {activeBranchOm && (
           <div>
             <Button
+              disabled={
+                activeBranchOm.doc.mergeMetadata?.mergedAt !== undefined
+              }
               onClick={(e) => {
                 if (
                   !window.confirm(

@@ -16,8 +16,6 @@ export type DocLink = {
   name: string;
   type: string;
   url: AutomergeUrl;
-  branchUrl?: AutomergeUrl;
-  branchName?: string;
 };
 
 export type DocLinkWithFolderPath = DocLink & {

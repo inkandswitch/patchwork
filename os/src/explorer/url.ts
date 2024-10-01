@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 
 export const useCurrentUrl = () => {
-  const [url, setUrl] = useState<URL>(getCurrentHashUrl());
+  const [url, setUrl] = useState<URL>(() => getCurrentHashUrl());
 
   useEffect(() => {
-    const onHashChange = () => setUrl(getCurrentHashUrl());
+    const onHashChange = () => {
+      setUrl(getCurrentHashUrl());
+    };
 
     // Listen for hash changes
     window.addEventListener("hashchange", onHashChange);

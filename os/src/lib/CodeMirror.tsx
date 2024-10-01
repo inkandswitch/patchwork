@@ -69,8 +69,6 @@ export const CodeMirror = memo(
           ...editorViewConfig,
         }));
         setEditorView?.(viewRef.current);
-
-        console.log("register error handler");
       }
     });
 

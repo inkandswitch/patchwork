@@ -1,4 +1,4 @@
-import { selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
+import { selectDocLink } from "@/explorer/hooks/useRouter";
 import { EditorProps } from "@/tools";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
