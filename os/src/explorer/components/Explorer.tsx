@@ -73,6 +73,11 @@ export const Explorer: React.FC = () => {
   const [selectedDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(selectedDocUrl);
 
+  useEffect(() => {
+    // @ts-expect-error global window
+    window.handle = selectedDocHandle;
+  }, [selectedDocHandle]);
+
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
 
