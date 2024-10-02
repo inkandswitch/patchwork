@@ -274,8 +274,8 @@ export const VersionControlEditor: React.FC<{
 
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
 
-  if (!cloneOrMainOm || !datatypeId) {
-    return <LoadingScreen docUrl={mainDocUrl} handle={cloneOrMainOm?.handle} />;
+  if (!cloneOrMainOm) {
+    return <LoadingScreen what="document" />;
   }
 
   // ---- ANYTHING RELYING ON doc SHOULD GO BELOW HERE ----

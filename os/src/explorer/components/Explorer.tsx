@@ -250,13 +250,12 @@ export const Explorer: React.FC = () => {
     }
   };
 
-  if (!accountDoc || !rootFolderDoc) {
-    return (
-      <LoadingScreen
-        docUrl={currentAccount?.handle?.url}
-        handle={currentAccount?.handle}
-      />
-    );
+  if (!accountDoc) {
+    return <LoadingScreen what="account" />;
+  }
+
+  if (!rootFolderDoc) {
+    return <LoadingScreen what="sidebar contents" />;
   }
 
   return (
