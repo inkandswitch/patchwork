@@ -13,8 +13,10 @@ import * as A from "@automerge/automerge/next";
 import {
   BranchDoc,
   HasVersionControlMetadata,
+  MergedBranchDoc,
   VersionControlSidecarDoc,
 } from "./schema";
+import { BranchScopeAndActiveBranchInfo } from "./signals";
 
 type Hash = string;
 
@@ -100,11 +102,9 @@ export const cloneDocWithLinks = async (
 
   // clone links
   const links = dataTypeById(dataTypes, dataTypeId)?.links;
-  console.log("links func", links, dataTypeById(dataTypes, dataTypeId));
   if (links) {
     const doc = await handle.doc();
     const links_ = links(doc);
-    console.log("links are", links_);
     await Promise.all(
       links_.map(async (link) => {
         const handle = repo.find(link.url);
@@ -291,4 +291,94 @@ export const setActiveBranchUrl = (
       delete uiStateDoc.openBranches[docPathString(branchScopePath)];
     }
   });
+};
+
+type LegacyBranchMetadata = {
+  branches: {
+    url: AutomergeUrl;
+    branchHeads: A.Heads;
+    createdBy: AutomergeUrl;
+    name: string;
+    mergeMetadata?: MergedBranchDoc["mergeMetadata"];
+  }[];
+};
+
+// A backwards compatibility shim to convert legacy branches to the current multi-doc branches.
+// Previously, branch metadata was stored directly on the document itself.
+// Now branch metadata is stored on a separate doc, and can support a "clone map" for multiple docs.
+export const hasLegacyBranchesToMigrate = async ({
+  docOm,
+  branchScopeAndActiveBranchInfo,
+  repo,
+  dataTypeId,
+  dataTypes,
+}: {
+  docOm: Om<any> | undefined;
+  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo | undefined;
+  repo: Repo;
+  dataTypeId: string;
+  dataTypes: DataType[];
+}) => {
+  if (!docOm || !branchScopeAndActiveBranchInfo) {
+    return;
+  }
+
+  if (docOm.doc?.branchMetadata?.branches === undefined) {
+    return;
+  }
+
+  // this is gross - we need to re-fetch the version control metadata doc
+  // because this can get called multiple times with stale data.
+  const latestBranchScopeVersionControlMetadata =
+    branchScopeAndActiveBranchInfo.branchScopeVersionControlMetadataOm?.handle.docSync();
+
+  // We only migrate if the doc has legacy branches and there are no "current" branches.
+  // This is conservative but should cover most cases.
+  const hasLegacyBranches =
+    (docOm.doc.branchMetadata as LegacyBranchMetadata).branches.length > 0;
+  const hasCurrentBranches =
+    latestBranchScopeVersionControlMetadata?.branches.length ?? 0 > 0;
+  return hasLegacyBranches && !hasCurrentBranches;
+};
+
+export const migrateLegacyBranches = async ({
+  docOm,
+  branchScopeAndActiveBranchInfo,
+  repo,
+  dataTypeId,
+  dataTypes,
+}: {
+  docOm: Om<any>;
+  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
+  repo: Repo;
+  dataTypeId: string;
+  dataTypes: DataType[];
+}) => {
+  for (const branch of (docOm.doc.branchMetadata as LegacyBranchMetadata)
+    .branches) {
+    // Create a new branch with the current structure
+    const newBranchUrl = await createBranch({
+      repo,
+      branchScopeHandle: branchScopeAndActiveBranchInfo.branchScopeOm.handle,
+      dataTypeId,
+      dataTypes,
+      createdBy: branch.createdBy,
+      name: branch.name,
+    });
+
+    // Add a clone map entry to replicate the contents of the legacy branch
+    const newBranchHandle = repo.find<BranchDoc>(newBranchUrl);
+    newBranchHandle.change((d) => {
+      d.clones[docOm.url] = {
+        url: branch.url,
+        baseHeads: branch.branchHeads,
+      };
+    });
+
+    if (branch.mergeMetadata) {
+      newBranchHandle.change((d) => {
+        d.mergeMetadata = branch.mergeMetadata ?? null;
+      });
+    }
+  }
 };

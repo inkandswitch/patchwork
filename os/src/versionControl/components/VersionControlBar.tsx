@@ -74,9 +74,14 @@ import {
   Trash2Icon,
   ChevronDownIcon,
   ChevronRightIcon,
+  FileQuestionIcon,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
-import { createBranch } from "../branches";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createBranch,
+  hasLegacyBranchesToMigrate,
+  migrateLegacyBranches,
+} from "../branches";
 import { BranchScopeAndActiveBranchInfo } from "../signals";
 
 // interface MakeBranchOptions {
@@ -298,6 +303,29 @@ export const VersionControlBar = ({
     ]
   );
 
+  const [needsMigration, setNeedsMigration] = useState(false);
+
+  useEffect(() => {
+    const checkMigration = async () => {
+      const result = await hasLegacyBranchesToMigrate({
+        docOm: cloneOrMainOm,
+        branchScopeAndActiveBranchInfo,
+        repo,
+        dataTypeId: datatypeId,
+        dataTypes,
+      });
+      setNeedsMigration(result ?? false);
+    };
+
+    checkMigration();
+  }, [
+    cloneOrMainOm,
+    branchScopeAndActiveBranchInfo,
+    repo,
+    datatypeId,
+    dataTypes,
+  ]);
+
   return (
     <div className="bg-gray-100 pl-4 py-2 flex gap-2 border-b border-gray-200">
       <div className="flex flex-col gap-0.5">
@@ -423,6 +451,45 @@ export const VersionControlBar = ({
           </div>
         )}
       </div>
+
+      {needsMigration && (
+        <div
+          className="flex h-8 items-center bg-red-100 border border-red-400 text-red-700 rounded text-xs p-1"
+          role="alert"
+        >
+          <span className="mr-2">Legacy branches found.</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <FileQuestionIcon className="h-5 w-5 text-red-700 mr-2" />
+              </TooltipTrigger>
+              <TooltipContent className="text-xs max-w-96">
+                <p>
+                  This doc has branches which were created in an older version
+                  of patchwork. To keep them working, you need to click the
+                  button to migrate the data to the current app.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <Button
+            onClick={() => {
+              migrateLegacyBranches({
+                docOm: cloneOrMainOm,
+                branchScopeAndActiveBranchInfo,
+                repo,
+                dataTypeId: datatypeId,
+                dataTypes,
+              });
+            }}
+            variant="destructive"
+            size="sm"
+            className="text-xs h-6"
+          >
+            Migrate
+          </Button>
+        </div>
+      )}
 
       <div className="flex gap-1">
         {activeBranchOm && (

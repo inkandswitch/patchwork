@@ -48,7 +48,7 @@ export const VersionControlEditor: React.FC<{
   setDocHeadsFromTimelineSidebar: (heads: A.Heads | undefined) => void;
 }> = ({
   mainDocUrl,
-  datatypeId,
+  datatypeId: dataTypeId,
   tool,
   selectedDocLink,
   getFakeDocPathForDocUrl,
@@ -60,6 +60,9 @@ export const VersionControlEditor: React.FC<{
   );
 
   const uiStateOm = useUIStateOm();
+  const account = useCurrentAccount();
+  const { toast } = useToast();
+  const repo = useRepo();
 
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
 
@@ -68,7 +71,7 @@ export const VersionControlEditor: React.FC<{
 
   const docHeads = docHeadsFromTimelineSidebar ?? undefined;
 
-  // TODO: IDK what this is, but should it use a branched doc?
+  // TODO: this mapping should use the branch doc url, not the main doc url
   const actorIdToAuthor = useActorIdToAuthorMap(mainDocUrl);
 
   const docPath = useMemo(
@@ -100,12 +103,13 @@ export const VersionControlEditor: React.FC<{
   const diff = diffFromTimelineSidebar ?? branchDiff;
 
   const dataTypes = useDataTypes();
-  const dataType = dataTypeById(dataTypes, datatypeId);
+  const dataType = dataTypeById(dataTypes, dataTypeId);
 
   const branchOms = branchScopeAndActiveBranchInfo?.branchOms;
   const branchScopeUrl = branchScopeAndActiveBranchInfo?.branchScopeOm?.url;
 
-  // hack: convert old branches that don't have a back link to the branchScope
+  // backwards compatibility migration:
+  // convert old branches that don't have a back link to the branchScope
   useEffect(() => {
     if (!branchScopeUrl || !branchOms) {
       return;
@@ -221,10 +225,6 @@ export const VersionControlEditor: React.FC<{
     changeDocUIState,
   ]);
 
-  const account = useCurrentAccount();
-  const { toast } = useToast();
-  const repo = useRepo();
-
   const onMergeBranch = useCallback(
     async (branchUrl: AutomergeUrl) => {
       if (!account) {
@@ -296,7 +296,7 @@ export const VersionControlEditor: React.FC<{
         {branchScopeAndActiveBranchInfo ? (
           <VersionControlBar
             docUrl={mainDocUrl}
-            datatypeId={datatypeId}
+            datatypeId={dataTypeId}
             tool={tool}
             branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
             highlightSidebarButton={highlightSidebarButton}
@@ -544,135 +544,3 @@ export const SideBySide = <T, V>(props: SideBySideProps<T, V>) => {
     </div>
   );
 };
-
-// const BranchActions: React.FC<{
-//   doc: HasVersionControlMetadata<unknown, unknown>;
-//   branchDoc: HasVersionControlMetadata<unknown, unknown>;
-//   branchUrl: AutomergeUrl;
-//   handleDeleteBranch: (branchUrl: AutomergeUrl) => void;
-//   handleRenameBranch: (branchUrl: AutomergeUrl, newName: string) => void;
-//   handleRebaseBranch: (branchUrl: AutomergeUrl) => void;
-//   handleMergeBranch: (branchUrl: AutomergeUrl) => void;
-// }> = ({
-//   doc,
-//   branchDoc,
-//   branchUrl,
-//   handleDeleteBranch,
-//   handleRenameBranch,
-//   handleRebaseBranch,
-//   handleMergeBranch,
-// }) => {
-//   const branchHeads = useMemo(
-//     () => (branchDoc ? JSON.stringify(A.getHeads(branchDoc)) : undefined),
-//     [branchDoc]
-//   );
-//   const [dropdownOpen, setDropdownOpen] = useState(false);
-//   const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
-
-//   // compute new name suggestions anytime the branch heads change
-//   // todo: seems like this should run outside of the react UI...
-//   useEffect(() => {
-//     if (!dropdownOpen || !doc || !branchDoc) return;
-//     if (!isMarkdownDoc(doc) || !isMarkdownDoc(branchDoc)) {
-//       console.warn("suggestions only work for markdown docs");
-//       return;
-//     }
-//     if (!isLLMActive) return;
-//     setNameSuggestions([]);
-//     (async () => {
-//       const suggestions = (
-//         await suggestBranchName({ doc, branchUrl, branchDoc })
-//       ).split("\n");
-//       setNameSuggestions(suggestions);
-//     })();
-//   }, [doc, branchDoc, branchUrl, branchHeads, dropdownOpen]);
-
-//   return (
-//     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-//       <DropdownMenuTrigger>
-//         <MoreHorizontal
-//           size={18}
-//           className="mt-1 mr-21 text-gray-500 hover:text-gray-800"
-//         />
-//       </DropdownMenuTrigger>
-//       <DropdownMenuContent className="mr-4 w-72">
-//         <DropdownMenuItem
-//           onClick={() => {
-//             navigator.clipboard.writeText(window.location.href).then(
-//               () => {
-//                 toast("Link copied to clipboard");
-//               },
-//               () => {
-//                 toast.error("Failed to copy link to clipboard");
-//               }
-//             );
-//           }}
-//         >
-//           <Link className="inline-block text-gray-500 mr-2" size={14} /> Copy
-//           link to branch
-//         </DropdownMenuItem>
-//         <DropdownMenuItem
-//           onClick={() => {
-//             const newName = prompt("Enter the new name for this branch:");
-//             if (newName && newName.trim() !== "") {
-//               handleRenameBranch(branchUrl, newName.trim());
-//             }
-//           }}
-//         >
-//           <Edit3Icon className="inline-block text-gray-500 mr-2" size={14} />{" "}
-//           Rename branch
-//         </DropdownMenuItem>
-//         <DropdownMenuItem
-//           onClick={() => {
-//             handleRebaseBranch(branchUrl);
-//           }}
-//         >
-//           <GitBranchPlusIcon
-//             className="inline-block text-gray-500 mr-2"
-//             size={14}
-//           />{" "}
-//           Incorporate updates from main
-//         </DropdownMenuItem>
-//         <DropdownMenuItem
-//           onClick={() => {
-//             handleMergeBranch(branchUrl);
-//           }}
-//         >
-//           <GitMergeIcon className="inline-block text-gray-500 mr-2" size={14} />{" "}
-//           Merge branch
-//         </DropdownMenuItem>
-//         <DropdownMenuItem
-//           onClick={() => {
-//             if (
-//               window.confirm("Are you sure you want to delete this branch?")
-//             ) {
-//               handleDeleteBranch(branchUrl);
-//             }
-//           }}
-//         >
-//           <Trash2Icon className="inline-block text-gray-500 mr-2" size={14} />{" "}
-//           Delete branch
-//         </DropdownMenuItem>
-//         <DropdownMenuSeparator></DropdownMenuSeparator>
-//         {isLLMActive && (
-//           <DropdownMenuGroup>
-//             <DropdownMenuLabel>Suggested renames:</DropdownMenuLabel>
-//             {nameSuggestions.length === 0 && (
-//               <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
-//             )}
-//             {nameSuggestions.map((suggestion) => (
-//               <DropdownMenuItem
-//                 key={suggestion}
-//                 onClick={() => {
-//                   handleRenameBranch(branchUrl, suggestion);
-//                 }}
-//               >
-//                 {suggestion}
-//               </DropdownMenuItem>
-//             ))}
-//           </DropdownMenuGroup>
-//         )}
-//       </DropdownMenuContent>
-//     </DropdownMenu>
-//   );
-// };
