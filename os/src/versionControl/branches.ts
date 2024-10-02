@@ -330,7 +330,9 @@ export const hasLegacyBranchesToMigrate = async ({
   // this is gross - we need to re-fetch the version control metadata doc
   // because this can get called multiple times with stale data.
   const latestBranchScopeVersionControlMetadata =
-    branchScopeAndActiveBranchInfo.branchScopeVersionControlMetadataOm?.handle.docSync();
+    branchScopeAndActiveBranchInfo.branchScopeVersionControlMetadataOm?.handle.docSync() as
+      | A.Doc<VersionControlSidecarDoc & { isBranchScope: true }>
+      | undefined;
 
   // We only migrate if the doc has legacy branches and there are no "current" branches.
   // This is conservative but should cover most cases.
