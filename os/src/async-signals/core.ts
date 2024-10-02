@@ -106,6 +106,7 @@ export module AsyncState {
      * Throw the error of a rejected state.
      */
     get value(): never {
+      console.warn(new Error("Following error thrown from a call to value()"));
       throw this.error;
     }
   }

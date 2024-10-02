@@ -2,18 +2,12 @@ import * as Automerge from "@automerge/automerge";
 import {
   AutomergeUrl,
   Doc,
-  DocHandle,
   parseAutomergeUrl,
   Repo,
 } from "@automerge/automerge-repo";
 import { atom } from "signia";
-import {
-  asyncComputed,
-  asyncComputedFromPromise,
-  AsyncSignal,
-  AsyncState,
-} from "./core";
 import { Om } from "../om";
+import { asyncComputed, AsyncSignal, AsyncState } from "./core";
 
 export class DocMissingError extends Error {
   isMissingError = true; // here for weird typing reasons
@@ -53,6 +47,9 @@ function getDocSignal<T>(
     new AsyncState.Pending(`Loading document: ${KEY}`)
   );
 
+  // Constructing the error here gives better stack traces
+  const missingError = new DocMissingError(KEY as AutomergeUrl);
+
   const handle = repo.find<T>(url);
   handle.doc().then((doc) => {
     if (doc) {
@@ -60,9 +57,7 @@ function getDocSignal<T>(
         new AsyncState.Fulfilled(heads ? Automerge.view(doc, heads) : doc)
       );
     } else {
-      signal.set(
-        new AsyncState.Rejected(new DocMissingError(KEY as AutomergeUrl))
-      );
+      signal.set(new AsyncState.Rejected(missingError));
     }
   });
 
@@ -72,9 +67,7 @@ function getDocSignal<T>(
       signal.set(new AsyncState.Fulfilled(ev.doc));
     });
     handle.on("delete", () => {
-      signal.set(
-        new AsyncState.Rejected(new DocMissingError(KEY as AutomergeUrl))
-      );
+      signal.set(new AsyncState.Rejected(missingError));
     });
   }
 
