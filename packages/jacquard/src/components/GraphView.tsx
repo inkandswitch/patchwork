@@ -1,4 +1,4 @@
-import { selectDocLink } from "@/explorer/hooks/useRouter";
+import { selectDocLink } from "@/explorer/router/useRouter";
 import { EditorProps } from "@/tools";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -207,7 +207,9 @@ function stateGraphSrc(state: ProjectState) {
     const status = stalenessInfo.buildRunStatuses[buildRun.id];
     lines.push(`${gvId(buildRun.id)} [
       shape=rect
-      label=${JSON.stringify("⚙️ " + (buildRun.spec.name ?? buildRun.spec.command))}
+      label=${JSON.stringify(
+        "⚙️ " + (buildRun.spec.name ?? buildRun.spec.command)
+      )}
       fontname=${
         buildRun.spec.name
           ? '"Merriweather Sans, sans-serif"'

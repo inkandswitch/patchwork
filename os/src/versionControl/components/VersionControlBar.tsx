@@ -1,7 +1,7 @@
 import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
-import { selectDocLink } from "@/explorer/hooks/useRouter";
+import { selectDocLink } from "@/explorer/router/useRouter";
 import { MainViewMode, useDocUIState } from "@/explorer/uiState";
 import { getRelativeTimeString } from "@/lib/dates";
 import { Om } from "@/om";

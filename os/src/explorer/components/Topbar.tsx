@@ -33,7 +33,7 @@ import { FileExportMethod, genericExportMethods } from "@/fileExports";
 import { Tool } from "@/tools";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { getHeads } from "@automerge/automerge";
-import { getUrlSafeName } from "../hooks/useRouter";
+import { getUrlSafeName } from "../router/useRouter";
 import { useToast } from "@/shadcn/ui/use-toast";
 import { useDataTypes } from "@/hooks/useDataTypes";
 import { dataTypeById } from "@/sdk";

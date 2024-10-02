@@ -12,21 +12,14 @@ import {
   stringifyAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { isEqual } from "lodash";
 import queryString from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import { useUIStateOm } from "../uiState";
 import { useCurrentUrl } from "../url";
 import { useDataTypes } from "@/hooks/useDataTypes";
 import { dataTypeById } from "@/datatypes";
-
-type URLParams = {
-  type: string;
-  url: AutomergeUrl;
-  branchUrl?: AutomergeUrl;
-  branchName?: string;
-  branchScopeUrl?: AutomergeUrl;
-};
+import { URLParams } from "./types";
+import { getDocLinkInRootFolder } from "./getDocLinkInRootFolder";
 
 // Construct a URL for a given document
 const toUrl = (docLinkOrUrlParams: DocLink | URLParams): string => {
@@ -260,72 +253,6 @@ export const useRouter = ({
     }
   }, [rootFolderDocWithMetadata, uiStateOm]);
 
-  /*
-   * getDocLinkInRootFolder resolves an url + type in the root folder of the user
-   *
-   * If the same document is linked multiple times in the folder hierarchy this function will open
-   * the document that's closest to the previously selected document
-   *
-   * Example:
-   *
-   * Document2 is resolved
-   *
-   * Root Folder
-   * |--- FolderA
-   * |    |--- Document1 <-- previously selected
-   * |    |--- Document2 <-- this document will be resolved
-   * |
-   * |--- FolderB
-   * |    |--- Document3
-   * |    |--- Document2
-   */
-  const getDocLinkInRootFolder = useCallback(
-    (
-      rootFolderDocWithMetadata: FolderDocWithMetadata,
-      { url, type }: DocLink | URLParams
-    ): DocLinkWithFolderPath | undefined => {
-      // try to match urlParams to docLink in root folder
-      const matches = rootFolderDocWithMetadata.flatDocLinks.filter(
-        (doc) => doc.url === url && doc.type === type
-      );
-
-      if (matches.length === 0) {
-        return;
-      }
-
-      if (matches.length === 1) {
-        return matches[0];
-      }
-
-      // if we have multiple matches bias towards links that have overlap with the previous selection
-      // otherwise just return the first link
-
-      const previousFolderPath: AutomergeUrl[] = selectedDocLink
-        ? selectedDocLink.type == "folder"
-          ? selectedDocLink.folderPath.concat(selectedDocLink.url)
-          : selectedDocLink.folderPath
-        : [];
-
-      let linkInPath: DocLinkWithFolderPath | undefined;
-
-      for (let i = previousFolderPath.length; i >= 0; i--) {
-        const comparisonPath = previousFolderPath.slice(0, i);
-
-        const maybeLinkInPath = matches.find((match) =>
-          isEqual(match.folderPath, comparisonPath)
-        );
-
-        if (maybeLinkInPath) {
-          linkInPath = maybeLinkInPath;
-          break;
-        }
-      }
-
-      return linkInPath ?? matches[0];
-    },
-    [selectedDocLink]
-  );
-
   /* resolveUrlToDocLink is called whenever a new document selection was triggered by an url change.
    *
    * This function resolve the document url (with an optional branch / branchScope) to a docLink in the root folder.
@@ -374,8 +301,9 @@ export const useRouter = ({
           : urlParams.type;
 
         const branchScopeLinkInRootFolder = getDocLinkInRootFolder(
+          { type: branchScopeType, url: branchScopeUrl },
           rootFolderDocWithMetadata,
-          { type: branchScopeType, url: branchScopeUrl }
+          selectedDocLink
         );
 
         if (!branchScopeLinkInRootFolder) {
@@ -432,8 +360,9 @@ export const useRouter = ({
       }
 
       let docLinkWithFolderPath = getDocLinkInRootFolder(
+        urlParams,
         rootFolderDocWithMetadata,
-        urlParams
+        selectedDocLink
       );
 
       if (!docLinkWithFolderPath) {

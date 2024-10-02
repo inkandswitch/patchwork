@@ -24,7 +24,7 @@ import {
   useCurrentAccountDoc,
   useRootFolderDocWithChildren,
 } from "../account";
-import { useRouter } from "../hooks/useRouter";
+import { useRouter } from "../router/useRouter";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
 import { useUIStateOm } from "../uiState";
 import { ErrorFallback } from "./ErrorFallback";

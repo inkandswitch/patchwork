@@ -1,5 +1,5 @@
 import * as Automerge from "@automerge/automerge";
-import { selectDocLink } from "@/explorer/hooks/useRouter";
+import { selectDocLink } from "@/explorer/router/useRouter";
 import { EditorProps } from "@/tools";
 import { useMemo } from "react";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
