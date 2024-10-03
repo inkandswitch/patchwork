@@ -2,9 +2,9 @@ name: TypeScript Check
 
 on:
   push:
-    branches: [main]
+    branches: [main, jacquard]
   pull_request:
-    branches: [main]
+    branches: [main, jacquard]
 
 jobs:
   build:
