@@ -1,6 +1,14 @@
 import { TLRecord, RecordId, TLStore } from "@tldraw/tldraw";
 import * as Automerge from "@automerge/automerge/next";
 
+/** Convert a value from an automerge doc to a value consumable by TLDraw.
+ *  The main thing we need to do is convert RawStrings to regular strings,
+ *  which can be achieved with a JSON.parse/stringify roundtrip.
+ */
+export function automergeValueToTldrawValue(value: any): any {
+  return JSON.parse(JSON.stringify(value));
+}
+
 export function translateAutomergePatchesToTLStoreUpdates(
   patches: Automerge.Patch[],
   store: TLStore
@@ -8,7 +16,18 @@ export function translateAutomergePatchesToTLStoreUpdates(
   const toRemove: TLRecord["id"][] = [];
   const updatedObjects: { [id: string]: TLRecord } = {};
 
-  patches.forEach((patch) => {
+  patches.forEach((rawPatch) => {
+    let patch = rawPatch;
+    if (
+      rawPatch.action === "put" &&
+      rawPatch.value instanceof Automerge.RawString
+    ) {
+      patch = {
+        ...rawPatch,
+        value: rawPatch.value.toString(),
+      };
+    }
+
     if (!isStorePatch(patch)) return;
 
     const id = pathToId(patch.path as string[]);
