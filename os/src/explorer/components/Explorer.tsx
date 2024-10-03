@@ -260,7 +260,7 @@ export const Explorer: React.FC = () => {
   }
 
   if (!rootFolderDoc) {
-    return <LoadingScreen what="sidebar contents" />;
+    return <LoadingScreen what="your documents" />;
   }
 
   return (
