@@ -22,7 +22,10 @@ import {
   useRemoteAwareness,
 } from "@automerge/automerge-repo-react-hooks";
 
-import { applyAutomergePatchesToTLStore } from "./AutomergeToTLStore";
+import {
+  applyAutomergePatchesToTLStore,
+  automergeValueToTldrawValue,
+} from "./AutomergeToTLStore";
 import { applyTLStoreChangesToAutomerge } from "./TLStoreToAutomerge";
 import { TLDrawDoc } from "../../datatype";
 
@@ -99,8 +102,8 @@ export function useAutomergeStore({
 
       store.mergeRemoteChanges(() => {
         store.loadSnapshot({
-          store: JSON.parse(JSON.stringify(doc.store)),
-          schema: doc.schema,
+          store: automergeValueToTldrawValue(doc.store),
+          schema: automergeValueToTldrawValue(doc.schema),
         });
       });
 
