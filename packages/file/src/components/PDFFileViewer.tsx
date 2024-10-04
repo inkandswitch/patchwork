@@ -43,8 +43,7 @@ export const isPDFFile = (file: FileDoc): file is PDFFileDoc => {
 export const PDFFileViewer = ({
   docUrl,
   docHeads,
-  getFakeDocPathForDocUrl,
-  mainDocUrl,
+  docPath,
 }: EditorProps<PDFFileDoc, never>) => {
   const [_doc] = useDocument<PDFFileDoc>(docUrl);
 
@@ -57,8 +56,6 @@ export const PDFFileViewer = ({
   if (!doc || !binaryData) {
     return;
   }
-
-  const docPath = getFakeDocPathForDocUrl(mainDocUrl);
 
   return (
     <div className="overflow-auto h-full">

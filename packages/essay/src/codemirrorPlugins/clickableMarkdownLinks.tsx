@@ -6,7 +6,7 @@ import {
   ViewUpdate,
 } from "@codemirror/view";
 import { StateField, StateEffect } from "@codemirror/state";
-import { parseUrl, selectDocLink } from "@/explorer/router/useRouter";
+import { parseUrl, selectDocLink } from "@/explorer/router";
 
 type Link = {
   url: string;

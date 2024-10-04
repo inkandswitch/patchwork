@@ -1,7 +1,7 @@
 import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
-import { selectDocLink } from "@/explorer/router/useRouter";
+import { selectDocLink } from "@/explorer/router";
 import { MainViewMode, useDocUIState } from "@/explorer/uiState";
 import { getRelativeTimeString } from "@/lib/dates";
 import { Om } from "@/om";
@@ -55,7 +55,7 @@ import {
   fetchProjectStateFromProjectInfo,
   getBuildRunsWithDocAsPrimaryInput,
 } from "@patchwork/jacquard/src/signals";
-import _, { truncate } from "lodash";
+import { truncate } from "lodash";
 import {
   ArrowRightFromLineIcon,
   ArrowRightToLineIcon,
@@ -121,28 +121,26 @@ const BranchSelectItem: React.FC<{
 };
 
 export const VersionControlBar = ({
-  docUrl,
-  datatypeId,
+  docPath,
   tool,
   branchScopeAndActiveBranchInfo,
   highlightSidebarButton,
-  getFakeDocPathForDocUrl,
   diffMode,
   onSelectBranch,
   onMergeBranch,
   onDeleteBranch,
 }: {
-  docUrl: AutomergeUrl;
-  datatypeId: string;
+  docPath: DocPath;
   tool: Tool;
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
   highlightSidebarButton: boolean;
-  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
   diffMode?: "branch" | "history";
   onSelectBranch: (branchUrl: AutomergeUrl | null) => void;
   onMergeBranch: (branchUrl: AutomergeUrl) => void;
   onDeleteBranch: (branchUrl: AutomergeUrl) => void;
 }) => {
+  const docLink = DocPath.toLink(docPath);
+
   const {
     branchScopeOm,
     activeBranchOm,
@@ -150,36 +148,33 @@ export const VersionControlBar = ({
     cloneOrMainOm,
     isRealBranchScope,
     branchScopeVersionControlMetadataOm,
+    branchScopePath,
   } = branchScopeAndActiveBranchInfo;
 
   const { toast } = useToast();
   const repo = useRepo();
   const account = useCurrentAccount();
 
-  const [docUIState, changeDocUIState] = useDocUIState(
-    getFakeDocPathForDocUrl(docUrl)
-  );
+  const [docUIState, changeDocUIState] = useDocUIState(docPath);
 
   const dataTypes = useDataTypes();
 
   const handleCreateBranch = useCallback(async () => {
-    const docPathForBranchScope = getFakeDocPathForDocUrl(branchScopeOm.url);
-    const docLinkForBranchScope = _.last(docPathForBranchScope)!;
+    const branchScopeLink = DocPath.toLink(branchScopePath)!;
 
     const branchUrl = await createBranch({
       repo,
       branchScopeHandle: branchScopeOm.handle,
-      dataTypeId: docLinkForBranchScope?.type,
+      dataTypeId: branchScopeLink?.type,
       dataTypes,
       createdBy: account?.contactHandle?.url,
     });
     onSelectBranch(branchUrl);
     toast({ title: "Created a new branch" });
   }, [
-    getFakeDocPathForDocUrl,
-    branchScopeOm.url,
-    branchScopeOm.handle,
+    branchScopePath,
     repo,
+    branchScopeOm.handle,
     dataTypes,
     account?.contactHandle?.url,
     onSelectBranch,
@@ -187,7 +182,7 @@ export const VersionControlBar = ({
   ]);
 
   const isInsideBranchScope =
-    isRealBranchScope && branchScopeOm?.url !== docUrl;
+    isRealBranchScope && branchScopeOm?.url !== docLink.url;
 
   // const moveCurrentChangesToBranch = () => {
   //   if (!isMarkdownDoc(doc))
@@ -218,12 +213,8 @@ export const VersionControlBar = ({
   const jacquardProjectInfo = useAsyncComputed(
     useCallback(() => {
       fetchAwaitMissing(account);
-      return fetchJacquardProjectInfoWithActiveBranch(
-        getFakeDocPathForDocUrl(docUrl),
-        account,
-        repo
-      );
-    }, [account, docUrl, getFakeDocPathForDocUrl, repo])
+      return fetchJacquardProjectInfoWithActiveBranch(docPath, account, repo);
+    }, [account, docPath, repo])
   ).ifPending(undefined).value;
 
   const projectState = useAsyncComputed(
@@ -235,8 +226,9 @@ export const VersionControlBar = ({
 
   const buildRunWithFileAsInput = useMemo(
     () =>
-      projectState && getBuildRunsWithDocAsPrimaryInput(projectState, docUrl),
-    [projectState, docUrl]
+      projectState &&
+      getBuildRunsWithDocAsPrimaryInput(projectState, docLink.url),
+    [projectState, docLink.url]
   );
 
   const hasOutputFiles =
@@ -311,7 +303,7 @@ export const VersionControlBar = ({
         docOm: cloneOrMainOm,
         branchScopeAndActiveBranchInfo,
         repo,
-        dataTypeId: datatypeId,
+        dataTypeId: docLink.type,
         dataTypes,
       });
       setNeedsMigration(result ?? false);
@@ -322,8 +314,8 @@ export const VersionControlBar = ({
     cloneOrMainOm,
     branchScopeAndActiveBranchInfo,
     repo,
-    datatypeId,
     dataTypes,
+    docLink.type,
   ]);
 
   return (
@@ -478,7 +470,7 @@ export const VersionControlBar = ({
                 docOm: cloneOrMainOm,
                 branchScopeAndActiveBranchInfo,
                 repo,
-                dataTypeId: datatypeId,
+                dataTypeId: docLink.type,
                 dataTypes,
               });
             }}
@@ -539,7 +531,7 @@ export const VersionControlBar = ({
           <JacquardSection
             jacquardProjectInfo={jacquardProjectInfo}
             projectState={projectState}
-            datatypeId={datatypeId}
+            datatypeId={docLink.type}
           />
         </>
       )}
@@ -547,7 +539,7 @@ export const VersionControlBar = ({
       {VerticalSeparator}
 
       {/* View mode selector */}
-      {(activeBranchOm || datatypeId === "file") && (
+      {(activeBranchOm || docLink.type === "file") && (
         <Select
           onValueChange={(value) => {
             changeDocUIState(

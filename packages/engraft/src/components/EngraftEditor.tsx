@@ -1,4 +1,4 @@
-import { useRootFolderDocWithChildren } from "@/explorer/account";
+import { useRootFolderDocWithMetadata } from "@/explorer/account";
 import { useHandleDef } from "@/hooks/useHandleDef";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { Button } from "@/shadcn/ui/button";
@@ -27,16 +27,20 @@ import {
   removeUndefineds,
 } from "../engraft-automerge";
 import { getDocState, fetchMap, useAsyncComputed } from "@/async-signals";
+import { DocPath } from "@/packages/folder/datatype";
 
 function getDocName(
   url: AutomergeUrl,
   rootFolderDocWithChildren: FolderDocWithMetadata | undefined
 ): string {
-  const docLink = rootFolderDocWithChildren?.flatDocLinks.find(
-    (link) => link.url === url
+  const docPath = rootFolderDocWithChildren?.flatDocPaths.find(
+    (docPath) => DocPath.toLink(docPath).url === url
   );
-  const automergeId = parseAutomergeUrl(url).documentId;
-  return docLink?.name || automergeId;
+  if (docPath) {
+    return DocPath.toLink(docPath).name;
+  } else {
+    return parseAutomergeUrl(url).documentId;
+  }
 }
 
 export function findAutomergeUrl(str: string): AutomergeUrl | null {
@@ -63,7 +67,7 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
   const [doc, changeDoc] = useDocument<EngraftDoc>(props.docUrl);
   const handle = useHandleDef<EngraftDoc>(props.docUrl);
 
-  const rootFolderDocWithChildren = useRootFolderDocWithChildren();
+  const rootFolderDocWithMetadata = useRootFolderDocWithMetadata();
 
   const repo = useRepo();
   const inputUrls = doc?.inputUrls;
@@ -93,13 +97,13 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
         varBindings[id] = {
           var_: {
             id,
-            label: getDocName(url, rootFolderDocWithChildren),
+            label: getDocName(url, rootFolderDocWithMetadata),
           },
           outputP: outputPs[i],
         };
       }
       return varBindings;
-    }, [inputUrls, repo, rootFolderDocWithChildren])
+    }, [inputUrls, repo, rootFolderDocWithMetadata])
   ).ifPending(undefined).value;
 
   const updateProgram: Updater<ToolProgram> = useCallback((update) => {
@@ -185,7 +189,7 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
                     });
                   }}
                 >
-                  {getDocName(depUrl, rootFolderDocWithChildren)}
+                  {getDocName(depUrl, rootFolderDocWithMetadata)}
                 </div>
               ))}
             </div>
@@ -226,7 +230,7 @@ export const EngraftEditor = (props: EditorProps<unknown, unknown>) => {
                     });
                   }}
                 >
-                  {getDocName(doc.outputUrl, rootFolderDocWithChildren)}
+                  {getDocName(doc.outputUrl, rootFolderDocWithMetadata)}
                 </div>
               )}
             </div>

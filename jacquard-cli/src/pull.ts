@@ -4,7 +4,7 @@ import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import fs from "fs";
 import path from "path";
 import { CommandLineArgs } from ".";
-import { dataTypes, omOnActiveBranchPromise } from "./util";
+import { dataTypes, omOnCLIActiveBranchPromise } from "./util";
 
 export async function pull(repo: Repo, args: CommandLineArgs) {
   const { projectFolderUrl, dir } = args;
@@ -25,7 +25,7 @@ async function pullFolder({
   dir: string;
   repo: Repo;
 }) {
-  const folderOm = await omOnActiveBranchPromise<FolderDoc>(folderUrl, repo);
+  const folderOm = await omOnCLIActiveBranchPromise<FolderDoc>(folderUrl, repo);
 
   await Promise.all(
     folderOm.doc.docs.map(async (docLink) => {
@@ -77,7 +77,7 @@ async function pullDoc({
     return;
   }
 
-  const docOm = await omOnActiveBranchPromise(docLink.url, repo);
+  const docOm = await omOnCLIActiveBranchPromise(docLink.url, repo);
 
   const unixFile = await dataType.docToUnixFile(docOm.doc);
   fs.writeFileSync(

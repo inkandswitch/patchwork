@@ -61,8 +61,7 @@ export const TextFileEditor = ({
   docHeads,
   annotations,
   setSelectedAnchors,
-  getFakeDocPathForDocUrl,
-  mainDocUrl,
+  docPath,
   collapseContentWithoutChanges: collapseContentWithoutAnnotations,
 }: EditorProps<TextAnchor, string>) => {
   // TODO: Only reason we need containerRef is for scrollObserverPlugin.
@@ -101,11 +100,6 @@ export const TextFileEditor = ({
   annotationsRef.current = resolvedAnnotations;
 
   const fileDocRef = useRefForCallback(fileDoc);
-
-  const docPath = useMemo(
-    () => getFakeDocPathForDocUrl(mainDocUrl),
-    [getFakeDocPathForDocUrl, mainDocUrl]
-  );
 
   const readOnly = docHeads !== undefined;
 

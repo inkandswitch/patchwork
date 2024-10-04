@@ -5,6 +5,7 @@ import { AutomergeUrl } from "@automerge/automerge-repo";
 import { FileDoc } from "../../file/src/datatype";
 import { BuildRun, Reference } from "./datatype";
 import { fetchMap } from "@/async-signals";
+import { DocPath } from "@/packages/folder/datatype";
 
 export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
   // TODO: we should be able to use equality to check if heads match, but
@@ -34,17 +35,19 @@ export const fetchProjectState = ({
   filesReferencedInBuildsOnly?: boolean;
   fetchDocOnBranchFromUrl: (url: AutomergeUrl) => Automerge.Doc<unknown>;
 }): ProjectState => {
-  const fileUrls = folderDoc.flatDocLinks.flatMap(({ url }) =>
-    !filesReferencedInBuildsOnly ||
-    // filter out files that are not referenced by any build run
-    buildRuns.some(
-      ({ inputs, outputs }) =>
-        inputs.some((input) => input.docUrl === url) ||
-        outputs.some((output) => output.docUrl === url)
-    )
-      ? [url]
-      : []
-  );
+  const fileUrls = folderDoc.flatDocPaths
+    .map(DocPath.toLink)
+    .flatMap(({ url }) =>
+      !filesReferencedInBuildsOnly ||
+      // filter out files that are not referenced by any build run
+      buildRuns.some(
+        ({ inputs, outputs }) =>
+          inputs.some((input) => input.docUrl === url) ||
+          outputs.some((output) => output.docUrl === url)
+      )
+        ? [url]
+        : []
+    );
 
   let files: Record<AutomergeUrl, Automerge.Doc<FileDoc>> = {};
   fetchMap(fileUrls, (url) => {

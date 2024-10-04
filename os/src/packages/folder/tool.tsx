@@ -1,37 +1,32 @@
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import * as A from "@automerge/automerge/next";
-import React, { useMemo } from "react";
-
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
-import { selectDocLink } from "@/explorer/router/useRouter";
+import { selectDocLink } from "@/explorer/router";
+import { useDocUIState } from "@/explorer/uiState";
 import { Icon, IconType } from "@/lib/icons";
+import { dataTypeById, useDataTypes, useTools } from "@/sdk";
 import { EditorProps, Tool, toolsForDataType } from "@/tools";
 import { useAnnotations } from "@/versionControl/annotations";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { diffWithProvenance } from "@/versionControl/utils";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import * as A from "@automerge/automerge/next";
+import React, { useMemo } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { DocLink, DocPath, FolderDoc } from "./datatype";
+import { DocPath, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
-import { useDocUIState } from "@/explorer/uiState";
-import { useDataTypes } from "@/hooks/useDataTypes";
-import { useTools } from "@/hooks/useTools";
-import { dataTypeById } from "@/sdk";
 
 export const FolderViewerWithEmbeds: React.FC<
   EditorProps<unknown, unknown>
 > = ({
+  docPath,
   docUrl,
   docHeads,
-  getFakeDocPathForDocUrl,
-  mainDocUrl,
   collapseContentWithoutChanges: collapseContentWithoutAnnotations,
 }: EditorProps<unknown, unknown>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
   const folderAtHeads = folder && docHeads ? A.view(folder, docHeads) : folder;
 
-  const [docUIState] = useDocUIState(getFakeDocPathForDocUrl(mainDocUrl));
+  const [docUIState] = useDocUIState(docPath);
 
   if (!folder || !folderAtHeads) {
     return null;
@@ -47,9 +42,8 @@ export const FolderViewerWithEmbeds: React.FC<
       <div className="flex flex-col gap-10 px-4 h-full overflow-y-auto pb-24">
         {folderAtHeads.docs.map((docLink, index) => (
           <FolderEntryView
-            docLink={docLink}
+            docPath={[...docPath, docLink]}
             key={index}
-            getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
             collapseContentWithoutChanges={
               collapseContentWithoutAnnotations ?? false
             }
@@ -62,19 +56,17 @@ export const FolderViewerWithEmbeds: React.FC<
 };
 
 type FolderEntryView = {
-  docLink: DocLink;
-  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
+  docPath: DocPath;
   collapseContentWithoutChanges: boolean;
   highlightChanges: boolean;
 };
 
 export const FolderEntryView = ({
-  docLink,
-  getFakeDocPathForDocUrl,
+  docPath,
   collapseContentWithoutChanges,
   highlightChanges,
 }: FolderEntryView) => {
-  const docPath = getFakeDocPathForDocUrl(docLink.url);
+  const docLink = DocPath.toLink(docPath);
   const branchScopeAndActiveBranchInfo =
     useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
@@ -139,9 +131,9 @@ export const FolderEntryView = ({
     cloneOrMainOm && tool && docLink.type !== "folder" ? (
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <tool.EditorComponent
+          docPath={docPath}
           docUrl={cloneOrMainOm.url}
           mainDocUrl={docLink.url}
-          getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
           collapseContentWithoutChanges={collapseContentWithoutChanges}
           {...annotationPropsWithFilteredAnnotations}
         />

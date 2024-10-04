@@ -1,9 +1,12 @@
+import { dataTypeById } from "@/datatypes";
+import { useCurrentAccount } from "@/explorer/account";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { LoadingScreen } from "@/explorer/components/LoadingScreen";
 import { useDocUIState, useUIStateOm } from "@/explorer/uiState";
-import { DocLinkWithFolderPath, DocPath } from "@/packages/folder/datatype";
 import { useDataTypes } from "@/hooks/useDataTypes";
+import { DocPath } from "@/packages/folder/datatype";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
+import { useToast } from "@/shadcn/ui/use-toast";
 import { EditorProps, Tool } from "@/tools";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -25,39 +28,28 @@ import {
   HasVersionControlMetadata,
 } from "../schema";
 import { diffWithProvenance, useActorIdToAuthorMap } from "../utils";
+import { BotSidebar } from "./BotSidebar";
 import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
-import { dataTypeById } from "@/datatypes";
-import { fakeDocPath } from "../signals";
-import { BotSidebar } from "./BotSidebar";
-import { useCurrentAccount } from "@/explorer/account";
-import { useToast } from "@/shadcn/ui/use-toast";
-import { Om } from "@/om";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
-  mainDocUrl: AutomergeUrl;
-  datatypeId: string;
+  docPath: DocPath;
   tool: Tool;
   addNewDocument: (doc: { type: string; change?: (doc: any) => void }) => void;
-  selectedDocLink: DocLinkWithFolderPath;
-  flatDocLinks: DocLinkWithFolderPath[];
-  getFakeDocPathForDocUrl: (url: AutomergeUrl) => DocPath;
+  flatDocPaths: DocPath[];
   docHeadsFromTimelineSidebar: A.Heads | undefined;
   setDocHeadsFromTimelineSidebar: (heads: A.Heads | undefined) => void;
 }> = ({
-  mainDocUrl,
-  datatypeId: dataTypeId,
+  docPath,
   tool,
-  selectedDocLink,
-  getFakeDocPathForDocUrl,
   docHeadsFromTimelineSidebar,
   setDocHeadsFromTimelineSidebar,
 }) => {
-  const [docUIState, changeDocUIState] = useDocUIState(
-    getFakeDocPathForDocUrl(mainDocUrl)
-  );
+  const docLink = DocPath.toLink(docPath);
+
+  const [docUIState, changeDocUIState] = useDocUIState(docPath);
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();
@@ -72,12 +64,7 @@ export const VersionControlEditor: React.FC<{
   const docHeads = docHeadsFromTimelineSidebar ?? undefined;
 
   // TODO: this mapping should use the branch doc url, not the main doc url
-  const actorIdToAuthor = useActorIdToAuthorMap(mainDocUrl);
-
-  const docPath = useMemo(
-    () => fakeDocPath(selectedDocLink),
-    [selectedDocLink]
-  );
+  const actorIdToAuthor = useActorIdToAuthorMap(docLink.url);
 
   const branchScopeAndActiveBranchInfo =
     useBranchScopeAndActiveBranchInfo(docPath);
@@ -91,19 +78,19 @@ export const VersionControlEditor: React.FC<{
 
   const branchDiff = useMemo(() => {
     // only compute branch diff if we are on a branch
-    if (baseHeads && cloneOrMainOm && cloneOrMainOm.url !== mainDocUrl) {
+    if (baseHeads && cloneOrMainOm && cloneOrMainOm.url !== docLink.url) {
       return diffWithProvenance(
         cloneOrMainOm.doc,
         baseHeads,
         A.getHeads(cloneOrMainOm.doc)
       );
     }
-  }, [mainDocUrl, baseHeads, cloneOrMainOm]);
+  }, [baseHeads, cloneOrMainOm, docLink.url]);
 
   const diff = diffFromTimelineSidebar ?? branchDiff;
 
   const dataTypes = useDataTypes();
-  const dataType = dataTypeById(dataTypes, dataTypeId);
+  const dataType = dataTypeById(dataTypes, docLink.type);
 
   const branchOms = branchScopeAndActiveBranchInfo?.branchOms;
   const branchScopeUrl = branchScopeAndActiveBranchInfo?.branchScopeOm?.url;
@@ -125,7 +112,7 @@ export const VersionControlEditor: React.FC<{
   }, [branchScopeUrl, branchOms]);
 
   const collapseContentWithoutChanges =
-    (docHeads || cloneOrMainOm?.url !== mainDocUrl) &&
+    (docHeads || cloneOrMainOm?.url !== docLink.url) &&
     docUIState.collapseContentWithoutChanges;
 
   const {
@@ -295,12 +282,10 @@ export const VersionControlEditor: React.FC<{
       <div className="flex flex-col flex-1 overflow-hidden">
         {branchScopeAndActiveBranchInfo ? (
           <VersionControlBar
-            docUrl={mainDocUrl}
-            datatypeId={dataTypeId}
+            docPath={docPath}
             tool={tool}
             branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
             highlightSidebarButton={highlightSidebarButton}
-            getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
             onSelectBranch={onSelectBranch}
             diffMode={
               branchScopeAndActiveBranchInfo.activeBranchOm &&
@@ -325,6 +310,7 @@ export const VersionControlEditor: React.FC<{
                 <SideBySide
                   key={cloneOrMainOm.url}
                   tool={tool}
+                  docPath={docPath}
                   docUrl={cloneOrMainOm.url}
                   docHeads={docHeads}
                   annotations={filteredAnnotations}
@@ -337,8 +323,7 @@ export const VersionControlEditor: React.FC<{
                   hideInlineComments={hideInlineComments}
                   collapseContentWithoutChanges={collapseContentWithoutChanges}
                   setCommentState={setCommentState}
-                  getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-                  mainDocUrl={mainDocUrl}
+                  mainDocUrl={docLink.url}
                   activeBranchUrl={
                     branchScopeAndActiveBranchInfo.activeBranchOm?.url
                   }
@@ -347,6 +332,7 @@ export const VersionControlEditor: React.FC<{
                 <DocEditor
                   key={cloneOrMainOm.url}
                   tool={tool}
+                  docPath={docPath}
                   docUrl={cloneOrMainOm.url}
                   docHeads={docHeads}
                   annotations={filteredAnnotations}
@@ -359,8 +345,7 @@ export const VersionControlEditor: React.FC<{
                   hideInlineComments={hideInlineComments}
                   collapseContentWithoutChanges={collapseContentWithoutChanges}
                   setCommentState={setCommentState}
-                  getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
-                  mainDocUrl={mainDocUrl}
+                  mainDocUrl={docLink.url}
                   activeBranchUrl={
                     branchScopeAndActiveBranchInfo.activeBranchOm?.url
                   }
@@ -442,7 +427,7 @@ export const VersionControlEditor: React.FC<{
                 <BotSidebar
                   doc={cloneOrMainDocAtHeads}
                   handle={cloneOrMainOm.handle}
-                  mainDocUrl={mainDocUrl}
+                  mainDocUrl={docLink.url}
                   dataType={dataType}
                   selectedBranchUrl={
                     branchScopeAndActiveBranchInfo.activeBranchOm?.url
@@ -467,6 +452,7 @@ export interface EditorPropsWithTool<T, V> extends EditorProps<T, V> {
 /* Wrapper component that dispatches to the tool for the doc type */
 const DocEditor = <T, V>({
   tool,
+  docPath,
   docUrl,
   docHeads,
   annotations,
@@ -478,7 +464,6 @@ const DocEditor = <T, V>({
   setSelectedAnnotationGroupId,
   setHoveredAnnotationGroupId,
   setCommentState,
-  getFakeDocPathForDocUrl,
   mainDocUrl,
   activeBranchUrl,
   collapseContentWithoutChanges,
@@ -491,6 +476,7 @@ const DocEditor = <T, V>({
 
   return (
     <Component
+      docPath={docPath}
       docUrl={docUrl}
       docHeads={docHeads}
       annotations={annotations}
@@ -503,7 +489,6 @@ const DocEditor = <T, V>({
       setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
       setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
       setCommentState={setCommentState}
-      getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
       mainDocUrl={mainDocUrl}
       activeBranchUrl={activeBranchUrl}
     />

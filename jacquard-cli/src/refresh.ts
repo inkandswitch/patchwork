@@ -1,7 +1,7 @@
 import { asyncComputedPromise, fetchDoc } from "@/async-signals";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
-import { fetchFolderDocWithChildren } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { fetchFolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import _, { omit } from "lodash";
 import { CommandLineArgs } from ".";
@@ -16,9 +16,9 @@ import {
 } from "../../packages/jacquard/src/getStalenessInfo";
 import { run } from "./run";
 import {
-  fetchOmOnActiveBranch,
+  fetchOmOnCLIActiveBranch,
   getBuildMetadataDocUrl,
-  omOnActiveBranchPromise,
+  omOnCLIActiveBranchPromise,
 } from "./util";
 
 export async function refresh(
@@ -35,7 +35,7 @@ export async function refresh(
   }
 
   // get build metadata
-  const folderOm = await omOnActiveBranchPromise<FolderDoc>(
+  const folderOm = await omOnCLIActiveBranchPromise<FolderDoc>(
     projectFolderUrl,
     repo
   );
@@ -46,17 +46,18 @@ export async function refresh(
     process.exit(1);
   }
 
-  const buildMetadataOm = await omOnActiveBranchPromise<JacquardBuildMetadata>(
-    buildMetadataDocUrl,
-    repo
-  );
+  const buildMetadataOm =
+    await omOnCLIActiveBranchPromise<JacquardBuildMetadata>(
+      buildMetadataDocUrl,
+      repo
+    );
 
   const getCurrentStalenessInfo = async () => {
     const projectState = await asyncComputedPromise(() => {
       const fetchDocOnBranchFromUrl = (fileUrl: AutomergeUrl) =>
-        fetchOmOnActiveBranch<FileDoc>(fileUrl, repo).doc;
+        fetchOmOnCLIActiveBranch<FileDoc>(fileUrl, repo).doc;
 
-      const folderDoc = fetchFolderDocWithChildren(
+      const folderDoc = fetchFolderDocWithMetadata(
         projectFolderUrl,
         (docPath: DocPath) =>
           fetchDocOnBranchFromUrl(docPath[docPath.length - 1].url)

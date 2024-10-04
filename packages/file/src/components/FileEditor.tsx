@@ -31,15 +31,9 @@ import { useCurrentAccount } from "@/explorer/account";
 // if this tool supports the data type
 
 export const FileEditor = (props: EditorProps<any, any>) => {
-  const {
-    docUrl,
-    mainDocUrl,
-    docHeads,
-    getFakeDocPathForDocUrl,
-    activeBranchUrl,
-  } = props;
+  const { docPath, docUrl, mainDocUrl, docHeads, activeBranchUrl } = props;
 
-  const [docUIState] = useDocUIState(getFakeDocPathForDocUrl(mainDocUrl));
+  const [docUIState] = useDocUIState(docPath);
 
   const [_doc] = useDocument<FileDoc>(docUrl);
 
@@ -52,7 +46,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
     useCallback(() => {
       fetchAwaitMissing(account);
       const jacquardProjectInfo = fetchJacquardProjectInfoWithActiveBranch(
-        getFakeDocPathForDocUrl(mainDocUrl),
+        docPath,
         account,
         repo
       );
@@ -82,7 +76,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
             : { ...output, mainDocUrl: output.docUrl }
         )
       );
-    }, [account, getFakeDocPathForDocUrl, mainDocUrl, repo, activeBranchUrl])
+    }, [account, docPath, repo, mainDocUrl, activeBranchUrl])
   ).ifPending(undefined).value;
 
   if (!doc) {

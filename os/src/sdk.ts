@@ -10,5 +10,5 @@ export * from "./hooks/useTools";
 // from the SDK and use them inside other tools.
 export { hashToColor } from "./versionControl/utils";
 
-export { selectDocLink } from "./explorer/router/useRouter";
+export { selectDocLink } from "./explorer/router";
 export { Icon } from "./lib/icons";

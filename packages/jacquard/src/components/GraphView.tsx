@@ -1,4 +1,4 @@
-import { selectDocLink } from "@/explorer/router/useRouter";
+import { selectDocLink } from "@/explorer/router";
 import { EditorProps } from "@/tools";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -41,8 +41,7 @@ import { useAsyncComputed, fetchAwaitMissing } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
 
 export const GraphView = ({
-  mainDocUrl,
-  getFakeDocPathForDocUrl,
+  docPath,
 }: EditorProps<JacquardBuildMetadata, never>) => {
   const repo = useRepo();
   const account = useCurrentAccount();
@@ -51,7 +50,7 @@ export const GraphView = ({
     useCallback(() => {
       fetchAwaitMissing(account);
       const jacquardProjectInfo = fetchJacquardProjectInfoWithActiveBranch(
-        getFakeDocPathForDocUrl(mainDocUrl),
+        docPath,
         account,
         repo
       );
@@ -76,7 +75,7 @@ export const GraphView = ({
           )}
         </div>
       );
-    }, [account, getFakeDocPathForDocUrl, mainDocUrl, repo])
+    }, [account, docPath, repo])
   ).ifPending(undefined).value;
 };
 

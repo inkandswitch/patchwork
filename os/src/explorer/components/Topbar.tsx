@@ -1,5 +1,20 @@
+import { FileExportMethod, genericExportMethods } from "@/fileExports";
+import { useDataTypes } from "@/hooks/useDataTypes";
+import { FolderDoc } from "@/packages/folder";
+import { DocPath } from "@/packages/folder/datatype";
+import { dataTypeById } from "@/sdk";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shadcn/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
+import { useToast } from "@/shadcn/ui/use-toast";
+import { Tool } from "@/tools";
+import { HasVersionControlMetadata } from "@/versionControl/schema";
 import * as Automerge from "@automerge/automerge";
-import { DocLink, DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
 import { Doc, DocHandle, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import {
@@ -19,36 +34,19 @@ import {
   JACQUARD_SYNC_SERVER_STORAGE_ID,
   SyncIndicator,
 } from "./SyncIndicator";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/shadcn/ui/dropdown-menu";
-
-import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
-import { FileExportMethod, genericExportMethods } from "@/fileExports";
-import { Tool } from "@/tools";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { getHeads } from "@automerge/automerge";
-import { getUrlSafeName } from "../router/useRouter";
-import { useToast } from "@/shadcn/ui/use-toast";
-import { useDataTypes } from "@/hooks/useDataTypes";
-import { dataTypeById } from "@/sdk";
+import { getUrlSafeName } from "../router";
 
 type TopbarProps = {
   showSidebar: boolean;
   setShowSidebar: (showSidebar: boolean) => void;
-  selectedDocLink: DocLinkWithFolderPath | undefined;
-  selectDocLink: (docLink: DocLinkWithFolderPath | undefined) => void;
+  selectedDocPath: DocPath | undefined;
+  selectDocPath: (docPath: DocPath | undefined) => void;
   selectedDoc: Doc<HasVersionControlMetadata<unknown, unknown>> | undefined;
   selectedDocHandle:
     | DocHandle<HasVersionControlMetadata<unknown, unknown>>
     | undefined;
   addNewDocument: (doc: { type: string }) => void;
-  removeDocLink: (link: DocLinkWithFolderPath) => void;
+  removeDocPath: (docPath: DocPath) => void;
   tools: Tool[];
   tool: Tool;
   setToolId: (id: string) => void;
@@ -58,19 +56,20 @@ type TopbarProps = {
 export const Topbar: React.FC<TopbarProps> = ({
   showSidebar,
   setShowSidebar,
-  selectDocLink,
-  selectedDocLink,
+  selectDocPath,
+  selectedDocPath,
   selectedDoc,
   selectedDocHandle,
   tools,
   tool,
   setToolId: setToolModuleId,
-  removeDocLink,
+  removeDocPath,
   docHeadsFromTimelineSidebar,
 }) => {
   const repo = useRepo();
   const { toast } = useToast();
 
+  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
@@ -83,7 +82,12 @@ export const Topbar: React.FC<TopbarProps> = ({
   const toolsWithEditorComponent = tools.filter((tool) => tool.EditorComponent);
 
   const onClickMakeCopy = async () => {
-    if (!selectedDocHandle || !selectedDataType || !selectedDocLink) {
+    if (
+      !selectedDocHandle ||
+      !selectedDataType ||
+      !selectedDocPath ||
+      !selectedDocLink
+    ) {
       // TODO: JAH strict fix lazy
       throw new Error("something unexpected is missing idk");
     }
@@ -134,23 +138,21 @@ export const Topbar: React.FC<TopbarProps> = ({
       type: selectedDocLink.type,
     };
 
+    const folderDocPath = DocPath.parent(selectedDocPath);
+
     if (!docHeadsFromTimelineSidebar) {
       const folderHandle = repo.find<FolderDoc>(
-        selectedDocLink.folderPath[selectedDocLink.folderPath.length - 1]
+        DocPath.toLink(folderDocPath).url
       );
-      await folderHandle.whenReady();
-
-      const index = folderHandle
-        .docSync()! // TODO: JAH strict fix
-        .docs.findIndex((doc) => doc.url === selectedDocUrl);
+      const folderDoc = await folderHandle.doc();
+      const index = folderDoc!.docs.findIndex(
+        (doc) => doc.url === selectedDocUrl
+      );
       folderHandle.change((doc) => doc.docs.splice(index + 1, 0, newDocLink));
     }
 
     // TODO: we used to have a setTimeout here, see if we need to bring it back.
-    selectDocLink({
-      ...newDocLink,
-      folderPath: selectedDocLink.folderPath,
-    });
+    selectDocPath([...folderDocPath, newDocLink]);
   };
 
   const onClickExport = async (method: FileExportMethod<unknown>) => {
@@ -292,7 +294,7 @@ export const Topbar: React.FC<TopbarProps> = ({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() =>
-                  selectedDocLink && removeDocLink(selectedDocLink)
+                  selectedDocPath && removeDocPath(selectedDocPath)
                 }
               >
                 <Trash2Icon

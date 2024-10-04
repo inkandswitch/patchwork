@@ -242,15 +242,18 @@ export const replaceExtension = (filePath: string, newExtension: string) => {
 /**
  * Doc-reactive. Like repo.find, but considers the active branch.
  */
-export const fetchOmOnActiveBranch = <T>(docUrl: AutomergeUrl, repo: Repo) => {
+export const fetchOmOnCLIActiveBranch = <T>(
+  docUrl: AutomergeUrl,
+  repo: Repo
+) => {
   const config = getJacquardConfig();
   const branchUrl = config?.activeBranchUrl;
   return fetchOmOnFixedBranch<T>(docUrl, branchUrl, repo);
 };
 
-export const omOnActiveBranchPromise = async <T>(
+export const omOnCLIActiveBranchPromise = async <T>(
   docUrl: AutomergeUrl,
   repo: Repo
 ) => {
-  return asyncComputedPromise(() => fetchOmOnActiveBranch<T>(docUrl, repo));
+  return asyncComputedPromise(() => fetchOmOnCLIActiveBranch<T>(docUrl, repo));
 };

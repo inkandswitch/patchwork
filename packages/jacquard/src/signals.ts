@@ -1,4 +1,4 @@
-import { fetchFolderDocWithChildrenOnFixedBranch } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { fetchFolderDocWithMetadataOnFixedBranch } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { fetchOmOnFixedBranch } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { fetchProjectState, ProjectState } from "./getStalenessInfo";
@@ -8,7 +8,7 @@ export const fetchProjectStateFromProjectInfo = (
   { projectFolderOm, branchUrl, buildMetadataOm }: JacquardProjectInfo,
   repo: Repo
 ) => {
-  const projectFolderWithMetadata = fetchFolderDocWithChildrenOnFixedBranch(
+  const projectFolderWithMetadata = fetchFolderDocWithMetadataOnFixedBranch(
     projectFolderOm.url,
     branchUrl,
     repo

@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { uploadFile } from "./utils";
 
 import { FolderDoc } from "@/packages/folder";
-import { useFolderDocWithChildren } from "../packages/folder/hooks/useFolderDocWithChildren";
+import { useFolderDocWithMetadataOnActiveBranch } from "../packages/folder/hooks/useFolderDocWithChildren";
 import { typeOnlyAssert } from "@/utils";
 import { UIStateDoc } from "./uiState";
 import {
@@ -327,7 +327,7 @@ export function useCurrentAccountDoc(): [
 }
 
 // TODO: is it ok to load this multiple times in the UI tree? Is that extra overhead?
-export function useRootFolderDocWithChildren() {
+export function useRootFolderDocWithMetadata() {
   const [accountDoc] = useCurrentAccountDoc();
 
   // debugging aid: put root folder handle on window
@@ -340,7 +340,7 @@ export function useRootFolderDocWithChildren() {
     }
   }, [repo, accountDoc]);
 
-  return useFolderDocWithChildren(accountDoc?.rootFolderUrl);
+  return useFolderDocWithMetadataOnActiveBranch(accountDoc?.rootFolderUrl);
 }
 
 export function useSelf(): ContactDoc | undefined {

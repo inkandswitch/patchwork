@@ -18,7 +18,7 @@ import { RunResult } from "./run";
 import {
   dataTypes,
   formatFileSize,
-  omOnActiveBranchPromise,
+  omOnCLIActiveBranchPromise,
   readFileContent,
   sleep,
   waitForSync,
@@ -161,7 +161,7 @@ async function pushDir({
       let subFolderHandle: DocHandle<FolderDoc>;
       if (existingDocLink) {
         subFolderHandle = (
-          await omOnActiveBranchPromise<FolderDoc>(existingDocLink.url, repo)
+          await omOnCLIActiveBranchPromise<FolderDoc>(existingDocLink.url, repo)
         ).handle;
       } else {
         subFolderHandle = repo.create<FolderDoc>();
@@ -209,7 +209,7 @@ async function findOrCreateFolderHandle(
   let folderHandle: DocHandle<FolderDoc>;
   if (projectFolderUrl !== undefined) {
     folderHandle = (
-      await omOnActiveBranchPromise<FolderDoc>(projectFolderUrl, repo)
+      await omOnCLIActiveBranchPromise<FolderDoc>(projectFolderUrl, repo)
     ).handle;
   } else {
     // assign a folder name based on the local FS name for this folder
@@ -254,7 +254,7 @@ async function findOrCreateBuildMetadataHandle(
 
   if (buildMetadataDocUrl) {
     buildMetadataHandle = (
-      await omOnActiveBranchPromise<JacquardBuildMetadata>(
+      await omOnCLIActiveBranchPromise<JacquardBuildMetadata>(
         buildMetadataDocUrl,
         repo
       )
@@ -322,7 +322,7 @@ const pushFile = async ({
   const existingDocLink = folderDoc.docs.find((link) => link.name === fileName);
 
   if (existingDocLink) {
-    const handle = (await omOnActiveBranchPromise(existingDocLink.url, repo))
+    const handle = (await omOnCLIActiveBranchPromise(existingDocLink.url, repo))
       .handle;
     const mainUrl = existingDocLink.url;
 

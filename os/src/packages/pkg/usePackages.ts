@@ -1,9 +1,10 @@
-import { useRootFolderDocWithChildren } from "@/explorer/account";
+import { useRootFolderDocWithMetadata } from "@/explorer/account";
 import { next as A } from "@automerge/automerge";
 import { DocumentId } from "@automerge/automerge-repo";
 import { useDocuments } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PackageDoc } from "./datatype";
+import { DocPath } from "../folder/datatype";
 
 type Package = {
   module: any;
@@ -22,20 +23,18 @@ export const usePackageModulesInRootFolder = (): Package[] => {
 };
 
 const usePackageModulesInRootFolderForReal = (): Package[] => {
-  const folderDocWithMetadata = useRootFolderDocWithChildren();
-  const flatDocLinks = folderDocWithMetadata?.flatDocLinks;
+  const folderDocWithMetadata = useRootFolderDocWithMetadata();
+  const flatDocPaths = folderDocWithMetadata?.flatDocPaths;
   const [modules, setModules] = useState<Package[]>([]);
 
-  const packageDocLinks = useMemo(
-    () =>
-      flatDocLinks ? flatDocLinks.filter((link) => link.type === "pkg") : [],
-    [flatDocLinks]
-  );
-
-  const packageDocUrls = useMemo(
-    () => packageDocLinks.map((link) => link.url),
-    [packageDocLinks]
-  );
+  const packageDocUrls = useMemo(() => {
+    return flatDocPaths
+      ? flatDocPaths
+          .map(DocPath.toLink)
+          .filter((link) => link.type === "pkg")
+          .map((link) => link.url)
+      : [];
+  }, [flatDocPaths]);
   const packageDocs = useDocuments<PackageDoc>(packageDocUrls);
 
   const packageDocsRef = useRef<Record<DocumentId, PackageDoc>>();

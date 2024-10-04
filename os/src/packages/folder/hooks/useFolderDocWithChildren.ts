@@ -1,9 +1,8 @@
 import { DocMissingError, fetchMap, useAsyncComputed } from "@/async-signals";
-import { useCurrentAccount } from "@/explorer/account";
+import { Account, useCurrentAccount } from "@/explorer/account";
 import {
-  fakeDocPath,
   fetchOmOnFixedBranch,
-  fetchOmOnBranchFromPath,
+  fetchOmOnActiveBranch,
 } from "@/versionControl/signals";
 import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -11,49 +10,55 @@ import { last } from "lodash";
 import { useCallback } from "react";
 import {
   DocLink,
-  DocLinkWithFolderPath,
   DocPath,
   FolderDoc,
-  FolderDocWithChildren,
+  FolderDocMaterialized,
 } from "../datatype";
 
+/**
+ * Kinda a convenience type, bundling a (materialized) FolderDoc with
+ * some other useful stuff.
+ */
 export type FolderDocWithMetadata = {
+  doc: FolderDocMaterialized;
   rootFolderUrl: AutomergeUrl;
-  flatDocLinks: DocLinkWithFolderPath[];
-  doc: FolderDocWithChildren;
+  flatDocPaths: DocPath[];
 };
 
-// Returns a flattened list of doc links in the folder tree, as an easy lookup index.
-// Each doclink also gets annotated with its parent in the tree.
-// NB: This returns undefined until we've recursively loaded all folders in our tree.
-// The reason is that when we load a new doc, we need to decide whether to load it from an
-// existing place in our folder hierarchy, or to create a new link to it in the root folder.
-// We can't make this determination before recursively loading folder contents.
-const computeFlattenedDocLinks = ({
-  folderPath,
-  doc,
+/**
+ * Given a materialized FolderDocWithChildren (at a given DocPath),
+ * computes a flat list of all DocPaths contained in it (including
+ * nested folders).
+ */
+const flattenDocPaths = ({
+  docPath,
+  folderDoc,
 }: {
-  folderPath: AutomergeUrl[];
-  doc: FolderDocWithChildren;
-}): DocLinkWithFolderPath[] => {
-  return doc.docs.flatMap((docLink) =>
-    docLink.type === "folder" && docLink.folderContents
-      ? [
-          { ...docLink, folderPath },
-          ...(computeFlattenedDocLinks({
-            doc: docLink.folderContents,
-            folderPath: [...folderPath, docLink.url],
-          }) ?? []),
-        ]
-      : { ...docLink, folderPath }
-  );
+  docPath: DocPath;
+  folderDoc: FolderDocMaterialized;
+}): DocPath[] => {
+  return folderDoc.docs.flatMap((docLink) => {
+    const childPath = [...docPath, docLink];
+    return [
+      childPath,
+      ...(docLink.type === "folder" && docLink.folderContents
+        ? flattenDocPaths({
+            docPath: childPath,
+            folderDoc: docLink.folderContents,
+          })
+        : []),
+    ];
+  });
 };
 
-// TODO: reactive but not incremental
+/**
+ * Given a DocPath to a folder, recursively expands out the folder's
+ * contents to produce a FolderDocWithChildren.
+ */
 function fetchMaterializeFolderDoc(
   docPath: DocPath,
   fetchDocOnBranch: (docPath: DocPath) => Doc<unknown>
-): FolderDocWithChildren {
+): FolderDocMaterialized {
   try {
     const folder = fetchDocOnBranch(docPath) as Doc<FolderDoc>;
 
@@ -81,7 +86,7 @@ function fetchMaterializeFolderDoc(
       return {
         title: "Loading...",
         docs: [],
-      } as unknown as FolderDocWithChildren;
+      } as unknown as FolderDocMaterialized;
     }
 
     // Any other error gets forwarded up -- including DocLoading, which is just an indicator
@@ -90,55 +95,61 @@ function fetchMaterializeFolderDoc(
   }
 }
 
-export function fetchFolderDocWithChildren(
+export function fetchFolderDocWithMetadata(
   rootFolderUrl: AutomergeUrl,
-  getDocOnBranchFromPath: (docPath: DocPath) => Doc<unknown>
+  getDocOnActiveBranch: (docPath: DocPath) => Doc<unknown>
 ): FolderDocWithMetadata {
-  const rootDocPath = fakeDocPath({
-    url: rootFolderUrl,
-    name: "root",
-    type: "folder",
-    folderPath: [],
-  });
-  const docWithLinks = fetchMaterializeFolderDoc(
+  const rootDocPath = DocPath.forRoot(rootFolderUrl);
+  const materializedDoc = fetchMaterializeFolderDoc(
     rootDocPath,
-    getDocOnBranchFromPath
+    getDocOnActiveBranch
   );
-  const flatDocLinks = computeFlattenedDocLinks({
-    doc: docWithLinks,
-    folderPath: [rootFolderUrl],
+  const flatDocPaths = flattenDocPaths({
+    folderDoc: materializedDoc,
+    docPath: rootDocPath,
   });
   return {
-    doc: docWithLinks,
+    doc: materializedDoc,
     rootFolderUrl,
-    flatDocLinks,
+    flatDocPaths,
   };
 }
 
-export function fetchFolderDocWithChildrenOnFixedBranch(
+export function fetchFolderDocWithMetadataOnFixedBranch(
   rootFolderUrl: AutomergeUrl,
   branchUrl: AutomergeUrl | undefined,
   repo: Repo
 ): FolderDocWithMetadata {
-  return fetchFolderDocWithChildren(rootFolderUrl, (path) => {
+  return fetchFolderDocWithMetadata(rootFolderUrl, (path) => {
     const docLink = last(path) as DocLink;
     return fetchOmOnFixedBranch(docLink.url, branchUrl, repo).doc;
   });
 }
 
+export function fetchFolderDocWithMetadataOnActiveBranch(
+  rootFolderUrl: AutomergeUrl,
+  account: Account,
+  repo: Repo
+) {
+  return fetchFolderDocWithMetadata(rootFolderUrl, (docPath: DocPath) => {
+    return fetchOmOnActiveBranch(docPath, account, repo).doc;
+  });
+}
+
 // This hook recursively traverses a tree of nested folders and loads folder contents.
-export function useFolderDocWithChildren(
+export function useFolderDocWithMetadataOnActiveBranch(
   rootFolderUrl: AutomergeUrl | undefined
 ): FolderDocWithMetadata | undefined {
   const repo = useRepo();
   const account = useCurrentAccount();
   return useAsyncComputed(
     useCallback(() => {
-      if (!rootFolderUrl) return undefined;
-      const getDocOnBranchFromPath = (docPath: DocPath) => {
-        return fetchOmOnBranchFromPath(docPath, account, repo).doc;
-      };
-      return fetchFolderDocWithChildren(rootFolderUrl, getDocOnBranchFromPath);
+      if (!rootFolderUrl || !account) return undefined;
+      return fetchFolderDocWithMetadataOnActiveBranch(
+        rootFolderUrl,
+        account,
+        repo
+      );
     }, [rootFolderUrl, account, repo])
   ).ifPending(undefined).value;
 }

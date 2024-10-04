@@ -1,10 +1,7 @@
 import { Account } from "@/explorer/account";
-import { docPathString, fetchUIStateOm } from "@/explorer/uiState";
+import { fetchUIStateOm } from "@/explorer/uiState";
 import { Om } from "@/om";
-import {
-  DocLinkWithFolderPath,
-  type DocPath,
-} from "@/packages/folder/datatype";
+import { DocPath } from "@/packages/folder/datatype";
 import { canBeUndef } from "@/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
@@ -104,7 +101,7 @@ export const fetchActiveBranchInfo = (
   const uiStateOm = fetchUIStateOm(repo, account);
   const activeBranchUrl = canBeUndef(
     // We handle the case of doc.openBranches being undefined here for backwards compatibility
-    uiStateOm.doc.openBranches?.[docPathString(branchScopePath)]
+    uiStateOm.doc.openBranches?.[DocPath.toString(branchScopePath)]
   );
 
   return {
@@ -170,7 +167,7 @@ export const fetchBranchScopeAndActiveBranchInfo = (
 /**
  * Get the Om at the docPath, accounting for active branches stored in the UI state.
  */
-export const fetchOmOnBranchFromPath = <T>(
+export const fetchOmOnActiveBranch = <T>(
   docPath: DocPath,
   account: Account | undefined,
   repo: Repo
@@ -196,20 +193,4 @@ export const fetchOmOnFixedBranch = <T>(
   }
 
   return fetchOm<T>(docUrlOnBranch, repo);
-};
-
-// TODO: provisional until we get rid of DocLinkWithFolderPath. also, this is in
-// "signals" (bad name) cuz it needs to be somewhere that's safe to access from
-// cli code
-export const fakeDocPath = (
-  docLinkWithFolderPath: DocLinkWithFolderPath
-): DocPath => {
-  return [
-    ...docLinkWithFolderPath.folderPath.map((url) => ({
-      name: undefined as any,
-      type: undefined as any,
-      url,
-    })),
-    docLinkWithFolderPath,
-  ];
 };

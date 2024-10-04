@@ -20,7 +20,7 @@ export type UIStateDoc = {
   openedFoldersInSidebar: { url: AutomergeUrl; folderPath: AutomergeUrl[] }[];
 
   /** Documents in the folder hierarchy that have a branch checked out.
-   *  Map from branch scope path string (made via docPathString) to branch URL.
+   *  Map from branch scope path string (made with DocPath.toString) to branch URL.
    */
   openBranches: { [docPathString: string]: AutomergeUrl };
 
@@ -43,10 +43,6 @@ export type MainViewMode =
   | "compareWithMain";
 
 export type SidebarMode = "review" | "history" | "bot";
-
-export function docPathString(docPath: DocPath): string {
-  return docPath.map((link) => link.url).join("/");
-}
 
 export const fetchUIStateOm = (repo: Repo, account: Account | undefined) => {
   if (!account) {
@@ -103,7 +99,7 @@ const TAB_DOC_UI_STATE_SIGNALS: Record<
 export const useDocUIStateOrUndefined = (
   docPath: DocPath
 ): [DocUIState | undefined, (fn: (state: DocUIState) => void) => void] => {
-  const key = docPathString(docPath);
+  const key = DocPath.toString(docPath);
   const uiStateOm = useUIStateOm();
   const uiStateHandle = uiStateOm?.handle;
   const tabDocUIStateAtom = getTabDocUIStateAtom(key, uiStateHandle);

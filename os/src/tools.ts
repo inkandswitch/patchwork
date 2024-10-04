@@ -82,6 +82,7 @@ export const toolById = (
 };
 
 export type EditorProps<A, V> = {
+  docPath: DocPath;
   docUrl: AutomergeUrl;
   docHeads?: Heads;
   activeDiscussionIds?: string[];
@@ -108,9 +109,6 @@ export type EditorProps<A, V> = {
 
   hideInlineComments?: boolean;
   collapseContentWithoutChanges?: boolean;
-
-  // TODO: will be replaced when we have real doc paths everywhere
-  getFakeDocPathForDocUrl: (docUrl: AutomergeUrl) => DocPath;
 
   // HACK
   mainDocUrl: AutomergeUrl;

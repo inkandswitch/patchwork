@@ -1,9 +1,9 @@
-import { useAsyncComputed, fetchAwaitMissing } from "@/async-signals";
-import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
+import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
 import { useDataTypes } from "@/hooks/useDataTypes";
+import { FolderDoc } from "@/packages/folder";
+import { DocPath } from "@/packages/folder/datatype";
 import { dataTypeById } from "@/sdk";
-import { fakeDocPath } from "@/versionControl/signals";
-import { fetchOmOnBranchFromPath } from "@/versionControl/signals";
+import { fetchOmOnActiveBranch } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";
 import { useCurrentAccount } from "../account";
@@ -15,34 +15,35 @@ import { useCurrentAccount } from "../account";
 // updated once the users opens the link again.
 
 export const useSyncDocTitle = ({
-  selectedDocLink,
+  selectedDocPath,
   repo,
-  selectDocLink,
+  selectDocPath,
 }: {
-  selectedDocLink?: DocLinkWithFolderPath;
+  selectedDocPath?: DocPath;
   repo: Repo;
-  selectDocLink: (docLink: DocLinkWithFolderPath) => void;
+  selectDocPath: (docLink: DocPath) => void;
 }) => {
+  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
+
   // counter is incremented each time the title is re computed so we can detect async operations that should be aborted because they are based on old state
   const counterRef = useRef(0);
   const selectedDocTitleRef = useRef<{ url: AutomergeUrl; title?: string }>();
   const dataTypes = useDataTypes();
   const dataType = dataTypeById(dataTypes, selectedDocLink?.type);
   const account = useCurrentAccount();
-  const selectedDocPath = selectedDocLink && fakeDocPath(selectedDocLink);
 
   const selectedDoc = useAsyncComputed(
     useCallback(() => {
       fetchAwaitMissing(selectedDocPath);
-      return fetchOmOnBranchFromPath(selectedDocPath, account, repo).doc;
+      return fetchOmOnActiveBranch(selectedDocPath, account, repo).doc;
     }, [account, repo, selectedDocPath])
   ).ifPending(undefined).value;
 
   const parentFolderOm = useAsyncComputed(
     useCallback(() => {
       fetchAwaitMissing(selectedDocPath);
-      return fetchOmOnBranchFromPath<FolderDoc>(
-        selectedDocPath.slice(0, -1),
+      return fetchOmOnActiveBranch<FolderDoc>(
+        DocPath.parent(selectedDocPath),
         account,
         repo
       );
@@ -56,7 +57,7 @@ export const useSyncDocTitle = ({
     }
 
     // reset title if url has changed
-    if (selectedDocTitleRef.current?.url !== selectedDocLink?.url) {
+    if (selectedDocTitleRef.current?.url !== selectedDocLink.url) {
       selectedDocTitleRef.current = { url: selectedDocLink.url };
     }
 
@@ -90,7 +91,10 @@ export const useSyncDocTitle = ({
             existingDocLink.name = title;
 
             // update url
-            selectDocLink({ ...selectedDocLink, name: title });
+            selectDocPath([
+              ...DocPath.parent(selectedDocPath),
+              { ...selectedDocLink, name: title },
+            ]);
           }
         });
       }
@@ -98,9 +102,10 @@ export const useSyncDocTitle = ({
   }, [
     selectedDoc,
     dataType,
-    selectedDocLink,
+    selectedDocPath,
     repo,
-    selectDocLink,
+    selectDocPath,
     parentFolderOm,
+    selectedDocLink,
   ]);
 };

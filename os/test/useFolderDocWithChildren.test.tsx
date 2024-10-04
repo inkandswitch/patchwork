@@ -1,5 +1,5 @@
 import { FolderDocWithChildren } from "@/packages/folder";
-import { useFolderDocWithChildren } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { useFolderDocWithMetadataOnActiveBranch } from "@/packages/folder/hooks/useFolderDocWithChildren";
 import { AutomergeUrl, PeerId, Repo } from "@automerge/automerge-repo";
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
 import { DummyStorageAdapter } from "@automerge/automerge-repo/helpers/DummyStorageAdapter.js";
@@ -43,7 +43,7 @@ describe("useFolderDocWithChildren", () => {
         | undefined
     ) => void;
   }) => {
-    const doc = useFolderDocWithChildren(rootFolderUrl);
+    const doc = useFolderDocWithMetadataOnActiveBranch(rootFolderUrl);
     onDoc(doc);
     return null;
   };

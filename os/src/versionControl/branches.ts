@@ -1,4 +1,4 @@
-import { docPathString, UIStateDoc } from "@/explorer/uiState";
+import { UIStateDoc } from "@/explorer/uiState";
 import { Om } from "@/om";
 import { DocPath } from "@/packages/folder/datatype";
 import {
@@ -286,9 +286,9 @@ export const setActiveBranchUrl = (
     }
 
     if (branchDocUrl) {
-      uiStateDoc.openBranches[docPathString(branchScopePath)] = branchDocUrl;
+      uiStateDoc.openBranches[DocPath.toString(branchScopePath)] = branchDocUrl;
     } else {
-      delete uiStateDoc.openBranches[docPathString(branchScopePath)];
+      delete uiStateDoc.openBranches[DocPath.toString(branchScopePath)];
     }
   });
 };

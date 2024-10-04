@@ -1,17 +1,22 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { describe, expect, it } from "vitest";
-import { DocLinkWithFolderPath } from "../../packages/folder/datatype";
+import { DocLink, DocPath } from "../../packages/folder/datatype";
 import { FolderDocWithMetadata } from "../../packages/folder/hooks/useFolderDocWithChildren";
-import { getDocLinkInRootFolder } from "./getDocLinkInRootFolder";
+import { getDocPathInRootFolder } from "./getDocPathInRootFolder";
 
-const mkFile = (url: string, folderPath: string[]): DocLinkWithFolderPath => ({
+const mkFileLink = (url: string, type: string): DocLink => ({
   name: url,
   url: url as AutomergeUrl,
-  type: "file" as const,
-  folderPath: folderPath as AutomergeUrl[],
+  type,
 });
 
-describe("getDocLinkInRootFolder", () => {
+const mkFilePath = (urls: string[]): DocPath => {
+  return urls.map((url, i) =>
+    mkFileLink(url, i === urls.length - 1 ? "file" : "folder")
+  );
+};
+
+describe("getDocPathInRootFolder", () => {
   it("resolves to the nearest option if there are several", () => {
     /* Example:
      *
@@ -30,17 +35,18 @@ describe("getDocLinkInRootFolder", () => {
     const rootFolderDocWithMetadata: FolderDocWithMetadata = {
       rootFolderUrl: undefined as any,
       doc: undefined as any,
-      flatDocLinks: [
-        mkFile("Document3", ["Root Folder", "FolderB"]),
-        mkFile("Document2", ["Root Folder", "FolderB"]),
-        mkFile("Document1", ["Root Folder", "FolderA"]),
-        mkFile("Document2", ["Root Folder", "FolderA"]),
+      flatDocPaths: [
+        mkFilePath(["Root Folder", "FolderB", "Document3"]),
+        mkFilePath(["Root Folder", "FolderB", "Document2"]),
+        mkFilePath(["Root Folder", "FolderA", "Document1"]),
+        mkFilePath(["Root Folder", "FolderA", "Document2"]),
       ],
     };
 
-    const previousSelectedDocLink: DocLinkWithFolderPath = mkFile("Document1", [
+    const previousSelectedDocPath = mkFilePath([
       "Root Folder",
       "FolderA",
+      "Document1",
     ]);
 
     const urlParams = {
@@ -48,17 +54,12 @@ describe("getDocLinkInRootFolder", () => {
       type: "file",
     };
 
-    const result = getDocLinkInRootFolder(
+    const result = getDocPathInRootFolder(
       urlParams,
       rootFolderDocWithMetadata,
-      previousSelectedDocLink
+      previousSelectedDocPath
     );
 
-    expect(result).toEqual({
-      name: "Document2",
-      url: "Document2",
-      type: "file",
-      folderPath: ["Root Folder", "FolderA"],
-    });
+    expect(result).toEqual(mkFilePath(["Root Folder", "FolderA", "Document2"]));
   });
 });

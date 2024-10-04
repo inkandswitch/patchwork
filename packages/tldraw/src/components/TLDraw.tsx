@@ -166,11 +166,11 @@ const ReadOnlyTLDraw = ({
 export const SideBySide = ({
   docUrl,
   mainDocUrl,
+  docPath,
   docHeads,
   annotations,
   setSelectedAnchors,
   setHoveredAnchor,
-  getFakeDocPathForDocUrl,
 }: SideBySideProps<unknown, unknown>) => {
   const [camera, setCamera] = useState<TLCamera>();
 
@@ -185,8 +185,8 @@ export const SideBySide = ({
           onChangeCamera={setCamera}
           setSelectedAnchors={setSelectedAnchors}
           setHoveredAnchor={setHoveredAnchor}
-          getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
           mainDocUrl={mainDocUrl}
+          docPath={docPath}
         />
       </div>
       <div className="h-full flex-1 overflow-auto border-l border-l-gray-200">
@@ -201,8 +201,8 @@ export const SideBySide = ({
           onChangeCamera={setCamera}
           setSelectedAnchors={setSelectedAnchors}
           setHoveredAnchor={setHoveredAnchor}
-          getFakeDocPathForDocUrl={getFakeDocPathForDocUrl}
           mainDocUrl={mainDocUrl}
+          docPath={docPath}
         />
       </div>
     </div>
