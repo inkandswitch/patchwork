@@ -3,7 +3,7 @@ import { useDataTypes } from "@/hooks/useDataTypes";
 import { useStaticCallback } from "@/hooks/useStaticCallback";
 import { DocLink, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
-import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { FolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
 import { setActiveBranchUrl } from "@/versionControl/branches";
 import { BranchDoc } from "@/versionControl/schema";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";

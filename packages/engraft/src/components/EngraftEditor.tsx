@@ -1,6 +1,6 @@
 import { useRootFolderDocWithMetadata } from "@/explorer/account";
 import { useHandleDef } from "@/hooks/useHandleDef";
-import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { FolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
 import { Button } from "@/shadcn/ui/button";
 import { EditorProps } from "@/tools";
 import {

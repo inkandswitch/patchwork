@@ -1,7 +1,7 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { describe, expect, it } from "vitest";
 import { DocLink, DocPath } from "../../packages/folder/datatype";
-import { FolderDocWithMetadata } from "../../packages/folder/hooks/useFolderDocWithChildren";
+import { FolderDocWithMetadata } from "../../packages/folder/hooks/fetchFolderDocWithMetadata";
 import { getDocPathInRootFolder } from "./getDocPathInRootFolder";
 
 const mkFileLink = (url: string, type: string): DocLink => ({

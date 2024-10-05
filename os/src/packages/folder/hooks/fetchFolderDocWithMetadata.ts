@@ -1,4 +1,9 @@
-import { DocMissingError, fetchMap, useAsyncComputed } from "@/async-signals";
+import {
+  DocMissingError,
+  fetchAwaitMissing,
+  fetchMap,
+  useAsyncComputed,
+} from "@/async-signals";
 import { Account, useCurrentAccount } from "@/explorer/account";
 import {
   fetchOmOnFixedBranch,
@@ -38,7 +43,11 @@ const flattenDocPaths = ({
   folderDoc: FolderDocMaterialized;
 }): DocPath[] => {
   return folderDoc.docs.flatMap((docLink) => {
-    const childPath = [...docPath, docLink];
+    // folderDoc is materialized, so docLink might have
+    // folderContents; no reason to include that in the docPath.
+    const docLinkCopy = { ...docLink };
+    delete docLinkCopy.folderContents;
+    const childPath = [...docPath, docLinkCopy];
     return [
       childPath,
       ...(docLink.type === "folder" && docLink.folderContents
@@ -57,10 +66,10 @@ const flattenDocPaths = ({
  */
 function fetchMaterializeFolderDoc(
   docPath: DocPath,
-  fetchDocOnBranch: (docPath: DocPath) => Doc<unknown>
+  fetchDoc: (docPath: DocPath) => Doc<unknown>
 ): FolderDocMaterialized {
   try {
-    const folder = fetchDocOnBranch(docPath) as Doc<FolderDoc>;
+    const folder = fetchDoc(docPath) as Doc<FolderDoc>;
 
     return {
       ...folder,
@@ -69,7 +78,7 @@ function fetchMaterializeFolderDoc(
           if (link.type === "folder") {
             const folderContents = fetchMaterializeFolderDoc(
               [...docPath, link],
-              fetchDocOnBranch
+              fetchDoc
             );
             // cast is ok cuz if it's loading, we won't return result
             return { ...link, folderContents };
@@ -97,13 +106,10 @@ function fetchMaterializeFolderDoc(
 
 export function fetchFolderDocWithMetadata(
   rootFolderUrl: AutomergeUrl,
-  getDocOnActiveBranch: (docPath: DocPath) => Doc<unknown>
+  fetchDoc: (docPath: DocPath) => Doc<unknown>
 ): FolderDocWithMetadata {
   const rootDocPath = DocPath.forRoot(rootFolderUrl);
-  const materializedDoc = fetchMaterializeFolderDoc(
-    rootDocPath,
-    getDocOnActiveBranch
-  );
+  const materializedDoc = fetchMaterializeFolderDoc(rootDocPath, fetchDoc);
   const flatDocPaths = flattenDocPaths({
     folderDoc: materializedDoc,
     docPath: rootDocPath,
@@ -144,7 +150,7 @@ export function useFolderDocWithMetadataOnActiveBranch(
   const account = useCurrentAccount();
   return useAsyncComputed(
     useCallback(() => {
-      if (!rootFolderUrl || !account) return undefined;
+      fetchAwaitMissing(rootFolderUrl && account);
       return fetchFolderDocWithMetadataOnActiveBranch(
         rootFolderUrl,
         account,

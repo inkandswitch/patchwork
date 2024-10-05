@@ -119,16 +119,20 @@ export type AsyncState<T> =
 
 export type AsyncSignal<T> = Signal<AsyncState<T>>;
 
-export function asyncComputed<T>(name: string, cb: () => T): AsyncSignal<T> {
-  return computed<AsyncState<T>>(name, () => asyncSignalCallbackToState<T>(cb));
+export function asyncComputed<T>(cb: () => T): AsyncSignal<T> {
+  return computed<AsyncState<T>>("asyncComputed", () =>
+    asyncSignalCallbackToState<T>(cb)
+  );
 }
 
-/**
- * For use in (trad) async code. Waits for an async-signal callback
- * to be loaded, then resolves with the value.
- */
-export function asyncComputedPromise<T>(cb: () => T): Promise<T> {
-  const signal = asyncComputed("loadedValue", cb);
+export function asyncCall<Args extends any[], Return>(
+  fn: (...args: Args) => Return,
+  ...args: Args
+): AsyncSignal<Return> {
+  return asyncComputed(() => fn(...args));
+}
+
+export function asyncPromise<T>(signal: AsyncSignal<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     // `react` runs synchronously, but it can't unsubscribe during
     // this first run since `unsubscribe` itself isn't defined yet;
@@ -158,6 +162,21 @@ export function asyncComputedPromise<T>(cb: () => T): Promise<T> {
     }
     firstRun = false;
   });
+}
+
+/**
+ * For use in (trad) async code. Waits for an async-signal callback
+ * to be loaded, then resolves with the value.
+ */
+export function asyncComputedPromise<T>(cb: () => T): Promise<T> {
+  return asyncPromise(asyncComputed(cb));
+}
+
+export function asyncCallPromise<Args extends any[], Return>(
+  fn: (...args: Args) => Return,
+  ...args: Args
+): Promise<Return> {
+  return asyncPromise(asyncCall(fn, ...args));
 }
 
 /**

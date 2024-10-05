@@ -1,4 +1,4 @@
-import { fetchFolderDocWithMetadataOnFixedBranch } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { fetchFolderDocWithMetadataOnFixedBranch } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
 import { fetchOmOnFixedBranch } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { fetchProjectState, ProjectState } from "./getStalenessInfo";

@@ -42,7 +42,7 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
 
   const buildMetadataDocsWithPendingRefresh = asyncComputed<
     BuildMetadataDocWithBranchUrl[]
-  >("", () => {
+  >(() => {
     const projectFolder = fetchDoc<FolderDoc>(projectFolderHandle.url, repo);
 
     const versionControlMetadataOm = fetchVersionControlMetadataOm(

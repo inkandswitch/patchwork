@@ -1,4 +1,4 @@
-import { FolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { FolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
 import { objectEntries } from "@/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";

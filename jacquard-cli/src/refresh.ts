@@ -1,7 +1,7 @@
 import { asyncComputedPromise, fetchDoc } from "@/async-signals";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
-import { fetchFolderDocWithMetadata } from "@/packages/folder/hooks/useFolderDocWithChildren";
+import { fetchFolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import _, { omit } from "lodash";
 import { CommandLineArgs } from ".";
