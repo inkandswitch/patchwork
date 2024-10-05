@@ -1,5 +1,8 @@
-import { initFrom, initVersionControlMetadata, type DataType } from "@/sdk";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
+import { DataType, initFrom } from "@/datatypes";
+import {
+  HasVersionControlMetadata,
+  initVersionControlMetadata,
+} from "@/versionControl/schema";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 
 // SCHEMA

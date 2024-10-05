@@ -1,1 +1,1 @@
-export default ["os/*", "packages/*"];
+export default ["jacquard-cli", "os", "packages/*"];

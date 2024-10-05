@@ -1,13 +1,13 @@
-// vite.config.ts
 import { Generator } from "@jspm/generator";
 import react from "@vitejs/plugin-react";
+import { build } from "esbuild";
 import { globSync } from "glob";
 import { fileURLToPath } from "node:url";
 import path from "path";
-import { Plugin, defineConfig } from "vite";
+import { Plugin, UserConfig, mergeConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
-import { build } from "esbuild";
+import sharedConfig from "../vite.shared";
 
 const SERVICE_WORKER_MODULE_ID = "/service-worker.js";
 const SERVICE_WORKER_PATH = path.join(import.meta.dirname, "service-worker.js");
@@ -131,7 +131,7 @@ const generateImportMapPlugin = (): Plugin => ({
   },
 });
 
-export default defineConfig({
+export default mergeConfig(sharedConfig, {
   plugins: [
     topLevelAwait(),
     wasm(),
@@ -139,15 +139,6 @@ export default defineConfig({
     generateImportMapPlugin(),
     swPlugin(),
   ],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@automerge/automerge-wasm": path.resolve(
-        __dirname,
-        "./src/vendor/automerge-wasm"
-      ),
-    },
-  },
 
   optimizeDeps: {
     exclude: ["@syntect/wasm"],
@@ -230,4 +221,4 @@ export default defineConfig({
       NODE_ENV: "production",
     },
   },
-});
+} satisfies UserConfig);

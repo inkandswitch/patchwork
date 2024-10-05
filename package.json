@@ -16,9 +16,12 @@
       "@automerge/automerge": "2.2.9-alpha.2"
     }
   },
-"keywords": [],
+  "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
+    "@vitest/ui": "^2.1.2",
+    "vite": "^5.3.4",
+    "vite-tsconfig-paths": "^5.0.1",
     "vitest": "^2.0.5"
   }
 }
