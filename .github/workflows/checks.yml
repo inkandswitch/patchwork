@@ -13,18 +13,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18" # or your preferred Node.js version
-
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8 # or your preferred pnpm version
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18" # or your preferred Node.js version
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
 
       - name: Run TypeScript compiler
         run: pnpm tsc
+
+      - name: Run tests
+        run: pnpm test
+        # see https://stackoverflow.com/q/58858429
+        if: success() || failure()
