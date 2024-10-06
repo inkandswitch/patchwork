@@ -19,6 +19,11 @@ export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
   );
 }
 
+/**
+ * Gathered-up information about what should be shown in a Jacquard
+ * project's build graph: what heads are files at? what build runs
+ * are relevant?
+ */
 export type ProjectState = {
   references: Reference[];
   buildRuns: BuildRun[];
@@ -76,6 +81,12 @@ export const fetchProjectState = ({
   };
 };
 
+/**
+ * The result of analyzing a Jacquard build graph to determine what
+ * is up-to-date and what is stale. StaleStatus holds a list of
+ * reasons why something is stale; if something is up-to-date its
+ * StaleStatus will be empty.
+ */
 export type StalenessInfo = {
   docStatuses: Record<string, StaleStatus>; // keyed by docUrl
   buildRunStatuses: Record<string, StaleStatus>; // keyed by BuildRun id
@@ -83,6 +94,12 @@ export type StalenessInfo = {
 
 export type StaleStatus = StaleReason[];
 
+/**
+ * Staleness ultimately comes from an upstream doc changing. This
+ * gives information on that change: what the upstream doc changed
+ * from/to, and the chain of docs & build runs that connects that to
+ * the current item.
+ */
 export type StaleReason = {
   originalChangeOld: Reference;
   originalChangeNew: Reference;

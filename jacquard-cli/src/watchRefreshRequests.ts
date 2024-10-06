@@ -120,7 +120,7 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
           type: "processing",
           processorHostname: os.hostname(),
           processorHeartbeat: Date.now(),
-          buildRuns: null,
+          buildRunRefreshStates: null,
         };
       });
 
@@ -136,7 +136,7 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
 
       await refresh(repo, {
         ...args,
-        onProgress: (buildRuns) => {
+        onProgress: (buildRunRefreshStates) => {
           next.buildMetadataOm.handle.change((doc) => {
             if (doc.refreshState.type !== "processing") {
               // throw new Error("unexpected state... why are we not processing?");
@@ -150,7 +150,9 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
               return;
             }
             // turn automerge object into POJO before assigning it back to the doc
-            doc.refreshState.buildRuns = JSON.parse(JSON.stringify(buildRuns));
+            doc.refreshState.buildRunRefreshStates = JSON.parse(
+              JSON.stringify(buildRunRefreshStates)
+            );
           });
         },
       });

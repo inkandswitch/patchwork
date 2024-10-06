@@ -7,7 +7,7 @@ import _, { omit } from "lodash";
 import { CommandLineArgs } from ".";
 import { FileDoc } from "../../packages/file/src/datatype";
 import {
-  BuildRunWithProgress,
+  BuildRunRefreshState,
   JacquardBuildMetadata,
 } from "../../packages/jacquard/src/datatype";
 import {
@@ -24,7 +24,7 @@ import {
 export async function refresh(
   repo: Repo,
   args: CommandLineArgs & {
-    onProgress?: (buildRuns: BuildRunWithProgress[]) => void;
+    onProgress?: (buildRunRefreshStates: BuildRunRefreshState[]) => void;
   }
 ) {
   const { projectFolderUrl, syncServerStorageId, onProgress = () => {} } = args;
@@ -75,7 +75,7 @@ export async function refresh(
   };
 
   // collect buildRuns that are in progress
-  const buildRunsWithProgress: BuildRunWithProgress[] = Object.entries(
+  const buildRunRefreshStates: BuildRunRefreshState[] = Object.entries(
     (await getCurrentStalenessInfo()).buildRunStatuses
   ).flatMap(([buildRunId, status]) => {
     if (status.length === 0) {
@@ -89,10 +89,12 @@ export async function refresh(
       throw new Error(`Build run missing from doc: ${buildRunId}`);
     }
 
-    return [{ ...omit(buildRun, ["timestamp"]), progress: "waiting", log: [] }];
+    return [
+      { id: buildRun.id, spec: buildRun.spec, progress: "waiting", log: [] },
+    ];
   });
 
-  onProgress(buildRunsWithProgress);
+  onProgress(buildRunRefreshStates);
 
   // TODO: report what's gonna run (in unknown order)
 
@@ -117,12 +119,12 @@ export async function refresh(
             (input) => stalenessInfo.docStatuses[input.docUrl].length === 0
           )
         ) {
-          const buildRunWithProgress = buildRunsWithProgress.find(
+          const buildRunRefreshState = buildRunRefreshStates.find(
             ({ id }) => id === buildRunId
           );
-          if (buildRunWithProgress) {
-            buildRunWithProgress.progress = "running";
-            onProgress(buildRunsWithProgress);
+          if (buildRunRefreshState) {
+            buildRunRefreshState.progress = "running";
+            onProgress(buildRunRefreshStates);
           }
 
           // all inputs are up to date, so we can run this build
@@ -137,16 +139,16 @@ export async function refresh(
               // skip this progress reporting for now - it's causing perf problems
               // because: 1) logs are long strings, 2) we make a new copy of buildRuns inside of onProgress
               // instead of mutating the existing one.
-              // if (buildRunWithProgress) {
-              //   buildRunWithProgress.log.push(output);
-              //   onProgress(buildRunsWithProgress);
+              // if (buildRunRefreshState) {
+              //   buildRunRefreshState) {.log.push(output);
+              //   onProgress(buildRunRefreshStates);
               // }
             },
           });
 
-          if (buildRunWithProgress) {
-            buildRunWithProgress.progress = "done";
-            onProgress(buildRunsWithProgress);
+          if (buildRunRefreshState) {
+            buildRunRefreshState.progress = "done";
+            onProgress(buildRunRefreshStates);
           }
 
           ranSomethingThisLoop = true;

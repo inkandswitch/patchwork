@@ -124,7 +124,7 @@ export const BuildRefreshButton = ({
 
             {refreshState?.type === "processing" && (
               <div>
-                {refreshState.buildRuns?.map(
+                {refreshState.buildRunRefreshStates?.map(
                   ({ id, spec: { command, name }, progress, log }) => (
                     <div key={id} className="flex flex-col gap-2">
                       <div className="flex gap-2 items-center">
