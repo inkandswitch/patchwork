@@ -140,7 +140,7 @@ export async function refresh(
               // because: 1) logs are long strings, 2) we make a new copy of buildRuns inside of onProgress
               // instead of mutating the existing one.
               // if (buildRunRefreshState) {
-              //   buildRunRefreshState) {.log.push(output);
+              //   buildRunRefreshState.log.push(output);
               //   onProgress(buildRunRefreshStates);
               // }
             },

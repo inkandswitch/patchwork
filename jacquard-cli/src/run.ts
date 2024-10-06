@@ -29,126 +29,117 @@ const JACQUARD_DECLARE_REGEX =
 export async function run(
   repo: Repo,
   spec: BuildRunSpec,
+  // TODO: "onLogOutput" is not being used right now, cuz 1. perf
+  // problems, 2. intercepting output with interceptOutput causes
+  // problems in Node tests.
   args: CommandLineArgs & { onLogOutput?: (output: string) => void },
   wait = true
 ) {
-  const { dir, runPrefix, onLogOutput } = args;
+  const { dir, runPrefix } = args;
 
   const inputs: string[] = [...spec.explicitInputs];
   const outputs: string[] = [...spec.explicitOutputs];
 
-  await interceptOutput(
-    {
-      onStdout: (data) => {
-        onLogOutput?.(data.toString());
-      },
-      onStderr: (data) => {
-        onLogOutput?.(data.toString());
-      },
-    },
-    async () => {
-      const timestampStart = Date.now();
+  const timestampStart = Date.now();
 
-      await new Promise((resolve, reject) => {
-        const child = spawn(addPrefix(runPrefix, spec.command), {
-          shell: true,
-        });
+  await new Promise((resolve, reject) => {
+    const child = spawn(addPrefix(runPrefix, spec.command), {
+      shell: true,
+    });
 
-        child.stdout.on("data", (data) => {
-          process.stdout.write(data.toString());
-          if (spec.autoDeps.stdoutDeclared) {
-            data
-              .toString()
-              .split("\n")
-              .forEach((line: string) => {
-                const match = line.match(JACQUARD_DECLARE_REGEX);
+    child.stdout.on("data", (data) => {
+      process.stdout.write(data.toString());
+      if (spec.autoDeps.stdoutDeclared) {
+        data
+          .toString()
+          .split("\n")
+          .forEach((line: string) => {
+            const match = line.match(JACQUARD_DECLARE_REGEX);
 
-                if (match) {
-                  const { type, filePath } = match.groups!;
-                  const relativePath = `./${path.relative(dir, filePath)}`;
+            if (match) {
+              const { type, filePath } = match.groups!;
+              const relativePath = `./${path.relative(dir, filePath)}`;
 
-                  if (type === "input") {
-                    inputs.push(relativePath);
-                  } else {
-                    outputs.push(relativePath);
-                  }
-                }
-              });
-          }
-        });
-
-        child.stderr.on("data", (data) => {
-          process.stderr.write(data.toString());
-        });
-
-        child.on("close", (code) => {
-          if (code !== 0) {
-            reject(new Error(`Command failed with exit code ${code}`));
-          } else {
-            resolve(true);
-          }
-        });
-
-        child.on("error", (error) => {
-          console.error(`Error executing command: ${error.message}`);
-          reject(error);
-        });
-      });
-
-      const timestampEnd = Date.now();
-
-      if (spec.autoDeps.latex) {
-        // TODO: very fragile (tho it's always been)
-        const filePath = spec.command.split(" ")[1];
-        inputs.push(`./${filePath}`);
-        outputs.push(`./${replaceExtension(filePath, "pdf")}`);
-
-        // parse dependencies from build log
-
-        const logPath = replaceExtension(filePath, "log");
-        const logContent = fs.readFileSync(logPath, "utf8");
-
-        logContent.split("\n").map((line) => {
-          const FILE_REFRENCE_REGEX = /^<use (?<filePath>.*)\>$/;
-          const match = line.match(FILE_REFRENCE_REGEX);
-
-          if (match) {
-            inputs.push(`./${match.groups!.filePath}`);
-          }
-        });
-
-        // hack: parse bib file references
-        // todo: find a more principled solution
-
-        const sourceContent = fs.readFileSync(filePath, "utf8");
-        const BIB_REF_REGEX = /\\bibliography\{(?<filePath>[^}]*)\}/g;
-        for (const match of sourceContent.matchAll(BIB_REF_REGEX)) {
-          const texFileDir = path.dirname(filePath);
-          const bibFilePath = match.groups!.filePath;
-          const bibFilePathWithExt = path.extname(bibFilePath)
-            ? bibFilePath
-            : `${bibFilePath}.bib`;
-          inputs.push(
-            `./${path.relative(dir, path.join(texFileDir, bibFilePathWithExt))}`
-          );
-        }
-
-        // delete build log
-        fs.unlinkSync(logPath);
+              if (type === "input") {
+                inputs.push(relativePath);
+              } else {
+                outputs.push(relativePath);
+              }
+            }
+          });
       }
+    });
 
-      // todo: rethink how this works with multiple build rules
-      const buildMetadata: RunResult = {
-        spec,
-        inputs,
-        outputs,
-        timestamp: timestampEnd,
-        duration: timestampEnd - timestampStart,
-      };
+    child.stderr.on("data", (data) => {
+      process.stderr.write(data.toString());
+    });
 
-      await push(repo, args, buildMetadata, wait);
+    child.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`Command failed with exit code ${code}`));
+      } else {
+        resolve(true);
+      }
+    });
+
+    child.on("error", (error) => {
+      console.error(`Error executing command: ${error.message}`);
+      reject(error);
+    });
+  });
+
+  const timestampEnd = Date.now();
+
+  if (spec.autoDeps.latex) {
+    // TODO: very fragile (tho it's always been)
+    const filePath = spec.command.split(" ")[1];
+    inputs.push(`./${filePath}`);
+    outputs.push(`./${replaceExtension(filePath, "pdf")}`);
+
+    // parse dependencies from build log
+
+    const logPath = replaceExtension(filePath, "log");
+    const logContent = fs.readFileSync(logPath, "utf8");
+
+    logContent.split("\n").map((line) => {
+      const FILE_REFRENCE_REGEX = /^<use (?<filePath>.*)\>$/;
+      const match = line.match(FILE_REFRENCE_REGEX);
+
+      if (match) {
+        inputs.push(`./${match.groups!.filePath}`);
+      }
+    });
+
+    // hack: parse bib file references
+    // todo: find a more principled solution
+
+    const sourceContent = fs.readFileSync(filePath, "utf8");
+    const BIB_REF_REGEX = /\\bibliography\{(?<filePath>[^}]*)\}/g;
+    for (const match of sourceContent.matchAll(BIB_REF_REGEX)) {
+      const texFileDir = path.dirname(filePath);
+      const bibFilePath = match.groups!.filePath;
+      const bibFilePathWithExt = path.extname(bibFilePath)
+        ? bibFilePath
+        : `${bibFilePath}.bib`;
+      inputs.push(
+        `./${path.relative(dir, path.join(texFileDir, bibFilePathWithExt))}`
+      );
     }
-  );
+
+    // delete build log
+    fs.unlinkSync(logPath);
+  }
+
+  // todo: rethink how this works with multiple build rules
+  const buildMetadata: RunResult = {
+    spec,
+    inputs,
+    outputs,
+    timestamp: timestampEnd,
+    duration: timestampEnd - timestampStart,
+  };
+
+  await push(repo, args, buildMetadata, wait);
 }
 
 export function buildRunSpecFromArgs(args: CommandLineArgs): BuildRunSpec {
