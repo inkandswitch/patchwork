@@ -1,9 +1,10 @@
-import { asyncComputedPromise, fetchDoc } from "@/async-signals";
+import { asyncComputedPromise } from "@/async-signals";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { fetchFolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import _, { omit } from "lodash";
+import debugFactory from "debug";
+import _ from "lodash";
 import { CommandLineArgs } from ".";
 import { FileDoc } from "../../packages/file/src/datatype";
 import {
@@ -21,11 +22,14 @@ import {
   omOnCLIActiveBranchPromise,
 } from "./util";
 
+const debug = debugFactory("jacquard-cli:run");
+
 export async function refresh(
   repo: Repo,
   args: CommandLineArgs & {
     onProgress?: (buildRunRefreshStates: BuildRunRefreshState[]) => void;
-  }
+  },
+  wait = true
 ) {
   const { projectFolderUrl, syncServerStorageId, onProgress = () => {} } = args;
 
@@ -128,23 +132,27 @@ export async function refresh(
           }
 
           // all inputs are up to date, so we can run this build
-          console.log(`running build ${buildRunId}: ${buildRun.spec.command}`);
           // TODO: the _.cloneDeep here is to avoid a "Cannot create a reference
           // to an existing document object" error – is there a more brain-dead
           // way to avoid these?
-          await run(repo, _.cloneDeep(buildRun.spec), {
-            ...args,
-            onLogOutput: (output) => {
-              // don't console log in here lol!
-              // skip this progress reporting for now - it's causing perf problems
-              // because: 1) logs are long strings, 2) we make a new copy of buildRuns inside of onProgress
-              // instead of mutating the existing one.
-              // if (buildRunRefreshState) {
-              //   buildRunRefreshState.log.push(output);
-              //   onProgress(buildRunRefreshStates);
-              // }
+          await run(
+            repo,
+            _.cloneDeep(buildRun.spec),
+            {
+              ...args,
+              onLogOutput: (output) => {
+                // don't console log in here lol!
+                // skip this progress reporting for now - it's causing perf problems
+                // because: 1) logs are long strings, 2) we make a new copy of buildRuns inside of onProgress
+                // instead of mutating the existing one.
+                // if (buildRunRefreshState) {
+                //   buildRunRefreshState.log.push(output);
+                //   onProgress(buildRunRefreshStates);
+                // }
+              },
             },
-          });
+            wait
+          );
 
           if (buildRunRefreshState) {
             buildRunRefreshState.progress = "done";
@@ -157,14 +165,14 @@ export async function refresh(
       }
     }
 
-    console.log("did a loop");
+    debug("did a loop");
 
     if (!ranSomethingThisLoop) {
       break;
     }
   }
 
-  console.log("JAH refresh() done");
+  debug("refresh() done");
 
   // TODO: stretch goals:
   //   "I'm going to run these commands in this order! here's the estimated time"
