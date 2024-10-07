@@ -44,6 +44,9 @@ importers:
       command-line-args:
         specifier: ^5.2.1
         version: 5.2.1
+      debug:
+        specifier: ^4.3.7
+        version: 4.3.7
       isbinaryfile:
         specifier: ^5.0.2
         version: 5.0.2
@@ -60,6 +63,9 @@ importers:
       '@types/command-line-args':
         specifier: ^5.2.3
         version: 5.2.3
+      '@types/debug':
+        specifier: ^4.1.12
+        version: 4.1.12
       '@types/lodash':
         specifier: ^4.17.7
         version: 4.17.7
@@ -4421,6 +4427,15 @@ packages:
       supports-color:
         optional: true
 
+  debug@4.3.7:
+    resolution: {integrity: sha512-Er2nc/H7RrMXZBFCEim6TCmMk02Z8vLC2Rbi1KEBggpo0fS6l0S1nnapwmIi3yW/+GOJap1Krg4w0Hg80oCqgQ==}
+    engines: {node: '>=6.0'}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
+
   decimal.js@10.4.3:
     resolution: {integrity: sha512-VBBaLc1MgL5XpzgIP7ny5Z6Nx3UrRkIViUkPUdtl9aya5amy3De1gsUUSB1g3+3sExYNjCAsAznmukyxCb1GRA==}
 
@@ -7994,7 +8009,7 @@ snapshots:
   '@automerge/automerge-repo-network-messagechannel@2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)':
     dependencies:
       '@automerge/automerge-repo': 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)
-      debug: 4.3.6
+      debug: 4.3.7
       eventemitter3: 5.0.1
     transitivePeerDependencies:
       - '@swc/core'
@@ -8007,7 +8022,7 @@ snapshots:
     dependencies:
       '@automerge/automerge-repo': 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)
       cbor-x: 1.6.0
-      debug: 4.3.6
+      debug: 4.3.7
       eventemitter3: 5.0.1
       isomorphic-ws: 5.0.0(ws@8.18.0)
       ws: 8.18.0
@@ -8061,7 +8076,7 @@ snapshots:
       '@automerge/automerge': 2.2.9-alpha.2
       bs58check: 3.0.1
       cbor-x: 1.6.0
-      debug: 4.3.6
+      debug: 4.3.7
       eventemitter3: 5.0.1
       fast-sha256: 1.3.0
       tiny-typed-emitter: 2.1.0
@@ -8080,7 +8095,7 @@ snapshots:
       '@automerge/automerge': 2.2.9-alpha.2
       bs58check: 3.0.1
       cbor-x: 1.6.0
-      debug: 4.3.6
+      debug: 4.3.7
       eventemitter3: 5.0.1
       fast-sha256: 1.3.0
       tiny-typed-emitter: 2.1.0
@@ -8118,7 +8133,7 @@ snapshots:
       '@babel/traverse': 7.25.4
       '@babel/types': 7.25.4
       convert-source-map: 2.0.0
-      debug: 4.3.6
+      debug: 4.3.7
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -8318,7 +8333,7 @@ snapshots:
       '@babel/parser': 7.25.4
       '@babel/template': 7.25.0
       '@babel/types': 7.25.4
-      debug: 4.3.6
+      debug: 4.3.7
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -9230,7 +9245,7 @@ snapshots:
   '@eslint/eslintrc@2.1.4':
     dependencies:
       ajv: 6.12.6
-      debug: 4.3.6
+      debug: 4.3.7
       espree: 9.6.1
       globals: 13.24.0
       ignore: 5.3.2
@@ -9334,7 +9349,7 @@ snapshots:
   '@humanwhocodes/config-array@0.11.14':
     dependencies:
       '@humanwhocodes/object-schema': 2.0.3
-      debug: 4.3.6
+      debug: 4.3.7
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
@@ -11532,7 +11547,7 @@ snapshots:
       '@typescript-eslint/type-utils': 6.21.0(eslint@8.57.0)(typescript@5.5.4)
       '@typescript-eslint/utils': 6.21.0(eslint@8.57.0)(typescript@5.5.4)
       '@typescript-eslint/visitor-keys': 6.21.0
-      debug: 4.3.6
+      debug: 4.3.7
       eslint: 8.57.0
       graphemer: 1.4.0
       ignore: 5.3.2
@@ -11550,7 +11565,7 @@ snapshots:
       '@typescript-eslint/types': 6.21.0
       '@typescript-eslint/typescript-estree': 6.21.0(typescript@5.5.4)
       '@typescript-eslint/visitor-keys': 6.21.0
-      debug: 4.3.6
+      debug: 4.3.7
       eslint: 8.57.0
     optionalDependencies:
       typescript: 5.5.4
@@ -11566,7 +11581,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/typescript-estree': 6.21.0(typescript@5.5.4)
       '@typescript-eslint/utils': 6.21.0(eslint@8.57.0)(typescript@5.5.4)
-      debug: 4.3.6
+      debug: 4.3.7
       eslint: 8.57.0
       ts-api-utils: 1.3.0(typescript@5.5.4)
     optionalDependencies:
@@ -11580,7 +11595,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 6.21.0
       '@typescript-eslint/visitor-keys': 6.21.0
-      debug: 4.3.6
+      debug: 4.3.7
       globby: 11.1.0
       is-glob: 4.0.3
       minimatch: 9.0.3
@@ -11743,7 +11758,7 @@ snapshots:
 
   agent-base@6.0.2:
     dependencies:
-      debug: 4.3.6
+      debug: 4.3.7
     transitivePeerDependencies:
       - supports-color
 
@@ -11876,7 +11891,7 @@ snapshots:
       common-path-prefix: 3.0.0
       concordance: 5.0.4
       currently-unhandled: 0.4.1
-      debug: 4.3.6
+      debug: 4.3.7
       emittery: 1.0.3
       figures: 5.0.0
       globby: 13.2.2
@@ -12543,6 +12558,10 @@ snapshots:
     dependencies:
       ms: 2.1.2
 
+  debug@4.3.7:
+    dependencies:
+      ms: 2.1.3
+
   decimal.js@10.4.3: {}
 
   decode-named-character-reference@1.0.2:
@@ -12802,7 +12821,7 @@ snapshots:
       ajv: 6.12.6
       chalk: 4.1.2
       cross-spawn: 7.0.3
-      debug: 4.3.6
+      debug: 4.3.7
       doctrine: 3.0.0
       escape-string-regexp: 4.0.0
       eslint-scope: 7.2.2
@@ -13303,7 +13322,7 @@ snapshots:
     dependencies:
       '@tootallnate/once': 1.1.2
       agent-base: 6.0.2
-      debug: 4.3.6
+      debug: 4.3.7
     transitivePeerDependencies:
       - supports-color
 
@@ -13311,7 +13330,7 @@ snapshots:
     dependencies:
       '@tootallnate/once': 2.0.0
       agent-base: 6.0.2
-      debug: 4.3.6
+      debug: 4.3.7
     transitivePeerDependencies:
       - supports-color
 
@@ -13345,7 +13364,7 @@ snapshots:
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.3.6
+      debug: 4.3.7
     transitivePeerDependencies:
       - supports-color
 
@@ -14295,7 +14314,7 @@ snapshots:
   micromark@3.2.0:
     dependencies:
       '@types/debug': 4.1.12
-      debug: 4.3.6
+      debug: 4.3.7
       decode-named-character-reference: 1.0.2
       micromark-core-commonmark: 1.1.0
       micromark-factory-space: 1.1.0
@@ -14317,7 +14336,7 @@ snapshots:
   micromark@4.0.0:
     dependencies:
       '@types/debug': 4.1.12
-      debug: 4.3.6
+      debug: 4.3.7
       decode-named-character-reference: 1.0.2
       devlop: 1.1.0
       micromark-core-commonmark: 2.0.1
@@ -15738,7 +15757,7 @@ snapshots:
   socks-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.3.6
+      debug: 4.3.7
       socks: 2.8.3
     transitivePeerDependencies:
       - supports-color
@@ -16600,7 +16619,7 @@ snapshots:
   vite-node@2.0.5(@types/node@20.16.1):
     dependencies:
       cac: 6.7.14
-      debug: 4.3.6
+      debug: 4.3.7
       pathe: 1.1.2
       tinyrainbow: 1.2.0
       vite: 5.4.2(@types/node@20.16.1)

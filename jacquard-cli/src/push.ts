@@ -23,6 +23,9 @@ import {
   sleep,
   waitForSync,
 } from "./util";
+import debugFactory from "debug";
+
+const debug = debugFactory("jacquard-cli:push");
 
 export async function push(
   repo: Repo,
@@ -69,11 +72,12 @@ export async function push(
         timestamp: runResult.timestamp,
         duration: runResult.duration,
         inputs: runResult.inputs.map((inputPath) => {
-          console.log({
-            inputPath,
-          });
-          const { mainUrl, cloneHandle } =
+          const info =
             mainUrlsAndCloneHandlesByFileName[path.basename(inputPath)];
+          if (!info) {
+            throw new Error(`Could not find info for input ${inputPath}`);
+          }
+          const { mainUrl, cloneHandle } = info;
           return {
             docUrl: mainUrl,
             path: inputPath,
@@ -81,8 +85,12 @@ export async function push(
           };
         }),
         outputs: runResult.outputs.map((outputPath) => {
-          const { mainUrl, cloneHandle } =
+          const info =
             mainUrlsAndCloneHandlesByFileName[path.basename(outputPath)];
+          if (!info) {
+            throw new Error(`Could not find info for output ${outputPath}`);
+          }
+          const { mainUrl, cloneHandle } = info;
           return {
             docUrl: mainUrl,
             path: outputPath,
@@ -95,7 +103,7 @@ export async function push(
   }
 
   if (projectFolderUrl) {
-    console.log(`Updated files in existing folder ${projectFolderUrl}`);
+    debug(`Updated files in existing folder ${projectFolderUrl}`);
   } else {
     console.log(`Created new folder at ${folderHandle.url}`);
     const { documentId } = parseAutomergeUrl(folderHandle.url);
@@ -139,7 +147,7 @@ async function pushDir({
   >;
   folderHandle: DocHandle<FolderDoc>;
 }) {
-  console.log(`Pushing dir: ${dir}`);
+  debug(`Pushing dir: ${dir}`);
 
   const files = fs.readdirSync(dir).sort();
 
@@ -216,7 +224,7 @@ async function findOrCreateFolderHandle(
     const projectName = path.basename(process.cwd());
 
     folderHandle = repo.create();
-    console.log(`Created new folder: ${folderHandle.url}`);
+    debug(`Created new folder: ${folderHandle.url}`);
     folderHandle.change((d) => {
       d.title = projectName;
       d.docs = [];
@@ -301,9 +309,7 @@ const pushFile = async ({
 
   const fileSize = fs.statSync(filePath).size;
   const formattedSize = formatFileSize(fileSize);
-  console.log(
-    `Pushing ${fileContent.type} file (${formattedSize}): ${filePath}`
-  );
+  debug(`Pushing ${fileContent.type} file (${formattedSize}): ${filePath}`);
 
   const fileExtension = path.extname(filePath).slice(1);
   const fileName = path.basename(filePath);
@@ -346,7 +352,7 @@ const pushFile = async ({
 
     return { handle, mainUrl, didChange };
   } else {
-    console.log("Creating new file...");
+    debug("Creating new file...");
 
     const dataType =
       dataTypes.find((dt) => dt.unixFileExtensions?.includes(fileExtension)) ??

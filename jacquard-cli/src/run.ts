@@ -5,7 +5,10 @@ import path from "path";
 import { BuildRunSpec } from "../../packages/jacquard/src/datatype.js";
 import { CommandLineArgs } from "./index.js";
 import { push } from "./push.js";
-import { addPrefix, interceptOutput, replaceExtension } from "./util.js";
+import { addPrefix, replaceExtension } from "./util.js";
+import debugFactory from "debug";
+
+const debug = debugFactory("jacquard-cli:run");
 
 /**
  * RunResult bundles information about how running a process went. It's how
@@ -43,6 +46,7 @@ export async function run(
   const timestampStart = Date.now();
 
   await new Promise((resolve, reject) => {
+    debug(`Running command: ${spec.command}`);
     const child = spawn(addPrefix(runPrefix, spec.command), {
       shell: true,
     });
