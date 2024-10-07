@@ -1,4 +1,4 @@
-name: TypeScript Check
+name: TypeScript & Vitest Check
 
 on:
   push:
