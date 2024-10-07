@@ -31,44 +31,44 @@ export type PatchworkDocLinkSpec = {
   url_linksTo: unknown;
 };
 
-export async function checkPatchworkFolder(
+export async function readPatchworkFolder(
   folderUrl: AutomergeUrl,
-  expected: PatchworkFolderSpec,
   repo: Repo
-) {
+): Promise<PatchworkFolderSpec> {
   const folderHandle = repo.find<FolderDoc>(folderUrl);
   const folderDoc = await folderHandle.doc();
   if (!folderDoc) {
     throw new Error("Folder doc not found");
   }
-  expect(folderDoc.title).toBe(expected.title);
-  expect(folderDoc.docs.length).toBe(expected.docs.length);
-  for (let i = 0; i < expected.docs.length; i++) {
-    const expectedDocLink = expected.docs[i];
-    const docLink = folderDoc.docs[i];
-    expect(docLink.name).toBe(expectedDocLink.name);
-    expect(docLink.type).toBe(expectedDocLink.type);
-    if (docLink.type === "folder") {
-      await checkPatchworkFolder(
-        docLink.url,
-        expectedDocLink.url_linksTo as PatchworkFolderSpec,
-        repo
-      );
-    } else {
-      await checkPatchworkDoc(
-        docLink.url,
-        docLink.type,
-        expectedDocLink.url_linksTo,
-        repo
-      );
-    }
-  }
+  return {
+    title: folderDoc.title,
+    docs: await Promise.all(
+      folderDoc.docs.map(async (docLink) => {
+        if (docLink.type === "folder") {
+          return {
+            name: docLink.name,
+            type: docLink.type,
+            url_linksTo: await readPatchworkFolder(docLink.url, repo),
+          };
+        } else {
+          return {
+            name: docLink.name,
+            type: docLink.type,
+            url_linksTo: await readPatchworkDoc(
+              docLink.url,
+              docLink.type,
+              repo
+            ),
+          };
+        }
+      })
+    ),
+  };
 }
 
-export async function checkPatchworkDoc(
+export async function readPatchworkDoc(
   url: AutomergeUrl,
   type: string,
-  expected: unknown,
   repo: Repo
 ) {
   const handle = repo.find(url);
@@ -78,17 +78,19 @@ export async function checkPatchworkDoc(
   }
   const docAsFile = doc as FileDoc;
   if (type === "file" && docAsFile.content.type === "link") {
-    const expectedAsFile = expected as FileDoc;
-    expect(docAsFile.name).toBe(expectedAsFile.name);
-    expect(docAsFile.type).toBe(expectedAsFile.type);
-    expect(docAsFile.content.type).toBe(expectedAsFile.content.type);
     const response = await fetch(docAsFile.content.url);
     const blob = await response.blob();
     const arrayBuffer = await blob.arrayBuffer();
-    const actual = new Uint8Array(arrayBuffer);
-    expect(actual).toEqual((expectedAsFile.content as any).url_linksTo);
+    const array = new Uint8Array(arrayBuffer);
+    return {
+      ...docAsFile,
+      content: {
+        type: "link",
+        url_linksTo: array,
+      },
+    };
   } else {
-    expect(doc).toEqual(expected);
+    return doc;
   }
 }
 

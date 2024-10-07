@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { FileDoc } from "../../packages/file/src/datatype";
 import { CommandLineArgs } from "../src";
 import { push } from "../src/push";
@@ -6,10 +6,10 @@ import {
   PatchworkFolderSpec,
   UnixFolderContentsSpec,
   binaryData,
-  checkPatchworkFolder,
   createPatchworkFolder,
   createUnixFolder,
   makeRepo,
+  readPatchworkFolder,
 } from "./utils";
 
 async function checkPush({
@@ -41,7 +41,7 @@ async function checkPush({
 
   // check
   expectedChange(beforePatchwork);
-  await checkPatchworkFolder(folderUrl, beforePatchwork, repo);
+  expect(await readPatchworkFolder(folderUrl, repo)).toEqual(beforePatchwork);
 }
 
 describe("push", () => {
