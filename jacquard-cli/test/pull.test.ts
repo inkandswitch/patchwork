@@ -1,18 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { FileDoc } from "../../packages/file/src/datatype";
 import { CommandLineArgs } from "../src";
-import { push } from "../src/push";
+import { pull } from "../src/pull";
 import {
   PatchworkFolderSpec,
   UnixFolderContentsSpec,
-  binaryData,
-  checkPatchworkFolder,
   createPatchworkFolder,
   createUnixFolder,
   makeRepo,
   readUnixFolder,
 } from "./utils";
-import { pull } from "../src/pull";
 
 async function checkPull({
   beforePatchwork,

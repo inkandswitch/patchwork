@@ -48,6 +48,7 @@ export async function run(
   await new Promise((resolve, reject) => {
     debug(`Running command: ${spec.command}`);
     const child = spawn(addPrefix(runPrefix, spec.command), {
+      cwd: dir,
       shell: true,
     });
 
