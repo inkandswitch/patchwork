@@ -87,6 +87,7 @@ const useTimelineItems = (
     branchScopeVersionControlMetadataOm,
     isRealBranchScope,
     originalUrl,
+    cloneMap,
   } = branchScopeAndActiveBranchInfo;
 
   // BranchScopeAndActiveBranchInfo updates every time the document changes because it contains an Om of the current document
@@ -102,6 +103,7 @@ const useTimelineItems = (
         branchScopeVersionControlMetadataOm,
         isRealBranchScope,
         originalUrl,
+        cloneMap,
       }),
       [
         activeBranchOm,
@@ -111,6 +113,7 @@ const useTimelineItems = (
         branchScopeVersionControlMetadataOm,
         isRealBranchScope,
         originalUrl,
+        cloneMap,
       ]
     );
 

@@ -7,6 +7,7 @@ import {
 } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { JacquardBuildMetadata } from "./datatype";
+import { DataType } from "@/sdk";
 
 export type JacquardProjectInfo = {
   branchUrl: AutomergeUrl | undefined;
@@ -21,12 +22,14 @@ export type JacquardProjectInfo = {
 export const fetchJacquardProjectInfoWithActiveBranch = (
   docPath: DocPath,
   account: Account,
-  repo: Repo
+  repo: Repo,
+  dataTypes: DataType[]
 ) => {
   const { activeBranchOm, branchScopeOm } = fetchBranchScopeAndActiveBranchInfo(
     docPath,
     account,
-    repo
+    repo,
+    dataTypes
   );
 
   const maybeProjectFolderOm = branchScopeOm as Om<FolderDoc>;

@@ -24,6 +24,7 @@ import { ImageFileDoc, ImageFileViewer } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
 import { useCurrentAccount } from "@/explorer/account";
+import { useDataTypes } from "@/sdk";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -41,6 +42,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
 
   const repo = useRepo();
   const account = useCurrentAccount();
+  const dataTypes = useDataTypes();
 
   const outputFiles = useAsyncComputed(
     useCallback(() => {
@@ -48,7 +50,8 @@ export const FileEditor = (props: EditorProps<any, any>) => {
       const jacquardProjectInfo = fetchJacquardProjectInfoWithActiveBranch(
         docPath,
         account,
-        repo
+        repo,
+        dataTypes
       );
       if (!jacquardProjectInfo) {
         return;
@@ -76,7 +79,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
             : { ...output, mainDocUrl: output.docUrl }
         )
       );
-    }, [account, docPath, repo, mainDocUrl, activeBranchUrl])
+    }, [account, docPath, repo, dataTypes, mainDocUrl, activeBranchUrl])
   ).ifPending(undefined).value;
 
   if (!doc) {

@@ -180,6 +180,7 @@ const NodeActiveBranchInfo = (props: NodeRendererProps<NodeData>) => {
   const docLink = DocPath.toLink(docPath);
   const repo = useRepo();
   const account = useCurrentAccount();
+  const dataTypes = useDataTypes();
 
   return useAsyncComputed(() => {
     // For performance reasons, we only show the active branch on
@@ -199,7 +200,12 @@ const NodeActiveBranchInfo = (props: NodeRendererProps<NodeData>) => {
       repo
     )?.doc;
     if (versionControlMetadataDoc?.isBranchScope) {
-      const { activeBranchOm } = fetchActiveBranchInfo(docPath, account, repo);
+      const { activeBranchOm } = fetchActiveBranchInfo(
+        docPath,
+        account,
+        repo,
+        dataTypes
+      );
       const activeBranchName = activeBranchOm?.doc.name ?? "Main";
       return (
         <div className="text-xs text-gray-500 flex items-center gap-1">
@@ -320,7 +326,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       const srcUrl = srcLink.url;
       const srcParentPath = DocPath.parent(srcPath);
       const srcParentOm = await asyncComputedPromise(() =>
-        fetchOmOnActiveBranch<FolderDoc>(srcParentPath, account, repo)
+        fetchOmOnActiveBranch<FolderDoc>(
+          srcParentPath,
+          account,
+          repo,
+          dataTypes
+        )
       );
       const dragItemIndex = srcParentOm.doc.docs.findIndex(
         (item) => item.url === DocPath.toLink(dragNode.data.docPath).url
@@ -334,7 +345,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ? DocPath.forRoot(rootFolderUrl)
           : parentNode.data.docPath;
       const dstParentOm = await asyncComputedPromise(() =>
-        fetchOmOnActiveBranch<FolderDoc>(dstParentPath, account, repo)
+        fetchOmOnActiveBranch<FolderDoc>(
+          dstParentPath,
+          account,
+          repo,
+          dataTypes
+        )
       );
 
       // Time for the subtlety listed under #3 above...
@@ -342,7 +358,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         const srcBranchInfo = fetchBranchScopeAndActiveBranchInfo(
           srcPath,
           account,
-          repo
+          repo,
+          dataTypes
         );
         if (
           srcBranchInfo.activeBranchOm && // we're on a branch
@@ -351,7 +368,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           const dstBranchInfo = fetchBranchScopeAndActiveBranchInfo(
             dstParentPath,
             account,
-            repo
+            repo,
+            dataTypes
           );
           if (
             dstBranchInfo.activeBranchOm?.url !==
@@ -412,11 +430,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
 
     const docOm = await asyncComputedPromise(() =>
-      fetchOmOnActiveBranch<FolderDoc>(docPath, account, repo)
+      fetchOmOnActiveBranch<FolderDoc>(docPath, account, repo, dataTypes)
     );
     const parentPath = DocPath.parent(docPath);
     const parentOm = await asyncComputedPromise(() =>
-      fetchOmOnActiveBranch<FolderDoc>(parentPath, account, repo)
+      fetchOmOnActiveBranch<FolderDoc>(parentPath, account, repo, dataTypes)
     );
 
     // rename doc link

@@ -9,7 +9,10 @@ import { Toaster } from "@/shadcn/ui/toaster";
 import { toolById, toolsForDataType } from "@/tools";
 import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { fetchOmOnActiveBranch } from "@/versionControl/signals";
+import {
+  fetchBranchScopeAndActiveBranchInfo,
+  fetchOmOnActiveBranch,
+} from "@/versionControl/signals";
 import * as Automerge from "@automerge/automerge";
 import {
   useDocument,
@@ -33,7 +36,6 @@ import { Topbar } from "./Topbar";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();
-  const currentAccount = useCurrentAccount();
   const [accountDoc] = useCurrentAccountDoc();
 
   const rootFolderData = useRootFolderDocWithMetadata();
@@ -133,9 +135,28 @@ export const Explorer: React.FC = () => {
         parentFolderDocPath = DocPath.parent(selectedDocPath);
       }
 
-      const parentFolderBranchedOm = await asyncComputedPromise(() =>
-        fetchOmOnActiveBranch<FolderDoc>(parentFolderDocPath, account, repo)
-      );
+      const branchScopeAndActiveBranchInfoOfParentFolder =
+        await asyncComputedPromise(() =>
+          fetchBranchScopeAndActiveBranchInfo<FolderDoc>(
+            parentFolderDocPath,
+            account,
+            repo,
+            dataTypes
+          )
+        );
+
+      const { activeBranchOm } = branchScopeAndActiveBranchInfoOfParentFolder;
+
+      // If we are on a branch add an entry to the clone map that maps
+      // the newly create document to itself
+      if (activeBranchOm) {
+        activeBranchOm.handle.change((branchDoc) => {
+          branchDoc.clones[newDocHandle.url] = {
+            url: newDocHandle.url,
+            baseHeads: [],
+          };
+        });
+      }
 
       const newDocLink = {
         url: newDocHandle.url,
@@ -143,9 +164,11 @@ export const Explorer: React.FC = () => {
         name: "Untitled document",
       };
 
-      parentFolderBranchedOm.handle.change((folderDoc) => {
-        folderDoc.docs.unshift(newDocLink);
-      });
+      branchScopeAndActiveBranchInfoOfParentFolder.cloneOrMainOm.handle.change(
+        (folderDoc) => {
+          folderDoc.docs.unshift(newDocLink);
+        }
+      );
 
       selectDocPath([...parentFolderDocPath, newDocLink]);
     },
@@ -195,7 +218,12 @@ export const Explorer: React.FC = () => {
     const docLink = DocPath.toLink(docPath);
     const parentFolderDocPath = DocPath.parent(docPath);
     const parentFolderOm = await asyncComputedPromise(() =>
-      fetchOmOnActiveBranch<FolderDoc>(parentFolderDocPath, account, repo)
+      fetchOmOnActiveBranch<FolderDoc>(
+        parentFolderDocPath,
+        account,
+        repo,
+        dataTypes
+      )
     );
     const parentFolderDoc = parentFolderOm.doc;
     const itemIndex = parentFolderDoc.docs.findIndex(

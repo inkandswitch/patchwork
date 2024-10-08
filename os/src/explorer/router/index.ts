@@ -106,6 +106,13 @@ export { parseUrl, getUrlSafeName } from "./urls";
  *  - change the branch, see that it's correctly reflected in the url
  *    of the other
  *
+ * - create a document on a branch
+ *  - check it out main to see that the it redirects to a 404 page
+ * - create a document on main
+ *  - check out a previously created branch to see that it redirects to a 404 page
+ *
+ * - copy and paste an url that points to a 404 page and see that it loads correctly
+ *
  */
 
 export const useRouter = ({
@@ -179,23 +186,25 @@ export const useRouter = ({
         ? branchDoc.branchScopeUrl
         : urlParams.branchScopeUrl;
 
+      const isBranchScopeASeparateDoc = branchScopeUrl !== urlParams.url;
+
+      // hack: we don't know the dataType of the branch scope but in practice we only have two cases
+      // - branchScope is the document itself -> type of document
+      // - branchscope is a folder that contains the document -> "folder"
+      const branchScopeType = isBranchScopeASeparateDoc
+        ? "folder"
+        : urlParams.type;
+
+      const branchScopePathInRootFolder = branchScopeUrl
+        ? getDocPathInRootFolder(
+            { type: branchScopeType, url: branchScopeUrl },
+            rootFolderDocWithMetadata,
+            selectedDocPath
+          )
+        : undefined;
+
       // make sure that the branch scope doc is in the root folder and that the right branch is checked out
       if (branchScopeUrl) {
-        const isBranchScopeASeparateDoc = branchScopeUrl !== urlParams.url;
-
-        // hack: we don't know the dataType of the branch scope but in practice we only have two cases
-        // - branchScope is the document itself -> type of document
-        // - branchscope is a folder that contains the document -> "folder"
-        const branchScopeType = isBranchScopeASeparateDoc
-          ? "folder"
-          : urlParams.type;
-
-        const branchScopePathInRootFolder = getDocPathInRootFolder(
-          { type: branchScopeType, url: branchScopeUrl },
-          rootFolderDocWithMetadata,
-          selectedDocPath
-        );
-
         if (!branchScopePathInRootFolder) {
           const folderDataType = dataTypeById(datatypes, "folder")!;
 
@@ -257,23 +266,39 @@ export const useRouter = ({
       );
 
       if (!docPath) {
-        const docLink = {
-          type: urlParams.type,
-          // The name will be synced in here once the doc loads
-          name: "Loading...",
-          url: urlParams.url,
-        };
+        // special case: the url references a branch scope that doesn't contain the referenced docUrl
+        // -> create a doc link that will lead to a 404 page
+        if (branchScopePathInRootFolder) {
+          const dataType = dataTypeById(datatypes, urlParams.type);
+          const doc = await repo.find(urlParams.url).doc();
+          const title = (await dataType?.getTitle(doc, repo)) ?? "Unknown";
 
-        repo
-          .find<FolderDoc>(rootFolderDocWithMetadata.rootFolderUrl)
-          .change((doc) => {
-            doc.docs.unshift(docLink);
+          docPath = branchScopePathInRootFolder.concat({
+            type: urlParams.type,
+            name: title,
+            url: urlParams.url,
           });
 
-        docPath = [
-          ...DocPath.forRoot(rootFolderDocWithMetadata.rootFolderUrl),
-          docLink,
-        ];
+          // ... otherwise add the doc to the root folder
+        } else {
+          const docLink = {
+            type: urlParams.type,
+            // The name will be synced in here once the doc loads
+            name: "Loading...",
+            url: urlParams.url,
+          };
+
+          repo
+            .find<FolderDoc>(rootFolderDocWithMetadata.rootFolderUrl)
+            .change((doc) => {
+              doc.docs.unshift(docLink);
+            });
+
+          docPath = [
+            ...DocPath.forRoot(rootFolderDocWithMetadata.rootFolderUrl),
+            docLink,
+          ];
+        }
       }
 
       selectDocPath(docPath);
