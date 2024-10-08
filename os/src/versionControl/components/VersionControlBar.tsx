@@ -184,16 +184,37 @@ export const VersionControlBar = ({
   const isInsideBranchScope =
     isRealBranchScope && branchScopeOm?.url !== docLink.url;
 
+  // const moveCurrentChangesToBranch = () => {
+  //   if (!isMarkdownDoc(doc))
+  //     throw new Error(
+  //       "No content to move to branch; this only works for MarkdownDoc now"
+  //     );
+
+  //   // todo: only pull in changes the author made themselves?
+  //   const latestText = doc.content;
+  //   const textBeforeEditSession = A.view(doc, sessionStartHeads).content;
+
+  //   // revert content of main to before edit session started
+  //   handle.change((doc) => {
+  //     A.updateText(doc, ["content"], textBeforeEditSession);
+  //   });
+
+  //   // Branch off after the revert is done -- this means that our
+  //   // change to add back the edits won't be clobbered when we merge
+  //   const branchHandle = handleCreateBranch();
+  //   branchHandle.change((doc) => {
+  //     A.updateText(doc, ["content"], latestText);
+  //   });
+
+  //   setSessionStartHeads(A.getHeads(doc));
+  //   setIsHoveringYankToBranchOption(false);
+  // };
+
   const jacquardProjectInfo = useAsyncComputed(
     useCallback(() => {
       fetchAwaitMissing(account);
-      return fetchJacquardProjectInfoWithActiveBranch(
-        docPath,
-        account,
-        repo,
-        dataTypes
-      );
-    }, [account, dataTypes, docPath, repo])
+      return fetchJacquardProjectInfoWithActiveBranch(docPath, account, repo);
+    }, [account, docPath, repo])
   ).ifPending(undefined).value;
 
   const projectState = useAsyncComputed(

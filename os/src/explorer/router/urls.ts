@@ -41,10 +41,6 @@ export const toUrl = (docLinkOrUrlParams: DocLink | URLParams): string => {
   return `${baseUrl}?${searchParams.toString()}`;
 };
 
-export const toHashUrl = (docLink: DocLink): string => {
-  return `${window.location.origin}/#${toUrl(docLink)}`;
-};
-
 // Turn names into a readable url safe string
 // - replaces any sequence of alpha numeric characters with a single "-"
 // - limits length to 100 characters

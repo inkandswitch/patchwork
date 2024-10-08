@@ -39,14 +39,12 @@ import { fetchJacquardProjectInfoWithActiveBranch } from "../hooks";
 import { fetchProjectStateFromProjectInfo } from "../signals";
 import { useAsyncComputed, fetchAwaitMissing } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
-import { useDataTypes } from "@/sdk";
 
 export const GraphView = ({
   docPath,
 }: EditorProps<JacquardBuildMetadata, never>) => {
   const repo = useRepo();
   const account = useCurrentAccount();
-  const dataTypes = useDataTypes();
 
   return useAsyncComputed(
     useCallback(() => {
@@ -54,8 +52,7 @@ export const GraphView = ({
       const jacquardProjectInfo = fetchJacquardProjectInfoWithActiveBranch(
         docPath,
         account,
-        repo,
-        dataTypes
+        repo
       );
       if (!jacquardProjectInfo) {
         return "Cannot find Jacquard project info";

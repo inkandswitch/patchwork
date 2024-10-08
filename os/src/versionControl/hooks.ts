@@ -7,7 +7,6 @@ import {
   BranchScopeAndActiveBranchInfo,
   fetchBranchScopeAndActiveBranchInfo,
 } from "./signals";
-import { useDataTypes } from "@/sdk";
 
 /**
  * Given a doc path representing current selected doc, resolve a
@@ -21,13 +20,11 @@ export const useBranchScopeAndActiveBranchInfo = (
 ): BranchScopeAndActiveBranchInfo | undefined => {
   const repo = useRepo();
   const account = useCurrentAccount();
-  const dataTypes = useDataTypes();
   const branchScopeAndActiveBranchInfo = useAsyncComputed(
     useCallback(
       () =>
-        docPath &&
-        fetchBranchScopeAndActiveBranchInfo(docPath, account, repo, dataTypes),
-      [docPath, account, repo, dataTypes]
+        docPath && fetchBranchScopeAndActiveBranchInfo(docPath, account, repo),
+      [docPath, account, repo]
     )
   ).ifPending(undefined).value;
 
@@ -48,7 +45,6 @@ export const useBranchScopeAndActiveBranchInfo = (
   const isRealBranchScope = branchScopeAndActiveBranchInfo?.isRealBranchScope;
   const originalUrl = branchScopeAndActiveBranchInfo?.originalUrl;
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
-  const cloneMap = branchScopeAndActiveBranchInfo?.cloneMap;
 
   // memoize branchOms and branchScopePath
 
@@ -78,8 +74,7 @@ export const useBranchScopeAndActiveBranchInfo = (
       isRealBranchScope === undefined ||
       originalUrl === undefined ||
       cloneOrMainOm === undefined ||
-      baseHeads === undefined ||
-      cloneMap === undefined
+      baseHeads === undefined
     ) {
       return;
     }
@@ -94,7 +89,6 @@ export const useBranchScopeAndActiveBranchInfo = (
       isRealBranchScope,
       originalUrl,
       cloneOrMainOm,
-      cloneMap,
     };
   }, [
     activeBranchOm,
@@ -106,7 +100,6 @@ export const useBranchScopeAndActiveBranchInfo = (
     isRealBranchScope,
     originalUrl,
     cloneOrMainOm,
-    cloneMap,
   ]);
 };
 

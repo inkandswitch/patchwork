@@ -1,15 +1,13 @@
 import { Account } from "@/explorer/account";
 import { fetchUIStateOm } from "@/explorer/uiState";
 import { Om } from "@/om";
-import { DocLink, DocPath } from "@/packages/folder/datatype";
+import { DocPath } from "@/packages/folder/datatype";
 import { canBeUndef } from "@/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { fetchDoc, fetchMap, fetchOm, fetchParallel } from "../async-signals";
-import { DataType, dataTypeById } from "../datatypes";
+import { fetchDoc, fetchOm, fetchMap } from "../async-signals";
 import {
   BranchDoc,
-  DocCloneMap,
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
 } from "./schema";
@@ -93,18 +91,12 @@ export type ActiveBranchInfo = {
    * undefined means "main"
    */
   activeBranchOm: Om<BranchDoc> | undefined;
-
-  // when there is no active branch an artificial cloneMap is generated
-  // of all the files contained in the branch scope doc that map the doc urls to themselves.
-  // The clone map is useful for checking if the currently checked out version contains a doc or not.
-  cloneMap: DocCloneMap;
 };
 
 export const fetchActiveBranchInfo = (
   branchScopePath: DocPath,
   account: Account | undefined,
-  repo: Repo,
-  dataTypes: DataType[]
+  repo: Repo
 ): ActiveBranchInfo => {
   const uiStateOm = fetchUIStateOm(repo, account);
   const activeBranchUrl = canBeUndef(
@@ -112,66 +104,10 @@ export const fetchActiveBranchInfo = (
     uiStateOm.doc.openBranches?.[DocPath.toString(branchScopePath)]
   );
 
-  let activeBranchOm: Om<BranchDoc> | undefined;
-  let cloneMap: DocCloneMap | undefined;
-
-  if (activeBranchUrl) {
-    activeBranchOm = fetchOm<BranchDoc>(activeBranchUrl, repo);
-    cloneMap = activeBranchOm.doc.clones;
-  } else {
-    branchScopePath;
-    const docLink = branchScopePath[branchScopePath.length - 1];
-    const url = docLink.url;
-    let type = docLink.type;
-
-    // dirty hack: remove once we have real doc paths
-    if (!type) {
-      const doc = fetchDoc(url, repo);
-      if ("docs" in doc && Array.isArray(doc.docs)) {
-        type = "folder";
-      }
-    }
-
-    cloneMap = { [url]: { url, baseHeads: [] } };
-    const linkedDocs = fetchAllLinkedDocLinks(repo, url, type, dataTypes);
-
-    for (const { url } of linkedDocs) {
-      cloneMap[url] = { url, baseHeads: [] };
-    }
-  }
-
   return {
-    activeBranchOm,
-    cloneMap,
+    activeBranchOm:
+      activeBranchUrl && fetchOm<BranchDoc>(activeBranchUrl, repo),
   };
-};
-
-export const fetchAllLinkedDocLinks = (
-  repo: Repo,
-  url: AutomergeUrl,
-  dataTypeId: string,
-  dataTypes: DataType[]
-): DocLink[] => {
-  const doc = fetchDoc(url, repo);
-
-  const links = dataTypeById(dataTypes, dataTypeId)?.links;
-  if (!links) {
-    return [];
-  }
-
-  const directLinks = links(doc);
-
-  return fetchParallel(
-    directLinks.map((link) => () => {
-      const childLinks = fetchAllLinkedDocLinks(
-        repo,
-        link.url,
-        link.type,
-        dataTypes
-      );
-      return [link, ...childLinks].flat();
-    })
-  ).flat();
 };
 
 export const fetchResolveUrlOnFixedBranch = (
@@ -188,33 +124,27 @@ export const fetchResolveUrlOnFixedBranch = (
   return cloneEntry ?? { url, baseHeads: undefined };
 };
 
-export type BranchScopeAndActiveBranchInfo<
-  T extends HasVersionControlMetadata = HasVersionControlMetadata
-> = BranchScopeInfo &
+export type BranchScopeAndActiveBranchInfo = BranchScopeInfo &
   ActiveBranchInfo & {
     baseHeads: Automerge.Heads;
     originalUrl: AutomergeUrl;
-    cloneOrMainOm: Om<T>;
+    cloneOrMainOm: Om<HasVersionControlMetadata>;
   };
 
 const EMPTY_HEADS: Automerge.Heads = [];
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.
-export const fetchBranchScopeAndActiveBranchInfo = <
-  T extends HasVersionControlMetadata = HasVersionControlMetadata
->(
+export const fetchBranchScopeAndActiveBranchInfo = (
   docPath: DocPath,
   account: Account | undefined,
-  repo: Repo,
-  dataTypes: DataType[]
-): BranchScopeAndActiveBranchInfo<T> => {
+  repo: Repo
+): BranchScopeAndActiveBranchInfo => {
   const branchScopeInfo = fetchBranchScopeInfo(docPath, repo);
   const activeBranchInfo = fetchActiveBranchInfo(
     branchScopeInfo.branchScopePath,
     account,
-    repo,
-    dataTypes
+    repo
   );
 
   const lastLink = docPath[docPath.length - 1];
@@ -223,7 +153,7 @@ export const fetchBranchScopeAndActiveBranchInfo = <
     activeBranchInfo.activeBranchOm?.url,
     repo
   );
-  const cloneOrMainOm = fetchOm<T>(url, repo);
+  const cloneOrMainOm = fetchOm<HasVersionControlMetadata>(url, repo);
 
   return {
     ...branchScopeInfo,
@@ -240,10 +170,9 @@ export const fetchBranchScopeAndActiveBranchInfo = <
 export const fetchOmOnActiveBranch = <T>(
   docPath: DocPath,
   account: Account | undefined,
-  repo: Repo,
-  dataTypes: DataType[]
+  repo: Repo
 ): Om<T> => {
-  return fetchBranchScopeAndActiveBranchInfo(docPath, account, repo, dataTypes)
+  return fetchBranchScopeAndActiveBranchInfo(docPath, account, repo)
     .cloneOrMainOm as Om<T>;
 };
 

@@ -19,7 +19,6 @@ import {
   FolderDoc,
   FolderDocMaterialized,
 } from "../datatype";
-import { DataType, useDataTypes } from "@/sdk";
 
 /**
  * Kinda a convenience type, bundling a (materialized) FolderDoc with
@@ -136,11 +135,10 @@ export function fetchFolderDocWithMetadataOnFixedBranch(
 export function fetchFolderDocWithMetadataOnActiveBranch(
   rootFolderUrl: AutomergeUrl,
   account: Account,
-  repo: Repo,
-  dataTypes: DataType[]
+  repo: Repo
 ) {
   return fetchFolderDocWithMetadata(rootFolderUrl, (docPath: DocPath) => {
-    return fetchOmOnActiveBranch(docPath, account, repo, dataTypes).doc;
+    return fetchOmOnActiveBranch(docPath, account, repo).doc;
   });
 }
 
@@ -150,16 +148,14 @@ export function useFolderDocWithMetadataOnActiveBranch(
 ): FolderDocWithMetadata | undefined {
   const repo = useRepo();
   const account = useCurrentAccount();
-  const dataTypes = useDataTypes();
   return useAsyncComputed(
     useCallback(() => {
       fetchAwaitMissing(rootFolderUrl && account);
       return fetchFolderDocWithMetadataOnActiveBranch(
         rootFolderUrl,
         account,
-        repo,
-        dataTypes
+        repo
       );
-    }, [rootFolderUrl, account, repo, dataTypes])
+    }, [rootFolderUrl, account, repo])
   ).ifPending(undefined).value;
 }

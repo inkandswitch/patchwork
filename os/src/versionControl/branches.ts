@@ -82,6 +82,8 @@ export const cloneDocWithLinks = async (
   dataTypes: DataType[],
   docCloneMap: DocCloneMap
 ): Promise<void> => {
+  console.log("cloning", handle.url);
+
   // skip, if doc has already been cloned
   if (docCloneMap[handle.url]) {
     return;

@@ -81,9 +81,7 @@ async function setupRepo() {
   const repo = new Repo({
     storage: new IndexedDBStorageAdapter(),
     network: [],
-    peerId: (PEER_ID_PREFIX
-      ? `patchwork-${PEER_ID_PREFIX}-${peerId}`
-      : peerId) as PeerId,
+    peerId: (PEER_ID_PREFIX ? `${PEER_ID_PREFIX}-${peerId}` : peerId) as PeerId,
     sharePolicy: async (peerId) => peerId.includes("service-worker"),
     // We need to enable remote heads gossiping so the remote heads of the sync server
     // are forwarded from the service worker to the repo here in the main thread
