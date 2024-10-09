@@ -27,7 +27,7 @@ import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-
 
 const CACHE_NAME = "v6";
 
-let PEER_ID = `service-worker-${Math.round(Math.random() * 1000000)}`;
+let PEER_ID = `patchwork-service-worker-${Math.round(Math.random() * 1000000)}`;
 
 /* Config is passed by the client in the init message
 {
