@@ -36,7 +36,7 @@ export const createBranch = async <
   dataTypes: DataType[];
   createdBy: AutomergeUrl | undefined;
   name?: string;
-}): Promise<AutomergeUrl> => {
+}): Promise<DocHandle<BranchDoc>> => {
   const versionControlMetadataHandle = ensureMetadataHandleIsBranchScope(
     getVersionControlMetadataHandle(branchScopeHandle, repo)
   );
@@ -72,7 +72,7 @@ export const createBranch = async <
     doc.branches.push(branchHandle.url);
   });
 
-  return branchHandle.url;
+  return branchHandle;
 };
 
 export const cloneDocWithLinks = async (
@@ -307,15 +307,9 @@ type LegacyBranchMetadata = {
 export const hasLegacyBranchesToMigrate = async ({
   docOm,
   branchScopeAndActiveBranchInfo,
-  repo,
-  dataTypeId,
-  dataTypes,
 }: {
   docOm: Om<any> | undefined;
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo | undefined;
-  repo: Repo;
-  dataTypeId: string;
-  dataTypes: DataType[];
 }) => {
   if (!docOm || !branchScopeAndActiveBranchInfo) {
     return;
@@ -354,10 +348,17 @@ export const migrateLegacyBranches = async ({
   dataTypeId: string;
   dataTypes: DataType[];
 }) => {
+  if (
+    !window.confirm(
+      "This may take a few seconds; the page will reload afterwards."
+    )
+  ) {
+    return;
+  }
   for (const branch of (docOm.doc.branchMetadata as LegacyBranchMetadata)
     .branches) {
     // Create a new branch with the current structure
-    const newBranchUrl = await createBranch({
+    const newBranchHandle = await createBranch({
       repo,
       branchScopeHandle: branchScopeAndActiveBranchInfo.branchScopeOm.handle,
       dataTypeId,
@@ -367,7 +368,6 @@ export const migrateLegacyBranches = async ({
     });
 
     // Add a clone map entry to replicate the contents of the legacy branch
-    const newBranchHandle = repo.find<BranchDoc>(newBranchUrl);
     newBranchHandle.change((d) => {
       d.clones[docOm.url] = {
         url: branch.url,
@@ -380,5 +380,9 @@ export const migrateLegacyBranches = async ({
         d.mergeMetadata = branch.mergeMetadata ?? null;
       });
     }
+
+    // HACK: There's some reactivity bug that causes the update to the clone map to not be immediately reflected.
+    // As a workaround we can just reload the page, which is ugly but ok for a corner case like this.
+    window.location.reload();
   }
 };

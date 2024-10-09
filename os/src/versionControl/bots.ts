@@ -202,7 +202,7 @@ ${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
     }
 
     // Now we create a new branch to hold the edits
-    const branchUrl = await createBranch({
+    const branchMetadataHandle = await createBranch({
       name: parsed.commitMessage,
       createdBy: EDITOR_BOT_CONTACT_URL,
       repo,
@@ -210,6 +210,7 @@ ${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
       dataTypeId: dataType.id,
       dataTypes: [dataType],
     });
+    const branchUrl = branchMetadataHandle.url;
 
     // This is some gross stuff because we don't have cherry-picking --
     // We need to update the branchurl on the last message on both the main doc and branch.
@@ -233,7 +234,6 @@ ${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
     updateBranchUrlForAssistantMessage(targetDocHandle);
 
     // Update on the newly created clone
-    const branchMetadataHandle = repo.find<BranchDoc>(branchUrl);
     const branchMetadataDoc = await branchMetadataHandle.doc();
     if (!branchMetadataDoc) {
       throw new Error(`Branch metadata doc missing at ${branchUrl}`);

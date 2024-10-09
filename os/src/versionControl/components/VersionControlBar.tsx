@@ -75,6 +75,8 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   FileQuestionIcon,
+  MailQuestionIcon,
+  InfoIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -162,13 +164,15 @@ export const VersionControlBar = ({
   const handleCreateBranch = useCallback(async () => {
     const branchScopeLink = DocPath.toLink(branchScopePath)!;
 
-    const branchUrl = await createBranch({
-      repo,
-      branchScopeHandle: branchScopeOm.handle,
-      dataTypeId: branchScopeLink?.type,
-      dataTypes,
-      createdBy: account?.contactHandle?.url,
-    });
+    const branchUrl = (
+      await createBranch({
+        repo,
+        branchScopeHandle: branchScopeOm.handle,
+        dataTypeId: branchScopeLink?.type,
+        dataTypes,
+        createdBy: account?.contactHandle?.url,
+      })
+    ).url;
     onSelectBranch(branchUrl);
     toast({ title: "Created a new branch" });
   }, [
@@ -423,17 +427,17 @@ export const VersionControlBar = ({
           className="flex h-8 items-center bg-red-100 border border-red-400 text-red-700 rounded text-xs p-1"
           role="alert"
         >
-          <span className="mr-2">Legacy branches found.</span>
+          <span className="mr-2">Legacy branches detected.</span>
           <TooltipProvider>
-            <Tooltip>
+            <Tooltip delayDuration={0}>
               <TooltipTrigger>
-                <FileQuestionIcon className="h-5 w-5 text-red-700 mr-2" />
+                <InfoIcon className="h-5 w-5 text-red-700 mr-2" />
               </TooltipTrigger>
               <TooltipContent className="text-xs max-w-96">
                 <p>
-                  This doc has branches which were created in an older version
-                  of patchwork. To keep them working, you need to click the
-                  button to migrate the data to the current app.
+                  This document has branches which were created in an older
+                  version of Patchwork. Click Upgrade to make these branches
+                  compatible with the current version of Patchwork.
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -452,7 +456,7 @@ export const VersionControlBar = ({
             size="sm"
             className="text-xs h-6"
           >
-            Migrate
+            Upgrade
           </Button>
         </div>
       )}
