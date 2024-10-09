@@ -19,6 +19,7 @@ import {
   FolderDoc,
   FolderDocMaterialized,
 } from "../datatype";
+import { DataType, useDataTypes } from "@/sdk";
 
 /**
  * Kinda a convenience type, bundling a (materialized) FolderDoc with

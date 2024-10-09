@@ -1,13 +1,15 @@
 import { Account } from "@/explorer/account";
 import { fetchUIStateOm } from "@/explorer/uiState";
 import { Om } from "@/om";
-import { DocPath } from "@/packages/folder/datatype";
+import { DocLink, DocPath } from "@/packages/folder/datatype";
 import { canBeUndef } from "@/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { fetchDoc, fetchOm, fetchMap } from "../async-signals";
+import { fetchDoc, fetchMap, fetchOm } from "../async-signals";
+import { DataType, dataTypeById } from "../datatypes";
 import {
   BranchDoc,
+  DocCloneMap,
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
 } from "./schema";
@@ -110,6 +112,35 @@ export const fetchActiveBranchInfo = (
   };
 };
 
+export const fetchAllLinkedDocLinks = (
+  url: AutomergeUrl,
+  dataTypeId: string,
+  repo: Repo,
+  dataTypes: DataType[],
+  cloneMap?: DocCloneMap
+): DocLink[] => {
+  const mappedUrl = cloneMap ? cloneMap[url].url ?? url : url;
+  const doc = fetchDoc(mappedUrl, repo);
+
+  const links = dataTypeById(dataTypes, dataTypeId)?.links;
+  if (!links) {
+    return [];
+  }
+
+  const directLinks = links(doc);
+
+  return fetchMap(directLinks, (link) => {
+    const childLinks = fetchAllLinkedDocLinks(
+      link.url,
+      link.type,
+      repo,
+      dataTypes,
+      cloneMap
+    );
+    return [link, ...childLinks].flat();
+  }).flat();
+};
+
 export const fetchResolveUrlOnFixedBranch = (
   url: AutomergeUrl,
   activeBranchUrl: AutomergeUrl | undefined, // undefined means "main"
@@ -124,22 +155,26 @@ export const fetchResolveUrlOnFixedBranch = (
   return cloneEntry ?? { url, baseHeads: undefined };
 };
 
-export type BranchScopeAndActiveBranchInfo = BranchScopeInfo &
+export type BranchScopeAndActiveBranchInfo<
+  T extends HasVersionControlMetadata = HasVersionControlMetadata
+> = BranchScopeInfo &
   ActiveBranchInfo & {
     baseHeads: Automerge.Heads;
     originalUrl: AutomergeUrl;
-    cloneOrMainOm: Om<HasVersionControlMetadata>;
+    cloneOrMainOm: Om<T>;
   };
 
 const EMPTY_HEADS: Automerge.Heads = [];
 
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.
-export const fetchBranchScopeAndActiveBranchInfo = (
+export const fetchBranchScopeAndActiveBranchInfo = <
+  T extends HasVersionControlMetadata = HasVersionControlMetadata
+>(
   docPath: DocPath,
   account: Account | undefined,
   repo: Repo
-): BranchScopeAndActiveBranchInfo => {
+): BranchScopeAndActiveBranchInfo<T> => {
   const branchScopeInfo = fetchBranchScopeInfo(docPath, repo);
   const activeBranchInfo = fetchActiveBranchInfo(
     branchScopeInfo.branchScopePath,
@@ -147,21 +182,49 @@ export const fetchBranchScopeAndActiveBranchInfo = (
     repo
   );
 
-  const lastLink = docPath[docPath.length - 1];
+  const docLink = DocPath.toLink(docPath);
   const { url, baseHeads } = fetchResolveUrlOnFixedBranch(
-    lastLink.url,
+    docLink.url,
     activeBranchInfo.activeBranchOm?.url,
     repo
   );
-  const cloneOrMainOm = fetchOm<HasVersionControlMetadata>(url, repo);
+  const cloneOrMainOm = fetchOm<T>(url, repo);
 
   return {
     ...branchScopeInfo,
     ...activeBranchInfo,
     cloneOrMainOm,
     baseHeads: baseHeads ?? EMPTY_HEADS,
-    originalUrl: lastLink.url,
+    originalUrl: docLink.url,
   };
+};
+
+/**
+ *  Get all linked documents contained in a document on a specific branch and check if one of them matches the docLink
+ */
+export const fetchDoesDocLinkExistInBranchScope = (
+  docLink: DocLink,
+  repo: Repo,
+  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo,
+  dataTypes: DataType[]
+) => {
+  const branchScopeDocLink = DocPath.toLink(
+    branchScopeAndActiveBranchInfo.branchScopePath
+  );
+
+  if (branchScopeDocLink.url === docLink.url) {
+    return true;
+  }
+
+  const linksInBranchScope = fetchAllLinkedDocLinks(
+    branchScopeDocLink.url,
+    branchScopeDocLink.type,
+    repo,
+    dataTypes,
+    branchScopeAndActiveBranchInfo.activeBranchOm?.doc.clones
+  );
+
+  return linksInBranchScope.some((link) => link.url === docLink.url);
 };
 
 /**

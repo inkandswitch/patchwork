@@ -39,6 +39,7 @@ import { fetchJacquardProjectInfoWithActiveBranch } from "../hooks";
 import { fetchProjectStateFromProjectInfo } from "../signals";
 import { useAsyncComputed, fetchAwaitMissing } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
+import { useDataTypes } from "@/sdk";
 
 export const GraphView = ({
   docPath,

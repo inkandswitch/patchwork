@@ -2,9 +2,10 @@ import { dataTypeById } from "@/datatypes";
 import { useCurrentAccount } from "@/explorer/account";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { LoadingScreen } from "@/explorer/components/LoadingScreen";
+import { toHashUrl } from "@/explorer/router/urls";
 import { useDocUIState, useUIStateOm } from "@/explorer/uiState";
 import { useDataTypes } from "@/hooks/useDataTypes";
-import { DocPath } from "@/packages/folder/datatype";
+import { DocLink, DocPath } from "@/packages/folder/datatype";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { useToast } from "@/shadcn/ui/use-toast";
 import { EditorProps, Tool } from "@/tools";
@@ -14,6 +15,7 @@ import * as A from "@automerge/automerge/next";
 import {
   BotIcon,
   ChevronsRight,
+  CrownIcon,
   HistoryIcon,
   MessageSquareIcon,
 } from "lucide-react";
@@ -27,11 +29,16 @@ import {
   DiffWithProvenance,
   HasVersionControlMetadata,
 } from "../schema";
+import {
+  BranchScopeAndActiveBranchInfo,
+  fetchDoesDocLinkExistInBranchScope,
+} from "../signals";
 import { diffWithProvenance, useActorIdToAuthorMap } from "../utils";
 import { BotSidebar } from "./BotSidebar";
 import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
+import { useAsyncComputed } from "@/async-signals";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -259,6 +266,21 @@ export const VersionControlEditor: React.FC<{
     [branchScopeAndActiveBranchInfo, onSelectBranch, toast]
   );
 
+  const doesDocExistInCheckedOutBranchScope = useAsyncComputed(
+    useCallback(() => {
+      if (!branchScopeAndActiveBranchInfo) {
+        return;
+      }
+
+      return fetchDoesDocLinkExistInBranchScope(
+        DocPath.toLink(docPath),
+        repo,
+        branchScopeAndActiveBranchInfo,
+        dataTypes
+      );
+    }, [branchScopeAndActiveBranchInfo, dataTypes, docPath, repo])
+  ).ifPending(undefined).value;
+
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
 
   if (!cloneOrMainOm) {
@@ -304,55 +326,67 @@ export const VersionControlEditor: React.FC<{
 
         {/* Main doc editor pane */}
         <ErrorBoundary FallbackComponent={ErrorFallback}>
-          <div className="flex-grow items-stretch justify-stretch relative flex flex-col overflow-hidden">
-            <div className="flex-1 min-h-0 relative">
-              {docUIState.mainViewMode === "compareWithMain" ? (
-                <SideBySide
-                  key={cloneOrMainOm.url}
-                  tool={tool}
-                  docPath={docPath}
-                  docUrl={cloneOrMainOm.url}
-                  docHeads={docHeads}
-                  annotations={filteredAnnotations}
-                  annotationGroups={filteredAnnotationGroups}
-                  actorIdToAuthor={actorIdToAuthor}
-                  setSelectedAnchors={setSelectedAnchors}
-                  setHoveredAnchor={setHoveredAnchor}
-                  setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
-                  setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
-                  hideInlineComments={hideInlineComments}
-                  collapseContentWithoutChanges={collapseContentWithoutChanges}
-                  setCommentState={setCommentState}
-                  mainDocUrl={docLink.url}
-                  activeBranchUrl={
-                    branchScopeAndActiveBranchInfo.activeBranchOm?.url
-                  }
-                />
-              ) : (
-                <DocEditor
-                  key={cloneOrMainOm.url}
-                  tool={tool}
-                  docPath={docPath}
-                  docUrl={cloneOrMainOm.url}
-                  docHeads={docHeads}
-                  annotations={filteredAnnotations}
-                  annotationGroups={filteredAnnotationGroups}
-                  actorIdToAuthor={actorIdToAuthor}
-                  setSelectedAnchors={setSelectedAnchors}
-                  setHoveredAnchor={setHoveredAnchor}
-                  setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
-                  setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
-                  hideInlineComments={hideInlineComments}
-                  collapseContentWithoutChanges={collapseContentWithoutChanges}
-                  setCommentState={setCommentState}
-                  mainDocUrl={docLink.url}
-                  activeBranchUrl={
-                    branchScopeAndActiveBranchInfo.activeBranchOm?.url
-                  }
-                />
-              )}
+          {!doesDocExistInCheckedOutBranchScope && (
+            <DocumentNotFoundPage
+              branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
+              docLink={docLink}
+            />
+          )}
+          {doesDocExistInCheckedOutBranchScope && (
+            <div className="flex-grow items-stretch justify-stretch relative flex flex-col overflow-hidden">
+              <div className="flex-1 min-h-0 relative">
+                {docUIState.mainViewMode === "compareWithMain" ? (
+                  <SideBySide
+                    key={cloneOrMainOm.url}
+                    tool={tool}
+                    docPath={docPath}
+                    docUrl={cloneOrMainOm.url}
+                    docHeads={docHeads}
+                    annotations={filteredAnnotations}
+                    annotationGroups={filteredAnnotationGroups}
+                    actorIdToAuthor={actorIdToAuthor}
+                    setSelectedAnchors={setSelectedAnchors}
+                    setHoveredAnchor={setHoveredAnchor}
+                    setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
+                    setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
+                    hideInlineComments={hideInlineComments}
+                    collapseContentWithoutChanges={
+                      collapseContentWithoutChanges
+                    }
+                    setCommentState={setCommentState}
+                    mainDocUrl={docLink.url}
+                    activeBranchUrl={
+                      branchScopeAndActiveBranchInfo.activeBranchOm?.url
+                    }
+                  />
+                ) : (
+                  <DocEditor
+                    key={cloneOrMainOm.url}
+                    tool={tool}
+                    docPath={docPath}
+                    docUrl={cloneOrMainOm.url}
+                    docHeads={docHeads}
+                    annotations={filteredAnnotations}
+                    annotationGroups={filteredAnnotationGroups}
+                    actorIdToAuthor={actorIdToAuthor}
+                    setSelectedAnchors={setSelectedAnchors}
+                    setHoveredAnchor={setHoveredAnchor}
+                    setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
+                    setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
+                    hideInlineComments={hideInlineComments}
+                    collapseContentWithoutChanges={
+                      collapseContentWithoutChanges
+                    }
+                    setCommentState={setCommentState}
+                    mainDocUrl={docLink.url}
+                    activeBranchUrl={
+                      branchScopeAndActiveBranchInfo.activeBranchOm?.url
+                    }
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </ErrorBoundary>
       </div>
 
@@ -441,6 +475,49 @@ export const VersionControlEditor: React.FC<{
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+const DocumentNotFoundPage = ({
+  branchScopeAndActiveBranchInfo,
+  docLink,
+}: {
+  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
+  docLink: DocLink;
+}) => {
+  const selectedBranchName =
+    branchScopeAndActiveBranchInfo.activeBranchOm?.doc.name;
+
+  return (
+    <div className="flex items-center justify-center h-full bg-gray-100">
+      <div className="text-center">
+        <h2 className="text-xl font-bold mb-4">Document not found</h2>
+        <p className="text-gray-700 mb-4">
+          <span className="bg-white border border-gray-300 shadow-sm px-2 py-1 rounded-md inline-flex gap-1 items-center">
+            {!selectedBranchName && <CrownIcon className="inline" size={12} />}
+            {selectedBranchName ?? "Main"}
+          </span>{" "}
+          does not contain the document{" "}
+          <span className="font-bold">{docLink.name}</span>.
+        </p>
+        <p className="text-gray-600">
+          It may have been deleted or not yet created on this branch.
+        </p>
+
+        <p className="mt-4">
+          <a
+            href={toHashUrl({
+              type: "folder",
+              url: branchScopeAndActiveBranchInfo.branchScopeOm.url,
+              name: "",
+            })}
+            className="text-blue-600 hover:underline"
+          >
+            Go to root of branch
+          </a>
+        </p>
+      </div>
     </div>
   );
 };

@@ -7,6 +7,7 @@ import {
 } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { JacquardBuildMetadata } from "./datatype";
+import { DataType } from "@/sdk";
 
 export type JacquardProjectInfo = {
   branchUrl: AutomergeUrl | undefined;
