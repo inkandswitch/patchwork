@@ -41,7 +41,7 @@ export const Explorer: React.FC = () => {
   const rootFolderData = useRootFolderDocWithMetadata();
   const rootFolderDoc = rootFolderData?.doc;
   const rootFolderUrl = rootFolderData?.rootFolderUrl;
-  const flatDocLinks = rootFolderData?.flatDocPaths;
+  const flatDocPaths = rootFolderData?.flatDocPaths;
 
   const [showSidebar, setShowSidebar] = useState(true);
 
@@ -325,13 +325,13 @@ export const Explorer: React.FC = () => {
               {selectedDocUrl &&
                 selectedDocPath &&
                 currentTool &&
-                flatDocLinks && (
+                flatDocPaths && (
                   <VersionControlEditor
                     key={DocPath.toString(selectedDocPath)}
                     docPath={selectedDocPath}
                     tool={currentTool}
                     addNewDocument={addNewDocument}
-                    flatDocPaths={flatDocLinks}
+                    flatDocPaths={flatDocPaths}
                     docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
                     setDocHeadsFromTimelineSidebar={
                       setDocHeadsFromTimelineSidebar
