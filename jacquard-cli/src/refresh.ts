@@ -22,7 +22,7 @@ import {
   omOnCLIActiveBranchPromise,
 } from "./util";
 
-const debug = debugFactory("jacquard-cli:run");
+const debug = debugFactory("jacquard-cli:refresh");
 
 export async function refresh(
   repo: Repo,

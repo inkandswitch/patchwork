@@ -1,17 +1,20 @@
-import { asyncComputed, fetchDoc, fetchOm, fetchMap } from "@/async-signals";
+import { asyncComputed, fetchDoc, fetchMap, fetchOm } from "@/async-signals";
 import { Om } from "@/om";
 import { FolderDoc } from "@/packages/folder";
 import {
-  fetchVersionControlMetadataOm,
   fetchResolveUrlOnFixedBranch,
+  fetchVersionControlMetadataOm,
 } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+import debugFactory from "debug";
 import os from "node:os";
 import { CommandLineArgs } from ".";
 import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
 import { activateBranch } from "./activate";
 import { refresh } from "./refresh";
 import { sleep } from "./util";
+
+const debug = debugFactory("jacquard-cli:run");
 
 type BuildMetadataDocWithBranchUrl = {
   branchUrl?: AutomergeUrl;
@@ -40,7 +43,7 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
     );
   }
 
-  const buildMetadataDocsWithPendingRefresh = asyncComputed<
+  const buildMetadataDocsWithRefreshRequest = asyncComputed<
     BuildMetadataDocWithBranchUrl[]
   >(() => {
     const projectFolder = fetchDoc<FolderDoc>(projectFolderHandle.url, repo);
@@ -50,7 +53,10 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
       repo
     );
 
-    const pending: BuildMetadataDocWithBranchUrl[] = [];
+    if (!versionControlMetadataOm?.doc.isBranchScope) {
+      debug("skip check branches");
+      return [];
+    }
 
     // check build metadata on main
     const mainBuildMetadataOm = fetchBuildMetadataOmOfFolder(
@@ -59,48 +65,39 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
     );
 
     if (!mainBuildMetadataOm) {
-      console.log("skip has no build metadata");
+      debug("skip has no build metadata");
       return [];
     }
 
-    if (mainBuildMetadataOm.doc.refreshState?.type === "requesting") {
-      pending.push({ buildMetadataOm: mainBuildMetadataOm });
-    }
+    const allBuildMetadataDocs: BuildMetadataDocWithBranchUrl[] = [
+      { buildMetadataOm: mainBuildMetadataOm },
+      ...fetchMap(versionControlMetadataOm.doc.branches, (branchUrl) => {
+        const branchBuildMetadataDocUrl = fetchResolveUrlOnFixedBranch(
+          mainBuildMetadataOm.url,
+          branchUrl,
+          repo
+        ).url;
 
-    if (!versionControlMetadataOm?.doc.isBranchScope) {
-      console.log("skip check branches");
-      return [];
-    }
+        const branchBuildMetadataOm = fetchOm<JacquardBuildMetadata>(
+          branchBuildMetadataDocUrl,
+          repo
+        );
 
-    console.log("check branches", versionControlMetadataOm.doc.branches.length);
+        return { buildMetadataOm: branchBuildMetadataOm, branchUrl };
+      }),
+    ];
 
-    // check branches
-
-    fetchMap(versionControlMetadataOm.doc.branches, (branchUrl) => {
-      const branchBuildMetadataDocUrl = fetchResolveUrlOnFixedBranch(
-        mainBuildMetadataOm.url,
-        branchUrl,
-        repo
-      ).url;
-
-      const branchBuildMetadataOm = fetchOm<JacquardBuildMetadata>(
-        branchBuildMetadataDocUrl,
-        repo
-      );
-
-      if (branchBuildMetadataOm.doc.refreshState?.type === "requesting") {
-        pending.push({ buildMetadataOm: branchBuildMetadataOm, branchUrl });
-      }
-    });
-
-    return pending;
+    return allBuildMetadataDocs.filter(
+      ({ buildMetadataOm }) =>
+        buildMetadataOm.doc.refreshState?.type === "requesting"
+    );
   });
 
   console.log("waiting for requests ...");
 
   while (true) {
     const pending =
-      buildMetadataDocsWithPendingRefresh.value.ifPending(undefined).value;
+      buildMetadataDocsWithRefreshRequest.value.ifPending(undefined).value;
     const next = pending && pending[0];
 
     if (!next) {
@@ -109,11 +106,11 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
     }
 
     try {
-      console.log("switch to branch:", next.branchUrl ?? "main");
+      debug("switch to branch:", next.branchUrl ?? "main");
 
       await activateBranch(repo, { ...args, branchUrl: next.branchUrl });
 
-      console.log("done pull");
+      debug("done pull");
 
       next.buildMetadataOm.handle.change((doc) => {
         doc.refreshState = {
@@ -159,7 +156,7 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
 
       await sleep(500);
 
-      console.log("refresh finished");
+      debug("refresh finished");
 
       next.buildMetadataOm.handle.change((doc) => {
         doc.refreshState = { type: "idle" };
