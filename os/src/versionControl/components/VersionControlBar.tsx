@@ -280,9 +280,6 @@ export const VersionControlBar = ({
       const result = await hasLegacyBranchesToMigrate({
         docOm: cloneOrMainOm,
         branchScopeAndActiveBranchInfo,
-        repo,
-        dataTypeId: docLink.type,
-        dataTypes,
       });
       setNeedsMigration(result ?? false);
     };
