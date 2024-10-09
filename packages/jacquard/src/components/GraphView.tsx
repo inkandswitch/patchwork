@@ -1,3 +1,5 @@
+import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
+import { useCurrentAccount } from "@/explorer/account";
 import { selectDocLink } from "@/explorer/router";
 import { EditorProps } from "@/tools";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
@@ -5,29 +7,6 @@ import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { instance } from "@viz-js/viz";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { JacquardBuildMetadata } from "../datatype";
-
-let svgIconsByFileExtension: Record<string, string> = {};
-
-// HACK: import.meta.glob doesn't work on the server. Ideally we
-// wouldn't import view code from the server at all, but right now
-// getting datatypes goes through packages indices and package
-// indices import view code. This works for now.
-if (typeof window !== "undefined") {
-  const rawSvgIcons = import.meta.glob("../file-icon-vectors/*.svg", {
-    eager: true,
-    import: "default",
-  });
-
-  for (let [key, value] of Object.entries(rawSvgIcons)) {
-    const fileExtension =
-      key
-        .split("/")
-        .pop()
-        ?.replace(/\.svg$/, "") || "";
-    svgIconsByFileExtension[fileExtension] = value as string;
-  }
-}
-
 import {
   getReferenceFromDocUrl,
   getStalenessInfo,
@@ -37,9 +16,22 @@ import {
 } from "../getStalenessInfo";
 import { fetchJacquardProjectInfoWithActiveBranch } from "../hooks";
 import { fetchProjectStateFromProjectInfo } from "../signals";
-import { useAsyncComputed, fetchAwaitMissing } from "@/async-signals";
-import { useCurrentAccount } from "@/explorer/account";
-import { useDataTypes } from "@/sdk";
+
+const rawSvgIcons = import.meta.glob("../file-icon-vectors/*.svg", {
+  eager: true,
+  import: "default",
+});
+
+let svgIconsByFileExtension: Record<string, string> = {};
+
+for (let [key, value] of Object.entries(rawSvgIcons)) {
+  const fileExtension =
+    key
+      .split("/")
+      .pop()
+      ?.replace(/\.svg$/, "") || "";
+  svgIconsByFileExtension[fileExtension] = value as string;
+}
 
 export const GraphView = ({
   docPath,
