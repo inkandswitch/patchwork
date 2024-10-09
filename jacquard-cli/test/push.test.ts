@@ -143,31 +143,34 @@ describe("push", () => {
     });
   });
 
-  it("works pushing a binary file", async () => {
-    await checkPush({
-      beforeUnix: [
-        {
-          fileName: "test.jpg",
-          content: binaryData,
-        },
-      ],
-      beforePatchwork: {
-        title: "My folder",
-        docs: [],
-      },
-      expectedChange: (spec) => {
-        spec.docs.push({
-          name: "test.jpg",
-          type: "file",
-          url_linksTo: {
-            name: "test.jpg",
-            type: "jpg",
-            content: { type: "link", url_linksTo: binaryData },
+  it.skipIf(import.meta.env.OFFLINE)(
+    "works pushing a binary file",
+    async () => {
+      await checkPush({
+        beforeUnix: [
+          {
+            fileName: "test.jpg",
+            content: binaryData,
           },
-        });
-      },
-    });
-  });
+        ],
+        beforePatchwork: {
+          title: "My folder",
+          docs: [],
+        },
+        expectedChange: (spec) => {
+          spec.docs.push({
+            name: "test.jpg",
+            type: "file",
+            url_linksTo: {
+              name: "test.jpg",
+              type: "jpg",
+              content: { type: "link", url_linksTo: binaryData },
+            },
+          });
+        },
+      });
+    }
+  );
 
   it("works pushing a markdown file", async () => {
     await checkPush({
