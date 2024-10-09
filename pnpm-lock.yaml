@@ -459,6 +459,64 @@ importers:
         specifier: ^18.3.0
         version: 18.3.0
 
+  packages/folder-list-view:
+    dependencies:
+      '@automerge/automerge':
+        specifier: 2.2.8
+        version: 2.2.8
+      '@automerge/automerge-repo':
+        specifier: ^1.2.1
+        version: 1.2.1(@swc/core@1.7.6)(@types/node@20.14.10)(typescript@5.5.3)
+      '@automerge/automerge-repo-react-hooks':
+        specifier: ^1.2.1
+        version: 1.2.1(@swc/core@1.7.6)(@types/node@20.14.10)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.3)
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@rollup/plugin-commonjs':
+        specifier: ^26.0.1
+        version: 26.0.1(rollup@4.18.1)
+      '@rollup/plugin-node-resolve':
+        specifier: ^15.2.3
+        version: 15.2.3(rollup@4.18.1)
+      '@rollup/plugin-typescript':
+        specifier: ^11.1.6
+        version: 11.1.6(rollup@4.18.1)(tslib@2.6.3)(typescript@5.5.3)
+      '@types/node':
+        specifier: ^20.8.2
+        version: 20.14.10
+      '@types/react':
+        specifier: ^18.2.15
+        version: 18.3.3
+      '@types/react-dom':
+        specifier: ^18.2.7
+        version: 18.3.0
+      autoprefixer:
+        specifier: ^10.4.16
+        version: 10.4.19(postcss@8.4.39)
+      postcss:
+        specifier: ^8.4.31
+        version: 8.4.39
+      rollup:
+        specifier: ^4.18.0
+        version: 4.18.1
+      rollup-plugin-postcss:
+        specifier: ^4.0.2
+        version: 4.0.2(postcss@8.4.39)(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@20.14.10)(typescript@5.5.3))
+      tailwindcss:
+        specifier: ^3.3.3
+        version: 3.4.4(ts-node@10.9.2(@swc/core@1.7.6)(@types/node@20.14.10)(typescript@5.5.3))
+      tslib:
+        specifier: ^2.6.3
+        version: 2.6.3
+      typescript:
+        specifier: ^5.0.2
+        version: 5.5.3
+
   packages/kanban:
     dependencies:
       '@automerge/automerge':

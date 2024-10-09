@@ -2,6 +2,7 @@
 
 Patchwork is a malleable, local-first collaboration environment. It lets you edit many types of automerge documents using various UI tools.
 
+
 ## Concepts
 
 - Datatype: a "file format" or "schema" for automerge documents. eg: markdown, drawing

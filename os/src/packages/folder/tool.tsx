@@ -141,7 +141,7 @@ export const FolderEntryView = ({
     ) : undefined;
 
   return (
-    <div>
+    <div className="h-72">
       {!tool ? (
         <div className="flex gap-2 items-center font-medium mb-1">
           Unknown type: {docLink.type}
