@@ -17,7 +17,7 @@ export const useCameraSync = ({
 }: {
   camera?: TLCamera;
   onChangeCamera?: (camera: TLCamera) => void;
-  editor: Editor;
+  editor?: Editor;
 }) => {
   useEffect(() => {
     if (!editor || !camera || isEqual(editor.camera, camera)) {
@@ -52,9 +52,9 @@ export const useDiffStyling = ({
   editor,
 }: {
   doc: TLDrawDoc;
-  annotations: AnnotationWithUIState<TLDrawDocAnchor, TLShape>[];
+  annotations: AnnotationWithUIState<TLDrawDocAnchor, TLShape>[] | undefined;
   store: TLStoreWithStatus;
-  editor: Editor;
+  editor: Editor | undefined;
 }) => {
   const tempShapeIdsRef = useRef(new Set<TLShapeId>());
   const highlightedElementsRef = useRef(new Set<HTMLElement>());
@@ -193,9 +193,9 @@ export const useAnchorEventListener = ({
   setSelectedAnchors,
   setHoveredAnchor,
 }: {
-  editor: Editor;
+  editor?: Editor;
   setSelectedAnchors: (anchors: TLDrawDocAnchor[]) => void;
-  setHoveredAnchor: (anchors: TLDrawDocAnchor) => void;
+  setHoveredAnchor: (anchors: TLDrawDocAnchor | null) => void;
 }) => {
   useEffect(() => {
     if (!editor) {

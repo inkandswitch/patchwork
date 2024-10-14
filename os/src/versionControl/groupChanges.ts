@@ -9,8 +9,8 @@
 // - getAllChanges returns different orders on different devices;
 //   we should define a total order for changes across all devices.
 
-import { Heads } from "@automerge/automerge";
-import { AutomergeUrl, Repo, DocHandle } from "@automerge/automerge-repo";
+import * as Automerge from "@automerge/automerge";
+import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import {
   ActorId,
   DecodedChange,
@@ -20,22 +20,25 @@ import {
   view,
 } from "@automerge/automerge/next";
 import { isEqual, sortBy } from "lodash";
+import { ReactElement } from "react";
 import { getChangesFromMergedBranch } from "./branches";
+
+import { Om } from "@/om";
+import { BranchScopeAndActiveBranchInfoWithoutDoc } from "./ChangeGrouper";
 import {
-  Branch,
-  Branchable,
+  BranchDoc,
   DiffWithProvenance,
-  Discussable,
   Discussion,
-  Tag,
-  Taggable,
+  HasVersionControlMetadata,
+  MergedBranchDoc,
 } from "./schema";
 import { TextPatch, diffWithProvenance } from "./utils";
 
 type Hash = string;
 
 /** Change group attributes that could work for any document */
-export type ChangeGroup<T> = {
+
+export type PendingChangeGroup<T> = {
   // Uniquely IDs the changes in this group.
   // (Concretely, we make IDs from heads + to heads, which I think does stably ID changes?)
   id: string;
@@ -44,11 +47,16 @@ export type ChangeGroup<T> = {
   changes: DecodedChangeWithMetadata[];
   actorIds: ActorId[];
   authorUrls: AutomergeUrl[];
-  docAtEndOfChangeGroup: Doc<T>;
-  numberOfEdits: number;
-  diff: DiffWithProvenance;
-  markers: HeadsMarker<T>[];
   time?: number;
+  markers: HeadsMarker<T>[];
+};
+
+export type ChangeGroup<T> = PendingChangeGroup<T> & {
+  docAtEndOfChangeGroup: Doc<T>;
+
+  diff: DiffWithProvenance;
+
+  numberOfEdits: number;
 
   /** A simple summary of the contents of this change group, computed cheaply at grouping time
    *  based on the contents of the change group.
@@ -56,7 +64,7 @@ export type ChangeGroup<T> = {
    *  NOTE: user-provided summaries are persisted elsewhere, this fallback is just computed
    *  on the fly!
    */
-  fallbackSummary: string;
+  fallbackSummary: string | ReactElement;
 };
 
 export type GenericChangeGroup = ChangeGroup<unknown>;
@@ -66,38 +74,53 @@ export interface DecodedChangeWithMetadata extends DecodedChange {
 }
 
 /** A marker of a moment in the doc history associated w/ some heads */
-export type HeadsMarker<T> = {
+
+export type HeadsMarkerBase = {
   id: string;
-  heads: Heads;
+  heads: Automerge.Heads;
   users: AutomergeUrl[];
   hideHistoryBeforeThis?: boolean;
-} & (
-  | { type: "tag"; tag: Tag }
-  | {
-      type: "otherBranchMergedIntoThisDoc";
-      branch: Branch;
-      changeGroups: ChangeGroup<T>[];
-    }
-  | { type: "branchCreatedFromThisDoc"; branch: Branch }
-  | {
-      type: "originOfThisBranch";
-      source: Branchable["branchMetadata"]["source"];
-      branch: Branch;
-    }
-  | { type: "discussionThread"; discussion: Discussion<unknown> }
-);
+};
+
+export type OtherBranchMergedMarker<T> = {
+  type: "otherBranchMergedIntoThisDoc";
+  branchOm: Om<MergedBranchDoc>;
+  changeGroups: ChangeGroup<T>[];
+} & HeadsMarkerBase;
+
+export type BranchCreatedMarker = {
+  type: "branchCreatedFromThisDoc";
+  branchOm: Om<BranchDoc>;
+} & HeadsMarkerBase;
+
+export type OriginBranchMarker = {
+  type: "originOfThisBranch";
+  source: { docUrl: AutomergeUrl; heads: Automerge.Heads };
+  branchOm: Om<BranchDoc>;
+} & HeadsMarkerBase;
+
+export type DiscussionThreadMarker = {
+  type: "discussionThread";
+  discussion: Discussion<unknown>;
+} & HeadsMarkerBase;
+
+export type HeadsMarker<T> =
+  | OtherBranchMergedMarker<T>
+  | BranchCreatedMarker
+  | OriginBranchMarker
+  | DiscussionThreadMarker;
 
 // All ChangelogItems have a unique id, a heads, and some users asociated.
 // Then, each type of item has its own unique data associated too.
 export type TimelineItems<T> = {
   id: string;
-  heads: Heads;
+  heads: Automerge.Heads;
   users: AutomergeUrl[];
-  time: number;
+  time?: number;
 } & ({ type: "changeGroup"; changeGroup: ChangeGroup<T> } | HeadsMarker<T>);
 
 type GroupingAlgorithm<T> = (
-  currentGroup: ChangeGroup<T>,
+  currentGroup: PendingChangeGroup<T>,
   newChange: DecodedChangeWithMetadata
 ) => boolean;
 
@@ -107,7 +130,11 @@ const defaultPopulateFallbackSummary = <D>(changeGroup: ChangeGroup<D>) => {
 };
 
 export const groupingByActorAndNumChanges =
-  (batchSize) => (currentGroup, newChange) => {
+  <T>(batchSize: number) =>
+  (
+    currentGroup: PendingChangeGroup<T>,
+    newChange: DecodedChangeWithMetadata
+  ) => {
     return (
       currentGroup.actorIds[0] === newChange.actor &&
       currentGroup.changes.length < batchSize
@@ -115,14 +142,14 @@ export const groupingByActorAndNumChanges =
   };
 
 export const groupingByActor = <T>(
-  currentGroup: ChangeGroup<T>,
+  currentGroup: PendingChangeGroup<T>,
   newChange: DecodedChangeWithMetadata
 ) => {
   return currentGroup.actorIds[0] === newChange.actor;
 };
 
 export const groupingByAuthor = <T>(
-  currentGroup: ChangeGroup<T>,
+  currentGroup: PendingChangeGroup<T>,
   newChange: DecodedChangeWithMetadata
 ) => {
   if (!newChange.metadata?.author) {
@@ -135,7 +162,7 @@ export const groupingByAuthor = <T>(
 
 export const groupingByNumberOfChanges =
   <T>(batchSize: number) =>
-  (currentGroup: ChangeGroup<T>, newChange: DecodedChangeWithMetadata) => {
+  (currentGroup: PendingChangeGroup<T>) => {
     return currentGroup.changes.length < batchSize;
   };
 
@@ -147,16 +174,25 @@ export const groupingByTagsOnly = () => true;
 //
 export const groupingByEditTime =
   <T>(maxGapInMinutes: number) =>
-  (currentGroup: ChangeGroup<T>, newChange: DecodedChangeWithMetadata) => {
+  (
+    currentGroup: PendingChangeGroup<T>,
+    newChange: DecodedChangeWithMetadata
+  ) => {
     if (
-      (newChange.time === undefined || newChange.time === 0) &&
+      (newChange.time === undefined || currentGroup.time === 0) &&
       (currentGroup.time === undefined || currentGroup.time === 0)
     ) {
       return true;
     }
 
+    if (currentGroup.time === undefined) {
+      return false;
+    }
+
     return newChange.time < currentGroup.time + maxGapInMinutes * 60 * 1000;
   };
+
+export const noGrouping = () => false;
 
 export const groupingByAuthorOrTime =
   <T>(maxGapInMinutes: number) =>
@@ -180,17 +216,18 @@ export const groupingByAuthorOrTime =
 // - use a manual grouping persisted somewhere?
 // - nonlinear: group by actor, out of this sorted order of changes
 
-export const getMarkersForDoc = <
-  T extends Branchable & Taggable & Discussable<unknown>
->(
+export const getMarkersForDoc = <T extends HasVersionControlMetadata>(
   handle: DocHandle<T>,
-  repo: Repo
+  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfoWithoutDoc
 ): HeadsMarker<T>[] => {
   const doc = handle.docSync();
+
   if (!doc) return [];
   let markers: HeadsMarker<T>[] = [];
 
-  const discussions = Object.values(doc.discussions ?? {})
+  const discussions: DiscussionThreadMarker[] = Object.values(
+    doc.discussions ?? {}
+  )
     .filter((d) => !d.anchors || d.anchors.length === 0)
     .map((discussion) => ({
       type: "discussionThread" as const,
@@ -198,7 +235,7 @@ export const getMarkersForDoc = <
       heads: discussion.heads,
       users: discussion.comments
         .map((comment) => comment.contactUrl)
-        .filter(Boolean),
+        .filter((contactUrl): contactUrl is AutomergeUrl => !!contactUrl),
       discussion,
     }));
 
@@ -216,69 +253,81 @@ export const getMarkersForDoc = <
   markers = markers.concat(sortedDiscussions);
 
   /** Mark branch merge points */
-  markers = markers.concat(
-    doc.branchMetadata.branches
-      .filter((branch) => branch.mergeMetadata !== undefined)
-      .map((branch) => ({
-        id: `branch-merge-${branch.mergeMetadata!.mergeHeads[0]}`,
-        heads: branch.mergeMetadata!.mergeHeads,
-        type: "otherBranchMergedIntoThisDoc",
-        users: branch.mergeMetadata!.mergedBy
-          ? [branch.mergeMetadata!.mergedBy]
-          : [],
-        branch,
-        changeGroups: [],
-      }))
-  );
+  const otherBranchMergedMarkers: OtherBranchMergedMarker<T>[] =
+    !branchScopeAndActiveBranchInfo.activeBranchOm
+      ? branchScopeAndActiveBranchInfo.branchOms
+          .filter((om): om is Om<MergedBranchDoc> => {
+            const { doc } = om;
+
+            if (
+              !doc.mergeMetadata ||
+              !doc.mergeMetadata.mergeHeadsByDocUrl // ignore old merges that don't have merged heads yet
+            ) {
+              return false;
+            }
+
+            const cloneOnBranch =
+              doc.clones[branchScopeAndActiveBranchInfo.originalUrl];
+            return cloneOnBranch !== undefined;
+          })
+          .map((om): OtherBranchMergedMarker<T> => {
+            const { doc } = om;
+            return {
+              id: `branch-merge-${doc.clones[handle.url].url}`,
+              heads: doc.mergeMetadata!.mergeHeadsByDocUrl[handle.url],
+              type: "otherBranchMergedIntoThisDoc",
+              users: doc.mergeMetadata!.mergedBy
+                ? [doc.mergeMetadata!.mergedBy]
+                : [],
+              branchOm: om,
+              changeGroups: [],
+            };
+          })
+      : [];
+
+  markers = markers.concat(otherBranchMergedMarkers);
 
   /** Mark where this branch started */
-  if (doc.branchMetadata.source) {
-    const branchMetadataAtSource = repo
-      .find<Branchable>(doc.branchMetadata.source.url)
-      .docSync() // this may fail if we haven't loaded the main doc yet...
-      ?.branchMetadata?.branches.find((b) => b.url === handle.url);
-    if (branchMetadataAtSource && doc.branchMetadata.source.branchHeads) {
-      markers.push({
-        id: `origin-of-this-branch`,
-        heads: doc.branchMetadata.source.branchHeads,
-        users: branchMetadataAtSource.createdBy
-          ? [branchMetadataAtSource.createdBy]
-          : [],
-        type: "originOfThisBranch",
-        source: doc.branchMetadata.source,
-        branch: branchMetadataAtSource,
-        hideHistoryBeforeThis: true,
-      });
-    }
+  const activeBranchOm = branchScopeAndActiveBranchInfo.activeBranchOm;
+  if (activeBranchOm) {
+    const branchDoc = activeBranchOm.doc;
+
+    markers.push({
+      id: `origin-of-this-branch`,
+      heads: branchScopeAndActiveBranchInfo.baseHeads,
+      users: branchDoc.createdBy ? [branchDoc.createdBy] : [],
+      type: "originOfThisBranch",
+      source: {
+        docUrl: branchScopeAndActiveBranchInfo.originalUrl,
+        heads: branchScopeAndActiveBranchInfo.baseHeads,
+      },
+      branchOm: activeBranchOm,
+      hideHistoryBeforeThis: true,
+    });
   }
 
   /** Mark new branches off this one */
-  markers = markers.concat(
-    doc.branchMetadata.branches
-      .filter(
-        (branch) =>
-          branch.branchHeads !== undefined &&
-          !isEqual(branch.branchHeads, doc.branchMetadata.source?.branchHeads)
-      )
-      .map((branch) => ({
-        id: `branch-created-${branch.branchHeads[0]}`,
-        users: branch.createdBy ? [branch.createdBy] : [],
-        heads: branch.branchHeads,
-        type: "branchCreatedFromThisDoc",
-        branch,
-      }))
-  );
+  const branchCreatedMarkers: HeadsMarker<T>[] =
+    !branchScopeAndActiveBranchInfo.activeBranchOm
+      ? branchScopeAndActiveBranchInfo.branchOms
+          .filter(({ doc }) => {
+            const cloneOnBranch = doc.clones[handle.url];
+            return cloneOnBranch !== undefined;
+          })
+          .map((branchOm) => {
+            const { doc, url } = branchOm;
 
-  /** Mark tags aka milestones */
-  markers = markers.concat(
-    (doc.tags ?? []).map((tag: Tag) => ({
-      id: `tag-${tag.heads[0]}-${tag.name}`,
-      heads: tag.heads,
-      type: "tag" as const,
-      tag,
-      users: tag.createdBy ? [tag.createdBy] : [],
-    }))
-  );
+            return {
+              id: `branch-created-${url}`,
+              users: doc.createdBy ? [doc.createdBy] : [],
+              heads: doc.clones[handle.url].baseHeads,
+              type: "branchCreatedFromThisDoc",
+              branchOm,
+            };
+          })
+      : [];
+
+  markers = markers.concat(branchCreatedMarkers);
 
   return markers;
 };
@@ -300,7 +349,9 @@ export type ChangeGroupingOptions<D> = {
    */
   includePatchInChangeGroup?: (patch: Patch | TextPatch) => boolean; // todo: can we not leak TextPatch to all datatypes?
 
-  fallbackSummaryForChangeGroup?: (changeGroup: ChangeGroup<D>) => string;
+  fallbackSummaryForChangeGroup?: (
+    changeGroup: ChangeGroup<D>
+  ) => string | ReactElement;
 };
 
 /** A memoized record of some change groups, including a record of what options were used. */
@@ -313,13 +364,15 @@ export type MemoizedChangeGroups<D> = {
 /** Returns a flat list of timeline items for display in the UI,
  *  based on a list of change groups.
  */
-export const getTimelineItems = <D extends Branchable>({
+export const getTimelineItems = <D extends HasVersionControlMetadata>({
   doc,
+  mainUrl,
   changes,
   options,
   memoizedGroups,
 }: {
   doc: Doc<D>;
+  mainUrl: AutomergeUrl;
   changes: DecodedChangeWithMetadata[];
   options: ChangeGroupingOptions<D>;
   memoizedGroups?: MemoizedChangeGroups<D>;
@@ -329,6 +382,7 @@ export const getTimelineItems = <D extends Branchable>({
 } => {
   const { changeGroups, changeCount } = getGroupedChangesMemo({
     doc,
+    mainUrl,
     changes,
     options,
     memoizedGroups,
@@ -351,15 +405,19 @@ export const getTimelineItems = <D extends Branchable>({
         timelineItems.push({ ...marker, time: changeGroup.time });
       }
     } else {
-      // for normal change groups, push the group and then any markers
-      timelineItems.push({
-        id: `changeGroup-${changeGroup.from}-${changeGroup.to}`,
-        type: "changeGroup",
-        changeGroup,
-        users: changeGroup.authorUrls,
-        heads: [changeGroup.to],
-        time: changeGroup.time,
-      });
+      // for normal change groups, push the group (if it contains edits)
+      if (changeGroup.numberOfEdits > 0) {
+        timelineItems.push({
+          id: `changeGroup-${changeGroup.from}-${changeGroup.to}`,
+          type: "changeGroup",
+          changeGroup,
+          users: changeGroup.authorUrls,
+          heads: [changeGroup.to],
+          time: changeGroup.time,
+        });
+      }
+
+      // ... and then any markers
       for (const marker of changeGroup.markers) {
         timelineItems.push({ ...marker, time: changeGroup.time });
       }
@@ -382,44 +440,52 @@ const finalizeChangeGroup = <D>({
   diffHeads,
   options: { includePatchInChangeGroup, fallbackSummaryForChangeGroup },
 }: {
-  group: ChangeGroup<D>;
+  group: PendingChangeGroup<D>;
   doc: Doc<D>;
-  diffHeads: Heads;
+  diffHeads: Automerge.Heads;
   options: ChangeGroupingOptions<D>;
 }): ChangeGroup<D> | null => {
-  const finalized = { ...group };
+  const diff = diffWithProvenance(doc, diffHeads, [group.to]);
+  const filteredDiff = {
+    ...diff,
+    patches: diff.patches.filter(
+      (patch) => !includePatchInChangeGroup || includePatchInChangeGroup(patch)
+    ),
+  };
 
-  finalized.id = `${group.from}-${group.to}`;
+  const numberOfEdits = filteredDiff.patches.length;
 
-  finalized.diff = diffWithProvenance(doc, diffHeads, [finalized.to]);
-  finalized.docAtEndOfChangeGroup = view(doc, [finalized.to]);
-
-  finalized.numberOfEdits = finalized.diff.patches.filter(
-    (patch) => !includePatchInChangeGroup || includePatchInChangeGroup(patch)
-  ).length;
-
-  if (finalized.numberOfEdits === 0) {
+  if (numberOfEdits === 0 && group.markers.length === 0) {
     return null;
   }
 
-  if (fallbackSummaryForChangeGroup) {
-    finalized.fallbackSummary = fallbackSummaryForChangeGroup(finalized);
-  } else {
-    finalized.fallbackSummary = defaultPopulateFallbackSummary(finalized);
-  }
+  const finalized: ChangeGroup<D> = {
+    ...group,
+    id: `${group.from}-${group.to}`,
+    diff: filteredDiff,
+    numberOfEdits,
+    docAtEndOfChangeGroup: view(doc, [group.to]),
+    fallbackSummary: "",
+  };
+
+  finalized.fallbackSummary = fallbackSummaryForChangeGroup
+    ? fallbackSummaryForChangeGroup(finalized)
+    : defaultPopulateFallbackSummary(finalized);
 
   return finalized;
 };
 
 // Given previous cached results for change grouping, returns new groupings
 // either by incrementally adding to the memoized result or by restarting from scratch.
-const getGroupedChangesMemo = <T extends Branchable>({
+const getGroupedChangesMemo = <T>({
   doc,
+  mainUrl,
   changes,
   options,
   memoizedGroups,
 }: {
   doc: Doc<T>;
+  mainUrl: AutomergeUrl;
   changes: DecodedChangeWithMetadata[];
   options: ChangeGroupingOptions<T>;
   memoizedGroups?: MemoizedChangeGroups<T>;
@@ -428,6 +494,7 @@ const getGroupedChangesMemo = <T extends Branchable>({
     // recompute from scratch
     return getGroupedChanges({
       doc,
+      mainUrl,
       changes,
       options,
     });
@@ -452,14 +519,12 @@ const getGroupedChangesMemo = <T extends Branchable>({
       // Bail out and recompute from scratch
       return getGroupedChanges({
         doc,
+        mainUrl,
         changes,
         options,
       });
     } else {
-      revisedLastGroup = addChangeToGroup({
-        group: revisedLastGroup,
-        change: change,
-      });
+      revisedLastGroup = addChangeToGroup({ group: revisedLastGroup, change });
     }
   }
 
@@ -493,13 +558,13 @@ const getGroupedChangesMemo = <T extends Branchable>({
 // Add a change to an existing group, and maintain stats for the
 // group that need to be updated as we go.
 // Returns a new group without mutating the one passed in.
-const addChangeToGroup = <D>({
+const addChangeToGroup = <D, C extends ChangeGroup<D> | PendingChangeGroup<D>>({
   group: originalGroup,
   change,
 }: {
-  group: ChangeGroup<D>;
+  group: C;
   change: DecodedChangeWithMetadata;
-}) => {
+}): C => {
   const group = { ...originalGroup };
   group.changes.push(change);
   group.to = change.hash;
@@ -526,8 +591,9 @@ const addChangeToGroup = <D>({
  *  with markers attached; if you want a flat list of changelog items
  *  for display, use getChangelogItems.
  */
-export const getGroupedChanges = <T extends Branchable>({
+export const getGroupedChanges = <T>({
   doc,
+  mainUrl,
   changes,
   options: {
     grouping,
@@ -538,16 +604,17 @@ export const getGroupedChanges = <T extends Branchable>({
   },
 }: {
   doc: Doc<T>;
+  mainUrl: AutomergeUrl;
   changes: DecodedChangeWithMetadata[];
   options: ChangeGroupingOptions<T>;
 }) => {
   // TODO: we should sort this list in a stable way across devices.
   const changeGroups: ChangeGroup<T>[] = [];
 
-  let currentGroup: ChangeGroup<T> | null = null;
+  let currentGroup: PendingChangeGroup<T> | null = null;
 
   // define a helper for pushing a new group onto the list
-  const pushGroup = (group: ChangeGroup<T>) => {
+  const pushGroup = (group: PendingChangeGroup<T>) => {
     const finalized = finalizeChangeGroup({
       group,
       doc,
@@ -578,35 +645,59 @@ export const getGroupedChanges = <T extends Branchable>({
     [key: string]: {
       changeGroup: ChangeGroup<T>;
       changeHashes: Set<Hash>;
-      mergeMetadata: Branch["mergeMetadata"];
+      mergeMetadata: {
+        mergedAt: number;
+        mergedBy: AutomergeUrl;
+        mergeHeads: Automerge.Heads;
+      };
     };
   } = {};
-  for (const branch of doc.branchMetadata.branches) {
-    if (branch.mergeMetadata && branch.branchHeads) {
-      branchChangeGroups[branch.url] = {
-        changeGroup: {
-          id: `${branch.branchHeads[0]}-${branch.mergeMetadata.mergeHeads[0]}`,
-          from: branch.branchHeads[0],
-          to: branch.mergeMetadata.mergeHeads[0],
-          changes: [],
-          actorIds: [],
-          authorUrls: [],
-          docAtEndOfChangeGroup: undefined,
-          diff: { patches: [], fromHeads: [], toHeads: [] },
-          markers: [],
-          numberOfEdits: 0,
-          time: undefined,
-          fallbackSummary: "", // We'll fill this in when we finalize the group
-        },
-        changeHashes: getChangesFromMergedBranch({
-          decodedChangesForDoc: changes,
-          branchHeads: branch.mergeMetadata.mergeHeads,
-          mainHeads: getHeads(doc),
-          baseHeads: branch.branchHeads ?? [],
-        }),
-        mergeMetadata: branch.mergeMetadata,
-      };
+
+  const branchMergedMarkers = markers.filter(
+    (marker) => marker.type === "otherBranchMergedIntoThisDoc"
+  );
+
+  for (const marker of branchMergedMarkers) {
+    const branchDoc = marker.branchOm.doc;
+    const branchUrl = marker.branchOm.url;
+    const baseHeads = branchDoc.clones[mainUrl]?.baseHeads;
+
+    // ignore branches that don't contain the current file
+    if (!baseHeads) {
+      continue;
     }
+
+    const { mergeHeadsByDocUrl, mergedAt, mergedBy } = branchDoc.mergeMetadata;
+
+    const mergeHeads = mergeHeadsByDocUrl[mainUrl];
+
+    branchChangeGroups[branchUrl] = {
+      changeGroup: {
+        id: `${baseHeads}-${mergeHeads}`,
+        from: baseHeads[0],
+        to: mergeHeads[0],
+        changes: [],
+        actorIds: [],
+        authorUrls: [],
+        docAtEndOfChangeGroup: Automerge.view(doc, mergeHeads),
+        diff: { patches: [], fromHeads: [], toHeads: [] },
+        markers: [],
+        numberOfEdits: 0,
+        time: undefined,
+        fallbackSummary: "", // We'll fill this in when we finalize the group
+      },
+      changeHashes: getChangesFromMergedBranch({
+        decodedChangesForDoc: changes,
+        branchHeads: mergeHeads,
+        mainHeads: getHeads(doc),
+        baseHeads,
+      }),
+      mergeMetadata: {
+        mergedAt,
+        mergedBy,
+        mergeHeads,
+      },
+    };
   }
 
   // Initialize an inclusion function specialized to this doc
@@ -618,6 +709,12 @@ export const getGroupedChanges = <T extends Branchable>({
   // Now we loop over the changes and make our groups.
   for (let i = 0; i < changes.length; i++) {
     const decodedChange = changes[i];
+
+    // HACK: previously creating a clone of a doc would add an additional empty change
+    // this breaks the history. To make old docs work we filter out any changes without dependencies, except for the first change
+    if (i !== 0 && decodedChange.deps.length === 0) {
+      continue;
+    }
 
     const skipChange =
       // See if the datatype wants this change to appear in the log
@@ -686,8 +783,8 @@ export const getGroupedChanges = <T extends Branchable>({
 
             branchChangeGroup.changeGroup.markers.push({
               ...mergeMarker,
-              // @ts-ignore
-              changeGroups: [finalized], //this is fine; we know we're adding to a merge marker
+              // @ts-expect-error this is fine; we know we're adding to a merge marker
+              changeGroups: [finalized],
             });
             const otherMarkersForThisGroup = markersForGroup.filter(
               (m) => m !== mergeMarker
@@ -714,30 +811,17 @@ export const getGroupedChanges = <T extends Branchable>({
         group: currentGroup,
         change: decodedChange,
       });
-
-      // If this change is tagged, then we should end the current group.
-      // This ensures we have a group boundary corresponding to the tag in the changelog.
-      // TODO: The comparison here seems a little iffy; we're comparing heads to a single change hash...
-      // how should this actually work?
-      const matchingMarkers = markers.filter((marker) => {
-        return marker.heads[0] === decodedChange.hash;
-      });
-      if (matchingMarkers.length > 0) {
-        currentGroup.markers = matchingMarkers;
-        pushGroup(currentGroup);
-        currentGroup = null;
-      }
     } else {
       if (currentGroup) {
         pushGroup(currentGroup);
       }
+
       currentGroup = {
         id: `${decodedChange.hash}-${decodedChange.hash}`,
         from: decodedChange.hash,
         to: decodedChange.hash,
         changes: [decodedChange],
         actorIds: [decodedChange.actor],
-        diff: { patches: [], fromHeads: [], toHeads: [] },
         markers: [],
         time:
           decodedChange.time && decodedChange.time > 0
@@ -746,10 +830,24 @@ export const getGroupedChanges = <T extends Branchable>({
         authorUrls: decodedChange.metadata?.author
           ? [decodedChange.metadata.author as AutomergeUrl]
           : [],
-        numberOfEdits: 0,
-        docAtEndOfChangeGroup: undefined, // We'll fill this in when we finalize the group
-        fallbackSummary: "", // We'll fill this in when we finalize the group
       };
+    }
+
+    // add matching markers to group
+    if (currentGroup) {
+      // If this change is tagged, then we should end the current group.
+      // This ensures we have a group boundary corresponding to the tag in the changelog.
+      // TODO: The comparison here seems a little iffy; we're comparing heads to a single change hash...
+      // how should this actually work?
+      const matchingMarkers = markers.filter((marker) => {
+        return marker.heads[0] === decodedChange.hash;
+      });
+
+      if (matchingMarkers.length > 0) {
+        currentGroup.markers = matchingMarkers;
+        pushGroup(currentGroup);
+        currentGroup = null;
+      }
     }
   }
 

@@ -51,13 +51,13 @@ function FilterMenu({ id, button, className }: Props) {
     );
   });*/
 
-  const statusOptions = statuses.map(({ icon, id, label }, idx) => {
+  const statusOptions = statuses.map(({ Icon, id, label }, idx) => {
     return (
       <Menu.Item
         key={`status-${idx}`}
         onClick={() => handleStatusSelect(id as string)}
       >
-        {React.createElement(icon, { className: "mr-3" })}
+        <Icon className="mr-3" />
         <span>{label}</span>
         {filterState.status?.includes(id) && <BsCheck2 className="ml-auto" />}
       </Menu.Item>

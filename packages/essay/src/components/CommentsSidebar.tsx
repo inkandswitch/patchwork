@@ -11,14 +11,16 @@ import { getAnnotationGroupId } from "@/versionControl/annotations";
 import { AnnotationGroupView } from "@/versionControl/components/AnnotationGroupView";
 import { DocHandle } from "@automerge/automerge-repo";
 import { MessageCircle } from "lucide-react";
-import { TextSelection } from "./MarkdownCodeMirrorEditor";
+import { TextSelection } from "./MarkdownDocEditor";
 import { CommentState } from "@/versionControl/schema";
-import { MarkdownDoc, MarkdownDocAnchor } from "../datatype";
+import { MarkdownDoc } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";
+import { TextAnchor } from "@/lib/textAnchors";
 
 export const CommentsSidebar = ({
   doc,
   handle,
+  readonly,
   selection,
   hasEditorFocus,
   hideInlineComments,
@@ -29,13 +31,14 @@ export const CommentsSidebar = ({
 }: {
   doc: MarkdownDoc;
   handle: DocHandle<MarkdownDoc>;
-  selection: TextSelection;
+  readonly?: boolean;
+  selection: TextSelection | undefined;
   hasEditorFocus: boolean;
   hideInlineComments: boolean;
   annotationGroupsWithPosition: AnnotationGroupWithPosition[];
-  setSelectedAnnotationGroupId: (id: string) => void;
-  setHoveredAnnotationGroupId: (id: string) => void;
-  setCommentState: (state: CommentState<MarkdownDocAnchor>) => void;
+  setSelectedAnnotationGroupId: ((id: string | undefined) => void) | undefined;
+  setHoveredAnnotationGroupId: ((id: string | undefined) => void) | undefined;
+  setCommentState?: (state: CommentState<TextAnchor> | undefined) => void;
 }) => {
   return (
     <div className="relative">
@@ -56,19 +59,20 @@ export const CommentsSidebar = ({
               <AnnotationGroupView
                 doc={doc}
                 handle={handle}
+                readonly={readonly}
                 annotationGroup={annotationGroup}
-                annotationsViewComponent={EssayAnnotations}
+                AnnotationsViewComponent={EssayAnnotations}
                 setIsHovered={(isHovered) => {
-                  setHoveredAnnotationGroupId(isHovered ? id : undefined);
+                  setHoveredAnnotationGroupId?.(isHovered ? id : undefined);
                 }}
                 setIsSelected={(isSelected) => {
-                  setSelectedAnnotationGroupId(isSelected ? id : undefined);
+                  setSelectedAnnotationGroupId?.(isSelected ? id : undefined);
                 }}
                 onSelectNext={() => {
                   const nextAnnotation =
                     annotationGroupsWithPosition[index + 1];
                   if (nextAnnotation) {
-                    setSelectedAnnotationGroupId(
+                    setSelectedAnnotationGroupId?.(
                       getAnnotationGroupId(nextAnnotation)
                     );
                   }
@@ -77,7 +81,7 @@ export const CommentsSidebar = ({
                   const prevAnnotation =
                     annotationGroupsWithPosition[index - 1];
                   if (prevAnnotation) {
-                    setSelectedAnnotationGroupId(
+                    setSelectedAnnotationGroupId?.(
                       getAnnotationGroupId(prevAnnotation)
                     );
                   }
@@ -85,7 +89,7 @@ export const CommentsSidebar = ({
                 hasNext={index < annotationGroupsWithPosition.length - 1}
                 hasPrev={index > 0}
                 setCommentState={setCommentState}
-                hideAnnotations={true}
+                hideInlineCommentAnnotations={true}
               />
             </div>
           );
@@ -110,7 +114,7 @@ export const CommentsSidebar = ({
                   // can't point after last character so we use the last character instead
                   const to = Math.min(doc.content.length - 1, selection.to);
 
-                  setCommentState({
+                  setCommentState?.({
                     type: "create",
                     target: [
                       {

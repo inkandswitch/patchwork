@@ -1,7 +1,8 @@
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 
-import { EditorProps, Tool } from "@/tools";
+import { EditorProps, makeTool } from "@/tools";
 import { next as A } from "@automerge/automerge";
+import Handsontable from "handsontable";
 import { HotTable } from "@handsontable/react";
 import "handsontable/dist/handsontable.full.min.css";
 import { registerAllModules } from "handsontable/registry";
@@ -26,16 +27,23 @@ export const DataGrid = ({
   annotations = [],
 }: EditorProps<DataGridDocAnchor, string>) => {
   const [latestDoc] = useDocument<DataGridDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const handle = useHandle<DataGridDoc>(docUrl);
+  const handle = useHandle<DataGridDoc>(docUrl)!; // TODO: JAH strict fix
 
   const doc = useMemo(
-    () => (docHeads ? A.view(latestDoc, docHeads) : latestDoc),
+    () => (latestDoc && docHeads ? A.view(latestDoc, docHeads) : latestDoc),
     [latestDoc, docHeads]
   );
 
-  const onBeforeHotChange = (changes) => {
+  const onBeforeHotChange = (
+    changes: Array<Handsontable.CellChange | null>
+  ) => {
     handle.change((doc) => {
-      changes.forEach(([row, column, , newValue]) => {
+      changes.forEach((change) => {
+        if (!change) {
+          return;
+        }
+        const [row, columnUntyped, , newValue] = change;
+        const column = columnUntyped as number; // TODO: JAH strict fix
         if (column > doc.data[0].length) {
           doc.data[0][column] = "";
         }
@@ -48,7 +56,7 @@ export const DataGrid = ({
     return false;
   };
 
-  const onBeforeCreateRow = (index, amount) => {
+  const onBeforeCreateRow = (index: number, amount: number) => {
     handle.change((doc) => {
       doc.data.splice(
         index,
@@ -59,7 +67,7 @@ export const DataGrid = ({
     return false;
   };
 
-  const onBeforeCreateCol = (index, amount) => {
+  const onBeforeCreateCol = (index: number, amount: number) => {
     handle.change((doc) => {
       doc.data.forEach((row) => {
         row.splice(index, 0, ...new Array(amount).fill(null));
@@ -100,10 +108,10 @@ export const DataGrid = ({
   );
 };
 
-export const dataGridTool: Tool = {
+export const dataGridTool = makeTool({
   type: "patchwork:tool",
   id: "datagrid",
   name: "Spreadsheet",
   supportedDataTypes: ["datagrid"],
-  editorComponent: DataGrid,
-};
+  EditorComponent: DataGrid,
+});

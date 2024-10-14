@@ -7,18 +7,28 @@ import { type DataType } from "@/sdk";
 import {
   AssistantMessage,
   ChatMessage,
-  SUPPORTED_DATATYPES,
+  isSupportedDatatype,
   makeBotTextEdits,
 } from "../bots";
-import { toast } from "sonner";
+import { useToast } from "@/shadcn/ui/use-toast";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { Branch, HasVersionControlMetadata } from "../schema";
-import { SidebarMode } from "./VersionControlEditor";
+import { BranchDoc, HasVersionControlMetadata } from "../schema";
 import Markdown from "react-markdown";
 import { isLLMActive } from "@/lib/llm";
+import { SidebarMode } from "@/explorer/uiState";
+import { om, Om } from "@/om";
 
 export type HasBotChatHistory = {
   botChatHistory: ChatMessage[];
+};
+
+export const withHasBotChatHistory = <D extends object>(
+  doc: D
+): D & HasBotChatHistory => {
+  return {
+    ...doc,
+    botChatHistory: [],
+  };
 };
 
 // A string which will be visible to the bot representing user acceptance of edits.
@@ -30,25 +40,28 @@ export const BotSidebar = ({
   doc,
   handle,
   dataType,
-  selectedBranch,
+  selectedBranchUrl,
   setSelectedBranch,
   setSidebarMode,
-  mergeBranch,
-  deleteBranch,
+  onMergeBranch,
+  onDeleteBranch,
+  mainDocUrl,
 }: {
   doc: Doc<HasVersionControlMetadata<unknown, unknown>>;
   handle: DocHandle<HasVersionControlMetadata<unknown, unknown>>;
-  dataType: DataType<unknown, unknown, unknown>;
-  selectedBranch: Branch | undefined;
-  setSelectedBranch: (branch: Branch) => void;
+  dataType: DataType;
+  selectedBranchUrl: AutomergeUrl | undefined;
+  setSelectedBranch: (branchUrl: AutomergeUrl | null) => void;
   setSidebarMode: (mode: SidebarMode) => void;
-  mergeBranch: (branchUrl: AutomergeUrl) => void;
-  deleteBranch: (branchUrl: AutomergeUrl) => void;
+  onMergeBranch: (branchUrl: AutomergeUrl) => void;
+  onDeleteBranch: (branchUrl: AutomergeUrl) => void;
+  mainDocUrl: AutomergeUrl;
 }) => {
   const repo = useRepo();
   const [pendingMessage, setPendingMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!doc.botChatHistory) {
@@ -73,7 +86,7 @@ export const BotSidebar = ({
     setPendingMessage("");
     setLoading(true);
     try {
-      const branch = await makeBotTextEdits({
+      const branchUrl = await makeBotTextEdits({
         repo,
         targetDocHandle: handle,
         // The doc object hasn't updated yet from the Automerge update above,
@@ -82,16 +95,16 @@ export const BotSidebar = ({
         dataType,
       });
 
-      if (branch) {
-        setSelectedBranch(branch);
+      if (branchUrl) {
+        setSelectedBranch(branchUrl);
       }
     } catch (e) {
-      toast.error("Error performing edit");
+      toast({ title: "Error performing edit", variant: "destructive" });
     }
     setLoading(false);
   };
 
-  if (!SUPPORTED_DATATYPES.includes(dataType.id)) {
+  if (!isSupportedDatatype(dataType.id)) {
     return (
       <div className="p-2 text-sm text-gray-500 flex items-center justify-center h-full">
         Bots are not yet supported for datatype: {dataType.id}
@@ -109,18 +122,20 @@ export const BotSidebar = ({
     .find((msg) => msg.role === "assistant") as AssistantMessage;
   const showAcceptRejectButtons =
     lastAssistantMessage?.branchUrl &&
-    selectedBranch?.url === lastAssistantMessage?.branchUrl;
+    selectedBranchUrl === lastAssistantMessage?.branchUrl;
 
-  const acceptSuggestion = () => {
+  const acceptSuggestion = async () => {
+    console.log("acceptSuggestion", selectedBranchUrl);
     handle.change((d) => {
       d.botChatHistory.push({
         role: "user",
         content: ACCEPT_MESSAGE,
       });
     });
-    mergeBranch(selectedBranch.url);
+    const branchOm = await om<BranchDoc>(selectedBranchUrl!, repo);
+    onMergeBranch(branchOm.url);
   };
-  const rejectSuggestion = () => {
+  const rejectSuggestion = async () => {
     handle.change((d) => {
       d.botChatHistory.push({
         role: "user",
@@ -129,9 +144,8 @@ export const BotSidebar = ({
     });
 
     // need to also do the update on the main doc because we're not merging the branch...
-    const mainDocHandle = repo.find<
-      HasVersionControlMetadata<unknown, unknown>
-    >(doc.branchMetadata.source.url);
+    const mainDocHandle =
+      repo.find<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
     mainDocHandle.change((d) => {
       d.botChatHistory.push({
         role: "user",
@@ -139,9 +153,8 @@ export const BotSidebar = ({
       });
     });
 
-    deleteBranch(selectedBranch.url);
-
-    setSelectedBranch(undefined);
+    const branchOm = await om<BranchDoc>(selectedBranchUrl!, repo);
+    onDeleteBranch(branchOm.url);
   };
   const reviewSuggestion = () => {
     setSidebarMode("review");
@@ -178,7 +191,6 @@ export const BotSidebar = ({
           )}
         </div>
       </h3>
-
       <div className="flex-grow overflow-y-auto mb-2 flex flex-col">
         {doc.botChatHistory
           .filter((message) => message.role !== "tool")
@@ -191,7 +203,7 @@ export const BotSidebar = ({
               return (
                 <div
                   key={index}
-                  className="text-sm text-gray-500 text-xs w-auto inline-block self-end mr-2"
+                  className="text-sm text-gray-500 w-auto inline-block self-end mr-2"
                 >
                   {message.content === ACCEPT_MESSAGE && (
                     <div className="flex items-center gap-2">
@@ -227,25 +239,16 @@ export const BotSidebar = ({
         )}
         {showAcceptRejectButtons && (
           <div className="flex items-center gap-2 px-2">
-            <Button
-              className=" bg-emerald-500 text-white flex items-center gap-2"
-              onClick={acceptSuggestion}
-            >
-              <CheckIcon size={16} />
+            <Button variant="default" onClick={acceptSuggestion}>
+              <CheckIcon size={16} className="mr-2" />
               Accept
             </Button>
-            <Button
-              className=" bg-yellow-500 text-white flex items-center gap-2"
-              onClick={rejectSuggestion}
-            >
-              <XIcon size={16} />
+            <Button variant="default" onClick={rejectSuggestion}>
+              <XIcon size={16} className="mr-2" />
               Reject
             </Button>
-            <Button
-              className=" bg-gray-500 text-white flex items-center gap-2"
-              onClick={reviewSuggestion}
-            >
-              <EyeIcon size={16} />
+            <Button variant="ghost" onClick={reviewSuggestion}>
+              <EyeIcon size={16} className="mr-2" />
               Review
             </Button>
           </div>

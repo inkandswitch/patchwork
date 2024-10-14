@@ -1,7 +1,7 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 // TODO move these utils
 import { getRelativeTimeString } from "@/lib/dates";
-import { next as A } from "@automerge/automerge";
+import { next as A, Heads } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, StorageId } from "@automerge/automerge-repo";
 import { useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { Button } from "@/shadcn/ui/button";
@@ -65,7 +65,7 @@ const SyncIndicatorInner = ({
   const repo = useRepo();
   const isSynced = syncState === SyncState.InSync;
 
-  const prevHandle = useRef(undefined);
+  const prevHandle = useRef<DocHandle<unknown> | undefined>(undefined);
 
   useEffect(() => {
     if (prevHandle.current && prevHandle.current.url !== handle.url) {
@@ -87,12 +87,14 @@ const SyncIndicatorInner = ({
 
     const ownStorageId = await repo.storageId();
 
-    const ownSyncState = await repo.storageSubsystem.loadSyncState(
+    // TODO: JAH strict fix - lots of !s here
+
+    const ownSyncState = await repo.storageSubsystem!.loadSyncState(
       handle.documentId,
-      ownStorageId
+      ownStorageId!
     );
 
-    const syncServerSyncState = await repo.storageSubsystem.loadSyncState(
+    const syncServerSyncState = await repo.storageSubsystem!.loadSyncState(
       handle.documentId,
       storageId
     );
@@ -303,8 +305,8 @@ enum SyncState {
 }
 
 interface SyncIndicatorState {
-  syncServerHeads: A.Heads;
-  ownHeads: A.Heads;
+  syncServerHeads: A.Heads | undefined;
+  ownHeads: A.Heads | undefined;
   lastSyncUpdate?: number;
   isInternetConnected: boolean;
   syncState: SyncState;
@@ -372,6 +374,10 @@ function useSyncIndicatorState(
       setSyncServerHeads(syncServerHeads ?? []); // initialize to empty heads if we have no state
 
       handle.doc().then((doc) => {
+        if (!doc) {
+          // TODO: JAH strict fix
+          throw new Error("No doc");
+        }
         setOwnHeads(A.getHeads(doc));
       });
     }
@@ -383,7 +389,7 @@ function useSyncIndicatorState(
       }
     };
 
-    const onRemoteHeads = ({ storageId: remoteStorageId, heads }) => {
+    const onRemoteHeads = ({ storageId: remoteStorageId, heads }: { storageId: StorageId, heads: Heads }) => {
       if (storageId === remoteStorageId) {
         send({ type: "RECEIVED_SYNC_MESSAGE" });
         setSyncServerHeads(heads);

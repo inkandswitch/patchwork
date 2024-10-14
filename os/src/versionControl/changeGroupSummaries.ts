@@ -1,27 +1,48 @@
-import { DocHandle } from "@automerge/automerge-repo";
-import { ChangeGroup } from "./groupChanges";
-import { HasChangeGroupSummaries } from "./schema";
 import { getStringCompletion, isLLMActive } from "@/lib/llm";
+import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { debounce } from "lodash";
-import { useCallback, useEffect } from "react";
-
+import { useEffect, useMemo } from "react";
+import { ChangeGroup } from "./groupChanges";
+import {
+  HasChangeGroupSummaries,
+  HasLinkToVersionControlSidecar,
+  initVersionControlSidecarDoc,
+} from "./schema";
 export const populateChangeGroupSummaries = async <
-  T extends HasChangeGroupSummaries
+  T extends HasLinkToVersionControlSidecar
 >({
   groups,
   handle,
   force,
   promptForAutoChangeGroupDescription,
+  repo,
 }: {
   groups: ChangeGroup<T>[];
   handle: DocHandle<T>;
   force?: boolean;
-  promptForAutoChangeGroupDescription: (args: {
+  promptForAutoChangeGroupDescription?: (args: {
     docBefore: T;
     docAfter: T;
   }) => string;
+  repo: Repo;
 }) => {
-  handle.change((doc) => {
+  let versionControlMetadataUrl = handle.docSync()?.versionControlMetadataUrl;
+  if (!versionControlMetadataUrl) {
+    // init sidecar doc for backwards compatibility
+    handle.change((doc) => {
+      initVersionControlSidecarDoc(doc, repo);
+    });
+    versionControlMetadataUrl = handle.docSync()?.versionControlMetadataUrl;
+  }
+
+  const versionControlSidecarHandle = repo.find<HasChangeGroupSummaries>(
+    versionControlMetadataUrl!
+  );
+  if (!versionControlSidecarHandle) {
+    console.error("Failed to load version control sidecar document");
+    return;
+  }
+  versionControlSidecarHandle.change((doc) => {
     if (!doc.changeGroupSummaries) {
       doc.changeGroupSummaries = {};
     }
@@ -32,30 +53,35 @@ export const populateChangeGroupSummaries = async <
   }
 
   for (const [index, group] of groups.entries()) {
-    if (!force && handle.docSync().changeGroupSummaries[group.id]) {
+    if (
+      !force &&
+      versionControlSidecarHandle.docSync()!.changeGroupSummaries[group.id]
+    ) {
       continue;
     }
-    await populateGroupSummary({
+    await populateGroupSummary<T>({
       group,
       docBefore: groups[index - 1]?.docAtEndOfChangeGroup ?? {},
-      handle,
+      versionControlSidecarHandle,
       promptForAutoChangeGroupDescription,
     });
   }
 };
 
-const populateGroupSummary = async <T extends HasChangeGroupSummaries>({
+const populateGroupSummary = async <
+  DocType extends HasLinkToVersionControlSidecar
+>({
   group,
   docBefore,
-  handle,
+  versionControlSidecarHandle,
   promptForAutoChangeGroupDescription,
 }: {
-  group: ChangeGroup<T>;
+  group: ChangeGroup<DocType>;
   docBefore: any;
-  handle: DocHandle<T>;
+  versionControlSidecarHandle: DocHandle<HasChangeGroupSummaries>;
   promptForAutoChangeGroupDescription: (args: {
-    docBefore: T;
-    docAfter: T;
+    docBefore: DocType;
+    docAfter: DocType;
   }) => string;
 }) => {
   const docAfter = group.docAtEndOfChangeGroup;
@@ -67,7 +93,7 @@ const populateGroupSummary = async <T extends HasChangeGroupSummaries>({
   const summary = await getStringCompletion(prompt);
 
   if (summary) {
-    handle.change((doc) => {
+    versionControlSidecarHandle.change((doc) => {
       doc.changeGroupSummaries[group.id] = {
         title: summary,
       };
@@ -76,31 +102,36 @@ const populateGroupSummary = async <T extends HasChangeGroupSummaries>({
 };
 
 export const useAutoPopulateChangeGroupSummaries = <
-  T extends HasChangeGroupSummaries
+  DocType extends HasLinkToVersionControlSidecar
 >({
   changeGroups,
   handle,
-  msBetween = 10000,
+  // debounce to every 5s by default; this keeps LLM requests reasonably light while typing
+  msBetween = 5000,
   promptForAutoChangeGroupDescription,
+  repo,
 }: {
-  changeGroups: ChangeGroup<T>[];
-  handle: DocHandle<T>;
+  changeGroups: ChangeGroup<DocType>[];
+  handle?: DocHandle<DocType>;
   msBetween?: number;
-  promptForAutoChangeGroupDescription: (args: {
-    docBefore: T;
-    docAfter: T;
+  promptForAutoChangeGroupDescription?: (args: {
+    docBefore: DocType;
+    docAfter: DocType;
   }) => string;
+  repo: Repo;
 }) => {
-  const debouncedPopulate = useCallback(
-    debounce(({ groups, handle, force }) => {
-      populateChangeGroupSummaries({
-        groups,
-        handle,
-        force,
-        promptForAutoChangeGroupDescription,
-      });
-    }, msBetween),
-    []
+  const debouncedPopulate = useMemo(
+    () =>
+      debounce(({ groups, handle, force }) => {
+        populateChangeGroupSummaries({
+          groups,
+          handle,
+          force,
+          promptForAutoChangeGroupDescription,
+          repo,
+        });
+      }, msBetween),
+    [msBetween, promptForAutoChangeGroupDescription, repo]
   );
 
   useEffect(() => {
@@ -109,7 +140,7 @@ export const useAutoPopulateChangeGroupSummaries = <
       handle,
     });
 
-    // Cleanup function to cancel the debounce if the component unmounts
+    // Cleanup function to cancel the debounce
     return () => {
       debouncedPopulate.cancel();
     };
@@ -118,5 +149,6 @@ export const useAutoPopulateChangeGroupSummaries = <
     handle,
     debouncedPopulate,
     promptForAutoChangeGroupDescription,
+    repo,
   ]);
 };

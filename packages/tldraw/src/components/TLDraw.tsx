@@ -1,5 +1,9 @@
 import { DocHandle } from "@automerge/automerge-repo";
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useHandle,
+  useRepo,
+} from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useState } from "react";
 
 import { useCurrentAccount } from "@/explorer/account";
@@ -12,6 +16,7 @@ import "@tldraw/tldraw/tldraw.css";
 import { useAutomergeStore } from "../vendor/automerge-tldraw";
 import { useDiffStyling, useCameraSync, useAnchorEventListener } from "./hooks";
 import { TLDrawDocAnchor, TLDrawDoc } from "../datatype";
+import { useHandleDef } from "@/hooks/useHandleDef";
 
 interface TLDrawProps extends EditorProps<TLDrawDocAnchor, TLShape> {
   camera?: TLCamera;
@@ -28,13 +33,13 @@ export const TLDraw = ({
   setHoveredAnchor = () => {},
 }: TLDrawProps) => {
   useDocument<TLDrawDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const handle = useHandle<TLDrawDoc>(docUrl);
+  const handle = useHandleDef<TLDrawDoc>(docUrl);
   const account = useCurrentAccount();
   const userId = account ? account.contactHandle.url : "no-account";
 
   const [doc] = useDocument<TLDrawDoc>(docUrl);
   const docAtHeads = useMemo(
-    () => (docHeads ? A.view(doc, docHeads) : undefined),
+    () => (doc && docHeads ? A.view(doc, docHeads) : undefined),
     [doc, docHeads]
   );
 
@@ -68,7 +73,7 @@ export const TLDraw = ({
       ) : (
         <EditableTLDraw
           userId={userId}
-          doc={doc}
+          doc={doc!} // TODO: JAH strict fix
           annotations={annotations}
           handle={handle}
           camera={camera ?? localCamera}
@@ -89,7 +94,7 @@ interface TlDrawProps {
   camera?: TLCamera;
   onChangeCamera?: (camera: TLCamera) => void;
   setSelectedAnchors: (anchors: TLDrawDocAnchor[]) => void;
-  setHoveredAnchor: (anchor: TLDrawDocAnchor) => void;
+  setHoveredAnchor: (anchor: TLDrawDocAnchor | null) => void;
 }
 
 const EditableTLDraw = ({
@@ -147,6 +152,7 @@ const ReadOnlyTLDraw = ({
 
   return (
     <Tldraw
+      className="border-2 border-dashed border-gray-400"
       store={store}
       autoFocus
       onMount={(editor) => {
@@ -160,6 +166,7 @@ const ReadOnlyTLDraw = ({
 export const SideBySide = ({
   docUrl,
   mainDocUrl,
+  docPath,
   docHeads,
   annotations,
   setSelectedAnchors,
@@ -178,6 +185,8 @@ export const SideBySide = ({
           onChangeCamera={setCamera}
           setSelectedAnchors={setSelectedAnchors}
           setHoveredAnchor={setHoveredAnchor}
+          mainDocUrl={mainDocUrl}
+          docPath={docPath}
         />
       </div>
       <div className="h-full flex-1 overflow-auto border-l border-l-gray-200">
@@ -192,6 +201,8 @@ export const SideBySide = ({
           onChangeCamera={setCamera}
           setSelectedAnchors={setSelectedAnchors}
           setHoveredAnchor={setHoveredAnchor}
+          mainDocUrl={mainDocUrl}
+          docPath={docPath}
         />
       </div>
     </div>

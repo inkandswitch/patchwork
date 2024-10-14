@@ -1,4 +1,20 @@
-import { DocLink, DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
+import { FileExportMethod, genericExportMethods } from "@/fileExports";
+import { useDataTypes } from "@/hooks/useDataTypes";
+import { FolderDoc } from "@/packages/folder";
+import { DocPath } from "@/packages/folder/datatype";
+import { dataTypeById } from "@/sdk";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shadcn/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
+import { useToast } from "@/shadcn/ui/use-toast";
+import { Tool } from "@/tools";
+import { HasVersionControlMetadata } from "@/versionControl/schema";
+import * as Automerge from "@automerge/automerge";
 import { Doc, DocHandle, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import {
@@ -10,7 +26,6 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import React, { useRef } from "react";
-import { toast } from "sonner";
 import { saveFile } from "../utils";
 import { AccountPicker } from "./AccountPicker";
 import {
@@ -19,60 +34,159 @@ import {
   JACQUARD_SYNC_SERVER_STORAGE_ID,
   SyncIndicator,
 } from "./SyncIndicator";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/shadcn/ui/dropdown-menu";
-
-import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
-import { genericExportMethods } from "@/fileExports";
-import { Tool } from "@/tools";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { getHeads } from "@automerge/automerge";
-import { useDataType } from "../../datatypes";
-import { getUrlSafeName } from "../hooks/useSelectedDocLink";
+import { getUrlSafeName } from "../router";
 
 type TopbarProps = {
   showSidebar: boolean;
   setShowSidebar: (showSidebar: boolean) => void;
-  selectedDocLink: DocLinkWithFolderPath | undefined;
-  selectDocLink: (docLink: DocLinkWithFolderPath | null) => void;
+  selectedDocPath: DocPath | undefined;
+  selectDocPath: (docPath: DocPath | undefined) => void;
   selectedDoc: Doc<HasVersionControlMetadata<unknown, unknown>> | undefined;
   selectedDocHandle:
     | DocHandle<HasVersionControlMetadata<unknown, unknown>>
     | undefined;
   addNewDocument: (doc: { type: string }) => void;
-  removeDocLink: (link: DocLinkWithFolderPath) => void;
+  removeDocPath: (docPath: DocPath) => void;
   tools: Tool[];
   tool: Tool;
   setToolId: (id: string) => void;
+  docHeadsFromTimelineSidebar?: Automerge.Heads;
 };
 
 export const Topbar: React.FC<TopbarProps> = ({
   showSidebar,
   setShowSidebar,
-  selectDocLink,
-  selectedDocLink,
+  selectDocPath,
+  selectedDocPath,
   selectedDoc,
   selectedDocHandle,
   tools,
   tool,
   setToolId: setToolModuleId,
-  removeDocLink,
+  removeDocPath,
+  docHeadsFromTimelineSidebar,
 }) => {
   const repo = useRepo();
+  const { toast } = useToast();
 
+  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
   const selectedDataTypeRef = useRef<string>();
   selectedDataTypeRef.current = selectedDataTypeId;
 
-  const selectedDataType = useDataType(selectedDataTypeId);
+  const dataTypes = useDataTypes();
+  const selectedDataType = dataTypeById(dataTypes, selectedDataTypeId);
+
+  const toolsWithEditorComponent = tools.filter((tool) => tool.EditorComponent);
+
+  const onClickMakeCopy = async () => {
+    if (
+      !selectedDocHandle ||
+      !selectedDataType ||
+      !selectedDocPath ||
+      !selectedDocLink
+    ) {
+      // TODO: JAH strict fix lazy
+      throw new Error("something unexpected is missing idk");
+    }
+
+    let newHandle: DocHandle<HasVersionControlMetadata>;
+
+    if (docHeadsFromTimelineSidebar) {
+      newHandle = repo.create<HasVersionControlMetadata>();
+
+      const originalDoc = await selectedDocHandle.doc();
+
+      if (!originalDoc) {
+        throw new Error("can't load doc");
+      }
+
+      const changes = Automerge.getAllChanges(originalDoc);
+
+      let cutOff = 0;
+      for (const change of changes) {
+        cutOff += 1;
+        const decodeChange = Automerge.decodeChange(change);
+
+        if (decodeChange.hash === docHeadsFromTimelineSidebar[0]) {
+          break;
+        }
+      }
+
+      const [docAtHeads] = Automerge.applyChanges(
+        Automerge.init<HasVersionControlMetadata>(),
+        changes.slice(0, cutOff)
+      );
+
+      newHandle.update((doc) => Automerge.merge(doc, docAtHeads));
+    } else {
+      newHandle =
+        repo.clone<HasVersionControlMetadata<unknown, unknown>>(
+          selectedDocHandle
+        );
+    }
+
+    newHandle.change((doc) => {
+      selectedDataType.markCopy(doc);
+    });
+
+    const newDocLink = {
+      url: newHandle.url,
+      name: await selectedDataType.getTitle(newHandle.docSync(), repo),
+      type: selectedDocLink.type,
+    };
+
+    const folderDocPath = DocPath.parent(selectedDocPath);
+
+    if (!docHeadsFromTimelineSidebar) {
+      const folderHandle = repo.find<FolderDoc>(
+        DocPath.toLink(folderDocPath).url
+      );
+      const folderDoc = await folderHandle.doc();
+      const index = folderDoc!.docs.findIndex(
+        (doc) => doc.url === selectedDocUrl
+      );
+      folderHandle.change((doc) => doc.docs.splice(index + 1, 0, newDocLink));
+    }
+
+    // TODO: we used to have a setTimeout here, see if we need to bring it back.
+    selectDocPath([...folderDocPath, newDocLink]);
+  };
+
+  const onClickExport = async (method: FileExportMethod<unknown>) => {
+    // TODO move this exporting logic into a more centralized place?
+    // but for now this is the only place it's called, so seems fine...
+
+    if (!selectedDoc || !selectedDocLink) {
+      // TODO: JAH strict fix lazy
+      throw new Error("something unexpected is missing idk");
+    }
+    const blob = await method.export(selectedDoc, repo);
+    const defaultFilename = `${getUrlSafeName(selectedDocLink.name)}.${
+      typeof method.fileExtension === "function"
+        ? method.fileExtension(selectedDoc!)
+        : method.fileExtension
+    }`;
+    const filename = method.filename
+      ? method.filename(selectedDoc!)
+      : defaultFilename;
+
+    console.log({ defaultFilename, filename });
+    const contentType =
+      typeof method.contentType === "function"
+        ? method.contentType(selectedDoc!)
+        : method.contentType;
+
+    saveFile(blob, filename, [
+      {
+        accept: {
+          [contentType]: [`.${method.fileExtension}`],
+        },
+      },
+    ]);
+  };
 
   return (
     <div className="h-10 bg-gray-100 flex items-center flex-shrink-0 border-b border-gray-300">
@@ -85,11 +199,11 @@ export const Topbar: React.FC<TopbarProps> = ({
         </div>
       )}
       <div className="ml-3 text-sm text-gray-700 font-bold">
-        {selectedDataType &&
+        {/* {selectedDataType &&
           React.createElement(selectedDataType.icon, {
             className: "inline mr-1",
             size: 14,
-          })}
+          })} */}
         {selectedDocName}
       </div>
       <div className="ml-1 mt-[-2px]">
@@ -111,24 +225,18 @@ export const Topbar: React.FC<TopbarProps> = ({
         )}
       </div>
 
-      {tools.length > 1 && selectedDocLink && (
+      {toolsWithEditorComponent.length > 1 && selectedDocLink && (
         <Tabs
           value={tool?.id}
           className="ml-auto"
           onValueChange={setToolModuleId}
         >
           <TabsList>
-            {tools
-              .filter((tool) => tool.editorComponent)
-              .map((tool) => (
-                <TabsTrigger
-                  value={tool.id}
-                  className="px-2 py-1"
-                  key={tool.id}
-                >
-                  {tool.name}
-                </TabsTrigger>
-              ))}
+            {toolsWithEditorComponent.map((tool) => (
+              <TabsTrigger value={tool.id} className="px-2 py-1" key={tool.id}>
+                {tool.name}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
       )}
@@ -141,106 +249,69 @@ export const Topbar: React.FC<TopbarProps> = ({
               className="mt-1 mr-21 text-gray-500 hover:text-gray-800"
             />
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="mr-4">
-            <DropdownMenuItem
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                toast.success("Copied to clipboard");
-              }}
-            >
-              <ShareIcon
-                className="inline-block text-gray-500 mr-2"
-                size={14}
-              />{" "}
-              Copy share URL
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={async () => {
-                const newHandle =
-                  repo.clone<HasVersionControlMetadata<unknown, unknown>>(
-                    selectedDocHandle
-                  );
-                newHandle.change((doc: any) => {
-                  selectedDataType.markCopy(doc);
-                  doc.branchMetadata.source = {
-                    url: selectedDocUrl,
-                    branchHeads: getHeads(selectedDocHandle.docSync()),
-                  };
-                });
+          {selectedDoc && (
+            <DropdownMenuContent className="mr-4">
+              <DropdownMenuItem
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast({ title: "Copied to clipboard" });
+                }}
+              >
+                <ShareIcon
+                  className="inline-block text-gray-500 mr-2"
+                  size={14}
+                />{" "}
+                Copy share URL
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onClickMakeCopy}>
+                <GitForkIcon
+                  className="inline-block text-gray-500 mr-2"
+                  size={14}
+                />{" "}
+                {!docHeadsFromTimelineSidebar
+                  ? "Make a copy of latest version"
+                  : "Make a copy of visible version"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {(selectedDataType?.fileExportMethods ?? [])
+                .concat(genericExportMethods)
+                .map((method, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    onClick={() => onClickExport(method)}
+                  >
+                    <Download
+                      size={14}
+                      className="inline-block text-gray-500 mr-2"
+                    />{" "}
+                    Export as{" "}
+                    {typeof method.exportMethodName === "function"
+                      ? method.exportMethodName(selectedDoc)
+                      : method.exportMethodName}
+                  </DropdownMenuItem>
+                ))}
 
-                const newDocLink: DocLink = {
-                  url: newHandle.url,
-                  name: await selectedDataType.getTitle(
-                    newHandle.docSync(),
-                    repo
-                  ),
-                  type: selectedDocLink.type,
-                };
-
-                const folderHandle = repo.find<FolderDoc>(
-                  selectedDocLink.folderPath[
-                    selectedDocLink.folderPath.length - 1
-                  ]
-                );
-                await folderHandle.whenReady();
-
-                const index = folderHandle
-                  .docSync()
-                  .docs.findIndex((doc) => doc.url === selectedDocUrl);
-                folderHandle.change((doc) =>
-                  doc.docs.splice(index + 1, 0, newDocLink)
-                );
-
-                // TODO: we used to have a setTimeout here, see if we need to bring it back.
-                selectDocLink({
-                  ...newDocLink,
-                  folderPath: selectedDocLink.folderPath,
-                });
-              }}
-            >
-              <GitForkIcon
-                className="inline-block text-gray-500 mr-2"
-                size={14}
-              />{" "}
-              Make a copy
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {(selectedDataType?.fileExportMethods ?? [])
-              .concat(genericExportMethods)
-              .map((method, index) => (
-                <DropdownMenuItem
-                  key={index}
-                  onClick={async () => {
-                    const blob = await method.export(selectedDoc, repo);
-                    const filename = `${getUrlSafeName(selectedDocLink.name)}.${
-                      method.extension
-                    }`;
-                    saveFile(blob, filename, [
-                      {
-                        accept: {
-                          [method.contentType]: [`.${method.extension}`],
-                        },
-                      },
-                    ]);
-                  }}
-                >
-                  <Download
-                    size={14}
-                    className="inline-block text-gray-500 mr-2"
-                  />{" "}
-                  Export as {method.name}
-                </DropdownMenuItem>
-              ))}
-
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => removeDocLink(selectedDocLink)}>
-              <Trash2Icon
-                className="inline-block text-gray-500 mr-2"
-                size={14}
-              />{" "}
-              Remove from My Documents
-            </DropdownMenuItem>
-          </DropdownMenuContent>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() =>
+                  selectedDocPath && removeDocPath(selectedDocPath)
+                }
+              >
+                <Trash2Icon
+                  className="inline-block text-gray-500 mr-2"
+                  size={14}
+                />{" "}
+                Remove doc from folder
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          )}
+          {!selectedDoc && (
+            <DropdownMenuContent className="mr-4 p-4">
+              <div className="text-gray-500 text-xs">
+                Open a document to see actions
+              </div>
+            </DropdownMenuContent>
+          )}
         </DropdownMenu>
       </div>
 

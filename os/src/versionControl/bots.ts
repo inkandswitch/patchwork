@@ -1,9 +1,10 @@
-import { DEFAULT_MODEL, openaiClient } from "@/lib/llm";
+import { DEFAULT_MODEL, getOpenaiClient } from "@/lib/llm";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { Doc, splice } from "@automerge/automerge/next";
 import { type DataType } from "@/sdk";
+import { BranchDoc, UnmergedBranchDoc } from "./schema";
+import { HasBotChatHistory } from "./components/BotSidebar";
 import { createBranch } from "./branches";
-import { Branch, HasVersionControlMetadata } from "./schema";
 
 // These types are a superset of OpenAI's API so we can directly store a chat history
 // and pass it to OpenAI without further modification.
@@ -59,7 +60,7 @@ const toolsSpec = [
 ];
 
 // given a path like ["content", "main"], get doc.content.main
-const getPath = (doc: Doc<unknown>, path: string[]) => {
+const getPath = (doc: Doc<any>, path: string[]) => {
   return path.reduce((acc, key) => acc[key], doc);
 };
 
@@ -67,7 +68,9 @@ const DATATYPE_CONFIGS = {
   essay: {
     instructions: `The user will give you some text.
 Your job is to edit the text given their specified task below.
-First ask them a clarifying question or two if there is any ambiguity in their request.
+First ask them a clarifying question or two if there is significant ambiguity in their request.
+Do not ask for clarification if the request is clear.
+Specifically, do not ask if the user wants their request applied to the entire document or just one part.
 Then use a tool call to make the edits to the document.
 In your reasoning, concisely explain in a short sentence why the edit is necessary given the task specification.
 Keep your before and after regions short. If you're only editing one word, you only need to include that word.
@@ -116,7 +119,12 @@ Include a short commit message of 2-8 words summarizing the change in specific t
   },
 };
 
-export const SUPPORTED_DATATYPES = Object.keys(DATATYPE_CONFIGS);
+const SUPPORTED_DATATYPES = Object.keys(DATATYPE_CONFIGS);
+export const isSupportedDatatype = (
+  datatype: string
+): datatype is keyof typeof DATATYPE_CONFIGS => {
+  return SUPPORTED_DATATYPES.includes(datatype);
+};
 
 export const makeBotTextEdits = async ({
   targetDocHandle,
@@ -126,9 +134,13 @@ export const makeBotTextEdits = async ({
 }: {
   targetDocHandle: DocHandle<any>;
   chatHistory: ChatMessage[];
-  dataType: DataType<unknown, unknown, unknown>;
+  dataType: DataType;
   repo: Repo;
-}): Promise<Branch | null> => {
+}): Promise<AutomergeUrl | null> => {
+  if (!isSupportedDatatype(dataType.id)) {
+    throw new Error(`Unsupported datatype: ${dataType.id}`);
+  }
+
   const { instructions, path } = DATATYPE_CONFIGS[dataType.id];
 
   const messages = [
@@ -141,11 +153,11 @@ If you call a tool, only make a single call.`,
     {
       role: "user",
       content: `Current document contents:
-${getPath(targetDocHandle.docSync(), path)}`,
+${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
     },
   ];
 
-  const response = await openaiClient.chat.completions.create({
+  const response = await getOpenaiClient().chat.completions.create({
     model: DEFAULT_MODEL,
     temperature: 0,
     // @ts-expect-error I don't understand what's wrong with the input here...
@@ -190,38 +202,51 @@ ${getPath(targetDocHandle.docSync(), path)}`,
     }
 
     // Now we create a new branch to hold the edits
-    const branch = createBranch({
+    const branchMetadataHandle = await createBranch({
       name: parsed.commitMessage,
       createdBy: EDITOR_BOT_CONTACT_URL,
       repo,
-      handle: targetDocHandle,
+      branchScopeHandle: targetDocHandle,
+      dataTypeId: dataType.id,
+      dataTypes: [dataType],
     });
-
-    const branchHandle = repo.find<HasVersionControlMetadata<unknown, unknown>>(
-      branch.url
-    );
+    const branchUrl = branchMetadataHandle.url;
 
     // This is some gross stuff because we don't have cherry-picking --
     // We need to update the branchurl on the last message on both the main doc and branch.
     // This is because we can't know the branch URL until we create the branch,
     // but we want the branch URL to exist on both the main doc and the branch even if
     // the branch is never merged. So we just do the change on both docs.
-    const updateBranchUrlForAssistantMessage = (docHandle) => {
+    const updateBranchUrlForAssistantMessage = (
+      docHandle: DocHandle<HasBotChatHistory>
+    ) => {
       docHandle.change((d) => {
         const lastAssistantMessage = d.botChatHistory
           .slice()
           .reverse()
           .find((msg) => msg.role === "assistant") as AssistantMessage;
         if (lastAssistantMessage) {
-          lastAssistantMessage.branchUrl = branch.url;
+          lastAssistantMessage.branchUrl = branchUrl;
         }
       });
     };
+    // Update on the original doc
     updateBranchUrlForAssistantMessage(targetDocHandle);
-    updateBranchUrlForAssistantMessage(branchHandle);
+
+    // Update on the newly created clone
+    const branchMetadataDoc = await branchMetadataHandle.doc();
+    if (!branchMetadataDoc) {
+      throw new Error(`Branch metadata doc missing at ${branchUrl}`);
+    }
+    const cloneUrl = branchMetadataDoc.clones[targetDocHandle.url]?.url;
+    if (!cloneUrl) {
+      throw new Error(`Clone URL missing for ${targetDocHandle.url}`);
+    }
+    const cloneHandle = repo.find<HasBotChatHistory>(cloneUrl);
+    updateBranchUrlForAssistantMessage(cloneHandle);
 
     for (const edit of parsed.edits) {
-      branchHandle.change(
+      cloneHandle.change(
         (doc) => {
           const from = getPath(doc, path).indexOf(edit.before);
 
@@ -240,7 +265,7 @@ ${getPath(targetDocHandle.docSync(), path)}`,
       );
     }
 
-    return branch;
+    return branchUrl;
   } catch (e) {
     console.error(e);
     throw new Error(`Failed to parse output: ${assistantMessage}`);

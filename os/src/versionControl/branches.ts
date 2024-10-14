@@ -1,118 +1,166 @@
-import * as A from "@automerge/automerge/next";
+import { UIStateDoc } from "@/explorer/uiState";
+import { Om } from "@/om";
+import { DocPath } from "@/packages/folder/datatype";
+import {
+  DataType,
+  dataTypeById,
+  DocCloneMap,
+  ensureMetadataHandleIsBranchScope,
+  getVersionControlMetadataHandle,
+} from "@/sdk";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import { Branch, Branchable } from "./schema";
-import { getStringCompletion } from "@/lib/llm";
-import { MarkdownDoc } from "../../../packages/essay/src";
+import * as A from "@automerge/automerge/next";
+import {
+  BranchDoc,
+  HasVersionControlMetadata,
+  MergedBranchDoc,
+  VersionControlSidecarDoc,
+} from "./schema";
+import { BranchScopeAndActiveBranchInfo } from "./signals";
 
 type Hash = string;
 
-export const createBranch = <DocType extends Branchable>({
+export const createBranch = async <
+  DocType extends HasVersionControlMetadata<unknown, unknown>
+>({
   repo,
-  handle,
-  name,
-  heads,
+  branchScopeHandle,
+  dataTypeId,
+  dataTypes,
   createdBy,
+  name,
 }: {
   repo: Repo;
-  handle: DocHandle<DocType>;
-  name: string;
+  branchScopeHandle: DocHandle<DocType>;
+  dataTypeId: string;
+  dataTypes: DataType[];
+  createdBy: AutomergeUrl | undefined;
+  name?: string;
+}): Promise<DocHandle<BranchDoc>> => {
+  const versionControlMetadataHandle = ensureMetadataHandleIsBranchScope(
+    getVersionControlMetadataHandle(branchScopeHandle, repo)
+  );
+  const versionControlMetadataDoc = await versionControlMetadataHandle.doc();
 
-  /** The heads which the branch should start at.
-   *  If undefined the branch will start from the current doc heads
-   */
-  heads?: A.Heads;
-  createdBy: AutomergeUrl;
-}): Branch => {
-  //
-  // This code should work but doesn't, not sure why yet? ----- GL 2/14
-  // We should be taking the specified heads into account when creating a branch
-  //
-  /* automerge-repo doesn't have a built-in way of cloning at a given heads.
-     So we make a fresh handle and reach in and update its contents. */
-  // const docAtHeads = view(handle.docSync(), heads);
-  // const branchHandle = repo.create();
-  // branchHandle.update(() => {
-  //   return clone(docAtHeads);
-  // });
-  //----------------------------------------------------------------
+  if (!versionControlMetadataDoc) {
+    throw new Error(
+      `Version control metadata doc missing at ${versionControlMetadataHandle.url}`
+    );
+  }
 
-  const branchHandle = repo.clone(handle);
-  const doc = handle.docSync();
-  const branchHeads = heads ?? A.getHeads(doc);
-  const branchPointer = {
-    name: name ?? `Branch #${(doc?.branchMetadata?.branches?.length ?? 0) + 1}`,
+  const clonesMap = {};
+  await cloneDocWithLinks(
+    repo,
+    branchScopeHandle,
+    dataTypeId,
+    dataTypes,
+    clonesMap
+  );
+
+  const branchHandle = repo.create<BranchDoc>({
+    name:
+      name ??
+      `Branch #${(versionControlMetadataDoc.branches?.length ?? 0) + 1}`,
     createdAt: Date.now(),
     createdBy,
-    branchHeads,
-    url: branchHandle.url,
-  };
-
-  // This is a terribly intricate dance because we store the draft metadata in the doc itself.
-  // We need to make sure that the copyheads for the draft doc is set after the original doc has the new draft metadata.
-  // We also need to merge the original handle into the draft after we update the draft metadata.
-  // This can all be avoided by storing draft metadata outside of the document itself.
-  // Also obviously we should extract this out of this view component...
-
-  handle.change((doc) => {
-    doc.branchMetadata.branches.unshift(branchPointer);
+    clones: clonesMap,
+    branchScopeUrl: branchScopeHandle.url,
+    mergeMetadata: null,
   });
 
-  branchHandle.merge(handle);
-
-  branchHandle.change((doc) => {
-    doc.branchMetadata.source = {
-      url: handle.url,
-      branchHeads,
-    };
+  versionControlMetadataHandle.change((doc) => {
+    doc.branches.push(branchHandle.url);
   });
 
-  return branchPointer;
+  return branchHandle;
 };
 
-export const mergeBranch = <DocType extends Branchable>({
-  docHandle,
+export const cloneDocWithLinks = async (
+  repo: Repo,
+  handle: DocHandle<unknown>,
+  dataTypeId: string,
+  dataTypes: DataType[],
+  docCloneMap: DocCloneMap
+): Promise<void> => {
+  // skip, if doc has already been cloned
+  if (docCloneMap[handle.url]) {
+    return;
+  }
+
+  // clone self
+  const doc = await handle.doc();
+  if (!doc) {
+    throw new Error(`Document missing at ${handle.url}`);
+  }
+  const cloneHandle = repo.clone(handle);
+  docCloneMap[handle.url] = {
+    url: cloneHandle.url,
+    baseHeads: A.getHeads(doc),
+  };
+
+  // clone links
+  const links = dataTypeById(dataTypes, dataTypeId)?.links;
+  if (links) {
+    const doc = await handle.doc();
+    const links_ = links(doc);
+    await Promise.all(
+      links_.map(async (link) => {
+        const handle = repo.find(link.url);
+        await cloneDocWithLinks(
+          repo,
+          handle,
+          link.type,
+          dataTypes,
+          docCloneMap
+        );
+      })
+    );
+  }
+};
+
+export const mergeBranch = async ({
+  repo,
   branchHandle,
   mergedBy,
 }: {
-  docHandle: DocHandle<DocType>;
-  branchHandle: DocHandle<DocType>;
+  repo: Repo;
+  branchHandle: DocHandle<BranchDoc>;
   mergedBy: AutomergeUrl;
 }) => {
-  docHandle.merge(branchHandle);
-  docHandle.change((doc) => {
-    const branch = doc.branchMetadata.branches.find(
-      (branch) => branch.url === branchHandle.url
-    );
+  const mergeHeadsByDocUrl: Record<string, A.Heads> = {};
 
-    if (!branch) {
-      console.warn("Branch not found in doc metadata", branchHandle.url);
-    }
+  const doc = await branchHandle.doc();
 
+  if (!doc) {
+    throw new Error(`can't load branch ${branchHandle.url}`);
+  }
+
+  await Promise.all(
+    Object.entries(doc.clones).map(async ([originalDocUrl, { url }]) => {
+      const originalHandle = repo.find(originalDocUrl as AutomergeUrl);
+      const cloneHandle = repo.find(url);
+
+      await originalHandle.whenReady();
+      await cloneHandle.whenReady();
+
+      mergeHeadsByDocUrl[originalDocUrl] = A.getHeads(cloneHandle.docSync()!); // todo: ts strict
+
+      originalHandle.merge(cloneHandle);
+    })
+  );
+
+  // todo: handle creation and deletion of documents
+  branchHandle.change((branch) => {
     branch.mergeMetadata = {
       mergedAt: Date.now(),
-      mergeHeads: A.getHeads(branchHandle.docSync()),
       mergedBy,
+      mergeHeadsByDocUrl,
     };
   });
 };
 
-export const deleteBranch = <DocType extends Branchable>({
-  docHandle,
-  branchUrl,
-}: {
-  docHandle: DocHandle<DocType>;
-  branchUrl: AutomergeUrl;
-}) => {
-  docHandle.change((doc) => {
-    const index = doc.branchMetadata.branches.findIndex(
-      (copy) => copy.url === branchUrl
-    );
-    if (index !== -1) {
-      doc.branchMetadata.branches.splice(index, 1);
-    }
-  });
-};
-
+// todo: adapt to multi doc branches
+/*
 export const suggestBranchName = async ({
   doc,
   branchDoc,
@@ -147,7 +195,7 @@ ${JSON.stringify(afterDoc)}
   const result = await getStringCompletion(prompt);
 
   return result;
-};
+}; */
 
 /** Returns 2 lists of change hashes present in one branch but not the other
  *  Framed in terms of "branch" and "main" but works fine for any 2 branches
@@ -206,8 +254,8 @@ const getHashesBetweenHeads = ({
   const hashes = new Set<Hash>();
   const workQueue = structuredClone(toHeads);
 
-  while (workQueue.length > 0) {
-    const hash = workQueue.shift();
+  let hash;
+  while ((hash = workQueue.shift())) {
     const change = changeMap.get(hash);
     if (!change) {
       throw new Error("Change not found in changes");
@@ -222,4 +270,119 @@ const getHashesBetweenHeads = ({
   }
 
   return hashes;
+};
+
+export const setActiveBranchUrl = (
+  uiStateOm: Om<UIStateDoc>,
+  branchScopePath: DocPath,
+  branchDocUrl: AutomergeUrl | null
+) => {
+  uiStateOm.handle.change((uiStateDoc) => {
+    // handle old uiState docs
+    if (!uiStateDoc.openBranches || Array.isArray(uiStateDoc.openBranches)) {
+      uiStateDoc.openBranches = {};
+    }
+
+    if (branchDocUrl) {
+      uiStateDoc.openBranches[DocPath.toString(branchScopePath)] = branchDocUrl;
+    } else {
+      delete uiStateDoc.openBranches[DocPath.toString(branchScopePath)];
+    }
+  });
+};
+
+type LegacyBranchMetadata = {
+  branches: {
+    url: AutomergeUrl;
+    branchHeads: A.Heads;
+    createdBy: AutomergeUrl;
+    name: string;
+    mergeMetadata?: MergedBranchDoc["mergeMetadata"];
+  }[];
+};
+
+// A backwards compatibility shim to convert legacy branches to the current multi-doc branches.
+// Previously, branch metadata was stored directly on the document itself.
+// Now branch metadata is stored on a separate doc, and can support a "clone map" for multiple docs.
+export const hasLegacyBranchesToMigrate = async ({
+  docOm,
+  branchScopeAndActiveBranchInfo,
+}: {
+  docOm: Om<any> | undefined;
+  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo | undefined;
+}) => {
+  if (!docOm || !branchScopeAndActiveBranchInfo) {
+    return;
+  }
+
+  if (docOm.doc?.branchMetadata?.branches === undefined) {
+    return;
+  }
+
+  // this is gross - we need to re-fetch the version control metadata doc
+  // because this can get called multiple times with stale data.
+  const latestBranchScopeVersionControlMetadata =
+    branchScopeAndActiveBranchInfo.branchScopeVersionControlMetadataOm?.handle.docSync() as
+      | A.Doc<VersionControlSidecarDoc & { isBranchScope: true }>
+      | undefined;
+
+  // We only migrate if the doc has legacy branches and there are no "current" branches.
+  // This is conservative but should cover most cases.
+  const hasLegacyBranches =
+    (docOm.doc.branchMetadata as LegacyBranchMetadata).branches.length > 0;
+  const hasCurrentBranches =
+    latestBranchScopeVersionControlMetadata?.branches.length ?? 0 > 0;
+  return hasLegacyBranches && !hasCurrentBranches;
+};
+
+export const migrateLegacyBranches = async ({
+  docOm,
+  branchScopeAndActiveBranchInfo,
+  repo,
+  dataTypeId,
+  dataTypes,
+}: {
+  docOm: Om<any>;
+  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
+  repo: Repo;
+  dataTypeId: string;
+  dataTypes: DataType[];
+}) => {
+  if (
+    !window.confirm(
+      "This may take a few seconds; the page will reload afterwards."
+    )
+  ) {
+    return;
+  }
+  for (const branch of (docOm.doc.branchMetadata as LegacyBranchMetadata)
+    .branches) {
+    // Create a new branch with the current structure
+    const newBranchHandle = await createBranch({
+      repo,
+      branchScopeHandle: branchScopeAndActiveBranchInfo.branchScopeOm.handle,
+      dataTypeId,
+      dataTypes,
+      createdBy: branch.createdBy,
+      name: branch.name,
+    });
+
+    // Add a clone map entry to replicate the contents of the legacy branch
+    newBranchHandle.change((d) => {
+      d.clones[docOm.url] = {
+        url: branch.url,
+        baseHeads: branch.branchHeads,
+      };
+    });
+
+    if (branch.mergeMetadata) {
+      newBranchHandle.change((d) => {
+        d.mergeMetadata = branch.mergeMetadata ?? null;
+      });
+    }
+
+    // HACK: There's some reactivity bug that causes the update to the clone map to not be immediately reflected.
+    // As a workaround we can just reload the page, which is ugly but ok for a corner case like this.
+    window.location.reload();
+  }
 };

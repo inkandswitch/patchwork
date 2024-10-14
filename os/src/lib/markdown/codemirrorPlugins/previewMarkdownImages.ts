@@ -66,7 +66,11 @@ class Image extends WidgetType {
 
 const MARKDOWN_IMAGE_REGEX = /!\[(?<caption>.*?)\]\((?<url>.*?)\)/gs;
 
-function getImages(heads: A.Heads, assetsDocId: DocumentId, view: EditorView) {
+function getImages(
+  heads: A.Heads,
+  assetsDocId: DocumentId | undefined,
+  view: EditorView
+) {
   const decorations: Range<Decoration>[] = [];
 
   for (const { from, to } of view.visibleRanges) {
@@ -76,13 +80,16 @@ function getImages(heads: A.Heads, assetsDocId: DocumentId, view: EditorView) {
     while ((match = MARKDOWN_IMAGE_REGEX.exec(text))) {
       const position = match.index + from;
 
-      const url = match.groups.url;
-      const caption = match.groups.caption;
+      const url = match.groups!.url;
+      const caption = match.groups!.caption;
+      const { protocol, host } = window.location;
 
       const image = new Image(
         heads,
         assetsDocId && url.startsWith("./assets")
-          ? `https://automerge/${assetsDocId}/files/${url.split("/")[2]}`
+          ? `${protocol}//${host}/automerge/${assetsDocId}/files/${
+              url.split("/")[2]
+            }`
           : "",
         caption
       );
@@ -128,7 +135,7 @@ export const previewImagesPlugin = (
       decorations: DecorationSet = Decoration.set([]);
       images: HTMLImageElement[] = [];
 
-      assetsDocHandle: DocHandle<AssetsDoc>;
+      assetsDocHandle: DocHandle<AssetsDoc> | undefined;
 
       constructor(private view: EditorView) {
         this.decorations = getImages([], undefined, view);
@@ -136,7 +143,7 @@ export const previewImagesPlugin = (
         this.onRemoteHeadsChanged = this.onRemoteHeadsChanged.bind(this);
 
         if (handle.isReady()) {
-          const assetsDocUrl = handle.docSync().assetsDocUrl;
+          const assetsDocUrl = handle.docSync()!.assetsDocUrl; // TODO: JAH strict fix
           this.onChangeAssetsDocUrl(assetsDocUrl);
         }
 
@@ -173,7 +180,7 @@ export const previewImagesPlugin = (
         this.assetsDocHandle.on("remote-heads", this.onRemoteHeadsChanged);
 
         this.assetsDocHandle.whenReady().then(() => {
-          const heads = A.getHeads(this.assetsDocHandle.docSync());
+          const heads = A.getHeads(this.assetsDocHandle!.docSync()!); // TODO: JAH strict fix
           this.view.dispatch({ effects: setAssetHeadsEffect.of(heads) });
         });
       }

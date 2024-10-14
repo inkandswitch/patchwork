@@ -1,7 +1,12 @@
 import { syntaxTree } from "@codemirror/language";
-import { Decoration, EditorView, ViewPlugin } from "@codemirror/view";
+import {
+  Decoration,
+  EditorView,
+  ViewPlugin,
+  ViewUpdate,
+} from "@codemirror/view";
 import { StateField, StateEffect } from "@codemirror/state";
-import { parseUrl, selectDocLink } from "@/explorer/hooks/useSelectedDocLink";
+import { parseUrl, selectDocLink } from "@/explorer/router";
 
 type Link = {
   url: string;
@@ -60,7 +65,7 @@ function getLinks(view: EditorView): Link[] {
       enter: (node) => {
         if (node.name === "Link") {
           const link = view.state.sliceDoc(node.from, node.to);
-          const url = link.match(URL_REGEX)?.groups.url;
+          const url = link.match(URL_REGEX)?.groups!.url;
           if (!url) {
             return;
           }
@@ -88,7 +93,7 @@ export const clickableMarkdownLinksPlugin = [
       constructor(view: EditorView) {
         this.links = getLinks(view);
       }
-      update(update) {
+      update(update: ViewUpdate) {
         if (update.docChanged || update.viewportChanged) {
           this.links = getLinks(update.view);
         }
@@ -106,6 +111,9 @@ export const clickableMarkdownLinksPlugin = [
               x: event.clientX,
               y: event.clientY,
             });
+            if (!pos) {
+              return;
+            } // TODO: JAH strict fix
 
             const link = this.getLinkAtPos(pos);
 
@@ -134,10 +142,16 @@ export const clickableMarkdownLinksPlugin = [
 
         mousemove(event, view) {
           const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+          if (!pos) {
+            return;
+          } // TODO: JAH strict fix
           const link = this.getLinkAtPos(pos);
 
           // ensure that mouse actually points inside of link and not beside it
           const rect = view.coordsAtPos(pos - 1);
+          if (!rect) {
+            return;
+          } // strict mode when
           const distance = Math.abs(rect.left - event.clientX);
           if (link && distance < 20) {
             if (view.state.field(hoveredLinkField) !== link) {

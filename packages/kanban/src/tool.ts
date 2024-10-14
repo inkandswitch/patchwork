@@ -1,10 +1,10 @@
-import { Tool } from "@/tools";
+import { makeTool } from "@/tools";
 import { KanbanBoard } from "./KanbanBoard";
 
-export const kanbanTool: Tool = {
+export const kanbanTool = makeTool({
   type: "patchwork:tool",
   id: "kanban",
   name: "Kanban",
   supportedDataTypes: ["kanban"],
-  editorComponent: KanbanBoard,
-};
+  EditorComponent: KanbanBoard,
+});

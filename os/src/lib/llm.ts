@@ -9,10 +9,17 @@ export const openaiClient = isLLMActive
     })
   : undefined;
 
+export const getOpenaiClient = () => {
+  if (!openaiClient) {
+    throw new Error("openaiClient not initialized: VITE_OPENAI_API_KEY not provided");
+  }
+  return openaiClient;
+}
+
 export const DEFAULT_MODEL = "gpt-4o";
 
-export const getStringCompletion = async (message) => {
-  const response = await openaiClient.chat.completions.create({
+export const getStringCompletion = async (message: string) => {
+  const response = await getOpenaiClient().chat.completions.create({
     model: DEFAULT_MODEL,
     temperature: 0,
     messages: [

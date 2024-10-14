@@ -1,13 +1,14 @@
-import { Tool } from "@/tools";
+import { makeTool } from "@/tools";
 import { EssayAnnotations } from "./components/EssayAnnotations";
 import { EssayEditor } from "./components/EssayEditor";
 
-export const essayEditorTool: Tool = {
+export const essayEditorTool = makeTool({
   type: "patchwork:tool",
   id: "essay",
   name: "Editor",
   supportedDataTypes: ["essay"],
-  editorComponent: EssayEditor,
-  annotationsViewComponent: EssayAnnotations,
+  EditorComponent: EssayEditor,
+  AnnotationsViewComponent: EssayAnnotations,
   supportsInlineComments: true,
-};
+  supportsCollapseContentWithoutAnnotations: true,
+});

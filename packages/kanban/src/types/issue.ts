@@ -32,32 +32,32 @@ export const StatusIcons = {
 };
 
 export const StatusOptions: {
-  icon: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
+  Icon: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
   id: (typeof Status)[keyof typeof Status];
   label: string;
 }[] = [
   {
-    icon: StatusIcons[Status.BACKLOG],
+    Icon: StatusIcons[Status.BACKLOG],
     id: Status.BACKLOG,
     label: StatusDisplay[Status.BACKLOG],
   },
   {
-    icon: StatusIcons[Status.TODO],
+    Icon: StatusIcons[Status.TODO],
     id: Status.TODO,
     label: StatusDisplay[Status.TODO],
   },
   {
-    icon: StatusIcons[Status.IN_PROGRESS],
+    Icon: StatusIcons[Status.IN_PROGRESS],
     id: Status.IN_PROGRESS,
     label: StatusDisplay[Status.IN_PROGRESS],
   },
   {
-    icon: StatusIcons[Status.DONE],
+    Icon: StatusIcons[Status.DONE],
     id: Status.DONE,
     label: StatusDisplay[Status.DONE],
   },
   {
-    icon: StatusIcons[Status.CANCELED],
+    Icon: StatusIcons[Status.CANCELED],
     id: Status.CANCELED,
     label: StatusDisplay[Status.CANCELED],
   },

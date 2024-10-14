@@ -68,8 +68,8 @@ const createFileReferenceInDoc = async (
   repo: Repo,
   handle: DocHandle<HasAssets>,
   file: File
-): Promise<string> => {
-  const doc = handle.docSync();
+): Promise<string | undefined> => {
+  const doc = handle.docSync()!;  // TODO: JAH strict fix
   let assetsHandle: DocHandle<AssetsDoc>;
 
   if (!doc.assetsDocUrl) {
@@ -85,7 +85,7 @@ const createFileReferenceInDoc = async (
     assetsHandle = repo.find<AssetsDoc>(doc.assetsDocUrl);
   }
   await assetsHandle.whenReady();
-  const assetsDoc = assetsHandle.docSync();
+  const assetsDoc = assetsHandle.docSync()!;  // TODO: JAH strict fix
 
   if (!isSupportedImageFile(file)) {
     alert(
@@ -115,9 +115,9 @@ const createFileReferenceInDoc = async (
 const loadFile = (file: File): Promise<Uint8Array> => {
   return new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onload = function (e) {
+    reader.onload = function () {
       // The file's text will be printed here
-      const arrayBuffer = e.target.result as ArrayBuffer;
+      const arrayBuffer = reader.result as ArrayBuffer;
 
       // Convert the arrayBuffer to a Uint8Array
       resolve(new Uint8Array(arrayBuffer));

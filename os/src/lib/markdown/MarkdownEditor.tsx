@@ -14,7 +14,7 @@ type MarkdownEditorProps = {
 };
 
 export const MarkdownEditor = ({ handle, path }: MarkdownEditorProps) => {
-  const [container, setContainer] = useState(null);
+  const [container, setContainer] = useState<HTMLElement | null>(null);
   const plugins = useMarkdownPlugins({ docWithAssetsHandle: handle });
 
   useEffect(() => {

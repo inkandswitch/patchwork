@@ -13,9 +13,6 @@ const MARKDOWN_STYLES = {
   ".cm-scroller": {
     height: "100%",
   },
-  ".cm-gutters": {
-    display: "none",
-  },
   ".cm-content": {
     height: "100%",
     margin: "0",
@@ -31,16 +28,7 @@ const MARKDOWN_STYLES = {
   ".cm-activeLine": {
     backgroundColor: "inherit",
   },
-  ".cm-comment-thread": {
-    backgroundColor: "rgb(255 249 194)",
-  },
-  ".cm-comment-thread.active": {
-    backgroundColor: "rgb(255 227 135)",
-  },
-  // active highlighting wins if it's inside another thread
-  ".cm-comment-thread.active .cm-comment-thread": {
-    backgroundColor: "rgb(255 227 135)",
-  },
+
   ".frontmatter, .frontmatter *": {
     fontSize: "14px",
     fontFamily: "monospace",
@@ -49,22 +37,33 @@ const MARKDOWN_STYLES = {
     fontWeight: "normal",
     lineHeight: "0.8em",
   },
-  ".cm-patch-splice": {
-    backgroundColor: "rgb(0 255 0 / 5%)",
-    borderBottom: "rgb(0 202 0 / 30%) 2px solid",
-    borderRadius: "3px",
+
+  ".cm-gutters": {
+    borderRight: "0",
   },
-  ".cm-patch-splice.active": {
-    backgroundColor: "rgb(0 255 0 / 20%)",
+
+  ".cm-folded-range-gutter-line-number": {
+    display: "none",
   },
-  ".cm-patch-splice .cm-comment-thread, .cm-comment-thread .cm-patch-splice": {
-    backgroundColor: "rgb(100 202 0 / 5%)",
+
+  ".cm-folded-range-gutter": {
+    background: "white",
+    borderRight: "0px",
+    width: "40px",
   },
-  ".cm-patch-splice .cm-comment-thread.active, .cm-comment-thread.active .cm-patch-splice":
-    {
-      backgroundColor: "rgb(100 202 0 / 30%)",
-      borderBottom: "rgb(0 222 0 / 100%) 2px solid",
-    },
+
+  ".cm-folded-line-widget": {
+    background: "white",
+    border: "0px",
+  },
+
+  ".cm-folded-range": {
+    background: "white",
+  },
+
+  ".cm-line": {
+    paddingRight: "40px",
+  },
 };
 
 const baseHeadingStyles = {

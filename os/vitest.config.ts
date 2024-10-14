@@ -1,18 +1,8 @@
-import { defineConfig } from "vitest/config";
-import path from "path";
+import { mergeConfig, UserConfig } from "vitest/config";
+import viteConfig from "./vite.config";
 
-export default defineConfig({
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"), // Adjust './src' as needed
-    },
-  },
+export default mergeConfig(viteConfig, {
   test: {
     environment: "jsdom",
-    coverage: {
-      provider: "v8",
-      reporter: ["lcov", "text", "html"],
-      include: ["test"],
-    },
   },
-});
+} satisfies UserConfig);

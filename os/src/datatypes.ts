@@ -1,15 +1,16 @@
 import {
   ChangeGroup,
   DecodedChangeWithMetadata,
+  PendingChangeGroup,
 } from "@/versionControl/groupChanges";
-import { Annotation } from "@/versionControl/schema";
+import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
 import { TextPatch } from "@/versionControl/utils";
 import { next as A, Doc } from "@automerge/automerge";
-import { Repo } from "@automerge/automerge-repo";
-import { useMemo } from "react";
-import * as PACKAGES from "./packages";
+import { DocHandle, Repo } from "@automerge/automerge-repo";
+import { ReactElement } from "react";
 import { FileExportMethod } from "./fileExports";
 import { IconType } from "./lib/icons";
+import { DocLink } from "./packages/folder";
 
 export type CoreDataType<D> = {
   id: string;
@@ -25,6 +26,27 @@ export type CoreDataType<D> = {
   /* Marking a data types as experimental hides it by default
    * so the user has to enable them in their account first  */
   isExperimental?: boolean;
+
+  /* If this flag is enabled the data type won't show up in the new document menu */
+  disableManualCreation?: boolean;
+
+  // UNIX SYNC (for Jacquard)
+  // Pulling
+  docToUnixFile?: (doc: D) => Promise<{
+    content: string | Uint8Array;
+    fileName?: string; // defaults to name provided in DocLink
+  }>;
+  // Pushing
+  initDocFromUnixFile?: (
+    content: string | Uint8Array,
+    fileName: string,
+    handle: DocHandle<D>
+  ) => Promise<void>;
+  updateDocFromUnixFile?: (
+    content: string | Uint8Array,
+    handle: DocHandle<D>
+  ) => Promise<{ didChange: boolean }>;
+  unixFileExtensions?: string[];
 };
 
 export type VersionedDataType<D, T, V> = {
@@ -56,7 +78,9 @@ export type VersionedDataType<D, T, V> = {
    */
 
   /* Generate a summary of a change group based on its contents */
-  fallbackSummaryForChangeGroup?: (changeGroup: ChangeGroup<D>) => string;
+  fallbackSummaryForChangeGroup?: (
+    changeGroup: ChangeGroup<D>
+  ) => string | ReactElement;
 
   /* Generate a prompt for an LLM to summarize a change group */
   promptForAIChangeGroupSummary?: (args: {
@@ -99,31 +123,60 @@ export type VersionedDataType<D, T, V> = {
    *  If this method is not implemented the anchors will not be sorted.
    */
   sortAnchorsBy?: (doc: D, anchor: T) => any;
+
+  /**
+   * Specifies how changes are grouped for more details look in: groupChange.ts
+   */
+  groupChanges?: (
+    currentGroup: PendingChangeGroup<D>,
+    newChange: DecodedChangeWithMetadata
+  ) => boolean;
+
+  /**
+   * Specifies what other Automerge documents are "linked to" from this
+   * document. This is currently used to figure out which documents to clone
+   * when a branch is created.
+   */
+  links?: (doc: D) => DocLink[];
 };
 
-export type DataType<D, T, V> = CoreDataType<D> & VersionedDataType<D, T, V>;
+export type DataType<D = unknown, T = unknown, V = unknown> = CoreDataType<D> &
+  VersionedDataType<D, T, V>;
 
-const isDataType = (
-  value: any
-): value is DataType<unknown, unknown, unknown> => {
+export const isDataType = (value: any): value is DataType => {
   return "type" in value && value.type === "patchwork:dataType";
 };
 
-export const useDataTypes = (): DataType<unknown, unknown, unknown>[] => {
-  return useMemo(
-    () =>
-      Object.values(PACKAGES).flatMap((module) =>
-        Object.values(module).filter(isDataType)
-      ),
-    []
-  );
-};
-
-export const useDataType = <D, T, V>(
-  id: string
-): DataType<D, T, V> | undefined => {
-  const dataTypes = useDataTypes();
+export const dataTypeById = <D, T, V>(
+  dataTypes: DataType[],
+  id: string | undefined
+) => {
   return dataTypes.find((dataType) => dataType.id == id) as
     | DataType<D, T, V>
     | undefined;
 };
+
+/** Kinda hacky utility function to initialize an object in
+ * handle.change in a type-safe way. */
+export const initFrom = <D extends object>(
+  doc: D,
+  init: Omit<D, keyof HasVersionControlMetadata<unknown, unknown>>
+) => {
+  Object.assign(doc, init);
+};
+
+// experimental "LoadedDocHandle"
+
+// export type LoadedDocHandle<D> = Omit<DocHandle<D>, "docSync"> & {
+//   docSync: () => Readonly<D>;
+// };
+
+// export const loadHandle = async <D>(
+//   handle: DocHandle<D>
+// ): Promise<LoadedDocHandle<D> | undefined> => {
+//   const doc = await handle.doc();
+//   if (!doc) {
+//     return undefined;
+//   }
+//   return handle as LoadedDocHandle<D>;
+// };

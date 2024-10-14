@@ -97,7 +97,7 @@ self.addEventListener("install", () => {
 });
 
 self.addEventListener("message", async (event) => {
-  console.log(`${PEER_ID}: Client messaged`, event.data);
+  // console.log(`${PEER_ID}: Client messaged`, event.data);
 
   switch (event.data.type) {
     case "PING":
@@ -143,7 +143,7 @@ self.addEventListener("activate", async (event) => {
 });
 
 const ASSETS_REQUEST_URL_REGEX =
-  /^https?:\/\/automerge\/([a-zA-Z0-9]+)(\/.*)?$/;
+  /^https?:\/\/[^/]*\/automerge\/([a-zA-Z0-9]+)(\/.*)?$/;
 
 const headsEqual = (doc, heads) => {
   if (!doc) {
@@ -157,7 +157,7 @@ self.addEventListener("fetch", async (event) => {
   const url = new URL(event.request.url);
 
   if (ASSETS_REQUEST_URL_REGEX.test(event.request.url)) {
-    const [, docId, ...encodedParts] = url.pathname.split("/");
+    const [, , docId, ...encodedParts] = url.pathname.split("/");
     const parts = encodedParts.map((part) => decodeURIComponent(part));
 
     const automergeUrl = `automerge:${docId}`;
@@ -254,6 +254,28 @@ self.addEventListener("fetch", async (event) => {
         return new Response(file.contents, {
           headers: { "Content-Type": file.contentType },
         });
+      })()
+    );
+  } else if (
+    event.request.method === "GET" &&
+    url.origin === "https://storage.googleapis.com"
+  ) {
+    event.respondWith(
+      (async () => {
+        const r = await caches.match(event.request);
+        console.log(
+          `[Service Worker] Fetching resource from cache: ${event.request.url}`
+        );
+        if (r) {
+          return r;
+        }
+        const response = await fetch(event.request);
+        const cache = await caches.open(CACHE_NAME);
+        console.log(
+          `[Service Worker] Caching new resource: ${event.request.url}`
+        );
+        cache.put(event.request, response.clone());
+        return response;
       })()
     );
   }

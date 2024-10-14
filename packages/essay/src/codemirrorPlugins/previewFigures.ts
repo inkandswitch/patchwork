@@ -19,7 +19,7 @@ class Figure extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
-    return undefined;
+    return undefined as any;  // TODO: JAH strict fix
   }
 
   eq(other: Figure) {
@@ -101,10 +101,10 @@ function getFigures(view: EditorView) {
     while ((match = INLINE_EXPR_REGEX.exec(text))) {
       const position = match.index + from;
 
-      const srcAttrMatch = match.groups.source.match(SOURCE_ATTR_REGEX);
+      const srcAttrMatch = match.groups!.source.match(SOURCE_ATTR_REGEX);
       if (srcAttrMatch) {
-        const url = srcAttrMatch.groups.value;
-        const caption = srcAttrMatch.groups.caption;
+        const url = srcAttrMatch.groups!.value;
+        const caption = srcAttrMatch.groups!.caption;
         const widget = Decoration.widget({
           widget: new ImageFigure(url, caption),
           side: 1,
@@ -121,7 +121,7 @@ function getFigures(view: EditorView) {
 
     while ((match = BLOCK_EXPR_REGEX.exec(text))) {
       const position = match.index + from;
-      const doc = parser.parseFromString(match.groups.source, "text/html");
+      const doc = parser.parseFromString(match.groups!.source, "text/html");
       const src = doc.body.getElementsByTagName("video")[0]?.src;
       const caption =
         doc.body.getElementsByTagName("figcaption")[0]?.innerText?.trim() ?? "";

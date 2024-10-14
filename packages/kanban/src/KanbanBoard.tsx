@@ -7,6 +7,7 @@ import IssueModal from "./components/IssueModal";
 import { KanbanBoardDoc } from "./datatype";
 import Board from "./pages/Board";
 import Issue from "./pages/Issue";
+import { useHandleDef } from "@/hooks/useHandleDef";
 
 interface MenuContextInterface {
   showMenu: boolean;
@@ -23,7 +24,7 @@ export const KanbanBoard = ({
   const [showIssueModal, setShowIssueModal] = useState(false);
 
   const [_doc, changeDoc] = useDocument<KanbanBoardDoc>(docUrl);
-  const handle = useHandle<KanbanBoardDoc>(docUrl);
+  const handle = useHandleDef<KanbanBoardDoc>(docUrl);
   const [openIssueId, setOpenIssueId] = useState<string | undefined>();
 
   if (!_doc) {

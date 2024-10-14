@@ -1,3 +1,4 @@
+import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
@@ -19,45 +20,37 @@ import {
   CrownIcon,
   GitBranchIcon,
   GitBranchPlusIcon,
-  MilestoneIcon,
-  MoreVerticalIcon,
-  PencilIcon,
 } from "lucide-react";
 import {
-  Branch,
   DiffWithProvenance,
   Discussion,
-  HasChangeGroupSummaries,
   HasVersionControlMetadata,
-  Tag,
+  VersionControlSidecarDoc,
 } from "../schema";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shadcn/ui/dropdown-menu";
-import {
-  populateChangeGroupSummaries,
-  useAutoPopulateChangeGroupSummaries,
-} from "@/versionControl/changeGroupSummaries";
+import { useAutoPopulateChangeGroupSummaries } from "@/versionControl/changeGroupSummaries";
 import { DiscussionInput } from "./DiscussionInput";
 
 import { HasAssets } from "@/assets";
-import { type DataType } from "@/sdk";
 import { MarkdownInput } from "@/lib/markdown";
+import { type DataType } from "@/sdk";
 import { DocHandle } from "@automerge/automerge-repo";
-import { ChangeGrouper } from "../ChangeGrouper";
+import {
+  BranchScopeAndActiveBranchInfoWithoutDoc,
+  ChangeGrouper,
+} from "../ChangeGrouper";
 import { ChangeGroupingOptions } from "../groupChanges";
+import { BranchDoc } from "../schema";
+import { BranchScopeAndActiveBranchInfo } from "../signals";
 
-const useScrollToBottom = (doc) => {
+const useScrollToBottom = (doc: unknown) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    void doc; // TODO: JAH I think we're supposed to react to this changing?
     if (scrollerRef.current) {
       scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
     }
-  }, [scrollerRef.current, doc]);
+  }, [doc]);
   return scrollerRef;
 };
 
@@ -74,32 +67,79 @@ type ChangelogSelectionAnchor = {
 };
 
 const useTimelineItems = (
-  handle,
+  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo,
   options: Omit<
     ChangeGroupingOptions<HasVersionControlMetadata<unknown, unknown>>,
     "markers"
   >
 ) => {
-  const repo = useRepo();
   const [items, setItems] = useState<
     TimelineItems<HasVersionControlMetadata<unknown, unknown>>[]
   >([]);
+
+  const handle = branchScopeAndActiveBranchInfo.cloneOrMainOm.handle;
+
+  const {
+    activeBranchOm,
+    baseHeads,
+    branchOms,
+    branchScopePath,
+    branchScopeVersionControlMetadataOm,
+    isRealBranchScope,
+    originalUrl,
+  } = branchScopeAndActiveBranchInfo;
+
+  // BranchScopeAndActiveBranchInfo updates every time the document changes because it contains an Om of the current document
+  // We don't want to remount the ChangeGrouper on every key stroke so we create a version of BranchScopeAndActiveBranchInfo with the document
+  // The change grouper manually subscribes to changes on the doc through the handle we pass in
+  const branchScopeAndActiveBranchInfoWithoutDoc =
+    useMemo<BranchScopeAndActiveBranchInfoWithoutDoc>(
+      () => ({
+        activeBranchOm,
+        baseHeads,
+        branchOms,
+        branchScopePath,
+        branchScopeVersionControlMetadataOm,
+        isRealBranchScope,
+        originalUrl,
+      }),
+      [
+        activeBranchOm,
+        baseHeads,
+        branchOms,
+        branchScopePath,
+        branchScopeVersionControlMetadataOm,
+        isRealBranchScope,
+        originalUrl,
+      ]
+    );
+
   useEffect(() => {
-    const grouper = new ChangeGrouper(handle, repo, options);
+    const grouper = new ChangeGrouper(
+      handle,
+      options,
+      branchScopeAndActiveBranchInfoWithoutDoc
+    );
+
     if (grouper.items) {
       setItems(grouper.items);
     }
 
-    const listener = (items) => {
+    const listener = (
+      items: TimelineItems<HasVersionControlMetadata<unknown, unknown>>[]
+    ) => {
       setItems(items);
     };
 
     grouper.on("change", listener);
+
     return () => {
+      console.log("remount change grouper");
       grouper.off("change", listener);
       grouper.teardown();
     };
-  }, [handle, options]);
+  }, [handle, options, branchScopeAndActiveBranchInfoWithoutDoc]);
+
   return items;
 };
 
@@ -108,26 +148,28 @@ export type ChangelogSelection =
   | undefined;
 
 export const TimelineSidebar: React.FC<{
-  dataType: DataType<unknown, unknown, unknown>;
+  dataType: DataType;
   docUrl: AutomergeUrl;
-  selectedBranch: Branch;
-  setSelectedBranch: (branch: Branch) => void;
-  setDocHeads: (heads: Heads) => void;
-  setDiff: (diff: DiffWithProvenance) => void;
+  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
+  setDocHeads: (heads: Heads | undefined) => void;
+  setDiff: (diff: DiffWithProvenance | undefined) => void;
+  onSelectBranchUrl: (branchUrl: AutomergeUrl | null) => void;
 }> = ({
   dataType,
   docUrl,
-  selectedBranch,
-  setSelectedBranch,
+  branchScopeAndActiveBranchInfo,
   setDocHeads,
   setDiff,
+  onSelectBranchUrl,
 }) => {
-  const [doc, changeDoc] =
+  const repo = useRepo();
+  const selectedBranchDoc = branchScopeAndActiveBranchInfo.activeBranchOm?.doc;
+
+  const [doc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(docUrl);
-  const [mainDoc] = useDocument<HasVersionControlMetadata<unknown, unknown>>(
-    doc?.branchMetadata?.source?.url
-  );
-  const handle = useHandle<HasVersionControlMetadata<unknown, unknown>>(docUrl);
+
+  const handle =
+    useHandle<HasVersionControlMetadata<unknown, unknown>>(docUrl)!; // TODO: JAH strict fix
   const scrollerRef = useScrollToBottom(doc);
   const [showHiddenItems, setShowHiddenItems] = useState(false);
 
@@ -136,6 +178,7 @@ export const TimelineSidebar: React.FC<{
     includePatchInChangeGroup,
     promptForAIChangeGroupSummary: promptForAutoChangeGroupDescription,
     fallbackSummaryForChangeGroup,
+    groupChanges,
   } = dataType ?? {};
 
   // todo: extract this as an interface that different doc types can implement
@@ -144,21 +187,25 @@ export const TimelineSidebar: React.FC<{
       ChangeGroupingOptions<HasVersionControlMetadata<unknown, unknown>>,
       "markers"
     >
-  >(() => {
-    return {
-      grouping: groupingByEditTime(30),
+  >(
+    () => ({
+      grouping: groupChanges ?? groupingByEditTime(30),
       includeChangeInHistory,
       includePatchInChangeGroup,
       fallbackSummaryForChangeGroup,
-    };
-  }, [
-    dataType.id,
-    includeChangeInHistory,
-    includePatchInChangeGroup,
-    fallbackSummaryForChangeGroup,
-  ]);
+    }),
+    [
+      groupChanges,
+      includeChangeInHistory,
+      includePatchInChangeGroup,
+      fallbackSummaryForChangeGroup,
+    ]
+  );
 
-  const changelogItems = useTimelineItems(handle, changeGroupingOptions);
+  const changelogItems = useTimelineItems(
+    branchScopeAndActiveBranchInfo,
+    changeGroupingOptions
+  );
 
   const hiddenItemBoundary = changelogItems.findIndex(
     (item) => item.type === "originOfThisBranch" && item.hideHistoryBeforeThis
@@ -170,7 +217,7 @@ export const TimelineSidebar: React.FC<{
   }
 
   // Within a branch, don't show new branches created after this branch started
-  if (selectedBranch) {
+  /* if (selectedBranchDoc) {
     const originIndex = visibleItems.findIndex(
       (item) => item.type === "originOfThisBranch"
     );
@@ -180,7 +227,7 @@ export const TimelineSidebar: React.FC<{
       }
       return true;
     });
-  }
+  }*/
 
   const { selection, handleClick, clearSelection, itemsContainerRef } =
     useChangelogSelection({
@@ -205,19 +252,10 @@ export const TimelineSidebar: React.FC<{
     changeGroups,
     handle,
     promptForAutoChangeGroupDescription,
+    repo,
   });
 
   if (!doc) return null;
-
-  // @ts-expect-error window global
-  window.populateChangeSummaries = () =>
-    populateChangeGroupSummaries({
-      groups: changelogItems.flatMap((item) =>
-        item.type === "changeGroup" ? [item.changeGroup] : []
-      ),
-      promptForAutoChangeGroupDescription,
-      handle,
-    });
 
   return (
     <div className="h-full w-full flex flex-col text-xs text-gray-600">
@@ -226,9 +264,11 @@ export const TimelineSidebar: React.FC<{
         <div className="flex items-center">
           <div
             className="cursor-pointer text-gray-500 font-semibold underline w-12 flex-shrink-0"
-            onClick={() => setSelectedBranch(null)}
+            onClick={() => {
+              onSelectBranchUrl(null);
+            }}
           >
-            {selectedBranch && (
+            {selectedBranchDoc && (
               <>
                 <ChevronLeftIcon size={12} className="inline" />
                 Main
@@ -237,16 +277,16 @@ export const TimelineSidebar: React.FC<{
           </div>
           <div className="flex-grow flex justify-center items-center px-2 py-1 text-sm">
             <div className="font-medium text-gray-800">
-              {!selectedBranch && (
+              {!selectedBranchDoc && (
                 <div className="flex items-center gap-2">
                   <CrownIcon className="inline" size={12} />
                   Main
                 </div>
               )}
-              {selectedBranch && (
+              {selectedBranchDoc && (
                 <div className="flex items-center gap-2">
                   <GitBranchIcon className="inline" size={12} />
-                  {selectedBranch.name}
+                  {selectedBranchDoc.name}
                 </div>
               )}
             </div>
@@ -271,7 +311,7 @@ export const TimelineSidebar: React.FC<{
 
       {/* The timeline */}
       <div
-        className="bg-gray-100 overflow-y-auto flex-1 flex flex-col pb-4"
+        className="bg-gray-100 overflow-auto flex-1 flex flex-col pb-4 relative"
         ref={scrollerRef}
       >
         <div className="timeline-line"></div>
@@ -293,19 +333,26 @@ export const TimelineSidebar: React.FC<{
 
           {visibleItems.map((item, index) => {
             const selected =
-              selection &&
-              index >= selection.from.index &&
-              index <= selection.to.index;
+              (selection &&
+                index >= selection.from.index &&
+                index <= selection.to.index) ||
+              false;
 
+            const prevItem = changelogItems[index - 1];
+            const prevItemDateTime = prevItem?.time
+              ? new Date(prevItem.time).toLocaleDateString()
+              : undefined;
+            const currentItemDateTime = item.time
+              ? new Date(item.time).toLocaleDateString()
+              : undefined;
             const dateChangedFromPrevItem =
-              new Date(changelogItems[index - 1]?.time).toDateString() !==
-              new Date(item.time).toDateString();
+              prevItemDateTime !== currentItemDateTime;
 
             return (
               <>
                 {dateChangedFromPrevItem && (
                   <div className="text-xs text-gray-400">
-                    <DateHeader date={new Date(item.time)} />
+                    <DateHeader timestamp={item.time} />
                   </div>
                 )}
                 <div
@@ -315,7 +362,10 @@ export const TimelineSidebar: React.FC<{
                     selected ? "bg-blue-100 bg-opacity-20" : ""
                   }`}
                   onClick={(e) =>
-                    handleClick({ itemId: item.id, shiftPressed: e.shiftKey })
+                    handleClick({
+                      itemId: item.id,
+                      shiftPressed: e.shiftKey,
+                    })
                   }
                 >
                   {(() => {
@@ -328,19 +378,10 @@ export const TimelineSidebar: React.FC<{
                             selected={selected}
                           />
                         );
-                      case "tag":
-                        return (
-                          <MilestoneItem
-                            milestone={item.tag}
-                            selected={selected}
-                          />
-                        );
                       case "branchCreatedFromThisDoc":
                         return (
                           <BranchCreatedItem
-                            selectedBranch={selectedBranch}
-                            setSelectedBranch={setSelectedBranch}
-                            branch={item.branch}
+                            branch={item.branchOm.doc}
                             selected={selected}
                           />
                         );
@@ -355,7 +396,7 @@ export const TimelineSidebar: React.FC<{
                       case "originOfThisBranch":
                         return (
                           <BranchOriginItem
-                            branch={item.branch}
+                            branch={item.branchOm.doc}
                             selected={selected}
                           />
                         );
@@ -363,13 +404,13 @@ export const TimelineSidebar: React.FC<{
                         return (
                           <BranchMergedItem
                             doc={doc}
-                            branch={item.branch}
+                            branch={item.branchOm.doc}
                             selected={selected}
                             changeGroups={item.changeGroups}
                           />
                         );
                       default: {
-                        // Ensure we've handled all types
+                        // Ensure we've handled all types, if an
                         const exhaustiveCheck: never = item;
                         return exhaustiveCheck;
                       }
@@ -394,7 +435,7 @@ export const TimelineSidebar: React.FC<{
 
                       {/* Context menu for the item (TODO: how to populate actions for this?) */}
                       <div className="mt-1 -mx-1">
-                        <DropdownMenu>
+                        {/* <DropdownMenu>
                           <DropdownMenuTrigger>
                             <MoreVerticalIcon
                               size={18}
@@ -436,7 +477,7 @@ export const TimelineSidebar: React.FC<{
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
-                        </DropdownMenu>
+                        </DropdownMenu> */}
                       </div>
                     </div>
                   )}
@@ -479,13 +520,19 @@ const useChangelogSelection = function <T>({
   setDocHeads,
 }: {
   items: TimelineItems<T>[];
-  setDiff: (diff: DiffWithProvenance) => void;
-  setDocHeads: (heads: Heads) => void;
+  setDiff: (diff: DiffWithProvenance | undefined) => void;
+  setDocHeads: (heads: Heads | undefined) => void;
 }): {
   // The current selection
   selection: ChangelogSelection;
   // Click handler for the items
-  handleClick: ({ itemId, shiftPressed }) => void;
+  handleClick: ({
+    itemId,
+    shiftPressed,
+  }: {
+    itemId: string;
+    shiftPressed: boolean;
+  }) => void;
   // Ref for the container of the items
   itemsContainerRef: React.RefObject<HTMLDivElement>;
   // Callback to clear the selection
@@ -493,9 +540,9 @@ const useChangelogSelection = function <T>({
 } {
   // Internally we track selection using item IDs.
   // Once we return it out of the hook, we'll also tack on numbers, to help out in the view.
-  const [selection, setSelection] = useState<{ from: string; to: string }>(
-    undefined
-  );
+  const [selection, setSelection] = useState<
+    { from: string; to: string } | undefined
+  >(undefined);
 
   // sync the diff and docHeads up to the parent component when the selection changes
   useEffect(() => {
@@ -539,7 +586,13 @@ const useChangelogSelection = function <T>({
 
   const itemsContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleClick = ({ itemId, shiftPressed }) => {
+  const handleClick = ({
+    itemId,
+    shiftPressed,
+  }: {
+    itemId: string;
+    shiftPressed: boolean;
+  }) => {
     if (!shiftPressed) {
       setSelection({ from: itemId, to: itemId });
       return;
@@ -578,16 +631,30 @@ const useChangelogSelection = function <T>({
   const fromIndex = items.findIndex((item) => item.id === selection?.from);
   const toIndex = items.findIndex((item) => item.id === selection?.to);
 
-  const containerTop = itemsContainerRef.current.getBoundingClientRect().top;
-  const fromPos =
-    [...itemsContainerRef.current.children]
-      .find((div) => div.attributes["data-item-id"]?.value === selection.from)
-      ?.getBoundingClientRect().top - containerTop;
+  const containerChildren = [
+    ...(itemsContainerRef.current?.children ?? []),
+  ] as HTMLElement[];
 
-  const toPos =
-    [...(itemsContainerRef.current?.children ?? [])]
-      .find((div) => div.attributes["data-item-id"]?.value === selection.to)
-      ?.getBoundingClientRect().bottom - containerTop;
+  const fromElement = containerChildren.find(
+    (div) => div.dataset.itemId === selection.from
+  );
+
+  const toElement = containerChildren.find(
+    (div) => div.dataset.itemId === selection.to
+  );
+
+  if (!fromElement || !toElement) {
+    return {
+      selection: undefined,
+      handleClick,
+      itemsContainerRef,
+      clearSelection: () => setSelection(undefined),
+    };
+  }
+
+  const containerTop = itemsContainerRef.current.getBoundingClientRect().top;
+  const fromPos = fromElement.getBoundingClientRect().top - containerTop;
+  const toPos = toElement.getBoundingClientRect().bottom - containerTop;
 
   return {
     selection: {
@@ -621,16 +688,18 @@ const ChangeGroupItem: React.FC<{
   );
 };
 
-const DateHeader: React.FC<{ date: Date }> = ({ date }) => {
+const DateHeader: React.FC<{ timestamp?: number }> = ({ timestamp }) => {
   return (
     <div className="text-sm font-normal text-gray-300 px-4 flex items-center justify-between p-1 w-full">
       <hr className="flex-grow border-t border-gray-200 mr-2 ml-4" />
       <div>
-        {date.toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          weekday: "long",
-        })}
+        {timestamp
+          ? new Date(timestamp).toLocaleString("en-US", {
+              month: "short",
+              day: "numeric",
+              weekday: "long",
+            })
+          : "Date unknown"}
       </div>
     </div>
   );
@@ -642,13 +711,22 @@ const ChangeGroupDescription = ({
   doc,
 }: {
   changeGroup: GenericChangeGroup;
-  doc: HasChangeGroupSummaries;
+  doc: Automerge.Doc<HasVersionControlMetadata>;
 }) => {
+  const [versionControlSidecarDoc] = useDocument<VersionControlSidecarDoc>(
+    doc.versionControlMetadataUrl
+  );
+
   let summary;
-  if (!doc.changeGroupSummaries || !doc.changeGroupSummaries[changeGroup.id]) {
+  if (
+    !versionControlSidecarDoc ||
+    !versionControlSidecarDoc.changeGroupSummaries ||
+    !versionControlSidecarDoc.changeGroupSummaries[changeGroup.id]
+  ) {
     summary = changeGroup.fallbackSummary;
   } else {
-    summary = doc.changeGroupSummaries[changeGroup.id].title;
+    summary =
+      versionControlSidecarDoc.changeGroupSummaries[changeGroup.id].title;
   }
   return (
     <div className={`group  p-1 rounded-full font-medium text-xs flex`}>
@@ -658,8 +736,8 @@ const ChangeGroupDescription = ({
 };
 
 const BranchMergedItem: React.FC<{
-  doc: HasChangeGroupSummaries;
-  branch: Branch;
+  doc: Automerge.Doc<HasVersionControlMetadata>;
+  branch: BranchDoc;
   changeGroups: GenericChangeGroup[];
   selected: boolean;
 }> = ({ doc, branch, changeGroups, selected }) => {
@@ -701,38 +779,12 @@ const BranchMergedItem: React.FC<{
   );
 };
 
-const MilestoneItem = ({
-  milestone,
-  selected,
-}: {
-  milestone: Tag;
-  selected: boolean;
-}) => {
-  return (
-    <div
-      className={`timeline-item w-full outline outline-2 outline-gray-50 cursor-pointer items-center flex gap-1 rounded-full -ml-1 pl-1 border-1.5 border-gray-300 shadow-sm ${
-        selected ? "bg-gray-200" : "bg-gray-100"
-      }`}
-    >
-      <div className="flex h-[16px] w-[16px] items-center justify-center rounded-full bg-orange-500 outline outline-2 outline-gray-100">
-        <MilestoneIcon className="h-[12px] w-[12px] text-white" />
-      </div>
-
-      <div className="flex-1 p-1 text-sm ">
-        <div className="font-semibold">{milestone.name}</div>
-      </div>
-    </div>
-  );
-};
-
 const BranchCreatedItem = ({
   branch,
   selected,
 }: {
-  branch: Branch;
+  branch: BranchDoc;
   selected: boolean;
-  selectedBranch: Branch;
-  setSelectedBranch: (branch: Branch) => void;
 }) => {
   return (
     <ItemView selected={selected} color="neutral">
@@ -757,7 +809,7 @@ const BranchOriginItem = ({
   branch,
   selected,
 }: {
-  branch: Branch;
+  branch: BranchDoc;
   selected: boolean;
 }) => {
   return (

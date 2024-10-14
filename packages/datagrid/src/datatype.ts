@@ -2,11 +2,12 @@ import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
 import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
 import { next as A } from "@automerge/automerge";
 import { pick } from "lodash";
-import { type DataType } from "@/sdk";
+import { initFrom, type DataType } from "@/sdk";
+import { TextPatch } from "@/versionControl/utils";
 
 // SCHEMA
 
-export type DataGridDoc = HasVersionControlMetadata<never, never> & {
+export type DataGridDoc = HasVersionControlMetadata<unknown, unknown> & {
   title: string; // The title of the table
 
   // NOTE: modeling the data this way does not result in reasonable merges.
@@ -40,14 +41,16 @@ const getTitle = async (doc: DataGridDoc) => {
   return doc.title || "Mystery Data Grid";
 };
 
-export const init = (doc: any) => {
-  doc.title = "Untitled Spreadsheet";
+export const init = (doc: DataGridDoc) => {
   const rows = 100;
   const cols = 26;
   const defaultValue = "";
-  doc.data = Array.from({ length: rows }, () =>
-    Array.from({ length: cols }, () => defaultValue)
-  );
+  initFrom(doc, {
+    title: "Untitled Spreadsheet",
+    data: Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => defaultValue)
+    ),
+  });
 };
 
 export const includeChangeInHistory = (doc: DataGridDoc) => {
@@ -70,7 +73,7 @@ export const includeChangeInHistory = (doc: DataGridDoc) => {
   };
 };
 
-export const includePatchInChangeGroup = (patch: A.Patch) =>
+export const includePatchInChangeGroup = (patch: A.Patch | TextPatch) =>
   patch.path[0] === "data" || patch.path[0] === "commentThreads";
 
 const promptForAIChangeGroupSummary = ({

@@ -1,48 +1,54 @@
+import { asyncComputedPromise } from "@/async-signals";
+import { dataTypeById } from "@/datatypes";
+import { useDataTypes } from "@/hooks/useDataTypes";
+import { useTools } from "@/hooks/useTools";
+import { FolderDoc } from "@/packages/folder";
+import { DocPath } from "@/packages/folder/datatype";
 import { Button } from "@/shadcn/ui/button";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { Toaster } from "@/shadcn/ui/toaster";
+import { toolById, toolsForDataType } from "@/tools";
+import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
+import { HasVersionControlMetadata } from "@/versionControl/schema";
+import {
+  fetchBranchScopeAndActiveBranchInfo,
+  fetchOmOnActiveBranch,
+} from "@/versionControl/signals";
+import * as Automerge from "@automerge/automerge";
 import {
   useDocument,
   useHandle,
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import {
   useCurrentAccount,
   useCurrentAccountDoc,
-  useRootFolderDocWithChildren,
+  useRootFolderDocWithMetadata,
 } from "../account";
-
-import { Toaster } from "@/shadcn/ui/sonner";
+import { useRouter } from "../router";
+import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
+import { useUIStateOm } from "../uiState";
+import { ErrorFallback } from "./ErrorFallback";
 import { LoadingScreen } from "./LoadingScreen";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
-import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
-import { Branch, HasVersionControlMetadata } from "@/versionControl/schema";
-
-import { useTool, useToolsForDataType } from "../../tools";
-import { useDataType, useDataTypes } from "../../datatypes";
-import { DocLinkWithFolderPath, FolderDoc } from "@/packages/folder";
-import { useSelectedDocLink } from "../hooks/useSelectedDocLink";
-import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
-import { ErrorFallback } from "./ErrorFallback";
-
 export const Explorer: React.FC = () => {
   const repo = useRepo();
-  const dataTypes = useDataTypes();
-  const currentAccount = useCurrentAccount();
   const [accountDoc] = useCurrentAccountDoc();
 
-  const rootFolderData = useRootFolderDocWithChildren();
-  const { doc: rootFolderDoc, rootFolderUrl } = rootFolderData;
+  const rootFolderData = useRootFolderDocWithMetadata();
+  const rootFolderDoc = rootFolderData?.doc;
+  const rootFolderUrl = rootFolderData?.rootFolderUrl;
+  const flatDocPaths = rootFolderData?.flatDocPaths;
 
   const [showSidebar, setShowSidebar] = useState(true);
 
-  const { selectedDocLink, selectDocLink } = useSelectedDocLink({
-    folderDocWithMetadata: rootFolderData,
-    repo,
+  const { selectedDocPath, selectDocPath } = useRouter({
+    rootFolderDocWithMetadata: rootFolderData,
   });
+  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
 
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocHandle =
@@ -50,36 +56,39 @@ export const Explorer: React.FC = () => {
   const [selectedDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(selectedDocUrl);
 
+  useEffect(() => {
+    // @ts-expect-error global window
+    window.handle = selectedDocHandle;
+  }, [selectedDocHandle]);
+
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
-  const selectedBranchUrl = selectedDocLink?.branchUrl;
 
-  const selectedBranch = useMemo<Branch>(() => {
-    if (!selectedBranchUrl || !selectedDoc) {
-      return;
-    }
+  const dataTypes = useDataTypes();
+  const allTools = useTools();
 
-    return selectedDoc.branchMetadata.branches.find(
-      (b) => b.url === selectedBranchUrl
-    );
-  }, [selectedBranchUrl, selectedDoc]);
-
-  const selectedDataType = useDataType(selectedDataTypeId);
-  const tools = useToolsForDataType(selectedDataType);
+  const selectedDataType = dataTypeById(dataTypes, selectedDataTypeId);
+  const tools = toolsForDataType(allTools, selectedDataType);
   const [selectedToolId, setSelectedToolId] = useState<string>();
-  const toolModules = useToolsForDataType(selectedDataType);
-  const selectedTool = useTool(selectedToolId);
+  const selectedTool = toolById(allTools, selectedToolId);
 
   const currentTool =
     // make sure the current tool is reset to the fallback tool
     // if the selected datatype changes and the selected tool is not compatible
     selectedTool &&
+    selectedDataType &&
     (selectedTool.supportedDataTypes === "*" ||
       selectedTool.supportedDataTypes.some(
         (supportedDataType) => supportedDataType === selectedDataType?.id
       ))
       ? selectedTool
-      : toolModules[0];
+      : tools[0];
+
+  const uiStateOm = useUIStateOm();
+  const account = useCurrentAccount();
+
+  const [docHeadsFromTimelineSidebar, setDocHeadsFromTimelineSidebar] =
+    useState<Automerge.Heads>();
 
   const addNewDocument = useCallback(
     async ({
@@ -89,7 +98,11 @@ export const Explorer: React.FC = () => {
       type: string;
       change?: (doc: unknown) => void;
     }) => {
-      const dataType = dataTypes.find(({ id }) => id === type);
+      if (!uiStateOm) {
+        throw new Error("uiStateHandle not ready");
+      }
+
+      const dataType = dataTypeById(dataTypes, type);
 
       if (!dataType) {
         throw new Error(`Unsupported document type: ${type}`);
@@ -105,21 +118,43 @@ export const Explorer: React.FC = () => {
         }
       });
 
-      let parentFolderUrl: AutomergeUrl;
-      let folderPath: AutomergeUrl[];
+      let parentFolderDocPath: DocPath;
 
-      if (!selectedDocLink) {
-        parentFolderUrl = rootFolderUrl;
-        folderPath = [rootFolderUrl];
-      } else if (selectedDocLink.type === "folder") {
+      if (!selectedDocPath) {
+        // If nothing is selected, add the new document to the root folder
+        // TODO: very weird code here
+        if (!rootFolderUrl) {
+          throw new Error("Root folder URL not ready");
+        }
+        parentFolderDocPath = DocPath.forRoot(rootFolderUrl);
+      } else if (selectedDataTypeId === "folder") {
         // If a folder is currently selected, add the new document to that folder
-        parentFolderUrl = selectedDocLink.url;
-        folderPath = [...selectedDocLink.folderPath, selectedDocLink.url];
+        parentFolderDocPath = selectedDocPath;
       } else {
         // Otherwise, add the new document to the parent folder of the selected doc
-        parentFolderUrl =
-          selectedDocLink?.folderPath[selectedDocLink.folderPath.length - 1];
-        folderPath = selectedDocLink.folderPath;
+        parentFolderDocPath = DocPath.parent(selectedDocPath);
+      }
+
+      const branchScopeAndActiveBranchInfoOfParentFolder =
+        await asyncComputedPromise(() =>
+          fetchBranchScopeAndActiveBranchInfo<FolderDoc>(
+            parentFolderDocPath,
+            account,
+            repo
+          )
+        );
+
+      const { activeBranchOm } = branchScopeAndActiveBranchInfoOfParentFolder;
+
+      // If we are on a branch add an entry to the clone map that maps
+      // the newly create document to itself
+      if (activeBranchOm) {
+        activeBranchOm.handle.change((branchDoc) => {
+          branchDoc.clones[newDocHandle.url] = {
+            url: newDocHandle.url,
+            baseHeads: [],
+          };
+        });
       }
 
       const newDocLink = {
@@ -128,24 +163,28 @@ export const Explorer: React.FC = () => {
         name: "Untitled document",
       };
 
-      repo
-        .find<FolderDoc>(parentFolderUrl)
-        .change((doc) => doc.docs.unshift(newDocLink));
+      branchScopeAndActiveBranchInfoOfParentFolder.cloneOrMainOm.handle.change(
+        (folderDoc) => {
+          folderDoc.docs.unshift(newDocLink);
+        }
+      );
 
-      selectDocLink({
-        ...newDocLink,
-        folderPath,
-      });
+      selectDocPath([...parentFolderDocPath, newDocLink]);
     },
-    [repo, selectedDocLink, selectDocLink]
+    [
+      uiStateOm,
+      dataTypes,
+      repo,
+      selectedDocPath,
+      selectedDataTypeId,
+      selectDocPath,
+      rootFolderUrl,
+      account,
+    ]
   );
 
-  useSyncDocTitle({
-    selectedDocLink,
-    selectedDoc,
-    selectDocLink,
-    repo,
-  });
+  // TODO: this only reads the main branch
+  useSyncDocTitle({ selectedDocPath, selectDocPath, repo });
 
   // update tab title to be the selected doc
   useEffect(() => {
@@ -174,46 +213,47 @@ export const Explorer: React.FC = () => {
     };
   }, [addNewDocument, selectedDocUrl]);
 
-  const removeDocLink = async (link: DocLinkWithFolderPath) => {
-    const folderHandle = repo.find<FolderDoc>(
-      link.folderPath[link.folderPath.length - 1]
+  const removeDocPath = async (docPath: DocPath) => {
+    const docLink = DocPath.toLink(docPath);
+    const parentFolderDocPath = DocPath.parent(docPath);
+    const parentFolderOm = await asyncComputedPromise(() =>
+      fetchOmOnActiveBranch<FolderDoc>(parentFolderDocPath, account, repo)
     );
-    await folderHandle.whenReady();
-    const itemIndex = folderHandle
-      .docSync()
-      .docs.findIndex((item) => item.url === link.url);
+    const parentFolderDoc = parentFolderOm.doc;
+    const itemIndex = parentFolderDoc.docs.findIndex(
+      (item) => item.url === docLink.url
+    );
     if (itemIndex >= 0) {
-      if (itemIndex < folderHandle.docSync().docs.length - 1) {
-        selectDocLink({
-          ...folderHandle.docSync().docs[itemIndex + 1],
-          folderPath: link.folderPath,
-        });
+      if (itemIndex < parentFolderDoc.docs.length - 1) {
+        selectDocPath([
+          ...parentFolderDocPath,
+          parentFolderDoc.docs[itemIndex + 1],
+        ]);
       } else if (itemIndex > 1) {
-        selectDocLink({
-          ...folderHandle.docSync().docs[itemIndex - 1],
-          folderPath: link.folderPath,
-        });
+        selectDocPath([
+          ...parentFolderDocPath,
+          parentFolderDoc.docs[itemIndex - 1],
+        ]);
       } else {
-        selectDocLink(null);
+        selectDocPath(undefined);
       }
 
       // Wait for the URL to update before we delete the doc link;
       // otherwise we end up re-adding it via the existing URL
       setTimeout(() => {
-        folderHandle.change((doc) => {
+        parentFolderOm.handle.change((doc) => {
           doc.docs.splice(itemIndex, 1);
         });
       }, 0);
     }
   };
 
-  if (!accountDoc || !rootFolderDoc) {
-    return (
-      <LoadingScreen
-        docUrl={currentAccount?.handle?.url}
-        handle={currentAccount?.handle}
-      />
-    );
+  if (!accountDoc) {
+    return <LoadingScreen what="account" />;
+  }
+
+  if (!rootFolderDoc) {
+    return <LoadingScreen what="your documents" />;
   }
 
   return (
@@ -226,8 +266,8 @@ export const Explorer: React.FC = () => {
         >
           <Sidebar
             rootFolderDoc={rootFolderData}
-            selectedDocLink={selectedDocLink}
-            selectDocLink={selectDocLink}
+            selectedDocPath={selectedDocPath}
+            selectDocPath={selectDocPath}
             hideSidebar={() => setShowSidebar(false)}
             addNewDocument={addNewDocument}
           />
@@ -241,15 +281,16 @@ export const Explorer: React.FC = () => {
             <Topbar
               showSidebar={showSidebar}
               setShowSidebar={setShowSidebar}
-              selectDocLink={selectDocLink}
-              selectedDocLink={selectedDocLink}
+              selectDocPath={selectDocPath}
+              selectedDocPath={selectedDocPath}
               selectedDoc={selectedDoc}
               selectedDocHandle={selectedDocHandle}
-              removeDocLink={removeDocLink}
+              removeDocPath={removeDocPath}
               addNewDocument={addNewDocument}
               setToolId={setSelectedToolId}
               tool={currentTool}
               tools={tools}
+              docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
             />
             <div className="flex-grow overflow-hidden z-0">
               {!selectedDocUrl && (
@@ -273,7 +314,7 @@ export const Explorer: React.FC = () => {
                 <div className="flex items-center justify-center h-full text-gray-500">
                   <div className="text-center">
                     <p className="text-sm">
-                      No tools available for datatype: {selectedDocLink?.type}
+                      No tools available for datatype: {selectedDataTypeId}
                     </p>
                   </div>
                 </div>
@@ -281,23 +322,22 @@ export const Explorer: React.FC = () => {
 
               {/* NOTE: we set the URL as the component key, to force re-mount on URL change.
                 If we want more continuity we could not do this. */}
-              {selectedDocUrl && selectedDoc && currentTool && (
-                <VersionControlEditor
-                  datatypeId={selectedDocLink?.type}
-                  docUrl={selectedDocUrl}
-                  key={selectedDocUrl}
-                  tool={currentTool}
-                  selectedBranch={selectedBranch}
-                  setSelectedBranch={(branch) => {
-                    selectDocLink({
-                      ...selectedDocLink,
-                      branchUrl: branch?.url,
-                      branchName: branch?.name,
-                    });
-                  }}
-                  addNewDocument={addNewDocument}
-                />
-              )}
+              {selectedDocUrl &&
+                selectedDocPath &&
+                currentTool &&
+                flatDocPaths && (
+                  <VersionControlEditor
+                    key={DocPath.toString(selectedDocPath)}
+                    docPath={selectedDocPath}
+                    tool={currentTool}
+                    addNewDocument={addNewDocument}
+                    flatDocPaths={flatDocPaths}
+                    docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
+                    setDocHeadsFromTimelineSidebar={
+                      setDocHeadsFromTimelineSidebar
+                    }
+                  />
+                )}
             </div>
           </div>
         </div>

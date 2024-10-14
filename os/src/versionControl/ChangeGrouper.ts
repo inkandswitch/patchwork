@@ -1,16 +1,26 @@
-import { DocHandle, Repo } from "@automerge/automerge-repo";
+import { next as A } from "@automerge/automerge";
+import { DocHandle } from "@automerge/automerge-repo";
 import { EventEmitter } from "eventemitter3";
+import { debounce, isEqual } from "lodash";
 import {
   ChangeGroup,
   ChangeGroupingOptions,
-  TimelineItems,
   DecodedChangeWithMetadata,
-  getTimelineItems,
   getMarkersForDoc,
+  getTimelineItems,
+  HeadsMarker,
+  TimelineItems,
 } from "./groupChanges";
 import { HasVersionControlMetadata } from "./schema";
-import { next as A } from "@automerge/automerge";
-import { debounce, isEqual } from "lodash";
+import { BranchScopeAndActiveBranchInfo } from "./signals";
+
+export type BranchScopeAndActiveBranchInfoWithoutDoc = Omit<
+  BranchScopeAndActiveBranchInfo,
+  | "cloneOrMainOm"
+  // exclude branchScopeOm, because that also points to the current doc
+  // if the branch scope is on the document and we are editing on main
+  | "branchScopeOm"
+>;
 
 const GROUPER_DEBOUNCE_MS = 1000;
 
@@ -21,30 +31,25 @@ const GROUPER_DEBOUNCE_MS = 1000;
  * by maintaining a cache of decoded changes and by debouncing updates.
  */
 export class ChangeGrouper<
-  D extends HasVersionControlMetadata<unknown, unknown>
+  D extends HasVersionControlMetadata
 > extends EventEmitter {
-  private handle: DocHandle<D>;
-  private repo: Repo;
-  private groupingOptions: Omit<ChangeGroupingOptions<D>, "markers">;
   // An array of decoded changes on the doc.
   private decodedChanges: DecodedChangeWithMetadata[];
   private debouncedListener;
-  items: TimelineItems<D>[];
+  items: TimelineItems<D>[] = [];
 
-  private memoizedGroups: {
+  private memoizedGroups?: {
     changeGroups: ChangeGroup<D>[];
     changeCount: number;
     options: ChangeGroupingOptions<D>;
   };
 
   constructor(
-    handle: DocHandle<D>,
-    repo: Repo,
-    groupingOptions: Omit<ChangeGroupingOptions<D>, "markers">
+    private handle: DocHandle<D>,
+    private groupingOptions: Omit<ChangeGroupingOptions<D>, "markers">,
+    private branchScopeAndActiveBranchInfoWithoutDoc: BranchScopeAndActiveBranchInfoWithoutDoc
   ) {
     super();
-    this.handle = handle;
-    this.repo = repo;
     this.groupingOptions = groupingOptions;
     this.debouncedListener = debounce(
       () => this.populateItems(),
@@ -58,9 +63,12 @@ export class ChangeGrouper<
     }
 
     // Listen for changes to the doc and update the items array as needed.
-    let cachedMarkers;
+    let cachedMarkers: HeadsMarker<D>[];
     handle.on("change", () => {
-      const markers = getMarkersForDoc(this.handle, this.repo);
+      const markers = getMarkersForDoc(
+        handle,
+        branchScopeAndActiveBranchInfoWithoutDoc
+      );
       if (!isEqual(markers, cachedMarkers)) {
         // If the markers on the doc have changed, then we immediately recompute change groups
         cachedMarkers = markers;
@@ -74,9 +82,16 @@ export class ChangeGrouper<
 
   // Recompute changelog items for the current state of the doc
   private populateItems() {
+    const doc = this.handle.docSync();
+
+    if (!doc) {
+      console.warn(`Can't load doc ${this.handle.url}`);
+      return;
+    }
+
     // This call to getAllChanges is still quite slow; it'd be a lot faster
     // if Automerge simply had an API to get a subset of changes.
-    const rawChanges = A.getAllChanges(this.handle.docSync());
+    const rawChanges = A.getAllChanges(doc);
 
     // Only decode new changes.
     // Note, this only works because new changes are added to the end of the list;
@@ -88,10 +103,14 @@ export class ChangeGrouper<
         .slice(this.decodedChanges.length)
         .map(decodeChangeAndParseMetadata);
       this.decodedChanges = this.decodedChanges.concat(newDecodedChanges);
-      const markers = getMarkersForDoc(this.handle, this.repo);
+      const markers = getMarkersForDoc(
+        this.handle,
+        this.branchScopeAndActiveBranchInfoWithoutDoc
+      );
 
       const { items, memoizedGroups } = getTimelineItems({
-        doc: this.handle.docSync(),
+        doc,
+        mainUrl: this.branchScopeAndActiveBranchInfoWithoutDoc.originalUrl,
         changes: this.decodedChanges,
         options: { ...this.groupingOptions, markers },
         memoizedGroups: this.memoizedGroups,
@@ -103,7 +122,6 @@ export class ChangeGrouper<
   }
 
   public teardown() {
-    this.handle.off("change", this.debouncedListener);
     this.items = [];
   }
 }
@@ -113,8 +131,14 @@ export class ChangeGrouper<
 const decodeChangeAndParseMetadata = (change: A.Change) => {
   let decodedChange = A.decodeChange(change) as DecodedChangeWithMetadata;
   decodedChange.metadata = {};
+  const { message } = decodedChange;
+
+  if (!message) {
+    return decodedChange;
+  }
+
   try {
-    const metadata = JSON.parse(decodedChange.message);
+    const metadata = JSON.parse(message);
     decodedChange = { ...decodedChange, metadata };
   } catch (e) {
     // do nothing for now...

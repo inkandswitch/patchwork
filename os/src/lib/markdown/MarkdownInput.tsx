@@ -25,9 +25,11 @@ export const MarkdownInput = ({
   docWithAssetsHandle,
   autoFocus,
 }: MarkdownInputProps) => {
-  const [editorView, setEditorView] = useState(null);
-  const [container, setContainer] = useState(null);
-  const [remountEditor, setRemountEditor] = useState(null);
+  const [editorView, setEditorView] = useState<EditorView | undefined>(
+    undefined
+  );
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+  const [remountEditor, setRemountEditor] = useState<object>({});
   const plugins = useMarkdownPlugins({ docWithAssetsHandle });
 
   // trigger a remount when value has changed from the outside

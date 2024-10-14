@@ -1,15 +1,20 @@
-import { type DataType } from "@/sdk";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { AutomergeUrl } from "@automerge/automerge-repo";
-import { Folder } from "lucide-react";
+import { DataType, initFrom } from "@/datatypes";
+import {
+  HasVersionControlMetadata,
+  initVersionControlMetadata,
+} from "@/versionControl/schema";
+import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 
 // SCHEMA
 
-// A type representing a folder where the contents are either links to regular docs,
-// or links to folders, in which case we have access to the contents of the folder
-export type FolderDocWithChildren = Omit<FolderDoc, "docs"> & {
+/**
+ * A folder where the contents are either links to regular docs, or
+ * links to folders, in which case we have access to the contents of
+ * the folder (and so on, recursively).
+ */
+export type FolderDocMaterialized = Omit<FolderDoc, "docs"> & {
   docs: (DocLink & {
-    folderContents?: FolderDocWithChildren;
+    folderContents?: FolderDocMaterialized;
   })[];
 };
 
@@ -17,27 +22,57 @@ export type DocLink = {
   name: string;
   type: string;
   url: AutomergeUrl;
-  branchUrl?: AutomergeUrl;
-  branchName?: string;
 };
 
-export type DocLinkWithFolderPath = DocLink & {
-  /** A list of URLs to folder docs that make up the path to this link.
-   *  Always contains at least one URL: the root folder for the user
-   */
-  folderPath: AutomergeUrl[];
+export type DocPath = DocLink[];
+
+export const DocPath = {
+  toString: (docPath: DocPath) => docPath.map((link) => link.url).join("/"),
+
+  toLink: (path: DocPath) => path[path.length - 1],
+
+  forRoot: (rootFolderUrl: AutomergeUrl): DocPath => [
+    { name: "Root", type: "folder", url: rootFolderUrl },
+  ],
+
+  parent: (path: DocPath): DocPath => {
+    if (path.length === 1) {
+      throw new Error("Root folder has no parent");
+    }
+    return path.slice(0, -1);
+  },
+
+  folder: (path: DocPath): DocPath => {
+    // NOTE: We assume that all containing links are folders.
+    if (DocPath.toLink(path).type === "folder") {
+      return path;
+    } else {
+      return DocPath.parent(path);
+    }
+  },
+
+  equals: (a: DocPath, b: DocPath) => {
+    // NOTE: We only compare URLs
+    if (a.length !== b.length) {
+      return false;
+    }
+    return a.every((link, i) => link.url === b[i].url);
+  },
 };
 
 export type FolderDoc = {
   title: string;
   docs: DocLink[];
-} & HasVersionControlMetadata<never, never>;
+} & HasVersionControlMetadata<unknown, unknown>;
 
 // FUNCTIONS
 
-const init = (doc: any) => {
-  doc.title = "Untitled Folder";
-  doc.docs = [];
+export const init = (doc: FolderDoc, repo: Repo) => {
+  initVersionControlMetadata(doc, repo);
+  initFrom(doc, {
+    title: "Untitled Folder",
+    docs: [],
+  });
 };
 
 // When a copy of the document has been made,
@@ -55,6 +90,10 @@ const setTitle = (doc: FolderDoc, title: string) => {
   doc.title = title;
 };
 
+const links = (doc: FolderDoc) => {
+  return doc.docs;
+};
+
 export const folderDatatype: DataType<FolderDoc, never, never> = {
   type: "patchwork:dataType",
   id: "folder",
@@ -64,4 +103,5 @@ export const folderDatatype: DataType<FolderDoc, never, never> = {
   getTitle,
   setTitle,
   markCopy,
+  links,
 };

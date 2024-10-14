@@ -1,18 +1,23 @@
 import * as Automerge from "@automerge/automerge";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import ReactJson, { InteractionProps } from "@microlink/react-json-view";
 import { useCallback, useState } from "react";
 import styles from "../rawEditor.module.css";
 
-export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
+export const RawEditor = ({
+  docUrl: originalDocumentUrl,
+}: {
+  docUrl: AutomergeUrl;
+}) => {
   const [documentUrl, changeDocumentUrl] = useState(originalDocumentUrl);
-  const [history, setHistory] = useState([]); // TODO: make these actual navigation effects? knapsack's design makes this tricky.
+  const [history, setHistory] = useState<AutomergeUrl[]>([]); // TODO: make these actual navigation effects? knapsack's design makes this tricky.
 
   const [doc, changeDoc] = useDocument(documentUrl);
   const handle = useHandle(documentUrl);
 
   const onSelectAutomergeUrl = useCallback(
-    (url) => {
+    (url: AutomergeUrl) => {
       setHistory([documentUrl, ...history]);
       changeDocumentUrl(url);
     },
@@ -22,15 +27,21 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
   const onEdit = useCallback(
     ({ namespace, new_value, name }: InteractionProps) => {
       changeDoc(function (doc) {
-        let current = doc;
-        for (
-          let _i = 0, namespace_1 = namespace;
-          _i < namespace_1.length;
-          _i++
-        ) {
-          const key = namespace_1[_i];
+        let current: any = doc;
+
+        for (const key of namespace) {
+          if (key === null) {
+            console.error("faild to update property");
+            return;
+          }
           current = current[key];
         }
+
+        if (!name) {
+          console.error("failed to update property");
+          return;
+        }
+
         current[name] = new_value;
       });
     },
@@ -42,24 +53,30 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
   }, []);
 
   const onDelete = useCallback(
-    function ({ namespace, name }) {
+    function ({ namespace, name }: InteractionProps) {
       changeDoc(function (doc) {
-        let current = doc;
-        for (
-          let _i = 0, namespace_2 = namespace;
-          _i < namespace_2.length;
-          _i++
-        ) {
-          const key = namespace_2[_i];
+        let current: any = doc;
+
+        for (const key of namespace) {
+          if (key === null) {
+            console.error("faild to delete property");
+            return;
+          }
           current = current[key];
         }
+
+        if (!name) {
+          console.error("failed to delete property");
+          return;
+        }
+
         delete current[name];
       });
     },
     [changeDoc]
   );
 
-  const onSelect = useCallback(function (arg) {
+  const onSelect = useCallback(function (arg: unknown) {
     console.log("select", arg);
     /*const { value } = arg;
     if (!(typeof value === "string")) {
@@ -76,6 +93,9 @@ export const RawEditor = ({ docUrl: originalDocumentUrl }) => {
   // lifted from https://gist.github.com/davalapar/d0a5ba7cce4bc599f54800da22926da2
   const onDownloadDoc = useCallback(
     function () {
+      if (!doc || !handle) {
+        throw new Error("No document or handle found");
+      }
       const data = Automerge.save(doc);
       const filename = `${handle.documentId}.automerge`;
       const blobURL = URL.createObjectURL(

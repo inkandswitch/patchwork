@@ -22,10 +22,10 @@ export default function IssueBoard({
       changeDoc((doc) => {
         const sourceLane = doc.lanes.find(
           ({ id }) => id === source.droppableId
-        );
+        )!;  // TODO: JAH strict fix
         const destinationLane = doc.lanes.find(
           ({ id }) => id === destination.droppableId
-        );
+        )!;  // TODO: JAH strict fix
 
         sourceLane.cardIds.splice(source.index, 1);
         destinationLane.cardIds.splice(destination.index, 0, draggableId);

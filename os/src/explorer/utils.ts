@@ -7,7 +7,7 @@ export interface FileDoc {
   data: ArrayBuffer;
 }
 
-export const useBlobUrl = (url: AutomergeUrl) => {
+export const useBlobUrl = (url: AutomergeUrl | undefined) => {
   const [file] = useDocument<FileDoc>(url);
 
   return useMemo(() => {
@@ -31,7 +31,7 @@ export const uploadFile = async (
     reader.onload = (event) => {
       fileDocHandle.change((fileDoc) => {
         fileDoc.type = file.type;
-        fileDoc.data = new Uint8Array(event.target.result as ArrayBuffer);
+        fileDoc.data = new Uint8Array(event.target!.result as ArrayBuffer);
       });
 
       resolve(true);
@@ -44,7 +44,7 @@ export const uploadFile = async (
   return fileDocHandle.url;
 };
 
-export const saveFile = async (blob, suggestedName, types) => {
+export const saveFile = async (blob: Blob, suggestedName: string, types: any) => {
   // Feature detection. The API needs to be supported
   // and the app not run in an iframe.
   const supportsFileSystemAccess =
@@ -72,7 +72,7 @@ export const saveFile = async (blob, suggestedName, types) => {
       return;
     } catch (err) {
       // Fail silently if the user has simply canceled the dialog.
-      if (err.name === "AbortError") {
+      if ((err as any).name === "AbortError") {
         return;
       }
     }

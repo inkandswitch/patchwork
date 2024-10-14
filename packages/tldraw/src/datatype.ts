@@ -6,10 +6,12 @@ import {
   initVersionControlMetadata,
 } from "@/versionControl/schema";
 import { next as A } from "@automerge/automerge";
+import { Repo } from "@automerge/automerge-repo";
 import {
   Editor,
   SerializedSchema,
   SerializedStore,
+  TLPage,
   TLRecord,
   TLShape,
   TLShapeId,
@@ -18,10 +20,11 @@ import {
 } from "@tldraw/tldraw";
 import { init as tldrawinit } from "./vendor/automerge-tldraw";
 import { pick } from "lodash";
+import { TextPatch } from "@/versionControl/utils";
 
 // SCHEMA
 
-export type TLDrawDoc = HasVersionControlMetadata<never, never> & {
+export type TLDrawDoc = HasVersionControlMetadata<TLShapeId, TLShape> & {
   store: SerializedStore<TLRecord>;
   schema: SerializedSchema;
 };
@@ -34,25 +37,29 @@ export type TLDrawDocAnchor = TLShapeId;
 // update the title so it's more clear which one is the copy vs original.
 // (this mechanism needs to be thought out more...)
 export const markCopy = (doc: TLDrawDoc) => {
-  doc.store["page:page"].name = "Copy of " + doc.store["page:page"].name;
+  const page = doc.store["page:page" as any] as TLPage;
+  page.name = "Copy of " + page.name;
 };
 
 export const getTitle = async (doc: TLDrawDoc) => {
-  return doc.store["page:page"].name || "Drawing";
+  const page = doc.store["page:page" as any] as TLPage;
+  return page.name || "Drawing";
 };
 
-export const setTitle = (doc: any, title: string) => {
-  doc.store["page:page"].name = title;
+export const setTitle = (doc: TLDrawDoc, title: string) => {
+  const page = doc.store["page:page" as any] as TLPage;
+  page.name = title;
 };
 
-export const init = (doc: TLDrawDoc) => {
+export const init = (doc: TLDrawDoc, repo: Repo) => {
   tldrawinit(doc);
-  doc.store["page:page"].name = "Drawing";
+  const page = doc.store["page:page" as any] as TLPage;
+  page.name = "Drawing";
 
-  initVersionControlMetadata(doc);
+  initVersionControlMetadata(doc, repo);
 };
 
-export const includePatchInChangeGroup = (patch: A.Patch) => {
+export const includePatchInChangeGroup = (patch: A.Patch | TextPatch) => {
   return patch.path[0] === "store";
 };
 
@@ -75,7 +82,7 @@ export const includeChangeInHistory = (doc: TLDrawDoc) => {
     "branchMetadata",
     "tags",
     "diffBase",
-    "discussions",
+    //"discussions", filter out comment changes for now because we don't surface them in the history
     "changeGroupSummaries",
   ].map((path) => A.getObjectId(doc, path));
 
@@ -272,12 +279,23 @@ function unionBounds(boundsA: Bounds, boundsB: Bounds): Bounds {
   return { x: minX, y: minY, w: width, h: height };
 }
 
-const editor = new Editor({
-  store: createTLStore({ shapeUtils: defaultShapeUtils }),
-  shapeUtils: defaultShapeUtils,
-  tools: [],
-  getContainer: () => document.body,
-});
+// HACK: `new Editor` doesn't work on the server cuz deep in tldraw
+// they do cancelAnimationFrame (etc?). Not sure what expectations
+// should be about datatype methods running on the server, but for
+// now let's just make this lazy.
+let EDITOR: Editor | null = null;
+const getEditor = () => {
+  if (!EDITOR) {
+    EDITOR = new Editor({
+      store: createTLStore({ shapeUtils: defaultShapeUtils }),
+      shapeUtils: defaultShapeUtils,
+      tools: [],
+      getContainer: () => document.body,
+    });
+  }
+
+  return EDITOR;
+};
 
 const getBounds = (shape: TLShape): Bounds => {
   let geometry;
@@ -285,7 +303,7 @@ const getBounds = (shape: TLShape): Bounds => {
   // hack: getGeometry throws an error for some shape types because we don't have a proper editor instance here.
   // we just create an empty editor so we can call the getGeometry function
   try {
-    geometry = editor.shapeUtils[shape.type].getGeometry(shape);
+    geometry = getEditor().shapeUtils[shape.type]!.getGeometry(shape); // TODO: JAH strict fix
   } catch (err) {
     return { x: 0, y: 0, w: 0, h: 0 };
   }
@@ -308,6 +326,10 @@ const valueOfAnnotation = (annotation: Annotation<TLShapeId, TLShape>) => {
 
     case "deleted":
       return annotation.deleted;
+
+    // TODO: JAH strict fix
+    case "highlighted":
+      return annotation.value;
   }
 };
 

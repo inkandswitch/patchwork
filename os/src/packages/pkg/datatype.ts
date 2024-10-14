@@ -1,4 +1,4 @@
-import { type DataType } from "@/sdk";
+import { initFrom, type DataType } from "@/sdk";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 
 // SCHEMA
@@ -12,7 +12,7 @@ export type FileSystem = {
   [name: string]: FileEntry | FileSystem;
 };
 
-export type PackageDoc = HasVersionControlMetadata<never, never> & {
+export type PackageDoc = HasVersionControlMetadata<unknown, unknown> & {
   title: string;
   packageJSON: any;
   fileContents: FileSystem;
@@ -37,25 +37,27 @@ export const tool = {
 // FUNCTIONS
 
 export const init = (doc: PackageDoc) => {
-  doc.title = "New Package";
+  initFrom(doc, {
+    title: "New Package",
 
-  // todo: figure out what we want the empty state to look like properly
+    // todo: figure out what we want the empty state to look like properly
 
-  doc.packageJSON = {
-    type: "module",
-    name: "my-package",
-    description: "",
-    version: "0.0.1",
-    main: "index.js",
-    files: ["index.js"],
-  };
-
-  doc.fileContents = {
-    "index.js": {
-      contentType: "application/javascript",
-      contents: EMPTY_SOURCE,
+    packageJSON: {
+      type: "module",
+      name: "my-package",
+      description: "",
+      version: "0.0.1",
+      main: "index.js",
+      files: ["index.js"],
     },
-  };
+
+    fileContents: {
+      "index.js": {
+        contentType: "application/javascript",
+        contents: EMPTY_SOURCE,
+      },
+    },
+  });
 };
 
 // When a copy of the document has been made,

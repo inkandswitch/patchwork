@@ -7,10 +7,10 @@ import { view } from "@automerge/automerge";
 import { get, set } from "lodash";
 import { PackageDoc } from "./datatype";
 
-export const PackageEditor: React.FC<EditorProps<never, never>> = ({
+export const PackageEditor: React.FC<EditorProps<unknown, unknown>> = ({
   docUrl,
   docHeads,
-}: EditorProps<never, never>) => {
+}: EditorProps<unknown, unknown>) => {
   const [rawPackageDoc, changeModuleDoc] = useDocument<PackageDoc>(docUrl);
 
   if (!rawPackageDoc) {
@@ -23,7 +23,7 @@ export const PackageEditor: React.FC<EditorProps<never, never>> = ({
 
   const mainPath = packageJSON.main.split("/");
 
-  const onChangeSourceCode = (evt) => {
+  const onChangeSourceCode = (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
     changeModuleDoc((doc) => {
       set(doc.fileContents, mainPath, {
         contentType: "application/javascript",
@@ -53,5 +53,5 @@ export const packageEditorTool: Tool = {
   id: "pkg",
   name: "Package",
   supportedDataTypes: ["pkg"],
-  editorComponent: PackageEditor,
+  EditorComponent: PackageEditor,
 };

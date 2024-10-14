@@ -1,0 +1,29 @@
+{
+  "name": "@patchwork/jacquard",
+  "version": "0.0.1",
+  "description": "A simple spreadsheet",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {},
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge": "2.2.9-alpha.2",
+    "@automerge/automerge-repo": "2.0.0-alpha.7",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
+    "@visx/network": "^3.3.0",
+    "@viz-js/viz": "^3.7.0",
+    "lodash": "^4.17.21",
+    "lucide-react": "^0.284.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "reactflow": "^11.11.4",
+    "signia": "^0.1.5",
+    "signia-react": "^0.1.5"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.7",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0"
+  }
+}

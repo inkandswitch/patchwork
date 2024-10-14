@@ -44,7 +44,7 @@ export function useAnnotations({
   isCommentInputFocused,
 }: {
   doc: A.Doc<HasVersionControlMetadata<unknown, unknown>>;
-  dataType: DataType<unknown, unknown, unknown>;
+  dataType: DataType | undefined;
   diff?: DiffWithProvenance;
   isCommentInputFocused: boolean;
 }): {
@@ -54,13 +54,19 @@ export function useAnnotations({
   setHoveredAnchor: (anchor: unknown) => void;
   setSelectedAnchors: (anchors: unknown[]) => void;
   hoveredAnnotationGroupId: string | undefined;
-  setHoveredAnnotationGroupId: (id: string) => void;
-  setSelectedAnnotationGroupId: (id: string) => void;
-  setCommentState: (state: CommentState<unknown>) => void;
+  setHoveredAnnotationGroupId: (id: string | undefined) => void;
+  setSelectedAnnotationGroupId: (id: string | undefined) => void;
+  setCommentState: (state: CommentState<unknown> | undefined) => void;
 } {
-  const [commentState, setCommentState] = useState<CommentState<unknown>>();
-  const [hoveredState, setHoveredState] = useState<HoverState<unknown>>();
-  const [selectedState, setSelectedState] = useState<SelectionState<unknown>>();
+  const [commentState, setCommentState] = useState<
+    CommentState<unknown> | undefined
+  >();
+  const [hoveredState, setHoveredState] = useState<
+    HoverState<unknown> | undefined
+  >();
+  const [selectedState, setSelectedState] = useState<
+    SelectionState<unknown> | undefined
+  >();
 
   const setHoveredAnchor = useStaticCallback((anchor: unknown) => {
     // ingore set if it doesn't change the current state
@@ -91,15 +97,21 @@ export function useAnnotations({
     );
   });
 
-  const setSelectedAnnotationGroupId = useStaticCallback((id: string) => {
-    setSelectedState({ type: "annotationGroup", id });
-  });
+  const setSelectedAnnotationGroupId = useStaticCallback(
+    (id: string | undefined) => {
+      setSelectedState(
+        id !== undefined ? { type: "annotationGroup", id } : undefined
+      );
+    }
+  );
 
-  const setHoveredAnnotationGroupId = useStaticCallback((id: string) => {
-    setHoveredState(
-      id !== undefined ? { type: "annotationGroup", id } : undefined
-    );
-  });
+  const setHoveredAnnotationGroupId = useStaticCallback(
+    (id: string | undefined) => {
+      setHoveredState(
+        id !== undefined ? { type: "annotationGroup", id } : undefined
+      );
+    }
+  );
 
   const hoveredAnnotationGroupId = useMemo(
     () =>
@@ -151,7 +163,7 @@ export function useAnnotations({
       typeof commentState.target !== "string"
     ) {
       discussions.push({
-        anchors: commentState.target,
+        anchors: commentState.target ?? [],
       });
     }
 
@@ -190,9 +202,17 @@ export function useAnnotations({
 
       highlightAnnotations.push(...discussionHighlightAnnotations);
 
-      const overlappingAnnotations = [];
+      const overlappingAnnotations: HighlightAnnotation<unknown, unknown>[] =
+        [];
 
       editAnnotations.forEach((editAnnotation) => {
+        if (discussion.anchors === undefined) {
+          console.error(
+            "Unexpected state: discussion has no anchors!",
+            discussion
+          );
+          return;
+        }
         if (
           discussion.anchors.some((anchor) =>
             doAnchorsOverlap(dataType, editAnnotation.anchor, anchor, doc)
@@ -200,7 +220,9 @@ export function useAnnotations({
         ) {
           // mark any annotation that is part of a discussion as claimed
           claimedAnnotations.add(editAnnotation);
-          overlappingAnnotations.push(editAnnotation);
+          overlappingAnnotations.push(
+            editAnnotation as HighlightAnnotation<unknown, unknown>
+          ); // TODO: JAH strict fix
         }
       });
 
@@ -242,7 +264,7 @@ export function useAnnotations({
             ? -Infinity // annotation groups without annotations are global comments which are always shown on top
             : min(
                 annotationGroup.annotations.map((annotation) =>
-                  dataType.sortAnchorsBy(doc, annotation.anchor)
+                  dataType.sortAnchorsBy!(doc, annotation.anchor)
                 )
               )
         )
@@ -252,15 +274,7 @@ export function useAnnotations({
       annotations: editAnnotations.concat(highlightAnnotations),
       annotationGroups: sortedAnnotationGroups,
     };
-  }, [
-    doc,
-    diff,
-    selectedState,
-    isCommentInputFocused,
-    dataType,
-    discussionsWithoutAnchors,
-    commentState,
-  ]);
+  }, [doc, diff, selectedState, isCommentInputFocused, dataType, commentState]);
 
   const {
     selectedAnchors,
@@ -271,7 +285,7 @@ export function useAnnotations({
     const selectedAnchors = new Set<string>();
     const hoveredAnchors = new Set<string>();
     const selectedAnnotationGroupIds = new Set<string>();
-    let expandedAnnotationGroupId: string;
+    let expandedAnnotationGroupId: string | undefined;
 
     // Record selection state for anchors and annotation groups
     switch (selectedState?.type) {
@@ -355,7 +369,7 @@ export function useAnnotations({
       selectedAnnotationGroupIds,
       expandedAnnotationGroupId,
     };
-  }, [hoveredState, selectedState, annotations, annotationGroups]);
+  }, [hoveredState, selectedState, annotationGroups]);
 
   const annotationsWithUIState: AnnotationWithUIState<unknown, unknown>[] =
     useMemo(
@@ -374,7 +388,7 @@ export function useAnnotations({
             JSON.stringify(annotation.anchor)
           ),
         })),
-      [annotations, selectedAnchors]
+      [annotations, hoveredAnchors, selectedAnchors]
     );
 
   const annotationGroupsWithState: AnnotationGroupWithUIState<
@@ -396,7 +410,7 @@ export function useAnnotations({
                 commentState.target === getAnnotationGroupId(annotationGroup) ||
                 // ... or target anchors ?
                 (Array.isArray(commentState.target) &&
-                  commentState.target.every((anchor, index) =>
+                  commentState.target.every((anchor) =>
                     annotationGroup.annotations.some((annotation) =>
                       isEqual(annotation.anchor, anchor)
                     )
@@ -404,10 +418,11 @@ export function useAnnotations({
               break;
             case "edit":
               isCommentBeingEdited =
-                commentState.type === "edit" &&
-                annotationGroup.discussion?.comments.some(
-                  (comment) => comment.id === commentState.commentId
-                );
+                (commentState.type === "edit" &&
+                  annotationGroup.discussion?.comments.some(
+                    (comment) => comment.id === commentState.commentId
+                  )) ||
+                false;
               break;
           }
         }
@@ -418,7 +433,7 @@ export function useAnnotations({
             expandedAnnotationGroupId === id ||
             (!expandedAnnotationGroupId && isCommentBeingCreated)
               ? "expanded"
-              : selectedAnnotationGroupIds.has(id)
+              : id && selectedAnnotationGroupIds.has(id)
               ? "focused"
               : "neutral",
           comment: isCommentBeingEdited
@@ -428,7 +443,12 @@ export function useAnnotations({
             : undefined,
         };
       }),
-    [annotationGroups, expandedAnnotationGroupId, selectedAnnotationGroupIds]
+    [
+      annotationGroups,
+      commentState,
+      expandedAnnotationGroupId,
+      selectedAnnotationGroupIds,
+    ]
   );
 
   return {
@@ -446,7 +466,7 @@ export function useAnnotations({
 }
 
 export const doAnchorsOverlap = (
-  datatype: DataType<unknown, unknown, unknown>,
+  datatype: DataType,
   a: unknown,
   b: unknown,
   doc: HasVersionControlMetadata<unknown, unknown>
@@ -456,7 +476,7 @@ export const doAnchorsOverlap = (
 };
 
 export const areAnchorSelectionsEqual = (
-  datatype: DataType<unknown, unknown, unknown>,
+  datatype: DataType,
   a: unknown[],
   b: unknown[],
   doc: HasVersionControlMetadata<unknown, unknown>

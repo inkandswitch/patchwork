@@ -53,6 +53,8 @@ This monorepo (managed with pnpm workspaces) includes both the core OS APIs as w
 
 `./os/src/packages/*`: we bundle some mature core packages like our essay editor datatype and tool directly into the OS and deploy them statically as part of the OS deploy. Over the long term we plan to pull these out of this directory and deploy them dynamically.
 
+(Maybe in the future we can make a new package that depends on os and packages, to break the cyclic dependency and enable some better TS workspaces stuff.)
+
 ### Dependency hygeine
 
 - Datatypes and tools can depend on the core OS APIs. Over time we plan to formalize a clear SDK that the OS exports.
@@ -77,6 +79,12 @@ If you want to dynamically deploy a new package to an automerge document and are
 ### AI
 
 LLM features in Patchwork include bot edits and change history summarization. Currently these are backed by the OpenAI API. To enable them in local dev you'll need to set up an API key locally. Create a file at `os/.env.local`:
+
+```
+VITE_OPENAI_API_KEY=<OpenAI key>
+```
+
+You can get the lab OpenAI key from Geoffrey.
 
 ```
 VITE_OPENAI_API_KEY=<OpenAI key>

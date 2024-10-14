@@ -7,13 +7,22 @@
   "scripts": {
     "dev": "pnpm --filter os dev",
     "build": "pnpm --filter os build",
+    "tsc": "tsc",
     "preinstall": "npx only-allow pnpm",
-    "test": "pnpm --filter os test"
+    "test": "pnpm --filter \"./{os,jacquard-cli}\" test"
+  },
+  "pnpm": {
+    "overrides": {
+      "@automerge/automerge": "2.2.9-alpha.2"
+    }
   },
   "keywords": [],
   "author": "Ink & Switch",
-  "resolutions": {
-    "@automerge/automerge-wasm": "file:./os/src/vendor/automerge-wasm"
-  },
-  "devDependencies": {}
+  "devDependencies": {
+    "@vitest/ui": "^2.1.2",
+    "typescript": "^5.5.4",
+    "vite": "^5.3.4",
+    "vite-tsconfig-paths": "^5.0.1",
+    "vitest": "^2.0.5"
+  }
 }

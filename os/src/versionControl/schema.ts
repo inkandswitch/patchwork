@@ -1,57 +1,84 @@
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
 import { TextPatch } from "./utils";
-import { HasAssets } from "@/assets";
-import { HasBotChatHistory } from "./components/BotSidebar";
+import { HasAssets, withHasAssets } from "@/assets";
+import {
+  HasBotChatHistory,
+  withHasBotChatHistory,
+} from "./components/BotSidebar";
+import { CursorPatch as CursorPatch } from "./cursorPatch";
 
-export type Branch = {
+// This is a separate doc to store version control metadata.
+// Eventually we envision all VC metadata living in here.
+// But for now, we have some metadata living in docs themselves, and
+// some living in this sidecar.
+// TODO: "Sidecar" in here is provisional until we remove old branches
+
+export type VersionControlSidecarDoc = BranchScopeMetadata &
+  HasChangeGroupSummaries;
+
+type BranchScopeMetadata =
+  | {
+      isBranchScope: false;
+    }
+  | {
+      isBranchScope: true;
+      branches: AutomergeUrl[];
+    };
+
+export type HasLinkToVersionControlSidecar = {
+  versionControlMetadataUrl: AutomergeUrl;
+};
+
+export const withHasLinkToVersionControlSidecar = <D>(
+  doc: D,
+  versionControlMetadataUrl: AutomergeUrl
+): D & HasLinkToVersionControlSidecar => ({
+  ...doc,
+  versionControlMetadataUrl,
+});
+
+export type DocCloneMap = {
+  [key: string]: {
+    url: AutomergeUrl;
+    // The base of the branch = the heads at which this branch was created
+    baseHeads: A.Heads;
+  };
+};
+
+// Represents a branch across multiple documents
+export type UnmergedBranchDoc = {
+  /* A mapping of URLs of "main" docs to clones representing that doc on this branch */
+  clones: DocCloneMap;
+
   name: string;
-  /** URL pointing to the clone doc */
-  url: AutomergeUrl;
+
   /** timestamp when the branch was created */
   createdAt: number;
-  /** Heads when the branch was created */
-  branchHeads: A.Heads;
+
   /** author contact doc URL for branch creator */
   createdBy?: AutomergeUrl;
 
-  mergeMetadata?: {
+  /**  doc on which the branch scope was created */
+  branchScopeUrl: AutomergeUrl;
+
+  mergeMetadata: null;
+};
+
+export type MergedBranchDoc = Omit<UnmergedBranchDoc, "mergeMetadata"> & {
+  mergeMetadata: {
     /** timestamp when the branch was merged */
     mergedAt: number;
+
     /** Heads of the branch at the point it was merged */
-    mergeHeads: A.Heads;
+    mergeHeadsByDocUrl: Record<AutomergeUrl, A.Heads>;
+
     /** author contact doc URL for branch merger */
     mergedBy: AutomergeUrl;
   };
 };
 
-export type Branchable = {
-  branchMetadata: {
-    /* A pointer to the source where this was copied from */
-    source: {
-      url: AutomergeUrl;
-      branchHeads: A.Heads; // the heads at which this branch was forked off
-    } | null;
-
-    /* A pointer to copies of this doc */
-    branches: Array<Branch>;
-  };
-};
-
-export type Tag = {
-  name: string;
-  heads: A.Heads;
-  createdAt: number;
-  createdBy?: AutomergeUrl;
-};
-export type Taggable = {
-  // TODO: should we model this as a map instead?
-  tags: Tag[];
-};
-
-export type Diffable = {
-  diffBase: A.Heads;
-};
+export type BranchDoc = UnmergedBranchDoc | MergedBranchDoc;
 
 // A data structure that lets us pass around diffs while remembering
 // where they came from
@@ -66,7 +93,7 @@ export type DiffWithProvenance = {
 export type DiscussionComment = {
   id: string;
   content: string;
-  contactUrl?: AutomergeUrl;
+  contactUrl: AutomergeUrl;
   timestamp: number;
 };
 
@@ -105,6 +132,13 @@ export type Discussable<T> = {
   discussions: { [key: string]: Discussion<T> };
 };
 
+export const withDiscussable = <D = unknown, T = unknown>(
+  doc: D
+): D & Discussable<T> => ({
+  ...doc,
+  discussions: {},
+});
+
 export type HasChangeGroupSummaries = {
   changeGroupSummaries: {
     [key: string]: {
@@ -113,11 +147,18 @@ export type HasChangeGroupSummaries = {
   };
 };
 
-export type HasVersionControlMetadata<T, V> = HasChangeGroupSummaries &
-  Branchable &
-  Taggable &
-  Diffable &
-  Discussable<T> &
+export const withHasChangeGroupSummaries = <D>(
+  doc: D
+): D & HasChangeGroupSummaries => ({
+  ...doc,
+  changeGroupSummaries: {},
+});
+
+export type HasVersionControlMetadata<
+  TAnchor = unknown,
+  TAnchorValue = unknown
+> = HasChangeGroupSummaries &
+  Discussable<TAnchor> &
   // @Paul 5/24/24
   // todo: we should rethink how to structure core interfaces
   // the application now assumes that all document types in the system implement HasVersionControlMetadata
@@ -125,42 +166,72 @@ export type HasVersionControlMetadata<T, V> = HasChangeGroupSummaries &
   // We should create a base schema that's a union of all interfaces that we can assume all documents implement but
   // split them up into logical sub interfaces like versioning, commenting, assets, etc
   HasAssets &
-  HasBotChatHistory;
+  HasBotChatHistory &
+  HasLinkToVersionControlSidecar;
+
+export const withHasVersionControlMetadata = <
+  D = unknown,
+  T = unknown,
+  V = unknown
+>(
+  doc: D,
+  {
+    versionControlMetadataUrl,
+    assetsDocUrl,
+  }: {
+    versionControlMetadataUrl: AutomergeUrl;
+    assetsDocUrl: AutomergeUrl;
+  }
+): D & HasVersionControlMetadata<T, V> =>
+  withHasAssets(
+    withHasLinkToVersionControlSidecar(
+      withHasBotChatHistory(
+        withHasChangeGroupSummaries(
+          withDiscussable(withHasChangeGroupSummaries(doc))
+        )
+      ),
+      versionControlMetadataUrl
+    ),
+    assetsDocUrl
+  );
 
 export type AnnotationId = string & { __annotationId: true };
 
-interface AddAnnotation<A, V> {
+export type AddAnnotation<A, V> = {
   type: "added";
   anchor: A;
   added: V;
-}
+  inversePatches?: CursorPatch[];
+};
 
-interface DeleteAnnotation<A, V> {
+export type DeleteAnnotation<A, V> = {
   type: "deleted";
   anchor: A;
   deleted: V;
-}
+  inversePatches?: CursorPatch[];
+};
 
-interface ChangeAnnotation<A, V> {
+export type ChangeAnnotation<A, V> = {
   type: "changed";
   anchor: A;
   before: V;
   after: V;
-}
+  inversePatches?: CursorPatch[];
+};
 
-export interface HighlightAnnotation<A, V> {
+export type HighlightAnnotation<A, V> = {
   type: "highlighted";
   anchor: A;
   value: V;
-}
+};
 
-export type Annotation<T, V> =
-  | AddAnnotation<T, V>
-  | DeleteAnnotation<T, V>
-  | ChangeAnnotation<T, V>
-  | HighlightAnnotation<T, V>;
+export type Annotation<Anchor, Value> =
+  | AddAnnotation<Anchor, Value>
+  | DeleteAnnotation<Anchor, Value>
+  | ChangeAnnotation<Anchor, Value>
+  | HighlightAnnotation<Anchor, Value>;
 
-export type AnnotationWithUIState<T, V> = Annotation<T, V> & {
+export type AnnotationWithUIState<A, V> = Annotation<A, V> & {
   /** Whether the annotation should be visually emphasized in the UI (eg, with darker coloring).
    *  This is used to indicate hovered/selected annotations within the UI.
    */
@@ -171,18 +242,80 @@ export type AnnotationWithUIState<T, V> = Annotation<T, V> & {
   shouldBeVisibleInViewport: boolean;
 };
 
-export interface AnnotationPosition<T, V> {
+export interface AnnotationPosition<A, V> {
   x: number;
   y: number;
-  annotation: Annotation<T, V>;
+  annotation: Annotation<A, V>;
 }
 
-export const initVersionControlMetadata = (doc: any) => {
-  doc.branchMetadata = {
-    source: null,
-    branches: [],
-  };
+type VersionControlMetadataDocOptions = {
+  branchScope?: boolean;
+};
+
+export const initVersionControlMetadata = (
+  doc: any,
+  repo: Repo,
+  options?: VersionControlMetadataDocOptions
+) => {
   doc.discussions = {};
   doc.tags = [];
   doc.changeGroupSummaries = {};
+
+  initVersionControlSidecarDoc(doc, repo, options);
+};
+
+export const initVersionControlSidecarDoc = (
+  doc: any,
+  repo: Repo,
+  options: VersionControlMetadataDocOptions = { branchScope: false }
+) => {
+  // init the separate metadata doc
+  const metadataHandle = repo.create<VersionControlSidecarDoc>({
+    isBranchScope: false,
+    changeGroupSummaries: {},
+  });
+  metadataHandle.change((d) => {
+    d.isBranchScope = false;
+    d.changeGroupSummaries = {};
+  });
+  if (options.branchScope) {
+    ensureMetadataHandleIsBranchScope(metadataHandle);
+  }
+  doc.versionControlMetadataUrl = metadataHandle.url;
+};
+
+export const getVersionControlMetadataHandle = (
+  handle: DocHandle<any>,
+  repo: Repo
+): DocHandle<VersionControlSidecarDoc> => {
+  const doc = handle.docSync();
+
+  if (!doc) {
+    throw new Error(`document is not available ${handle.url}`);
+  }
+
+  let versionControlMetadataUrl = doc.versionControlMetadataUrl;
+  if (!versionControlMetadataUrl) {
+    handle.change((d) => {
+      initVersionControlSidecarDoc(d, repo);
+      versionControlMetadataUrl = d.versionControlMetadataUrl;
+    });
+  }
+  return repo.find<VersionControlSidecarDoc>(versionControlMetadataUrl);
+};
+
+export const ensureMetadataHandleIsBranchScope = (
+  handle: DocHandle<VersionControlSidecarDoc>
+) => {
+  handle.change((d) => {
+    if (!d.isBranchScope) {
+      // @ts-expect-error TS not smart enough to figure this one out
+      d.isBranchScope = true;
+      // @ts-expect-error TS not smart enough to figure this one out
+      d.branches = [];
+    }
+  });
+  return handle as DocHandle<
+    VersionControlSidecarDoc & { isBranchScope: true }
+  >;
 };

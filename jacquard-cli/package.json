@@ -1,0 +1,34 @@
+{
+  "name": "jacquard-cli",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "vitest"
+  },
+  "bin": {
+    "jacquard": "./src/index.ts"
+  },
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge": "2.2.9-alpha.2",
+    "@automerge/automerge-repo": "2.0.0-alpha.7",
+    "@automerge/automerge-repo-network-websocket": "2.0.0-alpha.7",
+    "@automerge/automerge-repo-storage-nodefs": "^1.2.1",
+    "command-line-args": "^5.2.1",
+    "debug": "^4.3.7",
+    "isbinaryfile": "^5.0.2",
+    "lodash": "^4.17.21",
+    "mime-types": "^2.1.35",
+    "signia": "^0.1.5"
+  },
+  "devDependencies": {
+    "@types/command-line-args": "^5.2.3",
+    "@types/debug": "^4.1.12",
+    "@types/lodash": "^4.17.7",
+    "@types/mime-types": "^2.1.4",
+    "@types/node": "^20.14.12",
+    "vitest": "^2.0.5"
+  }
+}

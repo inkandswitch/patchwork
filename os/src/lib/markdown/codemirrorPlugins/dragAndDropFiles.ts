@@ -14,19 +14,21 @@ export const dragAndDropFilesPlugin = ({
 
   let previousSelection: EditorSelection;
 
-  const onDragEnter = (event) => {
+  const onDragEnter = (event: DragEvent) => {
     previousSelection = view.state.selection;
 
     event.preventDefault(); // cancel event to indicate drag is allowed
-    event.dataTransfer.dropEffect = "copy"; // Show a visual cue that a copy operation is happening
+    // TODO: JAH strict fix
+    event.dataTransfer!.dropEffect = "copy"; // Show a visual cue that a copy operation is happening
   };
 
-  const onDragOver = (event) => {
+  const onDragOver = (event: DragEvent) => {
     event.preventDefault(); // cancel event to indicate drag is allowed
   };
 
-  const onDrop = (event) => {
-    const files = event.dataTransfer.files;
+  const onDrop = (event: DragEvent) => {
+    // TODO: JAH strict fix
+    const files = event.dataTransfer!.files;
     if (files.length > 0) {
       const file = files[0];
 
@@ -36,6 +38,8 @@ export const dragAndDropFilesPlugin = ({
             x: event.clientX,
             y: event.clientY,
           });
+
+          if (!pos) { return; }  // TODO: JAH strict fix
 
           view.dispatch({
             changes: { from: pos, insert: text },

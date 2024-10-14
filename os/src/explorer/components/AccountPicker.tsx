@@ -33,9 +33,9 @@ import {
   TooltipTrigger,
 } from "@/shadcn/ui/tooltip";
 import { ContactAvatar } from "./ContactAvatar";
-import { useDataTypes } from "../../datatypes";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import { Icon } from "@/lib/icons";
+import { useDataTypes } from "@/hooks/useDataTypes";
 
 // 1MB in bytes
 const MAX_AVATAR_SIZE = 1024 * 1024;
@@ -57,7 +57,6 @@ export const AccountPicker = ({
   const currentAccount = useCurrentAccount();
 
   const self = useSelf();
-  const dataTypes = useDataTypes();
   const [name, setName] = useState<string>("");
   const [avatar, setAvatar] = useState<File>();
   const [activeTab, setActiveTab] = useState<AccountPickerTab>(
@@ -101,22 +100,23 @@ export const AccountPicker = ({
   const onSubmit = () => {
     switch (activeTab) {
       case AccountPickerTab.LogIn:
-        currentAccount.logIn(accountAutomergeUrlToLogin);
+        currentAccount!.logIn(accountAutomergeUrlToLogin!); // TODO: JAH strict fix
         break;
 
       case AccountPickerTab.SignUp:
-        currentAccount.signUp({ name, avatar });
+        currentAccount!.signUp({ name, avatar: avatar! }); // TODO: JAH strict fix
         break;
     }
   };
 
   const onLogout = () => {
-    currentAccount.logOut();
+    currentAccount!.logOut(); // TODO: JAH strict fix
   };
 
   const onFilesChanged = (e: ChangeEvent<HTMLInputElement>) => {
     const avatarFile = !e.target.files ? undefined : e.target.files[0];
-    if (avatarFile.size > MAX_AVATAR_SIZE) {
+    if (avatarFile!.size > MAX_AVATAR_SIZE) {
+      // TODO: JAH strict fix
       alert("Avatar is too large. Please choose a file under 1MB.");
       e.target.value = "";
       return;
@@ -129,7 +129,7 @@ export const AccountPicker = ({
   };
 
   const onCopy = () => {
-    navigator.clipboard.writeText(currentAccountToken);
+    navigator.clipboard.writeText(currentAccountToken!); // TODO: JAH strict fix
 
     setIsCopyTooltipOpen(true);
 
@@ -146,6 +146,8 @@ export const AccountPicker = ({
       contactToLogin?.type === "registered");
 
   const isLoggedIn = self?.type === "registered";
+
+  const dataTypes = useDataTypes();
 
   return (
     <Dialog>
@@ -277,7 +279,7 @@ export const AccountPicker = ({
               <div className="flex gap-1.5">
                 <Input
                   onFocus={(e) => e.target.select()}
-                  value={currentAccountToken}
+                  value={currentAccountToken!} // TODO: JAH strict fix
                   id="accountUrl"
                   type={showAccountUrl ? "text" : "password"}
                   accept="image/*"
@@ -324,7 +326,7 @@ export const AccountPicker = ({
 
               <div className="flex flex-col gap-2 py-2">
                 {moduleSettingsDoc &&
-                  Object.values(dataTypes).map((dataType) => {
+                  dataTypes.map((dataType) => {
                     const isEnabled =
                       moduleSettingsDoc.enabledDatatypeIds[dataType.id];
 
