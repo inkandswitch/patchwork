@@ -442,33 +442,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
       // ui state doc isn't ready; this hack seems to work? but i dunno
       return;
     }
-    const link = JSON.parse(id);
     changeUIStateDoc((uiState) => {
-      if (
-        uiState.openedFoldersInSidebar.find((folder) => folder.url === link.url)
-      ) {
-        const index = uiState.openedFoldersInSidebar.findIndex(
-          (folder) => folder.url === link.url
-        );
+      // Initialize the list of toggled open doc paths if it doesn't exist
+      // (This is basically a data migration on the fly...)
+      if (!uiState.docPathsToggledOpenInSidebar) {
+        uiState.docPathsToggledOpenInSidebar = [];
+
+        // Remove a deprecated field that was previously used to store this info.
+        // @ts-expect-error: openedFoldersInSidebar is no longer a field we want
+        if (uiState.openedFoldersInSidebar) {
+          // @ts-expect-error: openedFoldersInSidebar is no longer a field we want
+          delete uiState.openedFoldersInSidebar;
+        }
+      }
+      if (uiState.docPathsToggledOpenInSidebar.includes(id)) {
+        const index = uiState.docPathsToggledOpenInSidebar.indexOf(id);
         if (index !== -1) {
-          uiState.openedFoldersInSidebar.splice(index, 1);
+          uiState.docPathsToggledOpenInSidebar.splice(index, 1);
         }
       } else {
-        uiState.openedFoldersInSidebar.push(link);
+        uiState.docPathsToggledOpenInSidebar.push(id);
       }
     });
   };
 
   const initialOpenState = useMemo(
     () =>
-      (uiStateDoc?.openedFoldersInSidebar ?? []).reduce((acc, key) => {
-        acc[
-          // This is gross: we need to make sure that JSON stringify does the keys in the right order...
-          JSON.stringify({
-            url: key.url,
-            folderPath: key.folderPath,
-          })
-        ] = true;
+      (uiStateDoc?.docPathsToggledOpenInSidebar ?? []).reduce((acc, key) => {
+        acc[key] = true;
         return acc;
       }, {} as Record<string, true>),
     [uiStateDoc]
