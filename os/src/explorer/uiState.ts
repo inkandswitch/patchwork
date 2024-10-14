@@ -14,10 +14,11 @@ import { useValue } from "signia-react";
 import { Account, AccountDoc, useCurrentAccount } from "./account";
 
 export type UIStateDoc = {
-  /** Folders that are toggled open in the user's sidebar.
-   *  (If the object is here it counts as open; otherwise we default to closed)
+  /**
+   * Paths to documents that are toggled open in the sidebar.
+   * (Each toggled-open path is a docpath from DocPath.toString)
    */
-  openedFoldersInSidebar: { url: AutomergeUrl; folderPath: AutomergeUrl[] }[];
+  docPathsToggledOpenInSidebar: string[];
 
   /** Documents in the folder hierarchy that have a branch checked out.
    *  Map from branch scope path string (made with DocPath.toString) to branch URL.

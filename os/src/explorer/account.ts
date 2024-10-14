@@ -228,7 +228,7 @@ const createAccount = (
     )
   );
   const uiStateHandle = repo.create<UIStateDoc>({
-    openedFoldersInSidebar: [],
+    docPathsToggledOpenInSidebar: [],
     openBranches: {},
     docUIStates: {},
   });
@@ -293,7 +293,7 @@ export function useCurrentAccount(): Account | undefined {
     if (account && doc && doc.uiStateUrl === undefined) {
       const uiStateHandle = repo.create<UIStateDoc>();
       uiStateHandle.change((uiState) => {
-        uiState.openedFoldersInSidebar = [];
+        uiState.docPathsToggledOpenInSidebar = [];
         uiState.openBranches = {};
       });
       account.handle.change((account) => {
