@@ -602,6 +602,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   height={height}
                   openByDefault={false}
                   searchTerm={searchQuery}
+                  searchMatch={(node, term) => {
+                    const docName = DocPath.toLink(node.data.docPath).name;
+                    return docName.toLowerCase().includes(term.toLowerCase());
+                  }}
                   rowHeight={28}
                   selection={treeSelection}
                   idAccessor={idAccessor}
