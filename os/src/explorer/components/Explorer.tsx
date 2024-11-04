@@ -59,7 +59,9 @@ export const Explorer: React.FC = () => {
   useEffect(() => {
     // @ts-expect-error global window
     window.handle = selectedDocHandle;
-  }, [selectedDocHandle]);
+    // @ts-expect-error global window
+    window.flatDocPaths = flatDocPaths;
+  }, [selectedDocHandle, flatDocPaths]);
 
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
