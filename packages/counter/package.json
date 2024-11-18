@@ -1,0 +1,21 @@
+{
+  "name": "@patchwork/counter",
+  "version": "0.0.1",
+  "description": "A simple counter",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {},
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge": "2.2.9-alpha.2",
+    "@automerge/automerge-repo": "2.0.0-alpha.7",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0"
+  }
+}

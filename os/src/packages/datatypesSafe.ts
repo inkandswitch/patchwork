@@ -5,3 +5,4 @@ export * as kanban from "@patchwork/kanban/src/datatype";
 export * as pkg from "./pkg/datatype";
 export * as jacquard from "@patchwork/jacquard/src/datatype";
 export * as file from "@patchwork/file/src/datatype";
+export * as counter from "@patchwork/counter/src/datatype";
