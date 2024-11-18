@@ -26,6 +26,7 @@
     "build:sw": "node ./build-service-worker.js",
     "build": "pnpm build:main && pnpm build:sdk && pnpm build:tools && node ./build-service-worker.js",
     "build:no-tsc": "vite build && node ./build-service-worker.js",
+    "build:dev": "concurrently \"http-server dist\" \"vite build --watch\" \"vite build --config vite.config.ts --watch\"",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest"
@@ -46,6 +47,7 @@
     "@patchwork/jacquard": "workspace:*",
     "@patchwork/kanban": "workspace:*",
     "@patchwork/pkg": "workspace:*",
+    "@patchwork/sequencer": "workspace:*",
     "@patchwork/raw-editor": "workspace:*",
     "@patchwork/sdk": "workspace:*",
     "@patchwork/tldraw": "workspace:*",
