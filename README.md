@@ -66,15 +66,14 @@ This monorepo (managed with pnpm workspaces) includes both the core OS APIs as w
 If you want a fast development loop and easy deploy as part of the core OS deploy:
 
 - Run `pnpm dev` to run the OS in dev mode
-- copy one of the existing directories in `os/src/packages` and modify to your liking
-- Update the listing in `os/src/packages/index.ts`
+- copy one of the existing directories in `os/src/packages`. `counter` is a nice minimal one you can start with.
+- You'll need to update a few places to get your new package registered. (Sorry this list is long, it should be shorter.)
+  - update the package name in `<yourpackage>/package.json`
+  - update `os/package.json` to include an entry pointing to your new package
+  - update `os/src/packages/index.ts` to include an entry pointing to your new package
+  - Update `os/src/packages/datatypesSafe.ts` to include an entry for your new datatype (assuming your package exports a datatype)
 
-If you want to dynamically deploy a new package to an automerge document and are ok with a more experimental developer experience:
-
-- copy `packages/raw-editor` as a sample
-- In package.json: change the package name, and the automerge doc ID that it will deploy to
-- edit the code
-- run `pnpm push` to deploy to automerge. (You'll need [trailhead](https://github.com/inkandswitch/trailhead) installed.)
+If you want to dynamically deploy a new package to an automerge document and are ok with a more experimental developer experience: ask Paul or Geoffrey for help, that's a more experimental thing currently.
 
 ### AI
 

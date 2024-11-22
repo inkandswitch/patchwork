@@ -43,6 +43,7 @@
     "@patchwork/kanban": "workspace:*",
     "@patchwork/tldraw": "workspace:*",
     "@patchwork/counter": "workspace:*",
+    "@patchwork/raw-editor": "workspace:*",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-context-menu": "^2.2.1",
