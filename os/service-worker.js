@@ -143,7 +143,7 @@ self.addEventListener("activate", async (event) => {
 });
 
 const ASSETS_REQUEST_URL_REGEX =
-  /^https?:\/\/[^/]*\/automerge\/([a-zA-Z0-9]+)(\/.*)?$/;
+  /^https?:\/\/[^/]*\/automerge\/([a-zA-Z0-9]+)(\/.*)?(\?.*)?$/;
 
 const headsEqual = (doc, heads) => {
   if (!doc) {
