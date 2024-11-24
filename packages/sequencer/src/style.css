@@ -1,3 +1,6 @@
+.page {
+    overflow-y: auto;
+}
 .button {
     background-color: #04AA6D;
     /* Green */
@@ -22,6 +25,9 @@
 }
 .clear-button {
     background-color: #720000;
+}
+.fetch-button {
+    background-color: #650000;
 }
 
 .config-button {
@@ -88,6 +94,10 @@
 }
 .float-left {
     float: left;
+}
+.solid-outline {
+    border: 1px solid #2e2e2e;
+    padding: 5px;
 }
 .explanation {
     text-decoration-line: underline;

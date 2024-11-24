@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { SongConfig } from '../datatype'
 import { drumConfigs } from '../music/drum';
 import { MODES, ROOTS } from '../music/notes';
@@ -13,6 +14,8 @@ interface Props {
     handleDrumChange: (drumName: string) => void;
     duplicateFirstBarNotes: (isPlaying: boolean, instrumentVolume: number, drumVolume: number) => void,
     duplicateFirstBarDrums: (isPlaying: boolean, instrumentVolume: number, drumVolume: number) => void,
+    fetchOverridingInstrument: (overridingInstrumentUrl: string) => boolean;
+    setOverridingInstrumentChosen: (isChosen: boolean) => void;
     clearGrid: (isPlaying: boolean, instrumentVolume: number, drumVolume: number) => void,
 }
 
@@ -26,8 +29,11 @@ export const SongConfigurator = ({
     handleDrumChange,
     duplicateFirstBarNotes,
     duplicateFirstBarDrums,
+    fetchOverridingInstrument,
+    setOverridingInstrumentChosen,
     clearGrid,
 }: Props) => {
+    const [fetchUrl, setFetchUrl] = useState("");
     function flipMonophonic() {
         handleConfigChange((config) => {
             config.isMonophonic = !config.isMonophonic;
@@ -80,6 +86,14 @@ export const SongConfigurator = ({
     }
     function handleClearGrid() {
         clearGrid(isPlaying, instrumentVolume, drumVolume);
+    }
+    function handleSetFetchUrl(e: any) {
+        setFetchUrl(e.target.value)
+    }
+    function handleFetchOverridingInstrument(_e: any) {
+        if (fetchOverridingInstrument(fetchUrl)) {
+            setOverridingInstrumentChosen(true);
+        }
     }
     let text = "Poly";
     if (config.isMonophonic) {
@@ -163,6 +177,20 @@ export const SongConfigurator = ({
             <button className="button duplicate-button float-left" onClick={handleDuplicateFirstBar}>Paste All</button>
             <div className='horizontal-block'></div>
             <button className="button clear-button float-left" onClick={handleClearGrid}>Clear</button>
+            <div className='clear-block'></div>
+            <div className='clear-block'></div>
+            <div className='clear-block'></div>
+            <div className='clear-block'></div>
+            <div className='clear-block'></div>
+            <div className='horizontal-block'></div>
+            <div className='solid-outline'>
+                <label>
+                    {"Load external instrument script (beware malicious code!)"}
+                    <div className='horizontal-block'></div>
+                    <input name='fetchUrl' className='solid-outline' style={{ marginLeft: "20px" }} type="string" onChange={handleSetFetchUrl}></input>
+                    <button className='button fetch-button' style={{marginLeft: "20px"}} onClick={handleFetchOverridingInstrument}>Fetch</button>
+                </label>
+            </div>
         </div>
     );
 }

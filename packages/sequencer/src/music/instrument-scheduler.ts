@@ -141,13 +141,13 @@ export class InstrumentScheduler {
   incrementToggleAges: () => void;
   setPlayingIdx: (idx: number) => void;
 
-  constructor(setPlayingIdx: (idx: number) => void, instrumentConfig: InstrumentSamplePlayerConfig, drumConfig: DrumSamplePlayerConfig, instrumentVolume: number, drumVolume: number, incrementToggleAges: () => void) {
+  constructor(setPlayingIdx: (idx: number) => void, instrument: Instrument, drum: Instrument, incrementToggleAges: () => void) {
     this.isLoaded = false;
     this.instrumentLoaded = false;
     this.drumLoaded = false;
     this.context = null;
-    this.instrument = new SamplePlayer(instrumentConfig, instrumentVolume);
-    this.drum = new SamplePlayer(drumConfig, drumVolume);
+    this.instrument = instrument;
+    this.drum = drum;
     this.fullSchedule = new EmptySchedule();
     this.incrementToggleAges = incrementToggleAges;
     this.setPlayingIdx = setPlayingIdx;

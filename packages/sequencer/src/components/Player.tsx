@@ -62,12 +62,13 @@ interface Props {
     drumToggleRows: Toggle[][];
     stepGrid: Step[];
     config: SongConfig;
-    togglePlay: (instrumentVolume: number, drumVolume: number) => void;
+    togglePlay: (instrumentVolume: number, drumVolume: number, overridingInstrumentChosen: boolean) => void;
     toggleDirection: () => void;
     instrumentVolume: number;
     setInstrumentVolume: (vol: number) => void;
     drumVolume: number;
     setDrumVolume: (vol: number) => void;
+    overridingInstrumentChosen: boolean;
     isPlaying: boolean;
 }
 
@@ -82,10 +83,11 @@ export const Player = ({
     setInstrumentVolume,
     drumVolume,
     setDrumVolume,
+    overridingInstrumentChosen,
     isPlaying,
 }: Props) => {
     function handleTogglePlay() {
-        togglePlay(instrumentVolume, drumVolume);
+        togglePlay(instrumentVolume, drumVolume, overridingInstrumentChosen);
     }
 
     function handleVolumeChange(e: any) {

@@ -37,6 +37,7 @@ export const Sequencer = ({
   const [playingIdx, setPlayingIdx] = useState(0);
   const [instrumentVolume, setInstrumentVolume] = useState(1.0);
   const [drumVolume, setDrumVolume] = useState(1.0);
+  const [overridingInstrumentChosen, setOverridingInstrumentChosen] = useState(false);
   const [latestDoc] = useDocument<SequencerDoc>(docUrl); // used to trigger re-rendering when the doc loads
   const handle = useHandle<SequencerDoc>(docUrl)!; // TODO: JAH strict fix
 
@@ -71,7 +72,29 @@ export const Sequencer = ({
     })
   }
 
-  const togglePlay = toggleFn(doc.stepGrid, setPlayingIdx, setIsPlaying, setPlayStartTime, incrementToggleAges, doc.config);
+  const fetchOverridingInstrument = (overridingInstrumentUrl: string): boolean => {
+    if (confirm("WARNING: This song includes an external instrument script that could contain malicious code. Press cancel to use the default sample player instead. Only press OK if you know what you're doing.")) {
+      console.log(overridingInstrumentUrl);
+      import(overridingInstrumentUrl)
+        .then((mod) => {
+          let weirdInst = new mod.PianoSynth();
+          if (globalInstrumentSchedulers.length > 0) {
+            globalInstrumentSchedulers[0].updateInstrument(weirdInst);
+          }
+          handle.change((doc) => {
+            doc.config.overridingInstrument = overridingInstrumentUrl;
+          })
+        })
+        .catch((e) => {
+          alert("Failed to load external instrument script:\n\n " + e);
+        });
+      return true
+    } else {
+      return false
+    }
+  }
+
+  const togglePlay = toggleFn(doc.stepGrid, setPlayingIdx, setIsPlaying, setPlayStartTime, setOverridingInstrumentChosen, fetchOverridingInstrument, incrementToggleAges, doc.config);
 
   const handleToggleChange = (isToggled: boolean, x: number, y: number) => {
     handle.change((doc) => {
@@ -138,7 +161,7 @@ export const Sequencer = ({
 
   const duplicateFirstBarDrums = (isPlaying: boolean, instrumentVolume: number, drumVolume: number) => {
     if (isPlaying) {
-      togglePlay(instrumentVolume, drumVolume);
+      togglePlay(instrumentVolume, drumVolume, overridingInstrumentChosen);
     }
     handle.change((doc) => {
       let copyStepCount = STEPS_PER_BAR * doc.config.bars;
@@ -176,7 +199,7 @@ export const Sequencer = ({
 
   const duplicateFirstBarNotes = (isPlaying: boolean, instrumentVolume: number, drumVolume: number) => {
     if (isPlaying) {
-      togglePlay(instrumentVolume, drumVolume);
+      togglePlay(instrumentVolume, drumVolume, overridingInstrumentChosen);
     }
     handle.change((doc) => {
       let copyStepCount = STEPS_PER_BAR * doc.config.bars;
@@ -217,7 +240,7 @@ export const Sequencer = ({
       return
     }
     if (isPlaying) {
-      togglePlay(instrumentVolume, drumVolume);
+      togglePlay(instrumentVolume, drumVolume, overridingInstrumentChosen);
     }
     handle.change((doc) => {
       doc.toggleRows.forEach((row) => {
@@ -236,7 +259,7 @@ export const Sequencer = ({
   // }));
 
   return (
-    <div className="w-full h-full overflow-hidden">
+    <div className="w-full h-full overflow-hidden page">
       <Player
         toggleRows={doc.toggleRows}
         drumToggleRows={doc.drumToggleRows}
@@ -246,6 +269,7 @@ export const Sequencer = ({
         setInstrumentVolume={setInstrumentVolume}
         drumVolume={drumVolume}
         setDrumVolume={setDrumVolume}
+        overridingInstrumentChosen={overridingInstrumentChosen}
         togglePlay={togglePlay}
         toggleDirection={toggleDirection}
         isPlaying={isPlaying}
@@ -271,8 +295,11 @@ export const Sequencer = ({
         handleDrumChange={handleDrumChange}
         duplicateFirstBarNotes={duplicateFirstBarNotes}
         duplicateFirstBarDrums={duplicateFirstBarDrums}
+        fetchOverridingInstrument={fetchOverridingInstrument}
+        setOverridingInstrumentChosen={setOverridingInstrumentChosen}
         clearGrid={clearGrid}
       />
+      <div className="clear-block"></div>
     </div>
   );
 };

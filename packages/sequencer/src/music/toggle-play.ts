@@ -6,6 +6,7 @@ import {
   Step,
 } from "./instrument-scheduler";
 import { InstrumentSamplePlayerConfig } from "./sample-instrument";
+import { SamplePlayer } from "./sample-player";
 
 let playing = false;
 let wrkrs: Worker[] = [];
@@ -17,11 +18,27 @@ export function toggleFn(
   setPlayingIdx: (idx: number) => void,
   setIsPlaying: (isPlaying: boolean) => void,
   setPlayStartTime: (time: number) => void,
+  setOverridingInstrumentChosen: (shouldIgnore: boolean) => void,
+  fetchOverridingInstrument: (overridingInstrumentUrl: string) => boolean,
   incrementToggleAges: () => void,
   config: SongConfig
-): (instrumentVolume: number, drumVolume: number) => void {
+): (instrumentVolume: number, drumVolume: number, overridingInstrumentChosen: boolean) => void {
   let wrkr: Worker;
-  return (instrumentVolume, drumVolume) => {
+  return (instrumentVolume, drumVolume, overridingInstrumentChosen) => {
+    if (playing) {
+        playing = false;
+        setIsPlaying(false);
+        setPlayStartTime(0);
+        for (let w of wrkrs) {
+            w.terminate();
+        }
+        for (let isch of globalInstrumentSchedulers) {
+            isch.cancelSchedule();
+        }
+        globalInstrumentSchedulers.length = 0;
+        return;
+    }
+
     if (!audioContext) {
       audioContext = new AudioContext();
       for (let isch of globalInstrumentSchedulers) {
@@ -32,37 +49,20 @@ export function toggleFn(
       config.instrument
     );
     let drumSamplePlayerConfig = new DrumSamplePlayerConfig(config.drum);
+    let instrumentSampler = new SamplePlayer(instrumentSamplePlayerConfig, instrumentVolume);
+    let drumSamplePlayer = new SamplePlayer(drumSamplePlayerConfig, drumVolume);
     let instrumentScheduler = new InstrumentScheduler(
       setPlayingIdx,
-      instrumentSamplePlayerConfig,
-      drumSamplePlayerConfig,
-      instrumentVolume,
-      drumVolume,
+      instrumentSampler,
+      drumSamplePlayer,
       incrementToggleAges
     );
+    if (config.overridingInstrument && !overridingInstrumentChosen) {
+      fetchOverridingInstrument(config.overridingInstrument)
+      setOverridingInstrumentChosen(true);
+    }
     instrumentScheduler.initContext(audioContext);
-    if (config.overridingInstrument) {
-      console.log(config.overridingInstrument);
-      import(config.overridingInstrument).then((mod) => {
-        let weirdInst = new mod.PianoSynth();
-        instrumentScheduler.updateInstrument(weirdInst);
-      });
-    }
     globalInstrumentSchedulers.push(instrumentScheduler);
-
-    if (playing) {
-      playing = false;
-      setIsPlaying(false);
-      setPlayStartTime(0);
-      for (let w of wrkrs) {
-        w.terminate();
-      }
-      for (let isch of globalInstrumentSchedulers) {
-        isch.cancelSchedule();
-      }
-      globalInstrumentSchedulers.length = 0;
-      return;
-    }
 
     playing = true;
     setIsPlaying(true);
