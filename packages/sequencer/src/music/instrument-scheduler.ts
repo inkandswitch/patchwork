@@ -1,6 +1,4 @@
-import { stepDurationFromTempo } from "../components/Player";
-import { barCountToStepCount } from "../config";
-import { SongConfig } from "../datatype";
+import { SongConfig, barCountFromConfig, stepDurationFromConfig } from "../config";
 import { DrumSamplePlayerConfig } from "./drum";
 import { Instrument } from "./instrument";
 import { InstrumentSamplePlayerConfig, SampleInstrumentConfig } from "./sample-instrument";
@@ -55,17 +53,15 @@ class FullSchedule implements Scheduleable {
   stopped: boolean;
   nextTimeOffset: number;
   setPlayingIdx: (idx: number) => void;
-  incrementToggleAges: () => void;
   config: SongConfig;
 
-  constructor(startTime: number, steps: Step[], setPlayingIdx: (idx: number) => void, incrementToggleAges: () => void, config: SongConfig) {
+  constructor(startTime: number, steps: Step[], setPlayingIdx: (idx: number) => void, config: SongConfig) {
     this.stopped = false;
     this.startTime = startTime;
     this.steps = steps;
     this.nextTimeOffset = 0.0;
     this.idx = 0;
     this.setPlayingIdx = setPlayingIdx;
-    this.incrementToggleAges = incrementToggleAges;
     this.config = config;
   }
 
@@ -101,13 +97,10 @@ class FullSchedule implements Scheduleable {
     if (next_idx < 0) {
       next_idx = (this.steps.length * this.config.bars) - 1;
     }
-    let stepCount = barCountToStepCount(this.config.bars);
-    if (next_idx == stepCount) {
-      this.incrementToggleAges();
-    }
+    let stepCount = barCountFromConfig(this.config);
     this.idx = next_idx % stepCount;
     this.setPlayingIdx(this.idx);
-    this.nextTimeOffset = this.nextTimeOffset + stepDurationFromTempo(this.getTempo())
+    this.nextTimeOffset = this.nextTimeOffset + stepDurationFromConfig(this.config);
   }
 
   // TODO: This is a clunky way to get around a UI issue where starting to type
@@ -138,10 +131,9 @@ export class InstrumentScheduler {
   context: AudioContext | null;
 
   fullSchedule: Scheduleable;
-  incrementToggleAges: () => void;
   setPlayingIdx: (idx: number) => void;
 
-  constructor(setPlayingIdx: (idx: number) => void, instrument: Instrument, drum: Instrument, incrementToggleAges: () => void) {
+  constructor(setPlayingIdx: (idx: number) => void, instrument: Instrument, drum: Instrument) {
     this.isLoaded = false;
     this.instrumentLoaded = false;
     this.drumLoaded = false;
@@ -149,13 +141,12 @@ export class InstrumentScheduler {
     this.instrument = instrument;
     this.drum = drum;
     this.fullSchedule = new EmptySchedule();
-    this.incrementToggleAges = incrementToggleAges;
     this.setPlayingIdx = setPlayingIdx;
   }
 
   prepare_new_schedule(steps: Step[], startTime: number, config: SongConfig) {
     this.fullSchedule.stop();
-    this.fullSchedule = new FullSchedule(startTime, steps, this.setPlayingIdx, this.incrementToggleAges, config);
+    this.fullSchedule = new FullSchedule(startTime, steps, this.setPlayingIdx, config);
   }
 
   updateConfig(config: SongConfig) {

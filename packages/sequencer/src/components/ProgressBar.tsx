@@ -1,12 +1,13 @@
 import classnames from 'classnames'
-import { STEPS_PER_BAR } from '../config';
-import { SongConfig } from '../datatype';
+import { SongConfig } from '../config';
 
 interface ProgressCellProps {
+    config: SongConfig,
     playing: boolean;
 }
 
 const ProgressCell = ({
+    config,
     playing,
 }: ProgressCellProps) => {
     let display = "-";
@@ -17,6 +18,8 @@ const ProgressCell = ({
         'progress-cell',
         {
             'lit': playing,
+            'eighth-notes': config["stepsPerBar"] == 8,
+            'sixteenth-notes': config["stepsPerBar"] == 16,
         }
     );
 
@@ -35,7 +38,7 @@ export const ProgressBar = ({
     config,
 }: ProgressBarProps) => {
     let bar = [];
-    let width = config.bars * STEPS_PER_BAR;
+    let width = config.bars * config["stepsPerBar"];
     let progressIdx = playingIdx;
     // TODO: This code exists because the playingIdx is one off
     // depending on direction.
@@ -49,7 +52,7 @@ export const ProgressBar = ({
         if (i == progressIdx) {
             playing = true;
         }
-        bar.push(<ProgressCell playing={playing} key={"progress-cell:" + i}></ProgressCell>);
+        bar.push(<ProgressCell config={config} playing={playing} key={"progress-cell:" + i}></ProgressCell>);
     }
     return bar
 }

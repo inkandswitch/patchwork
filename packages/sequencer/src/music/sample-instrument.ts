@@ -89,13 +89,6 @@ export class InstrumentSamplePlayerConfig implements SamplePlayerConfig {
 // "G2.wav", "G3.wav", "G4.wav", and "G5.wav".
 export const INSTRUMENT_SAMPLES_URL: string = "/samples/instruments/";
 export const sampleInstrumentConfigs: Record<string, SampleInstrumentConfig> = {
-    "lead": {
-        "name": "lead",
-        "volModifier": 1,
-        "attack": 0.00,
-        "sustain": 0.75,
-        "sampleFormat": "mp3",
-    },
     "piano": {
         "name": "piano",
         "volModifier": 1.8,

@@ -47,7 +47,12 @@
     margin-top: -1px;
     padding: 0;
     text-align: center;
-    width: 50px;
+}
+.eighth-notes {
+    width:50px;
+}
+.sixteenth-notes {
+    width: 25px;
 }
 .progress-cell {
     background: #ffffff;
@@ -61,7 +66,7 @@
     margin-top: -1px;
     padding: 0;
     text-align: center;
-    width: 50px;
+    /* width: 50px; */
 }
 .drum-cell {
     background: #809bd0;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SongConfig } from '../datatype'
+import { SongConfig } from '../config'
 import { drumConfigs } from '../music/drum';
 import { MODES, ROOTS } from '../music/notes';
 import { sampleInstrumentConfigs } from '../music/sample-instrument';

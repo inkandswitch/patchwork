@@ -3,7 +3,7 @@ import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps, makeTool } from "@/tools";
 import { next as A } from "@automerge/automerge";
 import { useMemo, useState } from "react";
-import { SequencerDoc, SequencerDocAnchor, SongConfig, Toggle } from "./datatype";
+import { SequencerDoc, SequencerDocAnchor, Toggle } from "./datatype";
 import { Player } from "./components/Player";
 import { UIGrid } from "./components/SequencerGrid";
 import { SongConfigurator } from "./components/SongConfigurator";
@@ -12,9 +12,9 @@ import { drumConfigs, DrumSamplePlayerConfig } from "./music/drum";
 import { toggleFn } from "./music/toggle-play";
 import { useCurrentAccount } from "@/explorer/account";
 import { globalInstrumentSchedulers } from "./music/instrument-scheduler";
-import { COL_COUNT, STEPS_PER_BAR } from "./config";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { SamplePlayer } from "./music/sample-player";
+import { SongConfig } from "./config";
 
 function updateToggle(toggleRows: Toggle[][], x: number, y: number, isToggled: boolean, avatarUrl: AutomergeUrl | null) {
   toggleRows[y][x].toggled = isToggled;
@@ -50,27 +50,15 @@ export const Sequencer = ({
     return null;
   }
 
-  const account = useCurrentAccount();
-  let avatarUrl = account?.contactHandle.url;
-
-  const incrementToggleAges = () => {
+  // TODO: Temporary for backward compatibility
+  if (!doc.config.stepsPerBar) {
     handle.change((doc) => {
-      doc.toggleRows.forEach((row) => {
-        row.forEach((toggle) => {
-          if (toggle.toggled) {
-            toggle.toggleOnTime += 1;
-          }
-        })
-      });
-      doc.drumToggleRows.forEach((row) => {
-        row.forEach((toggle) => {
-          if (toggle.toggled) {
-            toggle.toggleOnTime += 1;
-          }
-        })
-      });
+      doc.config.stepsPerBar = 8;
     })
   }
+
+  const account = useCurrentAccount();
+  let avatarUrl = account?.contactHandle.url;
 
   const fetchOverridingInstrument = (overridingInstrumentUrl: string): boolean => {
     if (confirm("WARNING: This song includes an external instrument script that could contain malicious code. Press cancel to use the default sample player instead. Only press OK if you know what you're doing.")) {
@@ -94,7 +82,7 @@ export const Sequencer = ({
     }
   }
 
-  const togglePlay = toggleFn(doc.stepGrid, setPlayingIdx, setIsPlaying, setPlayStartTime, setOverridingInstrumentChosen, fetchOverridingInstrument, incrementToggleAges, doc.config);
+  const togglePlay = toggleFn(doc.stepGrid, setPlayingIdx, setIsPlaying, setPlayStartTime, setOverridingInstrumentChosen, fetchOverridingInstrument, doc.config);
 
   const handleToggleChange = (isToggled: boolean, x: number, y: number) => {
     handle.change((doc) => {
@@ -164,7 +152,7 @@ export const Sequencer = ({
       togglePlay(instrumentVolume, drumVolume, overridingInstrumentChosen);
     }
     handle.change((doc) => {
-      let copyStepCount = STEPS_PER_BAR * doc.config.bars;
+      let copyStepCount = doc.config["stepsPerBar"] * doc.config.bars;
       let offset1 = copyStepCount;
       let offset2 = copyStepCount * 2;
       let offset3 = copyStepCount * 3;
@@ -202,7 +190,7 @@ export const Sequencer = ({
       togglePlay(instrumentVolume, drumVolume, overridingInstrumentChosen);
     }
     handle.change((doc) => {
-      let copyStepCount = STEPS_PER_BAR * doc.config.bars;
+      let copyStepCount = doc.config["stepsPerBar"] * doc.config.bars;
       let offset1 = copyStepCount;
       let offset2 = copyStepCount * 2;
       let offset3 = copyStepCount * 3;

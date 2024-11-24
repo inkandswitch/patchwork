@@ -1,12 +1,13 @@
 import classnames from 'classnames'
-import { SongConfig, Toggle } from '../datatype';
+import { Toggle } from '../datatype';
 import { ProgressBar } from './ProgressBar';
 import "../style.css";
 import { ContactAvatar } from '@/explorer/components/ContactAvatar';
-import { barCountToStepCount } from '../config';
+import { SongConfig, barCountFromConfig } from '../config';
 
 interface CellProps {
     toggle: Toggle
+    config: SongConfig,
     x: number,
     y: number,
     isPlaying: boolean,
@@ -19,6 +20,7 @@ interface CellProps {
 
 export function Cell({
     toggle,
+    config,
     x,
     y,
     isPlaying,
@@ -36,7 +38,7 @@ export function Cell({
     if (y % 7 == 0 && !toggle.toggled && !isDrum) {
         rootColor = true;
     }
-    if (x % 8 == 0) {
+    if (x % config.stepsPerBar == 0) {
         barStart = true;
     }
 
@@ -51,6 +53,8 @@ export function Cell({
         'cell',
         {
             'cell-on': toggle.toggled,
+            'eighth-notes': config.stepsPerBar == 8,
+            'sixteenth-notes': config.stepsPerBar == 16,
             'drum-cell': isDrum,
             'root-color': rootColor,
             'bar-start-color': barStart,
@@ -92,7 +96,7 @@ export function UIGrid({
     isPlaying,
     config,
 }: GridProps) {
-    let stepCount = barCountToStepCount(config.bars);
+    let stepCount = barCountFromConfig(config);
     let currentTime = Date.now();
     return (
         <>
@@ -107,7 +111,7 @@ export function UIGrid({
                             cellIsPlaying = true;
                         }
                         let key = "cell:x:" + x_idx + ",y:" + y_idx;
-                        return <Cell toggle={toggle} x={x_idx} y={y_idx} handleToggleChange={handleToggleChange} isPlaying={cellIsPlaying} songIsPlaying={isPlaying} isDrum={false} playStartTime={playStartTime} currentTime={currentTime} key={key}></Cell>
+                        return <Cell toggle={toggle} config={config} x={x_idx} y={y_idx} handleToggleChange={handleToggleChange} isPlaying={cellIsPlaying} songIsPlaying={isPlaying} isDrum={false} playStartTime={playStartTime} currentTime={currentTime} key={key}></Cell>
                     })}
                     </div>
                 )
@@ -125,7 +129,7 @@ export function UIGrid({
                                 cellIsPlaying = true;
                             }
                             let key = "drum-cell:x:" + x_idx + ",y:" + y_idx;
-                            return <Cell toggle={toggle} x={x_idx} y={y_idx} handleToggleChange={handleDrumToggleChange} isPlaying={cellIsPlaying} songIsPlaying={isPlaying} isDrum={true} playStartTime={playStartTime} currentTime={currentTime} key={key}></Cell>
+                            return <Cell toggle={toggle} config={config} x={x_idx} y={y_idx} handleToggleChange={handleDrumToggleChange} isPlaying={cellIsPlaying} songIsPlaying={isPlaying} isDrum={true} playStartTime={playStartTime} currentTime={currentTime} key={key}></Cell>
                         })}
                     </div>
                 )

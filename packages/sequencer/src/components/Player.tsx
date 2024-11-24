@@ -1,12 +1,9 @@
 import classnames from 'classnames'
-import { SongConfig, Toggle } from "../datatype";
+import { Toggle } from "../datatype";
 import { globalInstrumentSchedulers, Note, Step } from "../music/instrument-scheduler";
 import { idxToDrumPiece, idxToNote } from "../music/notes";
 import { ChangeEvent } from 'react';
-
-export function stepDurationFromTempo(tempo: number): number {
-    return (60 / tempo) / 2
-}
+import { SongConfig, stepDurationFromConfig } from '../config';
 
 export function updateStepGridFromToggles(toggles: Toggle[][], drumToggles: Toggle[][], stepGrid: Step[], config: SongConfig) {
     for (let i = 0; i < stepGrid.length; i++) {
@@ -34,7 +31,7 @@ export function updateStepGridFromToggles(toggles: Toggle[][], drumToggles: Togg
 }
 
 function updateStepFromToggle(isToggled: boolean, x: number, y: number, stepGrid: Step[], config: SongConfig) {
-    let stepDuration = stepDurationFromTempo(config.tempo);
+    let stepDuration = stepDurationFromConfig(config);
     let offset = stepDuration * x;
     let noteName = idxToNote(y, config.root, config.mode);//noteNameFromYIdx(y)
     if (isToggled) {
@@ -46,7 +43,7 @@ function updateStepFromToggle(isToggled: boolean, x: number, y: number, stepGrid
 }
 
 function updateStepFromDrumToggle(isToggled: boolean, x: number, y: number, stepGrid: Step[], config: SongConfig) {
-    let stepDuration = stepDurationFromTempo(config.tempo);
+    let stepDuration = stepDurationFromConfig(config);
     let offset = stepDuration * x;
     let drumPieceName = idxToDrumPiece(y);
     if (isToggled) {

@@ -20,7 +20,6 @@ export function toggleFn(
   setPlayStartTime: (time: number) => void,
   setOverridingInstrumentChosen: (shouldIgnore: boolean) => void,
   fetchOverridingInstrument: (overridingInstrumentUrl: string) => boolean,
-  incrementToggleAges: () => void,
   config: SongConfig
 ): (instrumentVolume: number, drumVolume: number, overridingInstrumentChosen: boolean) => void {
   let wrkr: Worker;
@@ -55,7 +54,6 @@ export function toggleFn(
       setPlayingIdx,
       instrumentSampler,
       drumSamplePlayer,
-      incrementToggleAges
     );
     if (config.overridingInstrument && !overridingInstrumentChosen) {
       fetchOverridingInstrument(config.overridingInstrument)

@@ -4,29 +4,12 @@ import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
 import { next as A } from "@automerge/automerge";
 import { initFrom, type DataType } from "@/sdk";
 import { TextPatch } from "@/versionControl/utils";
-import { COL_COUNT, ROW_COUNT } from "./config";
+import { defaultSongConfig, ROW_COUNT, SongConfig, totalStepsFromConfig } from "./config";
 import { Step } from "./music/instrument-scheduler";
 import { SampleInstrumentConfig, sampleInstrumentConfigs } from "./music/sample-instrument";
-import { DrumConfig, drumConfigs, DRUM_PIECES_COUNT } from "./music/drum";
-import { Instrument } from "./music/instrument";
-import { jsFromGist } from "./music/experimental-instrument";
+import { drumConfigs, DRUM_PIECES_COUNT } from "./music/drum";
 
 // SCHEMA
-
-export type SongConfig = {
-  isMonophonic: boolean,
-  root: string,
-  mode: string,
-  tempo: number,
-  stepDirection: number, // 1 for forward, -1 for backward
-  bars: number, // 1-4
-  instrument: SampleInstrumentConfig,
-  drum: DrumConfig,
-  // TODO: A hack to support loading in an externally defined Instrument
-  // implementation. If one exists, it overrides the SampleInstrument that
-  // is normally used.
-  overridingInstrument: string | null,
-};
 
 export type SequencerDoc = HasVersionControlMetadata<unknown, unknown> & {
   title: string;
@@ -58,27 +41,18 @@ const getTitle = async (doc: SequencerDoc) => {
 };
 
 export const init = (doc: SequencerDoc) => {
+  let config: SongConfig = defaultSongConfig();
+  let totalSteps = totalStepsFromConfig(config);
   initFrom(doc, {
     title: "Untitled Song",
     toggleRows: Array.from({ length: ROW_COUNT }, () =>
-      Array.from({ length: COL_COUNT }, () => ({ toggled: false, toggleOnTime: 0 }))
+      Array.from({ length: totalSteps }, () => ({ toggled: false, toggleOnTime: 0 }))
     ),
     drumToggleRows: Array.from({ length: DRUM_PIECES_COUNT }, () =>
-      Array.from({ length: COL_COUNT }, () => ({ toggled: false, toggleOnTime: 0 }))
+      Array.from({ length: totalSteps }, () => ({ toggled: false, toggleOnTime: 0 }))
     ),
-    stepGrid: Array.from({ length: COL_COUNT }, () => ({ "instrument": {}, "drum": {} })),
-    config: {
-      isMonophonic: false,
-      root: "C",
-      mode: "major",
-      tempo: 120,
-      stepDirection: 1,
-      bars: 2,
-      instrument: sampleInstrumentConfigs["lead"],
-      drum: drumConfigs["linn"],
-      overridingInstrument: null,
-      // overridingInstrument: '/automerge/37r24kFLSfcXrd6ozrwcLemPkEpc',
-    },
+    stepGrid: Array.from({ length: totalSteps }, () => ({ "instrument": {}, "drum": {} })),
+    config,
   });
 }
 
