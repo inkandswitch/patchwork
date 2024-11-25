@@ -10,5 +10,5 @@ const builtInToolsUnsorted = Object.values(PACKAGES).flatMap((module) =>
 // We should improve this with some kind of tool prioritization system
 export const builtInTools = [
   ...builtInToolsUnsorted.filter((tool) => tool.id !== "raw"),
-  builtInToolsUnsorted.find((tool) => tool.id === "raw"),
+  ...builtInToolsUnsorted.filter((tool) => tool.id === "raw"),
 ];
