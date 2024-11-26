@@ -1,6 +1,6 @@
 import { FileExportMethod } from "@/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
-import { ChangeGroup, initFrom, type DataType } from "@/sdk";
+import { ChangeGroup, initFrom, type DataType } from "@patchwork/sdk";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 import { TextPatch } from "@/versionControl/utils";
 import * as Automerge from "@automerge/automerge";

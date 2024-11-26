@@ -1,4 +1,4 @@
-import { AnnotationWithUIState } from "@/sdk";
+import { AnnotationWithUIState } from "@patchwork/sdk";
 import { getCursorPositionSafely } from "@/versionControl/utils";
 import * as Automerge from "@automerge/automerge";
 import { EditorView } from "@codemirror/view";
@@ -76,11 +76,11 @@ export const useResolvedAnnotationAtPath = ({
       return fromPos === null || toPos === null
         ? []
         : [
-            {
-              ...annotation,
-              anchor: { fromPos, toPos, fromCursor, toCursor },
-            },
-          ];
+          {
+            ...annotation,
+            anchor: { fromPos, toPos, fromCursor, toCursor },
+          },
+        ];
     });
   }, [doc, annotations, path]);
 

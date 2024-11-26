@@ -13,7 +13,7 @@ import {
   Tool,
   useDataTypes,
   VersionControlSidecarDoc,
-} from "@/sdk";
+} from "@patchwork/sdk";
 import { Button } from "@/shadcn/ui/button";
 import {
   DropdownMenu,

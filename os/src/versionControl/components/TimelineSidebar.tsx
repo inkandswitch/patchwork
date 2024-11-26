@@ -33,7 +33,7 @@ import { DiscussionInput } from "./DiscussionInput";
 
 import { HasAssets } from "@/assets";
 import { MarkdownInput } from "@/lib/markdown";
-import { type DataType } from "@/sdk";
+import { type DataType } from "@patchwork/sdk";
 import { DocHandle } from "@automerge/automerge-repo";
 import {
   BranchScopeAndActiveBranchInfoWithoutDoc,

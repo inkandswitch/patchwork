@@ -17,14 +17,14 @@
 
     "paths": {
       "@/*": ["./os/src/*"],
-      "@patchwork/sdk": ["./os/src/sdk.ts"],
+      "@patchwork/sdk": ["./sdk/src/index.ts"],
       "@automerge/automerge-wasm": ["./os/src/vendor/automerge-wasm/index.d.ts"]
-    },
+    }
 
     /* Linting */
     // "noUnusedLocals": true,
     // "noUnusedParameters": true,
     // "noFallthroughCasesInSwitch": true
   },
-  "include": ["os", "packages", "jacquard-cli"],
+  "include": ["os", "sdk", "packages", "jacquard-cli"]
 }

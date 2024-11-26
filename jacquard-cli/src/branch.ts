@@ -3,7 +3,7 @@ import {
   BranchDoc,
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
-} from "@/sdk";
+} from "@patchwork/sdk";
 import { Repo } from "@automerge/automerge-repo";
 import { CommandLineArgs } from ".";
 import { getJacquardConfig } from "./util";

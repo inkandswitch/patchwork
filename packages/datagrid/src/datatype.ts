@@ -2,7 +2,7 @@ import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
 import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
 import { next as A } from "@automerge/automerge";
 import { pick } from "lodash";
-import { initFrom, type DataType } from "@/sdk";
+import { initFrom, type DataType } from "@patchwork/sdk";
 import { TextPatch } from "@/versionControl/utils";
 
 // SCHEMA

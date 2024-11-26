@@ -1,4 +1,4 @@
-import { Annotation } from "@/sdk";
+import { Annotation } from "@patchwork/sdk";
 import {
   getCursorPositionSafely,
   getCursorSafely,

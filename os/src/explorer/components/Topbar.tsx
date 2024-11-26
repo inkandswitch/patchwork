@@ -2,7 +2,7 @@ import { FileExportMethod, genericExportMethods } from "@/fileExports";
 import { useDataTypes } from "@/hooks/useDataTypes";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
-import { dataTypeById } from "@/sdk";
+import { dataTypeById } from "@patchwork/sdk";
 import {
   DropdownMenu,
   DropdownMenuContent,

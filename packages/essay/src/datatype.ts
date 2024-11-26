@@ -1,7 +1,7 @@
 import { AssetsDoc } from "@/assets";
 import { FileExportMethod } from "@/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
-import { initFrom, type DataType } from "@/sdk";
+import { initFrom, type DataType } from "@patchwork/sdk";
 import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
 import {
   HasVersionControlMetadata,

@@ -1,4 +1,4 @@
-import { initFrom, type DataType } from "@/sdk";
+import { initFrom, type DataType } from "@patchwork/sdk";
 import { HasVersionControlMetadata } from "@/versionControl/schema";
 
 // SCHEMA

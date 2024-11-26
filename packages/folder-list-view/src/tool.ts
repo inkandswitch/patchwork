@@ -1,4 +1,4 @@
-import { Tool } from "@/sdk";
+import { Tool } from "@patchwork/sdk";
 import { FolderViewerList } from "./components/FolderListView";
 
 export const folderViewerListTool: Tool = {

@@ -1,5 +1,5 @@
 import { DocLink, FolderDoc } from "@/packages/folder";
-import { dataTypeById } from "@/sdk";
+import { dataTypeById } from "@patchwork/sdk";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import fs from "fs";
 import path from "path";

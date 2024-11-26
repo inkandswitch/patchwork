@@ -19,7 +19,7 @@ import {
   FolderDoc,
   FolderDocMaterialized,
 } from "../datatype";
-import { DataType, useDataTypes } from "@/sdk";
+import { DataType, useDataTypes } from "@patchwork/sdk";
 
 /**
  * Kinda a convenience type, bundling a (materialized) FolderDoc with
@@ -53,9 +53,9 @@ const flattenDocPaths = ({
       childPath,
       ...(docLink.type === "folder" && docLink.folderContents
         ? flattenDocPaths({
-            docPath: childPath,
-            folderDoc: docLink.folderContents,
-          })
+          docPath: childPath,
+          folderDoc: docLink.folderContents,
+        })
         : []),
     ];
   });

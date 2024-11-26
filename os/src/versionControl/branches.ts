@@ -7,7 +7,7 @@ import {
   DocCloneMap,
   ensureMetadataHandleIsBranchScope,
   getVersionControlMetadataHandle,
-} from "@/sdk";
+} from "@patchwork/sdk";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
 import {
@@ -323,8 +323,8 @@ export const hasLegacyBranchesToMigrate = async ({
   // because this can get called multiple times with stale data.
   const latestBranchScopeVersionControlMetadata =
     branchScopeAndActiveBranchInfo.branchScopeVersionControlMetadataOm?.handle.docSync() as
-      | A.Doc<VersionControlSidecarDoc & { isBranchScope: true }>
-      | undefined;
+    | A.Doc<VersionControlSidecarDoc & { isBranchScope: true }>
+    | undefined;
 
   // We only migrate if the doc has legacy branches and there are no "current" branches.
   // This is conservative but should cover most cases.

@@ -1,5 +1,5 @@
 import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { initFrom, type DataType } from "@/sdk";
+import { initFrom, type DataType } from "@patchwork/sdk";
 
 // SCHEMA
 

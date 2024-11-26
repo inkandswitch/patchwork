@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { DataType } from "./sdk";
+import { DataType } from "@patchwork/sdk";
 import { Tool } from "./tools";
 
 // don't export any hooks from here, otherwise hot reloading doesn't work properly

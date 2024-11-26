@@ -2,7 +2,7 @@ import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
 import { useDataTypes } from "@/hooks/useDataTypes";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
-import { dataTypeById } from "@/sdk";
+import { dataTypeById } from "@patchwork/sdk";
 import { fetchOmOnActiveBranch } from "@/versionControl/signals";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";

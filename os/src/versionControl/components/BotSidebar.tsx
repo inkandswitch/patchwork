@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { useState } from "react";
 import { Button } from "@/shadcn/ui/button";
 import { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
-import { type DataType } from "@/sdk";
+import { type DataType } from "@patchwork/sdk";
 import {
   AssistantMessage,
   ChatMessage,

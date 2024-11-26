@@ -9,7 +9,7 @@ import {
   useResolvedAnnotationAtPath,
   useScrollAnnotationsIntoView,
 } from "@/lib/textAnchors";
-import { AnnotationWithUIState } from "@/sdk";
+import { AnnotationWithUIState } from "@patchwork/sdk";
 import { EditorProps } from "@/tools";
 import { useRefForCallback } from "@/utils";
 import {

@@ -24,7 +24,7 @@ import { ImageFileDoc, ImageFileViewer } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
 import { useCurrentAccount } from "@/explorer/account";
-import { useDataTypes } from "@/sdk";
+import { useDataTypes } from "@patchwork/sdk";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function

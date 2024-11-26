@@ -21,7 +21,7 @@ import {
   VersionControlSidecarDoc,
   withHasChangeGroupSummaries,
   withHasVersionControlMetadata,
-} from "@/sdk";
+} from "@patchwork/sdk";
 import { AssetsDoc } from "@/assets";
 
 export type ModuleSettingsDoc = {

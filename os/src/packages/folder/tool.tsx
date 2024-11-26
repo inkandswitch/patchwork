@@ -2,7 +2,7 @@ import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { selectDocLink } from "@/explorer/router";
 import { useDocUIState } from "@/explorer/uiState";
 import { Icon, IconType } from "@/lib/icons";
-import { dataTypeById, useDataTypes, useTools } from "@/sdk";
+import { dataTypeById, useDataTypes, useTools } from "@patchwork/sdk";
 import { EditorProps, Tool, toolsForDataType } from "@/tools";
 import { useAnnotations } from "@/versionControl/annotations";
 import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
