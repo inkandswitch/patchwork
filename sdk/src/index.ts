@@ -1,6 +1,6 @@
 export * from "./datatypes.js";
 export * from "./tools.js";
-export * from "@/patchworkContext";
+export * from "./patchworkContext.js";
 export * from "@/hooks/useDataTypes";
 export * from "@/hooks/useTools";
 

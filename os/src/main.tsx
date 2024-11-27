@@ -17,7 +17,7 @@ import { getAccount } from "./explorer/account.js";
 import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
 import { BACKUP_SYNC } from "./explorer/components/SyncIndicator.js";
-import { PatchworkContext } from "./patchworkContext.js";
+import { PatchworkContext } from "@patchwork/sdk";
 import { builtInTools } from "./builtInTools.js";
 import { builtInDataTypes } from "./builtInDataTypes.js";
 

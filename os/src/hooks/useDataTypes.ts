@@ -1,5 +1,4 @@
-import { PatchworkContext } from "@/patchworkContext";
-import { DataType } from "@patchwork/sdk";
+import { PatchworkContext, DataType } from "@patchwork/sdk";
 import { useContext } from "react";
 
 export const useDataTypes = (): DataType[] => {

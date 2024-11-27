@@ -1,4 +1,4 @@
-import { PatchworkContext } from "@/patchworkContext";
+import { PatchworkContext } from "@patchwork/sdk";
 import { usePackageModulesInRootFolder } from "@/packages/pkg/usePackages";
 import { Tool, isTool } from "@patchwork/sdk";
 import { useContext, useMemo } from "react";
