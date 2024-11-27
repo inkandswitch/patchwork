@@ -1,5 +1,5 @@
-import { asyncComputedPromise, fetchDoc } from "@/async-signals";
-import { useAsyncComputed } from "@/async-signals/react";
+import { asyncComputedPromise, fetchDoc } from "@patchwork/sdk/async-signals";
+import { useAsyncComputed } from "@patchwork/sdk/async-signals/react";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import { Icon, IconType } from "@patchwork/sdk/ui";
 import { DocLink, FolderDoc } from "@/packages/folder";

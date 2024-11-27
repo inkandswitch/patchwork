@@ -1,4 +1,7 @@
-import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
+import {
+  fetchAwaitMissing,
+  useAsyncComputed,
+} from "@patchwork/sdk/async-signals";
 import { useCurrentAccount } from "@patchwork/sdk";
 import { selectDocLink } from "@patchwork/sdk";
 import { EditorProps } from "@patchwork/sdk";

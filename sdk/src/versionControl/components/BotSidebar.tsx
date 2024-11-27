@@ -16,7 +16,7 @@ import { BranchDoc, HasVersionControlMetadata } from "../schema";
 import Markdown from "react-markdown";
 import { isLLMActive } from "@/lib/llm";
 import { SidebarMode } from "@patchwork/sdk/router/uiState";
-import { om, Om } from "@/om";
+import { om, Om } from "@patchwork/sdk/om";
 
 export type HasBotChatHistory = {
   botChatHistory: ChatMessage[];

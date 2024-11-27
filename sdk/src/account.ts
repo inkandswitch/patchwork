@@ -15,7 +15,7 @@ import { uploadFile } from "../../os/src/explorer/utils";
 
 import { FolderDoc } from "@/packages/folder";
 import { useFolderDocWithMetadataOnActiveBranch } from "../../os/src/packages/folder/hooks/fetchFolderDocWithMetadata";
-import { typeOnlyAssert } from "@/utils";
+import { typeOnlyAssert } from "@patchwork/sdk/utils";
 import { UIStateDoc } from "./router/uiState";
 import {
   VersionControlSidecarDoc,

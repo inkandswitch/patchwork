@@ -1,10 +1,10 @@
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
-import { objectEntries } from "@/utils";
+import { objectEntries } from "@patchwork/sdk/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { FileDoc } from "../../file/src/datatype";
 import { BuildRun, Reference } from "./datatype";
-import { fetchMap } from "@/async-signals";
+import { fetchMap } from "@patchwork/sdk/async-signals";
 import { DocPath } from "@/packages/folder/datatype";
 
 export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
@@ -44,12 +44,12 @@ export const fetchProjectState = ({
     .map(DocPath.toLink)
     .flatMap(({ url }) =>
       !filesReferencedInBuildsOnly ||
-      // filter out files that are not referenced by any build run
-      buildRuns.some(
-        ({ inputs, outputs }) =>
-          inputs.some((input) => input.docUrl === url) ||
-          outputs.some((output) => output.docUrl === url)
-      )
+        // filter out files that are not referenced by any build run
+        buildRuns.some(
+          ({ inputs, outputs }) =>
+            inputs.some((input) => input.docUrl === url) ||
+            outputs.some((output) => output.docUrl === url)
+        )
         ? [url]
         : []
     );

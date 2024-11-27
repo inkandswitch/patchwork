@@ -26,7 +26,11 @@ import {
   applyUpdateAsChangeToObject,
   removeUndefineds,
 } from "../engraft-automerge";
-import { getDocState, fetchMap, useAsyncComputed } from "@/async-signals";
+import {
+  getDocState,
+  fetchMap,
+  useAsyncComputed,
+} from "@patchwork/sdk/async-signals";
 import { DocPath } from "@/packages/folder/datatype";
 
 function getDocName(

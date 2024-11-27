@@ -3,7 +3,7 @@ import { next as A } from "@automerge/automerge";
 import { ReactElement, useMemo } from "react";
 import ReactDOMServer from "react-dom/server";
 import { AnnotationGroupWithUIState } from "@patchwork/sdk/versionControl";
-import { useScrollPosition } from "@/hooks/useScrollPosition";
+import { useScrollPosition } from "@patchwork/sdk/hooks/useScrollPosition";
 import { MarkdownDoc } from "./datatype";
 import { TextAnchor } from "@patchwork/sdk/textAnchors";
 

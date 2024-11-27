@@ -1,4 +1,4 @@
-import { useAsyncComputed } from "@/async-signals";
+import { useAsyncComputed } from "@patchwork/sdk/async-signals";
 import { useCurrentAccount } from "@patchwork/sdk";
 import { DocPath } from "@/packages/folder/datatype";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";

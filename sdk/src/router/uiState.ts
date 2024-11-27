@@ -3,8 +3,8 @@ import {
   fetchOm,
   PendingException,
   useAsyncCall,
-} from "@/async-signals";
-import { Om } from "@/om";
+} from "@patchwork/sdk/async-signals";
+import { Om } from "@patchwork/sdk/om";
 import { DocPath } from "@/packages/folder/datatype";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";

@@ -1,5 +1,5 @@
-import { asyncComputed, fetchDoc, fetchMap, fetchOm } from "@/async-signals";
-import { Om } from "@/om";
+import { asyncComputed, fetchDoc, fetchMap, fetchOm } from "@patchwork/sdk/async-signals";
+import { Om } from "@patchwork/sdk/om";
 import { FolderDoc } from "@/packages/folder";
 import {
   fetchResolveUrlOnFixedBranch,

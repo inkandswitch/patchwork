@@ -1,6 +1,6 @@
 import { Button } from "@patchwork/sdk/ui/button";
 import { useCurrentAccount } from "@patchwork/sdk";
-import { MarkdownInput } from "@/lib/markdown";
+import { MarkdownInput } from "@patchwork/sdk/markdown";
 import { TimelineItems } from "@patchwork/sdk/versionControl";
 import {
   DiscussionComment,

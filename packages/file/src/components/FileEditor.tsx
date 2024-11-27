@@ -3,7 +3,7 @@ import {
   fetchMap,
   useAsyncComputed,
   fetchAwaitMissing,
-} from "@/async-signals";
+} from "@patchwork/sdk/async-signals";
 import { useDocUIState } from "@patchwork/sdk/router/uiState";
 import { TextAnchor } from "@patchwork/sdk/textAnchors";
 import { EditorProps } from "@patchwork/sdk";

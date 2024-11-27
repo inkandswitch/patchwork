@@ -1,4 +1,4 @@
-import { asyncComputedPromise } from "@/async-signals";
+import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { fetchFolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
@@ -31,7 +31,7 @@ export async function refresh(
   },
   wait = true
 ) {
-  const { projectFolderUrl, syncServerStorageId, onProgress = () => {} } = args;
+  const { projectFolderUrl, syncServerStorageId, onProgress = () => { } } = args;
 
   if (!projectFolderUrl) {
     console.log("No project folder URL provided.");

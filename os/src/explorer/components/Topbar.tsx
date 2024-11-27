@@ -1,4 +1,7 @@
-import { FileExportMethod, genericExportMethods } from "@/fileExports";
+import {
+  FileExportMethod,
+  genericExportMethods,
+} from "@patchwork/sdk/fileExports";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";

@@ -17,7 +17,7 @@ import { useToolUIState } from "@patchwork/sdk/router/uiState";
 import { DocPath } from "@/packages/folder/datatype";
 import { clsx } from "clsx";
 import { fileTool } from "../tool";
-import { eventListenerEffect } from "@/utils";
+import { eventListenerEffect } from "@patchwork/sdk/utils";
 
 // react-pdf doesn't make this easy
 type OnPageRenderSuccess = NonNullable<

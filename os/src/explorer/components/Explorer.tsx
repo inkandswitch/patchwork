@@ -1,4 +1,4 @@
-import { asyncComputedPromise } from "@/async-signals";
+import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { dataTypeById } from "@patchwork/sdk";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import { useTools } from "@patchwork/sdk/hooks";

@@ -1,5 +1,5 @@
 import { ContactAvatar } from "@patchwork/sdk/components/ContactAvatar";
-import { MarkdownEditor } from "@/lib/markdown/MarkdownEditor";
+import { MarkdownEditor } from "@patchwork/sdk/markdown/MarkdownEditor";
 import { Button } from "@patchwork/sdk/ui/button";
 import { next as A, Prop } from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";

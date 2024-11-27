@@ -1,4 +1,8 @@
-import { asyncCall, asyncPromise, fetchDoc } from "@/async-signals";
+import {
+  asyncCall,
+  asyncPromise,
+  fetchDoc,
+} from "@patchwork/sdk/async-signals";
 import { DocLink } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { fetchFolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";

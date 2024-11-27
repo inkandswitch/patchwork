@@ -1,4 +1,4 @@
-import { FileExportMethod } from "@/fileExports";
+import { FileExportMethod } from "@patchwork/sdk/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
 import { initFrom, type DataType } from "@patchwork/sdk";
 import { ChangeGroup } from "@patchwork/sdk/versionControl";

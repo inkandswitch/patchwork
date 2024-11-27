@@ -11,7 +11,7 @@ import {
 } from "@patchwork/sdk/textAnchors";
 import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { EditorProps } from "@patchwork/sdk";
-import { useRefForCallback } from "@/utils";
+import { useRefForCallback } from "@patchwork/sdk/utils";
 import {
   getCursorPositionSafely,
   getCursorSafely,
@@ -44,7 +44,7 @@ import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import { tool } from "..";
 import { selectedAnchorsPlugin } from "../../../essay/src/codemirrorPlugins/setSelectedAnchors";
 import { FileDoc, TextFileContent } from "../datatype";
-import { CodeMirror } from "../../../../os/src/lib/CodeMirror";
+import { CodeMirror } from "../../../../sdk/src/components/CodeMirror";
 
 export type TextFileDoc = FileDoc & {
   content: TextFileContent;

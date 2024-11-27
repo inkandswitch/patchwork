@@ -3,7 +3,7 @@ import { memo, useRef, useState } from "react";
 import SelectLane from "./contextmenu/StatusMenu";
 
 import { useCurrentAccount } from "@patchwork/sdk";
-import { MarkdownInput } from "@/lib/markdown";
+import { MarkdownInput } from "@patchwork/sdk/markdown";
 import { Button } from "@patchwork/sdk/ui/button";
 import {
   Dialog,

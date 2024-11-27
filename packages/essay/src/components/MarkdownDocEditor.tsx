@@ -4,7 +4,7 @@ import { markdown } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
 import { EditorView } from "@codemirror/view";
 
-import { theme, useMarkdownPlugins } from "@/lib/markdown";
+import { theme, useMarkdownPlugins } from "@patchwork/sdk/markdown";
 import {
   annotationsPlugin,
   hideLinesWithoutAnnotations,
@@ -18,7 +18,7 @@ import { frontmatterPlugin } from "../codemirrorPlugins/frontmatter";
 import { previewFiguresPlugin } from "../codemirrorPlugins/previewFigures";
 import { tableOfContentsPreviewPlugin } from "../codemirrorPlugins/tableOfContentsPreview";
 
-import { CodeMirror } from "@/lib/CodeMirror";
+import { CodeMirror } from "@patchwork/sdk/components/CodeMirror";
 import {
   ResolvedTextAnchor,
   TextAnchor,

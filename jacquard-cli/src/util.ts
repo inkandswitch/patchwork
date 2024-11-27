@@ -15,7 +15,7 @@ import path from "path";
 import { FileContent } from "../../packages/file/src/datatype";
 import { builtInDataTypesSafe } from "@/builtInDataTypesSafe";
 import { fetchOmOnFixedBranch } from "@patchwork/sdk/versionControl";
-import { asyncComputedPromise } from "@/async-signals";
+import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 
 export const dataTypes = builtInDataTypesSafe;
 

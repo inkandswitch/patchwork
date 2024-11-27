@@ -3,7 +3,7 @@ import {
   fetchAwaitMissing,
   fetchMap,
   useAsyncComputed,
-} from "@/async-signals";
+} from "@patchwork/sdk/async-signals";
 import { Account, useCurrentAccount } from "@patchwork/sdk";
 import {
   fetchOmOnFixedBranch,
