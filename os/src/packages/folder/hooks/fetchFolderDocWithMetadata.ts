@@ -8,7 +8,7 @@ import { Account, useCurrentAccount } from "@/explorer/account";
 import {
   fetchOmOnFixedBranch,
   fetchOmOnActiveBranch,
-} from "@/versionControl/signals";
+} from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { last } from "lodash";

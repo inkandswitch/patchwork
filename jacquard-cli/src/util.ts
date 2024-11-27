@@ -14,7 +14,7 @@ import { inspect } from "node:util";
 import path from "path";
 import { FileContent } from "../../packages/file/src/datatype";
 import { builtInDataTypesSafe } from "@/builtInDataTypesSafe";
-import { fetchOmOnFixedBranch } from "@/versionControl/signals";
+import { fetchOmOnFixedBranch } from "@patchwork/sdk/versionControl";
 import { asyncComputedPromise } from "@/async-signals";
 
 export const dataTypes = builtInDataTypesSafe;
@@ -29,7 +29,7 @@ export async function waitForSync(
 ) {
   if (!syncServerStorageId) {
     console.log("No sync server storage ID provided. Waiting forever...");
-    return new Promise(() => {});
+    return new Promise(() => { });
   }
 
   console.log("Waiting for files to sync...");

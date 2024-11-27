@@ -4,7 +4,7 @@ import { DocPath, FolderDoc } from "@/packages/folder/datatype";
 import {
   fetchBranchScopeAndActiveBranchInfo,
   fetchOmOnFixedBranch,
-} from "@/versionControl/signals";
+} from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { JacquardBuildMetadata } from "./datatype";
 import { DataType } from "@patchwork/sdk";

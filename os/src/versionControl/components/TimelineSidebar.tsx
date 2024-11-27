@@ -13,7 +13,7 @@ import {
 } from "../groupChanges";
 
 import { InlineContactAvatar } from "@/explorer/components/InlineContactAvatar";
-import { useSlots } from "@/versionControl/utils";
+import { useSlots } from "@patchwork/sdk/versionControl";
 import { Heads } from "@automerge/automerge/next";
 import {
   ChevronLeftIcon,
@@ -28,7 +28,7 @@ import {
   VersionControlSidecarDoc,
 } from "../schema";
 
-import { useAutoPopulateChangeGroupSummaries } from "@/versionControl/changeGroupSummaries";
+import { useAutoPopulateChangeGroupSummaries } from "@patchwork/sdk/versionControl";
 import { DiscussionInput } from "./DiscussionInput";
 
 import { HasAssets } from "@/assets";

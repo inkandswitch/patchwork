@@ -1,5 +1,5 @@
 import { asyncComputedPromise } from "@/async-signals";
-import { dataTypeById } from "@/datatypes";
+import { dataTypeById } from "@patchwork/sdk";
 import { useDataTypes } from "@/hooks/useDataTypes";
 import { useTools } from "@/hooks/useTools";
 import { FolderDoc } from "@/packages/folder";
@@ -7,12 +7,12 @@ import { DocPath } from "@/packages/folder/datatype";
 import { Button } from "@/shadcn/ui/button";
 import { Toaster } from "@/shadcn/ui/toaster";
 import { toolById, toolsForDataType } from "@/tools";
-import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
+import { VersionControlEditor } from "@patchwork/sdk/versionControl";
+import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import {
   fetchBranchScopeAndActiveBranchInfo,
   fetchOmOnActiveBranch,
-} from "@/versionControl/signals";
+} from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import {
   useDocument,

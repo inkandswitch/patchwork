@@ -18,6 +18,7 @@
     "paths": {
       "@/*": ["./os/src/*"],
       "@patchwork/sdk": ["./sdk/src/index.ts"],
+      "@patchwork/sdk/versionControl": ["./sdk/src/versionControl/index.ts"],
       "@automerge/automerge-wasm": ["./os/src/vendor/automerge-wasm/index.d.ts"]
     }
 

@@ -1,5 +1,5 @@
 import { DocPath } from "@/packages/folder/datatype";
-import { useBranchScopeAndActiveBranchInfo } from "@/versionControl/hooks";
+import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useState } from "react";
 import { toUrl } from "./urls";

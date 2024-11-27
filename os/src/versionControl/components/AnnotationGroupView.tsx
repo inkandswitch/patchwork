@@ -9,7 +9,7 @@ import {
   AnnotationGroupWithUIState,
   CommentState,
   HasVersionControlMetadata,
-} from "@/versionControl/schema";
+} from "@patchwork/sdk/versionControl";
 import { next as A, uuid } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { Check, MessageCircle, PencilIcon } from "lucide-react";

@@ -1,5 +1,5 @@
 import * as Automerge from "@automerge/automerge";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
+import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { type DataType } from "@patchwork/sdk";
 import { Heads } from "@automerge/automerge/next";
 import { AutomergeUrl } from "@automerge/automerge-repo";

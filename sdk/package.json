@@ -4,6 +4,10 @@
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.ts",
+    "./versionControl": "./dist/versionControl/index.ts"
+  },
   "scripts": {
     "build": "tsc"
   },

@@ -2,12 +2,12 @@ import { AssetsDoc } from "@/assets";
 import { FileExportMethod } from "@/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
 import { initFrom, type DataType } from "@patchwork/sdk";
-import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
+import { DecodedChangeWithMetadata } from "@patchwork/sdk/versionControl";
 import {
   HasVersionControlMetadata,
   initVersionControlMetadata,
-} from "@/versionControl/schema";
-import { TextPatch } from "@/versionControl/utils";
+} from "@patchwork/sdk/versionControl";
+import { TextPatch } from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { splice, updateText } from "@automerge/automerge/next";

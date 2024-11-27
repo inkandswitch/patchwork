@@ -9,13 +9,13 @@ import {
   useResolvedAnnotationAtPath,
   useScrollAnnotationsIntoView,
 } from "@/lib/textAnchors";
-import { AnnotationWithUIState } from "@patchwork/sdk";
+import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { EditorProps } from "@/tools";
 import { useRefForCallback } from "@/utils";
 import {
   getCursorPositionSafely,
   getCursorSafely,
-} from "@/versionControl/utils";
+} from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";

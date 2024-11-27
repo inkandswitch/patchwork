@@ -6,14 +6,13 @@ import { MainViewMode, useDocUIState } from "@/explorer/uiState";
 import { getRelativeTimeString } from "@/lib/dates";
 import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";
+import { Tool, useDataTypes } from "@patchwork/sdk";
 import {
   BranchDoc,
   ensureMetadataHandleIsBranchScope,
   initVersionControlSidecarDoc,
-  Tool,
-  useDataTypes,
   VersionControlSidecarDoc,
-} from "@patchwork/sdk";
+} from "@patchwork/sdk/versionControl";
 import { Button } from "@/shadcn/ui/button";
 import {
   DropdownMenu,

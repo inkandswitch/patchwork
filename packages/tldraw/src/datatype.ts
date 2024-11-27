@@ -1,10 +1,10 @@
 import { type DataType } from "@patchwork/sdk";
-import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
+import { DecodedChangeWithMetadata } from "@patchwork/sdk/versionControl";
 import {
   Annotation,
   HasVersionControlMetadata,
   initVersionControlMetadata,
-} from "@/versionControl/schema";
+} from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import {
@@ -20,7 +20,7 @@ import {
 } from "@tldraw/tldraw";
 import { init as tldrawinit } from "./vendor/automerge-tldraw";
 import { pick } from "lodash";
-import { TextPatch } from "@/versionControl/utils";
+import { TextPatch } from "@patchwork/sdk/versionControl";
 
 // SCHEMA
 

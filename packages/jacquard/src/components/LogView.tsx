@@ -4,7 +4,7 @@ import { EditorProps } from "@/tools";
 import { useMemo } from "react";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { BuildRunSpec, JacquardBuildMetadata } from "../datatype";
-import { CopyButton } from "@/versionControl/components/CopyButton";
+import { CopyButton } from "@patchwork/sdk/versionControl";
 import { Trash2Icon } from "lucide-react";
 import { Button } from "@/shadcn/ui/button";
 

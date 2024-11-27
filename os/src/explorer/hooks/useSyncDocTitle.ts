@@ -3,7 +3,7 @@ import { useDataTypes } from "@/hooks/useDataTypes";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { dataTypeById } from "@patchwork/sdk";
-import { fetchOmOnActiveBranch } from "@/versionControl/signals";
+import { fetchOmOnActiveBranch } from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";
 import { useCurrentAccount } from "../account";

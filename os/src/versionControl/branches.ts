@@ -4,10 +4,12 @@ import { DocPath } from "@/packages/folder/datatype";
 import {
   DataType,
   dataTypeById,
+} from "@patchwork/sdk";
+import {
   DocCloneMap,
   ensureMetadataHandleIsBranchScope,
   getVersionControlMetadataHandle,
-} from "@patchwork/sdk";
+} from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
 import {

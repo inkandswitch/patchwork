@@ -13,7 +13,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { useToast } from "@/shadcn/ui/use-toast";
 import { Tool } from "@/tools";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
+import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import { Doc, DocHandle, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";

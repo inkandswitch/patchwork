@@ -2,8 +2,8 @@ import assert from "assert";
 import { describe, it } from "vitest";
 import * as Automerge from "@automerge/automerge/next";
 import { TextAnchor, textAnchorsAtPath } from "../src/lib/textAnchors";
-import { AddAnnotation, ChangeAnnotation, DeleteAnnotation } from "@patchwork/sdk";
-import { applyCursorPatches, CursorPatch } from "@/versionControl/cursorPatch";
+import { AddAnnotation, ChangeAnnotation, DeleteAnnotation } from "@patchwork/sdk/versionControl";
+import { applyCursorPatches, CursorPatch } from "@patchwork/sdk/versionControl";
 
 type TextDoc = {
   content: string;

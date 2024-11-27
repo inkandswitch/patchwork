@@ -4,7 +4,7 @@ import {
   AnnotationGroupWithUIState,
   CommentState,
   HasVersionControlMetadata,
-} from "@/versionControl/schema";
+} from "@patchwork/sdk/versionControl";
 import { DocHandle } from "@automerge/automerge-repo";
 import React from "react";
 import { getAnnotationGroupId } from "../annotations";

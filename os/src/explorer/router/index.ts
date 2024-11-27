@@ -1,11 +1,11 @@
-import { dataTypeById } from "@/datatypes";
+import { dataTypeById } from "@patchwork/sdk";
 import { useDataTypes } from "@/hooks/useDataTypes";
 import { useStaticCallback } from "@/hooks/useStaticCallback";
 import { DocLink, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
-import { setActiveBranchUrl } from "@/versionControl/branches";
-import { BranchDoc } from "@/versionControl/schema";
+import { setActiveBranchUrl } from "@patchwork/sdk/versionControl";
+import { BranchDoc } from "@patchwork/sdk/versionControl";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useState } from "react";
 import { useUIStateOm } from "../uiState";
@@ -197,10 +197,10 @@ export const useRouter = ({
 
       const branchScopePathInRootFolder = branchScopeUrl
         ? getDocPathInRootFolder(
-            { type: branchScopeType, url: branchScopeUrl },
-            rootFolderDocWithMetadata,
-            selectedDocPath
-          )
+          { type: branchScopeType, url: branchScopeUrl },
+          rootFolderDocWithMetadata,
+          selectedDocPath
+        )
         : undefined;
 
       // make sure that the branch scope doc is in the root folder and that the right branch is checked out

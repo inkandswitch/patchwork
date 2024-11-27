@@ -1,5 +1,5 @@
 import { TextAnchor } from "@/lib/textAnchors";
-import { AnnotationWithUIState } from "@/versionControl/schema";
+import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { DocHandle } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
 import { ViewPlugin, ViewUpdate } from "@codemirror/view";
@@ -32,7 +32,7 @@ export function selectedAnchorsPlugin({
             const selectedAnnotationAnchors = annotationsRef.current.flatMap(
               (annotation) =>
                 annotation.anchor.fromPos <= cursorPos &&
-                annotation.anchor.toPos > cursorPos
+                  annotation.anchor.toPos > cursorPos
                   ? [annotation.anchor]
                   : []
             );

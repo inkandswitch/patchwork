@@ -24,8 +24,8 @@ import {
   TextAnchor,
   useScrollAnnotationsIntoView,
 } from "@/lib/textAnchors";
-import { useDedupe } from "@/versionControl/hooks";
-import { AnnotationWithUIState } from "@/versionControl/schema";
+import { useDedupe } from "@patchwork/sdk/versionControl";
+import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { get, isEqual } from "lodash";
 import { clickableMarkdownLinksPlugin } from "../codemirrorPlugins/clickableMarkdownLinks";

@@ -14,13 +14,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/shadcn/ui/tooltip";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
+import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import {
   fetchActiveBranchInfo,
   fetchBranchScopeAndActiveBranchInfo,
   fetchOmOnActiveBranch,
   fetchVersionControlMetadataOm,
-} from "@/versionControl/signals";
+} from "@patchwork/sdk/versionControl";
 import { isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { capitalize, clone, uniqBy } from "lodash";

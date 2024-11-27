@@ -1,9 +1,0 @@
-{
-  "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "paths": {
-      "@patchwork/sdk": ["./sdk/src/index.ts"],
-      "@automerge/automerge-wasm": ["./os/src/vendor/automerge-wasm/index.d.ts"]
-    }
-  }
-}

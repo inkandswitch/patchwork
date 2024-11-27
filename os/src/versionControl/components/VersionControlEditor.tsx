@@ -1,4 +1,4 @@
-import { dataTypeById } from "@/datatypes";
+import { dataTypeById } from "@patchwork/sdk";
 import { useCurrentAccount } from "@/explorer/account";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { LoadingScreen } from "@/explorer/components/LoadingScreen";

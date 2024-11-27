@@ -7,7 +7,7 @@ import {
 import { useDocUIState } from "@/explorer/uiState";
 import { TextAnchor } from "@/lib/textAnchors";
 import { EditorProps } from "@/tools";
-import { fetchResolveUrlOnFixedBranch } from "@/versionControl/signals";
+import { fetchResolveUrlOnFixedBranch } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";

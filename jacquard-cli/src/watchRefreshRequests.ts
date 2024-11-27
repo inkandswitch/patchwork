@@ -4,7 +4,7 @@ import { FolderDoc } from "@/packages/folder";
 import {
   fetchResolveUrlOnFixedBranch,
   fetchVersionControlMetadataOm,
-} from "@/versionControl/signals";
+} from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import debugFactory from "debug";
 import os from "node:os";

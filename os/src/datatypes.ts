@@ -2,9 +2,9 @@ import {
   ChangeGroup,
   DecodedChangeWithMetadata,
   PendingChangeGroup,
-} from "@/versionControl/groupChanges";
-import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
-import { TextPatch } from "@/versionControl/utils";
+} from "@patchwork/sdk/versionControl";
+import { Annotation, HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
+import { TextPatch } from "@patchwork/sdk/versionControl";
 import { next as A, Doc } from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { ReactElement } from "react";

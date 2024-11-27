@@ -1,5 +1,5 @@
 import { initFrom, type DataType } from "@patchwork/sdk";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
+import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { uuid } from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 

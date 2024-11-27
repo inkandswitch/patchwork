@@ -7,12 +7,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/shadcn/ui/tooltip";
-import { getAnnotationGroupId } from "@/versionControl/annotations";
-import { AnnotationGroupView } from "@/versionControl/components/AnnotationGroupView";
+import {
+  AnnotationGroupView,
+  getAnnotationGroupId,
+  CommentState,
+} from "@patchwork/sdk/versionControl";
 import { DocHandle } from "@automerge/automerge-repo";
 import { MessageCircle } from "lucide-react";
 import { TextSelection } from "./MarkdownDocEditor";
-import { CommentState } from "@/versionControl/schema";
 import { MarkdownDoc } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";
 import { TextAnchor } from "@/lib/textAnchors";

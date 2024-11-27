@@ -8,8 +8,8 @@ import { useMemo, useState } from "react";
 
 import { useCurrentAccount } from "@/explorer/account";
 import { EditorProps } from "@/tools";
-import { SideBySideProps } from "@/versionControl/components/VersionControlEditor";
-import { AnnotationWithUIState } from "@/versionControl/schema";
+import { SideBySideProps } from "@patchwork/sdk/versionControl";
+import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { Editor, TLCamera, TLShape, Tldraw } from "@tldraw/tldraw";
 import "@tldraw/tldraw/tldraw.css";

@@ -1,8 +1,8 @@
-import { DataType, initFrom } from "@/datatypes";
+import { DataType, initFrom } from "@patchwork/sdk";
 import {
   HasVersionControlMetadata,
   initVersionControlMetadata,
-} from "@/versionControl/schema";
+} from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 
 // SCHEMA

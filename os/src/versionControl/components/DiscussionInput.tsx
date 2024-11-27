@@ -1,11 +1,11 @@
 import { Button } from "@/shadcn/ui/button";
 import { useCurrentAccount } from "@/explorer/account";
 import { MarkdownInput } from "@/lib/markdown";
-import { TimelineItems } from "@/versionControl/groupChanges";
+import { TimelineItems } from "@patchwork/sdk/versionControl";
 import {
   DiscussionComment,
   HasVersionControlMetadata,
-} from "@/versionControl/schema";
+} from "@patchwork/sdk/versionControl";
 import { uuid } from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
