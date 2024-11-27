@@ -15,7 +15,10 @@ import { uniq } from "lodash";
 import "../index.css";
 
 import { useHandleDef } from "@/hooks/useHandleDef";
-import { TextAnchor, useResolvedAnnotationAtPath } from "@/lib/textAnchors";
+import {
+  TextAnchor,
+  useResolvedAnnotationAtPath,
+} from "@patchwork/sdk/textAnchors";
 import { useAnnotationGroupsWithPosition } from "../utils";
 import { CommentsSidebar } from "./CommentsSidebar";
 

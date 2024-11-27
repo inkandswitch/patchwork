@@ -8,7 +8,7 @@ import {
   useAnnotationsInEditor,
   useResolvedAnnotationAtPath,
   useScrollAnnotationsIntoView,
-} from "@/lib/textAnchors";
+} from "@patchwork/sdk/textAnchors";
 import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { EditorProps } from "@patchwork/sdk";
 import { useRefForCallback } from "@/utils";

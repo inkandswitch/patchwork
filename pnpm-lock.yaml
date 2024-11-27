@@ -79,7 +79,7 @@ importers:
         specifier: ^2.0.5
         version: 2.0.5(@types/node@20.16.1)(@vitest/ui@2.1.2(vitest@2.0.5))(jsdom@22.1.0)
 
-  os: {dependencies: {'@automerge/automerge': {specifier: 2.2.9-alpha.2, version: 2.2.9-alpha.2}, '@automerge/automerge-codemirror': {specifier: ^0.0.12, version: 0.0.12(@lezer/common@1.2.1)}, '@automerge/automerge-repo': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-network-messagechannel': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-network-websocket': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-react-hooks': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)}, '@automerge/automerge-repo-storage-indexeddb': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@codemirror/autocomplete': {specifier: ^6.17.0, version: 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)}, '@codemirror/commands': {specifier: ^6.6.0, version: 6.6.0}, '@codemirror/lang-markdown': {specifier: ^6.2.5, version: 6.2.5}, '@codemirror/language': {specifier: ^6.10.2, version: 6.10.2}, '@codemirror/language-data': {specifier: ^6.5.1, version: 6.5.1(@codemirror/view@6.32.0)}, '@codemirror/search': {specifier: ^6.5.6, version: 6.5.6}, '@codemirror/state': {specifier: ^6.4.1, version: 6.4.1}, '@codemirror/view': {specifier: ^6.28.6, version: 6.32.0}, '@lezer/common': {specifier: ^1.2.1, version: 1.2.1}, '@lezer/highlight': {specifier: ^1.2.0, version: 1.2.1}, '@patchwork/counter': {specifier: workspace:*, version: link:../packages/counter}, '@patchwork/datagrid': {specifier: workspace:*, version: link:../packages/datagrid}, '@patchwork/essay': {specifier: workspace:*, version: link:../packages/essay}, '@patchwork/file': {specifier: workspace:*, version: link:../packages/file}, '@patchwork/jacquard': {specifier: workspace:*, version: link:../packages/jacquard}, '@patchwork/kanban': {specifier: workspace:*, version: link:../packages/kanban}, '@patchwork/raw-editor': {specifier: workspace:*, version: link:../packages/raw-editor}, '@patchwork/tldraw': {specifier: workspace:*, version: link:../packages/tldraw}, '@tailwindcss/container-queries': {specifier: ^0.1.1, version: 0.1.1(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)))}, '@xstate/react': {specifier: ^4.1.1, version: 4.1.1(@types/react@18.3.4)(react@18.3.1)(xstate@5.17.4)}, class-variance-authority: {specifier: ^0.7.0, version: 0.7.0}, clsx: {specifier: ^2.1.1, version: 2.1.1}, cmdk: {specifier: ^0.2.1, version: 0.2.1(@types/react@18.3.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, codemirror: {specifier: ^6.0.1, version: 6.0.1(@lezer/common@1.2.1)}, diff: {specifier: ^5.2.0, version: 5.2.0}, esbuild: {specifier: ^0.23.0, version: 0.23.1}, eventemitter3: {specifier: ^5.0.1, version: 5.0.1}, lodash: {specifier: ^4.17.21, version: 4.17.21}, lucide: {specifier: ^0.433.0, version: 0.433.0}, lucide-react: {specifier: ^0.284.0, version: 0.284.0(react@18.3.1)}, next-themes: {specifier: ^0.2.1, version: 0.2.1(next@14.2.6(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, openai: {specifier: ^4.53.0, version: 4.56.0(encoding@0.1.13)}, query-string: {specifier: ^8.2.0, version: 8.2.0}, react: {specifier: ^18.3.1, version: 18.3.1}, react-arborist: {specifier: ^3.4.0, version: 3.4.0(@types/hoist-non-react-statics@3.3.5)(@types/node@20.16.1)(@types/react@18.3.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, react-dom: {specifier: ^18.3.1, version: 18.3.1(react@18.3.1)}, react-error-boundary: {specifier: ^4.0.13, version: 4.0.13(react@18.3.1)}, react-markdown: {specifier: ^9.0.1, version: 9.0.1(@types/react@18.3.4)(react@18.3.1)}, react-merge-refs: {specifier: ^2.1.1, version: 2.1.1}, signia: {specifier: ^0.1.5, version: 0.1.5}, signia-react: {specifier: ^0.1.5, version: 0.1.5(react@18.3.1)}, tailwind-merge: {specifier: ^1.14.0, version: 1.14.0}, tailwindcss-animate: {specifier: ^1.0.7, version: 1.0.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)))}, use-resize-observer: {specifier: ^9.1.0, version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, xstate: {specifier: ^5.15.0, version: 5.17.4}}, devDependencies: {'@jspm/generator': {specifier: ^2.1.3, version: 2.1.3}, '@testing-library/react': {specifier: ^15.0.7, version: 15.0.7(@types/react@18.3.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@types/diff': {specifier: ^5.2.1, version: 5.2.1}, '@types/lodash': {specifier: ^4.17.7, version: 4.17.7}, '@types/node': {specifier: ^20.14.12, version: 20.16.1}, '@types/react': {specifier: ^18.3.3, version: 18.3.4}, '@types/react-dom': {specifier: ^18.3.0, version: 18.3.0}, '@typescript-eslint/eslint-plugin': {specifier: ^6.21.0, version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)}, '@typescript-eslint/parser': {specifier: ^6.21.0, version: 6.21.0(eslint@8.57.0)(typescript@5.5.4)}, '@vitejs/plugin-react': {specifier: ^4.3.1, version: 4.3.1(vite@5.4.2(@types/node@20.16.1))}, concurrently: {specifier: ^8.2.2, version: 8.2.2}, eslint: {specifier: ^8.57.0, version: 8.57.0}, eslint-plugin-react-hooks: {specifier: ^4.6.2, version: 4.6.2(eslint@8.57.0)}, eslint-plugin-react-refresh: {specifier: ^0.4.9, version: 0.4.11(eslint@8.57.0)}, glob: {specifier: ^10.4.5, version: 10.4.5}, http-server: {specifier: ^14.1.1, version: 14.1.1}, jsdom: {specifier: ^22.1.0, version: 22.1.0(canvas@2.11.2(encoding@0.1.13))}, pnpm: {specifier: ^8.15.9, version: 8.15.9}, tailwindcss: {specifier: ^3.4.6, version: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4))}, typescript: {specifier: ^5.5.4, version: 5.5.4}, vite: {specifier: ^5.3.4, version: 5.4.2(@types/node@20.16.1)}, vite-plugin-top-level-await: {specifier: ^1.4.2, version: 1.4.4(@swc/helpers@0.5.12)(rollup@4.21.0)(vite@5.4.2(@types/node@20.16.1))}, vite-plugin-wasm: {specifier: ^3.3.0, version: 3.3.0(vite@5.4.2(@types/node@20.16.1))}}}
+  os: {dependencies: {'@automerge/automerge': {specifier: 2.2.9-alpha.2, version: 2.2.9-alpha.2}, '@automerge/automerge-codemirror': {specifier: ^0.0.12, version: 0.0.12(@lezer/common@1.2.1)}, '@automerge/automerge-repo': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-network-messagechannel': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-network-websocket': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-react-hooks': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)}, '@automerge/automerge-repo-storage-indexeddb': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@codemirror/autocomplete': {specifier: ^6.17.0, version: 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)}, '@codemirror/commands': {specifier: ^6.6.0, version: 6.6.0}, '@codemirror/lang-markdown': {specifier: ^6.2.5, version: 6.2.5}, '@codemirror/language': {specifier: ^6.10.2, version: 6.10.2}, '@codemirror/language-data': {specifier: ^6.5.1, version: 6.5.1(@codemirror/view@6.35.0)}, '@codemirror/search': {specifier: ^6.5.6, version: 6.5.6}, '@codemirror/state': {specifier: ^6.4.1, version: 6.4.1}, '@codemirror/view': {specifier: ^6.28.6, version: 6.35.0}, '@lezer/common': {specifier: ^1.2.1, version: 1.2.1}, '@lezer/highlight': {specifier: ^1.2.0, version: 1.2.1}, '@patchwork/counter': {specifier: workspace:*, version: link:../packages/counter}, '@patchwork/datagrid': {specifier: workspace:*, version: link:../packages/datagrid}, '@patchwork/essay': {specifier: workspace:*, version: link:../packages/essay}, '@patchwork/file': {specifier: workspace:*, version: link:../packages/file}, '@patchwork/jacquard': {specifier: workspace:*, version: link:../packages/jacquard}, '@patchwork/kanban': {specifier: workspace:*, version: link:../packages/kanban}, '@patchwork/raw-editor': {specifier: workspace:*, version: link:../packages/raw-editor}, '@patchwork/tldraw': {specifier: workspace:*, version: link:../packages/tldraw}, '@tailwindcss/container-queries': {specifier: ^0.1.1, version: 0.1.1(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)))}, '@xstate/react': {specifier: ^4.1.1, version: 4.1.1(@types/react@18.3.4)(react@18.3.1)(xstate@5.17.4)}, class-variance-authority: {specifier: ^0.7.0, version: 0.7.0}, clsx: {specifier: ^2.1.1, version: 2.1.1}, cmdk: {specifier: ^0.2.1, version: 0.2.1(@types/react@18.3.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, codemirror: {specifier: ^6.0.1, version: 6.0.1(@lezer/common@1.2.1)}, diff: {specifier: ^5.2.0, version: 5.2.0}, esbuild: {specifier: ^0.23.0, version: 0.23.1}, eventemitter3: {specifier: ^5.0.1, version: 5.0.1}, lodash: {specifier: ^4.17.21, version: 4.17.21}, lucide: {specifier: ^0.433.0, version: 0.433.0}, lucide-react: {specifier: ^0.284.0, version: 0.284.0(react@18.3.1)}, next-themes: {specifier: ^0.2.1, version: 0.2.1(next@14.2.6(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, openai: {specifier: ^4.53.0, version: 4.56.0(encoding@0.1.13)}, query-string: {specifier: ^8.2.0, version: 8.2.0}, react: {specifier: ^18.3.1, version: 18.3.1}, react-arborist: {specifier: ^3.4.0, version: 3.4.0(@types/hoist-non-react-statics@3.3.5)(@types/node@20.16.1)(@types/react@18.3.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, react-dom: {specifier: ^18.3.1, version: 18.3.1(react@18.3.1)}, react-error-boundary: {specifier: ^4.0.13, version: 4.0.13(react@18.3.1)}, react-markdown: {specifier: ^9.0.1, version: 9.0.1(@types/react@18.3.4)(react@18.3.1)}, react-merge-refs: {specifier: ^2.1.1, version: 2.1.1}, signia: {specifier: ^0.1.5, version: 0.1.5}, signia-react: {specifier: ^0.1.5, version: 0.1.5(react@18.3.1)}, tailwind-merge: {specifier: ^1.14.0, version: 1.14.0}, tailwindcss-animate: {specifier: ^1.0.7, version: 1.0.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)))}, use-resize-observer: {specifier: ^9.1.0, version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, xstate: {specifier: ^5.15.0, version: 5.17.4}}, devDependencies: {'@jspm/generator': {specifier: ^2.1.3, version: 2.1.3}, '@testing-library/react': {specifier: ^15.0.7, version: 15.0.7(@types/react@18.3.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@types/diff': {specifier: ^5.2.1, version: 5.2.1}, '@types/lodash': {specifier: ^4.17.7, version: 4.17.7}, '@types/node': {specifier: ^20.14.12, version: 20.16.1}, '@types/react': {specifier: ^18.3.3, version: 18.3.4}, '@types/react-dom': {specifier: ^18.3.0, version: 18.3.0}, '@typescript-eslint/eslint-plugin': {specifier: ^6.21.0, version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)}, '@typescript-eslint/parser': {specifier: ^6.21.0, version: 6.21.0(eslint@8.57.0)(typescript@5.5.4)}, '@vitejs/plugin-react': {specifier: ^4.3.1, version: 4.3.1(vite@5.4.2(@types/node@20.16.1))}, concurrently: {specifier: ^8.2.2, version: 8.2.2}, eslint: {specifier: ^8.57.0, version: 8.57.0}, eslint-plugin-react-hooks: {specifier: ^4.6.2, version: 4.6.2(eslint@8.57.0)}, eslint-plugin-react-refresh: {specifier: ^0.4.9, version: 0.4.11(eslint@8.57.0)}, glob: {specifier: ^10.4.5, version: 10.4.5}, http-server: {specifier: ^14.1.1, version: 14.1.1}, jsdom: {specifier: ^22.1.0, version: 22.1.0(canvas@2.11.2(encoding@0.1.13))}, pnpm: {specifier: ^8.15.9, version: 8.15.9}, tailwindcss: {specifier: ^3.4.6, version: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4))}, typescript: {specifier: ^5.5.4, version: 5.5.4}, vite: {specifier: ^5.3.4, version: 5.4.2(@types/node@20.16.1)}, vite-plugin-top-level-await: {specifier: ^1.4.2, version: 1.4.4(@swc/helpers@0.5.12)(rollup@4.21.0)(vite@5.4.2(@types/node@20.16.1))}, vite-plugin-wasm: {specifier: ^3.3.0, version: 3.3.0(vite@5.4.2(@types/node@20.16.1))}}}
 
   packages/counter:
     dependencies:
@@ -159,7 +159,7 @@ importers:
         version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14)(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@codemirror/lang-markdown':
         specifier: ^6.2.5
         version: 6.2.5
@@ -168,13 +168,13 @@ importers:
         version: 6.10.2
       '@codemirror/language-data':
         specifier: ^6.5.1
-        version: 6.5.1(@codemirror/view@6.32.0)
+        version: 6.5.1(@codemirror/view@6.35.0)
       '@codemirror/state':
         specifier: ^6.4.1
         version: 6.4.1
       '@codemirror/view':
         specifier: ^6.28.6
-        version: 6.32.0
+        version: 6.35.0
       '@engraft/basic-setup':
         specifier: ^0.0.8
         version: 0.0.8(@babel/core@7.25.2)(@lezer/common@1.2.1)(@types/react@18.3.4)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)
@@ -183,13 +183,13 @@ importers:
         version: 0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@engraft/tool-python':
         specifier: ^0.0.8
-        version: 0.0.8(@codemirror/view@6.32.0)(@lezer/common@1.2.1)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.0.8(@codemirror/view@6.35.0)(@lezer/common@1.2.1)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@lezer/common':
         specifier: ^1.2.1
         version: 1.2.1
       '@tailwindcss/container-queries':
         specifier: ^0.1.1
-        version: 0.1.1(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4)))
+        version: 0.1.1(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)))
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
@@ -207,10 +207,10 @@ importers:
         version: 18.3.1(react@18.3.1)
       tailwindcss:
         specifier: ^3.4.6
-        version: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4))
+        version: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4))
       tailwindcss-animate:
         specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4)))
+        version: 1.0.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)))
     devDependencies:
       '@types/lodash':
         specifier: ^4.17.7
@@ -244,13 +244,13 @@ importers:
         version: 6.10.2
       '@codemirror/language-data':
         specifier: ^6.5.1
-        version: 6.5.1(@codemirror/view@6.32.0)
+        version: 6.5.1(@codemirror/view@6.35.0)
       '@codemirror/state':
         specifier: ^6.4.1
         version: 6.4.1
       '@codemirror/view':
         specifier: ^6.28.6
-        version: 6.32.0
+        version: 6.35.0
       '@lezer/common':
         specifier: ^1.2.1
         version: 1.2.1
@@ -299,7 +299,7 @@ importers:
         version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@codemirror/autocomplete':
         specifier: ^6.18.0
-        version: 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+        version: 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/commands':
         specifier: ^6.6.0
         version: 6.6.0
@@ -308,10 +308,10 @@ importers:
         version: 6.0.1
       '@codemirror/lang-python':
         specifier: ^6.1.6
-        version: 6.1.6(@codemirror/view@6.32.0)
+        version: 6.1.6(@codemirror/view@6.35.0)
       '@codemirror/lang-yaml':
         specifier: ^6.1.1
-        version: 6.1.1(@codemirror/view@6.32.0)
+        version: 6.1.1(@codemirror/view@6.35.0)
       '@codemirror/language':
         specifier: ^6.10.2
         version: 6.10.2
@@ -323,7 +323,7 @@ importers:
         version: 6.4.1
       '@codemirror/view':
         specifier: ^6.32.0
-        version: 6.32.0
+        version: 6.35.0
       '@microlink/react-json-view':
         specifier: ^1.23.1
         version: 1.23.1(@types/react@18.3.4)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -717,6 +717,12 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
         version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+      '@codemirror/state':
+        specifier: ^6.4.1
+        version: 6.4.1
+      '@codemirror/view':
+        specifier: ^6.32.0
+        version: 6.35.0
       '@patchwork/jacquard':
         specifier: workspace:*
         version: link:../packages/jacquard
@@ -765,6 +771,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@18.3.0)(@types/react@18.3.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/diff':
+        specifier: ^5.2.1
+        version: 5.2.1
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -774,12 +783,21 @@ importers:
       cmdk:
         specifier: ^0.2.1
         version: 0.2.1(@types/react@18.3.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      codemirror:
+        specifier: ^6.0.1
+        version: 6.0.1(@lezer/common@1.2.1)
+      diff:
+        specifier: ^5.2.0
+        version: 5.2.0
       eventemitter3:
         specifier: ^5.0.1
         version: 5.0.1
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      lucide:
+        specifier: ^0.433.0
+        version: 0.433.0
       lucide-react:
         specifier: ^0.284.0
         version: 0.284.0(react@18.3.1)
@@ -1139,8 +1157,8 @@ packages:
   '@codemirror/state@6.4.1':
     resolution: {integrity: sha512-QkEyUiLhsJoZkbumGZlswmAhA7CBU02Wrz7zvH4SrcifbsqwlXShVXg65f3v/ts57W3dqyamEriMhij1Z3Zz4A==}
 
-  '@codemirror/view@6.32.0':
-    resolution: {integrity: sha512-AgVNvED2QTsZp5e3syoHLsrWtwJFYWdx1Vr/m3f4h1ATQz0ax60CfXF3Htdmk69k2MlYZw8gXesnQdHtzyVmAw==}
+  '@codemirror/view@6.35.0':
+    resolution: {integrity: sha512-I0tYy63q5XkaWsJ8QRv5h6ves7kvtrBWjBcnf/bzohFJQc5c14a1AQRdE8QpPF9eMp5Mq2FMm59TCj1gDfE7kw==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -4546,15 +4564,6 @@ packages:
       supports-color:
         optional: true
 
-  debug@4.3.6:
-    resolution: {integrity: sha512-O/09Bd4Z1fBrU4VzkhFqVgpPzaGbw6Sm9FEkBT1A/YBXQFGuuSxa1dN2nxgxS34JmKXqYx8CZAwEVoJFImUXIg==}
-    engines: {node: '>=6.0'}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-
   debug@4.3.7:
     resolution: {integrity: sha512-Er2nc/H7RrMXZBFCEim6TCmMk02Z8vLC2Rbi1KEBggpo0fS6l0S1nnapwmIi3yW/+GOJap1Krg4w0Hg80oCqgQ==}
     engines: {node: '>=6.0'}
@@ -6005,9 +6014,6 @@ packages:
 
   ms@2.0.0:
     resolution: {integrity: sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==}
-
-  ms@2.1.2:
-    resolution: {integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==}
 
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
@@ -8130,7 +8136,7 @@ snapshots:
     dependencies:
       '@automerge/automerge': 2.2.9-alpha.2
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       codemirror: 6.0.1(@lezer/common@1.2.1)
     transitivePeerDependencies:
       - '@lezer/common'
@@ -8165,21 +8171,6 @@ snapshots:
       - utf-8-validate
 
   '@automerge/automerge-repo-react-hooks@2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)':
-    dependencies:
-      '@automerge/automerge': 2.2.9-alpha.2
-      '@automerge/automerge-repo': 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)
-      eventemitter3: 5.0.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-usestateref: 1.0.9(react@18.3.1)
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - supports-color
-      - typescript
-
-  '@automerge/automerge-repo-react-hooks@2.0.0-alpha.7(@swc/core@1.7.14)(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)':
     dependencies:
       '@automerge/automerge': 2.2.9-alpha.2
       '@automerge/automerge-repo': 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)
@@ -8506,18 +8497,18 @@ snapshots:
   '@cbor-extract/cbor-extract-win32-x64@2.2.0':
     optional: true
 
-  '@codemirror/autocomplete@6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)':
+  '@codemirror/autocomplete@6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)':
     dependencies:
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       '@lezer/common': 1.2.1
 
   '@codemirror/commands@6.6.0':
     dependencies:
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       '@lezer/common': 1.2.1
 
   '@codemirror/lang-angular@0.1.3':
@@ -8534,9 +8525,9 @@ snapshots:
       '@codemirror/language': 6.10.2
       '@lezer/cpp': 1.1.2
 
-  '@codemirror/lang-css@6.2.1(@codemirror/view@6.32.0)':
+  '@codemirror/lang-css@6.2.1(@codemirror/view@6.35.0)':
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
       '@lezer/common': 1.2.1
@@ -8544,9 +8535,9 @@ snapshots:
     transitivePeerDependencies:
       - '@codemirror/view'
 
-  '@codemirror/lang-go@6.0.1(@codemirror/view@6.32.0)':
+  '@codemirror/lang-go@6.0.1(@codemirror/view@6.35.0)':
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
       '@lezer/common': 1.2.1
@@ -8556,12 +8547,12 @@ snapshots:
 
   '@codemirror/lang-html@6.4.9':
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
-      '@codemirror/lang-css': 6.2.1(@codemirror/view@6.32.0)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
+      '@codemirror/lang-css': 6.2.1(@codemirror/view@6.35.0)
       '@codemirror/lang-javascript': 6.2.2
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       '@lezer/common': 1.2.1
       '@lezer/css': 1.1.8
       '@lezer/html': 1.3.10
@@ -8573,11 +8564,11 @@ snapshots:
 
   '@codemirror/lang-javascript@6.2.2':
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/language': 6.10.2
       '@codemirror/lint': 6.8.1
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       '@lezer/common': 1.2.1
       '@lezer/javascript': 1.4.17
 
@@ -8586,9 +8577,9 @@ snapshots:
       '@codemirror/language': 6.10.2
       '@lezer/json': 1.0.2
 
-  '@codemirror/lang-less@6.0.2(@codemirror/view@6.32.0)':
+  '@codemirror/lang-less@6.0.2(@codemirror/view@6.35.0)':
     dependencies:
-      '@codemirror/lang-css': 6.2.1(@codemirror/view@6.32.0)
+      '@codemirror/lang-css': 6.2.1(@codemirror/view@6.35.0)
       '@codemirror/language': 6.10.2
       '@lezer/common': 1.2.1
       '@lezer/highlight': 1.2.1
@@ -8598,22 +8589,22 @@ snapshots:
 
   '@codemirror/lang-liquid@6.2.1':
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/lang-html': 6.4.9
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       '@lezer/common': 1.2.1
       '@lezer/highlight': 1.2.1
       '@lezer/lr': 1.4.2
 
   '@codemirror/lang-markdown@6.2.5':
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/lang-html': 6.4.9
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       '@lezer/common': 1.2.1
       '@lezer/markdown': 1.3.0
 
@@ -8625,9 +8616,9 @@ snapshots:
       '@lezer/common': 1.2.1
       '@lezer/php': 1.0.2
 
-  '@codemirror/lang-python@6.1.6(@codemirror/view@6.32.0)':
+  '@codemirror/lang-python@6.1.6(@codemirror/view@6.35.0)':
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
       '@lezer/common': 1.2.1
@@ -8640,9 +8631,9 @@ snapshots:
       '@codemirror/language': 6.10.2
       '@lezer/rust': 1.0.2
 
-  '@codemirror/lang-sass@6.0.2(@codemirror/view@6.32.0)':
+  '@codemirror/lang-sass@6.0.2(@codemirror/view@6.35.0)':
     dependencies:
-      '@codemirror/lang-css': 6.2.1(@codemirror/view@6.32.0)
+      '@codemirror/lang-css': 6.2.1(@codemirror/view@6.35.0)
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
       '@lezer/common': 1.2.1
@@ -8650,9 +8641,9 @@ snapshots:
     transitivePeerDependencies:
       - '@codemirror/view'
 
-  '@codemirror/lang-sql@6.7.1(@codemirror/view@6.32.0)':
+  '@codemirror/lang-sql@6.7.1(@codemirror/view@6.35.0)':
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
       '@lezer/common': 1.2.1
@@ -8679,16 +8670,16 @@ snapshots:
 
   '@codemirror/lang-xml@6.1.0':
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       '@lezer/common': 1.2.1
       '@lezer/xml': 1.0.5
 
-  '@codemirror/lang-yaml@6.1.1(@codemirror/view@6.32.0)':
+  '@codemirror/lang-yaml@6.1.1(@codemirror/view@6.35.0)':
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/language': 6.10.2
       '@codemirror/state': 6.4.1
       '@lezer/common': 1.2.1
@@ -8697,28 +8688,28 @@ snapshots:
     transitivePeerDependencies:
       - '@codemirror/view'
 
-  '@codemirror/language-data@6.5.1(@codemirror/view@6.32.0)':
+  '@codemirror/language-data@6.5.1(@codemirror/view@6.35.0)':
     dependencies:
       '@codemirror/lang-angular': 0.1.3
       '@codemirror/lang-cpp': 6.0.2
-      '@codemirror/lang-css': 6.2.1(@codemirror/view@6.32.0)
-      '@codemirror/lang-go': 6.0.1(@codemirror/view@6.32.0)
+      '@codemirror/lang-css': 6.2.1(@codemirror/view@6.35.0)
+      '@codemirror/lang-go': 6.0.1(@codemirror/view@6.35.0)
       '@codemirror/lang-html': 6.4.9
       '@codemirror/lang-java': 6.0.1
       '@codemirror/lang-javascript': 6.2.2
       '@codemirror/lang-json': 6.0.1
-      '@codemirror/lang-less': 6.0.2(@codemirror/view@6.32.0)
+      '@codemirror/lang-less': 6.0.2(@codemirror/view@6.35.0)
       '@codemirror/lang-liquid': 6.2.1
       '@codemirror/lang-markdown': 6.2.5
       '@codemirror/lang-php': 6.0.1
-      '@codemirror/lang-python': 6.1.6(@codemirror/view@6.32.0)
+      '@codemirror/lang-python': 6.1.6(@codemirror/view@6.35.0)
       '@codemirror/lang-rust': 6.0.1
-      '@codemirror/lang-sass': 6.0.2(@codemirror/view@6.32.0)
-      '@codemirror/lang-sql': 6.7.1(@codemirror/view@6.32.0)
+      '@codemirror/lang-sass': 6.0.2(@codemirror/view@6.35.0)
+      '@codemirror/lang-sql': 6.7.1(@codemirror/view@6.35.0)
       '@codemirror/lang-vue': 0.1.3
       '@codemirror/lang-wast': 6.0.2
       '@codemirror/lang-xml': 6.1.0
-      '@codemirror/lang-yaml': 6.1.1(@codemirror/view@6.32.0)
+      '@codemirror/lang-yaml': 6.1.1(@codemirror/view@6.35.0)
       '@codemirror/language': 6.10.2
       '@codemirror/legacy-modes': 6.4.1
     transitivePeerDependencies:
@@ -8727,7 +8718,7 @@ snapshots:
   '@codemirror/language@6.10.2':
     dependencies:
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       '@lezer/common': 1.2.1
       '@lezer/highlight': 1.2.1
       '@lezer/lr': 1.4.2
@@ -8740,18 +8731,18 @@ snapshots:
   '@codemirror/lint@6.8.1':
     dependencies:
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       crelt: 1.0.6
 
   '@codemirror/search@6.5.6':
     dependencies:
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       crelt: 1.0.6
 
   '@codemirror/state@6.4.1': {}
 
-  '@codemirror/view@6.32.0':
+  '@codemirror/view@6.35.0':
     dependencies:
       '@codemirror/state': 6.4.1
       style-mod: 4.1.2
@@ -8862,13 +8853,13 @@ snapshots:
 
   '@engraft/codemirror-helpers@0.0.8(@lezer/common@1.2.1)':
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/commands': 6.6.0
       '@codemirror/language': 6.10.2
       '@codemirror/lint': 6.8.1
       '@codemirror/search': 6.5.6
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       '@engraft/core-widgets': 0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@engraft/shared': 0.0.8
       '@engraft/toolkit': 0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -9085,9 +9076,9 @@ snapshots:
       - react-dom
       - supports-color
 
-  '@engraft/tool-python@0.0.8(@codemirror/view@6.32.0)(@lezer/common@1.2.1)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@engraft/tool-python@0.0.8(@codemirror/view@6.35.0)(@lezer/common@1.2.1)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@codemirror/lang-python': 6.1.6(@codemirror/view@6.32.0)
+      '@codemirror/lang-python': 6.1.6(@codemirror/view@6.35.0)
       '@engraft/codemirror-helpers': 0.0.8(@lezer/common@1.2.1)
       '@engraft/pyodide': 0.0.8(encoding@0.1.13)
       '@engraft/toolkit': 0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -9109,7 +9100,7 @@ snapshots:
       '@babel/types': 7.25.4
       '@codemirror/lang-javascript': 6.2.2
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
       '@engraft/codemirror-helpers': 0.0.8(@lezer/common@1.2.1)
       '@engraft/shared': 0.0.8
       '@engraft/toolkit': 0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -11139,10 +11130,6 @@ snapshots:
     dependencies:
       tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4))
 
-  '@tailwindcss/container-queries@0.1.1(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4)))':
-    dependencies:
-      tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4))
-
   '@tailwindcss/forms@0.5.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4)))':
     dependencies:
       mini-svg-data-uri: 1.4.4
@@ -12337,13 +12324,13 @@ snapshots:
 
   codemirror@6.0.1(@lezer/common@1.2.1):
     dependencies:
-      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.32.0)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.18.0(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
       '@codemirror/commands': 6.6.0
       '@codemirror/language': 6.10.2
       '@codemirror/lint': 6.8.1
       '@codemirror/search': 6.5.6
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.32.0
+      '@codemirror/view': 6.35.0
     transitivePeerDependencies:
       - '@lezer/common'
 
@@ -12701,10 +12688,6 @@ snapshots:
   debug@3.2.7:
     dependencies:
       ms: 2.1.3
-
-  debug@4.3.6:
-    dependencies:
-      ms: 2.1.2
 
   debug@4.3.7:
     dependencies:
@@ -14588,8 +14571,6 @@ snapshots:
 
   ms@2.0.0: {}
 
-  ms@2.1.2: {}
-
   ms@2.1.3: {}
 
   mz@2.7.0:
@@ -16089,38 +16070,7 @@ snapshots:
     dependencies:
       tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4))
 
-  tailwindcss-animate@1.0.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4))):
-    dependencies:
-      tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4))
-
   tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)):
-    dependencies:
-      '@alloc/quick-lru': 5.2.0
-      arg: 5.0.2
-      chokidar: 3.6.0
-      didyoumean: 1.2.2
-      dlv: 1.1.3
-      fast-glob: 3.3.2
-      glob-parent: 6.0.2
-      is-glob: 4.0.3
-      jiti: 1.21.6
-      lilconfig: 2.1.0
-      micromatch: 4.0.7
-      normalize-path: 3.0.0
-      object-hash: 3.0.0
-      picocolors: 1.0.1
-      postcss: 8.4.41
-      postcss-import: 15.1.0(postcss@8.4.41)
-      postcss-js: 4.0.1(postcss@8.4.41)
-      postcss-load-config: 4.0.2(postcss@8.4.41)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4))
-      postcss-nested: 6.2.0(postcss@8.4.41)
-      postcss-selector-parser: 6.1.2
-      resolve: 1.22.8
-      sucrase: 3.35.0
-    transitivePeerDependencies:
-      - ts-node
-
-  tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4)):
     dependencies:
       '@alloc/quick-lru': 5.2.0
       arg: 5.0.2
@@ -16829,7 +16779,7 @@ snapshots:
 
   vite-tsconfig-paths@5.0.1(typescript@5.5.4)(vite@5.4.2(@types/node@20.16.1)):
     dependencies:
-      debug: 4.3.6
+      debug: 4.3.7
       globrex: 0.1.2
       tsconfck: 3.1.3(typescript@5.5.4)
     optionalDependencies:
@@ -16851,13 +16801,13 @@ snapshots:
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@vitest/expect': 2.0.5
-      '@vitest/pretty-format': 2.0.5
+      '@vitest/pretty-format': 2.1.2
       '@vitest/runner': 2.0.5
       '@vitest/snapshot': 2.0.5
       '@vitest/spy': 2.0.5
       '@vitest/utils': 2.0.5
       chai: 5.1.1
-      debug: 4.3.6
+      debug: 4.3.7
       execa: 8.0.1
       magic-string: 0.30.11
       pathe: 1.1.2

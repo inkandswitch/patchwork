@@ -1,6 +1,6 @@
 import { AssetsDoc } from "@patchwork/sdk/assets";
 import { FileExportMethod } from "@/fileExports";
-import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
+import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
 import { initFrom, type DataType } from "@patchwork/sdk";
 import { DecodedChangeWithMetadata } from "@patchwork/sdk/versionControl";
 import {

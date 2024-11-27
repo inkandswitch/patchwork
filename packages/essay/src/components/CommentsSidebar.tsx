@@ -17,7 +17,7 @@ import { MessageCircle } from "lucide-react";
 import { TextSelection } from "./MarkdownDocEditor";
 import { MarkdownDoc } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";
-import { TextAnchor } from "@/lib/textAnchors";
+import { TextAnchor } from "@patchwork/sdk/textAnchors";
 
 export const CommentsSidebar = ({
   doc,

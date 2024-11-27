@@ -1,5 +1,5 @@
 import { FileExportMethod } from "@/fileExports";
-import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
+import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
 import { initFrom, type DataType } from "@patchwork/sdk";
 import { ChangeGroup } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";

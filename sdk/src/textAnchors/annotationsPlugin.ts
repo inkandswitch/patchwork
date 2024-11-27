@@ -1,4 +1,4 @@
-import { ResolvedTextAnchor } from "@/lib/textAnchors";
+import { ResolvedTextAnchor } from "@patchwork/sdk/textAnchors";
 import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { StateEffect, StateField } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType } from "@codemirror/view";

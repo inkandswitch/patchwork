@@ -5,7 +5,7 @@ import {
   fetchAwaitMissing,
 } from "@/async-signals";
 import { useDocUIState } from "@patchwork/sdk/router/uiState";
-import { TextAnchor } from "@/lib/textAnchors";
+import { TextAnchor } from "@patchwork/sdk/textAnchors";
 import { EditorProps } from "@patchwork/sdk";
 import { fetchResolveUrlOnFixedBranch } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";

@@ -1,4 +1,4 @@
-import { TextAnchor } from "@/lib/textAnchors";
+import { TextAnchor } from "@patchwork/sdk/textAnchors";
 import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { DocHandle } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";

@@ -9,7 +9,7 @@ import {
   annotationsPlugin,
   hideLinesWithoutAnnotations,
   useAnnotationsInEditor,
-} from "@/lib/textAnchors";
+} from "@patchwork/sdk/textAnchors";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { type DocHandle } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
@@ -23,7 +23,7 @@ import {
   ResolvedTextAnchor,
   TextAnchor,
   useScrollAnnotationsIntoView,
-} from "@/lib/textAnchors";
+} from "@patchwork/sdk/textAnchors";
 import { useDedupe } from "@patchwork/sdk/versionControl";
 import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
