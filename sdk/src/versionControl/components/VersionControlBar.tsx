@@ -8,7 +8,7 @@ import { selectDocLink } from "@/explorer/router";
 import { MainViewMode, useDocUIState } from "@patchwork/sdk/router/uiState";
 import { getRelativeTimeString } from "@/lib/dates";
 import { Om } from "@patchwork/sdk/om";
-import { DocPath, FolderDoc } from "@/packages/folder/datatype";
+import { DocPath, FolderDoc } from "@patchwork/folder/datatype";
 import { Tool } from "@patchwork/sdk";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import {

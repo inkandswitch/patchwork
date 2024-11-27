@@ -1,6 +1,6 @@
 import { UIStateDoc } from "@patchwork/sdk/router/uiState";
 import { Om } from "@patchwork/sdk/om";
-import { DocPath } from "@/packages/folder/datatype";
+import { DocPath } from "@patchwork/folder/datatype";
 import {
   DataType,
   dataTypeById,

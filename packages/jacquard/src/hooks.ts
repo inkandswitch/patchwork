@@ -1,6 +1,6 @@
 import { Account } from "@patchwork/sdk";
 import { Om } from "@patchwork/sdk/om";
-import { DocPath, FolderDoc } from "@/packages/folder/datatype";
+import { DocPath, FolderDoc } from "../../folder/src/datatype";
 import {
   fetchBranchScopeAndActiveBranchInfo,
   fetchOmOnFixedBranch,

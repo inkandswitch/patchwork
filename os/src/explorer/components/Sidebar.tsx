@@ -2,9 +2,9 @@ import { asyncComputedPromise, fetchDoc } from "@patchwork/sdk/async-signals";
 import { useAsyncComputed } from "@patchwork/sdk/async-signals/react";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import { Icon, IconType } from "@patchwork/sdk/ui";
-import { DocLink, FolderDoc } from "@/packages/folder";
-import { DocPath, FolderDocMaterialized } from "@/packages/folder/datatype";
-import { FolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
+import { DocLink, FolderDoc } from "@patchwork/folder";
+import { DocPath, FolderDocMaterialized } from "@patchwork/folder/datatype";
+import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { dataTypeById } from "@patchwork/sdk";
 import { Input } from "@patchwork/sdk/ui/input";
 import {

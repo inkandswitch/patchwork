@@ -1,4 +1,4 @@
-import { FolderDoc } from "@/packages/folder";
+import { FolderDoc } from "@patchwork/folder";
 import * as A from "@automerge/automerge";
 import {
   AutomergeUrl,

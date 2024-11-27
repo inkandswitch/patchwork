@@ -11,7 +11,7 @@ import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { ReactElement } from "react";
 import { FileExportMethod } from "@patchwork/sdk/fileExports";
 import { IconType } from "./ui";
-import { DocLink } from "@/packages/folder";
+import { DocLink } from "@patchwork/folder";
 
 export type CoreDataType<D> = {
   id: string;

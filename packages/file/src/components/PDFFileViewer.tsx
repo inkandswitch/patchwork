@@ -14,7 +14,7 @@ import "react-pdf/dist/esm/Page/TextLayer.css";
 import { EditorProps } from "@patchwork/sdk";
 import { FileDoc, LinkedFileContent } from "../datatype";
 import { useToolUIState } from "@patchwork/sdk/router/uiState";
-import { DocPath } from "@/packages/folder/datatype";
+import { DocPath } from "../../../folder/src/datatype";
 import { clsx } from "clsx";
 import { fileTool } from "../tool";
 import { eventListenerEffect } from "@patchwork/sdk/utils";

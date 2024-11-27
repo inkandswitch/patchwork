@@ -4,7 +4,7 @@ import { DocumentId } from "@automerge/automerge-repo";
 import { useDocuments } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PackageDoc } from "./datatype";
-import { DocPath } from "../folder/datatype";
+import { DocPath } from "@patchwork/folder/datatype";
 
 type Package = {
   module: any;

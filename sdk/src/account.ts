@@ -13,8 +13,8 @@ import { ChangeFn } from "@automerge/automerge/next";
 import { useEffect, useState } from "react";
 import { uploadFile } from "../../os/src/explorer/utils";
 
-import { FolderDoc } from "@/packages/folder";
-import { useFolderDocWithMetadataOnActiveBranch } from "../../os/src/packages/folder/hooks/fetchFolderDocWithMetadata";
+import { FolderDoc } from "@patchwork/folder";
+import { useFolderDocWithMetadataOnActiveBranch } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { typeOnlyAssert } from "@patchwork/sdk/utils";
 import { UIStateDoc } from "./router/uiState";
 import {

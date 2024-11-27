@@ -1,11 +1,11 @@
 import { dataTypeById } from "@patchwork/sdk";
 import { useCurrentAccount } from "@patchwork/sdk";
-import { ErrorFallback } from "@/explorer/components/ErrorFallback";
+import { ErrorFallback } from "@patchwork/sdk/components/ErrorFallback";
 import { LoadingScreen } from "@/explorer/components/LoadingScreen";
 import { toHashUrl } from "@/explorer/router/urls";
 import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router/uiState";
 import { useDataTypes } from "@patchwork/sdk/hooks";
-import { DocLink, DocPath } from "@/packages/folder/datatype";
+import { DocLink, DocPath } from "@patchwork/folder/datatype";
 import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui/tabs";
 import { useToast } from "@patchwork/sdk/ui/use-toast";
 import { EditorProps, Tool } from "@patchwork/sdk";

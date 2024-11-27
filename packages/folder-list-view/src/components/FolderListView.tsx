@@ -1,4 +1,4 @@
-import { DocLink, FolderDoc } from "@/packages/folder/datatype";
+import { DocLink, FolderDoc } from "../../../folder/src/datatype";
 import * as Automerge from "@automerge/automerge";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps, selectDocLink, dataTypeById } from "@patchwork/sdk";

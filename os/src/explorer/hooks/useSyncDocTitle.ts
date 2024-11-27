@@ -1,7 +1,7 @@
 import { fetchAwaitMissing, useAsyncComputed } from "@patchwork/sdk/async-signals";
 import { useDataTypes } from "@patchwork/sdk/hooks";
-import { FolderDoc } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
+import { FolderDoc } from "@patchwork/folder";
+import { DocPath } from "@patchwork/folder/datatype";
 import { dataTypeById } from "@patchwork/sdk";
 import { fetchOmOnActiveBranch } from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";

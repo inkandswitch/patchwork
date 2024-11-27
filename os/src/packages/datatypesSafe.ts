@@ -1,8 +1,8 @@
 export * as datagrid from "@patchwork/datagrid/src/datatype";
 export * as essay from "@patchwork/essay/src/datatype";
-export * as folder from "./folder/datatype";
+export * as folder from "@patchwork/folder/datatype";
 export * as kanban from "@patchwork/kanban/src/datatype";
-export * as pkg from "./pkg/datatype";
+export * as pkg from "@patchwork/pkg/datatype";
 export * as jacquard from "@patchwork/jacquard/src/datatype";
 export * as file from "@patchwork/file/src/datatype";
 export * as counter from "@patchwork/counter/src/datatype";

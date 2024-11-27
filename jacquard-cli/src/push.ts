@@ -1,5 +1,5 @@
 import { dataTypeById, initFrom } from "@patchwork/sdk";
-import { FolderDoc } from "@/packages/folder";
+import { FolderDoc } from "@patchwork/folder";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import { next as A } from "@automerge/automerge";

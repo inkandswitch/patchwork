@@ -3,9 +3,9 @@ import {
   asyncPromise,
   fetchDoc,
 } from "@patchwork/sdk/async-signals";
-import { DocLink } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
-import { fetchFolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
+import { DocLink } from "@patchwork/folder";
+import { DocPath } from "@patchwork/folder/datatype";
+import { fetchFolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { PeerId, Repo } from "@automerge/automerge-repo";
 import { DummyStorageAdapter } from "@automerge/automerge-repo/helpers/DummyStorageAdapter.js";
 import { beforeEach, describe, expect, it } from "vitest";

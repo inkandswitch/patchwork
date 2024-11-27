@@ -1,9 +1,9 @@
 import { dataTypeById } from "@patchwork/sdk";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import { useStaticCallback } from "@/hooks/useStaticCallback";
-import { DocLink, FolderDoc } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
-import { FolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
+import { DocLink, FolderDoc } from "@patchwork/folder";
+import { DocPath } from "@patchwork/folder/datatype";
+import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { setActiveBranchUrl } from "@patchwork/sdk/versionControl";
 import { BranchDoc } from "@patchwork/sdk/versionControl";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";

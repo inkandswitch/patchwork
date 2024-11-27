@@ -1,4 +1,4 @@
-import { DocLink } from "@/packages/folder";
+import { DocLink } from "@patchwork/folder";
 import {
   AutomergeUrl,
   DocumentId,

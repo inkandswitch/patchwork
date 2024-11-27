@@ -1,6 +1,6 @@
 import { useRootFolderDocWithMetadata } from "@patchwork/sdk";
 import { useHandleDef } from "@patchwork/sdk/hooks/useHandleDef";
-import { FolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
+import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { Button } from "@patchwork/sdk/ui/button";
 import { EditorProps } from "@patchwork/sdk";
 import {
@@ -31,7 +31,7 @@ import {
   fetchMap,
   useAsyncComputed,
 } from "@patchwork/sdk/async-signals";
-import { DocPath } from "@/packages/folder/datatype";
+import { DocPath } from "../../../folder/src/datatype";
 
 function getDocName(
   url: AutomergeUrl,

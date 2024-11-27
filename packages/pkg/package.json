@@ -1,0 +1,27 @@
+{
+  "name": "@patchwork/pkg",
+  "version": "0.0.1",
+  "description": "pkg type",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge": "2.2.9-alpha.2",
+    "@automerge/automerge-repo": "2.0.0-alpha.7",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
+    "lodash": "^4.17.21",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.7",
+    "@types/mime-types": "^2.1.4",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.5.4"
+  }
+}
