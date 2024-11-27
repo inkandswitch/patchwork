@@ -1,5 +1,5 @@
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
-import { EditorProps, makeTool } from "@/tools";
+import { EditorProps, makeTool } from "@patchwork/sdk";
 import { CounterDoc } from "./datatype";
 import React from "react";
 

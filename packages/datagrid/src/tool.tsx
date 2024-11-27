@@ -1,6 +1,6 @@
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 
-import { EditorProps, makeTool } from "@/tools";
+import { EditorProps, makeTool } from "@patchwork/sdk";
 import { next as A } from "@automerge/automerge";
 import Handsontable from "handsontable";
 import { HotTable } from "@handsontable/react";

@@ -1,5 +1,5 @@
 import { Button } from "@/shadcn/ui/button";
-import { Tool } from "@/tools";
+import { Tool } from "@patchwork/sdk";
 import {
   AnnotationGroupWithUIState,
   CommentState,

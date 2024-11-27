@@ -1,7 +1,7 @@
 import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
 import { useCurrentAccount } from "@/explorer/account";
 import { selectDocLink } from "@/explorer/router";
-import { EditorProps } from "@/tools";
+import { EditorProps } from "@patchwork/sdk";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { instance } from "@viz-js/viz";

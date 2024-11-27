@@ -3,7 +3,7 @@ import { selectDocLink } from "@/explorer/router";
 import { useDocUIState } from "@/explorer/uiState";
 import { Icon, IconType } from "@/lib/icons";
 import { dataTypeById, useDataTypes, useTools } from "@patchwork/sdk";
-import { EditorProps, Tool, toolsForDataType } from "@/tools";
+import { EditorProps, Tool, toolsForDataType } from "@patchwork/sdk";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
 import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";

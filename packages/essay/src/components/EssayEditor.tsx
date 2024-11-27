@@ -10,7 +10,7 @@ import { EditorView } from "@codemirror/view";
 
 // TODO: audit the CSS being imported here;
 // it should be all 1) specific to TEE, 2) not dependent on viewport / media queries
-import { EditorProps } from "@/tools";
+import { EditorProps } from "@patchwork/sdk";
 import { uniq } from "lodash";
 import "../index.css";
 

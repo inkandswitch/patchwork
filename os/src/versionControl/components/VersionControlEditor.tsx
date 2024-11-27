@@ -8,7 +8,7 @@ import { useDataTypes } from "@/hooks/useDataTypes";
 import { DocLink, DocPath } from "@/packages/folder/datatype";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { useToast } from "@/shadcn/ui/use-toast";
-import { EditorProps, Tool } from "@/tools";
+import { EditorProps, Tool } from "@patchwork/sdk";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";

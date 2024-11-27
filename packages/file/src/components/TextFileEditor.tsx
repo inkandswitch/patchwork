@@ -10,7 +10,7 @@ import {
   useScrollAnnotationsIntoView,
 } from "@/lib/textAnchors";
 import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
-import { EditorProps } from "@/tools";
+import { EditorProps } from "@patchwork/sdk";
 import { useRefForCallback } from "@/utils";
 import {
   getCursorPositionSafely,

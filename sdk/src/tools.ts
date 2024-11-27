@@ -12,8 +12,8 @@ import {
   Heads,
 } from "@automerge/automerge-repo";
 import React from "react";
-import { IconType } from "./lib/icons";
-import { DocPath } from "./packages/folder/datatype";
+import { IconType } from "../../os/src/lib/icons";
+import { DocPath } from "../../os/src/packages/folder/datatype";
 import { DataType } from "./datatypes";
 
 // To construct well-typed tools, we need ToolTyped with specific type

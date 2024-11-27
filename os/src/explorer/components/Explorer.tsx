@@ -6,7 +6,7 @@ import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { Button } from "@/shadcn/ui/button";
 import { Toaster } from "@/shadcn/ui/toaster";
-import { toolById, toolsForDataType } from "@/tools";
+import { toolById, toolsForDataType } from "@patchwork/sdk";
 import { VersionControlEditor } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import {

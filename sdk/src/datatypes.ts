@@ -8,9 +8,9 @@ import { TextPatch } from "@patchwork/sdk/versionControl";
 import { next as A, Doc } from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { ReactElement } from "react";
-import { FileExportMethod } from "./fileExports";
-import { IconType } from "./lib/icons";
-import { DocLink } from "./packages/folder";
+import { FileExportMethod } from "../../os/src/fileExports";
+import { IconType } from "../../os/src/lib/icons";
+import { DocLink } from "../../os/src/packages/folder";
 
 export type CoreDataType<D> = {
   id: string;

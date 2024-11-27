@@ -12,7 +12,7 @@ import {
 } from "@/shadcn/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { useToast } from "@/shadcn/ui/use-toast";
-import { Tool } from "@/tools";
+import { Tool } from "@patchwork/sdk";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import { Doc, DocHandle, isValidAutomergeUrl } from "@automerge/automerge-repo";

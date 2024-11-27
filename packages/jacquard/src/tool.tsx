@@ -1,4 +1,4 @@
-import { makeTool } from "@/tools";
+import { makeTool } from "@patchwork/sdk";
 import "reactflow/dist/style.css";
 import { GraphView } from "./components/GraphView";
 import { LogView } from "./components/LogView";

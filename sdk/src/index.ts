@@ -1,5 +1,5 @@
-export * from "@/datatypes";
-export * from "@/tools";
+export * from "./datatypes.js";
+export * from "./tools.js";
 export * from "@/patchworkContext";
 export * from "@/hooks/useDataTypes";
 export * from "@/hooks/useTools";

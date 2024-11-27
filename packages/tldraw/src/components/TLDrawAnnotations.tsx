@@ -1,4 +1,4 @@
-import { AnnotationsViewProps } from "@/tools";
+import { AnnotationsViewProps } from "@patchwork/sdk";
 import {
   Annotation,
   AnnotationWithUIState,

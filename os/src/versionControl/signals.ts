@@ -6,7 +6,7 @@ import { canBeUndef } from "@/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { fetchDoc, fetchMap, fetchOm } from "../async-signals";
-import { DataType, dataTypeById } from "../datatypes";
+import { DataType, dataTypeById } from "@patchwork/sdk";
 import {
   BranchDoc,
   DocCloneMap,

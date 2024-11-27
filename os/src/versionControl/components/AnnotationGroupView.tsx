@@ -4,7 +4,7 @@ import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { getRelativeTimeString } from "@/lib/dates";
 import { MarkdownInput } from "@/lib/markdown";
 import { Button } from "@/shadcn/ui/button";
-import { AnnotationsViewProps } from "@/tools";
+import { AnnotationsViewProps } from "@patchwork/sdk";
 import {
   AnnotationGroupWithUIState,
   CommentState,

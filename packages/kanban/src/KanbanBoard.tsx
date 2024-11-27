@@ -1,4 +1,4 @@
-import { EditorProps } from "@/tools";
+import { EditorProps } from "@patchwork/sdk";
 import { next as A } from "@automerge/automerge";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import "animate.css/animate.min.css";

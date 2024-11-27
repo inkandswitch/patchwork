@@ -1,4 +1,4 @@
-import { makeTool } from "@/tools";
+import { makeTool } from "@patchwork/sdk";
 import { EngraftEditor } from "./components/EngraftEditor";
 
 export const engraftTool = makeTool({
