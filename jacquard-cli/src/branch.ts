@@ -1,4 +1,4 @@
-import { ContactDoc } from "@/explorer/account";
+import { ContactDoc } from "@patchwork/sdk";
 import {
   BranchDoc,
   HasVersionControlMetadata,

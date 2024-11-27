@@ -1,4 +1,4 @@
-import { HasAssets } from "@/assets";
+import { HasAssets } from "@patchwork/sdk/assets";
 import { Prop } from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";
 import { EditorView } from "@codemirror/view";

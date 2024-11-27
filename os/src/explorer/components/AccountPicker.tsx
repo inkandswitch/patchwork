@@ -6,7 +6,7 @@ import {
   automergeUrlToAccountToken,
   accountTokenToAutomergeUrl,
   ModuleSettingsDoc,
-} from "../account";
+} from "@patchwork/sdk";
 import { ChangeEvent, useEffect, useState } from "react";
 
 import {

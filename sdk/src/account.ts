@@ -11,18 +11,18 @@ import { EventEmitter } from "eventemitter3";
 import { useForceUpdate } from "@/hooks/useForceUpdate";
 import { ChangeFn } from "@automerge/automerge/next";
 import { useEffect, useState } from "react";
-import { uploadFile } from "./utils";
+import { uploadFile } from "../../os/src/explorer/utils";
 
 import { FolderDoc } from "@/packages/folder";
-import { useFolderDocWithMetadataOnActiveBranch } from "../packages/folder/hooks/fetchFolderDocWithMetadata";
+import { useFolderDocWithMetadataOnActiveBranch } from "../../os/src/packages/folder/hooks/fetchFolderDocWithMetadata";
 import { typeOnlyAssert } from "@/utils";
-import { UIStateDoc } from "./uiState";
+import { UIStateDoc } from "./router/uiState";
 import {
   VersionControlSidecarDoc,
   withHasChangeGroupSummaries,
   withHasVersionControlMetadata,
 } from "@patchwork/sdk/versionControl";
-import { AssetsDoc } from "@/assets";
+import { AssetsDoc } from "@patchwork/sdk/assets";
 
 export type ModuleSettingsDoc = {
   enabledDatatypeIds: { [id: string]: boolean };

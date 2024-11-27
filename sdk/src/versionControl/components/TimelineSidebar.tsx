@@ -31,7 +31,7 @@ import {
 import { useAutoPopulateChangeGroupSummaries } from "@patchwork/sdk/versionControl";
 import { DiscussionInput } from "./DiscussionInput";
 
-import { HasAssets } from "@/assets";
+import { HasAssets } from "@patchwork/sdk/assets";
 import { MarkdownInput } from "@/lib/markdown";
 import { type DataType } from "@patchwork/sdk";
 import { DocHandle } from "@automerge/automerge-repo";

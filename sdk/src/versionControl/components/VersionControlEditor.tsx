@@ -1,9 +1,9 @@
 import { dataTypeById } from "@patchwork/sdk";
-import { useCurrentAccount } from "@/explorer/account";
+import { useCurrentAccount } from "@patchwork/sdk";
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { LoadingScreen } from "@/explorer/components/LoadingScreen";
 import { toHashUrl } from "@/explorer/router/urls";
-import { useDocUIState, useUIStateOm } from "@/explorer/uiState";
+import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router/uiState";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import { DocLink, DocPath } from "@/packages/folder/datatype";
 import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui/tabs";

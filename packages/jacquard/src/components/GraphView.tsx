@@ -1,6 +1,6 @@
 import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
-import { useCurrentAccount } from "@/explorer/account";
-import { selectDocLink } from "@/explorer/router";
+import { useCurrentAccount } from "@patchwork/sdk";
+import { selectDocLink } from "@patchwork/sdk";
 import { EditorProps } from "@patchwork/sdk";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";

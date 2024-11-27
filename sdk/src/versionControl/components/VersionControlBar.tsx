@@ -1,8 +1,8 @@
 import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
-import { useCurrentAccount } from "@/explorer/account";
+import { useCurrentAccount } from "@patchwork/sdk";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { selectDocLink } from "@/explorer/router";
-import { MainViewMode, useDocUIState } from "@/explorer/uiState";
+import { MainViewMode, useDocUIState } from "@patchwork/sdk/router/uiState";
 import { getRelativeTimeString } from "@/lib/dates";
 import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";

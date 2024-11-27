@@ -4,7 +4,7 @@ import {
   fetchMap,
   useAsyncComputed,
 } from "@/async-signals";
-import { Account, useCurrentAccount } from "@/explorer/account";
+import { Account, useCurrentAccount } from "@patchwork/sdk";
 import {
   fetchOmOnFixedBranch,
   fetchOmOnActiveBranch,

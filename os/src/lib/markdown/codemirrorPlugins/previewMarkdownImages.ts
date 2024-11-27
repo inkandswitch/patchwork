@@ -15,7 +15,7 @@ import {
   DocumentId,
   Repo,
 } from "@automerge/automerge-repo";
-import { AssetsDoc, HasAssets } from "@/assets";
+import { AssetsDoc, HasAssets } from "@patchwork/sdk/assets";
 import * as A from "@automerge/automerge";
 
 class Image extends WidgetType {
@@ -87,9 +87,8 @@ function getImages(
       const image = new Image(
         heads,
         assetsDocId && url.startsWith("./assets")
-          ? `${protocol}//${host}/automerge/${assetsDocId}/files/${
-              url.split("/")[2]
-            }`
+          ? `${protocol}//${host}/automerge/${assetsDocId}/files/${url.split("/")[2]
+          }`
           : "",
         caption
       );
@@ -129,94 +128,94 @@ export const previewImagesPlugin = (
   handle: DocHandle<HasAssets>,
   repo: Repo
 ) => [
-  assetsHeadsField,
-  ViewPlugin.fromClass(
-    class {
-      decorations: DecorationSet = Decoration.set([]);
-      images: HTMLImageElement[] = [];
+    assetsHeadsField,
+    ViewPlugin.fromClass(
+      class {
+        decorations: DecorationSet = Decoration.set([]);
+        images: HTMLImageElement[] = [];
 
-      assetsDocHandle: DocHandle<AssetsDoc> | undefined;
+        assetsDocHandle: DocHandle<AssetsDoc> | undefined;
 
-      constructor(private view: EditorView) {
-        this.decorations = getImages([], undefined, view);
-        this.onChangeDoc = this.onChangeDoc.bind(this);
-        this.onRemoteHeadsChanged = this.onRemoteHeadsChanged.bind(this);
+        constructor(private view: EditorView) {
+          this.decorations = getImages([], undefined, view);
+          this.onChangeDoc = this.onChangeDoc.bind(this);
+          this.onRemoteHeadsChanged = this.onRemoteHeadsChanged.bind(this);
 
-        if (handle.isReady()) {
-          const assetsDocUrl = handle.docSync()!.assetsDocUrl; // TODO: JAH strict fix
-          this.onChangeAssetsDocUrl(assetsDocUrl);
+          if (handle.isReady()) {
+            const assetsDocUrl = handle.docSync()!.assetsDocUrl; // TODO: JAH strict fix
+            this.onChangeAssetsDocUrl(assetsDocUrl);
+          }
+
+          handle.on("change", this.onChangeDoc);
         }
 
-        handle.on("change", this.onChangeDoc);
+        onChangeDoc({ doc }: DocHandleChangePayload<HasAssets>) {
+          if (
+            this.assetsDocHandle &&
+            this.assetsDocHandle.url === doc.assetsDocUrl
+          ) {
+            return;
+          }
+
+          if (this.assetsDocHandle) {
+            this.assetsDocHandle.off("remote-heads", this.onRemoteHeadsChanged);
+          }
+
+          if (doc.assetsDocUrl) {
+            this.onChangeAssetsDocUrl(doc.assetsDocUrl);
+          }
+        }
+
+        onChangeAssetsDocUrl(url: AutomergeUrl) {
+          if (this.assetsDocHandle) {
+            this.assetsDocHandle.off("remote-heads", this.onRemoteHeadsChanged);
+          }
+
+          if (!url) {
+            return;
+          }
+
+          this.assetsDocHandle = repo.find<AssetsDoc>(url);
+          this.assetsDocHandle.on("remote-heads", this.onRemoteHeadsChanged);
+
+          this.assetsDocHandle.whenReady().then(() => {
+            const heads = A.getHeads(this.assetsDocHandle!.docSync()!); // TODO: JAH strict fix
+            this.view.dispatch({ effects: setAssetHeadsEffect.of(heads) });
+          });
+        }
+
+        async onRemoteHeadsChanged({
+          heads,
+          storageId,
+        }: DocHandleRemoteHeadsPayload) {
+          // We care about remote heads event from the service worker, because we can only load
+          // assets once they have arrived in the service worker. The service worker and the
+          // client have the same storage id since they are connected to the same indexeddb instance.
+          const ownStorageId = await repo.storageId();
+          if (ownStorageId === storageId) {
+            this.view.dispatch({ effects: setAssetHeadsEffect.of(heads) });
+          }
+        }
+
+        update(update: ViewUpdate) {
+          if (
+            update.docChanged ||
+            update.viewportChanged ||
+            update.transactions.some((tr) =>
+              tr.effects.some((e) => e.is(setAssetHeadsEffect))
+            )
+          ) {
+            const heads = update.state.field(assetsHeadsField);
+            this.decorations = getImages(
+              heads,
+              this.assetsDocHandle?.documentId,
+              update.view
+            );
+          }
+        }
+      },
+      {
+        decorations: (v) => v.decorations,
       }
-
-      onChangeDoc({ doc }: DocHandleChangePayload<HasAssets>) {
-        if (
-          this.assetsDocHandle &&
-          this.assetsDocHandle.url === doc.assetsDocUrl
-        ) {
-          return;
-        }
-
-        if (this.assetsDocHandle) {
-          this.assetsDocHandle.off("remote-heads", this.onRemoteHeadsChanged);
-        }
-
-        if (doc.assetsDocUrl) {
-          this.onChangeAssetsDocUrl(doc.assetsDocUrl);
-        }
-      }
-
-      onChangeAssetsDocUrl(url: AutomergeUrl) {
-        if (this.assetsDocHandle) {
-          this.assetsDocHandle.off("remote-heads", this.onRemoteHeadsChanged);
-        }
-
-        if (!url) {
-          return;
-        }
-
-        this.assetsDocHandle = repo.find<AssetsDoc>(url);
-        this.assetsDocHandle.on("remote-heads", this.onRemoteHeadsChanged);
-
-        this.assetsDocHandle.whenReady().then(() => {
-          const heads = A.getHeads(this.assetsDocHandle!.docSync()!); // TODO: JAH strict fix
-          this.view.dispatch({ effects: setAssetHeadsEffect.of(heads) });
-        });
-      }
-
-      async onRemoteHeadsChanged({
-        heads,
-        storageId,
-      }: DocHandleRemoteHeadsPayload) {
-        // We care about remote heads event from the service worker, because we can only load
-        // assets once they have arrived in the service worker. The service worker and the
-        // client have the same storage id since they are connected to the same indexeddb instance.
-        const ownStorageId = await repo.storageId();
-        if (ownStorageId === storageId) {
-          this.view.dispatch({ effects: setAssetHeadsEffect.of(heads) });
-        }
-      }
-
-      update(update: ViewUpdate) {
-        if (
-          update.docChanged ||
-          update.viewportChanged ||
-          update.transactions.some((tr) =>
-            tr.effects.some((e) => e.is(setAssetHeadsEffect))
-          )
-        ) {
-          const heads = update.state.field(assetsHeadsField);
-          this.decorations = getImages(
-            heads,
-            this.assetsDocHandle?.documentId,
-            update.view
-          );
-        }
-      }
-    },
-    {
-      decorations: (v) => v.decorations,
-    }
-  ),
-];
+    ),
+  ];

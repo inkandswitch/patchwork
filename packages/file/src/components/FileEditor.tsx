@@ -4,7 +4,7 @@ import {
   useAsyncComputed,
   fetchAwaitMissing,
 } from "@/async-signals";
-import { useDocUIState } from "@/explorer/uiState";
+import { useDocUIState } from "@patchwork/sdk/router/uiState";
 import { TextAnchor } from "@/lib/textAnchors";
 import { EditorProps } from "@patchwork/sdk";
 import { fetchResolveUrlOnFixedBranch } from "@patchwork/sdk/versionControl";
@@ -23,7 +23,7 @@ import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
 import { ImageFileDoc, ImageFileViewer } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
-import { useCurrentAccount } from "@/explorer/account";
+import { useCurrentAccount } from "@patchwork/sdk";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 
 // TODO: this should be split out into separate tools that

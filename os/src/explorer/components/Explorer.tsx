@@ -25,10 +25,10 @@ import {
   useCurrentAccount,
   useCurrentAccountDoc,
   useRootFolderDocWithMetadata,
-} from "../account";
+} from "@patchwork/sdk";
 import { useRouter } from "../router";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
-import { useUIStateOm } from "../uiState";
+import { useUIStateOm } from "@patchwork/sdk/router/uiState";
 import { ErrorFallback } from "./ErrorFallback";
 import { LoadingScreen } from "./LoadingScreen";
 import { Sidebar } from "./Sidebar";

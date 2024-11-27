@@ -1,5 +1,5 @@
-import { Account } from "@/explorer/account";
-import { fetchUIStateOm } from "@/explorer/uiState";
+import { Account } from "@patchwork/sdk";
+import { fetchUIStateOm } from "@patchwork/sdk/router/uiState";
 import { Om } from "@/om";
 import { DocLink, DocPath } from "@/packages/folder/datatype";
 import { canBeUndef } from "@/utils";

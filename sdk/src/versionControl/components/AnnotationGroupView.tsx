@@ -1,5 +1,5 @@
-import { HasAssets } from "@/assets";
-import { useCurrentAccount } from "@/explorer/account";
+import { HasAssets } from "@patchwork/sdk/assets";
+import { useCurrentAccount } from "@patchwork/sdk";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { getRelativeTimeString } from "@/lib/dates";
 import { MarkdownInput } from "@/lib/markdown";

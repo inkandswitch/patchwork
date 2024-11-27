@@ -2,7 +2,7 @@ import { memo, useRef, useState } from "react";
 
 import SelectLane from "./contextmenu/StatusMenu";
 
-import { useCurrentAccount } from "@/explorer/account";
+import { useCurrentAccount } from "@patchwork/sdk";
 import { MarkdownInput } from "@/lib/markdown";
 import { Button } from "@patchwork/sdk/ui/button";
 import {
@@ -18,7 +18,7 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { Card, KanbanBoardDoc, Lane } from "../datatype";
 import { Status } from "../types/issue";
 import { showInfo } from "../utils/notification";
-import { HasAssets } from "@/assets";
+import { HasAssets } from "@patchwork/sdk/assets";
 import { uuid } from "@automerge/automerge";
 
 interface Props {

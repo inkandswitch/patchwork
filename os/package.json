@@ -36,7 +36,6 @@
     "@lezer/common": "^1.2.1",
     "@lezer/highlight": "^1.2.0",
     "@patchwork/datagrid": "workspace:*",
-    "@patchwork/engraft": "workspace:*",
     "@patchwork/essay": "workspace:*",
     "@patchwork/file": "workspace:*",
     "@patchwork/jacquard": "workspace:*",

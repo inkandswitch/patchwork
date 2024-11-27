@@ -1,6 +1,6 @@
 import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { selectDocLink } from "@/explorer/router";
-import { useDocUIState } from "@/explorer/uiState";
+import { useDocUIState } from "@patchwork/sdk/router/uiState";
 import { Icon, IconType } from "@patchwork/sdk/ui";
 import { useDataTypes, useTools } from "@patchwork/sdk/hooks";
 import {

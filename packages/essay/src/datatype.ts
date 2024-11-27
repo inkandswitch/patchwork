@@ -1,4 +1,4 @@
-import { AssetsDoc } from "@/assets";
+import { AssetsDoc } from "@patchwork/sdk/assets";
 import { FileExportMethod } from "@/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
 import { initFrom, type DataType } from "@patchwork/sdk";

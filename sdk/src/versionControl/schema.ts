@@ -1,7 +1,7 @@
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
 import { TextPatch } from "./utils";
-import { HasAssets, withHasAssets } from "@/assets";
+import { HasAssets, withHasAssets } from "@patchwork/sdk/assets";
 import {
   HasBotChatHistory,
   withHasBotChatHistory,

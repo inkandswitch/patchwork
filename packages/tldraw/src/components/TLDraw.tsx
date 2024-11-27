@@ -6,7 +6,7 @@ import {
 } from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useState } from "react";
 
-import { useCurrentAccount } from "@/explorer/account";
+import { useCurrentAccount } from "@patchwork/sdk";
 import { EditorProps } from "@patchwork/sdk";
 import { SideBySideProps } from "@patchwork/sdk/versionControl";
 import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";

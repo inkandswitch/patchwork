@@ -6,7 +6,7 @@ import { dataTypeById } from "@patchwork/sdk";
 import { fetchOmOnActiveBranch } from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";
-import { useCurrentAccount } from "../account";
+import { useCurrentAccount } from "@patchwork/sdk";
 
 // This hook keeps the name of the link synced with the title of the document.
 // The update is triggered every time the selected doc changes.

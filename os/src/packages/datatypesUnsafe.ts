@@ -3,4 +3,4 @@
 export * as tldraw from "@patchwork/tldraw/src/datatype";
 
 // TODO: Causes "dyld[]: missing symbol called" error for Paul.
-export * as engraft from "@patchwork/engraft/src/datatype";
+// export * as engraft from "@patchwork/engraft/src/datatype";

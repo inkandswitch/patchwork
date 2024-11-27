@@ -1,4 +1,4 @@
-import { useRootFolderDocWithMetadata } from "@/explorer/account";
+import { useRootFolderDocWithMetadata } from "@patchwork/sdk";
 import { next as A } from "@automerge/automerge";
 import { DocumentId } from "@automerge/automerge-repo";
 import { useDocuments } from "@automerge/automerge-repo-react-hooks";
@@ -30,9 +30,9 @@ const usePackageModulesInRootFolderForReal = (): Package[] => {
   const packageDocUrls = useMemo(() => {
     return flatDocPaths
       ? flatDocPaths
-          .map(DocPath.toLink)
-          .filter((link) => link.type === "pkg")
-          .map((link) => link.url)
+        .map(DocPath.toLink)
+        .filter((link) => link.type === "pkg")
+        .map((link) => link.url)
       : [];
   }, [flatDocPaths]);
   const packageDocs = useDocuments<PackageDoc>(packageDocUrls);

@@ -52,8 +52,8 @@ import {
   useCurrentAccount,
   useCurrentAccountDoc,
   useDatatypeSettings,
-} from "../account";
-import { UIStateDoc } from "../uiState";
+} from "@patchwork/sdk";
+import { UIStateDoc } from "@patchwork/sdk/router/uiState";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
 

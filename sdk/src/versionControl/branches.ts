@@ -1,4 +1,4 @@
-import { UIStateDoc } from "@/explorer/uiState";
+import { UIStateDoc } from "@patchwork/sdk/router/uiState";
 import { Om } from "@/om";
 import { DocPath } from "@/packages/folder/datatype";
 import {

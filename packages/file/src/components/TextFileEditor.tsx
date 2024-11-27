@@ -1,4 +1,4 @@
-import { useToolUIState } from "@/explorer/uiState";
+import { useToolUIState } from "@patchwork/sdk/router/uiState";
 import { useHandleDef } from "@/hooks/useHandleDef";
 import {
   annotationsPlugin,

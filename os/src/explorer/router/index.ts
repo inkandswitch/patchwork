@@ -8,7 +8,7 @@ import { setActiveBranchUrl } from "@patchwork/sdk/versionControl";
 import { BranchDoc } from "@patchwork/sdk/versionControl";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useState } from "react";
-import { useUIStateOm } from "../uiState";
+import { useUIStateOm } from "@patchwork/sdk/router/uiState";
 import { useCurrentUrl } from "../url";
 import { getDocPathInRootFolder } from "./getDocPathInRootFolder";
 import { URLParams } from "./types";

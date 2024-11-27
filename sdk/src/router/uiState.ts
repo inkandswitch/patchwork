@@ -11,7 +11,7 @@ import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback, useMemo } from "react";
 import { Atom, atom } from "signia";
 import { useValue } from "signia-react";
-import { Account, AccountDoc, useCurrentAccount } from "./account";
+import { Account, AccountDoc, useCurrentAccount } from "@patchwork/sdk";
 
 export type UIStateDoc = {
   /**
@@ -175,9 +175,9 @@ export const useToolUIState = <T>(
 
   const toolUIState = docUIState
     ? // We're loaded – if the tool UI state hasn't been defined yet, use the default from init
-      (docUIState.toolUIStates?.[toolId] as T | undefined) ?? init()
+    (docUIState.toolUIStates?.[toolId] as T | undefined) ?? init()
     : // We're still loading – return undefined
-      undefined;
+    undefined;
   const setToolUIState = (fn: (state: T) => void) => {
     changeDocUIState((docUIState) => {
       if (!docUIState.toolUIStates) {
