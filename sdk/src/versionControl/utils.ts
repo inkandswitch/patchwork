@@ -4,7 +4,7 @@ import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { DiffWithProvenance } from "./schema";
-import { useHandleDef } from "@/hooks/useHandleDef";
+import { useHandleDef } from "@patchwork/sdk/hooks/useHandleDef";
 
 // Turns hashes (eg for changes and actors) into colors for scannability
 export const hashToColor = (hash: string) => {
@@ -406,14 +406,14 @@ type SlotValue<
   Property extends keyof Config
 > = Config[Property] extends React.ElementType // config option 1
   ? React.ReactElement<
-      React.ComponentPropsWithoutRef<Config[Property]>,
-      Config[Property]
-    >
+    React.ComponentPropsWithoutRef<Config[Property]>,
+    Config[Property]
+  >
   : Config[Property] extends readonly [
-      infer ElementType extends React.ElementType, // config option 2, infer array[0] as component
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      infer _testFn // even though we don't use testFn, we need to infer it to support types for slots.*.props
-    ]
+    infer ElementType extends React.ElementType, // config option 2, infer array[0] as component
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    infer _testFn // even though we don't use testFn, we need to infer it to support types for slots.*.props
+  ]
   ? React.ReactElement<React.ComponentPropsWithoutRef<ElementType>, ElementType>
   : never; // useful for narrowing types, third option is not possible
 

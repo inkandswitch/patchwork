@@ -16,7 +16,7 @@ import "@tldraw/tldraw/tldraw.css";
 import { useAutomergeStore } from "../vendor/automerge-tldraw";
 import { useDiffStyling, useCameraSync, useAnchorEventListener } from "./hooks";
 import { TLDrawDocAnchor, TLDrawDoc } from "../datatype";
-import { useHandleDef } from "@/hooks/useHandleDef";
+import { useHandleDef } from "@patchwork/sdk/hooks/useHandleDef";
 
 interface TLDrawProps extends EditorProps<TLDrawDocAnchor, TLShape> {
   camera?: TLCamera;

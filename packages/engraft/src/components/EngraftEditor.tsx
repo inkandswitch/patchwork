@@ -1,5 +1,5 @@
 import { useRootFolderDocWithMetadata } from "@patchwork/sdk";
-import { useHandleDef } from "@/hooks/useHandleDef";
+import { useHandleDef } from "@patchwork/sdk/hooks/useHandleDef";
 import { FolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
 import { Button } from "@patchwork/sdk/ui/button";
 import { EditorProps } from "@patchwork/sdk";

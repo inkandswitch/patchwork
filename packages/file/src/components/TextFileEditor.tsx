@@ -1,5 +1,5 @@
 import { useToolUIState } from "@patchwork/sdk/router/uiState";
-import { useHandleDef } from "@/hooks/useHandleDef";
+import { useHandleDef } from "@patchwork/sdk/hooks/useHandleDef";
 import {
   annotationsPlugin,
   hideLinesWithoutAnnotations,

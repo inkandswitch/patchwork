@@ -7,7 +7,7 @@ import IssueModal from "./components/IssueModal";
 import { KanbanBoardDoc } from "./datatype";
 import Board from "./pages/Board";
 import Issue from "./pages/Issue";
-import { useHandleDef } from "@/hooks/useHandleDef";
+import { useHandleDef } from "@patchwork/sdk/hooks/useHandleDef";
 
 interface MenuContextInterface {
   showMenu: boolean;
