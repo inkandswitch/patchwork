@@ -3,7 +3,7 @@ import { useCurrentAccount } from "@/explorer/account";
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { getRelativeTimeString } from "@/lib/dates";
 import { MarkdownInput } from "@/lib/markdown";
-import { Button } from "@/shadcn/ui/button";
+import { Button } from "@patchwork/sdk/ui/button";
 import { AnnotationsViewProps } from "@patchwork/sdk";
 import {
   AnnotationGroupWithUIState,

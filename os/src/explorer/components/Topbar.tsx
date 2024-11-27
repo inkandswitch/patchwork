@@ -9,9 +9,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/shadcn/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
-import { useToast } from "@/shadcn/ui/use-toast";
+} from "@patchwork/sdk/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui/tabs";
+import { useToast } from "@patchwork/sdk/ui/use-toast";
 import { Tool } from "@patchwork/sdk";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";

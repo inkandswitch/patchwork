@@ -1,11 +1,11 @@
 import { Om } from "@/om";
-import { Button } from "@/shadcn/ui/button";
+import { Button } from "@patchwork/sdk/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/shadcn/ui/tooltip";
+} from "@patchwork/sdk/ui/tooltip";
 import { canBeUndef } from "@/utils";
 import { CheckCircle, CircleDashed, Loader2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";

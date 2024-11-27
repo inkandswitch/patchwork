@@ -15,26 +15,31 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTrigger,
-} from "@/shadcn/ui/dialog";
+} from "@patchwork/sdk/ui/dialog";
 
-import { Button } from "@/shadcn/ui/button";
-import { Input } from "@/shadcn/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
+import { Button } from "@patchwork/sdk/ui/button";
+import { Input } from "@patchwork/sdk/ui/input";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@patchwork/sdk/ui/tabs";
 
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 
 import { Copy, Eye, EyeOff, PlusIcon, XIcon } from "lucide-react";
 
-import { Label } from "@/shadcn/ui/label";
+import { Label } from "@patchwork/sdk/ui/label";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/shadcn/ui/tooltip";
+} from "@patchwork/sdk/ui/tooltip";
 import { ContactAvatar } from "./ContactAvatar";
-import { Checkbox } from "@/shadcn/ui/checkbox";
-import { Icon } from "@/lib/icons";
+import { Checkbox } from "@patchwork/sdk/ui/checkbox";
+import { Icon } from "@patchwork/sdk/ui";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 
 // 1MB in bytes

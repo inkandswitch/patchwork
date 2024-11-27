@@ -1,4 +1,4 @@
-import { Button } from "@/shadcn/ui/button";
+import { Button } from "@patchwork/sdk/ui/button";
 import { useCurrentAccount } from "@/explorer/account";
 import { MarkdownInput } from "@/lib/markdown";
 import { TimelineItems } from "@patchwork/sdk/versionControl";

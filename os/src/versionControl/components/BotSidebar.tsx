@@ -1,7 +1,7 @@
 import { BotIcon, CheckIcon, EyeIcon, XIcon } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 import { useState } from "react";
-import { Button } from "@/shadcn/ui/button";
+import { Button } from "@patchwork/sdk/ui/button";
 import { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
 import { type DataType } from "@patchwork/sdk";
 import {
@@ -10,7 +10,7 @@ import {
   isSupportedDatatype,
   makeBotTextEdits,
 } from "../bots";
-import { useToast } from "@/shadcn/ui/use-toast";
+import { useToast } from "@patchwork/sdk/ui/use-toast";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { BranchDoc, HasVersionControlMetadata } from "../schema";
 import Markdown from "react-markdown";

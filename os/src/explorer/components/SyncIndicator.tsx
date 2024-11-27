@@ -1,10 +1,14 @@
-import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@patchwork/sdk/ui/popover";
 // TODO move these utils
 import { getRelativeTimeString } from "@/lib/dates";
 import { next as A, Heads } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, StorageId } from "@automerge/automerge-repo";
 import { useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { Button } from "@/shadcn/ui/button";
+import { Button } from "@patchwork/sdk/ui/button";
 import { useMachine } from "@xstate/react";
 import { WifiIcon, WifiOffIcon, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -389,7 +393,13 @@ function useSyncIndicatorState(
       }
     };
 
-    const onRemoteHeads = ({ storageId: remoteStorageId, heads }: { storageId: StorageId, heads: Heads }) => {
+    const onRemoteHeads = ({
+      storageId: remoteStorageId,
+      heads,
+    }: {
+      storageId: StorageId;
+      heads: Heads;
+    }) => {
       if (storageId === remoteStorageId) {
         send({ type: "RECEIVED_SYNC_MESSAGE" });
         setSyncServerHeads(heads);

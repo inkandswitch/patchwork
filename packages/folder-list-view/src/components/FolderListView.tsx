@@ -1,8 +1,8 @@
-import { IconType } from "@/lib/icons";
 import { DocLink, FolderDoc } from "@/packages/folder/datatype";
 import * as Automerge from "@automerge/automerge";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { EditorProps, Icon, selectDocLink, dataTypeById } from "@patchwork/sdk";
+import { EditorProps, selectDocLink, dataTypeById } from "@patchwork/sdk";
+import { Icon, IconType } from "@patchwork/sdk/ui";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import styles from "../folder-list-view.module.css";
 

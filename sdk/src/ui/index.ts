@@ -1,0 +1,1 @@
+export { Icon, type IconType } from "@/lib/icons"

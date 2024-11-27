@@ -1,6 +1,6 @@
 import { ContactAvatar } from "@/explorer/components/ContactAvatar";
 import { MarkdownEditor } from "@/lib/markdown/MarkdownEditor";
-import { Button } from "@/shadcn/ui/button";
+import { Button } from "@patchwork/sdk/ui/button";
 import { next as A, Prop } from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";
 import { TrashIcon, XIcon } from "lucide-react";
@@ -29,7 +29,7 @@ function IssuePage({
 
   const cardIndex = doc.cards.findIndex((issue) => issue.id === id);
   const card = doc.cards[cardIndex];
-  const lane = doc.lanes.find(({ cardIds }) => cardIds.includes(card.id))!;  // TODO: JAH strict fix
+  const lane = doc.lanes.find(({ cardIds }) => cardIds.includes(card.id))!; // TODO: JAH strict fix
 
   // ensure description is not undefined, this can be the
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { Button } from "@/shadcn/ui/button";
+import { Button } from "@patchwork/sdk/ui/button";
 import { Tool } from "@patchwork/sdk";
 import {
   AnnotationGroupWithUIState,

@@ -3,22 +3,20 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/shadcn/ui/tooltip";
+} from "@patchwork/sdk/ui/tooltip";
 import { Copy } from "lucide-react";
 import { useState } from "react";
-
-
 
 export const CopyButton = ({
   text,
   label = "Copied",
   size,
-  className
+  className,
 }: {
-  text: string,
-  label?: string,
-  size?: number,
-  className?: string
+  text: string;
+  label?: string;
+  size?: number;
+  className?: string;
 }) => {
   const [isCopyTooltipOpen, setIsCopyTooltipOpen] = useState(false);
 
@@ -49,4 +47,4 @@ export const CopyButton = ({
       </Tooltip>
     </TooltipProvider>
   );
-}
+};

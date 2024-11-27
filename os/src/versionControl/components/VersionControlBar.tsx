@@ -14,13 +14,13 @@ import {
   initVersionControlSidecarDoc,
   VersionControlSidecarDoc,
 } from "@patchwork/sdk/versionControl";
-import { Button } from "@/shadcn/ui/button";
+import { Button } from "@patchwork/sdk/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/shadcn/ui/dropdown-menu";
+} from "@patchwork/sdk/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -29,14 +29,14 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/shadcn/ui/select";
+} from "@patchwork/sdk/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/shadcn/ui/tooltip";
-import { useToast } from "@/shadcn/ui/use-toast";
+} from "@patchwork/sdk/ui/tooltip";
+import { useToast } from "@patchwork/sdk/ui/use-toast";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import {

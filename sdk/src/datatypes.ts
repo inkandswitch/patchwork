@@ -2,14 +2,15 @@ import {
   ChangeGroup,
   DecodedChangeWithMetadata,
   PendingChangeGroup,
-} from "@patchwork/sdk/versionControl";
-import { Annotation, HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
-import { TextPatch } from "@patchwork/sdk/versionControl";
+  Annotation,
+  HasVersionControlMetadata,
+  TextPatch
+} from "./versionControl";
 import { next as A, Doc } from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { ReactElement } from "react";
 import { FileExportMethod } from "@/fileExports";
-import { IconType } from "@/lib/icons";
+import { IconType } from "./ui";
 import { DocLink } from "@/packages/folder";
 
 export type CoreDataType<D> = {

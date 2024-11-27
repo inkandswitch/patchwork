@@ -5,8 +5,8 @@ import {
   ToastProvider,
   ToastTitle,
   ToastViewport,
-} from "@/shadcn/ui/toast";
-import { useToast } from "@/shadcn/ui/use-toast";
+} from "@patchwork/sdk/ui/toast";
+import { useToast } from "@patchwork/sdk/ui/use-toast";
 
 export function Toaster() {
   const { toasts } = useToast();

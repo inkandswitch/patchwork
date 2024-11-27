@@ -3,4 +3,3 @@ export * from "./tools.js";
 export * from "./patchworkContext.js";
 
 export { selectDocLink } from "@/explorer/router";
-export { Icon } from "@/lib/icons";
