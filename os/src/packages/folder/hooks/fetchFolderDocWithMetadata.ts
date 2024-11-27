@@ -19,7 +19,7 @@ import {
   FolderDoc,
   FolderDocMaterialized,
 } from "../datatype";
-import { DataType, useDataTypes } from "@patchwork/sdk";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 
 /**
  * Kinda a convenience type, bundling a (materialized) FolderDoc with

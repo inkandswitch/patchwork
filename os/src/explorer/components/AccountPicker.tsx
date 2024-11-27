@@ -35,7 +35,7 @@ import {
 import { ContactAvatar } from "./ContactAvatar";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import { Icon } from "@/lib/icons";
-import { useDataTypes } from "@/hooks/useDataTypes";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 
 // 1MB in bytes
 const MAX_AVATAR_SIZE = 1024 * 1024;

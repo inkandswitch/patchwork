@@ -1,5 +1,5 @@
 import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
-import { useDataTypes } from "@/hooks/useDataTypes";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { dataTypeById } from "@patchwork/sdk";

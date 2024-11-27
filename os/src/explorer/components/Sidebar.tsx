@@ -1,6 +1,6 @@
 import { asyncComputedPromise, fetchDoc } from "@/async-signals";
 import { useAsyncComputed } from "@/async-signals/react";
-import { useDataTypes } from "@/hooks/useDataTypes";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 import { Icon, IconType } from "@/lib/icons";
 import { DocLink, FolderDoc } from "@/packages/folder";
 import { DocPath, FolderDocMaterialized } from "@/packages/folder/datatype";

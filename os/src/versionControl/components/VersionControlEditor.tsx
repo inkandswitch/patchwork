@@ -4,7 +4,7 @@ import { ErrorFallback } from "@/explorer/components/ErrorFallback";
 import { LoadingScreen } from "@/explorer/components/LoadingScreen";
 import { toHashUrl } from "@/explorer/router/urls";
 import { useDocUIState, useUIStateOm } from "@/explorer/uiState";
-import { useDataTypes } from "@/hooks/useDataTypes";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 import { DocLink, DocPath } from "@/packages/folder/datatype";
 import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
 import { useToast } from "@/shadcn/ui/use-toast";

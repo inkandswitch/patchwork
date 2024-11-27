@@ -2,13 +2,8 @@ import { IconType } from "@/lib/icons";
 import { DocLink, FolderDoc } from "@/packages/folder/datatype";
 import * as Automerge from "@automerge/automerge";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import {
-  EditorProps,
-  Icon,
-  selectDocLink,
-  dataTypeById,
-  useDataTypes,
-} from "@patchwork/sdk";
+import { EditorProps, Icon, selectDocLink, dataTypeById } from "@patchwork/sdk";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 import styles from "../folder-list-view.module.css";
 
 const FolderListItem: React.FC<{ docLink: DocLink }> = ({ docLink }) => {

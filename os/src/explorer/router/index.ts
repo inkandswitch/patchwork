@@ -1,5 +1,5 @@
 import { dataTypeById } from "@patchwork/sdk";
-import { useDataTypes } from "@/hooks/useDataTypes";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 import { useStaticCallback } from "@/hooks/useStaticCallback";
 import { DocLink, FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";

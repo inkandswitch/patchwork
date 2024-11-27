@@ -6,7 +6,8 @@ import { MainViewMode, useDocUIState } from "@/explorer/uiState";
 import { getRelativeTimeString } from "@/lib/dates";
 import { Om } from "@/om";
 import { DocPath, FolderDoc } from "@/packages/folder/datatype";
-import { Tool, useDataTypes } from "@patchwork/sdk";
+import { Tool } from "@patchwork/sdk";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 import {
   BranchDoc,
   ensureMetadataHandleIsBranchScope,

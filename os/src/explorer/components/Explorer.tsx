@@ -1,7 +1,7 @@
 import { asyncComputedPromise } from "@/async-signals";
 import { dataTypeById } from "@patchwork/sdk";
-import { useDataTypes } from "@/hooks/useDataTypes";
-import { useTools } from "@/hooks/useTools";
+import { useDataTypes } from "@patchwork/sdk/hooks";
+import { useTools } from "@patchwork/sdk/hooks";
 import { FolderDoc } from "@/packages/folder";
 import { DocPath } from "@/packages/folder/datatype";
 import { Button } from "@/shadcn/ui/button";
