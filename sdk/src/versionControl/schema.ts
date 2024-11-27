@@ -19,12 +19,12 @@ export type VersionControlSidecarDoc = BranchScopeMetadata &
 
 type BranchScopeMetadata =
   | {
-      isBranchScope: false;
-    }
+    isBranchScope: false;
+  }
   | {
-      isBranchScope: true;
-      branches: AutomergeUrl[];
-    };
+    isBranchScope: true;
+    branches: AutomergeUrl[];
+  };
 
 export type HasLinkToVersionControlSidecar = {
   versionControlMetadataUrl: AutomergeUrl;

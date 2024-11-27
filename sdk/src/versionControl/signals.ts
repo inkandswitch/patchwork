@@ -5,7 +5,7 @@ import { DocLink, DocPath } from "@/packages/folder/datatype";
 import { canBeUndef } from "@/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { fetchDoc, fetchMap, fetchOm } from "../async-signals";
+import { fetchDoc, fetchMap, fetchOm } from "../../../os/src/async-signals";
 import { DataType, dataTypeById } from "@patchwork/sdk";
 import {
   BranchDoc,

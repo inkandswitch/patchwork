@@ -12,7 +12,7 @@ import {
   Heads,
 } from "@automerge/automerge-repo";
 import React from "react";
-import { IconType } from "../../os/src/lib/icons";
+import { IconType } from "./ui/icons";
 import { DocPath } from "../../os/src/packages/folder/datatype";
 import { DataType } from "./datatypes";
 

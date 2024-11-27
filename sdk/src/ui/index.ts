@@ -1,1 +1,1 @@
-export { Icon, type IconType } from "@/lib/icons"
+export { Icon, type IconType } from "./icons"
