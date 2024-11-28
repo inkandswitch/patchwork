@@ -8,21 +8,21 @@ import {
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { EventEmitter } from "eventemitter3";
 
-import { useForceUpdate } from "@patchwork/sdk/hooks/useForceUpdate";
+import { useForceUpdate } from "./hooks/useForceUpdate";
 import { ChangeFn } from "@automerge/automerge/next";
 import { useEffect, useState } from "react";
 import { uploadFile } from "./fileUtils";
 
 import { FolderDoc } from "@patchwork/folder";
 import { useFolderDocWithMetadataOnActiveBranch } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
-import { typeOnlyAssert } from "@patchwork/sdk/utils";
+import { typeOnlyAssert } from "./utils";
 import { UIStateDoc } from "./router/uiState";
 import {
   VersionControlSidecarDoc,
   withHasChangeGroupSummaries,
   withHasVersionControlMetadata,
-} from "@patchwork/sdk/versionControl";
-import { AssetsDoc } from "@patchwork/sdk/assets";
+} from "./versionControl";
+import { AssetsDoc } from "./assets";
 
 export type ModuleSettingsDoc = {
   enabledDatatypeIds: { [id: string]: boolean };

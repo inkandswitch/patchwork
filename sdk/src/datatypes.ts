@@ -9,7 +9,7 @@ import {
 import { next as A, Doc } from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { ReactElement } from "react";
-import { FileExportMethod } from "@patchwork/sdk/fileExports";
+import { FileExportMethod } from "./fileExports";
 import { IconType } from "./ui";
 import { DocLink } from "@patchwork/folder";
 

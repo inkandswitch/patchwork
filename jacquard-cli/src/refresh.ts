@@ -6,15 +6,15 @@ import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import debugFactory from "debug";
 import _ from "lodash";
 import { CommandLineArgs } from ".";
-import { FileDoc } from "../../packages/file/src/datatype";
+import { FileDoc } from "@patchwork/file/datatype";
 import {
   BuildRunRefreshState,
   JacquardBuildMetadata,
-} from "../../packages/jacquard/src/datatype";
+} from "@patchwork/jacquard/datatype";
 import {
   fetchProjectState,
   getStalenessInfo,
-} from "../../packages/jacquard/src/getStalenessInfo";
+} from "@patchwork/jacquard/getStalenessInfo";
 import { run } from "./run";
 import {
   fetchOmOnCLIActiveBranch,

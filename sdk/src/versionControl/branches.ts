@@ -1,15 +1,15 @@
-import { UIStateDoc } from "@patchwork/sdk/router/uiState";
-import { Om } from "@patchwork/sdk/om";
+import { UIStateDoc } from "../router/uiState";
+import { Om } from "../om";
 import { DocPath } from "@patchwork/folder/datatype";
 import {
   DataType,
   dataTypeById,
-} from "@patchwork/sdk";
+} from "..";
 import {
   DocCloneMap,
   ensureMetadataHandleIsBranchScope,
   getVersionControlMetadataHandle,
-} from "@patchwork/sdk/versionControl";
+} from "../versionControl";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
 import {

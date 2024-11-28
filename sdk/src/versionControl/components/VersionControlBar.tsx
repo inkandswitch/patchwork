@@ -1,29 +1,26 @@
-import {
-  fetchAwaitMissing,
-  useAsyncComputed,
-} from "@patchwork/sdk/async-signals";
-import { useCurrentAccount } from "@patchwork/sdk";
-import { ContactAvatar } from "@patchwork/sdk/components/ContactAvatar";
-import { selectDocLink } from "@patchwork/sdk";
-import { MainViewMode, useDocUIState } from "@patchwork/sdk/router/uiState";
-import { getRelativeTimeString } from "@patchwork/sdk/versionControl/dates";
-import { Om } from "@patchwork/sdk/om";
+import { fetchAwaitMissing, useAsyncComputed } from "../../async-signals";
+import { useCurrentAccount } from "../..";
+import { ContactAvatar } from "../../components/ContactAvatar";
+import { selectDocLink } from "../..";
+import { MainViewMode, useDocUIState } from "../../router/uiState";
+import { getRelativeTimeString } from "../../versionControl/dates";
+import { Om } from "../../om";
 import { DocPath, FolderDoc } from "@patchwork/folder/datatype";
-import { Tool } from "@patchwork/sdk";
-import { useDataTypes } from "@patchwork/sdk/hooks";
+import { Tool } from "../..";
+import { useDataTypes } from "../../hooks";
 import {
   BranchDoc,
   ensureMetadataHandleIsBranchScope,
   initVersionControlSidecarDoc,
   VersionControlSidecarDoc,
-} from "@patchwork/sdk/versionControl";
-import { Button } from "@patchwork/sdk/ui/button";
+} from "../../versionControl";
+import { Button } from "../../ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@patchwork/sdk/ui/dropdown-menu";
+} from "../../ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -32,14 +29,14 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@patchwork/sdk/ui/select";
+} from "../../ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@patchwork/sdk/ui/tooltip";
-import { useToast } from "@patchwork/sdk/ui/use-toast";
+} from "../../ui/tooltip";
+import { useToast } from "../../ui/use-toast";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import {

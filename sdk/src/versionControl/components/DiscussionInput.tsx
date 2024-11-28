@@ -1,11 +1,11 @@
-import { Button } from "@patchwork/sdk/ui/button";
-import { useCurrentAccount } from "@patchwork/sdk";
-import { MarkdownInput } from "@patchwork/sdk/markdown";
-import { TimelineItems } from "@patchwork/sdk/versionControl";
+import { Button } from "../../ui/button";
+import { useCurrentAccount } from "../..";
+import { MarkdownInput } from "../../markdown";
+import { TimelineItems } from "../../versionControl";
 import {
   DiscussionComment,
   HasVersionControlMetadata,
-} from "@patchwork/sdk/versionControl";
+} from "../../versionControl";
 import { uuid } from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";

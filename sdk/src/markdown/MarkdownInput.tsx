@@ -1,4 +1,4 @@
-import { HasAssets } from "@patchwork/sdk/assets";
+import { HasAssets } from "../assets";
 import { DocHandle } from "@automerge/automerge-repo";
 import { EditorView } from "@codemirror/view";
 import { useEffect, useState } from "react";

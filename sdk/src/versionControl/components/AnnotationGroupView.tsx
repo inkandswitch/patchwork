@@ -1,15 +1,15 @@
-import { HasAssets } from "@patchwork/sdk/assets";
-import { useCurrentAccount } from "@patchwork/sdk";
-import { ContactAvatar } from "@patchwork/sdk/components/ContactAvatar";
-import { getRelativeTimeString } from "@patchwork/sdk/versionControl/dates";
-import { MarkdownInput } from "@patchwork/sdk/markdown";
-import { Button } from "@patchwork/sdk/ui/button";
-import { AnnotationsViewProps } from "@patchwork/sdk";
+import { HasAssets } from "../../assets";
+import { useCurrentAccount } from "../..";
+import { ContactAvatar } from "../../components/ContactAvatar";
+import { getRelativeTimeString } from "../../versionControl/dates";
+import { MarkdownInput } from "../../markdown";
+import { Button } from "../../ui/button";
+import { AnnotationsViewProps } from "../..";
 import {
   AnnotationGroupWithUIState,
   CommentState,
   HasVersionControlMetadata,
-} from "@patchwork/sdk/versionControl";
+} from "../../versionControl";
 import { next as A, uuid } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { Check, MessageCircle, PencilIcon } from "lucide-react";

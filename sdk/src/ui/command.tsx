@@ -3,8 +3,8 @@ import { DialogProps } from "@radix-ui/react-dialog";
 import { Command as CommandPrimitive } from "cmdk";
 import { Search } from "lucide-react";
 
-import { cn } from "@patchwork/sdk/ui/utils";
-import { Dialog, DialogContent } from "@patchwork/sdk/ui/dialog";
+import { cn } from "../ui/utils";
+import { Dialog, DialogContent } from "../ui/dialog";
 
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,

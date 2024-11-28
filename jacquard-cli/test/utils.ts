@@ -6,7 +6,7 @@ import * as fsP from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { expect } from "vitest";
-import { FileDoc } from "../../packages/file/src/datatype";
+import { FileDoc } from "@patchwork/file/datatype";
 import { readFileContent } from "../src/util";
 
 // Automerge

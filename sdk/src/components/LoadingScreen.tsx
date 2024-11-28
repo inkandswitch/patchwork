@@ -1,4 +1,4 @@
-import { Progress } from "@patchwork/sdk/ui/progress";
+import { Progress } from "../ui/progress";
 import { useEffect, useState } from "react";
 
 // A very rough and naive loading screen.

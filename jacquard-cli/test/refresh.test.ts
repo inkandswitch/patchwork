@@ -2,7 +2,7 @@ import { Repo } from "@automerge/automerge-repo";
 import debug from "debug";
 import { assert, beforeEach, describe, expect, it } from "vitest";
 import { FolderDoc } from "@patchwork/folder/datatype";
-import { FileDoc } from "../../packages/file/src/datatype";
+import { FileDoc } from "@patchwork/file/datatype";
 import { CommandLineArgs } from "../src";
 import { pull } from "../src/pull";
 import { refresh } from "../src/refresh";

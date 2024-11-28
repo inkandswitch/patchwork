@@ -1,22 +1,22 @@
 import { BotIcon, CheckIcon, EyeIcon, XIcon } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 import { useState } from "react";
-import { Button } from "@patchwork/sdk/ui/button";
+import { Button } from "../../ui/button";
 import { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
-import { type DataType } from "@patchwork/sdk";
+import { type DataType } from "../..";
 import {
   AssistantMessage,
   ChatMessage,
   isSupportedDatatype,
   makeBotTextEdits,
 } from "../bots";
-import { useToast } from "@patchwork/sdk/ui/use-toast";
+import { useToast } from "../../ui/use-toast";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { BranchDoc, HasVersionControlMetadata } from "../schema";
 import Markdown from "react-markdown";
-import { isLLMActive } from "@patchwork/sdk/versionControl/llm";
-import { SidebarMode } from "@patchwork/sdk/router/uiState";
-import { om, Om } from "@patchwork/sdk/om";
+import { isLLMActive } from "../../versionControl/llm";
+import { SidebarMode } from "../../router/uiState";
+import { om, Om } from "../../om";
 
 export type HasBotChatHistory = {
   botChatHistory: ChatMessage[];

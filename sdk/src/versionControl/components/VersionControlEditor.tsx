@@ -1,14 +1,14 @@
-import { dataTypeById } from "@patchwork/sdk";
-import { useCurrentAccount } from "@patchwork/sdk";
-import { ErrorFallback } from "@patchwork/sdk/components/ErrorFallback";
-import { LoadingScreen } from "@patchwork/sdk/components/LoadingScreen";
-import { toHashUrl } from "@patchwork/sdk/router/urls";
-import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router/uiState";
-import { useDataTypes } from "@patchwork/sdk/hooks";
+import { dataTypeById } from "../..";
+import { useCurrentAccount } from "../..";
+import { ErrorFallback } from "../../components/ErrorFallback";
+import { LoadingScreen } from "../../components/LoadingScreen";
+import { toHashUrl } from "../../router/urls";
+import { useDocUIState, useUIStateOm } from "../../router/uiState";
+import { useDataTypes } from "../../hooks";
 import { DocLink, DocPath } from "@patchwork/folder/datatype";
-import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui/tabs";
-import { useToast } from "@patchwork/sdk/ui/use-toast";
-import { EditorProps, Tool } from "@patchwork/sdk";
+import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
+import { useToast } from "../../ui/use-toast";
+import { EditorProps, Tool } from "../..";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
@@ -38,7 +38,7 @@ import { BotSidebar } from "./BotSidebar";
 import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
-import { useAsyncComputed } from "@patchwork/sdk/async-signals";
+import { useAsyncComputed } from "../../async-signals";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{

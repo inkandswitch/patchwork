@@ -16,7 +16,7 @@ import { searchKeymap } from "@codemirror/search";
 import { codeMonospacePlugin } from "./codemirrorPlugins/codeMonospace";
 import { lineWrappingPlugin } from "./codemirrorPlugins/lineWrapping";
 
-import { AssetsDoc, HasAssets } from "@patchwork/sdk/assets";
+import { AssetsDoc, HasAssets } from "../assets";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useMemo } from "react";

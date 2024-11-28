@@ -23,7 +23,7 @@ import { isEqual, sortBy } from "lodash";
 import { ReactElement } from "react";
 import { getChangesFromMergedBranch } from "./branches";
 
-import { Om } from "@patchwork/sdk/om";
+import { Om } from "../om";
 import { BranchScopeAndActiveBranchInfoWithoutDoc } from "./ChangeGrouper";
 import {
   BranchDoc,

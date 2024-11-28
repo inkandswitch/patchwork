@@ -42,9 +42,9 @@ import clsx from "clsx";
 import { EditorView } from "codemirror";
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import { tool } from "..";
-import { selectedAnchorsPlugin } from "../../../essay/src/codemirrorPlugins/setSelectedAnchors";
+import { selectedAnchorsPlugin } from "@patchwork/essay/codemirrorPlugins/setSelectedAnchors";
 import { FileDoc, TextFileContent } from "../datatype";
-import { CodeMirror } from "../../../../sdk/src/components/CodeMirror";
+import { CodeMirror } from "@patchwork/sdk/components/CodeMirror";
 
 export type TextFileDoc = FileDoc & {
   content: TextFileContent;

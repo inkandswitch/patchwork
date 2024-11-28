@@ -9,7 +9,7 @@ import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import debugFactory from "debug";
 import os from "node:os";
 import { CommandLineArgs } from ".";
-import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
+import { JacquardBuildMetadata } from "@patchwork/jacquard/datatype";
 import { activateBranch } from "./activate";
 import { refresh } from "./refresh";
 import { sleep } from "./util";

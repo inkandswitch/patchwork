@@ -26,7 +26,7 @@ import {
   useCurrentAccountDoc,
   useRootFolderDocWithMetadata,
 } from "@patchwork/sdk";
-import { useRouter } from "../../../../sdk/src/router";
+import { useRouter } from "@patchwork/sdk/router";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
 import { useUIStateOm } from "@patchwork/sdk/router/uiState";
 import { ErrorFallback } from "@patchwork/sdk/components/ErrorFallback";

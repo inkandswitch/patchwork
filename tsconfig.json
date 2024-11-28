@@ -18,6 +18,10 @@
     "paths": {
       "@/*": ["./os/src/*"],
 
+      "@patchwork/essay": ["./packages/essay/src"],
+      "@patchwork/essay/*": ["./packages/essay/src/*"],
+      "@patchwork/jacquard": ["./packages/jacquard/src"],
+      "@patchwork/jacquard/*": ["./packages/jacquard/src/*"],
       "@patchwork/file": ["./packages/file/src"],
       "@patchwork/file/*": ["./packages/file/src/*"],
       "@patchwork/pkg": ["./packages/pkg/src"],

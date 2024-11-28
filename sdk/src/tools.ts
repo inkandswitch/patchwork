@@ -4,7 +4,7 @@ import {
   AnnotationWithUIState,
   CommentState,
   HasVersionControlMetadata,
-} from "@patchwork/sdk/versionControl";
+} from "./versionControl";
 import {
   ActorId,
   AutomergeUrl,

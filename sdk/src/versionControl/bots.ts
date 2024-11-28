@@ -1,7 +1,7 @@
-import { DEFAULT_MODEL, getOpenaiClient } from "@patchwork/sdk/versionControl/llm";
+import { DEFAULT_MODEL, getOpenaiClient } from "../versionControl/llm";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { Doc, splice } from "@automerge/automerge/next";
-import { type DataType } from "@patchwork/sdk";
+import { type DataType } from "..";
 import { BranchDoc, UnmergedBranchDoc } from "./schema";
 import { HasBotChatHistory } from "./components/BotSidebar";
 import { createBranch } from "./branches";

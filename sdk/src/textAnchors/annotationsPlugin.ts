@@ -1,5 +1,5 @@
-import { ResolvedTextAnchor } from "@patchwork/sdk/textAnchors";
-import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
+import { ResolvedTextAnchor } from "../textAnchors";
+import { AnnotationWithUIState } from "../versionControl";
 import { StateEffect, StateField } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 import { foldAwareLineNumberGutter } from "./foldLinesWithoutChanges";

@@ -3,15 +3,15 @@ import {
   fetchOm,
   PendingException,
   useAsyncCall,
-} from "@patchwork/sdk/async-signals";
-import { Om } from "@patchwork/sdk/om";
+} from "../async-signals";
+import { Om } from "../om";
 import { DocPath } from "@patchwork/folder/datatype";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback, useMemo } from "react";
 import { Atom, atom } from "signia";
 import { useValue } from "signia-react";
-import { Account, AccountDoc, useCurrentAccount } from "@patchwork/sdk";
+import { Account, AccountDoc, useCurrentAccount } from "..";
 
 export type UIStateDoc = {
   /**

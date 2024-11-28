@@ -1,10 +1,10 @@
-import { Button } from "@patchwork/sdk/ui/button";
-import { Tool } from "@patchwork/sdk";
+import { Button } from "../../ui/button";
+import { Tool } from "../..";
 import {
   AnnotationGroupWithUIState,
   CommentState,
   HasVersionControlMetadata,
-} from "@patchwork/sdk/versionControl";
+} from "../../versionControl";
 import { DocHandle } from "@automerge/automerge-repo";
 import React from "react";
 import { getAnnotationGroupId } from "../annotations";

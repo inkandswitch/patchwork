@@ -1,5 +1,5 @@
-import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
-import { getCursorPositionSafely } from "@patchwork/sdk/versionControl";
+import { AnnotationWithUIState } from "../versionControl";
+import { getCursorPositionSafely } from "../versionControl";
 import * as Automerge from "@automerge/automerge";
 import { EditorView } from "@codemirror/view";
 import { useEffect, useMemo } from "react";

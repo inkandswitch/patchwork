@@ -1,8 +1,8 @@
-import { Annotation } from "@patchwork/sdk/versionControl";
 import {
+  Annotation,
   getCursorPositionSafely,
   getCursorSafely,
-} from "@patchwork/sdk/versionControl";
+} from "../versionControl";
 import * as Automerge from "@automerge/automerge/next";
 import { get, isEqual, last } from "lodash";
 import { diffWords } from "diff";
