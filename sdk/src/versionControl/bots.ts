@@ -1,4 +1,4 @@
-import { DEFAULT_MODEL, getOpenaiClient } from "@/lib/llm";
+import { DEFAULT_MODEL, getOpenaiClient } from "@patchwork/sdk/versionControl/llm";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { Doc, splice } from "@automerge/automerge/next";
 import { type DataType } from "@patchwork/sdk";

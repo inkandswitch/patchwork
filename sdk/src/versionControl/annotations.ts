@@ -1,5 +1,5 @@
 import { DataType } from "@patchwork/sdk";
-import { useStaticCallback } from "@/hooks/useStaticCallback";
+import { useStaticCallback } from "@patchwork/sdk/hooks/useStaticCallback";
 import * as A from "@automerge/automerge/next";
 import { isEqual, min, sortBy } from "lodash";
 import { useMemo, useState } from "react";

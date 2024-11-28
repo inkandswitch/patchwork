@@ -1,8 +1,8 @@
 import { dataTypeById } from "@patchwork/sdk";
 import { useCurrentAccount } from "@patchwork/sdk";
 import { ErrorFallback } from "@patchwork/sdk/components/ErrorFallback";
-import { LoadingScreen } from "@/explorer/components/LoadingScreen";
-import { toHashUrl } from "@/explorer/router/urls";
+import { LoadingScreen } from "@patchwork/sdk/components/LoadingScreen";
+import { toHashUrl } from "@patchwork/sdk/router/urls";
 import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router/uiState";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import { DocLink, DocPath } from "@patchwork/folder/datatype";

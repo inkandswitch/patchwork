@@ -3,10 +3,10 @@ import {
   useAsyncComputed,
 } from "@patchwork/sdk/async-signals";
 import { useCurrentAccount } from "@patchwork/sdk";
-import { ContactAvatar } from "@/explorer/components/ContactAvatar";
-import { selectDocLink } from "@/explorer/router";
+import { ContactAvatar } from "@patchwork/sdk/components/ContactAvatar";
+import { selectDocLink } from "@patchwork/sdk";
 import { MainViewMode, useDocUIState } from "@patchwork/sdk/router/uiState";
-import { getRelativeTimeString } from "@/lib/dates";
+import { getRelativeTimeString } from "@patchwork/sdk/versionControl/dates";
 import { Om } from "@patchwork/sdk/om";
 import { DocPath, FolderDoc } from "@patchwork/folder/datatype";
 import { Tool } from "@patchwork/sdk";

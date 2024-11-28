@@ -8,10 +8,10 @@ import {
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { EventEmitter } from "eventemitter3";
 
-import { useForceUpdate } from "@/hooks/useForceUpdate";
+import { useForceUpdate } from "@patchwork/sdk/hooks/useForceUpdate";
 import { ChangeFn } from "@automerge/automerge/next";
 import { useEffect, useState } from "react";
-import { uploadFile } from "../../os/src/explorer/utils";
+import { uploadFile } from "./fileUtils";
 
 import { FolderDoc } from "@patchwork/folder";
 import { useFolderDocWithMetadataOnActiveBranch } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";

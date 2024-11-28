@@ -18,6 +18,8 @@
     "paths": {
       "@/*": ["./os/src/*"],
 
+      "@patchwork/file": ["./packages/file/src"],
+      "@patchwork/file/*": ["./packages/file/src/*"],
       "@patchwork/pkg": ["./packages/pkg/src"],
       "@patchwork/pkg/*": ["./packages/pkg/src/*"],
       "@patchwork/folder": ["./packages/folder/src"],

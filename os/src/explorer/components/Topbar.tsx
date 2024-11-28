@@ -29,7 +29,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import React, { useRef } from "react";
-import { saveFile } from "../utils";
+import { saveFile } from "../../../../sdk/src/fileUtils";
 import { AccountPicker } from "./AccountPicker";
 import {
   AUTOMERGE_SYNC_SERVER_STORAGE_ID,
@@ -37,7 +37,7 @@ import {
   JACQUARD_SYNC_SERVER_STORAGE_ID,
   SyncIndicator,
 } from "./SyncIndicator";
-import { getUrlSafeName } from "../router";
+import { getUrlSafeName } from "../../../../sdk/src/router";
 
 type TopbarProps = {
   showSidebar: boolean;

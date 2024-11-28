@@ -4,7 +4,7 @@ import {
   PopoverTrigger,
 } from "@patchwork/sdk/ui/popover";
 // TODO move these utils
-import { getRelativeTimeString } from "@/lib/dates";
+import { getRelativeTimeString } from "@patchwork/sdk/versionControl/dates";
 import { next as A, Heads } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, StorageId } from "@automerge/automerge-repo";
 import { useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";

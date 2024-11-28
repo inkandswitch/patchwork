@@ -12,8 +12,8 @@ import { isBinaryFileSync } from "isbinaryfile";
 import { PassThrough } from "node:stream";
 import { inspect } from "node:util";
 import path from "path";
-import { FileContent } from "../../packages/file/src/datatype";
-import { builtInDataTypesSafe } from "@/builtInDataTypesSafe";
+import { FileContent } from "@patchwork/file/datatype";
+import { builtInDataTypesSafe } from "../../os/src/builtInDataTypesSafe";
 import { fetchOmOnFixedBranch } from "@patchwork/sdk/versionControl";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 

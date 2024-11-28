@@ -1,7 +1,7 @@
 import { HasAssets } from "@patchwork/sdk/assets";
 import { useCurrentAccount } from "@patchwork/sdk";
-import { ContactAvatar } from "@/explorer/components/ContactAvatar";
-import { getRelativeTimeString } from "@/lib/dates";
+import { ContactAvatar } from "@patchwork/sdk/components/ContactAvatar";
+import { getRelativeTimeString } from "@patchwork/sdk/versionControl/dates";
 import { MarkdownInput } from "@patchwork/sdk/markdown";
 import { Button } from "@patchwork/sdk/ui/button";
 import { AnnotationsViewProps } from "@patchwork/sdk";

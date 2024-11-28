@@ -1,4 +1,4 @@
-import { useForceUpdate } from "@/hooks/useForceUpdate";
+import { useForceUpdate } from "@patchwork/sdk/hooks/useForceUpdate";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";

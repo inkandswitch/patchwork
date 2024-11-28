@@ -13,7 +13,7 @@ import fs from "fs";
 import path from "path";
 import process from "process";
 import { CommandLineArgs } from ".";
-import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
+import { JacquardBuildMetadata } from "@patchwork/jacquard/datatype";
 import { RunResult } from "./run";
 import {
   dataTypes,

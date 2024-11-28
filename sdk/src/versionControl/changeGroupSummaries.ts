@@ -1,4 +1,4 @@
-import { getStringCompletion, isLLMActive } from "@/lib/llm";
+import { getStringCompletion, isLLMActive } from "@patchwork/sdk/versionControl/llm";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { debounce } from "lodash";
 import { useEffect, useMemo } from "react";

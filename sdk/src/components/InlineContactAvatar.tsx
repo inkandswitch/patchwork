@@ -8,7 +8,7 @@ import {
   AvatarImage,
   avatarVariants,
 } from "@patchwork/sdk/ui/avatar";
-import { useBlobUrl } from "@/explorer/utils";
+import { useBlobUrl } from "@patchwork/sdk/fileUtils";
 import { User as UserIcon } from "lucide-react";
 
 interface ContactAvatarProps extends VariantProps<typeof avatarVariants> {

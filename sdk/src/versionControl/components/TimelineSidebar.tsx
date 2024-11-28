@@ -12,7 +12,7 @@ import {
   groupingByEditTime,
 } from "../groupChanges";
 
-import { InlineContactAvatar } from "@/explorer/components/InlineContactAvatar";
+import { InlineContactAvatar } from "@patchwork/sdk/components/InlineContactAvatar";
 import { useSlots } from "@patchwork/sdk/versionControl";
 import { Heads } from "@automerge/automerge/next";
 import {

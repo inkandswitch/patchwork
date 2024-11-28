@@ -14,7 +14,7 @@ import { useToast } from "@patchwork/sdk/ui/use-toast";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { BranchDoc, HasVersionControlMetadata } from "../schema";
 import Markdown from "react-markdown";
-import { isLLMActive } from "@/lib/llm";
+import { isLLMActive } from "@patchwork/sdk/versionControl/llm";
 import { SidebarMode } from "@patchwork/sdk/router/uiState";
 import { om, Om } from "@patchwork/sdk/om";
 
