@@ -249,6 +249,7 @@ export const Sequencer = ({
   return (
     <div className="w-full h-full overflow-hidden page">
       <Player
+        title={doc.title}
         toggleRows={doc.toggleRows}
         drumToggleRows={doc.drumToggleRows}
         stepGrid={doc.stepGrid}

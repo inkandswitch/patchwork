@@ -3,6 +3,7 @@ import { SongConfig } from '../config'
 import { drumConfigs } from '../music/drum';
 import { MODES, ROOTS } from '../music/notes';
 import { sampleInstrumentConfigs } from '../music/sample-instrument';
+import { exportMidi } from '../midi/midi';
 
 interface Props {
     config: SongConfig;

@@ -6,8 +6,7 @@ import { initFrom, type DataType } from "@/sdk";
 import { TextPatch } from "@/versionControl/utils";
 import { defaultSongConfig, ROW_COUNT, SongConfig, totalStepsFromConfig } from "./config";
 import { Step } from "./music/instrument-scheduler";
-import { SampleInstrumentConfig, sampleInstrumentConfigs } from "./music/sample-instrument";
-import { drumConfigs, DRUM_PIECES_COUNT } from "./music/drum";
+import { DRUM_PIECES_COUNT } from "./music/drum";
 
 // SCHEMA
 

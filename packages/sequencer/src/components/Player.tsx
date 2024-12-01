@@ -4,6 +4,8 @@ import { globalInstrumentSchedulers, Note, Step } from "../music/instrument-sche
 import { idxToDrumPiece, idxToNote } from "../music/notes";
 import { ChangeEvent } from 'react';
 import { SongConfig, stepDurationFromConfig } from '../config';
+import { stepsToMidiData } from '../midi/midi';
+import { downloadMidi } from '../midi/download';
 
 export function updateStepGridFromToggles(toggles: Toggle[][], drumToggles: Toggle[][], stepGrid: Step[], config: SongConfig) {
     for (let i = 0; i < stepGrid.length; i++) {
@@ -55,6 +57,7 @@ function updateStepFromDrumToggle(isToggled: boolean, x: number, y: number, step
 }
 
 interface Props {
+    title: string;
     toggleRows: Toggle[][];
     drumToggleRows: Toggle[][];
     stepGrid: Step[];
@@ -70,6 +73,7 @@ interface Props {
 }
 
 export const Player = ({
+    title,
     toggleRows,
     drumToggleRows,
     stepGrid,
@@ -110,6 +114,10 @@ export const Player = ({
         }
     }
 
+    function handleExportMidi(e: any) {
+        downloadMidi(stepsToMidiData(stepGrid, config), title);
+    }
+
     updateStepGridFromToggles(toggleRows, drumToggleRows, stepGrid, config);
     let playClasses = classnames(
         'button',
@@ -139,13 +147,17 @@ export const Player = ({
             <button className={directionClasses} onClick={toggleDirection}>{direction}</button>
             <div className='horizontal-block'></div>
             <div className='float-left'>
-                <label>Volume:</label>
+                <label>..................Volume:</label>
                 <input onChange={handleVolumeChange} type="range" min="0.0" max="1.0" step="0.01" value={volume} id="myRange"></input>
+                <div className="clear-block"></div>
                 <label>Instrument Volume:</label>
                 <input onChange={handleInstrumentVolumeChange} type="range" min="0.0" max="1.0" step="0.01" value={instrumentVolume} id="myRange"></input>
-                <label>Drum Volume:</label>
+                <div className="clear-block"></div>
+                <label>........Drum Volume:</label>
                 <input onChange={handleDrumVolumeChange} type="range" min="0.0" max="1.0" step="0.01" value={drumVolume} id="myRange"></input>
             </div>
+            <div className='horizontal-block'></div>
+            <button className="button clear-button float-left" onClick={handleExportMidi}>MIDI</button>
             <div className="clear-block"></div>
         </div>
     );
