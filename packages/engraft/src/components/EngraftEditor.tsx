@@ -1,8 +1,16 @@
+import { EditorProps } from "@patchwork/sdk";
 import { useRootFolderDocWithMetadata } from "@patchwork/sdk";
 import { useHandleDef } from "@patchwork/sdk/hooks/useHandleDef";
-import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { Button } from "@patchwork/sdk/ui/button";
-import { EditorProps } from "@patchwork/sdk";
+import {
+  getDocState,
+  fetchMap,
+  useAsyncComputed,
+} from "@patchwork/sdk/async-signals";
+
+import { DocPath } from "@patchwork/folder";
+import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
+
 import {
   AutomergeUrl,
   isValidAutomergeUrl,
@@ -19,6 +27,7 @@ import {
   Updater,
   VarBinding,
 } from "@engraft/hostkit";
+
 import { isEqual, isObject } from "lodash";
 import { useCallback } from "react";
 import { engraftContext, EngraftDoc } from "../datatype";
@@ -26,12 +35,6 @@ import {
   applyUpdateAsChangeToObject,
   removeUndefineds,
 } from "../engraft-automerge";
-import {
-  getDocState,
-  fetchMap,
-  useAsyncComputed,
-} from "@patchwork/sdk/async-signals";
-import { DocPath } from "../../../folder/src/datatype";
 
 function getDocName(
   url: AutomergeUrl,

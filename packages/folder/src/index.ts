@@ -1,5 +1,6 @@
 export {
   folderDatatype as dataType,
+  DocPath,
   type FolderDoc,
   type FolderDocMaterialized as FolderDocWithChildren,
   type DocLink,

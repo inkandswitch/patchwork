@@ -4,7 +4,10 @@
   "description": "some kinda engrafty thing in Patchwork idk",
   "type": "module",
   "main": "src/index.ts",
-  "scripts": {},
+  "scripts": {
+    "build": "rollup -c",
+    "push": "pnpm build && trailhead push --dir dist"
+  },
   "keywords": [],
   "author": "Ink & Switch",
   "dependencies": {
@@ -21,6 +24,7 @@
     "@engraft/hostkit": "^0.0.8",
     "@engraft/tool-python": "^0.0.8",
     "@lezer/common": "^1.2.1",
+    "@patchwork/folder": "workspace:*",
     "@tailwindcss/container-queries": "^0.1.1",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",
@@ -31,6 +35,11 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "rollup": "^4.19.0",
+    "rollup-plugin-postcss": "^4.0.2",
     "@types/lodash": "^4.17.7",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0"

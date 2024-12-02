@@ -4,7 +4,10 @@
   "description": "A simple spreadsheet",
   "type": "module",
   "main": "src/index.ts",
-  "scripts": {},
+  "scripts": {
+    "build": "rollup -c",
+    "push": "pnpm build && trailhead push --dir dist"
+  },
   "keywords": [],
   "author": "Ink & Switch",
   "dependencies": {
@@ -22,6 +25,11 @@
     "signia-react": "^0.1.5"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "rollup": "^4.19.0",
+    "rollup-plugin-postcss": "^4.0.2",
     "@types/lodash": "^4.17.7",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0"

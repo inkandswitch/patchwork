@@ -11,11 +11,11 @@ import { fetchResolveUrlOnFixedBranch } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback } from "react";
-import { fetchJacquardProjectInfoWithActiveBranch } from "../../../jacquard/src/hooks";
+import { fetchJacquardProjectInfoWithActiveBranch } from "@patchwork/jacquard/hooks";
 import {
   getBuildRunsWithDocAsPrimaryInput,
   fetchProjectStateFromProjectInfo,
-} from "../../../jacquard/src/signals";
+} from "@patchwork/jacquard/signals";
 import { FileDoc } from "../datatype";
 import { isImageFile } from "../utils";
 import { FitsFileDoc, FitsFileViewer, isFitsFile } from "./FitsFileViewer";

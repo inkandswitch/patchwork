@@ -6,7 +6,7 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "rollup -c",
-    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:4MEgMjNDKnppvtDr7QU64TVAKdNf"
+    "push": "pnpm build && trailhead push --dir dist"
   },
   "keywords": [],
   "author": "Ink & Switch",

@@ -6,7 +6,7 @@
   "packageManager": "pnpm@9.5.0",
   "scripts": {
     "dev": "pnpm --filter os dev",
-    "build": "pnpm --filter os build",
+    "build": "pnpm -r build",
     "tsc": "tsc",
     "preinstall": "npx only-allow pnpm",
     "test": "pnpm --filter \"./{os,jacquard-cli}\" test"
