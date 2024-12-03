@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   AmbContextWithResolvedPositions,
   Env,
@@ -8,12 +8,12 @@ import {
   contextsAreCompatible,
   contextsWithResolvedPositionsAreCompatible,
   resolvePositionsInContext,
-} from '../eval';
-import { isNumber, max, mean, min, sum, truncate, uniq } from 'lodash';
-import { FilterSelection } from './AmbSheet';
-import { displayNameForCell, simpleNameForCell } from '../print';
-import { Position, RawValue } from '../datatype';
-import { printRawValue } from '../print';
+} from "../eval";
+import { isNumber, max, mean, min, sum, truncate, uniq } from "lodash";
+import { FilterSelection } from "./AmbSheet";
+import { displayNameForCell, simpleNameForCell } from "../print";
+import { Position, RawValue } from "../datatype";
+import { printRawValue } from "../print";
 
 function findAllIndexes(arr, predicate) {
   const indexes = [];
@@ -27,23 +27,23 @@ function findAllIndexes(arr, predicate) {
   return indexes;
 }
 
-type Aggregation = 'avg' | 'min' | 'max' | 'count' | 'sum';
+type Aggregation = "avg" | "min" | "max" | "count" | "sum";
 
 const aggregateValues = (values: number[], aggregation: Aggregation) => {
   switch (aggregation) {
-    case 'avg': {
+    case "avg": {
       return mean(values);
     }
-    case 'min': {
+    case "min": {
       return min(values);
     }
-    case 'max': {
+    case "max": {
       return max(values);
     }
-    case 'count': {
+    case "count": {
       return values.length;
     }
-    case 'sum': {
+    case "sum": {
       return sum(values);
     }
   }
@@ -67,7 +67,7 @@ export const TableViewer = ({
   ) => void;
   filteredResults: FilteredResults;
 }) => {
-  const [aggregation, setAggregation] = useState<Aggregation>('avg');
+  const [aggregation, setAggregation] = useState<Aggregation>("avg");
   const valuesWithResolvedContexts = results.map((value) => ({
     ...value,
     value: {
@@ -259,8 +259,8 @@ export const TableViewer = ({
                         <td
                           key={colIndex}
                           className={`whitespace-nowrap text-sm text-center ${
-                            blueHighlight ? 'bg-blue-100' : ''
-                          } ${greyOut ? 'text-gray-300' : ''}`}
+                            blueHighlight ? "bg-blue-100" : ""
+                          } ${greyOut ? "text-gray-300" : ""}`}
                           onMouseEnter={() => {
                             setFilterSelectionForCell(
                               selectedCell,

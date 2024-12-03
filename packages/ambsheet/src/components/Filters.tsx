@@ -1,11 +1,11 @@
-import { DocHandle } from '@automerge/automerge-repo';
-import { useMemo, useState } from 'react';
-import { AmbSheetDoc, Position } from '../datatype';
-import { Results, NOT_READY, Value, Env } from '../eval';
-import { displayNameForCell } from '../print';
-import { FilterSelection } from './AmbSheet';
-import { groupBy, uniq } from 'lodash';
-import { printRawValue } from '../print';
+import { DocHandle } from "@automerge/automerge-repo";
+import { useMemo, useState } from "react";
+import { AmbSheetDoc, Position } from "../datatype";
+import { Results, NOT_READY, Value, Env } from "../eval";
+import { displayNameForCell } from "../print";
+import { FilterSelection } from "./AmbSheet";
+import { groupBy, uniq } from "lodash";
+import { printRawValue } from "../print";
 
 export const Filters = ({
   sheet,
@@ -69,7 +69,7 @@ export const Filters = ({
       <div className="h-3 text-gray-600 px-1 text-xs">
         {filterSelection.length > 0 && (
           <div>
-            {filterSelection.length} filters{' '}
+            {filterSelection.length} filters{" "}
             <span
               onClick={() => {
                 for (const f of filterSelection) {
@@ -232,7 +232,7 @@ const FiltersForCell = ({
               <label
                 htmlFor={`group-${groupValue}`}
                 className={`ml-2 text-sm  ${
-                  thisGroupGreyedOut ? 'text-gray-400' : 'text-gray-900'
+                  thisGroupGreyedOut ? "text-gray-400" : "text-gray-900"
                 } dark:text-gray-300`}
               >
                 {groupValue} ({groupItems.length})

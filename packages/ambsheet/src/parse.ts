@@ -1,39 +1,39 @@
-import * as ohm from 'ohm-js';
-import { Position, RawValue } from './datatype';
+import * as ohm from "ohm-js";
+import { Position, RawValue } from "./datatype";
 
 export type AmbLiteralNode = {
-  type: 'amb';
+  type: "amb";
   pos: Position;
   parts: AmbNodePart[];
 };
 
 export interface AmbRangePart {
-  type: 'range';
+  type: "range";
   from: number;
   to: number;
   step: number;
 }
 export interface AmbRepeatPart {
-  type: 'repeat';
+  type: "repeat";
   value: RawValue;
   numRepeats: number;
 }
 export type AmbNodePart = AmbRepeatPart | AmbRangePart;
 
 export interface AmbifyNode {
-  type: 'ambify';
+  type: "ambify";
   pos: Position;
   range: RangeNode;
 }
 
 export interface DeambifyNode {
-  type: 'deambify';
+  type: "deambify";
   pos: Position;
   ref: PositionalCellRefNode;
 }
 
 export interface NormalDistributionNode {
-  type: 'normal';
+  type: "normal";
   pos: Position;
   mean: number;
   stdev: number;
@@ -46,19 +46,19 @@ export type AmbNode =
   | DeambifyNode
   | NormalDistributionNode;
 
-type AddressingMode = 'relative' | 'absolute';
+type AddressingMode = "relative" | "absolute";
 export type PositionalCellRefNode = {
-  type: 'positionalCellRef';
+  type: "positionalCellRef";
   rowMode: AddressingMode;
   colMode: AddressingMode;
 } & Position;
 export type NamedCellRefNode = {
-  type: 'namedCellRef';
+  type: "namedCellRef";
   name: string;
 };
 
 interface RangeNode {
-  type: 'range';
+  type: "range";
   topLeft: PositionalCellRefNode;
   bottomRight: PositionalCellRefNode;
 }
@@ -68,11 +68,11 @@ export type Node =
   | PositionalCellRefNode
   | NamedCellRefNode
   | RangeNode
-  | { type: 'const'; value: number }
-  | { type: 'if'; cond: Node; then: Node; else: Node }
-  | { type: 'call'; funcName: string; args: Node[] }
+  | { type: "const"; value: number }
+  | { type: "if"; cond: Node; then: Node; else: Node }
+  | { type: "call"; funcName: string; args: Node[] }
   | {
-      type: 'named';
+      type: "named";
       name: string;
       node: Node;
       pos: Position;
@@ -188,15 +188,15 @@ export const isFormula = (input: string) => {
 let pos = { row: 0, col: 0 };
 
 function withName(name: ohm.Node, pos: Position, ast: Node) {
-  return name.sourceString === ''
+  return name.sourceString === ""
     ? ast
-    : { type: 'named', name: name.sourceString, node: ast, pos };
+    : { type: "named", name: name.sourceString, node: ast, pos };
 }
 
-const semantics = g.createSemantics().addOperation('toAst', {
+const semantics = g.createSemantics().addOperation("toAst", {
   Formula_ambify(name, _eq, _ambify, _lparen, range, _rparen) {
     return withName(name, pos, {
-      type: 'ambify',
+      type: "ambify",
       pos,
       range: range.toAst(),
     });
@@ -204,7 +204,7 @@ const semantics = g.createSemantics().addOperation('toAst', {
 
   Formula_deambify(name, _eq, _ambify, _lparen, ref, _rparen) {
     return withName(name, pos, {
-      type: 'deambify',
+      type: "deambify",
       pos,
       ref: ref.toAst(),
     });
@@ -223,7 +223,7 @@ const semantics = g.createSemantics().addOperation('toAst', {
     _rparen
   ) {
     return withName(name, pos, {
-      type: 'normal',
+      type: "normal",
       mean: parseFloat(mean.sourceString),
       stdev: parseFloat(stdev.sourceString),
       samples: parseInt(samples.sourceString),
@@ -241,77 +241,77 @@ const semantics = g.createSemantics().addOperation('toAst', {
 
   RelExp_eq(left, _op, right) {
     return {
-      type: 'call',
-      funcName: '=',
+      type: "call",
+      funcName: "=",
       args: [left.toAst(), right.toAst()],
     };
   },
   RelExp_neq(left, _op, right) {
     return {
-      type: 'call',
-      funcName: '<>',
+      type: "call",
+      funcName: "<>",
       args: [left.toAst(), right.toAst()],
     };
   },
   RelExp_ge(left, _op, right) {
     return {
-      type: 'call',
-      funcName: '>=',
+      type: "call",
+      funcName: ">=",
       args: [left.toAst(), right.toAst()],
     };
   },
   RelExp_gt(left, _op, right) {
     return {
-      type: 'call',
-      funcName: '>',
+      type: "call",
+      funcName: ">",
       args: [left.toAst(), right.toAst()],
     };
   },
   RelExp_le(left, _op, right) {
     return {
-      type: 'call',
-      funcName: '<=',
+      type: "call",
+      funcName: "<=",
       args: [left.toAst(), right.toAst()],
     };
   },
   RelExp_lt(left, _op, right) {
     return {
-      type: 'call',
-      funcName: '<',
+      type: "call",
+      funcName: "<",
       args: [left.toAst(), right.toAst()],
     };
   },
   AddExp_plus(left, _op, right) {
     return {
-      type: 'call',
-      funcName: '+',
+      type: "call",
+      funcName: "+",
       args: [left.toAst(), right.toAst()],
     };
   },
   AddExp_minus(left, _op, right) {
     return {
-      type: 'call',
-      funcName: '-',
+      type: "call",
+      funcName: "-",
       args: [left.toAst(), right.toAst()],
     };
   },
   MulExp_times(left, _op, right) {
     return {
-      type: 'call',
-      funcName: '*',
+      type: "call",
+      funcName: "*",
       args: [left.toAst(), right.toAst()],
     };
   },
   MulExp_div(left, _op, right) {
     return {
-      type: 'call',
-      funcName: '/',
+      type: "call",
+      funcName: "/",
       args: [left.toAst(), right.toAst()],
     };
   },
   CallExp_if(_if, _lparen, cond, _c1, thenExp, _c2, elseExp, _rparen) {
     return {
-      type: 'if',
+      type: "if",
       cond: cond.toAst(),
       then: thenExp.toAst(),
       else: elseExp.toAst(),
@@ -319,49 +319,49 @@ const semantics = g.createSemantics().addOperation('toAst', {
   },
   CallExp_call(fnName, _lparen, args, _rparen) {
     return {
-      type: 'call',
+      type: "call",
       funcName: fnName.sourceString.toLowerCase(),
       args: args.toAst(),
     };
   },
   UnExp_neg(_op, exp) {
     return {
-      type: 'call',
-      funcName: '-',
-      args: [{ type: 'const', value: 0 }, exp.toAst()],
+      type: "call",
+      funcName: "-",
+      args: [{ type: "const", value: 0 }, exp.toAst()],
     };
   },
   PriExp_paren(_lparen, exp, _rparen) {
     return exp.toAst();
   },
   PriExp_const(v) {
-    return { type: 'const', value: v.toAst() };
+    return { type: "const", value: v.toAst() };
   },
   Amb(_lbrace, list, _rbrace) {
     return {
-      type: 'amb',
+      type: "amb",
       pos,
       parts: list.toAst(),
     };
   },
   AmbPart_repeated(exp, _x, n) {
     return {
-      type: 'repeat',
+      type: "repeat",
       value: exp.toAst(),
       numRepeats: parseInt(n.sourceString),
     };
   },
   AmbPart_single(exp) {
-    return { type: 'repeat', value: exp.toAst(), numRepeats: 1 };
+    return { type: "repeat", value: exp.toAst(), numRepeats: 1 };
   },
   AmbPart_rangeAutoStep(fromNode, _sep, toNode) {
     const from = parseFloat(fromNode.sourceString);
     const to = parseFloat(toNode.sourceString);
-    return { type: 'range', from, to, step: from < to ? 1 : -1 };
+    return { type: "range", from, to, step: from < to ? 1 : -1 };
   },
   AmbPart_rangeWithStep(from, _to, to, _by, step) {
     return {
-      type: 'range',
+      type: "range",
       from: parseFloat(from.sourceString),
       to: parseFloat(to.sourceString),
       step: parseFloat(step.sourceString),
@@ -385,14 +385,14 @@ const semantics = g.createSemantics().addOperation('toAst', {
     let idx = 0;
     while (idx < cs.length) {
       let c = cs[idx++];
-      if (c === '\\' && idx < cs.length) {
+      if (c === "\\" && idx < cs.length) {
         c = cs[idx++];
         switch (c) {
-          case 'n':
-            c = '\n';
+          case "n":
+            c = "\n";
             break;
-          case 't':
-            c = '\t';
+          case "t":
+            c = "\t";
             break;
           default:
             idx--;
@@ -400,34 +400,34 @@ const semantics = g.createSemantics().addOperation('toAst', {
       }
       chars.push(c);
     }
-    return chars.join('');
+    return chars.join("");
   },
   CellRange(topLeft, _colon, bottomRight) {
     return {
-      type: 'range',
+      type: "range",
       topLeft: topLeft.toAst(),
       bottomRight: bottomRight.toAst(),
     };
   },
   cellRef_positional(cDollar, c, rDollar, r) {
     const [rowMode, colMode] = [rDollar, cDollar].map((dollar) =>
-      dollar.sourceString === '$' ? 'absolute' : 'relative'
+      dollar.sourceString === "$" ? "absolute" : "relative"
     );
     return {
-      type: 'positionalCellRef',
+      type: "positionalCellRef",
       rowMode,
       row:
-        parseInt(r.sourceString) - 1 - (rowMode === 'absolute' ? 0 : pos.row),
+        parseInt(r.sourceString) - 1 - (rowMode === "absolute" ? 0 : pos.row),
       colMode,
       col:
         c.sourceString.toUpperCase().charCodeAt(0) -
-        'A'.charCodeAt(0) -
-        (colMode === 'absolute' ? 0 : pos.col),
+        "A".charCodeAt(0) -
+        (colMode === "absolute" ? 0 : pos.col),
     };
   },
   cellRef_named(name) {
     return {
-      type: 'namedCellRef',
+      type: "namedCellRef",
       name: name.sourceString,
     };
   },
@@ -453,7 +453,7 @@ export function parseFormula(formula: string, cellPos: Position): Node {
 }
 
 export function parseLiteral(input: string, cellPos: Position) {
-  const match = g.match(input, 'Literal');
+  const match = g.match(input, "Literal");
   if (match.succeeded()) {
     pos = cellPos;
     return semantics(match).toAst();

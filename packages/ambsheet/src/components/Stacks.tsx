@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
-import { FilteredResultsForCell, Value } from '../eval';
-import { groupBy } from 'lodash';
-import { FilterSelection } from './AmbSheet';
-import { Position } from '../datatype';
+import React, { useMemo } from "react";
+import { FilteredResultsForCell, Value } from "../eval";
+import { groupBy } from "lodash";
+import { FilterSelection } from "./AmbSheet";
+import { Position } from "../datatype";
 
 export const Stacks = ({
   selectedCell,
@@ -48,7 +48,7 @@ export const Stacks = ({
           <div
             key={key}
             className={`w-10 relative cursor-default ${
-              values.length > 1 ? 'h-10' : 'h-8'
+              values.length > 1 ? "h-10" : "h-8"
             }`}
             onMouseEnter={() => selectGroup(key)}
             onMouseLeave={() => setFilterSelectionForCell(selectedCell, null)}
@@ -63,8 +63,8 @@ export const Stacks = ({
                   <div
                     key={index}
                     className={`absolute shadow-sm px-3 rounded-md border border-gray-200 ${
-                      selected ? 'bg-blue-100' : 'bg-white'
-                    } ${greyedOut ? 'text-gray-300' : ''}`}
+                      selected ? "bg-blue-100" : "bg-white"
+                    } ${greyedOut ? "text-gray-300" : ""}`}
                     style={{
                       transform: `translate(${index * 2}px, -${index * 2}px)`,
                     }}
