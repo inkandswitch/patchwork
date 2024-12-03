@@ -71,7 +71,7 @@ If you want a fast development loop and easy deploy as part of the core OS deplo
   - update the package name in `<yourpackage>/package.json`
   - update `os/package.json` to include an entry pointing to your new package
   - update `os/src/packages/index.ts` to include an entry pointing to your new package
-  - Update `os/src/packages/datatypesSafe.ts` to include an entry for your new datatype (assuming your package exports a datatype)
+  - Update `os/src/packages/datatypesSafe.ts` to include an entry for your new datatype (assuming your package exports a datatype). This will be removed once we support dynamic datatypes.
 
 If you want to dynamically deploy a new package to an automerge document and are ok with a more experimental developer experience: ask Paul or Geoffrey for help, that's a more experimental thing currently.
 
