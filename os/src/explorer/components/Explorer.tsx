@@ -3,7 +3,7 @@ import { dataTypeById } from "@patchwork/sdk";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import { useTools } from "@patchwork/sdk/hooks";
 import { FolderDoc } from "@patchwork/folder";
-import { DocPath } from "@patchwork/folder/datatype";
+import { DocPath } from "@patchwork/folder";
 import { Button } from "@patchwork/sdk/ui";
 import { Toaster } from "@patchwork/sdk/ui";
 import { toolById, toolsForDataType } from "@patchwork/sdk";

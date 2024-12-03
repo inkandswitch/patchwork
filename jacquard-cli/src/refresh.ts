@@ -1,20 +1,17 @@
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { FolderDoc } from "@patchwork/folder";
-import { DocPath } from "@patchwork/folder/datatype";
-import { fetchFolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
+import { DocPath } from "@patchwork/folder";
+import { fetchFolderDocWithMetadata } from "@patchwork/folder";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import debugFactory from "debug";
 import _ from "lodash";
 import { CommandLineArgs } from ".";
-import { FileDoc } from "@patchwork/file/datatype";
+import { FileDoc } from "@patchwork/file";
 import {
   BuildRunRefreshState,
   JacquardBuildMetadata,
-} from "@patchwork/jacquard/datatype";
-import {
-  fetchProjectState,
-  getStalenessInfo,
-} from "@patchwork/jacquard/getStalenessInfo";
+} from "@patchwork/jacquard";
+import { fetchProjectState, getStalenessInfo } from "@patchwork/jacquard";
 import { run } from "./run";
 import {
   fetchOmOnCLIActiveBranch,
@@ -31,7 +28,7 @@ export async function refresh(
   },
   wait = true
 ) {
-  const { projectFolderUrl, syncServerStorageId, onProgress = () => { } } = args;
+  const { projectFolderUrl, syncServerStorageId, onProgress = () => {} } = args;
 
   if (!projectFolderUrl) {
     console.log("No project folder URL provided.");

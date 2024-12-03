@@ -3,8 +3,7 @@ import {
   genericExportMethods,
 } from "@patchwork/sdk/fileExports";
 import { useDataTypes } from "@patchwork/sdk/hooks";
-import { FolderDoc } from "@patchwork/folder";
-import { DocPath } from "@patchwork/folder/datatype";
+import { FolderDoc, DocPath } from "@patchwork/folder";
 import { dataTypeById } from "@patchwork/sdk";
 import {
   DropdownMenu,

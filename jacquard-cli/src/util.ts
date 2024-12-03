@@ -12,7 +12,7 @@ import { isBinaryFileSync } from "isbinaryfile";
 import { PassThrough } from "node:stream";
 import { inspect } from "node:util";
 import path from "path";
-import { FileContent } from "@patchwork/file/datatype";
+import { FileContent } from "@patchwork/file";
 import { builtInDataTypesSafe } from "../../os/src/builtInDataTypesSafe";
 import { fetchOmOnFixedBranch } from "@patchwork/sdk/versionControl";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
@@ -29,7 +29,7 @@ export async function waitForSync(
 ) {
   if (!syncServerStorageId) {
     console.log("No sync server storage ID provided. Waiting forever...");
-    return new Promise(() => { });
+    return new Promise(() => {});
   }
 
   console.log("Waiting for files to sync...");

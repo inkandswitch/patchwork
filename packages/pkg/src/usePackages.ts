@@ -4,7 +4,7 @@ import { DocumentId } from "@automerge/automerge-repo";
 import { useDocuments } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PackageDoc } from "./datatype";
-import { DocPath } from "@patchwork/folder/datatype";
+import { DocPath } from "@patchwork/folder";
 
 type Package = {
   module: any;
@@ -30,9 +30,9 @@ const usePackageModulesInRootFolderForReal = (): Package[] => {
   const packageDocUrls = useMemo(() => {
     return flatDocPaths
       ? flatDocPaths
-        .map(DocPath.toLink)
-        .filter((link) => link.type === "pkg")
-        .map((link) => link.url)
+          .map(DocPath.toLink)
+          .filter((link) => link.type === "pkg")
+          .map((link) => link.url)
       : [];
   }, [flatDocPaths]);
   const packageDocs = useDocuments<PackageDoc>(packageDocUrls);

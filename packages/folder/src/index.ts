@@ -1,4 +1,5 @@
 export {
+  init,
   folderDatatype as dataType,
   DocPath,
   type FolderDoc,

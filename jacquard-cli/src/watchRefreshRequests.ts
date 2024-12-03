@@ -1,4 +1,9 @@
-import { asyncComputed, fetchDoc, fetchMap, fetchOm } from "@patchwork/sdk/async-signals";
+import {
+  asyncComputed,
+  fetchDoc,
+  fetchMap,
+  fetchOm,
+} from "@patchwork/sdk/async-signals";
 import { Om } from "@patchwork/sdk/om";
 import { FolderDoc } from "@patchwork/folder";
 import {
@@ -9,7 +14,7 @@ import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import debugFactory from "debug";
 import os from "node:os";
 import { CommandLineArgs } from ".";
-import { JacquardBuildMetadata } from "@patchwork/jacquard/datatype";
+import { JacquardBuildMetadata } from "@patchwork/jacquard";
 import { activateBranch } from "./activate";
 import { refresh } from "./refresh";
 import { sleep } from "./util";

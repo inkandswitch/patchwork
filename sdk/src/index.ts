@@ -1,6 +1,20 @@
 export * from "./datatypes.js";
 export * from "./tools.js";
 export * from "./assets.js";
-export * from "./account.js";
+export {
+  Account,
+  type AccountDoc,
+  type ContactDoc,
+  type RegisteredContactDoc,
+  getAccount,
+  useCurrentAccount,
+  useCurrentAccountDoc,
+  useDatatypeSettings,
+  useSelf,
+  automergeUrlToAccountToken,
+  accountTokenToAutomergeUrl,
+  type ModuleSettingsDoc,
+  useRootFolderDocWithMetadata,
+} from "./account.js";
 export * from "./patchworkContext.js";
-export * from "./router/index.js"
+export * from "./router/index.js";
