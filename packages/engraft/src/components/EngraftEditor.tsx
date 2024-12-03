@@ -1,7 +1,6 @@
-import { EditorProps } from "@patchwork/sdk";
-import { useRootFolderDocWithMetadata } from "@patchwork/sdk";
-import { useHandleDef } from "@patchwork/sdk/hooks/useHandleDef";
-import { Button } from "@patchwork/sdk/ui/button";
+import { useRootFolderDocWithMetadata, EditorProps } from "@patchwork/sdk";
+import { useHandleDef } from "@patchwork/sdk/hooks";
+import { Button } from "@patchwork/sdk/ui";
 import {
   getDocState,
   fetchMap,
@@ -9,7 +8,7 @@ import {
 } from "@patchwork/sdk/async-signals";
 
 import { DocPath } from "@patchwork/folder";
-import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
+import { FolderDocWithMetadata } from "@patchwork/folder";
 
 import {
   AutomergeUrl,

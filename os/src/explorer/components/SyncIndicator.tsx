@@ -1,14 +1,10 @@
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@patchwork/sdk/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@patchwork/sdk/ui";
 // TODO move these utils
 import { getRelativeTimeString } from "@patchwork/sdk/versionControl/dates";
 import { next as A, Heads } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, StorageId } from "@automerge/automerge-repo";
 import { useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { Button } from "@patchwork/sdk/ui/button";
+import { Button } from "@patchwork/sdk/ui";
 import { useMachine } from "@xstate/react";
 import { WifiIcon, WifiOffIcon, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

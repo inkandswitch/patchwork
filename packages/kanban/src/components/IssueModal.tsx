@@ -4,16 +4,16 @@ import SelectLane from "./contextmenu/StatusMenu";
 
 import { useCurrentAccount } from "@patchwork/sdk";
 import { MarkdownInput } from "@patchwork/sdk/markdown";
-import { Button } from "@patchwork/sdk/ui/button";
+import { Button } from "@patchwork/sdk/ui";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@patchwork/sdk/ui/dialog";
-import { Input } from "@patchwork/sdk/ui/input";
-import { Label } from "@patchwork/sdk/ui/label";
+} from "@patchwork/sdk/ui";
+import { Input } from "@patchwork/sdk/ui";
+import { Label } from "@patchwork/sdk/ui";
 import { DocHandle } from "@automerge/automerge-repo";
 import { Card, KanbanBoardDoc, Lane } from "../datatype";
 import { Status } from "../types/issue";

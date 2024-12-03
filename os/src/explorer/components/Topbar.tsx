@@ -12,9 +12,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@patchwork/sdk/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui/tabs";
-import { useToast } from "@patchwork/sdk/ui/use-toast";
+} from "@patchwork/sdk/ui";
+import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
+import { useToast } from "@patchwork/sdk/ui";
 import { Tool } from "@patchwork/sdk";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";

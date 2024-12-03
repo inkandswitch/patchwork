@@ -5,8 +5,9 @@ import { useMemo } from "react";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { BuildRunSpec, JacquardBuildMetadata } from "../datatype";
 import { Trash2Icon } from "lucide-react";
-import { Button } from "@patchwork/sdk/ui/button";
-import { CopyButton } from "@patchwork/sdk/components/CopyButton";
+
+import { CopyButton } from "@patchwork/sdk/components";
+import { Button } from "@patchwork/sdk/ui";
 
 export const LogView = ({
   docUrl,

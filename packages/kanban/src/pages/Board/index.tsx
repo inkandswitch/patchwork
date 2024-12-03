@@ -1,4 +1,4 @@
-import { Button } from "@patchwork/sdk/ui/button";
+import { Button } from "@patchwork/sdk/ui";
 import { KanbanBoardDoc } from "../../datatype";
 import IssueBoard from "./IssueBoard";
 import { PlusIcon } from "lucide-react";

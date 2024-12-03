@@ -7,7 +7,7 @@ import {
   AvatarFallback,
   AvatarImage,
   avatarVariants,
-} from "@patchwork/sdk/ui/avatar";
+} from "@patchwork/sdk/ui";
 import { useBlobUrl } from "@patchwork/sdk/fileUtils";
 import { useMemo } from "react";
 import { User as UserIcon } from "lucide-react";

@@ -4,6 +4,11 @@
   "description": "folder type",
   "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./hooks": "./dist/hooks.js",
+    "./signals": "./dist/signals.js"
+  },
   "scripts": {
     "build": "rollup -c"
   },

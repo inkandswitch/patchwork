@@ -1,7 +1,7 @@
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import React from "react";
 
-import { Textarea } from "@patchwork/sdk/ui/textarea";
+import { Textarea } from "@patchwork/sdk/ui";
 import { EditorProps, Tool } from "@patchwork/sdk";
 import { view } from "@automerge/automerge";
 import { get, set } from "lodash";

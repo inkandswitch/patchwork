@@ -1,6 +1,6 @@
 import { ContactAvatar } from "@patchwork/sdk/components/ContactAvatar";
-import { MarkdownEditor } from "@patchwork/sdk/markdown/MarkdownEditor";
-import { Button } from "@patchwork/sdk/ui/button";
+import { MarkdownEditor } from "@patchwork/sdk/markdown";
+import { Button } from "@patchwork/sdk/ui";
 import { next as A, Prop } from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";
 import { TrashIcon, XIcon } from "lucide-react";

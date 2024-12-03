@@ -6,18 +6,14 @@ import { DocLink, FolderDoc } from "@patchwork/folder";
 import { DocPath, FolderDocMaterialized } from "@patchwork/folder/datatype";
 import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { dataTypeById } from "@patchwork/sdk";
-import { Input } from "@patchwork/sdk/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@patchwork/sdk/ui/popover";
+import { Input } from "@patchwork/sdk/ui";
+import { Popover, PopoverContent, PopoverTrigger } from "@patchwork/sdk/ui";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@patchwork/sdk/ui/tooltip";
+} from "@patchwork/sdk/ui";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import {
   fetchActiveBranchInfo,

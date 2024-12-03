@@ -1,12 +1,12 @@
 import * as A from "@automerge/automerge/next";
 import { AnnotationGroupWithPosition } from "../utils";
-import { Button } from "@patchwork/sdk/ui/button";
+import { Button } from "@patchwork/sdk/ui";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@patchwork/sdk/ui/tooltip";
+} from "@patchwork/sdk/ui";
 import {
   getAnnotationGroupId,
   CommentState,

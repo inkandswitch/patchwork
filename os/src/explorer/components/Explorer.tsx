@@ -4,8 +4,8 @@ import { useDataTypes } from "@patchwork/sdk/hooks";
 import { useTools } from "@patchwork/sdk/hooks";
 import { FolderDoc } from "@patchwork/folder";
 import { DocPath } from "@patchwork/folder/datatype";
-import { Button } from "@patchwork/sdk/ui/button";
-import { Toaster } from "@patchwork/sdk/ui/toaster";
+import { Button } from "@patchwork/sdk/ui";
+import { Toaster } from "@patchwork/sdk/ui";
 import { toolById, toolsForDataType } from "@patchwork/sdk";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import {

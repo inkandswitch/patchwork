@@ -6,3 +6,9 @@ export {
   type DocLink,
 } from "./datatype";
 export { folderViewerWithEmbedsTool as tool } from "./tool";
+
+export {
+  fetchFolderDocWithMetadata,
+  fetchFolderDocWithMetadataOnFixedBranch,
+  type FolderDocWithMetadata,
+} from "./hooks/fetchFolderDocWithMetadata";

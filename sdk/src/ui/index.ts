@@ -1,5 +1,5 @@
-export { Avatar } from "./avatar";
-import { Tabs } from "@patchwork/sdk/ui/tabs";
+export { Avatar, AvatarFallback, AvatarImage, avatarVariants } from "./avatar";
+import { Tabs } from "@patchwork/sdk/ui";
 export { Button } from "./button";
 export { Checkbox } from "./checkbox";
 export { Command } from "./command";
@@ -10,14 +10,27 @@ export {
   DialogHeader,
   DialogFooter,
   DialogTrigger,
+  DialogTitle,
 } from "./dialog";
-export { DropdownMenu } from "./dropdown-menu";
+export {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./dropdown-menu";
 export { Icon, type IconType } from "./icons";
 export { Input } from "./input";
 export { Label } from "./label";
-export { Popover } from "./popover";
+export { Popover, PopoverContent, PopoverTrigger } from "./popover";
 export { Progress } from "./progress";
-export { Select } from "./select";
+export {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./select";
 export { Slider } from "./slider";
 export { Switch } from "./switch";
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";

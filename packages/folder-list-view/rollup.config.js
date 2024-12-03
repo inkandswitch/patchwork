@@ -17,7 +17,7 @@ const SHARED_DEPENDENCIES = [
 export default {
   input: "src/index.ts",
   output: {
-    file: "dist/index.js",
+    dir: "dist",
     format: "esm",
     sourcemap: true,
   },
