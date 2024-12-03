@@ -5,8 +5,8 @@ import {
   Position,
   Range,
   RawValue,
-} from './datatype';
-import * as d3 from 'd3';
+} from "./datatype";
+import * as d3 from "d3";
 import {
   isFormula,
   parseFormula,
@@ -16,9 +16,9 @@ import {
   AmbRangePart,
   PositionalCellRefNode,
   NamedCellRefNode,
-} from './parse';
-import { simpleNameForCell } from './print';
-import { uniq } from 'lodash';
+} from "./parse";
+import { simpleNameForCell } from "./print";
+import { uniq } from "lodash";
 
 export interface Value {
   context: AmbContext;
@@ -67,7 +67,8 @@ export const contextsWithResolvedPositionsAreCompatible = (
   return true;
 };
 
-export type Results = (Value[] | typeof NOT_READY | null)[][];
+type CellResult = Value[] | typeof NOT_READY | null;
+export type Results = CellResult[][];
 
 export type FilteredResultsForCell =
   | { value: Value; include: boolean }[]
@@ -106,54 +107,54 @@ const isReady = (
 ): cellValues is Value[] => cellValues !== NOT_READY;
 
 const builtInFunctions = {
-  '+'([x, y]: RawValue[]) {
-    return typeof x !== 'number' || typeof y !== 'number'
-      ? new ASError('#VALUE!', '+ expects numeric operands')
+  "+"([x, y]: RawValue[]) {
+    return typeof x !== "number" || typeof y !== "number"
+      ? new ASError("#VALUE!", "+ expects numeric operands")
       : x + y;
   },
-  '-'([x, y]: RawValue[]) {
-    return typeof x !== 'number' || typeof y !== 'number'
-      ? new ASError('#VALUE!', '- expects numeric operands')
+  "-"([x, y]: RawValue[]) {
+    return typeof x !== "number" || typeof y !== "number"
+      ? new ASError("#VALUE!", "- expects numeric operands")
       : x - y;
   },
-  '*'([x, y]: RawValue[]) {
-    return typeof x !== 'number' || typeof y !== 'number'
-      ? new ASError('#VALUE!', '* expects numeric operands')
+  "*"([x, y]: RawValue[]) {
+    return typeof x !== "number" || typeof y !== "number"
+      ? new ASError("#VALUE!", "* expects numeric operands")
       : x * y;
   },
-  '/'([x, y]: RawValue[]) {
-    return typeof x !== 'number' || typeof y !== 'number'
-      ? new ASError('#VALUE!', '/ expects numeric operands')
+  "/"([x, y]: RawValue[]) {
+    return typeof x !== "number" || typeof y !== "number"
+      ? new ASError("#VALUE!", "/ expects numeric operands")
       : y == 0
-      ? new ASError('#DIV/0!', 'divide by zero')
+      ? new ASError("#DIV/0!", "divide by zero")
       : x / y;
   },
-  '='([x, y]: RawValue[]) {
+  "="([x, y]: RawValue[]) {
     return x == y;
   },
-  '<>'([x, y]: RawValue[]) {
+  "<>"([x, y]: RawValue[]) {
     return x != y;
   },
-  '>'([x, y]: RawValue[]) {
+  ">"([x, y]: RawValue[]) {
     return x > y;
   },
-  '>='([x, y]: RawValue[]) {
+  ">="([x, y]: RawValue[]) {
     return x >= y;
   },
-  '<'([x, y]: RawValue[]) {
+  "<"([x, y]: RawValue[]) {
     return x < y;
   },
-  '<='([x, y]: RawValue[]) {
+  "<="([x, y]: RawValue[]) {
     return x <= y;
   },
   sum(xs: RawValue[]) {
     return xs.length === 0
-      ? new ASError('#N/A', 'sum() expects at least one argument')
+      ? new ASError("#N/A", "sum() expects at least one argument")
       : (flatten(xs) as number[]).reduce((x, y) => x + (y ?? 0), 0);
   },
   product(xs: RawValue[]) {
     return xs.length === 0
-      ? new ASError('#N/A', 'product() expects at least one argument')
+      ? new ASError("#N/A", "product() expects at least one argument")
       : (flatten(xs) as number[]).reduce((x, y) => x * (y ?? 1), 1);
   },
   count(xs: RawValue[]) {
@@ -163,37 +164,37 @@ const builtInFunctions = {
     const sum = builtInFunctions.sum(xs);
     return sum instanceof ASError
       ? sum
-      : builtInFunctions['/']([sum, builtInFunctions.count(xs)]);
+      : builtInFunctions["/"]([sum, builtInFunctions.count(xs)]);
   },
   min(xs: RawValue[]) {
     return xs.length === 0
-      ? new ASError('#N/A', 'min() expects at least one argument')
+      ? new ASError("#N/A", "min() expects at least one argument")
       : Math.min(...(flatten(xs).filter(notNull) as number[]));
   },
   max(xs: RawValue[]) {
     return xs.length === 0
-      ? new ASError('#N/A', 'max() expects at least one argument')
+      ? new ASError("#N/A", "max() expects at least one argument")
       : Math.max(...(flatten(xs).filter(notNull) as number[]));
   },
   and(xs: RawValue[]) {
     const args = flatten(xs);
-    return !args.every((arg) => typeof arg === 'boolean')
-      ? new ASError('#VALUE!', 'and() expects boolean arguments')
+    return !args.every((arg) => typeof arg === "boolean")
+      ? new ASError("#VALUE!", "and() expects boolean arguments")
       : args.reduce((a, b) => a && b, true);
   },
   or(xs: RawValue[]) {
     const args = flatten(xs);
-    return !args.every((arg) => typeof arg === 'boolean')
-      ? new ASError('#VALUE!', 'or() expects boolean arguments')
+    return !args.every((arg) => typeof arg === "boolean")
+      ? new ASError("#VALUE!", "or() expects boolean arguments")
       : args.reduce((a, b) => a || b, false);
   },
   not(xs: RawValue[]) {
-    return xs.length !== 1 || typeof xs[0] !== 'boolean'
-      ? new ASError('#VALUE!', 'not() expects a single boolean argument')
+    return xs.length !== 1 || typeof xs[0] !== "boolean"
+      ? new ASError("#VALUE!", "not() expects a single boolean argument")
       : !xs[0];
   },
   concat(xs: RawValue[]) {
-    return flatten(xs).filter(notNull).join('');
+    return flatten(xs).filter(notNull).join("");
   },
   vlookup([key, range, index, _isOrdered]: [RawValue, Range, number, boolean]) {
     // TODO: if isOrdered, do binary search
@@ -205,7 +206,7 @@ const builtInFunctions = {
         }
       }
     }
-    return new ASError('#N/A', 'key not found');
+    return new ASError("#N/A", "key not found");
   },
   // TODO: hlookup
   unique(xs: RawValue[]) {
@@ -244,10 +245,10 @@ export class Env {
   // accumulate evaluation results at each point in the sheet
   public results: Results;
 
-  constructor(private data: AmbSheetDoc['data']) {
+  constructor(private data: AmbSheetDoc["data"]) {
     this.results = data.map((cells, row) =>
       cells.map((cell, col) => {
-        if (cell === '' || cell === null) {
+        if (cell === "" || cell === null) {
           return null;
         } else if (isFormula(cell)) {
           return NOT_READY;
@@ -283,7 +284,7 @@ export class Env {
     continuation: Continuation
   ) {
     switch (node.type) {
-      case 'const':
+      case "const":
         return continuation(
           {
             rawValue: node.value,
@@ -292,7 +293,7 @@ export class Env {
           pos,
           context
         );
-      case 'positionalCellRef': {
+      case "positionalCellRef": {
         return this.interpCellAtPosition(
           this.toCellPosition(node, pos),
           pos,
@@ -300,7 +301,7 @@ export class Env {
           continuation
         );
       }
-      case 'namedCellRef': {
+      case "namedCellRef": {
         return this.interpCellAtPosition(
           this.toCellPosition(node, pos),
           pos,
@@ -308,7 +309,7 @@ export class Env {
           continuation
         );
       }
-      case 'range': {
+      case "range": {
         const c1 = this.toCellPosition(node.topLeft, pos);
         if (c1 instanceof ASError) {
           return continuation({ context, rawValue: c1 }, pos, context);
@@ -325,7 +326,7 @@ export class Env {
           continuation
         );
       }
-      case 'if':
+      case "if":
         return this.interp(
           node.cond,
           pos,
@@ -338,22 +339,22 @@ export class Env {
               continuation
             )
         );
-      case 'call': {
+      case "call": {
         const fn = builtInFunctions[node.funcName];
         return fn == null
           ? new ASError(
-              '#NAME?',
-              'unsupported built-in function: ' + node.funcName
+              "#NAME?",
+              "unsupported built-in function: " + node.funcName
             )
           : this.reduce(node.args, fn, [], pos, context, continuation);
       }
-      case 'amb': {
+      case "amb": {
         // call the continuation for each value in the amb node,
         // tracking which value we've chosen in the context.
         let i = 0;
         for (const part of node.parts) {
           switch (part.type) {
-            case 'repeat': {
+            case "repeat": {
               for (let idx = 0; idx < part.numRepeats; idx++) {
                 const newContext = new Map([...context, [node, i++]]);
                 continuation(
@@ -364,7 +365,7 @@ export class Env {
               }
               break;
             }
-            case 'range': {
+            case "range": {
               if (isSensibleRange(part)) {
                 let v = part.from;
                 while (part.from < part.to ? v <= part.to : v >= part.to) {
@@ -383,11 +384,11 @@ export class Env {
         }
         return;
       }
-      case 'ambify':
+      case "ambify":
         return this.interp(node.range, pos, context, (value, pos, context) => {
           if (!Array.isArray(value.rawValue)) {
             throw new Error(
-              'huh? this was supposed to be a BasicRawValue[][]!'
+              "huh? this was supposed to be a BasicRawValue[][]!"
             );
           }
 
@@ -403,7 +404,7 @@ export class Env {
             }
           }
         });
-      case 'deambify': {
+      case "deambify": {
         let error: ASError | null = null;
         const values: BasicRawValue[] = [];
         this.interp(node.ref, pos, context, (value) => {
@@ -425,7 +426,7 @@ export class Env {
           context
         );
       }
-      case 'normal': {
+      case "normal": {
         // TODO: try/catch, turn exceptions into ASErrors
         const normalGenerator = d3.randomNormal.source(
           d3.randomLcg(RANDOM_SEED)
@@ -442,7 +443,7 @@ export class Env {
         }
         return;
       }
-      case 'named':
+      case "named":
         return this.interp(node.node, pos, context, continuation);
       default: {
         const exhaustiveCheck: never = node;
@@ -524,11 +525,11 @@ export class Env {
     for (let row = topLeft.row; row <= bottomRight.row; row++) {
       for (let col = topLeft.col; col <= bottomRight.col; col++) {
         expandedRefs.push({
-          type: 'positionalCellRef',
+          type: "positionalCellRef",
           row,
           col,
-          rowMode: 'absolute',
-          colMode: 'absolute',
+          rowMode: "absolute",
+          colMode: "absolute",
         });
       }
     }
@@ -602,7 +603,7 @@ export class Env {
       }
 
       const node = parseFormula(cell, pos);
-      if (node.type === 'named') {
+      if (node.type === "named") {
         this.cellPosByName.set(node.name.toLowerCase(), {
           name: node.name,
           pos,
@@ -651,21 +652,21 @@ export class Env {
     node: NamedCellRefNode | PositionalCellRefNode,
     pos: Position
   ): Position | ASError {
-    if (node.type === 'positionalCellRef') {
+    if (node.type === "positionalCellRef") {
       const cellPos = {
-        row: node.row + (node.rowMode === 'relative' ? pos.row : 0),
-        col: node.col + (node.colMode === 'relative' ? pos.col : 0),
+        row: node.row + (node.rowMode === "relative" ? pos.row : 0),
+        col: node.col + (node.colMode === "relative" ? pos.col : 0),
       };
       return 0 <= cellPos.row &&
         cellPos.row < this.results.length &&
         0 <= cellPos.col &&
         cellPos.col < this.results[cellPos.row].length
         ? cellPos
-        : new ASError('#REF!', 'reference does not exist');
+        : new ASError("#REF!", "reference does not exist");
     } else {
       const cellPos = this.cellPosByName.get(node.name.toLowerCase())?.pos;
       return (
-        cellPos ?? new ASError('#REF!', 'undeclared cell name ' + node.name)
+        cellPos ?? new ASError("#REF!", "undeclared cell name " + node.name)
       );
     }
   }
@@ -682,12 +683,12 @@ export function printResults(results: Results) {
   return results.map((row) =>
     row.map((cell) =>
       !isReady(cell)
-        ? 'ERROR!'
+        ? "ERROR!"
         : cell === null
-        ? ''
+        ? ""
         : cell.length === 1
-        ? '' + cell[0].rawValue
-        : '{' + cell.map((v) => JSON.stringify(v.rawValue)).join(',') + '}'
+        ? "" + cell[0].rawValue
+        : "{" + cell.map((v) => JSON.stringify(v.rawValue)).join(",") + "}"
     )
   );
 }
@@ -702,4 +703,4 @@ export const resolvePositionsInContext = (
     ])
   );
 
-export const evalSheet = (data: AmbSheetDoc['data']) => new Env(data).eval();
+export const evalSheet = (data: AmbSheetDoc["data"]) => new Env(data).eval();
