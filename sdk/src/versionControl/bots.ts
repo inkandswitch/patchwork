@@ -2,8 +2,7 @@ import { DEFAULT_MODEL, getOpenaiClient } from "../versionControl/llm";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { Doc, splice } from "@automerge/automerge/next";
 import { type DataType } from "..";
-import { BranchDoc, UnmergedBranchDoc } from "./schema";
-import { HasBotChatHistory } from "./components/BotSidebar";
+import { BranchDoc, UnmergedBranchDoc, HasBotChatHistory } from "./schema";
 import { createBranch } from "./branches";
 
 // These types are a superset of OpenAI's API so we can directly store a chat history

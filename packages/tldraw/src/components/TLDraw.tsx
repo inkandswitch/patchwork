@@ -8,7 +8,6 @@ import { useMemo, useState } from "react";
 
 import { useCurrentAccount } from "@patchwork/sdk";
 import { EditorProps } from "@patchwork/sdk";
-import { SideBySideProps } from "@patchwork/sdk/versionControl";
 import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { Editor, TLCamera, TLShape, Tldraw } from "@tldraw/tldraw";
@@ -17,6 +16,7 @@ import { useAutomergeStore } from "../vendor/automerge-tldraw";
 import { useDiffStyling, useCameraSync, useAnchorEventListener } from "./hooks";
 import { TLDrawDocAnchor, TLDrawDoc } from "../datatype";
 import { useHandleDef } from "@patchwork/sdk/hooks/useHandleDef";
+import { SideBySideProps } from "@patchwork/sdk/versionControl/types";
 
 interface TLDrawProps extends EditorProps<TLDrawDocAnchor, TLShape> {
   camera?: TLCamera;

@@ -8,7 +8,6 @@ import {
   TooltipTrigger,
 } from "@patchwork/sdk/ui/tooltip";
 import {
-  AnnotationGroupView,
   getAnnotationGroupId,
   CommentState,
 } from "@patchwork/sdk/versionControl";
@@ -18,6 +17,7 @@ import { TextSelection } from "./MarkdownDocEditor";
 import { MarkdownDoc } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";
 import { TextAnchor } from "@patchwork/sdk/textAnchors";
+import { AnnotationGroupView } from "@patchwork/sdk/components/AnnotationGroupView";
 
 export const CommentsSidebar = ({
   doc,

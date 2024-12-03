@@ -7,7 +7,6 @@ import { DocPath } from "@patchwork/folder/datatype";
 import { Button } from "@patchwork/sdk/ui/button";
 import { Toaster } from "@patchwork/sdk/ui/toaster";
 import { toolById, toolsForDataType } from "@patchwork/sdk";
-import { VersionControlEditor } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import {
   fetchBranchScopeAndActiveBranchInfo,
@@ -33,6 +32,7 @@ import { ErrorFallback } from "@patchwork/sdk/components/ErrorFallback";
 import { LoadingScreen } from "@patchwork/sdk/components/LoadingScreen";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { VersionControlEditor } from "../../versionControl/components";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();

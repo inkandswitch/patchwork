@@ -1,14 +1,14 @@
-import { dataTypeById } from "../..";
-import { useCurrentAccount } from "../..";
-import { ErrorFallback } from "../../components/ErrorFallback";
-import { LoadingScreen } from "../../components/LoadingScreen";
-import { toHashUrl } from "../../router/urls";
-import { useDocUIState, useUIStateOm } from "../../router/uiState";
-import { useDataTypes } from "../../hooks";
+import { dataTypeById } from "@patchwork/sdk";
+import { useCurrentAccount } from "@patchwork/sdk";
+import { ErrorFallback } from "@patchwork/sdk/components/ErrorFallback";
+import { LoadingScreen } from "@patchwork/sdk/components/LoadingScreen";
+import { toHashUrl } from "@patchwork/sdk/router/urls";
+import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router/uiState";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 import { DocLink, DocPath } from "@patchwork/folder/datatype";
-import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
-import { useToast } from "../../ui/use-toast";
-import { EditorProps, Tool } from "../..";
+import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui/tabs";
+import { useToast } from "@patchwork/sdk/ui/use-toast";
+import { EditorProps, Tool } from "@patchwork/sdk";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
@@ -21,24 +21,34 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { useAnnotations } from "../annotations";
-import { mergeBranch, setActiveBranchUrl } from "../branches";
-import { useBranchScopeAndActiveBranchInfo } from "../hooks";
+import { useAnnotations } from "@patchwork/sdk/versionControl/annotations";
+import {
+  mergeBranch,
+  setActiveBranchUrl,
+} from "@patchwork/sdk/versionControl/branches";
+import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl/hooks";
 import {
   BranchDoc,
   DiffWithProvenance,
   HasVersionControlMetadata,
-} from "../schema";
+} from "@patchwork/sdk/versionControl/schema";
 import {
   BranchScopeAndActiveBranchInfo,
   fetchDoesDocLinkExistInBranchScope,
-} from "../signals";
-import { diffWithProvenance, useActorIdToAuthorMap } from "../utils";
+} from "@patchwork/sdk/versionControl/signals";
+import {
+  diffWithProvenance,
+  useActorIdToAuthorMap,
+} from "@patchwork/sdk/versionControl/utils";
 import { BotSidebar } from "./BotSidebar";
 import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
-import { useAsyncComputed } from "../../async-signals";
+import { useAsyncComputed } from "@patchwork/sdk/async-signals";
+import {
+  EditorPropsWithTool,
+  SideBySideProps,
+} from "@patchwork/sdk/versionControl/types";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -527,10 +537,6 @@ const DocumentNotFoundPage = ({
   );
 };
 
-export interface EditorPropsWithTool<T, V> extends EditorProps<T, V> {
-  tool: Tool;
-}
-
 /* Wrapper component that dispatches to the tool for the doc type */
 const DocEditor = <T, V>({
   tool,
@@ -576,10 +582,6 @@ const DocEditor = <T, V>({
     />
   );
 };
-
-export interface SideBySideProps<T, V> extends EditorPropsWithTool<T, V> {
-  mainDocUrl: AutomergeUrl;
-}
 
 export const SideBySide = <T, V>(props: SideBySideProps<T, V>) => {
   // special side-by-side view for tldraw with scroll linking

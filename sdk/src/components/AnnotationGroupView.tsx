@@ -1,15 +1,14 @@
-import { HasAssets } from "../../assets";
-import { useCurrentAccount } from "../..";
-import { ContactAvatar } from "../../components/ContactAvatar";
-import { getRelativeTimeString } from "../../versionControl/dates";
-import { MarkdownInput } from "../../markdown";
-import { Button } from "../../ui/button";
-import { AnnotationsViewProps } from "../..";
+import { HasAssets } from "@patchwork/sdk/assets";
+import { AnnotationsViewProps, useCurrentAccount } from "@patchwork/sdk";
+import { ContactAvatar } from "@patchwork/sdk/components/ContactAvatar";
+import { getRelativeTimeString } from "@patchwork/sdk/versionControl/dates";
+import { MarkdownInput } from "@patchwork/sdk/markdown";
+import { Button } from "@patchwork/sdk/ui/button";
 import {
   AnnotationGroupWithUIState,
   CommentState,
   HasVersionControlMetadata,
-} from "../../versionControl";
+} from "@patchwork/sdk/versionControl";
 import { next as A, uuid } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { Check, MessageCircle, PencilIcon } from "lucide-react";
@@ -20,8 +19,11 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { getAnnotationGroupId } from "../annotations";
-import { applyCursorPatches, CursorPatch } from "../cursorPatch";
+import { getAnnotationGroupId } from "@patchwork/sdk/versionControl/annotations";
+import {
+  applyCursorPatches,
+  CursorPatch,
+} from "@patchwork/sdk/versionControl/cursorPatch";
 
 export interface AnnotationGroupViewProps<
   D extends HasVersionControlMetadata<T, V>,

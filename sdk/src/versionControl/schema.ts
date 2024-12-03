@@ -2,11 +2,21 @@ import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge/next";
 import { TextPatch } from "./utils";
 import { HasAssets, withHasAssets } from "../assets";
-import {
-  HasBotChatHistory,
-  withHasBotChatHistory,
-} from "./components/BotSidebar";
 import { CursorPatch as CursorPatch } from "./cursorPatch";
+import { ChatMessage } from "./bots";
+
+export type HasBotChatHistory = {
+  botChatHistory: ChatMessage[];
+};
+
+export const withHasBotChatHistory = <D extends object>(
+  doc: D
+): D & HasBotChatHistory => {
+  return {
+    ...doc,
+    botChatHistory: [],
+  };
+};
 
 // This is a separate doc to store version control metadata.
 // Eventually we envision all VC metadata living in here.
@@ -19,12 +29,12 @@ export type VersionControlSidecarDoc = BranchScopeMetadata &
 
 type BranchScopeMetadata =
   | {
-    isBranchScope: false;
-  }
+      isBranchScope: false;
+    }
   | {
-    isBranchScope: true;
-    branches: AutomergeUrl[];
-  };
+      isBranchScope: true;
+      branches: AutomergeUrl[];
+    };
 
 export type HasLinkToVersionControlSidecar = {
   versionControlMetadataUrl: AutomergeUrl;

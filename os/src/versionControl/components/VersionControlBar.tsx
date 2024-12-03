@@ -1,26 +1,29 @@
-import { fetchAwaitMissing, useAsyncComputed } from "../../async-signals";
-import { useCurrentAccount } from "../..";
-import { ContactAvatar } from "../../components/ContactAvatar";
-import { selectDocLink } from "../..";
-import { MainViewMode, useDocUIState } from "../../router/uiState";
-import { getRelativeTimeString } from "../../versionControl/dates";
-import { Om } from "../../om";
+import {
+  fetchAwaitMissing,
+  useAsyncComputed,
+} from "@patchwork/sdk/async-signals";
+import { useCurrentAccount } from "@patchwork/sdk";
+import { ContactAvatar } from "@patchwork/sdk/components/ContactAvatar";
+import { selectDocLink } from "@patchwork/sdk";
+import { MainViewMode, useDocUIState } from "@patchwork/sdk/router/uiState";
+import { getRelativeTimeString } from "@patchwork/sdk/versionControl/dates";
+import { Om } from "@patchwork/sdk/om";
 import { DocPath, FolderDoc } from "@patchwork/folder/datatype";
-import { Tool } from "../..";
-import { useDataTypes } from "../../hooks";
+import { Tool } from "@patchwork/sdk";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 import {
   BranchDoc,
   ensureMetadataHandleIsBranchScope,
   initVersionControlSidecarDoc,
   VersionControlSidecarDoc,
-} from "../../versionControl";
-import { Button } from "../../ui/button";
+} from "@patchwork/sdk/versionControl";
+import { Button } from "@patchwork/sdk/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../ui/dropdown-menu";
+} from "@patchwork/sdk/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -29,14 +32,14 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "../../ui/select";
+} from "@patchwork/sdk/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "../../ui/tooltip";
-import { useToast } from "../../ui/use-toast";
+} from "@patchwork/sdk/ui/tooltip";
+import { useToast } from "@patchwork/sdk/ui/use-toast";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import {
@@ -74,8 +77,6 @@ import {
   Trash2Icon,
   ChevronDownIcon,
   ChevronRightIcon,
-  FileQuestionIcon,
-  MailQuestionIcon,
   InfoIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -83,8 +84,8 @@ import {
   createBranch,
   hasLegacyBranchesToMigrate,
   migrateLegacyBranches,
-} from "../branches";
-import { BranchScopeAndActiveBranchInfo } from "../signals";
+} from "@patchwork/sdk/versionControl/branches";
+import { BranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl/signals";
 
 // interface MakeBranchOptions {
 //   name?: string;

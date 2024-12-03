@@ -1,14 +1,14 @@
-import { Button } from "../../ui/button";
-import { Tool } from "../..";
+import { Button } from "@patchwork/sdk/ui/button";
+import { Tool } from "@patchwork/sdk";
 import {
   AnnotationGroupWithUIState,
   CommentState,
   HasVersionControlMetadata,
-} from "../../versionControl";
+} from "@patchwork/sdk/versionControl";
 import { DocHandle } from "@automerge/automerge-repo";
 import React from "react";
-import { getAnnotationGroupId } from "../annotations";
-import { AnnotationGroupView } from "./AnnotationGroupView";
+import { getAnnotationGroupId } from "@patchwork/sdk/versionControl/annotations";
+import { AnnotationGroupView } from "@patchwork/sdk/components/AnnotationGroupView";
 
 type ReviewSidebarProps = {
   doc: HasVersionControlMetadata<unknown, unknown>;
@@ -86,7 +86,6 @@ export const ReviewSidebar = React.memo(
             );
           })}
         </div>
-
         {!readonly && (
           <div className="bg-gray-50 z-10 px-2 py-4 flex flex-col gap-3 border-b border-gray-200 ">
             <Button

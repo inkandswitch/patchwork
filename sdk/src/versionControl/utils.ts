@@ -73,7 +73,9 @@ export const useActorIdToAuthorMap = (
     };
 
     handle.doc().then((doc) => {
-      if (!doc) { return; }  // TODO: JAH strict fix
+      if (!doc) {
+        return;
+      } // TODO: JAH strict fix
       lastHeads = A.getHeads(doc);
       addChangesToActorIdMap(A.getAllChanges(doc));
     });
@@ -83,7 +85,7 @@ export const useActorIdToAuthorMap = (
         return;
       }
 
-      const doc = handle.docSync()!;  // TODO: JAH strict fix
+      const doc = handle.docSync()!; // TODO: JAH strict fix
       const changes = A.getChanges(A.view(doc, lastHeads), doc);
       lastHeads = A.getHeads(doc);
       addChangesToActorIdMap(changes);
@@ -406,14 +408,14 @@ type SlotValue<
   Property extends keyof Config
 > = Config[Property] extends React.ElementType // config option 1
   ? React.ReactElement<
-    React.ComponentPropsWithoutRef<Config[Property]>,
-    Config[Property]
-  >
+      React.ComponentPropsWithoutRef<Config[Property]>,
+      Config[Property]
+    >
   : Config[Property] extends readonly [
-    infer ElementType extends React.ElementType, // config option 2, infer array[0] as component
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    infer _testFn // even though we don't use testFn, we need to infer it to support types for slots.*.props
-  ]
+      infer ElementType extends React.ElementType, // config option 2, infer array[0] as component
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      infer _testFn // even though we don't use testFn, we need to infer it to support types for slots.*.props
+    ]
   ? React.ReactElement<React.ComponentPropsWithoutRef<ElementType>, ElementType>
   : never; // useful for narrowing types, third option is not possible
 

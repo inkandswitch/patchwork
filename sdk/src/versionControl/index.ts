@@ -8,4 +8,3 @@ export * from "./signals";
 export * from "./schema";
 export * from "./hooks";
 export * from "./utils";
-export * from "./components";
