@@ -9,3 +9,4 @@ export * as file from "@patchwork/file";
 // export * as engraft from "@patchwork/engraft";
 export * as counter from "@patchwork/counter";
 export * as raw from "@patchwork/raw-editor";
+export * as ambsheet from "@patchwork/ambsheet";

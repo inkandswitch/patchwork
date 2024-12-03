@@ -1,16 +1,34 @@
-import { DecodedChangeWithMetadata } from "@patchwork/sdk/versionControl";
+import { BoxesIcon } from "lucide-react";
 import {
   Annotation,
+  DecodedChangeWithMetadata,
   HasVersionControlMetadata,
 } from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { pick } from "lodash";
-import { initFrom, type DataType } from "@patchwork/sdk";
-import { TextPatch } from "@patchwork/sdk/versionControl";
+import { DataType } from "@patchwork/sdk";
 
-// SCHEMA
+export interface Position {
+  row: number;
+  col: number;
+}
 
-export type DataGridDoc = HasVersionControlMetadata<unknown, unknown> & {
+export type BasicRawValue = number | boolean | string | null;
+export type Range = BasicRawValue[][];
+export class ASError {
+  constructor(public readonly shortMsg: string, public readonly msg: string) {}
+  toString() {
+    return this.shortMsg;
+  }
+  toJSON() {
+    return this.toString();
+  }
+}
+export type RawValue = BasicRawValue | Range | ASError;
+
+export type CellName = { row: number; col: number; name: string };
+
+export type AmbSheetDoc = HasVersionControlMetadata<never, never> & {
   title: string; // The title of the table
 
   // NOTE: modeling the data this way does not result in reasonable merges.
@@ -22,41 +40,40 @@ export type DataGridDoc = HasVersionControlMetadata<unknown, unknown> & {
 // These are bad unstable anchors but we don't have
 // anything better until we model the spreadsheet data in a better way (see above)
 
-export type DataGridDocAnchor = {
+export type AmbSheetDocAnchor = {
   row: number;
   column: number;
 };
 
-// FUNCTIONS
-
 // When a copy of the document has been made,
 // update the title so it's more clear which one is the copy vs original.
 // (this mechanism needs to be thought out more...)
-export const markCopy = (doc: DataGridDoc) => {
+export const markCopy = (doc: any) => {
   doc.title = "Copy of " + doc.title;
 };
 
-const setTitle = async (doc: DataGridDoc, title: string) => {
+const setTitle = async (doc: any, title: string) => {
   doc.title = title;
 };
 
-const getTitle = async (doc: DataGridDoc) => {
+const getTitle = async (doc: any) => {
   return doc.title || "Mystery Data Grid";
 };
 
-export const init = (doc: DataGridDoc) => {
+export const init = (doc: any) => {
+  doc.title = "Untitled AmbSheet";
   const rows = 100;
   const cols = 26;
   const defaultValue = "";
-  initFrom(doc, {
-    title: "Untitled Spreadsheet",
-    data: Array.from({ length: rows }, () =>
-      Array.from({ length: cols }, () => defaultValue)
-    ),
-  });
+  doc.data = Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () => defaultValue)
+  );
 };
 
-export const includeChangeInHistory = (doc: DataGridDoc) => {
+export const includeChangeInHistory = (
+  doc: AmbSheetDoc,
+  decodedChange: DecodedChangeWithMetadata
+) => {
   const dataObjId = A.getObjectId(doc, "data");
   // GL 3/11/24: this is miserable, we need to collect a whole bunch of object ids
   // for the rows inside the data object in order to filter changes.
@@ -64,27 +81,23 @@ export const includeChangeInHistory = (doc: DataGridDoc) => {
   const rowObjIds = doc.data.map((_, index) => A.getObjectId(doc.data, index));
   const commentsObjID = A.getObjectId(doc, "commentThreads");
 
-  return (decodedChange: DecodedChangeWithMetadata) => {
-    // todo
-    // @ts-ignore
-    return decodedChange.ops.some(
-      (op) =>
-        op.obj === dataObjId ||
-        rowObjIds.includes(op.obj) ||
-        op.obj === commentsObjID
-    );
-  };
+  return decodedChange.ops.some(
+    (op) =>
+      op.obj === dataObjId ||
+      rowObjIds.includes(op.obj) ||
+      op.obj === commentsObjID
+  );
 };
 
-export const includePatchInChangeGroup = (patch: A.Patch | TextPatch) =>
+export const includePatchInChangeGroup = (patch: A.Patch) =>
   patch.path[0] === "data" || patch.path[0] === "commentThreads";
 
 const promptForAIChangeGroupSummary = ({
   docBefore,
   docAfter,
 }: {
-  docBefore: DataGridDoc;
-  docAfter: DataGridDoc;
+  docBefore: AmbSheetDoc;
+  docAfter: AmbSheetDoc;
 }) => {
   return `
   Below are two versions of a spreadsheet document..
@@ -115,11 +128,11 @@ const promptForAIChangeGroupSummary = ({
 };
 
 const patchesToAnnotations = (
-  doc: DataGridDoc,
-  docBefore: DataGridDoc,
+  doc: AmbSheetDoc,
+  docBefore: AmbSheetDoc,
   patches: A.Patch[]
 ) => {
-  return patches.flatMap((patch): Annotation<DataGridDocAnchor, string>[] => {
+  return patches.flatMap((patch): Annotation<AmbSheetDocAnchor, string>[] => {
     const handledPatchActions = ["splice"];
     if (patch.path[0] !== "data" || !handledPatchActions.includes(patch.action))
       return [];
@@ -131,7 +144,7 @@ const patchesToAnnotations = (
           {
             type: "added",
             added: patch.value,
-            anchor: {
+            target: {
               row: patch.path[1] as number,
               column: patch.path[2] as number,
             },
@@ -148,15 +161,11 @@ const patchesToAnnotations = (
   });
 };
 
-export const dataGridDatatype: DataType<
-  DataGridDoc,
-  DataGridDocAnchor,
-  string
-> = {
+export const datatype: DataType<AmbSheetDoc, AmbSheetDocAnchor, string> = {
   type: "patchwork:dataType",
-  id: "datagrid",
-  name: "Spreadsheet",
-  icon: "Sheet",
+  id: "ambsheet",
+  name: "AmbSheet",
+  icon: "Boxes",
   isExperimental: true,
 
   init,
@@ -164,8 +173,8 @@ export const dataGridDatatype: DataType<
   setTitle,
   markCopy, // TODO: this shouldn't be here
 
-  includeChangeInHistory,
-  includePatchInChangeGroup,
+  // includeChangeInHistory,
+  // includePatchInChangeGroup,
 
   patchesToAnnotations,
 

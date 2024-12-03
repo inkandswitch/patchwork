@@ -35,6 +35,7 @@
     "@codemirror/view": "^6.28.6",
     "@lezer/common": "^1.2.1",
     "@lezer/highlight": "^1.2.0",
+    "@patchwork/ambsheet": "workspace:*",
     "@patchwork/datagrid": "workspace:*",
     "@patchwork/essay": "workspace:*",
     "@patchwork/file": "workspace:*",
