@@ -704,3 +704,29 @@ export const resolvePositionsInContext = (
   );
 
 export const evalSheet = (data: AmbSheetDoc["data"]) => new Env(data).eval();
+
+export type Filter = {
+  pos: Position;
+  values: RawValue[];
+};
+
+export function filter2(results: Results, filters: Filter[]): FilteredResults {
+  return filter(
+    results,
+    filters.map((filter) => toContexts(filter, results))
+  );
+}
+
+function toContexts(filter: Filter, results: Results): AmbContext[] {
+  const { row, col } = filter.pos;
+  const result = results[row][col] as Value[];
+  const contexts: AmbContext[] = [];
+  for (const rawValue of filter.values) {
+    for (let idx = 0; idx < result.length; idx++) {
+      if (result[idx].rawValue === rawValue) {
+        contexts.push(result[idx].context);
+      }
+    }
+  }
+  return contexts;
+}
