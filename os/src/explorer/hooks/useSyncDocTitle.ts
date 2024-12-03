@@ -3,7 +3,7 @@ import {
   useAsyncComputed,
 } from "@patchwork/sdk/async-signals";
 import { useDataTypes } from "@patchwork/sdk/hooks";
-import { FolderDoc } from "@patchwork/folder";
+import { DocPathUtils, FolderDoc } from "@patchwork/folder";
 import { DocPath } from "@patchwork/folder";
 import { dataTypeById } from "@patchwork/sdk";
 import { fetchOmOnActiveBranch } from "@patchwork/sdk/versionControl";
@@ -26,7 +26,8 @@ export const useSyncDocTitle = ({
   repo: Repo;
   selectDocPath: (docLink: DocPath) => void;
 }) => {
-  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
+  const selectedDocLink =
+    selectedDocPath && DocPathUtils.toLink(selectedDocPath);
 
   // counter is incremented each time the title is re computed so we can detect async operations that should be aborted because they are based on old state
   const counterRef = useRef(0);
@@ -46,7 +47,7 @@ export const useSyncDocTitle = ({
     useCallback(() => {
       fetchAwaitMissing(selectedDocPath);
       return fetchOmOnActiveBranch<FolderDoc>(
-        DocPath.parent(selectedDocPath),
+        DocPathUtils.parent(selectedDocPath),
         account,
         repo
       );
@@ -95,7 +96,7 @@ export const useSyncDocTitle = ({
 
             // update url
             selectDocPath([
-              ...DocPath.parent(selectedDocPath),
+              ...DocPathUtils.parent(selectedDocPath),
               { ...selectedDocLink, name: title },
             ]);
           }

@@ -26,7 +26,7 @@ export type DocLink = {
 
 export type DocPath = DocLink[];
 
-export const DocPath = {
+export const DocPathUtils = {
   toString: (docPath: DocPath) => docPath.map((link) => link.url).join("/"),
 
   toLink: (path: DocPath) => path[path.length - 1],
@@ -44,10 +44,10 @@ export const DocPath = {
 
   folder: (path: DocPath): DocPath => {
     // NOTE: We assume that all containing links are folders.
-    if (DocPath.toLink(path).type === "folder") {
+    if (DocPathUtils.toLink(path).type === "folder") {
       return path;
     } else {
-      return DocPath.parent(path);
+      return DocPathUtils.parent(path);
     }
   },
 

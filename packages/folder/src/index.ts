@@ -1,7 +1,8 @@
 export {
   init,
   folderDatatype as dataType,
-  DocPath,
+  DocPathUtils,
+  type DocPath,
   type FolderDoc,
   type FolderDocMaterialized as FolderDocWithChildren,
   type DocLink,

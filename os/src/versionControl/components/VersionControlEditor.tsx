@@ -5,7 +5,7 @@ import { LoadingScreen } from "@patchwork/sdk/components";
 import { toHashUrl } from "@patchwork/sdk/router";
 import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router";
 import { useDataTypes } from "@patchwork/sdk/hooks";
-import { DocLink, DocPath } from "@patchwork/folder";
+import { DocLink, DocPath, DocPathUtils } from "@patchwork/folder";
 import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
 import { useToast } from "@patchwork/sdk/ui";
 import { EditorProps, Tool } from "@patchwork/sdk";
@@ -62,7 +62,7 @@ export const VersionControlEditor: React.FC<{
   docHeadsFromTimelineSidebar,
   setDocHeadsFromTimelineSidebar,
 }) => {
-  const docLink = DocPath.toLink(docPath);
+  const docLink = DocPathUtils.toLink(docPath);
 
   const [docUIState, changeDocUIState] = useDocUIState(docPath);
 
@@ -286,7 +286,7 @@ export const VersionControlEditor: React.FC<{
       }
 
       return fetchDoesDocLinkExistInBranchScope(
-        DocPath.toLink(docPath),
+        DocPathUtils.toLink(docPath),
         repo,
         branchScopeAndActiveBranchInfo,
         dataTypes

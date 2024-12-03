@@ -2,7 +2,7 @@ import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { dataTypeById } from "@patchwork/sdk";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import { useTools } from "@patchwork/sdk/hooks";
-import { FolderDoc } from "@patchwork/folder";
+import { DocPathUtils, FolderDoc } from "@patchwork/folder";
 import { DocPath } from "@patchwork/folder";
 import { Button } from "@patchwork/sdk/ui";
 import { Toaster } from "@patchwork/sdk/ui";
@@ -47,7 +47,8 @@ export const Explorer: React.FC = () => {
   const { selectedDocPath, selectDocPath } = useRouter({
     rootFolderDocWithMetadata: rootFolderData,
   });
-  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
+  const selectedDocLink =
+    selectedDocPath && DocPathUtils.toLink(selectedDocPath);
 
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocHandle =
@@ -127,13 +128,13 @@ export const Explorer: React.FC = () => {
         if (!rootFolderUrl) {
           throw new Error("Root folder URL not ready");
         }
-        parentFolderDocPath = DocPath.forRoot(rootFolderUrl);
+        parentFolderDocPath = DocPathUtils.forRoot(rootFolderUrl);
       } else if (selectedDataTypeId === "folder") {
         // If a folder is currently selected, add the new document to that folder
         parentFolderDocPath = selectedDocPath;
       } else {
         // Otherwise, add the new document to the parent folder of the selected doc
-        parentFolderDocPath = DocPath.parent(selectedDocPath);
+        parentFolderDocPath = DocPathUtils.parent(selectedDocPath);
       }
 
       const branchScopeAndActiveBranchInfoOfParentFolder =
@@ -215,8 +216,8 @@ export const Explorer: React.FC = () => {
   }, [addNewDocument, selectedDocUrl]);
 
   const removeDocPath = async (docPath: DocPath) => {
-    const docLink = DocPath.toLink(docPath);
-    const parentFolderDocPath = DocPath.parent(docPath);
+    const docLink = DocPathUtils.toLink(docPath);
+    const parentFolderDocPath = DocPathUtils.parent(docPath);
     const parentFolderOm = await asyncComputedPromise(() =>
       fetchOmOnActiveBranch<FolderDoc>(parentFolderDocPath, account, repo)
     );
@@ -328,7 +329,7 @@ export const Explorer: React.FC = () => {
                 currentTool &&
                 flatDocPaths && (
                   <VersionControlEditor
-                    key={DocPath.toString(selectedDocPath)}
+                    key={DocPathUtils.toString(selectedDocPath)}
                     docPath={selectedDocPath}
                     tool={currentTool}
                     addNewDocument={addNewDocument}

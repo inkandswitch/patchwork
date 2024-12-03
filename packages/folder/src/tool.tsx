@@ -17,7 +17,7 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge/next";
 import React, { useMemo } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { DocPath, FolderDoc } from "./datatype";
+import { DocPath, DocPathUtils, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
 
 export const FolderViewerWithEmbeds: React.FC<
@@ -71,7 +71,7 @@ export const FolderEntryView = ({
   collapseContentWithoutChanges,
   highlightChanges,
 }: FolderEntryView) => {
-  const docLink = DocPath.toLink(docPath);
+  const docLink = DocPathUtils.toLink(docPath);
   const branchScopeAndActiveBranchInfo =
     useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;

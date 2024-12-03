@@ -5,7 +5,7 @@ import { AutomergeUrl } from "@automerge/automerge-repo";
 import { FileDoc } from "@patchwork/file";
 import { BuildRun, Reference } from "./datatype";
 import { fetchMap } from "@patchwork/sdk/async-signals";
-import { DocPath } from "@patchwork/folder";
+import { DocPath, DocPathUtils } from "@patchwork/folder";
 
 export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
   // TODO: we should be able to use equality to check if heads match, but
@@ -41,7 +41,7 @@ export const fetchProjectState = ({
   fetchDocOnBranchFromUrl: (url: AutomergeUrl) => Automerge.Doc<unknown>;
 }): ProjectState => {
   const fileUrls = folderDoc.flatDocPaths
-    .map(DocPath.toLink)
+    .map(DocPathUtils.toLink)
     .flatMap(({ url }) =>
       !filesReferencedInBuildsOnly ||
       // filter out files that are not referenced by any build run

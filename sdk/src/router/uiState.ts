@@ -5,7 +5,7 @@ import {
   useAsyncCall,
 } from "../async-signals";
 import { Om } from "../om";
-import { DocPath } from "@patchwork/folder";
+import { DocPath, DocPathUtils } from "@patchwork/folder";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback, useMemo } from "react";
@@ -16,12 +16,12 @@ import { Account, AccountDoc, useCurrentAccount } from "..";
 export type UIStateDoc = {
   /**
    * Paths to documents that are toggled open in the sidebar.
-   * (Each toggled-open path is a docpath from DocPath.toString)
+   * (Each toggled-open path is a docpath from DocPathUtils.toString)
    */
   docPathsToggledOpenInSidebar: string[];
 
   /** Documents in the folder hierarchy that have a branch checked out.
-   *  Map from branch scope path string (made with DocPath.toString) to branch URL.
+   *  Map from branch scope path string (made with DocPathUtils.toString) to branch URL.
    */
   openBranches: { [docPathString: string]: AutomergeUrl };
 
@@ -100,7 +100,7 @@ const TAB_DOC_UI_STATE_SIGNALS: Record<
 export const useDocUIStateOrUndefined = (
   docPath: DocPath
 ): [DocUIState | undefined, (fn: (state: DocUIState) => void) => void] => {
-  const key = DocPath.toString(docPath);
+  const key = DocPathUtils.toString(docPath);
   const uiStateOm = useUIStateOm();
   const uiStateHandle = uiStateOm?.handle;
   const tabDocUIStateAtom = getTabDocUIStateAtom(key, uiStateHandle);

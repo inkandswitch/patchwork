@@ -7,7 +7,7 @@ import {
   useAsyncComputed,
 } from "@patchwork/sdk/async-signals";
 
-import { DocPath } from "@patchwork/folder";
+import { DocPath, DocPathUtils } from "@patchwork/folder";
 import { FolderDocWithMetadata } from "@patchwork/folder";
 
 import {
@@ -40,10 +40,10 @@ function getDocName(
   rootFolderDocWithChildren: FolderDocWithMetadata | undefined
 ): string {
   const docPath = rootFolderDocWithChildren?.flatDocPaths.find(
-    (docPath) => DocPath.toLink(docPath).url === url
+    (docPath) => DocPathUtils.toLink(docPath).url === url
   );
   if (docPath) {
-    return DocPath.toLink(docPath).name;
+    return DocPathUtils.toLink(docPath).name;
   } else {
     return parseAutomergeUrl(url).documentId;
   }

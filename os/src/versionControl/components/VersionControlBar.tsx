@@ -8,7 +8,7 @@ import { selectDocLink } from "@patchwork/sdk";
 import { MainViewMode, useDocUIState } from "@patchwork/sdk/router";
 import { getRelativeTimeString } from "@patchwork/sdk/versionControl";
 import { Om } from "@patchwork/sdk/om";
-import { DocPath, FolderDoc } from "@patchwork/folder";
+import { DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
 import { Tool } from "@patchwork/sdk";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 
@@ -147,7 +147,7 @@ export const VersionControlBar = ({
   onMergeBranch: (branchUrl: AutomergeUrl) => void;
   onDeleteBranch: (branchUrl: AutomergeUrl) => void;
 }) => {
-  const docLink = DocPath.toLink(docPath);
+  const docLink = DocPathUtils.toLink(docPath);
 
   const {
     branchScopeOm,
@@ -168,7 +168,7 @@ export const VersionControlBar = ({
   const dataTypes = useDataTypes();
 
   const handleCreateBranch = useCallback(async () => {
-    const branchScopeLink = DocPath.toLink(branchScopePath)!;
+    const branchScopeLink = DocPathUtils.toLink(branchScopePath)!;
 
     const branchUrl = (
       await createBranch({

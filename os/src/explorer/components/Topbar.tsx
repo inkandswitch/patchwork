@@ -3,7 +3,7 @@ import {
   genericExportMethods,
 } from "@patchwork/sdk/fileExports";
 import { useDataTypes } from "@patchwork/sdk/hooks";
-import { FolderDoc, DocPath } from "@patchwork/folder";
+import { FolderDoc, DocPath, DocPathUtils } from "@patchwork/folder";
 import { dataTypeById } from "@patchwork/sdk";
 import {
   DropdownMenu,
@@ -71,7 +71,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   const repo = useRepo();
   const { toast } = useToast();
 
-  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
+  const selectedDocLink =
+    selectedDocPath && DocPathUtils.toLink(selectedDocPath);
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
@@ -140,11 +141,11 @@ export const Topbar: React.FC<TopbarProps> = ({
       type: selectedDocLink.type,
     };
 
-    const folderDocPath = DocPath.parent(selectedDocPath);
+    const folderDocPath = DocPathUtils.parent(selectedDocPath);
 
     if (!docHeadsFromTimelineSidebar) {
       const folderHandle = repo.find<FolderDoc>(
-        DocPath.toLink(folderDocPath).url
+        DocPathUtils.toLink(folderDocPath).url
       );
       const folderDoc = await folderHandle.doc();
       const index = folderDoc!.docs.findIndex(

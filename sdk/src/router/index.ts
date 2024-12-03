@@ -1,7 +1,7 @@
 import { dataTypeById } from "..";
 import { useDataTypes } from "../hooks";
 import { useStaticCallback } from "../hooks/useStaticCallback";
-import { DocLink, FolderDoc } from "@patchwork/folder";
+import { DocLink, DocPathUtils, FolderDoc } from "@patchwork/folder";
 import { DocPath } from "@patchwork/folder";
 import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { setActiveBranchUrl } from "../versionControl";
@@ -140,7 +140,8 @@ export const useRouter = ({
     activeBranchScopeUrl,
   } = useSelectedDocPathState();
 
-  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
+  const selectedDocLink =
+    selectedDocPath && DocPathUtils.toLink(selectedDocPath);
 
   const datatypes = useDataTypes();
 
@@ -246,7 +247,7 @@ export const useRouter = ({
           // ... otherwise the branch scope is the document itself
           // in this case we can skip the check below that ensures that the doc is in the root folder
           const docPath = [
-            ...DocPath.forRoot(rootFolderDocWithMetadata.rootFolderUrl),
+            ...DocPathUtils.forRoot(rootFolderDocWithMetadata.rootFolderUrl),
             {
               type: branchScopeType,
               name: "Loading...", // will be filled in once the doc is loaded
@@ -303,7 +304,7 @@ export const useRouter = ({
             });
 
           docPath = [
-            ...DocPath.forRoot(rootFolderDocWithMetadata.rootFolderUrl),
+            ...DocPathUtils.forRoot(rootFolderDocWithMetadata.rootFolderUrl),
             docLink,
           ];
         }

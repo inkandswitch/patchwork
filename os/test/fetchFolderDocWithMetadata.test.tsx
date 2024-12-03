@@ -3,7 +3,7 @@ import {
   asyncPromise,
   fetchDoc,
 } from "@patchwork/sdk/async-signals";
-import { DocLink } from "@patchwork/folder";
+import { DocLink, DocPathUtils } from "@patchwork/folder";
 import { DocPath } from "@patchwork/folder";
 import { fetchFolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { PeerId, Repo } from "@automerge/automerge-repo";
@@ -37,7 +37,7 @@ describe("fetchFolderDocWithMetadata", () => {
 
   const getFolderDocWithMetadataSignal = (link: DocLink) =>
     asyncCall(fetchFolderDocWithMetadata, link.url, (path) =>
-      fetchDoc(DocPath.toLink(path).url, repo)
+      fetchDoc(DocPathUtils.toLink(path).url, repo)
     );
 
   beforeEach(() => {

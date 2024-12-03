@@ -1,5 +1,5 @@
 import { isEqual } from "lodash";
-import { DocLink, DocPath } from "@patchwork/folder";
+import { DocLink, DocPath, DocPathUtils } from "@patchwork/folder";
 import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { URLParams } from "./types";
 
@@ -29,7 +29,7 @@ export const getDocPathInRootFolder = (
 ): DocPath | undefined => {
   // try to match urlParams to docLink in root folder
   const matches = rootFolderDocWithMetadata.flatDocPaths.filter((docPath) => {
-    const link = DocPath.toLink(docPath);
+    const link = DocPathUtils.toLink(docPath);
     return link.url === url && link.type === type;
   });
 
@@ -45,14 +45,14 @@ export const getDocPathInRootFolder = (
   // otherwise just return the first link
 
   const previousFolderPath =
-    previousSelectedDocPath && DocPath.folder(previousSelectedDocPath);
+    previousSelectedDocPath && DocPathUtils.folder(previousSelectedDocPath);
 
   if (previousFolderPath) {
     for (let i = previousFolderPath.length; i >= 0; i--) {
       const comparisonPath = previousFolderPath.slice(0, i);
 
       const maybeLinkInPath = matches.find((match) =>
-        isEqual(DocPath.parent(match), comparisonPath)
+        isEqual(DocPathUtils.parent(match), comparisonPath)
       );
 
       if (maybeLinkInPath) {

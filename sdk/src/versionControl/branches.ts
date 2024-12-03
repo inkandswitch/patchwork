@@ -1,6 +1,6 @@
 import { UIStateDoc } from "../router/uiState";
 import { Om } from "../om";
-import { DocPath } from "@patchwork/folder";
+import { DocPath, DocPathUtils } from "@patchwork/folder";
 import { DataType, dataTypeById } from "..";
 import {
   DocCloneMap,
@@ -283,9 +283,10 @@ export const setActiveBranchUrl = (
     }
 
     if (branchDocUrl) {
-      uiStateDoc.openBranches[DocPath.toString(branchScopePath)] = branchDocUrl;
+      uiStateDoc.openBranches[DocPathUtils.toString(branchScopePath)] =
+        branchDocUrl;
     } else {
-      delete uiStateDoc.openBranches[DocPath.toString(branchScopePath)];
+      delete uiStateDoc.openBranches[DocPathUtils.toString(branchScopePath)];
     }
   });
 };

@@ -1,4 +1,4 @@
-import { DocPath } from "@patchwork/folder";
+import { DocPath, DocPathUtils } from "@patchwork/folder";
 import { useBranchScopeAndActiveBranchInfo } from "../versionControl";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useState } from "react";
@@ -17,7 +17,8 @@ export const useSelectedDocPathState = (): {
   activeBranchScopeUrl?: AutomergeUrl;
 } => {
   const [selectedDocPath, _setSelectedDocPath] = useState<DocPath>();
-  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
+  const selectedDocLink =
+    selectedDocPath && DocPathUtils.toLink(selectedDocPath);
 
   // sync selected branch to url
   const branchScopeAndActiveBranchInfo =

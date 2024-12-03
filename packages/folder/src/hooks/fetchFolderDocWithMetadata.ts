@@ -16,6 +16,7 @@ import { useCallback } from "react";
 import {
   DocLink,
   DocPath,
+  DocPathUtils,
   FolderDoc,
   FolderDocMaterialized,
 } from "../datatype";
@@ -53,9 +54,9 @@ const flattenDocPaths = ({
       childPath,
       ...(docLink.type === "folder" && docLink.folderContents
         ? flattenDocPaths({
-          docPath: childPath,
-          folderDoc: docLink.folderContents,
-        })
+            docPath: childPath,
+            folderDoc: docLink.folderContents,
+          })
         : []),
     ];
   });
@@ -109,7 +110,7 @@ export function fetchFolderDocWithMetadata(
   rootFolderUrl: AutomergeUrl,
   fetchDoc: (docPath: DocPath) => Doc<unknown>
 ): FolderDocWithMetadata {
-  const rootDocPath = DocPath.forRoot(rootFolderUrl);
+  const rootDocPath = DocPathUtils.forRoot(rootFolderUrl);
   const materializedDoc = fetchMaterializeFolderDoc(rootDocPath, fetchDoc);
   const flatDocPaths = flattenDocPaths({
     folderDoc: materializedDoc,

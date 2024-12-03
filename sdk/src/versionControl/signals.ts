@@ -1,7 +1,7 @@
 import { Account } from "..";
 import { fetchUIStateOm } from "../router/uiState";
 import { Om } from "../om";
-import { DocLink, DocPath } from "@patchwork/folder";
+import { DocLink, DocPath, DocPathUtils } from "@patchwork/folder";
 import { canBeUndef } from "../utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
@@ -103,7 +103,7 @@ export const fetchActiveBranchInfo = (
   const uiStateOm = fetchUIStateOm(repo, account);
   const activeBranchUrl = canBeUndef(
     // We handle the case of doc.openBranches being undefined here for backwards compatibility
-    uiStateOm.doc.openBranches?.[DocPath.toString(branchScopePath)]
+    uiStateOm.doc.openBranches?.[DocPathUtils.toString(branchScopePath)]
   );
 
   return {
@@ -182,7 +182,7 @@ export const fetchBranchScopeAndActiveBranchInfo = <
     repo
   );
 
-  const docLink = DocPath.toLink(docPath);
+  const docLink = DocPathUtils.toLink(docPath);
   const { url, baseHeads } = fetchResolveUrlOnFixedBranch(
     docLink.url,
     activeBranchInfo.activeBranchOm?.url,
@@ -208,7 +208,7 @@ export const fetchDoesDocLinkExistInBranchScope = (
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo,
   dataTypes: DataType[]
 ) => {
-  const branchScopeDocLink = DocPath.toLink(
+  const branchScopeDocLink = DocPathUtils.toLink(
     branchScopeAndActiveBranchInfo.branchScopePath
   );
 
