@@ -7,3 +7,4 @@ export * as jacquard from "@patchwork/jacquard/src/datatype";
 export * as file from "@patchwork/file/src/datatype";
 export * as counter from "@patchwork/counter/src/datatype";
 export * as ambsheet from "@patchwork/ambsheet/src/datatype";
+export * as ambEmbed from "@patchwork/amb-embed/src/datatype";

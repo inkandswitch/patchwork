@@ -69,7 +69,7 @@ If you want a fast development loop and easy deploy as part of the core OS deplo
 - copy one of the existing directories in `os/src/packages`. `counter` is a nice minimal one you can start with.
 - You'll need to update a few places to get your new package registered. (Sorry this list is long, it should be shorter.)
   - update the package name in `<yourpackage>/package.json`
-  - update `os/package.json` to include an entry pointing to your new package
+  - update `os/package.json` to include an entry pointing to your new package, then run `pnpm i` to install the dependency
   - update `os/src/packages/index.ts` to include an entry pointing to your new package
   - Update `os/src/packages/datatypesSafe.ts` to include an entry for your new datatype (assuming your package exports a datatype). This will be removed once we support dynamic datatypes.
 

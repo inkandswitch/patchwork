@@ -10,3 +10,4 @@ export * as file from "@patchwork/file";
 export * as counter from "@patchwork/counter";
 export * as raw from "@patchwork/raw-editor";
 export * as ambsheet from "@patchwork/ambsheet";
+export * as ambEmbed from "@patchwork/amb-embed";

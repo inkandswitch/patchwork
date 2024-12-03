@@ -266,6 +266,24 @@ export const Topbar: React.FC<TopbarProps> = ({
                 />{" "}
                 Copy share URL
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (!selectedDocPath) {
+                    toast({ title: "No document selected" });
+                    return;
+                  }
+                  navigator.clipboard.writeText(
+                    DocPath.toLink(selectedDocPath).url
+                  );
+                  toast({ title: "Copied to clipboard" });
+                }}
+              >
+                <ShareIcon
+                  className="inline-block text-gray-500 mr-2"
+                  size={14}
+                />{" "}
+                Copy Automerge URL
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onClickMakeCopy}>
                 <GitForkIcon
                   className="inline-block text-gray-500 mr-2"
