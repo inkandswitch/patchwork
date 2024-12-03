@@ -15,6 +15,7 @@
     "@automerge/automerge-repo": "2.0.0-alpha.7",
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
     "@patchwork/sdk": "workspace:*",
+    "@patchwork/ambsheet": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
