@@ -10,37 +10,32 @@ import {
 import { ChangeEvent, useEffect, useState } from "react";
 
 import {
+  Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTrigger,
-} from "@patchwork/sdk/ui/dialog";
-
-import { Button } from "@patchwork/sdk/ui/button";
-import { Input } from "@patchwork/sdk/ui/input";
-import {
+  Icon,
+  Input,
+  Label,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@patchwork/sdk/ui/tabs";
-
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
-
-import { Copy, Eye, EyeOff, PlusIcon, XIcon } from "lucide-react";
-
-import { Label } from "@patchwork/sdk/ui/label";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@patchwork/sdk/ui/tooltip";
-import { ContactAvatar } from "./ContactAvatar";
-import { Checkbox } from "@patchwork/sdk/ui/checkbox";
-import { Icon } from "@patchwork/sdk/ui";
+} from "@patchwork/sdk/ui";
+
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
+
+import { Copy, Eye, EyeOff } from "lucide-react";
 import { useDataTypes } from "@patchwork/sdk/hooks";
+
+import { ContactAvatar } from "./ContactAvatar";
 
 // 1MB in bytes
 const MAX_AVATAR_SIZE = 1024 * 1024;
@@ -100,7 +95,7 @@ export const AccountPicker = ({
     if (self && self.type === "registered" && name === "") {
       setName(self.name);
     }
-  }, [self]);
+  }, [self, name]);
 
   const onSubmit = () => {
     switch (activeTab) {

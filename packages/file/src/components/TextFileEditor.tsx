@@ -1,5 +1,5 @@
-import { useToolUIState } from "@patchwork/sdk/router/uiState";
-import { useHandleDef } from "@patchwork/sdk/hooks/useHandleDef";
+import { useToolUIState } from "@patchwork/sdk/router";
+import { useHandleDef } from "@patchwork/sdk/hooks";
 import {
   annotationsPlugin,
   hideLinesWithoutAnnotations,
@@ -44,7 +44,7 @@ import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import { tool } from "..";
 import { selectedAnchorsPlugin } from "@patchwork/essay/codemirrorPlugins/setSelectedAnchors";
 import { FileDoc, TextFileContent } from "../datatype";
-import { CodeMirror } from "@patchwork/sdk/components/CodeMirror";
+import { CodeMirror } from "@patchwork/sdk/components";
 
 export type TextFileDoc = FileDoc & {
   content: TextFileContent;

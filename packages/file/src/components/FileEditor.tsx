@@ -1,15 +1,18 @@
+import { useCurrentAccount, EditorProps } from "@patchwork/sdk";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 import {
   fetchFlatMap,
   fetchMap,
   useAsyncComputed,
   fetchAwaitMissing,
 } from "@patchwork/sdk/async-signals";
-import { useDocUIState } from "@patchwork/sdk/router/uiState";
+import { useDocUIState } from "@patchwork/sdk/router";
 import { TextAnchor } from "@patchwork/sdk/textAnchors";
-import { EditorProps } from "@patchwork/sdk";
 import { fetchResolveUrlOnFixedBranch } from "@patchwork/sdk/versionControl";
+
 import * as Automerge from "@automerge/automerge";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
+
 import { useCallback } from "react";
 import { fetchJacquardProjectInfoWithActiveBranch } from "@patchwork/jacquard/hooks";
 import {
@@ -23,8 +26,6 @@ import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
 import { ImageFileDoc, ImageFileViewer } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
-import { useCurrentAccount } from "@patchwork/sdk";
-import { useDataTypes } from "@patchwork/sdk/hooks";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function

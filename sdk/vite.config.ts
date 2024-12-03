@@ -14,13 +14,14 @@ export default defineConfig({
     lib: {
       entry: {
         index: "src/index.ts",
-        versionControl: "src/versionControl/index.ts",
-        ui: "src/ui/index.ts",
-        markdown: "src/markdown/index.ts",
         "async-signals": "src/async-signals/index.ts",
-        textAnchors: "src/textAnchors/index.ts",
-        hooks: "src/hooks/index.ts",
         components: "src/components/index.ts",
+        hooks: "src/hooks/index.ts",
+        markdown: "src/markdown/index.ts",
+        router: "src/router/index.ts",
+        textAnchors: "src/textAnchors/index.ts",
+        ui: "src/ui/index.ts",
+        versionControl: "src/versionControl/index.ts",
         utils: "src/utils.ts", // note this is different from the others
       },
       name: "PatchworkSDK",

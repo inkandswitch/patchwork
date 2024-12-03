@@ -2,6 +2,7 @@ import resolve from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
 import postcss from "rollup-plugin-postcss";
 import commonjs from "@rollup/plugin-commonjs";
+import json from "@rollup/plugin-json";
 
 const SHARED_DEPENDENCIES = [
   "@automerge/automerge",
@@ -17,12 +18,13 @@ const SHARED_DEPENDENCIES = [
 export default {
   input: "src/index.ts",
   output: {
-    file: "dist/index.js",
+    dir: "dist",
     format: "esm",
     sourcemap: true,
   },
   plugins: [
     resolve(),
+    json(),
     typescript({ tsconfig: "../../tsconfig.json" }),
     postcss({
       extensions: [".css"],

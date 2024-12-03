@@ -15,8 +15,7 @@ import { URLParams } from "./types";
 import { parseLegacyUrl, parseUrl, toUrl } from "./urls";
 import { useSelectedDocPathState } from "./useSelectedDocPathState";
 
-export { useDocUIState } from "./uiState";
-
+export { useDocUIState, useToolUIState } from "./uiState";
 export { parseUrl, getUrlSafeName } from "./urls";
 
 /*
