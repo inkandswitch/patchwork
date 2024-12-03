@@ -153,31 +153,7 @@ export default mergeConfig(sharedConfig, {
       external: EXTERNAL_DEPENDENCIES,
       input: {
         main: path.resolve(__dirname, "index.html"),
-        sdk: path.resolve(__dirname, "../sdk/src/index.ts"), // Added entrypoint for sdk.ts
-        ...Object.fromEntries(
-          globSync(
-            path.resolve(__dirname, "src/datatypes/*/module.@(ts|js|tsx|jsx)")
-          ).map((path) => {
-            const datatypeId = path.split("/").slice(-2)[0];
-
-            return [
-              `dataType-${datatypeId}`,
-              fileURLToPath(new URL(path, import.meta.url)),
-            ];
-          })
-        ),
-        ...Object.fromEntries(
-          globSync(
-            path.resolve(__dirname, "src/tools/*/module.@(ts|js|tsx|jsx)")
-          ).map((path) => {
-            const toolId = path.split("/").slice(-2)[0];
-
-            return [
-              `tool-${toolId}`,
-              fileURLToPath(new URL(path, import.meta.url)),
-            ];
-          })
-        ),
+        sdk: path.resolve(__dirname, "../sdk/src/index.ts"),
       },
       output: {
         // We put index.css in dist instead of dist/assets so that we can link to fonts
@@ -191,19 +167,6 @@ export default mergeConfig(sharedConfig, {
           return "assets/[name]-[hash][extname]";
         },
         entryFileNames: (chunkInfo) => {
-          // output tools under "/tools"
-          if (chunkInfo.name.startsWith("tool-")) {
-            const typeId = chunkInfo.name.split("-")[1];
-            return `tools/${typeId}.js`;
-          }
-
-          // output datatypes under "/dataTypes"
-          if (chunkInfo.name.startsWith("dataType-")) {
-            const typeId = chunkInfo.name.split("-")[1];
-            return `dataTypes/${typeId}.js`;
-          }
-
-          // output sdk under "/sdk.js"
           if (chunkInfo.name === "sdk") {
             return `sdk.js`;
           }
