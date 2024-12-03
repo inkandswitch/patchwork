@@ -18,7 +18,7 @@ import { frontmatterPlugin } from "../codemirrorPlugins/frontmatter";
 import { previewFiguresPlugin } from "../codemirrorPlugins/previewFigures";
 import { tableOfContentsPreviewPlugin } from "../codemirrorPlugins/tableOfContentsPreview";
 
-import { CodeMirror } from "@patchwork/sdk/components/CodeMirror";
+import { CodeMirror } from "@patchwork/sdk/components";
 import {
   ResolvedTextAnchor,
   TextAnchor,

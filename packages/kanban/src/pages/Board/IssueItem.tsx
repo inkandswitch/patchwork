@@ -2,7 +2,7 @@ import { DraggableProvided } from "@hello-pangea/dnd";
 import classNames from "classnames";
 import { memo, type CSSProperties } from "react";
 import { Card } from "../../datatype";
-import { ContactAvatar } from "@patchwork/sdk/components/ContactAvatar";
+import { ContactAvatar } from "@patchwork/sdk/components";
 
 interface IssueProps {
   card: Card;

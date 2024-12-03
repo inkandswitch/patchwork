@@ -1,9 +1,9 @@
 import { HasAssets } from "@patchwork/sdk/assets";
 import { AnnotationsViewProps, useCurrentAccount } from "@patchwork/sdk";
-import { ContactAvatar } from "@patchwork/sdk/components/ContactAvatar";
-import { getRelativeTimeString } from "@patchwork/sdk/versionControl/dates";
+import { ContactAvatar } from "@patchwork/sdk/components";
+import { getRelativeTimeString } from "@patchwork/sdk/versionControl";
 import { MarkdownInput } from "@patchwork/sdk/markdown";
-import { Button } from "@patchwork/sdk/ui/button";
+import { Button } from "@patchwork/sdk/ui";
 import {
   AnnotationGroupWithUIState,
   CommentState,
@@ -19,11 +19,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { getAnnotationGroupId } from "@patchwork/sdk/versionControl/annotations";
-import {
-  applyCursorPatches,
-  CursorPatch,
-} from "@patchwork/sdk/versionControl/cursorPatch";
+import { getAnnotationGroupId } from "@patchwork/sdk/versionControl";
+import { applyCursorPatches, CursorPatch } from "@patchwork/sdk/versionControl";
 
 export interface AnnotationGroupViewProps<
   D extends HasVersionControlMetadata<T, V>,

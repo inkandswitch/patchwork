@@ -3,12 +3,12 @@ import {
   useAsyncComputed,
 } from "@patchwork/sdk/async-signals";
 import { useCurrentAccount } from "@patchwork/sdk";
-import { ContactAvatar } from "@patchwork/sdk/components/ContactAvatar";
+import { ContactAvatar } from "@patchwork/sdk/components";
 import { selectDocLink } from "@patchwork/sdk";
-import { MainViewMode, useDocUIState } from "@patchwork/sdk/router/uiState";
-import { getRelativeTimeString } from "@patchwork/sdk/versionControl/dates";
+import { MainViewMode, useDocUIState } from "@patchwork/sdk/router";
+import { getRelativeTimeString } from "@patchwork/sdk/versionControl";
 import { Om } from "@patchwork/sdk/om";
-import { DocPath, FolderDoc } from "@patchwork/folder/datatype";
+import { DocPath, FolderDoc } from "@patchwork/folder";
 import { Tool } from "@patchwork/sdk";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 
@@ -18,13 +18,13 @@ import {
   initVersionControlSidecarDoc,
   VersionControlSidecarDoc,
 } from "@patchwork/sdk/versionControl";
-import { Button } from "@patchwork/sdk/ui/button";
+import { Button } from "@patchwork/sdk/ui";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@patchwork/sdk/ui/dropdown-menu";
+} from "@patchwork/sdk/ui";
 import {
   Select,
   SelectContent,
@@ -33,16 +33,18 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@patchwork/sdk/ui/select";
+} from "@patchwork/sdk/ui";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@patchwork/sdk/ui/tooltip";
-import { useToast } from "@patchwork/sdk/ui/use-toast";
+} from "@patchwork/sdk/ui";
+import { useToast } from "@patchwork/sdk/ui";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
+
+/* Ugh... TODO */
 import {
   BuildRefreshButton,
   DisabledBuildRefreshButton,
@@ -59,7 +61,9 @@ import {
   fetchProjectStateFromProjectInfo,
   getBuildRunsWithDocAsPrimaryInput,
 } from "@patchwork/jacquard/src/signals";
+
 import { truncate } from "lodash";
+
 import {
   ArrowRightFromLineIcon,
   ArrowRightToLineIcon,
@@ -85,8 +89,8 @@ import {
   createBranch,
   hasLegacyBranchesToMigrate,
   migrateLegacyBranches,
-} from "@patchwork/sdk/versionControl/branches";
-import { BranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl/signals";
+} from "@patchwork/sdk/versionControl";
+import { BranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 
 // interface MakeBranchOptions {
 //   name?: string;

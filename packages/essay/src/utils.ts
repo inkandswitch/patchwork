@@ -3,7 +3,7 @@ import { next as A } from "@automerge/automerge";
 import { ReactElement, useMemo } from "react";
 import ReactDOMServer from "react-dom/server";
 import { AnnotationGroupWithUIState } from "@patchwork/sdk/versionControl";
-import { useScrollPosition } from "@patchwork/sdk/hooks/useScrollPosition";
+import { useScrollPosition } from "@patchwork/sdk/hooks";
 import { MarkdownDoc } from "./datatype";
 import { TextAnchor } from "@patchwork/sdk/textAnchors";
 
@@ -20,8 +20,8 @@ const estimatedHeightOfAnnotationGroup = (
 ) => {
   const commentHeights = annotationGroup.discussion
     ? annotationGroup.discussion.comments.map(
-      (comment) => 64 + Math.floor(comment.content.length / 60) * 20
-    )
+        (comment) => 64 + Math.floor(comment.content.length / 60) * 20
+      )
     : [];
   const commentsHeight = commentHeights.reduce((a, b) => a + b, 0);
   const PADDING = 24;
@@ -84,7 +84,7 @@ export const getVisibleAnnotationGroupsWithPos = ({
   for (let i = activeIndex - 1; i >= 0; i--) {
     if (
       annotationGroupsWithPosition[i].yCoord +
-      estimatedHeightOfAnnotationGroup(annotationGroupsWithPosition[i]) >
+        estimatedHeightOfAnnotationGroup(annotationGroupsWithPosition[i]) >
       annotationGroupsWithPosition[i + 1].yCoord
     ) {
       annotationGroupsWithPosition[i].yCoord =
@@ -98,7 +98,7 @@ export const getVisibleAnnotationGroupsWithPos = ({
     if (
       annotationGroupsWithPosition[i].yCoord <
       annotationGroupsWithPosition[i - 1].yCoord +
-      estimatedHeightOfAnnotationGroup(annotationGroupsWithPosition[i - 1])
+        estimatedHeightOfAnnotationGroup(annotationGroupsWithPosition[i - 1])
     ) {
       annotationGroupsWithPosition[i].yCoord =
         annotationGroupsWithPosition[i - 1].yCoord +
@@ -110,7 +110,7 @@ export const getVisibleAnnotationGroupsWithPos = ({
     if (
       annotationGroupsWithPosition[i].yCoord <
       annotationGroupsWithPosition[i - 1].yCoord +
-      estimatedHeightOfAnnotationGroup(annotationGroupsWithPosition[i - 1])
+        estimatedHeightOfAnnotationGroup(annotationGroupsWithPosition[i - 1])
     ) {
       if (i === activeIndex) {
         annotationGroupsWithPosition[i - 1].yCoord =
@@ -161,10 +161,10 @@ export const useAnnotationGroupsWithPosition = ({
   const annotationGroupsWithPositions = useMemo(() => {
     return editorView && doc && annotationGroups
       ? getVisibleAnnotationGroupsWithPos({
-        editorView,
-        doc,
-        annotationGroups,
-      })
+          editorView,
+          doc,
+          annotationGroups,
+        })
       : [];
 
     // the scrollPosition dependency is implicit so the linter thinks it's not needed;

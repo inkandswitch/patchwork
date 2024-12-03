@@ -1,14 +1,23 @@
-import { asyncComputedPromise, fetchDoc } from "@patchwork/sdk/async-signals";
-import { useAsyncComputed } from "@patchwork/sdk/async-signals/react";
+import {
+  useAsyncComputed,
+  asyncComputedPromise,
+  fetchDoc,
+} from "@patchwork/sdk/async-signals";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import { Icon, IconType } from "@patchwork/sdk/ui";
-import { DocLink, FolderDoc } from "@patchwork/folder";
-import { DocPath, FolderDocMaterialized } from "@patchwork/folder/datatype";
-import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
-import { dataTypeById } from "@patchwork/sdk";
-import { Input } from "@patchwork/sdk/ui";
-import { Popover, PopoverContent, PopoverTrigger } from "@patchwork/sdk/ui";
 import {
+  DocLink,
+  FolderDoc,
+  DocPath,
+  FolderDocWithChildren,
+  FolderDocWithMetadata,
+} from "@patchwork/folder";
+import { dataTypeById } from "@patchwork/sdk";
+import {
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -49,7 +58,7 @@ import {
   useCurrentAccountDoc,
   useDatatypeSettings,
 } from "@patchwork/sdk";
-import { UIStateDoc } from "@patchwork/sdk/router/uiState";
+import { UIStateDoc } from "@patchwork/sdk/router";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
 
@@ -62,7 +71,7 @@ type NodeData = {
   children: NodeData[];
 };
 const prepareDataForTree = (
-  folderDoc: FolderDocMaterialized,
+  folderDoc: FolderDocWithChildren,
   folderPath: DocPath
 ): NodeData[] => {
   if (!folderDoc) {

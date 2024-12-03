@@ -1,7 +1,7 @@
 import { BotIcon, CheckIcon, EyeIcon, XIcon } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 import { useState } from "react";
-import { Button } from "@patchwork/sdk/ui/button";
+import { Button } from "@patchwork/sdk/ui";
 import { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
 import { type DataType } from "@patchwork/sdk";
 import {
@@ -9,16 +9,16 @@ import {
   ChatMessage,
   isSupportedDatatype,
   makeBotTextEdits,
-} from "@patchwork/sdk/versionControl/bots";
-import { useToast } from "@patchwork/sdk/ui/use-toast";
+} from "@patchwork/sdk/versionControl";
+import { useToast } from "@patchwork/sdk/ui";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import {
   BranchDoc,
   HasVersionControlMetadata,
-} from "@patchwork/sdk/versionControl/schema";
+} from "@patchwork/sdk/versionControl";
 import Markdown from "react-markdown";
-import { isLLMActive } from "@patchwork/sdk/versionControl/llm";
-import { SidebarMode } from "@patchwork/sdk/router/uiState";
+import { isLLMActive } from "@patchwork/sdk/versionControl";
+import { SidebarMode } from "@patchwork/sdk/router";
 import { om } from "@patchwork/sdk/om";
 
 // A string which will be visible to the bot representing user acceptance of edits.

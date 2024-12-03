@@ -14,7 +14,7 @@ import { EditorProps } from "@patchwork/sdk";
 import { uniq } from "lodash";
 import "../index.css";
 
-import { useHandleDef } from "@patchwork/sdk/hooks/useHandleDef";
+import { useHandleDef } from "@patchwork/sdk/hooks";
 import {
   TextAnchor,
   useResolvedAnnotationAtPath,

@@ -1,13 +1,13 @@
 import { dataTypeById } from "@patchwork/sdk";
 import { useCurrentAccount } from "@patchwork/sdk";
-import { ErrorFallback } from "@patchwork/sdk/components/ErrorFallback";
-import { LoadingScreen } from "@patchwork/sdk/components/LoadingScreen";
-import { toHashUrl } from "@patchwork/sdk/router/urls";
-import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router/uiState";
+import { ErrorFallback } from "@patchwork/sdk/components";
+import { LoadingScreen } from "@patchwork/sdk/components";
+import { toHashUrl } from "@patchwork/sdk/router";
+import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import { DocLink, DocPath } from "@patchwork/folder/datatype";
-import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui/tabs";
-import { useToast } from "@patchwork/sdk/ui/use-toast";
+import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
+import { useToast } from "@patchwork/sdk/ui";
 import { EditorProps, Tool } from "@patchwork/sdk";
 
 import { AutomergeUrl } from "@automerge/automerge-repo";
@@ -22,25 +22,22 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { useAnnotations } from "@patchwork/sdk/versionControl/annotations";
-import {
-  mergeBranch,
-  setActiveBranchUrl,
-} from "@patchwork/sdk/versionControl/branches";
-import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl/hooks";
+import { useAnnotations } from "@patchwork/sdk/versionControl";
+import { mergeBranch, setActiveBranchUrl } from "@patchwork/sdk/versionControl";
+import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 import {
   BranchDoc,
   DiffWithProvenance,
   HasVersionControlMetadata,
-} from "@patchwork/sdk/versionControl/schema";
+} from "@patchwork/sdk/versionControl";
 import {
   BranchScopeAndActiveBranchInfo,
   fetchDoesDocLinkExistInBranchScope,
-} from "@patchwork/sdk/versionControl/signals";
+} from "@patchwork/sdk/versionControl";
 import {
   diffWithProvenance,
   useActorIdToAuthorMap,
-} from "@patchwork/sdk/versionControl/utils";
+} from "@patchwork/sdk/versionControl";
 import { BotSidebar } from "./BotSidebar";
 import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
@@ -49,7 +46,7 @@ import { useAsyncComputed } from "@patchwork/sdk/async-signals";
 import {
   EditorPropsWithTool,
   SideBySideProps,
-} from "@patchwork/sdk/versionControl/types";
+} from "@patchwork/sdk/versionControl";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{

@@ -10,9 +10,9 @@ import {
   GenericChangeGroup,
   TimelineItems,
   groupingByEditTime,
-} from "@patchwork/sdk/versionControl/groupChanges";
+} from "@patchwork/sdk/versionControl";
 
-import { InlineContactAvatar } from "@patchwork/sdk/components/InlineContactAvatar";
+import { InlineContactAvatar } from "@patchwork/sdk/components";
 import { useSlots } from "@patchwork/sdk/versionControl";
 import { Heads } from "@automerge/automerge/next";
 import {
@@ -26,7 +26,7 @@ import {
   Discussion,
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
-} from "@patchwork/sdk/versionControl/schema";
+} from "@patchwork/sdk/versionControl";
 
 import { useAutoPopulateChangeGroupSummaries } from "@patchwork/sdk/versionControl";
 import { DiscussionInput } from "./DiscussionInput";
@@ -38,10 +38,10 @@ import { DocHandle } from "@automerge/automerge-repo";
 import {
   BranchScopeAndActiveBranchInfoWithoutDoc,
   ChangeGrouper,
-} from "@patchwork/sdk/versionControl/ChangeGrouper";
-import { ChangeGroupingOptions } from "@patchwork/sdk/versionControl/groupChanges";
-import { BranchDoc } from "@patchwork/sdk/versionControl/schema";
-import { BranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl/signals";
+} from "@patchwork/sdk/versionControl";
+import { ChangeGroupingOptions } from "@patchwork/sdk/versionControl";
+import { BranchDoc } from "@patchwork/sdk/versionControl";
+import { BranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 
 const useScrollToBottom = (doc: unknown) => {
   const scrollerRef = useRef<HTMLDivElement>(null);

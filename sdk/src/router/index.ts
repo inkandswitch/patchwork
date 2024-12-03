@@ -8,15 +8,22 @@ import { setActiveBranchUrl } from "../versionControl";
 import { BranchDoc } from "../versionControl";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useState } from "react";
-import { useUIStateOm } from "../router/uiState";
+import { useUIStateOm } from "./uiState";
 import { useCurrentUrl } from "./url";
 import { getDocPathInRootFolder } from "./getDocPathInRootFolder";
 import { URLParams } from "./types";
 import { parseLegacyUrl, parseUrl, toUrl } from "./urls";
 import { useSelectedDocPathState } from "./useSelectedDocPathState";
 
-export { useDocUIState, useToolUIState } from "./uiState";
-export { parseUrl, getUrlSafeName } from "./urls";
+export {
+  type SidebarMode,
+  type MainViewMode,
+  type UIStateDoc,
+  useUIStateOm,
+  useDocUIState,
+  useToolUIState,
+} from "./uiState";
+export { toHashUrl, parseUrl, getUrlSafeName } from "./urls";
 
 /*
  * useRouter

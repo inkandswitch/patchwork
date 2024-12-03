@@ -4,3 +4,4 @@ export { InlineContactAvatar } from "./InlineContactAvatar";
 export { LoadingScreen } from "./LoadingScreen";
 export { ContactAvatar } from "./ContactAvatar";
 export { CopyButton } from "./CopyButton";
+export { AnnotationGroupView } from "./AnnotationGroupView";

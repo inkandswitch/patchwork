@@ -27,9 +27,8 @@ import {
 } from "@patchwork/sdk";
 import { useRouter } from "@patchwork/sdk/router";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
-import { useUIStateOm } from "@patchwork/sdk/router/uiState";
-import { ErrorFallback } from "@patchwork/sdk/components/ErrorFallback";
-import { LoadingScreen } from "@patchwork/sdk/components/LoadingScreen";
+import { useUIStateOm } from "@patchwork/sdk/router";
+import { ErrorFallback, LoadingScreen } from "@patchwork/sdk/components";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";

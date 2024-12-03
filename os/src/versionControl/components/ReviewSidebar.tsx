@@ -1,4 +1,4 @@
-import { Button } from "@patchwork/sdk/ui/button";
+import { Button } from "@patchwork/sdk/ui";
 import { Tool } from "@patchwork/sdk";
 import {
   AnnotationGroupWithUIState,
@@ -7,8 +7,8 @@ import {
 } from "@patchwork/sdk/versionControl";
 import { DocHandle } from "@automerge/automerge-repo";
 import React from "react";
-import { getAnnotationGroupId } from "@patchwork/sdk/versionControl/annotations";
-import { AnnotationGroupView } from "@patchwork/sdk/components/AnnotationGroupView";
+import { getAnnotationGroupId } from "@patchwork/sdk/versionControl";
+import { AnnotationGroupView } from "@patchwork/sdk/components";
 
 type ReviewSidebarProps = {
   doc: HasVersionControlMetadata<unknown, unknown>;
