@@ -11,10 +11,11 @@ export type AmbEmbedDoc = HasVersionControlMetadata<unknown, unknown> & {
   };
   blocks: Array<{
     type: "cellReference";
-    sheetName: string; // TODO
+    sheetName: string; // TODO: decide whether to reference sheets by name or by URL
     cellName: string;
   }>;
 };
+
 // FUNCTIONS
 
 export const markCopy = (doc: AmbEmbedDoc) => {
