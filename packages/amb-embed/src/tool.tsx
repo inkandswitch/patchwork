@@ -6,13 +6,25 @@ import { EditorProps, makeTool } from "@patchwork/sdk";
 import { AmbEmbedDoc } from "./datatype";
 import React, { useMemo } from "react";
 import { LinkedSheets } from "./components/LinkedSheets";
-import { AmbSheetDoc, Env, evalSheet } from "@patchwork/ambsheet";
+import {
+  AmbSheetDoc,
+  Env,
+  evalSheet,
+  Filter,
+  filter2,
+  FilteredResults,
+} from "@patchwork/ambsheet";
 import { AutomergeUrl, DocumentId } from "@automerge/automerge-repo";
 import { CellReferenceBlocks } from "./components/CellReferenceBlocks";
 
 export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
   docUrl,
 }) => {
+  const FILTER: Filter = {
+    pos: { row: 0, col: 0 },
+    values: [2, 3],
+  };
+
   const [doc, changeDoc] = useDocument<AmbEmbedDoc>(docUrl);
   const linkedSheets = useDocuments<AmbSheetDoc>(
     Object.values(doc?.linkedSheets || {})
@@ -24,6 +36,14 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
       return acc;
     }, {} as Record<AutomergeUrl, Env>);
   }, [linkedSheets]);
+
+  const filteredLinkedSheets = useMemo(() => {
+    return Object.entries(evaluatedLinkedSheets).reduce((acc, [url, env]) => {
+      const filteredResults = filter2(env.results, [FILTER]);
+      acc[url as AutomergeUrl] = filteredResults;
+      return acc;
+    }, {} as Record<AutomergeUrl, FilteredResults>);
+  }, [evaluatedLinkedSheets]);
 
   if (!doc) {
     return null;
@@ -75,7 +95,8 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
         <CellReferenceBlocks
           blocks={doc.blocks}
           linkedSheets={doc.linkedSheets}
-          evaluatedSheets={evaluatedLinkedSheets}
+          evaluatedSheetsByUrl={evaluatedLinkedSheets}
+          filteredResultsByUrl={filteredLinkedSheets}
           onUpdateBlock={handleUpdateBlock}
         />
       </div>

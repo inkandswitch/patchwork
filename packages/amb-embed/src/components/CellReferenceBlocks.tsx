@@ -1,27 +1,30 @@
 import React from "react";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { AmbEmbedDoc } from "../datatype";
-import { Env } from "@patchwork/ambsheet";
+import { Env, Filter } from "@patchwork/ambsheet";
 import { printRawValue } from "@patchwork/ambsheet";
+import { FilteredResults } from "@patchwork/ambsheet/src/eval";
 
 interface CellReferenceBlocksProps {
   blocks: AmbEmbedDoc["blocks"];
   linkedSheets: { [key: string]: AutomergeUrl };
-  evaluatedSheets: Record<AutomergeUrl, Env>;
+  evaluatedSheetsByUrl: Record<AutomergeUrl, Env>;
+  filteredResultsByUrl: Record<AutomergeUrl, FilteredResults>;
   onUpdateBlock: (index: number, sheetName: string, cellName: string) => void;
 }
 
 export const CellReferenceBlocks: React.FC<CellReferenceBlocksProps> = ({
   blocks,
   linkedSheets,
-  evaluatedSheets,
+  evaluatedSheetsByUrl,
+  filteredResultsByUrl,
   onUpdateBlock,
 }) => {
   const getCellsForSheet = (sheetName: string) => {
     if (!sheetName || !linkedSheets[sheetName]) return [];
 
     const sheetUrl = linkedSheets[sheetName];
-    const evaluatedSheet = evaluatedSheets[sheetUrl];
+    const evaluatedSheet = evaluatedSheetsByUrl[sheetUrl];
     if (!evaluatedSheet) return [];
 
     return Array.from(evaluatedSheet.cellPosByName.values())
@@ -33,7 +36,7 @@ export const CellReferenceBlocks: React.FC<CellReferenceBlocksProps> = ({
     if (!sheetName || !cellName || !linkedSheets[sheetName]) return null;
 
     const sheetUrl = linkedSheets[sheetName];
-    const evaluatedSheet = evaluatedSheets[sheetUrl];
+    const evaluatedSheet = evaluatedSheetsByUrl[sheetUrl];
     if (!evaluatedSheet) return null;
 
     // Look up the position using the cellName
@@ -43,7 +46,9 @@ export const CellReferenceBlocks: React.FC<CellReferenceBlocksProps> = ({
     if (!cellPos) return null;
 
     // Get the evaluated results at that position
-    const results = evaluatedSheet.getCellValues(cellPos);
+    // const results = evaluatedSheet.getCellValues(cellPos);
+
+    const results = filteredResultsByUrl[sheetUrl][cellPos.row][cellPos.col];
     return results;
   };
 
@@ -105,11 +110,19 @@ export const CellReferenceBlocks: React.FC<CellReferenceBlocksProps> = ({
                 </div>
                 <div className="space-y-1">
                   {cellResults.map((result, i) => (
-                    <div key={i} className="text-sm text-gray-600">
-                      {printRawValue(result.rawValue)}
+                    <div
+                      key={i}
+                      className={`text-sm text-gray-600 p-2 rounded ${
+                        !result.include ? "bg-red-200" : ""
+                      }`}
+                    >
+                      {printRawValue(result.value.rawValue)}
                       <span className="text-xs text-gray-400 ml-2">
                         (context:{" "}
-                        {JSON.stringify(Object.fromEntries(result.context))})
+                        {JSON.stringify(
+                          Object.fromEntries(result.value.context)
+                        )}
+                        )
                       </span>
                     </div>
                   ))}
