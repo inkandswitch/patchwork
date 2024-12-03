@@ -1,4 +1,3 @@
-import { BoxesIcon } from "lucide-react";
 import {
   Annotation,
   DecodedChangeWithMetadata,

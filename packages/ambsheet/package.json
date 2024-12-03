@@ -12,7 +12,10 @@
   "dependencies": {
     "@automerge/automerge": "2.2.9-alpha.2",
     "@automerge/automerge-repo": "2.0.0-alpha.7",
+    "@automerge/automerge-repo-network-broadcastchannel": "^2.0.0-alpha.7",
+    "@automerge/automerge-repo-network-websocket": "2.0.0-alpha.7",
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
+    "@automerge/automerge-repo-storage-indexeddb": "2.0.0-alpha.7",
     "@handsontable/react": "^14.4.0",
     "d3": "^7.9.0",
     "handsontable": "^14.4.0",
