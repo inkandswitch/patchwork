@@ -1,6 +1,6 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { describe, expect, it } from "vitest";
-import { DocLink, DocPath } from "@patchwork/folder/datatype";
+import { DocLink, DocPath } from "@patchwork/folder";
 import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { getDocPathInRootFolder } from "./getDocPathInRootFolder";
 

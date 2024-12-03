@@ -1,6 +1,6 @@
 import { useAsyncComputed } from "../async-signals";
 import { useCurrentAccount } from "..";
-import { DocPath } from "@patchwork/folder/datatype";
+import { DocPath } from "@patchwork/folder";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback, useMemo, useRef } from "react";
 import {

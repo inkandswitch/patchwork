@@ -2,7 +2,7 @@ import { dataTypeById } from "..";
 import { useDataTypes } from "../hooks";
 import { useStaticCallback } from "../hooks/useStaticCallback";
 import { DocLink, FolderDoc } from "@patchwork/folder";
-import { DocPath } from "@patchwork/folder/datatype";
+import { DocPath } from "@patchwork/folder";
 import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { setActiveBranchUrl } from "../versionControl";
 import { BranchDoc } from "../versionControl";
@@ -199,10 +199,10 @@ export const useRouter = ({
 
       const branchScopePathInRootFolder = branchScopeUrl
         ? getDocPathInRootFolder(
-          { type: branchScopeType, url: branchScopeUrl },
-          rootFolderDocWithMetadata,
-          selectedDocPath
-        )
+            { type: branchScopeType, url: branchScopeUrl },
+            rootFolderDocWithMetadata,
+            selectedDocPath
+          )
         : undefined;
 
       // make sure that the branch scope doc is in the root folder and that the right branch is checked out

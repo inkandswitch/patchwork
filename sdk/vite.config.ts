@@ -18,6 +18,10 @@ export default defineConfig({
         ui: "src/ui/index.ts",
         markdown: "src/markdown/index.ts",
         "async-signals": "src/async-signals/index.ts",
+        textAnchors: "src/textAnchors/index.ts",
+        hooks: "src/hooks/index.ts",
+        components: "src/components/index.ts",
+        utils: "src/utils.ts", // note this is different from the others
       },
       name: "PatchworkSDK",
       formats: ["es"],

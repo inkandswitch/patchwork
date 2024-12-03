@@ -1,7 +1,7 @@
 import { Account } from "..";
 import { fetchUIStateOm } from "../router/uiState";
 import { Om } from "../om";
-import { DocLink, DocPath } from "@patchwork/folder/datatype";
+import { DocLink, DocPath } from "@patchwork/folder";
 import { canBeUndef } from "../utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";

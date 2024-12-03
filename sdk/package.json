@@ -8,7 +8,9 @@
   "exports": {
     ".": "./dist/index.js",
     "./versionControl": "./dist/versionControl.js",
-    "./ui": "./dist/ui.js"
+    "./ui": "./dist/ui.js",
+    "./async-signals": "./dist/async-signals.js",
+    "./utils": "./dist/utils.js"
   },
   "scripts": {
     "build": "tsc && vite build",
