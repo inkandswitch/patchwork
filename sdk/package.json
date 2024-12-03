@@ -6,12 +6,13 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.ts",
-    "./versionControl": "./dist/versionControl/index.ts"
+    ".": "./dist/index.js",
+    "./versionControl": "./dist/versionControl.js",
+    "./ui": "./dist/ui.js"
   },
   "scripts": {
-    "build": "tsc && rollup -c",
-    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:4MEgMjNDKnppvtDr7QU64TVAKdNf"
+    "build": "tsc && vite build",
+    "push": "pnpm build && trailhead push --dir dist"
   },
   "keywords": [],
   "author": "",
@@ -46,7 +47,6 @@
     "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.1",
     "@radix-ui/react-tooltip": "^1.1.2",
-    "@types/diff": "^5.2.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^0.2.1",
@@ -70,9 +70,13 @@
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.6",
+    "@types/diff": "^5.2.1",
+    "@types/lodash": "^4.17.7",
+    "@types/react": "^18.3.3",
+    "@vitejs/plugin-react": "^4.3.1",
     "rollup": "^4.19.0",
     "rollup-plugin-postcss": "^4.0.2",
-    "@types/lodash": "^4.17.7",
-    "@types/react": "^18.3.3"
+    "vite-plugin-top-level-await": "^1.4.2",
+    "vite-plugin-wasm": "^3.3.0"
   }
 }
