@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { uploadFile } from "./fileUtils";
 
 import { FolderDoc } from "@patchwork/folder";
-import { useFolderDocWithMetadataOnActiveBranch } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
+import { useFolderDocWithMetadataOnActiveBranch } from "@patchwork/folder";
 import { typeOnlyAssert } from "./utils";
 import { UIStateDoc } from "./router/uiState";
 import {
