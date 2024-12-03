@@ -18,8 +18,6 @@ export const LinkedSheets: React.FC<LinkedSheetsProps> = ({
   const [newSheetUrl, setNewSheetUrl] = React.useState("");
   const [openSheets, setOpenSheets] = React.useState<Set<string>>(new Set());
 
-  console.log({ evaluatedSheets });
-
   const handleAdd = () => {
     if (!newSheetName || !newSheetUrl) return;
 

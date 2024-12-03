@@ -58,6 +58,8 @@ export const AmbSheet = ({
 
   const results = sheet.results;
 
+  console.log("results", results);
+
   const filteredResults = useMemo(() => {
     const filterContexts = filterSelection.map((f) => {
       return f.selectedValueIndexes.map(

@@ -75,6 +75,7 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
         <CellReferenceBlocks
           blocks={doc.blocks}
           linkedSheets={doc.linkedSheets}
+          evaluatedSheets={evaluatedLinkedSheets}
           onUpdateBlock={handleUpdateBlock}
         />
       </div>
