@@ -89,6 +89,7 @@ const SHARED_MODULES = {
   "@patchwork/sdk/ui": "./sdk/ui.js",
   "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
   "@patchwork/datagrid": "./datagrid/index.js",
+  "@patchwork/kanban": "./kanban/index.js",
 };
 
 // All dependencies that should not be bundled in and instead are loaded
