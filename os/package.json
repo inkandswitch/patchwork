@@ -10,8 +10,9 @@
   "scripts": {
     "dev": "vite --force --port 5173",
     "build:main": "tsc && vite build",
+    "build:sdk": "cp -r ../sdk/dist ./dist/sdk",
     "build:sw": "node ./build-service-worker.js",
-    "build": "tsc && vite build && node ./build-service-worker.js",
+    "build": "pnpm build:main && pnpm build:sdk && node ./build-service-worker.js",
     "build:no-tsc": "vite build && node ./build-service-worker.js",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",

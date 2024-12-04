@@ -78,7 +78,15 @@ const SHARED_DEPENDENCIES = [
 
 // Internal modules that are shared with dynamically loaded packages
 const SHARED_MODULES = {
-  // "@patchwork/sdk": "./sdk.js",
+  "@patchwork/sdk": "./sdk/index.js",
+  "@patchwork/sdk/async-signals": "./sdk/async-signals.js",
+  "@patchwork/sdk/components": "./sdk/components.js",
+  "@patchwork/sdk/hooks": "./sdk/hooks.js",
+  "@patchwork/sdk/markdown": "./sdk/markdown.js",
+  "@patchwork/sdk/router": "./sdk/router.js",
+  "@patchwork/sdk/textAnchors": "./sdk/textAnchors.js",
+  "@patchwork/sdk/ui": "./sdk/ui.js",
+  "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
 };
 
 // All dependencies that should not be bundled in and instead are loaded
@@ -111,9 +119,9 @@ const generateImportMapPlugin = (): Plugin => ({
       throw new Error("No imports object in generated import map");
     }
 
-    /*for (const [name, url] of Object.entries(SHARED_MODULES)) {
+    for (const [name, url] of Object.entries(SHARED_MODULES)) {
       importMap.imports[name] = url;
-    }*/
+    }
 
     return {
       html,
@@ -153,7 +161,6 @@ export default mergeConfig(sharedConfig, {
       external: EXTERNAL_DEPENDENCIES,
       input: {
         main: path.resolve(__dirname, "index.html"),
-        sdk: path.resolve(__dirname, "../sdk/src/index.ts"),
       },
       output: {
         // We put index.css in dist instead of dist/assets so that we can link to fonts
@@ -167,10 +174,6 @@ export default mergeConfig(sharedConfig, {
           return "assets/[name]-[hash][extname]";
         },
         entryFileNames: (chunkInfo) => {
-          if (chunkInfo.name === "sdk") {
-            return `sdk.js`;
-          }
-
           return "assets/[name]-[hash].js"; // Default behavior for other entries
         },
         exports: "named",
