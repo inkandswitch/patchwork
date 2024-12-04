@@ -2,12 +2,12 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { useEffect, useMemo, useState } from "react";
 import { AmbSheetDoc, Position, RawValue } from "../datatype";
 import { NOT_READY, Value, FilteredResults, Env, FilteredValue } from "../eval";
-import { displayNameForCell, printRawValue } from "../print";
+import { displayNameForCell } from "../print";
 import { stacksViewer } from "./Stacks";
-import { colorViewer } from "./Color";
-import { tableViewer, TableViewer } from "./TableViewer";
+import { shadesViewer } from "./Shades";
+import { tableViewer } from "./TableViewer";
 import { FilterSelection } from "./AmbSheet";
-import { histogramViewer, ResultHistogram } from "./ResultHistogram";
+import { histogramViewer } from "./ResultHistogram";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { choiceDependenciesViewer } from "./ChoiceDependencies";
 
@@ -30,7 +30,7 @@ const valueViewers: ValueViewer[] = [
   histogramViewer,
   tableViewer,
   stacksViewer,
-  colorViewer,
+  shadesViewer,
 ];
 
 export const CellDetails = ({

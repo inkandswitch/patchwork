@@ -2,7 +2,7 @@ import React from "react";
 import { ValueViewer, ValueViewerProps } from "./CellDetails";
 
 // TODO: add filterSelection... to props
-export const Color = ({ values, setFilterSelection }: ValueViewerProps) => {
+export const Shades = ({ values, setFilterSelection }: ValueViewerProps) => {
   const rawValues = values.map((v) => v.value.rawValue) as number[];
   const min = Math.min(...rawValues);
   const max = Math.max(...rawValues);
@@ -30,12 +30,12 @@ export const Color = ({ values, setFilterSelection }: ValueViewerProps) => {
   );
 };
 
-export const colorViewer: ValueViewer = {
-  name: "Color",
+export const shadesViewer: ValueViewer = {
+  name: "Shades",
   // todo: could refine this more: a small number of tall stacks with short names
   shouldRender: (values) =>
     values.every((value) => typeof value.value.rawValue === "number")
       ? "high"
       : "hide",
-  component: Color,
+  component: Shades,
 };
