@@ -66,12 +66,34 @@ export const Stacks = ({ values, setFilterSelection }: ValueViewerProps) => {
 
 export const stacksViewer: ValueViewer = {
   name: "Stacks",
-  // todo: could refine this more: a small number of tall stacks with short names
-  shouldRender: (values) =>
-    uniq(values.map((v) => v.value.rawValue)).length > 5 ? "hide" : "high",
+  shouldRender(values) {
+    const n = uniq(values.map((v) => v.value.rawValue)).length;
+    return 1 < n &&
+      n <= 5 &&
+      values.every((v) => renderValue(v.value.rawValue).length <= 8)
+      ? "high"
+      : "hide";
+  },
   component: Stacks,
 };
 
 function renderValue(v: RawValue) {
-  return typeof v === "number" ? v.toFixed(3) : "" + v;
+  if (typeof v !== "number") {
+    return "" + v;
+  }
+
+  let rv = v.toFixed(2);
+  while (true) {
+    const lastChar = rv.at(-1);
+    if (lastChar === "0") {
+      rv = rv.slice(0, -1);
+      continue;
+    }
+
+    if (lastChar === ".") {
+      rv = rv.slice(0, -1);
+    }
+    break;
+  }
+  return rv;
 }
