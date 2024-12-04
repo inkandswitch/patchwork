@@ -1,24 +1,31 @@
-import React, { useMemo } from "react";
-import { FilteredResultsForCell, Value } from "../eval";
-import { FilterSelection } from "./AmbSheet";
+import React from "react";
 import { ValueViewer, ValueViewerProps } from "./CellDetails";
 
 // TODO: add filterSelection... to props
-export const Color = ({ values }: ValueViewerProps) => {
+export const Color = ({ values, setFilterSelection }: ValueViewerProps) => {
   const rawValues = values.map((v) => v.value.rawValue) as number[];
   const min = Math.min(...rawValues);
   const max = Math.max(...rawValues);
   return (
     <div className="flex flex-wrap gap-2 mb-4">
-      {rawValues.map((value, idx) => (
-        <div
-          key={idx}
-          style={{
-            backgroundColor: `rgba(0, 0, 255, ${(value - min) / (max - min)})`,
-          }}
-          className={`w-4 h-4 relative cursor-default border border-gray-200`}
-        ></div>
-      ))}
+      {values.map((value, idx) => {
+        const rawValue = value.value.rawValue as number;
+        return (
+          <div
+            onMouseEnter={() => setFilterSelection([rawValue])}
+            onMouseLeave={() => setFilterSelection(null)}
+            key={idx}
+            style={{
+              backgroundColor: `rgba(0, 0, 255, ${
+                (rawValue - min) / (max - min)
+              })`,
+            }}
+            className={`w-4 h-4 relative cursor-default border ${
+              value.include ? "border-gray-600" : "border-gray-200"
+            }`}
+          ></div>
+        );
+      })}
     </div>
   );
 };
