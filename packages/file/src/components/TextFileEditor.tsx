@@ -16,10 +16,9 @@ import {
   getCursorPositionSafely,
   getCursorSafely,
 } from "@patchwork/sdk/versionControl";
-import * as Automerge from "@automerge/automerge";
+import { next as Automerge } from "@automerge/automerge";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { Cursor } from "@automerge/automerge/next";
 import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { json } from "@codemirror/lang-json";
@@ -104,7 +103,7 @@ export const TextFileEditor = ({
   const readOnly = docHeads !== undefined;
 
   const [toolUIState, changeToolUIState] = useToolUIState<{
-    scrollTopCursor?: Cursor;
+    scrollTopCursor?: Automerge.Cursor;
   }>(docPath, tool.id, () => ({}));
 
   // TODO: this obviously sucks
@@ -220,7 +219,7 @@ const scrollTo = ({
   toolUIState,
   fileDoc,
 }: {
-  toolUIState: { scrollTopCursor?: Cursor };
+  toolUIState: { scrollTopCursor?: Automerge.Cursor };
   fileDoc: TextFileDoc;
 }) => {
   if (toolUIState.scrollTopCursor) {

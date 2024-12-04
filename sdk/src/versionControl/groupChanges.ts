@@ -18,7 +18,7 @@ import {
   Patch,
   getHeads,
   view,
-} from "@automerge/automerge/next";
+} from "@automerge/automerge";
 import { isEqual, sortBy } from "lodash";
 import { ReactElement } from "react";
 import { getChangesFromMergedBranch } from "./branches";
@@ -131,15 +131,15 @@ const defaultPopulateFallbackSummary = <D>(changeGroup: ChangeGroup<D>) => {
 
 export const groupingByActorAndNumChanges =
   <T>(batchSize: number) =>
-    (
-      currentGroup: PendingChangeGroup<T>,
-      newChange: DecodedChangeWithMetadata
-    ) => {
-      return (
-        currentGroup.actorIds[0] === newChange.actor &&
-        currentGroup.changes.length < batchSize
-      );
-    };
+  (
+    currentGroup: PendingChangeGroup<T>,
+    newChange: DecodedChangeWithMetadata
+  ) => {
+    return (
+      currentGroup.actorIds[0] === newChange.actor &&
+      currentGroup.changes.length < batchSize
+    );
+  };
 
 export const groupingByActor = <T>(
   currentGroup: PendingChangeGroup<T>,
@@ -162,9 +162,9 @@ export const groupingByAuthor = <T>(
 
 export const groupingByNumberOfChanges =
   <T>(batchSize: number) =>
-    (currentGroup: PendingChangeGroup<T>) => {
-      return currentGroup.changes.length < batchSize;
-    };
+  (currentGroup: PendingChangeGroup<T>) => {
+    return currentGroup.changes.length < batchSize;
+  };
 
 // This always combines everything into one group,
 // so we only end up splitting when there's a manual tag
@@ -174,42 +174,42 @@ export const groupingByTagsOnly = () => true;
 //
 export const groupingByEditTime =
   <T>(maxGapInMinutes: number) =>
-    (
-      currentGroup: PendingChangeGroup<T>,
-      newChange: DecodedChangeWithMetadata
-    ) => {
-      if (
-        (newChange.time === undefined || currentGroup.time === 0) &&
-        (currentGroup.time === undefined || currentGroup.time === 0)
-      ) {
-        return true;
-      }
+  (
+    currentGroup: PendingChangeGroup<T>,
+    newChange: DecodedChangeWithMetadata
+  ) => {
+    if (
+      (newChange.time === undefined || currentGroup.time === 0) &&
+      (currentGroup.time === undefined || currentGroup.time === 0)
+    ) {
+      return true;
+    }
 
-      if (currentGroup.time === undefined) {
-        return false;
-      }
+    if (currentGroup.time === undefined) {
+      return false;
+    }
 
-      return newChange.time < currentGroup.time + maxGapInMinutes * 60 * 1000;
-    };
+    return newChange.time < currentGroup.time + maxGapInMinutes * 60 * 1000;
+  };
 
 export const noGrouping = () => false;
 
 export const groupingByAuthorOrTime =
   <T>(maxGapInMinutes: number) =>
-    (currentGroup: ChangeGroup<T>, newChange: DecodedChangeWithMetadata) => {
-      const authorMatch =
-        !newChange.metadata?.author ||
-        currentGroup.authorUrls.includes(
-          newChange.metadata?.author as AutomergeUrl
-        );
-      const timeMatch =
-        newChange.time === undefined ||
-        newChange.time === 0 ||
-        currentGroup.time === undefined ||
-        currentGroup.time === 0 ||
-        newChange.time < currentGroup.time + maxGapInMinutes * 60 * 1000;
-      return authorMatch && timeMatch;
-    };
+  (currentGroup: ChangeGroup<T>, newChange: DecodedChangeWithMetadata) => {
+    const authorMatch =
+      !newChange.metadata?.author ||
+      currentGroup.authorUrls.includes(
+        newChange.metadata?.author as AutomergeUrl
+      );
+    const timeMatch =
+      newChange.time === undefined ||
+      newChange.time === 0 ||
+      currentGroup.time === undefined ||
+      currentGroup.time === 0 ||
+      newChange.time < currentGroup.time + maxGapInMinutes * 60 * 1000;
+    return authorMatch && timeMatch;
+  };
 
 // Other groupings to try:
 // - time based sessions
@@ -256,33 +256,33 @@ export const getMarkersForDoc = <T extends HasVersionControlMetadata>(
   const otherBranchMergedMarkers: OtherBranchMergedMarker<T>[] =
     !branchScopeAndActiveBranchInfo.activeBranchOm
       ? branchScopeAndActiveBranchInfo.branchOms
-        .filter((om): om is Om<MergedBranchDoc> => {
-          const { doc } = om;
+          .filter((om): om is Om<MergedBranchDoc> => {
+            const { doc } = om;
 
-          if (
-            !doc.mergeMetadata ||
-            !doc.mergeMetadata.mergeHeadsByDocUrl // ignore old merges that don't have merged heads yet
-          ) {
-            return false;
-          }
+            if (
+              !doc.mergeMetadata ||
+              !doc.mergeMetadata.mergeHeadsByDocUrl // ignore old merges that don't have merged heads yet
+            ) {
+              return false;
+            }
 
-          const cloneOnBranch =
-            doc.clones[branchScopeAndActiveBranchInfo.originalUrl];
-          return cloneOnBranch !== undefined;
-        })
-        .map((om): OtherBranchMergedMarker<T> => {
-          const { doc } = om;
-          return {
-            id: `branch-merge-${doc.clones[handle.url].url}`,
-            heads: doc.mergeMetadata!.mergeHeadsByDocUrl[handle.url],
-            type: "otherBranchMergedIntoThisDoc",
-            users: doc.mergeMetadata!.mergedBy
-              ? [doc.mergeMetadata!.mergedBy]
-              : [],
-            branchOm: om,
-            changeGroups: [],
-          };
-        })
+            const cloneOnBranch =
+              doc.clones[branchScopeAndActiveBranchInfo.originalUrl];
+            return cloneOnBranch !== undefined;
+          })
+          .map((om): OtherBranchMergedMarker<T> => {
+            const { doc } = om;
+            return {
+              id: `branch-merge-${doc.clones[handle.url].url}`,
+              heads: doc.mergeMetadata!.mergeHeadsByDocUrl[handle.url],
+              type: "otherBranchMergedIntoThisDoc",
+              users: doc.mergeMetadata!.mergedBy
+                ? [doc.mergeMetadata!.mergedBy]
+                : [],
+              branchOm: om,
+              changeGroups: [],
+            };
+          })
       : [];
 
   markers = markers.concat(otherBranchMergedMarkers);
@@ -310,21 +310,21 @@ export const getMarkersForDoc = <T extends HasVersionControlMetadata>(
   const branchCreatedMarkers: HeadsMarker<T>[] =
     !branchScopeAndActiveBranchInfo.activeBranchOm
       ? branchScopeAndActiveBranchInfo.branchOms
-        .filter(({ doc }) => {
-          const cloneOnBranch = doc.clones[handle.url];
-          return cloneOnBranch !== undefined;
-        })
-        .map((branchOm) => {
-          const { doc, url } = branchOm;
+          .filter(({ doc }) => {
+            const cloneOnBranch = doc.clones[handle.url];
+            return cloneOnBranch !== undefined;
+          })
+          .map((branchOm) => {
+            const { doc, url } = branchOm;
 
-          return {
-            id: `branch-created-${url}`,
-            users: doc.createdBy ? [doc.createdBy] : [],
-            heads: doc.clones[handle.url].baseHeads,
-            type: "branchCreatedFromThisDoc",
-            branchOm,
-          };
-        })
+            return {
+              id: `branch-created-${url}`,
+              users: doc.createdBy ? [doc.createdBy] : [],
+              heads: doc.clones[handle.url].baseHeads,
+              type: "branchCreatedFromThisDoc",
+              branchOm,
+            };
+          })
       : [];
 
   markers = markers.concat(branchCreatedMarkers);
@@ -533,9 +533,9 @@ const getGroupedChangesMemo = <T>({
     diffHeads:
       memoizedGroups.changeGroups.length > 1
         ? [
-          memoizedGroups.changeGroups[memoizedGroups.changeGroups.length - 2]
-            .to,
-        ]
+            memoizedGroups.changeGroups[memoizedGroups.changeGroups.length - 2]
+              .to,
+          ]
         : [],
     doc,
     options,

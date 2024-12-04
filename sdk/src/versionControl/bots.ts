@@ -1,6 +1,6 @@
 import { DEFAULT_MODEL, getOpenaiClient } from "../versionControl/llm";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import { Doc, splice } from "@automerge/automerge/next";
+import { next as A } from "@automerge/automerge";
 import { type DataType } from "..";
 import { BranchDoc, UnmergedBranchDoc, HasBotChatHistory } from "./schema";
 import { createBranch } from "./branches";
@@ -59,7 +59,7 @@ const toolsSpec = [
 ];
 
 // given a path like ["content", "main"], get doc.content.main
-const getPath = (doc: Doc<any>, path: string[]) => {
+const getPath = (doc: A.Doc<any>, path: string[]) => {
   return path.reduce((acc, key) => acc[key], doc);
 };
 
@@ -250,7 +250,7 @@ ${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
           const from = getPath(doc, path).indexOf(edit.before);
 
           // edit the text
-          splice(doc, path, from, edit.before.length, edit.after);
+          A.splice(doc, path, from, edit.before.length, edit.after);
 
           // leave a comment
           // const fromCursor = getCursor(doc, ["content"], from);

@@ -1,7 +1,6 @@
 import * as Automerge from "@automerge/automerge";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { type DataType } from "@patchwork/sdk";
-import { Heads } from "@automerge/automerge/next";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 
 // SCHEMA
@@ -63,12 +62,12 @@ export type RefreshState =
   | { type: "idle" }
   | { type: "requesting" }
   | {
-    type: "processing";
-    processorHostname: string;
-    processorHeartbeat: number;
-    /** "null" here means "we're processing, but don't know what yet" */
-    buildRunRefreshStates: BuildRunRefreshState[] | null;
-  };
+      type: "processing";
+      processorHostname: string;
+      processorHeartbeat: number;
+      /** "null" here means "we're processing, but don't know what yet" */
+      buildRunRefreshStates: BuildRunRefreshState[] | null;
+    };
 
 /**
  * The document stored in Patchwork to keep track of build runs,

@@ -1,8 +1,12 @@
 import assert from "assert";
 import { describe, it } from "vitest";
-import * as Automerge from "@automerge/automerge/next";
+import { next as Automerge } from "@automerge/automerge";
 import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
-import { AddAnnotation, ChangeAnnotation, DeleteAnnotation } from "@patchwork/sdk/versionControl";
+import {
+  AddAnnotation,
+  ChangeAnnotation,
+  DeleteAnnotation,
+} from "@patchwork/sdk/versionControl";
 import { applyCursorPatches, CursorPatch } from "@patchwork/sdk/versionControl";
 
 type TextDoc = {

@@ -6,6 +6,7 @@
   "packageManager": "pnpm@9.5.0",
   "scripts": {
     "dev": "pnpm --filter os dev",
+    "preview": "pnpm --filter os preview",
     "build": "pnpm -r build",
     "tsc": "tsc",
     "preinstall": "npx only-allow pnpm",

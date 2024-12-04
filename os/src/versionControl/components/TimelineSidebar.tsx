@@ -14,7 +14,7 @@ import {
 
 import { InlineContactAvatar } from "@patchwork/sdk/components";
 import { useSlots } from "@patchwork/sdk/versionControl";
-import { Heads } from "@automerge/automerge/next";
+import { Heads } from "@automerge/automerge";
 import {
   ChevronLeftIcon,
   CrownIcon,

@@ -3,7 +3,7 @@ import {
   getCursorPositionSafely,
   getCursorSafely,
 } from "../versionControl";
-import * as Automerge from "@automerge/automerge/next";
+import { next as Automerge } from "@automerge/automerge";
 import { get, isEqual, last } from "lodash";
 import { diffWords } from "diff";
 

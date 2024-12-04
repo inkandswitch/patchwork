@@ -88,12 +88,18 @@ const SHARED_MODULES = {
   "@patchwork/sdk/textAnchors": "./sdk/textAnchors.js",
   "@patchwork/sdk/ui": "./sdk/ui.js",
   "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
+  "@patchwork/counter": "./counter/index.js",
   "@patchwork/datagrid": "./datagrid/index.js",
   "@patchwork/engraft": "./engraft/index.js",
-  "@patchwork/kanban": "./kanban/index.js",
-  "@patchwork/tldraw": "./tldraw/index.js",
-  "@patchwork/raw-editor": "./raw-editor/index.js",
+  "@patchwork/essay": "./essay/index.js",
+  "@patchwork/file": "./file/index.js",
   "@patchwork/folder": "./folder/index.js",
+  //"@patchwork/folder-list-view": "./folder-list-view/index.js",
+  "@patchwork/jacquard": "./jacquard/index.js",
+  "@patchwork/kanban": "./kanban/index.js",
+  //"@patchwork/pkg": "./pkg/index.js",
+  "@patchwork/raw-editor": "./raw-editor/index.js",
+  "@patchwork/tldraw": "./tldraw/index.js",
 };
 
 // All dependencies that should not be bundled in and instead are loaded

@@ -9,7 +9,7 @@ import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { EventEmitter } from "eventemitter3";
 
 import { useForceUpdate } from "./hooks/useForceUpdate";
-import { ChangeFn } from "@automerge/automerge/next";
+import { ChangeFn } from "@automerge/automerge";
 import { useEffect, useState } from "react";
 import { uploadFile } from "./fileUtils";
 

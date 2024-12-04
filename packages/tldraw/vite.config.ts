@@ -10,7 +10,6 @@ import sharedConfig from "../../vite.shared";
 // actual url will be resolved by generateImportMapPlugin
 const SHARED_DEPENDENCIES = [
   "@automerge/automerge",
-  "@automerge/automerge/next",
   "@automerge/automerge-repo",
   "@automerge/automerge-repo-react-hooks",
   "react",
