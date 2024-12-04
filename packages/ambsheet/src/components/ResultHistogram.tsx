@@ -43,18 +43,26 @@ export const ResultHistogram = ({
   const numbersMin = useMemo(() => Math.min(...numbers), [numbers]);
   const numbersMax = useMemo(() => Math.max(...numbers), [numbers]);
 
+  const minWithPadding = numbersMin - 0.1;
+  const maxWithPadding = numbersMax + 0.1;
+
+  console.log({ minWithPadding, maxWithPadding });
+
   const [filterMinMax, setFilterMinMax] = useState<{
     min: number;
     max: number;
-  }>({ min: numbersMin, max: numbersMax });
+  }>({ min: minWithPadding, max: maxWithPadding });
 
   // if the numbers change, we need to reset the filter range
   useEffect(() => {
-    setFilterMinMax({ min: numbersMin - 0.1, max: numbersMax + 0.1 });
+    setFilterMinMax({ min: minWithPadding, max: maxWithPadding });
   }, [numbersMin, numbersMax]);
 
   useEffect(() => {
-    if (filterMinMax.min === numbersMin && filterMinMax.max === numbersMax) {
+    if (
+      filterMinMax.min === minWithPadding &&
+      filterMinMax.max === maxWithPadding
+    ) {
       selectValuesBetween(null);
     } else {
       selectValuesBetween(filterMinMax);
@@ -81,8 +89,8 @@ export const ResultHistogram = ({
         />
         <div className="w-[200px] mt-2">
           <RangeSlider
-            min={numbersMin - 0.1}
-            max={numbersMax + 0.1}
+            min={minWithPadding}
+            max={maxWithPadding}
             width={200}
             value={[filterMinMax.min, filterMinMax.max]}
             onInput={([min, max]) => setFilterMinMax({ min, max })}

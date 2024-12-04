@@ -1,35 +1,22 @@
 import React, { useMemo } from "react";
 import { FilteredResultsForCell, Value } from "../eval";
-import { groupBy } from "lodash";
+import { groupBy, uniq } from "lodash";
 import { FilterSelection } from "./AmbSheet";
 import { Position } from "../datatype";
+import { ValueViewer, ValueViewerProps } from "./CellDetails";
 
-export const Stacks = ({
-  selectedCell,
-  results,
-  filterSelection,
-  setFilterSelectionForCell,
-}: {
-  selectedCell: Position;
-  results: { value: Value; include: boolean }[];
-  filterSelection: FilterSelection;
-  setFilterSelectionForCell: (
-    cell: Position,
-    selectedIndexes: number[]
-  ) => void;
-}) => {
+export const Stacks = ({ values, setFilterSelection }: ValueViewerProps) => {
   const groupedValues = useMemo(() => {
     return groupBy(
-      results.map((v, i) => ({ ...v, indexInCell: i })),
+      values.map((v, i) => ({ ...v, indexInCell: i })),
       (value) => value.value.rawValue
     );
-  }, [results]);
+  }, [values]);
 
   const selectGroup = (groupValue: any) => {
     const group = groupedValues[groupValue];
     if (!group) return;
-    const selectedIndexes = group.map((v) => v.indexInCell);
-    setFilterSelectionForCell(selectedCell, selectedIndexes);
+    setFilterSelection(group.map((v) => v.value.rawValue));
   };
 
   if (Object.keys(groupedValues).length > 15) {
@@ -44,6 +31,7 @@ export const Stacks = ({
     <div className="flex flex-wrap gap-2 mb-4">
       {Object.entries(groupedValues).map(([key, values]) => {
         const stackSize = Math.min(values.length, 4);
+        const selected = values.every((v) => v.include);
         return (
           <div
             key={key}
@@ -51,13 +39,10 @@ export const Stacks = ({
               values.length > 1 ? "h-10" : "h-8"
             }`}
             onMouseEnter={() => selectGroup(key)}
-            onMouseLeave={() => setFilterSelectionForCell(selectedCell, null)}
+            onMouseLeave={() => setFilterSelection(null)}
           >
             <div className="h-7">
               {Array.from({ length: stackSize }, (_, index) => {
-                const selected = filterSelection?.selectedValueIndexes.includes(
-                  values[index].indexInCell
-                );
                 const greyedOut = values.every((v) => !v.include);
                 return (
                   <div
@@ -85,4 +70,12 @@ export const Stacks = ({
       })}
     </div>
   );
+};
+
+export const stacksViewer: ValueViewer = {
+  name: "Stacks",
+  // todo: could refine this more: a small number of tall stacks with short names
+  shouldRender: (values) =>
+    uniq(values.map((v) => v.value.rawValue)).length > 5 ? "hide" : "high",
+  component: Stacks,
 };

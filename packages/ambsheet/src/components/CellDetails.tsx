@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AmbSheetDoc, Position, RawValue } from "../datatype";
 import { NOT_READY, Value, FilteredResults, Env, FilteredValue } from "../eval";
 import { displayNameForCell, printRawValue } from "../print";
-import { Stacks } from "./Stacks";
+import { Stacks, stacksViewer } from "./Stacks";
 import { tableViewer, TableViewer } from "./TableViewer";
 import { FilterSelection } from "./AmbSheet";
 import { histogramViewer, ResultHistogram } from "./ResultHistogram";
@@ -28,6 +28,7 @@ const valueViewers: ValueViewer[] = [
   choiceDependenciesViewer,
   histogramViewer,
   tableViewer,
+  stacksViewer,
 ];
 
 export const CellDetails = ({
@@ -138,20 +139,6 @@ export const CellDetails = ({
               />
             </div>
           ))}
-
-      {selectedCellResult && selectedCellResult !== NOT_READY && (
-        <div className="border-b border-gray-300 pb-3">
-          <h2 className="text-xs text-gray-500 font-medium uppercase mb-3">
-            Stacks
-          </h2>
-          <Stacks
-            selectedCell={selectedCell}
-            results={selectedCellResult}
-            filterSelection={filterSelectionForSelectedCell}
-            setFilterSelectionForCell={setFilterSelectionForCell}
-          />
-        </div>
-      )}
     </div>
   );
 };
