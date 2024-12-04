@@ -1,7 +1,7 @@
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
-import * as A from "@automerge/automerge/next";
+import { next as A } from "@automerge/automerge";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { DiffWithProvenance } from "./schema";
 import { useHandleDef } from "../hooks/useHandleDef";

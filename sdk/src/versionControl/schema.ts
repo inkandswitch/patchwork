@@ -1,5 +1,5 @@
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import * as A from "@automerge/automerge/next";
+import { next as A } from "@automerge/automerge";
 import { TextPatch } from "./utils";
 import { HasAssets, withHasAssets } from "../assets";
 import { CursorPatch as CursorPatch } from "./cursorPatch";

@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "build": "rollup -c",
+    "build": "vite build",
     "push": "pnpm build && trailhead push --dir dist"
   },
   "keywords": [],
@@ -15,18 +15,30 @@
     "@automerge/automerge-repo": "2.0.0-alpha.7",
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
     "@tldraw/tldraw": "2.0.0-alpha.17",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.1",
+    "events": "^3.3.0",
     "lodash": "^4.17.21",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "stream-browserify": "^3.0.0",
+    "util": "^0.12.5"
   },
   "devDependencies": {
+    "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-replace": "^6.0.1",
     "@rollup/plugin-typescript": "^11.1.6",
-    "rollup": "^4.19.0",
-    "rollup-plugin-postcss": "^4.0.2",
     "@types/lodash": "^4.17.7",
     "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0"
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "rollup": "^4.19.0",
+    "rollup-plugin-node-polyfills": "^0.2.1",
+    "rollup-plugin-postcss": "^4.0.2",
+    "vite-plugin-top-level-await": "^1.4.2",
+    "vite-plugin-wasm": "^3.3.0"
   }
 }

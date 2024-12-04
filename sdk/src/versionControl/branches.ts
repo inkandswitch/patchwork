@@ -8,7 +8,7 @@ import {
   getVersionControlMetadataHandle,
 } from "../versionControl";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import * as A from "@automerge/automerge/next";
+import { next as A } from "@automerge/automerge";
 import {
   BranchDoc,
   HasVersionControlMetadata,

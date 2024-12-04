@@ -1,6 +1,6 @@
 import { DataType } from "..";
 import { useStaticCallback } from "../hooks/useStaticCallback";
-import * as A from "@automerge/automerge/next";
+import { next as A } from "@automerge/automerge";
 import { isEqual, min, sortBy } from "lodash";
 import { useMemo, useState } from "react";
 import {
@@ -123,9 +123,9 @@ export function useAnnotations({
     () =>
       doc?.discussions
         ? Object.values(doc.discussions).filter(
-          (discussion) =>
-            !discussion.anchors || discussion.anchors.length === 0
-        )
+            (discussion) =>
+              !discussion.anchors || discussion.anchors.length === 0
+          )
         : [],
     [doc]
   );
@@ -146,10 +146,10 @@ export function useAnnotations({
     const editAnnotations =
       patchesToAnnotations && diff
         ? patchesToAnnotations(
-          doc,
-          A.view(doc, diff.fromHeads),
-          diff.patches as A.Patch[]
-        )
+            doc,
+            A.view(doc, diff.fromHeads),
+            diff.patches as A.Patch[]
+          )
         : [];
 
     // remember which annotations are part of a discussion
@@ -181,12 +181,12 @@ export function useAnnotations({
 
         return value !== undefined
           ? [
-            {
-              type: "highlighted",
-              anchor,
-              value,
-            },
-          ]
+              {
+                type: "highlighted",
+                anchor,
+                value,
+              },
+            ]
           : [];
       });
 
@@ -260,14 +260,14 @@ export function useAnnotations({
 
     const sortedAnnotationGroups = dataType.sortAnchorsBy
       ? sortBy(combinedAnnotationGroups, (annotationGroup) =>
-        annotationGroup.annotations.length === 0
-          ? -Infinity // annotation groups without annotations are global comments which are always shown on top
-          : min(
-            annotationGroup.annotations.map((annotation) =>
-              dataType.sortAnchorsBy!(doc, annotation.anchor)
-            )
-          )
-      )
+          annotationGroup.annotations.length === 0
+            ? -Infinity // annotation groups without annotations are global comments which are always shown on top
+            : min(
+                annotationGroup.annotations.map((annotation) =>
+                  dataType.sortAnchorsBy!(doc, annotation.anchor)
+                )
+              )
+        )
       : combinedAnnotationGroups;
 
     return {
@@ -431,16 +431,16 @@ export function useAnnotations({
           ...annotationGroup,
           state:
             expandedAnnotationGroupId === id ||
-              (!expandedAnnotationGroupId && isCommentBeingCreated)
+            (!expandedAnnotationGroupId && isCommentBeingCreated)
               ? "expanded"
               : id && selectedAnnotationGroupIds.has(id)
-                ? "focused"
-                : "neutral",
+              ? "focused"
+              : "neutral",
           comment: isCommentBeingEdited
             ? commentState
             : isCommentBeingCreated
-              ? { type: "create" }
-              : undefined,
+            ? { type: "create" }
+            : undefined,
         };
       }),
     [

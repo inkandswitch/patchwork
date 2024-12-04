@@ -91,6 +91,7 @@ const SHARED_MODULES = {
   "@patchwork/datagrid": "./datagrid/index.js",
   "@patchwork/kanban": "./kanban/index.js",
   "@patchwork/tldraw": "./tldraw/index.js",
+  "@patchwork/raw-editor": "./raw-editor/index.js",
 };
 
 // All dependencies that should not be bundled in and instead are loaded
