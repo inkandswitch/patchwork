@@ -1,35 +1,32 @@
 import { Position } from "../datatype";
-import { Env, NOT_READY, Value } from "../eval";
+import { Env, FilteredValue, NOT_READY, Value } from "../eval";
 import { displayNameForCell } from "../print";
+import { ValueViewer } from "./CellDetails";
 
 interface ChoiceDependenciesProps {
   sheet: Env;
-  selectedCell: Position;
-  selectedCellResult: { value: Value; include: boolean }[] | undefined;
+  values: FilteredValue[];
+  selectedCells?: Position[];
 }
 
-export const ChoiceDependencies = ({
+const ChoiceDependencies = ({
   sheet,
-  selectedCell,
-  selectedCellResult,
+  values,
+  selectedCells,
 }: ChoiceDependenciesProps) => {
   const ambDependencies = sheet
-    .getCellAmbDimensions(selectedCell)
+    .getAmbDimensions(values.map((v) => v.value))
     .filter(
+      // hide amb dimensions that are within the cell selection
       (dim) =>
-        dim.pos.row !== selectedCell.row || dim.pos.col !== selectedCell.col
+        !selectedCells ||
+        selectedCells.every(
+          (c) => c.row !== dim.pos.row || c.col !== dim.pos.col
+        )
     );
 
-  if (
-    ambDependencies.length === 0 ||
-    !selectedCellResult ||
-    selectedCellResult === NOT_READY
-  ) {
-    return null;
-  }
-
   return (
-    <div>
+    <div className="text-xs text-gray-500">
       <div>This result depends on choices made in:</div>
       <ul>
         {ambDependencies.map((dim) => (
@@ -40,4 +37,11 @@ export const ChoiceDependencies = ({
       </ul>
     </div>
   );
+};
+
+export const choiceDependenciesViewer: ValueViewer = {
+  name: "Choice Dependencies",
+  shouldRender: (values) =>
+    values.some((v) => v.value.context.size > 0) ? "normal" : "hide",
+  component: ChoiceDependencies,
 };

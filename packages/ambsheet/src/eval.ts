@@ -70,10 +70,9 @@ export const contextsWithResolvedPositionsAreCompatible = (
 type CellResult = Value[] | typeof NOT_READY | null;
 export type Results = CellResult[][];
 
-export type FilteredResultsForCell =
-  | { value: Value; include: boolean }[]
-  | typeof NOT_READY
-  | null;
+export type FilteredValue = { value: Value; include: boolean };
+
+export type FilteredResultsForCell = FilteredValue[] | typeof NOT_READY | null;
 export type FilteredResults = FilteredResultsForCell[][];
 
 // AND of ORs
@@ -592,7 +591,11 @@ export class Env {
     if (results == null || !isReady(results)) {
       return [];
     }
-    return uniq(results.flatMap((v) => [...v.context.keys()]));
+    return this.getAmbDimensions(results);
+  }
+
+  public getAmbDimensions(values: Value[]): AmbNode[] {
+    return uniq(values.flatMap((v) => [...v.context.keys()]));
   }
 
   eval(): Env {

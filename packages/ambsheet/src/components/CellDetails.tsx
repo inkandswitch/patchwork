@@ -1,16 +1,28 @@
 import { DocHandle } from "@automerge/automerge-repo";
 import { useEffect, useMemo, useState } from "react";
 import { AmbSheetDoc, Position } from "../datatype";
-import { NOT_READY, Value, FilteredResults, Env } from "../eval";
+import { NOT_READY, Value, FilteredResults, Env, FilteredValue } from "../eval";
 import { displayNameForCell, printRawValue } from "../print";
 import { Stacks } from "./Stacks";
 import { TableViewer } from "./TableViewer";
 import { FilterSelection } from "./AmbSheet";
 import { ResultHistogram } from "./ResultHistogram";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { isEqual, isNumber } from "lodash";
-import { RawViewer } from "./RawViewer";
-import { ChoiceDependencies } from "./ChoiceDependencies";
+import { choiceDependenciesViewer } from "./ChoiceDependencies";
+
+type ShouldRenderPriority = "high" | "normal" | "hide";
+
+export type ValueViewer = {
+  name: string;
+  shouldRender: (values: FilteredValue[]) => ShouldRenderPriority;
+  component: React.FC<{
+    sheet: Env;
+    values: FilteredValue[];
+    selectedCells?: Position[];
+  }>;
+};
+
+const valueViewers: ValueViewer[] = [choiceDependenciesViewer];
 
 export const CellDetails = ({
   handle,
@@ -81,6 +93,21 @@ export const CellDetails = ({
           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-2 focus:border-indigo-500 sm:text-sm"
         />
       </div>
+
+      {selectedCellResult &&
+        valueViewers
+          .filter(
+            (viewer) => viewer.shouldRender(selectedCellResult) !== "hide"
+          )
+          .map((viewer) => (
+            <div className="border-b border-gray-300 pb-3">
+              <h2 className="text-xs text-gray-500 font-medium uppercase mb-2">
+                {viewer.name}
+              </h2>
+              <viewer.component sheet={sheet} values={selectedCellResult} />
+            </div>
+          ))}
+
       {selectedCellResult && selectedCellResult !== NOT_READY && (
         <div className="border-b border-gray-300 pb-3">
           <h2 className="text-xs text-gray-500 font-medium uppercase mb-2">
@@ -95,17 +122,6 @@ export const CellDetails = ({
           />
         </div>
       )}
-
-      <div className="border-b border-gray-300 pb-3 text-xs text-gray-500">
-        <h2 className="text-xs text-gray-500 font-medium uppercase">
-          Choice Dependencies
-        </h2>
-        <ChoiceDependencies
-          sheet={sheet}
-          selectedCell={selectedCell}
-          selectedCellResult={selectedCellResult}
-        />
-      </div>
 
       {selectedCellResult && selectedCellResult !== NOT_READY && (
         <div className="border-b border-gray-300 pb-3">
