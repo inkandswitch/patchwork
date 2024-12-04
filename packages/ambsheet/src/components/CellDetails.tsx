@@ -13,8 +13,8 @@ import { choiceDependenciesViewer } from "./ChoiceDependencies";
 type ShouldRenderPriority = "high" | "normal" | "hide";
 
 export type ValueViewerProps = {
-  sheet: Env;
   values: FilteredValue[];
+  sheet: Env;
   selectedCells?: Position[];
   setFilterSelection: (selectedValues: RawValue[] | null) => void;
 };

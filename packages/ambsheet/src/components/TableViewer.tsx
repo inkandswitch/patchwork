@@ -266,7 +266,7 @@ export const TableViewer = ({
 
 export const tableViewer: ValueViewer = {
   name: "Table",
-  shouldRender: (values) => {
+  shouldRender: (values, sheet) => {
     // todo: only render if there are at least 2 amb dimensions
     return "high";
   },
