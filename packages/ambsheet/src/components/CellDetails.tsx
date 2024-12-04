@@ -9,6 +9,8 @@ import { FilterSelection } from "./AmbSheet";
 import { ResultHistogram } from "./ResultHistogram";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { isEqual, isNumber } from "lodash";
+import { RawViewer } from "./RawViewer";
+import { ChoiceDependencies } from "./ChoiceDependencies";
 
 export const CellDetails = ({
   handle,
@@ -56,10 +58,6 @@ export const CellDetails = ({
       d.data[selectedCell.row][selectedCell.col] = e.target.value;
     });
 
-  const ambDependencies = sheet
-    .getCellAmbDimensions(selectedCell)
-    .filter((dim) => !isEqual(dim.pos, selectedCell));
-
   return (
     <div className="flex flex-col gap-3">
       <div className="">
@@ -88,80 +86,26 @@ export const CellDetails = ({
           <h2 className="text-xs text-gray-500 font-medium uppercase mb-2">
             Distribution
           </h2>
-          <div className="flex flex-row gap-4 items-start">
-            <ResultHistogram
-              selectedCell={selectedCell}
-              results={selectedCellResult}
-              filterSelection={filterSelectionForSelectedCell}
-              setFilterSelectionForCell={setFilterSelectionForCell}
-            />
-            <table className="text-xs text-gray-500 w-full ">
-              <tbody>
-                <tr>
-                  <td className="font-medium">Count:</td>
-                  <td>{printRawValue(selectedCellResult.length)}</td>
-                </tr>
-                <tr>
-                  <td className="font-medium">Mean:</td>
-                  <td>
-                    {printRawValue(
-                      selectedCellResult
-                        .map((v) => v.value.rawValue)
-                        .filter(isNumber)
-                        .reduce((acc, v) => acc + v, 0) /
-                        selectedCellResult.length
-                    )}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="font-medium">Min:</td>
-                  <td>
-                    {printRawValue(
-                      Math.min(
-                        ...selectedCellResult
-                          .map((v) => v.value.rawValue)
-                          .filter(isNumber)
-                      )
-                    )}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="font-medium">Max:</td>
-                  <td>
-                    {printRawValue(
-                      Math.max(
-                        ...selectedCellResult
-                          .map((v) => v.value.rawValue)
-                          .filter(isNumber)
-                      )
-                    )}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <ResultHistogram
+            selectedCell={selectedCell}
+            results={selectedCellResult}
+            filterSelection={filterSelectionForSelectedCell}
+            setFilterSelectionForCell={setFilterSelectionForCell}
+            selectedCellResult={selectedCellResult}
+          />
         </div>
       )}
 
-      {ambDependencies.length > 0 &&
-        selectedCellResult &&
-        selectedCellResult !== NOT_READY && (
-          <div className="border-b border-gray-300 pb-3 text-xs text-gray-500">
-            <h2 className="text-xs text-gray-500 font-medium uppercase">
-              Choice Dependencies
-            </h2>
-            <div>
-              <div>This result depends on choices made in:</div>
-              <ul>
-                {ambDependencies.map((dim) => (
-                  <li className="list-disc ml-4">
-                    {displayNameForCell(dim.pos, sheet)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
+      <div className="border-b border-gray-300 pb-3 text-xs text-gray-500">
+        <h2 className="text-xs text-gray-500 font-medium uppercase">
+          Choice Dependencies
+        </h2>
+        <ChoiceDependencies
+          sheet={sheet}
+          selectedCell={selectedCell}
+          selectedCellResult={selectedCellResult}
+        />
+      </div>
 
       {selectedCellResult && selectedCellResult !== NOT_READY && (
         <div className="border-b border-gray-300 pb-3">
@@ -189,14 +133,6 @@ export const CellDetails = ({
           />
         </div>
       )}
-      {/* {selectedCellResult && selectedCellResult !== NOT_READY && (
-        <div className="">
-          <h2 className="text-xs text-gray-500 font-bold uppercase mb-3">
-            Raw
-          </h2>
-          <RawViewer values={selectedCellResult as Value[]} />
-        </div>
-      )} */}
     </div>
   );
 };

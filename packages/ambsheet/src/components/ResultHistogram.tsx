@@ -7,12 +7,14 @@ import { Histogram } from "./Histogram";
 import RangeSlider from "react-range-slider-input";
 import "../range-slider.css";
 import { useEffect, useMemo, useState } from "react";
+import { printRawValue } from "../print";
 
 export const ResultHistogram = ({
   selectedCell,
   results,
   filterSelection,
   setFilterSelectionForCell,
+  selectedCellResult,
 }: {
   selectedCell: Position;
   results: { value: Value; include: boolean }[];
@@ -21,6 +23,7 @@ export const ResultHistogram = ({
     cell: Position,
     selectedIndexes: number[]
   ) => void;
+  selectedCellResult: { value: Value; include: boolean }[];
 }) => {
   const numbers = useMemo(
     () => results.map((r) => r.value.rawValue).filter(isNumber),
@@ -82,23 +85,68 @@ export const ResultHistogram = ({
   }
 
   return (
-    <div>
-      <Histogram
-        data={numbers}
-        filteredData={filteredNumbers}
-        width={200}
-        height={100}
-        selectValuesBetween={selectValuesBetween}
-      />
-      <div className="w-[200px] mt-2">
-        <RangeSlider
-          min={numbersMin}
-          max={numbersMax}
+    <div className="flex flex-row gap-4 items-start">
+      <div>
+        <Histogram
+          data={numbers}
+          filteredData={filteredNumbers}
           width={200}
-          value={[filterBarLimits.min, filterBarLimits.max]}
-          onInput={([min, max]) => setFilterBarLimits({ min, max })}
+          height={100}
+          selectValuesBetween={selectValuesBetween}
         />
+        <div className="w-[200px] mt-2">
+          <RangeSlider
+            min={numbersMin}
+            max={numbersMax}
+            width={200}
+            value={[filterBarLimits.min, filterBarLimits.max]}
+            onInput={([min, max]) => setFilterBarLimits({ min, max })}
+          />
+        </div>
       </div>
+      <table className="text-xs text-gray-500 w-full ">
+        <tbody>
+          <tr>
+            <td className="font-medium">Count:</td>
+            <td>{printRawValue(selectedCellResult.length)}</td>
+          </tr>
+          <tr>
+            <td className="font-medium">Mean:</td>
+            <td>
+              {printRawValue(
+                selectedCellResult
+                  .map((v) => v.value.rawValue)
+                  .filter(isNumber)
+                  .reduce((acc, v) => acc + v, 0) / selectedCellResult.length
+              )}
+            </td>
+          </tr>
+          <tr>
+            <td className="font-medium">Min:</td>
+            <td>
+              {printRawValue(
+                Math.min(
+                  ...selectedCellResult
+                    .map((v) => v.value.rawValue)
+                    .filter(isNumber)
+                )
+              )}
+            </td>
+          </tr>
+          <tr>
+            <td className="font-medium">Max:</td>
+            <td>
+              {printRawValue(
+                Math.max(
+                  ...selectedCellResult
+                    .map((v) => v.value.rawValue)
+                    .filter(isNumber)
+                )
+              )}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 };
