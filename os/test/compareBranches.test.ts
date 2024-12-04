@@ -1,7 +1,7 @@
 import assert from "assert";
 import { describe, it } from "vitest";
 import { getChangesFromMergedBranch } from "@patchwork/sdk/versionControl";
-import * as A from "@automerge/automerge/next";
+import { next as A } from "@automerge/automerge";
 
 describe("compareBranches", () => {
   it("returns a single change on a branch, with nothing else concurrent on main", () => {

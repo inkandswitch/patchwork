@@ -8,7 +8,7 @@ import {
 } from "@patchwork/sdk/versionControl";
 import { uuid } from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";
-import * as A from "@automerge/automerge/next";
+import { next as A } from "@automerge/automerge";
 import { SendHorizontalIcon } from "lucide-react";
 import { useState } from "react";
 import { ChangelogSelection } from "./TimelineSidebar";

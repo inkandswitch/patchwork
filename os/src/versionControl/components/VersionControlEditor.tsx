@@ -12,7 +12,7 @@ import { EditorProps, Tool } from "@patchwork/sdk";
 
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import * as A from "@automerge/automerge/next";
+import { next as A } from "@automerge/automerge";
 import {
   BotIcon,
   ChevronsRight,

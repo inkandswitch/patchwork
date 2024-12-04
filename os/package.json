@@ -10,10 +10,11 @@
   "scripts": {
     "dev": "vite --force --port 5173",
     "build:main": "tsc && vite build",
-    "build:sdk": "cp -r ../sdk/dist ./dist/sdk",
-    "build:datagrid": "cp -r ../packages/datagrid/dist ./dist/datagrid",
-    "build:kanban": "cp -r ../packages/kanban/dist ./dist/kanban",
-    "build:tools": "pnpm build:datagrid && pnpm build:kanban",
+    "build:sdk": "mkdir -p ./dist/sdk && cp -r ../sdk/dist/* ./dist/sdk/",
+    "build:datagrid": "mkdir -p ./dist/datagrid && cp -r ../packages/datagrid/dist/* ./dist/datagrid",
+    "build:kanban": "mkdir -p ./dist/kanban && cp -r ../packages/kanban/dist/* ./dist/kanban",
+    "build:tldraw": "mkdir -p ./dist/tldraw && cp -r ../packages/tldraw/dist/* ./dist/tldraw",
+    "build:tools": "pnpm build:datagrid && pnpm build:kanban && pnpm build:tldraw",
     "build:sw": "node ./build-service-worker.js",
     "build": "pnpm build:main && pnpm build:sdk && pnpm build:tools && node ./build-service-worker.js",
     "build:no-tsc": "vite build && node ./build-service-worker.js",
@@ -79,6 +80,7 @@
   },
   "devDependencies": {
     "@jspm/generator": "^2.1.3",
+    "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-replace": "^6.0.1",
     "@testing-library/react": "^15.0.7",
     "@types/diff": "^5.2.1",
