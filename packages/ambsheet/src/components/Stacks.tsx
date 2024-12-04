@@ -1,15 +1,13 @@
 import React, { useMemo } from "react";
-import { FilteredResultsForCell, Value } from "../eval";
 import { groupBy, uniq } from "lodash";
-import { FilterSelection } from "./AmbSheet";
-import { Position, RawValue } from "../datatype";
 import { ValueViewer, ValueViewerProps } from "./CellDetails";
+import { FilteredValue } from "../eval";
 
 export const Stacks = ({ values, setFilterSelection }: ValueViewerProps) => {
   const groupedValues = useMemo(() => {
     return groupBy(
       values.map((v, i) => ({ ...v, indexInCell: i })),
-      (value) => renderValue(value.value.rawValue)
+      renderValue
     );
   }, [values]);
 
@@ -67,17 +65,17 @@ export const Stacks = ({ values, setFilterSelection }: ValueViewerProps) => {
 export const stacksViewer: ValueViewer = {
   name: "Stacks",
   shouldRender(values) {
-    const n = uniq(values.map((v) => v.value.rawValue)).length;
-    return 1 < n &&
-      n <= 5 &&
-      values.every((v) => renderValue(v.value.rawValue).length <= 8)
+    const n = uniq(values.map((v) => v)).length;
+    return 1 < n && n <= 5 && values.every((v) => renderValue(v).length <= 8)
       ? "high"
       : "hide";
   },
   component: Stacks,
 };
 
-function renderValue(v: RawValue) {
+function renderValue(fv: FilteredValue) {
+  const v = fv.value.rawValue;
+
   if (typeof v !== "number") {
     return "" + v;
   }
