@@ -16,11 +16,9 @@ type NumberRange = {
 };
 
 export const ResultHistogram = ({
-  sheet,
   values,
   setFilterSelection,
 }: ValueViewerProps) => {
-  console.log("values", values);
   const numbers = useMemo(
     () => values.map((v) => v.value.rawValue).filter(isNumber),
     [values]
@@ -45,25 +43,23 @@ export const ResultHistogram = ({
   const numbersMin = useMemo(() => Math.min(...numbers), [numbers]);
   const numbersMax = useMemo(() => Math.max(...numbers), [numbers]);
 
-  const [filterBarLimits, setFilterBarLimits] = useState<{
+  const [filterMinMax, setFilterMinMax] = useState<{
     min: number;
     max: number;
   }>({ min: numbersMin, max: numbersMax });
 
+  // if the numbers change, we need to reset the filter range
   useEffect(() => {
-    setFilterBarLimits({ min: numbersMin, max: numbersMax });
+    setFilterMinMax({ min: numbersMin - 0.1, max: numbersMax + 0.1 });
   }, [numbersMin, numbersMax]);
 
   useEffect(() => {
-    if (
-      filterBarLimits.min === numbersMin &&
-      filterBarLimits.max === numbersMax
-    ) {
+    if (filterMinMax.min === numbersMin && filterMinMax.max === numbersMax) {
       selectValuesBetween(null);
     } else {
-      selectValuesBetween(filterBarLimits);
+      selectValuesBetween(filterMinMax);
     }
-  }, [filterBarLimits]);
+  }, [filterMinMax]);
 
   if (numbers.length < 2) {
     return (
@@ -74,7 +70,7 @@ export const ResultHistogram = ({
   }
 
   return (
-    <div className="flex flex-row gap-4 items-start">
+    <div className="flex flex-row gap-2 items-start">
       <div>
         <Histogram
           data={numbers}
@@ -85,49 +81,56 @@ export const ResultHistogram = ({
         />
         <div className="w-[200px] mt-2">
           <RangeSlider
-            min={numbersMin - 0.01}
-            max={numbersMax + 0.01}
+            min={numbersMin - 0.1}
+            max={numbersMax + 0.1}
             width={200}
-            value={[filterBarLimits.min, filterBarLimits.max]}
-            onInput={([min, max]) => setFilterBarLimits({ min, max })}
+            value={[filterMinMax.min, filterMinMax.max]}
+            onInput={([min, max]) => setFilterMinMax({ min, max })}
           />
         </div>
       </div>
-      <table className="text-xs text-gray-500 w-full ">
+      <table className="text-xs text-gray-500 w-full">
+        <thead>
+          <tr>
+            <th className="text-left font-medium"></th>
+            <th className="text-left font-medium">All</th>
+            <th className="text-left font-medium bg-blue-100">Filtered</th>
+          </tr>
+        </thead>
         <tbody>
           <tr>
             <td className="font-medium">Count:</td>
-            <td>{printRawValue(values.length)}</td>
+            <td>{printRawValue(numbers.length)}</td>
+            <td className="bg-blue-100">
+              {printRawValue(filteredNumbers.length)}
+            </td>
           </tr>
           <tr>
             <td className="font-medium">Mean:</td>
             <td>
               {printRawValue(
-                values
-                  .map((v) => v.value.rawValue)
-                  .filter(isNumber)
-                  .reduce((acc, v) => acc + v, 0) / values.length
+                numbers.reduce((acc, v) => acc + v, 0) / numbers.length
+              )}
+            </td>
+            <td className="bg-blue-100">
+              {printRawValue(
+                filteredNumbers.reduce((acc, v) => acc + v, 0) /
+                  filteredNumbers.length
               )}
             </td>
           </tr>
           <tr>
             <td className="font-medium">Min:</td>
-            <td>
-              {printRawValue(
-                Math.min(
-                  ...values.map((v) => v.value.rawValue).filter(isNumber)
-                )
-              )}
+            <td>{printRawValue(Math.min(...numbers))}</td>
+            <td className="bg-blue-100">
+              {printRawValue(Math.min(...filteredNumbers))}
             </td>
           </tr>
           <tr>
             <td className="font-medium">Max:</td>
-            <td>
-              {printRawValue(
-                Math.max(
-                  ...values.map((v) => v.value.rawValue).filter(isNumber)
-                )
-              )}
+            <td>{printRawValue(Math.max(...numbers))}</td>
+            <td className="bg-blue-100">
+              {printRawValue(Math.max(...filteredNumbers))}
             </td>
           </tr>
         </tbody>
