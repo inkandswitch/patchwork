@@ -83,17 +83,11 @@ function renderValue(v: RawValue) {
   }
 
   let rv = v.toFixed(2);
-  while (true) {
-    const lastChar = rv.at(-1);
-    if (lastChar === "0") {
-      rv = rv.slice(0, -1);
-      continue;
-    }
-
-    if (lastChar === ".") {
-      rv = rv.slice(0, -1);
-    }
-    break;
+  while (rv.at(-1) === "0") {
+    rv = rv.slice(0, -1);
+  }
+  if (rv.at(-1) === ".") {
+    rv = rv.slice(0, -1);
   }
   return rv;
 }
