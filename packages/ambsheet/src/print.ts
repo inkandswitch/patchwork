@@ -21,6 +21,11 @@ function formatNumber(num) {
 }
 
 export const printRawValue = (value: RawValue): string => {
+  if (Array.isArray(value)) {
+    const width = value[0].length;
+    const height = value.length;
+    return `[${width}x${height} range]`;
+  }
   if (typeof value === "number") {
     if (!Number.isInteger(value)) {
       return formatNumber(roundNumber(value));
