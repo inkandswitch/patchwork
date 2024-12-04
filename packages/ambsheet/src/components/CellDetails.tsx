@@ -4,7 +4,7 @@ import { AmbSheetDoc, Position, RawValue } from "../datatype";
 import { NOT_READY, Value, FilteredResults, Env, FilteredValue } from "../eval";
 import { displayNameForCell, printRawValue } from "../print";
 import { Stacks } from "./Stacks";
-import { TableViewer } from "./TableViewer";
+import { tableViewer, TableViewer } from "./TableViewer";
 import { FilterSelection } from "./AmbSheet";
 import { histogramViewer, ResultHistogram } from "./ResultHistogram";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
@@ -24,7 +24,11 @@ export type ValueViewer = {
   component: React.FC<ValueViewerProps>;
 };
 
-const valueViewers: ValueViewer[] = [choiceDependenciesViewer, histogramViewer];
+const valueViewers: ValueViewer[] = [
+  choiceDependenciesViewer,
+  histogramViewer,
+  tableViewer,
+];
 
 export const CellDetails = ({
   handle,
@@ -135,19 +139,6 @@ export const CellDetails = ({
             </div>
           ))}
 
-      {selectedCellResult && selectedCellResult !== NOT_READY && (
-        <div className="border-b border-gray-300 pb-3">
-          <h2 className="text-xs text-gray-500 font-medium uppercase">Table</h2>
-          <TableViewer
-            sheet={sheet}
-            selectedCell={selectedCell}
-            results={selectedCellResult}
-            filterSelection={filterSelectionForSelectedCell}
-            setFilterSelectionForCell={setFilterSelectionForCell}
-            filteredResults={filteredResults}
-          />
-        </div>
-      )}
       {selectedCellResult && selectedCellResult !== NOT_READY && (
         <div className="border-b border-gray-300 pb-3">
           <h2 className="text-xs text-gray-500 font-medium uppercase mb-3">

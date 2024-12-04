@@ -14,6 +14,7 @@ import { FilterSelection } from "./AmbSheet";
 import { displayNameForCell, simpleNameForCell } from "../print";
 import { Position, RawValue } from "../datatype";
 import { printRawValue } from "../print";
+import { ValueViewer, ValueViewerProps } from "./CellDetails";
 
 function findAllIndexes(arr, predicate) {
   const indexes = [];
@@ -51,24 +52,12 @@ const aggregateValues = (values: number[], aggregation: Aggregation) => {
 
 export const TableViewer = ({
   sheet,
-  selectedCell,
-  results,
-  filterSelection,
-  setFilterSelectionForCell,
-  filteredResults,
-}: {
-  sheet: Env;
-  selectedCell: Position;
-  results: { value: Value; include: boolean }[];
-  filterSelection: FilterSelection;
-  setFilterSelectionForCell: (
-    cell: Position,
-    selectedIndexes: number[]
-  ) => void;
-  filteredResults: FilteredResults;
-}) => {
+  values,
+  selectedCells,
+  setFilterSelection,
+}: ValueViewerProps) => {
   const [aggregation, setAggregation] = useState<Aggregation>("avg");
-  const valuesWithResolvedContexts = results.map((value) => ({
+  const valuesWithResolvedContexts = values.map((value) => ({
     ...value,
     value: {
       ...value.value,
@@ -76,7 +65,7 @@ export const TableViewer = ({
     },
   }));
 
-  const ambDimensions = sheet.getCellAmbDimensions(selectedCell);
+  const ambDimensions = sheet.getAmbDimensions(values.map((v) => v.value));
 
   const [xDim, setXDim] = useState(ambDimensions[0] ?? null);
   const [yDim, setYDim] = useState(ambDimensions[1] ?? null);
@@ -103,14 +92,8 @@ export const TableViewer = ({
     }));
   };
 
-  // @ts-expect-error we know that the amb literal cell for the dimension has an eval'd value
-  const xDimChoices = filteredResults[xDim.pos.row][xDim.pos.col].map(
-    (v) => v.value
-  ) as Value[];
-  // @ts-expect-error we know that the amb literal cell for the dimension has an eval'd value
-  const yDimChoices = filteredResults[yDim.pos.row][yDim.pos.col].map(
-    (v) => v.value
-  ) as Value[];
+  const xDimChoices = sheet.results[xDim.pos.row][xDim.pos.col] as Value[];
+  const yDimChoices = sheet.results[yDim.pos.row][yDim.pos.col] as Value[];
 
   const hideTable = xDimChoices.length > 15 || yDimChoices.length > 15;
 
@@ -204,16 +187,13 @@ export const TableViewer = ({
                         const context = {
                           [displayNameForCell(xDim.pos)]: index,
                         };
-                        const filterSelectionIndexes = valuesForContext(
+                        const filterSelectionValues = valuesForContext(
                           context
-                        ).map((v) => v.index);
-                        setFilterSelectionForCell(
-                          selectedCell,
-                          filterSelectionIndexes
-                        );
+                        ).map((v) => v.rawValue);
+                        setFilterSelection(filterSelectionValues);
                       }}
                       onMouseLeave={() => {
-                        setFilterSelectionForCell(selectedCell, null);
+                        setFilterSelection(null);
                       }}
                     >
                       {printRawValue(xChoice.rawValue)}
@@ -230,16 +210,13 @@ export const TableViewer = ({
                         const context = {
                           [displayNameForCell(yDim.pos)]: rowIndex,
                         };
-                        const filterSelectionIndexes = valuesForContext(
+                        const filterSelectionValues = valuesForContext(
                           context
-                        ).map((v) => v.index);
-                        setFilterSelectionForCell(
-                          selectedCell,
-                          filterSelectionIndexes
-                        );
+                        ).map((v) => v.rawValue);
+                        setFilterSelection(filterSelectionValues);
                       }}
                       onMouseLeave={() => {
-                        setFilterSelectionForCell(selectedCell, null);
+                        setFilterSelection(null);
                       }}
                     >
                       {printRawValue(yChoice.rawValue)}
@@ -249,11 +226,7 @@ export const TableViewer = ({
                         [displayNameForCell(xDim.pos)]: colIndex,
                         [displayNameForCell(yDim.pos)]: rowIndex,
                       });
-                      const blueHighlight = resultValues.some((v) =>
-                        (filterSelection?.selectedValueIndexes ?? []).includes(
-                          v.index
-                        )
-                      );
+                      const blueHighlight = resultValues.some((v) => v.include); // todo: is this right?
                       const greyOut = resultValues.every((v) => !v.include);
                       return (
                         <td
@@ -262,9 +235,8 @@ export const TableViewer = ({
                             blueHighlight ? "bg-blue-100" : ""
                           } ${greyOut ? "text-gray-300" : ""}`}
                           onMouseEnter={() => {
-                            setFilterSelectionForCell(
-                              selectedCell,
-                              resultValues.map((v) => v.index)
+                            setFilterSelection(
+                              resultValues.map((v) => v.rawValue)
                             );
                           }}
                         >
@@ -290,4 +262,13 @@ export const TableViewer = ({
       </div>
     </div>
   );
+};
+
+export const tableViewer: ValueViewer = {
+  name: "Table",
+  shouldRender: (values) => {
+    // todo: only render if there are at least 2 amb dimensions
+    return "high";
+  },
+  component: TableViewer,
 };
