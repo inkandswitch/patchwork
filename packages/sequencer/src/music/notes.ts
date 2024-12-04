@@ -11,6 +11,10 @@ export const MODES: Record<string, number[]> = {
     "mixolydian": [0, 2, 4, 5, 7, 9, 10],
     "minor": [0, 2, 3, 5, 7, 8, 10],
     "locrian": [0, 1, 3, 5, 6, 8, 10],
+    "harmonic": [0, 2, 3, 5, 7, 8, 11],
+    "byzantine": [0, 1, 4, 5, 7, 8, 11],
+    "freygish": [0, 1, 3, 5, 7, 8, 10],
+    "hungarian": [0, 2, 3, 6, 7, 8, 11],
 };
 export const DRUM_PIECES = ["kick", "snare", "hi-hat", "percussion"];
 

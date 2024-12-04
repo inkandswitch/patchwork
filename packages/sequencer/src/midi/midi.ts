@@ -1,33 +1,72 @@
-// import fs from "fs";
 import { SongConfig } from "../config";
-import { Note, Step } from "../music/instrument-scheduler";
-import Midi from "./jsmidgen";
+import { Step } from "../music/instrument-scheduler";
+import { File, Track, Midi } from "./jsmidgen";
 
-export function stepsToMidiData(steps: Step[], config: SongConfig): Uint8Array {
-    var file = new Midi.File();
-    var track = new Midi.Track();
-    track.setTempo(config.tempo);
-    file.addTrack(track);
-    var channel = 0;
+export type SongMidiData = {
+    "instrument": Uint8Array,
+    "drum": Uint8Array,
+}
+
+export function stepsToMidiData(steps: Step[], config: SongConfig): SongMidiData {
+    var instFile = new Midi.File();
+    var drumFile = new Midi.File();
+    var instChannel = 0;
+    var drumChannel = 10;
+    var instTrack = new Midi.Track();
+    instTrack.setTempo(config.tempo);
+    instFile.addTrack(instTrack);
+    var drumTrack = new Midi.Track();
+    drumTrack.setTempo(config.tempo);
+    drumFile.addTrack(drumTrack);
     var stepDurTicks = 64;
 
-    var offset = 0;
+    var instOffset = 0;
+    var drumOffset = 0;
     for (var step of steps) {
-        let notes: Note[] = [];
+        let instNoteNames: string[] = [];
         for (var note of Object.values(step.instrument)) {
-            notes.push(note);
+            instNoteNames.push(note.note);
         }
-        if (notes.length > 0) {
-            track.addChord(channel, notes.map((note) => {
-                return note.note
-            }), stepDurTicks, offset);
-            offset = 0;
-        } else {
-            offset += stepDurTicks;
+        instOffset = addStepNotes(instNoteNames, instTrack, instChannel, stepDurTicks, instOffset);
+        let drumNoteNames: string[] = [];
+        for (var note of Object.values(step.drum)) {
+            drumNoteNames.push(drumMidiFor(note.note));
         }
+        drumOffset = addStepNotes(drumNoteNames, drumTrack, drumChannel, stepDurTicks, drumOffset);
     }
 
-    let str = file.toBytes();
+    return {
+        "instrument": midiFileToData(instFile),
+        "drum": midiFileToData(drumFile),
+    }
+}
+
+// Returns updated offset
+function addStepNotes(noteNames: string[], track: Track, channel: number, stepDurTicks: number, curOffset: number): number {
+    let offset = curOffset;
+    if (noteNames.length > 0) {
+        noteNames.forEach(function (note_name) {
+            track.addNoteOn(channel, note_name, offset);
+            if (offset > 0) {
+                offset = 0;
+            }
+        });
+        noteNames.forEach(function (note_name, index) {
+            if (index === 0) {
+                track.addNoteOff(channel, note_name, stepDurTicks);
+            } else {
+                track.addNoteOff(channel, note_name);
+            }
+        });
+        offset = 0;
+    } else {
+        offset += stepDurTicks;
+    }
+    return offset
+}
+
+function midiFileToData(midiFile: File): Uint8Array {
+    let str = midiFile.toBytes();
     var hex = '';
     for (var i = 0; i < str.length; i++) {
         var next = str.charCodeAt(i).toString(16);
@@ -42,4 +81,18 @@ export function stepsToMidiData(steps: Step[], config: SongConfig): Uint8Array {
         parsed = match.map((byte) => parseInt(byte, 16));
     }
     return Uint8Array.from(parsed);
+}
+
+function drumMidiFor(note: string): string {
+    switch (note) {
+        case "kick":
+            return "B1"
+        case "snare":
+            return "E2"
+        case "hi-hat":
+            return "F#2"
+        case "percussion":
+            return "F#3"
+    }
+    return "B1"
 }
