@@ -2,14 +2,14 @@ import React, { useMemo } from "react";
 import { FilteredResultsForCell, Value } from "../eval";
 import { groupBy, uniq } from "lodash";
 import { FilterSelection } from "./AmbSheet";
-import { Position } from "../datatype";
+import { Position, RawValue } from "../datatype";
 import { ValueViewer, ValueViewerProps } from "./CellDetails";
 
 export const Stacks = ({ values, setFilterSelection }: ValueViewerProps) => {
   const groupedValues = useMemo(() => {
     return groupBy(
       values.map((v, i) => ({ ...v, indexInCell: i })),
-      (value) => value.value.rawValue
+      (value) => renderValue(value.value.rawValue)
     );
   }, [values]);
 
@@ -18,14 +18,6 @@ export const Stacks = ({ values, setFilterSelection }: ValueViewerProps) => {
     if (!group) return;
     setFilterSelection(group.map((v) => v.value.rawValue));
   };
-
-  if (Object.keys(groupedValues).length > 15) {
-    return (
-      <div className="text-xs text-gray-400">
-        Too many distinct values to show Stacks
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-wrap gap-2 mb-4">
@@ -79,3 +71,7 @@ export const stacksViewer: ValueViewer = {
     uniq(values.map((v) => v.value.rawValue)).length > 5 ? "hide" : "high",
   component: Stacks,
 };
+
+function renderValue(v: RawValue) {
+  return typeof v === "number" ? v.toFixed(3) : "" + v;
+}
