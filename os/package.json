@@ -19,6 +19,7 @@
     "build:folder": "mkdir -p ./dist/folder && cp -r ../packages/folder/dist/* ./dist/folder",
     "build:jacquard": "mkdir -p ./dist/jacquard && cp -r ../packages/jacquard/dist/* ./dist/jacquard",
     "build:kanban": "mkdir -p ./dist/kanban && cp -r ../packages/kanban/dist/* ./dist/kanban",
+    "build:pkg": "mkdir -p ./dist/pkg && cp -r ../packages/pkg/dist/* ./dist/pkg",
     "build:raw-editor": "mkdir -p ./dist/raw-editor && cp -r ../packages/raw-editor/dist/* ./dist/raw-editor",
     "build:tldraw": "mkdir -p ./dist/tldraw && cp -r ../packages/tldraw/dist/* ./dist/tldraw",
     "build:tools": "pnpm build:counter && pnpm build:essay && pnpm build:file && pnpm build:datagrid && pnpm build:kanban && pnpm build:tldraw && pnpm build:raw-editor && pnpm build:folder && pnpm build:engraft && pnpm build:jacquard",

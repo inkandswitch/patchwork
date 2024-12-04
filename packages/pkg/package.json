@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "build": "rollup -c"
+    "build": "vite build"
   },
   "keywords": [],
   "author": "Ink & Switch",
@@ -21,12 +21,15 @@
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.6",
-    "rollup": "^4.19.0",
-    "rollup-plugin-postcss": "^4.0.2",
     "@types/lodash": "^4.17.7",
     "@types/mime-types": "^2.1.4",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "typescript": "^5.5.4"
+    "@vitejs/plugin-react": "^4.3.1",
+    "rollup": "^4.19.0",
+    "rollup-plugin-postcss": "^4.0.2",
+    "typescript": "^5.5.4",
+    "vite-plugin-top-level-await": "^1.4.2",
+    "vite-plugin-wasm": "^3.3.0"
   }
 }

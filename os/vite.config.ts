@@ -94,10 +94,10 @@ const SHARED_MODULES = {
   "@patchwork/essay": "./essay/index.js",
   "@patchwork/file": "./file/index.js",
   "@patchwork/folder": "./folder/index.js",
-  //"@patchwork/folder-list-view": "./folder-list-view/index.js",
+  //"@patchwork/folder-list-view": "./folder-list-view/index.js", // left as an example of existing dynamic loading
   "@patchwork/jacquard": "./jacquard/index.js",
   "@patchwork/kanban": "./kanban/index.js",
-  //"@patchwork/pkg": "./pkg/index.js",
+  "@patchwork/pkg": "./pkg/index.js",
   "@patchwork/raw-editor": "./raw-editor/index.js",
   "@patchwork/tldraw": "./tldraw/index.js",
 };
