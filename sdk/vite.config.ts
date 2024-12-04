@@ -7,14 +7,16 @@ import resolve from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
 import postcss from "rollup-plugin-postcss";
 import commonjs from "@rollup/plugin-commonjs";
+import replace from "@rollup/plugin-replace";
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths(), topLevelAwait(), wasm()],
-  resolve: {
-    alias: {
-      process: "process/browser",
-    },
-  },
+  plugins: [
+    react(),
+    tsconfigPaths(),
+    topLevelAwait(),
+    wasm(),
+    replace({ "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV) }),
+  ],
   build: {
     lib: {
       entry: {
