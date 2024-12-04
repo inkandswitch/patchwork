@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { AmbSheetDoc, Position, RawValue } from "../datatype";
 import { NOT_READY, Value, FilteredResults, Env, FilteredValue } from "../eval";
 import { displayNameForCell, printRawValue } from "../print";
-import { Stacks, stacksViewer } from "./Stacks";
+import { stacksViewer } from "./Stacks";
+import { colorViewer } from "./Color";
 import { tableViewer, TableViewer } from "./TableViewer";
 import { FilterSelection } from "./AmbSheet";
 import { histogramViewer, ResultHistogram } from "./ResultHistogram";
@@ -29,6 +30,7 @@ const valueViewers: ValueViewer[] = [
   histogramViewer,
   tableViewer,
   stacksViewer,
+  colorViewer,
 ];
 
 export const CellDetails = ({
