@@ -6,6 +6,6 @@ export * as pkg from "@patchwork/pkg";
 export * as tldraw from "@patchwork/tldraw";
 export * as jacquard from "@patchwork/jacquard";
 export * as file from "@patchwork/file";
-// export * as engraft from "@patchwork/engraft";
+export * as engraft from "@patchwork/engraft";
 export * as counter from "@patchwork/counter";
 export * as raw from "@patchwork/raw-editor";

@@ -89,6 +89,7 @@ const SHARED_MODULES = {
   "@patchwork/sdk/ui": "./sdk/ui.js",
   "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
   "@patchwork/datagrid": "./datagrid/index.js",
+  "@patchwork/engraft": "./engraft/index.js",
   "@patchwork/kanban": "./kanban/index.js",
   "@patchwork/tldraw": "./tldraw/index.js",
   "@patchwork/raw-editor": "./raw-editor/index.js",
