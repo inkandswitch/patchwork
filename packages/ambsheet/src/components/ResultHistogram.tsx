@@ -8,48 +8,37 @@ import RangeSlider from "react-range-slider-input";
 import "../range-slider.css";
 import { useEffect, useMemo, useState } from "react";
 import { printRawValue } from "../print";
+import { ValueViewer, ValueViewerProps } from "./CellDetails";
+
+type NumberRange = {
+  min: number;
+  max: number;
+};
 
 export const ResultHistogram = ({
-  selectedCell,
-  results,
-  filterSelection,
-  setFilterSelectionForCell,
-  selectedCellResult,
-}: {
-  selectedCell: Position;
-  results: { value: Value; include: boolean }[];
-  filterSelection: FilterSelection;
-  setFilterSelectionForCell: (
-    cell: Position,
-    selectedIndexes: number[]
-  ) => void;
-  selectedCellResult: { value: Value; include: boolean }[];
-}) => {
+  sheet,
+  values,
+  setFilterSelection,
+}: ValueViewerProps) => {
+  console.log("values", values);
   const numbers = useMemo(
-    () => results.map((r) => r.value.rawValue).filter(isNumber),
-    [results]
+    () => values.map((v) => v.value.rawValue).filter(isNumber),
+    [values]
   );
-  const filteredNumbers = results
-    .filter((n, i) => filterSelection?.selectedValueIndexes.includes(i))
+  const filteredNumbers = values
+    .filter((v) => v.include)
     .map((n) => n.value.rawValue)
     .filter(isNumber);
 
-  const selectValuesBetween = (range) => {
+  const selectValuesBetween = (range: NumberRange | null) => {
     if (!range) {
-      setFilterSelectionForCell(selectedCell, null);
+      setFilterSelection(null);
     } else {
       const numbersToSelect = numbers.filter(
         (n) => n >= range.min && n < range.max
       );
 
-      const indexesToSelect = [];
-      for (let i = 0; i < results.length; i++) {
-        if (numbersToSelect.includes(results[i].value.rawValue as number)) {
-          indexesToSelect.push(i);
-        }
-      }
-
-      setFilterSelectionForCell(selectedCell, indexesToSelect);
+      setFilterSelection(numbersToSelect);
     }
   };
 
@@ -96,8 +85,8 @@ export const ResultHistogram = ({
         />
         <div className="w-[200px] mt-2">
           <RangeSlider
-            min={numbersMin}
-            max={numbersMax}
+            min={numbersMin - 0.01}
+            max={numbersMax + 0.01}
             width={200}
             value={[filterBarLimits.min, filterBarLimits.max]}
             onInput={([min, max]) => setFilterBarLimits({ min, max })}
@@ -108,16 +97,16 @@ export const ResultHistogram = ({
         <tbody>
           <tr>
             <td className="font-medium">Count:</td>
-            <td>{printRawValue(selectedCellResult.length)}</td>
+            <td>{printRawValue(values.length)}</td>
           </tr>
           <tr>
             <td className="font-medium">Mean:</td>
             <td>
               {printRawValue(
-                selectedCellResult
+                values
                   .map((v) => v.value.rawValue)
                   .filter(isNumber)
-                  .reduce((acc, v) => acc + v, 0) / selectedCellResult.length
+                  .reduce((acc, v) => acc + v, 0) / values.length
               )}
             </td>
           </tr>
@@ -126,9 +115,7 @@ export const ResultHistogram = ({
             <td>
               {printRawValue(
                 Math.min(
-                  ...selectedCellResult
-                    .map((v) => v.value.rawValue)
-                    .filter(isNumber)
+                  ...values.map((v) => v.value.rawValue).filter(isNumber)
                 )
               )}
             </td>
@@ -138,9 +125,7 @@ export const ResultHistogram = ({
             <td>
               {printRawValue(
                 Math.max(
-                  ...selectedCellResult
-                    .map((v) => v.value.rawValue)
-                    .filter(isNumber)
+                  ...values.map((v) => v.value.rawValue).filter(isNumber)
                 )
               )}
             </td>
@@ -149,4 +134,11 @@ export const ResultHistogram = ({
       </table>
     </div>
   );
+};
+
+export const histogramViewer: ValueViewer = {
+  name: "Histogram",
+  shouldRender: (values) =>
+    values.length > 10 ? "high" : values.length > 1 ? "normal" : "hide",
+  component: ResultHistogram,
 };

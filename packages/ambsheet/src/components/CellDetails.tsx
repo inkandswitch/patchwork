@@ -1,28 +1,30 @@
 import { DocHandle } from "@automerge/automerge-repo";
 import { useEffect, useMemo, useState } from "react";
-import { AmbSheetDoc, Position } from "../datatype";
+import { AmbSheetDoc, Position, RawValue } from "../datatype";
 import { NOT_READY, Value, FilteredResults, Env, FilteredValue } from "../eval";
 import { displayNameForCell, printRawValue } from "../print";
 import { Stacks } from "./Stacks";
 import { TableViewer } from "./TableViewer";
 import { FilterSelection } from "./AmbSheet";
-import { ResultHistogram } from "./ResultHistogram";
+import { histogramViewer, ResultHistogram } from "./ResultHistogram";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { choiceDependenciesViewer } from "./ChoiceDependencies";
 
 type ShouldRenderPriority = "high" | "normal" | "hide";
 
+export type ValueViewerProps = {
+  sheet: Env;
+  values: FilteredValue[];
+  selectedCells?: Position[];
+  setFilterSelection: (selectedValues: RawValue[] | null) => void;
+};
 export type ValueViewer = {
   name: string;
   shouldRender: (values: FilteredValue[]) => ShouldRenderPriority;
-  component: React.FC<{
-    sheet: Env;
-    values: FilteredValue[];
-    selectedCells?: Position[];
-  }>;
+  component: React.FC<ValueViewerProps>;
 };
 
-const valueViewers: ValueViewer[] = [choiceDependenciesViewer];
+const valueViewers: ValueViewer[] = [choiceDependenciesViewer, histogramViewer];
 
 export const CellDetails = ({
   handle,
@@ -70,6 +72,26 @@ export const CellDetails = ({
       d.data[selectedCell.row][selectedCell.col] = e.target.value;
     });
 
+  // These days, we like having filter selections as values, and ValueViewers indeed work that way.
+  // But in other parts of the system, we still use indexes for filters (for now).
+  // So, here we convert from one to the other.
+  const setFilterSelectionForValueViewer = (
+    selectedValues: RawValue[] | null
+  ) => {
+    let indexesToSelect = [];
+    if (selectedValues && selectedCellResult) {
+      for (let i = 0; i < selectedCellResult.length; i++) {
+        if (selectedValues.includes(selectedCellResult[i].value.rawValue)) {
+          indexesToSelect.push(i);
+        }
+      }
+      console.log({ selectedValues, indexesToSelect });
+      setFilterSelectionForCell(selectedCell, indexesToSelect);
+    } else {
+      setFilterSelectionForCell(selectedCell, null);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="">
@@ -94,7 +116,7 @@ export const CellDetails = ({
         />
       </div>
 
-      {selectedCellResult &&
+      {selectedCellResult !== undefined &&
         valueViewers
           .filter(
             (viewer) => viewer.shouldRender(selectedCellResult) !== "hide"
@@ -104,24 +126,14 @@ export const CellDetails = ({
               <h2 className="text-xs text-gray-500 font-medium uppercase mb-2">
                 {viewer.name}
               </h2>
-              <viewer.component sheet={sheet} values={selectedCellResult} />
+              <viewer.component
+                sheet={sheet}
+                values={selectedCellResult}
+                selectedCells={[selectedCell]}
+                setFilterSelection={setFilterSelectionForValueViewer}
+              />
             </div>
           ))}
-
-      {selectedCellResult && selectedCellResult !== NOT_READY && (
-        <div className="border-b border-gray-300 pb-3">
-          <h2 className="text-xs text-gray-500 font-medium uppercase mb-2">
-            Distribution
-          </h2>
-          <ResultHistogram
-            selectedCell={selectedCell}
-            results={selectedCellResult}
-            filterSelection={filterSelectionForSelectedCell}
-            setFilterSelectionForCell={setFilterSelectionForCell}
-            selectedCellResult={selectedCellResult}
-          />
-        </div>
-      )}
 
       {selectedCellResult && selectedCellResult !== NOT_READY && (
         <div className="border-b border-gray-300 pb-3">

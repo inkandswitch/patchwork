@@ -1,19 +1,13 @@
 import { Position } from "../datatype";
 import { Env, FilteredValue, NOT_READY, Value } from "../eval";
 import { displayNameForCell } from "../print";
-import { ValueViewer } from "./CellDetails";
-
-interface ChoiceDependenciesProps {
-  sheet: Env;
-  values: FilteredValue[];
-  selectedCells?: Position[];
-}
+import { ValueViewer, ValueViewerProps } from "./CellDetails";
 
 const ChoiceDependencies = ({
   sheet,
   values,
   selectedCells,
-}: ChoiceDependenciesProps) => {
+}: ValueViewerProps) => {
   const ambDependencies = sheet
     .getAmbDimensions(values.map((v) => v.value))
     .filter(

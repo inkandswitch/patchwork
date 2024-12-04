@@ -430,7 +430,10 @@ export class Env {
         const normalGenerator = d3.randomNormal.source(
           d3.randomLcg(RANDOM_SEED)
         )(node.mean, node.stdev);
-        const values = Array.from({ length: node.samples }, normalGenerator);
+        const values = Array.from(
+          { length: node.samples },
+          normalGenerator
+        ).sort((a, b) => a - b);
         let i = 0;
         for (const value of values) {
           const newContext = new Map([...context, [node, i++]]);
