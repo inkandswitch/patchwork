@@ -7,6 +7,7 @@ import path from "path";
 import { Plugin, UserConfig, mergeConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
+
 import sharedConfig from "../vite.shared";
 
 const SERVICE_WORKER_MODULE_ID = "/service-worker.js";
@@ -87,6 +88,7 @@ const SHARED_MODULES = {
   "@patchwork/sdk/textAnchors": "./sdk/textAnchors.js",
   "@patchwork/sdk/ui": "./sdk/ui.js",
   "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
+  "@patchwork/datagrid": "./datagrid/index.js",
 };
 
 // All dependencies that should not be bundled in and instead are loaded

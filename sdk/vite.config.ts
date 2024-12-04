@@ -10,6 +10,11 @@ import commonjs from "@rollup/plugin-commonjs";
 
 export default defineConfig({
   plugins: [react(), tsconfigPaths(), topLevelAwait(), wasm()],
+  resolve: {
+    alias: {
+      process: "process/browser",
+    },
+  },
   build: {
     lib: {
       entry: {
