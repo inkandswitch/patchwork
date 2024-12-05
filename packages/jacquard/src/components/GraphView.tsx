@@ -20,10 +20,12 @@ import {
 import { fetchJacquardProjectInfoWithActiveBranch } from "../hooks";
 import { fetchProjectStateFromProjectInfo } from "../signals";
 
-const rawSvgIcons = import.meta.glob("../file-icon-vectors/*.svg", {
-  eager: true,
-  import: "default",
-});
+const rawSvgIcons = import.meta.glob
+  ? import.meta.glob("../file-icon-vectors/*.svg", {
+      eager: true,
+      import: "default",
+    })
+  : [];
 
 let svgIconsByFileExtension: Record<string, string> = {};
 
