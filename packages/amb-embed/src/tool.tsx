@@ -204,14 +204,14 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex justify-end p-2 border-b">
+      <div className="flex justify-end px-2 py-0 border-b">
         <SettingsDialog
           linkedSheets={doc.linkedSheets}
           evaluatedSheets={evaluatedLinkedSheets}
           onChange={handleLinkedSheetsChange}
         />
       </div>
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-auto">
         <CellReferenceBlocks
           handle={docHandle}
           blocks={doc.blocks}
