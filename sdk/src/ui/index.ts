@@ -1,6 +1,4 @@
 export { Avatar, AvatarFallback, AvatarImage, avatarVariants } from "./avatar";
-import { Tabs } from "@patchwork/sdk/ui";
-import Select from "../../../packages/kanban/src/components/Select";
 export { Button } from "./button";
 export { Checkbox } from "./checkbox";
 export { Command } from "./command";

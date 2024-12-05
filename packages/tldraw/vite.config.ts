@@ -1,6 +1,5 @@
 import react from "@vitejs/plugin-react";
-import path from "path";
-import { Plugin, UserConfig, mergeConfig } from "vite";
+import { UserConfig, mergeConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";

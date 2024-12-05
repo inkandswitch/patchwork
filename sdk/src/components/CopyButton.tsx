@@ -3,7 +3,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@patchwork/sdk/ui";
+} from "../ui";
 import { Copy } from "lucide-react";
 import { useState } from "react";
 
