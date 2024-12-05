@@ -3,11 +3,11 @@ import react from "@vitejs/plugin-react";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 import tsconfigPaths from "vite-tsconfig-paths";
-import resolve from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
 import postcss from "rollup-plugin-postcss";
 import commonjs from "@rollup/plugin-commonjs";
 import replace from "@rollup/plugin-replace";
+import { EXTERNAL_DEPENDENCIES } from "./src/shared-dependencies";
 
 export default defineConfig({
   plugins: [
@@ -30,6 +30,7 @@ export default defineConfig({
         ui: "src/ui/index.ts",
         versionControl: "src/versionControl/index.ts",
         utils: "src/utils.ts", // note this is different from the others
+        "shared-dependencies": "src/shared-dependencies.ts",
       },
       name: "PatchworkSDK",
       formats: ["es"],
@@ -44,13 +45,7 @@ export default defineConfig({
           requireReturnsDefault: "auto",
         }),
       ],
-      external: [
-        "react",
-        "react-dom",
-        "@automerge/automerge",
-        "@automerge/automerge-repo",
-        "@automerge/automerge-repo-react-hooks",
-      ],
+      external: EXTERNAL_DEPENDENCIES,
       output: {
         entryFileNames: "[name].js",
         chunkFileNames: "chunks/[name]-[hash].js",

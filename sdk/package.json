@@ -15,7 +15,8 @@
     "./textAnchors": "./dist/textAnchors.js",
     "./ui": "./dist/ui.js",
     "./versionControl": "./dist/versionControl.js",
-    "./utils": "./dist/utils.js"
+    "./utils": "./dist/utils.js",
+    "./shared-dependencies": "./dist/shared-dependencies.js"
   },
   "scripts": {
     "build": "tsc && vite build",

@@ -25,6 +25,7 @@
     "@engraft/tool-python": "^0.0.8",
     "@lezer/common": "^1.2.1",
     "@patchwork/folder": "workspace:*",
+    "@patchwork/sdk": "workspace:*",
     "@tailwindcss/container-queries": "^0.1.1",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",

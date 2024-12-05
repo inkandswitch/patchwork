@@ -9,6 +9,11 @@ import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
 
 import sharedConfig from "../vite.shared";
+import {
+  SHARED_DEPENDENCIES,
+  SHARED_MODULES,
+  EXTERNAL_DEPENDENCIES,
+} from "@patchwork/sdk/shared-dependencies";
 
 const SERVICE_WORKER_MODULE_ID = "/service-worker.js";
 const SERVICE_WORKER_PATH = path.join(import.meta.dirname, "service-worker.js");
@@ -63,50 +68,6 @@ function swPlugin(): Plugin {
     },
   };
 }
-
-// Dependencies that are shared with dynamically loaded packages
-// actual url will be resolved by generateImportMapPlugin
-const SHARED_DEPENDENCIES = [
-  "@automerge/automerge",
-  "@automerge/automerge-repo",
-  "@automerge/automerge-repo-react-hooks",
-  "react",
-  "react-dom",
-  "react-dom/client",
-  "react-dom/server",
-  "react/jsx-runtime",
-];
-
-// Internal modules that are shared with dynamically loaded packages
-const SHARED_MODULES = {
-  "@patchwork/sdk": "./sdk/index.js",
-  "@patchwork/sdk/async-signals": "./sdk/async-signals.js",
-  "@patchwork/sdk/components": "./sdk/components.js",
-  "@patchwork/sdk/hooks": "./sdk/hooks.js",
-  "@patchwork/sdk/markdown": "./sdk/markdown.js",
-  "@patchwork/sdk/router": "./sdk/router.js",
-  "@patchwork/sdk/textAnchors": "./sdk/textAnchors.js",
-  "@patchwork/sdk/ui": "./sdk/ui.js",
-  "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
-  "@patchwork/counter": "./counter/index.js",
-  "@patchwork/datagrid": "./datagrid/index.js",
-  "@patchwork/engraft": "./engraft/index.js",
-  "@patchwork/essay": "./essay/index.js",
-  "@patchwork/file": "./file/index.js",
-  "@patchwork/folder": "./folder/index.js",
-  //"@patchwork/folder-list-view": "./folder-list-view/index.js", // left as an example of existing dynamic loading
-  "@patchwork/jacquard": "./jacquard/index.js",
-  "@patchwork/kanban": "./kanban/index.js",
-  "@patchwork/pkg": "./pkg/index.js",
-  "@patchwork/raw-editor": "./raw-editor/index.js",
-  "@patchwork/tldraw": "./tldraw/index.js",
-};
-
-// All dependencies that should not be bundled in and instead are loaded
-// through the import map created by generateImportMapPlugin
-const EXTERNAL_DEPENDENCIES = SHARED_DEPENDENCIES.concat(
-  Object.keys(SHARED_MODULES)
-);
 
 // Generates an import map for the external dependencies
 const generateImportMapPlugin = (): Plugin => ({
