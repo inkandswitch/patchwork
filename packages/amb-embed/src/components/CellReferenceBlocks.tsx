@@ -10,7 +10,12 @@ interface CellReferenceBlocksProps {
   linkedSheets: { [key: string]: AutomergeUrl };
   evaluatedSheetsByUrl: Record<AutomergeUrl, Env>;
   filteredResultsByUrl: Record<AutomergeUrl, FilteredResults>;
-  onUpdateBlock: (index: number, sheetName: string, cellName: string) => void;
+  onUpdateBlock: (
+    index: number,
+    sheetName: string,
+    cellName: string,
+    viewerName: string
+  ) => void;
 }
 
 export const CellReferenceBlocks: React.FC<CellReferenceBlocksProps> = ({

@@ -70,11 +70,13 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
   const handleUpdateBlock = (
     index: number,
     sheetName: string,
-    cellName: string
+    cellName: string,
+    viewerName: string
   ) => {
     changeDoc((d) => {
       d.blocks[index].sheetName = sheetName;
       d.blocks[index].cellName = cellName;
+      d.blocks[index].viewerName = viewerName;
     });
   };
 

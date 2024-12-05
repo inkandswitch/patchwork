@@ -13,7 +13,12 @@ interface CellReferenceBlockProps {
   linkedSheets: { [key: string]: AutomergeUrl };
   evaluatedSheetsByUrl: Record<AutomergeUrl, Env>;
   filteredResultsByUrl: Record<AutomergeUrl, FilteredResults>;
-  onUpdateBlock: (index: number, sheetName: string, cellName: string) => void;
+  onUpdateBlock: (
+    index: number,
+    sheetName: string,
+    cellName: string,
+    viewerName: string
+  ) => void;
 }
 
 export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
@@ -53,7 +58,9 @@ export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
   };
 
   const cellResults = getCellValue(block.sheetName, block.cellName);
+  const sheet = evaluatedSheetsByUrl[linkedSheets[block.sheetName]];
   const viewer = valueViewers.find((v) => v.name === block.viewerName);
+  const cellIsReady = cellResults !== null && Array.isArray(cellResults);
 
   return (
     <div className="p-4 border rounded-lg bg-white shadow-sm space-y-2">
@@ -64,7 +71,9 @@ export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
           </label>
           <select
             value={block.sheetName}
-            onChange={(e) => onUpdateBlock(index, e.target.value, "")}
+            onChange={(e) =>
+              onUpdateBlock(index, e.target.value, "", block.viewerName)
+            }
             className="w-full px-3 py-2 border rounded-md"
           >
             <option value="">Select a sheet...</option>
@@ -82,7 +91,12 @@ export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
           <select
             value={block.cellName}
             onChange={(e) =>
-              onUpdateBlock(index, block.sheetName, e.target.value)
+              onUpdateBlock(
+                index,
+                block.sheetName,
+                e.target.value,
+                block.viewerName
+              )
             }
             className="w-full px-3 py-2 border rounded-md"
             disabled={!block.sheetName}
@@ -95,9 +109,40 @@ export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
             ))}
           </select>
         </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Viewer
+          </label>
+          <select
+            value={block.viewerName}
+            onChange={(e) =>
+              onUpdateBlock(
+                index,
+                block.sheetName,
+                block.cellName,
+                e.target.value
+              )
+            }
+            className="w-full px-3 py-2 border rounded-md"
+          >
+            <option value="">Select a viewer...</option>
+            {valueViewers.map((viewer) => (
+              <option
+                key={viewer.name}
+                value={viewer.name}
+                disabled={
+                  !cellIsReady ||
+                  viewer.shouldRender(cellResults, sheet) === "hide"
+                }
+              >
+                {viewer.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {cellResults && Array.isArray(cellResults) && (
+      {cellIsReady && (
         <div className="mt-2 p-2 bg-gray-50 rounded">
           {viewer && (
             <viewer.component
