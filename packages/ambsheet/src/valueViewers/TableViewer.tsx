@@ -10,11 +10,11 @@ import {
   resolvePositionsInContext,
 } from "../eval";
 import { isNumber, max, mean, min, sum, truncate, uniq } from "lodash";
-import { FilterSelection } from "./AmbSheet";
+import { FilterSelection } from "../components/AmbSheet";
 import { displayNameForCell, simpleNameForCell } from "../print";
 import { Position, RawValue } from "../datatype";
 import { printRawValue } from "../print";
-import { ValueViewer, ValueViewerProps } from "./CellDetails";
+import { ValueViewer, ValueViewerProps } from ".";
 
 function findAllIndexes(arr, predicate) {
   const indexes = [];
@@ -268,7 +268,9 @@ export const tableViewer: ValueViewer = {
   name: "Table",
   shouldRender: (values, sheet) => {
     // todo: only render if there are at least 2 amb dimensions
-    return "high";
+    return sheet.getAmbDimensions(values.map((v) => v.value)).length > 1
+      ? "high"
+      : "hide";
   },
   component: TableViewer,
 };

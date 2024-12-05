@@ -1,5 +1,5 @@
 import React from "react";
-import { ValueViewer, ValueViewerProps } from "./CellDetails";
+import { ValueViewer, ValueViewerProps } from ".";
 import { isArray } from "lodash";
 import { AmbRange } from "../datatype";
 import * as Plot from "@observablehq/plot";

@@ -1,5 +1,5 @@
 import React from "react";
-import { ValueViewer, ValueViewerProps } from "./CellDetails";
+import { ValueViewer, ValueViewerProps } from ".";
 
 // TODO: add filterSelection... to props
 export const Shades = ({ values, setFilterSelection }: ValueViewerProps) => {

@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { groupBy, uniq } from "lodash";
-import { ValueViewer, ValueViewerProps } from "./CellDetails";
+import { ValueViewer, ValueViewerProps } from ".";
 import { FilteredValue } from "../eval";
 
 export const Stacks = ({ values, setFilterSelection }: ValueViewerProps) => {

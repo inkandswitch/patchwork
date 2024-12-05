@@ -1,14 +1,14 @@
 import { Value } from "../eval";
 import { isNumber } from "lodash";
-import { FilterSelection } from "./AmbSheet";
+import { FilterSelection } from "../components/AmbSheet";
 import { Position } from "../datatype";
-import { Histogram } from "./Histogram";
+import { Histogram } from "../components/Histogram";
 
 import RangeSlider from "react-range-slider-input";
 import "../range-slider.css";
 import { useEffect, useMemo, useState } from "react";
 import { printRawValue } from "../print";
-import { ValueViewer, ValueViewerProps } from "./CellDetails";
+import { ValueViewer, ValueViewerProps } from ".";
 
 type NumberRange = {
   min: number;

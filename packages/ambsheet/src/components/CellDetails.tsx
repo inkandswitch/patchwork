@@ -1,39 +1,11 @@
 import { DocHandle } from "@automerge/automerge-repo";
 import { useEffect, useMemo, useState } from "react";
 import { AmbSheetDoc, Position, RawValue } from "../datatype";
-import { NOT_READY, Value, FilteredResults, Env, FilteredValue } from "../eval";
+import { NOT_READY, Value, FilteredResults, Env } from "../eval";
 import { displayNameForCell } from "../print";
-import { stacksViewer } from "./Stacks";
-import { shadesViewer } from "./Shades";
-import { tableViewer } from "./TableViewer";
 import { FilterSelection } from "./AmbSheet";
-import { histogramViewer } from "./ResultHistogram";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { choiceDependenciesViewer } from "./ChoiceDependencies";
-import { chartViewer } from "./LineChart";
-
-type ShouldRenderPriority = "high" | "normal" | "hide";
-
-export type ValueViewerProps = {
-  values: FilteredValue[];
-  sheet: Env;
-  selectedCells?: Position[];
-  setFilterSelection: (selectedValues: RawValue[] | null) => void;
-};
-export type ValueViewer = {
-  name: string;
-  shouldRender: (values: FilteredValue[]) => ShouldRenderPriority;
-  component: React.FC<ValueViewerProps>;
-};
-
-const valueViewers: ValueViewer[] = [
-  choiceDependenciesViewer,
-  histogramViewer,
-  tableViewer,
-  stacksViewer,
-  shadesViewer,
-  chartViewer,
-];
+import { valueViewers } from "../valueViewers";
 
 export const CellDetails = ({
   handle,
@@ -128,7 +100,8 @@ export const CellDetails = ({
       {selectedCellResult !== undefined &&
         valueViewers
           .filter(
-            (viewer) => viewer.shouldRender(selectedCellResult) !== "hide"
+            (viewer) =>
+              viewer.shouldRender(selectedCellResult, sheet) !== "hide"
           )
           .map((viewer) => (
             <div className="border-b border-gray-300 pb-3">

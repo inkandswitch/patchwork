@@ -1,7 +1,7 @@
 import { Position } from "../datatype";
 import { Env, FilteredValue, NOT_READY, Value } from "../eval";
 import { displayNameForCell } from "../print";
-import { ValueViewer, ValueViewerProps } from "./CellDetails";
+import { ValueViewer, ValueViewerProps } from ".";
 
 const ChoiceDependencies = ({
   sheet,
