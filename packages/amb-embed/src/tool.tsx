@@ -14,7 +14,11 @@ import {
   filter2,
   FilteredResults,
 } from "@patchwork/ambsheet";
-import { AutomergeUrl, DocumentId } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  DocumentId,
+  updateText,
+} from "@automerge/automerge-repo";
 import { CellReferenceBlocks } from "./components/CellReferenceBlocks";
 import { Button } from "@patchwork/sdk/ui/button";
 
@@ -99,27 +103,48 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
     });
   };
 
-  const handleAddBlock = (index: number) => {
+  const handleAddBlock = (type: "cellReference" | "text", index: number) => {
     changeDoc((d) => {
-      d.blocks.splice(index, 0, {
-        type: "cellReference",
-        sheetName: Object.keys(doc.linkedSheets)[0] || "",
-        cellName: "",
-        viewerName: "Stacks",
-      });
+      switch (type) {
+        case "text":
+          d.blocks.splice(index, 0, {
+            type: "text",
+            content: "Hello world",
+          });
+          break;
+        case "cellReference":
+          d.blocks.splice(index, 0, {
+            type: "cellReference",
+            sheetName: Object.keys(doc.linkedSheets)[0] || "",
+            cellName: "",
+            viewerName: "Stacks",
+          });
+          break;
+      }
     });
   };
 
-  const handleUpdateBlock = (
+  const handleUpdateCellReferenceBlock = (
     index: number,
     sheetName: string,
     cellName: string,
     viewerName: string
   ) => {
     changeDoc((d) => {
-      d.blocks[index].sheetName = sheetName;
-      d.blocks[index].cellName = cellName;
-      d.blocks[index].viewerName = viewerName;
+      const block = d.blocks[index];
+      if (block.type !== "cellReference") {
+        return;
+      }
+
+      block.sheetName = sheetName;
+      block.cellName = cellName;
+      block.viewerName = viewerName;
+    });
+  };
+
+  const handleUpdateTextBlock = (index: number, content: string) => {
+    changeDoc((d) => {
+      updateText(d, ["blocks", index, "content"], content);
     });
   };
 
@@ -129,6 +154,10 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
 
       // First remove the block
       d.blocks.splice(index, 1);
+
+      if (blockToDelete.type !== "cellReference") {
+        return;
+      }
 
       // If we have filters and the block had a valid sheet and cell
       if (
@@ -151,6 +180,7 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
         // Check if any remaining blocks reference this same cell
         const hasOtherReferences = d.blocks.some(
           (block) =>
+            block.type === "cellReference" &&
             block.sheetName === blockToDelete.sheetName &&
             block.cellName.toLowerCase() ===
               blockToDelete.cellName.toLowerCase()
@@ -188,7 +218,8 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
           linkedSheets={doc.linkedSheets}
           evaluatedSheetsByUrl={evaluatedLinkedSheets}
           filteredResultsByUrl={filteredLinkedSheets}
-          onUpdateBlock={handleUpdateBlock}
+          onUpdateCellReferenceBlock={handleUpdateCellReferenceBlock}
+          onUpdateTextBlock={handleUpdateTextBlock}
           onAddBlock={handleAddBlock}
           onDeleteBlock={handleDeleteBlock}
           onSetFilterSelection={handleSetFilterSelection}
