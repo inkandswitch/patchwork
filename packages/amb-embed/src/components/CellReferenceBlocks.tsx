@@ -1,5 +1,5 @@
 import React from "react";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { AmbEmbedDoc } from "../datatype";
 import { Env } from "@patchwork/ambsheet";
 import { FilteredResults } from "@patchwork/ambsheet/src/eval";
@@ -9,6 +9,7 @@ import { Icon } from "@patchwork/sdk/ui/icons";
 import { TextBlock } from "./TextBlock";
 
 interface CellReferenceBlocksProps {
+  handle: DocHandle<AmbEmbedDoc>;
   blocks: AmbEmbedDoc["blocks"];
   linkedSheets: { [key: string]: AutomergeUrl };
   evaluatedSheetsByUrl: Record<AutomergeUrl, Env>;
@@ -63,12 +64,12 @@ const AddBlockButtons = ({
 );
 
 export const CellReferenceBlocks: React.FC<CellReferenceBlocksProps> = ({
+  handle,
   blocks,
   linkedSheets,
   evaluatedSheetsByUrl,
   filteredResultsByUrl,
   onUpdateCellReferenceBlock,
-  onUpdateTextBlock,
   onAddBlock,
   onDeleteBlock,
   onSetFilterSelection,
@@ -94,8 +95,9 @@ export const CellReferenceBlocks: React.FC<CellReferenceBlocksProps> = ({
             <TextBlock
               block={block}
               index={index}
-              onUpdateTextBlock={onUpdateTextBlock}
               onDeleteBlock={onDeleteBlock}
+              handle={handle}
+              path={["blocks", index, "content"]}
             />
           )}
           <AddBlockButtons onAdd={onAddBlock} index={index + 1} />

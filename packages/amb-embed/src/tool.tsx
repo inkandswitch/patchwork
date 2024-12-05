@@ -1,6 +1,7 @@
 import {
   useDocument,
   useDocuments,
+  useHandle,
 } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps, makeTool } from "@patchwork/sdk";
 import { AmbEmbedDoc } from "./datatype";
@@ -26,6 +27,7 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
   docUrl,
 }) => {
   const [doc, changeDoc] = useDocument<AmbEmbedDoc>(docUrl);
+  const docHandle = useHandle(docUrl);
   const linkedSheets = useDocuments<AmbSheetDoc>(
     Object.values(doc?.linkedSheets || {})
   );
@@ -142,12 +144,6 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
     });
   };
 
-  const handleUpdateTextBlock = (index: number, content: string) => {
-    changeDoc((d) => {
-      updateText(d, ["blocks", index, "content"], content);
-    });
-  };
-
   const handleDeleteBlock = (index: number) => {
     changeDoc((d) => {
       const blockToDelete = d.blocks[index];
@@ -214,12 +210,12 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
       />
       <div className="flex-1 p-4">
         <CellReferenceBlocks
+          handle={docHandle}
           blocks={doc.blocks}
           linkedSheets={doc.linkedSheets}
           evaluatedSheetsByUrl={evaluatedLinkedSheets}
           filteredResultsByUrl={filteredLinkedSheets}
           onUpdateCellReferenceBlock={handleUpdateCellReferenceBlock}
-          onUpdateTextBlock={handleUpdateTextBlock}
           onAddBlock={handleAddBlock}
           onDeleteBlock={handleDeleteBlock}
           onSetFilterSelection={handleSetFilterSelection}

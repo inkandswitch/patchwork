@@ -1,3 +1,6 @@
+import { DocHandle } from "@automerge/automerge-repo";
+import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import { MarkdownEditor } from "@patchwork/sdk/markdown/MarkdownEditor";
 import React from "react";
 
 interface TextBlockProps {
@@ -8,22 +11,22 @@ interface TextBlockProps {
   index: number;
   onUpdateTextBlock: (index: number, content: string) => void;
   onDeleteBlock: (index: number) => void;
+  handle: DocHandle<AmbEmbedDoc>;
+  path: string[];
 }
 
 export const TextBlock: React.FC<TextBlockProps> = ({
   block,
   index,
-  onUpdateTextBlock,
+  handle,
+  path,
   onDeleteBlock,
 }) => {
   return (
     <div className="p-3 border rounded-lg bg-white shadow-sm group">
       <div className="flex justify-between items-start">
         <div className="text-sm">
-          <textarea
-            value={block.content}
-            onChange={(e) => onUpdateTextBlock(index, e.target.value)}
-          />
+          <MarkdownEditor handle={handle} path={path} />
         </div>
         <button
           onClick={() => onDeleteBlock(index)}
