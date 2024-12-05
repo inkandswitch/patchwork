@@ -34,6 +34,7 @@ export const shadesViewer: ValueViewer = {
   name: "Shades",
   // todo: could refine this more: a small number of tall stacks with short names
   shouldRender: (values) =>
+    values.length > 1 &&
     values.every((value) => typeof value.value.rawValue === "number")
       ? "high"
       : "hide",
