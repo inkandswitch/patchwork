@@ -21,6 +21,7 @@ import { Button } from "@patchwork/sdk/ui/button";
 export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
   docUrl,
 }) => {
+  // todo: persist a filter on the doc, and then let viewers control it
   const FILTER: Filter = {
     pos: { row: 0, col: 0 },
     values: [2, 3],
