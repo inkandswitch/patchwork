@@ -21,12 +21,6 @@ import { Button } from "@patchwork/sdk/ui/button";
 export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
   docUrl,
 }) => {
-  // todo: persist a filter on the doc, and then let viewers control it
-  const FILTER: Filter = {
-    pos: { row: 0, col: 0 },
-    values: [2, 3],
-  };
-
   const [doc, changeDoc] = useDocument<AmbEmbedDoc>(docUrl);
   const linkedSheets = useDocuments<AmbSheetDoc>(
     Object.values(doc?.linkedSheets || {})
@@ -39,9 +33,17 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
     }, {} as Record<AutomergeUrl, Env>);
   }, [linkedSheets]);
 
+  const FILTER: Filter = {
+    pos: { row: 1, col: 1 },
+    values: [1000, 2000],
+  };
+
   const filteredLinkedSheets = useMemo(() => {
     return Object.entries(evaluatedLinkedSheets).reduce((acc, [url, env]) => {
-      const filteredResults = filter2(env.results, [FILTER]);
+      const filteredResults = filter2(
+        env.results,
+        doc?.selectedFilters[url] || []
+      );
       acc[url as AutomergeUrl] = filteredResults;
       return acc;
     }, {} as Record<AutomergeUrl, FilteredResults>);

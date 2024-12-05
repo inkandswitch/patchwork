@@ -1,6 +1,8 @@
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { initFrom, type DataType } from "@patchwork/sdk";
 import { AutomergeUrl } from "@automerge/automerge-repo";
+import { RawValue } from "@patchwork/ambsheet/src/datatype";
+import { Filter } from "@patchwork/ambsheet/src/eval";
 
 // SCHEMA
 
@@ -15,6 +17,15 @@ export type AmbEmbedDoc = HasVersionControlMetadata<unknown, unknown> & {
     cellName: string;
     viewerName: string;
   }>;
+
+  // {
+  //   1,2: [1,2,3],   // cell 1,2 has values 1,2,3 selected
+  //   2,3: [4,5,6]
+  // }
+  selectedFilters: {
+    // sheet name => Filter[]
+    [key: string]: Filter[];
+  };
 };
 
 // FUNCTIONS
@@ -38,6 +49,7 @@ export const init = (doc: AmbEmbedDoc) => {
       test: "automerge:3io9Zy95WUmhZT7y1t5SosTK3U9t" as AutomergeUrl,
     },
     blocks: [],
+    selectedFilters: {},
   });
 };
 
