@@ -13,6 +13,7 @@ export type AmbEmbedDoc = HasVersionControlMetadata<unknown, unknown> & {
     type: "cellReference";
     sheetName: string; // TODO: decide whether to reference sheets by name or by URL
     cellName: string;
+    viewerName: string;
   }>;
 };
 
@@ -36,13 +37,7 @@ export const init = (doc: AmbEmbedDoc) => {
     linkedSheets: {
       test: "automerge:3io9Zy95WUmhZT7y1t5SosTK3U9t" as AutomergeUrl,
     },
-    blocks: [
-      {
-        type: "cellReference",
-        sheetName: "test",
-        cellName: "TestOutput",
-      },
-    ],
+    blocks: [],
   });
 };
 

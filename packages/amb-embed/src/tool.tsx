@@ -16,6 +16,7 @@ import {
 } from "@patchwork/ambsheet";
 import { AutomergeUrl, DocumentId } from "@automerge/automerge-repo";
 import { CellReferenceBlocks } from "./components/CellReferenceBlocks";
+import { Button } from "@patchwork/sdk/ui/button";
 
 export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
   docUrl,
@@ -61,6 +62,7 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
         type: "cellReference",
         sheetName: Object.keys(doc.linkedSheets)[0] || "",
         cellName: "",
+        viewerName: "default",
       });
     });
   };
@@ -85,12 +87,7 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
       />
       <div className="flex-1 p-4">
         <div className="mb-4">
-          <button
-            onClick={handleAddBlock}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Add Cell Reference
-          </button>
+          <Button onClick={handleAddBlock}>Add Cell Reference</Button>
         </div>
         <CellReferenceBlocks
           blocks={doc.blocks}

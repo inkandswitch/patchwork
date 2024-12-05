@@ -2,6 +2,7 @@ import React from "react";
 import { AutomergeUrl, DocumentId } from "@automerge/automerge-repo";
 import { AmbEmbedDoc } from "../datatype";
 import { Env } from "@patchwork/ambsheet";
+import { Button } from "@patchwork/sdk/ui/button";
 
 interface LinkedSheetsProps {
   linkedSheets: { [key: string]: AutomergeUrl };
@@ -64,12 +65,9 @@ export const LinkedSheets: React.FC<LinkedSheetsProps> = ({
               <span className="font-mono text-sm text-gray-600 flex-1">
                 {url}
               </span>
-              <button
-                onClick={() => handleRemove(name)}
-                className="text-red-500 hover:text-red-700 px-2 py-1"
-              >
+              <Button variant="destructive" onClick={() => handleRemove(name)}>
                 Remove
-              </button>
+              </Button>
             </div>
             {openSheets.has(name) && (
               <div className="font-mono text-xs text-gray-500 pl-8">
@@ -95,12 +93,7 @@ export const LinkedSheets: React.FC<LinkedSheetsProps> = ({
           placeholder="Automerge URL"
           className="px-2 py-1 border rounded flex-1"
         />
-        <button
-          onClick={handleAdd}
-          className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
-        >
-          Add
-        </button>
+        <Button onClick={handleAdd}>Add</Button>
       </div>
     </div>
   );
