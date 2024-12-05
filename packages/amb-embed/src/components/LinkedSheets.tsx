@@ -1,6 +1,5 @@
 import React from "react";
-import { AutomergeUrl, DocumentId } from "@automerge/automerge-repo";
-import { AmbEmbedDoc } from "../datatype";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 import { Env } from "@patchwork/ambsheet";
 import { Button } from "@patchwork/sdk/ui/button";
 
@@ -12,12 +11,10 @@ interface LinkedSheetsProps {
 
 export const LinkedSheets: React.FC<LinkedSheetsProps> = ({
   linkedSheets,
-  evaluatedSheets,
   onChange,
 }) => {
   const [newSheetName, setNewSheetName] = React.useState("");
   const [newSheetUrl, setNewSheetUrl] = React.useState("");
-  const [openSheets, setOpenSheets] = React.useState<Set<string>>(new Set());
 
   const handleAdd = () => {
     if (!newSheetName || !newSheetUrl) return;
@@ -37,48 +34,27 @@ export const LinkedSheets: React.FC<LinkedSheetsProps> = ({
     onChange(newSheets);
   };
 
-  const toggleSheet = (name: string) => {
-    const newOpenSheets = new Set(openSheets);
-    if (newOpenSheets.has(name)) {
-      newOpenSheets.delete(name);
-    } else {
-      newOpenSheets.add(name);
-    }
-    setOpenSheets(newOpenSheets);
-  };
-
   return (
-    <div className="w-full p-4 border-b border-gray-200">
-      <h2 className="text-lg font-semibold mb-4">Linked Sheets</h2>
-
+    <div className="space-y-4">
       <div className="space-y-2">
         {Object.entries(linkedSheets).map(([name, url]) => (
-          <div key={name} className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => toggleSheet(name)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                {openSheets.has(name) ? "▼" : "▶"}
-              </button>
-              <span className="font-medium">{name}:</span>
-              <span className="font-mono text-sm text-gray-600 flex-1">
-                {url}
-              </span>
-              <Button variant="destructive" onClick={() => handleRemove(name)}>
-                Remove
-              </Button>
-            </div>
-            {openSheets.has(name) && (
-              <div className="font-mono text-xs text-gray-500 pl-8">
-                {JSON.stringify(evaluatedSheets[url], null, 2)}
-              </div>
-            )}
+          <div key={name} className="flex items-center gap-2">
+            <span className="font-medium">{name}:</span>
+            <span className="font-mono text-sm text-gray-600 flex-1">
+              {url}
+            </span>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleRemove(name)}
+            >
+              Remove
+            </Button>
           </div>
         ))}
       </div>
 
-      <div className="mt-4 flex gap-2">
+      <div className="flex gap-2">
         <input
           type="text"
           value={newSheetName}

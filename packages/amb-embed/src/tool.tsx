@@ -22,6 +22,7 @@ import {
 } from "@automerge/automerge-repo";
 import { CellReferenceBlocks } from "./components/CellReferenceBlocks";
 import { Button } from "@patchwork/sdk/ui/button";
+import { SettingsDialog } from "./components/SettingsDialog";
 
 export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
   docUrl,
@@ -203,11 +204,13 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <LinkedSheets
-        linkedSheets={doc.linkedSheets}
-        evaluatedSheets={evaluatedLinkedSheets}
-        onChange={handleLinkedSheetsChange}
-      />
+      <div className="flex justify-end p-2 border-b">
+        <SettingsDialog
+          linkedSheets={doc.linkedSheets}
+          evaluatedSheets={evaluatedLinkedSheets}
+          onChange={handleLinkedSheetsChange}
+        />
+      </div>
       <div className="flex-1 p-4">
         <CellReferenceBlocks
           handle={docHandle}
