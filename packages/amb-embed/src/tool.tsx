@@ -80,6 +80,12 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
     });
   };
 
+  const handleDeleteBlock = (index: number) => {
+    changeDoc((d) => {
+      d.blocks.splice(index, 1);
+    });
+  };
+
   return (
     <div className="flex flex-col h-full">
       <LinkedSheets
@@ -95,6 +101,7 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
           filteredResultsByUrl={filteredLinkedSheets}
           onUpdateBlock={handleUpdateBlock}
           onAddBlock={handleAddBlock}
+          onDeleteBlock={handleDeleteBlock}
         />
       </div>
     </div>

@@ -19,6 +19,7 @@ interface CellReferenceBlocksProps {
     viewerName: string
   ) => void;
   onAddBlock: (index: number) => void;
+  onDeleteBlock: (index: number) => void;
 }
 
 const AddBlockButton = ({
@@ -50,6 +51,7 @@ export const CellReferenceBlocks: React.FC<CellReferenceBlocksProps> = ({
   filteredResultsByUrl,
   onUpdateBlock,
   onAddBlock,
+  onDeleteBlock,
 }) => {
   return (
     <div className="space-y-2">
@@ -64,6 +66,7 @@ export const CellReferenceBlocks: React.FC<CellReferenceBlocksProps> = ({
             evaluatedSheetsByUrl={evaluatedSheetsByUrl}
             filteredResultsByUrl={filteredResultsByUrl}
             onUpdateBlock={onUpdateBlock}
+            onDeleteBlock={onDeleteBlock}
           />
           <AddBlockButton onClick={() => onAddBlock(index + 1)} />
         </React.Fragment>

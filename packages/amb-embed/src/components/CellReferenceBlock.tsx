@@ -2,6 +2,8 @@ import React from "react";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { Env, valueViewers } from "@patchwork/ambsheet";
 import { FilteredResults } from "@patchwork/ambsheet/src/eval";
+import { Button } from "@patchwork/sdk/ui/button";
+import { Icon } from "@patchwork/sdk/ui/icons";
 
 interface CellReferenceBlockProps {
   block: {
@@ -19,6 +21,7 @@ interface CellReferenceBlockProps {
     cellName: string,
     viewerName: string
   ) => void;
+  onDeleteBlock: (index: number) => void;
 }
 
 export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
@@ -28,6 +31,7 @@ export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
   evaluatedSheetsByUrl,
   filteredResultsByUrl,
   onUpdateBlock,
+  onDeleteBlock,
 }) => {
   const getCellsForSheet = (sheetName: string) => {
     if (!sheetName || !linkedSheets[sheetName]) return [];
@@ -63,79 +67,90 @@ export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
   const cellIsReady = cellResults !== null && Array.isArray(cellResults);
 
   return (
-    <div className="p-3 border rounded-lg bg-white shadow-sm space-y-2">
+    <div className="p-3 border rounded-lg bg-white shadow-sm space-y-2 group">
       <div className="flex items-center gap-3 text-xs">
-        <div className="flex items-center gap-1.5">
-          <label className="text-gray-500 whitespace-nowrap">Sheet:</label>
-          <select
-            value={block.sheetName}
-            onChange={(e) =>
-              onUpdateBlock(index, e.target.value, "", block.viewerName)
-            }
-            className="px-2 py-1 border rounded"
-          >
-            <option value="">Select...</option>
-            {Object.keys(linkedSheets).map((sheetName) => (
-              <option key={sheetName} value={sheetName}>
-                {sheetName}
-              </option>
-            ))}
-          </select>
+        <div className="flex-1 flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <label className="text-gray-500 whitespace-nowrap">Sheet:</label>
+            <select
+              value={block.sheetName}
+              onChange={(e) =>
+                onUpdateBlock(index, e.target.value, "", block.viewerName)
+              }
+              className="px-2 py-1 border rounded"
+            >
+              <option value="">Select...</option>
+              {Object.keys(linkedSheets).map((sheetName) => (
+                <option key={sheetName} value={sheetName}>
+                  {sheetName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <label className="text-gray-500 whitespace-nowrap">Cell:</label>
+            <select
+              value={block.cellName}
+              onChange={(e) =>
+                onUpdateBlock(
+                  index,
+                  block.sheetName,
+                  e.target.value,
+                  block.viewerName
+                )
+              }
+              className="px-2 py-1 border rounded"
+              disabled={!block.sheetName}
+            >
+              <option value="">Select...</option>
+              {getCellsForSheet(block.sheetName).map((cellName) => (
+                <option key={cellName} value={cellName}>
+                  {cellName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <label className="text-gray-500 whitespace-nowrap">View as:</label>
+            <select
+              value={block.viewerName}
+              onChange={(e) =>
+                onUpdateBlock(
+                  index,
+                  block.sheetName,
+                  block.cellName,
+                  e.target.value
+                )
+              }
+              className="px-2 py-1 border rounded"
+            >
+              <option value="">Select...</option>
+              {valueViewers.map((viewer) => (
+                <option
+                  key={viewer.name}
+                  value={viewer.name}
+                  disabled={
+                    !cellIsReady ||
+                    viewer.shouldRender(cellResults, sheet) === "hide"
+                  }
+                >
+                  {viewer.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <label className="text-gray-500 whitespace-nowrap">Cell:</label>
-          <select
-            value={block.cellName}
-            onChange={(e) =>
-              onUpdateBlock(
-                index,
-                block.sheetName,
-                e.target.value,
-                block.viewerName
-              )
-            }
-            className="px-2 py-1 border rounded"
-            disabled={!block.sheetName}
-          >
-            <option value="">Select...</option>
-            {getCellsForSheet(block.sheetName).map((cellName) => (
-              <option key={cellName} value={cellName}>
-                {cellName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <label className="text-gray-500 whitespace-nowrap">View as:</label>
-          <select
-            value={block.viewerName}
-            onChange={(e) =>
-              onUpdateBlock(
-                index,
-                block.sheetName,
-                block.cellName,
-                e.target.value
-              )
-            }
-            className="px-2 py-1 border rounded"
-          >
-            <option value="">Select...</option>
-            {valueViewers.map((viewer) => (
-              <option
-                key={viewer.name}
-                value={viewer.name}
-                disabled={
-                  !cellIsReady ||
-                  viewer.shouldRender(cellResults, sheet) === "hide"
-                }
-              >
-                {viewer.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onDeleteBlock(index)}
+          className="opacity-0 group-hover:opacity-100 transition-opacity h-6 px-2"
+        >
+          <Icon type="Trash" size={14} />
+        </Button>
       </div>
 
       {cellIsReady && (
