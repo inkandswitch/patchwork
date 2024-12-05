@@ -1,9 +1,9 @@
-import { NOT_READY } from './eval';
-import './ambRenderer.css';
-import { printRawValue } from './print';
-import { renderToString } from 'react-dom/server';
-import { isNumber, mean } from 'lodash';
-import { HandsontableEditor } from 'handsontable/editors';
+import { NOT_READY } from "./eval";
+import "./ambRenderer.css";
+import { printRawValue } from "./print";
+import { renderToString } from "react-dom/server";
+import { isNumber, mean } from "lodash";
+import { HandsontableEditor } from "handsontable/editors";
 
 // Helper function to convert JSX to HTML
 function jsxToHtml(Component, props = {}) {
@@ -11,7 +11,7 @@ function jsxToHtml(Component, props = {}) {
 }
 
 const Cell = ({ cellName, filteredResult, selectedValueIndexes }) => {
-  if (!filteredResult) return '';
+  if (!filteredResult) return "";
 
   const numbers = filteredResult
     .map((val) => val.value.rawValue)
@@ -21,7 +21,7 @@ const Cell = ({ cellName, filteredResult, selectedValueIndexes }) => {
   const max = Math.max(...numbers);
 
   const valuesToShow =
-    filteredResult.length < 10 ? filteredResult : filteredResult.slice(0, 3);
+    filteredResult.length < 5 ? filteredResult : filteredResult.slice(0, 3);
 
   return (
     <div className="flex flex-col justify-start h-full">
@@ -33,7 +33,7 @@ const Cell = ({ cellName, filteredResult, selectedValueIndexes }) => {
               <div className="flex flex-row items-center justify-start text-xs ">
                 <div className="border-r-2 border-white px-1">
                   {/* <span className="overline">x</span> = {printRawValue(avg)} */}
-                  <span className="font-serif italic">x̄</span> ={' '}
+                  <span className="font-serif italic">x̄</span> ={" "}
                   {printRawValue(avg)}
                 </div>
               </div>
@@ -47,14 +47,14 @@ const Cell = ({ cellName, filteredResult, selectedValueIndexes }) => {
         </div>
       )}
       {filteredResult.length > 1 && (
-        <div className="flex flex-row flex-grow items-center justify-start text-sm overflow-auto px-1 pb-1">
+        <div className="flex flex-row flex-grow items-center justify-start text-sm overflow-auto px-1 pb-1 max-w-64">
           {valuesToShow.map((val, i) => (
             <div
               key={i}
               className={`px-1 py-0.5 m-0.5 rounded-sm border border-gray-300  ${
-                selectedValueIndexes.includes(i) ? 'bg-blue-100' : 'bg-white'
+                selectedValueIndexes.includes(i) ? "bg-blue-100" : "bg-white"
               }
-                      ${!val.include ? 'text-gray-300' : ''}`}
+                      ${!val.include ? "text-gray-300" : ""}`}
               data-context={JSON.stringify(val.context)}
               data-index={i} // Add a custom attribute to map this element to its index
             >
@@ -74,10 +74,10 @@ const Cell = ({ cellName, filteredResult, selectedValueIndexes }) => {
 
 // Function to bind events manually
 function bindClickEvents(container, selectedValueIndexes, instance, row, col) {
-  container.querySelectorAll('[data-index]').forEach((elem) => {
-    const index = parseInt(elem.getAttribute('data-index'), 10);
+  container.querySelectorAll("[data-index]").forEach((elem) => {
+    const index = parseInt(elem.getAttribute("data-index"), 10);
 
-    elem.addEventListener('click', () => {
+    elem.addEventListener("click", () => {
       const valueIndex = selectedValueIndexes.indexOf(index);
       if (valueIndex > -1) {
         selectedValueIndexes.splice(valueIndex, 1);
@@ -87,7 +87,7 @@ function bindClickEvents(container, selectedValueIndexes, instance, row, col) {
       instance.setCellMeta(
         row,
         col,
-        'selectedValueIndexes',
+        "selectedValueIndexes",
         selectedValueIndexes
       );
     });
@@ -108,12 +108,12 @@ export const ambRenderer = (
   const selectedValueIndexes = cellProperties?.selectedValueIndexes ?? [];
 
   if (!filteredResult) {
-    td.innerHTML = '';
+    td.innerHTML = "";
     return td;
   }
 
   if (filteredResult === NOT_READY) {
-    td.innerText = '!ERROR';
+    td.innerText = "!ERROR";
     return td;
   }
 
@@ -126,7 +126,7 @@ export const ambRenderer = (
 
   // Insert the HTML content into the `td`
   td.innerHTML = contentHtml;
-  td.style.padding = '0px';
+  td.style.padding = "0px";
 
   // Bind the click events manually
   bindClickEvents(td, selectedValueIndexes, instance, row, col);

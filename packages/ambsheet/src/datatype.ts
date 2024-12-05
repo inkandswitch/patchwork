@@ -13,7 +13,7 @@ export interface Position {
 }
 
 export type BasicRawValue = number | boolean | string | null;
-export type Range = BasicRawValue[][];
+export type AmbRange = BasicRawValue[][];
 export class ASError {
   constructor(public readonly shortMsg: string, public readonly msg: string) {}
   toString() {
@@ -23,7 +23,7 @@ export class ASError {
     return this.toString();
   }
 }
-export type RawValue = BasicRawValue | Range | ASError;
+export type RawValue = BasicRawValue | AmbRange | ASError;
 
 export type CellName = { row: number; col: number; name: string };
 

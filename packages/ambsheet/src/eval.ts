@@ -3,7 +3,7 @@ import {
   AmbSheetDoc,
   BasicRawValue,
   Position,
-  Range,
+  AmbRange,
   RawValue,
 } from "./datatype";
 import * as d3 from "d3";
@@ -195,7 +195,12 @@ const builtInFunctions = {
   concat(xs: RawValue[]) {
     return flatten(xs).filter(notNull).join("");
   },
-  vlookup([key, range, index, _isOrdered]: [RawValue, Range, number, boolean]) {
+  vlookup([key, range, index, _isOrdered]: [
+    RawValue,
+    AmbRange,
+    number,
+    boolean
+  ]) {
     // TODO: if isOrdered, do binary search
     const col = index - 1;
     if (0 <= col && col < range[0].length) {
