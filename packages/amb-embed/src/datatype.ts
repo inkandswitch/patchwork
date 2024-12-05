@@ -6,24 +6,27 @@ import { Filter } from "@patchwork/ambsheet/src/eval";
 
 // SCHEMA
 
+type CellReferenceBlock = {
+  type: "cellReference";
+  sheetName: string;
+  cellName: string;
+  viewerName: string;
+};
+
+type TextBlock = {
+  type: "text";
+  content: string;
+};
+
+type Block = CellReferenceBlock | TextBlock;
+
 export type AmbEmbedDoc = HasVersionControlMetadata<unknown, unknown> & {
   title: string;
   linkedSheets: {
     [key: string]: AutomergeUrl;
   };
-  blocks: Array<{
-    type: "cellReference";
-    sheetName: string; // TODO: decide whether to reference sheets by name or by URL
-    cellName: string;
-    viewerName: string;
-  }>;
-
-  // {
-  //   1,2: [1,2,3],   // cell 1,2 has values 1,2,3 selected
-  //   2,3: [4,5,6]
-  // }
+  blocks: Array<Block>;
   selectedFilters: {
-    // sheet name => Filter[]
     [key: string]: Filter[];
   };
 };
