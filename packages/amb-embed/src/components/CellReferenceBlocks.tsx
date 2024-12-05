@@ -20,6 +20,11 @@ interface CellReferenceBlocksProps {
   ) => void;
   onAddBlock: (index: number) => void;
   onDeleteBlock: (index: number) => void;
+  onSetFilterSelection: (
+    sheetUrl: AutomergeUrl,
+    cellPos: { row: number; col: number },
+    selectedValues: any[] | null
+  ) => void;
 }
 
 const AddBlockButton = ({
@@ -52,6 +57,7 @@ export const CellReferenceBlocks: React.FC<CellReferenceBlocksProps> = ({
   onUpdateBlock,
   onAddBlock,
   onDeleteBlock,
+  onSetFilterSelection,
 }) => {
   return (
     <div className="space-y-2">
@@ -67,6 +73,7 @@ export const CellReferenceBlocks: React.FC<CellReferenceBlocksProps> = ({
             filteredResultsByUrl={filteredResultsByUrl}
             onUpdateBlock={onUpdateBlock}
             onDeleteBlock={onDeleteBlock}
+            onSetFilterSelection={onSetFilterSelection}
           />
           <AddBlockButton onClick={() => onAddBlock(index + 1)} />
         </React.Fragment>

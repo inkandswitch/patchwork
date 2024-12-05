@@ -22,6 +22,11 @@ interface CellReferenceBlockProps {
     viewerName: string
   ) => void;
   onDeleteBlock: (index: number) => void;
+  onSetFilterSelection: (
+    sheetUrl: AutomergeUrl,
+    cellPos: { row: number; col: number },
+    selectedValues: any[] | null
+  ) => void;
 }
 
 export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
@@ -32,6 +37,7 @@ export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
   filteredResultsByUrl,
   onUpdateBlock,
   onDeleteBlock,
+  onSetFilterSelection,
 }) => {
   const getCellsForSheet = (sheetName: string) => {
     if (!sheetName || !linkedSheets[sheetName]) return [];
@@ -68,6 +74,19 @@ export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
 
   const cellPos = sheet?.cellPosByName.get(block.cellName);
   const selectedCells = cellPos ? [cellPos.pos] : [];
+
+  const handleSetFilterSelection = (selectedValues: any[] | null) => {
+    if (!block.sheetName || !block.cellName) return;
+
+    const sheetUrl = linkedSheets[block.sheetName];
+    const sheet = evaluatedSheetsByUrl[sheetUrl];
+    if (!sheet) return;
+
+    const cellPos = sheet.cellPosByName.get(block.cellName.toLowerCase())?.pos;
+    if (!cellPos) return;
+
+    onSetFilterSelection(sheetUrl, cellPos, selectedValues);
+  };
 
   return (
     <div className="p-3 border rounded-lg bg-white shadow-sm space-y-2 group">
@@ -163,7 +182,7 @@ export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
               sheet={evaluatedSheetsByUrl[linkedSheets[block.sheetName]]}
               values={cellResults}
               selectedCells={selectedCells}
-              setFilterSelection={() => {}}
+              setFilterSelection={handleSetFilterSelection}
             />
           )}
           {!viewer && (

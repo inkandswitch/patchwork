@@ -33,11 +33,6 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
     }, {} as Record<AutomergeUrl, Env>);
   }, [linkedSheets]);
 
-  const FILTER: Filter = {
-    pos: { row: 1, col: 1 },
-    values: [1000, 2000],
-  };
-
   const filteredLinkedSheets = useMemo(() => {
     return Object.entries(evaluatedLinkedSheets).reduce((acc, [url, env]) => {
       const filteredResults = filter2(
@@ -47,7 +42,52 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
       acc[url as AutomergeUrl] = filteredResults;
       return acc;
     }, {} as Record<AutomergeUrl, FilteredResults>);
-  }, [evaluatedLinkedSheets]);
+  }, [evaluatedLinkedSheets, doc?.selectedFilters]);
+
+  const handleSetFilterSelection = (
+    sheetUrl: AutomergeUrl,
+    cellPos: { row: number; col: number },
+    selectedValues: any[] | null
+  ) => {
+    changeDoc((d) => {
+      if (!d.selectedFilters) {
+        d.selectedFilters = {};
+      }
+
+      if (!selectedValues) {
+        // Clear filters for this sheet
+        if (d.selectedFilters[sheetUrl]) {
+          const filterIndex = d.selectedFilters[sheetUrl].findIndex(
+            (f) => f.pos.row === cellPos.row && f.pos.col === cellPos.col
+          );
+          if (filterIndex !== -1) {
+            d.selectedFilters[sheetUrl].splice(filterIndex, 1);
+          }
+        }
+      } else {
+        // Add or update filter
+        const filter = {
+          pos: cellPos,
+          values: selectedValues,
+        };
+
+        if (!d.selectedFilters[sheetUrl]) {
+          d.selectedFilters[sheetUrl] = [];
+        }
+
+        // Remove any existing filter for this position
+        const filterIndex = d.selectedFilters[sheetUrl].findIndex(
+          (f) => f.pos.row === cellPos.row && f.pos.col === cellPos.col
+        );
+        if (filterIndex !== -1) {
+          d.selectedFilters[sheetUrl].splice(filterIndex, 1);
+        }
+
+        // Add the new filter
+        d.selectedFilters[sheetUrl].push(filter);
+      }
+    });
+  };
 
   if (!doc) {
     return null;
@@ -65,7 +105,7 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
         type: "cellReference",
         sheetName: Object.keys(doc.linkedSheets)[0] || "",
         cellName: "",
-        viewerName: "default",
+        viewerName: "Stacks",
       });
     });
   };
@@ -85,7 +125,53 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
 
   const handleDeleteBlock = (index: number) => {
     changeDoc((d) => {
+      const blockToDelete = d.blocks[index];
+
+      // First remove the block
       d.blocks.splice(index, 1);
+
+      // If we have filters and the block had a valid sheet and cell
+      if (
+        d.selectedFilters &&
+        blockToDelete.sheetName &&
+        blockToDelete.cellName
+      ) {
+        const sheetUrl = d.linkedSheets[blockToDelete.sheetName];
+        if (!sheetUrl) return;
+
+        // Get the cell position for the deleted block
+        const sheet = evaluatedLinkedSheets[sheetUrl];
+        if (!sheet) return;
+
+        const cellPos = sheet.cellPosByName.get(
+          blockToDelete.cellName.toLowerCase()
+        )?.pos;
+        if (!cellPos) return;
+
+        // Check if any remaining blocks reference this same cell
+        const hasOtherReferences = d.blocks.some(
+          (block) =>
+            block.sheetName === blockToDelete.sheetName &&
+            block.cellName.toLowerCase() ===
+              blockToDelete.cellName.toLowerCase()
+        );
+
+        // If no other blocks reference this cell, remove its filters
+        if (!hasOtherReferences && d.selectedFilters[sheetUrl]) {
+          const filterIndex = d.selectedFilters[sheetUrl].findIndex(
+            (filter) =>
+              filter.pos.row === cellPos.row && filter.pos.col === cellPos.col
+          );
+          if (filterIndex !== -1) {
+            d.selectedFilters[sheetUrl].splice(filterIndex, 1);
+          }
+
+          // If this sheet has no more filters, remove the sheet entry
+          if (d.selectedFilters[sheetUrl].length === 0) {
+            delete d.selectedFilters[sheetUrl];
+          }
+        }
+      }
     });
   };
 
@@ -105,6 +191,7 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
           onUpdateBlock={handleUpdateBlock}
           onAddBlock={handleAddBlock}
           onDeleteBlock={handleDeleteBlock}
+          onSetFilterSelection={handleSetFilterSelection}
         />
       </div>
     </div>
