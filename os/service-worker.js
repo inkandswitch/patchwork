@@ -224,7 +224,27 @@ self.addEventListener("fetch", async (event) => {
           }
         }
 
-        const file = parts.reduce((dir, name) => dir?.[name], doc);
+        let file;
+
+        if (doc.docs) {
+          file = await parts.reduce(async (acc, curr) => {
+            let target = (await acc)?.docs?.find((doc) => doc.name === curr);
+
+            if (isValidAutomergeUrl(target?.url)) {
+              target = await (await repo).find(target.url).doc();
+            }
+            return target;
+          }, doc);
+        } else {
+          file = await parts.reduce(async (acc, curr) => {
+            let target = (await acc)?.[curr];
+            if (isValidAutomergeUrl(target)) {
+              target = await (await repo).find(target).doc();
+            }
+            return target;
+          }, doc);
+        }
+
         if (!file) {
           return new Response(
             `Not found\nObject path: ${url.pathname}\n${JSON.stringify(
@@ -237,6 +257,43 @@ self.addEventListener("fetch", async (event) => {
               headers: { "Content-Type": "text/plain" },
             }
           );
+        }
+
+        if (file?.content?.type === "link") {
+          // we need to handle fetching this from behind the scenes to maintain the path
+          const response = await fetch(file.content.url);
+          // return a response that makes this feel like it came from the same origin but works for html, pngs, etc
+          return new Response(response.body, {
+            headers: { "Content-Type": response.headers.get("Content-Type") },
+          });
+        } else if (file?.content) {
+          /*
+          {
+            "content": {
+              "type": "text",
+              "value": "Hello world..."
+            },
+            "name": "react-CHdo91hT.svg",
+            "type": "svg"
+          }
+          */
+          // the mimetype isn't actually here so we need to guess it based on the type field
+          const mimeType = {
+            svg: "image/svg+xml",
+            html: "text/html",
+            json: "application/json",
+            js: "application/javascript",
+            css: "text/css",
+            md: "text/markdown",
+            txt: "text/plain",
+            "": "text/plain",
+            png: "image/png",
+            jpg: "image/jpeg",
+          }[file.type];
+
+          return new Response(file.content.value, {
+            headers: { "Content-Type": mimeType },
+          });
         }
 
         if (!file.contentType || file.contents === undefined) {
