@@ -58,8 +58,8 @@ export const LineChart = ({ values, sheet }: ValueViewerProps) => {
 
   React.useEffect(() => {
     const chart = Plot.plot({
-      width: 300,
-      height: 200,
+      width: 500,
+      height: 250,
       margin: 30,
       marginLeft: 50,
       grid: true,
