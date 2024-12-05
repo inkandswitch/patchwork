@@ -10,7 +10,7 @@ import { FilterSelection } from "./AmbSheet";
 import { histogramViewer } from "./ResultHistogram";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { choiceDependenciesViewer } from "./ChoiceDependencies";
-import { chartViewer } from "./Chart";
+import { chartViewer } from "./LineChart";
 
 type ShouldRenderPriority = "high" | "normal" | "hide";
 

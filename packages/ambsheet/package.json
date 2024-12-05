@@ -17,6 +17,7 @@
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
     "@automerge/automerge-repo-storage-indexeddb": "2.0.0-alpha.7",
     "@handsontable/react": "^14.4.0",
+    "@observablehq/plot": "^0.6.16",
     "d3": "^7.9.0",
     "handsontable": "^14.4.0",
     "lodash": "^4.17.21",
