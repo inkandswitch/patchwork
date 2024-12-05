@@ -66,6 +66,9 @@ export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
   const viewer = valueViewers.find((v) => v.name === block.viewerName);
   const cellIsReady = cellResults !== null && Array.isArray(cellResults);
 
+  const cellPos = sheet?.cellPosByName.get(block.cellName);
+  const selectedCells = cellPos ? [cellPos.pos] : [];
+
   return (
     <div className="p-3 border rounded-lg bg-white shadow-sm space-y-2 group">
       <div className="flex items-center gap-3 text-xs">
@@ -159,7 +162,7 @@ export const CellReferenceBlock: React.FC<CellReferenceBlockProps> = ({
             <viewer.component
               sheet={evaluatedSheetsByUrl[linkedSheets[block.sheetName]]}
               values={cellResults}
-              selectedCells={[]}
+              selectedCells={selectedCells}
               setFilterSelection={() => {}}
             />
           )}
