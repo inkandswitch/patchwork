@@ -56,9 +56,9 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
     });
   };
 
-  const handleAddBlock = () => {
+  const handleAddBlock = (index: number) => {
     changeDoc((d) => {
-      d.blocks.push({
+      d.blocks.splice(index, 0, {
         type: "cellReference",
         sheetName: Object.keys(doc.linkedSheets)[0] || "",
         cellName: "",
@@ -88,15 +88,13 @@ export const AmbEmbed: React.FC<EditorProps<AmbEmbedDoc, string>> = ({
         onChange={handleLinkedSheetsChange}
       />
       <div className="flex-1 p-4">
-        <div className="mb-4">
-          <Button onClick={handleAddBlock}>Add Cell Reference</Button>
-        </div>
         <CellReferenceBlocks
           blocks={doc.blocks}
           linkedSheets={doc.linkedSheets}
           evaluatedSheetsByUrl={evaluatedLinkedSheets}
           filteredResultsByUrl={filteredLinkedSheets}
           onUpdateBlock={handleUpdateBlock}
+          onAddBlock={handleAddBlock}
         />
       </div>
     </div>
