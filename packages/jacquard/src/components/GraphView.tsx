@@ -20,6 +20,7 @@ import {
 import { fetchJacquardProjectInfoWithActiveBranch } from "../hooks";
 import { fetchProjectStateFromProjectInfo } from "../signals";
 
+// @ts-expect-error some environments don't have import.meta.glob
 const rawSvgIcons = import.meta.glob
   ? import.meta.glob("../file-icon-vectors/*.svg", {
       eager: true,

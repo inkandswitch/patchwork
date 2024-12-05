@@ -4,7 +4,7 @@ import {
   PendingChangeGroup,
   Annotation,
   HasVersionControlMetadata,
-  TextPatch
+  TextPatch,
 } from "./versionControl";
 import { next as A, Doc } from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";

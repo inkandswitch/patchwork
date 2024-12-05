@@ -1,8 +1,6 @@
 import { Generator } from "@jspm/generator";
 import react from "@vitejs/plugin-react";
 import { build } from "esbuild";
-import { globSync } from "glob";
-import { fileURLToPath } from "node:url";
 import path from "path";
 import { Plugin, UserConfig, mergeConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
@@ -13,7 +11,7 @@ import {
   SHARED_DEPENDENCIES,
   SHARED_MODULES,
   EXTERNAL_DEPENDENCIES,
-} from "@patchwork/sdk/shared-dependencies";
+} from "../sdk/src/shared-dependencies";
 
 const SERVICE_WORKER_MODULE_ID = "/service-worker.js";
 const SERVICE_WORKER_PATH = path.join(import.meta.dirname, "service-worker.js");

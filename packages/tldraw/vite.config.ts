@@ -3,21 +3,13 @@ import path from "path";
 import { Plugin, UserConfig, mergeConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
-
+import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import sharedConfig from "../../vite.shared";
 import { EXTERNAL_DEPENDENCIES } from "@patchwork/sdk/shared-dependencies";
 
 export default mergeConfig(sharedConfig, {
-  plugins: [topLevelAwait(), wasm(), react()],
+  plugins: [topLevelAwait(), wasm(), react(), cssInjectedByJsPlugin()],
 
-  optimizeDeps: {
-    exclude: ["@syntect/wasm"],
-  },
-
-  worker: {
-    format: "es",
-    plugins: () => [wasm()],
-  },
   build: {
     rollupOptions: {
       external: EXTERNAL_DEPENDENCIES,
