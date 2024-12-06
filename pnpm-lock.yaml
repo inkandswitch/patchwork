@@ -82,7 +82,7 @@ importers:
         specifier: ^2.0.5
         version: 2.0.5(@types/node@20.16.1)(@vitest/ui@2.1.2(vitest@2.0.5))(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))
 
-  os: {dependencies: {'@automerge/automerge': {specifier: 2.2.9-alpha.2, version: 2.2.9-alpha.2}, '@automerge/automerge-repo': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-network-messagechannel': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-network-websocket': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-react-hooks': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)}, '@automerge/automerge-repo-storage-indexeddb': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@patchwork/counter': {specifier: workspace:*, version: link:../packages/counter}, '@patchwork/datagrid': {specifier: workspace:*, version: link:../packages/datagrid}, '@patchwork/engraft': {specifier: workspace:*, version: link:../packages/engraft}, '@patchwork/essay': {specifier: workspace:*, version: link:../packages/essay}, '@patchwork/file': {specifier: workspace:*, version: link:../packages/file}, '@patchwork/folder': {specifier: workspace:*, version: link:../packages/folder}, '@patchwork/jacquard': {specifier: workspace:*, version: link:../packages/jacquard}, '@patchwork/kanban': {specifier: workspace:*, version: link:../packages/kanban}, '@patchwork/pkg': {specifier: workspace:*, version: link:../packages/pkg}, '@patchwork/raw-editor': {specifier: workspace:*, version: link:../packages/raw-editor}, '@patchwork/sdk': {specifier: workspace:*, version: link:../sdk}, '@patchwork/tldraw': {specifier: workspace:*, version: link:../packages/tldraw}, '@tailwindcss/container-queries': {specifier: ^0.1.1, version: 0.1.1(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)))}, '@xstate/react': {specifier: ^4.1.1, version: 4.1.1(@types/react@18.3.4)(react@18.3.1)(xstate@5.17.4)}, class-variance-authority: {specifier: ^0.7.0, version: 0.7.0}, esbuild: {specifier: ^0.23.0, version: 0.23.1}, lodash: {specifier: ^4.17.21, version: 4.17.21}, lucide-react: {specifier: ^0.284.0, version: 0.284.0(react@18.3.1)}, react: {specifier: ^18.3.1, version: 18.3.1}, react-arborist: {specifier: ^3.4.0, version: 3.4.0(@types/hoist-non-react-statics@3.3.5)(@types/node@20.16.1)(@types/react@18.3.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, react-dom: {specifier: ^18.3.1, version: 18.3.1(react@18.3.1)}, react-error-boundary: {specifier: ^4.0.13, version: 4.0.13(react@18.3.1)}, react-markdown: {specifier: ^9.0.1, version: 9.0.1(@types/react@18.3.4)(react@18.3.1)}, tailwindcss-animate: {specifier: ^1.0.7, version: 1.0.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)))}, use-resize-observer: {specifier: ^9.1.0, version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, xstate: {specifier: ^5.15.0, version: 5.17.4}}, devDependencies: {'@jspm/generator': {specifier: ^2.1.3, version: 2.1.3}, '@types/lodash': {specifier: ^4.17.7, version: 4.17.7}, '@types/node': {specifier: ^20.14.12, version: 20.16.1}, '@types/react': {specifier: ^18.3.3, version: 18.3.4}, '@types/react-dom': {specifier: ^18.3.0, version: 18.3.0}, '@types/uuid': {specifier: ^10.0.0, version: 10.0.0}, '@typescript-eslint/eslint-plugin': {specifier: ^6.21.0, version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)}, '@typescript-eslint/parser': {specifier: ^6.21.0, version: 6.21.0(eslint@8.57.0)(typescript@5.5.4)}, '@vitejs/plugin-react': {specifier: ^4.3.1, version: 4.3.1(vite@5.4.2(@types/node@20.16.1))}, eslint: {specifier: ^8.57.0, version: 8.57.0}, eslint-plugin-react-hooks: {specifier: ^4.6.2, version: 4.6.2(eslint@8.57.0)}, eslint-plugin-react-refresh: {specifier: ^0.4.9, version: 0.4.11(eslint@8.57.0)}, jsdom: {specifier: ^22.1.0, version: 22.1.0(canvas@2.11.2(encoding@0.1.13))}, pnpm: {specifier: ^8.15.9, version: 8.15.9}, tailwindcss: {specifier: ^3.4.6, version: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4))}, typescript: {specifier: ^5.5.4, version: 5.5.4}, vite: {specifier: ^5.3.4, version: 5.4.2(@types/node@20.16.1)}, vite-plugin-top-level-await: {specifier: ^1.4.2, version: 1.4.4(@swc/helpers@0.5.12)(rollup@4.28.0)(vite@5.4.2(@types/node@20.16.1))}, vite-plugin-wasm: {specifier: ^3.3.0, version: 3.3.0(vite@5.4.2(@types/node@20.16.1))}, vitest: {specifier: ^2.0.5, version: 2.0.5(@types/node@20.16.1)(@vitest/ui@2.1.2(vitest@2.0.5))(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))}}}
+  os: {dependencies: {'@automerge/automerge': {specifier: 2.2.9-alpha.2, version: 2.2.9-alpha.2}, '@automerge/automerge-repo': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-network-messagechannel': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-network-websocket': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@automerge/automerge-repo-react-hooks': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)}, '@automerge/automerge-repo-storage-indexeddb': {specifier: 2.0.0-alpha.7, version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)}, '@patchwork/counter': {specifier: workspace:*, version: link:../packages/counter}, '@patchwork/datagrid': {specifier: workspace:*, version: link:../packages/datagrid}, '@patchwork/engraft': {specifier: workspace:*, version: link:../packages/engraft}, '@patchwork/essay': {specifier: workspace:*, version: link:../packages/essay}, '@patchwork/file': {specifier: workspace:*, version: link:../packages/file}, '@patchwork/folder': {specifier: workspace:*, version: link:../packages/folder}, '@patchwork/jacquard': {specifier: workspace:*, version: link:../packages/jacquard}, '@patchwork/kanban': {specifier: workspace:*, version: link:../packages/kanban}, '@patchwork/pkg': {specifier: workspace:*, version: link:../packages/pkg}, '@patchwork/raw-editor': {specifier: workspace:*, version: link:../packages/raw-editor}, '@patchwork/sdk': {specifier: workspace:*, version: link:../sdk}, '@patchwork/tldraw': {specifier: workspace:*, version: link:../packages/tldraw}, '@tailwindcss/container-queries': {specifier: ^0.1.1, version: 0.1.1(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)))}, '@xstate/react': {specifier: ^4.1.1, version: 4.1.1(@types/react@18.3.4)(react@18.3.1)(xstate@5.17.4)}, class-variance-authority: {specifier: ^0.7.0, version: 0.7.0}, esbuild: {specifier: ^0.23.0, version: 0.23.1}, lodash: {specifier: ^4.17.21, version: 4.17.21}, lucide-react: {specifier: ^0.284.0, version: 0.284.0(react@18.3.1)}, react: {specifier: ^18.3.1, version: 18.3.1}, react-arborist: {specifier: ^3.4.0, version: 3.4.0(@types/hoist-non-react-statics@3.3.5)(@types/node@20.16.1)(@types/react@18.3.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, react-dom: {specifier: ^18.3.1, version: 18.3.1(react@18.3.1)}, react-error-boundary: {specifier: ^4.0.13, version: 4.0.13(react@18.3.1)}, react-markdown: {specifier: ^9.0.1, version: 9.0.1(@types/react@18.3.4)(react@18.3.1)}, tailwindcss-animate: {specifier: ^1.0.7, version: 1.0.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4)))}, use-resize-observer: {specifier: ^9.1.0, version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, xstate: {specifier: ^5.15.0, version: 5.17.4}}, devDependencies: {'@jspm/generator': {specifier: ^2.1.3, version: 2.1.3}, '@types/lodash': {specifier: ^4.17.7, version: 4.17.7}, '@types/node': {specifier: ^20.14.12, version: 20.16.1}, '@types/react': {specifier: ^18.3.3, version: 18.3.4}, '@types/react-dom': {specifier: ^18.3.0, version: 18.3.0}, '@types/uuid': {specifier: ^10.0.0, version: 10.0.0}, '@typescript-eslint/eslint-plugin': {specifier: ^6.21.0, version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)}, '@typescript-eslint/parser': {specifier: ^6.21.0, version: 6.21.0(eslint@8.57.0)(typescript@5.5.4)}, '@vitejs/plugin-react': {specifier: ^4.3.1, version: 4.3.1(vite@5.4.2(@types/node@20.16.1))}, autoprefixer: {specifier: ^10.4.20, version: 10.4.20(postcss@8.4.49)}, eslint: {specifier: ^8.57.0, version: 8.57.0}, eslint-plugin-react-hooks: {specifier: ^4.6.2, version: 4.6.2(eslint@8.57.0)}, eslint-plugin-react-refresh: {specifier: ^0.4.9, version: 0.4.11(eslint@8.57.0)}, jsdom: {specifier: ^22.1.0, version: 22.1.0(canvas@2.11.2(encoding@0.1.13))}, pnpm: {specifier: ^8.15.9, version: 8.15.9}, tailwindcss: {specifier: ^3.4.6, version: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/node@20.16.1)(typescript@5.5.4))}, typescript: {specifier: ^5.5.4, version: 5.5.4}, vite: {specifier: ^5.3.4, version: 5.4.2(@types/node@20.16.1)}, vite-plugin-top-level-await: {specifier: ^1.4.2, version: 1.4.4(@swc/helpers@0.5.12)(rollup@4.28.0)(vite@5.4.2(@types/node@20.16.1))}, vite-plugin-wasm: {specifier: ^3.3.0, version: 3.3.0(vite@5.4.2(@types/node@20.16.1))}, vitest: {specifier: ^2.0.5, version: 2.0.5(@types/node@20.16.1)(@vitest/ui@2.1.2(vitest@2.0.5))(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))}}}
 
   packages/counter:
     dependencies:
@@ -4009,6 +4009,13 @@ packages:
     resolution: {integrity: sha512-7prDjvt9HmqiZ0cl5CRjtS84sEyhsHP2coDkaZKRKVfCDo9s7iw7ChVmar78Gu9pC4SoR/28wFu/G5JJhTnqEg==}
     engines: {node: '>=4'}
 
+  autoprefixer@10.4.20:
+    resolution: {integrity: sha512-XY25y5xSv/wEoqzDyXXME4AFfkZI0P23z6Fs3YgymDnKJkCGOnkL0iTxCa85UTqaSgfcqyf3UA6+c7wUvx/16g==}
+    engines: {node: ^10 || ^12 || >=14}
+    hasBin: true
+    peerDependencies:
+      postcss: ^8.1.0
+
   ava@5.3.1:
     resolution: {integrity: sha512-Scv9a4gMOXB6+ni4toLuhAm9KYWEjsgBglJl+kMGI5+IVDt120CCDZyB5HNU9DjmLI2t4I0GbnxGLmmRfGTJGg==}
     engines: {node: '>=14.19 <15 || >=16.15 <17 || >=18'}
@@ -4942,6 +4949,9 @@ packages:
   forwarded@0.2.0:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
+
+  fraction.js@4.3.7:
+    resolution: {integrity: sha512-ZsDfxO51wGAXREY55a7la9LScWpwv9RxIrYABrlvOFBlH/ShPnrtsXeuUIfXKKOVicNxQ+o8JTbJvjS4M89yew==}
 
   fresh@0.5.2:
     resolution: {integrity: sha512-zJ2mQYM18rEFOudeV4GShTGIQ7RbzA7ozbU9I/XBpm7kqgMywgmylMwXHxZJmkVoYkna9d2pVXVXPdYTP9ej8Q==}
@@ -5905,6 +5915,10 @@ packages:
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
+    engines: {node: '>=0.10.0'}
+
+  normalize-range@0.1.2:
+    resolution: {integrity: sha512-bdok/XvKII3nUpklnV6P2hxtMNrCboOjAcyBuQnWEhO665FwrSNRxU+AqpsyvO6LgGYPspN+lu5CLtw4jPRKNA==}
     engines: {node: '>=0.10.0'}
 
   normalize-url@6.1.0:
@@ -11472,6 +11486,16 @@ snapshots:
 
   attr-accept@2.2.2: {}
 
+  autoprefixer@10.4.20(postcss@8.4.49):
+    dependencies:
+      browserslist: 4.23.3
+      caniuse-lite: 1.0.30001651
+      fraction.js: 4.3.7
+      normalize-range: 0.1.2
+      picocolors: 1.1.1
+      postcss: 8.4.49
+      postcss-value-parser: 4.2.0
+
   ava@5.3.1:
     dependencies:
       acorn: 8.12.1
@@ -12620,6 +12644,8 @@ snapshots:
       web-streams-polyfill: 4.0.0-beta.3
 
   forwarded@0.2.0: {}
+
+  fraction.js@4.3.7: {}
 
   fresh@0.5.2: {}
 
@@ -13892,6 +13918,8 @@ snapshots:
     optional: true
 
   normalize-path@3.0.0: {}
+
+  normalize-range@0.1.2: {}
 
   normalize-url@6.1.0: {}
 
