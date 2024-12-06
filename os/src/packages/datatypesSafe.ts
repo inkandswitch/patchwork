@@ -1,4 +1,3 @@
-export * as datagrid from "@patchwork/datagrid";
 export * as essay from "@patchwork/essay";
 export * as folder from "@patchwork/folder";
 export * as kanban from "@patchwork/kanban";
