@@ -18,18 +18,17 @@
     "@automerge/automerge-repo-storage-nodefs": "^1.2.1",
     "command-line-args": "^5.2.1",
     "@patchwork/file": "workspace:*",
+    "@patchwork/folder": "workspace:*",
+    "@patchwork/jacquard": "workspace:*",
     "@patchwork/sdk": "workspace:*",
     "debug": "^4.3.7",
     "isbinaryfile": "^5.0.2",
-    "lodash": "^4.17.21",
-    "mime-types": "^2.1.35",
-    "signia": "^0.1.5"
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@types/command-line-args": "^5.2.3",
     "@types/debug": "^4.1.12",
     "@types/lodash": "^4.17.7",
-    "@types/mime-types": "^2.1.4",
     "@types/node": "^20.14.12",
     "vitest": "^2.0.5"
   }
