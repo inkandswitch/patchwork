@@ -38,6 +38,7 @@
 .cell {
     background: #d2d2d2;
     border: 1px solid #2e2e2e;
+    border-left: 2px solid #2e2e2e;
     float: left;
     font-size: 24px;
     font-weight: bold;
@@ -47,6 +48,9 @@
     margin-top: -1px;
     padding: 0;
     text-align: center;
+}
+.light-vertical {
+    border-left: 1px solid #505050;
 }
 .eighth-notes {
     width:50px;

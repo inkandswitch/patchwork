@@ -41,6 +41,10 @@ export function Cell({
     if (x % config.stepsPerBar == 0) {
         barStart = true;
     }
+    let quarter = false;
+    if (x % (config.stepsPerBar / 4) == 0) {
+        quarter = true;
+    }
 
     let toggleOnTime = Math.max(playStartTime, toggle.toggleOnTime);
     let age = currentTime - toggleOnTime;
@@ -52,6 +56,7 @@ export function Cell({
     let classes = classnames(
         'cell',
         {
+            'light-vertical': !quarter,
             'cell-on': toggle.toggled,
             'eighth-notes': config.stepsPerBar == 8,
             'sixteenth-notes': config.stepsPerBar == 16,
