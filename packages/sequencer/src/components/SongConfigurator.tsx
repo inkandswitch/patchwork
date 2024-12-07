@@ -195,7 +195,7 @@ export const SongConfigurator = ({
                     Bar division (resets grid):
                     <select onChange={changeStepsPerBar} value={config.stepsPerBar}>
                         <option value={8} key="8steps">8</option>
-                        <option value={16} key="8steps">16</option>
+                        <option value={16} key="16steps">16</option>
                     </select>
                 </label>
             </div>
