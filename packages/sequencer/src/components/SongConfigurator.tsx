@@ -18,6 +18,7 @@ interface Props {
     fetchOverridingInstrument: (overridingInstrumentUrl: string) => boolean;
     setOverridingInstrumentChosen: (isChosen: boolean) => void;
     clearGrid: (isPlaying: boolean, instrumentVolume: number, drumVolume: number) => void,
+    resetGrid: (isPlaying: boolean, instrumentVolume: number, drumVolume: number) => void;
 }
 
 export const SongConfigurator = ({
@@ -33,6 +34,7 @@ export const SongConfigurator = ({
     fetchOverridingInstrument,
     setOverridingInstrumentChosen,
     clearGrid,
+    resetGrid,
 }: Props) => {
     const [fetchUrl, setFetchUrl] = useState("");
     function flipMonophonic() {
@@ -65,6 +67,15 @@ export const SongConfigurator = ({
         handleConfigChange((config) => {
             config.bars = e.target.value;
         });
+    }
+    function changeStepsPerBar(e: any) {
+        if (!confirm("WARNING: This will clear the grid. Proceed?")) {
+            return
+        }
+        handleConfigChange((config) => {
+            config.stepsPerBar = e.target.value;
+        });
+        resetGrid(isPlaying, instrumentVolume, drumVolume);
     }
     function handleDuplicateFirstBarNotes() {
         if (!confirm("WARNING: Are you sure you want to overwrite all other bars with the first bar notes?")) {
@@ -178,6 +189,16 @@ export const SongConfigurator = ({
             <button className="button duplicate-button float-left" onClick={handleDuplicateFirstBar}>Paste All</button>
             <div className='horizontal-block'></div>
             <button className="button clear-button float-left" onClick={handleClearGrid}>Clear</button>
+            <div className='horizontal-block'></div>
+            <div className='float-left'>
+                <label>
+                    Bar division (resets grid):
+                    <select onChange={changeStepsPerBar} value={config.stepsPerBar}>
+                        <option value={8} key="8steps">8</option>
+                        <option value={16} key="8steps">16</option>
+                    </select>
+                </label>
+            </div>
             <div className='clear-block'></div>
             <div className='clear-block'></div>
             <div className='clear-block'></div>

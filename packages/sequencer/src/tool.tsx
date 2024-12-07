@@ -8,13 +8,13 @@ import { Player } from "./components/Player";
 import { UIGrid } from "./components/SequencerGrid";
 import { SongConfigurator } from "./components/SongConfigurator";
 import { InstrumentSamplePlayerConfig, sampleInstrumentConfigs } from "./music/sample-instrument";
-import { drumConfigs, DrumSamplePlayerConfig } from "./music/drum";
+import { DRUM_PIECES_COUNT, drumConfigs, DrumSamplePlayerConfig } from "./music/drum";
 import { toggleFn } from "./music/toggle-play";
 import { useCurrentAccount } from "@/explorer/account";
 import { globalInstrumentSchedulers } from "./music/instrument-scheduler";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { SamplePlayer } from "./music/sample-player";
-import { SongConfig } from "./config";
+import { ROW_COUNT, SongConfig, totalStepsFromConfig } from "./config";
 
 function updateToggle(toggleRows: Toggle[][], x: number, y: number, isToggled: boolean, avatarUrl: AutomergeUrl | null) {
   toggleRows[y][x].toggled = isToggled;
@@ -240,6 +240,22 @@ export const Sequencer = ({
     })
   }
 
+  const resetGrid = (isPlaying: boolean, instrumentVolume: number, drumVolume: number) => {
+    if (isPlaying) {
+      togglePlay(instrumentVolume, drumVolume, overridingInstrumentChosen);
+    }
+    handle.change((doc) => {
+      let totalSteps = totalStepsFromConfig(doc.config);
+      doc.toggleRows = Array.from({ length: ROW_COUNT }, () =>
+        Array.from({ length: totalSteps }, () => ({ toggled: false, avatarUrl: null, toggleOnTime: 0 }))
+      );
+      doc.drumToggleRows = Array.from({ length: DRUM_PIECES_COUNT }, () =>
+          Array.from({ length: totalSteps }, () => ({ toggled: false, avatarUrl: null, toggleOnTime: 0 }))
+      );
+      doc.stepGrid = Array.from({ length: totalSteps }, () => ({ "instrument": {}, "drum": {} }));
+    })
+  }
+
   // const cellAnnotations = annotations.map((annotation) => ({
   //   row: annotation.anchor.row,
   //   col: annotation.anchor.column,
@@ -287,6 +303,7 @@ export const Sequencer = ({
         fetchOverridingInstrument={fetchOverridingInstrument}
         setOverridingInstrumentChosen={setOverridingInstrumentChosen}
         clearGrid={clearGrid}
+        resetGrid={resetGrid}
       />
       <div className="clear-block"></div>
     </div>
