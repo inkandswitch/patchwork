@@ -43,23 +43,19 @@ import { useToast } from "@patchwork/sdk/ui";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 
-/* Ugh... TODO */
 import {
   BuildRefreshButton,
   DisabledBuildRefreshButton,
-} from "@patchwork/jacquard/src/components/BuildRefreshButton";
-import {
-  getStalenessInfo,
-  ProjectState,
-} from "@patchwork/jacquard/src/getStalenessInfo";
+} from "@patchwork/jacquard/components";
+import { getStalenessInfo, ProjectState } from "@patchwork/jacquard";
 import {
   fetchJacquardProjectInfoWithActiveBranch,
   JacquardProjectInfo,
-} from "@patchwork/jacquard/src/hooks";
+} from "@patchwork/jacquard/hooks";
 import {
   fetchProjectStateFromProjectInfo,
   getBuildRunsWithDocAsPrimaryInput,
-} from "@patchwork/jacquard/src/signals";
+} from "@patchwork/jacquard/signals";
 
 import { truncate } from "lodash";
 

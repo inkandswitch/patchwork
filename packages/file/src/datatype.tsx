@@ -268,7 +268,7 @@ const updateDocFromUnixFile = async (
   return { didChange: true };
 };
 
-export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
+export const dataType: DataType<FileDoc, TextAnchor, string> = {
   type: "patchwork:dataType",
   id: "file",
   name: "File",

@@ -1,5 +1,8 @@
 import { DecodedChangeWithMetadata } from "@patchwork/sdk/versionControl";
-import { Annotation, HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
+import {
+  Annotation,
+  HasVersionControlMetadata,
+} from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { pick } from "lodash";
 import { initFrom, type DataType } from "@patchwork/sdk";
@@ -145,11 +148,7 @@ const patchesToAnnotations = (
   });
 };
 
-export const dataGridDatatype: DataType<
-  DataGridDoc,
-  DataGridDocAnchor,
-  string
-> = {
+export const dataType: DataType<DataGridDoc, DataGridDocAnchor, string> = {
   type: "patchwork:dataType",
   id: "datagrid",
   name: "Spreadsheet",

@@ -14,14 +14,12 @@ export default mergeConfig(sharedConfig, {
     exclude: ["@syntect/wasm"],
   },
 
-  worker: {
-    format: "es",
-    plugins: () => [wasm()],
-  },
   build: {
     rollupOptions: {
       external: EXTERNAL_DEPENDENCIES,
-      input: "./src/index.ts",
+      input: {
+        index: "./src/index.ts",
+      },
       output: {
         // We put index.css in dist instead of dist/assets so that we can link to fonts
         // using relative URLs like "./assets/font.woff2", which is the correct form

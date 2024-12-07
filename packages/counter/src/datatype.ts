@@ -28,7 +28,7 @@ export const init = (doc: CounterDoc) => {
   });
 };
 
-export const counterDatatype: DataType<CounterDoc, unknown> = {
+export const dataType: DataType<CounterDoc, unknown> = {
   type: "patchwork:dataType",
   id: "counter",
   name: "Counter",

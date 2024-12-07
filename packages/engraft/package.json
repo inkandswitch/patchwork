@@ -4,6 +4,10 @@
   "description": "some kinda engrafty thing in Patchwork idk",
   "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./datatype": "./dist/datatype.js"
+  },
   "scripts": {
     "build": "vite build",
     "push": "pnpm build && trailhead push --dir dist"

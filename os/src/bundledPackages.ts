@@ -6,7 +6,7 @@ export const SAFE_BUNDLED_TOOLS = {
   jacquard: "@patchwork/jacquard",
   kanban: "@patchwork/kanban",
   pkg: "@patchwork/pkg",
-  "raw-editor": "@patchwork/raw-editor",
+  raw: "@patchwork/raw-editor",
 };
 
 export const BUNDLED_TOOLS = {
@@ -24,15 +24,15 @@ export const BUNDLED_TOOLS = {
 
 // just copy it for now til i split up the datatypes as a separate export
 export const BUNDLED_DATATYPES = {
-  datagrid: "@patchwork/datagrid",
-  essay: "@patchwork/essay",
-  engraft: "@patchwork/engraft",
-  file: "@patchwork/file",
-  folder: "@patchwork/folder",
-  jacquard: "@patchwork/jacquard",
-  kanban: "@patchwork/kanban",
-  pkg: "@patchwork/pkg",
-  tldraw: "@patchwork/tldraw",
+  datagrid: "@patchwork/datagrid/datatype",
+  essay: "@patchwork/essay/datatype",
+  engraft: "@patchwork/engraft/datatype",
+  file: "@patchwork/file/datatype",
+  folder: "@patchwork/folder/datatype",
+  jacquard: "@patchwork/jacquard/datatype",
+  kanban: "@patchwork/kanban/datatype",
+  pkg: "@patchwork/pkg/datatype",
+  tldraw: "@patchwork/tldraw/datatype",
   // no specific raw editor datatype
 };
 

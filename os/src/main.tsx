@@ -195,12 +195,12 @@ window.repo = repo;
 await Promise.all([
   ...Object.entries(BUNDLED_TOOLS).map(async ([id, importName]) => {
     const module = await import(importName);
-    console.log(id, module);
     registerTool(id, module.tool);
   }),
 
   ...Object.entries(BUNDLED_DATATYPES).map(async ([id, importName]) => {
     const module = await import(importName);
+    console.log("datatype", id, module);
     registerDataType(id, module.dataType);
   }),
 ]);

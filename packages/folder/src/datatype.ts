@@ -94,7 +94,7 @@ const links = (doc: FolderDoc) => {
   return doc.docs;
 };
 
-export const folderDatatype: DataType<FolderDoc, never, never> = {
+export const dataType: DataType<FolderDoc, never, never> = {
   type: "patchwork:dataType",
   id: "folder",
   name: "Folder",

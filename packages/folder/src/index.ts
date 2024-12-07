@@ -3,7 +3,7 @@ import { DocPath } from "./datatype";
 
 export {
   init,
-  folderDatatype as dataType,
+  dataType,
   type DocPath,
   type FolderDoc,
   type FolderDocMaterialized as FolderDocWithChildren,

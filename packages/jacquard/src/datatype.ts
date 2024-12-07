@@ -106,11 +106,7 @@ export const init = (doc: any) => {
   doc.buildRuns = [];
 };
 
-export const jacquardBuildMetadataDatatype: DataType<
-  JacquardBuildMetadata,
-  never,
-  string
-> = {
+export const dataType: DataType<JacquardBuildMetadata, never, string> = {
   type: "patchwork:dataType",
   id: "jacquard-build-metadata",
   name: "Jacquard Build Metadata",

@@ -77,7 +77,7 @@ export const init = (doc: KanbanBoardDoc) => {
   });
 };
 
-export const kanbanBoardDatatype: DataType<KanbanBoardDoc, never, never> = {
+export const dataType: DataType<KanbanBoardDoc, never, never> = {
   type: "patchwork:dataType",
   id: "kanban",
   name: "Kanban Board",

@@ -75,7 +75,7 @@ export const setTitle = (doc: PackageDoc, title: string) => {
   doc.title = title;
 };
 
-export const packageDataType: DataType<PackageDoc, never, never> = {
+export const dataType: DataType<PackageDoc, never, never> = {
   type: "patchwork:dataType",
   id: "pkg",
   name: "Package",

@@ -79,7 +79,7 @@ export const toolsForDataType = (
     dataType = dataType.id;
   }
 
-  return [...(GlobalTools[dataType] || []), ...(GlobalTools["*"] || [])];
+  return [...(GlobalTools[dataType] || []), ...(GlobalTools["raw"] || [])];
 };
 
 export const toolById = (id: string | undefined): Tool[] => {

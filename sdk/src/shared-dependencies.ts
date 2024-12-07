@@ -34,17 +34,28 @@ export const SHARED_MODULES = {
   "@patchwork/sdk/ui": "./sdk/ui.js",
   "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
   "@patchwork/counter": "./counter/index.js",
+  "@patchwork/counter/datatype": "./counter/datatype.js", // do i really need to do this?
   "@patchwork/datagrid": "./datagrid/index.js",
+  "@patchwork/datagrid/datatype": "./datagrid/datatype.js",
   "@patchwork/engraft": "./engraft/index.js",
+  "@patchwork/engraft/datatype": "./engraft/datatype.js",
   "@patchwork/essay": "./essay/index.js",
+  "@patchwork/essay/datatype": "./essay/datatype.js",
   "@patchwork/file": "./file/index.js",
+  "@patchwork/file/datatype": "./file/datatype.js",
   "@patchwork/folder": "./folder/index.js",
+  "@patchwork/folder/datatype": "./folder/datatype.js",
   //"@patchwork/folder-list-view": "./folder-list-view/index.js", // left as an example of existing dynamic loading
   "@patchwork/jacquard": "./jacquard/index.js",
+  "@patchwork/jacquard/datatype": "./jacquard/datatype.js",
   "@patchwork/kanban": "./kanban/index.js",
+  "@patchwork/kanban/datatype": "./kanban/datatype.js",
   "@patchwork/pkg": "./pkg/index.js",
+  "@patchwork/pkg/datatype": "./pkg/datatype.js",
   "@patchwork/raw-editor": "./raw-editor/index.js",
+  // no datatype for raw-editor
   "@patchwork/tldraw": "./tldraw/index.js",
+  "@patchwork/tldraw/datatype": "./tldraw/datatype.js",
 };
 
 // All dependencies that should not be bundled in and instead are loaded

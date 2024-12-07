@@ -1,7 +1,4 @@
-export {
-  jacquardBuildMetadataDatatype as dataType,
-  type JacquardBuildMetadata,
-} from "./datatype";
+export { dataType, type JacquardBuildMetadata } from "./datatype";
 
 export { buildMetadataGraphView, buildMetadataLogView } from "./tool";
 

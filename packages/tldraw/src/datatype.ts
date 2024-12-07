@@ -333,7 +333,7 @@ const valueOfAnnotation = (annotation: Annotation<TLShapeId, TLShape>) => {
   }
 };
 
-export const tldrawDatatype: DataType<TLDrawDoc, TLDrawDocAnchor, TLShape> = {
+export const dataType: DataType<TLDrawDoc, TLDrawDocAnchor, TLShape> = {
   type: "patchwork:dataType",
   id: "tldraw",
   name: "Drawing",

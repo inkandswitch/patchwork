@@ -18,7 +18,7 @@ export type EngraftDoc = HasVersionControlMetadata<undefined, undefined> & {
   outputUrl: AutomergeUrl | null;
 };
 
-export const engraftDataType: DataType<EngraftDoc, unknown, unknown> = {
+export const dataType: DataType<EngraftDoc, unknown, unknown> = {
   type: "patchwork:dataType",
   id: "engraft",
   name: "Engraft program",

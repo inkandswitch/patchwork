@@ -211,7 +211,7 @@ const updateDocFromUnixFile = async (
   return { didChange: true };
 };
 
-export const markdownDataType: DataType<MarkdownDoc, TextAnchor, string> = {
+export const dataType: DataType<MarkdownDoc, TextAnchor, string> = {
   type: "patchwork:dataType",
   id: "essay",
   name: "Essay",
