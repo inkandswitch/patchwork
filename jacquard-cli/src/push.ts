@@ -1,4 +1,4 @@
-import { dataTypeById, initFrom } from "@patchwork/sdk";
+import { allDataTypes, dataTypeById, initFrom } from "@patchwork/sdk";
 import { FolderDoc } from "@patchwork/folder";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
@@ -16,7 +16,6 @@ import { CommandLineArgs } from ".";
 import { JacquardBuildMetadata } from "@patchwork/jacquard";
 import { RunResult } from "./run";
 import {
-  dataTypes,
   formatFileSize,
   omOnCLIActiveBranchPromise,
   readFileContent,
@@ -333,7 +332,7 @@ const pushFile = async ({
     const mainUrl = existingDocLink.url;
 
     const dataTypeId = existingDocLink.type;
-    const dataType = dataTypeById(dataTypes, dataTypeId);
+    const dataType = dataTypeById(dataTypeId);
     if (!dataType) {
       throw new Error(
         `cannot update ${filePath} with unknown type ${dataTypeId}`
@@ -354,13 +353,20 @@ const pushFile = async ({
   } else {
     debug("Creating new file...");
 
+    // XXX PVH TODO before landing think through how this should work
+    const dataTypes = allDataTypes();
     const dataType =
-      dataTypes.find((dt) => dt.unixFileExtensions?.includes(fileExtension)) ??
-      dataTypes.find((dt) => dt.unixFileExtensions?.includes("*"));
+      Object.values(dataTypes).find((dt) =>
+        dt.unixFileExtensions?.includes(fileExtension)
+      ) ??
+      Object.values(dataTypes).find((dt) =>
+        dt.unixFileExtensions?.includes("*")
+      );
 
     if (!dataType) {
       throw new Error(`Unable to find datatype for ${fileExtension} or *`);
     }
+
     if (!dataType.initDocFromUnixFile) {
       throw new Error(
         `datatype ${dataType.id} does not have initDocFromUnixFile`

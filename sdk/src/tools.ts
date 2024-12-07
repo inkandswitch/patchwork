@@ -14,7 +14,7 @@ import {
 import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "@patchwork/folder";
-import { DataType } from "./datatypes";
+import { DataType, isDataType } from "./datatypes";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -52,33 +52,41 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
   return tool as Tool;
 }
 
+const GlobalTools: Record<string, Tool[]> = {};
+export const registerTool = (id: string, tool: Tool) => {
+  if (!GlobalTools[id]) {
+    GlobalTools[id] = [];
+  }
+  GlobalTools[id].push(tool);
+};
+
 export const isTool = (value: any): value is Tool => {
   return "type" in value && value.type === "patchwork:tool";
 };
 
+export const allTools = () => {
+  return { ...GlobalTools };
+};
+
 export const toolsForDataType = (
-  tools: Tool[],
   dataType: DataType | string | undefined
 ): Tool[] => {
   if (!dataType) {
     return [];
   }
 
-  return tools.filter((tool) => {
-    return (
-      tool.supportedDataTypes === "*" ||
-      (typeof dataType === "string"
-        ? tool.supportedDataTypes.some((d) => d === dataType)
-        : tool.supportedDataTypes.includes(dataType.id))
-    );
-  });
+  if (isDataType(dataType)) {
+    dataType = dataType.id;
+  }
+
+  return [...(GlobalTools[dataType] || []), ...(GlobalTools["*"] || [])];
 };
 
-export const toolById = (
-  tools: Tool[],
-  id: string | undefined
-): Tool | undefined => {
-  return tools.find((tool) => tool.id === id);
+export const toolById = (id: string | undefined): Tool[] => {
+  if (!id) {
+    return [];
+  }
+  return GlobalTools[id] || [];
 };
 
 export type EditorProps<A, V> = {

@@ -207,7 +207,6 @@ ${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
       repo,
       branchScopeHandle: targetDocHandle,
       dataTypeId: dataType.id,
-      dataTypes: [dataType],
     });
     const branchUrl = branchMetadataHandle.url;
 

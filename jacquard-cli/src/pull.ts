@@ -4,7 +4,7 @@ import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import fs from "fs";
 import path from "path";
 import { CommandLineArgs } from ".";
-import { dataTypes, omOnCLIActiveBranchPromise } from "./util";
+import { omOnCLIActiveBranchPromise } from "./util";
 
 export async function pull(repo: Repo, args: CommandLineArgs) {
   const { projectFolderUrl, dir } = args;
@@ -67,7 +67,7 @@ async function pullDoc({
   const dataTypeId = docLink.type;
   const filePath = path.join(dir, docLink.name);
 
-  const dataType = dataTypeById(dataTypes, dataTypeId);
+  const dataType = dataTypeById(dataTypeId);
   if (!dataType) {
     console.error(`skipping doc ${filePath} with unknown type ${dataTypeId}`);
     return;

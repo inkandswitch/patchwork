@@ -13,13 +13,12 @@ import { next as Automerge } from "@automerge/automerge";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
-import { getAccount } from "@patchwork/sdk";
+import { getAccount, registerDataType, registerTool } from "@patchwork/sdk";
 import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
 import { BACKUP_SYNC } from "./explorer/components/SyncIndicator.js";
-import { PatchworkContext } from "@patchwork/sdk";
-import { builtInTools } from "./builtInTools.js";
-import { builtInDataTypes } from "./builtInDataTypes.js";
+
+import { BUNDLED_TOOLS, BUNDLED_DATATYPES } from "./bundledPackages.js";
 
 // Peer id prefix is added to both the peer id of the client and the service worker
 // to make it easier to grep for logs that are related to your own changes / sync state
@@ -193,11 +192,22 @@ window.Automerge = Automerge;
 // @ts-expect-error - adding property to window
 window.repo = repo;
 
-const Root = () => (
+await Promise.all([
+  ...Object.entries(BUNDLED_TOOLS).map(async ([id, importName]) => {
+    const module = await import(importName);
+    console.log(id, module);
+    registerTool(id, module.tool);
+  }),
+
+  ...Object.entries(BUNDLED_DATATYPES).map(async ([id, importName]) => {
+    const module = await import(importName);
+    registerDataType(id, module.dataType);
+  }),
+]);
+
+export const Root = () => (
   <RepoContext.Provider value={repo}>
-    <PatchworkContext.Provider value={{ builtInTools, builtInDataTypes }}>
-      <Explorer />
-    </PatchworkContext.Provider>
+    <Explorer />
   </RepoContext.Provider>
 );
 

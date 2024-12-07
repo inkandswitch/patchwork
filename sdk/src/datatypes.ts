@@ -148,13 +148,27 @@ export const isDataType = (value: any): value is DataType => {
   return "type" in value && value.type === "patchwork:dataType";
 };
 
-export const dataTypeById = <D, T, V>(
-  dataTypes: DataType[],
-  id: string | undefined
+const GlobalDataTypes: Record<string, DataType<unknown, unknown, unknown>> = {};
+export const registerDataType = (
+  id: string,
+  datatype: DataType<unknown, unknown, unknown>
 ) => {
-  return dataTypes.find((dataType) => dataType.id == id) as
-    | DataType<D, T, V>
-    | undefined;
+  if (GlobalDataTypes[id]) {
+    console.warn(
+      `DataType ${id} replacing datatype. This is probably an error. (from/to)`,
+      GlobalDataTypes[id],
+      datatype
+    );
+  }
+  GlobalDataTypes[id] = datatype;
+};
+
+export const allDataTypes = () => {
+  return { ...GlobalDataTypes };
+};
+
+export const dataTypeById = <D, T, V>(id: string | undefined) => {
+  return id ? GlobalDataTypes[id] : undefined;
 };
 
 /** Kinda hacky utility function to initialize an object in

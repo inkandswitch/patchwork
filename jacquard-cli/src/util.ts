@@ -13,11 +13,8 @@ import { PassThrough } from "node:stream";
 import { inspect } from "node:util";
 import path from "path";
 import { FileContent } from "@patchwork/file";
-import { builtInDataTypesSafe } from "../../os/src/builtInDataTypesSafe";
 import { fetchOmOnFixedBranch } from "@patchwork/sdk/versionControl";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
-
-export const dataTypes = builtInDataTypesSafe;
 
 export function getBuildMetadataDocUrl(folderDoc: Doc<FolderDoc>) {
   return folderDoc.docs.find((link) => link.name === "Build Metadata")?.url;

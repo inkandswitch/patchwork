@@ -3,7 +3,6 @@ import {
   asyncComputedPromise,
   fetchDoc,
 } from "@patchwork/sdk/async-signals";
-import { useDataTypes } from "@patchwork/sdk/hooks";
 import { Icon, IconType } from "@patchwork/sdk/ui";
 import {
   DocLink,
@@ -13,7 +12,7 @@ import {
   FolderDocWithMetadata,
   DocPathUtils,
 } from "@patchwork/folder";
-import { dataTypeById } from "@patchwork/sdk";
+import { allDataTypes, dataTypeById } from "@patchwork/sdk";
 import {
   Input,
   Popover,
@@ -94,8 +93,7 @@ const Node = (props: NodeRendererProps<NodeData>) => {
   const { node, style, dragHandle } = props;
   const docPath = node.data.docPath;
   const docLink = DocPathUtils.toLink(docPath);
-  const dataTypes = useDataTypes();
-  const dataType = dataTypeById(dataTypes, docLink.type);
+  const dataType = dataTypeById(docLink.type);
 
   const flatDocPaths = useContext(FlatDocPathsContext);
 
@@ -270,7 +268,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   rootFolderDoc,
 }) => {
   const repo = useRepo();
-  const dataTypes = useDataTypes();
+  const dataTypes = allDataTypes();
 
   const {
     doc: rootFolderDocWithChildren,
@@ -407,7 +405,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const onRename: RenameHandler<NodeData> = async ({ node, name }) => {
     const docPath = node.data.docPath;
     const docLink = DocPathUtils.toLink(docPath);
-    const dataType = dataTypeById(dataTypes, docLink?.type)!; // TODO: JAH strict fix
+    const dataType = dataTypeById(docLink?.type)!; // TODO: JAH strict fix
 
     if (!dataType?.setTitle) {
       alert(
@@ -509,7 +507,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
       <div className="py-2  border-b border-gray-200">
-        {dataTypes.map((dataType) => {
+        {Object.values(dataTypes).map((dataType) => {
           const { id } = dataType;
           const isEnabled = datatypeSettings?.enabledDatatypeIds[id];
           if (

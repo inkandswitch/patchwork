@@ -2,12 +2,11 @@ import { ErrorFallback } from "@patchwork/sdk/components";
 import { selectDocLink } from "@patchwork/sdk/router";
 import { useDocUIState } from "@patchwork/sdk/router";
 import { Icon, IconType } from "@patchwork/sdk/ui";
-import { useDataTypes, useTools } from "@patchwork/sdk/hooks";
 import {
   dataTypeById,
-  EditorProps,
-  Tool,
   toolsForDataType,
+  type EditorProps,
+  type Tool,
 } from "@patchwork/sdk";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
 import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
@@ -76,11 +75,8 @@ export const FolderEntryView = ({
     useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
-  const dataTypes = useDataTypes();
-  const dataType = dataTypeById(dataTypes, docLink.type);
-
-  const tools = useTools();
-  const tool = toolsForDataType(tools, docLink.type)[0];
+  const dataType = dataTypeById(docLink.type);
+  const tool = toolsForDataType(docLink.type)[0];
 
   const icon = tool?.icon ?? dataType?.icon;
 

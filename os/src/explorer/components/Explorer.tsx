@@ -1,12 +1,7 @@
+import { dataTypeById, toolById, toolsForDataType } from "@patchwork/sdk";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
-import { dataTypeById } from "@patchwork/sdk";
-import { useDataTypes } from "@patchwork/sdk/hooks";
-import { useTools } from "@patchwork/sdk/hooks";
-import { DocPathUtils, FolderDoc } from "@patchwork/folder";
-import { DocPath } from "@patchwork/folder";
-import { Button } from "@patchwork/sdk/ui";
-import { Toaster } from "@patchwork/sdk/ui";
-import { toolById, toolsForDataType } from "@patchwork/sdk";
+import { type DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
+import { Button, Toaster } from "@patchwork/sdk/ui";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import {
   fetchBranchScopeAndActiveBranchInfo,
@@ -66,13 +61,10 @@ export const Explorer: React.FC = () => {
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
 
-  const dataTypes = useDataTypes();
-  const allTools = useTools();
-
-  const selectedDataType = dataTypeById(dataTypes, selectedDataTypeId);
-  const tools = toolsForDataType(allTools, selectedDataType);
+  const selectedDataType = dataTypeById(selectedDataTypeId);
+  const toolsForSelection = toolsForDataType(selectedDataType);
   const [selectedToolId, setSelectedToolId] = useState<string>();
-  const selectedTool = toolById(allTools, selectedToolId);
+  const selectedTool = toolById(selectedToolId)[0]; // assume one tool?
 
   const currentTool =
     // make sure the current tool is reset to the fallback tool
@@ -84,7 +76,7 @@ export const Explorer: React.FC = () => {
         (supportedDataType) => supportedDataType === selectedDataType?.id
       ))
       ? selectedTool
-      : tools[0];
+      : toolsForSelection[0];
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();
@@ -104,7 +96,7 @@ export const Explorer: React.FC = () => {
         throw new Error("uiStateHandle not ready");
       }
 
-      const dataType = dataTypeById(dataTypes, type);
+      const dataType = dataTypeById(type);
 
       if (!dataType) {
         throw new Error(`Unsupported document type: ${type}`);
@@ -175,7 +167,6 @@ export const Explorer: React.FC = () => {
     },
     [
       uiStateOm,
-      dataTypes,
       repo,
       selectedDocPath,
       selectedDataTypeId,
@@ -291,7 +282,7 @@ export const Explorer: React.FC = () => {
               addNewDocument={addNewDocument}
               setToolId={setSelectedToolId}
               tool={currentTool}
-              tools={tools}
+              tools={toolsForSelection}
               docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
             />
             <div className="flex-grow overflow-hidden z-0">
@@ -312,15 +303,17 @@ export const Explorer: React.FC = () => {
                 </div>
               )}
 
-              {selectedDocUrl && selectedDoc && tools.length === 0 && (
-                <div className="flex items-center justify-center h-full text-gray-500">
-                  <div className="text-center">
-                    <p className="text-sm">
-                      No tools available for datatype: {selectedDataTypeId}
-                    </p>
+              {selectedDocUrl &&
+                selectedDoc &&
+                toolsForSelection.length === 0 && (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="text-center">
+                      <p className="text-sm">
+                        No tools available for datatype: {selectedDataTypeId}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* NOTE: we set the URL as the component key, to force re-mount on URL change.
                 If we want more continuity we could not do this. */}

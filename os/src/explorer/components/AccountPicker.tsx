@@ -6,6 +6,7 @@ import {
   automergeUrlToAccountToken,
   accountTokenToAutomergeUrl,
   ModuleSettingsDoc,
+  allDataTypes,
 } from "@patchwork/sdk";
 import { ChangeEvent, useEffect, useState } from "react";
 
@@ -31,10 +32,7 @@ import {
 } from "@patchwork/sdk/ui";
 
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-
 import { Copy, Eye, EyeOff } from "lucide-react";
-import { useDataTypes } from "@patchwork/sdk/hooks";
-
 import { ContactAvatar } from "./ContactAvatar";
 
 // 1MB in bytes
@@ -147,7 +145,7 @@ export const AccountPicker = ({
 
   const isLoggedIn = self?.type === "registered";
 
-  const dataTypes = useDataTypes();
+  const dataTypes = allDataTypes();
 
   return (
     <Dialog>
@@ -326,7 +324,7 @@ export const AccountPicker = ({
 
               <div className="flex flex-col gap-2 py-2">
                 {moduleSettingsDoc &&
-                  dataTypes.map((dataType) => {
+                  Object.entries(dataTypes).map(([, dataType]) => {
                     const isEnabled =
                       moduleSettingsDoc.enabledDatatypeIds[dataType.id];
 

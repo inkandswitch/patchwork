@@ -2,7 +2,6 @@ import {
   fetchAwaitMissing,
   useAsyncComputed,
 } from "@patchwork/sdk/async-signals";
-import { useDataTypes } from "@patchwork/sdk/hooks";
 import { DocPathUtils, FolderDoc } from "@patchwork/folder";
 import { DocPath } from "@patchwork/folder";
 import { dataTypeById } from "@patchwork/sdk";
@@ -32,8 +31,7 @@ export const useSyncDocTitle = ({
   // counter is incremented each time the title is re computed so we can detect async operations that should be aborted because they are based on old state
   const counterRef = useRef(0);
   const selectedDocTitleRef = useRef<{ url: AutomergeUrl; title?: string }>();
-  const dataTypes = useDataTypes();
-  const dataType = dataTypeById(dataTypes, selectedDocLink?.type);
+  const dataType = dataTypeById(selectedDocLink?.type);
   const account = useCurrentAccount();
 
   const selectedDoc = useAsyncComputed(

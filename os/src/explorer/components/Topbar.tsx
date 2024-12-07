@@ -2,7 +2,6 @@ import {
   FileExportMethod,
   genericExportMethods,
 } from "@patchwork/sdk/fileExports";
-import { useDataTypes } from "@patchwork/sdk/hooks";
 import { FolderDoc, DocPath, DocPathUtils } from "@patchwork/folder";
 import { dataTypeById } from "@patchwork/sdk";
 import {
@@ -79,8 +78,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   const selectedDataTypeRef = useRef<string>();
   selectedDataTypeRef.current = selectedDataTypeId;
 
-  const dataTypes = useDataTypes();
-  const selectedDataType = dataTypeById(dataTypes, selectedDataTypeId);
+  const selectedDataType = dataTypeById(selectedDataTypeId);
 
   const toolsWithEditorComponent = tools.filter((tool) => tool.EditorComponent);
 
