@@ -1,4 +1,4 @@
-import { SongConfig } from "../datatype";
+import { SongConfig } from "../config";
 import { DrumSamplePlayerConfig } from "./drum";
 import {
   InstrumentScheduler,

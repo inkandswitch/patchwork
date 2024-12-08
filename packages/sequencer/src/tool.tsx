@@ -58,7 +58,11 @@ export const Sequencer = ({
   }
 
   const account = useCurrentAccount();
-  let avatarUrl = account?.contactHandle.url;
+  let maybeUrl = account?.contactHandle.url;
+  let avatarUrl = null;
+  if (maybeUrl) {
+    avatarUrl = maybeUrl
+  }
 
   const fetchOverridingInstrument = (overridingInstrumentUrl: string): boolean => {
     if (confirm("WARNING: This song includes an external instrument script that could contain malicious code. Press cancel to use the default sample player instead. Only press OK if you know what you're doing.")) {

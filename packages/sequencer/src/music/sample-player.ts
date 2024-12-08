@@ -1,9 +1,5 @@
 import BufferLoader from "./bufferloader";
-import { DRUM_PIECES, noteToNumber } from "./notes";
-import { INSTRUMENT_SAMPLES_URL, SampleInstrumentConfig } from "./sample-instrument";
-import { DRUM_SAMPLES_URL, DrumConfig } from "./drum";
 import { Instrument } from "./instrument";
-
 
 export interface SamplePlayerConfig {
     name(): string;

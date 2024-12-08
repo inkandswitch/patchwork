@@ -1,9 +1,9 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
+// import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
 import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
 import { next as A } from "@automerge/automerge";
 import { initFrom, type DataType } from "@/sdk";
-import { TextPatch } from "@/versionControl/utils";
+// import { TextPatch } from "@/versionControl/utils";
 import { defaultSongConfig, ROW_COUNT, SongConfig, totalStepsFromConfig } from "./config";
 import { Step } from "./music/instrument-scheduler";
 import { DRUM_PIECES_COUNT } from "./music/drum";
@@ -45,10 +45,10 @@ export const init = (doc: SequencerDoc) => {
   initFrom(doc, {
     title: "Untitled Song",
     toggleRows: Array.from({ length: ROW_COUNT }, () =>
-      Array.from({ length: totalSteps }, () => ({ toggled: false, toggleOnTime: 0 }))
+      Array.from({ length: totalSteps }, () => ({ toggled: false, avatarUrl: null, toggleOnTime: 0 }))
     ),
     drumToggleRows: Array.from({ length: DRUM_PIECES_COUNT }, () =>
-      Array.from({ length: totalSteps }, () => ({ toggled: false, toggleOnTime: 0 }))
+      Array.from({ length: totalSteps }, () => ({ toggled: false, avatarUrl: null, toggleOnTime: 0 }))
     ),
     stepGrid: Array.from({ length: totalSteps }, () => ({ "instrument": {}, "drum": {} })),
     config,
