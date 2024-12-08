@@ -3,7 +3,7 @@ export const SAFE_BUNDLED_TOOLS = {
   essay: "@patchwork/essay",
   file: "@patchwork/file",
   folder: "@patchwork/folder",
-  jacquard: "@patchwork/jacquard",
+  "jacquard-build-metadata": "@patchwork/jacquard",
   kanban: "@patchwork/kanban",
   pkg: "@patchwork/pkg",
   raw: "@patchwork/raw-editor",

@@ -15,6 +15,7 @@ import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "@patchwork/folder";
 import { DataType, isDataType } from "./datatypes";
+import { isArray } from "lodash";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -52,8 +53,8 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
   return tool as Tool;
 }
 
-const GlobalTools: Record<string, Promise<Tool>[]> = {};
-export const registerTool = (id: string, tool: Promise<Tool>) => {
+const GlobalTools: Record<string, Promise<Tool[]>[]> = {};
+export const registerTool = (id: string, tool: Promise<Tool[]>) => {
   if (!GlobalTools[id]) {
     GlobalTools[id] = [];
   }
@@ -61,7 +62,7 @@ export const registerTool = (id: string, tool: Promise<Tool>) => {
 };
 
 export const isTool = (value: any): value is Tool => {
-  return "type" in value && value.type === "patchwork:tool";
+  return value && "type" in value && value.type === "patchwork:tool";
 };
 
 export const allTools = () => {
@@ -70,23 +71,31 @@ export const allTools = () => {
 
 export const toolsForDataType = (
   dataType: DataType | string | undefined
-): Promise<Tool>[] => {
+): Promise<Tool[]> => {
   if (!dataType) {
-    return [];
+    return Promise.resolve([]);
   }
 
   if (isDataType(dataType)) {
     dataType = dataType.id;
   }
 
-  return [...(GlobalTools[dataType] || []), ...(GlobalTools["raw"] || [])];
+  const specificTools = Promise.all(GlobalTools[dataType] || []).then(
+    (aryOfAry) => aryOfAry.flat()
+  );
+
+  const genericTools = Promise.all(GlobalTools["raw"] || []).then((a) =>
+    a.flat()
+  );
+
+  return Promise.all([specificTools, genericTools]).then((a) => a.flat());
 };
 
-export const toolById = (id: string | undefined): Promise<Tool>[] => {
+export const toolById = (id: string | undefined): Promise<Tool[]> => {
   if (!id) {
-    return [];
+    return Promise.resolve([]);
   }
-  return GlobalTools[id] || [];
+  return Promise.all(GlobalTools[id] || []).then((aryOfAry) => aryOfAry.flat());
 };
 
 export type EditorProps<A, V> = {

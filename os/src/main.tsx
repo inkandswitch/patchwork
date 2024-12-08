@@ -198,11 +198,15 @@ window.Automerge = Automerge;
 // @ts-expect-error - adding property to window
 window.repo = repo;
 
-const toolFromImportString = async (importName: string): Promise<Tool> => {
+const toolFromImportString = async (importName: string): Promise<Tool[]> => {
   const module = await import(importName);
   if (!module) throw new Error(`No module for  ${importName}`);
-  const tool = module.tool;
-  if (!isTool(tool))
+  let tool = module.tool;
+  if (!Array.isArray(tool)) {
+    tool = [tool];
+  }
+
+  if (!tool.every(isTool))
     throw new Error(`Module but no exported ".tool" for ${importName}`);
   return tool;
 };

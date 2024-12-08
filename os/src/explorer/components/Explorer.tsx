@@ -65,14 +65,14 @@ export const Explorer: React.FC = () => {
 
   const [toolsForSelection, setToolsForSelection] = useState<Tool[]>([]);
   useEffect(() => {
-    Promise.all(toolsForDataType(selectedDataType)).then(setToolsForSelection);
+    toolsForDataType(selectedDataType).then(setToolsForSelection);
   }, [selectedDataType]);
 
   const [selectedToolId, setSelectedToolId] = useState<string>();
 
   const [selectedTool, setSelectedTool] = useState<Tool | undefined>();
   useEffect(() => {
-    toolById(selectedToolId)[0]?.then(setSelectedTool); // assume one tool?
+    toolById(selectedToolId).then((ts) => setSelectedTool(ts[0])); // assume one tool?
   }, [selectedToolId]);
 
   const currentTool =

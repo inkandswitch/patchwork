@@ -1,6 +1,8 @@
 export { dataType, type JacquardBuildMetadata } from "./datatype";
 
-export { buildMetadataGraphView, buildMetadataLogView } from "./tool";
+import { buildMetadataGraphView, buildMetadataLogView } from "./tool";
+
+export const tool = [buildMetadataGraphView, buildMetadataLogView];
 
 export {
   getStalenessInfo,

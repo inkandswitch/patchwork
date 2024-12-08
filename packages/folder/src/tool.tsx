@@ -79,7 +79,7 @@ export const FolderEntryView = ({
 
   const [tool, setTool] = useState<Tool | undefined>(undefined);
   useEffect(() => {
-    toolsForDataType(docLink.type)[0].then(setTool);
+    toolsForDataType(docLink.type).then((a) => setTool(a[0]));
   }, [docLink.type]);
 
   const icon = tool?.icon ?? dataType?.icon;
