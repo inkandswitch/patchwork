@@ -1,10 +1,18 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 // import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
-import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
+import {
+  Annotation,
+  HasVersionControlMetadata,
+} from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
-import { initFrom, type DataType } from "@/sdk";
+import { initFrom, type DataType } from "@patchwork/sdk";
 // import { TextPatch } from "@/versionControl/utils";
-import { defaultSongConfig, ROW_COUNT, SongConfig, totalStepsFromConfig } from "./config";
+import {
+  defaultSongConfig,
+  ROW_COUNT,
+  SongConfig,
+  totalStepsFromConfig,
+} from "./config";
 import { Step } from "./music/instrument-scheduler";
 import { DRUM_PIECES_COUNT } from "./music/drum";
 
@@ -19,10 +27,10 @@ export type SequencerDoc = HasVersionControlMetadata<unknown, unknown> & {
 };
 
 export type Toggle = {
-  toggled: boolean,
+  toggled: boolean;
   avatarUrl: AutomergeUrl | null;
   toggleOnTime: number;
-}
+};
 
 // TODO
 export type SequencerDocAnchor = {};
@@ -45,15 +53,26 @@ export const init = (doc: SequencerDoc) => {
   initFrom(doc, {
     title: "Untitled Song",
     toggleRows: Array.from({ length: ROW_COUNT }, () =>
-      Array.from({ length: totalSteps }, () => ({ toggled: false, avatarUrl: null, toggleOnTime: 0 }))
+      Array.from({ length: totalSteps }, () => ({
+        toggled: false,
+        avatarUrl: null,
+        toggleOnTime: 0,
+      }))
     ),
     drumToggleRows: Array.from({ length: DRUM_PIECES_COUNT }, () =>
-      Array.from({ length: totalSteps }, () => ({ toggled: false, avatarUrl: null, toggleOnTime: 0 }))
+      Array.from({ length: totalSteps }, () => ({
+        toggled: false,
+        avatarUrl: null,
+        toggleOnTime: 0,
+      }))
     ),
-    stepGrid: Array.from({ length: totalSteps }, () => ({ "instrument": {}, "drum": {} })),
+    stepGrid: Array.from({ length: totalSteps }, () => ({
+      instrument: {},
+      drum: {},
+    })),
     config,
   });
-}
+};
 
 // // TODO: Review this to create a better approach.
 // export const includeChangeInHistory = (doc: SequencerDoc) => {
@@ -93,7 +112,10 @@ const patchesToAnnotations = (
 ) => {
   return patches.flatMap((patch): Annotation<SequencerDocAnchor, string>[] => {
     const handledPatchActions = ["splice"];
-    if (patch.path[0] !== "toggleRows" || !handledPatchActions.includes(patch.action))
+    if (
+      patch.path[0] !== "toggleRows" ||
+      !handledPatchActions.includes(patch.action)
+    )
       return [];
 
     // TODO: find a way to show the old value in the annotation

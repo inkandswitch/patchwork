@@ -21,21 +21,25 @@ export function toggleFn(
   setOverridingInstrumentChosen: (shouldIgnore: boolean) => void,
   fetchOverridingInstrument: (overridingInstrumentUrl: string) => boolean,
   config: SongConfig
-): (instrumentVolume: number, drumVolume: number, overridingInstrumentChosen: boolean) => void {
+): (
+  instrumentVolume: number,
+  drumVolume: number,
+  overridingInstrumentChosen: boolean
+) => void {
   let wrkr: Worker;
   return (instrumentVolume, drumVolume, overridingInstrumentChosen) => {
     if (playing) {
-        playing = false;
-        setIsPlaying(false);
-        setPlayStartTime(0);
-        for (let w of wrkrs) {
-            w.terminate();
-        }
-        for (let isch of globalInstrumentSchedulers) {
-            isch.cancelSchedule();
-        }
-        globalInstrumentSchedulers.length = 0;
-        return;
+      playing = false;
+      setIsPlaying(false);
+      setPlayStartTime(0);
+      for (let w of wrkrs) {
+        w.terminate();
+      }
+      for (let isch of globalInstrumentSchedulers) {
+        isch.cancelSchedule();
+      }
+      globalInstrumentSchedulers.length = 0;
+      return;
     }
 
     if (!audioContext) {
@@ -48,15 +52,18 @@ export function toggleFn(
       config.instrument
     );
     let drumSamplePlayerConfig = new DrumSamplePlayerConfig(config.drum);
-    let instrumentSampler = new SamplePlayer(instrumentSamplePlayerConfig, instrumentVolume);
+    let instrumentSampler = new SamplePlayer(
+      instrumentSamplePlayerConfig,
+      instrumentVolume
+    );
     let drumSamplePlayer = new SamplePlayer(drumSamplePlayerConfig, drumVolume);
     let instrumentScheduler = new InstrumentScheduler(
       setPlayingIdx,
       instrumentSampler,
-      drumSamplePlayer,
+      drumSamplePlayer
     );
     if (config.overridingInstrument && !overridingInstrumentChosen) {
-      fetchOverridingInstrument(config.overridingInstrument)
+      fetchOverridingInstrument(config.overridingInstrument);
       setOverridingInstrumentChosen(true);
     }
     instrumentScheduler.initContext(audioContext);
@@ -70,7 +77,7 @@ export function toggleFn(
 
     if (window.Worker) {
       wrkr = new Worker(
-        new URL("/workers/sequencer-worker.js", import.meta.url)
+        new URL("./workers/sequencer-worker.js", import.meta.url)
       );
       wrkrs.push(wrkr);
 
