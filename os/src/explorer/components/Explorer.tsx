@@ -1,4 +1,4 @@
-import { dataTypeById, toolById, toolsForDataType } from "@patchwork/sdk";
+import { dataTypeById, Tool, toolById, toolsForDataType } from "@patchwork/sdk";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { type DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
 import { Button, Toaster } from "@patchwork/sdk/ui";
@@ -62,9 +62,18 @@ export const Explorer: React.FC = () => {
   const selectedDataTypeId = selectedDocLink?.type;
 
   const selectedDataType = dataTypeById(selectedDataTypeId);
-  const toolsForSelection = toolsForDataType(selectedDataType);
+
+  const [toolsForSelection, setToolsForSelection] = useState<Tool[]>([]);
+  useEffect(() => {
+    Promise.all(toolsForDataType(selectedDataType)).then(setToolsForSelection);
+  }, [selectedDataType]);
+
   const [selectedToolId, setSelectedToolId] = useState<string>();
-  const selectedTool = toolById(selectedToolId)[0]; // assume one tool?
+
+  const [selectedTool, setSelectedTool] = useState<Tool | undefined>();
+  useEffect(() => {
+    toolById(selectedToolId)[0]?.then(setSelectedTool); // assume one tool?
+  }, [selectedToolId]);
 
   const currentTool =
     // make sure the current tool is reset to the fallback tool
@@ -76,7 +85,7 @@ export const Explorer: React.FC = () => {
         (supportedDataType) => supportedDataType === selectedDataType?.id
       ))
       ? selectedTool
-      : toolsForSelection[0];
+      : toolsForSelection![0]; // PVH: TODO this assumes there are tools for the selection
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();

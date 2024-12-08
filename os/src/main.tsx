@@ -13,7 +13,13 @@ import { next as Automerge } from "@automerge/automerge";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
-import { getAccount, registerDataType, registerTool } from "@patchwork/sdk";
+import {
+  getAccount,
+  isTool,
+  registerDataType,
+  registerTool,
+  Tool,
+} from "@patchwork/sdk";
 import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
 import { BACKUP_SYNC } from "./explorer/components/SyncIndicator.js";
@@ -192,12 +198,21 @@ window.Automerge = Automerge;
 // @ts-expect-error - adding property to window
 window.repo = repo;
 
-await Promise.all([
-  ...Object.entries(BUNDLED_TOOLS).map(async ([id, importName]) => {
-    const module = await import(importName);
-    registerTool(id, module.tool);
-  }),
+const toolFromImportString = async (importName: string): Promise<Tool> => {
+  const module = await import(importName);
+  if (!module) throw new Error(`No module for  ${importName}`);
+  const tool = module.tool;
+  if (!isTool(tool))
+    throw new Error(`Module but no exported ".tool" for ${importName}`);
+  return tool;
+};
 
+Object.entries(BUNDLED_TOOLS).map(async ([id, importName]) => {
+  registerTool(id, toolFromImportString(importName));
+});
+
+// Gotta get all the datatypes loaded before we can do much of anything
+await Promise.all([
   ...Object.entries(BUNDLED_DATATYPES).map(async ([id, importName]) => {
     const module = await import(importName);
     console.log("datatype", id, module);

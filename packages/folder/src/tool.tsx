@@ -14,7 +14,7 @@ import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { diffWithProvenance } from "@patchwork/sdk/versionControl";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { next as A } from "@automerge/automerge";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { DocPath, DocPathUtils, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
@@ -76,7 +76,11 @@ export const FolderEntryView = ({
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
   const dataType = dataTypeById(docLink.type);
-  const tool = toolsForDataType(docLink.type)[0];
+
+  const [tool, setTool] = useState<Tool | undefined>(undefined);
+  useEffect(() => {
+    toolsForDataType(docLink.type)[0].then(setTool);
+  }, [docLink.type]);
 
   const icon = tool?.icon ?? dataType?.icon;
 

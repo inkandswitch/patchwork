@@ -52,8 +52,8 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
   return tool as Tool;
 }
 
-const GlobalTools: Record<string, Tool[]> = {};
-export const registerTool = (id: string, tool: Tool) => {
+const GlobalTools: Record<string, Promise<Tool>[]> = {};
+export const registerTool = (id: string, tool: Promise<Tool>) => {
   if (!GlobalTools[id]) {
     GlobalTools[id] = [];
   }
@@ -70,7 +70,7 @@ export const allTools = () => {
 
 export const toolsForDataType = (
   dataType: DataType | string | undefined
-): Tool[] => {
+): Promise<Tool>[] => {
   if (!dataType) {
     return [];
   }
@@ -82,7 +82,7 @@ export const toolsForDataType = (
   return [...(GlobalTools[dataType] || []), ...(GlobalTools["raw"] || [])];
 };
 
-export const toolById = (id: string | undefined): Tool[] => {
+export const toolById = (id: string | undefined): Promise<Tool>[] => {
   if (!id) {
     return [];
   }
