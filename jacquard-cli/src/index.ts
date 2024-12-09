@@ -21,6 +21,7 @@ import { buildRunSpecFromArgs, run } from "./run";
 import { getJacquardConfig } from "./util";
 import { watch } from "./watch";
 import { watchRefreshRequests } from "./watchRefreshRequests";
+import { registerDataType } from "@patchwork/sdk";
 
 // those marked non-optional here are those with defaults provided in allFlags below
 export type CommandLineArgs = {
@@ -75,7 +76,7 @@ const main = async () => {
     {
       name: "patchworkUrl",
       type: String,
-      defaultValue: "https://jacquard.patchwork.inkandswitch.com",
+      defaultValue: "https://patchwork.inkandswitch.com",
     },
     {
       name: "inputs",
@@ -158,6 +159,20 @@ const main = async () => {
   });
 
   repo.subscribeToRemotes([syncServerStorageId]);
+
+  // Gotta get all the datatypes loaded before we can do much of anything
+  const BUNDLED_DATATYPES = {
+    file: "@patchwork/file",
+    folder: "@patchwork/folder",
+    jacquard: "@patchwork/jacquard",
+  };
+
+  await Promise.all([
+    ...Object.entries(BUNDLED_DATATYPES).map(async ([id, importName]) => {
+      const module = await import(importName);
+      registerDataType(id, module.dataType);
+    }),
+  ]);
 
   const t = Date.now();
 

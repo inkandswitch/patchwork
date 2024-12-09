@@ -17,6 +17,7 @@ export default mergeConfig(sharedConfig as UserConfig, {
   },
 
   build: {
+    sourcemap: true,
     rollupOptions: {
       external: EXTERNAL_DEPENDENCIES,
       input: {
