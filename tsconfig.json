@@ -15,8 +15,6 @@
     "jsx": "react-jsx",
 
     "paths": {
-      "@/*": ["./os/src/*"],
-
       "@patchwork/essay": ["./packages/essay/src"],
       "@patchwork/essay/*": ["./packages/essay/src/*"],
       "@patchwork/jacquard": ["./packages/jacquard/src"],

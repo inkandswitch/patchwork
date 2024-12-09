@@ -1,13 +1,12 @@
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { Plugin, UserConfig, mergeConfig } from "vite";
+import { Plugin, UserConfig, defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
 
-import sharedConfig from "../../vite.shared";
 import { EXTERNAL_DEPENDENCIES } from "@patchwork/sdk/shared-dependencies";
 
-export default mergeConfig(sharedConfig, {
+export default defineConfig({
   plugins: [topLevelAwait(), wasm(), react()],
 
   optimizeDeps: {

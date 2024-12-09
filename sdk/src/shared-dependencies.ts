@@ -48,6 +48,8 @@ export const SHARED_MODULES = {
   //"@patchwork/folder-list-view": "./folder-list-view/index.js", // left as an example of existing dynamic loading
   "@patchwork/jacquard": "./jacquard/index.js",
   "@patchwork/jacquard/datatype": "./jacquard/datatype.js",
+  "@patchwork/jacquard/components": "./jacquard/components.js", // blerf
+  "@patchwork/jacquard/hooks": "./jacquard/hooks.js",
   "@patchwork/kanban": "./kanban/index.js",
   "@patchwork/kanban/datatype": "./kanban/datatype.js",
   "@patchwork/pkg": "./pkg/index.js",

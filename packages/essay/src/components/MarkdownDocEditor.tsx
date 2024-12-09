@@ -29,7 +29,7 @@ import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { get, isEqual } from "lodash";
 import { clickableMarkdownLinksPlugin } from "../codemirrorPlugins/clickableMarkdownLinks";
-import { selectedAnchorsPlugin } from "../codemirrorPlugins/setSelectedAnchors";
+import { selectedAnchorsPlugin } from "@patchwork/sdk/markdown";
 import { MarkdownDoc } from "../datatype";
 
 export type TextSelection = {
