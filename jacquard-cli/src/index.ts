@@ -161,14 +161,14 @@ const main = async () => {
   repo.subscribeToRemotes([syncServerStorageId]);
 
   // Gotta get all the datatypes loaded before we can do much of anything
-  const BUNDLED_DATATYPES = {
-    file: "@patchwork/file",
-    folder: "@patchwork/folder",
-    jacquard: "@patchwork/jacquard",
+  const jacquardDataTypes = {
+    file: "@patchwork/file/datatype",
+    folder: "@patchwork/folder/datatype",
+    jacquard: "@patchwork/jacquard/datatype",
   };
 
   await Promise.all([
-    ...Object.entries(BUNDLED_DATATYPES).map(async ([id, importName]) => {
+    ...Object.entries(jacquardDataTypes).map(async ([id, importName]) => {
       const module = await import(importName);
       registerDataType(id, module.dataType);
     }),
