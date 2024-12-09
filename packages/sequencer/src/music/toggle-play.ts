@@ -76,9 +76,7 @@ export function toggleFn(
     instrumentScheduler.prepare_new_schedule(stepGrid, startTime, config);
 
     if (window.Worker) {
-      wrkr = new Worker(
-        new URL("./workers/sequencer-worker.js", import.meta.url)
-      );
+      wrkr = new Worker(new URL("../sequencer-worker.js", import.meta.url));
       wrkrs.push(wrkr);
 
       wrkr.onmessage = function (_e) {

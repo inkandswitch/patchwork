@@ -14,17 +14,15 @@
     "@automerge/automerge": "2.2.9-alpha.2",
     "@automerge/automerge-repo": "2.0.0-alpha.7",
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
-    "@handsontable/react": "^14.4.0",
     "@patchwork/sdk": "workspace:*",
     "@tailwindcss/forms": "^0.5.7",
     "animate.css": "^4.1.1",
     "classnames": "^2.5.1",
-    "handsontable": "^14.4.0",
-    "hyperformula": "^2.7.1",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "vite-plugin-css-injected-by-js": "^3.5.2"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.7",
