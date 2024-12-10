@@ -26,6 +26,8 @@ import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
 import { BACKUP_SYNC } from "./explorer/components/SyncIndicator.js";
 
+import { BUNDLED_TOOLS, BUNDLED_DATATYPES } from "./bundledPackages.js";
+
 // Peer id prefix is added to both the peer id of the client and the service worker
 // to make it easier to grep for logs that are related to your own changes / sync state
 const PEER_ID_PREFIX = localStorage.getItem("PEER_ID_PREFIX");

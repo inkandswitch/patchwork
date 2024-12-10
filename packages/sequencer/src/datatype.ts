@@ -151,7 +151,6 @@ export const SequencerDatatype: DataType<
   id: "sequencer",
   name: "Sequencer",
   icon: "CassetteTape",
-  isExperimental: true,
 
   init,
   getTitle,
