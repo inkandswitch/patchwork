@@ -27,8 +27,8 @@ export const isCard = (value: any): value is Card => {
   );
 };
 
-type Rank = (typeof allRanks)[number];
-type Suit = (typeof allSuits)[number];
+export type Rank = (typeof allRanks)[number];
+export type Suit = (typeof allSuits)[number];
 export type Card = `${Rank}${Suit}`;
 
 // in this limited language we only support cards, numbers and booleans.
@@ -60,9 +60,9 @@ export const SAMPLE_MODEL = {
     myCard2: deal("KS"),
     theirCard1: deal(),
     theirCard2: deal(),
-    communityCard1: deal("QS"),
-    communityCard2: deal("JS"),
-    communityCard3: deal("TS"),
+    communityCard1: deal("7C"),
+    communityCard2: deal("2H"),
+    communityCard3: deal("3H"),
     communityCard4: deal(),
     communityCard5: deal(),
   },
@@ -140,7 +140,7 @@ const test = () => {
     savedContexts.push(context)
   );
 
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 100; i++) {
     engine.next();
   }
   console.log(savedContexts);
