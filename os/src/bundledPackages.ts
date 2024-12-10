@@ -22,16 +22,13 @@ export const BUNDLED_TOOLS = {
   tldraw: "@patchwork/tldraw",
 };
 
-// just copy it for now til i split up the datatypes as a separate export
 export const BUNDLED_DATATYPES = {
   datagrid: "@patchwork/datagrid/datatype",
   essay: "@patchwork/essay/datatype",
-  engraft: "@patchwork/engraft/datatype",
   file: "@patchwork/file/datatype",
   folder: "@patchwork/folder/datatype",
   jacquard: "@patchwork/jacquard/datatype",
   kanban: "@patchwork/kanban/datatype",
-  pkg: "@patchwork/pkg/datatype",
   tldraw: "@patchwork/tldraw/datatype",
   // no specific raw editor datatype
 };
@@ -42,4 +39,7 @@ export const BUNDLED_DATATYPES = {
 export const UNBUNDLED_PACKAGES = {
   counter: "@patchwork/counter",
   "folder-list-view": "@patchwork/folder-list-view",
+  engraft: "@patchwork/engraft",
+  pkg: "@patchwork/pkg",
+  sequencer: "@patchwork/sequencer",
 };
