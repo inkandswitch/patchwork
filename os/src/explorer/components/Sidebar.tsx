@@ -32,7 +32,11 @@ import {
 } from "@patchwork/sdk/versionControl";
 import { isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { capitalize, clone, uniqBy } from "lodash";
+
+import capitalize from "lodash-es/capitalize";
+import clone from "lodash-es/clone";
+import uniqBy from "lodash-es/uniqBy";
+
 import {
   AlertCircle,
   ChevronsLeft,

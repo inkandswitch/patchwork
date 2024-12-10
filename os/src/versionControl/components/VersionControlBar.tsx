@@ -57,7 +57,7 @@ import {
   getBuildRunsWithDocAsPrimaryInput,
 } from "@patchwork/jacquard/signals";
 
-import { truncate } from "lodash";
+import truncate from "lodash-es/truncate";
 
 import {
   ArrowRightFromLineIcon,
