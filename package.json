@@ -10,7 +10,7 @@
     "build": "pnpm -r build",
     "tsc": "tsc",
     "preinstall": "npx only-allow pnpm",
-    "test": "pnpm --filter \"./{os,jacquard-cli}\" test"
+    "test": "pnpm --filter \"./os\" test"
   },
   "pnpm": {
     "overrides": {
