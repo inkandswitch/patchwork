@@ -47,33 +47,46 @@ And you'll need to manually refresh the browser to see changes. This is a slower
 
 This monorepo (managed with pnpm workspaces) includes both the core OS APIs as well as various datatypes and tools.
 
-`./os`: contains the core OS functionality: general API definitions, UI chrome like the doc list sidebar, and versioning utilities. (Over time we'll likely split these out into separate packages.)
+`./sdk`: contains Patchwork library functionality used by packages, eg:
 
-`./packages/*` contains *packages* which can define datatypes and tools. Some of these packages are referenced from `./os` and bundled as built-ins; some are deployed to Automerge as dynamic packages.
+- defining concepts like tools and datatypes
+- account management
+- version control utilities
+- helpers for working with Automerge data
+- reusable UI components
 
-`./os/src/packages/*`: we bundle some mature core packages like our essay editor datatype and tool directly into the OS and deploy them statically as part of the OS deploy. Over the long term we plan to pull these out of this directory and deploy them dynamically.
+Proper SDK documentation is a todo.
 
-(Maybe in the future we can make a new package that depends on os and packages, to break the cyclic dependency and enable some better TS workspaces stuff.)
+`./packages/*` contains *packages* which can define datatypes and tools, eg. the essay editor or a spreadsheet. Counter is a good sample one to look at for the minimal structure.
+
+`./os`: a React application that renders the Patchwork OS. Currently we also add a bunch of packages to the built OS so they can be deployed and loaded directly with the OS; we're moving towards loading all out of automerge.
 
 ### Dependency hygeine
 
-- Datatypes and tools can depend on the core OS APIs. Over time we plan to formalize a clear SDK that the OS exports.
-- Datatypes can depend on the OS but should not depend on tools.
-- Tools can depend on functionality in both the OS or various datatypes that they support.
+- Everything can depend on SDK. (We want to minimize and organize SDK over time.)
+- It's OK for packages to depend on each other, but only through the public interface.
+- Nothing should depend on OS, that's just a web app.
 
 ### Adding a new package
 
-If you want a fast development loop and easy deploy as part of the core OS deploy:
+If you want to add a package and bundle it into OS (recommended for now), here are the steps:
 
 - Run `pnpm dev` to run the OS in dev mode
 - copy one of the existing directories in `os/src/packages`. `counter` is a nice minimal one you can start with.
 - You'll need to update a few places to get your new package registered. (Sorry this list is long, it should be shorter.)
   - update the package name in `<yourpackage>/package.json`
-  - update `os/package.json` to include an entry pointing to your new package
+  - update `os/package.json`:
+    - include an entry pointing to your new package in the dependencies
+    - add a `build:<package>` line copying the structure of the existing ones. (This copies the built bundle for your package into the dist of the OS so it can be deployed together.)
+  - run `pnpm install`
   - update `os/src/packages/index.ts` to include an entry pointing to your new package
   - Update `os/src/packages/datatypesSafe.ts` to include an entry for your new datatype (assuming your package exports a datatype)
 
-If you want to dynamically deploy a new package to an automerge document and are ok with a more experimental developer experience: ask Paul or Geoffrey for help, that's a more experimental thing currently.
+Now it's time to try out your new package! To see your new datatype/tool in Patchwork, you'll need to make sure it's enabled, since we hide experimental datatypes by default. Log in / create an account, open the account picker, and check the box for your new datatype.
+
+You should see a new "new" button in the list at the top of the sidebar, letting you create a doc of your new datatype. Click that and you should see your new tool running!
+
+If you want to dynamically deploy a new package to an automerge document: ask the team for help, that's more experimental for now.
 
 ### AI
 
