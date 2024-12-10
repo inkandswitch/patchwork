@@ -37,6 +37,7 @@
     "@lezer/highlight": "^1.2.0",
     "@patchwork/ambsheet": "workspace:*",
     "@patchwork/amb-embed": "workspace:*",
+    "@patchwork/amb-poker": "workspace:*",
     "@patchwork/datagrid": "workspace:*",
     "@patchwork/essay": "workspace:*",
     "@patchwork/file": "workspace:*",
