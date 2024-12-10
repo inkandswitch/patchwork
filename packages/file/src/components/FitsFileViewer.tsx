@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as Automerge from "@automerge/automerge";
 import { FileDoc, LinkedFileContent } from "../datatype";
-import { EditorProps } from "@/tools";
+import { EditorProps } from "@patchwork/sdk";
 
 export type FitsFileDoc = FileDoc & {
   content: LinkedFileContent;

@@ -1,4 +1,4 @@
-import { ContactDoc, RegisteredContactDoc } from "../account";
+import { ContactDoc, RegisteredContactDoc } from "@patchwork/sdk";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { VariantProps } from "class-variance-authority";
@@ -7,8 +7,8 @@ import {
   AvatarFallback,
   AvatarImage,
   avatarVariants,
-} from "@/shadcn/ui/avatar";
-import { useBlobUrl } from "@/explorer/utils";
+} from "@patchwork/sdk/ui";
+import { useBlobUrl } from "@patchwork/sdk/fileUtils";
 import { useMemo } from "react";
 import { User as UserIcon } from "lucide-react";
 

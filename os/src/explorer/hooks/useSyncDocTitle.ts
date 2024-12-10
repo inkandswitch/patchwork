@@ -1,12 +1,15 @@
-import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
-import { useDataTypes } from "@/hooks/useDataTypes";
-import { FolderDoc } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
-import { dataTypeById } from "@/sdk";
-import { fetchOmOnActiveBranch } from "@/versionControl/signals";
+import {
+  fetchAwaitMissing,
+  useAsyncComputed,
+} from "@patchwork/sdk/async-signals";
+import { useDataTypes } from "@patchwork/sdk/hooks";
+import { DocPathUtils, FolderDoc } from "@patchwork/folder";
+import { DocPath } from "@patchwork/folder";
+import { dataTypeById } from "@patchwork/sdk";
+import { fetchOmOnActiveBranch } from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";
-import { useCurrentAccount } from "../account";
+import { useCurrentAccount } from "@patchwork/sdk";
 
 // This hook keeps the name of the link synced with the title of the document.
 // The update is triggered every time the selected doc changes.
@@ -23,7 +26,8 @@ export const useSyncDocTitle = ({
   repo: Repo;
   selectDocPath: (docLink: DocPath) => void;
 }) => {
-  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
+  const selectedDocLink =
+    selectedDocPath && DocPathUtils.toLink(selectedDocPath);
 
   // counter is incremented each time the title is re computed so we can detect async operations that should be aborted because they are based on old state
   const counterRef = useRef(0);
@@ -43,7 +47,7 @@ export const useSyncDocTitle = ({
     useCallback(() => {
       fetchAwaitMissing(selectedDocPath);
       return fetchOmOnActiveBranch<FolderDoc>(
-        DocPath.parent(selectedDocPath),
+        DocPathUtils.parent(selectedDocPath),
         account,
         repo
       );
@@ -92,7 +96,7 @@ export const useSyncDocTitle = ({
 
             // update url
             selectDocPath([
-              ...DocPath.parent(selectedDocPath),
+              ...DocPathUtils.parent(selectedDocPath),
               { ...selectedDocLink, name: title },
             ]);
           }

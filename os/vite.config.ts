@@ -1,13 +1,17 @@
 import { Generator } from "@jspm/generator";
 import react from "@vitejs/plugin-react";
 import { build } from "esbuild";
-import { globSync } from "glob";
-import { fileURLToPath } from "node:url";
 import path from "path";
 import { Plugin, UserConfig, mergeConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
+
 import sharedConfig from "../vite.shared";
+import {
+  SHARED_DEPENDENCIES,
+  SHARED_MODULES,
+  EXTERNAL_DEPENDENCIES,
+} from "../sdk/src/shared-dependencies";
 
 const SERVICE_WORKER_MODULE_ID = "/service-worker.js";
 const SERVICE_WORKER_PATH = path.join(import.meta.dirname, "service-worker.js");
@@ -62,30 +66,6 @@ function swPlugin(): Plugin {
     },
   };
 }
-
-// Dependencies that are shared with dynamically loaded packages
-// actual url will be resolved by generateImportMapPlugin
-const SHARED_DEPENDENCIES = [
-  "@automerge/automerge",
-  "@automerge/automerge-repo",
-  "@automerge/automerge-repo-react-hooks",
-  "react",
-  "react-dom",
-  "react-dom/client",
-  "react-dom/server",
-  "react/jsx-runtime",
-];
-
-// Internal modules that are shared with dynamically loaded packages
-const SHARED_MODULES = {
-  "@patchwork/sdk": "./sdk.js",
-};
-
-// All dependencies that should not be bundled in and instead are loaded
-// through the import map created by generateImportMapPlugin
-const EXTERNAL_DEPENDENCIES = SHARED_DEPENDENCIES.concat(
-  Object.keys(SHARED_MODULES)
-);
 
 // Generates an import map for the external dependencies
 const generateImportMapPlugin = (): Plugin => ({
@@ -153,31 +133,6 @@ export default mergeConfig(sharedConfig, {
       external: EXTERNAL_DEPENDENCIES,
       input: {
         main: path.resolve(__dirname, "index.html"),
-        sdk: path.resolve(__dirname, "src/sdk.ts"), // Added entrypoint for sdk.ts
-        ...Object.fromEntries(
-          globSync(
-            path.resolve(__dirname, "src/datatypes/*/module.@(ts|js|tsx|jsx)")
-          ).map((path) => {
-            const datatypeId = path.split("/").slice(-2)[0];
-
-            return [
-              `dataType-${datatypeId}`,
-              fileURLToPath(new URL(path, import.meta.url)),
-            ];
-          })
-        ),
-        ...Object.fromEntries(
-          globSync(
-            path.resolve(__dirname, "src/tools/*/module.@(ts|js|tsx|jsx)")
-          ).map((path) => {
-            const toolId = path.split("/").slice(-2)[0];
-
-            return [
-              `tool-${toolId}`,
-              fileURLToPath(new URL(path, import.meta.url)),
-            ];
-          })
-        ),
       },
       output: {
         // We put index.css in dist instead of dist/assets so that we can link to fonts
@@ -191,23 +146,6 @@ export default mergeConfig(sharedConfig, {
           return "assets/[name]-[hash][extname]";
         },
         entryFileNames: (chunkInfo) => {
-          // output tools under "/tools"
-          if (chunkInfo.name.startsWith("tool-")) {
-            const typeId = chunkInfo.name.split("-")[1];
-            return `tools/${typeId}.js`;
-          }
-
-          // output datatypes under "/dataTypes"
-          if (chunkInfo.name.startsWith("dataType-")) {
-            const typeId = chunkInfo.name.split("-")[1];
-            return `dataTypes/${typeId}.js`;
-          }
-
-          // output sdk under "/sdk.js"
-          if (chunkInfo.name === "sdk") {
-            return `sdk.js`;
-          }
-
           return "assets/[name]-[hash].js"; // Default behavior for other entries
         },
         exports: "named",

@@ -1,5 +1,5 @@
 import * as PACKAGES from "./packages";
-import { isTool } from "./tools";
+import { isTool } from "@patchwork/sdk";
 
 const builtInToolsUnsorted = Object.values(PACKAGES).flatMap((module) =>
   Object.values(module).filter(isTool)

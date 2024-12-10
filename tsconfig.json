@@ -9,7 +9,6 @@
 
     /* Bundler mode */
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
@@ -17,14 +16,26 @@
 
     "paths": {
       "@/*": ["./os/src/*"],
-      "@patchwork/sdk": ["./os/src/sdk.ts"],
+
+      "@patchwork/essay": ["./packages/essay/src"],
+      "@patchwork/essay/*": ["./packages/essay/src/*"],
+      "@patchwork/jacquard": ["./packages/jacquard/src"],
+      "@patchwork/jacquard/*": ["./packages/jacquard/src/*"],
+      "@patchwork/file": ["./packages/file/src"],
+      "@patchwork/file/*": ["./packages/file/src/*"],
+      "@patchwork/pkg": ["./packages/pkg/src"],
+      "@patchwork/pkg/*": ["./packages/pkg/src/*"],
+      "@patchwork/folder": ["./packages/folder/src"],
+      "@patchwork/folder/*": ["./packages/folder/src/*"],
+      "@patchwork/sdk": ["./sdk/src"],
+      "@patchwork/sdk/*": ["./sdk/src/*"],
       "@automerge/automerge-wasm": ["./os/src/vendor/automerge-wasm/index.d.ts"]
-    },
+    }
 
     /* Linting */
     // "noUnusedLocals": true,
     // "noUnusedParameters": true,
     // "noFallthroughCasesInSwitch": true
   },
-  "include": ["os", "packages", "jacquard-cli"],
+  "include": ["os", "sdk", "packages", "jacquard-cli"]
 }

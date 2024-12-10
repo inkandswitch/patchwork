@@ -1,6 +1,6 @@
 import { isEqual } from "lodash";
 import { useEffect, useRef, useState } from "react";
-import { AnnotationWithUIState } from "@/versionControl/schema";
+import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import {
   Editor,
   TLCamera,
@@ -71,7 +71,7 @@ export const useDiffStyling = ({
       }
     });
 
-    return () => {};
+    return () => { };
   }, [editor]);
 
   useEffect(() => {
@@ -139,9 +139,8 @@ export const useDiffStyling = ({
                 highlightColor = "green";
               }
 
-              const dropShadowFilter = `drop-shadow(0 0 ${
-                annotation.isEmphasized ? "0.25rem" : "0.75rem"
-              } ${highlightColor})`;
+              const dropShadowFilter = `drop-shadow(0 0 ${annotation.isEmphasized ? "0.25rem" : "0.75rem"
+                } ${highlightColor})`;
 
               // drop shadow has no spread option, to intesify it when annotation is focused we apply it twice
               shapeElem.style.filter =

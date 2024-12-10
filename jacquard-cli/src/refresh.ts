@@ -1,20 +1,17 @@
-import { asyncComputedPromise } from "@/async-signals";
-import { FolderDoc } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
-import { fetchFolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
+import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
+import { FolderDoc } from "@patchwork/folder";
+import { DocPath } from "@patchwork/folder";
+import { fetchFolderDocWithMetadata } from "@patchwork/folder";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import debugFactory from "debug";
 import _ from "lodash";
 import { CommandLineArgs } from ".";
-import { FileDoc } from "../../packages/file/src/datatype";
+import { FileDoc } from "@patchwork/file";
 import {
   BuildRunRefreshState,
   JacquardBuildMetadata,
-} from "../../packages/jacquard/src/datatype";
-import {
-  fetchProjectState,
-  getStalenessInfo,
-} from "../../packages/jacquard/src/getStalenessInfo";
+} from "@patchwork/jacquard";
+import { fetchProjectState, getStalenessInfo } from "@patchwork/jacquard";
 import { run } from "./run";
 import {
   fetchOmOnCLIActiveBranch,

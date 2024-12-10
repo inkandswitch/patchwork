@@ -1,9 +1,9 @@
-import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
-import { Annotation, HasVersionControlMetadata } from "@/versionControl/schema";
+import { DecodedChangeWithMetadata } from "@patchwork/sdk/versionControl";
+import { Annotation, HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { pick } from "lodash";
-import { initFrom, type DataType } from "@/sdk";
-import { TextPatch } from "@/versionControl/utils";
+import { initFrom, type DataType } from "@patchwork/sdk";
+import { TextPatch } from "@patchwork/sdk/versionControl";
 
 // SCHEMA
 

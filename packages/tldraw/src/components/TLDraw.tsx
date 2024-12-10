@@ -6,17 +6,17 @@ import {
 } from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useState } from "react";
 
-import { useCurrentAccount } from "@/explorer/account";
-import { EditorProps } from "@/tools";
-import { SideBySideProps } from "@/versionControl/components/VersionControlEditor";
-import { AnnotationWithUIState } from "@/versionControl/schema";
+import { useCurrentAccount } from "@patchwork/sdk";
+import { EditorProps } from "@patchwork/sdk";
+import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { Editor, TLCamera, TLShape, Tldraw } from "@tldraw/tldraw";
 import "@tldraw/tldraw/tldraw.css";
 import { useAutomergeStore } from "../vendor/automerge-tldraw";
 import { useDiffStyling, useCameraSync, useAnchorEventListener } from "./hooks";
 import { TLDrawDocAnchor, TLDrawDoc } from "../datatype";
-import { useHandleDef } from "@/hooks/useHandleDef";
+import { useHandleDef } from "@patchwork/sdk/hooks";
+import { SideBySideProps } from "@patchwork/sdk/versionControl";
 
 interface TLDrawProps extends EditorProps<TLDrawDocAnchor, TLShape> {
   camera?: TLCamera;

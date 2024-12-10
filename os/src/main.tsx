@@ -13,11 +13,11 @@ import { next as Automerge } from "@automerge/automerge";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
-import { getAccount } from "./explorer/account.js";
+import { getAccount } from "@patchwork/sdk";
 import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
 import { BACKUP_SYNC } from "./explorer/components/SyncIndicator.js";
-import { PatchworkContext } from "./patchworkContext.js";
+import { PatchworkContext } from "@patchwork/sdk";
 import { builtInTools } from "./builtInTools.js";
 import { builtInDataTypes } from "./builtInDataTypes.js";
 

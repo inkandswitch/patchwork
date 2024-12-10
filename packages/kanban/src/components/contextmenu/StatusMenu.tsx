@@ -4,7 +4,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/shadcn/ui/select";
+} from "@patchwork/sdk/ui";
 import { Lane } from "../../datatype";
 
 interface Props {

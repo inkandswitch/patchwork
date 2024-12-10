@@ -1,12 +1,13 @@
 import * as Automerge from "@automerge/automerge";
-import { selectDocLink } from "@/explorer/router";
-import { EditorProps } from "@/tools";
+import { selectDocLink } from "@patchwork/sdk";
+import { EditorProps } from "@patchwork/sdk";
 import { useMemo } from "react";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { BuildRunSpec, JacquardBuildMetadata } from "../datatype";
-import { CopyButton } from "@/versionControl/components/CopyButton";
 import { Trash2Icon } from "lucide-react";
-import { Button } from "@/shadcn/ui/button";
+
+import { CopyButton } from "@patchwork/sdk/components";
+import { Button } from "@patchwork/sdk/ui";
 
 export const LogView = ({
   docUrl,

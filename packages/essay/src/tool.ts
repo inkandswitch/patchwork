@@ -1,4 +1,4 @@
-import { makeTool } from "@/tools";
+import { makeTool } from "@patchwork/sdk";
 import { EssayAnnotations } from "./components/EssayAnnotations";
 import { EssayEditor } from "./components/EssayEditor";
 

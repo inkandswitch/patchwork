@@ -1,4 +1,4 @@
-import { FolderDoc } from "@/packages/folder";
+import { FolderDoc } from "@patchwork/folder";
 import * as A from "@automerge/automerge";
 import {
   AutomergeUrl,
@@ -12,10 +12,10 @@ import { isBinaryFileSync } from "isbinaryfile";
 import { PassThrough } from "node:stream";
 import { inspect } from "node:util";
 import path from "path";
-import { FileContent } from "../../packages/file/src/datatype";
-import { builtInDataTypesSafe } from "@/builtInDataTypesSafe";
-import { fetchOmOnFixedBranch } from "@/versionControl/signals";
-import { asyncComputedPromise } from "@/async-signals";
+import { FileContent } from "@patchwork/file";
+import { builtInDataTypesSafe } from "../../os/src/builtInDataTypesSafe";
+import { fetchOmOnFixedBranch } from "@patchwork/sdk/versionControl";
+import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 
 export const dataTypes = builtInDataTypesSafe;
 

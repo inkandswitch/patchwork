@@ -1,21 +1,23 @@
-import * as A from "@automerge/automerge/next";
+import { next as A } from "@automerge/automerge";
 import { AnnotationGroupWithPosition } from "../utils";
-import { Button } from "@/shadcn/ui/button";
+import { Button } from "@patchwork/sdk/ui";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/shadcn/ui/tooltip";
-import { getAnnotationGroupId } from "@/versionControl/annotations";
-import { AnnotationGroupView } from "@/versionControl/components/AnnotationGroupView";
+} from "@patchwork/sdk/ui";
+import {
+  getAnnotationGroupId,
+  CommentState,
+} from "@patchwork/sdk/versionControl";
 import { DocHandle } from "@automerge/automerge-repo";
 import { MessageCircle } from "lucide-react";
 import { TextSelection } from "./MarkdownDocEditor";
-import { CommentState } from "@/versionControl/schema";
 import { MarkdownDoc } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";
-import { TextAnchor } from "@/lib/textAnchors";
+import { TextAnchor } from "@patchwork/sdk/textAnchors";
+import { AnnotationGroupView } from "@patchwork/sdk/components/AnnotationGroupView";
 
 export const CommentsSidebar = ({
   doc,

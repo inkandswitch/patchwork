@@ -1,4 +1,4 @@
-import { Tool } from "@/sdk";
+import { Tool } from "@patchwork/sdk";
 import { RawEditor } from "./components/RawEditor";
 
 export const rawEditorTool: Tool = {

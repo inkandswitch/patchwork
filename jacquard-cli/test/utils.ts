@@ -1,12 +1,12 @@
-import * as FolderDataType from "@/packages/folder/datatype";
-import { FolderDoc } from "@/packages/folder/datatype";
+import * as FolderDataType from "@patchwork/folder";
+import { FolderDoc } from "@patchwork/folder";
 import { AutomergeUrl, PeerId, Repo } from "@automerge/automerge-repo";
 import { DummyStorageAdapter } from "@automerge/automerge-repo/helpers/DummyStorageAdapter.js";
 import * as fsP from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { expect } from "vitest";
-import { FileDoc } from "../../packages/file/src/datatype";
+import { FileDoc } from "@patchwork/file";
 import { readFileContent } from "../src/util";
 
 // Automerge

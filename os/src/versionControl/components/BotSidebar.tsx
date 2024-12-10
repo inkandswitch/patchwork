@@ -1,35 +1,25 @@
 import { BotIcon, CheckIcon, EyeIcon, XIcon } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 import { useState } from "react";
-import { Button } from "@/shadcn/ui/button";
+import { Button } from "@patchwork/sdk/ui";
 import { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
-import { type DataType } from "@/sdk";
+import { type DataType } from "@patchwork/sdk";
 import {
   AssistantMessage,
   ChatMessage,
   isSupportedDatatype,
   makeBotTextEdits,
-} from "../bots";
-import { useToast } from "@/shadcn/ui/use-toast";
+} from "@patchwork/sdk/versionControl";
+import { useToast } from "@patchwork/sdk/ui";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { BranchDoc, HasVersionControlMetadata } from "../schema";
+import {
+  BranchDoc,
+  HasVersionControlMetadata,
+} from "@patchwork/sdk/versionControl";
 import Markdown from "react-markdown";
-import { isLLMActive } from "@/lib/llm";
-import { SidebarMode } from "@/explorer/uiState";
-import { om, Om } from "@/om";
-
-export type HasBotChatHistory = {
-  botChatHistory: ChatMessage[];
-};
-
-export const withHasBotChatHistory = <D extends object>(
-  doc: D
-): D & HasBotChatHistory => {
-  return {
-    ...doc,
-    botChatHistory: [],
-  };
-};
+import { isLLMActive } from "@patchwork/sdk/versionControl";
+import { SidebarMode } from "@patchwork/sdk/router";
+import { om } from "@patchwork/sdk/om";
 
 // A string which will be visible to the bot representing user acceptance of edits.
 // We won't show it to the user because that's weird, we'll just show something in the UI

@@ -1,4 +1,4 @@
-import { makeTool } from "@/sdk";
+import { makeTool } from "@patchwork/sdk";
 import { FileEditor } from "./components/FileEditor";
 import { TextFileAnnotations } from "./components/TextFileAnnotations";
 

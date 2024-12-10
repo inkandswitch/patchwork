@@ -1,5 +1,5 @@
 import { TLRecord, RecordId, TLStore } from "@tldraw/tldraw";
-import * as Automerge from "@automerge/automerge/next";
+import { next as Automerge } from "@automerge/automerge";
 
 /** Convert a value from an automerge doc to a value consumable by TLDraw.
  *  The main thing we need to do is convert RawStrings to regular strings,

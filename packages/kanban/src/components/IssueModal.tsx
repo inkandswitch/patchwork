@@ -2,23 +2,23 @@ import { memo, useRef, useState } from "react";
 
 import SelectLane from "./contextmenu/StatusMenu";
 
-import { useCurrentAccount } from "@/explorer/account";
-import { MarkdownInput } from "@/lib/markdown";
-import { Button } from "@/shadcn/ui/button";
+import { useCurrentAccount } from "@patchwork/sdk";
+import { MarkdownInput } from "@patchwork/sdk/markdown";
+import { Button } from "@patchwork/sdk/ui";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/shadcn/ui/dialog";
-import { Input } from "@/shadcn/ui/input";
-import { Label } from "@/shadcn/ui/label";
+} from "@patchwork/sdk/ui";
+import { Input } from "@patchwork/sdk/ui";
+import { Label } from "@patchwork/sdk/ui";
 import { DocHandle } from "@automerge/automerge-repo";
 import { Card, KanbanBoardDoc, Lane } from "../datatype";
 import { Status } from "../types/issue";
 import { showInfo } from "../utils/notification";
-import { HasAssets } from "@/assets";
+import { HasAssets } from "@patchwork/sdk/assets";
 import { uuid } from "@automerge/automerge";
 
 interface Props {

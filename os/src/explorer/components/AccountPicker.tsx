@@ -6,36 +6,36 @@ import {
   automergeUrlToAccountToken,
   accountTokenToAutomergeUrl,
   ModuleSettingsDoc,
-} from "../account";
+} from "@patchwork/sdk";
 import { ChangeEvent, useEffect, useState } from "react";
 
 import {
+  Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTrigger,
-} from "@/shadcn/ui/dialog";
-
-import { Button } from "@/shadcn/ui/button";
-import { Input } from "@/shadcn/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
-
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
-
-import { Copy, Eye, EyeOff, PlusIcon, XIcon } from "lucide-react";
-
-import { Label } from "@/shadcn/ui/label";
-import {
+  Icon,
+  Input,
+  Label,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/shadcn/ui/tooltip";
+} from "@patchwork/sdk/ui";
+
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
+
+import { Copy, Eye, EyeOff } from "lucide-react";
+import { useDataTypes } from "@patchwork/sdk/hooks";
+
 import { ContactAvatar } from "./ContactAvatar";
-import { Checkbox } from "@/shadcn/ui/checkbox";
-import { Icon } from "@/lib/icons";
-import { useDataTypes } from "@/hooks/useDataTypes";
 
 // 1MB in bytes
 const MAX_AVATAR_SIZE = 1024 * 1024;
@@ -95,7 +95,7 @@ export const AccountPicker = ({
     if (self && self.type === "registered" && name === "") {
       setName(self.name);
     }
-  }, [self]);
+  }, [self, name]);
 
   const onSubmit = () => {
     switch (activeTab) {

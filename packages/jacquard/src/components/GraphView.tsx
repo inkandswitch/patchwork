@@ -1,7 +1,10 @@
-import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
-import { useCurrentAccount } from "@/explorer/account";
-import { selectDocLink } from "@/explorer/router";
-import { EditorProps } from "@/tools";
+import {
+  fetchAwaitMissing,
+  useAsyncComputed,
+} from "@patchwork/sdk/async-signals";
+import { useCurrentAccount } from "@patchwork/sdk";
+import { selectDocLink } from "@patchwork/sdk";
+import { EditorProps } from "@patchwork/sdk";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { instance } from "@viz-js/viz";
@@ -17,10 +20,13 @@ import {
 import { fetchJacquardProjectInfoWithActiveBranch } from "../hooks";
 import { fetchProjectStateFromProjectInfo } from "../signals";
 
-const rawSvgIcons = import.meta.glob("../file-icon-vectors/*.svg", {
-  eager: true,
-  import: "default",
-});
+// @ts-expect-error some environments don't have import.meta.glob
+const rawSvgIcons = import.meta.glob
+  ? import.meta.glob("../file-icon-vectors/*.svg", {
+      eager: true,
+      import: "default",
+    })
+  : [];
 
 let svgIconsByFileExtension: Record<string, string> = {};
 

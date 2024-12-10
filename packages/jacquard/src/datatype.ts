@@ -1,7 +1,6 @@
 import * as Automerge from "@automerge/automerge";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { type DataType } from "@/sdk";
-import { Heads } from "@automerge/automerge/next";
+import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
+import { type DataType } from "@patchwork/sdk";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 
 // SCHEMA

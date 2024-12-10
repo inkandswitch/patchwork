@@ -4,28 +4,28 @@ import { markdown } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
 import { EditorView } from "@codemirror/view";
 
-import { theme, useMarkdownPlugins } from "@/lib/markdown";
+import { theme, useMarkdownPlugins } from "@patchwork/sdk/markdown";
 import {
   annotationsPlugin,
   hideLinesWithoutAnnotations,
   useAnnotationsInEditor,
-} from "@/lib/textAnchors";
+} from "@patchwork/sdk/textAnchors";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { type DocHandle } from "@automerge/automerge-repo";
-import * as A from "@automerge/automerge/next";
+import { next as A } from "@automerge/automerge";
 import clsx from "clsx";
 import { frontmatterPlugin } from "../codemirrorPlugins/frontmatter";
 import { previewFiguresPlugin } from "../codemirrorPlugins/previewFigures";
 import { tableOfContentsPreviewPlugin } from "../codemirrorPlugins/tableOfContentsPreview";
 
-import { CodeMirror } from "@/lib/CodeMirror";
+import { CodeMirror } from "@patchwork/sdk/components";
 import {
   ResolvedTextAnchor,
   TextAnchor,
   useScrollAnnotationsIntoView,
-} from "@/lib/textAnchors";
-import { useDedupe } from "@/versionControl/hooks";
-import { AnnotationWithUIState } from "@/versionControl/schema";
+} from "@patchwork/sdk/textAnchors";
+import { useDedupe } from "@patchwork/sdk/versionControl";
+import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { get, isEqual } from "lodash";
 import { clickableMarkdownLinksPlugin } from "../codemirrorPlugins/clickableMarkdownLinks";

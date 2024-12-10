@@ -1,18 +1,17 @@
-import { asyncComputedPromise } from "@/async-signals";
-import { dataTypeById } from "@/datatypes";
-import { useDataTypes } from "@/hooks/useDataTypes";
-import { useTools } from "@/hooks/useTools";
-import { FolderDoc } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
-import { Button } from "@/shadcn/ui/button";
-import { Toaster } from "@/shadcn/ui/toaster";
-import { toolById, toolsForDataType } from "@/tools";
-import { VersionControlEditor } from "@/versionControl/components/VersionControlEditor";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
+import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
+import { dataTypeById } from "@patchwork/sdk";
+import { useDataTypes } from "@patchwork/sdk/hooks";
+import { useTools } from "@patchwork/sdk/hooks";
+import { DocPathUtils, FolderDoc } from "@patchwork/folder";
+import { DocPath } from "@patchwork/folder";
+import { Button } from "@patchwork/sdk/ui";
+import { Toaster } from "@patchwork/sdk/ui";
+import { toolById, toolsForDataType } from "@patchwork/sdk";
+import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import {
   fetchBranchScopeAndActiveBranchInfo,
   fetchOmOnActiveBranch,
-} from "@/versionControl/signals";
+} from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import {
   useDocument,
@@ -25,14 +24,14 @@ import {
   useCurrentAccount,
   useCurrentAccountDoc,
   useRootFolderDocWithMetadata,
-} from "../account";
-import { useRouter } from "../router";
+} from "@patchwork/sdk";
+import { useRouter } from "@patchwork/sdk/router";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
-import { useUIStateOm } from "../uiState";
-import { ErrorFallback } from "./ErrorFallback";
-import { LoadingScreen } from "./LoadingScreen";
+import { useUIStateOm } from "@patchwork/sdk/router";
+import { ErrorFallback, LoadingScreen } from "@patchwork/sdk/components";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { VersionControlEditor } from "../../versionControl/components";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();
@@ -48,7 +47,8 @@ export const Explorer: React.FC = () => {
   const { selectedDocPath, selectDocPath } = useRouter({
     rootFolderDocWithMetadata: rootFolderData,
   });
-  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
+  const selectedDocLink =
+    selectedDocPath && DocPathUtils.toLink(selectedDocPath);
 
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocHandle =
@@ -128,13 +128,13 @@ export const Explorer: React.FC = () => {
         if (!rootFolderUrl) {
           throw new Error("Root folder URL not ready");
         }
-        parentFolderDocPath = DocPath.forRoot(rootFolderUrl);
+        parentFolderDocPath = DocPathUtils.forRoot(rootFolderUrl);
       } else if (selectedDataTypeId === "folder") {
         // If a folder is currently selected, add the new document to that folder
         parentFolderDocPath = selectedDocPath;
       } else {
         // Otherwise, add the new document to the parent folder of the selected doc
-        parentFolderDocPath = DocPath.parent(selectedDocPath);
+        parentFolderDocPath = DocPathUtils.parent(selectedDocPath);
       }
 
       const branchScopeAndActiveBranchInfoOfParentFolder =
@@ -216,8 +216,8 @@ export const Explorer: React.FC = () => {
   }, [addNewDocument, selectedDocUrl]);
 
   const removeDocPath = async (docPath: DocPath) => {
-    const docLink = DocPath.toLink(docPath);
-    const parentFolderDocPath = DocPath.parent(docPath);
+    const docLink = DocPathUtils.toLink(docPath);
+    const parentFolderDocPath = DocPathUtils.parent(docPath);
     const parentFolderOm = await asyncComputedPromise(() =>
       fetchOmOnActiveBranch<FolderDoc>(parentFolderDocPath, account, repo)
     );
@@ -329,7 +329,7 @@ export const Explorer: React.FC = () => {
                 currentTool &&
                 flatDocPaths && (
                   <VersionControlEditor
-                    key={DocPath.toString(selectedDocPath)}
+                    key={DocPathUtils.toString(selectedDocPath)}
                     docPath={selectedDocPath}
                     tool={currentTool}
                     addNewDocument={addNewDocument}

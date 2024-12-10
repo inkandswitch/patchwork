@@ -4,27 +4,22 @@
   "description": "some kinda engrafty thing in Patchwork idk",
   "type": "module",
   "main": "src/index.ts",
-  "scripts": {},
+  "scripts": {
+    "build": "vite build",
+    "push": "pnpm build && trailhead push --dir dist"
+  },
   "keywords": [],
   "author": "Ink & Switch",
   "dependencies": {
-    "@automerge/automerge": "2.2.9-alpha.2",
-    "@automerge/automerge-codemirror": "^0.0.12",
     "@automerge/automerge-repo": "2.0.0-alpha.7",
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
-    "@codemirror/lang-markdown": "^6.2.5",
-    "@codemirror/language": "^6.10.2",
-    "@codemirror/language-data": "^6.5.1",
-    "@codemirror/state": "^6.4.1",
-    "@codemirror/view": "^6.28.6",
     "@engraft/basic-setup": "^0.0.8",
     "@engraft/hostkit": "^0.0.8",
     "@engraft/tool-python": "^0.0.8",
-    "@lezer/common": "^1.2.1",
+    "@patchwork/folder": "workspace:*",
+    "@patchwork/sdk": "workspace:*",
     "@tailwindcss/container-queries": "^0.1.1",
-    "jszip": "^3.10.1",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.284.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwindcss": "^3.4.6",
@@ -33,6 +28,9 @@
   "devDependencies": {
     "@types/lodash": "^4.17.7",
     "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0"
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.3.4",
+    "vite-plugin-top-level-await": "^1.4.2",
+    "vite-plugin-wasm": "^3.3.0"
   }
 }

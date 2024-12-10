@@ -1,5 +1,5 @@
-import { useToolUIState } from "@/explorer/uiState";
-import { useHandleDef } from "@/hooks/useHandleDef";
+import { useToolUIState } from "@patchwork/sdk/router";
+import { useHandleDef } from "@patchwork/sdk/hooks";
 import {
   annotationsPlugin,
   hideLinesWithoutAnnotations,
@@ -8,18 +8,17 @@ import {
   useAnnotationsInEditor,
   useResolvedAnnotationAtPath,
   useScrollAnnotationsIntoView,
-} from "@/lib/textAnchors";
-import { AnnotationWithUIState } from "@/sdk";
-import { EditorProps } from "@/tools";
-import { useRefForCallback } from "@/utils";
+} from "@patchwork/sdk/textAnchors";
+import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
+import { EditorProps } from "@patchwork/sdk";
+import { useRefForCallback } from "@patchwork/sdk/utils";
 import {
   getCursorPositionSafely,
   getCursorSafely,
-} from "@/versionControl/utils";
-import * as Automerge from "@automerge/automerge";
+} from "@patchwork/sdk/versionControl";
+import { next as Automerge } from "@automerge/automerge";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { Cursor } from "@automerge/automerge/next";
 import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { json } from "@codemirror/lang-json";
@@ -42,9 +41,9 @@ import clsx from "clsx";
 import { EditorView } from "codemirror";
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import { tool } from "..";
-import { selectedAnchorsPlugin } from "../../../essay/src/codemirrorPlugins/setSelectedAnchors";
+import { selectedAnchorsPlugin } from "@patchwork/essay/codemirrorPlugins/setSelectedAnchors";
 import { FileDoc, TextFileContent } from "../datatype";
-import { CodeMirror } from "../../../../os/src/lib/CodeMirror";
+import { CodeMirror } from "@patchwork/sdk/components";
 
 export type TextFileDoc = FileDoc & {
   content: TextFileContent;
@@ -104,7 +103,7 @@ export const TextFileEditor = ({
   const readOnly = docHeads !== undefined;
 
   const [toolUIState, changeToolUIState] = useToolUIState<{
-    scrollTopCursor?: Cursor;
+    scrollTopCursor?: Automerge.Cursor;
   }>(docPath, tool.id, () => ({}));
 
   // TODO: this obviously sucks
@@ -220,7 +219,7 @@ const scrollTo = ({
   toolUIState,
   fileDoc,
 }: {
-  toolUIState: { scrollTopCursor?: Cursor };
+  toolUIState: { scrollTopCursor?: Automerge.Cursor };
   fileDoc: TextFileDoc;
 }) => {
   if (toolUIState.scrollTopCursor) {

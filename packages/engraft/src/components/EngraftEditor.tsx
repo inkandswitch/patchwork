@@ -1,8 +1,15 @@
-import { useRootFolderDocWithMetadata } from "@/explorer/account";
-import { useHandleDef } from "@/hooks/useHandleDef";
-import { FolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
-import { Button } from "@/shadcn/ui/button";
-import { EditorProps } from "@/tools";
+import { useRootFolderDocWithMetadata, EditorProps } from "@patchwork/sdk";
+import { useHandleDef } from "@patchwork/sdk/hooks";
+import { Button } from "@patchwork/sdk/ui";
+import {
+  getDocState,
+  fetchMap,
+  useAsyncComputed,
+} from "@patchwork/sdk/async-signals";
+
+import { DocPath, DocPathUtils } from "@patchwork/folder";
+import { FolderDocWithMetadata } from "@patchwork/folder";
+
 import {
   AutomergeUrl,
   isValidAutomergeUrl,
@@ -19,6 +26,7 @@ import {
   Updater,
   VarBinding,
 } from "@engraft/hostkit";
+
 import { isEqual, isObject } from "lodash";
 import { useCallback } from "react";
 import { engraftContext, EngraftDoc } from "../datatype";
@@ -26,18 +34,16 @@ import {
   applyUpdateAsChangeToObject,
   removeUndefineds,
 } from "../engraft-automerge";
-import { getDocState, fetchMap, useAsyncComputed } from "@/async-signals";
-import { DocPath } from "@/packages/folder/datatype";
 
 function getDocName(
   url: AutomergeUrl,
   rootFolderDocWithChildren: FolderDocWithMetadata | undefined
 ): string {
   const docPath = rootFolderDocWithChildren?.flatDocPaths.find(
-    (docPath) => DocPath.toLink(docPath).url === url
+    (docPath) => DocPathUtils.toLink(docPath).url === url
   );
   if (docPath) {
-    return DocPath.toLink(docPath).name;
+    return DocPathUtils.toLink(docPath).name;
   } else {
     return parseAutomergeUrl(url).documentId;
   }

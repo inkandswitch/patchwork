@@ -1,8 +1,9 @@
-import { FileExportMethod } from "@/fileExports";
-import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
-import { ChangeGroup, initFrom, type DataType } from "@/sdk";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
-import { TextPatch } from "@/versionControl/utils";
+import { FileExportMethod } from "@patchwork/sdk/fileExports";
+import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
+import { initFrom, type DataType } from "@patchwork/sdk";
+import { ChangeGroup } from "@patchwork/sdk/versionControl";
+import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
+import { TextPatch } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import { DocHandle, updateText } from "@automerge/automerge-repo";
 import crypto from "crypto";

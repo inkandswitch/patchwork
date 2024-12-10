@@ -10,11 +10,11 @@ import {
   GenericChangeGroup,
   TimelineItems,
   groupingByEditTime,
-} from "../groupChanges";
+} from "@patchwork/sdk/versionControl";
 
-import { InlineContactAvatar } from "@/explorer/components/InlineContactAvatar";
-import { useSlots } from "@/versionControl/utils";
-import { Heads } from "@automerge/automerge/next";
+import { InlineContactAvatar } from "@patchwork/sdk/components";
+import { useSlots } from "@patchwork/sdk/versionControl";
+import { Heads } from "@automerge/automerge";
 import {
   ChevronLeftIcon,
   CrownIcon,
@@ -26,22 +26,22 @@ import {
   Discussion,
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
-} from "../schema";
+} from "@patchwork/sdk/versionControl";
 
-import { useAutoPopulateChangeGroupSummaries } from "@/versionControl/changeGroupSummaries";
+import { useAutoPopulateChangeGroupSummaries } from "@patchwork/sdk/versionControl";
 import { DiscussionInput } from "./DiscussionInput";
 
-import { HasAssets } from "@/assets";
-import { MarkdownInput } from "@/lib/markdown";
-import { type DataType } from "@/sdk";
+import { HasAssets } from "@patchwork/sdk/assets";
+import { MarkdownInput } from "@patchwork/sdk/markdown";
+import { type DataType } from "@patchwork/sdk";
 import { DocHandle } from "@automerge/automerge-repo";
 import {
   BranchScopeAndActiveBranchInfoWithoutDoc,
   ChangeGrouper,
-} from "../ChangeGrouper";
-import { ChangeGroupingOptions } from "../groupChanges";
-import { BranchDoc } from "../schema";
-import { BranchScopeAndActiveBranchInfo } from "../signals";
+} from "@patchwork/sdk/versionControl";
+import { ChangeGroupingOptions } from "@patchwork/sdk/versionControl";
+import { BranchDoc } from "@patchwork/sdk/versionControl";
+import { BranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 
 const useScrollToBottom = (doc: unknown) => {
   const scrollerRef = useRef<HTMLDivElement>(null);

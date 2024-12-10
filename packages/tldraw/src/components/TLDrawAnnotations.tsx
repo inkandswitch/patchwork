@@ -1,5 +1,8 @@
-import { AnnotationsViewProps } from "@/tools";
-import { Annotation, AnnotationWithUIState } from "@/versionControl/schema";
+import { AnnotationsViewProps } from "@patchwork/sdk";
+import {
+  Annotation,
+  AnnotationWithUIState,
+} from "@patchwork/sdk/versionControl";
 import { Editor, TLShape, TLShapeId, Tldraw } from "@tldraw/tldraw";
 import { useEffect, useMemo, useState } from "react";
 import { TLDrawDoc } from "../datatype";

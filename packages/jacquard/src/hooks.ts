@@ -1,13 +1,12 @@
-import { Account } from "@/explorer/account";
-import { Om } from "@/om";
-import { DocPath, FolderDoc } from "@/packages/folder/datatype";
+import { Account } from "@patchwork/sdk";
+import { Om } from "@patchwork/sdk/om";
+import { DocPath, FolderDoc } from "@patchwork/folder";
 import {
   fetchBranchScopeAndActiveBranchInfo,
   fetchOmOnFixedBranch,
-} from "@/versionControl/signals";
+} from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { JacquardBuildMetadata } from "./datatype";
-import { DataType } from "@/sdk";
 
 export type JacquardProjectInfo = {
   branchUrl: AutomergeUrl | undefined;

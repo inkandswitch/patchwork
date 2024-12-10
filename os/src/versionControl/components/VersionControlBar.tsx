@@ -1,26 +1,30 @@
-import { fetchAwaitMissing, useAsyncComputed } from "@/async-signals";
-import { useCurrentAccount } from "@/explorer/account";
-import { ContactAvatar } from "@/explorer/components/ContactAvatar";
-import { selectDocLink } from "@/explorer/router";
-import { MainViewMode, useDocUIState } from "@/explorer/uiState";
-import { getRelativeTimeString } from "@/lib/dates";
-import { Om } from "@/om";
-import { DocPath, FolderDoc } from "@/packages/folder/datatype";
+import {
+  fetchAwaitMissing,
+  useAsyncComputed,
+} from "@patchwork/sdk/async-signals";
+import { useCurrentAccount } from "@patchwork/sdk";
+import { ContactAvatar } from "@patchwork/sdk/components";
+import { selectDocLink } from "@patchwork/sdk";
+import { MainViewMode, useDocUIState } from "@patchwork/sdk/router";
+import { getRelativeTimeString } from "@patchwork/sdk/versionControl";
+import { Om } from "@patchwork/sdk/om";
+import { DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
+import { Tool } from "@patchwork/sdk";
+import { useDataTypes } from "@patchwork/sdk/hooks";
+
 import {
   BranchDoc,
   ensureMetadataHandleIsBranchScope,
   initVersionControlSidecarDoc,
-  Tool,
-  useDataTypes,
   VersionControlSidecarDoc,
-} from "@/sdk";
-import { Button } from "@/shadcn/ui/button";
+} from "@patchwork/sdk/versionControl";
+import { Button } from "@patchwork/sdk/ui";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/shadcn/ui/dropdown-menu";
+} from "@patchwork/sdk/ui";
 import {
   Select,
   SelectContent,
@@ -29,16 +33,18 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/shadcn/ui/select";
+} from "@patchwork/sdk/ui";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/shadcn/ui/tooltip";
-import { useToast } from "@/shadcn/ui/use-toast";
+} from "@patchwork/sdk/ui";
+import { useToast } from "@patchwork/sdk/ui";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
+
+/* Ugh... TODO */
 import {
   BuildRefreshButton,
   DisabledBuildRefreshButton,
@@ -55,7 +61,9 @@ import {
   fetchProjectStateFromProjectInfo,
   getBuildRunsWithDocAsPrimaryInput,
 } from "@patchwork/jacquard/src/signals";
+
 import { truncate } from "lodash";
+
 import {
   ArrowRightFromLineIcon,
   ArrowRightToLineIcon,
@@ -74,8 +82,6 @@ import {
   Trash2Icon,
   ChevronDownIcon,
   ChevronRightIcon,
-  FileQuestionIcon,
-  MailQuestionIcon,
   InfoIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -83,8 +89,8 @@ import {
   createBranch,
   hasLegacyBranchesToMigrate,
   migrateLegacyBranches,
-} from "../branches";
-import { BranchScopeAndActiveBranchInfo } from "../signals";
+} from "@patchwork/sdk/versionControl";
+import { BranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 
 // interface MakeBranchOptions {
 //   name?: string;
@@ -141,7 +147,7 @@ export const VersionControlBar = ({
   onMergeBranch: (branchUrl: AutomergeUrl) => void;
   onDeleteBranch: (branchUrl: AutomergeUrl) => void;
 }) => {
-  const docLink = DocPath.toLink(docPath);
+  const docLink = DocPathUtils.toLink(docPath);
 
   const {
     branchScopeOm,
@@ -162,7 +168,7 @@ export const VersionControlBar = ({
   const dataTypes = useDataTypes();
 
   const handleCreateBranch = useCallback(async () => {
-    const branchScopeLink = DocPath.toLink(branchScopePath)!;
+    const branchScopeLink = DocPathUtils.toLink(branchScopePath)!;
 
     const branchUrl = (
       await createBranch({

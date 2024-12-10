@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FileDoc } from "../../packages/file/src/datatype";
+import { FileDoc } from "@patchwork/file";
 import { CommandLineArgs } from "../src";
 import { push } from "../src/push";
 import {

@@ -1,8 +1,8 @@
-import { type DataType } from "@/sdk";
+import { type DataType } from "@patchwork/sdk";
 import {
   HasVersionControlMetadata,
   initVersionControlMetadata,
-} from "@/versionControl/schema";
+} from "@patchwork/sdk/versionControl";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { makeBasicContext } from "@engraft/basic-setup";
 import PythonTool from "@engraft/tool-python";

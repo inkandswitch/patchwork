@@ -4,7 +4,10 @@
   "description": "A simple kanban board",
   "type": "module",
   "main": "src/index.ts",
-  "scripts": {},
+  "scripts": {
+    "build": "vite build",
+    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:4MEgMjNDKnppvtDr7QU64TVAKdNf"
+  },
   "keywords": [],
   "dependencies": {
     "@automerge/automerge": "2.2.9-alpha.2",
@@ -13,40 +16,27 @@
     "@firefox-devtools/react-contextmenu": "^5.1.1",
     "@headlessui/react": "^2.1.2",
     "@hello-pangea/dnd": "^16.6.0",
-    "@svgr/plugin-jsx": "^8.1.0",
-    "@svgr/plugin-svgo": "^8.1.0",
-    "@tailwindcss/forms": "^0.5.7",
-    "@tiptap/extension-placeholder": "^2.5.5",
-    "@tiptap/extension-table": "^2.5.5",
-    "@tiptap/extension-table-cell": "^2.5.5",
-    "@tiptap/extension-table-header": "^2.5.5",
-    "@tiptap/extension-table-row": "^2.5.5",
-    "@tiptap/pm": "^2.5.5",
-    "@tiptap/react": "^2.5.5",
-    "@tiptap/starter-kit": "^2.5.5",
+    "@patchwork/sdk": "workspace:*",
     "animate.css": "^4.1.1",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.12",
-    "jsonwebtoken": "^9.0.2",
-    "lodash": "^4.17.21",
-    "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.284.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.2.1",
-    "react-markdown": "^9.0.1",
     "react-router-dom": "^6.25.1",
     "react-toastify": "^10.0.5",
     "react-virtualized-auto-sizer": "^1.0.24",
-    "react-window": "^1.8.10",
-    "tiptap-markdown": "^0.8.10",
-    "uuid": "^9.0.1"
+    "react-window": "^1.8.10"
   },
   "devDependencies": {
-    "@types/lodash": "^4.17.7",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/react-window": "^1.8.8",
-    "@types/uuid": "^10.0.0"
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^6.0.3",
+    "vite-plugin-top-level-await": "^1.4.2",
+    "vite-plugin-wasm": "^3.3.0"
   }
 }

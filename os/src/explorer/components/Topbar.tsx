@@ -1,19 +1,21 @@
-import { FileExportMethod, genericExportMethods } from "@/fileExports";
-import { useDataTypes } from "@/hooks/useDataTypes";
-import { FolderDoc } from "@/packages/folder";
-import { DocPath } from "@/packages/folder/datatype";
-import { dataTypeById } from "@/sdk";
+import {
+  FileExportMethod,
+  genericExportMethods,
+} from "@patchwork/sdk/fileExports";
+import { useDataTypes } from "@patchwork/sdk/hooks";
+import { FolderDoc, DocPath, DocPathUtils } from "@patchwork/folder";
+import { dataTypeById } from "@patchwork/sdk";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/shadcn/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
-import { useToast } from "@/shadcn/ui/use-toast";
-import { Tool } from "@/tools";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
+} from "@patchwork/sdk/ui";
+import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
+import { useToast } from "@patchwork/sdk/ui";
+import { Tool } from "@patchwork/sdk";
+import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import { Doc, DocHandle, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -26,7 +28,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import React, { useRef } from "react";
-import { saveFile } from "../utils";
+import { saveFile } from "@patchwork/sdk/fileUtils";
 import { AccountPicker } from "./AccountPicker";
 import {
   AUTOMERGE_SYNC_SERVER_STORAGE_ID,
@@ -34,7 +36,7 @@ import {
   JACQUARD_SYNC_SERVER_STORAGE_ID,
   SyncIndicator,
 } from "./SyncIndicator";
-import { getUrlSafeName } from "../router";
+import { getUrlSafeName } from "@patchwork/sdk/router";
 
 type TopbarProps = {
   showSidebar: boolean;
@@ -69,7 +71,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   const repo = useRepo();
   const { toast } = useToast();
 
-  const selectedDocLink = selectedDocPath && DocPath.toLink(selectedDocPath);
+  const selectedDocLink =
+    selectedDocPath && DocPathUtils.toLink(selectedDocPath);
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
@@ -138,11 +141,11 @@ export const Topbar: React.FC<TopbarProps> = ({
       type: selectedDocLink.type,
     };
 
-    const folderDocPath = DocPath.parent(selectedDocPath);
+    const folderDocPath = DocPathUtils.parent(selectedDocPath);
 
     if (!docHeadsFromTimelineSidebar) {
       const folderHandle = repo.find<FolderDoc>(
-        DocPath.toLink(folderDocPath).url
+        DocPathUtils.toLink(folderDocPath).url
       );
       const folderDoc = await folderHandle.doc();
       const index = folderDoc!.docs.findIndex(

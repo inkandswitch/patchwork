@@ -1,26 +1,36 @@
-import { asyncComputedPromise, fetchDoc } from "@/async-signals";
-import { useAsyncComputed } from "@/async-signals/react";
-import { useDataTypes } from "@/hooks/useDataTypes";
-import { Icon, IconType } from "@/lib/icons";
-import { DocLink, FolderDoc } from "@/packages/folder";
-import { DocPath, FolderDocMaterialized } from "@/packages/folder/datatype";
-import { FolderDocWithMetadata } from "@/packages/folder/hooks/fetchFolderDocWithMetadata";
-import { dataTypeById } from "@/sdk";
-import { Input } from "@/shadcn/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 import {
+  useAsyncComputed,
+  asyncComputedPromise,
+  fetchDoc,
+} from "@patchwork/sdk/async-signals";
+import { useDataTypes } from "@patchwork/sdk/hooks";
+import { Icon, IconType } from "@patchwork/sdk/ui";
+import {
+  DocLink,
+  FolderDoc,
+  DocPath,
+  FolderDocWithChildren,
+  FolderDocWithMetadata,
+  DocPathUtils,
+} from "@patchwork/folder";
+import { dataTypeById } from "@patchwork/sdk";
+import {
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/shadcn/ui/tooltip";
-import { HasVersionControlMetadata } from "@/versionControl/schema";
+} from "@patchwork/sdk/ui";
+import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import {
   fetchActiveBranchInfo,
   fetchBranchScopeAndActiveBranchInfo,
   fetchOmOnActiveBranch,
   fetchVersionControlMetadataOm,
-} from "@/versionControl/signals";
+} from "@patchwork/sdk/versionControl";
 import { isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { capitalize, clone, uniqBy } from "lodash";
@@ -48,8 +58,8 @@ import {
   useCurrentAccount,
   useCurrentAccountDoc,
   useDatatypeSettings,
-} from "../account";
-import { UIStateDoc } from "../uiState";
+} from "@patchwork/sdk";
+import { UIStateDoc } from "@patchwork/sdk/router";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
 
@@ -62,7 +72,7 @@ type NodeData = {
   children: NodeData[];
 };
 const prepareDataForTree = (
-  folderDoc: FolderDocMaterialized,
+  folderDoc: FolderDocWithChildren,
   folderPath: DocPath
 ): NodeData[] => {
   if (!folderDoc) {
@@ -83,7 +93,7 @@ const prepareDataForTree = (
 const Node = (props: NodeRendererProps<NodeData>) => {
   const { node, style, dragHandle } = props;
   const docPath = node.data.docPath;
-  const docLink = DocPath.toLink(docPath);
+  const docLink = DocPathUtils.toLink(docPath);
   const dataTypes = useDataTypes();
   const dataType = dataTypeById(dataTypes, docLink.type);
 
@@ -100,7 +110,7 @@ const Node = (props: NodeRendererProps<NodeData>) => {
 
     return flatDocPaths.find((otherDocPath) => {
       if (otherDocPath.length > 2) {
-        const otherDocLink = DocPath.toLink(otherDocPath);
+        const otherDocLink = DocPathUtils.toLink(otherDocPath);
         return docLink.url === otherDocLink.url;
       }
     });
@@ -162,7 +172,7 @@ const Node = (props: NodeRendererProps<NodeData>) => {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="text-xs text-gray-500">
-                  In {DocPath.toLink(redundantWithPath).name}
+                  In {DocPathUtils.toLink(redundantWithPath).name}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -177,7 +187,7 @@ const Node = (props: NodeRendererProps<NodeData>) => {
 const NodeActiveBranchInfo = (props: NodeRendererProps<NodeData>) => {
   const { node } = props;
   const docPath = node.data.docPath;
-  const docLink = DocPath.toLink(docPath);
+  const docLink = DocPathUtils.toLink(docPath);
   const repo = useRepo();
   const account = useCurrentAccount();
 
@@ -220,7 +230,7 @@ const NodeActiveBranchInfo = (props: NodeRendererProps<NodeData>) => {
 const Edit = ({ node }: NodeRendererProps<NodeData>) => {
   const input = useRef<any>();
   const docPath = node.data.docPath;
-  const docLink = DocPath.toLink(docPath);
+  const docLink = DocPathUtils.toLink(docPath);
 
   useEffect(() => {
     input.current?.focus();
@@ -249,7 +259,7 @@ type SidebarProps = {
 };
 
 const idAccessor = (data: NodeData) => {
-  return DocPath.toString(data.docPath);
+  return DocPathUtils.toString(data.docPath);
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -316,14 +326,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     for (const dragNode of dragNodes) {
       const srcPath = dragNode.data.docPath;
-      const srcLink = DocPath.toLink(srcPath);
+      const srcLink = DocPathUtils.toLink(srcPath);
       const srcUrl = srcLink.url;
-      const srcParentPath = DocPath.parent(srcPath);
+      const srcParentPath = DocPathUtils.parent(srcPath);
       const srcParentOm = await asyncComputedPromise(() =>
         fetchOmOnActiveBranch<FolderDoc>(srcParentPath, account, repo)
       );
       const dragItemIndex = srcParentOm.doc.docs.findIndex(
-        (item) => item.url === DocPath.toLink(dragNode.data.docPath).url
+        (item) => item.url === DocPathUtils.toLink(dragNode.data.docPath).url
       );
       if (dragItemIndex === -1) {
         throw new Error("Couldn't find drag item in parent folder");
@@ -331,7 +341,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       const dstParentPath: DocPath =
         !parentNode || parentNode.level < 0
-          ? DocPath.forRoot(rootFolderUrl)
+          ? DocPathUtils.forRoot(rootFolderUrl)
           : parentNode.data.docPath;
       const dstParentOm = await asyncComputedPromise(() =>
         fetchOmOnActiveBranch<FolderDoc>(dstParentPath, account, repo)
@@ -365,7 +375,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       // If we're dragging later within the same folder, we need to account for
       // the fact that the array will be shorter after we remove the original element
       const adjustedTargetIndex =
-        DocPath.toString(srcParentPath) === DocPath.toString(dstParentPath) &&
+        DocPathUtils.toString(srcParentPath) ===
+          DocPathUtils.toString(dstParentPath) &&
         dragItemIndex < dragTargetIndex
           ? dragTargetIndex - 1
           : dragTargetIndex;
@@ -386,16 +397,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const dataForTree = prepareDataForTree(
     rootFolderDocWithChildren,
-    DocPath.forRoot(rootFolderUrl)
+    DocPathUtils.forRoot(rootFolderUrl)
   );
 
   const treeSelection = selectedDocPath
-    ? DocPath.toString(selectedDocPath)
+    ? DocPathUtils.toString(selectedDocPath)
     : undefined;
 
   const onRename: RenameHandler<NodeData> = async ({ node, name }) => {
     const docPath = node.data.docPath;
-    const docLink = DocPath.toLink(docPath);
+    const docLink = DocPathUtils.toLink(docPath);
     const dataType = dataTypeById(dataTypes, docLink?.type)!; // TODO: JAH strict fix
 
     if (!dataType?.setTitle) {
@@ -414,7 +425,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const docOm = await asyncComputedPromise(() =>
       fetchOmOnActiveBranch<FolderDoc>(docPath, account, repo)
     );
-    const parentPath = DocPath.parent(docPath);
+    const parentPath = DocPathUtils.parent(docPath);
     const parentOm = await asyncComputedPromise(() =>
       fetchOmOnActiveBranch<FolderDoc>(parentPath, account, repo)
     );
@@ -603,7 +614,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   openByDefault={false}
                   searchTerm={searchQuery}
                   searchMatch={(node, term) => {
-                    const docName = DocPath.toLink(node.data.docPath).name;
+                    const docName = DocPathUtils.toLink(node.data.docPath).name;
                     return docName.toLowerCase().includes(term.toLowerCase());
                   }}
                   rowHeight={28}

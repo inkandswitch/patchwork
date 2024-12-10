@@ -1,7 +1,7 @@
 import { truncate } from "lodash";
-import { AnnotationsViewProps } from "@/tools";
+import { AnnotationsViewProps } from "@patchwork/sdk";
 import { FileDoc } from "../datatype";
-import { TextAnchor } from "@/lib/textAnchors";
+import { TextAnchor } from "@patchwork/sdk/textAnchors";
 
 export const TextFileAnnotations = ({
   annotations,

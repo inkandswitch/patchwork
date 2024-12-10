@@ -1,17 +1,18 @@
-import { dataTypeById } from "@/datatypes";
-import { useCurrentAccount } from "@/explorer/account";
-import { ErrorFallback } from "@/explorer/components/ErrorFallback";
-import { LoadingScreen } from "@/explorer/components/LoadingScreen";
-import { toHashUrl } from "@/explorer/router/urls";
-import { useDocUIState, useUIStateOm } from "@/explorer/uiState";
-import { useDataTypes } from "@/hooks/useDataTypes";
-import { DocLink, DocPath } from "@/packages/folder/datatype";
-import { Tabs, TabsList, TabsTrigger } from "@/shadcn/ui/tabs";
-import { useToast } from "@/shadcn/ui/use-toast";
-import { EditorProps, Tool } from "@/tools";
+import { dataTypeById } from "@patchwork/sdk";
+import { useCurrentAccount } from "@patchwork/sdk";
+import { ErrorFallback } from "@patchwork/sdk/components";
+import { LoadingScreen } from "@patchwork/sdk/components";
+import { toHashUrl } from "@patchwork/sdk/router";
+import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router";
+import { useDataTypes } from "@patchwork/sdk/hooks";
+import { DocLink, DocPath, DocPathUtils } from "@patchwork/folder";
+import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
+import { useToast } from "@patchwork/sdk/ui";
+import { EditorProps, Tool } from "@patchwork/sdk";
+
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import * as A from "@automerge/automerge/next";
+import { next as A } from "@automerge/automerge";
 import {
   BotIcon,
   ChevronsRight,
@@ -21,24 +22,31 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { useAnnotations } from "../annotations";
-import { mergeBranch, setActiveBranchUrl } from "../branches";
-import { useBranchScopeAndActiveBranchInfo } from "../hooks";
+import { useAnnotations } from "@patchwork/sdk/versionControl";
+import { mergeBranch, setActiveBranchUrl } from "@patchwork/sdk/versionControl";
+import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 import {
   BranchDoc,
   DiffWithProvenance,
   HasVersionControlMetadata,
-} from "../schema";
+} from "@patchwork/sdk/versionControl";
 import {
   BranchScopeAndActiveBranchInfo,
   fetchDoesDocLinkExistInBranchScope,
-} from "../signals";
-import { diffWithProvenance, useActorIdToAuthorMap } from "../utils";
+} from "@patchwork/sdk/versionControl";
+import {
+  diffWithProvenance,
+  useActorIdToAuthorMap,
+} from "@patchwork/sdk/versionControl";
 import { BotSidebar } from "./BotSidebar";
 import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
-import { useAsyncComputed } from "@/async-signals";
+import { useAsyncComputed } from "@patchwork/sdk/async-signals";
+import {
+  EditorPropsWithTool,
+  SideBySideProps,
+} from "@patchwork/sdk/versionControl";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -54,7 +62,7 @@ export const VersionControlEditor: React.FC<{
   docHeadsFromTimelineSidebar,
   setDocHeadsFromTimelineSidebar,
 }) => {
-  const docLink = DocPath.toLink(docPath);
+  const docLink = DocPathUtils.toLink(docPath);
 
   const [docUIState, changeDocUIState] = useDocUIState(docPath);
 
@@ -278,7 +286,7 @@ export const VersionControlEditor: React.FC<{
       }
 
       return fetchDoesDocLinkExistInBranchScope(
-        DocPath.toLink(docPath),
+        DocPathUtils.toLink(docPath),
         repo,
         branchScopeAndActiveBranchInfo,
         dataTypes
@@ -527,10 +535,6 @@ const DocumentNotFoundPage = ({
   );
 };
 
-export interface EditorPropsWithTool<T, V> extends EditorProps<T, V> {
-  tool: Tool;
-}
-
 /* Wrapper component that dispatches to the tool for the doc type */
 const DocEditor = <T, V>({
   tool,
@@ -576,10 +580,6 @@ const DocEditor = <T, V>({
     />
   );
 };
-
-export interface SideBySideProps<T, V> extends EditorPropsWithTool<T, V> {
-  mainDocUrl: AutomergeUrl;
-}
 
 export const SideBySide = <T, V>(props: SideBySideProps<T, V>) => {
   // special side-by-side view for tldraw with scroll linking

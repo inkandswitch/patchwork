@@ -1,4 +1,4 @@
-import { EditorProps } from "@/tools";
+import { EditorProps } from "@patchwork/sdk";
 import { next as A } from "@automerge/automerge";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import "animate.css/animate.min.css";
@@ -7,7 +7,7 @@ import IssueModal from "./components/IssueModal";
 import { KanbanBoardDoc } from "./datatype";
 import Board from "./pages/Board";
 import Issue from "./pages/Issue";
-import { useHandleDef } from "@/hooks/useHandleDef";
+import { useHandleDef } from "@patchwork/sdk/hooks";
 
 interface MenuContextInterface {
   showMenu: boolean;

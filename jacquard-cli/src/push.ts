@@ -1,6 +1,6 @@
-import { dataTypeById, initFrom } from "@/datatypes";
-import { FolderDoc } from "@/packages/folder";
-import { initVersionControlMetadata } from "@/versionControl/schema.ts";
+import { dataTypeById, initFrom } from "@patchwork/sdk";
+import { FolderDoc } from "@patchwork/folder";
+import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import { next as A } from "@automerge/automerge";
 import {
@@ -13,7 +13,7 @@ import fs from "fs";
 import path from "path";
 import process from "process";
 import { CommandLineArgs } from ".";
-import { JacquardBuildMetadata } from "../../packages/jacquard/src/datatype";
+import { JacquardBuildMetadata } from "@patchwork/jacquard";
 import { RunResult } from "./run";
 import {
   dataTypes,

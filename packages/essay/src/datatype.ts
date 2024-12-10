@@ -1,16 +1,15 @@
-import { AssetsDoc } from "@/assets";
-import { FileExportMethod } from "@/fileExports";
-import { TextAnchor, textAnchorsAtPath } from "@/lib/textAnchors";
-import { initFrom, type DataType } from "@/sdk";
-import { DecodedChangeWithMetadata } from "@/versionControl/groupChanges";
+import { AssetsDoc } from "@patchwork/sdk/assets";
+import { FileExportMethod } from "@patchwork/sdk/fileExports";
+import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
+import { initFrom, type DataType } from "@patchwork/sdk";
+import { DecodedChangeWithMetadata } from "@patchwork/sdk/versionControl";
 import {
   HasVersionControlMetadata,
   initVersionControlMetadata,
-} from "@/versionControl/schema";
-import { TextPatch } from "@/versionControl/utils";
+} from "@patchwork/sdk/versionControl";
+import { TextPatch } from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import { splice, updateText } from "@automerge/automerge/next";
 import JSZip from "jszip";
 import { pick } from "lodash";
 
@@ -46,7 +45,7 @@ const init = (doc: any, repo: Repo) => {
 const markCopy = (doc: MarkdownDoc) => {
   const firstHeadingIndex = doc.content.search(/^#\s.*$/m);
   if (firstHeadingIndex !== -1) {
-    splice(doc, ["content"], firstHeadingIndex + 2, 0, "Copy of ");
+    A.splice(doc, ["content"], firstHeadingIndex + 2, 0, "Copy of ");
   }
 };
 
@@ -206,7 +205,7 @@ const updateDocFromUnixFile = async (
   }
 
   handle.change((doc) => {
-    updateText(doc, ["content"], content);
+    A.updateText(doc, ["content"], content);
   });
 
   return { didChange: true };
