@@ -75,6 +75,7 @@ If you want to add a package and bundle it into OS (recommended for now), here a
 - copy one of the existing directories in `os/src/packages`. `counter` is a nice minimal one you can start with.
 - You'll need to update a few places to get your new package registered. (Sorry this list is long, it should be shorter.)
   - update the package name in `<yourpackage>/package.json`
+  - update `tsconfig.json` to have an entry for your new package.
   - update `os/package.json`:
     - include an entry pointing to your new package in the dependencies
     - add a `build:<package>` line copying the structure of the existing ones. (This copies the built bundle for your package into the dist of the OS so it can be deployed together.)
