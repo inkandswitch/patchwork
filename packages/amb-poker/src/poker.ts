@@ -18,7 +18,7 @@ const allCards = allRanks.flatMap((rank) =>
   allSuits.map((suit) => `${rank}${suit}` as Card)
 );
 
-const isCard = (value: any): value is Card => {
+export const isCard = (value: any): value is Card => {
   return (
     typeof value === "string" &&
     value.length === 2 &&
@@ -29,7 +29,7 @@ const isCard = (value: any): value is Card => {
 
 type Rank = (typeof allRanks)[number];
 type Suit = (typeof allSuits)[number];
-type Card = `${Rank}${Suit}`;
+export type Card = `${Rank}${Suit}`;
 
 // in this limited language we only support cards, numbers and booleans.
 type UnknownCard = "?";
