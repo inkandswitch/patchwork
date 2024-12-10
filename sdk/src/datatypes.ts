@@ -144,8 +144,13 @@ export type VersionedDataType<D, T, V> = {
 export type DataType<D = unknown, T = unknown, V = unknown> = CoreDataType<D> &
   VersionedDataType<D, T, V>;
 
-export const isDataType = (value: any): value is DataType => {
-  return "type" in value && value.type === "patchwork:dataType";
+export const isDataType = (value: unknown): value is DataType => {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'type' in value &&
+    (value as DataType).type === 'patchwork:dataType'
+  );
 };
 
 const GlobalDataTypes: Record<string, DataType<unknown, unknown, unknown>> = {};

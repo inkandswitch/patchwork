@@ -61,8 +61,13 @@ export const registerTool = (id: string, tool: Promise<Tool[]>) => {
   GlobalTools[id].push(tool);
 };
 
-export const isTool = (value: any): value is Tool => {
-  return value && "type" in value && value.type === "patchwork:tool";
+export const isTool = (value: unknown): value is DataType => {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "type" in value &&
+    (value as Tool).type === "patchwork:tool"
+  );
 };
 
 export const allTools = () => {
