@@ -201,8 +201,6 @@ window.Automerge = Automerge;
 window.repo = repo;
 
 // Gotta get all the datatypes loaded before we can do much of anything
-
-/*
 await Promise.all([
   ...Object.entries(BUNDLED_DATATYPES).map(async ([id, importName]) => {
     const module = await import(importName);
@@ -210,7 +208,6 @@ await Promise.all([
     registerDataType(id, module.dataType);
   }),
 ]);
-*/
 
 const account = await getAccount(repo);
 const mSU = repo.find<ModuleSettingsDoc>(
@@ -242,7 +239,13 @@ const toolFromImportString = async (importName: string): Promise<Tool[]> => {
   return tool;
 };
 
+Object.entries(BUNDLED_TOOLS).map(async ([id, importName]) => {
+  console.log("loading environment-provided tool", id, importName);
+  registerTool(id, toolFromImportString(importName));
+});
+
 Object.entries(doc?.toolModules || {}).map(async ([id, importName]) => {
+  console.log("loading user-provided tool", id, importName);
   registerTool(id, toolFromImportString(importName));
 });
 
