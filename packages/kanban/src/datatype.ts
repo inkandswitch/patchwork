@@ -82,7 +82,7 @@ export const dataType: DataType<KanbanBoardDoc, never, never> = {
   id: "kanban",
   name: "Kanban Board",
   icon: "KanbanSquare",
-  isExperimental: true,
+
   init,
   getTitle,
   setTitle,

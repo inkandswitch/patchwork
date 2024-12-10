@@ -14,8 +14,10 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
 import {
+  Account,
   getAccount,
   isTool,
+  ModuleSettingsDoc,
   registerDataType,
   registerTool,
   Tool,
@@ -198,6 +200,35 @@ window.Automerge = Automerge;
 // @ts-expect-error - adding property to window
 window.repo = repo;
 
+// Gotta get all the datatypes loaded before we can do much of anything
+
+/*
+await Promise.all([
+  ...Object.entries(BUNDLED_DATATYPES).map(async ([id, importName]) => {
+    const module = await import(importName);
+    console.log("built-in datatype", id, module);
+    registerDataType(id, module.dataType);
+  }),
+]);
+*/
+
+const account = await getAccount(repo);
+const mSU = repo.find<ModuleSettingsDoc>(
+  account.handle.docSync()!.moduleSettingsUrl
+);
+const doc = await mSU.doc();
+console.log("user datatypes loading:", doc, mSU);
+await Promise.all([
+  ...Object.entries(doc?.dataTypeModules || {}).map(
+    async ([id, importName]) => {
+      const module = await import(importName);
+      console.log("user datatype", id, module);
+      registerDataType(id, module.dataType);
+    }
+  ),
+]);
+
+// Tools we can wait on, so just slide on past this
 const toolFromImportString = async (importName: string): Promise<Tool[]> => {
   const module = await import(importName);
   if (!module) throw new Error(`No module for  ${importName}`);
@@ -211,18 +242,9 @@ const toolFromImportString = async (importName: string): Promise<Tool[]> => {
   return tool;
 };
 
-Object.entries(BUNDLED_TOOLS).map(async ([id, importName]) => {
+Object.entries(doc?.toolModules || {}).map(async ([id, importName]) => {
   registerTool(id, toolFromImportString(importName));
 });
-
-// Gotta get all the datatypes loaded before we can do much of anything
-await Promise.all([
-  ...Object.entries(BUNDLED_DATATYPES).map(async ([id, importName]) => {
-    const module = await import(importName);
-    console.log("datatype", id, module);
-    registerDataType(id, module.dataType);
-  }),
-]);
 
 export const Root = () => (
   <RepoContext.Provider value={repo}>

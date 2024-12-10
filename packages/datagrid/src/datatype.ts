@@ -153,7 +153,6 @@ export const dataType: DataType<DataGridDoc, DataGridDocAnchor, string> = {
   id: "datagrid",
   name: "Spreadsheet",
   icon: "Sheet",
-  isExperimental: true,
 
   init,
   getTitle,

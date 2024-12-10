@@ -33,7 +33,6 @@ export const dataType: DataType<CounterDoc, unknown> = {
   id: "counter",
   name: "Counter",
   icon: "PlusCircle",
-  isExperimental: true,
 
   init,
   getTitle,

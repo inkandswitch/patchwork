@@ -18,18 +18,12 @@ export type CoreDataType<D> = {
   type: "patchwork:dataType";
   name: string;
   icon: IconType;
-  init: (doc: D, repo: Repo) => void;
+  init?: (doc: D, repo: Repo) => void;
   getTitle: (doc: D, repo: Repo) => Promise<string>;
   setTitle?: (doc: any, title: string) => void;
   markCopy: (doc: D) => void; // TODO: this shouldn't be part of the interface
   actions?: Record<string, (doc: Doc<D>, args: object) => void>;
   fileExportMethods?: FileExportMethod<D>[];
-  /* Marking a data types as experimental hides it by default
-   * so the user has to enable them in their account first  */
-  isExperimental?: boolean;
-
-  /* If this flag is enabled the data type won't show up in the new document menu */
-  disableManualCreation?: boolean;
 
   // UNIX SYNC (for Jacquard)
   // Pulling
@@ -147,9 +141,9 @@ export type DataType<D = unknown, T = unknown, V = unknown> = CoreDataType<D> &
 export const isDataType = (value: unknown): value is DataType => {
   return (
     value !== null &&
-    typeof value === 'object' &&
-    'type' in value &&
-    (value as DataType).type === 'patchwork:dataType'
+    typeof value === "object" &&
+    "type" in value &&
+    (value as DataType).type === "patchwork:dataType"
   );
 };
 

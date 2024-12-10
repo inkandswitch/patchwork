@@ -12,7 +12,6 @@ import { ChangeEvent, useEffect, useState } from "react";
 
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -146,6 +145,8 @@ export const AccountPicker = ({
   const isLoggedIn = self?.type === "registered";
 
   const dataTypes = allDataTypes();
+  console.log({ moduleSettingsDoc, dataTypes });
+  const dataTypeModules = moduleSettingsDoc?.dataTypeModules || {};
 
   return (
     <Dialog>
@@ -323,46 +324,30 @@ export const AccountPicker = ({
               <Label>Data types</Label>
 
               <div className="flex flex-col gap-2 py-2">
-                {moduleSettingsDoc &&
-                  Object.entries(dataTypes).map(([, dataType]) => {
-                    const isEnabled =
-                      moduleSettingsDoc.enabledDatatypeIds[dataType.id];
-
-                    const isChecked =
-                      isEnabled ||
-                      (isEnabled === undefined && !dataType.isExperimental);
-
-                    return (
-                      <div
-                        className="flex items-center gap-2"
-                        key={dataType.id}
+                {Object.entries(dataTypes).map(([, dataType]) => {
+                  return (
+                    <div className="flex items-center gap-2" key={dataType.id}>
+                      <label
+                        htmlFor={`datatype-${dataType.id}`}
+                        className="text-sm text-gray-600 cursor-pointer "
                       >
-                        <Checkbox
-                          id={`datatype-${dataType.id}`}
-                          checked={isChecked}
-                          onClick={(e) => e.stopPropagation()}
-                          onCheckedChange={() => {
-                            changeModuleSettingsDoc((settings) => {
-                              settings.enabledDatatypeIds[dataType.id] =
-                                !isChecked;
-                            });
-                          }}
+                        <Icon
+                          type={dataType.icon}
+                          size={14}
+                          className="inline-block font-bold mr-2 align-top mt-[2px]"
                         />
-                        <label
-                          htmlFor={`datatype-${dataType.id}`}
-                          className="text-sm text-gray-600 cursor-pointer "
-                        >
-                          <Icon
-                            type={dataType.icon}
-                            size={14}
-                            className="inline-block font-bold mr-2 align-top mt-[2px]"
-                          />
-                          {dataType.name}
-                          {dataType.isExperimental ? " 🧪" : ""}
-                        </label>
-                      </div>
-                    );
-                  })}
+                        {dataType.name}
+                      </label>
+                      {dataTypeModules[dataType.id] && (
+                        <Input
+                          id={`datatype-${dataType.id}`}
+                          value={dataTypeModules[dataType.id]}
+                          onChange={(evt) => setName(evt.target.value)}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               <p className="text-gray-500 text-justify pt-2 text-sm">

@@ -40,5 +40,4 @@ export const dataType: DataType<EngraftDoc, unknown, unknown> = {
   markCopy: (doc) => {
     doc.title = "Copy of " + doc.title;
   },
-  isExperimental: true,
 };

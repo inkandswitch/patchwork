@@ -114,7 +114,7 @@ export const Explorer: React.FC = () => {
       const newDocHandle =
         repo.create<HasVersionControlMetadata<unknown, unknown>>();
       newDocHandle.change((doc) => {
-        dataType.init(doc, repo);
+        dataType.init && dataType.init(doc, repo);
 
         if (change) {
           change(doc);

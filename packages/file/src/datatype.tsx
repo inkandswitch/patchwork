@@ -56,12 +56,6 @@ const getTitle = async (doc: FileDoc) => {
   return doc.name || "Untitled File";
 };
 
-export const init = (doc: FileDoc) => {
-  // todo: should only be able to create this by importing a file
-  // or by creating a specific type
-  throw new Error("can't create empty file");
-};
-
 const ChangeGroupView = ({
   changeGroup,
 }: {
@@ -273,12 +267,10 @@ export const dataType: DataType<FileDoc, TextAnchor, string> = {
   id: "file",
   name: "File",
   icon: "File", // todo: this should be a function, to be type specific
-  init,
   getTitle,
   setTitle,
   markCopy,
   promptForAIChangeGroupSummary,
-  disableManualCreation: true,
   // todo: long term we probably want something different but this lets
   // us see each change directly
   // groupChanges: noGrouping,

@@ -111,7 +111,6 @@ export const dataType: DataType<JacquardBuildMetadata, never, string> = {
   id: "jacquard-build-metadata",
   name: "Jacquard Build Metadata",
   icon: "Microscope",
-  isExperimental: false, // TODO set true before merging?
 
   init,
   getTitle,

@@ -53,11 +53,7 @@ import {
   RenameHandler,
   Tree,
 } from "react-arborist";
-import {
-  useCurrentAccount,
-  useCurrentAccountDoc,
-  useDatatypeSettings,
-} from "@patchwork/sdk";
+import { useCurrentAccount, useCurrentAccountDoc } from "@patchwork/sdk";
 import { UIStateDoc } from "@patchwork/sdk/router";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
@@ -275,8 +271,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     rootFolderUrl,
     flatDocPaths,
   } = rootFolderDoc;
-
-  const datatypeSettings = useDatatypeSettings();
 
   // state related to open popover
   const [openNewDocPopoverVisible, setOpenNewDocPopoverVisible] =
@@ -509,12 +503,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="py-2  border-b border-gray-200">
         {Object.values(dataTypes).map((dataType) => {
           const { id } = dataType;
-          const isEnabled = datatypeSettings?.enabledDatatypeIds[id];
-          if (
-            isEnabled == false ||
-            (isEnabled !== true && dataType.isExperimental) ||
-            dataType.disableManualCreation
-          ) {
+          if (!dataType.init) {
             return;
           }
 

@@ -80,7 +80,6 @@ export const dataType: DataType<PackageDoc, never, never> = {
   id: "pkg",
   name: "Package",
   icon: "Package",
-  isExperimental: true,
   init,
   getTitle,
   setTitle,

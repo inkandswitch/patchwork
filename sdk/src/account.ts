@@ -25,7 +25,8 @@ import {
 import { AssetsDoc } from "./assets";
 
 export type ModuleSettingsDoc = {
-  enabledDatatypeIds: { [id: string]: boolean };
+  toolModules: { [id: string]: string };
+  dataTypeModules: { [id: string]: string };
 };
 
 export interface AccountDoc {
@@ -234,7 +235,8 @@ const createAccount = (
   });
 
   const moduleSettingsDocHandle = repo.create<ModuleSettingsDoc>({
-    enabledDatatypeIds: {},
+    dataTypeModules: {},
+    toolModules: {},
   });
 
   const accountHandle = repo.create<AccountDoc>({
@@ -301,10 +303,13 @@ export function useCurrentAccount(): Account | undefined {
       });
     }
 
+    // TODO: migrate existing accounts before landing!
+    // (moduleSettingsUrl will be defined but it'll be missing dataTypeModules & toolModules)
     if (account && doc && doc.moduleSettingsUrl === undefined) {
       const moduleSettingsHandle = repo.create<ModuleSettingsDoc>();
       moduleSettingsHandle.change((settings) => {
-        settings.enabledDatatypeIds = {};
+        settings.dataTypeModules = {};
+        settings.toolModules = {};
       });
       account.handle.change((account) => {
         account.moduleSettingsUrl = moduleSettingsHandle.url;
