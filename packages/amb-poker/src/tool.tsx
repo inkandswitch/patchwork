@@ -56,7 +56,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   console.log(activeScenario);
 
   const rows = [
-    { label: "Mine", cards: ["myCard1", "myCard2"] },
+    { label: "Theirs", cards: ["theirCard1", "theirCard2", "theirHand"] },
     {
       label: "Community",
       cards: [
@@ -67,9 +67,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         "communityCard5",
       ],
     },
-    { label: "Theirs", cards: ["theirCard1", "theirCard2"] },
-    { label: "My hand", cards: ["myHand"] },
-    { label: "Their hand", cards: ["theirHand"] },
+    { label: "Mine", cards: ["myCard1", "myCard2", "myHand"] },
     { label: "I win", cards: ["iWin"] },
   ];
 
@@ -116,7 +114,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                             return <Hand hand={cardValue} />;
                           }
                           if (typeof cardValue === "boolean") {
-                            return cardValue ? "true" : "false";
+                            return cardValue ? "✅ true" : "❌ false";
                           }
                           return cardValue;
                         })()}

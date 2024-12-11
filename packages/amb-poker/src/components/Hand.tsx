@@ -20,7 +20,7 @@ interface HandProps {
 export const Hand: React.FC<HandProps> = ({ hand }) => {
   if (hand instanceof HighCardHand) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col h-14">
         <div className="text-sm text-gray-600">High Card</div>
         <div className="flex gap-2">
           {hand.getCards().map((card, i) => (
@@ -33,7 +33,7 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
 
   if (hand instanceof OnePairHand) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col h-14">
         <div className="text-sm text-gray-600">Pair</div>
         <div className="flex gap-2">
           <div className="border rounded p-1 flex gap-1">
@@ -51,7 +51,7 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
 
   if (hand instanceof TwoPairHand) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col h-14">
         <div className="text-sm text-gray-600">Two Pair</div>
         <div className="flex gap-2">
           <div className="border rounded p-1 flex gap-1">
@@ -72,14 +72,10 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
 
   if (hand instanceof ThreeOfAKindHand) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col h-14">
         <div className="text-sm text-gray-600">Three of a Kind</div>
         <div className="flex gap-2">
           <div className="border rounded p-1 flex gap-1">
-            {(() => {
-              console.log("three cards", hand.threeCards);
-              return null;
-            })()}
             {hand.threeCards.map((card, i) => (
               <CardComponent key={i} card={card} />
             ))}
@@ -94,7 +90,7 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
 
   if (hand instanceof StraightHand) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col h-14">
         <div className="text-sm text-gray-600">Straight</div>
         <div className="flex gap-2">
           {hand.getCards().map((card, i) => (
@@ -107,7 +103,7 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
 
   if (hand instanceof FlushHand) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col h-14">
         <div className="text-sm text-gray-600">Flush</div>
         <div className="flex gap-2">
           {hand.getCards().map((card, i) => (
@@ -120,7 +116,7 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
 
   if (hand instanceof FullHouseHand) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col h-14">
         <div className="text-sm text-gray-600">Full House</div>
         <div className="flex gap-2">
           <div className="border rounded p-1 flex gap-1">
@@ -140,7 +136,7 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
 
   if (hand instanceof FourOfAKindHand) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col h-14">
         <div className="text-sm text-gray-600">Four of a Kind</div>
         <div className="flex gap-2">
           <div className="border rounded p-1 flex gap-1">
@@ -156,7 +152,7 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
 
   if (hand instanceof StraightFlushHand) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col h-14">
         <div className="text-sm text-gray-600">Straight Flush</div>
         <div className="flex gap-2">
           {hand.getCards().map((card, i) => (
