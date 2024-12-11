@@ -55,8 +55,13 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
 
 const GlobalTools: Record<string, Promise<Tool[]>[]> = {};
 export const registerTool = (id: string, tool: Promise<Tool[]>) => {
+  console.log("registering tool", id, tool);
   if (!GlobalTools[id]) {
     GlobalTools[id] = [];
+  }
+  if (GlobalTools[id].includes(tool)) {
+    console.warn("Tool already registered", id, tool);
+    return;
   }
   GlobalTools[id].push(tool);
 };

@@ -152,11 +152,11 @@ export const registerDataType = (
   id: string,
   datatype: DataType<unknown, unknown, unknown>
 ) => {
-  if (GlobalDataTypes[id]) {
+  console.log("registering datatype", id, datatype);
+  if (GlobalDataTypes[id] && GlobalDataTypes[id] !== datatype) {
     console.warn(
-      `DataType ${id} replacing datatype. This is probably an error. (from/to)`,
-      GlobalDataTypes[id],
-      datatype
+      `DataType ${id} replacing current datatype.`,
+      GlobalDataTypes[id]
     );
   }
   GlobalDataTypes[id] = datatype;

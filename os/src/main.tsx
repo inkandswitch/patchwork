@@ -13,20 +13,11 @@ import { next as Automerge } from "@automerge/automerge";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
-import {
-  Account,
-  getAccount,
-  isTool,
-  ModuleSettingsDoc,
-  registerDataType,
-  registerTool,
-  Tool,
-} from "@patchwork/sdk";
+import { getAccount } from "@patchwork/sdk";
 import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
 import { BACKUP_SYNC } from "./explorer/components/SyncIndicator.js";
-
-import { BUNDLED_TOOLS, BUNDLED_DATATYPES } from "./bundledPackages.js";
+import { CodeLoader } from "./codeLoader.js";
 
 // Peer id prefix is added to both the peer id of the client and the service worker
 // to make it easier to grep for logs that are related to your own changes / sync state
@@ -145,17 +136,25 @@ function establishMessageChannel(serviceWorker: ServiceWorker) {
   console.log("Connected to service worker");
 }
 
-// Setup account
-
+// Setup account & code loader
 let author: AutomergeUrl;
 
-getAccount(repo).then((account) => {
+async function setupAccount() {
+  const account = await getAccount(repo);
   author = account.contactHandle.url;
 
   account.on("change", () => {
     author = account.contactHandle.url;
   });
-});
+
+  const moduleSettingsUrl = account.handle.docSync()?.moduleSettingsUrl;
+  if (moduleSettingsUrl) {
+    new CodeLoader(repo.find(moduleSettingsUrl));
+  }
+
+  return account;
+}
+await setupAccount();
 
 /** Here we monkey patch the DocHandle to
  *  always add the currently logged in user as author
@@ -199,55 +198,6 @@ window.Automerge = Automerge;
 
 // @ts-expect-error - adding property to window
 window.repo = repo;
-
-// Gotta get all the datatypes loaded before we can do much of anything
-await Promise.all([
-  ...Object.entries(BUNDLED_DATATYPES).map(async ([id, importName]) => {
-    const module = await import(importName);
-    console.log("built-in datatype", id, module);
-    registerDataType(id, module.dataType);
-  }),
-]);
-
-const account = await getAccount(repo);
-const mSU = repo.find<ModuleSettingsDoc>(
-  account.handle.docSync()!.moduleSettingsUrl
-);
-const doc = await mSU.doc();
-console.log("user datatypes loading:", doc, mSU);
-await Promise.all([
-  ...Object.entries(doc?.dataTypeModules || {}).map(
-    async ([id, importName]) => {
-      const module = await import(importName);
-      console.log("user datatype", id, module);
-      registerDataType(id, module.dataType);
-    }
-  ),
-]);
-
-// Tools we can wait on, so just slide on past this
-const toolFromImportString = async (importName: string): Promise<Tool[]> => {
-  const module = await import(importName);
-  if (!module) throw new Error(`No module for  ${importName}`);
-  let tool = module.tool;
-  if (!Array.isArray(tool)) {
-    tool = [tool];
-  }
-
-  if (!tool.every(isTool))
-    throw new Error(`Module but no exported ".tool" for ${importName}`);
-  return tool;
-};
-
-Object.entries(BUNDLED_TOOLS).map(async ([id, importName]) => {
-  console.log("loading environment-provided tool", id, importName);
-  registerTool(id, toolFromImportString(importName));
-});
-
-Object.entries(doc?.toolModules || {}).map(async ([id, importName]) => {
-  console.log("loading user-provided tool", id, importName);
-  registerTool(id, toolFromImportString(importName));
-});
 
 export const Root = () => (
   <RepoContext.Provider value={repo}>

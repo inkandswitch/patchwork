@@ -393,7 +393,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const rootFolderPath = DocPathUtils.forRoot(rootFolderUrl);
   const openModuleSettings = () => {
-    debugger;
     selectDocPath([
       ...rootFolderPath,
       {
