@@ -8,9 +8,10 @@ import { bestHand, PokerHand } from "./handEvaluation";
 import { CardViewer } from "./components/Card";
 import { HandViewer } from "./components/Hand";
 import { valueViewers } from "./valueViewers";
+import { Button } from "@patchwork/sdk/ui/button";
 
 // when this gets to 100k+, something gets slow...
-const MAX_SCENARIOS = 20000;
+const DEFAULT_MAX_SCENARIOS = 20000;
 const MAX_MS_FOR_SCENARIO_GEN_PER_FRAME = 4; // how many ms do we spend generating scenarios per frame
 
 export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
@@ -21,11 +22,11 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   const scenariosRef = React.useRef<Scenario[]>([]);
   const [scenarioCount, setScenarioCount] = useState(0); // For triggering re-renders
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState(0);
+  const [maxScenarios, setMaxScenarios] = useState(DEFAULT_MAX_SCENARIOS);
 
   const totalComputeTime = useRef(0);
 
   useEffect(() => {
-    scenariosRef.current = [];
     const engine = new Engine(model, (scenario) => {
       scenariosRef.current.push(scenario);
     });
@@ -42,14 +43,16 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
 
       setScenarioCount(scenariosRef.current.length); // Trigger re-render after batch
 
-      if (scenariosRef.current.length < MAX_SCENARIOS) {
+      if (scenariosRef.current.length < maxScenarios) {
         requestAnimationFrame(frame);
       }
     };
     requestAnimationFrame(frame);
-  }, [model]);
+  }, [model, maxScenarios]);
 
-  const activeScenario = scenariosRef.current[selectedScenarioIndex];
+  useEffect(() => {
+    scenariosRef.current = [];
+  }, [model]);
 
   const rows = [
     { label: "Theirs", values: ["theirCard1", "theirCard2", "theirHand"] },
@@ -176,6 +179,18 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         {totalComputeTime.current.toFixed(0)}ms of active compute time. (
         {((scenarioCount / totalComputeTime.current) * 1000).toFixed(0)}{" "}
         scenarios/s)
+      </div>
+
+      <div className="p-4 text-xs">
+        <div>Scenario count limit: {maxScenarios}</div>
+        <Button
+          onClick={() => {
+            setMaxScenarios(maxScenarios * 2);
+          }}
+          variant="default"
+        >
+          Raise limit to {maxScenarios * 2}
+        </Button>
       </div>
     </div>
   );

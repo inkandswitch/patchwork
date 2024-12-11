@@ -17,7 +17,9 @@ import {
 // This function turns a value into an object with properties of primitive type.
 // The properties should be suitable for aggregating a list of values into useful groups.
 // TODO: where *should* this mapping live? Probably not here in a viewer.
-const turnValueIntoAggregatableObject = (value: Value) => {
+const turnValueIntoAggregatableObject = (
+  value: Value
+): { [key: string]: string | boolean | number } => {
   if (isCard(value)) {
     return { rank: getRank(value), suit: getSuit(value) };
   } else if (
@@ -30,6 +32,7 @@ const turnValueIntoAggregatableObject = (value: Value) => {
     return { handType: value.type };
   } else {
     const _exhaustiveCheck: never = value;
+    return {};
   }
 };
 
@@ -57,14 +60,16 @@ export const barChartViewer: ValueViewer = {
       ),
     }));
 
+    console.log({ groupedByKeys });
+
     return (
       <div className="flex flex-col gap-2">
         <div>
           {groupedByKeys.map((group) => (
             <div key={group.key}>
               {groupedByKeys.length > 1 && <div>{group.key}</div>}
-              <ResponsiveContainer width={300} height={120}>
-                <BarChart data={group.groups} width={400} height={120}>
+              <ResponsiveContainer width={300} height={70}>
+                <BarChart data={group.groups} width={400} height={70}>
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />

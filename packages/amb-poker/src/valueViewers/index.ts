@@ -14,4 +14,4 @@ export type ValueViewer = {
   component: React.FC<{ values: FilteredValue[] }>;
 };
 
-export const valueViewers: ValueViewer[] = [barChartViewer];
+export const valueViewers: ValueViewer[] = [];
