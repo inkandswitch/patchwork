@@ -14,15 +14,15 @@ const DEFAULT_MAX_SCENARIOS = 20000;
 const MAX_MS_FOR_SCENARIO_GEN_PER_FRAME = 4; // how many ms do we spend generating scenarios per frame
 const UPDATE_VIEW_EVERY_MS = 100;
 
-export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
-  docUrl,
-}) => {
-  const [doc, changeDoc] = useDocument(docUrl);
+// We don't use the automerge doc for anything yet.
+// Once the model is properly editable it'll be in the automerge doc.
+export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
   const [model, setModel] = useState<Model>(SAMPLE_MODEL);
   const scenariosRef = React.useRef<Scenario[]>([]);
   const [scenarioCount, setScenarioCount] = useState(0); // For triggering re-renders
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState(0);
   const [maxScenarios, setMaxScenarios] = useState(DEFAULT_MAX_SCENARIOS);
+  const [selectedValue, setSelectedValue] = useState<string | null>(null);
 
   const totalComputeTime = useRef(0);
 
@@ -73,7 +73,12 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   }
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div
+      className="flex h-full overflow-hidden"
+      onClick={() => {
+        setSelectedValue(null);
+      }}
+    >
       {/* Main content area */}
       <div
         className="flex-1 flex flex-col overflow-hidden bg-cover bg-center bg-repeat text-white"
@@ -92,19 +97,24 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                   </div>
                   <div className="flex gap-4 justify-center">
                     {values.map((name) => {
-                      const value = model.cells[name];
                       return (
-                        <div key={name}>
-                          {value === "?" && (
-                            <div className="absolute top-1 right-2 text-gray-500">
-                              ?
-                            </div>
-                          )}
+                        <div
+                          key={name}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedValue(name);
+                          }}
+                          className={`relative p-1 cursor-pointer rounded-md ${
+                            selectedValue === name
+                              ? "bg-blue-500 bg-opacity-40 border border-white box-border"
+                              : "border border-transparent"
+                          }`}
+                        >
                           <div className="text-sm mb-1 text-white font-mono">
                             {name}
                           </div>
                           <div
-                            className={` text-lg max-h-64 overflow-hidden overflow-y-autorounded relative`}
+                            className={`p-1 text-lg max-h-64 overflow-hidden overflow-y-autorounded relative`}
                           >
                             {(() => {
                               const ambValue = scenariosRef.current.map(
@@ -137,16 +147,12 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         </div>
       </div>
 
-      <div className="bg-[#003300] text-white w-80 border-l flex-shrink-0 overflow-hidden flex flex-col">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold">Statistics</h2>
-        </div>
+      <div className="bg-[#003300] text-white w-80 border-l flex-shrink-0 overflow-hidden flex flex-col gap-4">
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-6">
             <div>
-              <h3 className="font-medium mb-3">Scenario Selection</h3>
               <div className="space-y-2">
-                <input
+                {/* <input
                   type="range"
                   min={0}
                   max={Math.max(0, scenarioCount - 1)}
@@ -159,7 +165,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                 <div className="text-sm text-gray-600">
                   Viewing scenario {selectedScenarioIndex + 1} of{" "}
                   {scenarioCount}
-                </div>
+                </div> */}
                 <div className="text-sm text-gray-500">
                   {scenarioCount} scenarios enumerated in{" "}
                   {totalComputeTime.current.toFixed(0)}ms
@@ -173,7 +179,6 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
             </div>
 
             <div>
-              <h3 className="font-medium mb-3">Controls</h3>
               <div className="text-sm space-y-2">
                 <div>Current limit: {maxScenarios} scenarios</div>
                 <Button
@@ -187,6 +192,36 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                 </Button>
               </div>
             </div>
+
+            {selectedValue && (
+              <div className="flex flex-col gap-2 border-t border-gray-400 pt-4">
+                <div className="text-md text-white font-medium">
+                  {selectedValue}
+                </div>
+                {(() => {
+                  const ambValue = scenariosRef.current.map(
+                    (scenario) => scenario[selectedValue]
+                  );
+                  const filteredValues = ambValue.map((v) => ({
+                    value: v,
+                    include: true,
+                  }));
+                  const viewers = valueViewers.filter(
+                    (v) => v.shouldRender(filteredValues) !== "hide"
+                  );
+                  return viewers.map((viewer) => (
+                    <div key={viewer.name}>
+                      <div className="text-sm text-white">{viewer.name}</div>
+                      <div className="p-1 text-lg max-h-64 overflow-hidden overflow-y-autorounded relative">
+                        {viewer.component({
+                          values: filteredValues,
+                        })}
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
           </div>
         </div>
       </div>
