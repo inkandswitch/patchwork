@@ -76,8 +76,10 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
     <div className="flex h-full overflow-hidden">
       {/* Main content area */}
       <div
-        className="flex-1 flex flex-col overflow-hidden bg-cover bg-center bg-no-repeat bg-fixed text-white"
-        style={{ backgroundImage: `url(${background})` }}
+        className="flex-1 flex flex-col overflow-hidden bg-cover bg-center bg-repeat text-white"
+        style={{
+          backgroundImage: `url(${background})`,
+        }}
       >
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
