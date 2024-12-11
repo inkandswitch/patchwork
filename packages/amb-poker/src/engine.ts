@@ -11,7 +11,9 @@ export class Engine {
 
   next() {
     const scenario: Scenario = {};
-
+    const availableCards = allCards.filter(
+      (c) => !Object.values(this.model.cells).includes(c)
+    );
     // For each cell in the model
     for (const [cellName, cell] of Object.entries(this.model.cells)) {
       if (
@@ -22,12 +24,9 @@ export class Engine {
         scenario[cellName] = cell;
       } else if (cell === "?") {
         // Get a random card that's not already used in the context
-        const availableCards = allCards.filter(
-          (c) => !Object.values(scenario).includes(c)
-        );
         const randomIndex = Math.floor(Math.random() * availableCards.length);
-
         scenario[cellName] = availableCards[randomIndex];
+        availableCards.splice(randomIndex, 1);
       }
     }
 
