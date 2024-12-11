@@ -1,5 +1,5 @@
 import React from "react";
-import { CardComponent } from "./Card";
+import { CardViewer } from "./Card";
 import {
   PokerHand,
   HighCardHand,
@@ -17,14 +17,14 @@ interface HandProps {
   hand: PokerHand;
 }
 
-export const Hand: React.FC<HandProps> = ({ hand }) => {
+export const HandViewer: React.FC<HandProps> = ({ hand }) => {
   if (hand instanceof HighCardHand) {
     return (
       <div className="flex flex-col h-14">
         <div className="text-sm text-gray-600">High Card</div>
         <div className="flex gap-2">
           {hand.getCards().map((card, i) => (
-            <CardComponent key={i} card={card} />
+            <CardViewer key={i} card={card} />
           ))}
         </div>
       </div>
@@ -38,11 +38,11 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
         <div className="flex gap-2">
           <div className="border rounded p-1 flex gap-1">
             {hand.pairCards.map((card, i) => (
-              <CardComponent key={i} card={card} />
+              <CardViewer key={i} card={card} />
             ))}
           </div>
           {hand.kickers.map((card, i) => (
-            <CardComponent key={i} card={card} />
+            <CardViewer key={i} card={card} />
           ))}
         </div>
       </div>
@@ -56,15 +56,15 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
         <div className="flex gap-2">
           <div className="border rounded p-1 flex gap-1">
             {hand.highPairCards.map((card, i) => (
-              <CardComponent key={i} card={card} />
+              <CardViewer key={i} card={card} />
             ))}
           </div>
           <div className="border rounded p-1 flex gap-1">
             {hand.lowPairCards.map((card, i) => (
-              <CardComponent key={i} card={card} />
+              <CardViewer key={i} card={card} />
             ))}
           </div>
-          <CardComponent card={hand.kicker} />
+          <CardViewer card={hand.kicker} />
         </div>
       </div>
     );
@@ -77,11 +77,11 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
         <div className="flex gap-2">
           <div className="border rounded p-1 flex gap-1">
             {hand.threeCards.map((card, i) => (
-              <CardComponent key={i} card={card} />
+              <CardViewer key={i} card={card} />
             ))}
           </div>
           {hand.kickers.map((card, i) => (
-            <CardComponent key={i} card={card} />
+            <CardViewer key={i} card={card} />
           ))}
         </div>
       </div>
@@ -94,7 +94,7 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
         <div className="text-sm text-gray-600">Straight</div>
         <div className="flex gap-2">
           {hand.getCards().map((card, i) => (
-            <CardComponent key={i} card={card} />
+            <CardViewer key={i} card={card} />
           ))}
         </div>
       </div>
@@ -107,7 +107,7 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
         <div className="text-sm text-gray-600">Flush</div>
         <div className="flex gap-2">
           {hand.getCards().map((card, i) => (
-            <CardComponent key={i} card={card} />
+            <CardViewer key={i} card={card} />
           ))}
         </div>
       </div>
@@ -121,12 +121,12 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
         <div className="flex gap-2">
           <div className="border rounded p-1 flex gap-1">
             {hand.threeCards.map((card, i) => (
-              <CardComponent key={i} card={card} />
+              <CardViewer key={i} card={card} />
             ))}
           </div>
           <div className="border rounded p-1 flex gap-1">
             {hand.pairCards.map((card, i) => (
-              <CardComponent key={i} card={card} />
+              <CardViewer key={i} card={card} />
             ))}
           </div>
         </div>
@@ -141,10 +141,10 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
         <div className="flex gap-2">
           <div className="border rounded p-1 flex gap-1">
             {hand.fourCards.map((card, i) => (
-              <CardComponent key={i} card={card} />
+              <CardViewer key={i} card={card} />
             ))}
           </div>
-          <CardComponent card={hand.kicker} />
+          <CardViewer card={hand.kicker} />
         </div>
       </div>
     );
@@ -156,7 +156,7 @@ export const Hand: React.FC<HandProps> = ({ hand }) => {
         <div className="text-sm text-gray-600">Straight Flush</div>
         <div className="flex gap-2">
           {hand.getCards().map((card, i) => (
-            <CardComponent key={i} card={card} />
+            <CardViewer key={i} card={card} />
           ))}
         </div>
       </div>

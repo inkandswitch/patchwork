@@ -34,11 +34,14 @@ export type Rank = (typeof allRanks)[number];
 export type Suit = (typeof allSuits)[number];
 export type Card = `${Rank}${Suit}`;
 
+export const getRank = (card: Card) => card[0];
+export const getSuit = (card: Card) => card[1];
+
 // in this limited language we only support cards, numbers and booleans.
 type UnknownCard = "?";
 type Term = Value | UnknownCard;
 
-type Value = number | boolean | string | Card | PokerHand;
+export type Value = number | boolean | string | Card | PokerHand;
 
 // A tiny stub of the deal function. TODO: make this real
 const deal = (card: Card | UnknownCard = "?"): Card | UnknownCard => card;

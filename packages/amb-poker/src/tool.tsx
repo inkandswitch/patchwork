@@ -1,12 +1,13 @@
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps, makeTool } from "@patchwork/sdk";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AmbPokerDoc } from "./datatype";
 import { Model, SAMPLE_MODEL, Scenario, Card, isCard } from "./model";
 import { Engine } from "./engine";
 import { bestHand, PokerHand } from "./handEvaluation";
-import { CardComponent } from "./components/Card";
-import { Hand } from "./components/Hand";
+import { CardViewer } from "./components/Card";
+import { HandViewer } from "./components/Hand";
+import { valueViewers } from "./valueViewers";
 
 // when this gets to 100k+, something gets slow...
 const MAX_SCENARIOS = 20000;
@@ -21,6 +22,8 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   const [scenarioCount, setScenarioCount] = useState(0); // For triggering re-renders
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState(0);
 
+  const totalComputeTime = useRef(0);
+
   useEffect(() => {
     scenariosRef.current = [];
     const engine = new Engine(model, (scenario) => {
@@ -34,14 +37,9 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         engine.next();
         iterationsPerFrame++;
       }
+      totalComputeTime.current += performance.now() - start;
       // occasionally report the rate of scenario generation
-      if (Math.random() < 0.001) {
-        console.log(
-          `Generated ${iterationsPerFrame} scenarios in ${
-            performance.now() - start
-          }ms`
-        );
-      }
+
       setScenarioCount(scenariosRef.current.length); // Trigger re-render after batch
 
       if (scenariosRef.current.length < MAX_SCENARIOS) {
@@ -53,13 +51,11 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
 
   const activeScenario = scenariosRef.current[selectedScenarioIndex];
 
-  console.log(activeScenario);
-
   const rows = [
-    { label: "Theirs", cards: ["theirCard1", "theirCard2", "theirHand"] },
+    { label: "Theirs", values: ["theirCard1", "theirCard2", "theirHand"] },
     {
       label: "Community",
-      cards: [
+      values: [
         "communityCard1",
         "communityCard2",
         "communityCard3",
@@ -67,8 +63,8 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         "communityCard5",
       ],
     },
-    { label: "Mine", cards: ["myCard1", "myCard2", "myHand"] },
-    { label: "I win", cards: ["iWin"] },
+    { label: "Mine", values: ["myCard1", "myCard2", "myHand"] },
+    { label: "I win", values: ["iWin"] },
   ];
 
   const handTypeCounts = new Map<string, number>();
@@ -77,18 +73,22 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
     handTypeCounts.set(type, (handTypeCounts.get(type) ?? 0) + 1);
   }
 
+  if (!scenariosRef.current) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b">
         <h2 className="text-lg font-semibold mb-2">Model</h2>
         <div className="flex flex-col gap-4">
-          {rows.map(({ label, cards }, i) => (
+          {rows.map(({ label, values }, i) => (
             <div key={i} className="flex gap-4 items-center">
               <div className="w-24 text-sm text-gray-600 font-medium">
                 {label}:
               </div>
               <div className="flex gap-4 justify-center">
-                {cards.map((name) => {
+                {values.map((name) => {
                   const value = model.cells[name];
                   return (
                     <div key={name}>
@@ -106,18 +106,29 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                         } rounded relative`}
                       >
                         {(() => {
-                          const cardValue =
-                            activeScenario?.[name] ?? "Loading...";
-                          if (isCard(cardValue)) {
-                            return <CardComponent card={cardValue} />;
-                          } else if (cardValue instanceof PokerHand) {
-                            return <Hand hand={cardValue} />;
+                          const ambValue = scenariosRef.current.map(
+                            (scenario) => scenario[name]
+                          );
+                          const filteredValues = ambValue.map((v) => ({
+                            value: v,
+                            include: true,
+                          }));
+                          const viewer = valueViewers.find(
+                            (v) => v.shouldRender(filteredValues) !== "hide"
+                          );
+                          if (viewer) {
+                            return viewer.component({ values: filteredValues });
+                          } else {
+                            return "noviewer";
                           }
-                          if (typeof cardValue === "boolean") {
-                            return cardValue ? "✅ true" : "❌ false";
-                          }
-                          return cardValue;
                         })()}
+                        {/* return <CardViewer card={cardValue} />;
+                          } else if (cardValue instanceof PokerHand) {
+                            return <HandViewer hand={cardValue} />;
+                          }
+
+                          return cardValue; */}
+                        {/* })()} */}
                       </div>
                     </div>
                   );
@@ -158,6 +169,13 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
             })()}
           </div>
         </div>
+      </div>
+
+      <div className="p-4 text-xs text-gray-500">
+        {scenarioCount} scenarios enumerated in{" "}
+        {totalComputeTime.current.toFixed(0)}ms of active compute time. (
+        {((scenarioCount / totalComputeTime.current) * 1000).toFixed(0)}{" "}
+        scenarios/s)
       </div>
     </div>
   );

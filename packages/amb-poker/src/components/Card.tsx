@@ -1,6 +1,6 @@
 import { Card } from "../model";
 
-export const CardComponent: React.FC<{ card: Card }> = ({ card }) => {
+export const CardViewer: React.FC<{ card: Card }> = ({ card }) => {
   const rank = card[0];
   const suit = card[1];
   const displayRank = rank === "T" ? "10" : rank;
