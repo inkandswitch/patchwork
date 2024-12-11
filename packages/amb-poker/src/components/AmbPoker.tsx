@@ -104,7 +104,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                             {name}
                           </div>
                           <div
-                            className={`bg-white text-black text-lg max-h-64 overflow-hidden overflow-y-autorounded relative`}
+                            className={` text-lg max-h-64 overflow-hidden overflow-y-autorounded relative`}
                           >
                             {(() => {
                               const ambValue = scenariosRef.current.map(
@@ -137,7 +137,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         </div>
       </div>
 
-      <div className="w-80 border-l flex-shrink-0 overflow-hidden flex flex-col">
+      <div className="bg-[#003300] text-white w-80 border-l flex-shrink-0 overflow-hidden flex flex-col">
         <div className="p-4 border-b">
           <h2 className="text-lg font-semibold">Statistics</h2>
         </div>

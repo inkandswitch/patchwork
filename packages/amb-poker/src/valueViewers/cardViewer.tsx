@@ -19,7 +19,7 @@ export const cardViewer: ValueViewer = {
       return <img src={cardBack}></img>;
     } else {
       return (
-        <div className="h-[123px] w-[88px] box-border p-6 border border-black rounded-lg">
+        <div className="bg-white text-black h-[123px] w-[88px] box-border p-6 border border-black rounded-lg">
           <CardViewer card={values[0].value as Card} />
         </div>
       );

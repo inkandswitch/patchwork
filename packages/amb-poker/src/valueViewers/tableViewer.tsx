@@ -14,7 +14,7 @@ export const tableViewer: ValueViewer = {
     const groupedByKeys = aggregateValues(values.map((v) => v.value));
 
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 bg-black bg-opacity-30 rounded-lg">
         {groupedByKeys.map((group) => (
           <div key={group.key} className="w-full">
             {groupedByKeys.length > 1 && (
