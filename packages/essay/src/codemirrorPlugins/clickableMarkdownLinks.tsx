@@ -135,7 +135,7 @@ export const clickableMarkdownLinksPlugin = [
                 name: "Loading...",
               });
             } else {
-              window.open(link.url, "_tab");
+              window.open(link.url, "_blank");
             }
           }
         },
