@@ -7,6 +7,7 @@ import { valueViewers } from "../valueViewers";
 import { Button } from "@patchwork/sdk/ui/button";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps } from "@patchwork/sdk";
+import background from "../background.png";
 
 // when this gets to 100k+, something gets slow...
 const DEFAULT_MAX_SCENARIOS = 20000;
@@ -80,14 +81,17 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   return (
     <div className="flex h-full overflow-hidden">
       {/* Main content area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div
+        className="flex-1 flex flex-col overflow-hidden bg-cover bg-center bg-no-repeat bg-fixed text-white"
+        style={{ backgroundImage: `url(${background})` }}
+      >
         <div className="flex-1 overflow-y-auto">
-          <div className="p-4 border-b">
+          <div className="p-4">
             <h2 className="text-lg font-semibold mb-2">Model</h2>
             <div className="flex flex-col gap-4">
               {rows.map(({ label, values }, i) => (
                 <div key={i} className="flex gap-4 items-center">
-                  <div className="w-24 text-sm text-gray-600 font-medium">
+                  <div className="w-24 text-sm text-white font-medium">
                     {label}:
                   </div>
                   <div className="flex gap-4 justify-center">
@@ -100,13 +104,11 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                               ?
                             </div>
                           )}
-                          <div className="text-sm text-gray-600 font-mono">
+                          <div className="text-sm mb-1 text-white font-mono">
                             {name}
                           </div>
                           <div
-                            className={`text-lg p-3 max-h-64 overflow-hidden overflow-y-auto ${
-                              value === "?" ? "bg-gray-100" : "border"
-                            } rounded relative`}
+                            className={`bg-white text-black text-lg max-h-64 overflow-hidden overflow-y-autorounded relative`}
                           >
                             {(() => {
                               const ambValue = scenariosRef.current.map(
@@ -127,13 +129,6 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                                 return "noviewer";
                               }
                             })()}
-                            {/* return <CardViewer card={cardValue} />;
-                              } else if (cardValue instanceof PokerHand) {
-                                return <HandViewer hand={cardValue} />;
-                              }
-
-                              return cardValue; */}
-                            {/* })()} */}
                           </div>
                         </div>
                       );
