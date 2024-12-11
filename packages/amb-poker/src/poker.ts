@@ -1,3 +1,5 @@
+import { bestHand } from "./handEvaluation";
+
 const allRanks = [
   "A",
   "2",
@@ -35,26 +37,25 @@ export type Card = `${Rank}${Suit}`;
 type UnknownCard = "?";
 type Term = Value | UnknownCard;
 
-type Value = Card | number | boolean;
+type Value = Card | number | boolean | string;
 
 // A tiny stub of the deal function. TODO: make this real
-const deal = (card?: Card): Card | UnknownCard => {
-  if (card) {
-    return card;
-  }
-  return "?";
+const deal = (card: Card | UnknownCard = "?"): Card | UnknownCard => card;
+
+// A scenario is a mapping of each cell to a concrete value.
+// (These were called "contexts" in the previous ambsheet, but scenario is a better name.)
+export type Scenario = {
+  [key: string]: Value;
 };
 
 export type Model = {
   cells: {
     [key: string]: Card | UnknownCard;
   };
-  // todo: formulas
+  addComputedValues: (scenario: Scenario) => void;
 };
 
-type Formula = (model: Model) => Value;
-
-export const SAMPLE_MODEL = {
+export const SAMPLE_MODEL: Model = {
   cells: {
     myCard1: deal("AS"),
     myCard2: deal("KS"),
@@ -66,36 +67,30 @@ export const SAMPLE_MODEL = {
     communityCard4: deal(),
     communityCard5: deal(),
   },
-  formulas: {
-    // valueOfMyHand: (sheet) => {
-    //   const myHand = [...sheet.eval("myHoleCards"), ...sheet.eval("communityCards")]
-    //   /// ...  stuff ...
-    //   return new HandQuality({ type: "pair", value: 7 })
-    // },
-    // valueOfTheirHand: (sheet) => {
-    //   const theirHand = [...sheet.eval("theirHoleCards"), ...sheet.eval("communityCards")]
-    //   /// ...  stuff ...
-    //   return new HandQuality({ type: "pair", value: 7 })
-    // },
-    // iWin: (sheet) => {
-    //   return HandQuality.greaterThan(sheet.eval("valueOfMyHand"), sheet.eval("valueOfTheirHand"))
-    // }
-    // myHoleCards: (sheet) => {
-    //   return [sheet.eval("myCard1"), sheet.eval("myCard2")]
-    // },
-    // theirHoleCards: (sheet) => {
-    //   return [sheet.eval("theirCard1"), sheet.eval("theirCard2")]
-    // },
-    // communityCards: (sheet) => {
-    //   return [sheet.eval("communityCard1"), sheet.eval("communityCard2"), sheet.eval("communityCard3"), sheet.eval("communityCard4"), sheet.eval("communityCard5")]
-    // }
-  },
-};
+  addComputedValues(scenario) {
+    const myHand = bestHand([
+      scenario.myCard1 as Card,
+      scenario.myCard2 as Card,
+      scenario.communityCard1 as Card,
+      scenario.communityCard2 as Card,
+      scenario.communityCard3 as Card,
+      scenario.communityCard4 as Card,
+      scenario.communityCard5 as Card,
+    ]);
+    const theirHand = bestHand([
+      scenario.theirCard1 as Card,
+      scenario.theirCard2 as Card,
+      scenario.communityCard1 as Card,
+      scenario.communityCard2 as Card,
+      scenario.communityCard3 as Card,
+      scenario.communityCard4 as Card,
+      scenario.communityCard5 as Card,
+    ]);
 
-// A scenario is a mapping of each cell to a concrete value.
-// (These were called "contexts" in the previous ambsheet, but scenario is a better name.)
-export type Scenario = {
-  [key: string]: Value;
+    scenario.myHand = myHand.type;
+    scenario.theirHand = theirHand.type;
+    scenario.iWin = myHand.beats(theirHand);
+  },
 };
 
 export class Engine {
@@ -128,6 +123,8 @@ export class Engine {
         scenario[cellName] = availableCards[randomIndex];
       }
     }
+
+    this.model.addComputedValues(scenario);
 
     this.callback(scenario);
     return scenario;
