@@ -30,7 +30,7 @@ const handTypeRankMap: Record<string, number> = {
   "straight-flush": 9,
 };
 
-const handRank = (type: string) => handTypeRankMap[type];
+export const handRank = (type: string) => handTypeRankMap[type];
 
 // Helper function to check if ranks form a straight
 const isStraightCards = (sortedCards: Card[]): boolean => {

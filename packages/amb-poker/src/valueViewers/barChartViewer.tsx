@@ -22,18 +22,12 @@ export const barChartViewer: ValueViewer = {
   component: ({ values }) => {
     const groupedByKeys = aggregateValues(values.map((v) => v.value));
 
-    // Sort groups by count immutably using lodash sortBy
-    const sortedGroupedByKeys = groupedByKeys.map((group) => ({
-      ...group,
-      groups: sortBy(group.groups, (g) => -g.count), // Negative to sort descending
-    }));
-
     return (
       <div className="flex flex-col gap-2">
         <div>
-          {sortedGroupedByKeys.map((group) => (
+          {groupedByKeys.map((group) => (
             <div key={group.key}>
-              {sortedGroupedByKeys.length > 1 && <div>{group.key}</div>}
+              {groupedByKeys.length > 1 && <div>{group.key}</div>}
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={group.groups}>
                   <XAxis dataKey="name" />

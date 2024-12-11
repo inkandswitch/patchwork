@@ -1,7 +1,8 @@
 import { Value } from "../model";
-import { PokerHand } from "../handEvaluation";
+import { handRank, PokerHand } from "../handEvaluation";
 import { getRank, getSuit, isCard } from "../model";
 import groupBy from "lodash-es/groupBy";
+import sortBy from "lodash-es/sortBy";
 
 // This function turns a value into an object with properties of primitive type.
 // The properties should be suitable for aggregating a list of values into useful groups.
@@ -24,7 +25,7 @@ export const turnValueIntoAggregatableObject = (
   }
 };
 
-export type AggregateGroup = {
+export type GroupedValues = {
   key: string;
   groups: {
     name: string;
@@ -32,18 +33,30 @@ export type AggregateGroup = {
   }[];
 };
 
-export const aggregateValues = (values: Value[]): AggregateGroup[] => {
+export const aggregateValues = (values: Value[]): GroupedValues[] => {
   const aggregatables = values.map((v) => turnValueIntoAggregatableObject(v));
   const keys = Object.keys(aggregatables[0]!);
 
   // Group by each key and count occurrences
-  return keys.map((key) => ({
-    key,
-    groups: Object.entries(groupBy(aggregatables, key)).map(
-      ([name, items]) => ({
-        name,
-        count: items.length,
-      })
-    ),
-  }));
+  return keys.map((key) => {
+    const groupsForKey = {
+      key,
+      groups: Object.entries(groupBy(aggregatables, key)).map(
+        ([name, items]) => ({
+          name,
+          count: items.length,
+        })
+      ),
+    };
+
+    // This is a hack for now -- sort the aggregated groups w/ a special case for poker hands.
+    // TODO: think about where aggregation and sorting logic should go.
+    if (values.every((v) => v instanceof PokerHand)) {
+      groupsForKey.groups = sortBy(groupsForKey.groups, (g) =>
+        handRank(g.name)
+      );
+    }
+
+    return groupsForKey;
+  });
 };
