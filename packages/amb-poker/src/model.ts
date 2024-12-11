@@ -62,33 +62,33 @@ export type Model = {
 export const SAMPLE_MODEL: Model = {
   cells: {
     myCard1: deal("AS"),
-    myCard2: deal("KS"),
+    myCard2: deal("3S"),
     theirCard1: deal(),
     theirCard2: deal(),
-    communityCard1: deal("7C"),
-    communityCard2: deal("2H"),
-    communityCard3: deal("3H"),
-    communityCard4: deal(),
-    communityCard5: deal(),
+    commCard1: deal("7C"),
+    commCard2: deal("2H"),
+    commCard3: deal("3H"),
+    commCard4: deal(),
+    commCard5: deal(),
   },
   addComputedValues(scenario) {
     const myHand = bestHand([
       scenario.myCard1 as Card,
       scenario.myCard2 as Card,
-      scenario.communityCard1 as Card,
-      scenario.communityCard2 as Card,
-      scenario.communityCard3 as Card,
-      scenario.communityCard4 as Card,
-      scenario.communityCard5 as Card,
+      scenario.commCard1 as Card,
+      scenario.commCard2 as Card,
+      scenario.commCard3 as Card,
+      scenario.commCard4 as Card,
+      scenario.commCard5 as Card,
     ]);
     const theirHand = bestHand([
       scenario.theirCard1 as Card,
       scenario.theirCard2 as Card,
-      scenario.communityCard1 as Card,
-      scenario.communityCard2 as Card,
-      scenario.communityCard3 as Card,
-      scenario.communityCard4 as Card,
-      scenario.communityCard5 as Card,
+      scenario.commCard1 as Card,
+      scenario.commCard2 as Card,
+      scenario.commCard3 as Card,
+      scenario.commCard4 as Card,
+      scenario.commCard5 as Card,
     ]);
 
     scenario.myHand = myHand;
