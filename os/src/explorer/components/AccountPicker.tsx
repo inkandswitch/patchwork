@@ -319,42 +319,6 @@ export const AccountPicker = ({
                 private docs.
               </p>
             </form>
-
-            <div className="grid w-full max-w-sm items-center gap-1.5 pt-2">
-              <Label>Data types</Label>
-
-              <div className="flex flex-col gap-2 py-2">
-                {Object.entries(dataTypes).map(([, dataType]) => {
-                  return (
-                    <div className="flex items-center gap-2" key={dataType.id}>
-                      <label
-                        htmlFor={`datatype-${dataType.id}`}
-                        className="text-sm text-gray-600 cursor-pointer "
-                      >
-                        <Icon
-                          type={dataType.icon}
-                          size={14}
-                          className="inline-block font-bold mr-2 align-top mt-[2px]"
-                        />
-                        {dataType.name}
-                      </label>
-                      {dataTypeModules[dataType.id] && (
-                        <Input
-                          id={`datatype-${dataType.id}`}
-                          value={dataTypeModules[dataType.id]}
-                          onChange={(evt) => setName(evt.target.value)}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <p className="text-gray-500 text-justify pt-2 text-sm">
-                🧪 These are data types that are less fleshed out. Expect things
-                to break!
-              </p>
-            </div>
           </>
         )}
         <DialogFooter className="gap-1.5">

@@ -38,7 +38,7 @@ export class SamplePlayer implements Instrument {
     console.log({ SAMPLES, spc: this.samplePlayerConfig.sampleUrls() });
     this.sampleUrls = this.samplePlayerConfig
       .sampleUrls()
-      .map((url) => SAMPLES[url]);
+      .map((url) => SAMPLES[url] as string);
     this.context = null;
     this.volumeModifier = volumeModifier;
     this.destination = null;

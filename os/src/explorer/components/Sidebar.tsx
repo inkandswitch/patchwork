@@ -391,6 +391,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  const rootFolderPath = DocPathUtils.forRoot(rootFolderUrl);
+  const openModuleSettings = () => {
+    debugger;
+    selectDocPath([
+      ...rootFolderPath,
+      {
+        name: "ModuleSettings",
+        type: "module-settings",
+        url: accountDoc!.moduleSettingsUrl!,
+      },
+    ]);
+  };
+
   const dataForTree = prepareDataForTree(
     rootFolderDocWithChildren,
     DocPathUtils.forRoot(rootFolderUrl)
@@ -527,8 +540,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </div>
           );
-        })}
-
+        })}{" "}
+        <div
+          className="py-1 px-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-200 "
+          onClick={() => openModuleSettings()}
+        >
+          <Icon
+            type={"Cog"}
+            size={14}
+            className="inline-block font-bold mr-2 align-top mt-[2px]"
+          />
+          Module Settings
+        </div>
         <div
           className="py-1 px-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-200 "
           onClick={() => setOpenNewDocPopoverVisible(true)}

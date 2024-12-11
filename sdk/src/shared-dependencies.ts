@@ -52,6 +52,8 @@ export const SHARED_MODULES = {
   "@patchwork/jacquard/hooks": "./jacquard/hooks.js",
   "@patchwork/kanban": "./kanban/index.js",
   "@patchwork/kanban/datatype": "./kanban/datatype.js",
+  "@patchwork/module-settings": "./module-settings/index.js",
+  "@patchwork/module-settings/datatype": "./module-settings/datatype.js",
   "@patchwork/pkg": "./pkg/index.js",
   "@patchwork/pkg/datatype": "./pkg/datatype.js",
   "@patchwork/raw-editor": "./raw-editor/index.js",

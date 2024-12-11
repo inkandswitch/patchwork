@@ -5,7 +5,7 @@ export const SAFE_BUNDLED_TOOLS = {
   folder: "@patchwork/folder",
   "jacquard-build-metadata": "@patchwork/jacquard",
   kanban: "@patchwork/kanban",
-  pkg: "@patchwork/pkg",
+  "module-settings": "@patchwork/module-settings",
   raw: "@patchwork/raw-editor",
 };
 
@@ -13,10 +13,6 @@ export const BUNDLED_TOOLS = {
   ...SAFE_BUNDLED_TOOLS,
   // TODO: this is breaking the jacquard cli. why? i don't know.
   datagrid: "@patchwork/datagrid",
-
-  // TODO: Causes import issues at 2.0.0-alpha.17. Fixed by 2.0.0, but
-  // that requires code changes and may lead to data incompatibility.
-  engraft: "@patchwork/engraft",
 
   // TODO: Causes "dyld[]: missing symbol called" error for Paul.
   tldraw: "@patchwork/tldraw",
@@ -30,6 +26,7 @@ export const BUNDLED_DATATYPES = {
   jacquard: "@patchwork/jacquard/datatype",
   kanban: "@patchwork/kanban/datatype",
   tldraw: "@patchwork/tldraw/datatype",
+  "module-settings": "@patchwork/module-settings/datatype",
   // no specific raw editor datatype
 };
 

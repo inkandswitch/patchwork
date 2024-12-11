@@ -190,7 +190,7 @@ export const Explorer: React.FC = () => {
 
   // update tab title to be the selected doc
   useEffect(() => {
-    document.title = selectedDocName ?? "Essay Editor"; // TODO: generalize beyond TEE
+    document.title = selectedDocName ?? "Patchwork";
   }, [selectedDocName]);
 
   // keyboard shortcuts
