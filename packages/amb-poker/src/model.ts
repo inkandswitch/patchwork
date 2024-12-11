@@ -1,5 +1,5 @@
 import { Engine } from "./engine";
-import { bestHand } from "./handEvaluation";
+import { bestHand, PokerHand } from "./handEvaluation";
 
 const allRanks = [
   "A",
@@ -38,7 +38,7 @@ export type Card = `${Rank}${Suit}`;
 type UnknownCard = "?";
 type Term = Value | UnknownCard;
 
-type Value = Card | number | boolean | string;
+type Value = number | boolean | string | Card | PokerHand;
 
 // A tiny stub of the deal function. TODO: make this real
 const deal = (card: Card | UnknownCard = "?"): Card | UnknownCard => card;
@@ -88,8 +88,8 @@ export const SAMPLE_MODEL: Model = {
       scenario.communityCard5 as Card,
     ]);
 
-    scenario.myHand = myHand.type;
-    scenario.theirHand = theirHand.type;
+    scenario.myHand = myHand;
+    scenario.theirHand = theirHand;
     scenario.iWin = myHand.beats(theirHand);
   },
 };

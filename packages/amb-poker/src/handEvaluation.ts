@@ -137,9 +137,13 @@ export abstract class PokerHand {
   static detect(cards: Card[]): PokerHand | false {
     throw new Error("Not implemented");
   }
+
+  getCards(): Card[] {
+    return this.cards;
+  }
 }
 
-class HighCardHand extends PokerHand {
+export class HighCardHand extends PokerHand {
   readonly type = "high-card";
 
   constructor(cards: Card[]) {
@@ -160,14 +164,14 @@ class HighCardHand extends PokerHand {
   }
 }
 
-class OnePairHand extends PokerHand {
+export class OnePairHand extends PokerHand {
   readonly type = "pair";
-  private readonly pair: Card;
-  private readonly kickers: Card[];
+  readonly pairCards: [Card, Card];
+  readonly kickers: Card[];
 
-  constructor(cards: Card[], pair: Card, kickers: Card[]) {
+  constructor(cards: Card[], pairCards: [Card, Card], kickers: Card[]) {
     super(cards);
-    this.pair = pair;
+    this.pairCards = pairCards;
     this.kickers = kickers;
   }
 
@@ -182,17 +186,17 @@ class OnePairHand extends PokerHand {
 
     if (!pair) return false;
 
-    const pairCard = cards.find((c) => c[0] === pair[0])!;
+    const pairCards = cards.filter((c) => c[0] === pair[0]) as [Card, Card];
     const kickers = cards
       .filter((c) => c[0] !== pair[0])
       .sort((a, b) => cardRank(b) - cardRank(a));
 
-    return new OnePairHand(cards, pairCard, kickers);
+    return new OnePairHand(cards, pairCards, kickers);
   }
 
   beatsSameType(other: OnePairHand): boolean {
-    const pairRank1 = cardRank(this.pair);
-    const pairRank2 = cardRank(other.pair);
+    const pairRank1 = cardRank(this.pairCards[0]);
+    const pairRank2 = cardRank(other.pairCards[0]);
     if (pairRank1 !== pairRank2) return pairRank1 > pairRank2;
 
     for (let i = 0; i < this.kickers.length; i++) {
@@ -204,16 +208,21 @@ class OnePairHand extends PokerHand {
   }
 }
 
-class TwoPairHand extends PokerHand {
+export class TwoPairHand extends PokerHand {
   readonly type = "two-pair";
-  private readonly highPair: Card;
-  private readonly lowPair: Card;
-  private readonly kicker: Card;
+  readonly highPairCards: [Card, Card];
+  readonly lowPairCards: [Card, Card];
+  readonly kicker: Card;
 
-  constructor(cards: Card[], highPair: Card, lowPair: Card, kicker: Card) {
+  constructor(
+    cards: Card[],
+    highPairCards: [Card, Card],
+    lowPairCards: [Card, Card],
+    kicker: Card
+  ) {
     super(cards);
-    this.highPair = highPair;
-    this.lowPair = lowPair;
+    this.highPairCards = highPairCards;
+    this.lowPairCards = lowPairCards;
     this.kicker = kicker;
   }
 
@@ -234,36 +243,46 @@ class TwoPairHand extends PokerHand {
 
     if (pairs.length !== 2) return false;
 
-    const highPairCard = cards.find((c) => c[0] === pairs[0][0])!;
-    const lowPairCard = cards.find((c) => c[0] === pairs[1][0])!;
+    const highPairCards = cards.filter((c) => c[0] === pairs[0][0]) as [
+      Card,
+      Card
+    ];
+    const lowPairCards = cards.filter((c) => c[0] === pairs[1][0]) as [
+      Card,
+      Card
+    ];
     const kicker = cards.find(
       (c) => c[0] !== pairs[0][0] && c[0] !== pairs[1][0]
     )!;
 
-    return new TwoPairHand(cards, highPairCard, lowPairCard, kicker);
+    return new TwoPairHand(cards, highPairCards, lowPairCards, kicker);
   }
 
   beatsSameType(other: TwoPairHand): boolean {
-    const highPairRank1 = cardRank(this.highPair);
-    const highPairRank2 = cardRank(other.highPair);
+    const highPairRank1 = cardRank(this.highPairCards[0]);
+    const highPairRank2 = cardRank(other.highPairCards[0]);
     if (highPairRank1 !== highPairRank2) return highPairRank1 > highPairRank2;
 
-    const lowPairRank1 = cardRank(this.lowPair);
-    const lowPairRank2 = cardRank(other.lowPair);
+    const lowPairRank1 = cardRank(this.lowPairCards[0]);
+    const lowPairRank2 = cardRank(other.lowPairCards[0]);
     if (lowPairRank1 !== lowPairRank2) return lowPairRank1 > lowPairRank2;
 
     return cardRank(this.kicker) > cardRank(other.kicker);
   }
 }
 
-class ThreeOfAKindHand extends PokerHand {
+export class ThreeOfAKindHand extends PokerHand {
   readonly type = "three-of-a-kind";
-  private readonly three: Card;
-  private readonly kickers: Card[];
+  readonly threeCards: [Card, Card, Card];
+  readonly kickers: [Card, Card];
 
-  constructor(cards: Card[], three: Card, kickers: Card[]) {
+  constructor(
+    cards: Card[],
+    threeCards: [Card, Card, Card],
+    kickers: [Card, Card]
+  ) {
     super(cards);
-    this.three = three;
+    this.threeCards = threeCards;
     this.kickers = kickers;
   }
 
@@ -278,17 +297,21 @@ class ThreeOfAKindHand extends PokerHand {
 
     if (!three) return false;
 
-    const threeCard = cards.find((c) => c[0] === three[0])!;
+    const threeCards = cards.filter((c) => c[0] === three[0]) as [
+      Card,
+      Card,
+      Card
+    ];
     const kickers = cards
       .filter((c) => c[0] !== three[0])
-      .sort((a, b) => cardRank(b) - cardRank(a));
+      .sort((a, b) => cardRank(b) - cardRank(a)) as [Card, Card];
 
-    return new ThreeOfAKindHand(cards, threeCard, kickers);
+    return new ThreeOfAKindHand(cards, threeCards, kickers);
   }
 
   beatsSameType(other: ThreeOfAKindHand): boolean {
-    const threeRank1 = cardRank(this.three);
-    const threeRank2 = cardRank(other.three);
+    const threeRank1 = cardRank(this.threeCards[0]);
+    const threeRank2 = cardRank(other.threeCards[0]);
     if (threeRank1 !== threeRank2) return threeRank1 > threeRank2;
 
     for (let i = 0; i < this.kickers.length; i++) {
@@ -300,7 +323,7 @@ class ThreeOfAKindHand extends PokerHand {
   }
 }
 
-class StraightHand extends PokerHand {
+export class StraightHand extends PokerHand {
   readonly type = "straight";
   private readonly highCard: Card;
 
@@ -323,7 +346,7 @@ class StraightHand extends PokerHand {
   }
 }
 
-class FlushHand extends PokerHand {
+export class FlushHand extends PokerHand {
   readonly type = "flush";
 
   constructor(cards: Card[]) {
@@ -349,15 +372,19 @@ class FlushHand extends PokerHand {
   }
 }
 
-class FullHouseHand extends PokerHand {
+export class FullHouseHand extends PokerHand {
   readonly type = "full-house";
-  private readonly three: Card;
-  private readonly pair: Card;
+  readonly threeCards: [Card, Card, Card];
+  readonly pairCards: [Card, Card];
 
-  constructor(cards: Card[], three: Card, pair: Card) {
+  constructor(
+    cards: Card[],
+    threeCards: [Card, Card, Card],
+    pairCards: [Card, Card]
+  ) {
     super(cards);
-    this.three = three;
-    this.pair = pair;
+    this.threeCards = threeCards;
+    this.pairCards = pairCards;
   }
 
   static detect(cards: Card[]): FullHouseHand | false {
@@ -372,29 +399,37 @@ class FullHouseHand extends PokerHand {
 
     if (!three || !pair) return false;
 
-    const threeCard = cards.find((c) => c[0] === three[0])!;
-    const pairCard = cards.find((c) => c[0] === pair[0])!;
+    const threeCards = cards.filter((c) => c[0] === three[0]) as [
+      Card,
+      Card,
+      Card
+    ];
+    const pairCards = cards.filter((c) => c[0] === pair[0]) as [Card, Card];
 
-    return new FullHouseHand(cards, threeCard, pairCard);
+    return new FullHouseHand(cards, threeCards, pairCards);
   }
 
   beatsSameType(other: FullHouseHand): boolean {
-    const threeRank1 = cardRank(this.three);
-    const threeRank2 = cardRank(other.three);
+    const threeRank1 = cardRank(this.threeCards[0]);
+    const threeRank2 = cardRank(other.threeCards[0]);
     if (threeRank1 !== threeRank2) return threeRank1 > threeRank2;
 
-    return cardRank(this.pair) > cardRank(other.pair);
+    return cardRank(this.pairCards[0]) > cardRank(other.pairCards[0]);
   }
 }
 
-class FourOfAKindHand extends PokerHand {
+export class FourOfAKindHand extends PokerHand {
   readonly type = "four-of-a-kind";
-  private readonly four: Card;
-  private readonly kicker: Card;
+  readonly fourCards: [Card, Card, Card, Card];
+  readonly kicker: Card;
 
-  constructor(cards: Card[], four: Card, kicker: Card) {
+  constructor(
+    cards: Card[],
+    fourCards: [Card, Card, Card, Card],
+    kicker: Card
+  ) {
     super(cards);
-    this.four = four;
+    this.fourCards = fourCards;
     this.kicker = kicker;
   }
 
@@ -409,22 +444,27 @@ class FourOfAKindHand extends PokerHand {
 
     if (!four) return false;
 
-    const fourCard = cards.find((c) => c[0] === four[0])!;
+    const fourCards = cards.filter((c) => c[0] === four[0]) as [
+      Card,
+      Card,
+      Card,
+      Card
+    ];
     const kicker = cards.find((c) => c[0] !== four[0])!;
 
-    return new FourOfAKindHand(cards, fourCard, kicker);
+    return new FourOfAKindHand(cards, fourCards, kicker);
   }
 
   beatsSameType(other: FourOfAKindHand): boolean {
-    const fourRank1 = cardRank(this.four);
-    const fourRank2 = cardRank(other.four);
+    const fourRank1 = cardRank(this.fourCards[0]);
+    const fourRank2 = cardRank(other.fourCards[0]);
     if (fourRank1 !== fourRank2) return fourRank1 > fourRank2;
 
     return cardRank(this.kicker) > cardRank(other.kicker);
   }
 }
 
-class StraightFlushHand extends PokerHand {
+export class StraightFlushHand extends PokerHand {
   readonly type = "straight-flush";
   private readonly highCard: Card;
 

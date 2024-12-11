@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { AmbPokerDoc } from "./datatype";
 import { Model, SAMPLE_MODEL, Scenario, Card, isCard } from "./model";
 import { Engine } from "./engine";
-import { bestHand } from "./handEvaluation";
+import { bestHand, PokerHand } from "./handEvaluation";
 import { CardComponent } from "./components/Card";
 import { Hand } from "./components/Hand";
 
@@ -53,31 +53,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
 
   const activeScenario = scenariosRef.current[selectedScenarioIndex];
 
-  const myBestHand = activeScenario
-    ? bestHand([
-        activeScenario["myCard1"] as Card,
-        activeScenario["myCard2"] as Card,
-        activeScenario["communityCard1"] as Card,
-        activeScenario["communityCard2"] as Card,
-        activeScenario["communityCard3"] as Card,
-        activeScenario["communityCard4"] as Card,
-        activeScenario["communityCard5"] as Card,
-      ])
-    : null;
-
-  const theirBestHand = activeScenario
-    ? bestHand([
-        activeScenario["theirCard1"] as Card,
-        activeScenario["theirCard2"] as Card,
-        activeScenario["communityCard1"] as Card,
-        activeScenario["communityCard2"] as Card,
-        activeScenario["communityCard3"] as Card,
-        activeScenario["communityCard4"] as Card,
-        activeScenario["communityCard5"] as Card,
-      ])
-    : null;
-
-  const iWin = myBestHand && theirBestHand && myBestHand.beats(theirBestHand);
+  console.log(activeScenario);
 
   const rows = [
     { label: "Mine", cards: ["myCard1", "myCard2"] },
@@ -92,11 +68,14 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
       ],
     },
     { label: "Theirs", cards: ["theirCard1", "theirCard2"] },
+    { label: "My hand", cards: ["myHand"] },
+    { label: "Their hand", cards: ["theirHand"] },
+    { label: "I win", cards: ["iWin"] },
   ];
 
   const handTypeCounts = new Map<string, number>();
   for (const scenario of scenariosRef.current) {
-    const type = scenario.myHand as string;
+    const type = (scenario.myHand as PokerHand).type;
     handTypeCounts.set(type, (handTypeCounts.get(type) ?? 0) + 1);
   }
 
@@ -114,12 +93,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                 {cards.map((name) => {
                   const value = model.cells[name];
                   return (
-                    <div
-                      key={name}
-                      className={`p-3 ${
-                        value === "?" ? "bg-gray-100" : "border"
-                      } rounded relative`}
-                    >
+                    <div key={name}>
                       {value === "?" && (
                         <div className="absolute top-1 right-2 text-gray-500">
                           ?
@@ -128,14 +102,21 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                       <div className="text-sm text-gray-600 font-mono">
                         {name}
                       </div>
-                      <div className="text-2xl">
+                      <div
+                        className={`text-lg p-3 ${
+                          value === "?" ? "bg-gray-100" : "border"
+                        } rounded relative`}
+                      >
                         {(() => {
                           const cardValue =
-                            activeScenario && value === "?"
-                              ? activeScenario[name]
-                              : value;
+                            activeScenario?.[name] ?? "Loading...";
                           if (isCard(cardValue)) {
                             return <CardComponent card={cardValue} />;
+                          } else if (cardValue instanceof PokerHand) {
+                            return <Hand hand={cardValue} />;
+                          }
+                          if (typeof cardValue === "boolean") {
+                            return cardValue ? "true" : "false";
                           }
                           return cardValue;
                         })()}
@@ -146,28 +127,6 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
               </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      <div className="p-4">
-        <div className=" flex flex-col gap-4">
-          <div className="flex gap-4 items-center h-12">
-            <div className="w-24 text-sm text-gray-600 font-medium">
-              My hand:
-            </div>
-            {myBestHand ? <Hand hand={myBestHand} /> : "N/A"}
-          </div>
-          <div>
-            <div className="flex gap-4 items-center h-12">
-              <div className="w-24 text-sm text-gray-600 font-medium">
-                Their hand:
-              </div>
-              {theirBestHand ? <Hand hand={theirBestHand} /> : "N/A"}
-            </div>
-          </div>
-          <div className="flex gap-4 items-center">
-            {iWin ? "I win! 🎉" : "I lose 😢"}
-          </div>
         </div>
       </div>
 
