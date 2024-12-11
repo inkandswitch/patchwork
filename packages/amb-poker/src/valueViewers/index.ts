@@ -3,6 +3,7 @@
 
 import { Value } from "../model";
 import { barChartViewer } from "./barChartViewer";
+import { cardViewer } from "./cardViewer";
 import { tableViewer } from "./tableViewer";
 
 type FilteredValue = { value: Value; include: boolean };
@@ -15,4 +16,8 @@ export type ValueViewer = {
   component: React.FC<{ values: FilteredValue[] }>;
 };
 
-export const valueViewers: ValueViewer[] = [tableViewer];
+export const valueViewers: ValueViewer[] = [
+  cardViewer,
+  tableViewer,
+  barChartViewer,
+];

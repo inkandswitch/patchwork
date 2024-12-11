@@ -13,7 +13,7 @@ export const CardViewer: React.FC<{ card: Card }> = ({ card }) => {
     }[suit] || suit;
 
   return (
-    <span className="flex items-center gap-1">
+    <span className="flex items-center gap-1 text-xl">
       <span>{displayRank}</span>
       <span>{suitEmoji}</span>
     </span>
