@@ -112,7 +112,7 @@ export const bestHand = (cards: Card[]): PokerHand => {
 
 export abstract class PokerHand {
   abstract readonly type: string;
-  protected cards: Card[];
+  protected readonly cards: Card[];
 
   constructor(cards: Card[]) {
     this.cards = cards;
@@ -141,11 +141,9 @@ export abstract class PokerHand {
 
 class HighCardHand extends PokerHand {
   readonly type = "high-card";
-  protected cards: Card[];
 
   constructor(cards: Card[]) {
-    super(cards);
-    this.cards = [...cards].sort((a, b) => cardRank(b) - cardRank(a));
+    super([...cards].sort((a, b) => cardRank(b) - cardRank(a)));
   }
 
   static detect(cards: Card[]): HighCardHand {
@@ -164,8 +162,8 @@ class HighCardHand extends PokerHand {
 
 class OnePairHand extends PokerHand {
   readonly type = "pair";
-  private pair: Card;
-  private kickers: Card[];
+  private readonly pair: Card;
+  private readonly kickers: Card[];
 
   constructor(cards: Card[], pair: Card, kickers: Card[]) {
     super(cards);
@@ -177,7 +175,7 @@ class OnePairHand extends PokerHand {
     const ranks = cards.map((c) => c[0]);
     const rankCounts = new Map<string, number>();
     for (const rank of ranks) {
-      rankCounts.set(rank, (rankCounts.get(rank) || 0) + 1);
+      rankCounts.set(rank, (rankCounts.get(rank) ?? 0) + 1);
     }
 
     const pair = [...rankCounts.entries()].find(([_, count]) => count === 2);
@@ -208,9 +206,9 @@ class OnePairHand extends PokerHand {
 
 class TwoPairHand extends PokerHand {
   readonly type = "two-pair";
-  private highPair: Card;
-  private lowPair: Card;
-  private kicker: Card;
+  private readonly highPair: Card;
+  private readonly lowPair: Card;
+  private readonly kicker: Card;
 
   constructor(cards: Card[], highPair: Card, lowPair: Card, kicker: Card) {
     super(cards);
@@ -260,8 +258,8 @@ class TwoPairHand extends PokerHand {
 
 class ThreeOfAKindHand extends PokerHand {
   readonly type = "three-of-a-kind";
-  private three: Card;
-  private kickers: Card[];
+  private readonly three: Card;
+  private readonly kickers: Card[];
 
   constructor(cards: Card[], three: Card, kickers: Card[]) {
     super(cards);
@@ -304,7 +302,7 @@ class ThreeOfAKindHand extends PokerHand {
 
 class StraightHand extends PokerHand {
   readonly type = "straight";
-  private highCard: Card;
+  private readonly highCard: Card;
 
   constructor(cards: Card[], highCard: Card) {
     super(cards);
@@ -327,11 +325,9 @@ class StraightHand extends PokerHand {
 
 class FlushHand extends PokerHand {
   readonly type = "flush";
-  protected cards: Card[];
 
   constructor(cards: Card[]) {
-    super(cards);
-    this.cards = [...cards].sort((a, b) => cardRank(b) - cardRank(a));
+    super([...cards].sort((a, b) => cardRank(b) - cardRank(a)));
   }
 
   static detect(cards: Card[]): FlushHand | false {
@@ -355,8 +351,8 @@ class FlushHand extends PokerHand {
 
 class FullHouseHand extends PokerHand {
   readonly type = "full-house";
-  private three: Card;
-  private pair: Card;
+  private readonly three: Card;
+  private readonly pair: Card;
 
   constructor(cards: Card[], three: Card, pair: Card) {
     super(cards);
@@ -393,8 +389,8 @@ class FullHouseHand extends PokerHand {
 
 class FourOfAKindHand extends PokerHand {
   readonly type = "four-of-a-kind";
-  private four: Card;
-  private kicker: Card;
+  private readonly four: Card;
+  private readonly kicker: Card;
 
   constructor(cards: Card[], four: Card, kicker: Card) {
     super(cards);
@@ -430,7 +426,7 @@ class FourOfAKindHand extends PokerHand {
 
 class StraightFlushHand extends PokerHand {
   readonly type = "straight-flush";
-  private highCard: Card;
+  private readonly highCard: Card;
 
   constructor(cards: Card[], highCard: Card) {
     super(cards);
