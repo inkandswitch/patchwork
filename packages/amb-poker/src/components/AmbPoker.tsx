@@ -88,7 +88,6 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
       >
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
-            <h2 className="text-lg font-semibold mb-2">Model</h2>
             <div className="flex flex-col gap-4">
               {rows.map(({ label, values }, i) => (
                 <div key={i} className="flex gap-4 items-center">
@@ -114,7 +113,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                             {name}
                           </div>
                           <div
-                            className={`p-1 text-lg max-h-64 overflow-hidden overflow-y-autorounded relative`}
+                            className={`p-1 text-lg max-h-64 overflow-hidden overflow-y-auto rounded relative`}
                           >
                             {(() => {
                               const ambValue = scenariosRef.current.map(
@@ -194,7 +193,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
             </div>
 
             {selectedValue && (
-              <div className="flex flex-col gap-2 border-t border-gray-400 pt-4">
+              <div className="flex flex-col gap-6 border-t border-gray-400 pt-4">
                 <div className="text-md text-white font-medium">
                   {selectedValue}
                 </div>
@@ -212,7 +211,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                   return viewers.map((viewer) => (
                     <div key={viewer.name}>
                       <div className="text-sm text-white">{viewer.name}</div>
-                      <div className="p-1 text-lg max-h-64 overflow-hidden overflow-y-autorounded relative">
+                      <div className="p-1 text-lg max-h-72 overflow-hidden overflow-y-auto rounded relative">
                         {viewer.component({
                           values: filteredValues,
                         })}
