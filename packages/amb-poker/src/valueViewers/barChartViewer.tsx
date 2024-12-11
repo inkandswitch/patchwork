@@ -1,68 +1,22 @@
 import { ValueViewer } from ".";
-import { PokerHand } from "../handEvaluation";
-import { getRank, getSuit, isCard, Value } from "../model";
-import groupBy from "lodash-es/groupBy";
-
-import React, { PureComponent } from "react";
+import React from "react";
 import {
   BarChart,
   Bar,
   ResponsiveContainer,
-  Legend,
   Tooltip,
   YAxis,
   XAxis,
 } from "recharts";
-
-// This function turns a value into an object with properties of primitive type.
-// The properties should be suitable for aggregating a list of values into useful groups.
-// TODO: where *should* this mapping live? Probably not here in a viewer.
-const turnValueIntoAggregatableObject = (
-  value: Value
-): { [key: string]: string | boolean | number } => {
-  if (isCard(value)) {
-    return { rank: getRank(value), suit: getSuit(value) };
-  } else if (
-    typeof value === "boolean" ||
-    typeof value === "number" ||
-    typeof value === "string"
-  ) {
-    return { value };
-  } else if (value instanceof PokerHand) {
-    return { handType: value.type };
-  } else {
-    const _exhaustiveCheck: never = value;
-    return {};
-  }
-};
-
-const aggregateValues = (values: Value[]) => {
-  const aggregatables = values.map((v) => turnValueIntoAggregatableObject(v));
-  const keys = Object.keys(aggregatables[0]!);
-
-  // Group by each key and count occurrences
-  const groupedByKeys = keys.map((key) => ({
-    key,
-    groups: Object.entries(groupBy(aggregatables, key)).map(
-      ([name, items]) => ({
-        name,
-        count: items.length,
-      })
-    ),
-  }));
-
-  return groupedByKeys;
-};
+import { aggregateValues } from "./aggregate";
 
 export const barChartViewer: ValueViewer = {
   name: "Bar Chart",
   shouldRender: (values) => {
     if (values.length < 2) return "hide";
     const groupedByKeys = aggregateValues(values.map((v) => v.value));
-    console.log({ groupedByKeys });
     if (!groupedByKeys.some((g) => g.groups.length > 1)) return "hide";
-
-    return "high";
+    return "normal";
   },
   component: ({ values }) => {
     const groupedByKeys = aggregateValues(values.map((v) => v.value));
