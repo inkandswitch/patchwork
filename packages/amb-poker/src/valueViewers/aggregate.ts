@@ -1,5 +1,5 @@
-import { Value } from "../model";
-import { handRank, PokerHand } from "../handEvaluation";
+import { Card, Value } from "../model";
+import { cardRank, handRank, PokerHand } from "../handEvaluation";
 import { getRank, getSuit, isCard } from "../model";
 import groupBy from "lodash-es/groupBy";
 import sortBy from "lodash-es/sortBy";
@@ -54,6 +54,13 @@ export const aggregateValues = (values: Value[]): GroupedValues[] => {
     if (values.every((v) => v instanceof PokerHand)) {
       groupsForKey.groups = sortBy(groupsForKey.groups, (g) =>
         handRank(g.name)
+      );
+    }
+
+    if (values.every((v) => isCard(v)) && key === "rank") {
+      groupsForKey.groups = sortBy(
+        groupsForKey.groups,
+        (g) => cardRank(`${g.name}S` as Card) // arbitrary suit
       );
     }
 

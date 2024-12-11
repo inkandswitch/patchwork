@@ -16,7 +16,7 @@ const cardRankMap: Record<Rank, number> = {
   A: 14,
 };
 
-const cardRank = (card: Card) => cardRankMap[card[0] as Rank];
+export const cardRank = (card: Card) => cardRankMap[card[0] as Rank];
 
 const handTypeRankMap: Record<string, number> = {
   "high-card": 1,
