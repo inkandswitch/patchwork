@@ -23,10 +23,9 @@ export const tableViewer: ValueViewer = {
             <table className="w-full text-sm">
               <tbody>
                 {group.groups.map((row) => {
-                  const percentage = (
-                    (row.count / values.length) *
-                    100
-                  ).toFixed(2);
+                  const percentage = Number(
+                    (row.count / values.length) * 100
+                  ).toPrecision(2);
                   return (
                     <tr key={row.name} className="border-t">
                       <td className="p-2">{row.name}</td>

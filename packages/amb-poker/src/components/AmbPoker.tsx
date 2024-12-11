@@ -59,13 +59,13 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
   }, [model]);
 
   const rows = [
-    { label: "Theirs", values: ["theirCard1", "theirCard2", "theirHand"] },
+    { label: "Theirs", values: ["theirCard1", "theirCard2"] },
     {
       label: "Community",
       values: ["commCard1", "commCard2", "commCard3", "commCard4", "commCard5"],
     },
-    { label: "Mine", values: ["myCard1", "myCard2", "myHand"] },
-    { label: "I win", values: ["iWin"] },
+    { label: "Mine", values: ["myCard1", "myCard2"] },
+    { label: "Stats", values: ["myHand", "theirHand", "iWin"] },
   ];
 
   if (!scenariosRef.current) {
