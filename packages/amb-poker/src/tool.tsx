@@ -2,7 +2,7 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps, makeTool } from "@patchwork/sdk";
 import React, { useEffect, useMemo, useState } from "react";
 import { AmbPokerDoc } from "./datatype";
-import { Model, SAMPLE_MODEL, Scenario, Card, isCard } from "./poker";
+import { Model, SAMPLE_MODEL, Scenario, Card, isCard } from "./model";
 import { Engine } from "./engine";
 import { bestHand } from "./handEvaluation";
 import { CardComponent } from "./components/Card";

@@ -1,4 +1,4 @@
-import { Card } from "../poker";
+import { Card } from "../model";
 
 export const CardComponent: React.FC<{ card: Card }> = ({ card }) => {
   const rank = card[0];

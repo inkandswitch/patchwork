@@ -1,4 +1,4 @@
-import { Card, Rank } from "./poker";
+import { Card, Rank } from "./model";
 
 const cardRank = (card: Card): number => {
   const rankMap: Record<Rank, number> = {

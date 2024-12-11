@@ -1,4 +1,4 @@
-import { Model, Scenario, isCard, allCards } from "./poker";
+import { Model, Scenario, isCard, allCards } from "./model";
 
 export class Engine {
   model: Model;
