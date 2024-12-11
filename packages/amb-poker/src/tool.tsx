@@ -4,15 +4,14 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AmbPokerDoc } from "./datatype";
 import { Model, SAMPLE_MODEL, Scenario, Card, isCard } from "./model";
 import { Engine } from "./engine";
-import { bestHand, PokerHand } from "./handEvaluation";
-import { CardViewer } from "./components/Card";
-import { HandViewer } from "./components/Hand";
+import { PokerHand } from "./handEvaluation";
 import { valueViewers } from "./valueViewers";
 import { Button } from "@patchwork/sdk/ui/button";
 
 // when this gets to 100k+, something gets slow...
 const DEFAULT_MAX_SCENARIOS = 20000;
 const MAX_MS_FOR_SCENARIO_GEN_PER_FRAME = 4; // how many ms do we spend generating scenarios per frame
+const UPDATE_VIEW_EVERY_MS = 100;
 
 export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   docUrl,
@@ -30,6 +29,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
     const engine = new Engine(model, (scenario) => {
       scenariosRef.current.push(scenario);
     });
+    let lastUpdatedView = performance.now();
 
     const frame = () => {
       const start = performance.now();
@@ -39,9 +39,12 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         iterationsPerFrame++;
       }
       totalComputeTime.current += performance.now() - start;
-      // occasionally report the rate of scenario generation
 
-      setScenarioCount(scenariosRef.current.length); // Trigger re-render after batch
+      // Only update the view occasionally - this avoids re-rendering too much which can get slow
+      if (performance.now() - lastUpdatedView > UPDATE_VIEW_EVERY_MS) {
+        setScenarioCount(scenariosRef.current.length);
+        lastUpdatedView = performance.now();
+      }
 
       if (scenariosRef.current.length < maxScenarios) {
         requestAnimationFrame(frame);

@@ -36,31 +36,36 @@ const turnValueIntoAggregatableObject = (
   }
 };
 
+const aggregateValues = (values: Value[]) => {
+  const aggregatables = values.map((v) => turnValueIntoAggregatableObject(v));
+  const keys = Object.keys(aggregatables[0]!);
+
+  // Group by each key and count occurrences
+  const groupedByKeys = keys.map((key) => ({
+    key,
+    groups: Object.entries(groupBy(aggregatables, key)).map(
+      ([name, items]) => ({
+        name,
+        count: items.length,
+      })
+    ),
+  }));
+
+  return groupedByKeys;
+};
+
 export const barChartViewer: ValueViewer = {
   name: "Bar Chart",
   shouldRender: (values) => {
     if (values.length < 2) return "hide";
-    if (values.length < 10) return "normal";
+    const groupedByKeys = aggregateValues(values.map((v) => v.value));
+    console.log({ groupedByKeys });
+    if (!groupedByKeys.some((g) => g.groups.length > 1)) return "hide";
+
     return "high";
   },
   component: ({ values }) => {
-    const aggregatables = values.map((v) =>
-      turnValueIntoAggregatableObject(v.value)
-    );
-    const keys = Object.keys(aggregatables[0]!);
-
-    // Group by each key and count occurrences
-    const groupedByKeys = keys.map((key) => ({
-      key,
-      groups: Object.entries(groupBy(aggregatables, key)).map(
-        ([name, items]) => ({
-          name,
-          count: items.length,
-        })
-      ),
-    }));
-
-    console.log({ groupedByKeys });
+    const groupedByKeys = aggregateValues(values.map((v) => v.value));
 
     return (
       <div className="flex flex-col gap-2">
@@ -68,8 +73,8 @@ export const barChartViewer: ValueViewer = {
           {groupedByKeys.map((group) => (
             <div key={group.key}>
               {groupedByKeys.length > 1 && <div>{group.key}</div>}
-              <ResponsiveContainer width={300} height={70}>
-                <BarChart data={group.groups} width={400} height={70}>
+              <ResponsiveContainer width={300} height={100}>
+                <BarChart data={group.groups} width={400} height={100}>
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
