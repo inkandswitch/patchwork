@@ -211,7 +211,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                   return viewers.map((viewer) => (
                     <div key={viewer.name}>
                       <div className="text-sm text-white">{viewer.name}</div>
-                      <div className="p-1 text-lg max-h-72 overflow-hidden overflow-y-auto rounded relative">
+                      <div className="p-1 text-lg rounded relative">
                         {viewer.component({
                           values: filteredValues,
                         })}

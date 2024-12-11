@@ -9,6 +9,7 @@ import {
   XAxis,
 } from "recharts";
 import { aggregateValues } from "./aggregate";
+import { sortBy } from "lodash-es";
 
 export const barChartViewer: ValueViewer = {
   name: "Bar Chart",
@@ -21,14 +22,20 @@ export const barChartViewer: ValueViewer = {
   component: ({ values }) => {
     const groupedByKeys = aggregateValues(values.map((v) => v.value));
 
+    // Sort groups by count immutably using lodash sortBy
+    const sortedGroupedByKeys = groupedByKeys.map((group) => ({
+      ...group,
+      groups: sortBy(group.groups, (g) => -g.count), // Negative to sort descending
+    }));
+
     return (
       <div className="flex flex-col gap-2">
         <div>
-          {groupedByKeys.map((group) => (
+          {sortedGroupedByKeys.map((group) => (
             <div key={group.key}>
-              {groupedByKeys.length > 1 && <div>{group.key}</div>}
-              <ResponsiveContainer width={300} height={100}>
-                <BarChart data={group.groups} width={400} height={100}>
+              {sortedGroupedByKeys.length > 1 && <div>{group.key}</div>}
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={group.groups}>
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
