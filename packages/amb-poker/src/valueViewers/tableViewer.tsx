@@ -21,12 +21,6 @@ export const tableViewer: ValueViewer = {
               <div className="font-medium mb-2">{group.key}</div>
             )}
             <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="text-left p-2">Value</th>
-                  <th className="text-right p-2">Percentage</th>
-                </tr>
-              </thead>
               <tbody>
                 {group.groups.map((row) => {
                   const percentage = (
