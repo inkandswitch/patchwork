@@ -43,6 +43,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         );
       }
       setScenarioCount(scenariosRef.current.length); // Trigger re-render after batch
+
       if (scenariosRef.current.length < MAX_SCENARIOS) {
         requestAnimationFrame(frame);
       }
@@ -92,6 +93,12 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
     },
     { label: "Theirs", cards: ["theirCard1", "theirCard2"] },
   ];
+
+  const handTypeCounts = new Map<string, number>();
+  for (const scenario of scenariosRef.current) {
+    const type = scenario.myHand as string;
+    handTypeCounts.set(type, (handTypeCounts.get(type) ?? 0) + 1);
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -183,11 +190,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
               if (!scenariosRef.current) {
                 return <div></div>;
               }
-              const handTypeCounts = new Map<string, number>();
-              for (const scenario of scenariosRef.current) {
-                const type = scenario.myHand as string;
-                handTypeCounts.set(type, (handTypeCounts.get(type) ?? 0) + 1);
-              }
+
               return [...handTypeCounts.entries()].map(([type, count]) => {
                 return (
                   <div>
