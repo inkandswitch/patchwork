@@ -99,6 +99,8 @@ fns.bestHand = (...cards) => {
 
 fns.beats = (hand1, hand2) => (hand1 as PokerHand).beats(hand2 as PokerHand);
 
+fns.handType = (hand) => (hand as PokerHand).type;
+
 type CompiledModel = {
   cells: Record<string, Value | ((s: Scenario) => Value)>;
   filter?: Value | ((s: Scenario) => Value); // truthy means the scenario should be included
