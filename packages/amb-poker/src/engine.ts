@@ -1,36 +1,144 @@
-import { Model, Scenario, isCard, allCards } from "./model";
+import { Model, Scenario, isCard, allCards, Value, Card } from "./model";
+import { compileCell, fns } from "./compiler";
+import { bestHand, PokerHand } from "./handEvaluation";
+
+// arithmetic operators
+
+fns["+"] = (x, y) => {
+  if (typeof x === "number" && typeof y === "number") {
+    return x + y;
+  } else if (typeof x === "string" && typeof y === "string") {
+    return x + y;
+  } else {
+    throw new Error("operand + used with invalid operands");
+  }
+};
+
+fns["-"] = (x, y) => {
+  if (typeof x === "number" && typeof y === "number") {
+    return x - y;
+  } else {
+    throw new Error("operand - used with invalid operands");
+  }
+};
+
+fns["*"] = (x, y) => {
+  if (typeof x === "number" && typeof y === "number") {
+    return x * y;
+  } else {
+    throw new Error("operand * used with invalid operands");
+  }
+};
+
+fns["/"] = (x, y) => {
+  if (typeof x === "number" && typeof y === "number") {
+    return x / y;
+  } else {
+    throw new Error("operand / used with invalid operands");
+  }
+};
+
+// relational operators
+
+fns["="] = (x, y) => {
+  if (typeof x === "number" && typeof y === "number") {
+    return x === y;
+  } else if (typeof x === "string" && typeof y === "string") {
+    return x === y;
+  } else if (typeof x === "boolean" && typeof y === "boolean") {
+    return x === y;
+  } else if (x instanceof PokerHand && y instanceof PokerHand) {
+    return !x.beats(y) && !y.beats(x);
+  } else {
+    throw new Error("operand = used with invalid operands");
+  }
+};
+
+fns["<>"] = (x, y) => !fns["="](x, y);
+
+fns[">="] = (x, y) => fns["<"](y, x);
+
+fns[">"] = (x, y) => fns[">="](x, y) && !fns["="](x, y);
+
+fns["<="] = (x, y) => fns["<"](x, y) || fns["="](x, y);
+
+fns["<"] = (x, y) => {
+  if (typeof x === "number" && typeof y === "number") {
+    return x < y;
+  } else if (typeof x === "string" && typeof y === "string") {
+    return x < y;
+  } else if (typeof x === "boolean" && typeof y === "boolean") {
+    return x < y;
+  } else if (x instanceof PokerHand && y instanceof PokerHand) {
+    return y.beats(x);
+  } else {
+    throw new Error("operand < used with invalid operands");
+  }
+};
+
+// card and hand functions
+
+let remainingCards: Card[] = [];
+fns.deal = () => {
+  // Get one of the remaining cards at random
+  const idx = Math.floor(Math.random() * remainingCards.length);
+  const card = remainingCards[idx];
+  remainingCards.splice(idx, 1);
+  return card;
+};
+
+fns.bestHand = (...cards) => {
+  try {
+    return bestHand(cards as Card[]);
+  } catch (e) {
+    console.log(e);
+    debugger;
+  }
+  return null as any;
+};
+
+fns.beats = (hand1, hand2) => (hand1 as PokerHand).beats(hand2 as PokerHand);
+
+type CompiledModel = {
+  cells: Record<string, Value | ((s: Scenario) => Value)>;
+};
+
+function compile(model: Model): CompiledModel {
+  const cm: CompiledModel = { cells: {} };
+  for (const [name, src] of Object.entries(model.cells)) {
+    cm.cells[name] = compileCell(src);
+  }
+  return cm;
+}
 
 export class Engine {
-  model: Model;
-  callback: (scenario: Scenario) => void;
+  readonly compiledModel: CompiledModel;
+  readonly callback: (s: Scenario) => void;
+  readonly dealtCards = new Set<Card>();
 
   constructor(model: Model, callback: (result: Scenario) => void) {
-    this.model = model;
+    this.compiledModel = compile(model);
     this.callback = callback;
+
+    for (const value of Object.values(this.compiledModel)) {
+      if (isCard(value)) {
+        this.dealtCards.add(value);
+      }
+    }
   }
 
   next() {
-    const scenario: Scenario = {};
-    const availableCards = allCards.filter(
-      (c) => !Object.values(this.model.cells).includes(c)
-    );
-    // For each cell in the model
-    for (const [cellName, cell] of Object.entries(this.model.cells)) {
-      if (
-        isCard(cell) ||
-        typeof cell === "number" ||
-        typeof cell === "boolean"
-      ) {
-        scenario[cellName] = cell;
-      } else if (cell === "?") {
-        // Get a random card that's not already used in the context
-        const randomIndex = Math.floor(Math.random() * availableCards.length);
-        scenario[cellName] = availableCards[randomIndex];
-        availableCards.splice(randomIndex, 1);
-      }
-    }
+    // this is the state that makes deal() work
+    remainingCards = allCards.filter((c) => !this.dealtCards.has(c));
 
-    this.model.addComputedValues(scenario);
+    // For each cell in the model
+    const scenario: Scenario = {};
+    for (const [cellName, fnOrValue] of Object.entries(
+      this.compiledModel.cells
+    )) {
+      scenario[cellName] =
+        fnOrValue instanceof Function ? fnOrValue(scenario) : fnOrValue;
+    }
 
     this.callback(scenario);
     return scenario;

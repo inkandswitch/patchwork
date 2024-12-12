@@ -1,5 +1,5 @@
 import { Engine } from "./engine";
-import { bestHand, PokerHand } from "./handEvaluation";
+import { PokerHand } from "./handEvaluation";
 
 const allRanks = [
   "A",
@@ -53,47 +53,28 @@ export type Scenario = {
 };
 
 export type Model = {
-  cells: {
-    [key: string]: Card | UnknownCard;
-  };
-  addComputedValues: (scenario: Scenario) => void;
+  cells: Record<string, string>;
 };
 
 export const SAMPLE_MODEL: Model = {
   cells: {
-    myCard1: deal("AS"),
-    myCard2: deal("3S"),
-    theirCard1: deal(),
-    theirCard2: deal(),
-    commCard1: deal("7C"),
-    commCard2: deal("2H"),
-    commCard3: deal("3H"),
-    commCard4: deal(),
-    commCard5: deal(),
-  },
-  addComputedValues(scenario) {
-    const myHand = bestHand([
-      scenario.myCard1 as Card,
-      scenario.myCard2 as Card,
-      scenario.commCard1 as Card,
-      scenario.commCard2 as Card,
-      scenario.commCard3 as Card,
-      scenario.commCard4 as Card,
-      scenario.commCard5 as Card,
-    ]);
-    const theirHand = bestHand([
-      scenario.theirCard1 as Card,
-      scenario.theirCard2 as Card,
-      scenario.commCard1 as Card,
-      scenario.commCard2 as Card,
-      scenario.commCard3 as Card,
-      scenario.commCard4 as Card,
-      scenario.commCard5 as Card,
-    ]);
-
-    scenario.myHand = myHand;
-    scenario.theirHand = theirHand;
-    scenario.iWin = myHand.beats(theirHand);
+    // a: "=1+2",
+    // b: "=a*4-1",
+    // c: "=b/5",
+    myCard1: "AS",
+    myCard2: "3S",
+    theirCard1: "=deal()",
+    theirCard2: "=deal()",
+    commCard1: "7C",
+    commCard2: "2H",
+    commCard3: "3H",
+    commCard4: "=deal()",
+    commCard5: "=deal()",
+    myHand:
+      "=bestHand(myCard1, myCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
+    theirHand:
+      "=bestHand(theirCard1, theirCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
+    iWin: "=myHand < theirHand",
   },
 };
 
