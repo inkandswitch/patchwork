@@ -22,18 +22,24 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   const [doc, changeDoc] = useDocument<AmbPokerDoc>(docUrl);
   const scenariosRef = React.useRef<FilteredScenario[]>([]);
   const [scenarioCount, setScenarioCount] = useState(0); // For triggering re-renders
-  const [selectedScenarioIndex, setSelectedScenarioIndex] = useState(0);
   const [maxScenarios, setMaxScenarios] = useState(DEFAULT_MAX_SCENARIOS);
   const [selectedValue, setSelectedValue] = useState<string | null>(null);
-
+  const [error, setError] = useState<string | null>(null);
   const totalComputeTime = useRef(0);
 
   useEffect(() => {
     if (!doc || !doc.model) return;
     scenariosRef.current = [];
-    const engine = new Engine(doc.model, (filteredScenario) =>
-      scenariosRef.current.push(filteredScenario)
-    );
+    let engine;
+    try {
+      engine = new Engine(doc.model, (filteredScenario) =>
+        scenariosRef.current.push(filteredScenario)
+      );
+    } catch (e) {
+      setError((e as Error).message);
+      return;
+    }
+    setError(null);
     let lastUpdatedView = performance.now();
 
     const frame = () => {
@@ -69,7 +75,6 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   ];
 
   if (!doc || !doc.model || !scenariosRef.current) {
-    console.log({ doc, scenariosRef });
     return <div>Loading...</div>;
   }
 
@@ -94,6 +99,13 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
           backgroundImage: `url(${background})`,
         }}
       >
+        {error && (
+          <div className="absolute inset-x-0 top-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
+            <div className="bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg text-lg">
+              {error}
+            </div>
+          </div>
+        )}
         {/* Stats overlay in top right */}
         <div className="absolute top-4 right-8 w-72 bg-[#000000] bg-opacity-50 p-4">
           <div className="space-y-4">
@@ -109,9 +121,16 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
             <div className="flex flex-col gap-1">
               <div className="flex justify-between">
                 <div className="text-xs font-medium text-white">Filter</div>
-                <div className="text-xs text-white font-mono">
-                  {doc.model.filter ?? "No filter"}
-                </div>
+                <textarea
+                  className="text-xs text-white font-mono bg-transparent w-full resize-none"
+                  value={doc.model.filter ?? ""}
+                  placeholder="No filter"
+                  onChange={(e) => {
+                    changeDoc((doc) => {
+                      doc.model.filter = e.target.value;
+                    });
+                  }}
+                />
               </div>
               <div className="flex justify-between text-xs text-blue-300">
                 Matched{" "}
@@ -183,7 +202,12 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         </div>
       </div>
 
-      <div className="bg-[#003300] text-white w-80 border-l flex-shrink-0 overflow-hidden flex flex-col">
+      <div
+        className="bg-[#003300] text-white w-80 border-l flex-shrink-0 overflow-hidden flex flex-col"
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-6">
             {!selectedValue && (
@@ -196,6 +220,20 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                 <div className="text-md text-white font-medium">
                   {selectedValue}
                 </div>
+
+                <div>
+                  <div className="text-sm text-white mb-2">Formula</div>
+                  <textarea
+                    className="w-full bg-black bg-opacity-30 text-white p-2 rounded"
+                    value={doc.model.cells[selectedValue] || ""}
+                    onChange={(e) => {
+                      changeDoc((doc) => {
+                        doc.model.cells[selectedValue] = e.target.value;
+                      });
+                    }}
+                  />
+                </div>
+
                 {(() => {
                   const filteredValues = scenariosRef.current.map(
                     ({ scenario, include }) => ({

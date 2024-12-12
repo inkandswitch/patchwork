@@ -96,6 +96,9 @@ fns.deal = () => {
 };
 
 fns.bestHand = (...cards) => {
+  if (cards.some((c) => !isCard(c))) {
+    throw new Error(`bestHand used with invalid card: ${cards}`);
+  }
   try {
     return bestHand(cards as Card[]);
   } catch (e) {

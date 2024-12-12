@@ -146,9 +146,9 @@ export function compileCell(
   }
 
   const code = s(mr).comp();
-  console.log("code", code);
+  // console.log("code", code);
   const ans = eval(code);
-  console.log("ans", ans);
+  // console.log("ans", ans);
   return ans;
 }
 
