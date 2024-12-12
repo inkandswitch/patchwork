@@ -329,6 +329,7 @@ export const Explorer: React.FC = () => {
               {selectedDocUrl &&
                 selectedDocPath &&
                 currentTool &&
+                currentTool.supportedDataTypes.includes(selectedDataTypeId!) &&
                 flatDocPaths && (
                   <VersionControlEditor
                     key={DocPathUtils.toString(selectedDocPath)}

@@ -21,24 +21,22 @@ export class CodeLoader {
     });
   }
 
+  // Helper function for loading tools... This shouldn't be here.
+  // It's a sign of having the wrong API.
+  async toolFromImportString(importName: string): Promise<Tool[]> {
+    const module = await import(importName);
+    if (!module) throw new Error(`No module for  ${importName}`);
+    let tool = module.tool;
+    if (!Array.isArray(tool)) {
+      tool = [tool];
+    }
+
+    if (!tool.every(isTool))
+      throw new Error(`Module but no exported ".tool" for ${importName}`);
+    return tool;
+  }
+
   async loadBundled() {
-    // Helper function for loading tools... This shouldn't be here.
-    // It's a sign of having the wrong API.
-    const toolFromImportString = async (
-      importName: string
-    ): Promise<Tool[]> => {
-      const module = await import(importName);
-      if (!module) throw new Error(`No module for  ${importName}`);
-      let tool = module.tool;
-      if (!Array.isArray(tool)) {
-        tool = [tool];
-      }
-
-      if (!tool.every(isTool))
-        throw new Error(`Module but no exported ".tool" for ${importName}`);
-      return tool;
-    };
-
     // We DO want to block on datatypes loading
     const dataTypesLoaded = await Promise.all([
       ...Object.entries(BUNDLED_DATATYPES).map(async ([id, importName]) => {
@@ -49,7 +47,7 @@ export class CodeLoader {
 
     // We don't want to block on tools loading
     Object.entries(BUNDLED_TOOLS).map(async ([id, importName]) => {
-      const tool = toolFromImportString(importName);
+      const tool = this.toolFromImportString(importName);
       registerTool(id, tool);
     });
 
@@ -69,7 +67,8 @@ export class CodeLoader {
         registerDataType(id, module.dataType);
       }),
       ...Object.entries(toolModules || {}).map(async ([id, importName]) => {
-        const tool = await import(importName);
+        // We don't want to block on tools loading
+        const tool = this.toolFromImportString(importName);
         registerTool(id, tool);
       }),
     ]);
