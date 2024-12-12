@@ -7,6 +7,7 @@ import { Button } from "@patchwork/sdk/ui/button";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps } from "@patchwork/sdk";
 import background from "../background.png";
+import { formatPercentage } from "../valueViewers/aggregate";
 
 // when this gets to 50k+, aggregation gets slow
 const DEFAULT_MAX_SCENARIOS = 10000;
@@ -88,11 +89,41 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
     >
       {/* Main content area */}
       <div
-        className="flex-1 flex flex-col overflow-hidden bg-cover bg-center bg-repeat text-white"
+        className="flex-1 flex flex-col overflow-hidden bg-cover bg-center bg-repeat text-white relative"
         style={{
           backgroundImage: `url(${background})`,
         }}
       >
+        {/* Stats overlay in top right */}
+        <div className="absolute top-4 right-8 w-72 bg-[#000000] bg-opacity-50 p-4">
+          <div className="space-y-4">
+            <div className="text-sm text-white">
+              {scenarioCount} scenarios in {totalComputeTime.current.toFixed(0)}
+              ms (
+              {((scenarioCount / totalComputeTime.current) * 1000).toFixed(
+                0
+              )}{" "}
+              /s)
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between">
+                <div className="text-xs font-medium text-white">Filter</div>
+                <div className="text-xs text-white font-mono">
+                  {doc.model.filter ?? "No filter"}
+                </div>
+              </div>
+              <div className="flex justify-between text-xs text-blue-300">
+                Matched{" "}
+                {formatPercentage(
+                  (filteredScenariosCount * 100) / scenarioCount
+                )}{" "}
+                ({filteredScenariosCount} / {scenarioCount})
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
             <div className="flex flex-col gap-4">
@@ -152,65 +183,16 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         </div>
       </div>
 
-      <div className="bg-[#003300] text-white w-80 border-l flex-shrink-0 overflow-hidden flex flex-col gap-4">
+      <div className="bg-[#003300] text-white w-80 border-l flex-shrink-0 overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-6">
-            <div>
-              <div className="space-y-2">
-                {/* <input
-                  type="range"
-                  min={0}
-                  max={Math.max(0, scenarioCount - 1)}
-                  value={selectedScenarioIndex}
-                  onChange={(e) =>
-                    setSelectedScenarioIndex(parseInt(e.target.value))
-                  }
-                  className="w-full"
-                />
-                <div className="text-sm text-gray-600">
-                  Viewing scenario {selectedScenarioIndex + 1} of{" "}
-                  {scenarioCount}
-                </div> */}
-                <div className="text-sm text-white">
-                  {scenarioCount} scenarios enumerated in{" "}
-                  {totalComputeTime.current.toFixed(0)}ms
-                  <br />(
-                  {((scenarioCount / totalComputeTime.current) * 1000).toFixed(
-                    0
-                  )}{" "}
-                  scenarios/s)
-                </div>
-                {/* <Button
-                  onClick={() => {
-                    setMaxScenarios(maxScenarios * 2);
-                  }}
-                  variant="default"
-                  className="w-full"
-                >
-                  Generate more (up to {maxScenarios * 2})
-                </Button> */}
+            {!selectedValue && (
+              <div className="text-xs text-gray-300 flex items-center justify-center h-full">
+                No cell selected
               </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <div className="text-md font-medium text-white">Filter</div>
-
-              {doc.model.filter ? (
-                <div>
-                  <div className="text-sm text-white font-mono">
-                    {doc.model.filter}
-                  </div>
-                  <div className="text-sm text-blue-300">
-                    (filtered down to {filteredScenariosCount} scenarios)
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-white">No filter</div>
-              )}
-            </div>
-
+            )}
             {selectedValue && (
-              <div className="flex flex-col gap-6 border-t border-gray-400 pt-4">
+              <div className="flex flex-col gap-6">
                 <div className="text-md text-white font-medium">
                   {selectedValue}
                 </div>
