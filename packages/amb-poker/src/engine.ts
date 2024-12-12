@@ -101,6 +101,7 @@ fns.beats = (hand1, hand2) => (hand1 as PokerHand).beats(hand2 as PokerHand);
 
 type CompiledModel = {
   cells: Record<string, Value | ((s: Scenario) => Value)>;
+  filter?: Value | ((s: Scenario) => Value); // truthy means the scenario should be included
 };
 
 function compile(model: Model): CompiledModel {
@@ -108,15 +109,23 @@ function compile(model: Model): CompiledModel {
   for (const [name, src] of Object.entries(model.cells)) {
     cm.cells[name] = compileCell(src);
   }
+  if (model.filter) {
+    cm.filter = compileCell(model.filter);
+  }
   return cm;
 }
 
+export type FilteredScenario = {
+  scenario: Scenario;
+  include: boolean;
+};
+
 export class Engine {
   readonly compiledModel: CompiledModel;
-  readonly callback: (s: Scenario) => void;
+  readonly callback: (s: FilteredScenario) => void;
   readonly dealtCards = new Set<Card>();
 
-  constructor(model: Model, callback: (result: Scenario) => void) {
+  constructor(model: Model, callback: (result: FilteredScenario) => void) {
     this.compiledModel = compile(model);
     this.callback = callback;
 
@@ -140,7 +149,13 @@ export class Engine {
         fnOrValue instanceof Function ? fnOrValue(scenario) : fnOrValue;
     }
 
-    this.callback(scenario);
+    const include = !this.compiledModel.filter
+      ? true
+      : this.compiledModel.filter instanceof Function
+      ? !!this.compiledModel.filter(scenario)
+      : !!this.compiledModel.filter;
+
+    this.callback({ scenario, include });
     return scenario;
   }
 }

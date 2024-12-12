@@ -1,4 +1,4 @@
-import { Engine } from "./engine";
+import { Engine, FilteredScenario } from "./engine";
 import { PokerHand } from "./handEvaluation";
 
 const allRanks = [
@@ -54,6 +54,7 @@ export type Scenario = {
 
 export type Model = {
   cells: Record<string, string>;
+  filter?: string;
 };
 
 export const SAMPLE_MODEL: Model = {
@@ -76,10 +77,11 @@ export const SAMPLE_MODEL: Model = {
       "=bestHand(theirCard1, theirCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
     iWin: "=myHand < theirHand",
   },
+  filter: "=iWin", // this can be any formula!
 };
 
 const test = () => {
-  const savedContexts: Scenario[] = [];
+  const savedContexts: FilteredScenario[] = [];
   const engine = new Engine(SAMPLE_MODEL, (context) =>
     savedContexts.push(context)
   );

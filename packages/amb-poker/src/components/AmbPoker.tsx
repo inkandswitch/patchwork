@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AmbPokerDoc } from "../datatype";
 import { Model, SAMPLE_MODEL, Scenario, Card, isCard } from "../model";
-import { Engine } from "../engine";
-import { PokerHand } from "../handEvaluation";
+import { Engine, FilteredScenario } from "../engine";
 import { valueViewers } from "../valueViewers";
 import { Button } from "@patchwork/sdk/ui/button";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
@@ -18,7 +17,7 @@ const UPDATE_VIEW_EVERY_MS = 100;
 // Once the model is properly editable it'll be in the automerge doc.
 export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
   const [model, setModel] = useState<Model>(SAMPLE_MODEL);
-  const scenariosRef = React.useRef<Scenario[]>([]);
+  const scenariosRef = React.useRef<FilteredScenario[]>([]);
   const [scenarioCount, setScenarioCount] = useState(0); // For triggering re-renders
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState(0);
   const [maxScenarios, setMaxScenarios] = useState(DEFAULT_MAX_SCENARIOS);
@@ -27,9 +26,9 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
   const totalComputeTime = useRef(0);
 
   useEffect(() => {
-    const engine = new Engine(model, (scenario) => {
-      scenariosRef.current.push(scenario);
-    });
+    const engine = new Engine(model, (filteredScenario) =>
+      scenariosRef.current.push(filteredScenario)
+    );
     let lastUpdatedView = performance.now();
 
     const frame = () => {
@@ -116,13 +115,12 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                             className={`p-1 text-lg max-h-64 overflow-hidden overflow-y-auto rounded relative`}
                           >
                             {(() => {
-                              const ambValue = scenariosRef.current.map(
-                                (scenario) => scenario[name]
+                              const filteredValues = scenariosRef.current.map(
+                                ({ scenario, include }) => ({
+                                  value: scenario[name],
+                                  include,
+                                })
                               );
-                              const filteredValues = ambValue.map((v) => ({
-                                value: v,
-                                include: true,
-                              }));
                               const viewer = valueViewers.find(
                                 (v) => v.shouldRender(filteredValues) !== "hide"
                               );
@@ -198,13 +196,12 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                   {selectedValue}
                 </div>
                 {(() => {
-                  const ambValue = scenariosRef.current.map(
-                    (scenario) => scenario[selectedValue]
+                  const filteredValues = scenariosRef.current.map(
+                    ({ scenario, include }) => ({
+                      value: scenario[selectedValue],
+                      include,
+                    })
                   );
-                  const filteredValues = ambValue.map((v) => ({
-                    value: v,
-                    include: true,
-                  }));
                   const viewers = valueViewers.filter(
                     (v) => v.shouldRender(filteredValues) !== "hide"
                   );
