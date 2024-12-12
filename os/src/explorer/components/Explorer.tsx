@@ -63,17 +63,11 @@ export const Explorer: React.FC = () => {
 
   const selectedDataType = dataTypeById(selectedDataTypeId);
 
-  const [toolsForSelection, setToolsForSelection] = useState<Tool[]>([]);
-  useEffect(() => {
-    toolsForDataType(selectedDataType).then(setToolsForSelection);
-  }, [selectedDataType]);
-
+  const toolsForSelection = toolsForDataType(selectedDataType);
   const [selectedToolId, setSelectedToolId] = useState<string>();
+  const selectedTool = toolById(selectedToolId);
 
-  const [selectedTool, setSelectedTool] = useState<Tool | undefined>();
-  useEffect(() => {
-    toolById(selectedToolId).then((ts) => setSelectedTool(ts[0])); // assume one tool?
-  }, [selectedToolId]);
+  console.log({ selectedToolId, selectedTool, toolsForSelection });
 
   const currentTool =
     // make sure the current tool is reset to the fallback tool

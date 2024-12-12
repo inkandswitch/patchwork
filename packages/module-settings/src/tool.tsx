@@ -47,16 +47,10 @@ export const ModuleSettingsEditor: React.FC<
   const dataTypes = allDataTypes();
   const dataTypeModules = doc.dataTypeModules;
 
-  const promisedTools = useMemo(() => allTools(), [doc]);
+  const tools = allTools();
   const toolModules = doc.toolModules;
-  const [tools, setTools] = useState<Record<string, Tool[]>>({});
-  useEffect(() => {
-    Promise.all(
-      Object.entries(promisedTools).map(([key, promiseArray]) =>
-        Promise.all(promiseArray).then((toolArrays) => [key, toolArrays.flat()])
-      )
-    ).then((entries) => setTools(Object.fromEntries(entries)));
-  }, [promisedTools]);
+
+  console.log({ doc, tools, toolModules });
 
   return (
     <div>
@@ -96,7 +90,7 @@ export const ModuleSettingsEditor: React.FC<
         <Label>Tools</Label>
 
         <div className="flex flex-col gap-2 py-2">
-          {Object.entries(tools).map(([id, tools]) => {
+          {Object.entries(tools).map(([id, tool]) => {
             return (
               <div className="flex items-center gap-2" key={id}>
                 <label
@@ -110,17 +104,14 @@ export const ModuleSettingsEditor: React.FC<
                   />
                   {id}
                 </label>
-                {(tools || []).map((tool) => (
-                  <Label key={tool.id}>
-                    <Input
-                      id={`tool-${id}`}
-                      value={toolModules[id]}
-                      onChange={(evt) =>
-                        considerUpdatingTool(id, evt.target.value)
-                      }
-                    />
-                  </Label>
-                ))}
+                <Label key={tool.id} />
+
+                <Input
+                  id={`tool-${tool.id}`}
+                  value={toolModules[tool.id]}
+                  defaultValue={"Built-In (paste valid URL to replace)"}
+                  onChange={(evt) => considerUpdatingTool(id, evt.target.value)}
+                />
               </div>
             );
           })}

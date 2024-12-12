@@ -47,8 +47,8 @@ export class CodeLoader {
 
     // We don't want to block on tools loading
     Object.entries(BUNDLED_TOOLS).map(async ([id, importName]) => {
-      const tool = this.toolFromImportString(importName);
-      registerTool(id, tool);
+      const tools = await this.toolFromImportString(importName);
+      tools.forEach(registerTool);
     });
 
     return dataTypesLoaded;
@@ -68,8 +68,8 @@ export class CodeLoader {
       }),
       ...Object.entries(toolModules || {}).map(async ([id, importName]) => {
         // We don't want to block on tools loading
-        const tool = this.toolFromImportString(importName);
-        registerTool(id, tool);
+        const tools = await this.toolFromImportString(importName);
+        tools.forEach(registerTool);
       }),
     ]);
   }

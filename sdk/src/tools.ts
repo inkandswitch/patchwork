@@ -53,17 +53,14 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
   return tool as Tool;
 }
 
-const GlobalTools: Record<string, Promise<Tool[]>[]> = {};
-export const registerTool = (id: string, tool: Promise<Tool[]>) => {
+const GlobalTools: Record<string, Tool> = {};
+export const registerTool = (tool: Tool) => {
+  const { id } = tool;
   console.log("registering tool", id, tool);
-  if (!GlobalTools[id]) {
-    GlobalTools[id] = [];
+  if (GlobalTools[id]) {
+    console.warn("Replacing tool", tool);
   }
-  if (GlobalTools[id].includes(tool)) {
-    console.warn("Tool already registered", id, tool);
-    return;
-  }
-  GlobalTools[id].push(tool);
+  GlobalTools[id] = tool;
 };
 
 export const isTool = (value: unknown): value is DataType => {
@@ -81,31 +78,31 @@ export const allTools = () => {
 
 export const toolsForDataType = (
   dataType: DataType | string | undefined
-): Promise<Tool[]> => {
+): Tool[] => {
   if (!dataType) {
-    return Promise.resolve([]);
+    return [];
   }
 
   if (isDataType(dataType)) {
     dataType = dataType.id;
   }
 
-  const specificTools = Promise.all(GlobalTools[dataType] || []).then(
-    (aryOfAry) => aryOfAry.flat()
+  const specificTools = Object.values(GlobalTools).filter((tool) =>
+    tool.supportedDataTypes.includes(dataType)
   );
 
-  const genericTools = Promise.all(GlobalTools["raw"] || []).then((a) =>
-    a.flat()
+  const genericTools = Object.values(GlobalTools).filter((tool) =>
+    tool.supportedDataTypes.includes("*")
   );
 
-  return Promise.all([specificTools, genericTools]).then((a) => a.flat());
+  return [...specificTools, ...genericTools];
 };
 
-export const toolById = (id: string | undefined): Promise<Tool[]> => {
+export const toolById = (id: string | undefined): Tool | undefined => {
   if (!id) {
-    return Promise.resolve([]);
+    return undefined;
   }
-  return Promise.all(GlobalTools[id] || []).then((aryOfAry) => aryOfAry.flat());
+  return GlobalTools[id];
 };
 
 export type EditorProps<A, V> = {

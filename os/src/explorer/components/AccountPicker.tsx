@@ -5,8 +5,6 @@ import {
   useSelf,
   automergeUrlToAccountToken,
   accountTokenToAutomergeUrl,
-  ModuleSettingsDoc,
-  allDataTypes,
 } from "@patchwork/sdk";
 import { ChangeEvent, useEffect, useState } from "react";
 
@@ -17,7 +15,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTrigger,
-  Icon,
   Input,
   Label,
   Tabs,
@@ -67,13 +64,8 @@ export const AccountPicker = ({
     ? accountTokenToAutomergeUrl(accountTokenToLogin)
     : undefined;
 
-  const [currentAccountDoc] = useDocument<AccountDoc>(
-    currentAccount?.handle.url
-  );
   const [accountToLogin] = useDocument<AccountDoc>(accountAutomergeUrlToLogin);
   const [contactToLogin] = useDocument<ContactDoc>(accountToLogin?.contactUrl);
-  const [moduleSettingsDoc, changeModuleSettingsDoc] =
-    useDocument<ModuleSettingsDoc>(currentAccountDoc?.moduleSettingsUrl);
 
   const accountTokenToLoginStatus: AccountTokenToLoginStatus = (() => {
     if (!accountTokenToLogin || accountTokenToLogin === "") return null;
@@ -143,10 +135,6 @@ export const AccountPicker = ({
       contactToLogin?.type === "registered");
 
   const isLoggedIn = self?.type === "registered";
-
-  const dataTypes = allDataTypes();
-  console.log({ moduleSettingsDoc, dataTypes });
-  const dataTypeModules = moduleSettingsDoc?.dataTypeModules || {};
 
   return (
     <Dialog>
