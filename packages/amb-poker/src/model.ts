@@ -77,34 +77,8 @@ export const SAMPLE_MODEL: Model = {
       "=bestHand(theirCard1, theirCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
     iWin: "=myHand > theirHand",
   },
-  filter: `=handType(myHand) = "pair"`,
+  filter: `=handType(myHand) = "straight"`,
 };
-
-const test = () => {
-  const savedContexts: FilteredScenario[] = [];
-  const engine = new Engine(SAMPLE_MODEL, (context) =>
-    savedContexts.push(context)
-  );
-
-  for (let i = 0; i < 100; i++) {
-    engine.next();
-  }
-  console.log(savedContexts);
-};
-
-test();
-
-// engine.cardinality() // => 1326
-// engine.cardinality("iWin") // => 450
-// const winningPercentage = engine.cardinality("iWin") / engine.cardinality() // => 0.3386
-// engine.value("iWin") = [{value: true, context: { ... }}, ... ]
-
-// engine.evalFormula("iWin", scenario);
-
-// class Result {
-//   context() {}
-//   formula(name) {}
-// }
 
 // notes
 // lazy generators don't need to be fully evaluated

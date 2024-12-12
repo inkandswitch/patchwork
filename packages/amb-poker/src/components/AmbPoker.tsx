@@ -8,10 +8,10 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps } from "@patchwork/sdk";
 import background from "../background.png";
 
-// when this gets to 100k+, something gets slow...
-const DEFAULT_MAX_SCENARIOS = 20000;
+// when this gets to 50k+, aggregation gets slow
+const DEFAULT_MAX_SCENARIOS = 10000;
 const MAX_MS_FOR_SCENARIO_GEN_PER_FRAME = 4; // how many ms do we spend generating scenarios per frame
-const UPDATE_VIEW_EVERY_MS = 100;
+const UPDATE_VIEW_EVERY_MS = 100; // update the UI every __ ms (too often and rendering gets expensive)
 
 // We don't use the automerge doc for anything yet.
 // Once the model is properly editable it'll be in the automerge doc.
@@ -69,6 +69,13 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
 
   if (!scenariosRef.current) {
     return <div>Loading...</div>;
+  }
+
+  let filteredScenariosCount = 0;
+  for (const scenario of scenariosRef.current) {
+    if (scenario.include) {
+      filteredScenariosCount++;
+    }
   }
 
   return (
@@ -163,7 +170,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                   Viewing scenario {selectedScenarioIndex + 1} of{" "}
                   {scenarioCount}
                 </div> */}
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-white">
                   {scenarioCount} scenarios enumerated in{" "}
                   {totalComputeTime.current.toFixed(0)}ms
                   <br />(
@@ -172,12 +179,15 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                   )}{" "}
                   scenarios/s)
                 </div>
+
+                <div className="text-sm text-blue-300">
+                  (filtered down to {filteredScenariosCount} scenarios)
+                </div>
               </div>
             </div>
 
             <div>
               <div className="text-sm space-y-2">
-                <div>Current limit: {maxScenarios} scenarios</div>
                 <Button
                   onClick={() => {
                     setMaxScenarios(maxScenarios * 2);
@@ -185,7 +195,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                   variant="default"
                   className="w-full"
                 >
-                  Double limit to {maxScenarios * 2}
+                  Generate more (up to {maxScenarios * 2})
                 </Button>
               </div>
             </div>
