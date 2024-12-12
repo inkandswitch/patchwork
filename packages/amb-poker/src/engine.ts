@@ -76,6 +76,14 @@ fns["<"] = (x, y) => {
   }
 };
 
+// boolean functions
+
+fns.and = (...xs) => xs.reduce((acc, x) => acc && !!x, true);
+
+fns.or = (...xs) => xs.reduce((acc, x) => acc || !!x, false);
+
+fns.not = (x) => !x;
+
 // card and hand functions
 
 let remainingCards: Card[] = [];
