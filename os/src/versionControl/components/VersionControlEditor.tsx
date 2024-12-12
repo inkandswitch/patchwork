@@ -93,10 +93,10 @@ export const VersionControlEditor: React.FC<{
       : cloneOrMainOm?.doc;
   const baseHeads = branchScopeAndActiveBranchInfo?.baseHeads;
 
-  useEffect(() => {
-    console.log("Selected doc URL:", docLink.url);
-    console.log("CloneOrMainOm URL:", cloneOrMainOm?.url);
-  }, [docLink.url, cloneOrMainOm?.url]);
+  // useEffect(() => {
+  //   console.log("Selected doc URL:", docLink.url);
+  //   console.log("CloneOrMainOm URL:", cloneOrMainOm?.url);
+  // }, [docLink.url, cloneOrMainOm?.url]);
 
   const branchDiff = useMemo(() => {
     // only compute branch diff if we are on a branch

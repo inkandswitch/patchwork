@@ -15,8 +15,10 @@ const UPDATE_VIEW_EVERY_MS = 100; // update the UI every __ ms (too often and re
 
 // We don't use the automerge doc for anything yet.
 // Once the model is properly editable it'll be in the automerge doc.
-export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
-  const [model, setModel] = useState<Model>(SAMPLE_MODEL);
+export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
+  docUrl,
+}) => {
+  const [doc, changeDoc] = useDocument<AmbPokerDoc>(docUrl);
   const scenariosRef = React.useRef<FilteredScenario[]>([]);
   const [scenarioCount, setScenarioCount] = useState(0); // For triggering re-renders
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState(0);
@@ -26,7 +28,9 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
   const totalComputeTime = useRef(0);
 
   useEffect(() => {
-    const engine = new Engine(model, (filteredScenario) =>
+    if (!doc || !doc.model) return;
+    scenariosRef.current = [];
+    const engine = new Engine(doc.model, (filteredScenario) =>
       scenariosRef.current.push(filteredScenario)
     );
     let lastUpdatedView = performance.now();
@@ -51,11 +55,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
       }
     };
     requestAnimationFrame(frame);
-  }, [model, maxScenarios]);
-
-  useEffect(() => {
-    scenariosRef.current = [];
-  }, [model]);
+  }, [doc?.model, maxScenarios]);
 
   const rows = [
     { label: "Theirs", values: ["theirCard1", "theirCard2"] },
@@ -67,7 +67,8 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
     { label: "Stats", values: ["myHand", "theirHand", "iWin"] },
   ];
 
-  if (!scenariosRef.current) {
+  if (!doc || !doc.model || !scenariosRef.current) {
+    console.log({ doc, scenariosRef });
     return <div>Loading...</div>;
   }
 
@@ -179,7 +180,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                   )}{" "}
                   scenarios/s)
                 </div>
-                <Button
+                {/* <Button
                   onClick={() => {
                     setMaxScenarios(maxScenarios * 2);
                   }}
@@ -187,17 +188,17 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                   className="w-full"
                 >
                   Generate more (up to {maxScenarios * 2})
-                </Button>
+                </Button> */}
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
               <div className="text-md font-medium text-white">Filter</div>
 
-              {model.filter ? (
+              {doc.model.filter ? (
                 <div>
                   <div className="text-sm text-white font-mono">
-                    {model.filter}
+                    {doc.model.filter}
                   </div>
                   <div className="text-sm text-blue-300">
                     (filtered down to {filteredScenariosCount} scenarios)

@@ -3,11 +3,14 @@ import { initFrom, type DataType } from "@patchwork/sdk";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { RawValue } from "@patchwork/ambsheet/src/datatype";
 import { Filter } from "@patchwork/ambsheet/src/eval";
+import { Model } from "./model";
+import { SAMPLE_MODEL } from "./model";
 
 // SCHEMA
 
 export type AmbPokerDoc = HasVersionControlMetadata<unknown, unknown> & {
   title: string;
+  model: Model;
 };
 
 // FUNCTIONS
@@ -27,6 +30,7 @@ const getTitle = async (doc: AmbPokerDoc) => {
 export const init = (doc: AmbPokerDoc) => {
   initFrom(doc, {
     title: "Untitled AmbPoker",
+    model: SAMPLE_MODEL,
   });
 };
 
