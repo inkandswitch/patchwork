@@ -27,6 +27,23 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   const [error, setError] = useState<string | null>(null);
   const totalComputeTime = useRef(0);
 
+  // Add temporary state for inputs
+  const [tempFilterText, setTempFilterText] = useState("");
+  const [tempSelectedValueText, setTempSelectedValueText] = useState("");
+
+  // Update temp states when doc or selected value changes
+  useEffect(() => {
+    if (doc?.model) {
+      setTempFilterText(doc.model.filter ?? "");
+    }
+  }, [doc?.model]);
+
+  useEffect(() => {
+    if (doc?.model && selectedValue) {
+      setTempSelectedValueText(doc.model.cells[selectedValue] || "");
+    }
+  }, [doc?.model, selectedValue]);
+
   useEffect(() => {
     if (!doc || !doc.model) return;
     scenariosRef.current = [];
@@ -123,11 +140,12 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                 <div className="text-xs font-medium text-white">Filter</div>
                 <textarea
                   className="text-xs text-white font-mono bg-transparent w-full resize-none"
-                  value={doc.model.filter ?? ""}
+                  value={tempFilterText}
                   placeholder="No filter"
-                  onChange={(e) => {
+                  onChange={(e) => setTempFilterText(e.target.value)}
+                  onBlur={(e) => {
                     changeDoc((doc) => {
-                      doc.model.filter = e.target.value;
+                      doc.model.filter = tempFilterText;
                     });
                   }}
                 />
@@ -225,10 +243,11 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                   <div className="text-sm text-white mb-2">Formula</div>
                   <textarea
                     className="w-full bg-black bg-opacity-30 text-white p-2 rounded"
-                    value={doc.model.cells[selectedValue] || ""}
-                    onChange={(e) => {
+                    value={tempSelectedValueText}
+                    onChange={(e) => setTempSelectedValueText(e.target.value)}
+                    onBlur={(e) => {
                       changeDoc((doc) => {
-                        doc.model.cells[selectedValue] = e.target.value;
+                        doc.model.cells[selectedValue] = tempSelectedValueText;
                       });
                     }}
                   />
