@@ -77,7 +77,7 @@ export const SAMPLE_MODEL: Model = {
       "=bestHand(theirCard1, theirCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
     iWin: "=myHand > theirHand",
   },
-  filter: "=iWin", // this can be any formula!
+  filter: `=handType(myHand) = "pair"`,
 };
 
 const test = () => {
