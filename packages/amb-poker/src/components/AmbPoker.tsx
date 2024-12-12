@@ -179,15 +179,6 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                   )}{" "}
                   scenarios/s)
                 </div>
-
-                <div className="text-sm text-blue-300">
-                  (filtered down to {filteredScenariosCount} scenarios)
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="text-sm space-y-2">
                 <Button
                   onClick={() => {
                     setMaxScenarios(maxScenarios * 2);
@@ -198,6 +189,23 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({}) => {
                   Generate more (up to {maxScenarios * 2})
                 </Button>
               </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="text-md font-medium text-white">Filter</div>
+
+              {model.filter ? (
+                <div>
+                  <div className="text-sm text-white font-mono">
+                    {model.filter}
+                  </div>
+                  <div className="text-sm text-blue-300">
+                    (filtered down to {filteredScenariosCount} scenarios)
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-white">No filter</div>
+              )}
             </div>
 
             {selectedValue && (

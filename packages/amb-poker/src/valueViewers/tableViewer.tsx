@@ -1,13 +1,6 @@
 import { ValueViewer } from ".";
 import React from "react";
-import { aggregateValues } from "./aggregate";
-
-const displayPercentage = (percentage: number) =>
-  percentage === 0
-    ? "--"
-    : percentage >= 10
-    ? `${Math.round(percentage)}%`
-    : `${percentage.toFixed(1)}%`;
+import { aggregateValues, formatPercentage } from "./aggregate";
 
 export const tableViewer: ValueViewer = {
   name: "Table",
@@ -46,26 +39,19 @@ export const tableViewer: ValueViewer = {
               </thead>
               <tbody>
                 {group.groups.map((row) => {
-                  const rawPercentage = (row.count / values.length) * 100;
-                  const percentage = displayPercentage(rawPercentage);
-
                   const filteredGroup = filteredGroupedByKeys?.[i]?.groups.find(
                     (g) => g.name === row.name
-                  );
-                  const rawFilteredPercentage = filteredGroup
-                    ? (filteredGroup.count / filteredValues.length) * 100
-                    : 0;
-                  const filteredPercentage = displayPercentage(
-                    rawFilteredPercentage
                   );
 
                   return (
                     <tr key={row.name} className="border-t">
                       <td className="p-2">{row.name}</td>
-                      <td className="text-right p-2">{percentage}</td>
+                      <td className="text-right p-2">
+                        {formatPercentage(row.percentage)}
+                      </td>
                       {hasFilter && (
                         <td className="text-right p-2 text-blue-300">
-                          {filteredPercentage}
+                          {formatPercentage(filteredGroup?.percentage || 0)}
                         </td>
                       )}
                     </tr>

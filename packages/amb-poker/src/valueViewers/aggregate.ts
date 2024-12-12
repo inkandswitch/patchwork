@@ -30,8 +30,16 @@ export type GroupedValues = {
   groups: {
     name: string;
     count: number;
+    percentage: number;
   }[];
 };
+
+export const formatPercentage = (percentage: number): string =>
+  percentage === 0
+    ? "--"
+    : percentage >= 10
+    ? `${Math.round(percentage)}%`
+    : `${percentage.toFixed(1)}%`;
 
 export const aggregateValues = (values: Value[]): GroupedValues[] => {
   const aggregatables = values.map((v) => turnValueIntoAggregatableObject(v));
@@ -39,14 +47,17 @@ export const aggregateValues = (values: Value[]): GroupedValues[] => {
 
   // Group by each key and count occurrences
   return keys.map((key) => {
+    const groups = Object.entries(groupBy(aggregatables, key)).map(
+      ([name, items]) => ({
+        name,
+        count: items.length,
+        percentage: (items.length / values.length) * 100,
+      })
+    );
+
     const groupsForKey = {
       key,
-      groups: Object.entries(groupBy(aggregatables, key)).map(
-        ([name, items]) => ({
-          name,
-          count: items.length,
-        })
-      ),
+      groups,
     };
 
     // This is a hack for now -- sort the aggregated groups w/ a special case for poker hands.
