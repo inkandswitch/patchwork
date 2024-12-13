@@ -271,7 +271,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                     return;
                   }
                   navigator.clipboard.writeText(
-                    DocPath.toLink(selectedDocPath).url
+                    DocPathUtils.toLink(selectedDocPath).url
                   );
                   toast({ title: "Copied to clipboard" });
                 }}
