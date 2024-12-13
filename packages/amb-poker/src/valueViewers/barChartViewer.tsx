@@ -7,6 +7,7 @@ import {
   Tooltip,
   YAxis,
   XAxis,
+  Legend,
 } from "recharts";
 import { aggregateValues } from "./aggregate";
 
@@ -90,6 +91,7 @@ export const barChartViewer: ValueViewer = {
                       name={filterName}
                     />
                   ))}
+                  <Legend />
                 </BarChart>
               </ResponsiveContainer>
             </div>

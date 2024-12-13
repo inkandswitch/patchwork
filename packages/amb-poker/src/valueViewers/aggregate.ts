@@ -67,6 +67,13 @@ export const aggregateValues = (values: Value[]): GroupedValues[] => {
       groupsForKey.groups = sortBy(groupsForKey.groups, (g) =>
         handRank(g.name)
       );
+    } else if (values.every((v) => typeof v === "boolean")) {
+      groupsForKey.groups = sortBy(groupsForKey.groups, (g) =>
+        ["true", "false"].indexOf(g.name)
+      );
+    } else {
+      // sort by string name... not ideal but at least consistent?
+      groupsForKey.groups = sortBy(groupsForKey.groups, (g) => g.name);
     }
 
     if (values.every((v) => isCard(v)) && key === "rank") {

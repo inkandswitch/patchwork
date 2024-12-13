@@ -23,5 +23,5 @@ export type ValueViewer = {
 export const valueViewers: ValueViewer[] = [
   cardViewer,
   tableViewer,
-  // barChartViewer,
+  barChartViewer,
 ];
