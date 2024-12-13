@@ -81,7 +81,7 @@ If you want to add a package and bundle it into OS (recommended for now), here a
     - add a `build:<package>` line copying the structure of the existing ones. (This copies the built bundle for your package into the dist of the OS so it can be deployed together.)
   - run `pnpm install`
   - update `os/src/packages/index.ts` to include an entry pointing to your new package
-  - Update `os/src/packages/datatypesSafe.ts` to include an entry for your new datatype (assuming your package exports a datatype)
+  - Update `os/src/packages/datatypesSafe.ts` to include an entry for your new datatype (assuming your package exports a datatype). This will be removed once we support dynamic datatypes.
 
 Now it's time to try out your new package! To see your new datatype/tool in Patchwork, you'll need to make sure it's enabled, since we hide experimental datatypes by default. Log in / create an account, open the account picker, and check the box for your new datatype.
 
