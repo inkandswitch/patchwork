@@ -4,8 +4,12 @@
   "description": "A poker simulator",
   "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./datatype": "./dist/datatype.js"
+  },
   "scripts": {
-    "build": "rollup -c",
+    "build": "vite build",
     "push": "pnpm build && trailhead push --dir dist"
   },
   "keywords": [],
@@ -14,7 +18,6 @@
     "@automerge/automerge": "2.2.9-alpha.2",
     "@automerge/automerge-repo": "2.0.0-alpha.7",
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
-    "@patchwork/ambsheet": "workspace:*",
     "@patchwork/sdk": "workspace:*",
     "@types/lodash-es": "^4.17.12",
     "lodash-es": "^4.17.21",
@@ -29,7 +32,10 @@
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
     "rollup": "^4.19.0",
-    "rollup-plugin-postcss": "^4.0.2"
+    "rollup-plugin-postcss": "^4.0.2",
+    "vite-plugin-top-level-await": "^1.4.4",
+    "vite-plugin-wasm": "^3.3.0"
   }
 }

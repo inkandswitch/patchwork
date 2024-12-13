@@ -1,8 +1,5 @@
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { initFrom, type DataType } from "@patchwork/sdk";
-import { AutomergeUrl } from "@automerge/automerge-repo";
-import { RawValue } from "@patchwork/ambsheet/src/datatype";
-import { Filter } from "@patchwork/ambsheet/src/eval";
 import { Model } from "./model";
 import { SAMPLE_MODEL } from "./model";
 
@@ -34,12 +31,11 @@ export const init = (doc: AmbPokerDoc) => {
   });
 };
 
-export const datatype: DataType<AmbPokerDoc, unknown> = {
+export const dataType: DataType<AmbPokerDoc, unknown> = {
   type: "patchwork:dataType",
   id: "ambPoker",
   name: "Amb Poker",
   icon: "Club",
-  isExperimental: true,
 
   init,
   getTitle,
