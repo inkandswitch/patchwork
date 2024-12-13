@@ -1,6 +1,6 @@
 import { Model, Scenario, isCard, allCards, Value, Card } from "./model";
 import { compileCell, fns } from "./compiler";
-import { bestHand, PokerHand } from "./handEvaluation";
+import { bestHand, cardRank, PokerHand } from "./handEvaluation";
 
 // arithmetic operators
 
@@ -112,15 +112,23 @@ fns.beats = (hand1, hand2) => (hand1 as PokerHand).beats(hand2 as PokerHand);
 
 fns.handType = (hand) => (hand as PokerHand).type;
 
+fns.cardRank = (card) => cardRank(card as Card);
+
 type CompiledModel = {
-  cells: Record<string, Value | ((s: Scenario) => Value)>;
+  cells: {
+    name: string;
+    fn: Value | ((s: Scenario) => Value);
+  }[];
   filter?: Value | ((s: Scenario) => Value); // truthy means the scenario should be included
 };
 
 function compile(model: Model): CompiledModel {
-  const cm: CompiledModel = { cells: {} };
-  for (const [name, src] of Object.entries(model.cells)) {
-    cm.cells[name] = compileCell(src);
+  const cm: CompiledModel = { cells: [] };
+  for (const cell of model.cells) {
+    cm.cells.push({
+      name: cell.name,
+      fn: compileCell(cell.formula),
+    });
   }
   return cm;
 }
@@ -147,11 +155,10 @@ export class Engine {
 
     // For each cell in the model
     const scenario: Scenario = {};
-    for (const [cellName, fnOrValue] of Object.entries(
-      this.compiledModel.cells
-    )) {
-      scenario[cellName] =
-        fnOrValue instanceof Function ? fnOrValue(scenario) : fnOrValue;
+    // TODO: properly manage dependency order, don't just execute in order of cell definition
+    for (const cell of this.compiledModel.cells) {
+      scenario[cell.name] =
+        cell.fn instanceof Function ? cell.fn(scenario) : cell.fn;
     }
 
     this.callback(scenario);

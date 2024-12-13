@@ -32,7 +32,8 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
 
   useEffect(() => {
     if (doc?.model && selectedValue) {
-      setTempSelectedValueText(doc.model.cells[selectedValue] || "");
+      const cell = doc.model.cells.find((c) => c.name === selectedValue);
+      setTempSelectedValueText(cell?.formula || "");
     }
   }, [doc?.model, selectedValue]);
 
@@ -86,8 +87,9 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         "myHand",
         "theirHand",
         "iWin",
-        "I have a straight",
-        "I have a pair",
+        "theyHaveAPair",
+        "iHaveAPair",
+        "aceOnTurnOrRiver",
       ],
     },
   ];
@@ -101,6 +103,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
     return <div>Loading...</div>;
   }
 
+  console.log({ scenariosRef: scenariosRef.current });
   return (
     <div
       className="flex h-full overflow-hidden"
@@ -240,7 +243,12 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                     onChange={(e) => setTempSelectedValueText(e.target.value)}
                     onBlur={(e) => {
                       changeDoc((doc) => {
-                        doc.model.cells[selectedValue] = tempSelectedValueText;
+                        const cell = doc.model.cells.find(
+                          (c) => c.name === selectedValue
+                        );
+                        if (cell) {
+                          cell.formula = tempSelectedValueText;
+                        }
                       });
                     }}
                   />

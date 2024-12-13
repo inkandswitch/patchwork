@@ -1,4 +1,3 @@
-import { Engine, FilteredScenario } from "./engine";
 import { PokerHand } from "./handEvaluation";
 
 const allRanks = [
@@ -53,33 +52,75 @@ export type Scenario = {
 };
 
 export type Model = {
-  cells: Record<string, string>;
+  cells: {
+    name: string;
+    formula: string;
+  }[];
   filters: string[];
 };
 
 export const SAMPLE_MODEL: Model = {
-  cells: {
-    // a: "=1+2",
-    // b: "=a*4-1",
-    // c: "=b/5",
-    myCard1: "AS",
-    myCard2: "3S",
-    theirCard1: "=deal()",
-    theirCard2: "=deal()",
-    commCard1: "7C",
-    commCard2: "2H",
-    commCard3: "3H",
-    commCard4: "=deal()",
-    commCard5: "=deal()",
-    myHand:
-      "=bestHand(myCard1, myCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
-    theirHand:
-      "=bestHand(theirCard1, theirCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
-    "I win!": "=myHand > theirHand",
-    "I have a straight": '=handType(myHand) = "straight"',
-    "I have a pair": '=handType(myHand) = "pair"',
-  },
-  filters: ["I win!", "I have a straight", "I have a pair"],
+  cells: [
+    {
+      name: "myCard1",
+      formula: "AS",
+    },
+    {
+      name: "myCard2",
+      formula: "3S",
+    },
+    {
+      name: "theirCard1",
+      formula: "=deal()",
+    },
+    {
+      name: "theirCard2",
+      formula: "=deal()",
+    },
+    {
+      name: "commCard1",
+      formula: "7C",
+    },
+    {
+      name: "commCard2",
+      formula: "2H",
+    },
+    {
+      name: "commCard3",
+      formula: "3H",
+    },
+    {
+      name: "commCard4",
+      formula: "=deal()",
+    },
+    {
+      name: "commCard5",
+      formula: "=deal()",
+    },
+    {
+      name: "myHand",
+      formula:
+        "=bestHand(myCard1, myCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
+    },
+    {
+      name: "theirHand",
+      formula:
+        "=bestHand(theirCard1, theirCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
+    },
+    {
+      name: "iWin",
+      formula: "=myHand > theirHand",
+    },
+    {
+      name: "theyHaveAPair",
+      formula: '=handType(theirHand) = "pair"',
+    },
+    {
+      name: "iHaveAPair",
+      formula: '=handType(myHand) = "pair"',
+    },
+  ],
+  filters: ["iWin", "theyHaveAPair", "iHaveAPair", "aceOnTurnOrRiver"],
 };
 
 // notes
