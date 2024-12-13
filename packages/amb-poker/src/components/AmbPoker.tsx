@@ -83,14 +83,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
     { label: "Mine", values: ["myCard1", "myCard2"] },
     {
       label: "Stats",
-      values: [
-        "myHand",
-        "theirHand",
-        "iWin",
-        "theyHaveAPair",
-        "iHaveAPair",
-        "aceOnTurnOrRiver",
-      ],
+      values: ["myHand", "theirHand", "iWin", "theyHaveAPair", "iHaveAPair"],
     },
   ];
 
