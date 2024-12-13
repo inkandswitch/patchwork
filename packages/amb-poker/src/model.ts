@@ -120,7 +120,7 @@ export const SAMPLE_MODEL: Model = {
       formula: '=handType(myHand) = "pair"',
     },
   ],
-  filters: ["iWin", "theyHaveAPair", "iHaveAPair", "aceOnTurnOrRiver"],
+  filters: ["iWin", "theyHaveAPair", "iHaveAPair"],
 };
 
 // notes
