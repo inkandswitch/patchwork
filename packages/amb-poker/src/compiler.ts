@@ -86,7 +86,7 @@ const s = g.createSemantics().addOperation("comp", {
     }
   },
   Cell_formula(_eq, e) {
-    return `(s => ${e.comp()})`;
+    return `(function(s) { return ${e.comp()}; })`;
   },
   RelExp_eq: binOp(),
   RelExp_neq: binOp(),
