@@ -87,12 +87,26 @@ fns.not = (x) => !x;
 // card and hand functions
 
 let remainingCards: Card[] = [];
-fns.deal = () => {
-  // Get one of the remaining cards at random
-  const idx = Math.floor(Math.random() * remainingCards.length);
-  const card = remainingCards[idx];
-  remainingCards.splice(idx, 1);
-  return card;
+fns.deal = (card: Value = "?") => {
+  if (remainingCards.length === 0) {
+    throw new InvalidScenarioError();
+  }
+
+  let idx: number;
+  if (card === "?") {
+    // pick one at random
+    idx = Math.floor(Math.random() * remainingCards.length);
+  } else {
+    idx = remainingCards.indexOf(card as Card);
+    if (idx < 0) {
+      // can't deal a card that's already been dealt
+      throw new InvalidScenarioError();
+    }
+  }
+
+  const dealtCard = remainingCards[idx];
+  remainingCards[idx] = remainingCards.pop()!;
+  return dealtCard;
 };
 
 fns.bestHand = (...cards) => {
@@ -133,25 +147,33 @@ function compile(model: Model): CompiledModel {
   return cm;
 }
 
+class InvalidScenarioError {}
+
 export class Engine {
   readonly compiledModel: CompiledModel;
   readonly callback: (s: Scenario) => void;
-  readonly dealtCards = new Set<Card>();
 
   constructor(model: Model, callback: (result: Scenario) => void) {
     this.compiledModel = compile(model);
     this.callback = callback;
+  }
 
-    for (const value of Object.values(this.compiledModel)) {
-      if (isCard(value)) {
-        this.dealtCards.add(value);
+  next(): Scenario {
+    while (true) {
+      try {
+        return this._next();
+      } catch (e) {
+        if (!(e instanceof InvalidScenarioError)) {
+          throw e;
+        }
+        console.log("boom");
       }
     }
   }
 
-  next() {
+  private _next() {
     // this is the state that makes deal() work
-    remainingCards = allCards.filter((c) => !this.dealtCards.has(c));
+    remainingCards = allCards.slice();
 
     // For each cell in the model
     const scenario: Scenario = {};

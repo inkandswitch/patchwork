@@ -63,11 +63,11 @@ export const SAMPLE_MODEL: Model = {
   cells: [
     {
       name: "myCard1",
-      formula: "AS",
+      formula: `=deal("AS")`,
     },
     {
       name: "myCard2",
-      formula: "3S",
+      formula: `=deal("3S")`,
     },
     {
       name: "theirCard1",
@@ -79,15 +79,15 @@ export const SAMPLE_MODEL: Model = {
     },
     {
       name: "commCard1",
-      formula: "7C",
+      formula: `=deal("7C")`,
     },
     {
       name: "commCard2",
-      formula: "2H",
+      formula: `=deal("2H")`,
     },
     {
       name: "commCard3",
-      formula: "3H",
+      formula: `=deal("3H")`,
     },
     {
       name: "commCard4",
