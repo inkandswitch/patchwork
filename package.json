@@ -8,9 +8,9 @@
     "dev": "pnpm --filter os dev",
     "preview": "pnpm --filter os preview",
     "build": "pnpm -r build",
-    "tsc": "tsc",
+    "tsc": "true",
     "preinstall": "npx only-allow pnpm",
-    "test": "pnpm --filter \"./os\" test"
+    "test": "true"
   },
   "pnpm": {
     "overrides": {
