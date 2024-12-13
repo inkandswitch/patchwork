@@ -131,19 +131,53 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
             </div>
 
             <div className="flex flex-col gap-1">
-              Filters:
-              {doc.model.filters.map((filter) => (
-                <div key={filter}>
-                  <div className="font-mono">{filter}</div>
-                  <div className="text-xs text-gray-300">
-                    ( matched{" "}
-                    {formatPercentage(
-                      (scenariosRef.current.filter((s) => s[filter]).length *
-                        100) /
-                        scenariosRef.current.length
-                    )}{" "}
-                    of scenarios )
+              <div className="flex justify-between items-center">
+                <div>Filters:</div>
+                <select
+                  className="bg-black bg-opacity-50 text-white text-sm rounded px-2 py-1 border border-gray-600"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      changeDoc((d) => {
+                        if (!d.model.filters.includes(e.target.value)) {
+                          d.model.filters.push(e.target.value);
+                        }
+                      });
+                      e.target.value = "";
+                    }
+                  }}
+                >
+                  <option value="">Add filter...</option>
+                  {Object.keys(scenariosRef.current[0] || {}).map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {doc.model.filters.map((filter, index) => (
+                <div key={filter} className="flex justify-between items-start">
+                  <div>
+                    <div className="font-mono">{filter}</div>
+                    <div className="text-xs text-gray-300">
+                      ( matched{" "}
+                      {formatPercentage(
+                        (scenariosRef.current.filter((s) => s[filter]).length *
+                          100) /
+                          scenariosRef.current.length
+                      )}{" "}
+                      of scenarios )
+                    </div>
                   </div>
+                  <button
+                    onClick={() => {
+                      changeDoc((d) => {
+                        d.model.filters.splice(index, 1);
+                      });
+                    }}
+                    className="text-gray-400 hover:text-white px-2"
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
             </div>
