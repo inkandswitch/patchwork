@@ -6,6 +6,7 @@ import wasm from "vite-plugin-wasm";
 import { EXTERNAL_DEPENDENCIES } from "@patchwork/sdk/shared-dependencies";
 
 export default defineConfig({
+  base: "./",
   plugins: [topLevelAwait(), wasm(), react()],
 
   optimizeDeps: {
