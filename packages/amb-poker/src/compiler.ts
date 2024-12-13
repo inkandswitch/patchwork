@@ -102,10 +102,10 @@ const s = g.createSemantics().addOperation("comp", {
     return `((${cond.comp()}) ? (${tb.comp()}) : (${fb.comp()}))`;
   },
   CallExp_call(name, _op, xs, _cp) {
-    return `fns.${name.sourceString}(${xs.comp().join(",")})`;
+    return `this.$${name.sourceString}(${xs.comp().join(",")})`;
   },
   UnExp_neg(_op, e) {
-    return `fns["-"](0, ${e.comp()})`;
+    return `this["$-"](0, ${e.comp()})`;
   },
   PriExp_paren(_op, e, _cp) {
     return e.comp();
@@ -132,10 +132,8 @@ const s = g.createSemantics().addOperation("comp", {
 
 function binOp() {
   return (x: ohm.Node, op: ohm.Node, y: ohm.Node) =>
-    `fns["${op.sourceString}"](${x.comp()}, ${y.comp()})`;
+    `this["$${op.sourceString}"](${x.comp()}, ${y.comp()})`;
 }
-
-export const fns: Record<string, (...xs: Value[]) => Value> = {};
 
 export function compileCell(
   f: string
