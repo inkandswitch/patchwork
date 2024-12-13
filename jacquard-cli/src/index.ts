@@ -164,7 +164,7 @@ const main = async () => {
   const jacquardDataTypes = {
     file: "@patchwork/file/datatype",
     folder: "@patchwork/folder/datatype",
-    jacquard: "@patchwork/jacquard/datatype",
+    "jacquard-build-metadata": "@patchwork/jacquard/datatype",
   };
 
   await Promise.all([

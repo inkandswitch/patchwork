@@ -40,6 +40,26 @@ export const ModuleSettingsEditor: React.FC<
     });
   }, []);
 
+  const considerAddingTool = useCallback((value: string) => {
+    console.log("Adding tool module", value);
+    import(value).then((module) => {
+      if (!module?.tool) {
+        console.error("No tool exported from module", value);
+      }
+      const id = module.tool.id; // TODO: only supports a single tool
+      changeDoc((doc) => {
+        doc.toolModules[id] = value;
+      });
+    });
+  }, []);
+
+  const removeTool = useCallback((id: string) => {
+    console.log("Removing tool module", id);
+    changeDoc((doc) => {
+      delete doc.toolModules[id];
+    });
+  }, []);
+
   if (!doc) {
     return null;
   }
@@ -54,48 +74,15 @@ export const ModuleSettingsEditor: React.FC<
 
   return (
     <div>
-      <div className="grid w-full max-w-sm items-center gap-1.5 pt-2">
-        <Label>Data types</Label>
-
-        <div className="flex flex-col gap-2 py-2">
-          {Object.entries(dataTypes).map(([, dataType]) => {
-            return (
-              <div className="flex items-center gap-2" key={dataType.id}>
-                <label
-                  htmlFor={`datatype-${dataType.id}`}
-                  className="text-sm text-gray-600 cursor-pointer "
-                >
-                  <Icon
-                    type={dataType.icon}
-                    size={14}
-                    className="inline-block font-bold mr-2 align-top mt-[2px]"
-                  />
-                  {dataType.name}
-                </label>
-                {dataTypeModules[dataType.id] && (
-                  <Input
-                    id={`datatype-${dataType.id}`}
-                    value={dataTypeModules[dataType.id]}
-                    onChange={(evt) =>
-                      considerUpdatingDatatype(dataType.id, evt.target.value)
-                    }
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      <div className="grid w-full max-w-sm items-center gap-1.5 pt-2">
+      <div className="grid w-full overflow-scroll h-full items-center gap-1.5 pt-2 p-4">
         <Label>Tools</Label>
-
         <div className="flex flex-col gap-2 py-2">
           {Object.entries(tools).map(([id, tool]) => {
             return (
               <div className="flex items-center gap-2" key={id}>
                 <label
                   htmlFor={`tool-${id}`}
-                  className="text-sm text-gray-600 cursor-pointer "
+                  className="text-sm text-gray-600 w-64"
                 >
                   <Icon
                     type={"Cog"}
@@ -112,9 +99,27 @@ export const ModuleSettingsEditor: React.FC<
                   defaultValue={"Built-In (paste valid URL to replace)"}
                   onChange={(evt) => considerUpdatingTool(id, evt.target.value)}
                 />
+                <button onClick={() => removeTool(id)} className="text-red-500">
+                  <Icon type={"Trash"} size={14} />
+                </button>
               </div>
             );
           })}
+          <div className="grid w-full max-w-sm items-center gap-1.5 py-4">
+            <label htmlFor={`add-tool`} className="text-sm text-gray-600 w-64">
+              <Icon
+                type={"Plus"}
+                size={14}
+                className="inline-block font-bold mr-2 align-top mt-[2px]"
+              />
+              Add Tool
+            </label>
+            <Input
+              id="name"
+              placeholder={"Paste valid URL to add tool"}
+              onChange={(evt) => considerAddingTool(evt.target.value)}
+            />
+          </div>
         </div>
       </div>
     </div>

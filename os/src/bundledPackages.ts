@@ -23,7 +23,7 @@ export const BUNDLED_DATATYPES = {
   essay: "@patchwork/essay/datatype",
   file: "@patchwork/file/datatype",
   folder: "@patchwork/folder/datatype",
-  jacquard: "@patchwork/jacquard/datatype",
+  "jacquard-build-metadata": "@patchwork/jacquard/datatype",
   kanban: "@patchwork/kanban/datatype",
   tldraw: "@patchwork/tldraw/datatype",
   "module-settings": "@patchwork/module-settings/datatype",

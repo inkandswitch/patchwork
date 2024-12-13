@@ -5,13 +5,15 @@ import {
   registerTool,
   Tool,
 } from "@patchwork/sdk";
-import { DocHandle } from "@automerge/automerge-repo";
+import { DocHandle, DocumentId, Repo } from "@automerge/automerge-repo";
 
 import { BUNDLED_TOOLS, BUNDLED_DATATYPES } from "./bundledPackages.js";
 
 export class CodeLoader {
   moduleSettingsHandle: DocHandle<ModuleSettingsDoc>;
-  constructor(moduleSettingsHandle: DocHandle<ModuleSettingsDoc>) {
+  repo: Repo;
+  constructor(repo: Repo, moduleSettingsHandle: DocHandle<ModuleSettingsDoc>) {
+    this.repo = repo;
     this.moduleSettingsHandle = moduleSettingsHandle;
     this.loadBundled().then(() => {
       moduleSettingsHandle.on("change", () => {
@@ -67,9 +69,20 @@ export class CodeLoader {
         registerDataType(id, module.dataType);
       }),
       ...Object.entries(toolModules || {}).map(async ([id, importName]) => {
-        // We don't want to block on tools loading
         const tools = await this.toolFromImportString(importName);
         tools.forEach(registerTool);
+
+        // this is cheating but I'm going to watch the tool for the demo Friday
+        const docId = importName.match(/\/automerge\/(.+)\//)?.[1];
+        if (docId) {
+          const handle = this.repo.find(docId as DocumentId);
+          handle.on("change", async () => {
+            const tools = await this.toolFromImportString(
+              importName + "?v=" + handle.heads()
+            );
+            tools.forEach(registerTool);
+          });
+        }
       }),
     ]);
   }

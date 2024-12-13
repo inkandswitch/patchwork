@@ -149,7 +149,7 @@ async function setupAccount() {
 
   const moduleSettingsUrl = account.handle.docSync()?.moduleSettingsUrl;
   if (moduleSettingsUrl) {
-    new CodeLoader(repo.find(moduleSettingsUrl));
+    new CodeLoader(repo, repo.find(moduleSettingsUrl));
   }
 
   return account;
