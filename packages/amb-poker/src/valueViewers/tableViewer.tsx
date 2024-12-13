@@ -27,6 +27,18 @@ export const tableViewer: ValueViewer = {
       };
     });
 
+    const getTooltipText = (
+      cellName: string,
+      rowName: string,
+      percentage: number,
+      filterName?: string
+    ) => {
+      const context = filterName ? `Given ${filterName}` : "Overall";
+      return `${context}, ${cellName} = ${rowName} in ${formatPercentage(
+        percentage
+      )} of scenarios`;
+    };
+
     return (
       <div className="flex flex-col gap-4 bg-black bg-opacity-30 rounded-lg">
         {groupedByKeys.map((group, i) => (
@@ -51,7 +63,14 @@ export const tableViewer: ValueViewer = {
                   return (
                     <tr key={row.name} className="border-t">
                       <td className="p-2">{row.name}</td>
-                      <td className="text-right p-2">
+                      <td
+                        className="text-right p-2"
+                        title={getTooltipText(
+                          cellToDisplay,
+                          row.name,
+                          row.percentage
+                        )}
+                      >
                         {formatPercentage(row.percentage)}
                       </td>
                       {filterAggregates.map(({ name, aggregates }) => {
@@ -62,7 +81,20 @@ export const tableViewer: ValueViewer = {
                           (r) => r.name === row.name
                         );
                         return (
-                          <td key={name} className="text-right p-2">
+                          <td
+                            key={name}
+                            className="text-right p-2"
+                            title={
+                              matchingRow
+                                ? getTooltipText(
+                                    cellToDisplay,
+                                    row.name,
+                                    matchingRow.percentage,
+                                    name
+                                  )
+                                : undefined
+                            }
+                          >
                             {matchingRow
                               ? formatPercentage(matchingRow.percentage)
                               : "-"}
