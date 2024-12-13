@@ -160,7 +160,7 @@ export class Engine {
   // card and hand functions
 
   $remainingCards: Card[] = [];
-  $deal = (card: Value = "?") => {
+  $deal(card: Value = "?") {
     if (this.$remainingCards.length === 0) {
       throw new InvalidScenarioError();
     }
@@ -180,7 +180,7 @@ export class Engine {
     const dealtCard = this.$remainingCards[idx];
     this.$remainingCards[idx] = this.$remainingCards.pop()!;
     return dealtCard;
-  };
+  }
 
   $bestHand(...cards: Card[]) {
     if (cards.some((c) => !isCard(c))) {
