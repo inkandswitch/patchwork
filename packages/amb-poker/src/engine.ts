@@ -122,23 +122,15 @@ function compile(model: Model): CompiledModel {
   for (const [name, src] of Object.entries(model.cells)) {
     cm.cells[name] = compileCell(src);
   }
-  if (model.filter) {
-    cm.filter = compileCell(model.filter);
-  }
   return cm;
 }
 
-export type FilteredScenario = {
-  scenario: Scenario;
-  include: boolean;
-};
-
 export class Engine {
   readonly compiledModel: CompiledModel;
-  readonly callback: (s: FilteredScenario) => void;
+  readonly callback: (s: Scenario) => void;
   readonly dealtCards = new Set<Card>();
 
-  constructor(model: Model, callback: (result: FilteredScenario) => void) {
+  constructor(model: Model, callback: (result: Scenario) => void) {
     this.compiledModel = compile(model);
     this.callback = callback;
 
@@ -162,13 +154,7 @@ export class Engine {
         fnOrValue instanceof Function ? fnOrValue(scenario) : fnOrValue;
     }
 
-    const include = !this.compiledModel.filter
-      ? true
-      : this.compiledModel.filter instanceof Function
-      ? !!this.compiledModel.filter(scenario)
-      : !!this.compiledModel.filter;
-
-    this.callback({ scenario, include });
+    this.callback(scenario);
     return scenario;
   }
 }

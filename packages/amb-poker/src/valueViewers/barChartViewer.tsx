@@ -9,40 +9,53 @@ import {
   XAxis,
 } from "recharts";
 import { aggregateValues } from "./aggregate";
-import { sortBy } from "lodash-es";
+
+const COLORS = ["#fff", "#93c5fd", "#fca5a5", "#86efac", "#fcd34d"];
 
 export const barChartViewer: ValueViewer = {
   name: "Bar Chart",
-  shouldRender: (values) => {
-    if (values.length < 2) return "hide";
-    const groupedByKeys = aggregateValues(values.map((v) => v.value));
+  shouldRender: ({ scenarios, cellToDisplay }) => {
+    if (scenarios.length < 2) return "hide";
+    const groupedByKeys = aggregateValues(
+      scenarios.map((s) => s[cellToDisplay])
+    );
     if (!groupedByKeys.some((g) => g.groups.length > 1)) return "hide";
     return "normal";
   },
-  component: ({ values }) => {
-    const hasFilter = values.some((v) => !v.include);
-    const filteredValues = values.filter((v) => v.include);
+  component: ({ scenarios, cellToDisplay, filters }) => {
+    const values = scenarios.map((s) => s[cellToDisplay]);
+    const groupedByKeys = aggregateValues(values);
 
-    const groupedByKeys = aggregateValues(values.map((v) => v.value));
-    const filteredGroupedByKeys =
-      hasFilter && filteredValues.length > 0
-        ? aggregateValues(filteredValues.map((v) => v.value))
-        : null;
+    // Get aggregates for each filter
+    const filterAggregates = filters.map((filterName) => {
+      const filteredScenarios = scenarios.filter((s) => s[filterName]);
+      const filteredValues = filteredScenarios.map((s) => s[cellToDisplay]);
+      return {
+        name: filterName,
+        aggregates: aggregateValues(filteredValues),
+      };
+    });
 
-    // Transform data to include both overall and filtered percentages
-    const transformedData = groupedByKeys.map((group, i) => {
+    // Transform data to include overall and filtered percentages
+    const transformedData = groupedByKeys.map((group) => {
       return {
         key: group.key,
         data: group.groups.map((row) => {
-          const filteredGroup = filteredGroupedByKeys?.[i]?.groups.find(
-            (g) => g.name === row.name
-          );
-
-          return {
+          const result: { [key: string]: number | string } = {
             name: row.name,
-            overall: row.percentage,
-            filtered: filteredGroup?.percentage || 0,
+            Overall: row.percentage,
           };
+
+          // Add data for each filter
+          filterAggregates.forEach(({ name, aggregates }) => {
+            const matchingGroup = aggregates.find((g) => g.key === group.key);
+            const matchingRow = matchingGroup?.groups.find(
+              (r) => r.name === row.name
+            );
+            result[name] = matchingRow?.percentage || 0;
+          });
+
+          return result;
         }),
       };
     });
@@ -63,19 +76,20 @@ export const barChartViewer: ValueViewer = {
                     formatter={(value: number) => `${value.toFixed(1)}%`}
                   />
                   <Bar
-                    dataKey="overall"
-                    fill="#fff"
+                    dataKey="Overall"
+                    fill={COLORS[0]}
                     opacity={0.8}
                     name="Overall"
                   />
-                  {hasFilter && (
+                  {filters.map((filterName, index) => (
                     <Bar
-                      dataKey="filtered"
-                      fill="#93c5fd"
+                      key={filterName}
+                      dataKey={filterName}
+                      fill={COLORS[(index + 1) % COLORS.length]}
                       opacity={0.8}
-                      name="Filtered"
+                      name={filterName}
                     />
-                  )}
+                  ))}
                 </BarChart>
               </ResponsiveContainer>
             </div>

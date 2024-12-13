@@ -4,21 +4,28 @@ import { aggregateValues, formatPercentage } from "./aggregate";
 
 export const tableViewer: ValueViewer = {
   name: "Table",
-  shouldRender: (values) => {
-    if (values.length < 2) return "hide";
-    const groupedByKeys = aggregateValues(values.map((v) => v.value));
+  shouldRender: ({ scenarios, cellToDisplay }) => {
+    if (scenarios.length < 2) return "hide";
+    const groupedByKeys = aggregateValues(
+      scenarios.map((s) => s[cellToDisplay])
+    );
     if (!groupedByKeys.some((g) => g.groups.length > 1)) return "hide";
     return "normal";
   },
-  component: ({ values }) => {
-    const hasFilter = values.some((v) => !v.include);
-    const filteredValues = values.filter((v) => v.include);
+  component: ({ scenarios, cellToDisplay, filters }) => {
+    const values = scenarios.map((s) => s[cellToDisplay]);
+    const groupedByKeys = aggregateValues(values);
 
-    const groupedByKeys = aggregateValues(values.map((v) => v.value));
-    const filteredGroupedByKeys =
-      hasFilter && filteredValues.length > 0
-        ? aggregateValues(filteredValues.map((v) => v.value))
-        : null;
+    // For each filter, get the filtered values and aggregate them
+    const filterAggregates = filters.map((filterName) => {
+      // todo: is truthy good here? should we centralize this filter logic?
+      const filteredScenarios = scenarios.filter((s) => s[filterName]);
+      const filteredValues = filteredScenarios.map((s) => s[cellToDisplay]);
+      return {
+        name: filterName,
+        aggregates: aggregateValues(filteredValues),
+      };
+    });
 
     return (
       <div className="flex flex-col gap-4 bg-black bg-opacity-30 rounded-lg">
@@ -31,29 +38,37 @@ export const tableViewer: ValueViewer = {
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-2">Value</th>
-                  <th className="text-right p-2">Overall</th>
-                  {hasFilter && (
-                    <th className="text-right p-2 text-blue-300">Filtered</th>
-                  )}
+                  <th className="text-right p-2">All</th>
+                  {filters.map((filterName) => (
+                    <th key={filterName} className="text-right p-2">
+                      {filterName}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {group.groups.map((row) => {
-                  const filteredGroup = filteredGroupedByKeys?.[i]?.groups.find(
-                    (g) => g.name === row.name
-                  );
-
                   return (
                     <tr key={row.name} className="border-t">
                       <td className="p-2">{row.name}</td>
                       <td className="text-right p-2">
                         {formatPercentage(row.percentage)}
                       </td>
-                      {hasFilter && (
-                        <td className="text-right p-2 text-blue-300">
-                          {formatPercentage(filteredGroup?.percentage || 0)}
-                        </td>
-                      )}
+                      {filterAggregates.map(({ name, aggregates }) => {
+                        const matchingGroup = aggregates.find(
+                          (g) => g.key === group.key
+                        );
+                        const matchingRow = matchingGroup?.groups.find(
+                          (r) => r.name === row.name
+                        );
+                        return (
+                          <td key={name} className="text-right p-2">
+                            {matchingRow
+                              ? formatPercentage(matchingRow.percentage)
+                              : "-"}
+                          </td>
+                        );
+                      })}
                     </tr>
                   );
                 })}

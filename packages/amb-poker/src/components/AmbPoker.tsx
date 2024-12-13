@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AmbPokerDoc } from "../datatype";
 import { Model, SAMPLE_MODEL, Scenario, Card, isCard } from "../model";
-import { Engine, FilteredScenario } from "../engine";
-import { valueViewers } from "../valueViewers";
+import { Engine } from "../engine";
+import { ValueViewerProps, valueViewers } from "../valueViewers";
 import { Button } from "@patchwork/sdk/ui/button";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps } from "@patchwork/sdk";
@@ -20,7 +20,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   docUrl,
 }) => {
   const [doc, changeDoc] = useDocument<AmbPokerDoc>(docUrl);
-  const scenariosRef = React.useRef<FilteredScenario[]>([]);
+  const scenariosRef = React.useRef<Scenario[]>([]);
   const [scenarioCount, setScenarioCount] = useState(0); // For triggering re-renders
   const [maxScenarios, setMaxScenarios] = useState(DEFAULT_MAX_SCENARIOS);
   const [selectedValue, setSelectedValue] = useState<string | null>(null);
@@ -28,15 +28,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   const totalComputeTime = useRef(0);
 
   // Add temporary state for inputs
-  const [tempFilterText, setTempFilterText] = useState("");
   const [tempSelectedValueText, setTempSelectedValueText] = useState("");
-
-  // Update temp states when doc or selected value changes
-  useEffect(() => {
-    if (doc?.model) {
-      setTempFilterText(doc.model.filter ?? "");
-    }
-  }, [doc?.model]);
 
   useEffect(() => {
     if (doc?.model && selectedValue) {
@@ -88,18 +80,25 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
       values: ["commCard1", "commCard2", "commCard3", "commCard4", "commCard5"],
     },
     { label: "Mine", values: ["myCard1", "myCard2"] },
-    { label: "Stats", values: ["myHand", "theirHand", "iWin"] },
+    {
+      label: "Stats",
+      values: [
+        "myHand",
+        "theirHand",
+        "iWin",
+        "I have a straight",
+        "I have a pair",
+      ],
+    },
   ];
 
-  if (!doc || !doc.model || !scenariosRef.current) {
+  if (
+    !doc ||
+    !doc.model ||
+    !scenariosRef.current ||
+    scenariosRef.current.length === 0
+  ) {
     return <div>Loading...</div>;
-  }
-
-  let filteredScenariosCount = 0;
-  for (const scenario of scenariosRef.current) {
-    if (scenario.include) {
-      filteredScenariosCount++;
-    }
   }
 
   return (
@@ -136,27 +135,21 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
             </div>
 
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between">
-                <div className="text-xs font-medium text-white">Filter</div>
-                <textarea
-                  className="text-xs text-white font-mono bg-transparent w-full resize-none"
-                  value={tempFilterText}
-                  placeholder="No filter"
-                  onChange={(e) => setTempFilterText(e.target.value)}
-                  onBlur={(e) => {
-                    changeDoc((doc) => {
-                      doc.model.filter = tempFilterText;
-                    });
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-blue-300">
-                Matched{" "}
-                {formatPercentage(
-                  (filteredScenariosCount * 100) / scenarioCount
-                )}{" "}
-                ({filteredScenariosCount} / {scenarioCount})
-              </div>
+              Filters:
+              {doc.model.filters.map((filter) => (
+                <div key={filter}>
+                  <div className="font-mono">{filter}</div>
+                  <div className="text-xs text-gray-300">
+                    ( matched{" "}
+                    {formatPercentage(
+                      (scenariosRef.current.filter((s) => s[filter]).length *
+                        100) /
+                        scenariosRef.current.length
+                    )}{" "}
+                    of scenarios )
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -191,19 +184,19 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                             className={`p-1 text-lg max-h-64 overflow-hidden overflow-y-auto rounded relative`}
                           >
                             {(() => {
-                              const filteredValues = scenariosRef.current.map(
-                                ({ scenario, include }) => ({
-                                  value: scenario[name],
-                                  include,
-                                })
-                              );
+                              const viewerProps: ValueViewerProps = {
+                                scenarios: scenariosRef.current,
+                                cellToDisplay: name,
+                                filters: doc.model.filters.filter(
+                                  (f) => f !== name
+                                ),
+                              };
+
                               const viewer = valueViewers.find(
-                                (v) => v.shouldRender(filteredValues) !== "hide"
+                                (v) => v.shouldRender(viewerProps) !== "hide"
                               );
                               if (viewer) {
-                                return viewer.component({
-                                  values: filteredValues,
-                                });
+                                return viewer.component(viewerProps);
                               } else {
                                 return "noviewer";
                               }
@@ -254,22 +247,21 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                 </div>
 
                 {(() => {
-                  const filteredValues = scenariosRef.current.map(
-                    ({ scenario, include }) => ({
-                      value: scenario[selectedValue],
-                      include,
-                    })
-                  );
+                  const viewerProps: ValueViewerProps = {
+                    scenarios: scenariosRef.current,
+                    cellToDisplay: selectedValue,
+                    filters: doc.model.filters.filter(
+                      (f) => f !== selectedValue
+                    ),
+                  };
                   const viewers = valueViewers.filter(
-                    (v) => v.shouldRender(filteredValues) !== "hide"
+                    (v) => v.shouldRender(viewerProps) !== "hide"
                   );
                   return viewers.map((viewer) => (
                     <div key={viewer.name}>
                       <div className="text-sm text-white">{viewer.name}</div>
                       <div className="p-1 text-lg rounded relative">
-                        {viewer.component({
-                          values: filteredValues,
-                        })}
+                        {viewer.component(viewerProps)}
                       </div>
                     </div>
                   ));

@@ -1,23 +1,27 @@
 // This is basically a fork of the ValueViewer interface from original ambsheet.
 // Maybe we'll reconcile later.
 
-import { Value } from "../model";
+import { Scenario, Value } from "../model";
 import { barChartViewer } from "./barChartViewer";
 import { cardViewer } from "./cardViewer";
 import { tableViewer } from "./tableViewer";
 
-type FilteredValue = { value: Value; include: boolean };
+export type ValueViewerProps = {
+  scenarios: Scenario[];
+  cellToDisplay: string;
+  filters: string[];
+};
 
 type ShouldRenderPriority = "high" | "normal" | "hide";
 
 export type ValueViewer = {
   name: string;
-  shouldRender: (values: FilteredValue[]) => ShouldRenderPriority;
-  component: React.FC<{ values: FilteredValue[] }>;
+  shouldRender: (props: ValueViewerProps) => ShouldRenderPriority;
+  component: React.FC<ValueViewerProps>;
 };
 
 export const valueViewers: ValueViewer[] = [
   cardViewer,
   tableViewer,
-  barChartViewer,
+  // barChartViewer,
 ];

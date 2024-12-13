@@ -42,6 +42,7 @@ export const formatPercentage = (percentage: number): string =>
     : `${percentage.toFixed(1)}%`;
 
 export const aggregateValues = (values: Value[]): GroupedValues[] => {
+  if (values.length === 0) return [];
   const aggregatables = values.map((v) => turnValueIntoAggregatableObject(v));
   const keys = Object.keys(aggregatables[0]!);
 

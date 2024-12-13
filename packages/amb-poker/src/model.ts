@@ -54,7 +54,7 @@ export type Scenario = {
 
 export type Model = {
   cells: Record<string, string>;
-  filter?: string;
+  filters: string[];
 };
 
 export const SAMPLE_MODEL: Model = {
@@ -75,9 +75,11 @@ export const SAMPLE_MODEL: Model = {
       "=bestHand(myCard1, myCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
     theirHand:
       "=bestHand(theirCard1, theirCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
-    iWin: "=myHand > theirHand",
+    "I win!": "=myHand > theirHand",
+    "I have a straight": '=handType(myHand) = "straight"',
+    "I have a pair": '=handType(myHand) = "pair"',
   },
-  filter: `=handType(myHand) = "straight"`,
+  filters: ["I win!", "I have a straight", "I have a pair"],
 };
 
 // notes

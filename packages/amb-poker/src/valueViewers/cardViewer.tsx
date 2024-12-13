@@ -7,20 +7,23 @@ import cardBack from "../card-back.png";
 
 export const cardViewer: ValueViewer = {
   name: "Card",
-  shouldRender: (values) => {
-    if (values.length > 0 && values.every((v) => isCard(v.value))) {
+  shouldRender: ({ scenarios, cellToDisplay }) => {
+    if (
+      scenarios.length > 0 &&
+      scenarios.every((s) => isCard(s[cellToDisplay]))
+    ) {
       return "high";
     } else {
       return "hide";
     }
   },
-  component: ({ values }) => {
-    if (uniq(values.map((v) => v.value)).length > 1) {
+  component: ({ scenarios, cellToDisplay }) => {
+    if (uniq(scenarios.map((s) => s[cellToDisplay])).length > 1) {
       return <img src={cardBack}></img>;
     } else {
       return (
         <div className="bg-white text-black h-[123px] w-[88px] box-border p-6 border border-black rounded-lg">
-          <CardViewer card={values[0].value as Card} />
+          <CardViewer card={scenarios[0][cellToDisplay] as Card} />
         </div>
       );
     }
