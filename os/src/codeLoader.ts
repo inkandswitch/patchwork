@@ -73,7 +73,7 @@ export class CodeLoader {
         tools.forEach(registerTool);
 
         // this is cheating but I'm going to watch the tool for the demo Friday
-        const docId = importName.match(/\/automerge\/(.+)\//)?.[1];
+        const docId = importName.match(/\/automerge\/(\w+)\//)?.[1];
         if (docId) {
           const handle = this.repo.find(docId as DocumentId);
           handle.on("change", async () => {
