@@ -6,88 +6,83 @@ import {
   Tool,
 } from "@patchwork/sdk";
 import { DocHandle, DocumentId, Repo } from "@automerge/automerge-repo";
-
 import { BUNDLED_TOOLS, BUNDLED_DATATYPES } from "./bundledPackages.js";
 
 export class CodeLoader {
-  moduleSettingsHandle: DocHandle<ModuleSettingsDoc>;
-  repo: Repo;
+  constructor(
+    private repo: Repo,
+    private moduleSettingsHandle: DocHandle<ModuleSettingsDoc>
+  ) {
+    this.doneLoading = this.init();
+  }
+
   doneLoading: Promise<void>;
 
-  constructor(repo: Repo, moduleSettingsHandle: DocHandle<ModuleSettingsDoc>) {
-    this.repo = repo;
-    this.moduleSettingsHandle = moduleSettingsHandle;
-    this.doneLoading = new Promise<void>((resolve) => {
-      this.loadBundled().then(() => {
-        moduleSettingsHandle.on("change", () => {
-          this.load();
-        });
-        this.load().then(() => resolve());
-      });
-    });
+  private async init() {
+    await this.loadDataTypes(BUNDLED_DATATYPES);
+    await this.loadTools(BUNDLED_TOOLS);
+    this.moduleSettingsHandle.on("change", () =>
+      this.load().catch(console.error)
+    );
+    await this.load();
   }
 
-  // Helper function for loading tools... This shouldn't be here.
-  // It's a sign of having the wrong API.
-  async toolFromImportString(importName: string): Promise<Tool[]> {
-    const module = await import(importName);
-    if (!module) throw new Error(`No module for  ${importName}`);
-    let tool = module.tool;
-    if (!Array.isArray(tool)) {
-      tool = [tool];
+  private async importModuleSafe(importName: string): Promise<any | null> {
+    try {
+      return await import(importName);
+    } catch (err) {
+      console.error(`Failed to import ${importName}`, err);
+      return null;
     }
-
-    if (!tool.every(isTool))
-      throw new Error(`Module but no exported ".tool" for ${importName}`);
-    return tool;
   }
 
-  async loadBundled() {
-    // We DO want to block on datatypes loading
-    const dataTypesLoaded = await Promise.all([
-      ...Object.entries(BUNDLED_DATATYPES).map(async ([id, importName]) => {
-        const module = await import(importName);
-        registerDataType(id, module.dataType);
-      }),
-    ]);
+  private async loadDataTypes(config: Record<string, string>) {
+    await Promise.all(
+      Object.entries(config).map(async ([id, importName]) => {
+        const mod = await this.importModuleSafe(importName);
+        if (mod?.dataType) registerDataType(id, mod.dataType);
+        else console.warn(`No dataType found in ${importName} for ${id}`);
+      })
+    );
+  }
 
-    // We don't want to block on tools loading
-    Object.entries(BUNDLED_TOOLS).map(async ([id, importName]) => {
-      const tools = await this.toolFromImportString(importName);
+  private async loadTools(config: Record<string, string>) {
+    const tasks = Object.entries(config).map(async ([id, importName]) => {
+      const tools = await this.toolsFromImport(importName);
       tools.forEach(registerTool);
+      this.setDocWatcher(importName);
     });
+    return Promise.all(tasks);
+  }
 
-    return dataTypesLoaded;
+  private async toolsFromImport(importName: string): Promise<Tool[]> {
+    const mod = await this.importModuleSafe(importName);
+    if (!mod?.tool) return [];
+    const tools = Array.isArray(mod.tool) ? mod.tool : [mod.tool];
+    return tools.filter(isTool);
+  }
+
+  private setDocWatcher(importName: string) {
+    const docId = importName.match(/\/automerge\/(\w+)\//)?.[1];
+    if (!docId) return;
+    const handle = this.repo.find(docId as DocumentId);
+    if (!handle) return console.warn(`No handle found for docId ${docId}`);
+
+    handle.on("change", async () => {
+      const versionedImport = `${importName}?v=${handle.heads()}`;
+      const tools = await this.toolsFromImport(versionedImport);
+      tools.forEach((t) => registerTool(t));
+    });
   }
 
   async load() {
-    const doc = await this.moduleSettingsHandle.doc();
-    if (!doc) {
-      console.error("No module settings doc");
-      return;
-    }
-    const { dataTypeModules, toolModules } = doc;
-    await Promise.all([
-      ...Object.entries(dataTypeModules || {}).map(async ([id, importName]) => {
-        const module = await import(importName);
-        registerDataType(id, module.dataType);
-      }),
-      ...Object.entries(toolModules || {}).map(async ([id, importName]) => {
-        const tools = await this.toolFromImportString(importName);
-        tools.forEach(registerTool);
-
-        // this is cheating but I'm going to watch the tool for the demo Friday
-        const docId = importName.match(/\/automerge\/(\w+)\//)?.[1];
-        if (docId) {
-          const handle = this.repo.find(docId as DocumentId);
-          handle.on("change", async () => {
-            const tools = await this.toolFromImportString(
-              importName + "?v=" + handle.heads()
-            );
-            tools.forEach(registerTool);
-          });
-        }
-      }),
-    ]);
+    const doc = await this.moduleSettingsHandle.doc().catch((err) => {
+      console.error("Error loading moduleSettingsDoc", err);
+      return null;
+    });
+    if (!doc) return;
+    const { dataTypeModules = {}, toolModules = {} } = doc;
+    await this.loadDataTypes(dataTypeModules);
+    await this.loadTools(toolModules);
   }
 }
