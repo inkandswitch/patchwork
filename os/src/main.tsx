@@ -149,7 +149,8 @@ async function setupAccount() {
 
   const moduleSettingsUrl = account.handle.docSync()?.moduleSettingsUrl;
   if (moduleSettingsUrl) {
-    new CodeLoader(repo, repo.find(moduleSettingsUrl));
+    const loader = new CodeLoader(repo, repo.find(moduleSettingsUrl));
+    await loader.doneLoading; // ugh but...
   }
 
   return account;

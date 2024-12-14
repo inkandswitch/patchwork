@@ -12,14 +12,18 @@ import { BUNDLED_TOOLS, BUNDLED_DATATYPES } from "./bundledPackages.js";
 export class CodeLoader {
   moduleSettingsHandle: DocHandle<ModuleSettingsDoc>;
   repo: Repo;
+  doneLoading: Promise<void>;
+
   constructor(repo: Repo, moduleSettingsHandle: DocHandle<ModuleSettingsDoc>) {
     this.repo = repo;
     this.moduleSettingsHandle = moduleSettingsHandle;
-    this.loadBundled().then(() => {
-      moduleSettingsHandle.on("change", () => {
-        this.load();
+    this.doneLoading = new Promise<void>((resolve) => {
+      this.loadBundled().then(() => {
+        moduleSettingsHandle.on("change", () => {
+          this.load();
+        });
+        this.load().then(() => resolve());
       });
-      this.load();
     });
   }
 
