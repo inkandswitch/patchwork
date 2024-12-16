@@ -19,14 +19,14 @@ export const BUNDLED_TOOLS = {
 };
 
 export const BUNDLED_DATATYPES = {
-  datagrid: "@patchwork/datagrid/datatype",
-  essay: "@patchwork/essay/datatype",
-  file: "@patchwork/file/datatype",
-  folder: "@patchwork/folder/datatype",
-  "jacquard-build-metadata": "@patchwork/jacquard/datatype",
-  kanban: "@patchwork/kanban/datatype",
-  tldraw: "@patchwork/tldraw/datatype",
-  "module-settings": "@patchwork/module-settings/datatype",
+  datagrid: "@patchwork/datagrid",
+  essay: "@patchwork/essay",
+  file: "@patchwork/file",
+  folder: "@patchwork/folder",
+  "jacquard-build-metadata": "@patchwork/jacquard",
+  kanban: "@patchwork/kanban",
+  tldraw: "@patchwork/tldraw",
+  "module-settings": "@patchwork/module-settings",
   // no specific raw editor datatype
 };
 
@@ -37,6 +37,5 @@ export const UNBUNDLED_PACKAGES = {
   counter: "@patchwork/counter",
   "folder-list-view": "@patchwork/folder-list-view",
   engraft: "@patchwork/engraft",
-  pkg: "@patchwork/pkg",
   sequencer: "@patchwork/sequencer",
 };

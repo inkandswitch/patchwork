@@ -162,9 +162,9 @@ const main = async () => {
 
   // Gotta get all the datatypes loaded before we can do much of anything
   const jacquardDataTypes = {
-    file: "@patchwork/file/datatype",
-    folder: "@patchwork/folder/datatype",
-    "jacquard-build-metadata": "@patchwork/jacquard/datatype",
+    file: "@patchwork/file",
+    folder: "@patchwork/folder",
+    "jacquard-build-metadata": "@patchwork/jacquard",
   };
 
   await Promise.all([

@@ -1,15 +1,39 @@
-import { AutomergeUrl } from "@automerge/automerge-repo";
-import { DocPath } from "./datatype";
+import type { AutomergeUrl } from "@automerge/automerge-repo";
+import type { FolderDoc, DocPath } from "./datatype";
 
-export {
-  init,
-  dataType,
-  type DocPath,
-  type FolderDoc,
-  type FolderDocMaterialized as FolderDocWithChildren,
-  type DocLink,
+export type {
+  DocPath,
+  FolderDoc,
+  FolderDocMaterialized as FolderDocWithChildren,
+  DocLink,
 } from "./datatype";
-export { folderViewerWithEmbedsTool as tool } from "./tool";
+
+import type { DeferredDataType, DeferredTool } from "@patchwork/sdk";
+
+export const dataType: DeferredDataType<FolderDoc, never, never> = {
+  type: "patchwork:dataType",
+  id: "folder",
+  name: "Folder",
+  icon: "Folder",
+  async load() {
+    const { dataType } = await import("./datatype");
+    return dataType;
+  },
+};
+
+export const tools: DeferredTool[] = [
+  {
+    type: "patchwork:tool",
+    id: "folder-embeds",
+    name: "Embeds",
+    supportedDataTypes: ["folder"],
+
+    async load() {
+      const { tool } = await import("./tool");
+      return tool;
+    },
+  },
+];
 
 export const DocPathUtils = {
   toString: (docPath: DocPath) => docPath.map((link) => link.url).join("/"),

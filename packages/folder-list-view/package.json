@@ -5,8 +5,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "build": "vite build",
-    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:4MEgMjNDKnppvtDr7QU64TVAKdNf"
+    "build": "vite build"
   },
   "keywords": [],
   "author": "Ink & Switch",
@@ -23,6 +22,7 @@
     "@types/react": "^18.3.3",
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^6.0.3",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-top-level-await": "^1.4.4",
     "vite-plugin-wasm": "^3.3.0"
   }

@@ -2,7 +2,7 @@ import { makeTool } from "@patchwork/sdk";
 import { EssayAnnotations } from "./components/EssayAnnotations";
 import { EssayEditor } from "./components/EssayEditor";
 
-export const essayEditorTool = makeTool({
+export const tool = makeTool({
   type: "patchwork:tool",
   id: "essay",
   name: "Editor",

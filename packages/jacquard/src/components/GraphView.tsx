@@ -9,7 +9,7 @@ import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { instance } from "@viz-js/viz";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { JacquardBuildMetadata } from "../datatype";
+import type { JacquardBuildMetadata } from "../datatype";
 import {
   getReferenceFromDocUrl,
   getStalenessInfo,

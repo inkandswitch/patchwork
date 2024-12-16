@@ -2,7 +2,7 @@ import { makeTool } from "@patchwork/sdk";
 import { FileEditor } from "./components/FileEditor";
 import { TextFileAnnotations } from "./components/TextFileAnnotations";
 
-export const fileTool = makeTool({
+export const tool = makeTool({
   type: "patchwork:tool",
   id: "file",
   name: "File",

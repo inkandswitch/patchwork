@@ -24,6 +24,7 @@ export const SHARED_DEPENDENCIES = [
 
 // Internal modules that are shared with dynamically loaded packages
 export const SHARED_MODULES = {
+  // SDK modules
   "@patchwork/sdk": "./sdk/index.js",
   "@patchwork/sdk/async-signals": "./sdk/async-signals.js",
   "@patchwork/sdk/components": "./sdk/components.js",
@@ -33,6 +34,8 @@ export const SHARED_MODULES = {
   "@patchwork/sdk/textAnchors": "./sdk/textAnchors.js",
   "@patchwork/sdk/ui": "./sdk/ui.js",
   "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
+
+  // Is this useful?
   "@patchwork/counter": "./counter/index.js",
   "@patchwork/counter/datatype": "./counter/datatype.js", // do i really need to do this?
   "@patchwork/datagrid": "./datagrid/index.js",
@@ -45,7 +48,6 @@ export const SHARED_MODULES = {
   "@patchwork/file/datatype": "./file/datatype.js",
   "@patchwork/folder": "./folder/index.js",
   "@patchwork/folder/datatype": "./folder/datatype.js",
-  //"@patchwork/folder-list-view": "./folder-list-view/index.js", // left as an example of existing dynamic loading
   "@patchwork/jacquard": "./jacquard/index.js",
   "@patchwork/jacquard/datatype": "./jacquard/datatype.js",
   "@patchwork/jacquard/components": "./jacquard/components.js", // blerf
@@ -54,8 +56,6 @@ export const SHARED_MODULES = {
   "@patchwork/kanban/datatype": "./kanban/datatype.js",
   "@patchwork/module-settings": "./module-settings/index.js",
   "@patchwork/module-settings/datatype": "./module-settings/datatype.js",
-  "@patchwork/pkg": "./pkg/index.js",
-  "@patchwork/pkg/datatype": "./pkg/datatype.js",
   "@patchwork/raw-editor": "./raw-editor/index.js",
   // no datatype for raw-editor
   "@patchwork/tldraw": "./tldraw/index.js",

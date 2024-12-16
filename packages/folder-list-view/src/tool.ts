@@ -1,10 +1,10 @@
 import { Tool } from "@patchwork/sdk";
 import { FolderViewerList } from "./components/FolderListView";
 
-export const folderViewerListTool: Tool = {
+export const tool: Tool = {
   type: "patchwork:tool",
   id: "folder-view-list",
   name: "List",
-  EditorComponent: FolderViewerList,
   supportedDataTypes: ["folder"],
+  EditorComponent: FolderViewerList,
 };

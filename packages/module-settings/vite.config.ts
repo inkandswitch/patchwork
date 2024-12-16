@@ -1,45 +1,26 @@
 import react from "@vitejs/plugin-react";
-import path from "path";
-import { Plugin, UserConfig, defineConfig } from "vite";
+import { defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
+import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 
 import { EXTERNAL_DEPENDENCIES } from "@patchwork/sdk/shared-dependencies";
 
 export default defineConfig({
-  plugins: [topLevelAwait(), wasm(), react()],
-
-  optimizeDeps: {
-    exclude: ["@syntect/wasm"],
-  },
+  base: "./",
+  plugins: [topLevelAwait(), wasm(), react(), cssInjectedByJsPlugin()],
 
   build: {
     rollupOptions: {
       external: EXTERNAL_DEPENDENCIES,
-      input: {
-        index: "./src/index.ts",
-        datatype: "./src/datatype.ts",
-      },
+      input: "./src/index.ts",
       output: {
-        // We put index.css in dist instead of dist/assets so that we can link to fonts
-        // using relative URLs like "./assets/font.woff2", which is the correct form
-        // for deployment to trailrunner.
-        assetFileNames: (assetInfo) => {
-          // For all other assets, keep the default behavior
-          return "assets/[name]-[hash][extname]";
-        },
-        entryFileNames: (chunkInfo) => {
-          return "[name].js"; // Default behavior for other entries
-        },
-        exports: "named",
+        format: "es",
+        entryFileNames: "[name].js",
+        chunkFileNames: "assets/[name].js",
+        assetFileNames: "assets/[name][extname]",
       },
-      preserveEntrySignatures: "allow-extension",
+      preserveEntrySignatures: "strict",
     },
   },
-
-  define: {
-    "process.env": {
-      NODE_ENV: "production",
-    },
-  },
-} satisfies UserConfig);
+});

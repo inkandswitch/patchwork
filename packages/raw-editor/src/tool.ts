@@ -1,7 +1,7 @@
 import { Tool } from "@patchwork/sdk";
 import { RawEditor } from "./components/RawEditor";
 
-export const rawEditorTool: Tool = {
+export const tool: Tool = {
   type: "patchwork:tool",
   id: "raw",
   name: "Raw",

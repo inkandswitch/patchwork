@@ -16,7 +16,7 @@ import { FileDoc, LinkedFileContent } from "../datatype";
 import { useToolUIState } from "@patchwork/sdk/router";
 import { DocPath } from "@patchwork/folder";
 import { clsx } from "clsx";
-import { fileTool } from "../tool";
+import { tool } from "../tool";
 import { eventListenerEffect } from "@patchwork/sdk/utils";
 
 // react-pdf doesn't make this easy
@@ -172,7 +172,7 @@ export const PDFViewer = ({
 
   const [toolUIState, changeToolUIState] = useToolUIState<{
     scrollTop: number;
-  }>(docPath, fileTool.id, () => ({ scrollTop: 0 }));
+  }>(docPath, tool.id, () => ({ scrollTop: 0 }));
 
   const [didInitialScroll, setDidInitialScroll] = useState(false);
 

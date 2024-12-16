@@ -379,7 +379,7 @@ export const Sequencer = ({
   );
 };
 
-export const SequencerTool = makeTool({
+export const tool = makeTool({
   type: "patchwork:tool",
   id: "sequencer",
   name: "Sequencer",

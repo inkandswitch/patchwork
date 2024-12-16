@@ -67,8 +67,6 @@ export const Explorer: React.FC = () => {
   const [selectedToolId, setSelectedToolId] = useState<string>();
   const selectedTool = toolById(selectedToolId);
 
-  console.log({ selectedToolId, selectedTool, toolsForSelection });
-
   const currentTool =
     // make sure the current tool is reset to the fallback tool
     // if the selected datatype changes and the selected tool is not compatible

@@ -1,2 +1,32 @@
-export { dataType } from "./datatype";
-export { tool } from "./tool";
+import type {
+  DeferredDataType,
+  DeferredTool,
+  ModuleSettingsDoc,
+} from "@patchwork/sdk";
+
+// Kinda weird how ModuleSettingsDoc isn't owned by the type.
+
+export const dataType: DeferredDataType<ModuleSettingsDoc> = {
+  type: "patchwork:dataType",
+  id: "module-settings",
+  name: "Module Settings",
+  icon: "Cog",
+
+  async load() {
+    const { dataType } = await import("./datatype");
+    return dataType;
+  },
+};
+
+export const tools: DeferredTool[] = [
+  {
+    type: "patchwork:tool",
+    id: "module-settings",
+    name: "Module Settings",
+    supportedDataTypes: ["module-settings"],
+    async load() {
+      const { tool } = await import("./tool");
+      return tool;
+    },
+  },
+];

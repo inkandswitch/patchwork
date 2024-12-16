@@ -22,8 +22,7 @@
     "./shared-dependencies": "./dist/shared-dependencies.js"
   },
   "scripts": {
-    "build": "tsc && vite build",
-    "push": "pnpm build && trailhead push --dir dist"
+    "build": "tsc && vite build"
   },
   "keywords": [],
   "author": "",

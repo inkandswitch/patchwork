@@ -6,7 +6,6 @@
   "main": "src/index.ts",
   "exports": {
     ".": "./dist/index.js",
-    "./datatype": "./dist/datatype.js",
     "./hooks": "./dist/hooks.js"
   },
   "scripts": {
@@ -31,6 +30,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "eslint-plugin-react-hooks": "^4.6.2",
     "vite": "^6.0.3",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-top-level-await": "^1.4.2",
     "vite-plugin-wasm": "^3.3.0"
   }

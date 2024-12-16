@@ -9,8 +9,7 @@
     "./datatype": "./dist/datatype.js"
   },
   "scripts": {
-    "build": "vite build",
-    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:4MEgMjNDKnppvtDr7QU64TVAKdNf"
+    "build": "vite build"
   },
   "keywords": [],
   "dependencies": {

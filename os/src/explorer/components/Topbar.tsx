@@ -174,7 +174,6 @@ export const Topbar: React.FC<TopbarProps> = ({
       ? method.filename(selectedDoc!)
       : defaultFilename;
 
-    console.log({ defaultFilename, filename });
     const contentType =
       typeof method.contentType === "function"
         ? method.contentType(selectedDoc!)

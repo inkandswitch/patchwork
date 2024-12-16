@@ -1,9 +1,9 @@
 import {
+  DeferredTool,
   isTool,
   ModuleSettingsDoc,
   registerDataType,
   registerTool,
-  Tool,
 } from "@patchwork/sdk";
 import { DocHandle, DocumentId, Repo } from "@automerge/automerge-repo";
 import { BUNDLED_TOOLS, BUNDLED_DATATYPES } from "./bundledPackages.js";
@@ -55,11 +55,10 @@ export class CodeLoader {
     return Promise.all(tasks);
   }
 
-  private async toolsFromImport(importName: string): Promise<Tool[]> {
+  private async toolsFromImport(importName: string): Promise<DeferredTool[]> {
     const mod = await this.importModuleSafe(importName);
-    if (!mod?.tool) return [];
-    const tools = Array.isArray(mod.tool) ? mod.tool : [mod.tool];
-    return tools.filter(isTool);
+    if (!mod?.tools) return [];
+    return mod.tools.filter(isTool);
   }
 
   private setDocWatcher(importName: string) {

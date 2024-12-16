@@ -142,11 +142,7 @@ const patchesToAnnotations = (
   });
 };
 
-export const SequencerDatatype: DataType<
-  SequencerDoc,
-  SequencerDocAnchor,
-  string
-> = {
+export const dataType: DataType<SequencerDoc, SequencerDocAnchor, string> = {
   type: "patchwork:dataType",
   id: "sequencer",
   name: "Sequencer",

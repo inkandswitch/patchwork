@@ -29,6 +29,15 @@ export type Tool = ToolTyped<
   unknown
 >;
 
+export type DeferredTool = {
+  id: string;
+  type: "patchwork:tool";
+  supportedDataTypes: "*" | string[];
+  name: string;
+  icon?: IconType;
+  load(): Promise<Tool>;
+};
+
 export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
   id: string;
   type: "patchwork:tool";
@@ -54,21 +63,32 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
 }
 
 const GlobalTools: Record<string, Tool> = {};
-export const registerTool = (tool: Tool) => {
+export const registerTool = async (tool: DeferredTool) => {
   const { id } = tool;
   console.log("registering tool", id, tool);
   if (GlobalTools[id]) {
     console.warn("Replacing tool", tool);
   }
-  GlobalTools[id] = tool;
+  GlobalTools[id] = await tool.load();
 };
 
-export const isTool = (value: unknown): value is DataType => {
+export const isTool = (value: unknown): value is DeferredTool => {
   return (
     value !== null &&
     typeof value === "object" &&
     "type" in value &&
-    (value as Tool).type === "patchwork:tool"
+    (value as DeferredTool).type === "patchwork:tool"
+  );
+};
+
+export const isDeferredTool = (value: unknown): value is DeferredTool => {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "type" in value &&
+    (value as DeferredTool).type === "patchwork:tool" &&
+    "load" in value &&
+    (value as DeferredTool).load instanceof Function
   );
 };
 

@@ -186,7 +186,7 @@ export const FolderEntryView = ({
   );
 };
 
-export const folderViewerWithEmbedsTool: Tool = {
+export const tool: Tool = {
   type: "patchwork:tool",
   id: "folder-embeds",
   name: "Embeds",

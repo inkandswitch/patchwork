@@ -1,8 +1,7 @@
-export { dataType, type JacquardBuildMetadata } from "./datatype";
+import type { DeferredDataType, DeferredTool } from "@patchwork/sdk";
+import type { JacquardBuildMetadata } from "./datatype";
 
-import { buildMetadataGraphView, buildMetadataLogView } from "./tool";
-
-export const tool = [buildMetadataGraphView, buildMetadataLogView];
+export type { JacquardBuildMetadata, BuildRunRefreshState } from "./datatype";
 
 export {
   getStalenessInfo,
@@ -10,4 +9,37 @@ export {
   type ProjectState,
 } from "./getStalenessInfo";
 
-export { type BuildRunRefreshState } from "./datatype";
+export const dataType: DeferredDataType<JacquardBuildMetadata, never, string> =
+  {
+    type: "patchwork:dataType",
+    id: "file",
+    name: "File",
+    icon: "PlusCircle",
+    async load() {
+      const { dataType } = await import("./datatype");
+      return dataType;
+    },
+  };
+
+export const tools: DeferredTool[] = [
+  {
+    type: "patchwork:tool",
+    id: "jacquard-build-metadata-log-view",
+    name: "Log",
+    supportedDataTypes: ["jacquard-build-metadata"],
+    async load() {
+      const { buildMetadataLogView } = await import("./logTool");
+      return buildMetadataLogView;
+    },
+  },
+  {
+    type: "patchwork:tool",
+    id: "jacquard-build-metadata-graph-view",
+    name: "Graph",
+    supportedDataTypes: ["jacquard-build-metadata"],
+    async load() {
+      const { buildMetadataGraphView } = await import("./graphTool");
+      return buildMetadataGraphView;
+    },
+  },
+];

@@ -13,6 +13,14 @@ import { FileExportMethod } from "./fileExports";
 import { IconType } from "./ui";
 import { DocLink } from "@patchwork/folder";
 
+export type DeferredDataType<D = unknown, T = unknown, V = unknown> = {
+  id: string;
+  type: "patchwork:dataType";
+  name: string;
+  icon: IconType;
+  load(): Promise<DataType<D, T, V>>;
+};
+
 export type CoreDataType<D> = {
   id: string;
   type: "patchwork:dataType";
@@ -148,18 +156,12 @@ export const isDataType = (value: unknown): value is DataType => {
 };
 
 const GlobalDataTypes: Record<string, DataType<unknown, unknown, unknown>> = {};
-export const registerDataType = (
+export const registerDataType = async (
   id: string,
-  datatype: DataType<unknown, unknown, unknown>
+  datatype: DeferredDataType<unknown, unknown, unknown>
 ) => {
   console.log("registering datatype", id, datatype);
-  if (GlobalDataTypes[id] && GlobalDataTypes[id] !== datatype) {
-    console.warn(
-      `DataType ${id} replacing current datatype.`,
-      GlobalDataTypes[id]
-    );
-  }
-  GlobalDataTypes[id] = datatype;
+  GlobalDataTypes[id] = await datatype.load();
 };
 
 export const allDataTypes = () => {
