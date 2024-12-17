@@ -14,6 +14,7 @@ import {
 import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "@patchwork/folder";
+import EventEmitter from "eventemitter3";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -62,7 +63,12 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
   return tool as ToolImplementation;
 }
 
-const GlobalTools: Record<string, Tool> = {};
+export type ToolsMap = Record<string, Tool>;
+export type ToolsEvents = {
+  "tools:changed": (datatypes: ToolsMap) => void;
+};
+export const toolsEvents = new EventEmitter<ToolsEvents>();
+const GlobalTools: ToolsMap = {};
 export const registerTool = async (tool: ToolDescription) => {
   const { id } = tool;
   console.log("registering tool", id, tool);
@@ -72,6 +78,7 @@ export const registerTool = async (tool: ToolDescription) => {
   const loadedTool = await tool.load();
   console.log("loaded tool", id, loadedTool);
   GlobalTools[id] = { ...tool, ...loadedTool };
+  toolsEvents.emit("tools:changed", { ...GlobalTools });
 };
 
 export const isTool = (value: unknown): value is Tool => {
@@ -111,6 +118,7 @@ export const toolsForDataType = (dataType: string | undefined): Tool[] => {
     tool.supportedDataTypes.includes("*")
   );
 
+  console.log("toolsForDataType", dataType, specificTools, genericTools);
   return [...specificTools, ...genericTools];
 };
 

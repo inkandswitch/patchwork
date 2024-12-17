@@ -1,4 +1,4 @@
-import { dataTypeById, Tool, toolById, toolsForDataType } from "@patchwork/sdk";
+import { dataTypeById, toolById, toolsForDataType } from "@patchwork/sdk";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { type DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
 import { Button, Toaster } from "@patchwork/sdk/ui";
@@ -27,6 +27,7 @@ import { ErrorFallback, LoadingScreen } from "@patchwork/sdk/components";
 import { Sidebar } from "./sidebar/Sidebar";
 import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
+import { useToolsForDataType, useTool } from "@patchwork/sdk/hooks";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();
@@ -61,20 +62,24 @@ export const Explorer: React.FC = () => {
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
 
-  const selectedDataType = dataTypeById(selectedDataTypeId);
-
-  const toolsForSelection = toolsForDataType(selectedDataType?.id);
+  const toolsForSelection = useToolsForDataType(selectedDataTypeId);
   const [selectedToolId, setSelectedToolId] = useState<string>();
-  const selectedTool = toolById(selectedToolId);
+  const selectedTool = useTool(selectedToolId);
+
+  console.log({
+    selectedDataTypeId,
+    selectedToolId,
+    selectedTool,
+    toolsForSelection,
+  });
 
   const currentTool =
     // make sure the current tool is reset to the fallback tool
     // if the selected datatype changes and the selected tool is not compatible
     selectedTool &&
-    selectedDataType &&
     (selectedTool.supportedDataTypes === "*" ||
       selectedTool.supportedDataTypes.some(
-        (supportedDataType) => supportedDataType === selectedDataType?.id
+        (supportedDataType) => supportedDataType === selectedDataTypeId
       ))
       ? selectedTool
       : toolsForSelection[0];
