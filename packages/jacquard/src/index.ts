@@ -18,6 +18,7 @@ export const dataType: DataTypeDescription<
   id: "jacquard-build-metadata",
   name: "Jacquard Build Metadata",
   icon: "Microscope",
+  unlisted: true,
   async load() {
     const { dataType } = await import("./datatype");
     return dataType;
