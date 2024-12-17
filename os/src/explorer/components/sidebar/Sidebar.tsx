@@ -15,9 +15,6 @@ import {
 import { dataTypeById } from "@patchwork/sdk";
 import {
   Input,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -30,19 +27,13 @@ import {
   fetchOmOnActiveBranch,
   fetchVersionControlMetadataOm,
 } from "@patchwork/sdk/versionControl";
-import { isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 
 import capitalize from "lodash-es/capitalize";
 import clone from "lodash-es/clone";
 import uniqBy from "lodash-es/uniqBy";
 
-import {
-  AlertCircle,
-  ChevronsLeft,
-  FolderInput,
-  GitBranchIcon,
-} from "lucide-react";
+import { AlertCircle, ChevronsLeft, GitBranchIcon } from "lucide-react";
 import React, {
   createContext,
   useContext,
@@ -59,9 +50,11 @@ import {
 } from "react-arborist";
 import { useCurrentAccount, useCurrentAccountDoc } from "@patchwork/sdk";
 import { UIStateDoc } from "@patchwork/sdk/router";
-import { AccountPicker } from "./AccountPicker";
-import { FillFlexParent } from "./FillFlexParent";
+import { AccountPicker } from "../AccountPicker";
+import { FillFlexParent } from "../FillFlexParent";
 import { useDataTypes } from "@patchwork/sdk/hooks";
+import DataTypeSelector from "./DataTypeSelector";
+import { OpenAutomergeUrl } from "./OpenAutomergeUrl";
 
 const FlatDocPathsContext = createContext<DocPath[]>([]);
 
@@ -276,20 +269,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     rootFolderUrl,
     flatDocPaths,
   } = rootFolderDoc;
-
-  // state related to open popover
-  const [openNewDocPopoverVisible, setOpenNewDocPopoverVisible] =
-    useState(false);
-  const [openUrlInput, setOpenUrlInput] = useState("");
-  const automergeUrlMatch = openUrlInput
-    .replace(/%3A/g, ":")
-    .match(/(automerge:[a-zA-Z0-9]*)/);
-  const automergeUrlToOpen =
-    automergeUrlMatch &&
-    automergeUrlMatch[1] &&
-    isValidAutomergeUrl(automergeUrlMatch[1])
-      ? automergeUrlMatch[1]
-      : null;
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -518,29 +497,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
       <div className="py-2  border-b border-gray-200">
-        {Object.values(dataTypes).map((dataType) => {
-          const { id } = dataType;
-          if (!dataType.init) {
-            return;
-          }
-
-          return (
-            <div key={dataType.id}>
-              {" "}
-              <div
-                className="py-1 px-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-200 "
-                onClick={() => addNewDocument({ type: id })}
-              >
-                <Icon
-                  type={dataType.icon}
-                  size={14}
-                  className="inline-block font-bold mr-2 align-top mt-[2px]"
-                />
-                New {dataType.name}
-              </div>
-            </div>
-          );
-        })}{" "}
+        <DataTypeSelector
+          dataTypes={dataTypes}
+          addNewDocument={addNewDocument}
+        />
+        <OpenAutomergeUrl addNewDocument={addNewDocument} />
         <div
           className="py-1 px-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-200 "
           onClick={() => openModuleSettings()}
@@ -551,51 +512,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="inline-block font-bold mr-2 align-top mt-[2px]"
           />
           Module Settings
-        </div>
-        <div
-          className="py-1 px-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-200 "
-          onClick={() => setOpenNewDocPopoverVisible(true)}
-        >
-          {/* todo: extract a component for this */}
-          <Popover
-            open={openNewDocPopoverVisible}
-            onOpenChange={setOpenNewDocPopoverVisible}
-          >
-            <PopoverTrigger>
-              <FolderInput
-                size={14}
-                className="inline-block font-bold mr-2 align-top mt-[2px]"
-              />
-              Open document
-            </PopoverTrigger>
-            <PopoverContent className="w-96 h-20" side="right">
-              <Input
-                value={openUrlInput}
-                placeholder="automerge:<url>"
-                onChange={(e) => setOpenUrlInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && automergeUrlToOpen) {
-                    // openDocFromUrl(automergeUrlToOpen); // TODO FIX THIS
-                    setOpenUrlInput("");
-                    setOpenNewDocPopoverVisible(false);
-                  }
-                }}
-                className={`outline-none ${
-                  automergeUrlToOpen
-                    ? "bg-green-100"
-                    : openUrlInput.length > 0
-                    ? "bg-red-100"
-                    : ""
-                }`}
-              />
-              <div className="text-xs text-gray-500 text-right mt-1">
-                {automergeUrlToOpen && <> {"\u23CE"} Enter to open </>}
-                {openUrlInput.length > 0 &&
-                  !automergeUrlToOpen &&
-                  "Not a valid Automerge URL"}
-              </div>
-            </PopoverContent>
-          </Popover>
         </div>
       </div>
 
