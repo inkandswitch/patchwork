@@ -150,7 +150,10 @@ async function setupAccount() {
   const moduleSettingsUrl = account.handle.docSync()?.moduleSettingsUrl;
   if (moduleSettingsUrl) {
     const loader = new CodeLoader(repo, repo.find(moduleSettingsUrl));
-    await loader.doneLoading; // ugh but...
+    await Promise.race([
+      loader.doneLoading,
+      new Promise((r) => setTimeout(r, 2000)),
+    ]).catch(() => console.warn("Module settings load timed out"));
   }
 
   return account;
