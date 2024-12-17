@@ -67,9 +67,11 @@ export const registerTool = async (tool: DeferredTool) => {
   const { id } = tool;
   console.log("registering tool", id, tool);
   if (GlobalTools[id]) {
-    console.warn("Replacing tool", tool);
+    console.warn("Replacing tool", id, tool);
   }
-  GlobalTools[id] = await tool.load();
+  const loadedTool = await tool.load();
+  console.log("loaded tool", id, loadedTool);
+  GlobalTools[id] = loadedTool;
 };
 
 export const isTool = (value: unknown): value is DeferredTool => {

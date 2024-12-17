@@ -1,3 +1,4 @@
+import EventEmitter from "eventemitter3";
 import {
   ChangeGroup,
   DecodedChangeWithMetadata,
@@ -156,12 +157,19 @@ export const isDataType = (value: unknown): value is DataType => {
   );
 };
 
-const GlobalDataTypes: Record<string, DataType<unknown, unknown, unknown>> = {};
+export type DataTypesMap = Record<string, DataType<unknown, unknown, unknown>>;
+export type DataTypeEvents = {
+  "datatypes:changed": (datatypes: DataTypesMap) => void;
+};
+export const datatypeEvents = new EventEmitter<DataTypeEvents>();
+const GlobalDataTypes: DataTypesMap = {};
+
 export const registerDataType = async (
   datatype: DeferredDataType<unknown, unknown, unknown>
 ) => {
   console.log("registering datatype", datatype);
   GlobalDataTypes[datatype.id] = await datatype.load();
+  datatypeEvents.emit("datatypes:changed", { ...GlobalDataTypes });
 };
 
 export const allDataTypes = () => {

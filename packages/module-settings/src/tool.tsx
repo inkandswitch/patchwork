@@ -6,6 +6,8 @@ import {
   EditorProps,
   makeTool,
   isTool,
+  type DataType,
+  type Tool,
 } from "@patchwork/sdk";
 import {
   Icon,
@@ -21,33 +23,122 @@ import {
   AlertTitle,
   AlertDescription,
 } from "@patchwork/sdk/ui";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 
-interface ModulePreview {
-  dataType?: any;
-  tools?: any[];
+interface ModuleContents {
+  url: string;
+  dataType?: DataType<unknown, unknown, unknown>;
+  tools?: Tool[];
+  error?: string;
 }
+
+// Component to display module contents consistently
+const ModuleContentsDisplay: React.FC<{ contents: ModuleContents }> = ({
+  contents,
+}) => {
+  const { dataType, tools = [], error } = contents;
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Error loading {contents.url}</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="space-y-2 text-sm">
+      {dataType && (
+        <div className="border rounded p-3">
+          <div className="flex items-center gap-2 font-medium mb-2">
+            <Icon type="Database" size={14} />
+            <span>DataType: {dataType.name}</span>
+          </div>
+          <div className="pl-6 text-gray-500">
+            {dataType.unixFileExtensions &&
+              dataType.unixFileExtensions?.length > 0 && (
+                <div>File types: {dataType.unixFileExtensions.join(", ")}</div>
+              )}
+          </div>
+        </div>
+      )}
+      {tools.length > 0 && (
+        <div className="border rounded p-3">
+          <div className="flex items-center gap-2 font-medium mb-2">
+            <Icon type="Wrench" size={14} />
+            <span>Tools</span>
+          </div>
+          <ul className="pl-6 space-y-1">
+            {tools.map((tool, i) => (
+              <li key={i} className="flex items-center gap-2 text-gray-500">
+                <Icon type={tool.icon || "Wrench"} size={12} />
+                <span>{tool.name}</span>
+                {tool.supportedDataTypes && (
+                  <span className="text-xs">
+                    (supports:{" "}
+                    {Array.isArray(tool.supportedDataTypes)
+                      ? tool.supportedDataTypes.join(", ")
+                      : "*"}
+                    )
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {!dataType && !tools.length && (
+        <div className="text-gray-500 italic">No datatypes or tools found</div>
+      )}
+    </div>
+  );
+};
 
 export const ModuleSettingsEditor: React.FC<
   EditorProps<ModuleSettingsDoc, string>
 > = ({ docUrl }) => {
   const [doc, changeDoc] = useDocument<ModuleSettingsDoc>(docUrl);
   const [moduleUrl, setModuleUrl] = useState("");
-  const [preview, setPreview] = useState<ModulePreview | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<ModuleContents | null>(null);
+  const [registeredModules, setRegisteredModules] = useState<ModuleContents[]>(
+    []
+  );
 
-  const inspectModule = useCallback(async () => {
+  const loadModuleContents = async (url: string): Promise<ModuleContents> => {
     try {
-      setError(null);
-      const module = await import(moduleUrl);
-      setPreview({
+      const module = await import(url);
+      return {
+        url,
         dataType: module.dataType,
         tools: module.tools?.filter(isTool) || [],
-      });
+      };
     } catch (err) {
-      setError("Failed to load module. Please check the URL and try again.");
-      setPreview(null);
+      return {
+        url,
+        error: "Failed to load module. Please check the URL and try again.",
+      };
     }
+  };
+
+  // Load registered modules
+  useEffect(() => {
+    if (!doc?.modules) return;
+
+    const loadModules = async () => {
+      const moduleContents = await Promise.all(
+        doc.modules.map(loadModuleContents)
+      );
+      setRegisteredModules(moduleContents);
+    };
+
+    loadModules();
+  }, [doc?.modules]);
+
+  const inspectModule = useCallback(async () => {
+    if (!moduleUrl.trim()) return;
+    const contents = await loadModuleContents(moduleUrl);
+    setPreview(contents);
   }, [moduleUrl]);
 
   const registerModule = useCallback(() => {
@@ -73,8 +164,6 @@ export const ModuleSettingsEditor: React.FC<
 
   if (!doc) return null;
 
-  const modules = doc.modules || [];
-
   return (
     <div className="flex flex-col gap-4 p-4">
       {/* Module Import Section */}
@@ -98,33 +187,9 @@ export const ModuleSettingsEditor: React.FC<
             </div>
           </div>
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
           {preview && (
             <div className="space-y-4">
-              <div className="border rounded p-4">
-                <h4 className="font-medium mb-2">Module Contents:</h4>
-                <ul className="space-y-2">
-                  {preview.dataType && (
-                    <li className="flex items-center gap-2">
-                      <Icon type="Database" size={14} />
-                      <span>DataType Available</span>
-                    </li>
-                  )}
-                  {preview.tools?.map((tool, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <Icon type="Wrench" size={14} />
-                      <span>{tool.name || tool.id}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
+              <ModuleContentsDisplay contents={preview} />
               <Button onClick={registerModule} disabled={!moduleUrl.trim()}>
                 Register Module
               </Button>
@@ -139,27 +204,27 @@ export const ModuleSettingsEditor: React.FC<
           <CardTitle>Registered Modules</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {modules.map((url, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-2 border rounded"
-              >
-                <div className="flex items-center gap-2">
-                  <Icon type="Package" size={14} />
-                  <span className="text-sm text-gray-500">{url}</span>
+          <div className="space-y-4">
+            {registeredModules.map((module, index) => (
+              <div key={index} className="border rounded p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Icon type="Package" size={14} />
+                    <span className="text-sm text-gray-500">{module.url}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeModule(module.url)}
+                    className="text-red-500"
+                  >
+                    <Icon type="Trash" size={14} />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeModule(url)}
-                  className="text-red-500"
-                >
-                  <Icon type="Trash" size={14} />
-                </Button>
+                <ModuleContentsDisplay contents={module} />
               </div>
             ))}
-            {modules.length === 0 && (
+            {registeredModules.length === 0 && (
               <div className="text-gray-500 text-center py-4">
                 No modules registered yet
               </div>
@@ -175,6 +240,7 @@ export const tool = makeTool({
   type: "patchwork:tool",
   id: "module-settings",
   name: "Module Settings",
+  icon: "Settings",
   supportedDataTypes: ["module-settings"],
   EditorComponent: ModuleSettingsEditor,
 });

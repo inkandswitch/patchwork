@@ -12,7 +12,7 @@ import {
   FolderDocWithMetadata,
   DocPathUtils,
 } from "@patchwork/folder";
-import { allDataTypes, dataTypeById } from "@patchwork/sdk";
+import { dataTypeById } from "@patchwork/sdk";
 import {
   Input,
   Popover,
@@ -61,6 +61,7 @@ import { useCurrentAccount, useCurrentAccountDoc } from "@patchwork/sdk";
 import { UIStateDoc } from "@patchwork/sdk/router";
 import { AccountPicker } from "./AccountPicker";
 import { FillFlexParent } from "./FillFlexParent";
+import { useDataTypes } from "@patchwork/sdk/hooks";
 
 const FlatDocPathsContext = createContext<DocPath[]>([]);
 
@@ -268,7 +269,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   rootFolderDoc,
 }) => {
   const repo = useRepo();
-  const dataTypes = allDataTypes();
+  const dataTypes = useDataTypes();
 
   const {
     doc: rootFolderDocWithChildren,
