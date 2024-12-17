@@ -5,7 +5,7 @@ import {
 } from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { pick } from "lodash";
-import { initFrom, type DataType } from "@patchwork/sdk";
+import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 import { TextPatch } from "@patchwork/sdk/versionControl";
 
 // SCHEMA
@@ -148,12 +148,11 @@ const patchesToAnnotations = (
   });
 };
 
-export const dataType: DataType<DataGridDoc, DataGridDocAnchor, string> = {
-  type: "patchwork:dataType",
-  id: "datagrid",
-  name: "Spreadsheet",
-  icon: "Sheet",
-
+export const dataType: DataTypeImplementation<
+  DataGridDoc,
+  DataGridDocAnchor,
+  string
+> = {
   init,
   getTitle,
   setTitle,

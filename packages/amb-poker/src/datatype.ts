@@ -1,5 +1,9 @@
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
-import { initFrom, type DataType } from "@patchwork/sdk";
+import {
+  DataTypeImplementation,
+  initFrom,
+  type DataType,
+} from "@patchwork/sdk";
 import { Model } from "./model";
 import { SAMPLE_MODEL } from "./model";
 
@@ -31,12 +35,7 @@ export const init = (doc: AmbPokerDoc) => {
   });
 };
 
-export const dataType: DataType<AmbPokerDoc, unknown> = {
-  type: "patchwork:dataType",
-  id: "ambPoker",
-  name: "Amb Poker",
-  icon: "Club",
-
+export const dataType: DataTypeImplementation<AmbPokerDoc, unknown> = {
   init,
   getTitle,
   setTitle,

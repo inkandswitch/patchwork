@@ -1,10 +1,10 @@
 import type { KanbanBoardDoc } from "./datatype";
-import type { DeferredDataType, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
 
 // For others to enjoy
 export type { KanbanBoardDoc };
 
-export const dataType: DeferredDataType<KanbanBoardDoc, never, never> = {
+export const dataType: DataTypeDescription<KanbanBoardDoc, never, never> = {
   type: "patchwork:dataType",
   id: "kanban",
   name: "Kanban Board",

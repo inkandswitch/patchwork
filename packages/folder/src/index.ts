@@ -8,9 +8,9 @@ export type {
   DocLink,
 } from "./datatype";
 
-import type { DeferredDataType, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
 
-export const dataType: DeferredDataType<FolderDoc, never, never> = {
+export const dataType: DataTypeDescription<FolderDoc, never, never> = {
   type: "patchwork:dataType",
   id: "folder",
   name: "Folder",

@@ -1,7 +1,7 @@
-import type { DeferredDataType, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
 import type { CounterDoc } from "./datatype";
 
-export const dataType: DeferredDataType<CounterDoc> = {
+export const dataType: DataTypeDescription<CounterDoc> = {
   type: "patchwork:dataType",
   id: "counter",
   name: "Counter",

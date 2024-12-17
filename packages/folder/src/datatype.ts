@@ -1,4 +1,4 @@
-import { DataType, initFrom } from "@patchwork/sdk";
+import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 import {
   HasVersionControlMetadata,
   initVersionControlMetadata,
@@ -94,11 +94,7 @@ const links = (doc: FolderDoc) => {
   return doc.docs;
 };
 
-export const dataType: DataType<FolderDoc, never, never> = {
-  type: "patchwork:dataType",
-  id: "folder",
-  name: "Folder",
-  icon: "Folder",
+export const dataType: DataTypeImplementation<FolderDoc, never, never> = {
   init,
   getTitle,
   setTitle,

@@ -1,6 +1,6 @@
 import { FileExportMethod } from "@patchwork/sdk/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
-import { initFrom, type DataType } from "@patchwork/sdk";
+import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 import { ChangeGroup } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { TextPatch } from "@patchwork/sdk/versionControl";
@@ -262,11 +262,7 @@ const updateDocFromUnixFile = async (
   return { didChange: true };
 };
 
-export const dataType: DataType<FileDoc, TextAnchor, string> = {
-  type: "patchwork:dataType",
-  id: "file",
-  name: "File",
-  icon: "File", // todo: this should be a function, to be type specific
+export const dataType: DataTypeImplementation<FileDoc, TextAnchor, string> = {
   getTitle,
   setTitle,
   markCopy,
@@ -287,5 +283,4 @@ export const dataType: DataType<FileDoc, TextAnchor, string> = {
   docToUnixFile,
   initDocFromUnixFile,
   updateDocFromUnixFile,
-  unixFileExtensions: ["*"],
 };

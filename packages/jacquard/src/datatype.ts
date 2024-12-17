@@ -1,6 +1,6 @@
 import * as Automerge from "@automerge/automerge";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
-import { type DataType } from "@patchwork/sdk";
+import { type DataTypeImplementation } from "@patchwork/sdk";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 
 // SCHEMA
@@ -106,12 +106,11 @@ export const init = (doc: any) => {
   doc.buildRuns = [];
 };
 
-export const dataType: DataType<JacquardBuildMetadata, never, string> = {
-  type: "patchwork:dataType",
-  id: "jacquard-build-metadata",
-  name: "Jacquard Build Metadata",
-  icon: "Microscope",
-
+export const dataType: DataTypeImplementation<
+  JacquardBuildMetadata,
+  never,
+  string
+> = {
   init,
   getTitle,
   setTitle,

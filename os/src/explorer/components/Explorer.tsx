@@ -63,7 +63,7 @@ export const Explorer: React.FC = () => {
 
   const selectedDataType = dataTypeById(selectedDataTypeId);
 
-  const toolsForSelection = toolsForDataType(selectedDataType);
+  const toolsForSelection = toolsForDataType(selectedDataType?.id);
   const [selectedToolId, setSelectedToolId] = useState<string>();
   const selectedTool = toolById(selectedToolId);
 

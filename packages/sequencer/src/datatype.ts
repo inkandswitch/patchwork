@@ -5,7 +5,7 @@ import {
   HasVersionControlMetadata,
 } from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
-import { initFrom, type DataType } from "@patchwork/sdk";
+import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 // import { TextPatch } from "@/versionControl/utils";
 import {
   defaultSongConfig,
@@ -142,12 +142,11 @@ const patchesToAnnotations = (
   });
 };
 
-export const dataType: DataType<SequencerDoc, SequencerDocAnchor, string> = {
-  type: "patchwork:dataType",
-  id: "sequencer",
-  name: "Sequencer",
-  icon: "CassetteTape",
-
+export const dataType: DataTypeImplementation<
+  SequencerDoc,
+  SequencerDocAnchor,
+  string
+> = {
   init,
   getTitle,
   setTitle,

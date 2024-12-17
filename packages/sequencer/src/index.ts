@@ -1,7 +1,7 @@
-import type { DeferredDataType, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
 import type { SequencerDoc, SequencerDocAnchor } from "./datatype";
 
-export const dataType: DeferredDataType<
+export const dataType: DataTypeDescription<
   SequencerDoc,
   SequencerDocAnchor,
   string

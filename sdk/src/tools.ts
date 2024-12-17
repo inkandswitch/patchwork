@@ -98,15 +98,9 @@ export const allTools = () => {
   return { ...GlobalTools };
 };
 
-export const toolsForDataType = (
-  dataType: DataType | string | undefined
-): Tool[] => {
+export const toolsForDataType = (dataType: string | undefined): Tool[] => {
   if (!dataType) {
     return [];
-  }
-
-  if (isDataType(dataType)) {
-    dataType = dataType.id;
   }
 
   const specificTools = Object.values(GlobalTools).filter((tool) =>

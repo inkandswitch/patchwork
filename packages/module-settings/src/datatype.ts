@@ -1,6 +1,6 @@
 import {
   initFrom,
-  type DataType,
+  type DataTypeImplementation,
   type ModuleSettingsDoc,
 } from "@patchwork/sdk";
 
@@ -22,12 +22,7 @@ export const init = (doc: ModuleSettingsDoc) => {
   });
 };
 
-export const dataType: DataType<ModuleSettingsDoc, unknown> = {
-  type: "patchwork:dataType",
-  id: "module-settings",
-  name: "Module Settings",
-  icon: "Cog",
-
+export const dataType: DataTypeImplementation<ModuleSettingsDoc, unknown> = {
   init,
   getTitle,
   setTitle,

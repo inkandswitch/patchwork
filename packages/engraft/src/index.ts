@@ -1,9 +1,9 @@
-import type { DeferredDataType, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
 import type { EngraftDoc } from "./datatype";
 
 // TODO: engraft's datatype is 5mb!!!!
 
-export const dataType: DeferredDataType<EngraftDoc> = {
+export const dataType: DataTypeDescription<EngraftDoc> = {
   type: "patchwork:dataType",
   id: "engraft",
   name: "Engraft program",

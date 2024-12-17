@@ -1,11 +1,11 @@
 import type { TextAnchor } from "@patchwork/sdk/textAnchors";
 import type { FileDoc, FileContent } from "./datatype";
-import type { DeferredDataType, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
 
 // For others to enjoy
 export { type FileDoc, type FileContent };
 
-export const dataType: DeferredDataType<FileDoc, TextAnchor, string> = {
+export const dataType: DataTypeDescription<FileDoc, TextAnchor, string> = {
   type: "patchwork:dataType",
   id: "file",
   name: "File",

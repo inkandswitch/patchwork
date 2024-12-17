@@ -1,7 +1,7 @@
 import { AssetsDoc } from "@patchwork/sdk/assets";
 import { FileExportMethod } from "@patchwork/sdk/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
-import { initFrom, type DataType } from "@patchwork/sdk";
+import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 import { DecodedChangeWithMetadata } from "@patchwork/sdk/versionControl";
 import {
   HasVersionControlMetadata,
@@ -211,21 +211,17 @@ const updateDocFromUnixFile = async (
   return { didChange: true };
 };
 
-export const dataType: DataType<MarkdownDoc, TextAnchor, string> = {
-  type: "patchwork:dataType",
-  id: "essay",
-  name: "Essay",
-  icon: "Text",
-  init,
-  getTitle,
-  markCopy,
-  includeChangeInHistory,
-  includePatchInChangeGroup,
-  promptForAIChangeGroupSummary,
-  fileExportMethods,
-  ...textAnchorsAtPath(["content"]),
-  docToUnixFile,
-  initDocFromUnixFile,
-  updateDocFromUnixFile,
-  unixFileExtensions: ["md"],
-};
+export const dataType: DataTypeImplementation<MarkdownDoc, TextAnchor, string> =
+  {
+    init,
+    getTitle,
+    markCopy,
+    includeChangeInHistory,
+    includePatchInChangeGroup,
+    promptForAIChangeGroupSummary,
+    fileExportMethods,
+    ...textAnchorsAtPath(["content"]),
+    docToUnixFile,
+    initDocFromUnixFile,
+    updateDocFromUnixFile,
+  };

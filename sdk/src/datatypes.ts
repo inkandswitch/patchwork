@@ -14,20 +14,24 @@ import { FileExportMethod } from "./fileExports";
 import { IconType } from "./ui";
 import { DocLink } from "@patchwork/folder";
 
-export type DeferredDataType<D = unknown, T = unknown, V = unknown> = {
+export type DataType<
+  D = unknown,
+  T = unknown,
+  V = unknown
+> = DataTypeDescription &
+  DataTypeImplementation<D, T, V> &
+  Omit<DataTypeDescription, "load">;
+
+export type DataTypeDescription<D = unknown, T = unknown, V = unknown> = {
   id: string;
   type: "patchwork:dataType";
   name: string;
   icon: IconType;
   unixFileExtensions?: string[];
-  load(): Promise<DataType<D, T, V>>;
+  load(): Promise<DataTypeImplementation<D, T, V>>;
 };
 
 export type CoreDataType<D> = {
-  id: string;
-  type: "patchwork:dataType";
-  name: string;
-  icon: IconType;
   init?: (doc: D, repo: Repo) => void;
   getTitle: (doc: D, repo: Repo) => Promise<string>;
   setTitle?: (doc: any, title: string) => void;
@@ -51,7 +55,6 @@ export type CoreDataType<D> = {
     content: string | Uint8Array,
     handle: DocHandle<D>
   ) => Promise<{ didChange: boolean }>;
-  unixFileExtensions?: string[];
 };
 
 export type VersionedDataType<D, T, V> = {
@@ -145,8 +148,11 @@ export type VersionedDataType<D, T, V> = {
   links?: (doc: D) => DocLink[];
 };
 
-export type DataType<D = unknown, T = unknown, V = unknown> = CoreDataType<D> &
-  VersionedDataType<D, T, V>;
+export type DataTypeImplementation<
+  D = unknown,
+  T = unknown,
+  V = unknown
+> = CoreDataType<D> & VersionedDataType<D, T, V>;
 
 export const isDataType = (value: unknown): value is DataType => {
   return (
@@ -165,10 +171,10 @@ export const datatypeEvents = new EventEmitter<DataTypeEvents>();
 const GlobalDataTypes: DataTypesMap = {};
 
 export const registerDataType = async (
-  datatype: DeferredDataType<unknown, unknown, unknown>
+  datatype: DataTypeDescription<unknown, unknown, unknown>
 ) => {
   console.log("registering datatype", datatype);
-  GlobalDataTypes[datatype.id] = await datatype.load();
+  GlobalDataTypes[datatype.id] = { ...datatype, ...(await datatype.load()) };
   datatypeEvents.emit("datatypes:changed", { ...GlobalDataTypes });
 };
 

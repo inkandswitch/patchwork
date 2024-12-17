@@ -1,5 +1,5 @@
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
-import { initFrom, type DataType } from "@patchwork/sdk";
+import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 
 // SCHEMA
 
@@ -28,12 +28,7 @@ export const init = (doc: CounterDoc) => {
   });
 };
 
-export const dataType: DataType<CounterDoc, unknown> = {
-  type: "patchwork:dataType",
-  id: "counter",
-  name: "Counter",
-  icon: "PlusCircle",
-
+export const dataType: DataTypeImplementation<CounterDoc, unknown> = {
   init,
   getTitle,
   setTitle,

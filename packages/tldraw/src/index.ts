@@ -1,8 +1,12 @@
-import type { DeferredDataType, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
 import type { TLDrawDoc, TLDrawDocAnchor } from "./datatype";
 import type { TLShape } from "@tldraw/tldraw";
 
-export const dataType: DeferredDataType<TLDrawDoc, TLDrawDocAnchor, TLShape> = {
+export const dataType: DataTypeDescription<
+  TLDrawDoc,
+  TLDrawDocAnchor,
+  TLShape
+> = {
   type: "patchwork:dataType",
   id: "tldraw",
   name: "Drawing",

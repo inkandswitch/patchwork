@@ -1,12 +1,12 @@
 import type {
-  DeferredDataType,
+  DataTypeDescription,
   DeferredTool,
   ModuleSettingsDoc,
 } from "@patchwork/sdk";
 
 // Kinda weird how ModuleSettingsDoc isn't owned by the type.
 
-export const dataType: DeferredDataType<ModuleSettingsDoc> = {
+export const dataType: DataTypeDescription<ModuleSettingsDoc> = {
   type: "patchwork:dataType",
   id: "module-settings",
   name: "Module Settings",
