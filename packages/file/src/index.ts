@@ -10,6 +10,7 @@ export const dataType: DeferredDataType<FileDoc, TextAnchor, string> = {
   id: "file",
   name: "File",
   icon: "PlusCircle",
+  unixFileExtensions: ["*"],
   async load() {
     const { dataType } = await import("./datatype");
     return dataType;

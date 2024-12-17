@@ -9,6 +9,7 @@ export const dataType: DeferredDataType<MarkdownDoc, TextAnchor, string> = {
   id: "essay",
   name: "Essay",
   icon: "Text",
+  unixFileExtensions: ["md"],
   async load() {
     const { dataType } = await import("./datatype");
     return dataType;

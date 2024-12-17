@@ -18,8 +18,7 @@ const getTitle = async (doc: ModuleSettingsDoc) => {
 
 export const init = (doc: ModuleSettingsDoc) => {
   initFrom(doc, {
-    dataTypeModules: {},
-    toolModules: {},
+    modules: [],
   });
 };
 
@@ -34,3 +33,5 @@ export const dataType: DataType<ModuleSettingsDoc, unknown> = {
   setTitle,
   markCopy,
 };
+
+export { ModuleSettingsDoc };

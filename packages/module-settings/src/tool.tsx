@@ -1,127 +1,172 @@
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import {
   type ModuleSettingsDoc,
   allDataTypes,
   allTools,
   EditorProps,
   makeTool,
-  Tool,
+  isTool,
 } from "@patchwork/sdk";
-import { Icon, Input, Label } from "@patchwork/sdk/ui";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Icon,
+  Input,
+  Label,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+  Button,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from "@patchwork/sdk/ui";
+import React, { useCallback, useState } from "react";
+
+interface ModulePreview {
+  dataType?: any;
+  tools?: any[];
+}
 
 export const ModuleSettingsEditor: React.FC<
   EditorProps<ModuleSettingsDoc, string>
 > = ({ docUrl }) => {
   const [doc, changeDoc] = useDocument<ModuleSettingsDoc>(docUrl);
+  const [moduleUrl, setModuleUrl] = useState("");
+  const [preview, setPreview] = useState<ModulePreview | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const considerUpdatingDatatype = useCallback((id: string, value: string) => {
-    console.log("Changing datatype module", id, value);
-    import(value).then((module) => {
-      console.log("Proposed datatype module", module);
-      if (!module?.dataType) {
-        console.error("No dataType exported from module", value);
-      }
-      changeDoc((doc) => {
-        doc.dataTypeModules[id] = value;
+  const inspectModule = useCallback(async () => {
+    try {
+      setError(null);
+      const module = await import(moduleUrl);
+      setPreview({
+        dataType: module.dataType,
+        tools: module.tools?.filter(isTool) || [],
       });
-    });
-  }, []);
+    } catch (err) {
+      setError("Failed to load module. Please check the URL and try again.");
+      setPreview(null);
+    }
+  }, [moduleUrl]);
 
-  const considerUpdatingTool = useCallback((id: string, value: string) => {
-    console.log("Changing tool module", id, value);
-    import(value).then((module) => {
-      if (!module?.tool) {
-        console.error("No tool exported from module", value);
-      }
-      changeDoc((doc) => {
-        doc.toolModules[id] = value;
-      });
-    });
-  }, []);
+  const registerModule = useCallback(() => {
+    if (!doc || !moduleUrl.trim()) return;
 
-  const considerAddingTool = useCallback((value: string) => {
-    console.log("Adding tool module", value);
-    import(value).then((module) => {
-      if (!module?.tool) {
-        console.error("No tool exported from module", value);
-      }
-      const id = module.tool.id; // TODO: only supports a single tool
-      changeDoc((doc) => {
-        doc.toolModules[id] = value;
-      });
-    });
-  }, []);
-
-  const removeTool = useCallback((id: string) => {
-    console.log("Removing tool module", id);
     changeDoc((doc) => {
-      delete doc.toolModules[id];
+      if (!doc.modules) doc.modules = [];
+      if (!doc.modules.includes(moduleUrl)) {
+        doc.modules.push(moduleUrl);
+      }
+    });
+
+    setModuleUrl("");
+    setPreview(null);
+  }, [doc, moduleUrl]);
+
+  const removeModule = useCallback((urlToRemove: string) => {
+    changeDoc((doc) => {
+      if (!doc.modules) return;
+      doc.modules = doc.modules.filter((url) => url !== urlToRemove);
     });
   }, []);
 
-  if (!doc) {
-    return null;
-  }
+  if (!doc) return null;
 
-  const dataTypes = allDataTypes();
-  const dataTypeModules = doc.dataTypeModules;
-
-  const tools = allTools();
-  const toolModules = doc.toolModules;
-
-  console.log({ doc, tools, toolModules });
+  const modules = doc.modules || [];
 
   return (
-    <div>
-      <div className="grid w-full overflow-scroll h-full items-center gap-1.5 pt-2 p-4">
-        <Label>Tools</Label>
-        <div className="flex flex-col gap-2 py-2">
-          {Object.entries(tools).map(([id, tool]) => {
-            return (
-              <div className="flex items-center gap-2" key={id}>
-                <label
-                  htmlFor={`tool-${id}`}
-                  className="text-sm text-gray-600 w-64"
-                >
-                  <Icon
-                    type={"Cog"}
-                    size={14}
-                    className="inline-block font-bold mr-2 align-top mt-[2px]"
-                  />
-                  {id}
-                </label>
-                <Label key={tool.id} />
-
-                <Input
-                  id={`tool-${tool.id}`}
-                  value={toolModules[tool.id]}
-                  defaultValue={"Built-In (paste valid URL to replace)"}
-                  onChange={(evt) => considerUpdatingTool(id, evt.target.value)}
-                />
-                <button onClick={() => removeTool(id)} className="text-red-500">
-                  <Icon type={"Trash"} size={14} />
-                </button>
-              </div>
-            );
-          })}
-          <div className="grid w-full max-w-sm items-center gap-1.5 py-4">
-            <label htmlFor={`add-tool`} className="text-sm text-gray-600 w-64">
-              <Icon
-                type={"Plus"}
-                size={14}
-                className="inline-block font-bold mr-2 align-top mt-[2px]"
+    <div className="flex flex-col gap-4 p-4">
+      {/* Module Import Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Import New Module</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="moduleUrl">Module URL</Label>
+            <div className="flex gap-2">
+              <Input
+                id="moduleUrl"
+                value={moduleUrl}
+                onChange={(e) => setModuleUrl(e.target.value)}
+                placeholder="Enter module URL"
               />
-              Add Tool
-            </label>
-            <Input
-              id="name"
-              placeholder={"Paste valid URL to add tool"}
-              onChange={(evt) => considerAddingTool(evt.target.value)}
-            />
+              <Button onClick={inspectModule} disabled={!moduleUrl.trim()}>
+                Inspect
+              </Button>
+            </div>
           </div>
-        </div>
-      </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {preview && (
+            <div className="space-y-4">
+              <div className="border rounded p-4">
+                <h4 className="font-medium mb-2">Module Contents:</h4>
+                <ul className="space-y-2">
+                  {preview.dataType && (
+                    <li className="flex items-center gap-2">
+                      <Icon type="Database" size={14} />
+                      <span>DataType Available</span>
+                    </li>
+                  )}
+                  {preview.tools?.map((tool, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <Icon type="Wrench" size={14} />
+                      <span>{tool.name || tool.id}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <Button onClick={registerModule} disabled={!moduleUrl.trim()}>
+                Register Module
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Registered Modules Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Registered Modules</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {modules.map((url, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-2 border rounded"
+              >
+                <div className="flex items-center gap-2">
+                  <Icon type="Package" size={14} />
+                  <span className="text-sm text-gray-500">{url}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeModule(url)}
+                  className="text-red-500"
+                >
+                  <Icon type="Trash" size={14} />
+                </Button>
+              </div>
+            ))}
+            {modules.length === 0 && (
+              <div className="text-gray-500 text-center py-4">
+                No modules registered yet
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

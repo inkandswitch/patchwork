@@ -25,8 +25,7 @@ import {
 import { AssetsDoc } from "./assets";
 
 export type ModuleSettingsDoc = {
-  toolModules: { [id: string]: string };
-  dataTypeModules: { [id: string]: string };
+  modules: string[];
 };
 
 export interface AccountDoc {
@@ -235,8 +234,7 @@ const createAccount = (
   });
 
   const moduleSettingsDocHandle = repo.create<ModuleSettingsDoc>({
-    dataTypeModules: {},
-    toolModules: {},
+    modules: [],
   });
 
   const accountHandle = repo.create<AccountDoc>({
@@ -308,8 +306,7 @@ export function useCurrentAccount(): Account | undefined {
     if (account && doc && doc.moduleSettingsUrl === undefined) {
       const moduleSettingsHandle = repo.create<ModuleSettingsDoc>();
       moduleSettingsHandle.change((settings) => {
-        settings.dataTypeModules = {};
-        settings.toolModules = {};
+        settings.modules = [];
       });
       account.handle.change((account) => {
         account.moduleSettingsUrl = moduleSettingsHandle.url;

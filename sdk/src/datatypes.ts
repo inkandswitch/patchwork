@@ -18,6 +18,7 @@ export type DeferredDataType<D = unknown, T = unknown, V = unknown> = {
   type: "patchwork:dataType";
   name: string;
   icon: IconType;
+  unixFileExtensions?: string[];
   load(): Promise<DataType<D, T, V>>;
 };
 
@@ -157,11 +158,10 @@ export const isDataType = (value: unknown): value is DataType => {
 
 const GlobalDataTypes: Record<string, DataType<unknown, unknown, unknown>> = {};
 export const registerDataType = async (
-  id: string,
   datatype: DeferredDataType<unknown, unknown, unknown>
 ) => {
-  console.log("registering datatype", id, datatype);
-  GlobalDataTypes[id] = await datatype.load();
+  console.log("registering datatype", datatype);
+  GlobalDataTypes[datatype.id] = await datatype.load();
 };
 
 export const allDataTypes = () => {

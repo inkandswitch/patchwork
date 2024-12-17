@@ -1,41 +1,21 @@
-// Core packages and better supported ones (and kanban for whatever)
-export const SAFE_BUNDLED_TOOLS = {
-  essay: "@patchwork/essay",
-  file: "@patchwork/file",
-  folder: "@patchwork/folder",
-  "jacquard-build-metadata": "@patchwork/jacquard",
-  kanban: "@patchwork/kanban",
-  "module-settings": "@patchwork/module-settings",
-  raw: "@patchwork/raw-editor",
-};
+export const BUNDLED_MODULES = [
+  "@patchwork/datagrid",
+  "@patchwork/essay",
+  "@patchwork/file",
+  "@patchwork/folder",
+  "@patchwork/jacquard",
+  "@patchwork/kanban",
+  "@patchwork/tldraw",
+  "@patchwork/module-settings",
+  "@patchwork/raw-editor",
+];
 
-export const BUNDLED_TOOLS = {
-  ...SAFE_BUNDLED_TOOLS,
-  // TODO: this is breaking the jacquard cli. why? i don't know.
-  datagrid: "@patchwork/datagrid",
-
-  // TODO: Causes "dyld[]: missing symbol called" error for Paul.
-  tldraw: "@patchwork/tldraw",
-};
-
-export const BUNDLED_DATATYPES = {
-  datagrid: "@patchwork/datagrid",
-  essay: "@patchwork/essay",
-  file: "@patchwork/file",
-  folder: "@patchwork/folder",
-  "jacquard-build-metadata": "@patchwork/jacquard",
-  kanban: "@patchwork/kanban",
-  tldraw: "@patchwork/tldraw",
-  "module-settings": "@patchwork/module-settings",
-  // no specific raw editor datatype
-};
-
-// These two are held as examples for (current-era) dynamic loading.
+// These modules are reserved as examples for (current-era) dynamic loading.
 // We don't use this variable, it's just here to explain why these
 // packages aren't otherwise referenced.
-export const UNBUNDLED_PACKAGES = {
-  counter: "@patchwork/counter",
-  "folder-list-view": "@patchwork/folder-list-view",
-  engraft: "@patchwork/engraft",
-  sequencer: "@patchwork/sequencer",
-};
+export const UNBUNDLED_MODULES = [
+  "@patchwork/counter",
+  "@patchwork/folder-list-view",
+  "@patchwork/engraft",
+  "@patchwork/sequencer",
+];

@@ -21,7 +21,11 @@ import { buildRunSpecFromArgs, run } from "./run";
 import { getJacquardConfig } from "./util";
 import { watch } from "./watch";
 import { watchRefreshRequests } from "./watchRefreshRequests";
-import { registerDataType } from "@patchwork/sdk";
+import {
+  DeferredDataType,
+  DeferredTool,
+  registerDataType,
+} from "@patchwork/sdk";
 
 // those marked non-optional here are those with defaults provided in allFlags below
 export type CommandLineArgs = {
@@ -164,13 +168,17 @@ const main = async () => {
   const jacquardDataTypes = {
     file: "@patchwork/file",
     folder: "@patchwork/folder",
+    essay: "@patchwork/essay",
     "jacquard-build-metadata": "@patchwork/jacquard",
   };
 
   await Promise.all([
     ...Object.entries(jacquardDataTypes).map(async ([id, importName]) => {
-      const module = await import(importName);
-      registerDataType(id, module.dataType);
+      const module = (await import(importName)) as {
+        dataType: DeferredDataType<unknown>;
+        tools: DeferredTool[];
+      };
+      await registerDataType(module.dataType);
     }),
   ]);
 

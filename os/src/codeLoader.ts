@@ -6,7 +6,7 @@ import {
   registerTool,
 } from "@patchwork/sdk";
 import { DocHandle, DocumentId, Repo } from "@automerge/automerge-repo";
-import { BUNDLED_TOOLS, BUNDLED_DATATYPES } from "./bundledPackages.js";
+import { BUNDLED_MODULES } from "./bundledPackages.js";
 
 export class CodeLoader {
   constructor(
@@ -19,8 +19,7 @@ export class CodeLoader {
   doneLoading: Promise<void>;
 
   private async init() {
-    await this.loadDataTypes(BUNDLED_DATATYPES);
-    await this.loadTools(BUNDLED_TOOLS);
+    await this.loadModules(BUNDLED_MODULES);
     this.moduleSettingsHandle.on("change", () =>
       this.load().catch(console.error)
     );
@@ -36,29 +35,25 @@ export class CodeLoader {
     }
   }
 
-  private async loadDataTypes(config: Record<string, string>) {
+  private async loadModules(config: string[]) {
     await Promise.all(
-      Object.entries(config).map(async ([id, importName]) => {
+      config.map(async (importName) => {
         const mod = await this.importModuleSafe(importName);
-        if (mod?.dataType) registerDataType(id, mod.dataType);
-        else console.warn(`No dataType found in ${importName} for ${id}`);
+        if (!mod) return;
+
+        // Load and register dataType if present
+        if (mod.dataType) {
+          registerDataType(mod.dataType);
+        }
+
+        // Load and register tools if present
+        if (mod.tools?.length) {
+          const tools = mod.tools.filter(isTool);
+          tools.forEach(registerTool);
+          this.setDocWatcher(importName);
+        }
       })
     );
-  }
-
-  private async loadTools(config: Record<string, string>) {
-    const tasks = Object.entries(config).map(async ([id, importName]) => {
-      const tools = await this.toolsFromImport(importName);
-      tools.forEach(registerTool);
-      this.setDocWatcher(importName);
-    });
-    return Promise.all(tasks);
-  }
-
-  private async toolsFromImport(importName: string): Promise<DeferredTool[]> {
-    const mod = await this.importModuleSafe(importName);
-    if (!mod?.tools) return [];
-    return mod.tools.filter(isTool);
   }
 
   private setDocWatcher(importName: string) {
@@ -69,8 +64,11 @@ export class CodeLoader {
 
     handle.on("change", async () => {
       const versionedImport = `${importName}?v=${handle.heads()}`;
-      const tools = await this.toolsFromImport(versionedImport);
-      tools.forEach((t) => registerTool(t));
+      const mod = await this.importModuleSafe(versionedImport);
+      if (!mod?.tools) return;
+
+      const tools = mod.tools.filter(isTool);
+      tools.forEach(registerTool);
     });
   }
 
@@ -80,8 +78,8 @@ export class CodeLoader {
       return null;
     });
     if (!doc) return;
-    const { dataTypeModules = {}, toolModules = {} } = doc;
-    await this.loadDataTypes(dataTypeModules);
-    await this.loadTools(toolModules);
+
+    const { modules = [] } = doc;
+    await this.loadModules(modules);
   }
 }

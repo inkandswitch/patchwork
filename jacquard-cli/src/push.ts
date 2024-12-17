@@ -355,6 +355,7 @@ const pushFile = async ({
 
     // XXX PVH TODO before landing think through how this should work
     const dataTypes = allDataTypes();
+    console.log(dataTypes);
     const dataType =
       Object.values(dataTypes).find((dt) =>
         dt.unixFileExtensions?.includes(fileExtension)

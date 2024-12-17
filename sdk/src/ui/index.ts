@@ -1,5 +1,7 @@
+export { Alert, AlertDescription, AlertTitle } from "./alert";
 export { Avatar, AvatarFallback, AvatarImage, avatarVariants } from "./avatar";
 export { Button } from "./button";
+export { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./card";
 export { Checkbox } from "./checkbox";
 export { Command } from "./command";
 export { ContextMenu } from "./context-menu";
