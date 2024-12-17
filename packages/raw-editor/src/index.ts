@@ -1,6 +1,6 @@
-import { DeferredTool } from "@patchwork/sdk";
+import { ToolDescription } from "@patchwork/sdk";
 
-export const tools: DeferredTool[] = [
+export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "raw",

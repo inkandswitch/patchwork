@@ -104,7 +104,7 @@ export const TextFileEditor = ({
 
   const [toolUIState, changeToolUIState] = useToolUIState<{
     scrollTopCursor?: Automerge.Cursor;
-  }>(docPath, tool.id, () => ({}));
+  }>(docPath, "file", () => ({}));
 
   // TODO: this obviously sucks
   const changeToolUIStateRef = useRefForCallback(changeToolUIState);

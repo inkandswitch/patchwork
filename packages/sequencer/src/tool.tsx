@@ -380,9 +380,5 @@ export const Sequencer = ({
 };
 
 export const tool = makeTool({
-  type: "patchwork:tool",
-  id: "sequencer",
-  name: "Sequencer",
-  supportedDataTypes: ["sequencer"],
   EditorComponent: Sequencer,
 });

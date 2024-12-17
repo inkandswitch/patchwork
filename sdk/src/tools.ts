@@ -14,8 +14,6 @@ import {
 import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "@patchwork/folder";
-import { DataType, isDataType } from "./datatypes";
-import { isArray } from "lodash";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -23,27 +21,29 @@ import { isArray } from "lodash";
 // which TypeScript doesn't have. In hackish but reasonable lieu of that, we
 // just stuff a bunch of unknowns in there.
 
-export type Tool = ToolTyped<
+export type Tool = ToolBase & ToolImplementation;
+
+export type ToolImplementation = ToolTyped<
   HasVersionControlMetadata<unknown, unknown>,
   unknown,
   unknown
 >;
 
-export type DeferredTool = {
+type ToolBase = {
   id: string;
   type: "patchwork:tool";
   supportedDataTypes: "*" | string[];
   name: string;
   icon?: IconType;
-  load(): Promise<Tool>;
+};
+
+export type ToolDescription = ToolBase & {
+  load: () => Promise<
+    ToolTyped<HasVersionControlMetadata<unknown, unknown>, unknown, unknown>
+  >;
 };
 
 export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
-  id: string;
-  type: "patchwork:tool";
-  supportedDataTypes: "*" | string[];
-  name: string;
-  icon?: IconType;
   EditorComponent: React.FC<EditorProps<A, V>>;
   AnnotationsViewComponent?: React.FC<AnnotationsViewProps<D, A, V>>;
   /** whether this tool has support for rendering comments inline or if it
@@ -58,12 +58,12 @@ export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
 /** Forgets the type parameters of a ToolTyped so that it can be used as a Tool */
 export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
   tool: ToolTyped<D, A, V>
-): Tool {
-  return tool as Tool;
+): ToolImplementation {
+  return tool as ToolImplementation;
 }
 
 const GlobalTools: Record<string, Tool> = {};
-export const registerTool = async (tool: DeferredTool) => {
+export const registerTool = async (tool: ToolDescription) => {
   const { id } = tool;
   console.log("registering tool", id, tool);
   if (GlobalTools[id]) {
@@ -71,26 +71,26 @@ export const registerTool = async (tool: DeferredTool) => {
   }
   const loadedTool = await tool.load();
   console.log("loaded tool", id, loadedTool);
-  GlobalTools[id] = loadedTool;
+  GlobalTools[id] = { ...tool, ...loadedTool };
 };
 
-export const isTool = (value: unknown): value is DeferredTool => {
+export const isTool = (value: unknown): value is Tool => {
   return (
     value !== null &&
     typeof value === "object" &&
     "type" in value &&
-    (value as DeferredTool).type === "patchwork:tool"
+    (value as Tool).type === "patchwork:tool"
   );
 };
 
-export const isDeferredTool = (value: unknown): value is DeferredTool => {
+export const isToolDescription = (value: unknown): value is ToolDescription => {
   return (
     value !== null &&
     typeof value === "object" &&
     "type" in value &&
-    (value as DeferredTool).type === "patchwork:tool" &&
+    (value as ToolDescription).type === "patchwork:tool" &&
     "load" in value &&
-    (value as DeferredTool).load instanceof Function
+    (value as ToolDescription).load instanceof Function
   );
 };
 

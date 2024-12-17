@@ -1,4 +1,4 @@
-import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
 import type { JacquardBuildMetadata } from "./datatype";
 
 export type { JacquardBuildMetadata, BuildRunRefreshState } from "./datatype";
@@ -15,16 +15,16 @@ export const dataType: DataTypeDescription<
   string
 > = {
   type: "patchwork:dataType",
-  id: "file",
-  name: "File",
-  icon: "PlusCircle",
+  id: "jacquard-build-metadata",
+  name: "Jacquard Build Metadata",
+  icon: "Microscope",
   async load() {
     const { dataType } = await import("./datatype");
     return dataType;
   },
 };
 
-export const tools: DeferredTool[] = [
+export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "jacquard-build-metadata-log-view",

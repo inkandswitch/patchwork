@@ -172,7 +172,7 @@ export const PDFViewer = ({
 
   const [toolUIState, changeToolUIState] = useToolUIState<{
     scrollTop: number;
-  }>(docPath, tool.id, () => ({ scrollTop: 0 }));
+  }>(docPath, "file", () => ({ scrollTop: 0 }));
 
   const [didInitialScroll, setDidInitialScroll] = useState(false);
 

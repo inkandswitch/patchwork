@@ -1,5 +1,5 @@
 import type { TextAnchor } from "@patchwork/sdk/textAnchors";
-import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
 import type { MarkdownDoc } from "./datatype";
 
 export { isMarkdownDoc } from "./utils";
@@ -16,7 +16,7 @@ export const dataType: DataTypeDescription<MarkdownDoc, TextAnchor, string> = {
   },
 };
 
-export const tools: DeferredTool[] = [
+export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "essay",

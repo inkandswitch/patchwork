@@ -4,9 +4,9 @@ import { useDocUIState } from "@patchwork/sdk/router";
 import { Icon, IconType } from "@patchwork/sdk/ui";
 import {
   dataTypeById,
+  makeTool,
   toolsForDataType,
   type EditorProps,
-  type Tool,
 } from "@patchwork/sdk";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
 import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
@@ -186,11 +186,7 @@ export const FolderEntryView = ({
   );
 };
 
-export const tool: Tool = {
-  type: "patchwork:tool",
-  id: "folder-embeds",
-  name: "Embeds",
+export const tool = makeTool({
   EditorComponent: FolderViewerWithEmbeds,
-  supportedDataTypes: ["folder"],
   supportsCollapseContentWithoutAnnotations: true,
-};
+});

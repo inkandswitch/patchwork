@@ -23,7 +23,7 @@ import { watch } from "./watch";
 import { watchRefreshRequests } from "./watchRefreshRequests";
 import {
   DataTypeDescription,
-  DeferredTool,
+  ToolDescription,
   registerDataType,
 } from "@patchwork/sdk";
 
@@ -176,7 +176,7 @@ const main = async () => {
     ...Object.entries(jacquardDataTypes).map(async ([id, importName]) => {
       const module = (await import(importName)) as {
         dataType: DataTypeDescription<unknown>;
-        tools: DeferredTool[];
+        tools: ToolDescription[];
       };
       await registerDataType(module.dataType);
     }),

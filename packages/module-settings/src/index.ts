@@ -1,6 +1,6 @@
 import type {
   DataTypeDescription,
-  DeferredTool,
+  ToolDescription,
   ModuleSettingsDoc,
 } from "@patchwork/sdk";
 
@@ -18,7 +18,7 @@ export const dataType: DataTypeDescription<ModuleSettingsDoc> = {
   },
 };
 
-export const tools: DeferredTool[] = [
+export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "module-settings",

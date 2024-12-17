@@ -47,9 +47,5 @@ export const Counter: React.FC<EditorProps<CounterDoc, string>> = ({
 };
 
 export const tool = makeTool({
-  type: "patchwork:tool",
-  id: "counter",
-  name: "Counter",
-  supportedDataTypes: ["counter"],
   EditorComponent: Counter,
 });

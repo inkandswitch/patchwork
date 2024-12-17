@@ -1,4 +1,4 @@
-import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
 import type { SequencerDoc, SequencerDocAnchor } from "./datatype";
 
 export const dataType: DataTypeDescription<
@@ -16,7 +16,7 @@ export const dataType: DataTypeDescription<
   },
 };
 
-export const tools: DeferredTool[] = [
+export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "sequencer",

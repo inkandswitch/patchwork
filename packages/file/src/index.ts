@@ -1,6 +1,6 @@
 import type { TextAnchor } from "@patchwork/sdk/textAnchors";
 import type { FileDoc, FileContent } from "./datatype";
-import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
 
 // For others to enjoy
 export { type FileDoc, type FileContent };
@@ -9,7 +9,7 @@ export const dataType: DataTypeDescription<FileDoc, TextAnchor, string> = {
   type: "patchwork:dataType",
   id: "file",
   name: "File",
-  icon: "PlusCircle",
+  icon: "File",
   unixFileExtensions: ["*"],
   async load() {
     const { dataType } = await import("./datatype");
@@ -17,7 +17,7 @@ export const dataType: DataTypeDescription<FileDoc, TextAnchor, string> = {
   },
 };
 
-export const tools: DeferredTool[] = [
+export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "file",

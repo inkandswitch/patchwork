@@ -1,5 +1,5 @@
 import {
-  DeferredTool,
+  ToolDescription,
   isTool,
   ModuleSettingsDoc,
   registerDataType,

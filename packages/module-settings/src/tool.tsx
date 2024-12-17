@@ -237,10 +237,5 @@ export const ModuleSettingsEditor: React.FC<
 };
 
 export const tool = makeTool({
-  type: "patchwork:tool",
-  id: "module-settings",
-  name: "Module Settings",
-  icon: "Settings",
-  supportedDataTypes: ["module-settings"],
   EditorComponent: ModuleSettingsEditor,
 });

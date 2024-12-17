@@ -1,4 +1,4 @@
-import type { DataTypeDescription, DeferredTool } from "@patchwork/sdk";
+import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
 import type { AmbPokerDoc } from "./datatype";
 
 export const dataType: DataTypeDescription<AmbPokerDoc> = {
@@ -12,7 +12,7 @@ export const dataType: DataTypeDescription<AmbPokerDoc> = {
   },
 };
 
-export const tools: DeferredTool[] = [
+export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "ambPoker",
