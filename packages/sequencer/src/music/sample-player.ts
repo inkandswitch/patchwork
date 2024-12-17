@@ -1,7 +1,7 @@
 import BufferLoader from "./bufferloader";
 import { Instrument } from "./instrument";
 
-const SAMPLES = import.meta.glob("../../assets/samples/**/*.wav", {
+const SAMPLES = import.meta.glob("../../assets/**/**/*.(wav|mp3)", {
   eager: true,
   query: "?url",
   import: "default",
