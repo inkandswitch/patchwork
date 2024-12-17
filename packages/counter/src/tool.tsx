@@ -26,7 +26,7 @@ export const Counter: React.FC<EditorProps<CounterDoc, string>> = ({
 
   return (
     <div className="flex flex-col items-center justify-center h-full">
-      <h2 className="text-2xl font-bold mb-4">{doc.title}</h2>
+      <h2 className="text-4xl font-bold mb-4">{doc.title}</h2>
       <div className="text-4xl mb-4">{doc.count}</div>
       <div className="flex space-x-4">
         <button
