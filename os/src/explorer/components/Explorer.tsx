@@ -77,7 +77,7 @@ export const Explorer: React.FC = () => {
         (supportedDataType) => supportedDataType === selectedDataType?.id
       ))
       ? selectedTool
-      : toolsForSelection![0]; // PVH: TODO this assumes there are tools for the selection
+      : toolsForSelection[0];
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();

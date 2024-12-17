@@ -353,7 +353,6 @@ const pushFile = async ({
   } else {
     debug("Creating new file...");
 
-    // XXX PVH TODO before landing think through how this should work
     const dataTypes = allDataTypes();
     console.log(dataTypes);
     const dataType =
