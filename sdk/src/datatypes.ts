@@ -27,6 +27,7 @@ export type DataTypeDescription<D = unknown, T = unknown, V = unknown> = {
   type: "patchwork:dataType";
   name: string;
   icon: IconType;
+  unlisted?: boolean;
   unixFileExtensions?: string[];
   load(): Promise<DataTypeImplementation<D, T, V>>;
 };

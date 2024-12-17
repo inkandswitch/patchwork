@@ -31,7 +31,7 @@ const DataTypeSelector = ({
       </SelectTrigger>
       <SelectContent>
         {Object.values(dataTypes).map((dataType) => {
-          if (!dataType.init) return null;
+          if (!dataType.init && dataType.unlisted) return null;
 
           return (
             <SelectItem

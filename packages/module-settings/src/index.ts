@@ -11,6 +11,7 @@ export const dataType: DataTypeDescription<ModuleSettingsDoc> = {
   id: "module-settings",
   name: "Module Settings",
   icon: "Cog",
+  unlisted: true,
 
   async load() {
     const { dataType } = await import("./datatype");
