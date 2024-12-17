@@ -376,7 +376,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     selectDocPath([
       ...rootFolderPath,
       {
-        name: "ModuleSettings",
+        name: "Custom Modules",
         type: "module-settings",
         url: accountDoc!.moduleSettingsUrl!,
       },
