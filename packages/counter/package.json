@@ -8,7 +8,9 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "push": "jacquard push",
+    "watch": "nodemon --watch src -e js,tsx,ts,tsx,css,json --exec 'pnpm build && pnpm push'"
   },
   "keywords": [],
   "author": "Ink & Switch",
@@ -21,6 +23,7 @@
   "devDependencies": {
     "@types/react": "^18.3.3",
     "@vitejs/plugin-react": "^4.3.1",
+    "nodemon": "^3.1.9",
     "vite": "^5.3.4",
     "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-top-level-await": "^1.4.2",

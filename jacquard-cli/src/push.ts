@@ -111,6 +111,13 @@ export async function push(
     );
   }
 
+  if (handlesToWaitOn.length > 1) {
+    folderHandle.change((d: any) => {
+      // XXX HACK: this forces a change to the root folder which should trigger a code reload
+      d.lastPush = Date.now();
+    });
+  }
+
   if (wait) {
     await waitForSync(handlesToWaitOn, syncServerStorageId);
   }

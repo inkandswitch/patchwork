@@ -38,24 +38,31 @@ export class CodeLoader {
   private async loadModules(config: string[]) {
     await Promise.all(
       config.map(async (importName) => {
-        const mod = await this.importModuleSafe(importName);
-        if (!mod) return;
-
-        // Load and register dataType if present
-        if (mod.dataType) {
-          registerDataType(mod.dataType);
-        }
-
-        // Load and register tools if present
-        if (mod.tools?.length) {
-          const tools = mod.tools.filter(isTool);
-          tools.forEach(registerTool);
-          this.setDocWatcher(importName);
-        }
+        this.registerModule(importName);
+        this.setDocWatcher(importName);
       })
     );
   }
 
+  private async registerModule(importName: string) {
+    const mod = await this.importModuleSafe(importName);
+    if (!mod) return;
+
+    // Load and register dataType if present
+    if (mod.dataType) {
+      registerDataType(mod.dataType);
+    }
+
+    // Load and register tools if present
+    if (mod.tools?.length) {
+      const tools = mod.tools.filter(isTool);
+      tools.forEach(registerTool);
+    }
+  }
+
+  // TODO: This is a bit janky and relies on a bunch of heuristics.
+  // It would be better to watch all the files in the folder recursively
+  // and to have some relationship with those other than just parsing the URL.
   private setDocWatcher(importName: string) {
     const docId = importName.match(/\/automerge\/(\w+)\//)?.[1];
     if (!docId) return;
@@ -64,11 +71,7 @@ export class CodeLoader {
 
     handle.on("change", async () => {
       const versionedImport = `${importName}?v=${handle.heads()}`;
-      const mod = await this.importModuleSafe(versionedImport);
-      if (!mod?.tools) return;
-
-      const tools = mod.tools.filter(isTool);
-      tools.forEach(registerTool);
+      this.registerModule(versionedImport);
     });
   }
 
