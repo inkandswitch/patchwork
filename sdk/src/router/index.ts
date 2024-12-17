@@ -294,11 +294,14 @@ export const useRouter = ({
             url: urlParams.url,
           };
 
-          repo
-            .find<FolderDoc>(rootFolderDocWithMetadata.rootFolderUrl)
-            .change((doc) => {
-              doc.docs.unshift(docLink);
-            });
+          // XXX PVH TODO HACK: don't put module-settings into the root folder
+          if (urlParams.type !== "module-settings") {
+            repo
+              .find<FolderDoc>(rootFolderDocWithMetadata.rootFolderUrl)
+              .change((doc) => {
+                doc.docs.unshift(docLink);
+              });
+          }
 
           docPath = [
             ...DocPathUtils.forRoot(rootFolderDocWithMetadata.rootFolderUrl),
