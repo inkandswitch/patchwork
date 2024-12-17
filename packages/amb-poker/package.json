@@ -9,7 +9,9 @@
     "./datatype": "./dist/datatype.js"
   },
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "push": "jacquard push",
+    "watch": "nodemon --watch src -e js,tsx,ts,tsx,css,json --exec 'pnpm build && pnpm push'"
   },
   "keywords": [],
   "author": "Ink & Switch",
