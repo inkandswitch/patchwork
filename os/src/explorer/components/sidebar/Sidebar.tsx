@@ -511,7 +511,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             size={14}
             className="inline-block font-bold mr-2 align-top mt-[2px]"
           />
-          Module Settings
+          Custom Modules...
         </div>
       </div>
 

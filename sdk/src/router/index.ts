@@ -286,6 +286,18 @@ export const useRouter = ({
           });
 
           // ... otherwise add the doc to the root folder
+        } else if (urlParams.type === "module-settings") {
+          // XXX PVH TODO HACK: don't put module-settings into the root folder
+          const docLink = {
+            type: urlParams.type,
+            // The name will be synced in here once the doc loads
+            name: "Custom Packages",
+            url: urlParams.url,
+          };
+          docPath = [
+            ...DocPathUtils.forRoot(rootFolderDocWithMetadata.rootFolderUrl),
+            docLink,
+          ];
         } else {
           const docLink = {
             type: urlParams.type,
@@ -294,14 +306,11 @@ export const useRouter = ({
             url: urlParams.url,
           };
 
-          // XXX PVH TODO HACK: don't put module-settings into the root folder
-          if (urlParams.type !== "module-settings") {
-            repo
-              .find<FolderDoc>(rootFolderDocWithMetadata.rootFolderUrl)
-              .change((doc) => {
-                doc.docs.unshift(docLink);
-              });
-          }
+          repo
+            .find<FolderDoc>(rootFolderDocWithMetadata.rootFolderUrl)
+            .change((doc) => {
+              doc.docs.unshift(docLink);
+            });
 
           docPath = [
             ...DocPathUtils.forRoot(rootFolderDocWithMetadata.rootFolderUrl),

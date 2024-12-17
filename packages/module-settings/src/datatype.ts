@@ -13,7 +13,7 @@ const setTitle = async (doc: ModuleSettingsDoc, title: string) => {
 };
 
 const getTitle = async (doc: ModuleSettingsDoc) => {
-  return "Module Settings";
+  return "Custom Modules";
 };
 
 export const init = (doc: ModuleSettingsDoc) => {
