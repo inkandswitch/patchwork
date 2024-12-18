@@ -79,23 +79,21 @@ Now, to install your module in Patchwork, go to "My Tools" and register a new mo
 Now in Patchwork when you click "create new" you should see a new option letting you create a doc of your new datatype.
 Click that and you should see your new tool running!
 
-## Editing the OS itself
+## Editing the OS
 
 If you want to edit the OS web app:
 
 Run the built app locally with `pnpm preview`.
-Each time you edit the app, run `pnpm build`. (For some edits, `pnpm build:main` might be enough.)
+Each time you edit the app, run `pnpm build` and then reload. (For some edits, `pnpm build:main` might be enough.)
+
+If you edit the SDK, you probably want to run `pnpm build` on the entire monorepo.
 
 ### AI
 
 LLM features in Patchwork include bot edits and change history summarization.
-Currently these are backed by the OpenAI API. To enable them in local dev you'll need to set up an API key locally. Create a file at `os/.env.local`:
+Currently these are backed by the OpenAI API. To enable them in local dev you'll need to set up an API key locally.
 
-```
-VITE_OPENAI_API_KEY=<OpenAI key>
-```
-
-You can get the lab OpenAI key from Geoffrey.
+Create a file at `sdk/.env.local`:
 
 ```
 VITE_OPENAI_API_KEY=<OpenAI key>
