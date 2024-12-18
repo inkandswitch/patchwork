@@ -1,7 +1,7 @@
 import { FileExportMethod } from "@patchwork/sdk/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
 import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
-import { ChangeGroup } from "@patchwork/sdk/versionControl";
+import { ChangeGroup, noGrouping } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { TextPatch } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
@@ -269,7 +269,7 @@ export const dataType: DataTypeImplementation<FileDoc, TextAnchor, string> = {
   promptForAIChangeGroupSummary,
   // todo: long term we probably want something different but this lets
   // us see each change directly
-  // groupChanges: noGrouping,
+  groupChanges: noGrouping,
 
   /*fallbackSummaryForChangeGroup(changeGroup) {
     return <ChangeGroupView changeGroup={changeGroup} />;
