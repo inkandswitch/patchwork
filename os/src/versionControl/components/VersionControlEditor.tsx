@@ -555,15 +555,6 @@ const DocEditor = <T, V>({
     return;
   }
 
-  console.log(
-    "Rendering editor for",
-    docPath,
-    "with tool",
-    tool.id,
-    "and URL",
-    docUrl
-  );
-
   const Component = tool.EditorComponent as React.FC<EditorProps<T, V>>;
 
   return (
