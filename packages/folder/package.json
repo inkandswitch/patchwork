@@ -9,7 +9,8 @@
     "./hooks": "./dist/hooks.js"
   },
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "push": "pnpm build && pnpm --filter @patchwork/os build:folder"
   },
   "keywords": [],
   "author": "Ink & Switch",
