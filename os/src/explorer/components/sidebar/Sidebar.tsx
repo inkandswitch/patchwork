@@ -96,10 +96,6 @@ const Node = (props: NodeRendererProps<NodeData>) => {
   const [docForFindingDataType] = useDocument(
     possibleDocUrlForLoadingSuggestedDataType
   );
-  console.log({
-    docForFindingDataType,
-    possibleDocUrlForLoadingSuggestedDataType,
-  });
   // @ts-expect-error global type hack
   const patchworkMetadata = docForFindingDataType?.["@patchwork"];
   useEffect(() => {
