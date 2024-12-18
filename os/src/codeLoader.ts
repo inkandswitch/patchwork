@@ -70,6 +70,8 @@ export class CodeLoader {
     if (!handle) return console.warn(`No handle found for docId ${docId}`);
 
     handle.on("change", async () => {
+      // Note that because the heads are going into a query parameter,
+      // modules loaded *below* this one will not be reloaded unless their filename has changed.
       const versionedImport = `${importName}?v=${handle.heads()}`;
       this.registerModule(versionedImport);
     });
