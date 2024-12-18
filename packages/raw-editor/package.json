@@ -5,7 +5,8 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "push": "pnpm build && pnpm --filter @patchwork/os build:raw-editor"
   },
   "keywords": [],
   "author": "Ink & Switch",
