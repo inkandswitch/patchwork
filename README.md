@@ -84,7 +84,7 @@ Click that and you should see your new tool running!
 If you want to edit the OS web app:
 
 Run the built app locally with `pnpm preview`.
-Each time you edit the app, run `pnpm build` and then reload. (For some edits, `pnpm build:main` might be enough.)
+Each time you edit the OS, run `pnpm build` inside the `os` folder and then reload.
 
 If you edit the SDK, you probably want to run `pnpm build` on the entire monorepo.
 
