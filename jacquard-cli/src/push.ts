@@ -41,6 +41,8 @@ export async function push(
     repo
   );
 
+  console.log(`pushing to folder: ${folderHandle.url}`);
+
   const mainUrlsAndCloneHandlesByFileName: Record<
     string,
     {

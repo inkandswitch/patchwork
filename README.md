@@ -1,51 +1,21 @@
 # Patchwork
 
-Patchwork is a malleable, local-first collaboration environment. It lets you edit many types of automerge documents using various UI tools.
+Patchwork is a malleable, local-first collaboration environment in the browser. It lets you edit many types of automerge documents using various UI tools.
 
+## Key Concepts
 
-## Concepts
+- **Datatype**: A "file format" or "schema" for automerge documents. eg: markdown, drawing. In addition to a schema, a datatype also defines some useful functionality that's not tied to a particular UI: e.g., how to initialize a new document of that type.
+- **Tool**: a UI for viewing and editing documents. eg: markdown editor, tldraw canvas, raw json editor.
 
-- Datatype: a "file format" or "schema" for automerge documents. eg: markdown, drawing
-- Tool: a UI for viewing and editing documents. eg: markdown editor, tldraw canvas, raw json editor.
-- Package: a unit for wrapping up datatypes and tools and sharing them.
-
-The Patchwork OS has 2 kinds of packages: built-ins and dynamic. Built-in packages are bundled into the OS and deployed together with it. Dynamic packages are deployed to Automerge documents and loaded out of Automerge at runtime. Currently most of our packages are built-ins, but we plan to gradually migrate everything to dynamic over time, so that we're only deploying the OS and all the datatypes + tools are loaded out of Automerge.
-
+Datatypes and tools are exported from JavaScript modules. At runtime, Patchwork can load arbitrary JS modules stored in an Automerge document (or at any URL). There are also some "built-in" modules which are built into the OS bundle directly. Over time we plan to move all modules to loading dynamically out of Automerge; the built-ins are there for historical legacy / convenience as we bootstrap.
 
 ## Development
 
-For typical development you can run these commands for a fast development loop based on `vite dev`:
+Patchwork isn't a monolithic vite app. Depending on whether you're editing a package or editing the OS/SDK, your dev workflow will look slightly different.
 
-```
-pnpm install
-pnpm dev
-```
+First, here's a quick orientation — this monorepo (managed with pnpm workspaces) includes both the core OS APIs as well as various datatypes and tools.
 
-However, with the above commands dynamic packages won't work. To include dynamic packages loaded out of Automerge:
-
-Switch to the `os` directory:
-
-```
-cd os
-```
-
-Run a build watcher:
-
-```
-pnpm build:dev
-```
-
-Run a vite preview server:
-
-```
-pnpm preview
-```
-
-And you'll need to manually refresh the browser to see changes. This is a slower dev loop which will re-bundle the app every time a change is made.
-
-### Folder structure
-
-This monorepo (managed with pnpm workspaces) includes both the core OS APIs as well as various datatypes and tools.
+`./packages/*` contains various domain-specific modules which can define datatypes and tools, eg. the essay editor or a spreadsheet. `packages/counter` is a good sample one to look at for the minimal structure.
 
 `./sdk`: contains Patchwork library functionality used by packages, eg:
 
@@ -55,43 +25,64 @@ This monorepo (managed with pnpm workspaces) includes both the core OS APIs as w
 - helpers for working with Automerge data
 - reusable UI components
 
-Proper SDK documentation is a todo.
+(Proper SDK documentation is a todo.)
 
-`./packages/*` contains *packages* which can define datatypes and tools, eg. the essay editor or a spreadsheet. Counter is a good sample one to look at for the minimal structure.
+`./os`: a React application that renders the Patchwork OS. This currently includes the "OS chrome" UI, but over time that will be moved into packages.
 
-`./os`: a React application that renders the Patchwork OS. Currently we also add a bunch of packages to the built OS so they can be deployed and loaded directly with the OS; we're moving towards loading all out of automerge.
+### Prereq
 
-### Dependency hygeine
+A prerequisite is to install the jacquard cli which is used to push to automerge:
 
-- Everything can depend on SDK. (We want to minimize and organize SDK over time.)
-- It's OK for packages to depend on each other, but only through the public interface.
-- Nothing should depend on OS, that's just a web app.
+`cd jacquard-cli`
+`pnpm install -g`
 
-### Adding a new package
+### Editing a module
 
-If you want to add a package and bundle it into OS (recommended for now), here are the steps:
+First, check if the package is a built-in by looking at the list in `os/src/bundledPackages.ts`.
 
-- Run `pnpm dev` to run the OS in dev mode
+If the package is "dynamic", i.e. _not_ a built-in:
+
+Run `pnpm watch` in the package directory; this will build the package after each code change and push changes to Automerge, and any tools will live-reload. Alternatively, you can manually run `pnpm push` after each code changes. You don't need to run the Patchwork OS locally to develop on a dynamic package.
+
+If the package is built-in:
+
+One thing you can do is to push the package into Automerge temporarily:
+
+`cd packages/<yourpackage`
+`jacquard push`
+
+and then register the resulting folder as a custom tool.
+
+Another thing you can do for a built-in tool is to run the OS locally:
+
+```
+pnpm preview
+```
+
+And then after each code change, run `pnpm push` in the package directory, and reload the browser.
+
+### Adding a new module
+
+If you want to add a package, here are the steps:
+
 - copy one of the existing directories in `os/src/packages`. `counter` is a nice minimal one you can start with.
-- You'll need to update a few places to get your new package registered. (Sorry this list is long, it should be shorter.)
-  - update the package name in `<yourpackage>/package.json`
-  - update `tsconfig.json` to have an entry for your new package.
-  - update `os/package.json`:
-    - include an entry pointing to your new package in the dependencies
-    - add a `build:<package>` line copying the structure of the existing ones. (This copies the built bundle for your package into the dist of the OS so it can be deployed together.)
-  - run `pnpm install`
-  - update `os/src/packages/index.ts` to include an entry pointing to your new package
-  - Update `os/src/packages/datatypesSafe.ts` to include an entry for your new datatype (assuming your package exports a datatype). This will be removed once we support dynamic datatypes.
+- update the package name in `<yourpackage>/package.json`
+- `pnpm install`
+- Push the package to an automerge document: `pnpm push`
 
-Now it's time to try out your new package! To see your new datatype/tool in Patchwork, you'll need to make sure it's enabled, since we hide experimental datatypes by default. Log in / create an account, open the account picker, and check the box for your new datatype.
+This output should say something like: `pushing to folder: automerge:<docid>`
 
-You should see a new "new" button in the list at the top of the sidebar, letting you create a doc of your new datatype. Click that and you should see your new tool running!
+Now, to install your module in Patchwork, go to "My Tools" and register a new module at this URL:
 
-If you want to dynamically deploy a new package to an automerge document: ask the team for help, that's more experimental for now.
+`automerge/<docid>/dist/index.js`
+
+Now in Patchwork when you click "create new" you should see a new option letting you create a doc of your new datatype.
+Click that and you should see your new tool running!
 
 ### AI
 
-LLM features in Patchwork include bot edits and change history summarization. Currently these are backed by the OpenAI API. To enable them in local dev you'll need to set up an API key locally. Create a file at `os/.env.local`:
+LLM features in Patchwork include bot edits and change history summarization.
+Currently these are backed by the OpenAI API. To enable them in local dev you'll need to set up an API key locally. Create a file at `os/.env.local`:
 
 ```
 VITE_OPENAI_API_KEY=<OpenAI key>
