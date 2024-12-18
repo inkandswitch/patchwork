@@ -17,7 +17,7 @@ import { TextSelection } from "./MarkdownDocEditor";
 import { MarkdownDoc } from "../datatype";
 import { EssayAnnotations } from "./EssayAnnotations";
 import { TextAnchor } from "@patchwork/sdk/textAnchors";
-import { AnnotationGroupView } from "@patchwork/sdk/components/AnnotationGroupView";
+import { AnnotationGroupView } from "@patchwork/sdk/components";
 
 export const CommentsSidebar = ({
   doc,

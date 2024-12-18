@@ -1,10 +1,6 @@
 import { makeTool } from "@patchwork/sdk";
 import { EngraftEditor } from "./components/EngraftEditor";
 
-export const engraftTool = makeTool({
-  type: "patchwork:tool",
-  id: "engraft",
-  name: "Engraft",
-  supportedDataTypes: ["engraft"],
+export const tool = makeTool({
   EditorComponent: EngraftEditor,
 });

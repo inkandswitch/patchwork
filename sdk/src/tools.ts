@@ -14,7 +14,7 @@ import {
 import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "@patchwork/folder";
-import { DataType } from "./datatypes";
+import EventEmitter from "eventemitter3";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -22,18 +22,29 @@ import { DataType } from "./datatypes";
 // which TypeScript doesn't have. In hackish but reasonable lieu of that, we
 // just stuff a bunch of unknowns in there.
 
-export type Tool = ToolTyped<
+export type Tool = ToolBase & ToolImplementation;
+
+export type ToolImplementation = ToolTyped<
   HasVersionControlMetadata<unknown, unknown>,
   unknown,
   unknown
 >;
 
-export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
+type ToolBase = {
   id: string;
   type: "patchwork:tool";
   supportedDataTypes: "*" | string[];
   name: string;
   icon?: IconType;
+};
+
+export type ToolDescription = ToolBase & {
+  load: () => Promise<
+    ToolTyped<HasVersionControlMetadata<unknown, unknown>, unknown, unknown>
+  >;
+};
+
+export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
   EditorComponent: React.FC<EditorProps<A, V>>;
   AnnotationsViewComponent?: React.FC<AnnotationsViewProps<D, A, V>>;
   /** whether this tool has support for rendering comments inline or if it
@@ -48,37 +59,73 @@ export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
 /** Forgets the type parameters of a ToolTyped so that it can be used as a Tool */
 export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
   tool: ToolTyped<D, A, V>
-): Tool {
-  return tool as Tool;
+): ToolImplementation {
+  return tool as ToolImplementation;
 }
 
-export const isTool = (value: any): value is Tool => {
-  return "type" in value && value.type === "patchwork:tool";
+export type ToolsMap = Record<string, Tool>;
+export type ToolsEvents = {
+  "tools:changed": (datatypes: ToolsMap) => void;
+};
+export const toolsEvents = new EventEmitter<ToolsEvents>();
+const GlobalTools: ToolsMap = {};
+export const registerTool = async (tool: ToolDescription) => {
+  const { id } = tool;
+  console.log("registering tool", id, tool);
+  if (GlobalTools[id]) {
+    console.warn("Replacing tool", id, tool);
+  }
+  const loadedTool = await tool.load();
+  console.log("loaded tool", id, loadedTool);
+  GlobalTools[id] = { ...tool, ...loadedTool };
+  toolsEvents.emit("tools:changed", { ...GlobalTools });
 };
 
-export const toolsForDataType = (
-  tools: Tool[],
-  dataType: DataType | string | undefined
-): Tool[] => {
+export const isTool = (value: unknown): value is Tool => {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "type" in value &&
+    (value as Tool).type === "patchwork:tool"
+  );
+};
+
+export const isToolDescription = (value: unknown): value is ToolDescription => {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "type" in value &&
+    (value as ToolDescription).type === "patchwork:tool" &&
+    "load" in value &&
+    (value as ToolDescription).load instanceof Function
+  );
+};
+
+export const allTools = () => {
+  return { ...GlobalTools };
+};
+
+export const toolsForDataType = (dataType: string | undefined): Tool[] => {
   if (!dataType) {
     return [];
   }
 
-  return tools.filter((tool) => {
-    return (
-      tool.supportedDataTypes === "*" ||
-      (typeof dataType === "string"
-        ? tool.supportedDataTypes.some((d) => d === dataType)
-        : tool.supportedDataTypes.includes(dataType.id))
-    );
-  });
+  const specificTools = Object.values(GlobalTools).filter((tool) =>
+    tool.supportedDataTypes.includes(dataType)
+  );
+
+  const genericTools = Object.values(GlobalTools).filter((tool) =>
+    tool.supportedDataTypes.includes("*")
+  );
+
+  return [...specificTools, ...genericTools];
 };
 
-export const toolById = (
-  tools: Tool[],
-  id: string | undefined
-): Tool | undefined => {
-  return tools.find((tool) => tool.id === id);
+export const toolById = (id: string | undefined): Tool | undefined => {
+  if (!id) {
+    return undefined;
+  }
+  return GlobalTools[id];
 };
 
 export type EditorProps<A, V> = {

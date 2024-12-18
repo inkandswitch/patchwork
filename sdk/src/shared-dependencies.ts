@@ -24,6 +24,7 @@ export const SHARED_DEPENDENCIES = [
 
 // Internal modules that are shared with dynamically loaded packages
 export const SHARED_MODULES = {
+  // SDK modules
   "@patchwork/sdk": "./sdk/index.js",
   "@patchwork/sdk/async-signals": "./sdk/async-signals.js",
   "@patchwork/sdk/components": "./sdk/components.js",
@@ -33,16 +34,16 @@ export const SHARED_MODULES = {
   "@patchwork/sdk/textAnchors": "./sdk/textAnchors.js",
   "@patchwork/sdk/ui": "./sdk/ui.js",
   "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
-  "@patchwork/counter": "./counter/index.js",
+
   "@patchwork/datagrid": "./datagrid/index.js",
-  "@patchwork/engraft": "./engraft/index.js",
   "@patchwork/essay": "./essay/index.js",
   "@patchwork/file": "./file/index.js",
   "@patchwork/folder": "./folder/index.js",
-  //"@patchwork/folder-list-view": "./folder-list-view/index.js", // left as an example of existing dynamic loading
   "@patchwork/jacquard": "./jacquard/index.js",
+  "@patchwork/jacquard/components": "./jacquard/components.js", // blerf
+  "@patchwork/jacquard/hooks": "./jacquard/hooks.js",
   "@patchwork/kanban": "./kanban/index.js",
-  "@patchwork/pkg": "./pkg/index.js",
+  "@patchwork/my-tools": "./my-tools/index.js",
   "@patchwork/raw-editor": "./raw-editor/index.js",
   "@patchwork/tldraw": "./tldraw/index.js",
 };

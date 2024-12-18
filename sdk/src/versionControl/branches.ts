@@ -25,14 +25,12 @@ export const createBranch = async <
   repo,
   branchScopeHandle,
   dataTypeId,
-  dataTypes,
   createdBy,
   name,
 }: {
   repo: Repo;
   branchScopeHandle: DocHandle<DocType>;
   dataTypeId: string;
-  dataTypes: DataType[];
   createdBy: AutomergeUrl | undefined;
   name?: string;
 }): Promise<DocHandle<BranchDoc>> => {
@@ -48,13 +46,7 @@ export const createBranch = async <
   }
 
   const clonesMap = {};
-  await cloneDocWithLinks(
-    repo,
-    branchScopeHandle,
-    dataTypeId,
-    dataTypes,
-    clonesMap
-  );
+  await cloneDocWithLinks(repo, branchScopeHandle, dataTypeId, clonesMap);
 
   const branchHandle = repo.create<BranchDoc>({
     name:
@@ -78,7 +70,6 @@ export const cloneDocWithLinks = async (
   repo: Repo,
   handle: DocHandle<unknown>,
   dataTypeId: string,
-  dataTypes: DataType[],
   docCloneMap: DocCloneMap
 ): Promise<void> => {
   // skip, if doc has already been cloned
@@ -98,20 +89,14 @@ export const cloneDocWithLinks = async (
   };
 
   // clone links
-  const links = dataTypeById(dataTypes, dataTypeId)?.links;
+  const links = dataTypeById(dataTypeId)?.links;
   if (links) {
     const doc = await handle.doc();
     const links_ = links(doc);
     await Promise.all(
       links_.map(async (link) => {
         const handle = repo.find(link.url);
-        await cloneDocWithLinks(
-          repo,
-          handle,
-          link.type,
-          dataTypes,
-          docCloneMap
-        );
+        await cloneDocWithLinks(repo, handle, link.type, docCloneMap);
       })
     );
   }
@@ -340,13 +325,11 @@ export const migrateLegacyBranches = async ({
   branchScopeAndActiveBranchInfo,
   repo,
   dataTypeId,
-  dataTypes,
 }: {
   docOm: Om<any>;
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
   repo: Repo;
   dataTypeId: string;
-  dataTypes: DataType[];
 }) => {
   if (
     !window.confirm(
@@ -362,7 +345,6 @@ export const migrateLegacyBranches = async ({
       repo,
       branchScopeHandle: branchScopeAndActiveBranchInfo.branchScopeOm.handle,
       dataTypeId,
-      dataTypes,
       createdBy: branch.createdBy,
       name: branch.name,
     });

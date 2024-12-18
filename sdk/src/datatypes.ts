@@ -1,3 +1,4 @@
+import EventEmitter from "eventemitter3";
 import {
   ChangeGroup,
   DecodedChangeWithMetadata,
@@ -13,23 +14,31 @@ import { FileExportMethod } from "./fileExports";
 import { IconType } from "./ui";
 import { DocLink } from "@patchwork/folder";
 
-export type CoreDataType<D> = {
+export type DataType<
+  D = unknown,
+  T = unknown,
+  V = unknown
+> = DataTypeDescription &
+  DataTypeImplementation<D, T, V> &
+  Omit<DataTypeDescription, "load">;
+
+export type DataTypeDescription<D = unknown, T = unknown, V = unknown> = {
   id: string;
   type: "patchwork:dataType";
   name: string;
   icon: IconType;
-  init: (doc: D, repo: Repo) => void;
+  unlisted?: boolean;
+  unixFileExtensions?: string[];
+  load(): Promise<DataTypeImplementation<D, T, V>>;
+};
+
+export type CoreDataType<D> = {
+  init?: (doc: D, repo: Repo) => void;
   getTitle: (doc: D, repo: Repo) => Promise<string>;
   setTitle?: (doc: any, title: string) => void;
   markCopy: (doc: D) => void; // TODO: this shouldn't be part of the interface
   actions?: Record<string, (doc: Doc<D>, args: object) => void>;
   fileExportMethods?: FileExportMethod<D>[];
-  /* Marking a data types as experimental hides it by default
-   * so the user has to enable them in their account first  */
-  isExperimental?: boolean;
-
-  /* If this flag is enabled the data type won't show up in the new document menu */
-  disableManualCreation?: boolean;
 
   // UNIX SYNC (for Jacquard)
   // Pulling
@@ -47,7 +56,6 @@ export type CoreDataType<D> = {
     content: string | Uint8Array,
     handle: DocHandle<D>
   ) => Promise<{ didChange: boolean }>;
-  unixFileExtensions?: string[];
 };
 
 export type VersionedDataType<D, T, V> = {
@@ -141,20 +149,41 @@ export type VersionedDataType<D, T, V> = {
   links?: (doc: D) => DocLink[];
 };
 
-export type DataType<D = unknown, T = unknown, V = unknown> = CoreDataType<D> &
-  VersionedDataType<D, T, V>;
+export type DataTypeImplementation<
+  D = unknown,
+  T = unknown,
+  V = unknown
+> = CoreDataType<D> & VersionedDataType<D, T, V>;
 
-export const isDataType = (value: any): value is DataType => {
-  return "type" in value && value.type === "patchwork:dataType";
+export const isDataType = (value: unknown): value is DataType => {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "type" in value &&
+    (value as DataType).type === "patchwork:dataType"
+  );
 };
 
-export const dataTypeById = <D, T, V>(
-  dataTypes: DataType[],
-  id: string | undefined
+export type DataTypesMap = Record<string, DataType<unknown, unknown, unknown>>;
+export type DataTypeEvents = {
+  "datatypes:changed": (datatypes: DataTypesMap) => void;
+};
+export const datatypeEvents = new EventEmitter<DataTypeEvents>();
+const GlobalDataTypes: DataTypesMap = {};
+
+export const registerDataType = async (
+  datatype: DataTypeDescription<unknown, unknown, unknown>
 ) => {
-  return dataTypes.find((dataType) => dataType.id == id) as
-    | DataType<D, T, V>
-    | undefined;
+  GlobalDataTypes[datatype.id] = { ...datatype, ...(await datatype.load()) };
+  datatypeEvents.emit("datatypes:changed", { ...GlobalDataTypes });
+};
+
+export const allDataTypes = () => {
+  return { ...GlobalDataTypes };
+};
+
+export const dataTypeById = <D, T, V>(id: string | undefined) => {
+  return id ? GlobalDataTypes[id] : undefined;
 };
 
 /** Kinda hacky utility function to initialize an object in

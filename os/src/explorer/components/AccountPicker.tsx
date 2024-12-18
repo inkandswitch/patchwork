@@ -5,19 +5,16 @@ import {
   useSelf,
   automergeUrlToAccountToken,
   accountTokenToAutomergeUrl,
-  ModuleSettingsDoc,
 } from "@patchwork/sdk";
 import { ChangeEvent, useEffect, useState } from "react";
 
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTrigger,
-  Icon,
   Input,
   Label,
   Tabs,
@@ -31,10 +28,7 @@ import {
 } from "@patchwork/sdk/ui";
 
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-
 import { Copy, Eye, EyeOff } from "lucide-react";
-import { useDataTypes } from "@patchwork/sdk/hooks";
-
 import { ContactAvatar } from "./ContactAvatar";
 
 // 1MB in bytes
@@ -70,13 +64,8 @@ export const AccountPicker = ({
     ? accountTokenToAutomergeUrl(accountTokenToLogin)
     : undefined;
 
-  const [currentAccountDoc] = useDocument<AccountDoc>(
-    currentAccount?.handle.url
-  );
   const [accountToLogin] = useDocument<AccountDoc>(accountAutomergeUrlToLogin);
   const [contactToLogin] = useDocument<ContactDoc>(accountToLogin?.contactUrl);
-  const [moduleSettingsDoc, changeModuleSettingsDoc] =
-    useDocument<ModuleSettingsDoc>(currentAccountDoc?.moduleSettingsUrl);
 
   const accountTokenToLoginStatus: AccountTokenToLoginStatus = (() => {
     if (!accountTokenToLogin || accountTokenToLogin === "") return null;
@@ -146,8 +135,6 @@ export const AccountPicker = ({
       contactToLogin?.type === "registered");
 
   const isLoggedIn = self?.type === "registered";
-
-  const dataTypes = useDataTypes();
 
   return (
     <Dialog>
@@ -320,58 +307,6 @@ export const AccountPicker = ({
                 private docs.
               </p>
             </form>
-
-            <div className="grid w-full max-w-sm items-center gap-1.5 pt-2">
-              <Label>Data types</Label>
-
-              <div className="flex flex-col gap-2 py-2">
-                {moduleSettingsDoc &&
-                  dataTypes.map((dataType) => {
-                    const isEnabled =
-                      moduleSettingsDoc.enabledDatatypeIds[dataType.id];
-
-                    const isChecked =
-                      isEnabled ||
-                      (isEnabled === undefined && !dataType.isExperimental);
-
-                    return (
-                      <div
-                        className="flex items-center gap-2"
-                        key={dataType.id}
-                      >
-                        <Checkbox
-                          id={`datatype-${dataType.id}`}
-                          checked={isChecked}
-                          onClick={(e) => e.stopPropagation()}
-                          onCheckedChange={() => {
-                            changeModuleSettingsDoc((settings) => {
-                              settings.enabledDatatypeIds[dataType.id] =
-                                !isChecked;
-                            });
-                          }}
-                        />
-                        <label
-                          htmlFor={`datatype-${dataType.id}`}
-                          className="text-sm text-gray-600 cursor-pointer "
-                        >
-                          <Icon
-                            type={dataType.icon}
-                            size={14}
-                            className="inline-block font-bold mr-2 align-top mt-[2px]"
-                          />
-                          {dataType.name}
-                          {dataType.isExperimental ? " 🧪" : ""}
-                        </label>
-                      </div>
-                    );
-                  })}
-              </div>
-
-              <p className="text-gray-500 text-justify pt-2 text-sm">
-                🧪 These are data types that are less fleshed out. Expect things
-                to break!
-              </p>
-            </div>
           </>
         )}
         <DialogFooter className="gap-1.5">

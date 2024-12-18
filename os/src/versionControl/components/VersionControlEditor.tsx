@@ -4,7 +4,6 @@ import { ErrorFallback } from "@patchwork/sdk/components";
 import { LoadingScreen } from "@patchwork/sdk/components";
 import { toHashUrl } from "@patchwork/sdk/router";
 import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router";
-import { useDataTypes } from "@patchwork/sdk/hooks";
 import { DocLink, DocPath, DocPathUtils } from "@patchwork/folder";
 import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
 import { useToast } from "@patchwork/sdk/ui";
@@ -91,10 +90,10 @@ export const VersionControlEditor: React.FC<{
       : cloneOrMainOm?.doc;
   const baseHeads = branchScopeAndActiveBranchInfo?.baseHeads;
 
-  useEffect(() => {
-    console.log("Selected doc URL:", docLink.url);
-    console.log("CloneOrMainOm URL:", cloneOrMainOm?.url);
-  }, [docLink.url, cloneOrMainOm?.url]);
+  // useEffect(() => {
+  //   console.log("Selected doc URL:", docLink.url);
+  //   console.log("CloneOrMainOm URL:", cloneOrMainOm?.url);
+  // }, [docLink.url, cloneOrMainOm?.url]);
 
   const branchDiff = useMemo(() => {
     // only compute branch diff if we are on a branch
@@ -109,8 +108,7 @@ export const VersionControlEditor: React.FC<{
 
   const diff = diffFromTimelineSidebar ?? branchDiff;
 
-  const dataTypes = useDataTypes();
-  const dataType = dataTypeById(dataTypes, docLink.type);
+  const dataType = dataTypeById(docLink.type);
 
   const branchOms = branchScopeAndActiveBranchInfo?.branchOms;
   const branchScopeUrl = branchScopeAndActiveBranchInfo?.branchScopeOm?.url;
@@ -288,10 +286,9 @@ export const VersionControlEditor: React.FC<{
       return fetchDoesDocLinkExistInBranchScope(
         DocPathUtils.toLink(docPath),
         repo,
-        branchScopeAndActiveBranchInfo,
-        dataTypes
+        branchScopeAndActiveBranchInfo
       );
-    }, [branchScopeAndActiveBranchInfo, dataTypes, docPath, repo])
+    }, [branchScopeAndActiveBranchInfo, docPath, repo])
   ).ifPending(undefined).value;
 
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----

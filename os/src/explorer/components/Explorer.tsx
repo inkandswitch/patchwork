@@ -1,12 +1,7 @@
+import { dataTypeById, toolById, toolsForDataType } from "@patchwork/sdk";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
-import { dataTypeById } from "@patchwork/sdk";
-import { useDataTypes } from "@patchwork/sdk/hooks";
-import { useTools } from "@patchwork/sdk/hooks";
-import { DocPathUtils, FolderDoc } from "@patchwork/folder";
-import { DocPath } from "@patchwork/folder";
-import { Button } from "@patchwork/sdk/ui";
-import { Toaster } from "@patchwork/sdk/ui";
-import { toolById, toolsForDataType } from "@patchwork/sdk";
+import { type DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
+import { Button, Toaster } from "@patchwork/sdk/ui";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import {
   fetchBranchScopeAndActiveBranchInfo,
@@ -29,9 +24,10 @@ import { useRouter } from "@patchwork/sdk/router";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
 import { useUIStateOm } from "@patchwork/sdk/router";
 import { ErrorFallback, LoadingScreen } from "@patchwork/sdk/components";
-import { Sidebar } from "./Sidebar";
+import { Sidebar } from "./sidebar/Sidebar";
 import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
+import { useToolsForDataType, useTool } from "@patchwork/sdk/hooks";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();
@@ -66,25 +62,20 @@ export const Explorer: React.FC = () => {
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
 
-  const dataTypes = useDataTypes();
-  const allTools = useTools();
-
-  const selectedDataType = dataTypeById(dataTypes, selectedDataTypeId);
-  const tools = toolsForDataType(allTools, selectedDataType);
+  const toolsForSelection = useToolsForDataType(selectedDataTypeId);
   const [selectedToolId, setSelectedToolId] = useState<string>();
-  const selectedTool = toolById(allTools, selectedToolId);
+  const selectedTool = useTool(selectedToolId);
 
   const currentTool =
     // make sure the current tool is reset to the fallback tool
     // if the selected datatype changes and the selected tool is not compatible
     selectedTool &&
-    selectedDataType &&
     (selectedTool.supportedDataTypes === "*" ||
       selectedTool.supportedDataTypes.some(
-        (supportedDataType) => supportedDataType === selectedDataType?.id
+        (supportedDataType) => supportedDataType === selectedDataTypeId
       ))
       ? selectedTool
-      : tools[0];
+      : toolsForSelection[0];
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();
@@ -104,7 +95,7 @@ export const Explorer: React.FC = () => {
         throw new Error("uiStateHandle not ready");
       }
 
-      const dataType = dataTypeById(dataTypes, type);
+      const dataType = dataTypeById(type);
 
       if (!dataType) {
         throw new Error(`Unsupported document type: ${type}`);
@@ -113,7 +104,7 @@ export const Explorer: React.FC = () => {
       const newDocHandle =
         repo.create<HasVersionControlMetadata<unknown, unknown>>();
       newDocHandle.change((doc) => {
-        dataType.init(doc, repo);
+        dataType.init && dataType.init(doc, repo);
 
         if (change) {
           change(doc);
@@ -175,7 +166,6 @@ export const Explorer: React.FC = () => {
     },
     [
       uiStateOm,
-      dataTypes,
       repo,
       selectedDocPath,
       selectedDataTypeId,
@@ -190,7 +180,7 @@ export const Explorer: React.FC = () => {
 
   // update tab title to be the selected doc
   useEffect(() => {
-    document.title = selectedDocName ?? "Essay Editor"; // TODO: generalize beyond TEE
+    document.title = selectedDocName ?? "Patchwork";
   }, [selectedDocName]);
 
   // keyboard shortcuts
@@ -291,7 +281,7 @@ export const Explorer: React.FC = () => {
               addNewDocument={addNewDocument}
               setToolId={setSelectedToolId}
               tool={currentTool}
-              tools={tools}
+              tools={toolsForSelection}
               docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
             />
             <div className="flex-grow overflow-hidden z-0">
@@ -312,21 +302,25 @@ export const Explorer: React.FC = () => {
                 </div>
               )}
 
-              {selectedDocUrl && selectedDoc && tools.length === 0 && (
-                <div className="flex items-center justify-center h-full text-gray-500">
-                  <div className="text-center">
-                    <p className="text-sm">
-                      No tools available for datatype: {selectedDataTypeId}
-                    </p>
+              {selectedDocUrl &&
+                selectedDoc &&
+                toolsForSelection.length === 0 && (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="text-center">
+                      <p className="text-sm">
+                        No tools available for datatype: {selectedDataTypeId}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* NOTE: we set the URL as the component key, to force re-mount on URL change.
                 If we want more continuity we could not do this. */}
               {selectedDocUrl &&
                 selectedDocPath &&
                 currentTool &&
+                (currentTool.supportedDataTypes.includes(selectedDataTypeId!) ||
+                  currentTool.supportedDataTypes.includes("*")) &&
                 flatDocPaths && (
                   <VersionControlEditor
                     key={DocPathUtils.toString(selectedDocPath)}

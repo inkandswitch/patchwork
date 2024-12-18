@@ -2,12 +2,8 @@ import { makeTool } from "@patchwork/sdk";
 import { FileEditor } from "./components/FileEditor";
 import { TextFileAnnotations } from "./components/TextFileAnnotations";
 
-export const fileTool = makeTool({
-  type: "patchwork:tool",
-  id: "file",
-  name: "File",
+export const tool = makeTool({
   EditorComponent: FileEditor,
   AnnotationsViewComponent: TextFileAnnotations,
-  supportedDataTypes: ["file"],
   supportsCollapseContentWithoutAnnotations: true,
 });

@@ -4,9 +4,11 @@
   "description": "A simple kanban board",
   "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
-    "build": "vite build",
-    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:4MEgMjNDKnppvtDr7QU64TVAKdNf"
+    "build": "vite build"
   },
   "keywords": [],
   "dependencies": {
@@ -33,7 +35,6 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/react-window": "^1.8.8",
-    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^6.0.3",
     "vite-plugin-top-level-await": "^1.4.2",

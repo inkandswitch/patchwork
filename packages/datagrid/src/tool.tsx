@@ -108,10 +108,6 @@ export const DataGrid = ({
   );
 };
 
-export const dataGridTool = makeTool({
-  type: "patchwork:tool",
-  id: "datagrid",
-  name: "Spreadsheet",
-  supportedDataTypes: ["datagrid"],
+export const tool = makeTool({
   EditorComponent: DataGrid,
 });

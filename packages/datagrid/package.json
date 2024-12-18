@@ -4,9 +4,12 @@
   "description": "A simple spreadsheet",
   "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
     "build": "vite build",
-    "push": "pnpm build && trailhead push --dir dist"
+    "push": "pnpm build && pnpm --filter @patchwork/os build:datagrid"
   },
   "keywords": [],
   "author": "Ink & Switch",

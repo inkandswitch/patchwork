@@ -10,7 +10,6 @@ import { getRelativeTimeString } from "@patchwork/sdk/versionControl";
 import { Om } from "@patchwork/sdk/om";
 import { DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
 import { Tool } from "@patchwork/sdk";
-import { useDataTypes } from "@patchwork/sdk/hooks";
 
 import {
   BranchDoc,
@@ -44,25 +43,21 @@ import { useToast } from "@patchwork/sdk/ui";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 
-/* Ugh... TODO */
 import {
   BuildRefreshButton,
   DisabledBuildRefreshButton,
-} from "@patchwork/jacquard/src/components/BuildRefreshButton";
-import {
-  getStalenessInfo,
-  ProjectState,
-} from "@patchwork/jacquard/src/getStalenessInfo";
+} from "@patchwork/jacquard/components";
+import { getStalenessInfo, ProjectState } from "@patchwork/jacquard";
 import {
   fetchJacquardProjectInfoWithActiveBranch,
   JacquardProjectInfo,
-} from "@patchwork/jacquard/src/hooks";
+} from "@patchwork/jacquard/hooks";
 import {
   fetchProjectStateFromProjectInfo,
   getBuildRunsWithDocAsPrimaryInput,
-} from "@patchwork/jacquard/src/signals";
+} from "@patchwork/jacquard/signals";
 
-import { truncate } from "lodash";
+import truncate from "lodash-es/truncate";
 
 import {
   ArrowRightFromLineIcon,
@@ -165,8 +160,6 @@ export const VersionControlBar = ({
 
   const [docUIState, changeDocUIState] = useDocUIState(docPath);
 
-  const dataTypes = useDataTypes();
-
   const handleCreateBranch = useCallback(async () => {
     const branchScopeLink = DocPathUtils.toLink(branchScopePath)!;
 
@@ -175,7 +168,6 @@ export const VersionControlBar = ({
         repo,
         branchScopeHandle: branchScopeOm.handle,
         dataTypeId: branchScopeLink?.type,
-        dataTypes,
         createdBy: account?.contactHandle?.url,
       })
     ).url;
@@ -185,7 +177,6 @@ export const VersionControlBar = ({
     branchScopePath,
     repo,
     branchScopeOm.handle,
-    dataTypes,
     account?.contactHandle?.url,
     onSelectBranch,
     toast,
@@ -291,13 +282,7 @@ export const VersionControlBar = ({
     };
 
     checkMigration();
-  }, [
-    cloneOrMainOm,
-    branchScopeAndActiveBranchInfo,
-    repo,
-    dataTypes,
-    docLink.type,
-  ]);
+  }, [cloneOrMainOm, branchScopeAndActiveBranchInfo, repo, docLink.type]);
 
   return (
     <div className="bg-gray-100 pl-4 py-2 flex gap-2 border-b border-gray-200">
@@ -452,7 +437,6 @@ export const VersionControlBar = ({
                 branchScopeAndActiveBranchInfo,
                 repo,
                 dataTypeId: docLink.type,
-                dataTypes,
               });
             }}
             variant="destructive"

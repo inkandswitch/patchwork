@@ -2,7 +2,6 @@ import {
   FileExportMethod,
   genericExportMethods,
 } from "@patchwork/sdk/fileExports";
-import { useDataTypes } from "@patchwork/sdk/hooks";
 import { FolderDoc, DocPath, DocPathUtils } from "@patchwork/folder";
 import { dataTypeById } from "@patchwork/sdk";
 import {
@@ -79,8 +78,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   const selectedDataTypeRef = useRef<string>();
   selectedDataTypeRef.current = selectedDataTypeId;
 
-  const dataTypes = useDataTypes();
-  const selectedDataType = dataTypeById(dataTypes, selectedDataTypeId);
+  const selectedDataType = dataTypeById(selectedDataTypeId);
 
   const toolsWithEditorComponent = tools.filter((tool) => tool.EditorComponent);
 
@@ -176,7 +174,6 @@ export const Topbar: React.FC<TopbarProps> = ({
       ? method.filename(selectedDoc!)
       : defaultFilename;
 
-    console.log({ defaultFilename, filename });
     const contentType =
       typeof method.contentType === "function"
         ? method.contentType(selectedDoc!)
@@ -265,6 +262,24 @@ export const Topbar: React.FC<TopbarProps> = ({
                   size={14}
                 />{" "}
                 Copy share URL
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (!selectedDocPath) {
+                    toast({ title: "No document selected" });
+                    return;
+                  }
+                  navigator.clipboard.writeText(
+                    DocPathUtils.toLink(selectedDocPath).url
+                  );
+                  toast({ title: "Copied to clipboard" });
+                }}
+              >
+                <ShareIcon
+                  className="inline-block text-gray-500 mr-2"
+                  size={14}
+                />{" "}
+                Copy Automerge URL
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onClickMakeCopy}>
                 <GitForkIcon

@@ -1,6 +1,31 @@
-export {
-  fileDatatype as dataType,
-  type FileDoc,
-  type FileContent,
-} from "./datatype";
-export { fileTool as tool } from "./tool";
+import type { TextAnchor } from "@patchwork/sdk/textAnchors";
+import type { FileDoc, FileContent } from "./datatype";
+import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
+
+// For others to enjoy
+export { type FileDoc, type FileContent };
+
+export const dataType: DataTypeDescription<FileDoc, TextAnchor, string> = {
+  type: "patchwork:dataType",
+  id: "file",
+  name: "File",
+  icon: "File",
+  unixFileExtensions: ["*"],
+  async load() {
+    const { dataType } = await import("./datatype");
+    return dataType;
+  },
+};
+
+export const tools: ToolDescription[] = [
+  {
+    type: "patchwork:tool",
+    id: "file",
+    name: "File",
+    supportedDataTypes: ["file"],
+    async load() {
+      const { tool } = await import("./tool");
+      return tool;
+    },
+  },
+];

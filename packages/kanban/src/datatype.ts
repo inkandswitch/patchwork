@@ -1,4 +1,4 @@
-import { initFrom, type DataType } from "@patchwork/sdk";
+import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { uuid } from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
@@ -77,12 +77,7 @@ export const init = (doc: KanbanBoardDoc) => {
   });
 };
 
-export const kanbanBoardDatatype: DataType<KanbanBoardDoc, never, never> = {
-  type: "patchwork:dataType",
-  id: "kanban",
-  name: "Kanban Board",
-  icon: "KanbanSquare",
-  isExperimental: true,
+export const dataType: DataTypeImplementation<KanbanBoardDoc, never, never> = {
   init,
   getTitle,
   setTitle,

@@ -4,9 +4,12 @@
   "description": "some kinda engrafty thing in Patchwork idk",
   "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
     "build": "vite build",
-    "push": "pnpm build && trailhead push --dir dist"
+    "push": "pnpm build && pnpm --filter @patchwork/os build:engraft"
   },
   "keywords": [],
   "author": "Ink & Switch",
@@ -30,6 +33,7 @@
     "@types/react": "^18.3.3",
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^5.3.4",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-top-level-await": "^1.4.2",
     "vite-plugin-wasm": "^3.3.0"
   }

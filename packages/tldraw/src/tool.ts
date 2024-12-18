@@ -2,11 +2,7 @@ import { makeTool } from "@patchwork/sdk";
 import { TLDraw } from "./components/TLDraw";
 import { TLDrawAnnotations } from "./components/TLDrawAnnotations";
 
-export const drawingTool = makeTool({
-  type: "patchwork:tool",
-  id: "tldraw",
-  name: "Drawing",
-  supportedDataTypes: ["tldraw"],
+export const tool = makeTool({
   EditorComponent: TLDraw,
   AnnotationsViewComponent: TLDrawAnnotations,
 });

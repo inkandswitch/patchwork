@@ -4,9 +4,11 @@
   "description": "file type",
   "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
-    "build": "vite build",
-    "push": "pnpm build && trailhead push --dir dist --automergeDocUrl automerge:3wGv4cn63qqf8UnxyB5MZAzw1MfU"
+    "build": "vite build"
   },
   "keywords": [],
   "author": "Ink & Switch",

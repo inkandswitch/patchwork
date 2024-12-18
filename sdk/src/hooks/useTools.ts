@@ -1,28 +1,54 @@
-import { PatchworkContext } from "..";
-import { usePackageModulesInRootFolder } from "@patchwork/pkg/usePackages";
-import { Tool, isTool } from "..";
-import { useContext, useMemo } from "react";
+import { useEffect, useState } from "react";
+import {
+  allTools,
+  Tool,
+  toolById,
+  toolsEvents,
+  toolsForDataType,
+  ToolsMap,
+} from "../tools";
 
-export const useTools = (): Tool[] => {
-  const { builtInTools } = useContext(PatchworkContext);
-  const modules = usePackageModulesInRootFolder();
+export function useTool(id: string | undefined) {
+  const [tool, setTool] = useState<Tool | undefined>(toolById(id));
 
-  // add exported tools in packages to tools
-  const dynamicTools = useMemo(
-    () =>
-      Object.values(modules).flatMap(({ module }) =>
-        Object.values(module).flatMap((tool) => {
-          console.log(tool);
-          return isTool(tool) ? [{ ...tool }] : [];
-        })
-      ),
-    [modules]
-  );
+  useEffect(() => {
+    setTool(toolById(id));
 
-  const tools = useMemo(
-    () => builtInTools.concat(dynamicTools),
-    [builtInTools, dynamicTools]
-  );
+    const handler = () => setTool(toolById(id));
+    toolsEvents.on("tools:changed", handler);
+    return () => {
+      toolsEvents.off("tools:changed", handler);
+    };
+  }, [id]);
+
+  return tool;
+}
+
+export function useTools() {
+  const [tools, setTools] = useState<ToolsMap>(allTools());
+
+  useEffect(() => {
+    const handler = () => setTools(allTools());
+    toolsEvents.on("tools:changed", handler);
+    return () => {
+      toolsEvents.off("tools:changed", handler);
+    };
+  }, []);
 
   return tools;
-};
+}
+
+export function useToolsForDataType(id: string | undefined) {
+  const [tools, setTools] = useState<Tool[]>(toolsForDataType(id));
+
+  useEffect(() => {
+    setTools(toolsForDataType(id));
+    const handler = () => setTools(toolsForDataType(id));
+    toolsEvents.on("tools:changed", handler);
+    return () => {
+      toolsEvents.off("tools:changed", handler);
+    };
+  }, [id]);
+
+  return tools;
+}

@@ -17,9 +17,7 @@ import { getAccount } from "@patchwork/sdk";
 import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
 import { BACKUP_SYNC } from "./explorer/components/SyncIndicator.js";
-import { PatchworkContext } from "@patchwork/sdk";
-import { builtInTools } from "./builtInTools.js";
-import { builtInDataTypes } from "./builtInDataTypes.js";
+import { CodeLoader } from "./codeLoader.js";
 
 // Peer id prefix is added to both the peer id of the client and the service worker
 // to make it easier to grep for logs that are related to your own changes / sync state
@@ -138,17 +136,31 @@ function establishMessageChannel(serviceWorker: ServiceWorker) {
   console.log("Connected to service worker");
 }
 
-// Setup account
-
+// Setup account & code loader
 let author: AutomergeUrl;
 
-getAccount(repo).then((account) => {
+async function setupAccount() {
+  const account = await getAccount(repo);
   author = account.contactHandle.url;
 
   account.on("change", () => {
     author = account.contactHandle.url;
   });
-});
+
+  const moduleSettingsUrl = account.handle.docSync()?.moduleSettingsUrl;
+  if (moduleSettingsUrl) {
+    const loader = new CodeLoader(repo, repo.find(moduleSettingsUrl));
+    await Promise.race([
+      loader.doneLoading,
+      new Promise((r) => setTimeout(r, 1000)),
+    ]).catch(() =>
+      console.warn("Tool load timed out; hopefully they'll arrive later.")
+    );
+  }
+
+  return account;
+}
+await setupAccount();
 
 /** Here we monkey patch the DocHandle to
  *  always add the currently logged in user as author
@@ -193,11 +205,9 @@ window.Automerge = Automerge;
 // @ts-expect-error - adding property to window
 window.repo = repo;
 
-const Root = () => (
+export const Root = () => (
   <RepoContext.Provider value={repo}>
-    <PatchworkContext.Provider value={{ builtInTools, builtInDataTypes }}>
-      <Explorer />
-    </PatchworkContext.Provider>
+    <Explorer />
   </RepoContext.Provider>
 );
 

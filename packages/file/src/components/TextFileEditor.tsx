@@ -40,8 +40,8 @@ import {
 import clsx from "clsx";
 import { EditorView } from "codemirror";
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
-import { tool } from "..";
-import { selectedAnchorsPlugin } from "@patchwork/essay/codemirrorPlugins/setSelectedAnchors";
+import { tool } from "../tool";
+import { selectedAnchorsPlugin } from "@patchwork/sdk/markdown";
 import { FileDoc, TextFileContent } from "../datatype";
 import { CodeMirror } from "@patchwork/sdk/components";
 
@@ -104,7 +104,7 @@ export const TextFileEditor = ({
 
   const [toolUIState, changeToolUIState] = useToolUIState<{
     scrollTopCursor?: Automerge.Cursor;
-  }>(docPath, tool.id, () => ({}));
+  }>(docPath, "file", () => ({}));
 
   // TODO: this obviously sucks
   const changeToolUIStateRef = useRefForCallback(changeToolUIState);

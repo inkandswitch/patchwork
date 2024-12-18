@@ -1,5 +1,4 @@
 import { dataTypeById } from "..";
-import { useDataTypes } from "../hooks";
 import { useStaticCallback } from "../hooks/useStaticCallback";
 import { DocLink, DocPathUtils, FolderDoc } from "@patchwork/folder";
 import { DocPath } from "@patchwork/folder";
@@ -143,8 +142,6 @@ export const useRouter = ({
   const selectedDocLink =
     selectedDocPath && DocPathUtils.toLink(selectedDocPath);
 
-  const datatypes = useDataTypes();
-
   const uiStateOm = useUIStateOm();
 
   const [isLoaded, setIsLoaded] = useState(false);
@@ -215,7 +212,7 @@ export const useRouter = ({
       // make sure that the branch scope doc is in the root folder and that the right branch is checked out
       if (branchScopeUrl) {
         if (!branchScopePathInRootFolder) {
-          const folderDataType = dataTypeById(datatypes, "folder")!;
+          const folderDataType = dataTypeById("folder")!;
 
           const branchScopeHandle = repo.find<FolderDoc>(branchScopeUrl);
           const title = await folderDataType.getTitle(
@@ -278,7 +275,7 @@ export const useRouter = ({
         // special case: the url references a branch scope that doesn't contain the referenced docUrl
         // -> create a doc link that will lead to a 404 page
         if (branchScopePathInRootFolder) {
-          const dataType = dataTypeById(datatypes, urlParams.type);
+          const dataType = dataTypeById(urlParams.type);
           const doc = await repo.find(urlParams.url).doc();
           const title = (await dataType?.getTitle(doc, repo)) ?? "Unknown";
 
@@ -289,6 +286,19 @@ export const useRouter = ({
           });
 
           // ... otherwise add the doc to the root folder
+        } else if (urlParams.type === "my-tools") {
+          // XXX PVH TODO HACK: don't put "my-tools" into the root folder, it's part of the account
+          //  (longer term thought: should we root the app's search in the account instead of the root folder?)
+          const docLink = {
+            type: urlParams.type,
+            // The name will be synced in here once the doc loads
+            name: "My Tools",
+            url: urlParams.url,
+          };
+          docPath = [
+            ...DocPathUtils.forRoot(rootFolderDocWithMetadata.rootFolderUrl),
+            docLink,
+          ];
         } else {
           const docLink = {
             type: urlParams.type,

@@ -1,0 +1,212 @@
+.page {
+    overflow-y: auto;
+}
+.button {
+    background-color: #04AA6D;
+    /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+}
+.playing-button {
+    background-color: pink;
+}
+.direction-button {
+    background-color: #04636f;
+    width: 150px;
+}
+.duplicate-button {
+    background-color: #877b00;
+    width: 170px;
+}
+.clear-button {
+    background-color: #720000;
+}
+.fetch-button {
+    background-color: #650000;
+}
+
+.config-button {
+    background-color: #740f60;
+    width: 100px;
+}
+
+.cell {
+    background: #d2d2d2;
+    border: 1px solid #2e2e2e;
+    border-left: 2px solid #2e2e2e;
+    float: left;
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 34px;
+    height: 34px;
+    margin-right: -1px;
+    margin-top: -1px;
+    padding: 0;
+    text-align: center;
+}
+.light-vertical {
+    border-left: 1px solid #505050;
+}
+.eighth-notes {
+    width:50px;
+}
+.sixteenth-notes {
+    width: 25px;
+}
+.progress-cell {
+    background: #ffffff;
+    /* border: 1px solid #7c7c7c; */
+    float: left;
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 34px;
+    height: 17px;
+    margin-right: -1px;
+    margin-top: -1px;
+    padding: 0;
+    text-align: center;
+    /* width: 50px; */
+}
+.drum-cell {
+    background: #809bd0;
+}
+.cell-on {
+    background: #d24040;
+}
+.drum-cell-on {
+    background: #4b3dcb;
+}
+.root-color {
+    background: #f3d9ff;
+}
+.bar-start-color {
+    border-left: 3px solid #000000;
+}
+.lit {
+    background: #f9ffb5;
+}
+.clear {
+    clear: left;
+}
+.clear-block {
+    clear: left;
+    padding: 5px;
+}
+.horizontal-block {
+    float: left;
+    padding: 25px;
+}
+.float-left {
+    float: left;
+}
+.solid-outline {
+    border: 1px solid #2e2e2e;
+    padding: 5px;
+}
+.explanation {
+    text-decoration-line: underline;
+    color: rgb(100, 25, 0);
+}
+.grid-row:after {
+    clear: both;
+    content: '';
+    display: table;
+}
+.new-toggle {
+    filter: alpha(opacity=100);
+    /* IE */
+    -moz-opacity: 1;
+    /* Mozilla */
+    opacity: 1;
+}
+.young-toggle {
+    filter: alpha(opacity=85);
+    /* IE */
+    -moz-opacity: 0.85;
+    /* Mozilla */
+    opacity: 0.85;
+}
+.teenage-toggle {
+    filter: alpha(opacity=70);
+    /* IE */
+    -moz-opacity: 0.7;
+    /* Mozilla */
+    opacity: 0.7;
+}
+.middle-age-toggle {
+    filter: alpha(opacity=7);
+        /* IE */
+        -moz-opacity: 0.7;
+        /* Mozilla */
+        opacity: 0.7;}
+.old-toggle {
+    filter: alpha(opacity=6);
+    /* IE */
+    -moz-opacity: 0.6;
+    /* Mozilla */
+    opacity: 0.6;
+}
+
+
+/* Slider CSS taken from https: //www.w3schools.com/howto/howto_js_rangeslider.asp */
+.slidecontainer {
+    width: 100%;
+    /* Width of the outside container */
+}
+
+/* The slider itself */
+.slider {
+    -webkit-appearance: none;
+    /* Override default CSS styles */
+    appearance: none;
+    width: 100%;
+    /* Full-width */
+    height: 25px;
+    /* Specified height */
+    background: #d3d3d3;
+    /* Grey background */
+    outline: none;
+    /* Remove outline */
+    opacity: 0.7;
+    /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s;
+    /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+}
+
+/* Mouse-over effects */
+.slider:hover {
+    opacity: 1;
+    /* Fully shown on mouse-over */
+}
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    /* Override default look */
+    appearance: none;
+    width: 25px;
+    /* Set a specific slider handle width */
+    height: 25px;
+    /* Slider handle height */
+    background: #04AA6D;
+    /* Green background */
+    cursor: pointer;
+    /* Cursor on hover */
+}
+
+.slider::-moz-range-thumb {
+    width: 25px;
+    /* Set a specific slider handle width */
+    height: 25px;
+    /* Slider handle height */
+    background: #04AA6D;
+    /* Green background */
+    cursor: pointer;
+    /* Cursor on hover */
+}

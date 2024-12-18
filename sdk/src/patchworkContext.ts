@@ -5,11 +5,11 @@ import { Tool } from ".";
 // don't export any hooks from here, otherwise hot reloading doesn't work properly
 
 export interface PatchworkContext {
-  builtInTools: Tool[];
-  builtInDataTypes: DataType[];
+  tools: Tool[];
+  dataTypes: DataType[];
 }
 
 export const PatchworkContext = createContext<PatchworkContext>({
-  builtInTools: [],
-  builtInDataTypes: [],
+  tools: [],
+  dataTypes: [],
 });

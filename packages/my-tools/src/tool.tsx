@@ -1,0 +1,121 @@
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import {
+  type ModuleSettingsDoc,
+  EditorProps,
+  isTool,
+  type DataType,
+  type Tool,
+  makeTool,
+} from "@patchwork/sdk";
+import {
+  Icon,
+  Input,
+  Label,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Button,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@patchwork/sdk/ui";
+import React, { useCallback, useState, useEffect } from "react";
+import { DataTypeModule } from "./components/DataTypeModule";
+import { ToolsModule } from "./components/ToolsModule";
+import { RegisterModuleDialog } from "./components/RegisterModuleDialog";
+import { RegisteredModules } from "./components/RegisteredModules";
+
+export interface ModuleContents {
+  url: string;
+  dataType?: DataType<unknown, unknown, unknown>;
+  tools?: Tool[];
+  error?: string;
+}
+
+export const ModuleSettingsEditor: React.FC<
+  EditorProps<ModuleSettingsDoc, string>
+> = ({ docUrl }) => {
+  const [doc, changeDoc] = useDocument<ModuleSettingsDoc>(docUrl);
+  const [registeredModules, setRegisteredModules] = useState<ModuleContents[]>(
+    []
+  );
+
+  const loadModuleContents = async (url: string): Promise<ModuleContents> => {
+    try {
+      const module = await import(url);
+      return {
+        url,
+        dataType: module.dataType,
+        tools: module.tools?.filter(isTool) || [],
+      };
+    } catch (err) {
+      return {
+        url,
+        error: "Failed to load module. Please check the URL and try again.",
+      };
+    }
+  };
+
+  // Load registered modules
+  useEffect(() => {
+    if (!doc?.modules) return;
+
+    const loadModules = async () => {
+      const moduleContents = await Promise.all(
+        doc.modules.map(loadModuleContents)
+      );
+      setRegisteredModules(moduleContents);
+    };
+
+    loadModules();
+  }, [doc?.modules]);
+
+  const registerModule = useCallback(
+    (moduleUrl: string) => {
+      if (!doc || !moduleUrl.trim()) return;
+
+      changeDoc((doc) => {
+        if (!doc.modules) doc.modules = [];
+        if (!doc.modules.includes(moduleUrl)) {
+          doc.modules.push(moduleUrl);
+        }
+      });
+    },
+    [doc, changeDoc]
+  );
+
+  const removeModule = useCallback(
+    (urlToRemove: string) => {
+      changeDoc((doc) => {
+        if (!doc.modules) return;
+        doc.modules = doc.modules.filter((url) => url !== urlToRemove);
+      });
+    },
+    [changeDoc]
+  );
+
+  if (!doc) return null;
+
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      <RegisterModuleDialog
+        onRegister={registerModule}
+        loadModuleContents={loadModuleContents}
+      />
+      <RegisteredModules
+        registeredModules={registeredModules}
+        removeModule={removeModule}
+      />
+    </div>
+  );
+};
+
+export const tool = makeTool({
+  EditorComponent: ModuleSettingsEditor,
+});

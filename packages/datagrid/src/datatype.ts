@@ -1,8 +1,11 @@
 import { DecodedChangeWithMetadata } from "@patchwork/sdk/versionControl";
-import { Annotation, HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
+import {
+  Annotation,
+  HasVersionControlMetadata,
+} from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { pick } from "lodash";
-import { initFrom, type DataType } from "@patchwork/sdk";
+import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 import { TextPatch } from "@patchwork/sdk/versionControl";
 
 // SCHEMA
@@ -145,17 +148,11 @@ const patchesToAnnotations = (
   });
 };
 
-export const dataGridDatatype: DataType<
+export const dataType: DataTypeImplementation<
   DataGridDoc,
   DataGridDocAnchor,
   string
 > = {
-  type: "patchwork:dataType",
-  id: "datagrid",
-  name: "Spreadsheet",
-  icon: "Sheet",
-  isExperimental: true,
-
   init,
   getTitle,
   setTitle,

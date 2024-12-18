@@ -1,3 +1,5 @@
-import sharedConfig from "../vite.shared";
+import { defineConfig } from "vite";
 
-export default sharedConfig;
+export default defineConfig({
+  // No configuration options
+});

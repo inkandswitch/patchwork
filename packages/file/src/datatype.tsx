@@ -1,7 +1,7 @@
 import { FileExportMethod } from "@patchwork/sdk/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
-import { initFrom, type DataType } from "@patchwork/sdk";
-import { ChangeGroup } from "@patchwork/sdk/versionControl";
+import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
+import { ChangeGroup, noGrouping } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { TextPatch } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
@@ -54,12 +54,6 @@ const setTitle = async (doc: FileDoc, title: string) => {
 
 const getTitle = async (doc: FileDoc) => {
   return doc.name || "Untitled File";
-};
-
-export const init = (doc: FileDoc) => {
-  // todo: should only be able to create this by importing a file
-  // or by creating a specific type
-  throw new Error("can't create empty file");
 };
 
 const ChangeGroupView = ({
@@ -268,20 +262,14 @@ const updateDocFromUnixFile = async (
   return { didChange: true };
 };
 
-export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
-  type: "patchwork:dataType",
-  id: "file",
-  name: "File",
-  icon: "File", // todo: this should be a function, to be type specific
-  init,
+export const dataType: DataTypeImplementation<FileDoc, TextAnchor, string> = {
   getTitle,
   setTitle,
   markCopy,
   promptForAIChangeGroupSummary,
-  disableManualCreation: true,
   // todo: long term we probably want something different but this lets
   // us see each change directly
-  // groupChanges: noGrouping,
+  groupChanges: noGrouping,
 
   /*fallbackSummaryForChangeGroup(changeGroup) {
     return <ChangeGroupView changeGroup={changeGroup} />;
@@ -295,5 +283,4 @@ export const fileDatatype: DataType<FileDoc, TextAnchor, string> = {
   docToUnixFile,
   initDocFromUnixFile,
   updateDocFromUnixFile,
-  unixFileExtensions: ["*"],
 };

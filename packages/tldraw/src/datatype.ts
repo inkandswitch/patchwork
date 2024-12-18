@@ -1,4 +1,4 @@
-import { type DataType } from "@patchwork/sdk";
+import { type DataTypeImplementation } from "@patchwork/sdk";
 import { DecodedChangeWithMetadata } from "@patchwork/sdk/versionControl";
 import {
   Annotation,
@@ -333,11 +333,11 @@ const valueOfAnnotation = (annotation: Annotation<TLShapeId, TLShape>) => {
   }
 };
 
-export const tldrawDatatype: DataType<TLDrawDoc, TLDrawDocAnchor, TLShape> = {
-  type: "patchwork:dataType",
-  id: "tldraw",
-  name: "Drawing",
-  icon: "PenLine",
+export const dataType: DataTypeImplementation<
+  TLDrawDoc,
+  TLDrawDocAnchor,
+  TLShape
+> = {
   init,
   getTitle,
   setTitle,

@@ -1,8 +1,21 @@
-import { PatchworkContext, DataType } from "..";
-import { useContext } from "react";
+import { useEffect, useState } from "react";
+import { allDataTypes, datatypeEvents, DataTypesMap } from "../datatypes";
 
-export const useDataTypes = (): DataType[] => {
-  const { builtInDataTypes } = useContext(PatchworkContext);
+export function useDataTypes() {
+  const [datatypes, setDatatypes] = useState<DataTypesMap>(() =>
+    allDataTypes()
+  );
 
-  return builtInDataTypes;
-};
+  useEffect(() => {
+    const handler = (newDatatypes: DataTypesMap) => {
+      setDatatypes(newDatatypes);
+    };
+
+    datatypeEvents.on("datatypes:changed", handler);
+    return () => {
+      datatypeEvents.off("datatypes:changed", handler);
+    };
+  }, []);
+
+  return datatypes;
+}

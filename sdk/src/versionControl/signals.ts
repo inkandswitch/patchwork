@@ -116,13 +116,12 @@ export const fetchAllLinkedDocLinks = (
   url: AutomergeUrl,
   dataTypeId: string,
   repo: Repo,
-  dataTypes: DataType[],
   cloneMap?: DocCloneMap
 ): DocLink[] => {
   const mappedUrl = cloneMap ? cloneMap[url].url ?? url : url;
   const doc = fetchDoc(mappedUrl, repo);
 
-  const links = dataTypeById(dataTypes, dataTypeId)?.links;
+  const links = dataTypeById(dataTypeId)?.links;
   if (!links) {
     return [];
   }
@@ -134,7 +133,6 @@ export const fetchAllLinkedDocLinks = (
       link.url,
       link.type,
       repo,
-      dataTypes,
       cloneMap
     );
     return [link, ...childLinks].flat();
@@ -205,8 +203,7 @@ export const fetchBranchScopeAndActiveBranchInfo = <
 export const fetchDoesDocLinkExistInBranchScope = (
   docLink: DocLink,
   repo: Repo,
-  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo,
-  dataTypes: DataType[]
+  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo
 ) => {
   const branchScopeDocLink = DocPathUtils.toLink(
     branchScopeAndActiveBranchInfo.branchScopePath
@@ -220,7 +217,6 @@ export const fetchDoesDocLinkExistInBranchScope = (
     branchScopeDocLink.url,
     branchScopeDocLink.type,
     repo,
-    dataTypes,
     branchScopeAndActiveBranchInfo.activeBranchOm?.doc.clones
   );
 

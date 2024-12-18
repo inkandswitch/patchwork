@@ -1,2 +1,31 @@
-export { kanbanTool as tool } from "./tool";
-export { kanbanBoardDatatype as dataType } from "./datatype";
+import type { KanbanBoardDoc } from "./datatype";
+import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
+
+// For others to enjoy
+export type { KanbanBoardDoc };
+
+export const dataType: DataTypeDescription<KanbanBoardDoc, never, never> = {
+  type: "patchwork:dataType",
+  id: "kanban",
+  name: "Kanban Board",
+  icon: "KanbanSquare",
+
+  async load() {
+    const { dataType } = await import("./datatype");
+    return dataType;
+  },
+};
+
+export const tools: ToolDescription[] = [
+  {
+    type: "patchwork:tool",
+    id: "kanban",
+    name: "Kanban",
+    supportedDataTypes: ["kanban"],
+
+    async load() {
+      const { tool } = await import("./tool");
+      return tool;
+    },
+  },
+];

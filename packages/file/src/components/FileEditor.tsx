@@ -1,5 +1,4 @@
 import { useCurrentAccount, EditorProps } from "@patchwork/sdk";
-import { useDataTypes } from "@patchwork/sdk/hooks";
 import {
   fetchFlatMap,
   fetchMap,
@@ -43,7 +42,6 @@ export const FileEditor = (props: EditorProps<any, any>) => {
 
   const repo = useRepo();
   const account = useCurrentAccount();
-  const dataTypes = useDataTypes();
 
   const outputFiles = useAsyncComputed(
     useCallback(() => {
@@ -79,7 +77,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
             : { ...output, mainDocUrl: output.docUrl }
         )
       );
-    }, [account, docPath, repo, dataTypes, mainDocUrl, activeBranchUrl])
+    }, [account, docPath, repo, mainDocUrl, activeBranchUrl])
   ).ifPending(undefined).value;
 
   if (!doc) {

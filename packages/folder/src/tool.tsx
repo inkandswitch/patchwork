@@ -2,12 +2,11 @@ import { ErrorFallback } from "@patchwork/sdk/components";
 import { selectDocLink } from "@patchwork/sdk/router";
 import { useDocUIState } from "@patchwork/sdk/router";
 import { Icon, IconType } from "@patchwork/sdk/ui";
-import { useDataTypes, useTools } from "@patchwork/sdk/hooks";
 import {
   dataTypeById,
-  EditorProps,
-  Tool,
+  makeTool,
   toolsForDataType,
+  type EditorProps,
 } from "@patchwork/sdk";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
 import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
@@ -15,7 +14,7 @@ import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { diffWithProvenance } from "@patchwork/sdk/versionControl";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { next as A } from "@automerge/automerge";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { DocPath, DocPathUtils, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
@@ -76,11 +75,9 @@ export const FolderEntryView = ({
     useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
-  const dataTypes = useDataTypes();
-  const dataType = dataTypeById(dataTypes, docLink.type);
+  const dataType = dataTypeById(docLink.type);
 
-  const tools = useTools();
-  const tool = toolsForDataType(tools, docLink.type)[0];
+  const tool = toolsForDataType(docLink.type)[0];
 
   const icon = tool?.icon ?? dataType?.icon;
 
@@ -189,11 +186,7 @@ export const FolderEntryView = ({
   );
 };
 
-export const folderViewerWithEmbedsTool: Tool = {
-  type: "patchwork:tool",
-  id: "folder-embeds",
-  name: "Embeds",
+export const tool = makeTool({
   EditorComponent: FolderViewerWithEmbeds,
-  supportedDataTypes: ["folder"],
   supportsCollapseContentWithoutAnnotations: true,
-};
+});

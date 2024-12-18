@@ -100,7 +100,7 @@ export function createPatchworkFolder(
 ): AutomergeUrl {
   const folderHandle = repo.create<FolderDoc>();
   folderHandle.change((doc) => {
-    FolderDataType.init(doc, repo);
+    // UGH: FolderDataType.init(doc, repo);
     doc.title = spec.title;
     doc.docs = spec.docs.map((docLinkSpec) => {
       const url =

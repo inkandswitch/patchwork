@@ -1,4 +1,4 @@
-import { type DataType } from "@patchwork/sdk";
+import { type DataTypeImplementation } from "@patchwork/sdk";
 import {
   HasVersionControlMetadata,
   initVersionControlMetadata,
@@ -18,11 +18,7 @@ export type EngraftDoc = HasVersionControlMetadata<undefined, undefined> & {
   outputUrl: AutomergeUrl | null;
 };
 
-export const engraftDataType: DataType<EngraftDoc, unknown, unknown> = {
-  type: "patchwork:dataType",
-  id: "engraft",
-  name: "Engraft program",
-  icon: "Sprout",
+export const dataType: DataTypeImplementation<EngraftDoc, unknown, unknown> = {
   init: (doc, repo) => {
     // TODO: it is bad that initialization isn't type-safe
     doc.program = engraftContext.makeSlotWithCode("");
@@ -40,5 +36,4 @@ export const engraftDataType: DataType<EngraftDoc, unknown, unknown> = {
   markCopy: (doc) => {
     doc.title = "Copy of " + doc.title;
   },
-  isExperimental: true,
 };

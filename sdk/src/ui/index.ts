@@ -1,5 +1,7 @@
+export { Alert, AlertDescription, AlertTitle } from "./alert";
 export { Avatar, AvatarFallback, AvatarImage, avatarVariants } from "./avatar";
 export { Button } from "./button";
+export { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./card";
 export { Checkbox } from "./checkbox";
 export { Command } from "./command";
 export { ContextMenu } from "./context-menu";
@@ -17,6 +19,9 @@ export {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "./dropdown-menu";
 export { Icon, type IconType } from "./icons";
 export { Input } from "./input";
