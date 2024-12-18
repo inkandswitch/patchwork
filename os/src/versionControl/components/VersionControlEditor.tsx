@@ -42,10 +42,8 @@ import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
 import { useAsyncComputed } from "@patchwork/sdk/async-signals";
-import {
-  EditorPropsWithTool,
-  SideBySideProps,
-} from "@patchwork/sdk/versionControl";
+import { SideBySideProps } from "@patchwork/sdk/versionControl";
+import { DocEditor } from "./DocEditor";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -529,61 +527,6 @@ const DocumentNotFoundPage = ({
         </p>
       </div>
     </div>
-  );
-};
-
-/* Wrapper component that dispatches to the tool for the doc type */
-const DocEditor = <T, V>({
-  tool,
-  docPath,
-  docUrl,
-  docHeads,
-  annotations,
-  annotationGroups,
-  actorIdToAuthor,
-  hideInlineComments,
-  setSelectedAnchors,
-  setHoveredAnchor,
-  setSelectedAnnotationGroupId,
-  setHoveredAnnotationGroupId,
-  setCommentState,
-  mainDocUrl,
-  activeBranchUrl,
-  collapseContentWithoutChanges,
-}: EditorPropsWithTool<T, V>) => {
-  if (!tool) {
-    return;
-  }
-
-  console.log(
-    "Rendering editor for",
-    docPath,
-    "with tool",
-    tool.id,
-    "and URL",
-    docUrl
-  );
-
-  const Component = tool.EditorComponent as React.FC<EditorProps<T, V>>;
-
-  return (
-    <Component
-      docPath={docPath}
-      docUrl={docUrl}
-      docHeads={docHeads}
-      annotations={annotations}
-      annotationGroups={annotationGroups}
-      actorIdToAuthor={actorIdToAuthor}
-      hideInlineComments={hideInlineComments}
-      collapseContentWithoutChanges={collapseContentWithoutChanges}
-      setSelectedAnchors={setSelectedAnchors}
-      setHoveredAnchor={setHoveredAnchor}
-      setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
-      setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
-      setCommentState={setCommentState}
-      mainDocUrl={mainDocUrl}
-      activeBranchUrl={activeBranchUrl}
-    />
   );
 };
 
