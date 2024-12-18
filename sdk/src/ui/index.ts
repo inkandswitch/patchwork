@@ -19,6 +19,9 @@ export {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "./dropdown-menu";
 export { Icon, type IconType } from "./icons";
 export { Input } from "./input";
