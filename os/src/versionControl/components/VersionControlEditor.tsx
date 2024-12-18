@@ -7,7 +7,7 @@ import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router";
 import { DocLink, DocPath, DocPathUtils } from "@patchwork/folder";
 import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
 import { useToast } from "@patchwork/sdk/ui";
-import { EditorProps, Tool } from "@patchwork/sdk";
+import { Tool } from "@patchwork/sdk";
 
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -42,8 +42,8 @@ import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
 import { useAsyncComputed } from "@patchwork/sdk/async-signals";
-import { SideBySideProps } from "@patchwork/sdk/versionControl";
 import { DocEditor } from "./DocEditor";
+import { SideBySide } from "./SideBySide";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -525,37 +525,6 @@ const DocumentNotFoundPage = ({
             Go to root of branch
           </a>
         </p>
-      </div>
-    </div>
-  );
-};
-
-export const SideBySide = <T, V>(props: SideBySideProps<T, V>) => {
-  // special side-by-side view for tldraw with scroll linking
-  // todo: add back once modules is gone
-  /* if (props.tool.id === "tldraw") {
-    return <TLDrawSideBySide {...props} />;
-  }*/
-
-  const { mainDocUrl } = props;
-
-  return (
-    <div className="flex h-full w-full">
-      <div className="h-full flex-1 overflow-auto bg-gray-200">
-        {
-          <DocEditor
-            {...props}
-            docUrl={mainDocUrl}
-            // note: we don't want to pass in docheads here, the doc heads in the parent
-            // should not affect the heads we show for main
-            docHeads={undefined}
-            annotations={[]}
-            annotationGroups={[]}
-          />
-        }
-      </div>
-      <div className="h-full flex-1 overflow-auto">
-        {<DocEditor {...props} />}
       </div>
     </div>
   );
