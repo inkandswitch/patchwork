@@ -52,6 +52,19 @@ export const Explorer: React.FC = () => {
   const [selectedDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(selectedDocUrl);
 
+  // @ts-expect-error global type hack
+  const patchworkMetadata = selectedDoc?.["@patchwork"];
+  useEffect(() => {
+    if (patchworkMetadata) {
+      console.log(
+        "Found a patchwork recommended modules document",
+        patchworkMetadata
+      );
+      // @ts-expect-error global window hack
+      window.loader.loadModules([patchworkMetadata.suggestedImportUrl]);
+    }
+  }, [patchworkMetadata]);
+
   useEffect(() => {
     // @ts-expect-error global window
     window.handle = selectedDocHandle;
@@ -65,13 +78,6 @@ export const Explorer: React.FC = () => {
   const toolsForSelection = useToolsForDataType(selectedDataTypeId);
   const [selectedToolId, setSelectedToolId] = useState<string>();
   const selectedTool = useTool(selectedToolId);
-
-  console.log({
-    selectedDataTypeId,
-    selectedToolId,
-    selectedTool,
-    toolsForSelection,
-  });
 
   const currentTool =
     // make sure the current tool is reset to the fallback tool
@@ -112,6 +118,11 @@ export const Explorer: React.FC = () => {
         repo.create<HasVersionControlMetadata<unknown, unknown>>();
       newDocHandle.change((doc) => {
         dataType.init && dataType.init(doc, repo);
+        // @ts-expect-error TODO: we'll come back to this before merging
+        doc["@patchwork"] = {
+          type: dataType.id,
+          suggestedImportUrl: dataType.importUrl,
+        };
 
         if (change) {
           change(doc);

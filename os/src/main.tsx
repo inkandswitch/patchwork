@@ -150,6 +150,8 @@ async function setupAccount() {
   const moduleSettingsUrl = account.handle.docSync()?.moduleSettingsUrl;
   if (moduleSettingsUrl) {
     const loader = new CodeLoader(repo, repo.find(moduleSettingsUrl));
+    // @ts-expect-error - adding property to window as a TEMPORARY HACK
+    window.loader = loader;
     await Promise.race([
       loader.doneLoading,
       new Promise((r) => setTimeout(r, 1000)),

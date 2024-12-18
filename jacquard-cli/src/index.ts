@@ -178,7 +178,7 @@ const main = async () => {
         dataType: DataTypeDescription<unknown>;
         tools: ToolDescription[];
       };
-      await registerDataType(module.dataType);
+      await registerDataType(module.dataType, importName);
     }),
   ]);
 

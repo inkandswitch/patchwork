@@ -26,15 +26,6 @@ export class CodeLoader {
     await this.load();
   }
 
-  private async importModuleSafe(importName: string): Promise<any | null> {
-    try {
-      return await import(importName);
-    } catch (err) {
-      console.error(`Failed to import ${importName}`, err);
-      return null;
-    }
-  }
-
   private async loadModules(config: string[]) {
     await Promise.all(
       config.map(async (importName) => {
@@ -44,19 +35,28 @@ export class CodeLoader {
     );
   }
 
+  private async importModuleSafe(importName: string): Promise<any | null> {
+    try {
+      return await import(importName);
+    } catch (err) {
+      console.error(`Failed to import ${importName}`, err);
+      return null;
+    }
+  }
+
   private async registerModule(importName: string) {
     const mod = await this.importModuleSafe(importName);
     if (!mod) return;
 
     // Load and register dataType if present
     if (mod.dataType) {
-      registerDataType(mod.dataType);
+      registerDataType(mod.dataType, importName);
     }
 
     // Load and register tools if present
     if (mod.tools?.length) {
       const tools = mod.tools.filter(isTool);
-      tools.forEach(registerTool);
+      tools.forEach((t: ToolDescription) => registerTool(t, importName));
     }
   }
 

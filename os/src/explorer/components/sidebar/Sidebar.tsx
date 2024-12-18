@@ -89,6 +89,31 @@ const Node = (props: NodeRendererProps<NodeData>) => {
   const docLink = DocPathUtils.toLink(docPath);
   const dataType = dataTypeById(docLink.type);
 
+  let possibleDocUrlForLoadingSuggestedDataType = undefined;
+  if (!dataType) {
+    possibleDocUrlForLoadingSuggestedDataType = docLink.url;
+  }
+  const [docForFindingDataType] = useDocument(
+    possibleDocUrlForLoadingSuggestedDataType
+  );
+  console.log({
+    docForFindingDataType,
+    possibleDocUrlForLoadingSuggestedDataType,
+  });
+  // @ts-expect-error global type hack
+  const patchworkMetadata = docForFindingDataType?.["@patchwork"];
+  useEffect(() => {
+    console.log("Using effect!", patchworkMetadata);
+    if (patchworkMetadata) {
+      console.log(
+        "Found a patchwork recommended modules document",
+        patchworkMetadata
+      );
+      // @ts-expect-error global window hack
+      window.loader.loadModules([patchworkMetadata.suggestedImportUrl]);
+    }
+  }, [patchworkMetadata]);
+
   const flatDocPaths = useContext(FlatDocPathsContext);
 
   // We often end up in a situation where a doc that's deep in some

@@ -36,6 +36,7 @@ type ToolBase = {
   supportedDataTypes: "*" | string[];
   name: string;
   icon?: IconType;
+  importUrl?: string; // populated at registration-time
 };
 
 export type ToolDescription = ToolBase & {
@@ -69,7 +70,10 @@ export type ToolsEvents = {
 };
 export const toolsEvents = new EventEmitter<ToolsEvents>();
 const GlobalTools: ToolsMap = {};
-export const registerTool = async (tool: ToolDescription) => {
+export const registerTool = async (
+  tool: ToolDescription,
+  importUrl: string
+) => {
   const { id } = tool;
   console.log("registering tool", id, tool);
   if (GlobalTools[id]) {
@@ -77,7 +81,7 @@ export const registerTool = async (tool: ToolDescription) => {
   }
   const loadedTool = await tool.load();
   console.log("loaded tool", id, loadedTool);
-  GlobalTools[id] = { ...tool, ...loadedTool };
+  GlobalTools[id] = { ...tool, importUrl, ...loadedTool };
   toolsEvents.emit("tools:changed", { ...GlobalTools });
 };
 

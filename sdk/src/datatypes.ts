@@ -29,6 +29,7 @@ export type DataTypeDescription<D = unknown, T = unknown, V = unknown> = {
   icon: IconType;
   unlisted?: boolean;
   unixFileExtensions?: string[];
+  importUrl?: string; // populated at registration-time
   load(): Promise<DataTypeImplementation<D, T, V>>;
 };
 
@@ -172,10 +173,15 @@ export const datatypeEvents = new EventEmitter<DataTypeEvents>();
 const GlobalDataTypes: DataTypesMap = {};
 
 export const registerDataType = async (
-  datatype: DataTypeDescription<unknown, unknown, unknown>
+  datatype: DataTypeDescription<unknown, unknown, unknown>,
+  importUrl: string
 ) => {
   console.log("registering datatype", datatype);
-  GlobalDataTypes[datatype.id] = { ...datatype, ...(await datatype.load()) };
+  GlobalDataTypes[datatype.id] = {
+    ...datatype,
+    importUrl,
+    ...(await datatype.load()),
+  };
   datatypeEvents.emit("datatypes:changed", { ...GlobalDataTypes });
 };
 
