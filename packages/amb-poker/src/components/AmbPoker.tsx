@@ -30,9 +30,27 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
   // Add temporary state for inputs
   const [tempSelectedValueText, setTempSelectedValueText] = useState("");
 
+  // Add new state for temporary name editing
+  const [tempCellName, setTempCellName] = useState("");
+
+  // Add new state for mouse position
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
+    null
+  );
+
+  // Add new state for drag tracking
+  const [dragState, setDragState] = useState<{
+    cellName: string;
+    offsetX: number;
+    offsetY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
+
   useEffect(() => {
     if (doc?.model && selectedValue) {
       const cell = doc.model.cells.find((c) => c.name === selectedValue);
+      setTempCellName(cell?.name || "");
       setTempSelectedValueText(cell?.formula || "");
     }
   }, [doc?.model, selectedValue]);
@@ -51,6 +69,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
     }
     setError(null);
     let lastUpdatedView = performance.now();
+    totalComputeTime.current = 0;
 
     const frame = () => {
       const start = performance.now();
@@ -87,6 +106,101 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
     },
   ];
 
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    console.log("click", e.target);
+    // If we clicked on the main content area (not a cell)
+    if ((e.target as HTMLElement).classList.contains("cell-canvas")) {
+      // Get click coordinates relative to the container
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Generate new cell name
+      const cellNumber = doc?.model.cells.length || 0;
+      const newCellName = `cell${cellNumber + 1}`;
+
+      console.log("click", { x, y, newCellName });
+
+      // Add new cell to the model
+      changeDoc((d) => {
+        d.model.cells.push({
+          name: newCellName,
+          formula: "=deal()",
+          position: { x, y },
+        });
+      });
+
+      e.stopPropagation();
+    }
+    setSelectedValue(null);
+  };
+
+  // Add mouse move handler
+  const handleMouseMove = (e: React.MouseEvent) => {
+    // Only show tooltip if we're directly over the canvas
+    if ((e.target as HTMLElement).classList.contains("cell-canvas")) {
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      setMousePos({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    } else {
+      setMousePos(null);
+    }
+  };
+
+  // Add mouse leave handler
+  const handleMouseLeave = () => {
+    setMousePos(null);
+  };
+
+  // Add mouse handlers for dragging
+  const handleDragStart = (e: React.MouseEvent, cell: Model["cells"][0]) => {
+    e.stopPropagation();
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    setDragState({
+      cellName: cell.name,
+      offsetX,
+      offsetY,
+      currentX: cell.position.x,
+      currentY: cell.position.y,
+    });
+  };
+
+  const handleDragMove = (e: React.MouseEvent) => {
+    if (dragState) {
+      const rect = (e.target as HTMLElement)
+        .closest(".cell-canvas")
+        ?.getBoundingClientRect();
+      if (rect) {
+        const x = e.clientX - rect.left - dragState.offsetX;
+        const y = e.clientY - rect.top - dragState.offsetY;
+
+        setDragState({
+          ...dragState,
+          currentX: x,
+          currentY: y,
+        });
+      }
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (dragState) {
+      changeDoc((doc) => {
+        const cell = doc.model.cells.find((c) => c.name === dragState.cellName);
+        if (cell) {
+          cell.position.x = dragState.currentX;
+          cell.position.y = dragState.currentY;
+        }
+      });
+      setDragState(null);
+    }
+  };
+
   if (
     !doc ||
     !doc.model ||
@@ -109,6 +223,12 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
         className="flex-1 flex flex-col overflow-hidden bg-cover bg-center bg-repeat text-white relative"
         style={{
           backgroundImage: `url(${background})`,
+        }}
+        onMouseMove={dragState ? handleDragMove : handleMouseMove}
+        onMouseUp={handleDragEnd}
+        onMouseLeave={() => {
+          handleDragEnd();
+          handleMouseLeave();
         }}
       >
         {error && (
@@ -184,60 +304,99 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div
+          className="flex-1 overflow-y-auto cell-canvas cursor-pointer"
+          onClick={handleCanvasClick}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
           <div className="p-4">
             <div className="flex flex-col gap-4">
-              {rows.map(({ label, values }, i) => (
-                <div key={i} className="flex gap-4 items-center">
-                  <div className="w-24 text-sm text-white font-medium">
-                    {label}:
-                  </div>
-                  <div className="flex gap-4 justify-center">
-                    {values.map((name) => {
-                      return (
-                        <div
-                          key={name}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedValue(name);
-                          }}
-                          className={`relative p-1 cursor-pointer rounded-md ${
-                            selectedValue === name
-                              ? "bg-blue-500 bg-opacity-40 border border-white box-border"
-                              : "border border-transparent"
-                          }`}
-                        >
-                          <div className="text-sm mb-1 text-white font-mono">
-                            {name}
-                          </div>
-                          <div
-                            className={`p-1 text-lg max-h-64 overflow-hidden overflow-y-auto rounded relative`}
-                          >
-                            {(() => {
-                              const viewerProps: ValueViewerProps = {
-                                scenarios: scenariosRef.current,
-                                cellToDisplay: name,
-                                filters: doc.model.filters.filter(
-                                  (f) => f !== name
-                                ),
-                              };
+              {doc.model.cells.map((cell) => {
+                const isDragging = dragState?.cellName === cell.name;
+                return (
+                  <div
+                    key={cell.name}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedValue(cell.name);
+                    }}
+                    style={{
+                      position: "absolute",
+                      left: isDragging ? dragState.currentX : cell.position.x,
+                      top: isDragging ? dragState.currentY : cell.position.y,
+                    }}
+                    className={`p-1 rounded-md ${
+                      selectedValue === cell.name
+                        ? "bg-blue-500 bg-opacity-40 border border-white box-border"
+                        : "border border-transparent"
+                    }`}
+                  >
+                    {/* Add drag handle */}
+                    <div
+                      className="absolute -left-1 -top-1 w-4 h-4 bg-gray-700 hover:bg-gray-600 rounded cursor-move flex items-center justify-center"
+                      onMouseDown={(e) => handleDragStart(e, cell)}
+                    >
+                      <div className="w-2 h-2 bg-gray-400 rounded-sm" />
+                    </div>
 
-                              const viewer = valueViewers.find(
-                                (v) => v.shouldRender(viewerProps) !== "hide"
-                              );
-                              if (viewer) {
-                                return viewer.component(viewerProps);
-                              } else {
-                                return "noviewer";
-                              }
-                            })()}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    <div className="text-sm mb-1 text-white font-mono">
+                      {cell.name}
+                    </div>
+                    <div
+                      className={`p-1 text-lg max-h-64 overflow-hidden overflow-y-auto rounded relative`}
+                    >
+                      {(() => {
+                        const viewerProps: ValueViewerProps = {
+                          scenarios: scenariosRef.current,
+                          cellToDisplay: cell.name,
+                          filters: doc.model.filters.filter(
+                            (f) => f !== cell.name
+                          ),
+                        };
+
+                        // First try to use the default viewer if set
+                        if (cell.defaultViewer) {
+                          const defaultViewer = valueViewers.find(
+                            (v) => v.name === cell.defaultViewer
+                          );
+                          if (
+                            defaultViewer &&
+                            defaultViewer.shouldRender(viewerProps) !== "hide"
+                          ) {
+                            return defaultViewer.component(viewerProps);
+                          }
+                        }
+
+                        // Fall back to auto-selection if no default or if default is not available
+                        const viewer = valueViewers.find(
+                          (v) => v.shouldRender(viewerProps) !== "hide"
+                        );
+                        if (viewer) {
+                          return viewer.component(viewerProps);
+                        } else {
+                          return "noviewer";
+                        }
+                      })()}
+                    </div>
                   </div>
+                );
+              })}
+
+              {/* Add new cell tooltip */}
+              {mousePos && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: mousePos.x,
+                    top: mousePos.y + 12, // offset below cursor
+                    pointerEvents: "none", // prevent tooltip from interfering with clicks
+                  }}
+                  className="bg-black bg-opacity-75 text-white text-sm px-2 py-1 rounded-md whitespace-nowrap"
+                >
+                  + Add new cell
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -258,8 +417,44 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
             )}
             {selectedValue && (
               <div className="flex flex-col gap-6">
-                <div className="text-md text-white font-medium">
-                  {selectedValue}
+                <div className="flex justify-between items-center">
+                  <div className="flex-1 mr-2">
+                    <textarea
+                      className="w-full bg-black bg-opacity-30 text-white p-2 rounded text-md font-medium resize-none"
+                      value={tempCellName}
+                      onChange={(e) => setTempCellName(e.target.value)}
+                      onBlur={() => {
+                        if (tempCellName.trim() !== selectedValue) {
+                          changeDoc((doc) => {
+                            const cell = doc.model.cells.find(
+                              (c) => c.name === selectedValue
+                            );
+                            if (cell) {
+                              cell.name = tempCellName.trim();
+                            }
+                          });
+                          setSelectedValue(tempCellName.trim());
+                        }
+                      }}
+                      rows={1}
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      changeDoc((doc) => {
+                        const index = doc.model.cells.findIndex(
+                          (c) => c.name === selectedValue
+                        );
+                        if (index !== -1) {
+                          doc.model.cells.splice(index, 1);
+                        }
+                      });
+                      setSelectedValue(null);
+                    }}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm"
+                  >
+                    Delete
+                  </button>
                 </div>
 
                 <div>
@@ -279,6 +474,50 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
                       });
                     }}
                   />
+                </div>
+
+                {/* Add default viewer selector */}
+                <div>
+                  <div className="text-sm text-white mb-2">Default Viewer</div>
+                  <select
+                    className="w-full bg-black bg-opacity-30 text-white p-2 rounded border border-gray-600"
+                    value={
+                      doc.model.cells.find((c) => c.name === selectedValue)
+                        ?.defaultViewer || ""
+                    }
+                    onChange={(e) => {
+                      changeDoc((doc) => {
+                        const cell = doc.model.cells.find(
+                          (c) => c.name === selectedValue
+                        );
+                        if (cell) {
+                          if (e.target.value === "") {
+                            delete cell.defaultViewer;
+                          } else {
+                            cell.defaultViewer = e.target.value;
+                          }
+                        }
+                      });
+                    }}
+                  >
+                    <option value="">Auto-select viewer</option>
+                    {(() => {
+                      const viewerProps: ValueViewerProps = {
+                        scenarios: scenariosRef.current,
+                        cellToDisplay: selectedValue!,
+                        filters: doc.model.filters.filter(
+                          (f) => f !== selectedValue
+                        ),
+                      };
+                      return valueViewers
+                        .filter((v) => v.shouldRender(viewerProps) !== "hide")
+                        .map((viewer) => (
+                          <option key={viewer.name} value={viewer.name}>
+                            {viewer.name}
+                          </option>
+                        ));
+                    })()}
+                  </select>
                 </div>
 
                 {(() => {

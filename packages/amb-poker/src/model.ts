@@ -38,12 +38,7 @@ export const getSuit = (card: Card) => card[1];
 
 // in this limited language we only support cards, numbers and booleans.
 type UnknownCard = "?";
-type Term = Value | UnknownCard;
-
 export type Value = number | boolean | string | Card | PokerHand;
-
-// A tiny stub of the deal function. TODO: make this real
-const deal = (card: Card | UnknownCard = "?"): Card | UnknownCard => card;
 
 // A scenario is a mapping of each cell to a concrete value.
 // (These were called "contexts" in the previous ambsheet, but scenario is a better name.)
@@ -55,72 +50,100 @@ export type Model = {
   cells: {
     name: string;
     formula: string;
+    position: { x: number; y: number };
+    defaultViewer?: string;
   }[];
   filters: string[];
 };
 
+const PADDING = 50;
+const ROW_HEIGHT = 170;
+const COL_WIDTH = 120;
+
 export const SAMPLE_MODEL: Model = {
   cells: [
-    {
-      name: "myCard1",
-      formula: `=deal("AS")`,
-    },
-    {
-      name: "myCard2",
-      formula: `=deal("3S")`,
-    },
+    // Row 0 - Their cards
     {
       name: "theirCard1",
       formula: "=deal()",
+      position: { x: PADDING + 0 * COL_WIDTH, y: PADDING + 0 * ROW_HEIGHT },
     },
     {
       name: "theirCard2",
       formula: "=deal()",
+      position: { x: PADDING + 1 * COL_WIDTH, y: PADDING + 0 * ROW_HEIGHT },
     },
+    // Row 1 - Community cards
     {
       name: "commCard1",
-      formula: `=deal("7C")`,
+      formula: `=deal()`,
+      position: { x: PADDING + 0 * COL_WIDTH, y: PADDING + 1 * ROW_HEIGHT },
     },
     {
       name: "commCard2",
-      formula: `=deal("2H")`,
+      formula: `=deal()`,
+      position: { x: PADDING + 1 * COL_WIDTH, y: PADDING + 1 * ROW_HEIGHT },
     },
     {
       name: "commCard3",
-      formula: `=deal("3H")`,
+      formula: `=deal()`,
+      position: { x: PADDING + 2 * COL_WIDTH, y: PADDING + 1 * ROW_HEIGHT },
     },
     {
       name: "commCard4",
       formula: "=deal()",
+      position: { x: PADDING + 3 * COL_WIDTH, y: PADDING + 1 * ROW_HEIGHT },
     },
     {
       name: "commCard5",
       formula: "=deal()",
+      position: { x: PADDING + 4 * COL_WIDTH, y: PADDING + 1 * ROW_HEIGHT },
     },
+    // Row 2 - My cards
+    {
+      name: "myCard1",
+      formula: `=deal("AS")`,
+      position: { x: PADDING + 0 * COL_WIDTH, y: PADDING + 2 * ROW_HEIGHT },
+    },
+    {
+      name: "myCard2",
+      formula: `=deal("3S")`,
+      position: { x: PADDING + 1 * COL_WIDTH, y: PADDING + 2 * ROW_HEIGHT },
+    },
+    // Row 3 - Results
     {
       name: "myHand",
       formula:
         "=bestHand(myCard1, myCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
+      position: { x: PADDING + 0 * COL_WIDTH, y: PADDING + 3.2 * ROW_HEIGHT },
     },
     {
       name: "theirHand",
       formula:
         "=bestHand(theirCard1, theirCard2, commCard1, commCard2, commCard3, commCard4, commCard5)",
+      position: {
+        x: PADDING + 1 * (COL_WIDTH * 1.5),
+        y: PADDING + 3.2 * ROW_HEIGHT,
+      },
     },
     {
       name: "iWin",
       formula: "=myHand > theirHand",
+      position: {
+        x: PADDING + 2 * (COL_WIDTH * 1.5),
+        y: PADDING + 3.2 * ROW_HEIGHT,
+      },
     },
     {
-      name: "theyHaveAPair",
-      formula: '=handType(theirHand) = "pair"',
-    },
-    {
-      name: "iHaveAPair",
-      formula: '=handType(myHand) = "pair"',
+      name: "iHaveAStraight",
+      formula: '=handType(myHand) = "straight"',
+      position: {
+        x: PADDING + 3 * (COL_WIDTH * 1.5),
+        y: PADDING + 3.2 * ROW_HEIGHT,
+      },
     },
   ],
-  filters: ["iWin", "theyHaveAPair", "iHaveAPair"],
+  filters: [],
 };
 
 // notes

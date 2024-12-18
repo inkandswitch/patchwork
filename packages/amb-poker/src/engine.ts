@@ -41,7 +41,7 @@ export class Engine {
         if (!(e instanceof InvalidScenarioError)) {
           throw e;
         }
-        console.log("boom");
+        // console.log("boom");
       }
     }
   }

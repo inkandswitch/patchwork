@@ -20,7 +20,8 @@ export const barChartViewer: ValueViewer = {
     const groupedByKeys = aggregateValues(
       scenarios.map((s) => s[cellToDisplay])
     );
-    if (!groupedByKeys.some((g) => g.groups.length > 1)) return "hide";
+    if (!groupedByKeys.some((g) => g.groups.length > 1 && g.groups.length < 20))
+      return "hide";
     return "normal";
   },
   component: ({ scenarios, cellToDisplay, filters }) => {

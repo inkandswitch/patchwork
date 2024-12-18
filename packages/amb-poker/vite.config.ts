@@ -3,10 +3,11 @@ import { defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
 import { EXTERNAL_DEPENDENCIES } from "@patchwork/sdk/shared-dependencies";
+import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 
 export default defineConfig({
   base: "./",
-  plugins: [topLevelAwait(), wasm(), react()],
+  plugins: [topLevelAwait(), wasm(), react(), cssInjectedByJsPlugin()],
 
   build: {
     minify: false,

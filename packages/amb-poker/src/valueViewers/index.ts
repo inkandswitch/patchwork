@@ -5,6 +5,7 @@ import { Scenario, Value } from "../model";
 import { barChartViewer } from "./barChartViewer";
 import { cardViewer } from "./cardViewer";
 import { tableViewer } from "./tableViewer";
+import { histogramViewer } from "./histogramViewer";
 
 export type ValueViewerProps = {
   scenarios: Scenario[];
@@ -24,4 +25,5 @@ export const valueViewers: ValueViewer[] = [
   cardViewer,
   tableViewer,
   barChartViewer,
+  histogramViewer,
 ];
