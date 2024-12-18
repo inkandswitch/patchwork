@@ -9,6 +9,7 @@ export default defineConfig({
   plugins: [topLevelAwait(), wasm(), react()],
 
   build: {
+    minify: false,
     rollupOptions: {
       external: EXTERNAL_DEPENDENCIES,
       input: "./src/index.ts",
