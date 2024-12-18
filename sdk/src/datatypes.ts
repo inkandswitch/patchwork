@@ -174,7 +174,6 @@ const GlobalDataTypes: DataTypesMap = {};
 export const registerDataType = async (
   datatype: DataTypeDescription<unknown, unknown, unknown>
 ) => {
-  console.log("registering datatype", datatype);
   GlobalDataTypes[datatype.id] = { ...datatype, ...(await datatype.load()) };
   datatypeEvents.emit("datatypes:changed", { ...GlobalDataTypes });
 };
