@@ -6,6 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@patchwork/sdk/ui";
 import { DataTypesMap } from "@patchwork/sdk";
+import sortBy from "lodash-es/sortBy";
 
 interface DataTypeSelectorProps {
   dataTypes: DataTypesMap;
@@ -27,26 +28,28 @@ const DataTypeSelector = ({
         Create New
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-[180px]">
-        {Object.values(dataTypes).map((dataType) => {
-          if (!dataType.init && dataType.unlisted) return null;
+        {sortBy(Object.values(dataTypes), (dataType) => dataType.name).map(
+          (dataType) => {
+            if (!dataType.init || dataType.unlisted) return null;
 
-          return (
-            <DropdownMenuItem
-              key={dataType.id}
-              onClick={() => addNewDocument({ type: dataType.id })}
-              className="py-1 px-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-200"
-            >
-              <div className="flex items-center">
-                <Icon
-                  type={dataType.icon}
-                  size={14}
-                  className="inline-block font-bold mr-2 align-top mt-[2px]"
-                />
-                New {dataType.name}
-              </div>
-            </DropdownMenuItem>
-          );
-        })}
+            return (
+              <DropdownMenuItem
+                key={dataType.id}
+                onClick={() => addNewDocument({ type: dataType.id })}
+                className="py-1 px-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-200"
+              >
+                <div className="flex items-center">
+                  <Icon
+                    type={dataType.icon}
+                    size={14}
+                    className="inline-block font-bold mr-2 align-top mt-[2px]"
+                  />
+                  New {dataType.name}
+                </div>
+              </DropdownMenuItem>
+            );
+          }
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
