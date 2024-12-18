@@ -35,31 +35,17 @@ export const SHARED_MODULES = {
   "@patchwork/sdk/ui": "./sdk/ui.js",
   "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
 
-  // Is this useful?
-  "@patchwork/counter": "./counter/index.js",
-  "@patchwork/counter/datatype": "./counter/datatype.js", // do i really need to do this?
   "@patchwork/datagrid": "./datagrid/index.js",
-  "@patchwork/datagrid/datatype": "./datagrid/datatype.js",
-  "@patchwork/engraft": "./engraft/index.js",
-  "@patchwork/engraft/datatype": "./engraft/datatype.js",
   "@patchwork/essay": "./essay/index.js",
-  "@patchwork/essay/datatype": "./essay/datatype.js",
   "@patchwork/file": "./file/index.js",
-  "@patchwork/file/datatype": "./file/datatype.js",
   "@patchwork/folder": "./folder/index.js",
-  "@patchwork/folder/datatype": "./folder/datatype.js",
   "@patchwork/jacquard": "./jacquard/index.js",
-  "@patchwork/jacquard/datatype": "./jacquard/datatype.js",
   "@patchwork/jacquard/components": "./jacquard/components.js", // blerf
   "@patchwork/jacquard/hooks": "./jacquard/hooks.js",
   "@patchwork/kanban": "./kanban/index.js",
-  "@patchwork/kanban/datatype": "./kanban/datatype.js",
-  "@patchwork/module-settings": "./module-settings/index.js",
-  "@patchwork/module-settings/datatype": "./module-settings/datatype.js",
+  "@patchwork/my-tools": "./my-tools/index.js",
   "@patchwork/raw-editor": "./raw-editor/index.js",
-  // no datatype for raw-editor
   "@patchwork/tldraw": "./tldraw/index.js",
-  "@patchwork/tldraw/datatype": "./tldraw/datatype.js",
 };
 
 // All dependencies that should not be bundled in and instead are loaded

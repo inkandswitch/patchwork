@@ -6,7 +6,7 @@ export const BUNDLED_MODULES = [
   "@patchwork/jacquard",
   "@patchwork/kanban",
   "@patchwork/tldraw",
-  "@patchwork/module-settings",
+  "@patchwork/my-tools",
   "@patchwork/raw-editor",
 ];
 

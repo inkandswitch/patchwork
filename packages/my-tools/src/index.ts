@@ -8,8 +8,8 @@ import type {
 
 export const dataType: DataTypeDescription<ModuleSettingsDoc> = {
   type: "patchwork:dataType",
-  id: "module-settings",
-  name: "Custom Modules",
+  id: "my-tools",
+  name: "My Tools",
   icon: "Cog",
   unlisted: true,
 
@@ -22,9 +22,9 @@ export const dataType: DataTypeDescription<ModuleSettingsDoc> = {
 export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
-    id: "module-settings",
-    name: "Custom Modules",
-    supportedDataTypes: ["module-settings"],
+    id: "my-tools",
+    name: "My Tools",
+    supportedDataTypes: ["my-tools"],
     async load() {
       const { tool } = await import("./tool");
       return tool;

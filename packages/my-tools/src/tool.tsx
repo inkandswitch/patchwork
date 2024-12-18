@@ -26,6 +26,8 @@ import {
   DialogTrigger,
 } from "@patchwork/sdk/ui";
 import React, { useCallback, useState, useEffect } from "react";
+import { DataTypeModule } from "./components/DataTypeModule";
+import { ToolsModule } from "./components/ToolsModule";
 
 interface ModuleContents {
   url: string;
@@ -51,45 +53,8 @@ const ModuleContentsDisplay: React.FC<{ contents: ModuleContents }> = ({
 
   return (
     <div className="space-y-2 text-sm">
-      {dataType && (
-        <div className="border rounded p-3">
-          <div className="flex items-center gap-2 font-medium mb-2">
-            <Icon type="Database" size={14} />
-            <span>DataType: {dataType.name}</span>
-          </div>
-          <div className="pl-6 text-gray-500">
-            {dataType.unixFileExtensions &&
-              dataType.unixFileExtensions?.length > 0 && (
-                <div>File types: {dataType.unixFileExtensions.join(", ")}</div>
-              )}
-          </div>
-        </div>
-      )}
-      {tools.length > 0 && (
-        <div className="border rounded p-3">
-          <div className="flex items-center gap-2 font-medium mb-2">
-            <Icon type="Wrench" size={14} />
-            <span>Tools</span>
-          </div>
-          <ul className="pl-6 space-y-1">
-            {tools.map((tool, i) => (
-              <li key={i} className="flex items-center gap-2 text-gray-500">
-                <Icon type={tool.icon || "Wrench"} size={12} />
-                <span>{tool.name}</span>
-                {tool.supportedDataTypes && (
-                  <span className="text-xs">
-                    (supports:{" "}
-                    {Array.isArray(tool.supportedDataTypes)
-                      ? tool.supportedDataTypes.join(", ")
-                      : "*"}
-                    )
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {dataType && <DataTypeModule dataType={dataType} />}
+      {tools.length > 0 && <ToolsModule tools={tools} />}
       {!dataType && !tools.length && (
         <div className="text-gray-500 italic">No datatypes or tools found</div>
       )}

@@ -376,8 +376,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     selectDocPath([
       ...rootFolderPath,
       {
-        name: "Custom Modules",
-        type: "module-settings",
+        name: "My Tools...",
+        type: "my-tools",
         url: accountDoc!.moduleSettingsUrl!,
       },
     ]);
@@ -511,7 +511,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             size={14}
             className="inline-block font-bold mr-2 align-top mt-[2px]"
           />
-          Custom Modules...
+          My Tools...
         </div>
       </div>
 

@@ -152,8 +152,10 @@ async function setupAccount() {
     const loader = new CodeLoader(repo, repo.find(moduleSettingsUrl));
     await Promise.race([
       loader.doneLoading,
-      new Promise((r) => setTimeout(r, 2000)),
-    ]).catch(() => console.warn("Module settings load timed out"));
+      new Promise((r) => setTimeout(r, 1000)),
+    ]).catch(() =>
+      console.warn("Tool load timed out; hopefully they'll arrive later.")
+    );
   }
 
   return account;

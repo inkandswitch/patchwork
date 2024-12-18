@@ -286,12 +286,13 @@ export const useRouter = ({
           });
 
           // ... otherwise add the doc to the root folder
-        } else if (urlParams.type === "module-settings") {
-          // XXX PVH TODO HACK: don't put module-settings into the root folder
+        } else if (urlParams.type === "my-tools") {
+          // XXX PVH TODO HACK: don't put "my-tools" into the root folder, it's part of the account
+          //  (longer term thought: should we root the app's search in the account instead of the root folder?)
           const docLink = {
             type: urlParams.type,
             // The name will be synced in here once the doc loads
-            name: "Custom Packages",
+            name: "My Tools...",
             url: urlParams.url,
           };
           docPath = [

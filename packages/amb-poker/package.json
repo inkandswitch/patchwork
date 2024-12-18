@@ -5,8 +5,7 @@
   "type": "module",
   "main": "src/index.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./datatype": "./dist/datatype.js"
+    ".": "./dist/index.js"
   },
   "scripts": {
     "build": "vite build",
