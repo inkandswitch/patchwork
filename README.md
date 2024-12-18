@@ -79,6 +79,13 @@ Now, to install your module in Patchwork, go to "My Tools" and register a new mo
 Now in Patchwork when you click "create new" you should see a new option letting you create a doc of your new datatype.
 Click that and you should see your new tool running!
 
+## Editing the OS itself
+
+If you want to edit the OS web app:
+
+Run the built app locally with `pnpm preview`.
+Each time you edit the app, run `pnpm build`. (For some edits, `pnpm build:main` might be enough.)
+
 ### AI
 
 LLM features in Patchwork include bot edits and change history summarization.
