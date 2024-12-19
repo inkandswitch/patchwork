@@ -42,12 +42,18 @@ const Timeline = ({ data, currentStep, onStepSelect }) => {
               idx === currentStep
                 ? "bg-green-500"
                 : snapshot.solution
-                ? "bg-green-900 hover:bg-green-800"
+                ? snapshot.solution.repeated
+                  ? "bg-red-900 hover:bg-red-800"
+                  : "bg-green-900 hover:bg-green-800"
                 : "bg-green-900/30 hover:bg-green-900/50"
             } transition-colors`}
             style={{ width: stepWidth }}
             title={`Step ${idx + 1}${
-              snapshot.solution ? " (Solution found)" : ""
+              snapshot.solution
+                ? snapshot.solution.repeated
+                  ? " (Repeated solution)"
+                  : " (Solution found)"
+                : ""
             }`}
           />
         ))}
@@ -156,8 +162,18 @@ const PrologDebugger: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
 
           {/* Solution Display */}
           {currentSnapshot.solution && (
-            <div className="mb-2 p-2 border border-green-300 bg-green-900/20 text-sm">
-              <div className="font-bold mb-1">Solution Found</div>
+            <div
+              className={`mb-2 p-2 border ${
+                currentSnapshot.solution.repeated
+                  ? "border-red-300 bg-red-900/20"
+                  : "border-green-300 bg-green-900/20"
+              } text-sm`}
+            >
+              <div className="font-bold mb-1">
+                {currentSnapshot.solution.repeated
+                  ? "Repeated Solution (Backing Out)"
+                  : "Solution Found"}
+              </div>
               {Object.entries(currentSnapshot.solution.bindings).map(
                 ([key, value]) => (
                   <div key={key}>
@@ -261,7 +277,10 @@ const PrologDebugger: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
             </div>
             <div className="text-sm">
               Step {currentStep + 1} of {doc.trace!.stack.length}
-              {currentSnapshot.solution && " (Solution found!)"}
+              {currentSnapshot.solution &&
+                (currentSnapshot.solution.repeated
+                  ? " (Repeated solution!)"
+                  : " (Solution found!)")}
             </div>
           </div>
         </div>
