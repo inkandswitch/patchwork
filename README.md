@@ -67,8 +67,13 @@ If you want to add a package, here are the steps:
 
 - copy one of the existing directories in `os/src/packages`. `counter` is a nice minimal one you can start with.
 - update the package name in `<yourpackage>/package.json`
+- delete `jacquard.json` -- that's a config file which tells the system which automerge doc to push to. you don't want to overwrite the original counter.
 - `pnpm install`
-- Push the package to an automerge document: `pnpm push`
+- Edit the metadata in `index.ts` to have appropriate names etc.
+- Push the package to an automerge document:
+
+`cd packages/<yourpackage>`
+`pnpm push`
 
 This output should say something like: `pushing to folder: automerge:<docid>`
 

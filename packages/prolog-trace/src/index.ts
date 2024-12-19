@@ -5,9 +5,9 @@ import "./index.css";
 
 export const dataType: DataTypeDescription<Doc> = {
   type: "patchwork:dataType",
-  id: "counter",
-  name: "Counter",
-  icon: "PlusCircle",
+  id: "prolog-trace",
+  name: "Prolog Trace",
+  icon: "Code",
   async load() {
     const { dataType } = await import("./datatype");
     return dataType;
@@ -17,10 +17,10 @@ export const dataType: DataTypeDescription<Doc> = {
 export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
-    id: "counter",
-    name: "Counter",
-    icon: "PlusCircle",
-    supportedDataTypes: ["counter"],
+    id: "prolog-trace",
+    name: "Prolog Trace",
+    icon: "Code",
+    supportedDataTypes: ["prolog-trace"],
     async load() {
       const { tool } = await import("./tool");
       return tool;

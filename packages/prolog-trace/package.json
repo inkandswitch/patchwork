@@ -1,7 +1,7 @@
 {
-  "name": "@patchwork/counter",
+  "name": "@patchwork/prolog-trace",
   "version": "0.0.1",
-  "description": "A simple counter",
+  "description": "A tool for tracing prolog execution",
   "type": "module",
   "main": "src/index.ts",
   "exports": {
@@ -17,6 +17,7 @@
   "dependencies": {
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
     "@patchwork/sdk": "workspace:*",
+    "lucide-react": "^0.284.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
