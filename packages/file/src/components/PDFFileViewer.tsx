@@ -16,7 +16,6 @@ import { FileDoc, LinkedFileContent } from "../datatype";
 import { useToolUIState } from "@patchwork/sdk/router";
 import { DocPath } from "@patchwork/folder";
 import { clsx } from "clsx";
-import { tool } from "../tool";
 import { eventListenerEffect } from "@patchwork/sdk/utils";
 
 // react-pdf doesn't make this easy

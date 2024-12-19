@@ -3,9 +3,9 @@ import type { Doc } from "./datatype";
 
 export const dataType: DataTypeDescription<Doc> = {
   type: "patchwork:dataType",
-  id: "counter",
-  name: "Counter",
-  icon: "PlusCircle",
+  id: "chat",
+  name: "Chat",
+  icon: "Speech",
   async load() {
     const { dataType } = await import("./datatype");
     return dataType;
@@ -14,11 +14,11 @@ export const dataType: DataTypeDescription<Doc> = {
 
 export const tools: ToolDescription[] = [
   {
+    id: "chat",
     type: "patchwork:tool",
-    id: "counter",
-    name: "Counter",
-    icon: "PlusCircle",
-    supportedDataTypes: ["counter"],
+    supportedDataTypes: ["chat"],
+    name: "Chat",
+    icon: "Speech",
     async load() {
       const { tool } = await import("./tool");
       return tool;

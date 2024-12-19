@@ -7,7 +7,7 @@ import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router";
 import { DocLink, DocPath, DocPathUtils } from "@patchwork/folder";
 import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
 import { useToast } from "@patchwork/sdk/ui";
-import { EditorProps, Tool } from "@patchwork/sdk";
+import { Tool } from "@patchwork/sdk";
 
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -42,10 +42,8 @@ import { ReviewSidebar } from "./ReviewSidebar";
 import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
 import { useAsyncComputed } from "@patchwork/sdk/async-signals";
-import {
-  EditorPropsWithTool,
-  SideBySideProps,
-} from "@patchwork/sdk/versionControl";
+import { DocEditor } from "./DocEditor";
+import { SideBySide } from "./SideBySide";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -527,83 +525,6 @@ const DocumentNotFoundPage = ({
             Go to root of branch
           </a>
         </p>
-      </div>
-    </div>
-  );
-};
-
-/* Wrapper component that dispatches to the tool for the doc type */
-const DocEditor = <T, V>({
-  tool,
-  docPath,
-  docUrl,
-  docHeads,
-  annotations,
-  annotationGroups,
-  actorIdToAuthor,
-  hideInlineComments,
-  setSelectedAnchors,
-  setHoveredAnchor,
-  setSelectedAnnotationGroupId,
-  setHoveredAnnotationGroupId,
-  setCommentState,
-  mainDocUrl,
-  activeBranchUrl,
-  collapseContentWithoutChanges,
-}: EditorPropsWithTool<T, V>) => {
-  if (!tool) {
-    return;
-  }
-
-  const Component = tool.EditorComponent as React.FC<EditorProps<T, V>>;
-
-  return (
-    <Component
-      docPath={docPath}
-      docUrl={docUrl}
-      docHeads={docHeads}
-      annotations={annotations}
-      annotationGroups={annotationGroups}
-      actorIdToAuthor={actorIdToAuthor}
-      hideInlineComments={hideInlineComments}
-      collapseContentWithoutChanges={collapseContentWithoutChanges}
-      setSelectedAnchors={setSelectedAnchors}
-      setHoveredAnchor={setHoveredAnchor}
-      setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
-      setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
-      setCommentState={setCommentState}
-      mainDocUrl={mainDocUrl}
-      activeBranchUrl={activeBranchUrl}
-    />
-  );
-};
-
-export const SideBySide = <T, V>(props: SideBySideProps<T, V>) => {
-  // special side-by-side view for tldraw with scroll linking
-  // todo: add back once modules is gone
-  /* if (props.tool.id === "tldraw") {
-    return <TLDrawSideBySide {...props} />;
-  }*/
-
-  const { mainDocUrl } = props;
-
-  return (
-    <div className="flex h-full w-full">
-      <div className="h-full flex-1 overflow-auto bg-gray-200">
-        {
-          <DocEditor
-            {...props}
-            docUrl={mainDocUrl}
-            // note: we don't want to pass in docheads here, the doc heads in the parent
-            // should not affect the heads we show for main
-            docHeads={undefined}
-            annotations={[]}
-            annotationGroups={[]}
-          />
-        }
-      </div>
-      <div className="h-full flex-1 overflow-auto">
-        {<DocEditor {...props} />}
       </div>
     </div>
   );
