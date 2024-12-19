@@ -1,4 +1,4 @@
-import { dataTypeById, toolById, toolsForDataType } from "@patchwork/sdk";
+import { dataTypeById } from "@patchwork/sdk";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { type DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
 import { Button, Toaster } from "@patchwork/sdk/ui";
