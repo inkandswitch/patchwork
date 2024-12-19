@@ -1,7 +1,7 @@
 import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
-import type { CounterDoc } from "./datatype";
+import type { Doc } from "./datatype";
 
-export const dataType: DataTypeDescription<CounterDoc> = {
+export const dataType: DataTypeDescription<Doc> = {
   type: "patchwork:dataType",
   id: "counter",
   name: "Counter",
@@ -14,11 +14,11 @@ export const dataType: DataTypeDescription<CounterDoc> = {
 
 export const tools: ToolDescription[] = [
   {
-    id: "counter",
     type: "patchwork:tool",
-    supportedDataTypes: ["counter"],
+    id: "counter",
     name: "Counter",
     icon: "PlusCircle",
+    supportedDataTypes: ["counter"],
     async load() {
       const { tool } = await import("./tool");
       return tool;
