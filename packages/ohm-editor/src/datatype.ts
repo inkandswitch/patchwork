@@ -28,6 +28,9 @@ export const init = (doc: Doc) => {
   initFrom(doc, {
     title: "Untitled Ohm Grammar",
     grammar: "",
+    example: "",
+    semantics: "",
+    tests: "[]",
   });
 };
 
