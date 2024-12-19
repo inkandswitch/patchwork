@@ -1,12 +1,10 @@
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps, makeTool } from "@patchwork/sdk";
-import { CounterDoc } from "./datatype";
+import { Doc } from "./datatype";
 import React from "react";
 
-export const Counter: React.FC<EditorProps<CounterDoc, string>> = ({
-  docUrl,
-}) => {
-  const [doc, changeDoc] = useDocument<CounterDoc>(docUrl);
+export const Counter: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
+  const [doc, changeDoc] = useDocument<Doc>(docUrl);
 
   if (!doc) {
     return null;
