@@ -1,0 +1,44 @@
+{
+  "name": "@patchwork/mergecraft",
+  "version": "0.0.1",
+  "description": "Automerge backed minecraft?",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "vite build",
+    "push": "jacquard push",
+    "watch": "nodemon --watch src -e js,tsx,ts,tsx,css,json --exec 'pnpm build && pnpm push'"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
+    "@dimforge/rapier3d-compat": "^0.14.0",
+    "@patchwork/sdk": "workspace:*",
+    "@pmndrs/branding": "0.0.8",
+    "@react-three/drei": "9.34.4",
+    "@react-three/fiber": "8.8.10",
+    "@react-three/rapier": "0.8.2",
+    "@react-three/xr": "^6.4.12",
+    "@types/three": "0.144.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "5.0.1",
+    "simplex-noise": "4.0.1",
+    "three": "0.145.0",
+    "zustand": "3.7.2"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/three": "^0.171.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "nodemon": "^3.1.9",
+    "vite": "^5.3.4",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vite-plugin-top-level-await": "^1.4.2",
+    "vite-plugin-wasm": "^3.3.0"
+  }
+}
