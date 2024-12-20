@@ -1,9 +1,13 @@
 import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
-import type { Doc } from "./datatype";
+import type { PrologTraceAnchor, TraceDoc } from "./datatype";
 
 import "./index.css";
 
-export const dataType: DataTypeDescription<Doc> = {
+export const dataType: DataTypeDescription<
+  TraceDoc,
+  PrologTraceAnchor,
+  string
+> = {
   type: "patchwork:dataType",
   id: "prolog-trace",
   name: "Prolog Trace",

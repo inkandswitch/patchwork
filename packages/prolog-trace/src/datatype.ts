@@ -1,9 +1,11 @@
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
+import { Annotation } from "@patchwork/sdk/versionControl";
 
 // SCHEMA
 
-export interface Doc {
+export interface TraceDoc {
+  title: string;
   trace?: {
     stack: any[];
     prog: {
@@ -13,27 +15,48 @@ export interface Doc {
   };
 }
 
+// Simple numeric index anchor type
+export type PrologTraceAnchor = {
+  step: number;
+};
+
+export interface Snapshot {
+  stack: any[];
+  solution?: any;
+  note?: string;
+}
+
 // FUNCTIONS
 
-export const markCopy = (doc: Doc) => {
+export const markCopy = (doc: TraceDoc) => {
   doc.title = "Copy of " + doc.title;
 };
 
-const setTitle = async (doc: Doc, title: string) => {
+const setTitle = async (doc: TraceDoc, title: string) => {
   doc.title = title;
 };
 
-const getTitle = async (doc: Doc) => {
+const getTitle = async (doc: TraceDoc) => {
   return doc.title || "Counter";
 };
 
-export const init = (doc: Doc) => {
+export const init = (doc: TraceDoc) => {
   initFrom(doc, {
     title: "Untitled Prolog Trace",
   });
 };
 
-export const dataType: DataTypeImplementation<Doc, unknown> = {
+export const groupAnnotations = (
+  annotations: Annotation<PrologTraceAnchor, string>[]
+) => {
+  return annotations.map((annotation) => [annotation]);
+};
+
+export const dataType: DataTypeImplementation<
+  TraceDoc,
+  PrologTraceAnchor,
+  string
+> = {
   init,
   getTitle,
   setTitle,

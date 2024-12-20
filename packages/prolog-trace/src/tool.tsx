@@ -1,15 +1,15 @@
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps, makeTool } from "@patchwork/sdk";
-import { Doc } from "./datatype";
+import { TraceDoc } from "./datatype";
 
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Code, ArrowRight } from "lucide-react";
 
 // Helper to format a clause in Prolog syntax
-const formatClause = (clause) => {
+const formatClause = (clause: any) => {
   if (!clause.args || clause.args.length === 0) return clause.name;
   const args = clause.args
-    .map((arg) => {
+    .map((arg: any) => {
       if (!arg.args) return arg.name; // It's a variable
       return formatClause(arg); // It's a compound term
     })
@@ -18,7 +18,7 @@ const formatClause = (clause) => {
 };
 
 // Helper to format a rule in Prolog syntax
-const formatRule = (rule) => {
+const formatRule = (rule: any) => {
   const head = formatClause(rule.head);
   if (!rule.body || rule.body.length === 0) {
     return `${head}.`;
@@ -27,18 +27,26 @@ const formatRule = (rule) => {
   return `${head} :- ${body}.`;
 };
 
-const Timeline = ({ data, currentStep, onStepSelect }) => {
+const Timeline = ({
+  data,
+  currentStep,
+  onStepSelect,
+}: {
+  data: any;
+  currentStep: number;
+  onStepSelect: (step: number) => void;
+}) => {
   const stepWidth = `${100 / data.stack.length}%`;
 
   return (
     <div className="grid grid-cols-[auto_1fr] gap-2 items-center">
       <div className="text-sm opacity-70">Timeline:</div>
       <div className="flex h-6 gap-px">
-        {data.stack.map((snapshot, idx) => (
+        {data.stack.map((snapshot: any, idx: number) => (
           <button
             key={idx}
             onClick={() => onStepSelect(idx)}
-            className={`h-full ${
+            className={`h-full relative ${
               idx === currentStep
                 ? "bg-green-500"
                 : snapshot.solution
@@ -54,16 +62,24 @@ const Timeline = ({ data, currentStep, onStepSelect }) => {
                   ? " (Repeated solution)"
                   : " (Solution found)"
                 : ""
-            }`}
-          />
+            }${snapshot.note ? "\n\nNote: " + snapshot.note : ""}`}
+          >
+            {snapshot.note && (
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full" />
+            )}
+          </button>
         ))}
       </div>
     </div>
   );
 };
 
-const PrologDebugger: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
-  const [doc, changeDoc] = useDocument<Doc>(docUrl);
+const PrologDebugger: React.FC<EditorProps<TraceDoc, string>> = ({
+  docUrl,
+  annotations,
+}) => {
+  console.log({ annotations });
+  const [doc, changeDoc] = useDocument<TraceDoc>(docUrl);
   const [currentStep, setCurrentStep] = useState(0);
   const [jsonInput, setJsonInput] = useState("");
   const [hoveredRule, setHoveredRule] = useState<number | null>(null);
@@ -283,6 +299,22 @@ const PrologDebugger: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
                   : " (Solution found!)")}
             </div>
           </div>
+        </div>
+
+        <div className="col-span-3 border border-green-500 p-2">
+          <div className="text-sm mb-2">Notes for Step {currentStep + 1}</div>
+          <textarea
+            value={currentSnapshot.note || ""}
+            onChange={(e) => {
+              changeDoc((d) => {
+                if (!d.trace) return;
+                d.trace.stack[currentStep].note = e.target.value;
+              });
+            }}
+            placeholder="Add notes about this step..."
+            className="w-full h-20 bg-black border border-green-500 text-green-500 p-2
+                       focus:outline-none focus:border-green-300 text-sm resize-none"
+          />
         </div>
       </div>
     </div>
