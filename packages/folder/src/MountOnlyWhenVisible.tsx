@@ -36,7 +36,11 @@ export const MountOnlyWhenVisible = ({
   }, []);
 
   return (
-    <div ref={ref} style={{ height, minHeight: height }}>
+    <div
+      ref={ref}
+      style={{ height, minHeight: height }}
+      className="overflow-hidden"
+    >
       {isVisible ? children : null}
     </div>
   );
