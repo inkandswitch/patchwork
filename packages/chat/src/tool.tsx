@@ -52,8 +52,8 @@ const ChatMessage: React.FC<{
   onEdit: (messageId: string, newContent: string) => void;
   onDelete: (messageId: string) => void;
   onReact: (messageId: string, emoji: string) => void;
-  readBy: string[];
-  currentUserUrl: string;
+  readBy: AutomergeUrl[];
+  currentUserUrl: AutomergeUrl;
 }> = ({
   message,
   messages,
@@ -130,7 +130,7 @@ const ChatMessage: React.FC<{
 
             {readBy.length > 0 && (
               <div className="absolute bottom-1 right-1">
-                <ReadReceipt readers={readBy} />
+                <ReadReceipt readers={readBy as AutomergeUrl[]} />
               </div>
             )}
           </div>
@@ -193,7 +193,7 @@ const ChatMessage: React.FC<{
                     key={index}
                     onClick={() => onReact(message.id, reaction.emoji)}
                     className={`text-sm rounded-full px-2 py-0.5 ${
-                      reaction.users.includes(currentUserUrl)
+                      reaction.users.includes(currentUserUrl as AutomergeUrl)
                         ? "bg-blue-100"
                         : "bg-gray-100"
                     }`}
@@ -364,7 +364,7 @@ export const Chat: React.FC<EditorProps<ChatDoc, string>> = ({ docUrl }) => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onReact={handleReact}
-            readBy={getReadBy(message.id)}
+            readBy={getReadBy(message.id) as AutomergeUrl[]}
             currentUserUrl={contactHandle.url}
           />
         ))}
@@ -388,7 +388,8 @@ export const Chat: React.FC<EditorProps<ChatDoc, string>> = ({ docUrl }) => {
             <span>Replying to:</span>
             <InlineContactAvatar
               url={
-                doc.messages.find((m) => m.id === replyingTo)?.authorUrl || ""
+                doc.messages.find((m) => m.id === replyingTo)
+                  ?.authorUrl as AutomergeUrl
               }
               size={"default"}
             />
