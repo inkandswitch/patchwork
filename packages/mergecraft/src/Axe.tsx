@@ -8,6 +8,8 @@ import React from "react";
 import { useGLTF } from "@react-three/drei";
 import { GLTF } from "three-stdlib";
 
+import axeUrl from "./assets/axe.glb?url";
+
 type GLTFResult = GLTF & {
   nodes: {
     Mesh_1001_1: THREE.Mesh;
@@ -20,7 +22,7 @@ type GLTFResult = GLTF & {
 };
 
 export function Model(props: JSX.IntrinsicElements["group"]) {
-  const { nodes, materials } = useGLTF("/axe.glb") as GLTFResult;
+  const { nodes, materials } = useGLTF(axeUrl) as GLTFResult;
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -35,4 +37,4 @@ export function Model(props: JSX.IntrinsicElements["group"]) {
   );
 }
 
-useGLTF.preload("/axe.glb");
+useGLTF.preload(axeUrl);

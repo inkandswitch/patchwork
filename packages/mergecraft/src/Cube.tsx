@@ -18,8 +18,15 @@ export const Cubes = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [doc, changeDoc] = useDocument<Doc>(docUrl);
   const addCube = (x: number, y: number, z: number) =>
     changeDoc((doc) => doc.cubes.push([x, y, z]));
-
-  console.log({ doc, docUrl, addCube });
+  const removeCube = (x: number, y: number, z: number) =>
+    changeDoc((doc) => {
+      const index = doc.cubes.findIndex(
+        (coords) => coords[0] === x && coords[1] === y && coords[2] === z
+      );
+      if (index !== -1) {
+        doc.cubes.splice(index, 1);
+      }
+    });
 
   if (!doc) {
     return null;
@@ -27,16 +34,22 @@ export const Cubes = ({ docUrl }: { docUrl: AutomergeUrl }) => {
 
   const cubes = doc.cubes || [];
   return cubes.map((coords, index) => (
-    <Cube key={index} addCube={addCube} position={coords} />
+    <Cube
+      key={index}
+      addCube={addCube}
+      removeCube={removeCube}
+      position={coords}
+    />
   ));
 };
 
 interface CubeProps {
   addCube: (x: number, y: number, z: number) => void;
+  removeCube: (x: number, y: number, z: number) => void;
   position: [number, number, number];
 }
 
-export function Cube({ addCube, ...props }: CubeProps) {
+export function Cube({ addCube, removeCube, ...props }: CubeProps) {
   const ref = useRef<RapierRigidBody>(null);
   const [hover, setHover] = useState<number | undefined>(undefined);
 
@@ -51,6 +64,12 @@ export function Cube({ addCube, ...props }: CubeProps) {
     e.stopPropagation();
     if (!e.faceIndex || !ref.current) return;
     const { x, y, z } = ref.current.translation();
+
+    if (e.button === 2) {
+      removeCube(x, y, z);
+      return;
+    }
+
     const dir: [number, number, number][] = [
       [x + 1, y, z],
       [x - 1, y, z],

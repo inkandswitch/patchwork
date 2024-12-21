@@ -13,7 +13,27 @@ export default function Scene({ docUrl }: { docUrl: AutomergeUrl }) {
 
   return (
     <>
-      <button onClick={() => store.enterVR()}>Enter VR</button>
+      <button
+        style={{
+          position: "absolute",
+          zIndex: 10000,
+          background: "black",
+          borderRadius: "0.5rem",
+          border: "none",
+          fontWeight: "bold",
+          color: "white",
+          padding: "1rem 2rem",
+          cursor: "pointer",
+          fontSize: "1.5rem",
+          bottom: "1rem",
+          left: "50%",
+          boxShadow: "0px 0px 20px rgba(0,0,0,1)",
+          transform: "translate(-50%, 0)",
+        }}
+        onClick={() => store.enterVR()}
+      >
+        Enter VR
+      </button>
       <KeyboardControls
         map={[
           { name: "forward", keys: ["ArrowUp", "w", "W"] },
@@ -26,8 +46,8 @@ export default function Scene({ docUrl }: { docUrl: AutomergeUrl }) {
         <Canvas shadows camera={{ fov: 45 }}>
           <XR store={store}>
             <Sky sunPosition={[100, 20, 100]} />
-            <ambientLight intensity={0.3} />
-            <pointLight castShadow intensity={0.8} position={[100, 100, 100]} />
+            <ambientLight intensity={1.5} />
+            <pointLight castShadow intensity={2.5} position={[100, 100, 100]} />
             <Physics gravity={[0, -30, 0]}>
               <Ground />
               <Player />
