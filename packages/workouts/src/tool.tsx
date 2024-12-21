@@ -1,0 +1,49 @@
+import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import { EditorProps, makeTool } from "@patchwork/sdk";
+import { Doc } from "./datatype";
+import React from "react";
+
+export const Counter: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
+  const [doc, changeDoc] = useDocument<Doc>(docUrl);
+
+  if (!doc) {
+    return null;
+  }
+
+  const increment = () => {
+    changeDoc((d) => {
+      d.count += 2;
+    });
+  };
+
+  const decrement = () => {
+    changeDoc((d) => {
+      d.count -= 2;
+    });
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full">
+      <h2 className="text-4xl font-bold mb-4">{doc.title}</h2>
+      <div className="text-4xl mb-4">{doc.count}</div>
+      <div className="flex space-x-4">
+        <button
+          className="px-4 py-2 bg-red-500 text-white rounded"
+          onClick={decrement}
+        >
+          -
+        </button>
+        <button
+          className="px-4 py-2 bg-green-500 text-white rounded"
+          onClick={increment}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export const tool = makeTool({
+  EditorComponent: Counter,
+});
