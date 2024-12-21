@@ -29,6 +29,7 @@ import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
 import { useToolsForDataType, useTool } from "@patchwork/sdk/hooks";
 import { useModuleWatcher } from "../hooks/useModuleWatcher";
+import { HasPatchworkMetadata } from "@patchwork/sdk/modules/types";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();
@@ -105,11 +106,9 @@ export const Explorer: React.FC = () => {
         throw new Error(`Unsupported document type: ${type}`);
       }
 
-      const newDocHandle =
-        repo.create<HasVersionControlMetadata<unknown, unknown>>();
-      newDocHandle.change((doc) => {
+      const newDocHandle = repo.create<HasPatchworkMetadata>();
+      newDocHandle.change((doc: HasPatchworkMetadata) => {
         dataType.init && dataType.init(doc, repo);
-        // @ts-expect-error TODO: we'll come back to this before merging
         doc["@patchwork"] = {
           type: dataType.id,
           suggestedImportUrl: dataType.importUrl,

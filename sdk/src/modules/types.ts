@@ -5,6 +5,6 @@ export type ModuleSettingsDoc = {
 export type HasPatchworkMetadata = {
   "@patchwork": {
     type: string;
-    suggestedImportUrl: string;
+    suggestedImportUrl?: string;
   };
 };
