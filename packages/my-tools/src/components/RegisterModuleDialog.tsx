@@ -12,6 +12,8 @@ import {
 import { useState, useCallback } from "react";
 import { ModuleContents } from "../tool";
 import { ModuleContentsDisplay } from "./ModuleContentsDisplay";
+import { importModuleFromFolderDocUrl } from "@patchwork/sdk";
+import { isValidAutomergeUrl } from "@automerge/automerge-repo";
 
 export const RegisterModuleDialog: React.FC<{
   onRegister: (url: string) => void;
@@ -23,8 +25,10 @@ export const RegisterModuleDialog: React.FC<{
 
   const inspectModule = useCallback(async () => {
     if (!moduleUrl.trim()) return;
-    const contents = await loadModuleContents(moduleUrl);
-    setPreview(contents);
+    if (isValidAutomergeUrl(moduleUrl)) {
+      const contents = await importModuleFromFolderDocUrl(moduleUrl);
+      setPreview(contents);
+    }
   }, [moduleUrl, loadModuleContents]);
 
   const handleRegister = useCallback(() => {

@@ -13,8 +13,8 @@ export {
   useSelf,
   automergeUrlToAccountToken,
   accountTokenToAutomergeUrl,
-  type ModuleSettingsDoc,
   useRootFolderDocWithMetadata,
 } from "./account.js";
 export * from "./patchworkContext.js";
 export * from "./router/index.js";
+export * from "./modules";

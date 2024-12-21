@@ -1,0 +1,9 @@
+export type { ModuleSettingsDoc } from "./types";
+
+export { ModuleWatcher } from "./module-watcher";
+export {
+  automergeUrlToServiceWorkerUrl,
+  docHandleToServiceWorkerUrl,
+  importModuleFromFolderDocUrl,
+  useSuggestedModuleForDocUrl, // todo: move this
+} from "./utils";

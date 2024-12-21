@@ -13,11 +13,11 @@ import { next as Automerge } from "@automerge/automerge";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
-import { getAccount } from "@patchwork/sdk";
+import { getAccount, useCurrentAccount } from "@patchwork/sdk";
 import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
 import { BACKUP_SYNC } from "./explorer/components/SyncIndicator.js";
-import { CodeLoader } from "./codeLoader.js";
+import { ModuleWatcherProvider } from "./explorer/hooks/useModuleWatcher.js";
 
 // Peer id prefix is added to both the peer id of the client and the service worker
 // to make it easier to grep for logs that are related to your own changes / sync state
@@ -147,22 +147,9 @@ async function setupAccount() {
     author = account.contactHandle.url;
   });
 
-  const moduleSettingsUrl = account.handle.docSync()?.moduleSettingsUrl;
-  if (moduleSettingsUrl) {
-    const loader = new CodeLoader(repo, repo.find(moduleSettingsUrl));
-    // @ts-expect-error - adding property to window as a TEMPORARY HACK
-    window.loader = loader;
-    await Promise.race([
-      loader.doneLoading,
-      new Promise((r) => setTimeout(r, 1000)),
-    ]).catch(() =>
-      console.warn("Tool load timed out; hopefully they'll arrive later.")
-    );
-  }
-
   return account;
 }
-await setupAccount();
+const account = await setupAccount();
 
 /** Here we monkey patch the DocHandle to
  *  always add the currently logged in user as author
@@ -209,7 +196,9 @@ window.repo = repo;
 
 export const Root = () => (
   <RepoContext.Provider value={repo}>
-    <Explorer />
+    <ModuleWatcherProvider account={account} repo={repo}>
+      <Explorer />
+    </ModuleWatcherProvider>
   </RepoContext.Provider>
 );
 

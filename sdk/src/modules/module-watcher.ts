@@ -5,13 +5,24 @@ import {
   registerDataType,
   registerTool,
 } from "@patchwork/sdk";
-import { DocHandle, DocumentId, Repo } from "@automerge/automerge-repo";
-import { BUNDLED_MODULES } from "./bundledPackages.js";
+import {
+  DocHandle,
+  DocumentId,
+  isValidAutomergeUrl,
+  Repo,
+} from "@automerge/automerge-repo";
+import { importModuleFromFolderDocUrl } from "./utils";
 
-export class CodeLoader {
+/**
+ * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
+ * It also watches the modules themselves for changes and reloads them when they change.
+ */
+
+export class ModuleWatcher {
   constructor(
-    private repo: Repo,
-    private moduleSettingsHandle: DocHandle<ModuleSettingsDoc>
+    private moduleSettingsHandle: DocHandle<ModuleSettingsDoc>,
+    private baselineModules: string[],
+    private repo: Repo
   ) {
     this.doneLoading = this.init();
   }
@@ -19,16 +30,16 @@ export class CodeLoader {
   doneLoading: Promise<void>;
 
   private async init() {
-    await this.loadModules(BUNDLED_MODULES);
+    await this.loadModules(this.baselineModules);
     this.moduleSettingsHandle.on("change", () =>
       this.load().catch(console.error)
     );
     await this.load();
   }
 
-  private async loadModules(config: string[]) {
+  async loadModules(modules: string[]) {
     await Promise.all(
-      config.map(async (importName) => {
+      modules.map(async (importName) => {
         this.registerModule(importName);
         this.setDocWatcher(importName);
       })
@@ -37,7 +48,9 @@ export class CodeLoader {
 
   private async importModuleSafe(importName: string): Promise<any | null> {
     try {
-      return await import(importName);
+      return await (isValidAutomergeUrl(importName)
+        ? importModuleFromFolderDocUrl(importName)
+        : import(importName)); // allow reimporting; note this doesn't work for referenced files inside the import
     } catch (err) {
       console.error(`Failed to import ${importName}`, err);
       return null;
@@ -64,20 +77,21 @@ export class CodeLoader {
   // It would be better to watch all the files in the folder recursively
   // and to have some relationship with those other than just parsing the URL.
   private setDocWatcher(importName: string) {
-    const docId = importName.match(/\/automerge\/(\w+)\//)?.[1];
-    if (!docId) return;
-    const handle = this.repo.find(docId as DocumentId);
-    if (!handle) return console.warn(`No handle found for docId ${docId}`);
+    const docUrl = isValidAutomergeUrl(importName)
+      ? importName
+      : (importName.match(/\/automerge\/(\w+)\//)?.[1] as DocumentId);
+    const handle = this.repo.find(docUrl);
+    if (!handle) return console.warn(`No handle found for docUrl ${docUrl}`);
 
     handle.on("change", async () => {
       // Note that because the heads are going into a query parameter,
       // modules loaded *below* this one will not be reloaded unless their filename has changed.
-      const versionedImport = `${importName}?v=${handle.heads()}`;
+      const versionedImport = `${importName}`;
       this.registerModule(versionedImport);
     });
   }
 
-  async load() {
+  private async load() {
     const doc = await this.moduleSettingsHandle.doc().catch((err) => {
       console.error("Error loading moduleSettingsDoc", err);
       return null;

@@ -143,7 +143,7 @@ self.addEventListener("activate", async (event) => {
 });
 
 const ASSETS_REQUEST_URL_REGEX =
-  /^https?:\/\/[^/]*\/automerge\/([a-zA-Z0-9]+)(\/.*)?(\?.*)?$/;
+  /^https?:\/\/[^/]*\/automerge\/(automerge:)?([a-zA-Z0-9]+)(\/.*)?(\?.*)?$/;
 
 const headsEqual = (doc, heads) => {
   if (!doc) {
@@ -157,10 +157,13 @@ self.addEventListener("fetch", async (event) => {
   const url = new URL(event.request.url);
 
   if (ASSETS_REQUEST_URL_REGEX.test(event.request.url)) {
-    const [, , docId, ...encodedParts] = url.pathname.split("/");
+    const [, , maybeAutomergeUrl, ...encodedParts] = url.pathname.split("/");
     const parts = encodedParts.map((part) => decodeURIComponent(part));
 
-    const automergeUrl = `automerge:${docId}`;
+    // support old docID style URLs
+    const automergeUrl = maybeAutomergeUrl.startsWith("automerge:")
+      ? maybeAutomergeUrl
+      : `automerge:${maybeAutomergeUrl}`;
     if (!isValidAutomergeUrl(automergeUrl)) {
       event.respondWith(
         new Response(`Invalid document id ${docId}`, {

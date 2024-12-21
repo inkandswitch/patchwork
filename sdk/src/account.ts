@@ -23,10 +23,7 @@ import {
   withHasVersionControlMetadata,
 } from "./versionControl";
 import { AssetsDoc } from "./assets";
-
-export type ModuleSettingsDoc = {
-  modules: string[];
-};
+import { ModuleSettingsDoc } from "./modules";
 
 export interface AccountDoc {
   contactUrl: AutomergeUrl;

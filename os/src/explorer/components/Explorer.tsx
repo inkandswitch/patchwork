@@ -1,4 +1,4 @@
-import { dataTypeById } from "@patchwork/sdk";
+import { dataTypeById, useSuggestedModuleForDocUrl } from "@patchwork/sdk";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { type DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
 import { Button, Toaster } from "@patchwork/sdk/ui";
@@ -28,6 +28,7 @@ import { Sidebar } from "./sidebar/Sidebar";
 import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
 import { useToolsForDataType, useTool } from "@patchwork/sdk/hooks";
+import { useModuleWatcher } from "../hooks/useModuleWatcher";
 
 export const Explorer: React.FC = () => {
   const repo = useRepo();
@@ -52,18 +53,8 @@ export const Explorer: React.FC = () => {
   const [selectedDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(selectedDocUrl);
 
-  // @ts-expect-error global type hack
-  const patchworkMetadata = selectedDoc?.["@patchwork"];
-  useEffect(() => {
-    if (patchworkMetadata) {
-      console.log(
-        "Found a patchwork recommended modules document",
-        patchworkMetadata
-      );
-      // @ts-expect-error global window hack
-      window.loader.loadModules([patchworkMetadata.suggestedImportUrl]);
-    }
-  }, [patchworkMetadata]);
+  const { watcher } = useModuleWatcher();
+  useSuggestedModuleForDocUrl(selectedDocUrl, watcher);
 
   useEffect(() => {
     // @ts-expect-error global window

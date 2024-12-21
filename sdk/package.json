@@ -71,6 +71,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-merge-refs": "^2.1.1",
+    "resolve.exports": "^2.0.3",
     "signia": "^0.1.5",
     "signia-react": "^0.1.5",
     "tailwind-merge": "^1.14.0",
