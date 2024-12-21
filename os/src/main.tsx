@@ -13,7 +13,7 @@ import { next as Automerge } from "@automerge/automerge";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
-import { getAccount, useCurrentAccount } from "@patchwork/sdk";
+import { getAccount } from "@patchwork/sdk";
 import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
 import { BACKUP_SYNC } from "./explorer/components/SyncIndicator.js";
