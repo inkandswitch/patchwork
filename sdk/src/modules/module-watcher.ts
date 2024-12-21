@@ -87,6 +87,10 @@ export class ModuleWatcher {
       // Note that because the heads are going into a query parameter,
       // modules loaded *below* this one will not be reloaded unless their filename has changed.
       const versionedImport = `${importName}`;
+      // This needs heads support in AutomergeUrl
+      /* ?heads=${(
+        handle.heads() || []
+      ).join(",")} */
       this.registerModule(versionedImport);
     });
   }

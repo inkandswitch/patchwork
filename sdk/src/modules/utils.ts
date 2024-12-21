@@ -28,7 +28,7 @@ export const useSuggestedModuleForDocUrl = (
   const [selectedDoc] = useDocument<HasPatchworkMetadata>(docUrl);
   const patchworkMetadata = selectedDoc?.["@patchwork"];
   useEffect(() => {
-    if (!watcher || !patchworkMetadata) return;
+    if (!watcher || !patchworkMetadata?.suggestedImportUrl) return;
 
     console.log(
       "Found a patchwork recommended modules document",
