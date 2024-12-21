@@ -397,7 +397,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     selectDocPath([
       ...rootFolderPath,
       {
-        name: "My Tools...",
+        name: "My Tools",
         type: "my-tools",
         url: accountDoc!.moduleSettingsUrl!,
       },
@@ -524,7 +524,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
         <OpenAutomergeUrl addNewDocument={addNewDocument} />
         <div
-          className="py-1 px-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-200 "
+          className={`py-1 px-2 text-sm  cursor-pointer ${
+            selectedDocPath &&
+            DocPathUtils.toLink(selectedDocPath).type === "my-tools"
+              ? " bg-gray-300 hover:bg-gray-300 text-gray-900"
+              : "text-gray-600 hover:bg-gray-200"
+          }`}
           onClick={() => openModuleSettings()}
         >
           <Icon
@@ -532,7 +537,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             size={14}
             className="inline-block font-bold mr-2 align-top mt-[2px]"
           />
-          My Tools...
+          My Tools
         </div>
       </div>
 

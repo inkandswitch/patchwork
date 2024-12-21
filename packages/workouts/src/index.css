@@ -1,0 +1,6 @@
+/* This is a bit of a hack since we don't have proper style scoping yet.
+   We rely on the fact that the OS defines the tailwind base (with appropriate config);
+   we only generate components and utilities here which may be specific to this package. */
+/* @tailwind base; */
+@tailwind components;
+@tailwind utilities;

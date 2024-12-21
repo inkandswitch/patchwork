@@ -51,7 +51,7 @@ export default defineConfig({
       external: EXTERNAL_DEPENDENCIES,
       output: {
         entryFileNames: "[name].js",
-        chunkFileNames: "chunks/[name]-[hash].js",
+        chunkFileNames: "chunks/[name].js",
       },
     },
   },

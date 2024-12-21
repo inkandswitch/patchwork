@@ -122,7 +122,6 @@ export const toolsForDataType = (dataType: string | undefined): Tool[] => {
     tool.supportedDataTypes.includes("*")
   );
 
-  console.log("toolsForDataType", dataType, specificTools, genericTools);
   return [...specificTools, ...genericTools];
 };
 

@@ -20,7 +20,7 @@ export default defineConfig({
       output: {
         format: "es",
         entryFileNames: "[name].js",
-        chunkFileNames: "assets/[name].js",
+        chunkFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name][extname]",
       },
       preserveEntrySignatures: "strict",

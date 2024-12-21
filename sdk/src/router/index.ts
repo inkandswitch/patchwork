@@ -292,7 +292,7 @@ export const useRouter = ({
           const docLink = {
             type: urlParams.type,
             // The name will be synced in here once the doc loads
-            name: "My Tools...",
+            name: "My Tools",
             url: urlParams.url,
           };
           docPath = [

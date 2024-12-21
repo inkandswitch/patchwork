@@ -3,32 +3,32 @@ import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 
 // SCHEMA
 
-export type CounterDoc = HasVersionControlMetadata<unknown, unknown> & {
+export type Doc = HasVersionControlMetadata<unknown, unknown> & {
   title: string;
   count: number;
 };
 // FUNCTIONS
 
-export const markCopy = (doc: CounterDoc) => {
+export const markCopy = (doc: Doc) => {
   doc.title = "Copy of " + doc.title;
 };
 
-const setTitle = async (doc: CounterDoc, title: string) => {
+const setTitle = async (doc: Doc, title: string) => {
   doc.title = title;
 };
 
-const getTitle = async (doc: CounterDoc) => {
+const getTitle = async (doc: Doc) => {
   return doc.title || "Counter";
 };
 
-export const init = (doc: CounterDoc) => {
+export const init = (doc: Doc) => {
   initFrom(doc, {
     title: "Untitled Counter",
     count: 0,
   });
 };
 
-export const dataType: DataTypeImplementation<CounterDoc, unknown> = {
+export const dataType: DataTypeImplementation<Doc, unknown> = {
   init,
   getTitle,
   setTitle,

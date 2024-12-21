@@ -1,0 +1,33 @@
+{
+  "name": "@patchwork/chat",
+  "version": "0.0.1",
+  "description": "A simple chat",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "vite build",
+    "push": "jacquard push",
+    "watch": "nodemon --watch src -e js,tsx,ts,tsx,css,json --exec 'pnpm build && pnpm push'"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge-repo": "2.0.0-alpha.7",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
+    "@patchwork/sdk": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@vitejs/plugin-react": "^4.3.1",
+    "nodemon": "^3.1.9",
+    "vite": "^5.3.4",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vite-plugin-top-level-await": "^1.4.2",
+    "vite-plugin-wasm": "^3.3.0"
+  }
+}
