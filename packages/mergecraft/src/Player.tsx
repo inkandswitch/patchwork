@@ -2,10 +2,15 @@ import * as THREE from "three";
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
-import { CapsuleCollider, RigidBody, useRapier } from "@react-three/rapier";
+import {
+  CapsuleCollider,
+  RigidBody,
+  RapierRigidBody,
+  useRapier,
+} from "@react-three/rapier";
 import * as RAPIER from "@dimforge/rapier3d-compat";
 
-import Axe from "./Axe";
+import { Model as Axe } from "./Axe";
 
 const SPEED = 5;
 const direction = new THREE.Vector3();
@@ -14,8 +19,8 @@ const sideVector = new THREE.Vector3();
 const rotation = new THREE.Vector3();
 
 export function Player({ lerp = THREE.MathUtils.lerp }) {
-  const axe = useRef<THREE.Group<THREE.Object3DEventMap>>();
-  const ref = useRef<typeof RigidBody>();
+  const axe = useRef<THREE.Group>(null);
+  const ref = useRef<RapierRigidBody>(null);
   const rapier = useRapier();
   const [, get] = useKeyboardControls();
   useFrame((state) => {
@@ -24,7 +29,8 @@ export function Player({ lerp = THREE.MathUtils.lerp }) {
     }
 
     const { forward, backward, left, right, jump } = get();
-    const velocity = ref.current.linvel();
+    const lv = ref.current.linvel();
+    const length = new THREE.Vector3(lv.x, lv.y, lv.z).length();
 
     // update camera
     const xlation = ref.current.translation();
@@ -32,7 +38,7 @@ export function Player({ lerp = THREE.MathUtils.lerp }) {
     // update axe
     axe.current.children[0].rotation.x = lerp(
       axe.current.children[0].rotation.x,
-      Math.sin((velocity.length() > 1) * state.clock.elapsedTime * 10) / 6,
+      Math.sin((length > 1 ? 1 : 0) * state.clock.elapsedTime * 10) / 6,
       0.1
     );
     axe.current.rotation.copy(state.camera.rotation);
@@ -47,14 +53,16 @@ export function Player({ lerp = THREE.MathUtils.lerp }) {
       .normalize()
       .multiplyScalar(SPEED)
       .applyEuler(state.camera.rotation);
-    ref.current.setLinvel({ x: direction.x, y: velocity.y, z: direction.z });
+    ref.current.setLinvel({ x: direction.x, y: lv.y, z: direction.z }, true);
     // jumping
-    const world = rapier.world.raw();
-    const ray = world.castRay(
-      new RAPIER.Ray(ref.current.translation(), { x: 0, y: -1, z: 0 })
+    const world = rapier.world;
+    const result = world.castRay(
+      new RAPIER.Ray(ref.current.translation(), { x: 0, y: -1, z: 0 }),
+      100, // maxtoi
+      true // solid
     );
-    const grounded = ray && ray.collider && Math.abs(ray.toi) <= 1.75;
-    if (jump && grounded) ref.current.setLinvel({ x: 0, y: 7.5, z: 0 });
+    const grounded = result && result.collider && result.timeOfImpact <= 1.75;
+    if (jump && grounded) ref.current.setLinvel({ x: 0, y: 7.5, z: 0 }, true);
   });
   return (
     <>
@@ -70,7 +78,9 @@ export function Player({ lerp = THREE.MathUtils.lerp }) {
       </RigidBody>
       <group
         ref={axe}
-        onPointerMissed={(e) => (axe.current.children[0].rotation.x = -0.5)}
+        onPointerMissed={(e) =>
+          axe.current && (axe.current.children[0].rotation.x = -0.5)
+        }
       >
         <Axe position={[0.3, -0.35, 0.5]} />
       </group>

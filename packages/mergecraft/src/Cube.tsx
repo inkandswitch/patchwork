@@ -1,12 +1,14 @@
 import { useCallback, useRef, useState } from "react";
-import { useTexture } from "@react-three/drei";
-import { RigidBody } from "@react-three/rapier";
-import create from "zustand";
-import dirt from "./assets/dirt.jpg?url";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { Doc } from "./datatype";
+
 import { ThreeEvent } from "@react-three/fiber";
+import { useTexture } from "@react-three/drei";
+import { RigidBody, type RapierRigidBody } from "@react-three/rapier";
+
+import { Doc } from "./datatype";
+
+import dirt from "./assets/dirt.jpg?url";
 
 // This is a naive implementation and wouldn't allow for more than a few thousand boxes.
 // In order to make this scale this has to be one instanced mesh, then it could easily be
@@ -35,19 +37,21 @@ interface CubeProps {
 }
 
 export function Cube({ addCube, ...props }: CubeProps) {
-  const ref = useRef();
-  const [hover, set] = useState(null);
+  const ref = useRef<RapierRigidBody>(null);
+  const [hover, setHover] = useState<number | undefined>(undefined);
 
   const texture = useTexture(dirt);
   const onMove = useCallback((e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    set(Math.floor(e.faceIndex / 2));
+    if (!e.faceIndex) return;
+    setHover(Math.floor(e.faceIndex / 2));
   }, []);
-  const onOut = useCallback(() => set(null), []);
-  const onClick = useCallback((e) => {
+  const onOut = useCallback(() => setHover(undefined), []);
+  const onClick = useCallback((e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
+    if (!e.faceIndex || !ref.current) return;
     const { x, y, z } = ref.current.translation();
-    const dir = [
+    const dir: [number, number, number][] = [
       [x + 1, y, z],
       [x - 1, y, z],
       [x, y + 1, z],
@@ -55,7 +59,9 @@ export function Cube({ addCube, ...props }: CubeProps) {
       [x, y, z + 1],
       [x, y, z - 1],
     ];
-    addCube(...dir[Math.floor(e.faceIndex / 2)]);
+    const faceIndex = Math.floor(e.faceIndex / 2);
+    const adjacentCubeCoordinates = dir[faceIndex];
+    addCube(...adjacentCubeCoordinates);
   }, []);
   return (
     <RigidBody {...props} type="fixed" colliders="cuboid" ref={ref}>

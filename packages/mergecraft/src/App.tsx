@@ -1,23 +1,19 @@
+import { type AutomergeUrl } from "@automerge/automerge-repo";
 import { Canvas } from "@react-three/fiber";
 import { Sky, PointerLockControls, KeyboardControls } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
-import { Ground } from "./Ground";
-import { Player } from "./Player";
-import { Cube, Cubes } from "./Cube";
-import { type AutomergeUrl } from "@automerge/automerge-repo";
 import { createXRStore, XR } from "@react-three/xr";
 
-// The original was made by Maksim Ivanow: https://www.youtube.com/watch?v=Lc2JvBXMesY&t=124s
-// This demo needs pointer-lock, that works only if you open it in a new window
-// Controls: WASD + left click
+import { Ground } from "./Ground";
+import { Player } from "./Player";
+import { Cubes } from "./Cube";
 
-export default function App({ docUrl }: { docUrl: AutomergeUrl }) {
+export default function Scene({ docUrl }: { docUrl: AutomergeUrl }) {
   const store = createXRStore();
 
   return (
     <>
       <button onClick={() => store.enterVR()}>Enter VR</button>
-      <button onClick={() => store.enterAR()}>Enter AR</button>
       <KeyboardControls
         map={[
           { name: "forward", keys: ["ArrowUp", "w", "W"] },
