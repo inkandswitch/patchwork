@@ -363,7 +363,7 @@ const pushFile = async ({
     debug("Creating new file...");
 
     const dataTypes = allDataTypes();
-    console.log(dataTypes);
+
     const dataType =
       Object.values(dataTypes).find((dt) =>
         dt.unixFileExtensions?.includes(fileExtension)

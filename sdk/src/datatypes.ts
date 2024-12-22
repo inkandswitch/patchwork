@@ -176,7 +176,6 @@ export const registerDataType = async (
   datatype: DataTypeDescription<unknown, unknown, unknown>,
   importUrl: string
 ) => {
-  console.log("registering datatype", datatype);
   GlobalDataTypes[datatype.id] = {
     ...datatype,
     importUrl,
