@@ -33,6 +33,47 @@ interface ChatDoc {
   readReceipts: Record<AutomergeUrl, { messageId: string; timestamp: number }>;
   typingUsers: TypingIndicator[];
 }
+const convertUrlsToLinks = (text: string): JSX.Element[] => {
+  // URL regex pattern - using exec() instead of split()
+  const urlPattern = /(https?:\/\/[^\s]+)/gi;
+  const parts: JSX.Element[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = urlPattern.exec(text)) !== null) {
+    // Add the text before the URL
+    if (match.index > lastIndex) {
+      parts.push(
+        <span key={`text-${lastIndex}`}>
+          {text.slice(lastIndex, match.index)}
+        </span>
+      );
+    }
+
+    // Add the URL as a link
+    parts.push(
+      <a
+        key={`link-${match.index}`}
+        href={match[0]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-500 hover:text-blue-600 hover:underline"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {match[0]}
+      </a>
+    );
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add any remaining text after the last URL
+  if (lastIndex < text.length) {
+    parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex)}</span>);
+  }
+
+  return parts;
+};
 
 const TYPING_TIMEOUT = 3000;
 const COMMON_EMOJIS = ["👍", "❤️", "😂", "🎉", "👏", "🤔"];
@@ -94,7 +135,7 @@ const ChatMessage: React.FC<{
               url={replyToMessage.authorUrl}
               size={"default"}
             />
-            {replyToMessage.content}
+            {convertUrlsToLinks(replyToMessage.content)}
           </div>
         </div>
       )}
@@ -121,7 +162,7 @@ const ChatMessage: React.FC<{
               </div>
             ) : (
               <>
-                {message.content}
+                {convertUrlsToLinks(message.content)}
                 {message.edited && (
                   <span className="text-xs text-gray-500 ml-2">(edited)</span>
                 )}
