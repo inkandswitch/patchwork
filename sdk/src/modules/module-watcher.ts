@@ -80,6 +80,10 @@ export class ModuleWatcher {
     const docUrl = isValidAutomergeUrl(importName)
       ? importName
       : (importName.match(/\/automerge\/(\w+)\//)?.[1] as DocumentId);
+
+    // This is probably a built-in, which is fine!
+    if (!docUrl) return;
+
     const handle = this.repo.find(docUrl);
     if (!handle) return console.warn(`No handle found for docUrl ${docUrl}`);
 
