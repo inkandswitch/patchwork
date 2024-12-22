@@ -44,6 +44,8 @@ export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
     throw new Error("No entry point found in package.json");
   }
   // this should use heads() but we want to put them in the URL prefix
+  // (so as to make sure the versions of assets & relative required files are consistent)
+  // and that really requires some changes to the service-worker I'm not ready to make
   return import(entryPointUrl + "?rand=" + Math.random());
 }
 
