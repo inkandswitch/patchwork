@@ -55,8 +55,6 @@ import { FillFlexParent } from "../FillFlexParent";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import DataTypeSelector from "./DataTypeSelector";
 import { OpenAutomergeUrl } from "./OpenAutomergeUrl";
-import { useSuggestedModuleForDocUrl } from "@patchwork/sdk";
-import { useModuleWatcher } from "../../hooks/useModuleWatcher";
 
 const FlatDocPathsContext = createContext<DocPath[]>([]);
 
@@ -90,9 +88,6 @@ const Node = (props: NodeRendererProps<NodeData>) => {
   const docPath = node.data.docPath;
   const docLink = DocPathUtils.toLink(docPath);
   const dataType = dataTypeById(docLink.type);
-
-  const { watcher } = useModuleWatcher();
-  useSuggestedModuleForDocUrl(docLink.url, watcher);
 
   const flatDocPaths = useContext(FlatDocPathsContext);
 
