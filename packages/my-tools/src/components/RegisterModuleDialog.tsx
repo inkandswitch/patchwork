@@ -75,7 +75,7 @@ export const RegisterModuleDialog: React.FC<{
                   id="moduleUrl"
                   value={moduleUrl}
                   onChange={(e) => setModuleUrl(e.target.value)}
-                  placeholder="/automerge/2oQBaw48pr5B5VUCiThMQBwM8ApG/dist/index.js"
+                  placeholder="automerge:2oQBaw48pr5B5VUCiThMQBwM8ApG"
                 />
                 <Button onClick={inspectModule} disabled={!moduleUrl.trim()}>
                   Inspect
@@ -85,15 +85,15 @@ export const RegisterModuleDialog: React.FC<{
 
             <div className="text-sm text-gray-600 space-y-4">
               <p>
-                You can enter any URL pointing to a JavaScript module that
-                exports tools or data types for Patchwork.
+                Tools and datatypes are loaded from folders. Paste in an
+                AutomergeURL for the folder which contains the package.json. The
+                inspector will show you which datatypes & tools it finds within.
               </p>
               <div className="bg-gray-50 p-4 rounded-lg border">
                 <p>
-                  For modules stored in Automerge documents, use the special URL
-                  format:
+                  Use this format:
                   <code className="block mt-2 bg-white p-2 rounded">
-                    /automerge/DOC_ID/dist/index.js
+                    automerge:2oQBaw48pr5B5VUCiThMQBwM8ApG
                   </code>
                 </p>
               </div>
