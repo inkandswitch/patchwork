@@ -6,6 +6,7 @@ import {
   type DataType,
   type Tool,
   makeTool,
+  importModuleFromFolderDocUrl,
 } from "@patchwork/sdk";
 import {
   Icon,
@@ -30,6 +31,7 @@ import { DataTypeModule } from "./components/DataTypeModule";
 import { ToolsModule } from "./components/ToolsModule";
 import { RegisterModuleDialog } from "./components/RegisterModuleDialog";
 import { RegisteredModules } from "./components/RegisteredModules";
+import { isValidAutomergeUrl } from "@automerge/automerge-repo";
 
 export interface ModuleContents {
   url: string;
@@ -48,7 +50,9 @@ export const ModuleSettingsEditor: React.FC<
 
   const loadModuleContents = async (url: string): Promise<ModuleContents> => {
     try {
-      const module = await import(url);
+      const module = isValidAutomergeUrl(url)
+        ? await importModuleFromFolderDocUrl(url)
+        : import(url);
       return {
         url,
         dataType: module.dataType,
