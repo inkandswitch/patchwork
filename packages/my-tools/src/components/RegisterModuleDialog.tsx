@@ -13,11 +13,11 @@ import { useState, useCallback } from "react";
 import { ModuleContents } from "../tool";
 import { ModuleContentsDisplay } from "./ModuleContentsDisplay";
 import { importModuleFromFolderDocUrl } from "@patchwork/sdk";
-import { isValidAutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 
 export const RegisterModuleDialog: React.FC<{
-  onRegister: (url: string) => void;
-  loadModuleContents: (url: string) => Promise<ModuleContents>;
+  onRegister: (url: AutomergeUrl) => void;
+  loadModuleContents: (url: AutomergeUrl) => Promise<ModuleContents>;
 }> = ({ onRegister, loadModuleContents }) => {
   const [moduleUrl, setModuleUrl] = useState("");
   const [preview, setPreview] = useState<ModuleContents | null>(null);
@@ -33,7 +33,7 @@ export const RegisterModuleDialog: React.FC<{
 
   const handleRegister = useCallback(() => {
     if (!moduleUrl.trim()) return;
-    onRegister(moduleUrl);
+    onRegister(moduleUrl as AutomergeUrl);
     setModuleUrl("");
     setPreview(null);
     setOpen(false);

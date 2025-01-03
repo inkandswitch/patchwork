@@ -31,10 +31,10 @@ import { DataTypeModule } from "./components/DataTypeModule";
 import { ToolsModule } from "./components/ToolsModule";
 import { RegisterModuleDialog } from "./components/RegisterModuleDialog";
 import { RegisteredModules } from "./components/RegisteredModules";
-import { isValidAutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 
 export interface ModuleContents {
-  url: string;
+  url: AutomergeUrl;
   dataType?: DataType<unknown, unknown, unknown>;
   tools?: Tool[];
   error?: string;
@@ -48,7 +48,9 @@ export const ModuleSettingsEditor: React.FC<
     []
   );
 
-  const loadModuleContents = async (url: string): Promise<ModuleContents> => {
+  const loadModuleContents = async (
+    url: AutomergeUrl
+  ): Promise<ModuleContents> => {
     try {
       const module = isValidAutomergeUrl(url)
         ? await importModuleFromFolderDocUrl(url)
@@ -81,7 +83,7 @@ export const ModuleSettingsEditor: React.FC<
   }, [doc?.modules]);
 
   const registerModule = useCallback(
-    (moduleUrl: string) => {
+    (moduleUrl: AutomergeUrl) => {
       if (!doc || !moduleUrl.trim()) return;
 
       changeDoc((doc) => {
@@ -108,6 +110,7 @@ export const ModuleSettingsEditor: React.FC<
 
   return (
     <div className="h-full overflow-y-auto">
+      <h2>Hello?</h2>
       <div className="flex flex-col gap-4 p-4">
         <RegisterModuleDialog
           onRegister={registerModule}

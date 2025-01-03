@@ -1,5 +1,7 @@
+import { AutomergeUrl } from "@automerge/automerge-repo";
+
 export type ModuleSettingsDoc = {
-  modules: string[];
+  modules: AutomergeUrl[];
 };
 
 export type HasPatchworkMetadata = {
