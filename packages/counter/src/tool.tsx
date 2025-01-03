@@ -3,7 +3,7 @@ import { EditorProps, makeTool } from "@patchwork/sdk";
 import { Doc } from "./datatype";
 import React from "react";
 
-export const Counter: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
+export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
   const [doc, changeDoc] = useDocument<Doc>(docUrl);
 
   if (!doc) {
@@ -43,7 +43,3 @@ export const Counter: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
     </div>
   );
 };
-
-export const tool = makeTool({
-  EditorComponent: Counter,
-});

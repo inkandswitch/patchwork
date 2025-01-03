@@ -1,4 +1,8 @@
-import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
+import {
+  makeTool,
+  type DataTypeDescription,
+  type ToolDescription,
+} from "@patchwork/sdk";
 import type { Doc } from "./datatype";
 
 import "./index.css";
@@ -22,8 +26,8 @@ export const tools: ToolDescription[] = [
     icon: "CirclePlus",
     supportedDataTypes: ["counter"],
     async load() {
-      const { tool } = await import("./tool");
-      return tool;
+      const { Tool } = await import("./tool");
+      return makeTool({ EditorComponent: Tool });
     },
   },
 ];
