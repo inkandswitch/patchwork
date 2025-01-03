@@ -8,7 +8,7 @@ import type { HasAssets } from "@patchwork/sdk";
 export const LoadingState = () => (
   <div className="flex items-center justify-center h-full">
     <div className="flex flex-col items-center gap-4">
-      <Icon type="Loader2" className="w-8 h-8 animate-spin text-gray-400" />
+      <Icon type="Loader" className="w-8 h-8 animate-spin text-gray-400" />
       <span className="text-gray-600">Loading document...</span>
     </div>
   </div>
@@ -18,7 +18,7 @@ export const LoadingState = () => (
 export const ErrorState = ({ error }: { error: string }) => (
   <div className="flex items-center justify-center h-full">
     <div className="flex flex-col items-center gap-4 max-w-md text-center">
-      <Icon type="AlertCircle" className="w-8 h-8 text-red-500" />
+      <Icon type="CircleAlert" className="w-8 h-8 text-red-500" />
       <span className="text-gray-800 font-medium">{error}</span>
     </div>
   </div>
@@ -42,7 +42,7 @@ export const EditorSection = ({
       <span className="font-semibold text-gray-800">{title}</span>
       {error && (
         <span className="text-sm text-red-600 flex items-center gap-1">
-          <Icon type="AlertCircle" className="w-4 h-4" />
+          <Icon type="CircleAlert" className="w-4 h-4" />
           {error}
         </span>
       )}
@@ -69,11 +69,11 @@ export const ResultsPanel = ({
   <div className="bg-gray-50 rounded-lg p-4">
     <div className="flex items-center gap-2 mb-2">
       {success === undefined ? (
-        <Icon type="AlertCircle" className="w-5 h-5 text-gray-400" />
+        <Icon type="CircleAlert" className="w-5 h-5 text-gray-400" />
       ) : success ? (
-        <Icon type="CheckCircle" className="w-5 h-5 text-green-500" />
+        <Icon type="CircleCheck" className="w-5 h-5 text-green-500" />
       ) : (
-        <Icon type="XCircle" className="w-5 h-5 text-red-500" />
+        <Icon type="CircleX" className="w-5 h-5 text-red-500" />
       )}
       <span
         className={`font-medium ${success ? "text-green-600" : "text-red-600"}`}
@@ -98,7 +98,7 @@ export const PageLayout = ({
     <div className="flex items-center justify-between">
       {error && (
         <span className="text-sm text-red-600 flex items-center gap-1">
-          <Icon type="AlertCircle" className="w-4 h-4" />
+          <Icon type="CircleAlert" className="w-4 h-4" />
           {error}
         </span>
       )}

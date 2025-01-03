@@ -90,11 +90,11 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
   const showDetails = !result.passed || result.error;
 
   const statusIcon = result.error ? (
-    <Icon type="AlertTriangle" className="w-5 h-5 text-yellow-500" />
+    <Icon type="TriangleAlert" className="w-5 h-5 text-yellow-500" />
   ) : result.passed ? (
-    <Icon type="CheckCircle" className="w-5 h-5 text-green-500" />
+    <Icon type="CircleCheck" className="w-5 h-5 text-green-500" />
   ) : (
-    <Icon type="XCircle" className="w-5 h-5 text-red-500" />
+    <Icon type="CircleX" className="w-5 h-5 text-red-500" />
   );
 
   const expectationDisplay =
@@ -221,15 +221,15 @@ export const TestResultsSummary = ({
 }) => (
   <div className="flex gap-4 text-sm">
     <span className="flex items-center gap-1">
-      <Icon type="CheckCircle" className="w-4 h-4 text-green-500" />
+      <Icon type="CircleCheck" className="w-4 h-4 text-green-500" />
       {results.passed} passed
     </span>
     <span className="flex items-center gap-1">
-      <Icon type="XCircle" className="w-4 h-4 text-red-500" />
+      <Icon type="CircleX" className="w-4 h-4 text-red-500" />
       {results.failed} failed
     </span>
     <span className="flex items-center gap-1">
-      <Icon type="AlertTriangle" className="w-4 h-4 text-yellow-500" />
+      <Icon type="TriangleAlert" className="w-4 h-4 text-yellow-500" />
       {results.errors} errors
     </span>
   </div>
