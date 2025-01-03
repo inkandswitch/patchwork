@@ -8,7 +8,7 @@ export const dataType: DataTypeDescription<KanbanBoardDoc, never, never> = {
   type: "patchwork:dataType",
   id: "kanban",
   name: "Kanban Board",
-  icon: "KanbanSquare",
+  icon: "SquareKanban",
 
   async load() {
     const { dataType } = await import("./datatype");

@@ -5,7 +5,8 @@
   "type": "module",
   "main": "src/index.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./dist/index.js",
+    "./components": "./dist/components.js"
   },
   "scripts": {
     "build": "vite build"
@@ -19,6 +20,7 @@
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
     "@codemirror/autocomplete": "^6.18.0",
     "@codemirror/commands": "^6.6.0",
+    "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/lang-python": "^6.1.6",
     "@codemirror/language": "^6.10.2",

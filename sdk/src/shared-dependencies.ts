@@ -38,6 +38,7 @@ export const SHARED_MODULES = {
   "@patchwork/datagrid": "./datagrid/index.js",
   "@patchwork/essay": "./essay/index.js",
   "@patchwork/file": "./file/index.js",
+  "@patchwork/file/components": "./file/components.js", // blerf
   "@patchwork/folder": "./folder/index.js",
   "@patchwork/jacquard": "./jacquard/index.js",
   "@patchwork/jacquard/components": "./jacquard/components.js", // blerf

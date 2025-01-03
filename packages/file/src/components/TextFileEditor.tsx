@@ -23,6 +23,7 @@ import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { json } from "@codemirror/lang-json";
 import { python } from "@codemirror/lang-python";
+import { javascript } from "@codemirror/lang-javascript";
 import {
   bracketMatching,
   defaultHighlightStyle,
@@ -209,6 +210,8 @@ const getPluginsByType = (type: string) => {
       return [python()];
     case "json":
       return [json()];
+    case "js":
+      return [javascript({ jsx: true })];
     default:
       return [];
   }

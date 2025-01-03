@@ -124,15 +124,15 @@ export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
           <div className="font-semibold">Test Results:</div>
           <div className="flex gap-4 text-sm">
             <span className="flex items-center gap-1">
-              <Icon type="CheckCircle2" className="w-4 h-4 text-green-500" />
+              <Icon type="CircleCheck" className="w-4 h-4 text-green-500" />
               {results.passed} passed
             </span>
             <span className="flex items-center gap-1">
-              <Icon type="XCircle" className="w-4 h-4 text-red-500" />
+              <Icon type="CircleX" className="w-4 h-4 text-red-500" />
               {results.failed} failed
             </span>
             <span className="flex items-center gap-1">
-              <Icon type="AlertCircle" className="w-4 h-4 text-yellow-500" />
+              <Icon type="CircleAlert" className="w-4 h-4 text-yellow-500" />
               {results.errors} errors
             </span>
           </div>
@@ -153,16 +153,13 @@ export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
               <div className="flex items-center gap-2">
                 {test.error ? (
                   <Icon
-                    type="AlertCircle"
+                    type="CircleAlert"
                     className="w-5 h-5 text-yellow-500"
                   />
                 ) : test.passed ? (
-                  <Icon
-                    type="CheckCircle2"
-                    className="w-5 h-5 text-green-500"
-                  />
+                  <Icon type="CircleCheck" className="w-5 h-5 text-green-500" />
                 ) : (
-                  <Icon type="XCircle" className="w-5 h-5 text-red-500" />
+                  <Icon type="CircleX" className="w-5 h-5 text-red-500" />
                 )}
                 <code className="font-mono">{test.input}</code>
               </div>

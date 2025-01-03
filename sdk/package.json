@@ -65,7 +65,7 @@
     "eventemitter3": "^5.0.1",
     "lodash": "^4.17.21",
     "lucide": "^0.433.0",
-    "lucide-react": "^0.284.0",
+    "lucide-react": "^0.456.0",
     "openai": "^4.53.0",
     "query-string": "^8.2.0",
     "react": "^18.3.1",
