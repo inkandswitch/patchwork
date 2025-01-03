@@ -1,39 +1,67 @@
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
-import { EditorProps, HasAssets, makeTool } from "@patchwork/sdk";
-import { Doc } from "./datatype";
 import React, { useEffect, useState } from "react";
-import { MarkdownEditor } from "@patchwork/sdk/markdown";
+import { EditorProps, HasAssets, makeTool } from "@patchwork/sdk";
+import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import * as ohm from "ohm-js";
+import { Doc } from "./datatype";
+import {
+  LoadingState,
+  ErrorState,
+  EditorSection,
+  ResultsPanel,
+  PageLayout,
+} from "./shared-components";
 
 export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
   const [doc, changeDoc] = useDocument<Doc>(docUrl);
   const handle = useHandle<HasAssets>(docUrl);
   const [match, setMatch] = useState<ohm.MatchResult | null>(null);
+  const [error, setError] = useState<string | undefined>();
 
   if (!doc || !handle) {
-    return null;
+    return <LoadingState />;
   }
 
   useEffect(() => {
-    const grammar = ohm.grammar(doc.grammar);
-    const match = grammar.match(doc.example);
-    console.log(match);
-    setMatch(match);
+    try {
+      const grammar = ohm.grammar(doc.grammar || "");
+      const match = grammar.match(doc.example || "");
+      setMatch(match);
+      setError(undefined);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to parse grammar");
+      setMatch(null);
+    }
   }, [doc.grammar, doc.example]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full">
-      <h2 className="text-4xl font-bold mb-4">{doc.title}</h2>
-      <div className="h-full overflow-auto min-h-0 w-full scroll-smooth">
-        <MarkdownEditor path={["grammar"]} handle={handle} />
+    <PageLayout title={doc.title || "Untitled Grammar"} error={error}>
+      <div className="flex-1 min-h-0">
+        <EditorSection
+          title="Grammar Definition"
+          path={["grammar"]}
+          handle={handle}
+          error={error}
+        />
       </div>
-      <div className="h-16 overflow-auto min-h-0 w-full scroll-smooth">
-        <MarkdownEditor path={["example"]} handle={handle} />
+
+      <div className="h-32">
+        <EditorSection
+          title="Test Input"
+          path={["example"]}
+          handle={handle}
+          height="32"
+        />
       </div>
-      <div className="match_result">
-        {match?.succeeded() ? "Success!" : match?.message}
-      </div>
-    </div>
+
+      <ResultsPanel
+        success={match?.succeeded()}
+        message={
+          match?.succeeded()
+            ? "Grammar successfully parsed input!"
+            : match?.message || "No input provided"
+        }
+      />
+    </PageLayout>
   );
 };
 

@@ -1,17 +1,17 @@
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
+import { type TestSuite } from "./tester/types";
 
 // SCHEMA
-
 export type Doc = HasVersionControlMetadata<unknown, unknown> & {
   title: string;
   grammar: string;
   example: string;
   semantics: string;
-  tests: string;
+  testSuite: TestSuite;
 };
-// FUNCTIONS
 
+// FUNCTIONS
 export const markCopy = (doc: Doc) => {
   doc.title = "Copy of " + doc.title;
 };
@@ -30,7 +30,13 @@ export const init = (doc: Doc) => {
     grammar: "",
     example: "",
     semantics: "",
-    tests: "[]",
+    testSuite: {
+      cases: [],
+      metadata: {
+        description: "Test suite for grammar",
+        tags: [],
+      },
+    },
   });
 };
 

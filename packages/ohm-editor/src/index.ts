@@ -1,4 +1,8 @@
-import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
+import {
+  makeTool,
+  type DataTypeDescription,
+  type ToolDescription,
+} from "@patchwork/sdk";
 import type { Doc } from "./datatype";
 
 export const dataType: DataTypeDescription<Doc> = {
@@ -20,8 +24,8 @@ export const tools: ToolDescription[] = [
     icon: "Code",
     supportedDataTypes: ["ohm"],
     async load() {
-      const { tool } = await import("./tool");
-      return tool;
+      const { Tool } = await import("./tool");
+      return makeTool({ EditorComponent: Tool });
     },
   },
   {
@@ -31,8 +35,8 @@ export const tools: ToolDescription[] = [
     icon: "Code",
     supportedDataTypes: ["ohm"],
     async load() {
-      const { tool } = await import("./semantics");
-      return tool;
+      const { Tool } = await import("./semantics");
+      return makeTool({ EditorComponent: Tool });
     },
   },
   {
@@ -42,8 +46,8 @@ export const tools: ToolDescription[] = [
     icon: "Code",
     supportedDataTypes: ["ohm"],
     async load() {
-      const { tool } = await import("./tests");
-      return tool;
+      const { Tool } = await import("./tester/tests");
+      return makeTool({ EditorComponent: Tool });
     },
   },
 ];
