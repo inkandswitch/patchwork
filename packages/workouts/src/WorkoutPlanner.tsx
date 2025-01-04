@@ -13,7 +13,7 @@ import {
 } from "./types";
 import { createExercise } from "./utils";
 
-const WorkoutPlanner = ({ docUrl }: { docUrl: AutomergeUrl }) => {
+export const WorkoutPlanner = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [doc, changeDoc] = useDocument<WorkoutDoc>(docUrl);
 
   const addWorkout = useCallback(() => {

@@ -1,5 +1,6 @@
 // Basic building blocks
 export interface WorkoutDoc {
+  title: string;
   workouts: Workout[];
   oneRMs: OneRMs;
 }

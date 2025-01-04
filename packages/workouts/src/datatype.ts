@@ -1,12 +1,11 @@
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
+import { WorkoutDoc } from "./types";
 
 // SCHEMA
 
-export type Doc = HasVersionControlMetadata<unknown, unknown> & {
-  title: string;
-  count: number;
-};
+export type Doc = HasVersionControlMetadata<unknown, unknown> & WorkoutDoc;
+
 // FUNCTIONS
 
 const markCopy = (doc: Doc) => {
@@ -18,13 +17,14 @@ const setTitle = async (doc: Doc, title: string) => {
 };
 
 const getTitle = async (doc: Doc) => {
-  return doc.title || "Counter";
+  return doc.title || "Workout";
 };
 
 const init = (doc: Doc) => {
   initFrom(doc, {
-    title: "Untitled Counter",
-    count: 0,
+    title: "Untitled Workout",
+    workouts: [],
+    oneRMs: {},
   });
 };
 

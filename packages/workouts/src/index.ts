@@ -1,4 +1,4 @@
-import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
+import { makeTool, type DataTypeDescription, type ToolDescription } from "@patchwork/sdk";
 import type { Doc } from "./datatype";
 
 import "./index.css";
@@ -22,8 +22,8 @@ export const tools: ToolDescription[] = [
     icon: "Dumbbell",
     supportedDataTypes: ["swole"],
     async load() {
-      const { tool } = await import("./tool");
-      return tool;
+      const { WorkoutPlanner } = await import("./WorkoutPlanner");
+      return makeTool({ EditorComponent: WorkoutPlanner });
     },
   },
 ];
