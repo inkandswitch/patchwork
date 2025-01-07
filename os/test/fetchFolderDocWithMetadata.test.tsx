@@ -5,7 +5,7 @@ import {
 } from "@patchwork/sdk/async-signals";
 import { DocLink, DocPathUtils } from "@patchwork/folder";
 import { DocPath } from "@patchwork/folder";
-import { fetchFolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
+import { fetchFolderDocWithMetadata } from "@patchwork/folder";
 import { PeerId, Repo } from "@automerge/automerge-repo";
 import { DummyStorageAdapter } from "@automerge/automerge-repo/helpers/DummyStorageAdapter.js";
 import { beforeEach, describe, expect, it } from "vitest";
