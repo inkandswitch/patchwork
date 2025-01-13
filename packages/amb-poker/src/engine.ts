@@ -208,9 +208,20 @@ export class Engine {
     return cardRank(card);
   }
 
+  // TODO: add date constructor => { type: "date", value: epoch_ms }
+
   // distributions
 
   $normal(mean = 0, stdev = 1) {
     return d3.randomNormal(mean, stdev)();
+  }
+
+  $Date(dateStr: string) {
+    // Expects date string in American format like "MM/DD/YYYY"
+    const [month, day, year] = dateStr.split("/").map((n) => parseInt(n, 10));
+    return {
+      type: "date",
+      value: new Date(year, month - 1, day).getTime(), // month is 0-based in JS Date
+    };
   }
 }
