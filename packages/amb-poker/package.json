@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "vite build",
-    "push": "pnpm build && jacquard push",
+    "push": "jacquard push",
     "watch": "nodemon --watch src -e js,tsx,ts,tsx,css,json --exec 'pnpm build && pnpm push'"
   },
   "keywords": [],
