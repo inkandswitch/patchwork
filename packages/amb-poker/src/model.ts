@@ -38,7 +38,7 @@ export const getSuit = (card: Card) => card[1];
 
 // in this limited language we only support cards, numbers and booleans.
 type UnknownCard = "?";
-type DateValue = {
+export type DateValue = {
   type: "date";
   value: number;
 };

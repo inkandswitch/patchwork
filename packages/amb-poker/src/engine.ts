@@ -1,4 +1,12 @@
-import { Model, Scenario, isCard, allCards, Value, Card } from "./model";
+import {
+  Model,
+  Scenario,
+  isCard,
+  allCards,
+  Value,
+  Card,
+  DateValue,
+} from "./model";
 import { compileCell } from "./compiler";
 import { bestHand, cardRank, PokerHand } from "./handEvaluation";
 import * as d3 from "d3";
@@ -117,7 +125,10 @@ export class Engine {
       x.type === "date" &&
       y.type === "date"
     ) {
-      return x.value === y.value;
+      // this cast shouldn't be needed; it can go away once we clean up poker hand values more.
+      return (
+        (x as unknown as DateValue).value === (y as unknown as DateValue).value
+      );
     } else {
       throw new Error("operand = used with invalid operands");
     }
@@ -156,7 +167,9 @@ export class Engine {
       x.type === "date" &&
       y.type === "date"
     ) {
-      return x.value < y.value;
+      return (
+        (x as unknown as DateValue).value < (y as unknown as DateValue).value
+      );
     } else {
       throw new Error("operand < used with invalid operands");
     }

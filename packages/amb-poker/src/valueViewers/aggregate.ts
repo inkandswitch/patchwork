@@ -19,6 +19,8 @@ export const turnValueIntoAggregatableObject = (
     return { value };
   } else if (value instanceof PokerHand) {
     return { handType: value.type };
+  } else if (value.type === "date") {
+    return { value: value.value };
   } else {
     const _exhaustiveCheck: never = value;
     return {};
