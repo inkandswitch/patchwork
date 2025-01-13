@@ -6,6 +6,7 @@ import { barChartViewer } from "./barChartViewer";
 import { cardViewer } from "./cardViewer";
 import { tableViewer } from "./tableViewer";
 import { histogramViewer } from "./histogramViewer";
+import { singleValueViewer } from "./singleValueViewer";
 
 export type ValueViewerProps = {
   scenarios: Scenario[];
@@ -23,6 +24,7 @@ export type ValueViewer = {
 
 export const valueViewers: ValueViewer[] = [
   cardViewer,
+  singleValueViewer,
   tableViewer,
   barChartViewer,
   histogramViewer,
