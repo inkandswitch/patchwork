@@ -109,6 +109,15 @@ export class Engine {
       return x === y;
     } else if (x instanceof PokerHand && y instanceof PokerHand) {
       return !x.beats(y) && !y.beats(x);
+    } else if (
+      x &&
+      y &&
+      typeof x === "object" &&
+      typeof y === "object" &&
+      x.type === "date" &&
+      y.type === "date"
+    ) {
+      return x.value === y.value;
     } else {
       throw new Error("operand = used with invalid operands");
     }
@@ -139,6 +148,15 @@ export class Engine {
       return x < y;
     } else if (x instanceof PokerHand && y instanceof PokerHand) {
       return y.beats(x);
+    } else if (
+      x &&
+      y &&
+      typeof x === "object" &&
+      typeof y === "object" &&
+      x.type === "date" &&
+      y.type === "date"
+    ) {
+      return x.value < y.value;
     } else {
       throw new Error("operand < used with invalid operands");
     }
@@ -207,8 +225,6 @@ export class Engine {
   $cardRank(card: Card) {
     return cardRank(card);
   }
-
-  // TODO: add date constructor => { type: "date", value: epoch_ms }
 
   // distributions
 

@@ -38,7 +38,11 @@ export const getSuit = (card: Card) => card[1];
 
 // in this limited language we only support cards, numbers and booleans.
 type UnknownCard = "?";
-export type Value = number | boolean | string | Card | PokerHand;
+type DateValue = {
+  type: "date";
+  value: number;
+};
+export type Value = number | boolean | string | Card | PokerHand | DateValue;
 
 // A scenario is a mapping of each cell to a concrete value.
 // (These were called "contexts" in the previous ambsheet, but scenario is a better name.)
