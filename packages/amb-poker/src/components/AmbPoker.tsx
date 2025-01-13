@@ -412,7 +412,7 @@ export const AmbPoker: React.FC<EditorProps<AmbPokerDoc, string>> = ({
           <div className="space-y-6">
             {!selectedValue && (
               <div className="text-xs text-gray-300 flex items-center justify-center h-full">
-                No cell selected
+                No cell selected!
               </div>
             )}
             {selectedValue && (
