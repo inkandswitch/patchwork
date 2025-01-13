@@ -31,7 +31,11 @@ const getTitle = async (doc: AmbPokerDoc) => {
 export const init = (doc: AmbPokerDoc) => {
   initFrom(doc, {
     title: "Untitled AmbPoker",
-    model: SAMPLE_MODEL,
+    // model: SAMPLE_MODEL,
+    model: {
+      cells: [],
+      filters: [],
+    },
   });
 };
 
