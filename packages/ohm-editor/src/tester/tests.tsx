@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { EditorProps, HasAssets } from "@patchwork/sdk";
+import { EditorProps } from "@patchwork/sdk";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import { Doc } from "../datatype";
 import { TestCase } from "./types";
@@ -19,7 +19,7 @@ const createTestCase = (): TestCase => ({
 
 export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
   const [doc, changeDoc] = useDocument<Doc>(docUrl);
-  const handle = useHandle<HasAssets>(docUrl);
+  const handle = useHandle<Doc>(docUrl);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [error, setError] = useState<string | undefined>();
 

@@ -2,7 +2,6 @@ import React from "react";
 import { Icon } from "@patchwork/sdk/ui";
 import { TestResult } from "./runner";
 import { TestCase, TestExpectation } from "./types";
-import { HasAssets } from "@patchwork/sdk";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { DocHandle, updateText } from "@automerge/automerge-repo";
 import { Doc } from "../datatype";
@@ -10,7 +9,7 @@ import { Doc } from "../datatype";
 interface TestCaseEditorProps {
   testCase: TestCase;
   result: TestResult;
-  handle: DocHandle<HasAssets>;
+  handle: DocHandle<Doc>;
   index: number;
   onDelete: () => void;
 }

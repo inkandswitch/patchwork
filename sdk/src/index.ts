@@ -1,6 +1,5 @@
 export * from "./datatypes.js";
 export * from "./tools.js";
-export * from "./assets.js";
 export {
   Account,
   type AccountDoc,
@@ -15,6 +14,6 @@ export {
   accountTokenToAutomergeUrl,
   useRootFolderDocWithMetadata,
 } from "./account.js";
-export * from "./patchworkContext.js";
 export * from "./router/index.js";
 export * from "./modules";
+export { DocMigration } from "./migrations/DocMigration";

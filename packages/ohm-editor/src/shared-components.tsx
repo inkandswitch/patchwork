@@ -2,7 +2,7 @@ import React from "react";
 import { DocHandle } from "@automerge/automerge-repo";
 import { Icon } from "@patchwork/sdk/ui";
 import { MarkdownEditor } from "@patchwork/sdk/markdown";
-import type { HasAssets } from "@patchwork/sdk";
+import { Doc } from "./datatype";
 
 // Loading state component
 export const LoadingState = () => (
@@ -33,7 +33,7 @@ export const EditorSection = ({
 }: {
   title: string;
   path: string[];
-  handle: DocHandle<HasAssets>;
+  handle: DocHandle<Doc>;
   height?: string;
   error?: string | undefined;
 }) => (

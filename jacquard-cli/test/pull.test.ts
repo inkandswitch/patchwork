@@ -98,7 +98,7 @@ describe("pull", () => {
             type: "essay",
             url_linksTo: {
               content: "# My Essay\n\nHello world",
-              unixFileName: "secret-filename.md",
+              fileName: "secret-filename.md",
             },
           },
         ],

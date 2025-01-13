@@ -18,24 +18,17 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { Card, KanbanBoardDoc, Lane } from "../datatype";
 import { Status } from "../types/issue";
 import { showInfo } from "../utils/notification";
-import { HasAssets } from "@patchwork/sdk/assets";
 import { uuid } from "@automerge/automerge";
 
 interface Props {
-  docWithAssetsHandle: DocHandle<HasAssets>;
+  docHandle: DocHandle<unknown>;
   isOpen: boolean;
   lanes: Lane[];
   onDismiss?: () => void;
   changeDoc: (fn: (doc: KanbanBoardDoc) => void) => void;
 }
 
-function IssueModal({
-  isOpen,
-  onDismiss,
-  changeDoc,
-  lanes,
-  docWithAssetsHandle,
-}: Props) {
+function IssueModal({ isOpen, onDismiss, changeDoc, lanes, docHandle }: Props) {
   const ref = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState<string>("");
@@ -119,7 +112,7 @@ function IssueModal({
             <MarkdownInput
               value={description}
               onChange={setDescription}
-              docWithAssetsHandle={docWithAssetsHandle}
+              docHandle={docHandle}
             />
           </div>
         </div>

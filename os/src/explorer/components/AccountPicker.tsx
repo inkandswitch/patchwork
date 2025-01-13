@@ -29,7 +29,7 @@ import {
 
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { Copy, Eye, EyeOff } from "lucide-react";
-import { ContactAvatar } from "./ContactAvatar";
+import { ContactAvatar } from "@patchwork/sdk/components";
 
 // 1MB in bytes
 const MAX_AVATAR_SIZE = 1024 * 1024;

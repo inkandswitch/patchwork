@@ -1,17 +1,16 @@
 import { useMemo } from "react";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as Automerge from "@automerge/automerge";
-import { FileDoc, LinkedFileContent } from "../datatype";
+import { FileDoc } from "../datatype";
 import { EditorProps } from "@patchwork/sdk";
 import { useBinaryDataOfDocFile } from "./PDFFileViewer";
 
 export type HTMLFileDoc = FileDoc & {
-  content: LinkedFileContent;
   type: "html" | "htm";
 };
 
 export const isHTMLFile = (doc: FileDoc) => {
-  return ["html", "htm"].includes(doc.type);
+  return ["html", "htm"].includes(doc.extension);
 };
 
 export const HTMLFileViewer = ({

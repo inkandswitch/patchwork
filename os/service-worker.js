@@ -262,14 +262,17 @@ self.addEventListener("fetch", async (event) => {
           );
         }
 
-        if (file?.content?.type === "link") {
-          // we need to handle fetching this from behind the scenes to maintain the path
-          const response = await fetch(file.content.url);
-          // return a response that makes this feel like it came from the same origin but works for html, pngs, etc
-          return new Response(response.body, {
-            headers: { "Content-Type": response.headers.get("Content-Type") },
-          });
-        } else if (file?.content) {
+        if (file?.content) {
+          if (file?.content?.type === "link") {
+            return new Response(
+              "The requested file uses a deprecated storage format and can't be loaded. You can re-push from Jacquard or open it in the editor to migrate it to the new format.",
+              {
+                status: 500,
+                headers: { "Content-Type": "text/plain" },
+              }
+            );
+          }
+
           /*
           {
             "content": {

@@ -190,7 +190,7 @@ describe("push", () => {
           type: "essay",
           url_linksTo: {
             content: "hello world",
-            unixFileName: "test.md",
+            fileName: "test.md",
           },
         });
       },

@@ -55,7 +55,7 @@ export const KanbanBoard = ({
         isOpen={showIssueModal}
         lanes={doc.lanes}
         changeDoc={changeDoc}
-        docWithAssetsHandle={handle}
+        docHandle={handle}
         onDismiss={() => setShowIssueModal(false)}
       />
     </MenuContext.Provider>

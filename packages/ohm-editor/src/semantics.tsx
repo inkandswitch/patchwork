@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { EditorProps, HasAssets, makeTool } from "@patchwork/sdk";
+import { EditorProps, makeTool } from "@patchwork/sdk";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import * as ohm from "ohm-js";
 import { Doc } from "./datatype";
@@ -13,7 +13,7 @@ import {
 
 export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
   const [doc, changeDoc] = useDocument<Doc>(docUrl);
-  const handle = useHandle<HasAssets>(docUrl);
+  const handle = useHandle<Doc>(docUrl);
   const [match, setMatch] = useState<ohm.MatchResult | null>(null);
   const [evalResult, setEvalResult] = useState<any>(null);
   const [error, setError] = useState<string | undefined>();

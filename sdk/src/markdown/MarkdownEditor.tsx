@@ -1,4 +1,3 @@
-import { HasAssets } from "../assets";
 import { Prop } from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";
 import { EditorView } from "@codemirror/view";
@@ -9,13 +8,13 @@ import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { get } from "lodash";
 
 type MarkdownEditorProps = {
-  handle: DocHandle<HasAssets>;
+  handle: DocHandle<unknown>;
   path: Prop[];
 };
 
 export const MarkdownEditor = ({ handle, path }: MarkdownEditorProps) => {
   const [container, setContainer] = useState<HTMLElement | null>(null);
-  const plugins = useMarkdownPlugins({ docWithAssetsHandle: handle });
+  const plugins = useMarkdownPlugins({ docHandle: handle });
 
   useEffect(() => {
     if (!container) {

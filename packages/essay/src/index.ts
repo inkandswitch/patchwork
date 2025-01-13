@@ -9,7 +9,6 @@ export const dataType: DataTypeDescription<MarkdownDoc, TextAnchor, string> = {
   id: "essay",
   name: "Essay",
   icon: "Text",
-  unixFileExtensions: ["md"],
   async load() {
     const { dataType } = await import("./datatype");
     return dataType;

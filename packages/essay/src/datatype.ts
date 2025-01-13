@@ -1,5 +1,3 @@
-import { AssetsDoc } from "@patchwork/sdk/assets";
-import { FileExportMethod } from "@patchwork/sdk/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
 import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 import { DecodedChangeWithMetadata } from "@patchwork/sdk/versionControl";
@@ -10,8 +8,8 @@ import {
 import { TextPatch } from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import JSZip from "jszip";
 import { pick } from "lodash";
+import { EssayImageStorageMigration } from "./migrations/EssayImageStorageMigration";
 
 // SCHEMA
 
@@ -20,8 +18,11 @@ import { pick } from "lodash";
 // unclear if comments should be part of the doc or the content
 export type MarkdownDoc = HasVersionControlMetadata<TextAnchor, string> & {
   content: string;
-  /** If an essay came from Jacquard-pushing a markdown file, this is its filename */
-  unixFileName?: string;
+
+  // the following optional fields allow for higher fidelity import/exports
+  fileName?: string;
+  extension?: string;
+  mimeType?: string;
 };
 
 // FUNCTIONS
@@ -31,12 +32,6 @@ const init = (doc: any, repo: Repo) => {
   doc.commentThreads = {};
 
   initVersionControlMetadata(doc, repo);
-  const handle = repo.create<AssetsDoc>();
-  handle.change((doc) => {
-    doc.files = {};
-  });
-
-  doc.assetsDocUrl = handle.url;
 };
 
 // When a copy of the document has been made,
@@ -49,15 +44,12 @@ const markCopy = (doc: MarkdownDoc) => {
   }
 };
 
-const asMarkdownFile = (doc: MarkdownDoc): Blob => {
-  return new Blob([doc.content], { type: "text/markdown" });
-}; // Helper to get the title of one of our markdown docs.
+// Helper to get the title of one of our markdown docs.
 // looks first for yaml frontmatter from the i&s essay format;
 // then looks for the first H1.
-
 const getTitle = async (doc: MarkdownDoc) => {
-  if (doc.unixFileName) {
-    return doc.unixFileName;
+  if (doc.fileName) {
+    return doc.fileName;
   }
 
   const content = doc.content;
@@ -130,65 +122,25 @@ ${JSON.stringify(pick(docBefore, ["content", "commentThreads"]), null, 2)}
 ${JSON.stringify(pick(docAfter, ["content", "commentThreads"]), null, 2)}`;
 };
 
-const fileExportMethods: FileExportMethod<MarkdownDoc>[] = [
-  {
-    id: "markdown",
-    exportMethodName: "Markdown",
-    export: (doc) => asMarkdownFile(doc),
-    contentType: "text/markdown",
-    fileExtension: "md",
-  },
-  {
-    id: "markdown-with-assets",
-    exportMethodName: "Markdown + Assets (.zip)",
-    export: async (doc, repo) => {
-      // export a zip file with the markdown file and the assets folder
-      const assetsDoc = await repo.find<AssetsDoc>(doc.assetsDocUrl).doc();
+const updateFileFromDoc = async (doc: MarkdownDoc) => {
+  const content = doc.content;
 
-      const zip = new JSZip();
-      zip.file("index.md", doc.content);
-      for (const [filename, file] of Object.entries(assetsDoc!.files)) {
-        // TODO: JAH strict fix
-        zip.file(`assets/${filename}`, file.contents);
-      }
+  const prefix = doc.fileName ?? (await getTitle(doc));
+  const extension = doc.extension ?? "md";
+  const hasExtensionAlready = /\.[a-z0-9]+$/.test(prefix);
+  const fileName = hasExtensionAlready ? prefix : `${prefix}.${extension}`;
 
-      const uintarray = await zip.generateAsync({ type: "uint8array" });
-      return new Blob([uintarray], { type: "application/zip" });
-    },
-    contentType: "application/zip",
-    fileExtension: "zip",
-  },
-];
+  // TODO: we could do a better job of inferring extension/mimeType if we don't have them
+  const type = doc.mimeType ?? "text/markdown";
 
-const docToUnixFile = async (doc: MarkdownDoc) => {
-  return {
-    content: doc.content,
-    fileName: doc.unixFileName,
-  };
+  return new File([content], fileName, { type });
 };
 
-const initDocFromUnixFile = async (
-  content: string | Uint8Array,
-  unixFileName: string,
-  handle: DocHandle<MarkdownDoc>
-): Promise<void> => {
-  if (typeof content !== "string") {
-    // TODO: better handling?
-    throw new Error("Expected content to be a string");
-  }
-
-  handle.change((doc) => {
-    initFrom(doc, {
-      content,
-      unixFileName,
-    });
-  });
-};
-
-const updateDocFromUnixFile = async (
-  content: string | Uint8Array,
+const updateDocFromFile = async (
+  file: File,
   handle: DocHandle<MarkdownDoc>
 ) => {
+  const content = await file.text();
   if (typeof content !== "string") {
     // TODO: better handling?
     throw new Error("Expected content to be a string");
@@ -199,12 +151,13 @@ const updateDocFromUnixFile = async (
     throw new Error("Document not found");
   }
 
-  if (doc.content === content) {
-    console.log("File didn't change, skipping update");
-    return { didChange: false };
-  }
-
+  const extension = file.name.split(".").pop();
   handle.change((doc) => {
+    doc.fileName = file.name;
+
+    if (extension) doc.extension = extension;
+    doc.mimeType = file.type;
+
     A.updateText(doc, ["content"], content);
   });
 
@@ -219,9 +172,13 @@ export const dataType: DataTypeImplementation<MarkdownDoc, TextAnchor, string> =
     includeChangeInHistory,
     includePatchInChangeGroup,
     promptForAIChangeGroupSummary,
-    fileExportMethods,
     ...textAnchorsAtPath(["content"]),
-    docToUnixFile,
-    initDocFromUnixFile,
-    updateDocFromUnixFile,
+    updateFileFromDoc,
+    updateDocFromFile,
+    fileExtensions: ["md"],
+
+    // TODO: eventually we will want to decouple migrations more from data types.
+    // You should be able to register migrations as a "trait implementation"
+    // and then associate them with specific data types.
+    migrations: [new EssayImageStorageMigration()],
   };

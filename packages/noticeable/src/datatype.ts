@@ -11,7 +11,8 @@ export const dataType: DataTypeImplementation<NoticeableDoc, unknown, unknown> =
   {
     init: (doc, repo) => {
       doc.name = "doesn't matter";
-      doc.type = "js";
+      doc.mimeType = "application/javascript";
+      doc.extension = ".js";
       doc.content = {
         type: "text",
         value: "// # My Notebook\n\n",

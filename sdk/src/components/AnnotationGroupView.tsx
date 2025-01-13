@@ -1,4 +1,3 @@
-import { HasAssets } from "../assets";
 import { AnnotationsViewProps, useCurrentAccount } from "..";
 import { ContactAvatar } from "../components";
 import { getRelativeTimeString } from "../versionControl";
@@ -364,7 +363,7 @@ export const AnnotationGroupView = <
                 content={comment.content}
                 key={comment.id}
                 readonly={readonly || !setCommentState}
-                docWithAssetsHandle={handle}
+                docHandle={handle}
                 onChangeContent={(content) =>
                   onUpdateCommentContentWithId(comment.id, content)
                 }
@@ -392,7 +391,7 @@ export const AnnotationGroupView = <
             account && (
               <DiscussionCommentView
                 contactUrl={account.contactHandle.url}
-                docWithAssetsHandle={handle}
+                docHandle={handle}
                 onChangeContent={(content) => {
                   setCommentState(undefined);
                   addCommentToAnnotationGroup(content);
@@ -466,7 +465,7 @@ const DiscussionCommentView = ({
   contactUrl,
   timestamp,
   content = "",
-  docWithAssetsHandle,
+  docHandle,
   onChangeContent,
   isBeingEdited,
   setIsBeingEdited,
@@ -476,7 +475,7 @@ const DiscussionCommentView = ({
   timestamp?: number;
   content?: string;
   onChangeContent: (value: string) => void;
-  docWithAssetsHandle: DocHandle<HasAssets>;
+  docHandle: DocHandle<unknown>;
   isBeingEdited: boolean;
   setIsBeingEdited: (isBeingEdited: boolean) => void;
   readonly: boolean;
@@ -556,7 +555,7 @@ const DiscussionCommentView = ({
             autoFocus
             value={content}
             onChange={isBeingEdited ? setUpdatedContent : undefined}
-            docWithAssetsHandle={docWithAssetsHandle}
+            docHandle={docHandle}
           />
         </div>
 

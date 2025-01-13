@@ -5,9 +5,6 @@ import { DummyStorageAdapter } from "@automerge/automerge-repo/helpers/DummyStor
 import * as fsP from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { expect } from "vitest";
-import { FileDoc } from "@patchwork/file";
-import { readFileContent } from "../src/util";
 
 // Automerge
 
@@ -76,22 +73,7 @@ export async function readPatchworkDoc(
   if (!doc) {
     throw new Error("Doc not found");
   }
-  const docAsFile = doc as FileDoc;
-  if (type === "file" && docAsFile.content.type === "link") {
-    const response = await fetch(docAsFile.content.url);
-    const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
-    const array = new Uint8Array(arrayBuffer);
-    return {
-      ...docAsFile,
-      content: {
-        type: "link",
-        url_linksTo: array,
-      },
-    };
-  } else {
-    return doc;
-  }
+  return doc;
 }
 
 export function createPatchworkFolder(
@@ -168,7 +150,7 @@ export async function readUnixFolder(
     entries.map(async (entry) => ({
       fileName: entry.name,
       content: entry.isFile()
-        ? await readFileContent(path.join(folderPath, entry.name)).value
+        ? await path.join(folderPath, entry.name) // XXX: TODO, fix up these tests
         : await readUnixFolder(path.join(folderPath, entry.name)),
     }))
   );

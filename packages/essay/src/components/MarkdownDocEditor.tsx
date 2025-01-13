@@ -56,15 +56,15 @@ export function MarkdownDocEditor({
   path,
   setSelection = () => {},
   setHasFocus = () => {},
-  setSelectedAnchors = () => {},
   setView = () => {},
+  setSelectedAnchors = () => {},
   readOnly,
   docHeads,
   annotations = [], // TODO: JAH strict fix
   collapseContentWithoutAnnotations,
 }: MarkdownDocEditorProps) {
   const editorRoot = useRef<EditorView | undefined>(undefined);
-  const markdownPlugins = useMarkdownPlugins({ docWithAssetsHandle: handle });
+  const markdownPlugins = useMarkdownPlugins({ docHandle: handle });
 
   const [doc] = useDocument(handle.url);
   const docAtHeads = doc && docHeads ? A.view(doc, docHeads) : doc;

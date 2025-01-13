@@ -1,7 +1,4 @@
-import {
-  FileExportMethod,
-  genericExportMethods,
-} from "@patchwork/sdk/fileExports";
+import { FileExportMethod, genericExportMethods } from "@patchwork/sdk/files";
 import { FolderDoc, DocPath, DocPathUtils } from "@patchwork/folder";
 import { dataTypeById } from "@patchwork/sdk";
 import {
@@ -27,7 +24,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import React, { useRef } from "react";
-import { saveFile } from "@patchwork/sdk/fileUtils";
+import { saveFile } from "@patchwork/sdk/files";
 import { AccountPicker } from "./AccountPicker";
 import {
   AUTOMERGE_SYNC_SERVER_STORAGE_ID,
@@ -35,7 +32,6 @@ import {
   JACQUARD_SYNC_SERVER_STORAGE_ID,
   SyncIndicator,
 } from "./SyncIndicator";
-import { getUrlSafeName } from "@patchwork/sdk/router";
 
 type TopbarProps = {
   showSidebar: boolean;
@@ -164,29 +160,27 @@ export const Topbar: React.FC<TopbarProps> = ({
       // TODO: JAH strict fix lazy
       throw new Error("something unexpected is missing idk");
     }
-    const blob = await method.export(selectedDoc, repo);
-    const defaultFilename = `${getUrlSafeName(selectedDocLink.name)}.${
-      typeof method.fileExtension === "function"
-        ? method.fileExtension(selectedDoc!)
-        : method.fileExtension
-    }`;
-    const filename = method.filename
-      ? method.filename(selectedDoc!)
-      : defaultFilename;
 
-    const contentType =
-      typeof method.contentType === "function"
-        ? method.contentType(selectedDoc!)
-        : method.contentType;
+    const file = await method.export(selectedDoc, selectedDataType, repo);
+    const extension = file.name.split(".").pop();
 
-    saveFile(blob, filename, [
+    saveFile(file, [
       {
         accept: {
-          [contentType]: [`.${method.fileExtension}`],
+          [file.type]: [`.${extension}`],
         },
       },
     ]);
   };
+
+  const exportMethods = [...genericExportMethods];
+  if (selectedDataType?.updateFileFromDoc) {
+    exportMethods.unshift({
+      id: "export-as-custom",
+      exportMethodName: selectedDataType.name,
+      export: selectedDataType.updateFileFromDoc,
+    });
+  }
 
   return (
     <div className="h-10 bg-gray-100 flex items-center flex-shrink-0 border-b border-gray-300">
@@ -206,7 +200,7 @@ export const Topbar: React.FC<TopbarProps> = ({
           })} */}
         {selectedDocName}
       </div>
-      <div className="ml-1 mt-[-2px]">
+      <div className="ml-1 mt-[-2px] flex items-center">
         {isValidAutomergeUrl(selectedDocUrl) && (
           <>
             <SyncIndicator
@@ -291,23 +285,18 @@ export const Topbar: React.FC<TopbarProps> = ({
                   : "Make a copy of visible version"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {(selectedDataType?.fileExportMethods ?? [])
-                .concat(genericExportMethods)
-                .map((method, index) => (
-                  <DropdownMenuItem
-                    key={index}
-                    onClick={() => onClickExport(method)}
-                  >
-                    <Download
-                      size={14}
-                      className="inline-block text-gray-500 mr-2"
-                    />{" "}
-                    Export as{" "}
-                    {typeof method.exportMethodName === "function"
-                      ? method.exportMethodName(selectedDoc)
-                      : method.exportMethodName}
-                  </DropdownMenuItem>
-                ))}
+              {exportMethods.map((method, index) => (
+                <DropdownMenuItem
+                  key={index}
+                  onClick={() => onClickExport(method)}
+                >
+                  <Download
+                    size={14}
+                    className="inline-block text-gray-500 mr-2"
+                  />{" "}
+                  Export as {method.exportMethodName}
+                </DropdownMenuItem>
+              ))}
 
               <DropdownMenuSeparator />
               <DropdownMenuItem

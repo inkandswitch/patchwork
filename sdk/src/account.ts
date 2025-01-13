@@ -6,14 +6,13 @@ import {
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { EventEmitter } from "eventemitter3";
+import EventEmitter from "eventemitter3";
 
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { ChangeFn } from "@automerge/automerge";
 import { useEffect, useState } from "react";
-import { uploadFile } from "./fileUtils";
 
-import { FolderDoc } from "@patchwork/folder";
+import type { FolderDoc } from "@patchwork/folder";
 import { useFolderDocWithMetadataOnActiveBranch } from "@patchwork/folder";
 import { typeOnlyAssert } from "./utils";
 import { UIStateDoc } from "./router/uiState";
@@ -22,8 +21,10 @@ import {
   withHasChangeGroupSummaries,
   withHasVersionControlMetadata,
 } from "./versionControl";
-import { AssetsDoc } from "./assets";
+import { importFile } from "./files";
+
 import { ModuleSettingsDoc } from "./modules";
+import { FileDoc } from "@patchwork/file";
 
 export interface AccountDoc {
   contactUrl: AutomergeUrl;
@@ -110,10 +111,7 @@ export class Account extends EventEmitter<AccountEvents> {
   }
 
   async signUp({ name, avatar }: ContactProps) {
-    let avatarUrl: AutomergeUrl;
-    if (avatar) {
-      avatarUrl = await uploadFile(this.#repo, avatar);
-    }
+    const avatarHandle = avatar ? await importFile(avatar, this.#repo) : null;
 
     this.contactHandle.change((contact: ContactDoc) => {
       typeOnlyAssert(contact.type === "registered");
@@ -121,8 +119,8 @@ export class Account extends EventEmitter<AccountEvents> {
       contact.type = "registered";
       contact.name = name;
 
-      if (avatarUrl) {
-        contact.avatarUrl = avatarUrl;
+      if (avatarHandle) {
+        contact.avatarUrl = avatarHandle.url;
       }
     });
   }
@@ -210,8 +208,6 @@ const createAccount = (
     })
   );
 
-  const assetsDocHandle = repo.create<AssetsDoc>({ files: {} });
-
   const rootFolderHandle = repo.create<FolderDoc>(
     withHasVersionControlMetadata(
       {
@@ -220,7 +216,6 @@ const createAccount = (
       },
       {
         versionControlMetadataUrl: versionControlMetadataDocHandle.url,
-        assetsDocUrl: assetsDocHandle.url,
       }
     )
   );
@@ -298,8 +293,6 @@ export function useCurrentAccount(): Account | undefined {
       });
     }
 
-    // TODO: migrate existing accounts before landing!
-    // (moduleSettingsUrl will be defined but it'll be missing dataTypeModules & toolModules)
     if (account && doc && doc.moduleSettingsUrl === undefined) {
       const moduleSettingsHandle = repo.create<ModuleSettingsDoc>();
       moduleSettingsHandle.change((settings) => {
@@ -309,6 +302,85 @@ export function useCurrentAccount(): Account | undefined {
         account.moduleSettingsUrl = moduleSettingsHandle.url;
       });
     }
+
+    // migrate avatar images from old format to new format.
+    // TODO: create a proper datatype for contacts, and put this migration on there.
+    (async () => {
+      if (!account) {
+        return;
+      }
+      const contactDoc = await account.contactHandle.doc();
+      if (!contactDoc) {
+        return;
+      }
+      if (contactDoc.type === "anonymous") {
+        return;
+      }
+      const avatarUrl = contactDoc.avatarUrl;
+      if (!avatarUrl) {
+        return;
+      }
+      const avatarHandle = repo.find<{ type: string; data: Uint8Array }>(
+        avatarUrl
+      );
+      const avatarDoc = await avatarHandle.doc();
+      if (!avatarDoc) {
+        return;
+      }
+
+      // early return if the migration is not necessary
+      if (!avatarDoc.data) {
+        return;
+      }
+
+      console.log("migrating avatar", avatarDoc, avatarHandle.url);
+
+      // Create new FileDoc for avatar image
+      const fileHandle = repo.create<FileDoc>();
+
+      // Guard against unsupported avatar image types
+      if (
+        !["image/jpeg", "image/jpg", "image/png", "image/svg+xml"].includes(
+          avatarDoc.type
+        )
+      ) {
+        console.log("Unsupported avatar image type:", avatarDoc.type);
+        return;
+      }
+
+      fileHandle.change((file) => {
+        let extension;
+        switch (avatarDoc.type) {
+          case "image/jpeg":
+          case "image/jpg":
+            extension = "jpg";
+            break;
+          case "image/png":
+            extension = "png";
+            break;
+          case "image/svg+xml":
+            extension = "svg";
+            break;
+          default:
+            console.log("unsupported avatar type", avatarDoc.type);
+            return;
+        }
+        file.name = `avatar.${extension}`;
+        file.extension = extension;
+        file.mimeType = avatarDoc.type;
+        file.content = {
+          type: "binary",
+          value: avatarDoc.data,
+        };
+      });
+
+      // Update contact to point to new FileDoc
+      account.contactHandle.change((contact) => {
+        if (contact.type === "registered") {
+          contact.avatarUrl = fileHandle.url;
+        }
+      });
+    })();
   }, [account, doc, repo]);
 
   return account;

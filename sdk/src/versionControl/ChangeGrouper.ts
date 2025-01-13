@@ -1,6 +1,6 @@
 import { next as A } from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";
-import { EventEmitter } from "eventemitter3";
+import EventEmitter from "eventemitter3";
 import { debounce, isEqual } from "lodash";
 import {
   ChangeGroup,
@@ -21,6 +21,9 @@ export type BranchScopeAndActiveBranchInfoWithoutDoc = Omit<
   // if the branch scope is on the document and we are editing on main
   | "branchScopeOm"
 >;
+
+// This keeps EventEmitter from being optimized away
+Object.defineProperty(EventEmitter, "__register", { value: true });
 
 const GROUPER_DEBOUNCE_MS = 1000;
 

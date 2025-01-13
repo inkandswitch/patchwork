@@ -1,7 +1,6 @@
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { next as A } from "@automerge/automerge";
 import { TextPatch } from "./utils";
-import { HasAssets, withHasAssets } from "../assets";
 import { CursorPatch as CursorPatch } from "./cursorPatch";
 import { ChatMessage } from "./bots";
 
@@ -172,10 +171,8 @@ export type HasVersionControlMetadata<
   // @Paul 5/24/24
   // todo: we should rethink how to structure core interfaces
   // the application now assumes that all document types in the system implement HasVersionControlMetadata
-  // HasAssets is also a universal interface that can be used with any document but it's not really related to versioning
   // We should create a base schema that's a union of all interfaces that we can assume all documents implement but
-  // split them up into logical sub interfaces like versioning, commenting, assets, etc
-  HasAssets &
+  // split them up into logical sub interfaces like versioning, commenting, etc
   HasBotChatHistory &
   HasLinkToVersionControlSidecar;
 
@@ -187,22 +184,17 @@ export const withHasVersionControlMetadata = <
   doc: D,
   {
     versionControlMetadataUrl,
-    assetsDocUrl,
   }: {
     versionControlMetadataUrl: AutomergeUrl;
-    assetsDocUrl: AutomergeUrl;
   }
 ): D & HasVersionControlMetadata<T, V> =>
-  withHasAssets(
-    withHasLinkToVersionControlSidecar(
-      withHasBotChatHistory(
-        withHasChangeGroupSummaries(
-          withDiscussable(withHasChangeGroupSummaries(doc))
-        )
-      ),
-      versionControlMetadataUrl
+  withHasLinkToVersionControlSidecar(
+    withHasBotChatHistory(
+      withHasChangeGroupSummaries(
+        withDiscussable(withHasChangeGroupSummaries(doc))
+      )
     ),
-    assetsDocUrl
+    versionControlMetadataUrl
   );
 
 export type AnnotationId = string & { __annotationId: true };

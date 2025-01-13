@@ -1,0 +1,116 @@
+import { DocMigration } from "@patchwork/sdk";
+import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
+import { MarkdownDoc } from "../datatype";
+import { FileDoc } from "@patchwork/file";
+import { next as A } from "@automerge/automerge";
+
+type AssetsDoc = {
+  files: {
+    [key: string]: {
+      contentType: string;
+      contents: Uint8Array;
+    };
+  };
+};
+
+// todo fill this in properly
+type OldMarkdownDoc = any;
+
+export class EssayImageStorageMigration extends DocMigration {
+  readonly description =
+    "Convert image storage from assets to individual documents";
+
+  async migrationNeedsToRun(
+    handle: DocHandle<OldMarkdownDoc>,
+    repo: Repo
+  ): Promise<boolean> {
+    const doc = await handle.doc();
+    if (!doc) return false;
+
+    // Check if document has old-style image links
+    const imageRegex = /!\[([^\]]*)\]\(\.\/assets\/([^)]+)\)/;
+    return imageRegex.test(doc.content);
+  }
+
+  async runMigration(
+    handle: DocHandle<OldMarkdownDoc>,
+    repo: Repo
+  ): Promise<void> {
+    console.log("Starting migration for essay");
+
+    const doc = await handle.doc();
+    if (!doc) {
+      throw new Error("Essay document not found");
+    }
+
+    // Get the assets document
+    const assetsUrl = doc.assetsDocUrl;
+    if (!assetsUrl) {
+      console.log("No assets document found, skipping migration");
+      return;
+    }
+
+    const assetsHandle = repo.find<AssetsDoc>(assetsUrl);
+    const assets = await assetsHandle.doc();
+
+    if (!assets) {
+      throw new Error("Assets document not found");
+    }
+
+    console.log("Found assets document with files:", Object.keys(assets.files));
+
+    // Find all image links in the markdown
+    const imageRegex = /!\[([^\]]*)\]\(\.\/assets\/([^)]+)\)/g;
+    let content = doc.content;
+    let match;
+    let offset = 0;
+
+    while ((match = imageRegex.exec(content)) !== null) {
+      const [fullMatch, altText, imagePath] = match;
+      const imageData = assets.files[imagePath];
+
+      if (!imageData) {
+        console.warn(`Image not found in assets: ${imagePath}`);
+        continue;
+      }
+
+      // Create new file document
+      const fileHandle = repo.create<FileDoc>();
+
+      // Initialize the file document
+      fileHandle.change((doc) => {
+        doc.name = imagePath;
+        doc.mimeType = imageData.contentType;
+        doc.extension = imagePath.split(".").pop() || "";
+        doc.content = {
+          type: "binary",
+          value: imageData.contents,
+        };
+      });
+
+      console.log(`Created new file document for ${imagePath}`);
+
+      // Calculate the new positions after previous replacements
+      const currentPosition = match.index + offset;
+      const newImageLink = `![${altText}](./automerge/${fileHandle.documentId})`;
+
+      // Update the essay content
+      handle.change((doc) => {
+        A.splice(
+          doc,
+          ["content"],
+          currentPosition,
+          fullMatch.length,
+          newImageLink
+        );
+      });
+
+      // Update offset for next replacement
+      offset += newImageLink.length - fullMatch.length;
+
+      console.log(`Updated image link for ${imagePath}`);
+    }
+
+    console.log("Migration completed successfully");
+  }
+}

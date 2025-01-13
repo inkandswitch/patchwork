@@ -12,7 +12,7 @@ import { pdfjs, Document, Page } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import { EditorProps } from "@patchwork/sdk";
-import { FileDoc, LinkedFileContent } from "../datatype";
+import { FileDoc } from "../datatype";
 import { useToolUIState } from "@patchwork/sdk/router";
 import { DocPath } from "@patchwork/folder";
 import { clsx } from "clsx";
@@ -32,11 +32,7 @@ export type PDFFileDoc = FileDoc & {
 };
 
 export const isPDFFile = (file: FileDoc): file is PDFFileDoc => {
-  return (
-    file &&
-    (file.content.type === "binary" || file.content.type === "link") &&
-    file.type === "pdf"
-  );
+  return file && file.content.type === "binary" && file.extension === "pdf";
 };
 
 export const PDFFileViewer = ({
@@ -64,39 +60,8 @@ export const PDFFileViewer = ({
 };
 
 export const useBinaryDataOfDocFile = (doc: FileDoc | undefined) => {
-  const urlRef = useRef<string>();
-  urlRef.current =
-    doc && doc.content.type === "link" ? doc.content.url : undefined;
-
-  const [binaryData, setBinaryData] = useState<Uint8Array>();
-
   const content = doc?.content;
-
-  useEffect(() => {
-    if (!content) {
-      return;
-    }
-
-    if (content.type === "binary") {
-      setBinaryData(content.value);
-      return;
-    }
-
-    if (content.type === "link" && urlRef.current) {
-      setBinaryData(undefined);
-      fetch(urlRef.current)
-        .then((response) => response.arrayBuffer())
-        .then((buffer) => {
-          if ((content as LinkedFileContent).url === urlRef.current) {
-            setBinaryData(new Uint8Array(buffer));
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching binary data:", error);
-        });
-    }
-  }, [content]);
-
+  const binaryData = content?.type === "binary" ? content.value : undefined;
   return binaryData;
 };
 

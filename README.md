@@ -31,10 +31,13 @@ First, here's a quick orientation — this monorepo (managed with pnpm workspace
 
 ### Prereq
 
-A prerequisite is to install the jacquard cli which is used to push to automerge:
+A prerequisite is to install the jacquard cli which is used to push to automerge.
+
+First install [bun](https://bun.sh/). Then run:
 
 `cd jacquard-cli`
-`pnpm install -g`
+`pnpm i`
+`npm link`
 
 ### Editing a module
 

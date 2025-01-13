@@ -1,4 +1,4 @@
-import { allDataTypes, dataTypeById, initFrom } from "@patchwork/sdk";
+import { allDataTypes, DataType, dataTypeById, initFrom } from "@patchwork/sdk";
 import { FolderDoc } from "@patchwork/folder";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
@@ -7,6 +7,7 @@ import {
   AutomergeUrl,
   DocHandle,
   Repo,
+  StorageId,
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
 import fs from "fs";
@@ -18,11 +19,11 @@ import { RunResult } from "./run";
 import {
   formatFileSize,
   omOnCLIActiveBranchPromise,
-  readFileContent,
   sleep,
   waitForSync,
 } from "./util";
 import debugFactory from "debug";
+import { fileTypeFromBuffer } from "file-type";
 
 const debug = debugFactory("jacquard-cli:push");
 
@@ -59,6 +60,7 @@ export async function push(
     folderHandle,
     mainUrlsAndCloneHandlesByFileName,
     handlesToWaitOn,
+    syncServerStorageId,
   });
 
   if (runResult) {
@@ -143,12 +145,14 @@ async function pushDir({
   dir,
   handlesToWaitOn,
   repo,
+  syncServerStorageId,
   mainUrlsAndCloneHandlesByFileName,
   folderHandle,
 }: {
   dir: string;
   handlesToWaitOn: DocHandle<unknown>[];
   repo: Repo;
+  syncServerStorageId: StorageId | undefined;
   mainUrlsAndCloneHandlesByFileName: Record<
     string,
     { mainUrl: AutomergeUrl; cloneHandle: DocHandle<unknown> }
@@ -198,6 +202,7 @@ async function pushDir({
         dir: filePath,
         handlesToWaitOn,
         repo,
+        syncServerStorageId,
         mainUrlsAndCloneHandlesByFileName,
         folderHandle: subFolderHandle,
       });
@@ -206,6 +211,7 @@ async function pushDir({
         filePath,
         folderHandle,
         repo,
+        syncServerStorageId,
       });
       mainUrlsAndCloneHandlesByFileName[path.basename(filePath)] = {
         mainUrl,
@@ -304,20 +310,21 @@ const pushFile = async ({
   filePath,
   folderHandle,
   repo,
+  syncServerStorageId,
 }: {
   filePath: string;
   folderHandle: DocHandle<FolderDoc>;
   repo: Repo;
+  syncServerStorageId: StorageId | undefined;
 }): Promise<{
   handle: DocHandle<unknown>;
   mainUrl: AutomergeUrl;
   didChange: boolean;
 }> => {
-  const fileContent = readFileContent(filePath);
-
+  console.log("pushing file: ", filePath);
   const fileSize = fs.statSync(filePath).size;
   const formattedSize = formatFileSize(fileSize);
-  debug(`Pushing ${fileContent.type} file (${formattedSize}): ${filePath}`);
+  debug(`Pushing file (${formattedSize}): ${filePath}`);
 
   const fileExtension = path.extname(filePath).slice(1);
   const fileName = path.basename(filePath);
@@ -335,70 +342,66 @@ const pushFile = async ({
 
   const existingDocLink = folderDoc.docs.find((link) => link.name === fileName);
 
-  if (existingDocLink) {
-    const handle = (await omOnCLIActiveBranchPromise(existingDocLink.url, repo))
-      .handle;
-    const mainUrl = existingDocLink.url;
+  // This is a bit convoluted but we create figure out our dataType and handle quite
+  // differently for new files vs existing files
 
-    const dataTypeId = existingDocLink.type;
-    const dataType = dataTypeById(dataTypeId);
-    if (!dataType) {
-      throw new Error(
-        `cannot update ${filePath} with unknown type ${dataTypeId}`
-      );
-    }
-    if (!dataType.updateDocFromUnixFile) {
-      throw new Error(
-        `cannot update ${filePath} of non-file type ${dataTypeId}`
-      );
-    }
-
-    const { didChange } = await dataType.updateDocFromUnixFile(
-      fileContent.value,
-      handle
-    );
-
-    return { handle, mainUrl, didChange };
-  } else {
-    debug("Creating new file...");
-
+  let handle: DocHandle<unknown>;
+  let dataType: DataType | undefined;
+  if (!existingDocLink) {
+    // XXX PVH TODO before landing think through how this should work
     const dataTypes = allDataTypes();
 
-    const dataType =
+    const dataTypeForNewDoc =
       Object.values(dataTypes).find((dt) =>
-        dt.unixFileExtensions?.includes(fileExtension)
+        dt.fileExtensions?.includes(fileExtension)
       ) ??
-      Object.values(dataTypes).find((dt) =>
-        dt.unixFileExtensions?.includes("*")
-      );
+      Object.values(dataTypes).find((dt) => dt.fileExtensions?.includes("*"));
 
-    if (!dataType) {
+    if (!dataTypeForNewDoc) {
       throw new Error(`Unable to find datatype for ${fileExtension} or *`);
     }
 
-    if (!dataType.initDocFromUnixFile) {
-      throw new Error(
-        `datatype ${dataType.id} does not have initDocFromUnixFile`
-      );
-    }
-
     // Make a new doc in the folder
-    const handle = repo.create();
-    await dataType.initDocFromUnixFile(fileContent.value, fileName, handle);
-    const mainUrl = handle.url;
-    const didChange = true;
-
-    // delay to not overload automerge repo by creating many handles
-    sleep(500);
+    handle = repo.create();
+    handle.change((d) => dataTypeForNewDoc.init(d, repo));
 
     folderHandle.change((d) => {
       d.docs.push({
         name: fileName,
         url: handle.url, // this is ok cuz it's a new doc, not a clone
-        type: dataType.id,
+        type: dataTypeForNewDoc.id,
       });
     });
 
-    return { handle, mainUrl, didChange };
+    dataType = dataTypeForNewDoc;
+  } else {
+    const dataTypeForExistingDoc = dataTypeById(existingDocLink.type);
+    if (!dataTypeForExistingDoc) {
+      throw new Error(
+        `cannot update ${filePath} with unknown type ${existingDocLink.type}`
+      );
+    }
+
+    handle = (await omOnCLIActiveBranchPromise(existingDocLink.url, repo))
+      .handle;
+
+    dataType = dataTypeForExistingDoc;
   }
+
+  if (!dataType?.updateDocFromFile) {
+    throw new Error(`datatype ${dataType?.id} does not have updateDocFromFile`);
+  }
+
+  /* Load the file from disk into a File object */
+  const buffer = fs.readFileSync(filePath);
+  const type =
+    (await fileTypeFromBuffer(buffer))?.mime ?? "application/octet-stream";
+  const file = new File([buffer], fileName, { type });
+
+  const { didChange } = await dataType.updateDocFromFile(file, handle);
+
+  // wait for the sync to complete to not overload automerge repo by creating many handles at once
+  await waitForSync([handle], syncServerStorageId);
+
+  return { handle, mainUrl: handle.url, didChange };
 };

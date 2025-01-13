@@ -156,7 +156,7 @@ export const TextFileEditor = ({
     }
 
     return [
-      getPluginsByType(fileDoc.type),
+      getPluginsByType(fileDoc.extension),
       ...(readOnly ? [EditorView.editable.of(false)] : []),
       ...(setSelectedAnchors
         ? [

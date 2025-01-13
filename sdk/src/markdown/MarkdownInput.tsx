@@ -1,4 +1,3 @@
-import { HasAssets } from "../assets";
 import { DocHandle } from "@automerge/automerge-repo";
 import { EditorView } from "@codemirror/view";
 import { useEffect, useState } from "react";
@@ -13,7 +12,7 @@ type MarkdownInputProps = {
 
   // handle to the main doc which has an assets doc that we use
   // to store dragged in images
-  docWithAssetsHandle?: DocHandle<HasAssets>;
+  docHandle?: DocHandle<unknown>;
 
   // set focus after initialization
   autoFocus?: boolean;
@@ -22,7 +21,7 @@ type MarkdownInputProps = {
 export const MarkdownInput = ({
   value,
   onChange,
-  docWithAssetsHandle,
+  docHandle,
   autoFocus,
 }: MarkdownInputProps) => {
   const [editorView, setEditorView] = useState<EditorView | undefined>(
@@ -30,7 +29,7 @@ export const MarkdownInput = ({
   );
   const [container, setContainer] = useState<HTMLElement | null>(null);
   const [remountEditor, setRemountEditor] = useState<object>({});
-  const plugins = useMarkdownPlugins({ docWithAssetsHandle });
+  const plugins = useMarkdownPlugins({ docHandle });
 
   // trigger a remount when value has changed from the outside
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { DocLink, FolderDoc } from "@patchwork/folder";
 import { dataTypeById } from "@patchwork/sdk";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import { CommandLineArgs } from ".";
 import { omOnCLIActiveBranchPromise } from "./util";
@@ -38,9 +38,7 @@ async function pullFolder({
         const newDir = path.join(dir, docLink.name);
 
         // Create the folder on disk if it doesn't exist
-        if (!fs.existsSync(newDir)) {
-          fs.mkdirSync(newDir, { recursive: true });
-        }
+        await fs.mkdir(newDir, { recursive: true });
 
         // then pull the contents of the folder
         await pullFolder({
@@ -72,16 +70,19 @@ async function pullDoc({
     console.error(`skipping doc ${filePath} with unknown type ${dataTypeId}`);
     return;
   }
-  if (!dataType.docToUnixFile) {
-    console.log(`skipping doc ${filePath} of non-file type ${dataTypeId}`);
+
+  if (!dataType.updateFileFromDoc) {
+    console.log(
+      `skipping doc ${filePath} (no exporter defined for ${dataTypeId})`
+    );
     return;
   }
 
   const docOm = await omOnCLIActiveBranchPromise(docLink.url, repo);
 
-  const unixFile = await dataType.docToUnixFile(docOm.doc);
-  fs.writeFileSync(
-    unixFile.fileName ? path.join(dir, unixFile.fileName) : filePath,
-    unixFile.content
+  const file = await dataType.updateFileFromDoc(docOm.doc);
+  await fs.writeFile(
+    path.join(dir, file.name),
+    Buffer.from(await file.arrayBuffer())
   );
 }

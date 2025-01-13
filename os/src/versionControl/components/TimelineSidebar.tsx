@@ -31,7 +31,6 @@ import {
 import { useAutoPopulateChangeGroupSummaries } from "@patchwork/sdk/versionControl";
 import { DiscussionInput } from "./DiscussionInput";
 
-import { HasAssets } from "@patchwork/sdk/assets";
 import { MarkdownInput } from "@patchwork/sdk/markdown";
 import { type DataType } from "@patchwork/sdk";
 import { DocHandle } from "@automerge/automerge-repo";
@@ -389,7 +388,7 @@ export const TimelineSidebar: React.FC<{
                         return (
                           <DiscussionThreadItem
                             discussion={item.discussion}
-                            docWithAssetsHandle={handle}
+                            docHandle={handle}
                             selected={selected}
                           />
                         );
@@ -837,9 +836,9 @@ const BranchOriginItem = ({
 // We only show the first comment in the thread (replying isn't supported yet)
 const DiscussionThreadItem = ({
   discussion,
-  docWithAssetsHandle,
+  docHandle,
 }: {
-  docWithAssetsHandle: DocHandle<HasAssets>;
+  docHandle: DocHandle<unknown>;
   discussion: Discussion<unknown>;
   selected: boolean;
 }) => {
@@ -854,10 +853,7 @@ const DiscussionThreadItem = ({
         />
       </div>
       <div className="font-normal text-gray-800 -ml-1 -my-1">
-        <MarkdownInput
-          value={comment.content.trim()}
-          docWithAssetsHandle={docWithAssetsHandle}
-        />
+        <MarkdownInput value={comment.content.trim()} docHandle={docHandle} />
       </div>
     </div>
   );

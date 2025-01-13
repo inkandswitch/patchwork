@@ -1,15 +1,14 @@
-import { FileExportMethod } from "@patchwork/sdk/fileExports";
 import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
 import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 import { ChangeGroup, noGrouping } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { TextPatch } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
-import { DocHandle, updateText } from "@automerge/automerge-repo";
-import crypto from "crypto";
+import { DocHandle, RawString, updateText } from "@automerge/automerge-repo";
 import mime from "mime-types";
-import path from "path";
-import { isImageFile, useBinaryUrl } from "./utils";
+import { compareBuffers, isImageFile, useBinaryUrl } from "./utils";
+import { isBinaryCheck } from "./isBinaryFile";
+import { DeprecateLinkType } from "./migrations/DeprecateLinkType";
 
 // SCHEMA
 
@@ -23,23 +22,38 @@ export type TextFileContent = {
   value: string;
 };
 
-export type LinkedFileContent = {
-  type: "link";
-  url: string;
+// A special type for long text files that are stored as RawStrings.
+// This avoids performance problems with large text files.
+// We can display these in the UI as a blob, but we don't want to edit them.
+export type LongTextFileContent = {
+  type: "longText";
+  value: RawString;
 };
+
+// Conservatively use LongTextFileContent for text files longer than 100KB.
+const LONG_TEXT_FILE_LENGTH_THRESHOLD = 100000;
 
 export type FileContent =
   | BinaryFileContent
   | TextFileContent
-  | LinkedFileContent;
+  | LongTextFileContent;
 
 export type FileDoc = HasVersionControlMetadata<TextAnchor, string> & {
   name: string;
-  type: string; // todo: should maybe rename type to extension?
+  extension: string;
+  mimeType: string;
   content: FileContent;
 };
 
 // FUNCTIONS
+const init = (doc: FileDoc) => {
+  initFrom(doc, {
+    name: "",
+    extension: "",
+    mimeType: "",
+    content: { type: "text", value: "" },
+  });
+};
 
 // When a copy of the document has been made,
 // update the title so it's more clear which one is the copy vs original.
@@ -113,106 +127,24 @@ ${docAfter.content.value}
 const includePatchInChangeGroup = (patch: Automerge.Patch | TextPatch) =>
   patch.path[0] === "content";
 
-const fileExportMethods: FileExportMethod<FileDoc>[] = [
-  {
-    id: "export-as-file",
-    exportMethodName: (doc) => {
-      const parts = doc.name.split(".");
-      return parts.length > 1 ? "." + parts[parts.length - 1] : "file";
-    },
-    export: async (doc) => {
-      if (doc.content.type === "binary") {
-        return new Blob([doc.content.value], {
-          type: "application/octet-stream",
-        });
-      } else if (doc.content.type === "text") {
-        return new Blob([doc.content.value], { type: "text/plain" });
-      } else {
-        if (doc.content.type === "link") {
-          const response = await fetch(doc.content.url);
-          const blob = await response.blob();
-          return blob;
-        } else {
-          throw new Error("Unsupported content type for export");
-        }
-      }
-    },
-    // TODO: in the future we might want to make this content type more specific and accurate
-    // based on the actual content of the file. but for now we don't have convenient access
-    // to a mimetype, and this isn't used for too much anyway.
-    contentType: (doc) => "application/octet-stream",
-    fileExtension: (doc) => {
-      const parts = doc.name.split(".");
-      return parts.length > 1 ? parts[parts.length - 1] : "";
-    },
-    filename: (doc) => doc.name,
-  },
-];
+const updateFileFromDoc = async (doc: FileDoc): Promise<File> => {
+  const isBinary = doc.content.type === "binary";
+  const extension = doc.extension ?? (isBinary ? "dat" : "txt");
+  const hasExtensionAlready = /\.[a-z0-9]+$/.test(doc.name);
+  const fileName = hasExtensionAlready ? doc.name : `${doc.name}.${extension}`;
+  const type =
+    doc.mimeType ?? mime.lookup(extension) ?? "application/octet-stream";
 
-const ENDPOINT_URL = "https://file-server-txxa.onrender.com/file";
+  const fileContents =
+    doc.content.type === "longText"
+      ? doc.content.value.toString()
+      : doc.content.value;
 
-const uploadFile = async (
-  fileBuffer: Uint8Array,
-  mimeType: string | false
-): Promise<string> => {
-  try {
-    const response = await fetch(ENDPOINT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": mimeType || "application/octet-stream",
-      },
-      body: fileBuffer,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload file: ${response.statusText}`);
-    }
-
-    const responseData = await response.json();
-    return responseData.url as string;
-  } catch (error) {
-    console.error("Error uploading file:", error);
-    throw error;
-  }
+  return new File([fileContents], fileName, { type });
 };
 
-export const sha256 = (buffer: Uint8Array) =>
-  crypto.createHash("sha256").update(buffer).digest("hex");
-
-const docToUnixFile = async (doc: FileDoc) => {
-  if (doc.content.type === "link") {
-    const response = await fetch(doc.content.url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch file: ${response.statusText}`);
-    }
-    const arrayBuffer = await response.arrayBuffer();
-    return { content: new Uint8Array(arrayBuffer) };
-  } else {
-    return { content: doc.content.value };
-  }
-};
-
-const initDocFromUnixFile = async (
-  content: string | Uint8Array,
-  fileName: string,
-  handle: DocHandle<FileDoc>
-): Promise<void> => {
-  const fileExtension = path.extname(fileName).slice(1);
-
-  handle.change((doc) => {
-    initFrom(doc, {
-      name: fileName,
-      type: fileExtension,
-      // TODO: kinda hacky
-      content: { type: "text", value: "" },
-    });
-  });
-
-  await updateDocFromUnixFile(content, handle);
-};
-
-const updateDocFromUnixFile = async (
-  content: string | Uint8Array,
+export const updateDocFromFile = async (
+  file: File,
   handle: DocHandle<FileDoc>
 ) => {
   const doc = await handle.doc();
@@ -220,49 +152,55 @@ const updateDocFromUnixFile = async (
     throw new Error("Document not found");
   }
 
-  const fileExtension = path.extname(doc.name).slice(1);
+  const fileContents = new Uint8Array(await file.arrayBuffer());
+  const fileSize = fileContents.byteLength;
+  const isBinary = isBinaryCheck(fileContents, fileSize);
 
-  // TODO: Buffer is supposed to be a subclass of Uint8Array but
-  // maybe (with vitest?) it isn't?
-  if (content instanceof Buffer || content instanceof Uint8Array) {
-    // BINARY DATA
+  // TODO: annoying type
+  const historyLength = handle.history()!.length;
 
-    // check if's a link and hasn't changed
-    if (doc.content.type === "link") {
-      const hash = sha256(content);
-      if (doc.content.url.endsWith(hash)) {
-        console.log("File didn't change, skipping upload");
-        return { didChange: false };
+  handle.change((doc) => {
+    // First, update file metadata.
+    if (doc.name !== file.name) {
+      doc.name = file.name;
+    }
+    const extension = file.name.split(".").pop() || "";
+    if (doc.extension !== extension) {
+      doc.extension = extension;
+    }
+
+    if (doc.mimeType !== file.type) {
+      doc.mimeType = file.type;
+    }
+
+    // Then, update the file content.
+    if (isBinary) {
+      if (
+        doc.content.type !== "binary" ||
+        !compareBuffers(fileContents, doc.content.value)
+      ) {
+        doc.content = { type: "binary", value: fileContents };
       }
-    }
-
-    const mimeType = mime.lookup(fileExtension);
-    const url = await uploadFile(content, mimeType);
-    handle.change((doc) => {
-      doc.content = { type: "link", url };
-    });
-  } else {
-    // TEXT DATA
-
-    //  check if it's text and hasn't changed
-    if (doc.content.type === "text" && doc.content.value === content) {
-      console.log("File didn't change, skipping update");
-      return { didChange: false };
-    }
-
-    handle.change((doc) => {
-      if (doc.content.type === "text") {
-        updateText(doc, ["content", "value"], content);
+    } else {
+      const text = new TextDecoder("utf-8").decode(fileContents);
+      if (text.length > LONG_TEXT_FILE_LENGTH_THRESHOLD) {
+        console.log("using RawString for text of length: ", text.length);
+        doc.content = { type: "longText", value: new RawString(text) };
       } else {
-        doc.content = { type: "text", value: content };
+        if (doc.content.type !== "text" || doc.content.value !== text) {
+          doc.content = { type: "text", value: text };
+        }
       }
-    });
-  }
+    }
+  });
 
-  return { didChange: true };
+  // if nothing happened during the above function, the history will be the same size
+  const historyGrew = handle.history()!.length > historyLength;
+  return { didChange: historyGrew };
 };
 
 export const dataType: DataTypeImplementation<FileDoc, TextAnchor, string> = {
+  init,
   getTitle,
   setTitle,
   markCopy,
@@ -276,11 +214,10 @@ export const dataType: DataTypeImplementation<FileDoc, TextAnchor, string> = {
   },*/
 
   includePatchInChangeGroup,
-  fileExportMethods,
-
   ...textAnchorsAtPath(["content", "value"]),
 
-  docToUnixFile,
-  initDocFromUnixFile,
-  updateDocFromUnixFile,
+  updateFileFromDoc,
+  updateDocFromFile,
+  fileExtensions: ["*"],
+  migrations: [new DeprecateLinkType()],
 };

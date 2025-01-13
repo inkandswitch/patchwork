@@ -81,7 +81,7 @@ export const DiscussionInput = function <
             <MarkdownInput
               value={commentBoxContent}
               onChange={changelogSelection ? undefined : setCommentBoxContent}
-              docWithAssetsHandle={handle}
+              docHandle={handle}
             />
           </div>
           <div className="flex justify-end mt-2 text-sm">

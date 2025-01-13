@@ -10,9 +10,9 @@ import {
 import { next as A, Doc } from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { ReactElement } from "react";
-import { FileExportMethod } from "./fileExports";
 import { IconType } from "./ui";
 import { DocLink } from "@patchwork/folder";
+import { DocMigration } from "./migrations/DocMigration";
 
 export type DataType<
   D = unknown,
@@ -28,35 +28,24 @@ export type DataTypeDescription<D = unknown, T = unknown, V = unknown> = {
   name: string;
   icon: IconType;
   unlisted?: boolean;
-  unixFileExtensions?: string[];
   importUrl?: string; // populated at registration-time
   load(): Promise<DataTypeImplementation<D, T, V>>;
 };
 
 export type CoreDataType<D> = {
-  init?: (doc: D, repo: Repo) => void;
+  init: (doc: D, repo: Repo) => void;
   getTitle: (doc: D, repo: Repo) => Promise<string>;
   setTitle?: (doc: any, title: string) => void;
   markCopy: (doc: D) => void; // TODO: this shouldn't be part of the interface
   actions?: Record<string, (doc: Doc<D>, args: object) => void>;
-  fileExportMethods?: FileExportMethod<D>[];
 
-  // UNIX SYNC (for Jacquard)
-  // Pulling
-  docToUnixFile?: (doc: D) => Promise<{
-    content: string | Uint8Array;
-    fileName?: string; // defaults to name provided in DocLink
-  }>;
-  // Pushing
-  initDocFromUnixFile?: (
-    content: string | Uint8Array,
-    fileName: string,
-    handle: DocHandle<D>
-  ) => Promise<void>;
-  updateDocFromUnixFile?: (
-    content: string | Uint8Array,
+  // FILE EXPORT
+  updateFileFromDoc?: (doc: D) => Promise<File>;
+  updateDocFromFile?: (
+    file: File,
     handle: DocHandle<D>
   ) => Promise<{ didChange: boolean }>;
+  fileExtensions?: string[];
 };
 
 export type VersionedDataType<D, T, V> = {
@@ -148,6 +137,11 @@ export type VersionedDataType<D, T, V> = {
    * when a branch is created.
    */
   links?: (doc: D) => DocLink[];
+
+  /**
+   * List of available migrations for this data type
+   */
+  migrations?: DocMigration[];
 };
 
 export type DataTypeImplementation<
@@ -190,6 +184,17 @@ export const allDataTypes = () => {
 
 export const dataTypeById = <D, T, V>(id: string | undefined) => {
   return id ? GlobalDataTypes[id] : undefined;
+};
+
+// XXX: Is this good?
+export const dataTypeByFileExtension = (fileExtension: string) => {
+  const dataTypes = allDataTypes();
+  const dataType =
+    Object.values(dataTypes).find((dt) =>
+      dt.fileExtensions?.includes(fileExtension)
+    ) ??
+    Object.values(dataTypes).find((dt) => dt.fileExtensions?.includes("*"));
+  return dataType;
 };
 
 /** Kinda hacky utility function to initialize an object in

@@ -1,6 +1,6 @@
 import { ContactDoc, RegisteredContactDoc } from "..";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
 import { VariantProps } from "class-variance-authority";
 import {
   Avatar,
@@ -8,8 +8,8 @@ import {
   AvatarImage,
   avatarVariants,
 } from "../ui/avatar";
-import { useBlobUrl } from "../fileUtils";
 import { User as UserIcon } from "lucide-react";
+import { fileHandleToServiceWorkerUrl } from "../files";
 
 interface ContactAvatarProps extends VariantProps<typeof avatarVariants> {
   url?: AutomergeUrl;
@@ -33,10 +33,12 @@ export const InlineContactAvatar = ({
       ? maybeAnonymousContact
       : registeredContact;
 
-  const avatarBlobUrl = useBlobUrl(contact?.avatarUrl);
+  const avatarHandle = useHandle(contact?.avatarUrl);
+  const avatarImgUrl =
+    avatarHandle && fileHandleToServiceWorkerUrl(avatarHandle);
 
   const avatarUrl =
-    url && contact?.avatarUrl && showImage ? avatarBlobUrl : undefined;
+    url && contact?.avatarUrl && showImage ? avatarImgUrl : undefined;
   const name = contact?.name;
 
   return (

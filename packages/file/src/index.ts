@@ -10,7 +10,6 @@ export const dataType: DataTypeDescription<FileDoc, TextAnchor, string> = {
   id: "file",
   name: "File",
   icon: "File",
-  unixFileExtensions: ["*"],
   async load() {
     const { dataType } = await import("./datatype");
     return dataType;

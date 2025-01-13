@@ -20,11 +20,11 @@ import {
 } from "@patchwork/jacquard/signals";
 import { FileDoc } from "../datatype";
 import { isImageFile } from "../utils";
-import { FitsFileDoc, FitsFileViewer, isFitsFile } from "./FitsFileViewer";
 import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
 import { ImageFileDoc, ImageFileViewer } from "./ImageFileViewer";
 import { PDFFileDoc, PDFFileViewer, isPDFFile } from "./PDFFileViewer";
 import { TextFileEditor, isTextFile } from "./TextFileEditor";
+import { LongTextFileViewer, isLongTextFile } from "./LongTextFileViewer";
 
 // TODO: this should be split out into separate tools that
 // for that we need to extend the suppportsDatatype mechanism and turn it into a function
@@ -90,6 +90,8 @@ export const FileEditor = (props: EditorProps<any, any>) => {
         {" "}
         {isTextFile(doc) ? (
           <TextFileEditor {...(props as EditorProps<TextAnchor, string>)} />
+        ) : isLongTextFile(doc) ? (
+          <LongTextFileViewer {...(props as EditorProps<FileDoc, never>)} />
         ) : (
           <>
             {isImageFile(doc) ? (
@@ -98,8 +100,6 @@ export const FileEditor = (props: EditorProps<any, any>) => {
               />
             ) : isPDFFile(doc) ? (
               <PDFFileViewer {...(props as EditorProps<PDFFileDoc, never>)} />
-            ) : isFitsFile(doc) ? (
-              <FitsFileViewer {...(props as EditorProps<FitsFileDoc, never>)} />
             ) : isHTMLFile(doc) ? (
               <HTMLFileViewer {...(props as EditorProps<HTMLFileDoc, never>)} />
             ) : (

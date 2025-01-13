@@ -10,10 +10,9 @@ export const DataTypeModule: React.FC<{ dataType: DataType }> = ({
       <span>DataType: {dataType.name}</span>
     </div>
     <div className="pl-6 text-gray-500">
-      {dataType.unixFileExtensions &&
-        dataType.unixFileExtensions?.length > 0 && (
-          <div>File types: {dataType.unixFileExtensions.join(", ")}</div>
-        )}
+      {dataType.fileExtensions && dataType.fileExtensions?.length > 0 && (
+        <div>File types: {dataType.fileExtensions.join(", ")}</div>
+      )}
     </div>
   </div>
 );

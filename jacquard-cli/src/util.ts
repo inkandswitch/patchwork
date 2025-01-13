@@ -8,11 +8,9 @@ import {
   StorageId,
 } from "@automerge/automerge-repo";
 import fs from "fs";
-import { isBinaryFileSync } from "isbinaryfile";
 import { PassThrough } from "node:stream";
 import { inspect } from "node:util";
 import path from "path";
-import { FileContent } from "@patchwork/file";
 import { fetchOmOnFixedBranch } from "@patchwork/sdk/versionControl";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 
@@ -29,7 +27,7 @@ export async function waitForSync(
     return new Promise(() => {});
   }
 
-  console.log("Waiting for files to sync...");
+  console.log("Waiting for sync...");
   await Promise.all(
     handlesToWaitOn.map(
       (handle) =>
@@ -54,7 +52,6 @@ export async function waitForSync(
         })
     )
   );
-  console.log("  Files synced!");
 }
 
 type JacquardConfig = {
@@ -93,43 +90,6 @@ export const sleep = async (duration: number): Promise<void> => {
 
 export const addPrefix = (prefix: string | undefined, str: string) =>
   prefix ? `${prefix} ${str}` : str;
-
-const isBinaryFileJacquard = (filePath: string) => {
-  // extensions that are binary but not detected by isbinaryfile
-  const BINARY_FILE_EXTENSIONS = [
-    // fits is a binary format for images often used in astronomy,
-    // the format has a human readable ASCII header which trips up isbinaryfile
-    ".fits",
-    ".html",
-  ];
-
-  // files that are uploaded as text even if they are above the size limit
-  const WHITELIST_FILE_EXTENSION_BIG_TEXT = [".tex", ".py"];
-
-  const MAX_TEXT_FILE_SIZE = 100000;
-
-  const fileSize = fs.statSync(filePath).size;
-
-  const treateAsBinaryFileBecauseOfSize =
-    fileSize > MAX_TEXT_FILE_SIZE &&
-    !WHITELIST_FILE_EXTENSION_BIG_TEXT.some((ext) => filePath.endsWith(ext));
-
-  return (
-    isBinaryFileSync(filePath) ||
-    BINARY_FILE_EXTENSIONS.some((ext) => filePath.endsWith(ext)) ||
-    treateAsBinaryFileBecauseOfSize
-  );
-};
-
-export const readFileContent = (
-  filePath: string
-): FileContent & { type: "binary" | "text" } => {
-  if (isBinaryFileJacquard(filePath)) {
-    return { type: "binary", value: fs.readFileSync(filePath) };
-  } else {
-    return { type: "text", value: fs.readFileSync(filePath, "utf8") };
-  }
-};
 
 export function formatFileSize(bytes: number): string {
   const units = ["B", "KB", "MB", "GB", "TB"];
