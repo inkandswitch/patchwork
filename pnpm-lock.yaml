@@ -140,7 +140,7 @@ importers:
         version: 18.3.0
       '@vitejs/plugin-react':
         specifier: ^4.3.1
-        version: 4.3.1(vite@6.0.3(@types/node@20.16.1)(jiti@1.21.6)(terser@5.37.0)(yaml@2.5.0))
+        version: 4.3.1(vite@5.4.2(@types/node@20.16.1)(terser@5.37.0))
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.4.49)
@@ -156,15 +156,18 @@ importers:
       tailwindcss:
         specifier: ^3.4.6
         version: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      vite:
+        specifier: ^5.3.4
+        version: 5.4.2(@types/node@20.16.1)(terser@5.37.0)
       vite-plugin-css-injected-by-js:
         specifier: ^3.5.2
-        version: 3.5.2(vite@6.0.3(@types/node@20.16.1)(jiti@1.21.6)(terser@5.37.0)(yaml@2.5.0))
+        version: 3.5.2(vite@5.4.2(@types/node@20.16.1)(terser@5.37.0))
       vite-plugin-top-level-await:
         specifier: ^1.4.4
-        version: 1.4.4(@swc/helpers@0.5.15)(rollup@4.28.0)(vite@6.0.3(@types/node@20.16.1)(jiti@1.21.6)(terser@5.37.0)(yaml@2.5.0))
+        version: 1.4.4(@swc/helpers@0.5.15)(rollup@4.28.0)(vite@5.4.2(@types/node@20.16.1)(terser@5.37.0))
       vite-plugin-wasm:
         specifier: ^3.3.0
-        version: 3.3.0(vite@6.0.3(@types/node@20.16.1)(jiti@1.21.6)(terser@5.37.0)(yaml@2.5.0))
+        version: 3.3.0(vite@5.4.2(@types/node@20.16.1)(terser@5.37.0))
 
   packages/chat:
     dependencies:
@@ -210,7 +213,7 @@ importers:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -250,7 +253,7 @@ importers:
         version: 2.2.9-alpha.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@handsontable/react':
         specifier: ^14.4.0
         version: 14.5.0(handsontable@14.5.0)
@@ -615,7 +618,7 @@ importers:
         version: 2.2.9-alpha.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@patchwork/folder':
         specifier: workspace:*
         version: link:../folder
@@ -1003,7 +1006,7 @@ importers:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -1199,7 +1202,7 @@ importers:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -12470,6 +12473,21 @@ snapshots:
     dependencies:
       '@automerge/automerge': 2.2.9-alpha.2
       '@automerge/automerge-repo': 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+      eventemitter3: 5.0.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-usestateref: 1.0.9(react@18.3.1)
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - supports-color
+      - typescript
+
+  '@automerge/automerge-repo-react-hooks@2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)':
+    dependencies:
+      '@automerge/automerge': 2.2.9-alpha.2
+      '@automerge/automerge-repo': 2.0.0-alpha.7(@swc/core@1.7.14)(@types/node@20.16.1)(typescript@5.5.4)
       eventemitter3: 5.0.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
