@@ -24,6 +24,7 @@ import {
 } from "./util";
 import debugFactory from "debug";
 import { fileTypeFromBuffer } from "file-type";
+import { isBinaryCheck } from "@patchwork/file";
 
 const debug = debugFactory("jacquard-cli:push");
 
@@ -394,9 +395,29 @@ const pushFile = async ({
 
   /* Load the file from disk into a File object */
   const buffer = fs.readFileSync(filePath);
-  const type =
-    (await fileTypeFromBuffer(buffer))?.mime ?? "application/octet-stream";
-  const file = new File([buffer], fileName, { type });
+
+  const isBinary = isBinaryCheck(buffer, buffer.length);
+
+  let mimeType;
+  if (isBinary) {
+    mimeType =
+      (await fileTypeFromBuffer(buffer))?.mime ?? "application/octet-stream";
+  } else {
+    // for now we just handle a few common types of text-based data, based on file extensions
+    if (fileExtension === "json") {
+      mimeType = "application/json";
+    } else if (fileExtension === "csv") {
+      mimeType = "text/csv";
+    } else if (fileExtension === "js") {
+      mimeType = "application/javascript";
+    } else if (fileExtension === "ts") {
+      mimeType = "application/typescript";
+    } else {
+      mimeType = "text/plain";
+    }
+  }
+
+  const file = new File([buffer], fileName, { type: mimeType });
 
   const { didChange } = await dataType.updateDocFromFile(file, handle);
 

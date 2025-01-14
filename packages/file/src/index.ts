@@ -4,6 +4,7 @@ import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
 
 // For others to enjoy
 export { type FileDoc, type FileContent };
+export { isBinaryCheck } from "./isBinaryFile";
 
 export const dataType: DataTypeDescription<FileDoc, TextAnchor, string> = {
   type: "patchwork:dataType",

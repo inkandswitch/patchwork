@@ -284,21 +284,21 @@ self.addEventListener("fetch", async (event) => {
           }
           */
           // the mimetype isn't actually here so we need to guess it based on the type field
-          const mimeType = {
-            svg: "image/svg+xml",
-            html: "text/html",
-            json: "application/json",
-            js: "application/javascript",
-            css: "text/css",
-            md: "text/markdown",
-            txt: "text/plain",
-            "": "text/plain",
-            png: "image/png",
-            jpg: "image/jpeg",
-          }[file.type];
+          // const mimeType = {
+          //   svg: "image/svg+xml",
+          //   html: "text/html",
+          //   json: "application/json",
+          //   js: "application/javascript",
+          //   css: "text/css",
+          //   md: "text/markdown",
+          //   txt: "text/plain",
+          //   "": "text/plain",
+          //   png: "image/png",
+          //   jpg: "image/jpeg",
+          // }[file.type];
 
           return new Response(file.content.value, {
-            headers: { "Content-Type": mimeType },
+            headers: { "Content-Type": file.mimeType },
           });
         }
 
