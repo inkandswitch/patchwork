@@ -1,9 +1,10 @@
 import { EditorProps } from "@patchwork/sdk";
 import { FileDoc } from "../datatype";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import { RawString } from "@automerge/automerge-repo";
 
 export const isLongTextFile = (doc: FileDoc): boolean => {
-  return doc.content.type === "longText";
+  return doc.contents instanceof RawString;
 };
 
 export const LongTextFileViewer = ({ docUrl }: EditorProps<FileDoc, never>) => {
@@ -20,7 +21,7 @@ export const LongTextFileViewer = ({ docUrl }: EditorProps<FileDoc, never>) => {
         mode.
       </div>
       <pre className="font-mono text-sm whitespace-pre-wrap break-words">
-        {doc.content.value.toString()}
+        {doc.contents.toString()}
       </pre>
     </div>
   );

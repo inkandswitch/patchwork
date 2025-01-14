@@ -1,9 +1,9 @@
 import type { TextAnchor } from "@patchwork/sdk/textAnchors";
-import type { FileDoc, FileContent } from "./datatype";
+import type { FileDoc } from "./datatype";
 import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
 
 // For others to enjoy
-export { type FileDoc, type FileContent };
+export { type FileDoc };
 export { isBinaryCheck } from "./isBinaryFile";
 
 export const dataType: DataTypeDescription<FileDoc, TextAnchor, string> = {

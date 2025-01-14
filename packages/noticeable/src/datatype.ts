@@ -13,10 +13,7 @@ export const dataType: DataTypeImplementation<NoticeableDoc, unknown, unknown> =
       doc.name = "doesn't matter";
       doc.mimeType = "application/javascript";
       doc.extension = ".js";
-      doc.content = {
-        type: "text",
-        value: "// # My Notebook\n\n",
-      };
+      doc.contents = "// # My Notebook\n\n";
       initVersionControlMetadata(doc, repo);
     },
     getTitle,
@@ -27,13 +24,12 @@ export const dataType: DataTypeImplementation<NoticeableDoc, unknown, unknown> =
 const titleRegex = /^\/\/\s#\s(.+)/m;
 
 export function getContent(doc: NoticeableDoc) {
-  if (doc.content.type === "text") {
-    return doc.content.value;
-  } else {
+  if (typeof doc?.contents !== "string") {
     throw new Error(
-      `Unsupported content type for notebook: ${doc.content.type}`
+      `Unsupported content type for notebook: ${typeof doc.contents}`
     );
   }
+  return doc.contents;
 }
 
 async function getTitle(doc: NoticeableDoc) {

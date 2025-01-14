@@ -368,10 +368,7 @@ export function useCurrentAccount(): Account | undefined {
         file.name = `avatar.${extension}`;
         file.extension = extension;
         file.mimeType = avatarDoc.type;
-        file.content = {
-          type: "binary",
-          value: avatarDoc.data,
-        };
+        file.contents = avatarDoc.data;
       });
 
       // Update contact to point to new FileDoc

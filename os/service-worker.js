@@ -263,46 +263,16 @@ self.addEventListener("fetch", async (event) => {
         }
 
         if (file?.content) {
-          if (file?.content?.type === "link") {
-            return new Response(
-              "The requested file uses a deprecated storage format and can't be loaded. You can re-push from Jacquard or open it in the editor to migrate it to the new format.",
-              {
-                status: 500,
-                headers: { "Content-Type": "text/plain" },
-              }
-            );
-          }
-
-          /*
-          {
-            "content": {
-              "type": "text",
-              "value": "Hello world..."
-            },
-            "name": "react-CHdo91hT.svg",
-            "type": "svg"
-          }
-          */
-          // the mimetype isn't actually here so we need to guess it based on the type field
-          // const mimeType = {
-          //   svg: "image/svg+xml",
-          //   html: "text/html",
-          //   json: "application/json",
-          //   js: "application/javascript",
-          //   css: "text/css",
-          //   md: "text/markdown",
-          //   txt: "text/plain",
-          //   "": "text/plain",
-          //   png: "image/png",
-          //   jpg: "image/jpeg",
-          // }[file.type];
-
-          return new Response(file.content.value, {
-            headers: { "Content-Type": file.mimeType },
-          });
+          return new Response(
+            "The requested file uses a deprecated storage format and can't be loaded. You can re-push from Jacquard or open it in the editor to migrate it to the new format.",
+            {
+              status: 500,
+              headers: { "Content-Type": "text/plain" },
+            }
+          );
         }
 
-        if (!file.contentType || file.contents === undefined) {
+        if (!file.mimeType || file.contents === undefined) {
           return new Response(
             `Invalid file entry.\n${url.pathname}:\nfileEntry:${JSON.stringify(
               file
@@ -315,36 +285,13 @@ self.addEventListener("fetch", async (event) => {
         }
 
         return new Response(file.contents, {
-          headers: { "Content-Type": file.contentType },
+          headers: { "Content-Type": file.mimeType },
         });
-      })()
-    );
-  } else if (
-    event.request.method === "GET" &&
-    url.origin === "https://storage.googleapis.com"
-  ) {
-    event.respondWith(
-      (async () => {
-        const r = await caches.match(event.request);
-        console.log(
-          `[Service Worker] Fetching resource from cache: ${event.request.url}`
-        );
-        if (r) {
-          return r;
-        }
-        const response = await fetch(event.request);
-        const cache = await caches.open(CACHE_NAME);
-        console.log(
-          `[Service Worker] Caching new resource: ${event.request.url}`
-        );
-        cache.put(event.request, response.clone());
-        return response;
       })()
     );
   }
   // disable caching for now
   /* else if (
-    import.meta.env.PROD &&
     event.request.method === "GET" &&
     url.origin === self.location.origin
   ) {

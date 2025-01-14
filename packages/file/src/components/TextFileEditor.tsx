@@ -43,15 +43,11 @@ import { EditorView } from "codemirror";
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import { tool } from "../tool";
 import { selectedAnchorsPlugin } from "@patchwork/sdk/markdown";
-import { FileDoc, TextFileContent } from "../datatype";
+import { FileDoc } from "../datatype";
 import { CodeMirror } from "@patchwork/sdk/components";
 
-export type TextFileDoc = FileDoc & {
-  content: TextFileContent;
-};
-
 export const isTextFile = (doc: FileDoc) => {
-  return doc && doc.content && doc.content.type === "text";
+  return doc?.mimeType.match("text/");
 };
 
 const pathToText = ["content", "value"];
@@ -72,8 +68,8 @@ export const TextFileEditor = ({
   // better at it. Anyway, for now I'm just using this.
   const containerRef = useRef<HTMLDivElement>(null);
   const [editor, setEditor] = useState<EditorView>();
-  const [_fileDoc] = useDocument<TextFileDoc>(docUrl);
-  const handle = useHandleDef<TextFileDoc>(docUrl);
+  const [_fileDoc] = useDocument<FileDoc>(docUrl);
+  const handle = useHandleDef<FileDoc>(docUrl);
 
   const fileDoc =
     docHeads && _fileDoc ? Automerge.view(_fileDoc, docHeads) : _fileDoc;
@@ -188,7 +184,7 @@ export const TextFileEditor = ({
         ref={containerRef}
         setEditorView={setEditor}
         key={JSON.stringify(docHeads)} // remount component whenever the passed in heads change
-        initialDoc={fileDoc.content.value}
+        initialDoc={fileDoc.contents.toString()}
         extensions={allExtensions}
         editorViewConfig={{
           scrollTo: scrollTo({ toolUIState, fileDoc }),
@@ -223,7 +219,7 @@ const scrollTo = ({
   fileDoc,
 }: {
   toolUIState: { scrollTopCursor?: Automerge.Cursor };
-  fileDoc: TextFileDoc;
+  fileDoc: FileDoc;
 }) => {
   if (toolUIState.scrollTopCursor) {
     const pos = getCursorPositionSafely(
@@ -255,7 +251,7 @@ const scrollObserverPlugin = ({
   changeToolUIStateRef,
 }: {
   containerRef: MutableRefObject<HTMLElement | null>;
-  fileDocRef: MutableRefObject<TextFileDoc | undefined>;
+  fileDocRef: MutableRefObject<FileDoc | undefined>;
   changeToolUIStateRef: MutableRefObject<(fn: (state: any) => void) => void>;
 }) => {
   let writeScrollTimeout: number | undefined = undefined;

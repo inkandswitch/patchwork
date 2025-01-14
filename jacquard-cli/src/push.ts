@@ -24,7 +24,14 @@ import {
 } from "./util";
 import debugFactory from "debug";
 import { fileTypeFromBuffer } from "file-type";
+import { Mime } from "mime";
 import { isBinaryCheck } from "@patchwork/file";
+
+// This is mostly because .ts is otherwise interpreted as a video file
+// the 'text/tsx' is for consistency with .jsx files in 'mime'.
+// We might consider adding an automerge type in the future but I have not done so here.
+// This could also be extensible via dataTypes but... again, I'm just fixing an immediate issue.
+const mime = new Mime({ "text/typescript": ["ts"], "text/tsx": ["tsx"] });
 
 const debug = debugFactory("jacquard-cli:push");
 
@@ -403,20 +410,8 @@ const pushFile = async ({
     mimeType =
       (await fileTypeFromBuffer(buffer))?.mime ?? "application/octet-stream";
   } else {
-    // for now we just handle a few common types of text-based data, based on file extensions
-    if (fileExtension === "json") {
-      mimeType = "application/json";
-    } else if (fileExtension === "csv") {
-      mimeType = "text/csv";
-    } else if (fileExtension === "js") {
-      mimeType = "application/javascript";
-    } else if (fileExtension === "ts") {
-      mimeType = "application/typescript";
-    } else {
-      mimeType = "text/plain";
-    }
+    mimeType = mime.getType(fileExtension) ?? "text/plain";
   }
-
   const file = new File([buffer], fileName, { type: mimeType });
 
   const { didChange } = await dataType.updateDocFromFile(file, handle);

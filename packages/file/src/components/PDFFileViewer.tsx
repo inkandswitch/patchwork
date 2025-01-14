@@ -32,7 +32,7 @@ export type PDFFileDoc = FileDoc & {
 };
 
 export const isPDFFile = (file: FileDoc): file is PDFFileDoc => {
-  return file && file.content.type === "binary" && file.extension === "pdf";
+  return file?.mimeType === "application/pdf";
 };
 
 export const PDFFileViewer = ({
@@ -59,10 +59,10 @@ export const PDFFileViewer = ({
   );
 };
 
-export const useBinaryDataOfDocFile = (doc: FileDoc | undefined) => {
-  const content = doc?.content;
-  const binaryData = content?.type === "binary" ? content.value : undefined;
-  return binaryData;
+export const useBinaryDataOfDocFile = (
+  doc: FileDoc | undefined
+): Uint8Array | undefined => {
+  return doc?.contents instanceof Uint8Array ? doc.contents : undefined;
 };
 
 // TODO: loading worker from global CDN because Vite import wasn't working,

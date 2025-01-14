@@ -94,10 +94,7 @@ describe("push", () => {
         ],
       },
       expectedChange: (spec) => {
-        (spec.docs[0].url_linksTo as FileDoc).content = {
-          type: "text",
-          value: "hello world v2.0",
-        };
+        (spec.docs[0].url_linksTo as FileDoc).contents = "hello world v2.0";
       },
     });
     // TODO: would be nice to double-check that the change is minimal
