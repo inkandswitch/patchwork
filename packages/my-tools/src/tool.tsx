@@ -110,7 +110,6 @@ export const ModuleSettingsEditor: React.FC<
 
   return (
     <div className="h-full overflow-y-auto">
-      <h2>Hello?</h2>
       <div className="flex flex-col gap-4 p-4">
         <RegisterModuleDialog
           onRegister={registerModule}
