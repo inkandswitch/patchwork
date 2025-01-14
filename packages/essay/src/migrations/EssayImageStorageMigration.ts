@@ -82,10 +82,7 @@ export class EssayImageStorageMigration extends DocMigration {
         doc.name = imagePath;
         doc.mimeType = imageData.contentType;
         doc.extension = imagePath.split(".").pop() || "";
-        doc.content = {
-          type: "binary",
-          value: imageData.contents,
-        };
+        doc.contents = imageData.contents;
       });
 
       console.log(`Created new file document for ${imagePath}`);
