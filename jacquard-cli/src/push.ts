@@ -35,6 +35,7 @@ export async function push(
   runResult?: RunResult,
   wait = true
 ) {
+  console.log("pushing");
   const { dir, projectFolderUrl, patchworkUrl, syncServerStorageId } = args;
 
   let folderHandle: DocHandle<FolderDoc> = await findOrCreateFolderHandle(
@@ -106,14 +107,15 @@ export async function push(
   }
 
   if (projectFolderUrl) {
-    debug(`Updated files in existing folder ${projectFolderUrl}`);
+    console.log(`Updated files in existing folder ${projectFolderUrl}`);
   } else {
     console.log(`Created new folder at ${folderHandle.url}`);
-    const { documentId } = parseAutomergeUrl(folderHandle.url);
-    console.log(
-      `  View at: ${patchworkUrl}/#jacquard-project--${documentId}?type=folder`
-    );
   }
+
+  const { documentId } = parseAutomergeUrl(folderHandle.url);
+  console.log(
+    `  View at: ${patchworkUrl}/#jacquard-project--${documentId}?type=folder`
+  );
 
   if (handlesToWaitOn.length > 1) {
     folderHandle.change((d: any) => {
@@ -342,13 +344,11 @@ const pushFile = async ({
 
   const existingDocLink = folderDoc.docs.find((link) => link.name === fileName);
 
-  // This is a bit convoluted but we create figure out our dataType and handle quite
-  // differently for new files vs existing files
-
+  // TODO: perhaps we want to make the "existing doc" and "new doc" cases more similar
+  // in terms of detecting datatypes?
   let handle: DocHandle<unknown>;
   let dataType: DataType | undefined;
   if (!existingDocLink) {
-    // XXX PVH TODO before landing think through how this should work
     const dataTypes = allDataTypes();
 
     const dataTypeForNewDoc =
