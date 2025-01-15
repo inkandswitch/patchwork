@@ -27,12 +27,12 @@ type OnDocumentLoadSuccess = NonNullable<
 >;
 
 export type PDFFileDoc = FileDoc & {
-  content: Uint8Array;
-  type: "pdf";
+  contents: Uint8Array;
+  mimeType: "application/pdf";
 };
 
 export const isPDFFile = (file: FileDoc): file is PDFFileDoc => {
-  return file?.mimeType === "application/pdf";
+  return file.mimeType === "application/pdf";
 };
 
 export const PDFFileViewer = ({

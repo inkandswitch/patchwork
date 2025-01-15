@@ -41,8 +41,9 @@ export const isRawStringFileDoc = (doc: FileDoc): boolean => {
 
 export type FileDoc = BinaryFileDoc | TextFileDoc;
 
-export const fileContents = (doc: FileDoc): string | Uint8Array => {
-  if (doc.contents instanceof Uint8Array) {
+// This is really here because RawString requires .toString() to be called
+export const getFileContents = (doc: FileDoc): string | Uint8Array => {
+  if (isBinaryFileDoc(doc)) {
     return doc.contents;
   } else return doc.contents.toString();
 };
@@ -79,7 +80,7 @@ const ChangeGroupView = ({
 }) => {
   const doc = changeGroup.docAtEndOfChangeGroup;
   const binaryUrl = useBinaryUrl(
-    doc?.contents instanceof Uint8Array ? doc.contents : undefined
+    isBinaryFileDoc(doc) ? doc.contents : undefined
   );
 
   if (!isImageFile(doc)) {
@@ -97,7 +98,7 @@ const promptForAIChangeGroupSummary = ({
   docAfter: FileDoc;
 }) => {
   // TODO: refactor so we don't need to call an LLM in this case
-  if (docAfter.contents instanceof Uint8Array) {
+  if (isBinaryFileDoc(docAfter)) {
     return "Respond with just this text: 'can't summarize non-text changes'";
   }
   return `
@@ -130,17 +131,14 @@ const includePatchInChangeGroup = (patch: Automerge.Patch | TextPatch) =>
   patch.path[0] === "content";
 
 const updateFileFromDoc = async (doc: FileDoc): Promise<File> => {
-  const isBinary = doc.contents instanceof Uint8Array;
+  const isBinary = isBinaryFileDoc(doc);
   const extension = doc.extension ?? (isBinary ? "dat" : "txt");
   const hasExtensionAlready = /\.[a-z0-9]+$/.test(doc.name);
   const fileName = hasExtensionAlready ? doc.name : `${doc.name}.${extension}`;
   const type =
     doc.mimeType ?? mime.lookup(extension) ?? "application/octet-stream";
 
-  const fileContents =
-    doc.contents instanceof Uint8Array ? doc.contents : doc.contents.toString();
-
-  return new File([fileContents], fileName, { type });
+  return new File([getFileContents(doc)], fileName, { type });
 };
 
 export const updateDocFromFile = async (
@@ -176,7 +174,7 @@ export const updateDocFromFile = async (
     // Then, update the file content.
     if (isBinary) {
       if (
-        !(doc.contents instanceof Uint8Array) ||
+        !isBinaryFileDoc(doc) ||
         !compareBuffers(fileContents, doc.contents)
       ) {
         doc.contents = fileContents;
