@@ -262,11 +262,21 @@ self.addEventListener("fetch", async (event) => {
           );
         }
 
-        if (!file.mimeType || file.contents === undefined) {
+        let dataToReturn = file.content;
+
+        // This is backwards compatibility—file.content used to be an object,
+        // so we still handle old files that have that shape.
+        const isOldFormat =
+          typeof file.content === "object" && file.content.value !== undefined;
+        if (isOldFormat) {
+          dataToReturn = file.content.value;
+        }
+
+        if (!file.mimeType) {
           // Detect old file format
-          if (file?.content) {
+          if (file?.content?.value) {
             return new Response(
-              "The requested file uses a deprecated storage format and can't be loaded. You can re-push from Jacquard or open it in the editor to migrate it to the new format.",
+              "The requested file uses a deprecated storage format (from before 1/14/25) and can't be loaded. You can re-push from Jacquard or open it in the editor to migrate it to the new format.",
               {
                 status: 500,
                 headers: { "Content-Type": "text/plain" },
@@ -285,7 +295,7 @@ self.addEventListener("fetch", async (event) => {
           );
         }
 
-        return new Response(file.content, {
+        return new Response(dataToReturn, {
           headers: { "Content-Type": file.mimeType },
         });
       })()
