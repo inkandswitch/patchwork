@@ -263,6 +263,17 @@ self.addEventListener("fetch", async (event) => {
         }
 
         if (!file.mimeType || file.contents === undefined) {
+          // Detect old file format
+          if (file?.content) {
+            return new Response(
+              "The requested file uses a deprecated storage format and can't be loaded. You can re-push from Jacquard or open it in the editor to migrate it to the new format.",
+              {
+                status: 500,
+                headers: { "Content-Type": "text/plain" },
+              }
+            );
+          }
+
           return new Response(
             `Invalid file entry.\n${url.pathname}:\nfileEntry:${JSON.stringify(
               file
