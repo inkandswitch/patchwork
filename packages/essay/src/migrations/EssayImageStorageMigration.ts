@@ -1,6 +1,5 @@
 import { DocMigration } from "@patchwork/sdk";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import { MarkdownDoc } from "../datatype";
 import { FileDoc } from "@patchwork/file";
 import { next as A } from "@automerge/automerge";
 
@@ -82,7 +81,7 @@ export class EssayImageStorageMigration extends DocMigration {
         doc.name = imagePath;
         doc.mimeType = imageData.contentType;
         doc.extension = imagePath.split(".").pop() || "";
-        doc.contents = imageData.contents;
+        doc.content = imageData.contents;
       });
 
       console.log(`Created new file document for ${imagePath}`);

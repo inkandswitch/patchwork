@@ -75,7 +75,7 @@ describe("refresh", () => {
     assert(folderDoc);
     const inputUrl = folderDoc.docs[0].url;
     const inputHandle = repo.find<FileDoc>(inputUrl);
-    inputHandle.change((d) => (d.contents = "sup cosmos"));
+    inputHandle.change((d) => (d.content = "sup cosmos"));
 
     await pull(repo, {
       dir: tempDir,

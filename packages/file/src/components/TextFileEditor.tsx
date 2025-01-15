@@ -50,7 +50,7 @@ export const isTextFile = (doc: FileDoc) => {
   return doc?.mimeType.match("text/");
 };
 
-const pathToText = ["content", "value"];
+const pathToText = ["content"];
 
 export const TextFileEditor = ({
   docUrl,
@@ -184,7 +184,7 @@ export const TextFileEditor = ({
         ref={containerRef}
         setEditorView={setEditor}
         key={JSON.stringify(docHeads)} // remount component whenever the passed in heads change
-        initialDoc={fileDoc.contents.toString()}
+        initialDoc={fileDoc.content.toString()}
         extensions={allExtensions}
         editorViewConfig={{
           scrollTo: scrollTo({ toolUIState, fileDoc }),

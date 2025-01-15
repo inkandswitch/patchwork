@@ -53,7 +53,7 @@ export const PDFFileViewer = ({
 
   return (
     <div className="overflow-auto h-full">
-      <PDFViewer data={doc.contents} docPath={docPath} />
+      <PDFViewer data={doc.content} docPath={docPath} />
     </div>
   );
 };

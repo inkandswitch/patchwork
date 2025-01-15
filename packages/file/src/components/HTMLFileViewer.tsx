@@ -1,9 +1,8 @@
 import { useMemo } from "react";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as Automerge from "@automerge/automerge";
-import { FileDoc } from "../datatype";
+import { FileDoc, getFileContents, isBinaryFileDoc } from "../datatype";
 import { EditorProps } from "@patchwork/sdk";
-import { useBinaryDataOfDocFile } from "./PDFFileViewer";
 
 export type HTMLFileDoc = FileDoc & {
   type: "html" | "htm";
@@ -21,14 +20,17 @@ export const HTMLFileViewer = ({
 
   const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
 
-  const binaryData = useBinaryDataOfDocFile(doc);
   const textData = useMemo(() => {
-    if (!binaryData) {
+    if (!doc) {
       return;
     }
 
-    return new TextDecoder().decode(binaryData);
-  }, [binaryData]);
+    if (isBinaryFileDoc(doc)) {
+      return new TextDecoder().decode(doc.content);
+    } else {
+      return doc.content.toString();
+    }
+  }, [doc]);
 
   return (
     <div className="overflow-auto h-full">

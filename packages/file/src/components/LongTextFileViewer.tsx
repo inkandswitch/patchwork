@@ -17,7 +17,7 @@ export const LongTextFileViewer = ({ docUrl }: EditorProps<FileDoc, never>) => {
         mode.
       </div>
       <pre className="font-mono text-sm whitespace-pre-wrap break-words">
-        {doc.contents.toString()}
+        {doc.content.toString()}
       </pre>
     </div>
   );

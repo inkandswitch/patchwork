@@ -17,26 +17,26 @@ export type TextFileDoc = HasVersionControlMetadata<TextAnchor, string> & {
   name: string;
   extension: string;
   mimeType: string;
-  contents: string | RawString;
+  content: string | RawString;
 };
 
 export type BinaryFileDoc = HasVersionControlMetadata<TextAnchor, string> & {
   name: string;
   extension: string;
   mimeType: string;
-  contents: Uint8Array;
+  content: Uint8Array;
 };
 
 export function isBinaryFileDoc(doc: FileDoc): doc is BinaryFileDoc {
-  return doc.contents instanceof Uint8Array;
+  return doc.content instanceof Uint8Array;
 }
 
 export function isTextFileDoc(doc: FileDoc): doc is TextFileDoc {
-  return typeof doc.contents === "string";
+  return typeof doc.content === "string";
 }
 
 export const isRawStringFileDoc = (doc: FileDoc): boolean => {
-  return doc.contents instanceof RawString;
+  return doc.content instanceof RawString;
 };
 
 export type FileDoc = BinaryFileDoc | TextFileDoc;
@@ -44,8 +44,8 @@ export type FileDoc = BinaryFileDoc | TextFileDoc;
 // This is really here because RawString requires .toString() to be called
 export const getFileContents = (doc: FileDoc): string | Uint8Array => {
   if (isBinaryFileDoc(doc)) {
-    return doc.contents;
-  } else return doc.contents.toString();
+    return doc.content;
+  } else return doc.content.toString();
 };
 
 // FUNCTIONS
@@ -54,7 +54,7 @@ const init = (doc: FileDoc) => {
     name: "",
     extension: "",
     mimeType: "",
-    contents: "",
+    content: "",
   });
 };
 
@@ -80,7 +80,7 @@ const ChangeGroupView = ({
 }) => {
   const doc = changeGroup.docAtEndOfChangeGroup;
   const binaryUrl = useBinaryUrl(
-    isBinaryFileDoc(doc) ? doc.contents : undefined
+    isBinaryFileDoc(doc) ? doc.content : undefined
   );
 
   if (!isImageFile(doc)) {
@@ -118,11 +118,11 @@ a few small tweaks
 reworded a paragraph
 
 <docBefore>
-${docBefore.contents.toString()}
+${docBefore.content.toString()}
 </docBefore>
 
 <docAfter>
-${docAfter.contents.toString()}
+${docAfter.content.toString()}
 </docAfter>
 `;
 };
@@ -173,26 +173,23 @@ export const updateDocFromFile = async (
 
     // Then, update the file content.
     if (isBinary) {
-      if (
-        !isBinaryFileDoc(doc) ||
-        !compareBuffers(fileContents, doc.contents)
-      ) {
-        doc.contents = fileContents;
+      if (!isBinaryFileDoc(doc) || !compareBuffers(fileContents, doc.content)) {
+        doc.content = fileContents;
       }
     } else {
       const text = new TextDecoder("utf-8").decode(fileContents);
-      if (text === doc.contents) {
+      if (text === doc.content) {
         return;
       }
 
       if (text.length > LONG_TEXT_FILE_LENGTH_THRESHOLD) {
         console.log("using RawString for text of length: ", text.length);
-        doc.contents = new RawString(text);
+        doc.content = new RawString(text);
       } else {
-        if (typeof doc.contents === "string") {
-          updateText(doc, ["contents"], text);
+        if (typeof doc.content === "string") {
+          updateText(doc, ["content"], text);
         } else {
-          doc.contents = text;
+          doc.content = text;
         }
       }
     }
@@ -218,7 +215,7 @@ export const dataType: DataTypeImplementation<FileDoc, TextAnchor, string> = {
   },*/
 
   includePatchInChangeGroup,
-  ...textAnchorsAtPath(["content", "value"]),
+  ...textAnchorsAtPath(["content"]),
 
   updateFileFromDoc,
   updateDocFromFile,

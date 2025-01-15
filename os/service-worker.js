@@ -285,7 +285,7 @@ self.addEventListener("fetch", async (event) => {
           );
         }
 
-        return new Response(file.contents, {
+        return new Response(file.content, {
           headers: { "Content-Type": file.mimeType },
         });
       })()

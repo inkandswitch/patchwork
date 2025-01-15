@@ -1,11 +1,11 @@
 import { next as Automerge } from "@automerge/automerge";
 import { DataTypeImplementation } from "@patchwork/sdk";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
-import { FileDoc } from "../../file/src/datatype";
+import { TextFileDoc } from "../../file/src/datatype";
 
 // TODO: for convenience we use FileDoc as the type so we can reuse
 // the TextFileEditor; not great
-export type NoticeableDoc = FileDoc;
+export type NoticeableDoc = TextFileDoc;
 
 export const dataType: DataTypeImplementation<NoticeableDoc, unknown, unknown> =
   {
@@ -13,7 +13,7 @@ export const dataType: DataTypeImplementation<NoticeableDoc, unknown, unknown> =
       doc.name = "doesn't matter";
       doc.mimeType = "application/javascript";
       doc.extension = ".js";
-      doc.contents = "// # My Notebook\n\n";
+      doc.content = "// # My Notebook\n\n";
       initVersionControlMetadata(doc, repo);
     },
     getTitle,
@@ -24,12 +24,12 @@ export const dataType: DataTypeImplementation<NoticeableDoc, unknown, unknown> =
 const titleRegex = /^\/\/\s#\s(.+)/m;
 
 export function getContent(doc: NoticeableDoc) {
-  if (typeof doc?.contents !== "string") {
+  if (typeof doc?.content !== "string") {
     throw new Error(
-      `Unsupported content type for notebook: ${typeof doc.contents}`
+      `Unsupported content type for notebook: ${typeof doc.content}`
     );
   }
-  return doc.contents;
+  return doc.content;
 }
 
 async function getTitle(doc: NoticeableDoc) {
@@ -41,6 +41,6 @@ async function getTitle(doc: NoticeableDoc) {
 function markCopy(doc: NoticeableDoc) {
   const titleMatch = getContent(doc).search(titleRegex);
   if (titleMatch !== -1) {
-    Automerge.splice(doc, ["content", "value"], titleMatch + 5, 0, "Copy of ");
+    Automerge.splice(doc, ["content"], titleMatch + 5, 0, "Copy of ");
   }
 }
