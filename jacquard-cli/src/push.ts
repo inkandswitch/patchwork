@@ -26,12 +26,21 @@ import debugFactory from "debug";
 import { fileTypeFromBuffer } from "file-type";
 import { Mime } from "mime";
 import { isBinaryCheck } from "@patchwork/file";
+import standardTypes from "mime/types/standard.js";
+import otherTypes from "mime/types/other.js";
 
 // This is mostly because .ts is otherwise interpreted as a video file
 // the 'text/tsx' is for consistency with .jsx files in 'mime'.
 // We might consider adding an automerge type in the future but I have not done so here.
 // This could also be extensible via dataTypes but... again, I'm just fixing an immediate issue.
-const mime = new Mime({ "text/typescript": ["ts"], "text/tsx": ["tsx"] });
+const mime = new Mime(standardTypes, otherTypes);
+mime.define(
+  {
+    "text/typescript": ["ts"],
+    "text/tsx": ["tsx"],
+  },
+  true
+);
 
 const debug = debugFactory("jacquard-cli:push");
 

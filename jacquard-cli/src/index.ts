@@ -26,6 +26,7 @@ import {
   ToolDescription,
   registerDataType,
 } from "@patchwork/sdk";
+import { Mime } from "mime";
 
 // those marked non-optional here are those with defaults provided in allFlags below
 export type CommandLineArgs = {
