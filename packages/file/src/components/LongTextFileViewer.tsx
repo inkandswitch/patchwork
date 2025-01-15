@@ -1,16 +1,12 @@
 import { EditorProps } from "@patchwork/sdk";
-import { FileDoc } from "../datatype";
+import { FileDoc, isRawStringFileDoc } from "../datatype";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { RawString } from "@automerge/automerge-repo";
-
-export const isLongTextFile = (doc: FileDoc): boolean => {
-  return doc.contents instanceof RawString;
-};
 
 export const LongTextFileViewer = ({ docUrl }: EditorProps<FileDoc, never>) => {
   const [doc] = useDocument<FileDoc>(docUrl);
 
-  if (!doc || !isLongTextFile(doc)) {
+  if (!doc || !isRawStringFileDoc(doc)) {
     return null;
   }
 

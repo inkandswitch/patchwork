@@ -13,12 +13,33 @@ import { DeprecateLinkType } from "./migrations/DeprecateLinkType";
 // Conservatively use LongTextFileContent for text files longer than 100KB.
 const LONG_TEXT_FILE_LENGTH_THRESHOLD = 100000;
 
-export type FileDoc = HasVersionControlMetadata<TextAnchor, string> & {
+export type TextFileDoc = HasVersionControlMetadata<TextAnchor, string> & {
   name: string;
   extension: string;
   mimeType: string;
-  contents: Uint8Array | string | RawString;
+  contents: string | RawString;
 };
+
+export type BinaryFileDoc = HasVersionControlMetadata<TextAnchor, string> & {
+  name: string;
+  extension: string;
+  mimeType: string;
+  contents: Uint8Array;
+};
+
+export function isBinaryFileDoc(doc: FileDoc): doc is BinaryFileDoc {
+  return doc.contents instanceof Uint8Array;
+}
+
+export function isTextFileDoc(doc: FileDoc): doc is TextFileDoc {
+  return typeof doc.contents === "string";
+}
+
+export const isRawStringFileDoc = (doc: FileDoc): boolean => {
+  return doc.contents instanceof RawString;
+};
+
+export type FileDoc = BinaryFileDoc | TextFileDoc;
 
 export const fileContents = (doc: FileDoc): string | Uint8Array => {
   if (doc.contents instanceof Uint8Array) {

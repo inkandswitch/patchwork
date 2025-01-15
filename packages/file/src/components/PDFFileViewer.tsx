@@ -12,7 +12,7 @@ import { pdfjs, Document, Page } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import { EditorProps } from "@patchwork/sdk";
-import { FileDoc } from "../datatype";
+import { FileDoc, isBinaryFileDoc } from "../datatype";
 import { useToolUIState } from "@patchwork/sdk/router";
 import { DocPath } from "@patchwork/folder";
 import { clsx } from "clsx";
@@ -46,23 +46,16 @@ export const PDFFileViewer = ({
     () => (_doc && docHeads ? Automerge.view(_doc, docHeads) : _doc),
     [docHeads, _doc]
   );
-  const binaryData = useBinaryDataOfDocFile(doc);
 
-  if (!doc || !binaryData) {
+  if (!doc || !isBinaryFileDoc(doc)) {
     return;
   }
 
   return (
     <div className="overflow-auto h-full">
-      <PDFViewer data={binaryData} docPath={docPath} />
+      <PDFViewer data={doc.contents} docPath={docPath} />
     </div>
   );
-};
-
-export const useBinaryDataOfDocFile = (
-  doc: FileDoc | undefined
-): Uint8Array | undefined => {
-  return doc?.contents instanceof Uint8Array ? doc.contents : undefined;
 };
 
 // TODO: loading worker from global CDN because Vite import wasn't working,
