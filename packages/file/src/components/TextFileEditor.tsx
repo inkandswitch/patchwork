@@ -47,7 +47,9 @@ import { FileDoc } from "../datatype";
 import { CodeMirror } from "@patchwork/sdk/components";
 
 export const isTextFile = (doc: FileDoc) => {
-  return doc?.mimeType.match("text/");
+  return (
+    doc?.mimeType.match("text/") || doc?.mimeType.match("application/json")
+  );
 };
 
 const pathToText = ["content"];
