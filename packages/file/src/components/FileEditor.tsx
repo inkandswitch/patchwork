@@ -88,9 +88,9 @@ export const FileEditor = (props: EditorProps<any, any>) => {
     <div className="h-full flex">
       <div className="overflow-auto h-full flex-1">
         {" "}
-        {isTextFile(doc) ? (
+        {isTextFile(doc) && !isRawStringFileDoc(doc) ? (
           <TextFileEditor {...(props as EditorProps<TextAnchor, string>)} />
-        ) : isRawStringFileDoc(doc) ? (
+        ) : isTextFile(doc) && isRawStringFileDoc(doc) ? (
           <LongTextFileViewer {...(props as EditorProps<FileDoc, never>)} />
         ) : (
           <>
