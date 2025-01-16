@@ -3,7 +3,7 @@ import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 import { ChangeGroup, noGrouping } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { TextPatch } from "@patchwork/sdk/versionControl";
-import * as Automerge from "@automerge/automerge";
+import * as Automerge from "@automerge/automerge/next";
 import { DocHandle, RawString, updateText } from "@automerge/automerge-repo";
 import mime from "mime-types";
 import { compareBuffers, isImageFile, useBinaryUrl } from "./utils";
@@ -36,7 +36,7 @@ export function isTextFileDoc(doc: FileDoc): doc is TextFileDoc {
 }
 
 export const isRawStringFileDoc = (doc: FileDoc): boolean => {
-  return doc.content instanceof RawString;
+  return Automerge.isRawString(doc.content);
 };
 
 export type FileDoc = BinaryFileDoc | TextFileDoc;
