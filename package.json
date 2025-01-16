@@ -14,7 +14,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@automerge/automerge": "2.2.9-alpha.2"
+      "@automerge/automerge": "2.2.9-alpha.4"
     }
   },
   "keywords": [],
