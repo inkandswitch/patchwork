@@ -113,7 +113,7 @@ export const NoticeableEditor = (props: EditorProps<unknown, unknown>) => {
 
   return (
     <Allotment snap={true}>
-      <div className="bg-white">
+      <div className="w-full h-full bg-white">
         <TextFileEditor {...(props as EditorProps<TextAnchor, string>)} />
       </div>
       <Iframe className="w-full h-full" setIframe={setIframe}>

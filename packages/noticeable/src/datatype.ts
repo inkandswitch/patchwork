@@ -12,7 +12,7 @@ export const dataType: DataTypeImplementation<NoticeableDoc, unknown, unknown> =
     init: (doc, repo) => {
       doc.name = "doesn't matter";
       doc.mimeType = "application/javascript";
-      doc.extension = ".js";
+      doc.extension = "js";
       doc.content = "// # My Notebook\n\n";
       initVersionControlMetadata(doc, repo);
     },
