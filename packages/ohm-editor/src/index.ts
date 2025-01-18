@@ -20,7 +20,7 @@ export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "ohm",
-    name: "Ohm Grammar Editor",
+    name: "Grammar Editor",
     icon: "Code",
     supportedDataTypes: ["ohm"],
     async load() {
@@ -30,8 +30,19 @@ export const tools: ToolDescription[] = [
   },
   {
     type: "patchwork:tool",
+    id: "ohm-viz",
+    name: "Visualizer",
+    icon: "Code",
+    supportedDataTypes: ["ohm"],
+    async load() {
+      const { Tool } = await import("./visualizer");
+      return makeTool({ EditorComponent: Tool });
+    },
+  },
+  {
+    type: "patchwork:tool",
     id: "ohm-semantics",
-    name: "Ohm Semantics Editor",
+    name: "Semantics Editor",
     icon: "Code",
     supportedDataTypes: ["ohm"],
     async load() {
@@ -42,7 +53,7 @@ export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "ohm-tests",
-    name: "Ohm Test Editor",
+    name: "Test Editor",
     icon: "Code",
     supportedDataTypes: ["ohm"],
     async load() {

@@ -48,7 +48,7 @@ export const EditorSection = ({
       )}
     </div>
 
-    <div className="flex-1 min-h-0 rounded-lg border border-gray-200 overflow-hidden">
+    <div className="flex-1 min-h-0 rounded-lg border border-gray-200 overflow-scroll">
       <div className="h-full font-mono">
         <MarkdownEditor path={path} handle={handle} />
       </div>
