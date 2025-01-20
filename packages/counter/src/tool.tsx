@@ -13,13 +13,13 @@ export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
 
   const increment = () => {
     changeDoc((d) => {
-      d.count += 2;
+      d.count += 1;
     });
   };
 
   const decrement = () => {
     changeDoc((d) => {
-      d.count -= 2;
+      d.count -= 1;
     });
   };
 
