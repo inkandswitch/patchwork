@@ -93,6 +93,8 @@ Now, to install your module in Patchwork, go to "My Tools" and register a new mo
 Now in Patchwork when you click "create new" you should see a new option letting you create a doc of your new datatype.
 Click that and you should see your new tool running!
 
+See below for a more detailed guide.
+
 ## Editing the OS
 
 If you want to edit the OS web app:
@@ -114,3 +116,370 @@ VITE_OPENAI_API_KEY=<OpenAI key>
 ```
 
 You can get the lab OpenAI key from Geoffrey.
+
+## Creating a new tool in Patchwork
+
+This is a guide to creating a custom tool in Patchwork. We'll walk through an example tool: a simple counter with persistence.
+
+First, here's the package.json. Give your package a name (in the @patchwork/ namespace) and a description. This is just a regular JavaScript package. If you need more dependencies, you can add them here. The "push" command bundles the package and pushes it to Automerge, from which you can install it into Patchwork.
+
+counter/package.json:
+
+```
+{
+  "name": "@patchwork/counter",
+  "version": "0.0.1",
+  "description": "A simple counter",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "vite build",
+    "push": "pnpm build && jacquard push",
+    "watch": "nodemon --watch src -e js,tsx,ts,tsx,css,json --exec 'pnpm build && pnpm push'"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
+    "@patchwork/sdk": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@vitejs/plugin-react": "^4.3.1",
+    "nodemon": "^3.1.9",
+    "vite": "^5.3.4",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vite-plugin-top-level-await": "^1.4.2",
+    "vite-plugin-wasm": "^3.3.0"
+  }
+}
+
+```
+
+Next we define a data type, which is a schema for the Automerge document that we can enforce in TypeScript, plus some helper functions that operate on the data. The most important part here is the TypeScript schema.
+
+counter/src/datatype.ts:
+
+```
+import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
+import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
+
+// SCHEMA
+
+export type Doc = HasVersionControlMetadata<unknown, unknown> & {
+  title: string;
+  count: number;
+};
+// FUNCTIONS
+
+export const markCopy = (doc: Doc) => {
+  doc.title = "Copy of " + doc.title;
+};
+
+const setTitle = async (doc: Doc, title: string) => {
+  doc.title = title;
+};
+
+const getTitle = async (doc: Doc) => {
+  return doc.title || "Counter";
+};
+
+export const init = (doc: Doc) => {
+  initFrom(doc, {
+    title: "Untitled Counter",
+    count: 0,
+  });
+};
+
+export const dataType: DataTypeImplementation<Doc, unknown> = {
+  init,
+  getTitle,
+  setTitle,
+  markCopy,
+};
+
+```
+
+Then we define a tool. A tool is just a React component that will render in the Patchwork environment. It has access to a variety of props. It can also use various SDK functions.
+
+For now, the only prop we use is docUrl. We can use standard hooks from automerge-repo to read the value of the document and edit it as well.
+
+counter/src/tool.tsx
+
+```
+import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import { EditorProps, makeTool } from "@patchwork/sdk";
+import { Button } from "@patchwork/sdk/ui";
+import { Doc } from "./datatype";
+import React from "react";
+
+export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
+  const [doc, changeDoc] = useDocument<Doc>(docUrl);
+
+  if (!doc) {
+    return null;
+  }
+
+  const increment = () => {
+    changeDoc((d) => {
+      d.count += 1;
+    });
+  };
+
+  const decrement = () => {
+    changeDoc((d) => {
+      d.count -= 1;
+    });
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full">
+      <h2 className="text-4xl font-bold mb-4">{doc.title}</h2>
+      <div className="text-4xl mb-4">{doc.count}</div>
+      <div className="flex space-x-4">
+        <Button variant="destructive" onClick={decrement}>
+          -
+        </Button>
+        <Button variant="default" onClick={increment}>
+          +
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+```
+
+We're almost done. Our CSS file is just a small stub to support tailwind:
+
+counter/src/index.ts
+
+```
+/* This is a bit of a hack since we don't have proper style scoping yet.
+   We rely on the fact that the OS defines the tailwind base (with appropriate config);
+   we only generate components and utilities here which may be specific to this package. */
+/* @tailwind base; */
+@tailwind components;
+@tailwind utilities;
+
+```
+
+And finally we pull it all together with an index file. We simply import the tool and data type, wrap them in some metadata, and then re-export them. Note the lazy import, which lets us load this metadata without loading the code itself.
+
+counter/src/index.ts
+
+```
+import {
+  makeTool,
+  type DataTypeDescription,
+  type ToolDescription,
+} from "@patchwork/sdk";
+import type { Doc } from "./datatype";
+
+import "./index.css";
+
+export const dataType: DataTypeDescription<Doc> = {
+  type: "patchwork:dataType",
+  id: "counter",
+  name: "Counter",
+  icon: "CirclePlus",
+  async load() {
+    const { dataType } = await import("./datatype");
+    return dataType;
+  },
+};
+
+export const tools: ToolDescription[] = [
+  {
+    type: "patchwork:tool",
+    id: "counter",
+    name: "Counter",
+    icon: "CirclePlus",
+    supportedDataTypes: ["counter"],
+    async load() {
+      const { Tool } = await import("./tool");
+      return makeTool({ EditorComponent: Tool });
+    },
+  },
+];
+
+```
+
+
+### SDK functions
+
+#### UI
+
+You should use shadcn for standard UI elements whenever possible instead of rolling your own components.
+
+Many of the components from @shadcn/ui are available in the UI SDK. You can import them like this:
+
+```
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTrigger,
+  ...
+} from "@patchwork/sdk/ui";
+```
+
+Here is the list of available shadcn components:
+
+```
+sdk/src/ui/alert.tsx
+sdk/src/ui/avatar.tsx
+sdk/src/ui/button.tsx
+sdk/src/ui/card.tsx
+sdk/src/ui/checkbox.tsx
+sdk/src/ui/command.tsx
+sdk/src/ui/context-menu.tsx
+sdk/src/ui/dialog.tsx
+sdk/src/ui/dropdown-menu.tsx
+sdk/src/ui/icons.tsx
+sdk/src/ui/index.ts
+sdk/src/ui/input.tsx
+sdk/src/ui/label.tsx
+sdk/src/ui/popover.tsx
+sdk/src/ui/progress.tsx
+sdk/src/ui/select.tsx
+sdk/src/ui/slider.tsx
+sdk/src/ui/switch.tsx
+sdk/src/ui/tabs.tsx
+sdk/src/ui/textarea.tsx
+sdk/src/ui/toast.tsx
+sdk/src/ui/toaster.tsx
+sdk/src/ui/tooltip.tsx
+sdk/src/ui/use-toast.ts
+sdk/src/ui/utils.ts
+```
+
+#### Accounts
+
+You can call `useCurrentAccountDoc` in a tool component:
+
+```
+const [accountDoc] = useCurrentAccountDoc();
+```
+
+which gives you a doc that represents the user's account, linking to 4 related docs:
+
+```
+export interface AccountDoc {
+  // a publicly available contact doc
+  contactUrl: AutomergeUrl;
+
+  // the folder containing the user's documents
+  rootFolderUrl: AutomergeUrl;
+
+  // UI state for this user
+  uiStateUrl: AutomergeUrl;
+
+  // custom modules the user has installed
+  moduleSettingsUrl: AutomergeUrl;
+}
+```
+
+You can traverse the links like this:
+
+```
+const [accountDoc] = useCurrentAccountDoc();
+  const [uiStateDoc, changeUIStateDoc] = useDocument<UIStateDoc>(
+    accountDoc?.uiStateUrl
+  );
+```
+
+The contact doc has a name and avatar if the user is registered:
+
+```
+export interface AnonymousContactDoc {
+  type: "anonymous";
+}
+
+export interface RegisteredContactDoc {
+  type: "registered";
+  name: string;
+  avatarUrl?: AutomergeUrl;
+}
+
+export type ContactDoc = AnonymousContactDoc | RegisteredContactDoc;
+```
+
+The root folder url links to a folder doc that looks like this, containing the user's documents:
+
+```
+export type DocLink = {
+  name: string;
+  type: string;
+  url: AutomergeUrl;
+};
+
+export type FolderDoc = {
+  title: string;
+  docs: DocLink[];
+} & HasVersionControlMetadata<unknown, unknown>;
+
+```
+
+The UI state doc has global UI state as well as per-doc UI state:
+
+```
+export type UIStateDoc = {
+  /**
+   * Paths to documents that are toggled open in the sidebar.
+   * (Each toggled-open path is a docpath from DocPathUtils.toString)
+   */
+  docPathsToggledOpenInSidebar: string[];
+
+  /** Documents in the folder hierarchy that have a branch checked out.
+   *  Map from branch scope path string (made with DocPathUtils.toString) to branch URL.
+   */
+  openBranches: { [docPathString: string]: AutomergeUrl };
+
+  /** Document-specific UI states */
+  docUIStates: { [docPathString: string]: DocUIState };
+};
+
+export type DocUIState = {
+  mainViewMode: MainViewMode;
+  sidebarMode?: SidebarMode;
+  highlightChanges: boolean;
+  collapseContentWithoutChanges: boolean;
+  toolUIStates: Record<string, unknown>;
+};
+
+export type MainViewMode =
+  | "showFile"
+  | "showInputs"
+  | "showOutputs"
+  | "compareWithMain";
+
+export type SidebarMode = "review" | "history" | "bot";
+```
+
+And finally, the module settings doc is just a list of Automerge URLs for modules the user has installed:
+
+```
+export type ModuleSettingsDoc = {
+  modules: AutomergeUrl[];
+};
+```
+### Development tips
+
+- Use tailwind for styling.
+- If the user doesn't specify any styles, make the tool UI look like a clean design by Todd Matthews of Ink & Switch: simple and monochrome, but with a bit of flair.
+- Your tool should display well if rendered in a small 600x300 window - make it take full width/height with overflows if needed. Don't add unnecessary borders or frames around the tool.
+- For reading and writing an Automerge doc, use the useDocument hook as shown in examples.
+- In a changeDoc block, you are interacting with a proxy representing the Automerge doc. Follow these tips for correctly editing an Automerge doc:
+  - When deleting items from a list, use .splice on the array, rather than assigning the result of .filter
+  - Try to mutate arrays and objects instead of reasigning them
+  - You are not allowed to set fields to undefined set them to null instead
+  - Any data that came from an Automerge doc must be passed through structuredClone before getting written back into the doc.
+  - .indexOf cannot be called directly on an array in the proxy; you must do [...list].indexOf(item)
