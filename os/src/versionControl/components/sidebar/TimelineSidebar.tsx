@@ -29,7 +29,7 @@ import {
 } from "@patchwork/sdk/versionControl";
 
 import { useAutoPopulateChangeGroupSummaries } from "@patchwork/sdk/versionControl";
-import { DiscussionInput } from "./DiscussionInput";
+import { DiscussionInput } from "../DiscussionInput";
 
 import { MarkdownInput } from "@patchwork/sdk/markdown";
 import { type DataType } from "@patchwork/sdk";

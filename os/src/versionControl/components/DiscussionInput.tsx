@@ -11,7 +11,7 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { next as A } from "@automerge/automerge";
 import { SendHorizontalIcon } from "lucide-react";
 import { useState } from "react";
-import { ChangelogSelection } from "./TimelineSidebar";
+import { ChangelogSelection } from "./sidebar/TimelineSidebar";
 
 type DiscussionInputProps<D> = {
   doc: D;

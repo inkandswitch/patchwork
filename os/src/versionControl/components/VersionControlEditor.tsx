@@ -2,23 +2,14 @@ import { dataTypeById } from "@patchwork/sdk";
 import { useCurrentAccount } from "@patchwork/sdk";
 import { ErrorFallback } from "@patchwork/sdk/components";
 import { LoadingScreen } from "@patchwork/sdk/components";
-import { toHashUrl } from "@patchwork/sdk/router";
 import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router";
-import { DocLink, DocPath, DocPathUtils } from "@patchwork/folder";
-import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
+import { DocPath, DocPathUtils } from "@patchwork/folder";
 import { useToast } from "@patchwork/sdk/ui";
 import { Tool } from "@patchwork/sdk";
 
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { next as A } from "@automerge/automerge";
-import {
-  BotIcon,
-  ChevronsRight,
-  CrownIcon,
-  HistoryIcon,
-  MessageSquareIcon,
-} from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
@@ -29,21 +20,17 @@ import {
   DiffWithProvenance,
   HasVersionControlMetadata,
 } from "@patchwork/sdk/versionControl";
-import {
-  BranchScopeAndActiveBranchInfo,
-  fetchDoesDocLinkExistInBranchScope,
-} from "@patchwork/sdk/versionControl";
+import { fetchDoesDocLinkExistInBranchScope } from "@patchwork/sdk/versionControl";
 import {
   diffWithProvenance,
   useActorIdToAuthorMap,
 } from "@patchwork/sdk/versionControl";
-import { BotSidebar } from "./BotSidebar";
-import { ReviewSidebar } from "./ReviewSidebar";
-import { TimelineSidebar } from "./TimelineSidebar";
 import { VersionControlBar } from "./VersionControlBar";
 import { useAsyncComputed } from "@patchwork/sdk/async-signals";
 import { DocEditor } from "./DocEditor";
 import { SideBySide } from "./SideBySide";
+import { VersionControlSidebar } from "./sidebar/VersionControlSidebar";
+import { DocumentNotFoundPage } from "./DocumentNotFoundPage";
 
 /** A wrapper UI that renders a doc editor with a surrounding branch picker + timeline/annotations sidebar */
 export const VersionControlEditor: React.FC<{
@@ -398,134 +385,32 @@ export const VersionControlEditor: React.FC<{
         </ErrorBoundary>
       </div>
 
-      {docUIState.sidebarMode && (
-        <div className="border-l border-gray-200 py-2 h-full flex flex-col relative bg-gray-50">
-          <div
-            className="-left-[33px] absolute cursor-pointer hover:bg-gray-100 border hover:border-gray-500 rounded-lg w-[24px] h-[24px] grid place-items-center"
-            onClick={() =>
-              changeDocUIState((state) => delete state.sidebarMode)
-            }
-          >
-            <ChevronsRight size={16} />
-          </div>
-
-          <div className="px-2 pb-2 flex flex-col gap-2 text-sm font-semibold text-gray-600 border-b border-gray-200">
-            <Tabs
-              value={docUIState.sidebarMode}
-              onValueChange={onChangeSidebarMode}
-            >
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="review">
-                  <MessageSquareIcon size={16} className="mr-2" />
-                  Review
-                </TabsTrigger>
-                <TabsTrigger value="history">
-                  <HistoryIcon size={16} className="mr-2" />
-                  History
-                </TabsTrigger>
-                <TabsTrigger value="bot">
-                  <BotIcon size={16} className="mr-2" />
-                  Bot
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-
-          <div className="min-h-0 flex-grow w-96">
-            {docUIState.sidebarMode === "history" && dataType && (
-              <TimelineSidebar
-                // set key to trigger re-mount on branch change
-                key={cloneOrMainOm.url}
-                dataType={dataType}
-                docUrl={cloneOrMainOm.url}
-                setDocHeads={setDocHeadsFromTimelineSidebar}
-                setDiff={setDiffFromTimelineSidebar}
-                branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
-                onSelectBranchUrl={onSelectBranch}
-              />
-            )}
-
-            {docUIState.sidebarMode === "review" &&
-              cloneOrMainDocAtHeads &&
-              cloneOrMainOm && (
-                <ReviewSidebar
-                  doc={cloneOrMainDocAtHeads}
-                  handle={cloneOrMainOm.handle}
-                  readonly={!!docHeadsFromTimelineSidebar}
-                  tool={tool}
-                  annotationGroups={filteredAnnotationGroups}
-                  selectedAnchors={selectedAnchors}
-                  setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
-                  setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
-                  isCommentInputFocused={isCommentInputFocused}
-                  setIsCommentInputFocused={setIsCommentInputFocused}
-                  setCommentState={setCommentState}
-                />
-              )}
-            {docUIState.sidebarMode === "bot" &&
-              cloneOrMainDocAtHeads &&
-              cloneOrMainOm &&
-              dataType && (
-                <BotSidebar
-                  doc={cloneOrMainDocAtHeads}
-                  handle={cloneOrMainOm.handle}
-                  mainDocUrl={docLink.url}
-                  dataType={dataType}
-                  selectedBranchUrl={
-                    branchScopeAndActiveBranchInfo.activeBranchOm?.url
-                  }
-                  setSelectedBranch={onSelectBranch}
-                  setSidebarMode={onChangeSidebarMode}
-                  onMergeBranch={onMergeBranch}
-                  onDeleteBranch={onDeleteBranch}
-                />
-              )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const DocumentNotFoundPage = ({
-  branchScopeAndActiveBranchInfo,
-  docLink,
-}: {
-  branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
-  docLink: DocLink;
-}) => {
-  const selectedBranchName =
-    branchScopeAndActiveBranchInfo.activeBranchOm?.doc.name;
-
-  return (
-    <div className="flex items-center justify-center h-full bg-gray-100">
-      <div className="text-center">
-        <h2 className="text-xl font-bold mb-4">Document not found</h2>
-        <p className="text-gray-700 mb-4">
-          <span className="bg-white border border-gray-300 shadow-sm px-2 py-1 rounded-md inline-flex gap-1 items-center">
-            {!selectedBranchName && <CrownIcon className="inline" size={12} />}
-            {selectedBranchName ?? "Main"}
-          </span>{" "}
-          does not contain the document{" "}
-          <span className="font-bold">{docLink.name}</span>.
-        </p>
-        <p className="text-gray-600">
-          It may have been deleted or not yet created on this branch.
-        </p>
-
-        <p className="mt-4">
-          <a
-            href={toHashUrl({
-              type: "folder",
-              url: branchScopeAndActiveBranchInfo.branchScopeOm.url,
-              name: "",
-            })}
-            className="text-blue-600 hover:underline"
-          >
-            Go to root of branch
-          </a>
-        </p>
-      </div>
+      <VersionControlSidebar
+        {...{
+          docUIState,
+          changeDocUIState,
+          onChangeSidebarMode,
+          dataType,
+          cloneOrMainOm,
+          setDocHeadsFromTimelineSidebar,
+          setDiffFromTimelineSidebar,
+          branchScopeAndActiveBranchInfo,
+          onSelectBranch,
+          cloneOrMainDocAtHeads,
+          docHeadsFromTimelineSidebar,
+          tool,
+          filteredAnnotationGroups,
+          selectedAnchors,
+          setHoveredAnnotationGroupId,
+          setSelectedAnnotationGroupId,
+          isCommentInputFocused,
+          setIsCommentInputFocused,
+          setCommentState,
+          docLink,
+          onMergeBranch,
+          onDeleteBranch,
+        }}
+      />
     </div>
   );
 };

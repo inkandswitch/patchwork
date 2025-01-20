@@ -34,13 +34,13 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-network-websocket':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-storage-nodefs':
         specifier: ^1.2.1
-        version: 1.2.1(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 1.2.1(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@patchwork/file':
         specifier: workspace:*
         version: link:../packages/file
@@ -97,10 +97,10 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -134,7 +134,7 @@ importers:
         version: 15.3.0(rollup@4.28.0)
       '@rollup/plugin-typescript':
         specifier: ^11.1.6
-        version: 11.1.6(rollup@4.28.0)(tslib@2.8.1)(typescript@5.5.4)
+        version: 11.1.6(rollup@4.28.0)(tslib@2.8.1)(typescript@5.6.3)
       '@types/d3':
         specifier: ^7.4.3
         version: 7.4.3
@@ -158,10 +158,10 @@ importers:
         version: 4.28.0
       rollup-plugin-postcss:
         specifier: ^4.0.2
-        version: 4.0.2(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+        version: 4.0.2(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       tailwindcss:
         specifier: ^3.4.6
-        version: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+        version: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       vite:
         specifier: ^5.3.4
         version: 5.4.2(@types/node@20.16.1)(terser@5.37.0)
@@ -179,10 +179,10 @@ importers:
     dependencies:
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -219,7 +219,7 @@ importers:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -259,7 +259,7 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@handsontable/react':
         specifier: ^14.4.0
         version: 14.5.0(handsontable@14.5.0)
@@ -308,10 +308,10 @@ importers:
     dependencies:
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@engraft/basic-setup':
         specifier: ^0.0.8
         version: 0.0.8(@babel/core@7.25.2)(@lezer/common@1.2.1)(@types/react@18.3.4)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)
@@ -329,7 +329,7 @@ importers:
         version: link:../../sdk
       '@tailwindcss/container-queries':
         specifier: ^0.1.1
-        version: 0.1.1(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)))
+        version: 0.1.1(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)))
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -341,10 +341,10 @@ importers:
         version: 18.3.1(react@18.3.1)
       tailwindcss:
         specifier: ^3.4.6
-        version: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+        version: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       tailwindcss-animate:
         specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)))
+        version: 1.0.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)))
     devDependencies:
       '@types/lodash':
         specifier: ^4.17.7
@@ -378,10 +378,10 @@ importers:
         version: 0.0.12(@lezer/common@1.2.1)
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@codemirror/lang-markdown':
         specifier: ^6.2.5
         version: 6.2.5
@@ -433,7 +433,7 @@ importers:
         version: 18.3.0
       '@typescript-eslint/parser':
         specifier: ^6.21.0
-        version: 6.21.0(eslint@8.57.0)(typescript@5.5.4)
+        version: 6.21.0(eslint@8.57.0)(typescript@5.6.3)
       '@vitejs/plugin-react':
         specifier: ^4.3.1
         version: 4.3.1(vite@5.4.2(@types/node@20.16.1)(terser@5.37.0))
@@ -456,6 +456,22 @@ importers:
         specifier: ^2.0.5
         version: 2.0.5(@types/node@20.16.1)(@vitest/ui@2.1.2(vitest@2.0.5))(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(terser@5.37.0)
 
+  packages/etui:
+    dependencies:
+      mithril:
+        specifier: ^2.2.12
+        version: 2.2.12
+    devDependencies:
+      '@types/mithril':
+        specifier: ^2.2.7
+        version: 2.2.7
+      typescript:
+        specifier: ~5.6.2
+        version: 5.6.3
+      vite:
+        specifier: ^5.4.10
+        version: 5.4.11(@types/node@20.16.1)(terser@5.37.0)
+
   packages/file:
     dependencies:
       '@automerge/automerge':
@@ -466,10 +482,10 @@ importers:
         version: 0.0.12(@lezer/common@1.2.1)
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@codemirror/autocomplete':
         specifier: ^6.18.0
         version: 6.18.3(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
@@ -548,7 +564,7 @@ importers:
         version: 18.3.4
       '@typescript-eslint/parser':
         specifier: ^6.21.0
-        version: 6.21.0(eslint@8.57.0)(typescript@5.5.4)
+        version: 6.21.0(eslint@8.57.0)(typescript@5.6.3)
       '@vitejs/plugin-react':
         specifier: ^4.3.1
         version: 4.3.1(vite@5.4.2(@types/node@20.16.1)(terser@5.37.0))
@@ -572,10 +588,10 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -600,7 +616,7 @@ importers:
         version: 18.3.4
       '@typescript-eslint/parser':
         specifier: ^6.21.0
-        version: 6.21.0(eslint@8.57.0)(typescript@5.5.4)
+        version: 6.21.0(eslint@8.57.0)(typescript@5.6.3)
       '@vitejs/plugin-react':
         specifier: ^4.3.1
         version: 4.3.1(vite@6.0.3(@types/node@20.16.1)(jiti@1.21.6)(terser@5.37.0)(yaml@2.5.0))
@@ -627,7 +643,7 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@patchwork/folder':
         specifier: workspace:*
         version: link:../folder
@@ -670,10 +686,10 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@patchwork/folder':
         specifier: workspace:*
         version: link:../folder
@@ -701,7 +717,7 @@ importers:
         version: 18.3.4
       '@typescript-eslint/parser':
         specifier: ^6.21.0
-        version: 6.21.0(eslint@8.57.0)(typescript@5.5.4)
+        version: 6.21.0(eslint@8.57.0)(typescript@5.6.3)
       '@vitejs/plugin-react':
         specifier: ^4.3.1
         version: 4.3.1(vite@6.0.3(@types/node@20.16.1)(jiti@1.21.6)(terser@5.37.0)(yaml@2.5.0))
@@ -725,10 +741,10 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@firefox-devtools/react-contextmenu':
         specifier: ^5.1.1
         version: 5.1.1(prop-types@15.8.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -801,10 +817,10 @@ importers:
     dependencies:
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@dimforge/rapier3d-compat':
         specifier: ^0.14.0
         version: 0.14.0
@@ -837,7 +853,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-scripts:
         specifier: 5.0.1
-        version: 5.0.1(@babel/plugin-syntax-flow@7.26.0(@babel/core@7.25.2))(@babel/plugin-transform-react-jsx@7.25.9(@babel/core@7.25.2))(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/babel__core@7.20.5)(canvas@2.11.2(encoding@0.1.13))(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))(type-fest@0.21.3)(typescript@5.5.4)
+        version: 5.0.1(@babel/plugin-syntax-flow@7.26.0(@babel/core@7.25.2))(@babel/plugin-transform-react-jsx@7.25.9(@babel/core@7.25.2))(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/babel__core@7.20.5)(canvas@2.11.2(encoding@0.1.13))(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))(type-fest@0.21.3)(typescript@5.6.3)
       simplex-noise:
         specifier: 4.0.1
         version: 4.0.1
@@ -877,10 +893,10 @@ importers:
     dependencies:
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -920,10 +936,10 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -972,10 +988,10 @@ importers:
     dependencies:
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -1018,7 +1034,7 @@ importers:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -1061,10 +1077,10 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@microlink/react-json-view':
         specifier: ^1.23.1
         version: 1.23.1(@types/react@18.3.4)(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1107,16 +1123,16 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
       '@tailwindcss/forms':
         specifier: ^0.5.7
-        version: 0.5.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)))
+        version: 0.5.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)))
       animate.css:
         specifier: ^4.1.1
         version: 4.1.1
@@ -1168,10 +1184,10 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -1214,7 +1230,7 @@ importers:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -1272,10 +1288,10 @@ importers:
     dependencies:
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -1318,10 +1334,10 @@ importers:
         version: 0.0.12(@lezer/common@1.2.1)
       '@automerge/automerge-repo':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)
       '@codemirror/autocomplete':
         specifier: ^6.18.3
         version: 6.18.3(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.35.0)(@lezer/common@1.2.1)
@@ -1460,7 +1476,7 @@ importers:
         version: 6.0.1(rollup@4.28.0)
       '@rollup/plugin-typescript':
         specifier: ^11.1.6
-        version: 11.1.6(rollup@4.28.0)(tslib@2.8.1)(typescript@5.5.4)
+        version: 11.1.6(rollup@4.28.0)(tslib@2.8.1)(typescript@5.6.3)
       '@types/diff':
         specifier: ^5.2.1
         version: 5.2.1
@@ -1481,7 +1497,7 @@ importers:
         version: 4.28.0
       rollup-plugin-postcss:
         specifier: ^4.0.2
-        version: 4.0.2(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+        version: 4.0.2(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       vite:
         specifier: ^5.3.4
         version: 5.4.2(@types/node@20.16.1)(terser@5.37.0)
@@ -1493,7 +1509,7 @@ importers:
         version: 3.3.0(vite@5.4.2(@types/node@20.16.1)(terser@5.37.0))
       vite-tsconfig-paths:
         specifier: ^5.0.1
-        version: 5.0.1(typescript@5.5.4)(vite@5.4.2(@types/node@20.16.1)(terser@5.37.0))
+        version: 5.0.1(typescript@5.6.3)(vite@5.4.2(@types/node@20.16.1)(terser@5.37.0))
       vitest:
         specifier: ^2.0.5
         version: 2.0.5(@types/node@20.16.1)(@vitest/ui@2.1.2(vitest@2.0.5))(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(terser@5.37.0)
@@ -5251,6 +5267,9 @@ packages:
 
   '@types/mime@1.3.5':
     resolution: {integrity: sha512-/pyBZWSLD2n0dcHE3hq8s8ZvcETHtEuF+3E7XVt0Ig2nvsVQXdghHVcEkIWjy9A0wKfTn97a/PSDYohKIlnP/w==}
+
+  '@types/mithril@2.2.7':
+    resolution: {integrity: sha512-uetxoYizBMHPELl6DSZUfO6Q/aOm+h0NUCv9bVAX2iAxfrdBSOvU9KKFl+McTtxR13F+BReYLY814pJsZvnSxg==}
 
   '@types/ms@0.7.34':
     resolution: {integrity: sha512-nG96G3Wp6acyAgJqGasjODb+acrI7KltPiRxzHPXnP3NgI28bpQDRv53olbqGXbfcgF5aiiHmO3xpwEpS5Ld9g==}
@@ -9163,6 +9182,9 @@ packages:
     resolution: {integrity: sha512-bAxsR8BVfj60DWXHE3u30oHzfl4G7khkSuPW+qvpd7jFRHm7dLxOjUk1EHACJ/hxLY8phGJ0YhYHZo7jil7Qdg==}
     engines: {node: '>= 8'}
 
+  mithril@2.2.12:
+    resolution: {integrity: sha512-EpHb0DkcfwB+83NYvU8WMGBib+/TBtFLzdvYYXijqcW0o1i6cpVPklrCglJi2COXT2MG0Kih81CNPCoZkj0vag==}
+
   mkdirp@0.5.6:
     resolution: {integrity: sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==}
     hasBin: true
@@ -11573,6 +11595,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@5.6.3:
+    resolution: {integrity: sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   typical@4.0.0:
     resolution: {integrity: sha512-VAH4IvQ7BDFYglMd7BPRDfLgxZZX4O4TFcRDA6EN5X7erNJJq+McIEp8np9aVtxrCJ6qx4GTYVfOWNjcqwZgRw==}
     engines: {node: '>=8'}
@@ -11971,6 +11998,37 @@ packages:
       vite: '*'
     peerDependenciesMeta:
       vite:
+        optional: true
+
+  vite@5.4.11:
+    resolution: {integrity: sha512-c7jFQRklXua0mTzneGW9QVyxFjUgwcihC4bXEtujIo2ouWCe1Ajt/amn2PCxYnhYfd5k09JX3SB7OYWFKYqj8Q==}
+    engines: {node: ^18.0.0 || >=20.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^18.0.0 || >=20.0.0
+      less: '*'
+      lightningcss: ^1.21.0
+      sass: '*'
+      sass-embedded: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.4.0
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
         optional: true
 
   vite@5.4.2:
@@ -12509,10 +12567,57 @@ snapshots:
       - typescript
       - utf-8-validate
 
+  '@automerge/automerge-repo-network-websocket@2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)':
+    dependencies:
+      '@automerge/automerge-repo': 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
+      cbor-x: 1.6.0
+      debug: 4.3.7(supports-color@5.5.0)
+      eventemitter3: 5.0.1
+      isomorphic-ws: 5.0.0(ws@8.18.0)
+      ws: 8.18.0
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - bufferutil
+      - supports-color
+      - typescript
+      - utf-8-validate
+
   '@automerge/automerge-repo-react-hooks@2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)':
     dependencies:
       '@automerge/automerge': 2.2.9-alpha.4
       '@automerge/automerge-repo': 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+      eventemitter3: 5.0.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-usestateref: 1.0.9(react@18.3.1)
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - supports-color
+      - typescript
+
+  '@automerge/automerge-repo-react-hooks@2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)':
+    dependencies:
+      '@automerge/automerge': 2.2.9-alpha.4
+      '@automerge/automerge-repo': 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
+      eventemitter3: 5.0.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-usestateref: 1.0.9(react@18.3.1)
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - supports-color
+      - typescript
+
+  '@automerge/automerge-repo-react-hooks@2.0.0-alpha.7(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)':
+    dependencies:
+      '@automerge/automerge': 2.2.9-alpha.4
+      '@automerge/automerge-repo': 2.0.0-alpha.7(@types/node@20.16.1)(typescript@5.5.4)
       eventemitter3: 5.0.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -12534,9 +12639,9 @@ snapshots:
       - supports-color
       - typescript
 
-  '@automerge/automerge-repo-storage-nodefs@1.2.1(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)':
+  '@automerge/automerge-repo-storage-nodefs@1.2.1(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)':
     dependencies:
-      '@automerge/automerge-repo': 1.2.1(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+      '@automerge/automerge-repo': 1.2.1(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
       rimraf: 5.0.10
     transitivePeerDependencies:
       - '@swc/core'
@@ -12545,7 +12650,26 @@ snapshots:
       - supports-color
       - typescript
 
-  '@automerge/automerge-repo@1.2.1(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)':
+  '@automerge/automerge-repo@1.2.1(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)':
+    dependencies:
+      '@automerge/automerge': 2.2.9-alpha.4
+      bs58check: 3.0.1
+      cbor-x: 1.6.0
+      debug: 4.3.7(supports-color@5.5.0)
+      eventemitter3: 5.0.1
+      fast-sha256: 1.3.0
+      tiny-typed-emitter: 2.1.0
+      ts-node: 10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
+      uuid: 9.0.1
+      xstate: 5.17.4
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - supports-color
+      - typescript
+
+  '@automerge/automerge-repo@2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)':
     dependencies:
       '@automerge/automerge': 2.2.9-alpha.4
       bs58check: 3.0.1
@@ -12564,7 +12688,26 @@ snapshots:
       - supports-color
       - typescript
 
-  '@automerge/automerge-repo@2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)':
+  '@automerge/automerge-repo@2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)':
+    dependencies:
+      '@automerge/automerge': 2.2.9-alpha.4
+      bs58check: 3.0.1
+      cbor-x: 1.6.0
+      debug: 4.3.7(supports-color@5.5.0)
+      eventemitter3: 5.0.1
+      fast-sha256: 1.3.0
+      tiny-typed-emitter: 2.1.0
+      ts-node: 10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
+      uuid: 9.0.1
+      xstate: 5.17.4
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - supports-color
+      - typescript
+
+  '@automerge/automerge-repo@2.0.0-alpha.7(@types/node@20.16.1)(typescript@5.5.4)':
     dependencies:
       '@automerge/automerge': 2.2.9-alpha.4
       bs58check: 3.0.1
@@ -14731,7 +14874,7 @@ snapshots:
       jest-util: 28.1.3
       slash: 3.0.0
 
-  '@jest/core@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))':
+  '@jest/core@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))':
     dependencies:
       '@jest/console': 27.5.1
       '@jest/reporters': 27.5.1
@@ -14745,7 +14888,7 @@ snapshots:
       exit: 0.1.2
       graceful-fs: 4.2.11
       jest-changed-files: 27.5.1
-      jest-config: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      jest-config: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       jest-haste-map: 27.5.1
       jest-message-util: 27.5.1
       jest-regex-util: 27.5.1
@@ -16494,11 +16637,11 @@ snapshots:
     optionalDependencies:
       rollup: 4.28.0
 
-  '@rollup/plugin-typescript@11.1.6(rollup@4.28.0)(tslib@2.8.1)(typescript@5.5.4)':
+  '@rollup/plugin-typescript@11.1.6(rollup@4.28.0)(tslib@2.8.1)(typescript@5.6.3)':
     dependencies:
       '@rollup/pluginutils': 5.1.0(rollup@4.28.0)
       resolve: 1.22.8
-      typescript: 5.5.4
+      typescript: 5.6.3
     optionalDependencies:
       rollup: 4.28.0
       tslib: 2.8.1
@@ -16731,10 +16874,14 @@ snapshots:
     dependencies:
       tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
 
-  '@tailwindcss/forms@0.5.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)))':
+  '@tailwindcss/container-queries@0.1.1(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)))':
+    dependencies:
+      tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
+
+  '@tailwindcss/forms@0.5.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)))':
     dependencies:
       mini-svg-data-uri: 1.4.4
-      tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
 
   '@tanstack/react-virtual@3.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -17113,6 +17260,8 @@ snapshots:
 
   '@types/mime@1.3.5': {}
 
+  '@types/mithril@2.2.7': {}
+
   '@types/ms@0.7.34': {}
 
   '@types/node-fetch@2.6.11':
@@ -17245,22 +17394,22 @@ snapshots:
     dependencies:
       '@types/yargs-parser': 21.0.3
 
-  '@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)':
+  '@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.6.3))(eslint@8.57.0)(typescript@5.6.3)':
     dependencies:
       '@eslint-community/regexpp': 4.11.0
-      '@typescript-eslint/parser': 5.62.0(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/parser': 5.62.0(eslint@8.57.0)(typescript@5.6.3)
       '@typescript-eslint/scope-manager': 5.62.0
-      '@typescript-eslint/type-utils': 5.62.0(eslint@8.57.0)(typescript@5.5.4)
-      '@typescript-eslint/utils': 5.62.0(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/type-utils': 5.62.0(eslint@8.57.0)(typescript@5.6.3)
+      '@typescript-eslint/utils': 5.62.0(eslint@8.57.0)(typescript@5.6.3)
       debug: 4.3.7(supports-color@5.5.0)
       eslint: 8.57.0
       graphemer: 1.4.0
       ignore: 5.3.2
       natural-compare-lite: 1.4.0
       semver: 7.6.3
-      tsutils: 3.21.0(typescript@5.5.4)
+      tsutils: 3.21.0(typescript@5.6.3)
     optionalDependencies:
-      typescript: 5.5.4
+      typescript: 5.6.3
     transitivePeerDependencies:
       - supports-color
 
@@ -17284,23 +17433,23 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/experimental-utils@5.62.0(eslint@8.57.0)(typescript@5.5.4)':
+  '@typescript-eslint/experimental-utils@5.62.0(eslint@8.57.0)(typescript@5.6.3)':
     dependencies:
-      '@typescript-eslint/utils': 5.62.0(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/utils': 5.62.0(eslint@8.57.0)(typescript@5.6.3)
       eslint: 8.57.0
     transitivePeerDependencies:
       - supports-color
       - typescript
 
-  '@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.5.4)':
+  '@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.6.3)':
     dependencies:
       '@typescript-eslint/scope-manager': 5.62.0
       '@typescript-eslint/types': 5.62.0
-      '@typescript-eslint/typescript-estree': 5.62.0(typescript@5.5.4)
+      '@typescript-eslint/typescript-estree': 5.62.0(typescript@5.6.3)
       debug: 4.3.7(supports-color@5.5.0)
       eslint: 8.57.0
     optionalDependencies:
-      typescript: 5.5.4
+      typescript: 5.6.3
     transitivePeerDependencies:
       - supports-color
 
@@ -17317,6 +17466,19 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@typescript-eslint/parser@6.21.0(eslint@8.57.0)(typescript@5.6.3)':
+    dependencies:
+      '@typescript-eslint/scope-manager': 6.21.0
+      '@typescript-eslint/types': 6.21.0
+      '@typescript-eslint/typescript-estree': 6.21.0(typescript@5.6.3)
+      '@typescript-eslint/visitor-keys': 6.21.0
+      debug: 4.3.7(supports-color@5.5.0)
+      eslint: 8.57.0
+    optionalDependencies:
+      typescript: 5.6.3
+    transitivePeerDependencies:
+      - supports-color
+
   '@typescript-eslint/scope-manager@5.62.0':
     dependencies:
       '@typescript-eslint/types': 5.62.0
@@ -17327,15 +17489,15 @@ snapshots:
       '@typescript-eslint/types': 6.21.0
       '@typescript-eslint/visitor-keys': 6.21.0
 
-  '@typescript-eslint/type-utils@5.62.0(eslint@8.57.0)(typescript@5.5.4)':
+  '@typescript-eslint/type-utils@5.62.0(eslint@8.57.0)(typescript@5.6.3)':
     dependencies:
-      '@typescript-eslint/typescript-estree': 5.62.0(typescript@5.5.4)
-      '@typescript-eslint/utils': 5.62.0(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/typescript-estree': 5.62.0(typescript@5.6.3)
+      '@typescript-eslint/utils': 5.62.0(eslint@8.57.0)(typescript@5.6.3)
       debug: 4.3.7(supports-color@5.5.0)
       eslint: 8.57.0
-      tsutils: 3.21.0(typescript@5.5.4)
+      tsutils: 3.21.0(typescript@5.6.3)
     optionalDependencies:
-      typescript: 5.5.4
+      typescript: 5.6.3
     transitivePeerDependencies:
       - supports-color
 
@@ -17355,7 +17517,7 @@ snapshots:
 
   '@typescript-eslint/types@6.21.0': {}
 
-  '@typescript-eslint/typescript-estree@5.62.0(typescript@5.5.4)':
+  '@typescript-eslint/typescript-estree@5.62.0(typescript@5.6.3)':
     dependencies:
       '@typescript-eslint/types': 5.62.0
       '@typescript-eslint/visitor-keys': 5.62.0
@@ -17363,9 +17525,9 @@ snapshots:
       globby: 11.1.0
       is-glob: 4.0.3
       semver: 7.6.3
-      tsutils: 3.21.0(typescript@5.5.4)
+      tsutils: 3.21.0(typescript@5.6.3)
     optionalDependencies:
-      typescript: 5.5.4
+      typescript: 5.6.3
     transitivePeerDependencies:
       - supports-color
 
@@ -17384,14 +17546,29 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/utils@5.62.0(eslint@8.57.0)(typescript@5.5.4)':
+  '@typescript-eslint/typescript-estree@6.21.0(typescript@5.6.3)':
+    dependencies:
+      '@typescript-eslint/types': 6.21.0
+      '@typescript-eslint/visitor-keys': 6.21.0
+      debug: 4.3.7(supports-color@5.5.0)
+      globby: 11.1.0
+      is-glob: 4.0.3
+      minimatch: 9.0.3
+      semver: 7.6.3
+      ts-api-utils: 1.3.0(typescript@5.6.3)
+    optionalDependencies:
+      typescript: 5.6.3
+    transitivePeerDependencies:
+      - supports-color
+
+  '@typescript-eslint/utils@5.62.0(eslint@8.57.0)(typescript@5.6.3)':
     dependencies:
       '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.0)
       '@types/json-schema': 7.0.15
       '@types/semver': 7.5.8
       '@typescript-eslint/scope-manager': 5.62.0
       '@typescript-eslint/types': 5.62.0
-      '@typescript-eslint/typescript-estree': 5.62.0(typescript@5.5.4)
+      '@typescript-eslint/typescript-estree': 5.62.0(typescript@5.6.3)
       eslint: 8.57.0
       eslint-scope: 5.1.1
       semver: 7.6.3
@@ -19375,25 +19552,25 @@ snapshots:
     optionalDependencies:
       source-map: 0.6.1
 
-  eslint-config-react-app@7.0.1(@babel/plugin-syntax-flow@7.26.0(@babel/core@7.25.2))(@babel/plugin-transform-react-jsx@7.25.9(@babel/core@7.25.2))(eslint@8.57.0)(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)))(typescript@5.5.4):
+  eslint-config-react-app@7.0.1(@babel/plugin-syntax-flow@7.26.0(@babel/core@7.25.2))(@babel/plugin-transform-react-jsx@7.25.9(@babel/core@7.25.2))(eslint@8.57.0)(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)))(typescript@5.6.3):
     dependencies:
       '@babel/core': 7.25.2
       '@babel/eslint-parser': 7.25.9(@babel/core@7.25.2)(eslint@8.57.0)
       '@rushstack/eslint-patch': 1.10.4
-      '@typescript-eslint/eslint-plugin': 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
-      '@typescript-eslint/parser': 5.62.0(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/eslint-plugin': 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.6.3))(eslint@8.57.0)(typescript@5.6.3)
+      '@typescript-eslint/parser': 5.62.0(eslint@8.57.0)(typescript@5.6.3)
       babel-preset-react-app: 10.0.1
       confusing-browser-globals: 1.0.11
       eslint: 8.57.0
       eslint-plugin-flowtype: 8.0.3(@babel/plugin-syntax-flow@7.26.0(@babel/core@7.25.2))(@babel/plugin-transform-react-jsx@7.25.9(@babel/core@7.25.2))(eslint@8.57.0)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)
-      eslint-plugin-jest: 25.7.0(@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)))(typescript@5.5.4)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.6.3))(eslint@8.57.0)
+      eslint-plugin-jest: 25.7.0(@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.6.3))(eslint@8.57.0)(typescript@5.6.3))(eslint@8.57.0)(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)))(typescript@5.6.3)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.0)
       eslint-plugin-react: 7.37.2(eslint@8.57.0)
       eslint-plugin-react-hooks: 4.6.2(eslint@8.57.0)
-      eslint-plugin-testing-library: 5.11.1(eslint@8.57.0)(typescript@5.5.4)
+      eslint-plugin-testing-library: 5.11.1(eslint@8.57.0)(typescript@5.6.3)
     optionalDependencies:
-      typescript: 5.5.4
+      typescript: 5.6.3
     transitivePeerDependencies:
       - '@babel/plugin-syntax-flow'
       - '@babel/plugin-transform-react-jsx'
@@ -19410,11 +19587,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-node@0.3.9)(eslint@8.57.0):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint@8.57.0):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
-      '@typescript-eslint/parser': 5.62.0(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/parser': 5.62.0(eslint@8.57.0)(typescript@5.6.3)
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.9
     transitivePeerDependencies:
@@ -19428,7 +19605,7 @@ snapshots:
       lodash: 4.17.21
       string-natural-compare: 3.0.1
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.6.3))(eslint@8.57.0):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -19439,7 +19616,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-node@0.3.9)(eslint@8.57.0)
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint@8.57.0)
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3
@@ -19451,19 +19628,19 @@ snapshots:
       string.prototype.trimend: 1.0.9
       tsconfig-paths: 3.15.0
     optionalDependencies:
-      '@typescript-eslint/parser': 5.62.0(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/parser': 5.62.0(eslint@8.57.0)(typescript@5.6.3)
     transitivePeerDependencies:
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-jest@25.7.0(@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)))(typescript@5.5.4):
+  eslint-plugin-jest@25.7.0(@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.6.3))(eslint@8.57.0)(typescript@5.6.3))(eslint@8.57.0)(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)))(typescript@5.6.3):
     dependencies:
-      '@typescript-eslint/experimental-utils': 5.62.0(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/experimental-utils': 5.62.0(eslint@8.57.0)(typescript@5.6.3)
       eslint: 8.57.0
     optionalDependencies:
-      '@typescript-eslint/eslint-plugin': 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
-      jest: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      '@typescript-eslint/eslint-plugin': 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@5.6.3))(eslint@8.57.0)(typescript@5.6.3)
+      jest: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -19517,9 +19694,9 @@ snapshots:
       string.prototype.matchall: 4.0.11
       string.prototype.repeat: 1.0.0
 
-  eslint-plugin-testing-library@5.11.1(eslint@8.57.0)(typescript@5.5.4):
+  eslint-plugin-testing-library@5.11.1(eslint@8.57.0)(typescript@5.6.3):
     dependencies:
-      '@typescript-eslint/utils': 5.62.0(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/utils': 5.62.0(eslint@8.57.0)(typescript@5.6.3)
       eslint: 8.57.0
     transitivePeerDependencies:
       - supports-color
@@ -19904,7 +20081,7 @@ snapshots:
       cross-spawn: 7.0.3
       signal-exit: 4.1.0
 
-  fork-ts-checker-webpack-plugin@6.5.3(eslint@8.57.0)(typescript@5.5.4)(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15))):
+  fork-ts-checker-webpack-plugin@6.5.3(eslint@8.57.0)(typescript@5.6.3)(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15))):
     dependencies:
       '@babel/code-frame': 7.26.2
       '@types/json-schema': 7.0.15
@@ -19919,7 +20096,7 @@ snapshots:
       schema-utils: 2.7.0
       semver: 7.6.3
       tapable: 1.1.3
-      typescript: 5.5.4
+      typescript: 5.6.3
       webpack: 5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15))
     optionalDependencies:
       eslint: 8.57.0
@@ -20746,16 +20923,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  jest-cli@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)):
+  jest-cli@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)):
     dependencies:
-      '@jest/core': 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      '@jest/core': 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       '@jest/test-result': 27.5.1
       '@jest/types': 27.5.1
       chalk: 4.1.2
       exit: 0.1.2
       graceful-fs: 4.2.11
       import-local: 3.2.0
-      jest-config: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      jest-config: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       jest-util: 27.5.1
       jest-validate: 27.5.1
       prompts: 2.4.2
@@ -20767,7 +20944,7 @@ snapshots:
       - ts-node
       - utf-8-validate
 
-  jest-config@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)):
+  jest-config@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)):
     dependencies:
       '@babel/core': 7.25.2
       '@jest/test-sequencer': 27.5.1
@@ -20794,7 +20971,7 @@ snapshots:
       slash: 3.0.0
       strip-json-comments: 3.1.1
     optionalDependencies:
-      ts-node: 10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+      ts-node: 10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
     transitivePeerDependencies:
       - bufferutil
       - canvas
@@ -21070,11 +21247,11 @@ snapshots:
       leven: 3.1.0
       pretty-format: 27.5.1
 
-  jest-watch-typeahead@1.1.0(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))):
+  jest-watch-typeahead@1.1.0(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))):
     dependencies:
       ansi-escapes: 4.3.2
       chalk: 4.1.2
-      jest: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      jest: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       jest-regex-util: 28.0.2
       jest-watcher: 28.1.3
       slash: 4.0.0
@@ -21120,11 +21297,11 @@ snapshots:
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
-  jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)):
+  jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)):
     dependencies:
-      '@jest/core': 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      '@jest/core': 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       import-local: 3.2.0
-      jest-cli: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      jest-cli: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
     transitivePeerDependencies:
       - bufferutil
       - canvas
@@ -22148,6 +22325,8 @@ snapshots:
       minipass: 3.3.6
       yallist: 4.0.0
 
+  mithril@2.2.12: {}
+
   mkdirp@0.5.6:
     dependencies:
       minimist: 1.2.8
@@ -22756,13 +22935,13 @@ snapshots:
       postcss: 8.4.49
       postcss-value-parser: 4.2.0
 
-  postcss-load-config@3.1.4(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)):
+  postcss-load-config@3.1.4(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)):
     dependencies:
       lilconfig: 2.1.0
       yaml: 1.10.2
     optionalDependencies:
       postcss: 8.4.49
-      ts-node: 10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+      ts-node: 10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
 
   postcss-load-config@4.0.2(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)):
     dependencies:
@@ -22771,6 +22950,14 @@ snapshots:
     optionalDependencies:
       postcss: 8.4.49
       ts-node: 10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)
+
+  postcss-load-config@4.0.2(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)):
+    dependencies:
+      lilconfig: 3.1.2
+      yaml: 2.5.0
+    optionalDependencies:
+      postcss: 8.4.49
+      ts-node: 10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
 
   postcss-loader@6.2.1(postcss@8.4.49)(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15))):
     dependencies:
@@ -23238,7 +23425,7 @@ snapshots:
       prop-types: 15.8.1
       react: 18.3.1
 
-  react-dev-utils@12.0.1(eslint@8.57.0)(typescript@5.5.4)(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15))):
+  react-dev-utils@12.0.1(eslint@8.57.0)(typescript@5.6.3)(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15))):
     dependencies:
       '@babel/code-frame': 7.26.2
       address: 1.2.2
@@ -23249,7 +23436,7 @@ snapshots:
       escape-string-regexp: 4.0.0
       filesize: 8.0.7
       find-up: 5.0.0
-      fork-ts-checker-webpack-plugin: 6.5.3(eslint@8.57.0)(typescript@5.5.4)(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
+      fork-ts-checker-webpack-plugin: 6.5.3(eslint@8.57.0)(typescript@5.6.3)(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
       global-modules: 2.0.0
       globby: 11.1.0
       gzip-size: 6.0.0
@@ -23266,7 +23453,7 @@ snapshots:
       text-table: 0.2.0
       webpack: 5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15))
     optionalDependencies:
-      typescript: 5.5.4
+      typescript: 5.6.3
     transitivePeerDependencies:
       - eslint
       - supports-color
@@ -23462,7 +23649,7 @@ snapshots:
       '@remix-run/router': 1.19.1
       react: 18.3.1
 
-  react-scripts@5.0.1(@babel/plugin-syntax-flow@7.26.0(@babel/core@7.25.2))(@babel/plugin-transform-react-jsx@7.25.9(@babel/core@7.25.2))(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/babel__core@7.20.5)(canvas@2.11.2(encoding@0.1.13))(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))(type-fest@0.21.3)(typescript@5.5.4):
+  react-scripts@5.0.1(@babel/plugin-syntax-flow@7.26.0(@babel/core@7.25.2))(@babel/plugin-transform-react-jsx@7.25.9(@babel/core@7.25.2))(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/babel__core@7.20.5)(canvas@2.11.2(encoding@0.1.13))(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))(type-fest@0.21.3)(typescript@5.6.3):
     dependencies:
       '@babel/core': 7.25.2
       '@pmmmwh/react-refresh-webpack-plugin': 0.5.15(react-refresh@0.11.0)(type-fest@0.21.3)(webpack-dev-server@4.15.2(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15))))(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
@@ -23480,15 +23667,15 @@ snapshots:
       dotenv: 10.0.0
       dotenv-expand: 5.1.0
       eslint: 8.57.0
-      eslint-config-react-app: 7.0.1(@babel/plugin-syntax-flow@7.26.0(@babel/core@7.25.2))(@babel/plugin-transform-react-jsx@7.25.9(@babel/core@7.25.2))(eslint@8.57.0)(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)))(typescript@5.5.4)
+      eslint-config-react-app: 7.0.1(@babel/plugin-syntax-flow@7.26.0(@babel/core@7.25.2))(@babel/plugin-transform-react-jsx@7.25.9(@babel/core@7.25.2))(eslint@8.57.0)(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)))(typescript@5.6.3)
       eslint-webpack-plugin: 3.2.0(eslint@8.57.0)(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
       file-loader: 6.2.0(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
       fs-extra: 10.1.0
       html-webpack-plugin: 5.6.3(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
       identity-obj-proxy: 3.0.0
-      jest: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      jest: 27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       jest-resolve: 27.5.1
-      jest-watch-typeahead: 1.1.0(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)))
+      jest-watch-typeahead: 1.1.0(jest@27.5.1(canvas@2.11.2(encoding@0.1.13))(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)))
       mini-css-extract-plugin: 2.9.2(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
       postcss: 8.4.49
       postcss-flexbugs-fixes: 5.0.2(postcss@8.4.49)
@@ -23498,7 +23685,7 @@ snapshots:
       prompts: 2.4.2
       react: 18.3.1
       react-app-polyfill: 3.0.0
-      react-dev-utils: 12.0.1(eslint@8.57.0)(typescript@5.5.4)(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
+      react-dev-utils: 12.0.1(eslint@8.57.0)(typescript@5.6.3)(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
       react-refresh: 0.11.0
       resolve: 1.22.8
       resolve-url-loader: 4.0.0
@@ -23506,7 +23693,7 @@ snapshots:
       semver: 7.6.3
       source-map-loader: 3.0.2(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
       style-loader: 3.3.4(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
-      tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       terser-webpack-plugin: 5.3.11(@swc/core@1.7.14(@swc/helpers@0.5.15))(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
       webpack: 5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15))
       webpack-dev-server: 4.15.2(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
@@ -23514,7 +23701,7 @@ snapshots:
       workbox-webpack-plugin: 6.6.0(@types/babel__core@7.20.5)(webpack@5.97.1(@swc/core@1.7.14(@swc/helpers@0.5.15)))
     optionalDependencies:
       fsevents: 2.3.3
-      typescript: 5.5.4
+      typescript: 5.6.3
     transitivePeerDependencies:
       - '@babel/plugin-syntax-flow'
       - '@babel/plugin-transform-react-jsx'
@@ -23858,7 +24045,7 @@ snapshots:
 
   robust-predicates@3.0.2: {}
 
-  rollup-plugin-postcss@4.0.2(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)):
+  rollup-plugin-postcss@4.0.2(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)):
     dependencies:
       chalk: 4.1.2
       concat-with-sourcemaps: 1.1.0
@@ -23867,7 +24054,7 @@ snapshots:
       p-queue: 6.6.2
       pify: 5.0.0
       postcss: 8.4.49
-      postcss-load-config: 3.1.4(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      postcss-load-config: 3.1.4(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       postcss-modules: 4.3.1(postcss@8.4.49)
       promise.series: 0.2.0
       resolve: 1.22.8
@@ -24529,6 +24716,10 @@ snapshots:
     dependencies:
       tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
 
+  tailwindcss-animate@1.0.7(tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))):
+    dependencies:
+      tailwindcss: 3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
+
   tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4)):
     dependencies:
       '@alloc/quick-lru': 5.2.0
@@ -24549,6 +24740,33 @@ snapshots:
       postcss-import: 15.1.0(postcss@8.4.49)
       postcss-js: 4.0.1(postcss@8.4.49)
       postcss-load-config: 4.0.2(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4))
+      postcss-nested: 6.2.0(postcss@8.4.49)
+      postcss-selector-parser: 6.1.2
+      resolve: 1.22.8
+      sucrase: 3.35.0
+    transitivePeerDependencies:
+      - ts-node
+
+  tailwindcss@3.4.10(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)):
+    dependencies:
+      '@alloc/quick-lru': 5.2.0
+      arg: 5.0.2
+      chokidar: 3.6.0
+      didyoumean: 1.2.2
+      dlv: 1.1.3
+      fast-glob: 3.3.2
+      glob-parent: 6.0.2
+      is-glob: 4.0.3
+      jiti: 1.21.6
+      lilconfig: 2.1.0
+      micromatch: 4.0.7
+      normalize-path: 3.0.0
+      object-hash: 3.0.0
+      picocolors: 1.1.1
+      postcss: 8.4.49
+      postcss-import: 15.1.0(postcss@8.4.49)
+      postcss-js: 4.0.1(postcss@8.4.49)
+      postcss-load-config: 4.0.2(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3))
       postcss-nested: 6.2.0(postcss@8.4.49)
       postcss-selector-parser: 6.1.2
       resolve: 1.22.8
@@ -24728,6 +24946,10 @@ snapshots:
     dependencies:
       typescript: 5.5.4
 
+  ts-api-utils@1.3.0(typescript@5.6.3):
+    dependencies:
+      typescript: 5.6.3
+
   ts-interface-checker@0.1.13: {}
 
   ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.5.4):
@@ -24750,9 +24972,33 @@ snapshots:
     optionalDependencies:
       '@swc/core': 1.7.14(@swc/helpers@0.5.15)
 
+  ts-node@10.9.2(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3):
+    dependencies:
+      '@cspotcode/source-map-support': 0.8.1
+      '@tsconfig/node10': 1.0.11
+      '@tsconfig/node12': 1.0.11
+      '@tsconfig/node14': 1.0.3
+      '@tsconfig/node16': 1.0.4
+      '@types/node': 20.16.1
+      acorn: 8.14.0
+      acorn-walk: 8.3.4
+      arg: 4.1.3
+      create-require: 1.1.1
+      diff: 4.0.2
+      make-error: 1.3.6
+      typescript: 5.6.3
+      v8-compile-cache-lib: 3.0.1
+      yn: 3.1.1
+    optionalDependencies:
+      '@swc/core': 1.7.14(@swc/helpers@0.5.15)
+
   tsconfck@3.1.3(typescript@5.5.4):
     optionalDependencies:
       typescript: 5.5.4
+
+  tsconfck@3.1.3(typescript@5.6.3):
+    optionalDependencies:
+      typescript: 5.6.3
 
   tsconfig-paths@3.15.0:
     dependencies:
@@ -24769,10 +25015,10 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsutils@3.21.0(typescript@5.5.4):
+  tsutils@3.21.0(typescript@5.6.3):
     dependencies:
       tslib: 1.14.1
-      typescript: 5.5.4
+      typescript: 5.6.3
 
   tunnel-rat@0.1.2(@types/react@18.3.4)(immer@9.0.21)(react@18.3.1):
     dependencies:
@@ -24843,6 +25089,8 @@ snapshots:
       is-typedarray: 1.0.0
 
   typescript@5.5.4: {}
+
+  typescript@5.6.3: {}
 
   typical@4.0.0: {}
 
@@ -25428,7 +25676,7 @@ snapshots:
       debug: 4.3.7(supports-color@5.5.0)
       pathe: 1.1.2
       tinyrainbow: 1.2.0
-      vite: 5.4.2(@types/node@20.16.1)(terser@5.37.0)
+      vite: 5.4.11(@types/node@20.16.1)(terser@5.37.0)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -25496,6 +25744,27 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
       - typescript
+
+  vite-tsconfig-paths@5.0.1(typescript@5.6.3)(vite@5.4.2(@types/node@20.16.1)(terser@5.37.0)):
+    dependencies:
+      debug: 4.3.7(supports-color@5.5.0)
+      globrex: 0.1.2
+      tsconfck: 3.1.3(typescript@5.6.3)
+    optionalDependencies:
+      vite: 5.4.2(@types/node@20.16.1)(terser@5.37.0)
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
+
+  vite@5.4.11(@types/node@20.16.1)(terser@5.37.0):
+    dependencies:
+      esbuild: 0.21.5
+      postcss: 8.4.49
+      rollup: 4.28.0
+    optionalDependencies:
+      '@types/node': 20.16.1
+      fsevents: 2.3.3
+      terser: 5.37.0
 
   vite@5.4.2(@types/node@20.16.1)(terser@5.37.0):
     dependencies:
