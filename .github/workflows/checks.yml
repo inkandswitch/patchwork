@@ -1,10 +1,10 @@
-name: TypeScript & Vitest Check
+name: TypeScript Check
 
 on:
   push:
-    branches: [main, jacquard]
+    branches: [main]
   pull_request:
-    branches: [main, jacquard]
+    branches: [main]
 
 jobs:
   build:
