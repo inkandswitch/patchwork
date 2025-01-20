@@ -1,9 +1,5 @@
-import {
-  useAsyncComputed,
-  asyncComputedPromise,
-  fetchDoc,
-} from "@patchwork/sdk/async-signals";
-import { Icon, IconType } from "@patchwork/sdk/ui";
+import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
+import { Icon } from "@patchwork/sdk/ui";
 import {
   DocLink,
   FolderDoc,
@@ -13,19 +9,10 @@ import {
   DocPathUtils,
 } from "@patchwork/folder";
 import { dataTypeById } from "@patchwork/sdk";
+import { Input } from "@patchwork/sdk/ui";
 import {
-  Input,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@patchwork/sdk/ui";
-import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
-import {
-  fetchActiveBranchInfo,
   fetchBranchScopeAndActiveBranchInfo,
   fetchOmOnActiveBranch,
-  fetchVersionControlMetadataOm,
 } from "@patchwork/sdk/versionControl";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 
@@ -33,21 +20,9 @@ import capitalize from "lodash-es/capitalize";
 import clone from "lodash-es/clone";
 import uniqBy from "lodash-es/uniqBy";
 
-import { AlertCircle, ChevronsLeft, GitBranchIcon } from "lucide-react";
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  MoveHandler,
-  NodeRendererProps,
-  RenameHandler,
-  Tree,
-} from "react-arborist";
+import { ChevronsLeft } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { MoveHandler, RenameHandler, Tree } from "react-arborist";
 import { useCurrentAccount, useCurrentAccountDoc } from "@patchwork/sdk";
 import { UIStateDoc } from "@patchwork/sdk/router";
 import { AccountPicker } from "../AccountPicker";
@@ -55,15 +30,8 @@ import { FillFlexParent } from "../FillFlexParent";
 import { useDataTypes } from "@patchwork/sdk/hooks";
 import DataTypeSelector from "./DataTypeSelector";
 import { OpenAutomergeUrl } from "./OpenAutomergeUrl";
+import { Node, FlatDocPathsContext, NodeData } from "./Node";
 
-const FlatDocPathsContext = createContext<DocPath[]>([]);
-
-// React Arborist expects a particular format for data: nodes with
-// children. We transform our data into that format here.
-type NodeData = {
-  docPath: DocPath;
-  children: NodeData[];
-};
 const prepareDataForTree = (
   folderDoc: FolderDocWithChildren,
   folderPath: DocPath
@@ -81,165 +49,6 @@ const prepareDataForTree = (
           : [],
     };
   });
-};
-
-const Node = (props: NodeRendererProps<NodeData>) => {
-  const { node, style, dragHandle } = props;
-  const docPath = node.data.docPath;
-  const docLink = DocPathUtils.toLink(docPath);
-  const dataType = dataTypeById(docLink.type);
-
-  const flatDocPaths = useContext(FlatDocPathsContext);
-
-  // We often end up in a situation where a doc that's deep in some
-  // folder structure is also present at the top level, cuz it was
-  // loaded that way first. This is a little feature to identify such
-  // cases.
-  const redundantWithPath = useMemo(() => {
-    if (docPath.length > 2) {
-      return;
-    }
-
-    return flatDocPaths.find((otherDocPath) => {
-      if (otherDocPath.length > 2) {
-        const otherDocLink = DocPathUtils.toLink(otherDocPath);
-        return docLink.url === otherDocLink.url;
-      }
-    });
-  }, [docLink.url, docPath.length, flatDocPaths]);
-
-  let icon;
-  if (docLink.type === "folder") {
-    if (node.isOpen) {
-      icon = "ChevronDown";
-    } else {
-      icon = "ChevronRight";
-    }
-  } else {
-    icon = dataType?.icon;
-  }
-
-  return (
-    <div
-      style={style}
-      ref={dragHandle}
-      className={`flex items-center cursor-pointer text-sm py-1 w-full truncate ${
-        node.isSelected
-          ? " bg-gray-300 hover:bg-gray-300 text-gray-900"
-          : "text-gray-600 hover:bg-gray-200"
-      }`}
-      onDoubleClick={() => node.edit()}
-    >
-      <div
-        className={`${node.isSelected ? "text-gray-800" : "text-gray-500"} ${
-          docLink.type === "folder" && "hover:bg-gray-400 text-gray-800"
-        } p-1 mr-0.5 rounded-sm transition-all`}
-        onClick={(e) => {
-          if (docLink.type === "folder") {
-            node.toggle();
-            e.stopPropagation();
-          }
-        }}
-      >
-        <Icon type={icon as IconType} size={14} />
-      </div>
-
-      {!node.isEditing && (
-        <div className="flex items-center">
-          <div className="">
-            {dataType ? docLink.name : `Unknown type: ${docLink.type}`}
-          </div>
-          {docLink.type === "folder" && (
-            <div className="ml-2 text-gray-500 text-xs py-0.5 px-1.5 rounded-lg bg-gray-200">
-              {node.children?.length || 0}
-            </div>
-          )}
-          <NodeActiveBranchInfo {...props} />
-          {redundantWithPath && (
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger className="ml-1">
-                  <div className="ml-1">
-                    <AlertCircle size={14} />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="text-xs text-gray-500">
-                  In {DocPathUtils.toLink(redundantWithPath).name}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-      )}
-      {node.isEditing && <Edit {...props} />}
-    </div>
-  );
-};
-
-const NodeActiveBranchInfo = (props: NodeRendererProps<NodeData>) => {
-  const { node } = props;
-  const docPath = node.data.docPath;
-  const docLink = DocPathUtils.toLink(docPath);
-  const repo = useRepo();
-  const account = useCurrentAccount();
-
-  return useAsyncComputed(() => {
-    // For performance reasons, we only show the active branch on
-    // certain nodes to avoid eagerly loading too much data.
-    // - We show it for the currently selected sidebar entry, which
-    //   should already have data loaded
-    // - We show it for folders, because a folder can be a branch
-    //   scope for its contents, and it's helpful to see the branch
-    //   name on the folder to indicate that it's a branch scope.
-    const showActiveBranchName = docLink.type === "folder" || node.isSelected;
-    if (!showActiveBranchName) {
-      return undefined;
-    }
-    const doc = fetchDoc<HasVersionControlMetadata>(docLink.url, repo);
-    const versionControlMetadataDoc = fetchVersionControlMetadataOm(
-      doc,
-      repo
-    )?.doc;
-    if (versionControlMetadataDoc?.isBranchScope) {
-      const { activeBranchOm } = fetchActiveBranchInfo(docPath, account, repo);
-      const activeBranchName = activeBranchOm?.doc.name ?? "Main";
-      return (
-        <div className="text-xs text-gray-500 flex items-center gap-1">
-          <GitBranchIcon size={14} className="ml-1" />
-          {activeBranchName}
-        </div>
-      );
-    }
-  })
-    .ifPending(() => (
-      <div className="text-xs text-gray-300 flex items-center gap-1">
-        <GitBranchIcon size={14} className="ml-1" />
-      </div>
-    ))
-    .ifRejected(() => <div></div>).value;
-};
-
-const Edit = ({ node }: NodeRendererProps<NodeData>) => {
-  const input = useRef<any>();
-  const docPath = node.data.docPath;
-  const docLink = DocPathUtils.toLink(docPath);
-
-  useEffect(() => {
-    input.current?.focus();
-    input.current?.select();
-  }, []);
-
-  return (
-    <input
-      ref={input}
-      defaultValue={docLink.name}
-      onBlur={() => node.reset()}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") node.reset();
-        if (e.key === "Enter") node.submit(input.current?.value || "");
-      }}
-    ></input>
-  );
 };
 
 type SidebarProps = {
