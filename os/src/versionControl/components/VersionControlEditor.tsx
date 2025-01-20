@@ -333,7 +333,7 @@ export const VersionControlEditor: React.FC<{
         )}
 
         {/* Main doc editor pane */}
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <ErrorBoundary FallbackComponent={ErrorFallback} resetKeys={[tool]}>
           {!doesDocExistInCheckedOutBranchScope && (
             <DocumentNotFoundPage
               branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
