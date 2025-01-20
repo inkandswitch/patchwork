@@ -59,6 +59,10 @@ class TableOfContentsWidget extends WidgetType {
   }
 }
 
+const isTree = (obj: any): obj is Tree => {
+  return obj && typeof obj === "object" && obj.hasOwnProperty("children");
+};
+
 // [TOC] is a standard command for inserting a TOC into Markdown.
 // endintro is used by the I&S website hugo template.
 const TOC_COMMAND_REGEX = /<!--endintro-->|\[TOC\]/;
@@ -115,7 +119,10 @@ function getTOCDecorations(view: EditorView) {
 
         tree.positions.forEach((childPos, index) => {
           const child = tree.children[index];
-          if (child instanceof Tree) {
+          // "child instanceof Tree" does not work here due to some dependency issue,
+          // so just duck-type the Tree check instead.
+          // if (child instanceof Tree) {
+          if (isTree(child)) {
             dfs(child, position + childPos);
           }
         });
