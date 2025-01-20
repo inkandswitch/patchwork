@@ -1,17 +1,11 @@
 import {
-  Account,
   dataTypeById,
   DataTypeImplementation,
   useSuggestedModuleForDocUrl,
 } from "@patchwork/sdk";
-import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
-import { type DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
-import { Button, Toaster } from "@patchwork/sdk/ui";
+import { type DocPath, DocPathUtils } from "@patchwork/folder";
+import { Toaster } from "@patchwork/sdk/ui";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
-import {
-  fetchBranchScopeAndActiveBranchInfo,
-  fetchOmOnActiveBranch,
-} from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import {
   useDocument,
@@ -25,7 +19,7 @@ import {
   useCurrentAccountDoc,
   useRootFolderDocWithMetadata,
 } from "@patchwork/sdk";
-import { UIStateDoc, useRouter } from "@patchwork/sdk/router";
+import { useRouter } from "@patchwork/sdk/router";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
 import { useUIStateOm } from "@patchwork/sdk/router";
 import { ErrorFallback, LoadingScreen } from "@patchwork/sdk/components";
@@ -34,10 +28,10 @@ import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
 import { useToolsForDataType, useTool } from "@patchwork/sdk/hooks";
 import { useModuleWatcher } from "../hooks/useModuleWatcher";
-import { HasPatchworkMetadata } from "@patchwork/sdk/modules/types";
-import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
-import { Repo } from "@automerge/automerge-repo";
-import { Om } from "@patchwork/sdk/om";
+import { DocHandle } from "@automerge/automerge-repo";
+import { addNewDocument } from "../docActions";
+import { removeDocPath } from "../docActions";
+import { NoDocumentSelected } from "./NoDocumentSelected";
 
 // A hook that runs any needed data migrations when a doc is selected and fully loaded.
 // We have to be careful to only run:
@@ -254,22 +248,7 @@ export const Explorer: React.FC = () => {
               docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
             />
             <div className="flex-grow overflow-hidden z-0">
-              {!selectedDocUrl && (
-                <div className="flex items-center justify-center h-full text-gray-500">
-                  <div>
-                    <p className="text-center cursor-default select-none mb-4">
-                      No document selected
-                    </p>
-                    <Button
-                      onClick={() => addNewDoc({ type: "essay" })} // Default type for new document
-                      variant="outline"
-                    >
-                      Create new document
-                      <span className="ml-2">(&#9166;)</span>
-                    </Button>
-                  </div>
-                </div>
-              )}
+              {!selectedDocUrl && <NoDocumentSelected addNewDoc={addNewDoc} />}
 
               {selectedDocUrl &&
                 selectedDoc &&
@@ -312,133 +291,3 @@ export const Explorer: React.FC = () => {
     </ErrorBoundary>
   );
 };
-
-async function addNewDocument({
-  type,
-  change,
-  uiStateOm,
-  repo,
-  selectedDocPath,
-  selectedDataTypeId,
-  selectDocPath,
-  rootFolderUrl,
-  account,
-}: {
-  type: string;
-  uiStateOm: Om<UIStateDoc> | undefined;
-  change?: (doc: unknown) => void;
-  repo: Repo;
-  selectedDocPath: DocPath | undefined;
-  selectedDataTypeId: string | undefined;
-  selectDocPath: (path: DocPath | undefined) => void;
-  rootFolderUrl: AutomergeUrl | undefined;
-  account: Account | undefined;
-}): Promise<void> {
-  if (!uiStateOm) {
-    throw new Error("uiStateHandle not ready");
-  }
-
-  const dataType = dataTypeById(type);
-  if (!dataType) {
-    throw new Error(`Unsupported document type: ${type}`);
-  }
-
-  const newDocHandle = repo.create<HasPatchworkMetadata>();
-  newDocHandle.change((doc: HasPatchworkMetadata) => {
-    dataType.init && dataType.init(doc, repo);
-    doc["@patchwork"] = {
-      type: dataType.id,
-      suggestedImportUrl: dataType.importUrl,
-    };
-    if (change) {
-      change(doc);
-    }
-  });
-
-  let parentFolderDocPath: DocPath;
-  if (!selectedDocPath) {
-    if (!rootFolderUrl) {
-      throw new Error("Root folder URL not ready");
-    }
-    parentFolderDocPath = DocPathUtils.forRoot(rootFolderUrl);
-  } else if (selectedDataTypeId === "folder") {
-    parentFolderDocPath = selectedDocPath;
-  } else {
-    parentFolderDocPath = DocPathUtils.parent(selectedDocPath);
-  }
-
-  const branchScopeAndActiveBranchInfoOfParentFolder =
-    await asyncComputedPromise(() =>
-      fetchBranchScopeAndActiveBranchInfo<FolderDoc>(
-        parentFolderDocPath,
-        account,
-        repo
-      )
-    );
-  const { activeBranchOm } = branchScopeAndActiveBranchInfoOfParentFolder;
-
-  if (activeBranchOm) {
-    activeBranchOm.handle.change((branchDoc) => {
-      branchDoc.clones[newDocHandle.url] = {
-        url: newDocHandle.url,
-        baseHeads: [],
-      };
-    });
-  }
-
-  const newDocLink = {
-    url: newDocHandle.url,
-    type,
-    name: "Untitled document",
-  };
-
-  branchScopeAndActiveBranchInfoOfParentFolder.cloneOrMainOm.handle.change(
-    (folderDoc) => {
-      folderDoc.docs.unshift(newDocLink);
-    }
-  );
-
-  selectDocPath([...parentFolderDocPath, newDocLink]);
-}
-
-async function removeDocPath({
-  docPath,
-  account,
-  repo,
-  selectDocPath,
-}: {
-  docPath: DocPath;
-  account: any;
-  repo: any;
-  selectDocPath: (path: DocPath | undefined) => void;
-}): Promise<void> {
-  const docLink = DocPathUtils.toLink(docPath);
-  const parentFolderDocPath = DocPathUtils.parent(docPath);
-  const parentFolderOm = await asyncComputedPromise(() =>
-    fetchOmOnActiveBranch<FolderDoc>(parentFolderDocPath, account, repo)
-  );
-  const parentFolderDoc = parentFolderOm.doc;
-  const itemIndex = parentFolderDoc.docs.findIndex(
-    (item) => item.url === docLink.url
-  );
-  if (itemIndex >= 0) {
-    if (itemIndex < parentFolderDoc.docs.length - 1) {
-      selectDocPath([
-        ...parentFolderDocPath,
-        parentFolderDoc.docs[itemIndex + 1],
-      ]);
-    } else if (itemIndex > 1) {
-      selectDocPath([
-        ...parentFolderDocPath,
-        parentFolderDoc.docs[itemIndex - 1],
-      ]);
-    } else {
-      selectDocPath(undefined);
-    }
-    setTimeout(() => {
-      parentFolderOm.handle.change((doc) => {
-        doc.docs.splice(itemIndex, 1);
-      });
-    }, 0);
-  }
-}
