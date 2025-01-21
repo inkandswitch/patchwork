@@ -7,8 +7,27 @@
 import commandLineArgs from "command-line-args";
 import fs from "fs";
 import path from "path";
+import process from "process";
 
-import { AutomergeUrl, Repo, StorageId } from "@automerge/automerge-repo";
+import {
+  allDataTypes,
+  DataType,
+  dataTypeById,
+  initFrom,
+  AccountDoc,
+  ContactDoc,
+} from "@patchwork/sdk";
+import { FolderDoc } from "@patchwork/folder";
+import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
+import * as Automerge from "@automerge/automerge";
+import { next as A } from "@automerge/automerge";
+import {
+  AutomergeUrl,
+  DocHandle,
+  Repo,
+  StorageId,
+  parseAutomergeUrl,
+} from "@automerge/automerge-repo";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { NodeFSStorageAdapter } from "@automerge/automerge-repo-storage-nodefs";
 
@@ -27,11 +46,18 @@ import {
   registerDataType,
 } from "@patchwork/sdk";
 import { Mime } from "mime";
+import { login } from "./login";
+import { install } from "./install";
+import { logout } from "./logout";
+import { whoami } from "./whoami";
+import { JacquardBuildMetadata } from "@patchwork/jacquard";
+import { RunResult } from "./run";
 
 // those marked non-optional here are those with defaults provided in allFlags below
 export type CommandLineArgs = {
   dir: string;
   projectFolderUrl?: AutomergeUrl;
+  parentFolderUrl?: AutomergeUrl;
   test: boolean;
   syncServerUrl: string;
   syncServerStorageId: StorageId;
@@ -44,6 +70,8 @@ export type CommandLineArgs = {
   latexDeps: boolean;
   stdoutDeclaredDeps: boolean;
   name?: string;
+  accountUrl?: AutomergeUrl;
+  moduleUrl?: AutomergeUrl;
 };
 
 const main = async () => {
@@ -63,6 +91,7 @@ const main = async () => {
       type: String,
       defaultValue: jacquardConfig?.projectFolderUrl,
     },
+    { name: "parentFolderUrl", type: String },
     { name: "branchUrl", type: String },
     { name: "test", type: Boolean, defaultValue: false },
     {
@@ -116,6 +145,8 @@ const main = async () => {
       name: "name",
       type: String,
     },
+    { name: "accountUrl", type: String },
+    { name: "moduleUrl", type: String },
   ];
 
   const args = commandLineArgs(allFlags, {
@@ -201,6 +232,26 @@ const main = async () => {
     case "pull":
       await pull(repo, args);
       break;
+
+    case "login": {
+      await login(repo, args);
+      break;
+    }
+
+    case "logout": {
+      await logout(repo, args);
+      break;
+    }
+
+    case "whoami": {
+      await whoami(repo, args);
+      break;
+    }
+
+    case "install": {
+      await install(repo, args);
+      break;
+    }
 
     case "run": {
       const spec = buildRunSpecFromArgs({

@@ -13,6 +13,7 @@ import { inspect } from "node:util";
 import path from "path";
 import { fetchOmOnFixedBranch } from "@patchwork/sdk/versionControl";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
+import os from "os";
 
 export function getBuildMetadataDocUrl(folderDoc: Doc<FolderDoc>) {
   return folderDoc.docs.find((link) => link.name === "Build Metadata")?.url;
@@ -54,7 +55,7 @@ export async function waitForSync(
   );
 }
 
-type JacquardConfig = {
+type JacquardProjectConfig = {
   projectFolderUrl?: AutomergeUrl;
   syncServer?: {
     url?: string;
@@ -72,7 +73,7 @@ export const getJacquardConfig = () => {
   if (fs.existsSync(configFilePath)) {
     try {
       const configFileContents = fs.readFileSync(configFilePath, "utf8");
-      return JSON.parse(configFileContents) as JacquardConfig;
+      return JSON.parse(configFileContents) as JacquardProjectConfig;
     } catch (error) {
       console.warn("invalid jacquard.json file");
       return null;
@@ -214,3 +215,50 @@ export const omOnCLIActiveBranchPromise = async <T>(
 ) => {
   return asyncComputedPromise(() => fetchOmOnCLIActiveBranch<T>(docUrl, repo));
 };
+
+// Config file storage
+const CONFIG_FILE_PATH = path.join(os.homedir(), ".jacquard", "config.json");
+
+export interface JacquardConfig {
+  accountUrl?: AutomergeUrl;
+  parentFolderUrl?: AutomergeUrl;
+}
+
+export function getConfig(): JacquardConfig {
+  try {
+    if (!fs.existsSync(CONFIG_FILE_PATH)) {
+      return {};
+    }
+    return JSON.parse(fs.readFileSync(CONFIG_FILE_PATH, "utf-8"));
+  } catch (error) {
+    return {};
+  }
+}
+
+export function setConfig(config: Partial<JacquardConfig>) {
+  const dir = path.dirname(CONFIG_FILE_PATH);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  const existingConfig = getConfig();
+  const newConfig = { ...existingConfig, ...config };
+
+  fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(newConfig, null, 2));
+}
+
+export function getStoredAccountUrl(): AutomergeUrl | undefined {
+  return getConfig().accountUrl;
+}
+
+export function setStoredAccountUrl(accountUrl: AutomergeUrl) {
+  setConfig({ accountUrl });
+}
+
+export function getStoredParentFolderUrl(): AutomergeUrl | undefined {
+  return getConfig().parentFolderUrl;
+}
+
+export function setStoredParentFolderUrl(parentFolderUrl: AutomergeUrl) {
+  setConfig({ parentFolderUrl });
+}

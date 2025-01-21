@@ -1,4 +1,11 @@
-import { allDataTypes, DataType, dataTypeById, initFrom } from "@patchwork/sdk";
+import {
+  allDataTypes,
+  DataType,
+  dataTypeById,
+  initFrom,
+  AccountDoc,
+  ContactDoc,
+} from "@patchwork/sdk";
 import { FolderDoc } from "@patchwork/folder";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
@@ -21,6 +28,8 @@ import {
   omOnCLIActiveBranchPromise,
   sleep,
   waitForSync,
+  getStoredAccountUrl,
+  getStoredParentFolderUrl,
 } from "./util";
 import debugFactory from "debug";
 import { fileTypeFromBuffer } from "file-type";
@@ -53,7 +62,13 @@ export async function push(
   wait = true
 ) {
   console.log("pushing");
-  const { dir, projectFolderUrl, patchworkUrl, syncServerStorageId } = args;
+  const {
+    dir,
+    projectFolderUrl,
+    patchworkUrl,
+    syncServerStorageId,
+    parentFolderUrl,
+  } = args;
 
   let folderHandle: DocHandle<FolderDoc> = await findOrCreateFolderHandle(
     projectFolderUrl,
@@ -127,6 +142,28 @@ export async function push(
     console.log(`Updated files in existing folder ${projectFolderUrl}`);
   } else {
     console.log(`Created new folder at ${folderHandle.url}`);
+
+    // Use command line arg if provided, otherwise fall back to stored value
+    const targetParentFolderUrl = parentFolderUrl || getStoredParentFolderUrl();
+    if (targetParentFolderUrl) {
+      const parentFolderHandle = repo.find<FolderDoc>(targetParentFolderUrl);
+      await parentFolderHandle.whenReady();
+      const folderDoc = await folderHandle.doc();
+      if (!folderDoc) {
+        // Skip if folder doc not found
+        return;
+      }
+
+      parentFolderHandle.change((doc) => {
+        doc.docs.unshift({
+          name: folderDoc.title,
+          url: folderHandle.url,
+          type: "folder",
+        });
+      });
+
+      console.log(`Added to parent folder at ${targetParentFolderUrl}`);
+    }
   }
 
   const { documentId } = parseAutomergeUrl(folderHandle.url);

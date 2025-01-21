@@ -3,6 +3,7 @@ import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
 import type { MarkdownDoc } from "./datatype";
 
 export { isMarkdownDoc } from "./utils";
+export type { MarkdownDoc };
 
 export const dataType: DataTypeDescription<MarkdownDoc, TextAnchor, string> = {
   type: "patchwork:dataType",

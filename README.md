@@ -74,11 +74,8 @@ And then after each code change, run `pnpm push` in the package directory, and r
 
 If you want to add a package, here are the steps:
 
-- copy one of the existing directories in `os/src/packages`. `counter` is a nice minimal one you can start with.
-- update the package name in `<yourpackage>/package.json`
-- delete `jacquard.json` -- that's a config file which tells the system which automerge doc to push to. you don't want to overwrite the original counter.
+- run `pnpm make-tool`, which will give you interactive prompts to specify a name and description for your new package. (If you want a non-interactive version, eg if you are an AI agent, you can run it non-interactively as well, like this: `pnpm make-tool --name "Todo List" --id "todos" --description "A simple todo list tool"`)
 - `pnpm install`
-- Edit the metadata in `index.ts` to have appropriate names etc.
 - Push the package to an automerge document:
 
 `cd packages/<yourpackage>`
@@ -86,9 +83,7 @@ If you want to add a package, here are the steps:
 
 This output should say something like: `pushing to folder: automerge:<docid>`
 
-Now, to install your module in Patchwork, go to "My Tools" and register a new module at this URL:
-
-`automerge/<docid>/dist/index.js`
+Now, to install your module in Patchwork: in the UI you can go to "My Tools" and register a new module at the given automerge url. Or, on the CLI you can run `jacquard install --moduleUrl <your-automerge-url>`.
 
 Now in Patchwork when you click "create new" you should see a new option letting you create a doc of your new datatype.
 Click that and you should see your new tool running!
@@ -119,7 +114,10 @@ You can get the lab OpenAI key from Geoffrey.
 
 ## Creating a new tool in Patchwork
 
-This is a guide to creating a custom tool in Patchwork. We'll walk through an example tool: a simple counter with persistence.
+This is a guide to creating a custom tool in Patchwork.
+
+
+We'll walk through an example tool: a simple counter with persistence.
 
 First, here's the package.json. Give your package a name (in the @patchwork/ namespace) and a description. This is just a regular JavaScript package. If you need more dependencies, you can add them here. The "push" command bundles the package and pushes it to Automerge, from which you can install it into Patchwork.
 
@@ -160,6 +158,8 @@ counter/package.json:
 }
 
 ```
+
+(Note: if you need to import functionality from other patchwork packages, you will need to add lines to the package.json to establish those dependencies: `"@patchwork/<other-package>": "workspace:*",`. Make sure to only import from the public exports of other packages, not their internal src directories.)
 
 Next we define a data type, which is a schema for the Automerge document that we can enforce in TypeScript, plus some helper functions that operate on the data. The most important part here is the TypeScript schema.
 
@@ -310,6 +310,30 @@ export const tools: ToolDescription[] = [
 
 ```
 
+You just need a few more files which you can copy over from the sample counter app:
+
+- vite.config.ts
+- postcss.config.cjs
+- tailwind.config.js
+
+And that's it, you have a package!
+
+### Deploying your package
+
+Run these commands to push your package to automerge:
+
+```
+cd packages/your-package
+pnpm install
+pnpm build
+pnpm push
+```
+
+This will give you an automerge URL for a Patchwork folder.
+
+You can install the tool into your Patchwork account by copying this automerge URL into the My Tools UI, or you can also install via CLI:
+
+`jacquard install --moduleUrl <your-automerge-url>`
 
 ### SDK functions
 
