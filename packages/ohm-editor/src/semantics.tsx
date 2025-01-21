@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { EditorProps, makeTool } from "@patchwork/sdk";
 import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import { updateText } from "@automerge/automerge-repo";
 import * as ohm from "ohm-js";
 import { Doc } from "./datatype";
 import {
@@ -11,12 +12,30 @@ import {
   PageLayout,
 } from "./shared-components";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { Button, Icon } from "@patchwork/sdk/ui";
+import { Button, Icon, Input } from "@patchwork/sdk/ui";
 
 export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
   const [doc, changeDoc] = useDocument<Doc>(docUrl);
   const handle = useHandle<Doc>(docUrl);
   const [match, setMatch] = useState<ohm.MatchResult | null>(null);
+
+  const setSemanticsName = useCallback(
+    (semanticsName: string) => {
+      changeDoc((d) => updateText(d, ["semanticsName"], semanticsName));
+    },
+    [changeDoc]
+  );
+
+  const setExampleArgs = useCallback(
+    (args: string) => {
+      changeDoc((d) => (d.exampleArgs = args));
+    },
+    [changeDoc]
+  );
+
+  // Parens indicate that the semantics function takes arguments, so we show the example args input
+  const shouldShowExampleArgs = doc?.semanticsName?.match("\\(");
+
   const [evalResult, setEvalResult] = useState<any>(null);
   const [error, setError] = useState<string | undefined>();
   const [showGrammar, setShowGrammar] = useState(true);
@@ -41,11 +60,14 @@ export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
         // Create and evaluate semantics
         const semantics = grammar.createSemantics();
         const semanticsObj = Function(`return ${doc.semantics}`)();
-        semantics.addOperation("eval", semanticsObj);
+        semantics.addOperation(doc.semanticsName || "eval", semanticsObj);
 
         const adapter = semantics(match);
-        const result = adapter.eval();
-        setEvalResult(result);
+        const args = JSON.parse(doc.exampleArgs || "{}");
+        console.log({ args, adapter });
+        const result = adapter.eval(...args);
+        const evalResult = JSON.stringify(result, null, 2);
+        setEvalResult(evalResult);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to evaluate grammar");
@@ -56,7 +78,7 @@ export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
     <div className="grid grid-cols-1 gap-2">
       <div className="font-medium text-gray-700">Evaluation Result:</div>
       <pre className="bg-gray-100 p-2 rounded-lg overflow-auto text-sm">
-        {JSON.stringify(evalResult, null, 2)}
+        {evalResult}
       </pre>
     </div>
   );
@@ -86,6 +108,12 @@ export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
                         Show Grammar
                       </Button>
                     )}
+                  </div>
+                  <div className="flex items-center h-8 flex-none">
+                    <Input
+                      value={doc?.semanticsName}
+                      onChange={(e) => setSemanticsName(e.target.value)}
+                    />
                   </div>
                   <div className="flex-1 overflow-hidden">
                     <EditorSection
@@ -137,6 +165,14 @@ export const Tool: React.FC<EditorProps<Doc, string>> = ({ docUrl }) => {
                 handle={handle}
               />
             </div>
+            {shouldShowExampleArgs && (
+              <div className="flex items-center h-8 flex-none">
+                <Input
+                  value={doc?.exampleArgs}
+                  onChange={(e) => setExampleArgs(e.target.value)}
+                />
+              </div>
+            )}
             <div className="flex-1 min-h-0 overflow-auto">
               <ResultsPanel
                 success={match?.succeeded()}

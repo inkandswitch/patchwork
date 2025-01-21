@@ -7,7 +7,9 @@ export type Doc = HasVersionControlMetadata<unknown, unknown> & {
   title: string;
   grammar: string;
   example: string;
+  exampleArgs: string;
   semantics: string;
+  semanticsName: string;
   testSuite: TestSuite;
 };
 
@@ -29,7 +31,10 @@ export const init = (doc: Doc) => {
     title: "Untitled Ohm Grammar",
     grammar: "",
     example: "",
+    exampleArgs: "{}",
+    // TODO: these should be moved to their own subdocument so we can reuse grammars and have multiple semantics
     semantics: "",
+    semanticsName: "eval",
     testSuite: {
       cases: [],
       metadata: {
