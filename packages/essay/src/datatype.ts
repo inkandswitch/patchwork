@@ -7,7 +7,7 @@ import {
 } from "@patchwork/sdk/versionControl";
 import { TextPatch } from "@patchwork/sdk/versionControl";
 import { next as A } from "@automerge/automerge";
-import { DocHandle, Repo } from "@automerge/automerge-repo";
+import { Repo } from "@automerge/automerge-repo";
 import { pick } from "lodash";
 import { EssayImageStorageMigration } from "./migrations/EssayImageStorageMigration";
 
@@ -47,7 +47,7 @@ const markCopy = (doc: MarkdownDoc) => {
 // Helper to get the title of one of our markdown docs.
 // looks first for yaml frontmatter from the i&s essay format;
 // then looks for the first H1.
-const getTitle = async (doc: MarkdownDoc) => {
+export const getTitle = async (doc: MarkdownDoc) => {
   if (doc.fileName) {
     return doc.fileName;
   }
@@ -122,48 +122,6 @@ ${JSON.stringify(pick(docBefore, ["content", "commentThreads"]), null, 2)}
 ${JSON.stringify(pick(docAfter, ["content", "commentThreads"]), null, 2)}`;
 };
 
-const updateFileFromDoc = async (doc: MarkdownDoc) => {
-  const content = doc.content;
-
-  const prefix = doc.fileName ?? (await getTitle(doc));
-  const extension = doc.extension ?? "md";
-  const hasExtensionAlready = /\.[a-z0-9]+$/.test(prefix);
-  const fileName = hasExtensionAlready ? prefix : `${prefix}.${extension}`;
-
-  // TODO: we could do a better job of inferring extension/mimeType if we don't have them
-  const type = doc.mimeType ?? "text/markdown";
-
-  return new File([content], fileName, { type });
-};
-
-const updateDocFromFile = async (
-  file: File,
-  handle: DocHandle<MarkdownDoc>
-) => {
-  const content = await file.text();
-  if (typeof content !== "string") {
-    // TODO: better handling?
-    throw new Error("Expected content to be a string");
-  }
-
-  const doc = await handle.doc();
-  if (!doc) {
-    throw new Error("Document not found");
-  }
-
-  const extension = file.name.split(".").pop();
-  handle.change((doc) => {
-    doc.fileName = file.name;
-
-    if (extension) doc.extension = extension;
-    doc.mimeType = file.type;
-
-    A.updateText(doc, ["content"], content);
-  });
-
-  return { didChange: true };
-};
-
 export const dataType: DataTypeImplementation<MarkdownDoc, TextAnchor, string> =
   {
     init,
@@ -173,9 +131,6 @@ export const dataType: DataTypeImplementation<MarkdownDoc, TextAnchor, string> =
     includePatchInChangeGroup,
     promptForAIChangeGroupSummary,
     ...textAnchorsAtPath(["content"]),
-    updateFileFromDoc,
-    updateDocFromFile,
-    fileExtensions: ["md"],
 
     // TODO: eventually we will want to decouple migrations more from data types.
     // You should be able to register migrations as a "trait implementation"

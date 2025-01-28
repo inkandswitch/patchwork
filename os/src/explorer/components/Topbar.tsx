@@ -1,6 +1,9 @@
-import { FileExportMethod, genericExportMethods } from "@patchwork/sdk/files";
 import { FolderDoc, DocPath, DocPathUtils } from "@patchwork/folder";
-import { dataTypeById } from "@patchwork/sdk";
+import {
+  dataTypeById,
+  getExportMethodsForDatatype,
+  ExportMethod,
+} from "@patchwork/sdk";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -152,16 +155,12 @@ export const Topbar: React.FC<TopbarProps> = ({
     selectDocPath([...folderDocPath, newDocLink]);
   };
 
-  const onClickExport = async (method: FileExportMethod<unknown>) => {
-    // TODO move this exporting logic into a more centralized place?
-    // but for now this is the only place it's called, so seems fine...
-
+  const onClickExport = async (method: ExportMethod) => {
     if (!selectedDoc || !selectedDocLink) {
-      // TODO: JAH strict fix lazy
       throw new Error("something unexpected is missing idk");
     }
 
-    const file = await method.export(selectedDoc, selectedDataType, repo);
+    const file = await method.exportData(selectedDoc, repo);
     const extension = file.name.split(".").pop();
 
     saveFile(file, [
@@ -173,14 +172,9 @@ export const Topbar: React.FC<TopbarProps> = ({
     ]);
   };
 
-  const exportMethods = [...genericExportMethods];
-  if (selectedDataType?.updateFileFromDoc) {
-    exportMethods.unshift({
-      id: "export-as-custom",
-      exportMethodName: selectedDataType.name,
-      export: selectedDataType.updateFileFromDoc,
-    });
-  }
+  const exportMethods = selectedDataType
+    ? getExportMethodsForDatatype(selectedDataType)
+    : [];
 
   return (
     <div className="h-10 bg-gray-100 flex items-center flex-shrink-0 border-b border-gray-300">
@@ -285,16 +279,16 @@ export const Topbar: React.FC<TopbarProps> = ({
                   : "Make a copy of visible version"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {exportMethods.map((method, index) => (
+              {exportMethods.map((method) => (
                 <DropdownMenuItem
-                  key={index}
+                  key={method.id}
                   onClick={() => onClickExport(method)}
                 >
                   <Download
                     size={14}
                     className="inline-block text-gray-500 mr-2"
                   />{" "}
-                  Export as {method.exportMethodName}
+                  Export as {method.name}
                 </DropdownMenuItem>
               ))}
 

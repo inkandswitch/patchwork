@@ -5,6 +5,8 @@ import {
   registerDataType,
   registerTool,
 } from "@patchwork/sdk";
+import { registerImportMethod, ImportMethod } from "@patchwork/sdk";
+import { registerExportMethod, ExportMethod } from "@patchwork/sdk";
 import {
   DocHandle,
   DocumentId,
@@ -70,6 +72,20 @@ export class ModuleWatcher {
     if (mod.tools?.length) {
       const tools = mod.tools.filter(isTool);
       tools.forEach((t: ToolDescription) => registerTool(t, importName));
+    }
+
+    // Load and register import methods if present
+    if (mod.importMethods?.length) {
+      mod.importMethods.forEach((method: ImportMethod) => {
+        registerImportMethod(method);
+      });
+    }
+
+    // Load and register export methods if present
+    if (mod.exportMethods?.length) {
+      mod.exportMethods.forEach((method: ExportMethod) => {
+        registerExportMethod(method);
+      });
     }
   }
 

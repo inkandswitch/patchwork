@@ -1,6 +1,11 @@
 import { Repo, AutomergeUrl } from "@automerge/automerge-repo";
 import { type DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
-import { UIStateDoc, Account, dataTypeById } from "@patchwork/sdk";
+import {
+  UIStateDoc,
+  Account,
+  dataTypeById,
+  createDocOfDataType,
+} from "@patchwork/sdk";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { HasPatchworkMetadata } from "@patchwork/sdk/modules/types";
 import { Om } from "@patchwork/sdk/om";
@@ -39,17 +44,7 @@ export async function addNewDocument({
     throw new Error(`Unsupported document type: ${type}`);
   }
 
-  const newDocHandle = repo.create<HasPatchworkMetadata>();
-  newDocHandle.change((doc: HasPatchworkMetadata) => {
-    dataType.init && dataType.init(doc, repo);
-    doc["@patchwork"] = {
-      type: dataType.id,
-      suggestedImportUrl: dataType.importUrl,
-    };
-    if (change) {
-      change(doc);
-    }
-  });
+  const newDocHandle = createDocOfDataType(dataType, repo, change);
 
   let parentFolderDocPath: DocPath;
   if (!selectedDocPath) {

@@ -1,6 +1,7 @@
 import { DocMigration } from "@patchwork/sdk";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import { FileDoc, updateDocFromFile } from "../datatype";
+import { FileDoc } from "../datatype";
+import { updateDocFromFile } from "@patchwork/sdk/files";
 
 type OldLinkFileDoc = {
   content: {
@@ -58,7 +59,7 @@ export class DeprecateLinkType extends DocMigration {
       });
 
       // Use the existing updateDocFromFile function to update the document
-      await updateDocFromFile(file, handle as unknown as DocHandle<FileDoc>);
+      await updateDocFromFile(file, handle);
 
       console.log("Migration completed successfully");
     } catch (error) {

@@ -10,10 +10,9 @@ import { ModuleContentsDisplay } from "./ModuleContentsDisplay";
 import { ModuleContents } from "../tool";
 import { selectDocLink } from "@patchwork/sdk/router";
 import { dataTypeById, toolsForDataType } from "@patchwork/sdk";
-import { DocPathUtils } from "@patchwork/folder";
+import { DocLink, DocPathUtils } from "@patchwork/folder";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 
-// New ModuleCard component with enhanced functionality
 interface ModuleCardProps {
   module: ModuleContents;
   onRemove: (url: AutomergeUrl) => void;
@@ -42,7 +41,7 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onRemove }) => {
           <button
             className="text-sm text-gray-500 underline align-bottom cursor-pointer"
             onClick={() => {
-              selectDocLink(docLink);
+              selectDocLink(docLink as DocLink);
             }}
           >
             Open
@@ -51,7 +50,7 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onRemove }) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onRemove(module.url)}
+          onClick={() => onRemove(module.url as AutomergeUrl)}
           className="text-red-500"
         >
           <Icon type="Trash" size={14} />
@@ -61,23 +60,6 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onRemove }) => {
     </div>
   );
 };
-
-// Helper function to get a readable name from the module
-function getModuleName(module: ModuleContents): string {
-  // Try to extract a meaningful name from the URL
-  // You might want to customize this based on your URL structure
-  const urlParts = module.url.split("/");
-  const lastPart = urlParts[urlParts.length - 1];
-
-  // Remove file extension if present
-  const name = lastPart.replace(/\.[^/.]+$/, "");
-
-  // Capitalize and add spaces before capital letters
-  return name
-    .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (str) => str.toUpperCase())
-    .trim();
-}
 
 // Updated RegisteredModules component
 interface RegisteredModulesProps {

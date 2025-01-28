@@ -462,6 +462,49 @@ importers:
         specifier: ^2.0.5
         version: 2.0.5(@types/node@20.16.1)(@vitest/ui@2.1.2(vitest@2.0.5))(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(terser@5.37.0)
 
+  packages/essay-zip-export:
+    dependencies:
+      '@automerge/automerge':
+        specifier: 2.2.9-alpha.4
+        version: 2.2.9-alpha.4
+      '@automerge/automerge-repo':
+        specifier: 2.0.0-alpha.7
+        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(typescript@5.6.3)
+      '@patchwork/essay':
+        specifier: workspace:*
+        version: link:../essay
+      '@patchwork/file':
+        specifier: workspace:*
+        version: link:../file
+      '@patchwork/sdk':
+        specifier: workspace:*
+        version: link:../../sdk
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.3
+        version: 18.3.4
+      '@vitejs/plugin-react':
+        specifier: ^4.3.1
+        version: 4.3.1(vite@5.4.11(@types/node@20.16.1)(terser@5.37.0))
+      nodemon:
+        specifier: ^3.1.9
+        version: 3.1.9
+      vite:
+        specifier: ^5.3.4
+        version: 5.4.11(@types/node@20.16.1)(terser@5.37.0)
+      vite-plugin-css-injected-by-js:
+        specifier: ^3.5.2
+        version: 3.5.2(vite@5.4.11(@types/node@20.16.1)(terser@5.37.0))
+      vite-plugin-top-level-await:
+        specifier: ^1.4.2
+        version: 1.4.4(@swc/helpers@0.5.15)(rollup@4.28.0)(vite@5.4.11(@types/node@20.16.1)(terser@5.37.0))
+      vite-plugin-wasm:
+        specifier: ^3.3.0
+        version: 3.3.0(vite@5.4.11(@types/node@20.16.1)(terser@5.37.0))
+
   packages/file:
     dependencies:
       '@automerge/automerge':
@@ -1224,43 +1267,6 @@ importers:
       vite-plugin-wasm:
         specifier: ^3.3.0
         version: 3.3.0(vite@6.0.3(@types/node@20.16.1)(jiti@1.21.6)(terser@5.37.0)(yaml@2.5.0))
-
-  packages/todos:
-    dependencies:
-      '@automerge/automerge-repo-react-hooks':
-        specifier: 2.0.0-alpha.7
-        version: 2.0.0-alpha.7(@swc/core@1.7.14(@swc/helpers@0.5.15))(@types/node@20.16.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
-      '@patchwork/sdk':
-        specifier: workspace:*
-        version: link:../../sdk
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-    devDependencies:
-      '@types/react':
-        specifier: ^18.3.3
-        version: 18.3.4
-      '@vitejs/plugin-react':
-        specifier: ^4.3.1
-        version: 4.3.1(vite@5.4.11(@types/node@20.16.1)(terser@5.37.0))
-      nodemon:
-        specifier: ^3.1.9
-        version: 3.1.9
-      vite:
-        specifier: ^5.3.4
-        version: 5.4.11(@types/node@20.16.1)(terser@5.37.0)
-      vite-plugin-css-injected-by-js:
-        specifier: ^3.5.2
-        version: 3.5.2(vite@5.4.11(@types/node@20.16.1)(terser@5.37.0))
-      vite-plugin-top-level-await:
-        specifier: ^1.4.2
-        version: 1.4.4(@swc/helpers@0.5.15)(rollup@4.28.0)(vite@5.4.11(@types/node@20.16.1)(terser@5.37.0))
-      vite-plugin-wasm:
-        specifier: ^3.3.0
-        version: 3.3.0(vite@5.4.11(@types/node@20.16.1)(terser@5.37.0))
 
   packages/web-vr:
     dependencies:

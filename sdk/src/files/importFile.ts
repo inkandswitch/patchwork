@@ -1,28 +1,68 @@
-import { DocHandle, Repo } from "@automerge/automerge-repo";
-import { dataTypeByFileExtension } from "../datatypes";
+import { Doc, DocHandle, Repo } from "@automerge/automerge-repo";
+import {
+  allDataTypes,
+  dataTypeById,
+  DataType,
+  createDocOfDataType,
+} from "../datatypes";
+import { getDefaultImportMethodForDatatype } from "../importMethods";
+import { ImportMethod } from "../importMethods";
+import { HasPatchworkMetadata } from "../modules/types";
 
-/*
- * This import function doesn't return until after the updateDoc function resolves
- * Hopefully this will give the service worker enough time to finish loading the document
- * before proceeding.
+/**
+ * Helper function to find the appropriate import method and datatype for a file
  */
-export const importFile = async (
-  file: File,
-  repo: Repo
-): Promise<DocHandle<unknown>> => {
+const getImportMethodForFile = (
+  file: File
+): { importMethod: ImportMethod; dataType: DataType } => {
   const extension = file.name.split(".").pop();
+
   if (!extension) {
     throw new Error("File has no extension, not sure how to proceed");
   }
 
-  const dataType = dataTypeByFileExtension(extension);
-  if (!dataType || !dataType.updateDocFromFile) {
-    throw new Error("No data type reports ability to import this file.");
+  const importMethod = Object.values(allDataTypes())
+    .map((dt) => getDefaultImportMethodForDatatype(dt))
+    .find(
+      (method) =>
+        method?.fileExtensions.includes(extension) ||
+        method?.fileExtensions.includes("*")
+    );
+
+  if (!importMethod) {
+    throw new Error("No import method found for this file.");
   }
 
-  const handle = repo.create();
-  handle.change((d) => dataType.init(d, repo));
-  await dataType.updateDocFromFile(file, handle);
+  const dataType = dataTypeById(importMethod.datatypeId);
+  if (!dataType) {
+    throw new Error(
+      `Could not find data type for import method (datatypeId: ${importMethod.datatypeId})`
+    );
+  }
 
+  return { importMethod, dataType };
+};
+
+/**
+ * Creates a new document from a file, initializing it with the appropriate datatype
+ */
+export const createDocFromFile = async (
+  file: File,
+  repo: Repo
+): Promise<DocHandle<unknown>> => {
+  const { importMethod, dataType } = getImportMethodForFile(file);
+  const handle = createDocOfDataType(dataType, repo);
+  await importMethod.importData(file, handle);
   return handle;
+};
+
+/**
+ * Updates an existing document from a file
+ */
+export const updateDocFromFile = async (
+  file: File,
+  handle: DocHandle<unknown>
+): Promise<{ didChange: boolean }> => {
+  const { importMethod } = getImportMethodForFile(file);
+  return importMethod.importData(file, handle);
 };

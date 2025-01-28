@@ -16,6 +16,10 @@ import {
   initFrom,
   AccountDoc,
   ContactDoc,
+  registerImportMethod,
+  registerExportMethod,
+  ExportMethod,
+  ImportMethod,
 } from "@patchwork/sdk";
 import { FolderDoc } from "@patchwork/folder";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
@@ -209,8 +213,16 @@ const main = async () => {
       const module = (await import(importName)) as {
         dataType: DataTypeDescription<unknown>;
         tools: ToolDescription[];
+        importMethods?: ImportMethod[];
+        exportMethods?: ExportMethod[];
       };
       await registerDataType(module.dataType, importName);
+      for (const method of module.importMethods ?? []) {
+        await registerImportMethod(method);
+      }
+      for (const method of module.exportMethods ?? []) {
+        await registerExportMethod(method);
+      }
     }),
   ]);
 

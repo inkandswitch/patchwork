@@ -23,7 +23,7 @@ import { dragAndDropFilesPlugin } from "./codemirrorPlugins/dragAndDropFiles";
 import { dropCursor } from "./codemirrorPlugins/dropCursor";
 import { previewImagesPlugin } from "./codemirrorPlugins/previewMarkdownImages";
 
-import { fileHandleToServiceWorkerUrl, importFile } from "../files/";
+import { fileHandleToServiceWorkerUrl, createDocFromFile } from "../files/";
 
 type MarkdownPluginsConfig = { docHandle?: DocHandle<unknown> };
 
@@ -69,6 +69,6 @@ const createFileReferenceInDoc = async (
   repo: Repo,
   file: File
 ): Promise<string | undefined> => {
-  const fileHandle = await importFile(file, repo);
-  return `![](${fileHandleToServiceWorkerUrl(fileHandle)})`;
+  const handle = await createDocFromFile(file, repo);
+  return `![](${fileHandleToServiceWorkerUrl(handle)})`;
 };

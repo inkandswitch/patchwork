@@ -5,11 +5,12 @@ import {
   initFrom,
   AccountDoc,
   ContactDoc,
+  getDefaultImportMethodForDatatype,
 } from "@patchwork/sdk";
 import { FolderDoc } from "@patchwork/folder";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
-import { next as A } from "@automerge/automerge";
+import { next as A, Doc } from "@automerge/automerge";
 import {
   AutomergeUrl,
   DocHandle,
@@ -37,6 +38,8 @@ import { Mime } from "mime";
 import { isBinaryCheck } from "@patchwork/file";
 import standardTypes from "mime/types/standard.js";
 import otherTypes from "mime/types/other.js";
+import { HasPatchworkMetadata } from "@patchwork/sdk/modules/types";
+import { createDocFromFile, updateDocFromFile } from "@patchwork/sdk/files";
 
 // This is mostly because .ts is otherwise interpreted as a video file
 // the 'text/tsx' is for consistency with .jsx files in 'mime'.
@@ -382,10 +385,9 @@ const pushFile = async ({
   const formattedSize = formatFileSize(fileSize);
   debug(`Pushing file (${formattedSize}): ${filePath}`);
 
-  const fileExtension = path.extname(filePath).slice(1);
   const fileName = path.basename(filePath);
-
   const folderDoc = await folderHandle.doc();
+
   if (!folderDoc) {
     throw new Error(`Folder doc missing: ${folderHandle.url}`);
   }
@@ -398,69 +400,36 @@ const pushFile = async ({
 
   const existingDocLink = folderDoc.docs.find((link) => link.name === fileName);
 
-  // TODO: perhaps we want to make the "existing doc" and "new doc" cases more similar
-  // in terms of detecting datatypes?
+  /* Load the file from disk into a File object */
+  const buffer = fs.readFileSync(filePath);
+  const isBinary = isBinaryCheck(buffer, buffer.length);
+  const mimeType = isBinary
+    ? (await fileTypeFromBuffer(buffer))?.mime ?? "application/octet-stream"
+    : mime.getType(path.extname(filePath).slice(1)) ?? "text/plain";
+
+  const file = new File([buffer], fileName, { type: mimeType });
+
   let handle: DocHandle<unknown>;
-  let dataType: DataType | undefined;
-  if (!existingDocLink) {
-    const dataTypes = allDataTypes();
+  let didChange: boolean;
 
-    const dataTypeForNewDoc =
-      Object.values(dataTypes).find((dt) =>
-        dt.fileExtensions?.includes(fileExtension)
-      ) ??
-      Object.values(dataTypes).find((dt) => dt.fileExtensions?.includes("*"));
-
-    if (!dataTypeForNewDoc) {
-      throw new Error(`Unable to find datatype for ${fileExtension} or *`);
-    }
-
-    // Make a new doc in the folder
-    handle = repo.create();
-    handle.change((d) => dataTypeForNewDoc.init(d, repo));
+  if (existingDocLink) {
+    handle = (await omOnCLIActiveBranchPromise(existingDocLink.url, repo))
+      .handle;
+    ({ didChange } = await updateDocFromFile(file, handle));
+  } else {
+    handle = await createDocFromFile(file, repo);
+    didChange = true; // New doc always counts as a change
+    const newDoc = handle.docSync() as Doc<HasPatchworkMetadata>;
+    const dataTypeId = newDoc["@patchwork"].type;
 
     folderHandle.change((d) => {
       d.docs.push({
         name: fileName,
-        url: handle.url, // this is ok cuz it's a new doc, not a clone
-        type: dataTypeForNewDoc.id,
+        url: handle.url,
+        type: dataTypeId,
       });
     });
-
-    dataType = dataTypeForNewDoc;
-  } else {
-    const dataTypeForExistingDoc = dataTypeById(existingDocLink.type);
-    if (!dataTypeForExistingDoc) {
-      throw new Error(
-        `cannot update ${filePath} with unknown type ${existingDocLink.type}`
-      );
-    }
-
-    handle = (await omOnCLIActiveBranchPromise(existingDocLink.url, repo))
-      .handle;
-
-    dataType = dataTypeForExistingDoc;
   }
-
-  if (!dataType?.updateDocFromFile) {
-    throw new Error(`datatype ${dataType?.id} does not have updateDocFromFile`);
-  }
-
-  /* Load the file from disk into a File object */
-  const buffer = fs.readFileSync(filePath);
-
-  const isBinary = isBinaryCheck(buffer, buffer.length);
-
-  let mimeType;
-  if (isBinary) {
-    mimeType =
-      (await fileTypeFromBuffer(buffer))?.mime ?? "application/octet-stream";
-  } else {
-    mimeType = mime.getType(fileExtension) ?? "text/plain";
-  }
-  const file = new File([buffer], fileName, { type: mimeType });
-
-  const { didChange } = await dataType.updateDocFromFile(file, handle);
 
   // wait for the sync to complete to not overload automerge repo by creating many handles at once
   await waitForSync([handle], syncServerStorageId);

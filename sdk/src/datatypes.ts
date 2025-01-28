@@ -13,6 +13,7 @@ import { ReactElement } from "react";
 import { IconType } from "./ui";
 import { DocLink } from "@patchwork/folder";
 import { DocMigration } from "./migrations/DocMigration";
+import { HasPatchworkMetadata } from "./modules/types";
 
 export type DataType<
   D = unknown,
@@ -38,14 +39,6 @@ export type CoreDataType<D> = {
   setTitle?: (doc: any, title: string) => void;
   markCopy: (doc: D) => void; // TODO: this shouldn't be part of the interface
   actions?: Record<string, (doc: Doc<D>, args: object) => void>;
-
-  // FILE EXPORT
-  updateFileFromDoc?: (doc: D) => Promise<File>;
-  updateDocFromFile?: (
-    file: File,
-    handle: DocHandle<D>
-  ) => Promise<{ didChange: boolean }>;
-  fileExtensions?: string[];
 };
 
 export type VersionedDataType<D, T, V> = {
@@ -186,15 +179,24 @@ export const dataTypeById = <D, T, V>(id: string | undefined) => {
   return id ? GlobalDataTypes[id] : undefined;
 };
 
-// XXX: Is this good?
-export const dataTypeByFileExtension = (fileExtension: string) => {
-  const dataTypes = allDataTypes();
-  const dataType =
-    Object.values(dataTypes).find((dt) =>
-      dt.fileExtensions?.includes(fileExtension)
-    ) ??
-    Object.values(dataTypes).find((dt) => dt.fileExtensions?.includes("*"));
-  return dataType;
+/** Creates a new document initialized with the given datatype */
+export const createDocOfDataType = <D>(
+  dataType: DataType<D>,
+  repo: Repo,
+  change?: (doc: D) => void
+): DocHandle<D & HasPatchworkMetadata> => {
+  const handle = repo.create<D & HasPatchworkMetadata>();
+  handle.change((doc) => {
+    dataType.init(doc, repo);
+    (doc as any)["@patchwork"] = {
+      type: dataType.id,
+      suggestedImportUrl: dataType.importUrl,
+    };
+    if (change) {
+      change(doc);
+    }
+  });
+  return handle;
 };
 
 /** Kinda hacky utility function to initialize an object in

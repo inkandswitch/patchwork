@@ -21,7 +21,7 @@ import {
   withHasChangeGroupSummaries,
   withHasVersionControlMetadata,
 } from "./versionControl";
-import { importFile } from "./files";
+import { createDocFromFile } from "./files";
 
 import { ModuleSettingsDoc } from "./modules";
 import { FileDoc } from "@patchwork/file";
@@ -111,11 +111,12 @@ export class Account extends EventEmitter<AccountEvents> {
   }
 
   async signUp({ name, avatar }: ContactProps) {
-    const avatarHandle = avatar ? await importFile(avatar, this.#repo) : null;
+    const avatarHandle = avatar
+      ? await createDocFromFile(avatar, this.#repo)
+      : null;
 
     this.contactHandle.change((contact: ContactDoc) => {
       typeOnlyAssert(contact.type === "registered");
-
       contact.type = "registered";
       contact.name = name;
 

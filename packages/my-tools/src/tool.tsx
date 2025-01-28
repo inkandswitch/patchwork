@@ -7,6 +7,10 @@ import {
   type Tool,
   makeTool,
   importModuleFromFolderDocUrl,
+  ImportMethod,
+  ExportMethod,
+  isExportMethod,
+  isImportMethod,
 } from "@patchwork/sdk";
 import {
   Icon,
@@ -33,12 +37,14 @@ import { RegisterModuleDialog } from "./components/RegisterModuleDialog";
 import { RegisteredModules } from "./components/RegisteredModules";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 
-export interface ModuleContents {
-  url: AutomergeUrl;
-  dataType?: DataType<unknown, unknown, unknown>;
+export type ModuleContents = {
+  url: string;
+  dataType?: DataType;
   tools?: Tool[];
+  importMethods?: ImportMethod[];
+  exportMethods?: ExportMethod[];
   error?: string;
-}
+};
 
 export const ModuleSettingsEditor: React.FC<
   EditorProps<ModuleSettingsDoc, string>
@@ -59,6 +65,8 @@ export const ModuleSettingsEditor: React.FC<
         url,
         dataType: module.dataType,
         tools: module.tools?.filter(isTool) || [],
+        importMethods: module.importMethods?.filter(isImportMethod) || [],
+        exportMethods: module.exportMethods?.filter(isExportMethod) || [],
       };
     } catch (err) {
       return {

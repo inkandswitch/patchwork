@@ -1,18 +1,32 @@
-import type { TextAnchor } from "@patchwork/sdk/textAnchors";
-import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
+import {
+  DataTypeDescription,
+  ToolDescription,
+  ImportMethod,
+  ExportMethod,
+} from "@patchwork/sdk";
+import { TextAnchor } from "@patchwork/sdk/textAnchors";
 import type { MarkdownDoc } from "./datatype";
+import { markdownImport } from "./importMethods";
+import { markdownExport } from "./exportMethods";
 
 export { isMarkdownDoc } from "./utils";
 export type { MarkdownDoc };
+export { getTitle } from "./datatype";
 
 export const dataType: DataTypeDescription<MarkdownDoc, TextAnchor, string> = {
-  type: "patchwork:dataType",
   id: "essay",
+  type: "patchwork:dataType",
   name: "Essay",
-  icon: "Text",
+  icon: "FileText",
   async load() {
     const { dataType } = await import("./datatype");
-    return dataType;
+    const importMethods = await import("./importMethods");
+    const exportMethods = await import("./exportMethods");
+    return {
+      ...dataType,
+      ...importMethods,
+      ...exportMethods,
+    };
   },
 };
 
@@ -29,3 +43,6 @@ export const tools: ToolDescription[] = [
     },
   },
 ];
+
+export const importMethods: ImportMethod[] = [markdownImport];
+export const exportMethods: ExportMethod[] = [markdownExport];

@@ -1,9 +1,14 @@
 import type { TextAnchor } from "@patchwork/sdk/textAnchors";
-import type { FileDoc } from "./datatype";
 import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
+import type { ImportMethod } from "@patchwork/sdk";
+import type { ExportMethod } from "@patchwork/sdk";
+import type { FileDoc } from "./datatype";
+import { universalImport } from "./importMethods";
+import { universalExport } from "./exportMethods";
 
 // For others to enjoy
-export { type FileDoc };
+export type { FileDoc };
+export { isBinaryFileDoc, isTextFileDoc } from "./datatype";
 export { isBinaryCheck } from "./isBinaryFile";
 
 export const dataType: DataTypeDescription<FileDoc, TextAnchor, string> = {
@@ -29,3 +34,6 @@ export const tools: ToolDescription[] = [
     },
   },
 ];
+
+export const importMethods: ImportMethod[] = [universalImport];
+export const exportMethods: ExportMethod[] = [universalExport];

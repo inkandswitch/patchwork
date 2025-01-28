@@ -9,10 +9,5 @@ export const DataTypeModule: React.FC<{ dataType: DataType }> = ({
       <Icon type="Database" size={14} />
       <span>DataType: {dataType.name}</span>
     </div>
-    <div className="pl-6 text-gray-500">
-      {dataType.fileExtensions && dataType.fileExtensions?.length > 0 && (
-        <div>File types: {dataType.fileExtensions.join(", ")}</div>
-      )}
-    </div>
   </div>
 );
