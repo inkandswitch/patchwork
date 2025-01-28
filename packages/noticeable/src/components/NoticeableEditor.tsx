@@ -1,6 +1,7 @@
 import {
   AnyDocumentId,
   DocHandleChangePayload,
+  updateText,
 } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { TextFileEditor } from "@patchwork/file/components";
@@ -39,7 +40,16 @@ export const NoticeableEditor = (props: EditorProps<unknown, unknown>) => {
         return () => handle.off("change", onChange);
       });
     },
-    []
+    [repo]
+  );
+
+  const useDoc = useMemo(
+    // first () => is for the useMemo, second is for builtins
+    () => () => (id: AnyDocumentId) => {
+      const handle = repo.find(id);
+      return [observeDoc()(id), handle.change.bind(handle)];
+    },
+    [observeDoc, repo]
   );
 
   const observeAsyncComputed = useMemo(
@@ -68,16 +78,33 @@ export const NoticeableEditor = (props: EditorProps<unknown, unknown>) => {
     []
   );
 
+  const _updateText = useMemo(
+    // first () => is for the useMemo, second is for builtins
+    () => () => updateText,
+    []
+  );
+
   const builtins = useMemo(() => {
     return {
       win: iframe?.contentWindow,
       repo,
       observeDoc,
+      useDoc,
       currentAccount,
       observeAsyncComputed,
       fetchDoc: _fetchDoc,
+      updateText: _updateText,
     };
-  }, [iframe, repo, observeDoc, currentAccount]);
+  }, [
+    iframe?.contentWindow,
+    repo,
+    observeDoc,
+    useDoc,
+    currentAccount,
+    observeAsyncComputed,
+    _fetchDoc,
+    _updateText,
+  ]);
 
   // some Observable inputs library adds a style tag to the head of
   // THIS document, and then the iframe can't see it. clearly the
