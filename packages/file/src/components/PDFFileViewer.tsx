@@ -43,7 +43,8 @@ export const PDFFileViewer = ({
   const [_doc] = useDocument<PDFFileDoc>(docUrl);
 
   const doc = useMemo(
-    () => (_doc && docHeads ? Automerge.view(_doc, docHeads) : _doc),
+    () =>
+      _doc && docHeads ? Automerge.view<PDFFileDoc>(_doc, docHeads) : _doc,
     [docHeads, _doc]
   );
 

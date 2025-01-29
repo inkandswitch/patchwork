@@ -34,9 +34,9 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
     return;
   }
 
-  const projectFolderHandle = repo.find<FolderDoc>(projectFolderUrl);
+  const projectFolderHandle = await repo.find<FolderDoc>(projectFolderUrl);
 
-  const projectFolder = await projectFolderHandle.doc();
+  const projectFolder = projectFolderHandle.doc();
   if (!projectFolder) {
     console.log("Failed to load project folder");
     return;

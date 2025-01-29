@@ -9,8 +9,9 @@ import {
 import {
   useDocument,
   useDocuments,
-  useHandle,
+  useDocHandle,
   useRepo,
+  useDocHandleWithUndefined,
 } from "@automerge/automerge-repo-react-hooks";
 import { compact } from "lodash";
 
@@ -26,11 +27,8 @@ export type Omable<T = unknown> = AutomergeUrl | DocHandle<T>;
 export async function om<T>(omable: Omable<T>, repo: Repo): Promise<Om<T>> {
   const url = typeof omable === "string" ? omable : omable.url;
   const id = parseAutomergeUrl(url).documentId;
-  const handle = repo.find<T>(url);
-  const doc = await handle.doc();
-  if (!doc) {
-    throw new Error(`Document not found: ${url}`);
-  }
+  const handle = await repo.find<T>(url);
+  const doc = handle.doc();
   return { url, id, handle, doc };
 }
 
@@ -41,7 +39,7 @@ export function useOm<T>(omable: Omable<T> | undefined): Om<T> | undefined {
     ? omable
     : omable.url;
   const id = !url ? undefined : parseAutomergeUrl(url).documentId;
-  const handle = useHandle<T>(url);
+  const handle = useDocHandleWithUndefined<T>(url);
   const [doc] = useDocument<T>(url);
 
   return url && id && handle && doc && { url, id, handle, doc };

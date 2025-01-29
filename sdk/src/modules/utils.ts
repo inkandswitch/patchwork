@@ -3,7 +3,10 @@ import {
   DocHandle,
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useDocHandle,
+} from "@automerge/automerge-repo-react-hooks";
 import { resolve } from "resolve.exports";
 import { HasPatchworkMetadata } from "./types";
 import { useEffect } from "react";

@@ -1,5 +1,5 @@
 import { useToolUIState } from "@patchwork/sdk/router";
-import { useHandleDef } from "@patchwork/sdk/hooks";
+import { useDocHandleDef } from "@patchwork/sdk/hooks";
 import {
   annotationsPlugin,
   hideLinesWithoutAnnotations,
@@ -71,10 +71,12 @@ export const TextFileEditor = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [editor, setEditor] = useState<EditorView>();
   const [_fileDoc] = useDocument<FileDoc>(docUrl);
-  const handle = useHandleDef<FileDoc>(docUrl);
+  const handle = useDocHandleDef<FileDoc>(docUrl);
 
   const fileDoc =
-    docHeads && _fileDoc ? Automerge.view(_fileDoc, docHeads) : _fileDoc;
+    docHeads && _fileDoc
+      ? Automerge.view<FileDoc>(_fileDoc, docHeads)
+      : _fileDoc;
 
   const resolvedAnnotations = useResolvedAnnotationAtPath({
     doc: fileDoc,

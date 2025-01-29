@@ -70,11 +70,11 @@ describe("refresh", () => {
       },
     ]);
 
-    const folderHandle = repo.find<FolderDoc>(folderUrl);
-    const folderDoc = await folderHandle.doc();
+    const folderHandle = await repo.find<FolderDoc>(folderUrl);
+    const folderDoc = folderHandle.doc();
     assert(folderDoc);
     const inputUrl = folderDoc.docs[0].url;
-    const inputHandle = repo.find<FileDoc>(inputUrl);
+    const inputHandle = await repo.find<FileDoc>(inputUrl);
     inputHandle.change((d) => (d.content = "sup cosmos"));
 
     await pull(repo, {

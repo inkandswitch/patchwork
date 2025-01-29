@@ -217,7 +217,7 @@ export const initFrom = <D extends object>(
 // export const loadHandle = async <D>(
 //   handle: DocHandle<D>
 // ): Promise<LoadedDocHandle<D> | undefined> => {
-//   const doc = await handle.doc();
+//   const doc = handle.doc();
 //   if (!doc) {
 //     return undefined;
 //   }

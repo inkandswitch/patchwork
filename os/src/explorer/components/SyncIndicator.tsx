@@ -2,7 +2,7 @@
 import { getRelativeTimeString } from "@patchwork/sdk/versionControl";
 import { next as A, Heads } from "@automerge/automerge";
 import { AutomergeUrl, DocHandle, StorageId } from "@automerge/automerge-repo";
-import { useHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
+import { useDocHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
 import {
   Button,
   Popover,
@@ -32,7 +32,7 @@ export const SyncIndicator = ({
   storageId?: StorageId;
   name?: string;
 }) => {
-  const handle = useHandle(docUrl);
+  const handle = useDocHandle(docUrl);
   if (!handle) {
     return null;
   }
@@ -376,18 +376,11 @@ function useSyncIndicatorState(
     if (machine.matches("sync.unknown")) {
       const syncServerHeads = handle.getRemoteHeads(storageId);
       setSyncServerHeads(syncServerHeads ?? []); // initialize to empty heads if we have no state
-
-      handle.doc().then((doc) => {
-        if (!doc) {
-          // TODO: JAH strict fix
-          throw new Error("No doc");
-        }
-        setOwnHeads(A.getHeads(doc));
-      });
+      setOwnHeads(A.getHeads(handle.doc()));
     }
 
     const onChange = () => {
-      const doc = handle.docSync();
+      const doc = handle.doc();
       if (doc) {
         setOwnHeads(A.getHeads(doc));
       }

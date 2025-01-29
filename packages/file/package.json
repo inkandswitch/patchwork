@@ -16,8 +16,8 @@
   "dependencies": {
     "@automerge/automerge": "2.2.9-alpha.4",
     "@automerge/automerge-codemirror": "^0.0.12",
-    "@automerge/automerge-repo": "2.0.0-alpha.7",
-    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
+    "@automerge/automerge-repo": "2.0.0-alpha.20",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.20",
     "@codemirror/autocomplete": "^6.18.0",
     "@codemirror/commands": "^6.6.0",
     "@codemirror/lang-javascript": "^6.2.2",

@@ -33,7 +33,7 @@ export async function install(repo: Repo, args: CommandLineArgs) {
 
   // Load account document
   const accountHandle = repo.find<AccountDoc>(accountUrl);
-  const accountDoc = await accountHandle.doc();
+  const accountDoc = (await accountHandle).doc();
 
   if (!accountDoc) {
     console.error("Account not found. Please log in again.");
@@ -41,10 +41,10 @@ export async function install(repo: Repo, args: CommandLineArgs) {
   }
 
   // Load module settings document
-  const moduleSettingsHandle = repo.find<ModuleSettingsDoc>(
+  const moduleSettingsHandle = await repo.find<ModuleSettingsDoc>(
     accountDoc.moduleSettingsUrl
   );
-  const moduleSettingsDoc = await moduleSettingsHandle.doc();
+  const moduleSettingsDoc = moduleSettingsHandle.doc();
 
   if (!moduleSettingsDoc) {
     console.error("Module settings document not found");

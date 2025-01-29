@@ -134,8 +134,9 @@ export const BotSidebar = ({
     });
 
     // need to also do the update on the main doc because we're not merging the branch...
-    const mainDocHandle =
-      repo.find<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
+    const mainDocHandle = await repo.find<
+      HasVersionControlMetadata<unknown, unknown>
+    >(mainDocUrl);
     mainDocHandle.change((d) => {
       d.botChatHistory.push({
         role: "user",

@@ -223,7 +223,7 @@ export const VersionControlEditor: React.FC<{
         );
       }
 
-      const branchHandle = repo.find<BranchDoc>(branchUrl);
+      const branchHandle = await repo.find<BranchDoc>(branchUrl);
 
       await mergeBranch({
         repo,

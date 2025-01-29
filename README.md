@@ -141,7 +141,7 @@ counter/package.json:
   "keywords": [],
   "author": "Ink & Switch",
   "dependencies": {
-    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.7",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.20",
     "@patchwork/sdk": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -212,7 +212,7 @@ For now, the only prop we use is docUrl. We can use standard hooks from automerg
 counter/src/tool.tsx
 
 ```
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useDocHandle } from "@automerge/automerge-repo-react-hooks";
 import { EditorProps, makeTool } from "@patchwork/sdk";
 import { Button } from "@patchwork/sdk/ui";
 import { Doc } from "./datatype";

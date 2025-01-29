@@ -1,5 +1,8 @@
 import { useMemo } from "react";
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useDocHandle,
+} from "@automerge/automerge-repo-react-hooks";
 import * as Automerge from "@automerge/automerge";
 import { FileDoc } from "../datatype";
 import { EditorProps } from "@patchwork/sdk";
@@ -12,13 +15,7 @@ export const ImageFileViewer = ({
   docUrl,
   docHeads,
 }: EditorProps<ImageFileDoc, never>) => {
-  const [_doc] = useDocument<ImageFileDoc>(docUrl);
-  const handle = useHandle<ImageFileDoc>(docUrl);
-
-  const doc = useMemo(
-    () => (_doc && docHeads ? Automerge.view(_doc, docHeads) : _doc),
-    [docHeads, _doc]
-  );
+  const handle = useDocHandle<ImageFileDoc>(docUrl);
 
   // TODO: this is wrong
   const imgUrl = `/automerge/${handle?.documentId}`;

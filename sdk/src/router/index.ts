@@ -180,7 +180,7 @@ export const useRouter = ({
 
       let branchDoc: BranchDoc | undefined;
       if (urlParams.branchUrl) {
-        branchDoc = await repo.find<BranchDoc>(urlParams.branchUrl).doc();
+        branchDoc = (await repo.find<BranchDoc>(urlParams.branchUrl)).doc();
 
         if (!branchDoc) {
           alert(`Could not find branch ${urlParams.branchUrl}`);
@@ -214,21 +214,23 @@ export const useRouter = ({
         if (!branchScopePathInRootFolder) {
           const folderDataType = dataTypeById("folder")!;
 
-          const branchScopeHandle = repo.find<FolderDoc>(branchScopeUrl);
+          const branchScopeHandle = await repo.find<FolderDoc>(branchScopeUrl);
           const title = await folderDataType.getTitle(
-            await branchScopeHandle.doc(),
+            branchScopeHandle.doc(),
             repo
           );
 
-          repo
-            .find<FolderDoc>(rootFolderDocWithMetadata.rootFolderUrl)
-            .change((doc) => {
-              doc.docs.unshift({
-                type: branchScopeType,
-                name: title,
-                url: branchScopeUrl,
-              });
+          const handle = await repo.find<FolderDoc>(
+            rootFolderDocWithMetadata.rootFolderUrl
+          );
+
+          handle.change((doc) => {
+            doc.docs.unshift({
+              type: branchScopeType,
+              name: title,
+              url: branchScopeUrl,
             });
+          });
 
           // if the branchScope is a separated doc we reset isLoaded.
           // adding the branchScope will set
@@ -276,7 +278,7 @@ export const useRouter = ({
         // -> create a doc link that will lead to a 404 page
         if (branchScopePathInRootFolder) {
           const dataType = dataTypeById(urlParams.type);
-          const doc = await repo.find(urlParams.url).doc();
+          const doc = (await repo.find(urlParams.url)).doc();
           const title = (await dataType?.getTitle(doc, repo)) ?? "Unknown";
 
           docPath = branchScopePathInRootFolder.concat({
@@ -307,11 +309,12 @@ export const useRouter = ({
             url: urlParams.url,
           };
 
-          repo
-            .find<FolderDoc>(rootFolderDocWithMetadata.rootFolderUrl)
-            .change((doc) => {
-              doc.docs.unshift(docLink);
-            });
+          const handle = await repo.find<FolderDoc>(
+            rootFolderDocWithMetadata.rootFolderUrl
+          );
+          handle.change((doc) => {
+            doc.docs.unshift(docLink);
+          });
 
           docPath = [
             ...DocPathUtils.forRoot(rootFolderDocWithMetadata.rootFolderUrl),

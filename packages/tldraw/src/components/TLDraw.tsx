@@ -1,7 +1,7 @@
 import { DocHandle } from "@automerge/automerge-repo";
 import {
   useDocument,
-  useHandle,
+  useDocHandle,
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
 import { useMemo, useState } from "react";
@@ -15,7 +15,7 @@ import "@tldraw/tldraw/tldraw.css";
 import { useAutomergeStore } from "../vendor/automerge-tldraw";
 import { useDiffStyling, useCameraSync, useAnchorEventListener } from "./hooks";
 import { TLDrawDocAnchor, TLDrawDoc } from "../datatype";
-import { useHandleDef } from "@patchwork/sdk/hooks";
+import { useDocHandleDef } from "@patchwork/sdk/hooks";
 import { SideBySideProps } from "@patchwork/sdk/versionControl";
 
 interface TLDrawProps extends EditorProps<TLDrawDocAnchor, TLShape> {
@@ -33,7 +33,7 @@ export const TLDraw = ({
   setHoveredAnchor = () => {},
 }: TLDrawProps) => {
   useDocument<TLDrawDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const handle = useHandleDef<TLDrawDoc>(docUrl);
+  const handle = useDocHandleDef<TLDrawDoc>(docUrl);
   const account = useCurrentAccount();
   const userId = account ? account.contactHandle.url : "no-account";
 

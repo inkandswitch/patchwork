@@ -1,4 +1,7 @@
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useDocHandle,
+} from "@automerge/automerge-repo-react-hooks";
 
 import { EditorProps, makeTool } from "@patchwork/sdk";
 import { next as A } from "@automerge/automerge";
@@ -27,7 +30,7 @@ export const DataGrid = ({
   annotations = [],
 }: EditorProps<DataGridDocAnchor, string>) => {
   const [latestDoc] = useDocument<DataGridDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const handle = useHandle<DataGridDoc>(docUrl)!; // TODO: JAH strict fix
+  const handle = useDocHandle<DataGridDoc>(docUrl)!; // TODO: JAH strict fix
 
   const doc = useMemo(
     () => (latestDoc && docHeads ? A.view(latestDoc, docHeads) : latestDoc),

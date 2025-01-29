@@ -96,25 +96,25 @@ export function useAutomergeStore({
 
     // hack skip loading from handle if doc is passed directly
     // for this tldraw should be in readonly mode otherwise this will break
-    Promise.resolve(
-      doc ?? handle.whenReady().then(() => handle.docSync())
-    ).then((doc) => {
-      if (!doc) throw new Error("Document not found");
-      if (!doc.store) throw new Error("Document store not initialized");
+    Promise.resolve(doc ?? handle.whenReady().then(() => handle.doc())).then(
+      (doc) => {
+        if (!doc) throw new Error("Document not found");
+        if (!doc.store) throw new Error("Document store not initialized");
 
-      store.mergeRemoteChanges(() => {
-        store.loadSnapshot({
-          store: automergeValueToTldrawValue(doc.store),
-          schema: automergeValueToTldrawValue(doc.schema),
+        store.mergeRemoteChanges(() => {
+          store.loadSnapshot({
+            store: automergeValueToTldrawValue(doc.store),
+            schema: automergeValueToTldrawValue(doc.schema),
+          });
         });
-      });
 
-      setStoreWithStatus({
-        store,
-        status: "synced-remote",
-        connectionStatus: "online",
-      });
-    });
+        setStoreWithStatus({
+          store,
+          status: "synced-remote",
+          connectionStatus: "online",
+        });
+      }
+    );
 
     return () => {
       unsubs.forEach((fn) => fn());
@@ -164,7 +164,10 @@ export function useAutomergePresence({
       .get()
       .sort(sortById)
       .map((record: TLRecord) => record.id)
-      .filter((id: RecordId<UnknownRecord>) => !toPut.find((record) => record.id === id));
+      .filter(
+        (id: RecordId<UnknownRecord>) =>
+          !toPut.find((record) => record.id === id)
+      );
 
     if (toRemove.length) innerStore.remove(toRemove);
     if (toPut.length) innerStore.put(toPut);

@@ -33,7 +33,7 @@ export async function waitForSync(
     handlesToWaitOn.map(
       (handle) =>
         new Promise((resolve) => {
-          const newHeads = A.getHeads(handle.docSync()!); // TODO: JAH strict fix
+          const newHeads = A.getHeads(handle.doc());
           const remoteHeads = handle.getRemoteHeads(syncServerStorageId);
 
           // If the remote heads are already up to date, we can resolve immediately.

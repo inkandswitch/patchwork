@@ -20,8 +20,7 @@ export class DeprecateLinkType extends DocMigration {
     handle: DocHandle<OldLinkFileDoc>,
     repo: Repo
   ): Promise<boolean> {
-    const doc = await handle.doc();
-    if (!doc) return false;
+    const doc = handle.doc();
 
     // Check if document has old-style link content
     return doc.content?.type === "link";
@@ -33,10 +32,7 @@ export class DeprecateLinkType extends DocMigration {
   ): Promise<void> {
     console.log("Starting migration for file");
 
-    const doc = await handle.doc();
-    if (!doc) {
-      throw new Error("File document not found");
-    }
+    const doc = handle.doc();
 
     // Get the URL from the old document
     const url = doc.content.url;

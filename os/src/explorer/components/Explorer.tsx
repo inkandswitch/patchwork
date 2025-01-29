@@ -9,8 +9,8 @@ import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import {
   useDocument,
-  useHandle,
   useRepo,
+  useDocHandleWithUndefined,
 } from "@automerge/automerge-repo-react-hooks";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
@@ -28,7 +28,7 @@ import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
 import { useToolsForDataType, useTool } from "@patchwork/sdk/hooks";
 import { useModuleWatcher } from "../hooks/useModuleWatcher";
-import { DocHandle } from "@automerge/automerge-repo";
+import { DocHandle, UrlHeads } from "@automerge/automerge-repo";
 import { addNewDocument } from "../docActions";
 import { removeDocPath } from "../docActions";
 import { NoDocumentSelected } from "./NoDocumentSelected";
@@ -46,7 +46,7 @@ const useRunMigrationsOnceOnLoad = ({
 }) => {
   const repo = useRepo();
   const hasRunForCurrentHandle = useRef<string | null>(null);
-
+  const doc = handle?.doc();
   useEffect(() => {
     // Reset tracking when handle changes
     if (!handle || !dataType) {
@@ -54,11 +54,10 @@ const useRunMigrationsOnceOnLoad = ({
       return;
     }
 
-    const docSync = handle.docSync();
     const handleId = handle.url;
 
     // Only run if we have a docSync and haven't run for this handle yet
-    if (docSync && hasRunForCurrentHandle.current !== handleId) {
+    if (doc && hasRunForCurrentHandle.current !== handleId) {
       (async () => {
         if (!dataType.migrations) return;
         for (const migration of dataType.migrations) {
@@ -73,7 +72,7 @@ const useRunMigrationsOnceOnLoad = ({
 
       hasRunForCurrentHandle.current = handleId;
     }
-  }, [handle, handle?.docSync(), dataType, repo]);
+  }, [handle, doc, dataType, repo]);
 };
 
 export const Explorer: React.FC = () => {
@@ -95,7 +94,9 @@ export const Explorer: React.FC = () => {
 
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocHandle =
-    useHandle<HasVersionControlMetadata<unknown, unknown>>(selectedDocUrl);
+    useDocHandleWithUndefined<HasVersionControlMetadata<unknown, unknown>>(
+      selectedDocUrl
+    );
   const [selectedDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(selectedDocUrl);
 

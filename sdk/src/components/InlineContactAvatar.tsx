@@ -1,6 +1,10 @@
 import { ContactDoc, RegisteredContactDoc } from "..";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useDocHandle,
+  useDocHandleWithUndefined,
+} from "@automerge/automerge-repo-react-hooks";
 import { VariantProps } from "class-variance-authority";
 import {
   Avatar,
@@ -33,7 +37,7 @@ export const InlineContactAvatar = ({
       ? maybeAnonymousContact
       : registeredContact;
 
-  const avatarHandle = useHandle(contact?.avatarUrl);
+  const avatarHandle = useDocHandleWithUndefined(contact?.avatarUrl);
   const avatarImgUrl =
     avatarHandle && fileHandleToServiceWorkerUrl(avatarHandle);
 

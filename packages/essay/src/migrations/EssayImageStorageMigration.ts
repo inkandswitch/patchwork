@@ -23,8 +23,7 @@ export class EssayImageStorageMigration extends DocMigration {
     handle: DocHandle<OldMarkdownDoc>,
     repo: Repo
   ): Promise<boolean> {
-    const doc = await handle.doc();
-    if (!doc) return false;
+    const doc = handle.doc();
 
     // Check if document has old-style image links
     const imageRegex = /!\[([^\]]*)\]\(\.\/assets\/([^)]+)\)/;
@@ -37,10 +36,7 @@ export class EssayImageStorageMigration extends DocMigration {
   ): Promise<void> {
     console.log("Starting migration for essay");
 
-    const doc = await handle.doc();
-    if (!doc) {
-      throw new Error("Essay document not found");
-    }
+    const doc = handle.doc();
 
     // Get the assets document
     const assetsUrl = doc.assetsDocUrl;
@@ -49,12 +45,8 @@ export class EssayImageStorageMigration extends DocMigration {
       return;
     }
 
-    const assetsHandle = repo.find<AssetsDoc>(assetsUrl);
-    const assets = await assetsHandle.doc();
-
-    if (!assets) {
-      throw new Error("Assets document not found");
-    }
+    const assetsHandle = await repo.find<AssetsDoc>(assetsUrl);
+    const assets = assetsHandle.doc();
 
     console.log("Found assets document with files:", Object.keys(assets.files));
 

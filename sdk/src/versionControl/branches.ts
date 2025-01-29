@@ -34,10 +34,10 @@ export const createBranch = async <
   createdBy: AutomergeUrl | undefined;
   name?: string;
 }): Promise<DocHandle<BranchDoc>> => {
-  const versionControlMetadataHandle = ensureMetadataHandleIsBranchScope(
-    getVersionControlMetadataHandle(branchScopeHandle, repo)
-  );
-  const versionControlMetadataDoc = await versionControlMetadataHandle.doc();
+  const result = await getVersionControlMetadataHandle(branchScopeHandle, repo);
+  const versionControlMetadataHandle =
+    ensureMetadataHandleIsBranchScope(result);
+  const versionControlMetadataDoc = versionControlMetadataHandle.doc();
 
   if (!versionControlMetadataDoc) {
     throw new Error(
@@ -78,10 +78,7 @@ export const cloneDocWithLinks = async (
   }
 
   // clone self
-  const doc = await handle.doc();
-  if (!doc) {
-    throw new Error(`Document missing at ${handle.url}`);
-  }
+  const doc = handle.doc();
   const cloneHandle = repo.clone(handle);
   docCloneMap[handle.url] = {
     url: cloneHandle.url,
@@ -91,11 +88,11 @@ export const cloneDocWithLinks = async (
   // clone links
   const links = dataTypeById(dataTypeId)?.links;
   if (links) {
-    const doc = await handle.doc();
+    const doc = handle.doc();
     const links_ = links(doc);
     await Promise.all(
       links_.map(async (link) => {
-        const handle = repo.find(link.url);
+        const handle = await repo.find(link.url);
         await cloneDocWithLinks(repo, handle, link.type, docCloneMap);
       })
     );
@@ -112,22 +109,14 @@ export const mergeBranch = async ({
   mergedBy: AutomergeUrl;
 }) => {
   const mergeHeadsByDocUrl: Record<string, A.Heads> = {};
-
   const doc = await branchHandle.doc();
-
-  if (!doc) {
-    throw new Error(`can't load branch ${branchHandle.url}`);
-  }
 
   await Promise.all(
     Object.entries(doc.clones).map(async ([originalDocUrl, { url }]) => {
-      const originalHandle = repo.find(originalDocUrl as AutomergeUrl);
-      const cloneHandle = repo.find(url);
+      const originalHandle = await repo.find(originalDocUrl as AutomergeUrl);
+      const cloneHandle = await repo.find(url);
 
-      await originalHandle.whenReady();
-      await cloneHandle.whenReady();
-
-      mergeHeadsByDocUrl[originalDocUrl] = A.getHeads(cloneHandle.docSync()!); // todo: ts strict
+      mergeHeadsByDocUrl[originalDocUrl] = A.getHeads(cloneHandle.doc());
 
       originalHandle.merge(cloneHandle);
     })
@@ -307,7 +296,7 @@ export const hasLegacyBranchesToMigrate = async ({
   // this is gross - we need to re-fetch the version control metadata doc
   // because this can get called multiple times with stale data.
   const latestBranchScopeVersionControlMetadata =
-    branchScopeAndActiveBranchInfo.branchScopeVersionControlMetadataOm?.handle.docSync() as
+    branchScopeAndActiveBranchInfo.branchScopeVersionControlMetadataOm?.handle.doc() as
       | A.Doc<VersionControlSidecarDoc & { isBranchScope: true }>
       | undefined;
 

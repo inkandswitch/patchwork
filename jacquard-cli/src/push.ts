@@ -120,7 +120,7 @@ export async function push(
           return {
             docUrl: mainUrl,
             path: inputPath,
-            heads: A.getHeads(cloneHandle.docSync()!), // TODO: JAH strict fix
+            heads: A.getHeads(cloneHandle.doc()),
           };
         }),
         outputs: runResult.outputs.map((outputPath) => {
@@ -133,7 +133,7 @@ export async function push(
           return {
             docUrl: mainUrl,
             path: outputPath,
-            heads: A.getHeads(cloneHandle.docSync()!), // TODO: JAH strict fix
+            heads: A.getHeads(cloneHandle.doc()),
           };
         }),
       });
@@ -149,9 +149,10 @@ export async function push(
     // Use command line arg if provided, otherwise fall back to stored value
     const targetParentFolderUrl = parentFolderUrl || getStoredParentFolderUrl();
     if (targetParentFolderUrl) {
-      const parentFolderHandle = repo.find<FolderDoc>(targetParentFolderUrl);
-      await parentFolderHandle.whenReady();
-      const folderDoc = await folderHandle.doc();
+      const parentFolderHandle = await repo.find<FolderDoc>(
+        targetParentFolderUrl
+      );
+      const folderDoc = folderHandle.doc();
       if (!folderDoc) {
         // Skip if folder doc not found
         return;
@@ -318,7 +319,7 @@ async function findOrCreateBuildMetadataHandle(
   let buildMetadataHandle: DocHandle<JacquardBuildMetadata>;
 
   // TODO: feels weird to ID the build metadata doc by name like this
-  const folderDoc = folderHandle.docSync();
+  const folderDoc = folderHandle.doc();
   if (!folderDoc) {
     throw new Error(`Folder doc missing: ${folderHandle.url}`);
   }

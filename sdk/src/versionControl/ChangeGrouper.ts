@@ -61,7 +61,7 @@ export class ChangeGrouper<
     this.decodedChanges = [];
 
     // Get change groups using initial state of the doc.
-    if (handle.docSync()) {
+    if (handle.doc()) {
       this.populateItems();
     }
 
@@ -85,7 +85,7 @@ export class ChangeGrouper<
 
   // Recompute changelog items for the current state of the doc
   private populateItems() {
-    const doc = this.handle.docSync();
+    const doc = this.handle.doc();
 
     if (!doc) {
       console.warn(`Can't load doc ${this.handle.url}`);

@@ -38,7 +38,7 @@ export const FileEditor = (props: EditorProps<any, any>) => {
 
   const [_doc] = useDocument<FileDoc>(docUrl);
 
-  const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
+  const doc = _doc && docHeads ? Automerge.view<FileDoc>(_doc, docHeads) : _doc;
 
   const repo = useRepo();
   const account = useCurrentAccount();

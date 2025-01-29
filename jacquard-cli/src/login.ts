@@ -37,8 +37,8 @@ export async function login(repo: Repo, args: CommandLineArgs) {
   }
 
   // Verify the account exists by trying to load it
-  const accountHandle = repo.find<AccountDoc>(automergeUrl);
-  const accountDoc = await accountHandle.doc();
+  const accountHandle = await repo.find<AccountDoc>(automergeUrl);
+  const accountDoc = accountHandle.doc();
 
   if (!accountDoc) {
     console.error(

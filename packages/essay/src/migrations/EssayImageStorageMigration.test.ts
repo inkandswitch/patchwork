@@ -44,7 +44,7 @@ describe("EssayImageStorageMigration", () => {
   it("should migrate images to new format", async () => {
     await migration.runMigration(essayHandle, repo);
 
-    const essay = await essayHandle.doc();
+    const essay = essayHandle.doc();
     expect(essay.content).toMatch(/\!\[test\]\(\.\/automerge\/[a-zA-Z0-9]+\)/);
     expect(essay.content).toMatch(
       /\!\[another\]\(\.\/automerge\/[a-zA-Z0-9]+\)/
@@ -54,12 +54,12 @@ describe("EssayImageStorageMigration", () => {
   it("should create file documents with correct content", async () => {
     await migration.runMigration(essayHandle, repo);
 
-    const essay = await essayHandle.doc();
+    const essay = essayHandle.doc();
     const fileUrls = essay.content.match(/automerge:[a-zA-Z0-9]+/g) || [];
 
     for (const url of fileUrls) {
-      const fileHandle = repo.find<any>(url);
-      const fileDoc = await fileHandle.doc();
+      const fileHandle = await repo.find<any>(url);
+      const fileDoc = fileHandle.doc();
       expect(fileDoc).toBeDefined();
       expect(fileDoc?.content.type).toBe("binary");
     }

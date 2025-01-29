@@ -176,9 +176,8 @@ self.addEventListener("fetch", async (event) => {
 
     event.respondWith(
       (async () => {
-        const handle = (await repo).find(automergeUrl);
-        await handle.whenReady();
-        let doc = await handle.doc();
+        const handle = await (await repo).find(automergeUrl);
+        let doc = handle.doc();
 
         if (!doc) {
           return new Response(
@@ -211,7 +210,7 @@ self.addEventListener("fetch", async (event) => {
             Date.now() - startTime < TIMEOUT_MS
           ) {
             await new Promise((resolve) => setTimeout(resolve, INTERVAL_MS));
-            doc = handle.docSync();
+            doc = handle.doc();
           }
 
           if (!headsEqual(doc, queryHeads)) {

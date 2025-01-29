@@ -220,7 +220,7 @@ export const getMarkersForDoc = <T extends HasVersionControlMetadata>(
   handle: DocHandle<T>,
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfoWithoutDoc
 ): HeadsMarker<T>[] => {
-  const doc = handle.docSync();
+  const doc = handle.doc();
 
   if (!doc) return [];
   let markers: HeadsMarker<T>[] = [];

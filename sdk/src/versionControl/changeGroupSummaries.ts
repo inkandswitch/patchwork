@@ -26,16 +26,16 @@ export const populateChangeGroupSummaries = async <
   }) => string;
   repo: Repo;
 }) => {
-  let versionControlMetadataUrl = handle.docSync()?.versionControlMetadataUrl;
+  let versionControlMetadataUrl = handle.doc()?.versionControlMetadataUrl;
   if (!versionControlMetadataUrl) {
     // init sidecar doc for backwards compatibility
     handle.change((doc) => {
       initVersionControlSidecarDoc(doc, repo);
     });
-    versionControlMetadataUrl = handle.docSync()?.versionControlMetadataUrl;
+    versionControlMetadataUrl = handle.doc()?.versionControlMetadataUrl;
   }
 
-  const versionControlSidecarHandle = repo.find<HasChangeGroupSummaries>(
+  const versionControlSidecarHandle = await repo.find<HasChangeGroupSummaries>(
     versionControlMetadataUrl!
   );
   if (!versionControlSidecarHandle) {
@@ -55,7 +55,7 @@ export const populateChangeGroupSummaries = async <
   for (const [index, group] of groups.entries()) {
     if (
       !force &&
-      versionControlSidecarHandle.docSync()!.changeGroupSummaries[group.id]
+      versionControlSidecarHandle.doc()!.changeGroupSummaries[group.id]
     ) {
       continue;
     }

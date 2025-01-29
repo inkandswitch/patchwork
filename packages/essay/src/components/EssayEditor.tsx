@@ -14,7 +14,7 @@ import { EditorProps } from "@patchwork/sdk";
 import { uniq } from "lodash";
 import "../index.css";
 
-import { useHandleDef } from "@patchwork/sdk/hooks";
+import { useDocHandleDef } from "@patchwork/sdk/hooks";
 import {
   TextAnchor,
   useResolvedAnnotationAtPath,
@@ -40,7 +40,7 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const [hasEditorFocus, setHasEditorFocus] = useState(false);
   const [selection, setSelection] = useState<TextSelection>();
   const [_doc] = useDocument<MarkdownDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const handle = useHandleDef<MarkdownDoc>(docUrl);
+  const handle = useDocHandleDef<MarkdownDoc>(docUrl);
   const [editorView, setEditorView] = useState<EditorView>();
   const [editorContainer, setEditorContainer] = useState<HTMLDivElement | null>(
     null

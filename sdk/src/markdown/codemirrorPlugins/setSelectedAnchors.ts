@@ -45,7 +45,7 @@ export function selectedAnchorsPlugin({
               }))
             );
           } else {
-            const doc = handle.docSync();
+            const doc = handle.doc();
             if (!doc) {
               return;
             }

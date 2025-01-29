@@ -5,6 +5,7 @@ import {
   DocHandle,
   PeerId,
   Repo,
+  UrlHeads,
 } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 
@@ -171,12 +172,16 @@ DocHandle.prototype.change = function <T>(
     message: JSON.stringify({ author }),
     ...options,
   };
-  oldChange.call(this, callback, optionsWithAttribution);
+  oldChange.call(
+    this,
+    callback,
+    optionsWithAttribution as A.ChangeOptions<any>
+  );
 };
 
 const oldChangeAt = DocHandle.prototype.changeAt;
 DocHandle.prototype.changeAt = function <T>(
-  heads: A.Heads,
+  heads: UrlHeads,
   callback: A.ChangeFn<T>,
   options: A.ChangeOptions<T> = {}
 ) {
@@ -185,7 +190,12 @@ DocHandle.prototype.changeAt = function <T>(
     message: JSON.stringify({ author }),
     ...options,
   };
-  return oldChangeAt.call(this, heads, callback, optionsWithAttribution);
+  return oldChangeAt.call(
+    this,
+    heads,
+    callback,
+    optionsWithAttribution as A.ChangeOptions<any>
+  );
 };
 
 // @ts-expect-error - adding property to window

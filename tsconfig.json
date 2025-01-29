@@ -25,7 +25,6 @@
       "@patchwork/folder/*": ["./packages/folder/src/*"],
       "@patchwork/sdk": ["./sdk/src"],
       "@patchwork/sdk/*": ["./sdk/src/*"],
-      "@automerge/automerge-wasm": ["./os/src/vendor/automerge-wasm/index.d.ts"]
     }
 
     /* Linting */

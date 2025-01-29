@@ -289,12 +289,8 @@ export const initVersionControlSidecarDoc = (
 export const getVersionControlMetadataHandle = (
   handle: DocHandle<any>,
   repo: Repo
-): DocHandle<VersionControlSidecarDoc> => {
-  const doc = handle.docSync();
-
-  if (!doc) {
-    throw new Error(`document is not available ${handle.url}`);
-  }
+): Promise<DocHandle<VersionControlSidecarDoc>> => {
+  const doc = handle.doc();
 
   let versionControlMetadataUrl = doc.versionControlMetadataUrl;
   if (!versionControlMetadataUrl) {

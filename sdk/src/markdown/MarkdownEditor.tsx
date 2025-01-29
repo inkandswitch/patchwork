@@ -21,7 +21,7 @@ export const MarkdownEditor = ({ handle, path }: MarkdownEditorProps) => {
       return;
     }
 
-    const doc = handle.docSync();
+    const doc = handle.doc();
     const view = new EditorView({
       doc: get(doc, path) ?? "",
       extensions: [

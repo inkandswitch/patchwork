@@ -7,10 +7,10 @@ class ModuleWatcherManager {
   private _watcher: ModuleWatcher | null = null;
 
   constructor(account: Account, repo: Repo) {
-    const moduleSettingsUrl = account.handle.docSync()?.moduleSettingsUrl;
+    const moduleSettingsUrl = account.handle.doc()?.moduleSettingsUrl;
     if (moduleSettingsUrl) {
       this._watcher = new ModuleWatcher(
-        repo.find(moduleSettingsUrl),
+        moduleSettingsUrl,
         BUNDLED_MODULES,
         repo
       );

@@ -11,16 +11,16 @@ export async function whoami(repo: Repo, args: CommandLineArgs) {
     process.exit(1);
   }
 
-  const accountHandle = repo.find<AccountDoc>(accountUrl);
-  const accountDoc = await accountHandle.doc();
+  const accountHandle = await repo.find<AccountDoc>(accountUrl);
+  const accountDoc = accountHandle.doc();
 
   if (!accountDoc) {
     console.error("Account not found. Please log in again.");
     process.exit(1);
   }
 
-  const contactHandle = repo.find<ContactDoc>(accountDoc.contactUrl);
-  const contactDoc = await contactHandle.doc();
+  const contactHandle = await repo.find<ContactDoc>(accountDoc.contactUrl);
+  const contactDoc = contactHandle.doc();
 
   if (!contactDoc) {
     console.error("Contact information not found. Please log in again.");

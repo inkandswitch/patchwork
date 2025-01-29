@@ -8,6 +8,7 @@ import {
 import { registerImportMethod, ImportMethod } from "@patchwork/sdk";
 import { registerExportMethod, ExportMethod } from "@patchwork/sdk";
 import {
+  AutomergeUrl,
   DocHandle,
   DocumentId,
   isValidAutomergeUrl,
@@ -22,16 +23,18 @@ import { importModuleFromFolderDocUrl } from "./utils";
 
 export class ModuleWatcher {
   constructor(
-    private moduleSettingsHandle: DocHandle<ModuleSettingsDoc>,
+    private moduleSettingsUrl: AutomergeUrl,
     private baselineModules: string[],
     private repo: Repo
   ) {
     this.doneLoading = this.init();
   }
 
+  moduleSettingsHandle: DocHandle<ModuleSettingsDoc> | undefined;
   doneLoading: Promise<void>;
 
   private async init() {
+    this.moduleSettingsHandle = await this.repo.find(this.moduleSettingsUrl);
     await this.loadModules(this.baselineModules);
     this.moduleSettingsHandle.on("change", () =>
       this.load().catch(console.error)
@@ -100,27 +103,24 @@ export class ModuleWatcher {
     // This is probably a built-in, which is fine!
     if (!docUrl) return;
 
-    const handle = this.repo.find(docUrl);
-    if (!handle) return console.warn(`No handle found for docUrl ${docUrl}`);
-
-    handle.on("change", async () => {
-      // Note that because the heads are going into a query parameter,
-      // modules loaded *below* this one will not be reloaded unless their filename has changed.
-      const versionedImport = `${importName}`;
-      // This needs heads support in AutomergeUrl
-      /* ?heads=${(
-        handle.heads() || []
-      ).join(",")} */
-      this.registerModule(versionedImport);
+    this.repo.find(docUrl).then((handle) => {
+      handle.on("change", async () => {
+        // Note that because the heads are going into a query parameter,
+        // modules loaded *below* this one will not be reloaded unless their filename has changed.
+        const versionedImport = `${importName}`;
+        // This needs heads support in AutomergeUrl
+        /* ?heads=${(
+          handle.heads() || []
+        ).join(",")} */
+        this.registerModule(versionedImport);
+      });
     });
   }
 
   private async load() {
-    const doc = await this.moduleSettingsHandle.doc().catch((err) => {
-      console.error("Error loading moduleSettingsDoc", err);
-      return null;
-    });
-    if (!doc) return;
+    if (!this.moduleSettingsHandle) throw new Error("No moduleSettingsHandle");
+
+    const doc = this.moduleSettingsHandle.doc();
 
     const { modules = [] } = doc;
     await this.loadModules(modules);

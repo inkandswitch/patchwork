@@ -83,9 +83,8 @@ function getTabDocUIStateAtom(
     TAB_DOC_UI_STATE_SIGNALS[key] = signal;
 
     // Initialize the signal from Automerge.
-    uiStateHandle.doc().then((uiStateDoc) => {
-      signal.set(uiStateDoc?.docUIStates?.[key] ?? defaultDocUIState());
-    });
+    const uiStateDoc = uiStateHandle.doc();
+    signal.set(uiStateDoc.docUIStates?.[key] ?? defaultDocUIState());
   }
   return TAB_DOC_UI_STATE_SIGNALS[key];
 }
@@ -128,7 +127,7 @@ export const useDocUIStateOrUndefined = (
       });
 
       // Record the result in the local state
-      const newUIStateDoc = uiStateHandle.docSync();
+      const newUIStateDoc = uiStateHandle.doc();
       if (!newUIStateDoc) {
         throw new Error(
           "internal error: doc should be loaded immediately after change"

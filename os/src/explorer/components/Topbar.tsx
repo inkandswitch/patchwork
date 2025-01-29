@@ -97,7 +97,7 @@ export const Topbar: React.FC<TopbarProps> = ({
     if (docHeadsFromTimelineSidebar) {
       newHandle = repo.create<HasVersionControlMetadata>();
 
-      const originalDoc = await selectedDocHandle.doc();
+      const originalDoc = selectedDocHandle.doc();
 
       if (!originalDoc) {
         throw new Error("can't load doc");
@@ -134,17 +134,17 @@ export const Topbar: React.FC<TopbarProps> = ({
 
     const newDocLink = {
       url: newHandle.url,
-      name: await selectedDataType.getTitle(newHandle.docSync(), repo),
+      name: await selectedDataType.getTitle(newHandle.doc(), repo),
       type: selectedDocLink.type,
     };
 
     const folderDocPath = DocPathUtils.parent(selectedDocPath);
 
     if (!docHeadsFromTimelineSidebar) {
-      const folderHandle = repo.find<FolderDoc>(
+      const folderHandle = await repo.find<FolderDoc>(
         DocPathUtils.toLink(folderDocPath).url
       );
-      const folderDoc = await folderHandle.doc();
+      const folderDoc = folderHandle.doc();
       const index = folderDoc!.docs.findIndex(
         (doc) => doc.url === selectedDocUrl
       );

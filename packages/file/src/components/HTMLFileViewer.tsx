@@ -18,7 +18,8 @@ export const HTMLFileViewer = ({
 }: EditorProps<HTMLFileDoc, never>) => {
   const [_doc] = useDocument<HTMLFileDoc>(docUrl);
 
-  const doc = _doc && docHeads ? Automerge.view(_doc, docHeads) : _doc;
+  const doc =
+    _doc && docHeads ? Automerge.view<HTMLFileDoc>(_doc, docHeads) : _doc;
 
   const textData = useMemo(() => {
     if (!doc) {

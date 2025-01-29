@@ -60,9 +60,8 @@ export const AccountPicker = ({
   const [isCopyTooltipOpen, setIsCopyTooltipOpen] = useState(false);
 
   const [accountTokenToLogin, setAccountTokenToLogin] = useState<string>("");
-  const accountAutomergeUrlToLogin = accountTokenToLogin
-    ? accountTokenToAutomergeUrl(accountTokenToLogin)
-    : undefined;
+  const accountAutomergeUrlToLogin =
+    accountTokenToAutomergeUrl(accountTokenToLogin);
 
   const [accountToLogin] = useDocument<AccountDoc>(accountAutomergeUrlToLogin);
   const [contactToLogin] = useDocument<ContactDoc>(accountToLogin?.contactUrl);

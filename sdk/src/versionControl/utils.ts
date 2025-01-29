@@ -1,10 +1,13 @@
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useDocHandle,
+} from "@automerge/automerge-repo-react-hooks";
 import { next as A } from "@automerge/automerge";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { DiffWithProvenance } from "./schema";
-import { useHandleDef } from "../hooks/useHandleDef";
+import { useDocHandleDef } from "../hooks/useDocHandleDef";
 
 // Turns hashes (eg for changes and actors) into colors for scannability
 export const hashToColor = (hash: string) => {
@@ -45,11 +48,15 @@ export const diffWithProvenance = (
 export const useActorIdToAuthorMap = (
   url: AutomergeUrl
 ): Record<A.ActorId, AutomergeUrl> => {
-  const handle = useHandleDef<any>(url);
+  const handle = useDocHandle<any>(url);
   const forceUpdate = useForceUpdate();
   const actorIdToAuthorRef = useRef<Record<A.ActorId, AutomergeUrl>>({});
 
   useEffect(() => {
+    if (!handle) {
+      return;
+    }
+
     let lastHeads: A.Heads;
 
     const addChangesToActorIdMap = (changes: A.Change[]) => {
@@ -72,20 +79,16 @@ export const useActorIdToAuthorMap = (
       forceUpdate();
     };
 
-    handle.doc().then((doc) => {
-      if (!doc) {
-        return;
-      } // TODO: JAH strict fix
-      lastHeads = A.getHeads(doc);
-      addChangesToActorIdMap(A.getAllChanges(doc));
-    });
+    const doc = handle.doc();
+    lastHeads = A.getHeads(doc);
+    addChangesToActorIdMap(A.getAllChanges(doc));
 
     const onChange = () => {
       if (!lastHeads) {
         return;
       }
 
-      const doc = handle.docSync()!; // TODO: JAH strict fix
+      const doc = handle.doc();
       const changes = A.getChanges(A.view(doc, lastHeads), doc);
       lastHeads = A.getHeads(doc);
       addChangesToActorIdMap(changes);

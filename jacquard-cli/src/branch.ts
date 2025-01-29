@@ -16,9 +16,11 @@ export const listBranches = async (repo: Repo, args: CommandLineArgs) => {
     return;
   }
   console.log("loading branches for project folder", projectFolderUrl);
-  const projectFolderDoc = await repo
-    .find<HasVersionControlMetadata<unknown, unknown>>(projectFolderUrl)
-    .doc();
+  const projectFolderDoc = (
+    await repo.find<HasVersionControlMetadata<unknown, unknown>>(
+      projectFolderUrl
+    )
+  ).doc();
   if (!projectFolderDoc) {
     throw new Error(`Project folder doc missing: ${projectFolderUrl}`);
   }
@@ -31,9 +33,9 @@ export const listBranches = async (repo: Repo, args: CommandLineArgs) => {
     return;
   }
 
-  const versionControlMetadataDoc = await repo
-    .find<VersionControlSidecarDoc>(versionControlMetadataUrl)
-    .doc();
+  const versionControlMetadataDoc = (
+    await repo.find<VersionControlSidecarDoc>(versionControlMetadataUrl)
+  ).doc();
   if (!versionControlMetadataDoc) {
     throw new Error(
       `Version control metadata doc missing: ${versionControlMetadataUrl}`
@@ -49,7 +51,7 @@ export const listBranches = async (repo: Repo, args: CommandLineArgs) => {
   const branches = await Promise.all(
     branchUrls.map(async (url) => ({
       url,
-      branchDoc: await repo.find<BranchDoc>(url).doc(),
+      branchDoc: (await repo.find<BranchDoc>(url)).doc(),
     }))
   );
   if (branches.length === 0) {
@@ -81,7 +83,9 @@ export const listBranches = async (repo: Repo, args: CommandLineArgs) => {
       );
     }
     if (branchDoc.createdBy) {
-      const contactDoc = await repo.find<ContactDoc>(branchDoc.createdBy).doc();
+      const contactDoc = (
+        await repo.find<ContactDoc>(branchDoc.createdBy)
+      ).doc();
       if (!contactDoc) {
         console.log(`  Created by: <contact doc missing>`);
       } else if (contactDoc.type === "registered") {

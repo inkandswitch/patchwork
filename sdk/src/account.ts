@@ -76,8 +76,8 @@ export class Account extends EventEmitter<AccountEvents> {
         const newAccountUrl = event.newValue as AutomergeUrl;
 
         // try to see if account is already loaded
-        const accountHandle = this.#repo.find<AccountDoc>(newAccountUrl);
-        const accountDoc = await accountHandle.doc();
+        const accountHandle = await this.#repo.find<AccountDoc>(newAccountUrl);
+        const accountDoc = accountHandle.doc();
         if (accountDoc?.contactUrl) {
           this.logIn(newAccountUrl);
           return;
@@ -97,13 +97,15 @@ export class Account extends EventEmitter<AccountEvents> {
     // override old accountUrl
     localStorage.setItem(ACCOUNT_URL_STORAGE_KEY, accountUrl);
 
-    const accountHandle = this.#repo.find<AccountDoc>(accountUrl);
-    const accountDoc = await accountHandle.doc();
+    const accountHandle = await this.#repo.find<AccountDoc>(accountUrl);
+    const accountDoc = accountHandle.doc();
     if (!accountDoc) {
       // TODO: JAH strict fix
       throw new Error(`Account not found: ${accountUrl}`);
     }
-    const contactHandle = this.#repo.find<ContactDoc>(accountDoc.contactUrl);
+    const contactHandle = await this.#repo.find<ContactDoc>(
+      accountDoc.contactUrl
+    );
 
     this.#contactHandle = contactHandle;
     this.#handle = accountHandle;
@@ -169,13 +171,13 @@ export async function getAccount(repo: Repo) {
   // try to load existing account
   if (accountUrl) {
     CURRENT_ACCOUNT = (async () => {
-      const accountHandle = repo.find<AccountDoc>(accountUrl);
-      const accountDoc = await accountHandle.doc();
+      const accountHandle = await repo.find<AccountDoc>(accountUrl);
+      const accountDoc = accountHandle.doc();
       if (!accountDoc) {
         // TODO: JAH strict fix
         throw new Error(`Account not found: ${accountUrl}`);
       }
-      const contactHandle = repo.find<ContactDoc>(accountDoc.contactUrl);
+      const contactHandle = await repo.find<ContactDoc>(accountDoc.contactUrl);
 
       return new Account(repo, accountHandle, contactHandle);
     })();
@@ -271,7 +273,7 @@ export function useCurrentAccount(): Account | undefined {
 
   // Add new fields to an old account doc that doesn't have one yet.
   // In the future, replace this with a more principled schema migration system.
-  const doc = account?.handle.docSync();
+  const doc = account?.handle.doc();
   useEffect(() => {
     if (account && doc && doc.rootFolderUrl === undefined) {
       const rootFolderHandle = repo.create<FolderDoc>();
@@ -321,10 +323,10 @@ export function useCurrentAccount(): Account | undefined {
       if (!avatarUrl) {
         return;
       }
-      const avatarHandle = repo.find<{ type: string; data: Uint8Array }>(
+      const avatarHandle = await repo.find<{ type: string; data: Uint8Array }>(
         avatarUrl
       );
-      const avatarDoc = await avatarHandle.doc();
+      const avatarDoc = avatarHandle.doc();
       if (!avatarDoc) {
         return;
       }

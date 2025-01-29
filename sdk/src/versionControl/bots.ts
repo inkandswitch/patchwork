@@ -152,7 +152,7 @@ If you call a tool, only make a single call.`,
     {
       role: "user",
       content: `Current document contents:
-${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
+${getPath(targetDocHandle.doc()!, path)}`, // TODO: JAH strict fix
     },
   ];
 
@@ -232,7 +232,7 @@ ${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
     updateBranchUrlForAssistantMessage(targetDocHandle);
 
     // Update on the newly created clone
-    const branchMetadataDoc = await branchMetadataHandle.doc();
+    const branchMetadataDoc = branchMetadataHandle.doc();
     if (!branchMetadataDoc) {
       throw new Error(`Branch metadata doc missing at ${branchUrl}`);
     }
@@ -240,7 +240,7 @@ ${getPath(targetDocHandle.docSync()!, path)}`, // TODO: JAH strict fix
     if (!cloneUrl) {
       throw new Error(`Clone URL missing for ${targetDocHandle.url}`);
     }
-    const cloneHandle = repo.find<HasBotChatHistory>(cloneUrl);
+    const cloneHandle = await repo.find<HasBotChatHistory>(cloneUrl);
     updateBranchUrlForAssistantMessage(cloneHandle);
 
     for (const edit of parsed.edits) {

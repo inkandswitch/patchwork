@@ -1,8 +1,8 @@
 import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, UrlHeads } from "@automerge/automerge-repo";
 import {
   useDocument,
-  useHandle,
+  useDocHandle,
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
 import React, { ReactNode, useEffect, useMemo, useRef, useState } from "react";
@@ -168,7 +168,7 @@ export const TimelineSidebar: React.FC<{
     useDocument<HasVersionControlMetadata<unknown, unknown>>(docUrl);
 
   const handle =
-    useHandle<HasVersionControlMetadata<unknown, unknown>>(docUrl)!; // TODO: JAH strict fix
+    useDocHandle<HasVersionControlMetadata<unknown, unknown>>(docUrl)!; // TODO: JAH strict fix
   const scrollerRef = useScrollToBottom(doc);
   const [showHiddenItems, setShowHiddenItems] = useState(false);
 

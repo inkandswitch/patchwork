@@ -50,26 +50,27 @@ function getDocSignal<T>(
   // Constructing the error here gives better stack traces
   const missingError = new DocMissingError(KEY as AutomergeUrl);
 
-  const handle = repo.find<T>(url);
-  handle.doc().then((doc) => {
-    if (doc) {
+  repo
+    .find<T>(url)
+    .then((handle) => {
+      const doc = handle.doc();
       signal.set(
         new AsyncState.Fulfilled(heads ? Automerge.view(doc, heads) : doc)
       );
-    } else {
-      signal.set(new AsyncState.Rejected(missingError));
-    }
-  });
 
-  // Subscribe to changes if heads are not provided
-  if (!heads) {
-    handle.on("change", (ev) => {
-      signal.set(new AsyncState.Fulfilled(ev.doc));
-    });
-    handle.on("delete", () => {
+      // Subscribe to changes if heads are not provided
+      if (!heads) {
+        handle.on("change", (ev) => {
+          signal.set(new AsyncState.Fulfilled(ev.doc));
+        });
+        handle.on("delete", () => {
+          signal.set(new AsyncState.Rejected(missingError));
+        });
+      }
+    })
+    .catch(() => {
       signal.set(new AsyncState.Rejected(missingError));
     });
-  }
 
   DOC_SIGNAL_CACHE.set(KEY, signal);
   return signal;
@@ -116,6 +117,8 @@ function getOmSignal<T>(
 
   const docSignal = getDocSignal<T>(url, repo, heads);
   const id = parseAutomergeUrl(url).documentId;
+
+  // TODO: this is a problem because we can't await the handle
   const handle = repo.find<T>(id);
   const omSignal = asyncComputed(() => {
     return { url, id, handle, doc: docSignal.value.fetch() };

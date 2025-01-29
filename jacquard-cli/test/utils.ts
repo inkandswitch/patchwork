@@ -32,8 +32,8 @@ export async function readPatchworkFolder(
   folderUrl: AutomergeUrl,
   repo: Repo
 ): Promise<PatchworkFolderSpec> {
-  const folderHandle = repo.find<FolderDoc>(folderUrl);
-  const folderDoc = await folderHandle.doc();
+  const folderHandle = await repo.find<FolderDoc>(folderUrl);
+  const folderDoc = folderHandle.doc();
   if (!folderDoc) {
     throw new Error("Folder doc not found");
   }
@@ -68,8 +68,8 @@ export async function readPatchworkDoc(
   type: string,
   repo: Repo
 ) {
-  const handle = repo.find(url);
-  const doc = await handle.doc();
+  const handle = await repo.find(url);
+  const doc = handle.doc();
   if (!doc) {
     throw new Error("Doc not found");
   }

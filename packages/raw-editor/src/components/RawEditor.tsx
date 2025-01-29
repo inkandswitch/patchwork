@@ -1,6 +1,9 @@
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useDocHandle,
+} from "@automerge/automerge-repo-react-hooks";
 import ReactJson, { InteractionProps } from "@microlink/react-json-view";
 import { useCallback, useState } from "react";
 import styles from "../rawEditor.module.css";
@@ -14,7 +17,7 @@ export const RawEditor = ({
   const [history, setHistory] = useState<AutomergeUrl[]>([]); // TODO: make these actual navigation effects? knapsack's design makes this tricky.
 
   const [doc, changeDoc] = useDocument(documentUrl);
-  const handle = useHandle(documentUrl);
+  const handle = useDocHandle(documentUrl);
 
   const onSelectAutomergeUrl = useCallback(
     (url: AutomergeUrl) => {
