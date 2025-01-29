@@ -1,11 +1,23 @@
 import { useMemo } from "react";
 import { FileDoc } from "./datatype";
 
+export const VIDEO_EXTENSIONS = ["mp4", "webm", "ogg"];
+export const IMAGE_EXTENSIONS = [
+  "svg",
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "bmp",
+];
+
 export const isImageFile = (doc: FileDoc) => {
-  // TODO: this is wrong, use the mimetype
-  return ["svg", "png", "jpg", "jpeg", "gif", "webp", "bmp"].includes(
-    doc.extension
-  );
+  return IMAGE_EXTENSIONS.includes(doc.extension);
+};
+
+export const isVideoFile = (doc: FileDoc) => {
+  return VIDEO_EXTENSIONS.includes(doc.extension);
 };
 
 export const useBinaryUrl = (value: Uint8Array | undefined) => {

@@ -10,6 +10,7 @@ import { universalExport } from "./exportMethods";
 export type { FileDoc };
 export { isBinaryFileDoc, isTextFileDoc } from "./datatype";
 export { isBinaryCheck } from "./isBinaryFile";
+export { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from "./utils";
 
 export const dataType: DataTypeDescription<FileDoc, TextAnchor, string> = {
   type: "patchwork:dataType",

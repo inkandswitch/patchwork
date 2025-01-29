@@ -22,10 +22,29 @@ import { useMemo } from "react";
 import { dragAndDropFilesPlugin } from "./codemirrorPlugins/dragAndDropFiles";
 import { dropCursor } from "./codemirrorPlugins/dropCursor";
 import { previewImagesPlugin } from "./codemirrorPlugins/previewMarkdownImages";
+import { previewVideosPlugin } from "./codemirrorPlugins/previewMarkdownVideos";
 
 import { fileHandleToServiceWorkerUrl, createDocFromFile } from "../files/";
 
 type MarkdownPluginsConfig = { docHandle?: DocHandle<unknown> };
+
+const createImageReference = async (
+  repo: Repo,
+  file: File
+): Promise<string> => {
+  const handle = await createDocFromFile(file, repo);
+  return `![${file.name}](${fileHandleToServiceWorkerUrl(handle)})`;
+};
+
+const createVideoReference = async (
+  repo: Repo,
+  file: File
+): Promise<string> => {
+  const handle = await createDocFromFile(file, repo);
+  return `<video controls src="${fileHandleToServiceWorkerUrl(
+    handle
+  )}"></video>`;
+};
 
 export const useMarkdownPlugins = ({
   docHandle,
@@ -53,22 +72,15 @@ export const useMarkdownPlugins = ({
       docHandle
         ? [
             dragAndDropFilesPlugin({
-              createFileReference: (file) =>
-                createFileReferenceInDoc(repo, file),
+              createImageReference: (file) => createImageReference(repo, file),
+              createVideoReference: (file) => createVideoReference(repo, file),
             }),
             previewImagesPlugin(docHandle, repo),
+            previewVideosPlugin(docHandle, repo),
           ]
         : [],
       codeMonospacePlugin,
       lineWrappingPlugin,
     ];
   }, [repo, docHandle]);
-};
-
-const createFileReferenceInDoc = async (
-  repo: Repo,
-  file: File
-): Promise<string | undefined> => {
-  const handle = await createDocFromFile(file, repo);
-  return `![](${fileHandleToServiceWorkerUrl(handle)})`;
 };
