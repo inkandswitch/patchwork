@@ -52,6 +52,7 @@ export const SHARED_MODULES = {
   "@patchwork/jacquard": "./jacquard/index.js",
   "@patchwork/jacquard/components": "./jacquard/components.js", // blerf
   "@patchwork/jacquard/hooks": "./jacquard/hooks.js",
+  "@patchwork/kanban": "./kanban/index.js",
   "@patchwork/my-tools": "./my-tools/index.js",
   "@patchwork/raw-editor": "./raw-editor/index.js",
   "@patchwork/tldraw": "./tldraw/index.js",
