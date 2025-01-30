@@ -78,6 +78,10 @@ const generateImportMapPlugin = (): Plugin => ({
     // in build mode generate import map
     const generator = new Generator({
       env: ["browser", "module"],
+      providers: {
+        "@automerge/automerge-repo": "nodemodules",
+        "@automerge/automerge-repo-react-hooks": "nodemodules",
+      },
     });
 
     for (const dep of SHARED_DEPENDENCIES) {
@@ -128,6 +132,7 @@ export default defineConfig({
     plugins: () => [wasm()],
   },
   build: {
+    minify: false,
     rollupOptions: {
       external: EXTERNAL_DEPENDENCIES,
       input: {

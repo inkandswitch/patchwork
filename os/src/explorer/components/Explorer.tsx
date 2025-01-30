@@ -10,7 +10,7 @@ import * as Automerge from "@automerge/automerge";
 import {
   useDocument,
   useRepo,
-  useDocHandleWithUndefined,
+  useDocHandle,
 } from "@automerge/automerge-repo-react-hooks";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
@@ -94,9 +94,7 @@ export const Explorer: React.FC = () => {
 
   const selectedDocUrl = selectedDocLink?.url;
   const selectedDocHandle =
-    useDocHandleWithUndefined<HasVersionControlMetadata<unknown, unknown>>(
-      selectedDocUrl
-    );
+    useDocHandle<HasVersionControlMetadata<unknown, unknown>>(selectedDocUrl);
   const [selectedDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(selectedDocUrl);
 
