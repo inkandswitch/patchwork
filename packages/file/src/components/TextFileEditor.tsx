@@ -1,5 +1,4 @@
 import { useToolUIState } from "@patchwork/sdk/router";
-import { useDocHandleDef } from "@patchwork/sdk/hooks";
 import {
   annotationsPlugin,
   hideLinesWithoutAnnotations,
@@ -18,7 +17,10 @@ import {
 } from "@patchwork/sdk/versionControl";
 import { next as Automerge } from "@automerge/automerge";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useDocHandle,
+} from "@automerge/automerge-repo-react-hooks";
 import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { json } from "@codemirror/lang-json";
@@ -71,7 +73,7 @@ export const TextFileEditor = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [editor, setEditor] = useState<EditorView>();
   const [_fileDoc] = useDocument<FileDoc>(docUrl);
-  const handle = useDocHandleDef<FileDoc>(docUrl);
+  const handle = useDocHandle<FileDoc>(docUrl);
 
   const fileDoc =
     docHeads && _fileDoc
@@ -111,6 +113,9 @@ export const TextFileEditor = ({
   const changeToolUIStateRef = useRefForCallback(changeToolUIState);
 
   const stableExtensions: Extension = useMemo(() => {
+    if (!handle) {
+      return [];
+    }
     return [
       suppressModEnter, // keep on top to take priority, or be classier someday
 
@@ -151,7 +156,7 @@ export const TextFileEditor = ({
   ]);
 
   const docDependentExtensions = useMemo(() => {
-    if (!fileDoc) {
+    if (!fileDoc || !handle) {
       return [];
     }
 

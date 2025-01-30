@@ -15,7 +15,6 @@ import "@tldraw/tldraw/tldraw.css";
 import { useAutomergeStore } from "../vendor/automerge-tldraw";
 import { useDiffStyling, useCameraSync, useAnchorEventListener } from "./hooks";
 import { TLDrawDocAnchor, TLDrawDoc } from "../datatype";
-import { useDocHandleDef } from "@patchwork/sdk/hooks";
 import { SideBySideProps } from "@patchwork/sdk/versionControl";
 
 interface TLDrawProps extends EditorProps<TLDrawDocAnchor, TLShape> {
@@ -33,7 +32,7 @@ export const TLDraw = ({
   setHoveredAnchor = () => {},
 }: TLDrawProps) => {
   useDocument<TLDrawDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const handle = useDocHandleDef<TLDrawDoc>(docUrl);
+  const handle = useDocHandle<TLDrawDoc>(docUrl);
   const account = useCurrentAccount();
   const userId = account ? account.contactHandle.url : "no-account";
 
@@ -44,6 +43,10 @@ export const TLDraw = ({
   );
 
   const [localCamera, setLocalCamera] = useState<TLCamera>();
+
+  if (!handle) {
+    return;
+  }
 
   const setCamera = (camera: TLCamera) => {
     if (onChangeCamera) {

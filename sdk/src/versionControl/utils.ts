@@ -7,7 +7,6 @@ import {
 import { next as A } from "@automerge/automerge";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { DiffWithProvenance } from "./schema";
-import { useDocHandleDef } from "../hooks/useDocHandleDef";
 
 // Turns hashes (eg for changes and actors) into colors for scannability
 export const hashToColor = (hash: string) => {

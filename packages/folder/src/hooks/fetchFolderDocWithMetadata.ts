@@ -1,5 +1,5 @@
 import {
-  DocMissingError,
+  DocHandleMissingError,
   fetchAwaitMissing,
   fetchMap,
   useAsyncComputed,
@@ -92,7 +92,7 @@ function fetchMaterializeFolderDoc(
     // If the doc is missing, return dummy data to unblock rendering something in the UI.
     // TODO: we could return an explicit marker that the doc is still loading and
     // figure out how to render that in the UI.
-    if (e instanceof DocMissingError) {
+    if (e instanceof DocHandleMissingError) {
       return {
         title: "Loading...",
         docs: [],

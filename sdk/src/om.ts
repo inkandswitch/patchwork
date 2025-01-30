@@ -8,10 +8,9 @@ import {
 } from "@automerge/automerge-repo";
 import {
   useDocument,
-  useDocuments,
-  useDocHandle,
+  useDocHandles,
   useRepo,
-  useDocHandleWithUndefined,
+  useDocHandle,
 } from "@automerge/automerge-repo-react-hooks";
 import { compact } from "lodash";
 
@@ -39,7 +38,7 @@ export function useOm<T>(omable: Omable<T> | undefined): Om<T> | undefined {
     ? omable
     : omable.url;
   const id = !url ? undefined : parseAutomergeUrl(url).documentId;
-  const handle = useDocHandleWithUndefined<T>(url);
+  const handle = useDocHandle<T>(url);
   const [doc] = useDocument<T>(url);
 
   return url && id && handle && doc && { url, id, handle, doc };
@@ -52,14 +51,16 @@ export function useOms<T>(
   const urls = omables.map(
     (omable) => omable && (typeof omable === "string" ? omable : omable.url)
   );
-  const ids = urls.map((url) => url && parseAutomergeUrl(url).documentId);
-  const handles = urls.map((url) => url && repo.find<T>(url));
-  const docs = useDocuments<T>(compact(urls));
+  const handles = useDocHandles(compact(urls));
 
-  return urls.map((url, i) => {
-    const id = ids[i];
-    const handle = handles[i];
-    const doc = id && docs[id];
-    return url && id && handle && doc && { url, id, handle, doc };
+  return Object.entries(handles).map(([url, handle]) => {
+    return (
+      handle && {
+        url: handle.url,
+        id: handle.documentId,
+        handle,
+        doc: handle.doc(),
+      }
+    );
   });
 }

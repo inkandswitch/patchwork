@@ -4,9 +4,9 @@
 // This is really a provisional solution to help the existing vite.configs as we figure out what to do next.
 
 export const SHARED_DEPENDENCIES = [
-  "@automerge/automerge",
   "@automerge/automerge-repo",
   "@automerge/automerge-repo-react-hooks",
+  "@automerge/automerge",
   "@codemirror/autocomplete",
   "@codemirror/commands",
   "@codemirror/lang-markdown",
@@ -20,6 +20,15 @@ export const SHARED_DEPENDENCIES = [
   "react-dom/client",
   "react-dom/server",
   "react/jsx-runtime",
+  "eventemitter3",
+  "uuid",
+  "fast-sha256",
+  "debug",
+  "cbor-x",
+  "bs58check",
+  "@automerge/automerge/slim",
+  "@automerge/automerge/slim/next",
+  "xstate",
 ];
 
 // Internal modules that are shared with dynamically loaded packages
@@ -43,7 +52,6 @@ export const SHARED_MODULES = {
   "@patchwork/jacquard": "./jacquard/index.js",
   "@patchwork/jacquard/components": "./jacquard/components.js", // blerf
   "@patchwork/jacquard/hooks": "./jacquard/hooks.js",
-  "@patchwork/kanban": "./kanban/index.js",
   "@patchwork/my-tools": "./my-tools/index.js",
   "@patchwork/raw-editor": "./raw-editor/index.js",
   "@patchwork/tldraw": "./tldraw/index.js",

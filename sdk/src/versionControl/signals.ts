@@ -5,7 +5,7 @@ import { DocLink, DocPath, DocPathUtils } from "@patchwork/folder";
 import { canBeUndef } from "../utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { fetchDoc, fetchMap, fetchOm } from "../async-signals";
+import { fetchDocHandle, fetchMap, fetchOm } from "../async-signals";
 import { DataType, dataTypeById } from "..";
 import {
   BranchDoc,
@@ -119,7 +119,7 @@ export const fetchAllLinkedDocLinks = (
   cloneMap?: DocCloneMap
 ): DocLink[] => {
   const mappedUrl = cloneMap ? cloneMap[url].url ?? url : url;
-  const doc = fetchDoc(mappedUrl, repo);
+  const doc = fetchDocHandle(mappedUrl, repo).doc();
 
   const links = dataTypeById(dataTypeId)?.links;
   if (!links) {
@@ -148,7 +148,7 @@ export const fetchResolveUrlOnFixedBranch = (
   baseHeads: Automerge.Heads | undefined;
 } => {
   const activeBranchDoc =
-    activeBranchUrl && fetchDoc<BranchDoc>(activeBranchUrl, repo);
+    activeBranchUrl && fetchDocHandle<BranchDoc>(activeBranchUrl, repo).doc();
   const cloneEntry = activeBranchDoc?.clones[url];
   return cloneEntry ?? { url, baseHeads: undefined };
 };

@@ -1,6 +1,9 @@
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useDocHandle,
+} from "@automerge/automerge-repo-react-hooks";
 import { MarkdownDocEditor, TextSelection } from "./MarkdownDocEditor";
 
 import { useEffect, useState } from "react";
@@ -14,7 +17,6 @@ import { EditorProps } from "@patchwork/sdk";
 import { uniq } from "lodash";
 import "../index.css";
 
-import { useDocHandleDef } from "@patchwork/sdk/hooks";
 import {
   TextAnchor,
   useResolvedAnnotationAtPath,
@@ -40,7 +42,7 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const [hasEditorFocus, setHasEditorFocus] = useState(false);
   const [selection, setSelection] = useState<TextSelection>();
   const [_doc] = useDocument<MarkdownDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const handle = useDocHandleDef<MarkdownDoc>(docUrl);
+  const handle = useDocHandle<MarkdownDoc>(docUrl);
   const [editorView, setEditorView] = useState<EditorView>();
   const [editorContainer, setEditorContainer] = useState<HTMLDivElement | null>(
     null
@@ -71,7 +73,7 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
     annotationGroups,
   });
 
-  if (!doc) {
+  if (!doc || !handle) {
     return null;
   }
 
