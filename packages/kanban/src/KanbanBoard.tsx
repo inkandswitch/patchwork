@@ -1,13 +1,15 @@
 import { EditorProps } from "@patchwork/sdk";
 import { next as A } from "@automerge/automerge";
-import { useDocument, useHandle } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useDocHandle,
+} from "@automerge/automerge-repo-react-hooks";
 import "animate.css/animate.min.css";
 import { createContext, useState } from "react";
 import IssueModal from "./components/IssueModal";
 import { KanbanBoardDoc } from "./datatype";
 import Board from "./pages/Board";
 import Issue from "./pages/Issue";
-import { useHandleDef } from "@patchwork/sdk/hooks";
 
 interface MenuContextInterface {
   showMenu: boolean;
@@ -24,10 +26,10 @@ export const KanbanBoard = ({
   const [showIssueModal, setShowIssueModal] = useState(false);
 
   const [_doc, changeDoc] = useDocument<KanbanBoardDoc>(docUrl);
-  const handle = useHandleDef<KanbanBoardDoc>(docUrl);
+  const handle = useDocHandle<KanbanBoardDoc>(docUrl);
   const [openIssueId, setOpenIssueId] = useState<string | undefined>();
 
-  if (!_doc) {
+  if (!_doc || !handle) {
     return;
   }
 

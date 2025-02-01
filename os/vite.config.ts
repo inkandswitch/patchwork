@@ -78,10 +78,6 @@ const generateImportMapPlugin = (): Plugin => ({
     // in build mode generate import map
     const generator = new Generator({
       env: ["browser", "module"],
-      providers: {
-        "@automerge/automerge-repo": "nodemodules",
-        "@automerge/automerge-repo-react-hooks": "nodemodules",
-      },
     });
 
     for (const dep of SHARED_DEPENDENCIES) {

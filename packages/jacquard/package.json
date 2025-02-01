@@ -17,8 +17,8 @@
   "author": "Ink & Switch",
   "dependencies": {
     "@automerge/automerge": "2.2.9-alpha.4",
-    "@automerge/automerge-repo": "2.0.0-alpha.20",
-    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.20",
+    "@automerge/automerge-repo": "2.0.0-alpha.22",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.22",
     "@patchwork/folder": "workspace:*",
     "@patchwork/sdk": "workspace:*",
     "@viz-js/viz": "^3.7.0",

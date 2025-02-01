@@ -20,15 +20,8 @@ export const SHARED_DEPENDENCIES = [
   "react-dom/client",
   "react-dom/server",
   "react/jsx-runtime",
-  "eventemitter3",
-  "uuid",
-  "fast-sha256",
-  "debug",
-  "cbor-x",
-  "bs58check",
   "@automerge/automerge/slim",
   "@automerge/automerge/slim/next",
-  "xstate",
 ];
 
 // Internal modules that are shared with dynamically loaded packages
