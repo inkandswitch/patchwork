@@ -1,3 +1,9 @@
+/* eslint-env serviceworker, worker */
+/// <reference lib="webworker" />
+
+/** @type {ServiceWorkerGlobalScope} */
+self;
+
 // @ts-check
 import * as Automerge from "@automerge/automerge/slim";
 import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo/slim";
@@ -29,43 +35,36 @@ const CACHE_NAME = "v6";
 
 let PEER_ID = `patchwork-service-worker-${Math.round(Math.random() * 1000000)}`;
 
+const resolvablePromise = () => {
+  let resolve;
+  const promise = new Promise((r) => (resolve = r));
+  return { promise, resolve };
+};
+
 /* Config is passed by the client in the init message
 {
   wasmBlobUrl: string  // url to the wasm blob
-  backupSync: boolean  // weather or not the experimental sync server should be enabled
   peerIdPrefix: string // prefix that is added to peer to make it easier to find own messages in server log
 }*/
-let resolveConfig;
+let setConfig;
 const config = new Promise((resolve) => {
-  resolveConfig = resolve;
+  setConfig = resolve;
 });
 
-const repo = new Promise(async (resolve) => {
-  const { wasmBlobUrl, backupSync, peerIdPrefix } = await config;
-
-  console.log("init repo", { wasmBlobUrl, backupSync, peerIdPrefix });
-
+let repo = null;
+const { promise: repoReady, resolve: resolveRepoReady } = resolvablePromise();
+// Initialize the repo
+(async () => {
+  const { wasmBlobUrl, peerIdPrefix } = await config;
   await Automerge.initializeWasm(wasmBlobUrl);
-
-  console.log("done");
 
   if (peerIdPrefix) {
     PEER_ID = `${peerIdPrefix}-${PEER_ID}`;
   }
 
-  const repo = new Repo({
+  const newRepo = new Repo({
     storage: new IndexedDBStorageAdapter(),
-    network: [
-      new BrowserWebSocketClientAdapter("wss://sync.automerge.org"),
-    ].concat(
-      backupSync
-        ? [
-            new BrowserWebSocketClientAdapter(
-              "wss://jacquardsync.memoryandthought.me"
-            ),
-          ]
-        : []
-    ),
+    network: [new BrowserWebSocketClientAdapter("wss://sync.automerge.org")],
     peerId: PEER_ID,
     sharePolicy: async (peerId) => peerId.includes("storage-server"),
     enableRemoteHeadsGossiping: true,
@@ -75,11 +74,12 @@ const repo = new Promise(async (resolve) => {
   self.repo = repo;
   self.Automerge = Automerge;
 
-  resolve(repo);
-});
+  repo = newRepo;
+  resolveRepoReady(newRepo);
+})();
 
 function sendMessageToClients(message) {
-  clients.matchAll().then((clients) => {
+  self.clients.matchAll().then((clients) => {
     clients.forEach((client) => {
       client.postMessage(message);
     });
@@ -107,22 +107,28 @@ self.addEventListener("message", async (event) => {
     case "INIT":
       // load config and connect with client through message channel
       // if config is already loaded the new config is ignored
-      const clientPort = event.ports[0];
-      resolveConfig(event.data.config);
-
-      (await repo).networkSubsystem.addNetworkAdapter(
-        new MessageChannelNetworkAdapter(clientPort, { useWeakRef: true })
+      setConfig(event.data.config);
+      if (!repo) await repoReady;
+      repo.networkSubsystem.addNetworkAdapter(
+        new MessageChannelNetworkAdapter(event.ports[0], { useWeakRef: true })
       );
+      return;
+
+    case "ADD_SYNC_SERVER":
+      addSyncServer(event.data.url);
+      return;
   }
 });
 
-function addSyncServer(url) {
-  repo.then((repo) =>
-    repo.networkSubsystem.addNetworkAdapter(
-      new BrowserWebSocketClientAdapter(url)
-    )
+async function addSyncServer(url) {
+  if (!repo) {
+    await repoReady;
+  }
+  repo.networkSubsystem.addNetworkAdapter(
+    new BrowserWebSocketClientAdapter(url)
   );
 }
+// add this to window so it can be called from the service worker's REPL
 self.addSyncServer = addSyncServer;
 
 async function clearOldCaches() {
@@ -142,7 +148,7 @@ self.addEventListener("activate", async (event) => {
   clients.claim();
 });
 
-const ASSETS_REQUEST_URL_REGEX =
+const AUTOMERGE_REQUEST_URL_REGEX =
   /^https?:\/\/[^/]*\/automerge\/(automerge:)?([a-zA-Z0-9]+)(\/.*)?(\?.*)?$/;
 
 const headsEqual = (doc, heads) => {
@@ -156,7 +162,7 @@ const headsEqual = (doc, heads) => {
 self.addEventListener("fetch", async (event) => {
   const url = new URL(event.request.url);
 
-  if (ASSETS_REQUEST_URL_REGEX.test(event.request.url)) {
+  if (AUTOMERGE_REQUEST_URL_REGEX.test(event.request.url)) {
     const [, , maybeAutomergeUrl, ...encodedParts] = url.pathname.split("/");
     const parts = encodedParts.map((part) => decodeURIComponent(part));
 
@@ -164,9 +170,10 @@ self.addEventListener("fetch", async (event) => {
     const automergeUrl = maybeAutomergeUrl.startsWith("automerge:")
       ? maybeAutomergeUrl
       : `automerge:${maybeAutomergeUrl}`;
+
     if (!isValidAutomergeUrl(automergeUrl)) {
       event.respondWith(
-        new Response(`Invalid document id ${docId}`, {
+        new Response(`Invalid document id ${automergeUrl}`, {
           status: 404,
           headers: { "Content-Type": "text/plain" },
         })
@@ -176,7 +183,9 @@ self.addEventListener("fetch", async (event) => {
 
     event.respondWith(
       (async () => {
-        const handle = await (await repo).find(automergeUrl);
+        if (!repo) await repoReady;
+
+        const handle = await repo.find(automergeUrl);
         let doc = handle.doc();
 
         if (!doc) {
@@ -233,7 +242,7 @@ self.addEventListener("fetch", async (event) => {
             let target = (await acc)?.docs?.find((doc) => doc.name === curr);
 
             if (isValidAutomergeUrl(target?.url)) {
-              target = await (await repo).find(target.url).doc();
+              target = (await repo.find(target.url)).doc();
             }
             return target;
           }, doc);
@@ -241,7 +250,7 @@ self.addEventListener("fetch", async (event) => {
           file = await parts.reduce(async (acc, curr) => {
             let target = (await acc)?.[curr];
             if (isValidAutomergeUrl(target)) {
-              target = await (await repo).find(target).doc();
+              target = (await repo.find(target)).doc();
             }
             return target;
           }, doc);

@@ -103,7 +103,7 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.22
-        version: 2.0.0-alpha.22(@swc/core@1.10.9(@swc/helpers@0.5.15))(@types/node@22.10.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
+        version: 2.0.0-alpha.22(@types/node@22.10.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@handsontable/react':
         specifier: ^14.4.0
         version: 14.6.1(handsontable@14.6.1)
@@ -399,49 +399,6 @@ importers:
       vite-plugin-wasm:
         specifier: ^3.3.0
         version: 3.4.1(vite@6.0.11(@types/node@22.10.9)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0))
-
-  packages/folder-list-view:
-    dependencies:
-      '@automerge/automerge':
-        specifier: 2.2.9-alpha.4
-        version: 2.2.9-alpha.4
-      '@automerge/automerge-repo-react-hooks':
-        specifier: 2.0.0-alpha.22
-        version: 2.0.0-alpha.22(@swc/core@1.10.9(@swc/helpers@0.5.15))(@types/node@20.17.16)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
-      '@patchwork/folder':
-        specifier: workspace:*
-        version: link:../folder
-      '@patchwork/sdk':
-        specifier: workspace:*
-        version: link:../../sdk
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-    devDependencies:
-      '@types/node':
-        specifier: ^20.14.12
-        version: 20.17.16
-      '@types/react':
-        specifier: ^18.3.3
-        version: 18.3.18
-      '@vitejs/plugin-react':
-        specifier: ^4.3.1
-        version: 4.3.4(vite@6.0.11(@types/node@20.17.16)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0))
-      vite:
-        specifier: ^6.0.3
-        version: 6.0.11(@types/node@20.17.16)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0)
-      vite-plugin-css-injected-by-js:
-        specifier: ^3.5.2
-        version: 3.5.2(vite@6.0.11(@types/node@20.17.16)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0))
-      vite-plugin-top-level-await:
-        specifier: ^1.4.4
-        version: 1.4.4(@swc/helpers@0.5.15)(rollup@4.31.0)(vite@6.0.11(@types/node@20.17.16)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0))
-      vite-plugin-wasm:
-        specifier: ^3.3.0
-        version: 3.4.1(vite@6.0.11(@types/node@20.17.16)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0))
 
   packages/jacquard:
     dependencies:
@@ -6489,6 +6446,21 @@ snapshots:
       - supports-color
       - typescript
 
+  '@automerge/automerge-repo-react-hooks@2.0.0-alpha.22(@types/node@22.10.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)':
+    dependencies:
+      '@automerge/automerge': 2.2.9-alpha.4
+      '@automerge/automerge-repo': 2.0.0-alpha.22(@types/node@22.10.9)(typescript@5.7.3)
+      eventemitter3: 5.0.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-usestateref: 1.0.9(react@18.3.1)
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - supports-color
+      - typescript
+
   '@automerge/automerge-repo-storage-indexeddb@2.0.0-alpha.22(@swc/core@1.10.9(@swc/helpers@0.5.15))(@types/node@20.17.16)(typescript@5.7.3)':
     dependencies:
       '@automerge/automerge-repo': 2.0.0-alpha.22(@swc/core@1.10.9(@swc/helpers@0.5.15))(@types/node@20.17.16)(typescript@5.7.3)
@@ -6539,6 +6511,25 @@ snapshots:
       fast-sha256: 1.3.0
       tiny-typed-emitter: 2.1.0
       ts-node: 10.9.2(@swc/core@1.10.9(@swc/helpers@0.5.15))(@types/node@22.10.9)(typescript@5.7.3)
+      uuid: 9.0.1
+      xstate: 5.19.2
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - supports-color
+      - typescript
+
+  '@automerge/automerge-repo@2.0.0-alpha.22(@types/node@22.10.9)(typescript@5.7.3)':
+    dependencies:
+      '@automerge/automerge': 2.2.9-alpha.4
+      bs58check: 3.0.1
+      cbor-x: 1.6.0
+      debug: 4.4.0
+      eventemitter3: 5.0.1
+      fast-sha256: 1.3.0
+      tiny-typed-emitter: 2.1.0
+      ts-node: 10.9.2(@types/node@22.10.9)(typescript@5.7.3)
       uuid: 9.0.1
       xstate: 5.19.2
     transitivePeerDependencies:
@@ -12246,6 +12237,24 @@ snapshots:
       yn: 3.1.1
     optionalDependencies:
       '@swc/core': 1.10.9(@swc/helpers@0.5.15)
+
+  ts-node@10.9.2(@types/node@22.10.9)(typescript@5.7.3):
+    dependencies:
+      '@cspotcode/source-map-support': 0.8.1
+      '@tsconfig/node10': 1.0.11
+      '@tsconfig/node12': 1.0.11
+      '@tsconfig/node14': 1.0.3
+      '@tsconfig/node16': 1.0.4
+      '@types/node': 22.10.9
+      acorn: 8.14.0
+      acorn-walk: 8.3.4
+      arg: 4.1.3
+      create-require: 1.1.1
+      diff: 4.0.2
+      make-error: 1.3.6
+      typescript: 5.7.3
+      v8-compile-cache-lib: 3.0.1
+      yn: 3.1.1
 
   tsconfck@3.1.4(typescript@5.7.3):
     optionalDependencies:
