@@ -17,7 +17,6 @@ import { RepoContext } from "@automerge/automerge-repo-react-hooks";
 import { getAccount } from "@patchwork/sdk";
 import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
-import { BACKUP_SYNC } from "./explorer/components/SyncIndicator.js";
 import { ModuleWatcherProvider } from "./explorer/hooks/useModuleWatcher.js";
 
 // Peer id prefix is added to both the peer id of the client and the service worker
@@ -128,7 +127,6 @@ function establishMessageChannel(serviceWorker: ServiceWorker) {
       type: "INIT",
       config: {
         wasmBlobUrl,
-        backupSync: BACKUP_SYNC,
         peerIdPrefix: PEER_ID_PREFIX,
       },
     },

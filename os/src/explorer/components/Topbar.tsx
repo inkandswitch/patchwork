@@ -31,8 +31,6 @@ import { saveFile } from "@patchwork/sdk/files";
 import { AccountPicker } from "./AccountPicker";
 import {
   AUTOMERGE_SYNC_SERVER_STORAGE_ID,
-  BACKUP_SYNC,
-  JACQUARD_SYNC_SERVER_STORAGE_ID,
   SyncIndicator,
 } from "./SyncIndicator";
 
@@ -202,13 +200,6 @@ export const Topbar: React.FC<TopbarProps> = ({
               storageId={AUTOMERGE_SYNC_SERVER_STORAGE_ID}
               name={"sync.automerge.org"}
             />
-            {BACKUP_SYNC && (
-              <SyncIndicator
-                docUrl={selectedDocUrl}
-                storageId={JACQUARD_SYNC_SERVER_STORAGE_ID}
-                name={"jacquard.sync"}
-              />
-            )}
           </>
         )}
       </div>
