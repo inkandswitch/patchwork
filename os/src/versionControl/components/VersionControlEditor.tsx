@@ -7,7 +7,7 @@ import { DocPath, DocPathUtils } from "@patchwork/folder";
 import { useToast } from "@patchwork/sdk/ui";
 import { Tool } from "@patchwork/sdk";
 
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, decodeHeads } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { next as A } from "@automerge/automerge";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -86,7 +86,7 @@ export const VersionControlEditor: React.FC<{
       return diffWithProvenance(
         cloneOrMainOm.doc,
         baseHeads,
-        cloneOrMainOm.handle.heads()
+        decodeHeads(cloneOrMainOm.handle.heads())
       );
     }
   }, [baseHeads, cloneOrMainOm, docLink.url]);
