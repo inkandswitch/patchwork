@@ -18,4 +18,12 @@ module.exports = {
     "@typescript-eslint/no-unused-vars": "warn",
     "no-useless-escape": "warn",
   },
+  overrides: [
+    {
+      files: ["service-worker.js"],
+      env: {
+        serviceworker: true,
+      },
+    },
+  ],
 };

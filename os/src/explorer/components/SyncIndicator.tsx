@@ -18,11 +18,6 @@ export const AUTOMERGE_SYNC_SERVER_STORAGE_ID = (import.meta.env
   ?.VITE_SYNC_SERVER_STORAGE_ID ??
   "3760df37-a4c6-4f66-9ecd-732039a9385d") as StorageId;
 
-export const JACQUARD_SYNC_SERVER_STORAGE_ID =
-  "8EQu4Pnz70bYtynRVIVcNciTTarwODfg" as StorageId;
-
-export const BACKUP_SYNC = localStorage.getItem("BACKUP_SYNC");
-
 export const SyncIndicator = ({
   docUrl,
   storageId,
@@ -332,10 +327,7 @@ function useSyncIndicatorState(
     // otherwise one of the subscriptions would win, since subscribe unsubscribes any existing storageIds that are not in the list
     // maybe we should reconsider this api
     // todo: remove this once we got rid of the duplicte
-    repo.subscribeToRemotes([
-      AUTOMERGE_SYNC_SERVER_STORAGE_ID,
-      JACQUARD_SYNC_SERVER_STORAGE_ID,
-    ]);
+    repo.subscribeToRemotes([AUTOMERGE_SYNC_SERVER_STORAGE_ID]);
   }, [repo]);
 
   const [machineConfig] = useState(() =>
