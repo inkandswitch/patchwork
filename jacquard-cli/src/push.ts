@@ -420,7 +420,7 @@ const pushFile = async ({
   } else {
     handle = await createDocFromFile(file, repo);
     didChange = true; // New doc always counts as a change
-    const newDoc = handle.docSync() as Doc<HasPatchworkMetadata>;
+    const newDoc = handle.doc() as Doc<HasPatchworkMetadata>;
     const dataTypeId = newDoc["@patchwork"].type;
 
     folderHandle.change((d) => {

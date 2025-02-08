@@ -210,8 +210,8 @@ export const initFrom = <D extends object>(
 
 // experimental "LoadedDocHandle"
 
-// export type LoadedDocHandle<D> = Omit<DocHandle<D>, "docSync"> & {
-//   docSync: () => Readonly<D>;
+// export type LoadedDocHandle<D> = Omit<DocHandle<D>, "doc"> & {
+//   doc: () => Readonly<D>;
 // };
 
 // export const loadHandle = async <D>(

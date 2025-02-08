@@ -56,7 +56,7 @@ const useRunMigrationsOnceOnLoad = ({
 
     const handleId = handle.url;
 
-    // Only run if we have a docSync and haven't run for this handle yet
+    // Only run if we have a doc and haven't run for this handle yet
     if (doc && hasRunForCurrentHandle.current !== handleId) {
       (async () => {
         if (!dataType.migrations) return;
