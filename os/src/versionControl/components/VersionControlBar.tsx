@@ -216,7 +216,7 @@ export const VersionControlBar = ({
   //     repo.find<HasVersionControlMetadata<unknown, unknown>>(docUrl);
   //   draftHandle.merge(docHandle);
   //   draftHandle.change((doc) => {
-  //     doc.branchMetadata.source.branchHeads = A.getHeads(docHandle.doc());
+  //     doc.branchMetadata.source.branchHeads = docHandle.heads();
   //   });
 
   //   toast("Incorporated updates from main");

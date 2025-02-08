@@ -91,7 +91,7 @@ export const FolderEntryView = ({
       return diffWithProvenance(
         cloneOrMainOm.doc,
         baseHeads,
-        A.getHeads(cloneOrMainOm.doc)
+        cloneOrMainOm.handle.heads()
       );
     }
   }, [branchScopeAndActiveBranchInfo, docLink.url]);

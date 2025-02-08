@@ -199,7 +199,7 @@ export const AnnotationGroupView = <
           discussionId = uuid();
           discussions[discussionId] = {
             id: discussionId,
-            heads: A.getHeads(doc),
+            heads: handle.heads(),
             comments: [],
             resolved: false,
             anchors: annotationGroup.annotations.map(

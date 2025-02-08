@@ -120,7 +120,7 @@ export async function push(
           return {
             docUrl: mainUrl,
             path: inputPath,
-            heads: A.getHeads(cloneHandle.doc()),
+            heads: cloneHandle.heads(),
           };
         }),
         outputs: runResult.outputs.map((outputPath) => {
@@ -133,7 +133,7 @@ export async function push(
           return {
             docUrl: mainUrl,
             path: outputPath,
-            heads: A.getHeads(cloneHandle.doc()),
+            heads: cloneHandle.heads(),
           };
         }),
       });

@@ -10,7 +10,11 @@
 //   we should define a total order for changes across all devices.
 
 import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  DocHandle,
+  encodeHeads,
+} from "@automerge/automerge-repo";
 import {
   ActorId,
   DecodedChange,
@@ -689,7 +693,7 @@ export const getGroupedChanges = <T>({
       changeHashes: getChangesFromMergedBranch({
         decodedChangesForDoc: changes,
         branchHeads: mergeHeads,
-        mainHeads: getHeads(doc),
+        mainHeads: encodeHeads(getHeads(doc)),
         baseHeads,
       }),
       mergeMetadata: {

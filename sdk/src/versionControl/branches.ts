@@ -82,7 +82,7 @@ export const cloneDocWithLinks = async (
   const cloneHandle = repo.clone(handle);
   docCloneMap[handle.url] = {
     url: cloneHandle.url,
-    baseHeads: A.getHeads(doc),
+    baseHeads: handle.heads(),
   };
 
   // clone links
@@ -116,7 +116,7 @@ export const mergeBranch = async ({
       const originalHandle = await repo.find(originalDocUrl as AutomergeUrl);
       const cloneHandle = await repo.find(url);
 
-      mergeHeadsByDocUrl[originalDocUrl] = A.getHeads(cloneHandle.doc());
+      mergeHeadsByDocUrl[originalDocUrl] = cloneHandle.heads();
 
       originalHandle.merge(cloneHandle);
     })

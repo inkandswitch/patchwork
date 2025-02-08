@@ -1,7 +1,7 @@
 import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
 import { objectEntries } from "@patchwork/sdk/utils";
 import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, encodeHeads } from "@automerge/automerge-repo";
 import { FileDoc } from "@patchwork/file";
 import { BuildRun, Reference } from "./datatype";
 import { fetchMap } from "@patchwork/sdk/async-signals";
@@ -61,7 +61,7 @@ export const fetchProjectState = ({
 
   const references = objectEntries(files).map(([docUrl, doc]) => ({
     docUrl: docUrl as AutomergeUrl,
-    heads: Automerge.getHeads(doc),
+    heads: encodeHeads(Automerge.getHeads(doc)),
     path: (doc as FileDoc).name, // todo: handle this generically, we just assume here that this is a file doc
   }));
 
@@ -71,7 +71,7 @@ export const fetchProjectState = ({
   const filteredBuildRuns = buildRuns.filter(({ outputs }) =>
     outputs.every(({ docUrl, heads }) => {
       const doc = files[docUrl];
-      return doc && headsMatch(Automerge.getHeads(doc), heads);
+      return doc && headsMatch(encodeHeads(Automerge.getHeads(doc)), heads);
     })
   );
 

@@ -86,7 +86,7 @@ export const VersionControlEditor: React.FC<{
       return diffWithProvenance(
         cloneOrMainOm.doc,
         baseHeads,
-        A.getHeads(cloneOrMainOm.doc)
+        cloneOrMainOm.handle.heads()
       );
     }
   }, [baseHeads, cloneOrMainOm, docLink.url]);

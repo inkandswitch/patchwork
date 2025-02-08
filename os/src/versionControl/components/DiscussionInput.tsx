@@ -55,7 +55,7 @@ export const DiscussionInput = function <
 
       doc.discussions[discussionId] = {
         id: discussionId,
-        heads: A.getHeads(doc),
+        heads: handle.heads(),
         resolved: false,
         comments: [comment],
         anchors: [],
