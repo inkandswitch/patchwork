@@ -36,8 +36,6 @@ export const DocEditor = <T, V>({
     heads: docHeads ? encodeHeads(docHeads) : undefined,
   });
 
-  console.log(docUrlWithHeads);
-
   return (
     <Component
       docPath={docPath}

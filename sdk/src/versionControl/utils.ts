@@ -1,5 +1,9 @@
 import { useForceUpdate } from "../hooks/useForceUpdate";
-import { AutomergeUrl, encodeHeads } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  decodeHeads,
+  encodeHeads,
+} from "@automerge/automerge-repo";
 import {
   useDocument,
   useDocHandle,
@@ -79,7 +83,7 @@ export const useActorIdToAuthorMap = (
     };
 
     const doc = handle.doc();
-    lastHeads = handle.heads();
+    lastHeads = decodeHeads(handle.heads());
     addChangesToActorIdMap(A.getAllChanges(doc));
 
     const onChange = () => {
@@ -89,7 +93,7 @@ export const useActorIdToAuthorMap = (
 
       const doc = handle.doc();
       const changes = A.getChanges(A.view(doc, lastHeads), doc);
-      lastHeads = handle.heads();
+      lastHeads = decodeHeads(handle.heads());
       addChangesToActorIdMap(changes);
     };
 
