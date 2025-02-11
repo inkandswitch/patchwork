@@ -31,7 +31,14 @@ import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-
  * for the wasm blob in it.
  */
 
-const CACHE_NAME = "v6";
+// The CACHE_VERSION token gets replaced during build by cache-Date.now()
+// See build-service-worker.js
+/* global CACHE_VERSION */
+const CACHE_NAME = CACHE_VERSION;
+
+// We also cache any JSPM.io requests because that's where our importMap
+// packages live
+const JSPM_ORIGIN = "https://ga.jspm.io";
 
 let PEER_ID = `patchwork-service-worker-${Math.round(Math.random() * 1000000)}`;
 
@@ -308,29 +315,25 @@ self.addEventListener("fetch", async (event) => {
         });
       })()
     );
-  }
-  // disable caching for now
-  /* else if (
+  } else if (
     event.request.method === "GET" &&
-    url.origin === self.location.origin
+    (url.origin === self.location.origin || url.origin === JSPM_ORIGIN)
   ) {
     event.respondWith(
       (async () => {
-        const r = await caches.match(event.request);
-        console.log(
-          `[Service Worker] Fetching resource from cache: ${event.request.url}`
-        );
-        if (r) {
-          return r;
-        }
-        const response = await fetch(event.request);
         const cache = await caches.open(CACHE_NAME);
-        console.log(
-          `[Service Worker] Caching new resource: ${event.request.url}`
-        );
-        cache.put(event.request, response.clone());
-        return response;
+
+        // Try cache first -- this site is all static
+        const cachedResponse = await cache.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // On cache fail, hit the network
+        const networkResponse = await fetch(event.request);
+        cache.put(event.request, networkResponse.clone());
+        return networkResponse;
       })()
     );
-  } */
+  }
 });

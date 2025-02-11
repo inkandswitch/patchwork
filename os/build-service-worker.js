@@ -6,4 +6,7 @@ await build({
   outfile: "dist/service-worker.js",
   bundle: true,
   format: "iife",
+  define: {
+    CACHE_VERSION: `"cache-${Date.now()}"`, // Note the nested quotes for string
+  },
 });
