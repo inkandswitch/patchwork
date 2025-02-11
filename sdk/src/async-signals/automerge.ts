@@ -7,13 +7,18 @@ import {
 } from "@automerge/automerge-repo";
 import { atom } from "signia";
 import { Om } from "../om";
-import { asyncComputed, AsyncSignal, AsyncState } from "./core";
+import {
+  asyncComputed,
+  AsyncSignal,
+  asyncSignalFromPromise,
+  AsyncState,
+} from "./core";
 
-export class DocMissingError extends Error {
+export class DocHandleMissingError extends Error {
   isMissingError = true; // here for weird typing reasons
 
   constructor(readonly url?: AutomergeUrl) {
-    super(`Document is missing: ${url ?? "unknown"}`);
+    super(`Handle is missing: ${url ?? "unknown"}`);
   }
 }
 
@@ -48,7 +53,7 @@ function getDocSignal<T>(
   );
 
   // Constructing the error here gives better stack traces
-  const missingError = new DocMissingError(KEY as AutomergeUrl);
+  const missingError = new DocHandleMissingError(KEY as AutomergeUrl);
 
   repo
     .find<T>(url)
@@ -118,10 +123,14 @@ function getOmSignal<T>(
   const docSignal = getDocSignal<T>(url, repo, heads);
   const id = parseAutomergeUrl(url).documentId;
 
-  // TODO: this is a problem because we can't await the handle
-  const handle = repo.find<T>(id);
+  const handleSignal = asyncSignalFromPromise(repo.find<T>(id));
   const omSignal = asyncComputed(() => {
-    return { url, id, handle, doc: docSignal.value.fetch() };
+    return {
+      url,
+      id,
+      handle: handleSignal.value.fetch(),
+      doc: docSignal.value.fetch(),
+    };
   });
 
   OM_SIGNAL_CACHE.set(KEY, omSignal);

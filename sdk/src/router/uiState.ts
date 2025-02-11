@@ -1,5 +1,5 @@
 import {
-  fetchDocHandle,
+  fetchDoc,
   fetchOm,
   PendingException,
   useAsyncCall,
@@ -49,7 +49,7 @@ export const fetchUIStateOm = (repo: Repo, account: Account | undefined) => {
   if (!account) {
     throw new PendingException();
   }
-  const accountDoc = fetchDocHandle<AccountDoc>(account.handle.url, repo).doc();
+  const accountDoc = fetchDoc<AccountDoc>(account.handle.url, repo);
   return fetchOm<UIStateDoc>(accountDoc.uiStateUrl, repo);
 };
 

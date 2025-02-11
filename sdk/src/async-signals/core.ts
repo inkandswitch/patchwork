@@ -220,11 +220,9 @@ export function fetchFlatMap<T, U>(values: T[], fn: (value: T) => U[]): U[] {
  * TODO: Maybe we could use a weak map from the promise to the atom?
  * But I don't want to think about that.
  */
-export function asyncComputedFromPromise<T>(
-  promise: Promise<T>
-): AsyncSignal<T> {
+export function asyncSignalFromPromise<T>(promise: Promise<T>): AsyncSignal<T> {
   const signal = atom<AsyncState<T>>(
-    "asyncComputedFromPromise",
+    "asyncSignalFromPromise",
     new AsyncState.Pending()
   );
   promise.then(

@@ -1,7 +1,7 @@
 import {
   asyncCall,
   asyncPromise,
-  fetchDocHandle,
+  fetchDoc,
 } from "@patchwork/sdk/async-signals";
 import { DocLink, DocPathUtils } from "@patchwork/folder";
 import { DocPath } from "@patchwork/folder";
@@ -37,7 +37,7 @@ describe("fetchFolderDocWithMetadata", () => {
 
   const getFolderDocWithMetadataSignal = (link: DocLink) =>
     asyncCall(fetchFolderDocWithMetadata, link.url, (path) =>
-      fetchDocHandle(DocPathUtils.toLink(path).url, repo).doc()
+      fetchDoc(DocPathUtils.toLink(path).url, repo)
     );
 
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import {
   asyncComputed,
-  fetchDocHandle,
+  fetchDoc,
   fetchMap,
   fetchOm,
 } from "@patchwork/sdk/async-signals";
@@ -51,10 +51,7 @@ export async function watchRefreshRequests(repo: Repo, args: CommandLineArgs) {
   const buildMetadataDocsWithRefreshRequest = asyncComputed<
     BuildMetadataDocWithBranchUrl[]
   >(() => {
-    const projectFolder = fetchDocHandle<FolderDoc>(
-      projectFolderHandle.url,
-      repo
-    ).doc();
+    const projectFolder = fetchDoc<FolderDoc>(projectFolderHandle.url, repo);
 
     const versionControlMetadataOm = fetchVersionControlMetadataOm(
       projectFolder,

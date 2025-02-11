@@ -1,7 +1,7 @@
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { DocPathUtils } from "@patchwork/sdk/router";
 import { useCurrentAccount } from "@patchwork/sdk";
-import { useAsyncComputed, fetchDocHandle } from "@patchwork/sdk/async-signals";
+import { useAsyncComputed, fetchDoc } from "@patchwork/sdk/async-signals";
 import {
   HasVersionControlMetadata,
   fetchVersionControlMetadataOm,
@@ -30,10 +30,7 @@ export const NodeActiveBranchInfo = (props: NodeRendererProps<NodeData>) => {
     if (!showActiveBranchName) {
       return undefined;
     }
-    const doc = fetchDocHandle<HasVersionControlMetadata>(
-      docLink.url,
-      repo
-    ).doc();
+    const doc = fetchDoc<HasVersionControlMetadata>(docLink.url, repo);
     const versionControlMetadataDoc = fetchVersionControlMetadataOm(
       doc,
       repo

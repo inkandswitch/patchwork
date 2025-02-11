@@ -1,12 +1,12 @@
-import { Account } from "../account";
-import { fetchUIStateOm } from "../router/uiState";
-import { Om } from "../om";
-import { DocLink, DocPath, DocPathUtils } from "../router/DocLink";
-import { canBeUndef } from "../utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { fetchDocHandle, fetchMap, fetchOm } from "../async-signals";
+import { Account } from "../account";
+import { fetchDoc, fetchMap, fetchOm } from "../async-signals";
 import { dataTypeById } from "../datatypes";
+import { Om } from "../om";
+import { DocLink, DocPath, DocPathUtils } from "../router/DocLink";
+import { fetchUIStateOm } from "../router/uiState";
+import { canBeUndef } from "../utils";
 import {
   BranchDoc,
   DocCloneMap,
@@ -119,7 +119,7 @@ export const fetchAllLinkedDocLinks = (
   cloneMap?: DocCloneMap
 ): DocLink[] => {
   const mappedUrl = cloneMap ? cloneMap[url].url ?? url : url;
-  const doc = fetchDocHandle(mappedUrl, repo).doc();
+  const doc = fetchDoc(mappedUrl, repo);
 
   const links = dataTypeById(dataTypeId)?.links;
   if (!links) {
@@ -148,7 +148,7 @@ export const fetchResolveUrlOnFixedBranch = (
   baseHeads: Automerge.Heads | undefined;
 } => {
   const activeBranchDoc =
-    activeBranchUrl && fetchDocHandle<BranchDoc>(activeBranchUrl, repo).doc();
+    activeBranchUrl && fetchDoc<BranchDoc>(activeBranchUrl, repo);
   const cloneEntry = activeBranchDoc?.clones[url];
   return cloneEntry ?? { url, baseHeads: undefined };
 };
