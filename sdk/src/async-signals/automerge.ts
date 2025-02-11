@@ -2,7 +2,6 @@ import * as Automerge from "@automerge/automerge";
 import {
   AutomergeUrl,
   Doc,
-  DocHandle,
   parseAutomergeUrl,
   Repo,
 } from "@automerge/automerge-repo";
@@ -10,11 +9,11 @@ import { atom } from "signia";
 import { Om } from "../om";
 import { asyncComputed, AsyncSignal, AsyncState } from "./core";
 
-export class DocHandleMissingError extends Error {
+export class DocMissingError extends Error {
   isMissingError = true; // here for weird typing reasons
 
   constructor(readonly url?: AutomergeUrl) {
-    super(`Handle is missing: ${url ?? "unknown"}`);
+    super(`Document is missing: ${url ?? "unknown"}`);
   }
 }
 
@@ -25,41 +24,44 @@ export class DocHandleMissingError extends Error {
 // TODO: all doc functions accept a third optional heads argument which is a bit akward
 // instead we should put heads into the url
 
-const HANDLE_SIGNAL_CACHE = new Map<string, AsyncSignal<DocHandle<unknown>>>();
+const DOC_SIGNAL_CACHE = new Map<string, AsyncSignal<Doc<unknown>>>();
 
-function getDocHandleSignal<T>(
+function getDocSignal<T>(
   url: AutomergeUrl,
   repo: Repo,
   heads?: Automerge.Heads
-): AsyncSignal<DocHandle<T>> {
+): AsyncSignal<Doc<T>> {
   if (!(typeof url === "string")) {
     throw new Error(`Expected string URL, got ${url}`);
   }
 
   const KEY = url + (heads ? `@${heads.join(",")}` : "");
 
-  const fromCache = HANDLE_SIGNAL_CACHE.get(KEY);
+  const fromCache = DOC_SIGNAL_CACHE.get(KEY);
   if (fromCache) {
-    return fromCache as AsyncSignal<DocHandle<T>>;
+    return fromCache as AsyncSignal<Doc<T>>;
   }
 
-  const signal = atom<AsyncState<DocHandle<T>>>(
+  const signal = atom<AsyncState<Doc<T>>>(
     `getDocSig:${url}`,
     new AsyncState.Pending(`Loading document: ${KEY}`)
   );
 
   // Constructing the error here gives better stack traces
-  const missingError = new DocHandleMissingError(KEY as AutomergeUrl);
+  const missingError = new DocMissingError(KEY as AutomergeUrl);
 
   repo
     .find<T>(url)
     .then((handle) => {
-      signal.set(new AsyncState.Fulfilled(handle));
+      const doc = handle.doc();
+      signal.set(
+        new AsyncState.Fulfilled(heads ? Automerge.view(doc, heads) : doc)
+      );
 
       // Subscribe to changes if heads are not provided
       if (!heads) {
         handle.on("change", (ev) => {
-          signal.set(new AsyncState.Fulfilled(ev.handle));
+          signal.set(new AsyncState.Fulfilled(ev.doc));
         });
         handle.on("delete", () => {
           signal.set(new AsyncState.Rejected(missingError));
@@ -70,7 +72,7 @@ function getDocHandleSignal<T>(
       signal.set(new AsyncState.Rejected(missingError));
     });
 
-  HANDLE_SIGNAL_CACHE.set(KEY, signal);
+  DOC_SIGNAL_CACHE.set(KEY, signal);
   return signal;
 }
 
@@ -79,24 +81,24 @@ function getDocHandleSignal<T>(
  * missing, this will be reflected in the return value – this function will not
  * throw.
  */
-export function getDocHandleState<T = unknown>(
+export function getDocState<T = unknown>(
   url: AutomergeUrl,
   repo: Repo,
   heads?: Automerge.Heads
-): AsyncState<DocHandle<T>> {
-  return getDocHandleSignal<T>(url, repo, heads).value;
+): AsyncState<Doc<T>> {
+  return getDocSignal<T>(url, repo, heads).value;
 }
 
 /**
  * Get the value of a doc in a reactive context. If the doc is loading or
  * missing, this will throw an error.
  */
-export function fetchDocHandle<T = unknown>(
+export function fetchDoc<T = unknown>(
   url: AutomergeUrl,
   repo: Repo,
   heads?: Automerge.Heads
-): DocHandle<T> {
-  return getDocHandleState<T>(url, repo, heads).fetch();
+): Doc<T> {
+  return getDocState<T>(url, repo, heads).fetch();
 }
 
 const OM_SIGNAL_CACHE = new Map<string, AsyncSignal<Om<unknown>>>();
@@ -113,16 +115,13 @@ function getOmSignal<T>(
     return fromCache as AsyncSignal<Om<T>>;
   }
 
-  const handleSignal = getDocHandleSignal<T>(url, repo, heads);
+  const docSignal = getDocSignal<T>(url, repo, heads);
   const id = parseAutomergeUrl(url).documentId;
 
+  // TODO: this is a problem because we can't await the handle
+  const handle = repo.find<T>(id);
   const omSignal = asyncComputed(() => {
-    return {
-      url,
-      id,
-      handle: handleSignal.value.fetch(),
-      doc: handleSignal.value.fetch().doc(),
-    };
+    return { url, id, handle, doc: docSignal.value.fetch() };
   });
 
   OM_SIGNAL_CACHE.set(KEY, omSignal);
