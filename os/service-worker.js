@@ -78,7 +78,7 @@ const { promise: repoReady, resolve: resolveRepoReady } = resolvablePromise();
   });
 
   // Put the repo on the global context for interactive use
-  self.repo = repo;
+  self.repo = newRepo;
   self.Automerge = Automerge;
 
   repo = newRepo;
