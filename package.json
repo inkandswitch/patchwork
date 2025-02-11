@@ -10,7 +10,8 @@
     "tsc": "tsc",
     "preinstall": "npx only-allow pnpm",
     "test": "pnpm --filter \"./os\" test",
-    "make-tool": "node scripts/make-tool.mjs"
+    "make-tool": "node scripts/make-tool.mjs",
+    "clean": "rm -rf **/node_modules **/dist"
   },
   "pnpm": {
     "overrides": {
