@@ -18,6 +18,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { DocPath, DocPathUtils, FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
+import { decodeHeads } from "@automerge/automerge-repo";
 
 export const FolderViewerWithEmbeds: React.FC<
   EditorProps<unknown, unknown>
@@ -91,7 +92,7 @@ export const FolderEntryView = ({
       return diffWithProvenance(
         cloneOrMainOm.doc,
         baseHeads,
-        cloneOrMainOm.handle.heads()
+        decodeHeads(cloneOrMainOm.handle.heads())
       );
     }
   }, [branchScopeAndActiveBranchInfo, docLink.url]);

@@ -9,7 +9,11 @@ import {
   HasVersionControlMetadata,
 } from "../versionControl";
 import { next as A, uuid } from "@automerge/automerge";
-import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  decodeHeads,
+  DocHandle,
+} from "@automerge/automerge-repo";
 import { Check, MessageCircle, PencilIcon } from "lucide-react";
 import React, {
   MutableRefObject,
@@ -199,7 +203,7 @@ export const AnnotationGroupView = <
           discussionId = uuid();
           discussions[discussionId] = {
             id: discussionId,
-            heads: handle.heads(),
+            heads: decodeHeads(handle.heads()),
             comments: [],
             resolved: false,
             anchors: annotationGroup.annotations.map(

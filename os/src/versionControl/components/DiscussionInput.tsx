@@ -7,7 +7,7 @@ import {
   HasVersionControlMetadata,
 } from "@patchwork/sdk/versionControl";
 import { uuid } from "@automerge/automerge";
-import { DocHandle } from "@automerge/automerge-repo";
+import { decodeHeads, DocHandle } from "@automerge/automerge-repo";
 import { next as A } from "@automerge/automerge";
 import { SendHorizontalIcon } from "lucide-react";
 import { useState } from "react";
@@ -55,7 +55,7 @@ export const DiscussionInput = function <
 
       doc.discussions[discussionId] = {
         id: discussionId,
-        heads: handle.heads(),
+        heads: decodeHeads(handle.heads()),
         resolved: false,
         comments: [comment],
         anchors: [],

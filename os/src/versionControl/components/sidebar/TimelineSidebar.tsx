@@ -1,5 +1,5 @@
 import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl, UrlHeads } from "@automerge/automerge-repo";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
   useDocHandle,

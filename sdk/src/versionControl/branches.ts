@@ -7,7 +7,12 @@ import {
   ensureMetadataHandleIsBranchScope,
   getVersionControlMetadataHandle,
 } from "../versionControl";
-import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  decodeHeads,
+  DocHandle,
+  Repo,
+} from "@automerge/automerge-repo";
 import { next as A } from "@automerge/automerge";
 import {
   BranchDoc,
@@ -82,7 +87,7 @@ export const cloneDocWithLinks = async (
   const cloneHandle = repo.clone(handle);
   docCloneMap[handle.url] = {
     url: cloneHandle.url,
-    baseHeads: handle.heads(),
+    baseHeads: decodeHeads(handle.heads()),
   };
 
   // clone links
@@ -116,7 +121,7 @@ export const mergeBranch = async ({
       const originalHandle = await repo.find(originalDocUrl as AutomergeUrl);
       const cloneHandle = await repo.find(url);
 
-      mergeHeadsByDocUrl[originalDocUrl] = cloneHandle.heads();
+      mergeHeadsByDocUrl[originalDocUrl] = decodeHeads(cloneHandle.heads());
 
       originalHandle.merge(cloneHandle);
     })

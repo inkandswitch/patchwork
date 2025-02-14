@@ -28,7 +28,7 @@ import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
 import { useToolsForDataType, useTool } from "@patchwork/sdk/hooks";
 import { useModuleWatcher } from "../hooks/useModuleWatcher";
-import { DocHandle, UrlHeads } from "@automerge/automerge-repo";
+import { DocHandle } from "@automerge/automerge-repo";
 import { addNewDocument } from "../docActions";
 import { removeDocPath } from "../docActions";
 import { NoDocumentSelected } from "./NoDocumentSelected";
