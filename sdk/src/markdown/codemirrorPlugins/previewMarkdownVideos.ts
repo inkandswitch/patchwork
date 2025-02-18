@@ -120,8 +120,10 @@ export const previewVideosPlugin = (handle: DocHandle<unknown>, repo: Repo) => [
     class {
       decorations: DecorationSet = Decoration.set([]);
       videos: HTMLVideoElement[] = [];
+      view: EditorView;
 
-      constructor(private view: EditorView) {
+      constructor(view: EditorView) {
+        this.view = view
         this.decorations = getVideos([], undefined, view);
       }
 

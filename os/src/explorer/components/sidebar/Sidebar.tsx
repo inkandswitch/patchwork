@@ -1,13 +1,11 @@
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { Icon } from "@patchwork/sdk/ui";
+import { DocLink, DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import {
-  DocLink,
   FolderDoc,
-  DocPath,
-  FolderDocWithChildren,
+  FolderDocMaterialized as FolderDocWithChildren,
   FolderDocWithMetadata,
-  DocPathUtils,
-} from "@patchwork/folder";
+} from "@patchwork/sdk/borrowed-bits";
 import { dataTypeById } from "@patchwork/sdk";
 import { Input } from "@patchwork/sdk/ui";
 import {

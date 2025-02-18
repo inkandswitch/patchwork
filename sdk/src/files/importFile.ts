@@ -7,7 +7,6 @@ import {
 } from "../datatypes";
 import { getDefaultImportMethodForDatatype } from "../importMethods";
 import { ImportMethod } from "../importMethods";
-import { HasPatchworkMetadata } from "../modules/types";
 
 /**
  * Helper function to find the appropriate import method and datatype for a file

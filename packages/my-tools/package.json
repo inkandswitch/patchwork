@@ -8,7 +8,7 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "tsup",
     "push": "pnpm build && pnpm --filter @patchwork/os build:my-tools"
   },
   "keywords": [],
@@ -24,6 +24,7 @@
   "devDependencies": {
     "@types/react": "^18.3.3",
     "@vitejs/plugin-react": "^4.3.1",
+    "tsup": "^8.3.6",
     "vite": "^5.3.4",
     "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-top-level-await": "^1.4.2",

@@ -1,6 +1,6 @@
 import { isEqual } from "lodash";
-import { DocLink, DocPath, DocPathUtils } from "@patchwork/folder";
-import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
+import { DocLink, DocPath, DocPathUtils } from "./DocLink";
+import { FolderDocWithMetadata } from "../borrowed-bits/FolderDoc";
 import { URLParams } from "./types";
 
 /*

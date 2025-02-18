@@ -1,5 +1,5 @@
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { DocPathUtils } from "@patchwork/folder";
+import { DocPathUtils } from "@patchwork/sdk/router";
 import { useCurrentAccount } from "@patchwork/sdk";
 import { useAsyncComputed, fetchDocHandle } from "@patchwork/sdk/async-signals";
 import {

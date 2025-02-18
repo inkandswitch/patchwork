@@ -4,24 +4,67 @@
   "description": "",
   "type": "module",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "./dist/types/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./async-signals": "./dist/async-signals.js",
-    "./components": "./dist/components.js",
-    "./files": "./dist/files.js",
-    "./hooks": "./dist/hooks.js",
-    "./om": "./dist/om.js",
-    "./markdown": "./dist/markdown.js",
-    "./router": "./dist/router.js",
-    "./textAnchors": "./dist/textAnchors.js",
-    "./ui": "./dist/ui.js",
-    "./versionControl": "./dist/versionControl.js",
-    "./utils": "./dist/utils.js",
-    "./shared-dependencies": "./dist/shared-dependencies.js"
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./async-signals": {
+      "types": "./dist/types/async-signals/index.d.ts",
+      "import": "./dist/async-signals.js"
+    },
+    "./borrowed-bits": {
+      "types": "./dist/types/borrowed-bits/index.d.ts",
+      "import": "./dist/borrowed-bits.js"
+    },
+    "./components": {
+      "types": "./dist/types/components/index.d.ts",
+      "import": "./dist/components.js"
+    },
+    "./files": {
+      "types": "./dist/types/files/index.d.ts",
+      "import": "./dist/files.js"
+    },
+    "./hooks": {
+      "types": "./dist/types/hooks/index.d.ts",
+      "import": "./dist/hooks.js"
+    },
+    "./om": {
+      "types": "./dist/types/om.d.ts",
+      "import": "./dist/om.js"
+    },
+    "./markdown": {
+      "types": "./dist/types/markdown/index.d.ts",
+      "import": "./dist/markdown.js"
+    },
+    "./router": {
+      "types": "./dist/types/router/index.d.ts",
+      "import": "./dist/router.js"
+    },
+    "./textAnchors": {
+      "types": "./dist/types/textAnchors/index.d.ts",
+      "import": "./dist/textAnchors.js"
+    },
+    "./ui": {
+      "types": "./dist/types/ui/index.d.ts",
+      "import": "./dist/ui.js"
+    },
+    "./versionControl": {
+      "types": "./dist/types/versionControl/index.d.ts",
+      "import": "./dist/versionControl.js"
+    },
+    "./utils": {
+      "types": "./dist/types/utils.d.ts",
+      "import": "./dist/utils.js"
+    },
+    "./shared-dependencies": {
+      "types": "./dist/types/shared-dependencies.d.ts",
+      "import": "./dist/shared-dependencies.js"
+    }
   },
   "scripts": {
-    "build": "tsc && vite build",
+    "build": "tsc && tsup",
     "push": "pnpm build && pnpm --filter=@patchwork/os build:sdk"
   },
   "keywords": [],
@@ -87,7 +130,9 @@
     "@vitejs/plugin-react": "^4.3.1",
     "rollup": "^4.19.0",
     "rollup-plugin-postcss": "^4.0.2",
+    "tsup": "^8.3.6",
     "vite": "^5.3.4",
+    "vite-plugin-dts": "^4.5.0",
     "vite-plugin-top-level-await": "^1.4.2",
     "vite-plugin-wasm": "^3.3.0",
     "vite-tsconfig-paths": "^5.0.1",

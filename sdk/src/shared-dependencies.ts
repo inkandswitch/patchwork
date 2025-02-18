@@ -35,6 +35,7 @@ export const SHARED_MODULES = {
   "@patchwork/sdk/router": "./sdk/router.js",
   "@patchwork/sdk/textAnchors": "./sdk/textAnchors.js",
   "@patchwork/sdk/ui": "./sdk/ui.js",
+  "@patchwork/sdk/utils": "./sdk/utils.js",
   "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
 
   "@patchwork/datagrid": "./datagrid/index.js",

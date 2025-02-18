@@ -1,4 +1,4 @@
-import { DocPathUtils } from "@patchwork/folder";
+import { DocPathUtils } from "@patchwork/sdk/router";
 import { useRef, useEffect } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { NodeData } from "./Node";

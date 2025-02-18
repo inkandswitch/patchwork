@@ -8,7 +8,8 @@ import { selectDocLink } from "@patchwork/sdk";
 import { MainViewMode, useDocUIState } from "@patchwork/sdk/router";
 import { getRelativeTimeString } from "@patchwork/sdk/versionControl";
 import { Om } from "@patchwork/sdk/om";
-import { DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
+import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
+import { FolderDoc } from "@patchwork/sdk/borrowed-bits";
 import { Tool } from "@patchwork/sdk";
 
 import {

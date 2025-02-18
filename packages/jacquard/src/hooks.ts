@@ -1,6 +1,6 @@
-import { Account } from "@patchwork/sdk";
+import { Account, DocPath } from "@patchwork/sdk";
 import { Om } from "@patchwork/sdk/om";
-import { DocPath, FolderDoc } from "@patchwork/folder";
+import { FolderDoc } from "@patchwork/sdk/borrowed-bits";
 import {
   fetchBranchScopeAndActiveBranchInfo,
   fetchOmOnFixedBranch,

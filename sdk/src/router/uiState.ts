@@ -5,13 +5,13 @@ import {
   useAsyncCall,
 } from "../async-signals";
 import { Om } from "../om";
-import { DocPath, DocPathUtils } from "@patchwork/folder";
+import { DocPath, DocPathUtils } from "./DocLink";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useCallback, useMemo } from "react";
 import { Atom, atom } from "signia";
 import { useValue } from "signia-react";
-import { Account, AccountDoc, useCurrentAccount } from "..";
+import { Account, AccountDoc, useCurrentAccount } from "../account";
 
 export type UIStateDoc = {
   /**

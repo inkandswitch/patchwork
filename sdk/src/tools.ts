@@ -13,7 +13,7 @@ import {
 } from "@automerge/automerge-repo";
 import React from "react";
 import { IconType } from "./ui/icons";
-import { DocPath } from "@patchwork/folder";
+import { DocPath } from "./router/DocLink";
 import EventEmitter from "eventemitter3";
 
 // To construct well-typed tools, we need ToolTyped with specific type

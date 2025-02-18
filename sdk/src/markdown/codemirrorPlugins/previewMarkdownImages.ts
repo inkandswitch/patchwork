@@ -119,8 +119,10 @@ export const previewImagesPlugin = (handle: DocHandle<unknown>, repo: Repo) => [
     class {
       decorations: DecorationSet = Decoration.set([]);
       images: HTMLImageElement[] = [];
+      view: EditorView;
 
-      constructor(private view: EditorView) {
+      constructor(view: EditorView) {
+        this.view = view
         this.decorations = getImages([], undefined, view);
       }
 

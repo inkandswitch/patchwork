@@ -1,8 +1,4 @@
-import {
-  DocPath,
-  DocPathUtils,
-  FolderDocWithChildren,
-} from "@patchwork/folder";
+import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { dataTypeById } from "@patchwork/sdk";
 import {
   Icon,
@@ -12,7 +8,6 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@patchwork/sdk/ui";
-import { uniqBy } from "lodash-es";
 import { AlertCircle } from "lucide-react";
 import { createContext, useContext, useMemo } from "react";
 import { NodeRendererProps } from "react-arborist";

@@ -1,8 +1,7 @@
-import { dataTypeById } from "..";
+import { dataTypeById } from "../datatypes";
 import { useStaticCallback } from "../hooks/useStaticCallback";
-import { DocLink, DocPathUtils, FolderDoc } from "@patchwork/folder";
-import { DocPath } from "@patchwork/folder";
-import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
+import { DocPath, DocLink, DocPathUtils } from "./DocLink";
+import { FolderDoc, FolderDocWithMetadata } from "../borrowed-bits/FolderDoc";
 import { setActiveBranchUrl } from "../versionControl";
 import { BranchDoc } from "../versionControl";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -14,10 +13,13 @@ import { URLParams } from "./types";
 import { parseLegacyUrl, parseUrl, toUrl } from "./urls";
 import { useSelectedDocPathState } from "./useSelectedDocPathState";
 
+export { type DocLink, type DocPath, DocPathUtils };
+
 export {
   type SidebarMode,
   type MainViewMode,
   type UIStateDoc,
+  type DocUIState,
   useUIStateOm,
   useDocUIState,
   useToolUIState,

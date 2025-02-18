@@ -1,7 +1,7 @@
 import { UIStateDoc } from "../router/uiState";
 import { Om } from "../om";
-import { DocPath, DocPathUtils } from "@patchwork/folder";
-import { DataType, dataTypeById } from "..";
+import { DocPath, DocPathUtils } from "../router/DocLink";
+import { dataTypeById } from "../datatypes";
 import {
   DocCloneMap,
   ensureMetadataHandleIsBranchScope,

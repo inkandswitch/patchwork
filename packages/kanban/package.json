@@ -8,7 +8,7 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "vite build"
+    "build": "tsup"
   },
   "keywords": [],
   "dependencies": {
@@ -36,6 +36,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/react-window": "^1.8.8",
     "@vitejs/plugin-react": "^4.3.1",
+    "tsup": "^8.3.6",
     "vite": "^6.0.3",
     "vite-plugin-top-level-await": "^1.4.2",
     "vite-plugin-wasm": "^3.3.0"

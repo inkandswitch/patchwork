@@ -1,4 +1,4 @@
-import { ContactDoc, RegisteredContactDoc } from "..";
+import { ContactDoc, RegisteredContactDoc } from "../account";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,

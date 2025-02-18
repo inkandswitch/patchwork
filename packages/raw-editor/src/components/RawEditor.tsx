@@ -6,7 +6,7 @@ import {
 } from "@automerge/automerge-repo-react-hooks";
 import ReactJson, { InteractionProps } from "@microlink/react-json-view";
 import { useCallback, useState } from "react";
-import styles from "../rawEditor.module.css";
+import "../rawEditor.module.css";
 
 export const RawEditor = ({
   docUrl: originalDocumentUrl,
@@ -129,7 +129,7 @@ export const RawEditor = ({
   }
 
   return (
-    <div className={`${styles.rawEditor} p-2 h-full overflow-auto`}>
+    <div className={`p-2 h-full overflow-auto`}>
       <ReactJson
         collapsed={3}
         src={doc}

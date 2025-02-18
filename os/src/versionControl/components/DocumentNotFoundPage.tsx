@@ -1,4 +1,4 @@
-import { DocLink } from "@patchwork/folder";
+import { DocLink } from "@patchwork/sdk/router";
 import { toHashUrl } from "@patchwork/sdk";
 import { BranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 import { CrownIcon } from "lucide-react";

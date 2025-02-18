@@ -1,11 +1,11 @@
-import { FolderDocWithMetadata } from "@patchwork/folder/hooks/fetchFolderDocWithMetadata";
+import { FileDoc } from "@patchwork/sdk/borrowed-bits";
+import { FolderDocWithMetadata } from "@patchwork/sdk/borrowed-bits";
 import { objectEntries } from "@patchwork/sdk/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, encodeHeads } from "@automerge/automerge-repo";
-import { FileDoc } from "@patchwork/file";
 import { BuildRun, Reference } from "./datatype";
 import { fetchMap } from "@patchwork/sdk/async-signals";
-import { DocPath, DocPathUtils } from "@patchwork/folder";
+import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
 
 export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
   // TODO: we should be able to use equality to check if heads match, but

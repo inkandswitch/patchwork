@@ -2,8 +2,12 @@ import { dataTypeById } from "@patchwork/sdk";
 import { useCurrentAccount } from "@patchwork/sdk";
 import { ErrorFallback } from "@patchwork/sdk/components";
 import { LoadingScreen } from "@patchwork/sdk/components";
-import { useDocUIState, useUIStateOm } from "@patchwork/sdk/router";
-import { DocPath, DocPathUtils } from "@patchwork/folder";
+import {
+  DocPath,
+  DocPathUtils,
+  useDocUIState,
+  useUIStateOm,
+} from "@patchwork/sdk/router";
 import { useToast } from "@patchwork/sdk/ui";
 import { Tool } from "@patchwork/sdk";
 

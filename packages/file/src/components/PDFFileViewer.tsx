@@ -14,9 +14,9 @@ import "react-pdf/dist/esm/Page/TextLayer.css";
 import { EditorProps } from "@patchwork/sdk";
 import { FileDoc, isBinaryFileDoc } from "../datatype";
 import { useToolUIState } from "@patchwork/sdk/router";
-import { DocPath } from "@patchwork/folder";
+import { DocPath } from "@patchwork/sdk/router";
 import { clsx } from "clsx";
-import { eventListenerEffect } from "@patchwork/sdk/utils";
+import { eventListenerEffect } from "@patchwork/sdk";
 
 // react-pdf doesn't make this easy
 type OnPageRenderSuccess = NonNullable<

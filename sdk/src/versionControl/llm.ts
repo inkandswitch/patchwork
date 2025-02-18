@@ -1,20 +1,22 @@
 import OpenAI from "openai";
 
-export const isLLMActive = import.meta.env["VITE_OPENAI_API_KEY"] !== undefined;
+export const isLLMActive = false; // TODO: import.meta.env["VITE_OPENAI_API_KEY"] !== undefined;
 
 export const openaiClient = isLLMActive
   ? new OpenAI({
-      apiKey: import.meta.env["VITE_OPENAI_API_KEY"],
+      apiKey: undefined, // import.meta.env["VITE_OPENAI_API_KEY"],
       dangerouslyAllowBrowser: true,
     })
   : undefined;
 
 export const getOpenaiClient = () => {
   if (!openaiClient) {
-    throw new Error("openaiClient not initialized: VITE_OPENAI_API_KEY not provided");
+    throw new Error(
+      "openaiClient not initialized: VITE_OPENAI_API_KEY not provided"
+    );
   }
   return openaiClient;
-}
+};
 
 export const DEFAULT_MODEL = "gpt-4o";
 

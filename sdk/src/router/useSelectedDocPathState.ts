@@ -1,4 +1,4 @@
-import { DocPath, DocPathUtils } from "@patchwork/folder";
+import { DocPath, DocPathUtils } from "./DocLink";
 import { useBranchScopeAndActiveBranchInfo } from "../versionControl";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useState } from "react";

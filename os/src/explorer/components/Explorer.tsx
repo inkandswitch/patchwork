@@ -3,7 +3,7 @@ import {
   DataTypeImplementation,
   useSuggestedModuleForDocUrl,
 } from "@patchwork/sdk";
-import { type DocPath, DocPathUtils } from "@patchwork/folder";
+import { type DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { Toaster } from "@patchwork/sdk/ui";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";

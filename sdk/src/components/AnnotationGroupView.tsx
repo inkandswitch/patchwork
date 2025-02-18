@@ -1,4 +1,5 @@
-import { AnnotationsViewProps, useCurrentAccount } from "..";
+import { useCurrentAccount } from "../account";
+import { AnnotationsViewProps } from "../tools";
 import { ContactAvatar } from "../components";
 import { getRelativeTimeString } from "../versionControl";
 import { MarkdownInput } from "../markdown";

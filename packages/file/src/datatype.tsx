@@ -27,6 +27,8 @@ export type BinaryFileDoc = HasVersionControlMetadata<TextAnchor, string> & {
   content: Uint8Array;
 };
 
+export type FileDoc = BinaryFileDoc | TextFileDoc;
+
 export function isBinaryFileDoc(doc: FileDoc): doc is BinaryFileDoc {
   return doc.content instanceof Uint8Array;
 }
@@ -38,8 +40,6 @@ export function isTextFileDoc(doc: FileDoc): doc is TextFileDoc {
 export const isRawStringFileDoc = (doc: FileDoc): boolean => {
   return Automerge.isRawString(doc.content);
 };
-
-export type FileDoc = BinaryFileDoc | TextFileDoc;
 
 // This is really here because RawString requires .toString() to be called
 export const getFileContents = (doc: FileDoc): string | Uint8Array => {

@@ -1,4 +1,5 @@
-import { FolderDoc, DocPath, DocPathUtils } from "@patchwork/folder";
+import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
+import { FolderDoc } from "@patchwork/sdk/borrowed-bits";
 import {
   dataTypeById,
   getExportMethodsForDatatype,

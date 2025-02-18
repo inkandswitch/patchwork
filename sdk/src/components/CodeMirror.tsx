@@ -85,9 +85,6 @@ export const CodeMirror = memo(
       return (
         <div className="bg-red-100 p-4">
           <p className="mb-2">⛔️ Error: editor crashed!</p>
-          {import.meta.env.MODE === "development" && (
-            <p className="mb-2">Probably due to hot reload in dev.</p>
-          )}
           <p className="mb-2">
             We're sorry for the inconvenience. Please reload to keep working.
             Your data was most likely saved before the crash.

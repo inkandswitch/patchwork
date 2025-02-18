@@ -1,6 +1,9 @@
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import { EditorSelection } from "@codemirror/state";
-import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from "@patchwork/file";
+import {
+  IMAGE_EXTENSIONS,
+  VIDEO_EXTENSIONS,
+} from "../../borrowed-bits/FileDoc";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 

@@ -4,7 +4,13 @@ import {
   fetchMap,
   useAsyncComputed,
 } from "@patchwork/sdk/async-signals";
-import { Account, useCurrentAccount } from "@patchwork/sdk";
+import {
+  Account,
+  useCurrentAccount,
+  DocLink,
+  DocPath,
+  DocPathUtils,
+} from "@patchwork/sdk";
 import {
   fetchOmOnFixedBranch,
   fetchOmOnActiveBranch,
@@ -13,13 +19,7 @@ import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { last } from "lodash";
 import { useCallback } from "react";
-import {
-  DocLink,
-  DocPath,
-  DocPathUtils,
-  FolderDoc,
-  FolderDocMaterialized,
-} from "../datatype";
+import { FolderDoc, FolderDocMaterialized } from "../datatype";
 
 /**
  * Kinda a convenience type, bundling a (materialized) FolderDoc with

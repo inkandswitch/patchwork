@@ -1,5 +1,5 @@
 import { ErrorFallback } from "@patchwork/sdk/components";
-import { selectDocLink } from "@patchwork/sdk/router";
+import { selectDocLink, DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { useDocUIState } from "@patchwork/sdk/router";
 import { Icon, IconType } from "@patchwork/sdk/ui";
 import {
@@ -16,7 +16,7 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { next as A } from "@automerge/automerge";
 import React, { useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { DocPath, DocPathUtils, FolderDoc } from "./datatype";
+import { FolderDoc } from "./datatype";
 import { MountOnlyWhenVisible } from "./MountOnlyWhenVisible";
 import { decodeHeads } from "@automerge/automerge-repo";
 
