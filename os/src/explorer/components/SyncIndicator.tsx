@@ -1,7 +1,12 @@
 // TODO move these utils
 import { getRelativeTimeString } from "@patchwork/sdk/versionControl";
 import { next as A, Heads } from "@automerge/automerge";
-import { AutomergeUrl, DocHandle, StorageId } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  DocHandle,
+  StorageId,
+  UrlHeads,
+} from "@automerge/automerge-repo";
 import { useDocHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
 import {
   Button,
@@ -304,8 +309,8 @@ enum SyncState {
 }
 
 interface SyncIndicatorState {
-  syncServerHeads: A.Heads | undefined;
-  ownHeads: A.Heads | undefined;
+  syncServerHeads: UrlHeads | undefined;
+  ownHeads: UrlHeads | undefined;
   lastSyncUpdate?: number;
   isInternetConnected: boolean;
   syncState: SyncState;
@@ -319,8 +324,10 @@ function useSyncIndicatorState(
 ): SyncIndicatorState {
   const repo = useRepo();
   const [lastSyncUpdate, setLastSyncUpdate] = useState<number | undefined>(); // todo: should load that from persisted sync state
-  const [syncServerHeads, setSyncServerHeads] = useState<A.Heads | undefined>();
-  const [ownHeads, setOwnHeads] = useState<A.Heads | undefined>();
+  const [syncServerHeads, setSyncServerHeads] = useState<
+    UrlHeads | undefined
+  >();
+  const [ownHeads, setOwnHeads] = useState<UrlHeads | undefined>();
 
   useEffect(() => {
     // hack: since we have two sync indictators we hard code the storage ids here
@@ -367,14 +374,14 @@ function useSyncIndicatorState(
   useEffect(() => {
     if (machine.matches("sync.unknown")) {
       const syncServerHeads = handle.getRemoteHeads(storageId);
-      setSyncServerHeads(syncServerHeads ?? []); // initialize to empty heads if we have no state
-      setOwnHeads(A.getHeads(handle.doc()));
+      setSyncServerHeads(syncServerHeads ?? ([] as unknown as UrlHeads)); // initialize to empty heads if we have no state
+      setOwnHeads(handle.heads());
     }
 
     const onChange = () => {
       const doc = handle.doc();
       if (doc) {
-        setOwnHeads(A.getHeads(doc));
+        setOwnHeads(handle.heads());
       }
     };
 
@@ -383,7 +390,7 @@ function useSyncIndicatorState(
       heads,
     }: {
       storageId: StorageId;
-      heads: Heads;
+      heads: UrlHeads;
     }) => {
       if (storageId === remoteStorageId) {
         send({ type: "RECEIVED_SYNC_MESSAGE" });
