@@ -81,7 +81,22 @@ const generateImportMapPlugin = (): Plugin => ({
       resolutions: SHARED_MODULES,
     });
 
-    await generator.install(EXTERNAL_DEPENDENCIES);
+    await generator.install([
+      ...EXTERNAL_DEPENDENCIES,
+      "@patchwork/sdk/async-signals",
+      "@patchwork/sdk/borrowed-bits",
+      "@patchwork/sdk/components",
+      "@patchwork/sdk/files",
+      "@patchwork/sdk/hooks",
+      "@patchwork/sdk/om",
+      "@patchwork/sdk/markdown",
+      "@patchwork/sdk/router",
+      "@patchwork/sdk/textAnchors",
+      "@patchwork/sdk/ui",
+      "@patchwork/sdk/versionControl",
+      "@patchwork/sdk/utils",
+      "@patchwork/sdk/shared-dependencies",
+    ]);
     const importMap = generator.getMap();
 
     return {
@@ -120,7 +135,12 @@ export default defineConfig({
   build: {
     minify: false,
     rollupOptions: {
-      external: EXTERNAL_DEPENDENCIES,
+      external: (id) => {
+        // More precise external matching
+        if (id === "@patchwork/sdk") return true;
+        if (id.startsWith("@patchwork/sdk/")) return true;
+        return EXTERNAL_DEPENDENCIES.includes(id);
+      },
       input: {
         main: path.resolve(__dirname, "index.html"),
       },

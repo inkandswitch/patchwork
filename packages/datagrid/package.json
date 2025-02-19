@@ -8,7 +8,7 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "vite build",
     "push": "pnpm build && pnpm --filter @patchwork/os build:datagrid"
   },
   "keywords": [],

@@ -9,7 +9,7 @@
     "./components": "./dist/components.js"
   },
   "scripts": {
-    "build": "tsup"
+    "build": "vite build"
   },
   "keywords": [],
   "author": "Ink & Switch",
