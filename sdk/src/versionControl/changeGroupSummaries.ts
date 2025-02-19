@@ -1,6 +1,6 @@
 import { getStringCompletion, isLLMActive } from "../versionControl/llm";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import { debounce } from "lodash";
+import { debounce } from "lodash-es";
 import { useEffect, useMemo } from "react";
 import { ChangeGroup } from "./groupChanges";
 import {

@@ -4,7 +4,7 @@ import {
   getCursorSafely,
 } from "../versionControl";
 import { next as Automerge } from "@automerge/automerge";
-import { get, isEqual, last } from "lodash";
+import { get, isEqual, last } from "lodash-es";
 import { diffWords } from "diff";
 
 export type TextAnchor = {

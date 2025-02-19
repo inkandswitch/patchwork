@@ -1,4 +1,4 @@
-import { isEqual } from "lodash";
+import { isEqual } from "lodash-es";
 import { DocLink, DocPath, DocPathUtils } from "./DocLink";
 import { FolderDocWithMetadata } from "../borrowed-bits/FolderDoc";
 import { URLParams } from "./types";

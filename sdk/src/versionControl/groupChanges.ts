@@ -23,7 +23,7 @@ import {
   getHeads,
   view,
 } from "@automerge/automerge";
-import { isEqual, sortBy } from "lodash";
+import { isEqual, sortBy } from "lodash-es";
 import { ReactElement } from "react";
 import { getChangesFromMergedBranch } from "./branches";
 

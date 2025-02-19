@@ -8,7 +8,7 @@ import { Account, useCurrentAccount } from "../account";
 import { fetchOmOnFixedBranch, fetchOmOnActiveBranch } from "../versionControl";
 import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { last } from "lodash";
+import { last } from "lodash-es";
 import { useCallback } from "react";
 import { DocLink, DocPath, DocPathUtils } from "../router/DocLink";
 import { FolderDocMaterialized, FolderDoc } from "./FolderDoc";

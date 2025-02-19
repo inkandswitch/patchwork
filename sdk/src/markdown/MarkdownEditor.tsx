@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useMarkdownPlugins } from "./useMarkdownPlugins";
 import { theme } from "./codemirrorPlugins/theme";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
-import { get } from "lodash";
+import { get } from "lodash-es";
 
 type MarkdownEditorProps = {
   handle: DocHandle<unknown>;

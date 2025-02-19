@@ -6,7 +6,7 @@ import {
   Decoration,
 } from "@codemirror/view";
 import { Range } from "@codemirror/state";
-import { set } from "lodash";
+import { set } from "lodash-es";
 
 const CODE_BLOCK_REGEX = /```.*?```/gs;
 const INLINE_CODE_REGEX = /`[^\n\`]+?`/g;
