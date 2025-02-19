@@ -103,7 +103,7 @@ importers:
         version: 2.2.9-alpha.4
       '@automerge/automerge-repo-react-hooks':
         specifier: 2.0.0-alpha.22
-        version: 2.0.0-alpha.22(@swc/core@1.10.9(@swc/helpers@0.5.15))(@types/node@22.10.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
+        version: 2.0.0-alpha.22(@types/node@22.10.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@handsontable/react':
         specifier: ^14.4.0
         version: 14.6.1(handsontable@14.6.1)
@@ -135,9 +135,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.3.1
         version: 4.3.4(vite@5.4.14(@types/node@22.10.9)(terser@5.37.0))
-      tsup:
-        specifier: ^8.3.6
-        version: 8.3.6(@microsoft/api-extractor@7.50.0(@types/node@22.10.9))(@swc/core@1.10.9(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0)
       vite:
         specifier: ^5.3.4
         version: 5.4.14(@types/node@22.10.9)(terser@5.37.0)
@@ -223,9 +220,6 @@ importers:
       eslint-plugin-react-hooks:
         specifier: ^4.6.2
         version: 4.6.2(eslint@8.57.1)
-      tsup:
-        specifier: ^8.3.6
-        version: 8.3.6(@microsoft/api-extractor@7.50.0(@types/node@22.10.9))(@swc/core@1.10.9(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0)
       vite:
         specifier: ^5.3.4
         version: 5.4.14(@types/node@22.10.9)(terser@5.37.0)
@@ -341,9 +335,6 @@ importers:
       eslint-plugin-react-hooks:
         specifier: ^4.6.2
         version: 4.6.2(eslint@8.57.1)
-      tsup:
-        specifier: ^8.3.6
-        version: 8.3.6(@microsoft/api-extractor@7.50.0(@types/node@20.17.16))(@swc/core@1.10.9(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0)
       vite:
         specifier: ^5.4.2
         version: 5.4.14(@types/node@20.17.16)(terser@5.37.0)
@@ -396,9 +387,6 @@ importers:
       eslint-plugin-react-hooks:
         specifier: ^4.6.2
         version: 4.6.2(eslint@8.57.1)
-      tsup:
-        specifier: ^8.3.6
-        version: 8.3.6(@microsoft/api-extractor@7.50.0(@types/node@22.10.9))(@swc/core@1.10.9(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0)
       vite:
         specifier: ^6.0.3
         version: 6.0.11(@types/node@22.10.9)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0)
@@ -457,9 +445,6 @@ importers:
       eslint-plugin-react-hooks:
         specifier: ^4.6.2
         version: 4.6.2(eslint@8.57.1)
-      tsup:
-        specifier: ^8.3.6
-        version: 8.3.6(@microsoft/api-extractor@7.50.0(@types/node@22.10.9))(@swc/core@1.10.9(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0)
       vite:
         specifier: ^6.0.3
         version: 6.0.11(@types/node@22.10.9)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0)
@@ -542,9 +527,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.3.1
         version: 4.3.4(vite@6.0.11(@types/node@22.10.9)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0))
-      tsup:
-        specifier: ^8.3.6
-        version: 8.3.6(@microsoft/api-extractor@7.50.0(@types/node@22.10.9))(@swc/core@1.10.9(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0)
       vite:
         specifier: ^6.0.3
         version: 6.0.11(@types/node@22.10.9)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0)
@@ -582,9 +564,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.3.1
         version: 4.3.4(vite@5.4.14(@types/node@22.10.9)(terser@5.37.0))
-      tsup:
-        specifier: ^8.3.6
-        version: 8.3.6(@microsoft/api-extractor@7.50.0(@types/node@22.10.9))(@swc/core@1.10.9(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0)
       vite:
         specifier: ^5.3.4
         version: 5.4.14(@types/node@22.10.9)(terser@5.37.0)
@@ -631,9 +610,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.3.1
         version: 4.3.4(vite@6.0.11(@types/node@20.17.16)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0))
-      tsup:
-        specifier: ^8.3.6
-        version: 8.3.6(@microsoft/api-extractor@7.50.0(@types/node@20.17.16))(@swc/core@1.10.9(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0)
       vite:
         specifier: ^6.0.3
         version: 6.0.11(@types/node@20.17.16)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0)
@@ -683,9 +659,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.3.1
         version: 4.3.4(vite@6.0.11(@types/node@22.10.9)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0))
-      tsup:
-        specifier: ^8.3.6
-        version: 8.3.6(@microsoft/api-extractor@7.50.0(@types/node@22.10.9))(@swc/core@1.10.9(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0)
       vite:
         specifier: ^6.0.3
         version: 6.0.11(@types/node@22.10.9)(jiti@1.21.7)(terser@5.37.0)(yaml@2.7.0)
@@ -6767,6 +6740,21 @@ snapshots:
       - supports-color
       - typescript
 
+  '@automerge/automerge-repo-react-hooks@2.0.0-alpha.22(@types/node@22.10.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)':
+    dependencies:
+      '@automerge/automerge': 2.2.9-alpha.4
+      '@automerge/automerge-repo': 2.0.0-alpha.22(@types/node@22.10.9)(typescript@5.7.3)
+      eventemitter3: 5.0.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-usestateref: 1.0.9(react@18.3.1)
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - supports-color
+      - typescript
+
   '@automerge/automerge-repo-storage-indexeddb@2.0.0-alpha.22(@swc/core@1.10.9(@swc/helpers@0.5.15))(@types/node@20.17.16)(typescript@5.7.3)':
     dependencies:
       '@automerge/automerge-repo': 2.0.0-alpha.22(@swc/core@1.10.9(@swc/helpers@0.5.15))(@types/node@20.17.16)(typescript@5.7.3)
@@ -6817,6 +6805,25 @@ snapshots:
       fast-sha256: 1.3.0
       tiny-typed-emitter: 2.1.0
       ts-node: 10.9.2(@swc/core@1.10.9(@swc/helpers@0.5.15))(@types/node@22.10.9)(typescript@5.7.3)
+      uuid: 9.0.1
+      xstate: 5.19.2
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - supports-color
+      - typescript
+
+  '@automerge/automerge-repo@2.0.0-alpha.22(@types/node@22.10.9)(typescript@5.7.3)':
+    dependencies:
+      '@automerge/automerge': 2.2.9-alpha.4
+      bs58check: 3.0.1
+      cbor-x: 1.6.0
+      debug: 4.4.0
+      eventemitter3: 5.0.1
+      fast-sha256: 1.3.0
+      tiny-typed-emitter: 2.1.0
+      ts-node: 10.9.2(@types/node@22.10.9)(typescript@5.7.3)
       uuid: 9.0.1
       xstate: 5.19.2
     transitivePeerDependencies:
@@ -7819,15 +7826,6 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
-  '@microsoft/api-extractor-model@7.30.3(@types/node@20.17.16)':
-    dependencies:
-      '@microsoft/tsdoc': 0.15.1
-      '@microsoft/tsdoc-config': 0.17.1
-      '@rushstack/node-core-library': 5.11.0(@types/node@20.17.16)
-    transitivePeerDependencies:
-      - '@types/node'
-    optional: true
-
   '@microsoft/api-extractor-model@7.30.3(@types/node@22.10.9)':
     dependencies:
       '@microsoft/tsdoc': 0.15.1
@@ -7835,25 +7833,6 @@ snapshots:
       '@rushstack/node-core-library': 5.11.0(@types/node@22.10.9)
     transitivePeerDependencies:
       - '@types/node'
-
-  '@microsoft/api-extractor@7.50.0(@types/node@20.17.16)':
-    dependencies:
-      '@microsoft/api-extractor-model': 7.30.3(@types/node@20.17.16)
-      '@microsoft/tsdoc': 0.15.1
-      '@microsoft/tsdoc-config': 0.17.1
-      '@rushstack/node-core-library': 5.11.0(@types/node@20.17.16)
-      '@rushstack/rig-package': 0.5.3
-      '@rushstack/terminal': 0.15.0(@types/node@20.17.16)
-      '@rushstack/ts-command-line': 4.23.5(@types/node@20.17.16)
-      lodash: 4.17.21
-      minimatch: 3.0.8
-      resolve: 1.22.10
-      semver: 7.5.4
-      source-map: 0.6.1
-      typescript: 5.7.2
-    transitivePeerDependencies:
-      - '@types/node'
-    optional: true
 
   '@microsoft/api-extractor@7.50.0(@types/node@22.10.9)':
     dependencies:
@@ -9088,20 +9067,6 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.31.0':
     optional: true
 
-  '@rushstack/node-core-library@5.11.0(@types/node@20.17.16)':
-    dependencies:
-      ajv: 8.13.0
-      ajv-draft-04: 1.0.0(ajv@8.13.0)
-      ajv-formats: 3.0.1(ajv@8.13.0)
-      fs-extra: 11.3.0
-      import-lazy: 4.0.0
-      jju: 1.4.0
-      resolve: 1.22.10
-      semver: 7.5.4
-    optionalDependencies:
-      '@types/node': 20.17.16
-    optional: true
-
   '@rushstack/node-core-library@5.11.0(@types/node@22.10.9)':
     dependencies:
       ajv: 8.13.0
@@ -9120,30 +9085,12 @@ snapshots:
       resolve: 1.22.10
       strip-json-comments: 3.1.1
 
-  '@rushstack/terminal@0.15.0(@types/node@20.17.16)':
-    dependencies:
-      '@rushstack/node-core-library': 5.11.0(@types/node@20.17.16)
-      supports-color: 8.1.1
-    optionalDependencies:
-      '@types/node': 20.17.16
-    optional: true
-
   '@rushstack/terminal@0.15.0(@types/node@22.10.9)':
     dependencies:
       '@rushstack/node-core-library': 5.11.0(@types/node@22.10.9)
       supports-color: 8.1.1
     optionalDependencies:
       '@types/node': 22.10.9
-
-  '@rushstack/ts-command-line@4.23.5(@types/node@20.17.16)':
-    dependencies:
-      '@rushstack/terminal': 0.15.0(@types/node@20.17.16)
-      '@types/argparse': 1.0.38
-      argparse: 1.0.10
-      string-argv: 0.3.2
-    transitivePeerDependencies:
-      - '@types/node'
-    optional: true
 
   '@rushstack/ts-command-line@4.23.5(@types/node@22.10.9)':
     dependencies:
@@ -12838,40 +12785,29 @@ snapshots:
     optionalDependencies:
       '@swc/core': 1.10.9(@swc/helpers@0.5.15)
 
+  ts-node@10.9.2(@types/node@22.10.9)(typescript@5.7.3):
+    dependencies:
+      '@cspotcode/source-map-support': 0.8.1
+      '@tsconfig/node10': 1.0.11
+      '@tsconfig/node12': 1.0.11
+      '@tsconfig/node14': 1.0.3
+      '@tsconfig/node16': 1.0.4
+      '@types/node': 22.10.9
+      acorn: 8.14.0
+      acorn-walk: 8.3.4
+      arg: 4.1.3
+      create-require: 1.1.1
+      diff: 4.0.2
+      make-error: 1.3.6
+      typescript: 5.7.3
+      v8-compile-cache-lib: 3.0.1
+      yn: 3.1.1
+
   tsconfck@3.1.4(typescript@5.7.3):
     optionalDependencies:
       typescript: 5.7.3
 
   tslib@2.8.1: {}
-
-  tsup@8.3.6(@microsoft/api-extractor@7.50.0(@types/node@20.17.16))(@swc/core@1.10.9(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0):
-    dependencies:
-      bundle-require: 5.1.0(esbuild@0.24.2)
-      cac: 6.7.14
-      chokidar: 4.0.3
-      consola: 3.4.0
-      debug: 4.4.0
-      esbuild: 0.24.2
-      joycon: 3.1.1
-      picocolors: 1.1.1
-      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.1)(yaml@2.7.0)
-      resolve-from: 5.0.0
-      rollup: 4.31.0
-      source-map: 0.8.0-beta.0
-      sucrase: 3.35.0
-      tinyexec: 0.3.2
-      tinyglobby: 0.2.10
-      tree-kill: 1.2.2
-    optionalDependencies:
-      '@microsoft/api-extractor': 7.50.0(@types/node@20.17.16)
-      '@swc/core': 1.10.9(@swc/helpers@0.5.15)
-      postcss: 8.5.1
-      typescript: 5.7.3
-    transitivePeerDependencies:
-      - jiti
-      - supports-color
-      - tsx
-      - yaml
 
   tsup@8.3.6(@microsoft/api-extractor@7.50.0(@types/node@22.10.9))(@swc/core@1.10.9(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0):
     dependencies:

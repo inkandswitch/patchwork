@@ -28,7 +28,6 @@
     "@types/lodash": "^4.17.7",
     "@types/react": "^18.3.3",
     "@vitejs/plugin-react": "^4.3.1",
-    "tsup": "^8.3.6",
     "vite": "^5.3.4",
     "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-top-level-await": "^1.4.2",

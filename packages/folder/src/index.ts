@@ -67,10 +67,3 @@ export const DocPathUtils = {
     return a.every((link, i) => link.url === b[i].url);
   },
 };
-
-export {
-  fetchFolderDocWithMetadata,
-  useFolderDocWithMetadataOnActiveBranch,
-  fetchFolderDocWithMetadataOnFixedBranch,
-  type FolderDocWithMetadata,
-} from "./hooks/fetchFolderDocWithMetadata";
