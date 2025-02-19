@@ -607,8 +607,8 @@ importers:
         specifier: 2.0.0-alpha.22
         version: 2.0.0-alpha.22(@swc/core@1.10.9(@swc/helpers@0.5.15))(@types/node@20.17.16)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@microlink/react-json-view':
-        specifier: ^1.23.1
-        version: 1.24.0(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^1.26.1
+        version: 1.26.1(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patchwork/sdk':
         specifier: workspace:*
         version: link:../../sdk
@@ -800,7 +800,7 @@ importers:
       eventemitter3:
         specifier: ^5.0.1
         version: 5.0.1
-      lodash:
+      lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
       lucide:
@@ -1822,8 +1822,9 @@ packages:
   '@marijn/find-cluster-break@1.0.2':
     resolution: {integrity: sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g==}
 
-  '@microlink/react-json-view@1.24.0':
-    resolution: {integrity: sha512-xrOBvWUR05Pe1x/H7op/yrLFpmf+VjMc5acu7pQpfS70Pux6AmoI+sO7jf2e76OYv27TOvt0TnYSXc3OtjH3Bg==}
+  '@microlink/react-json-view@1.26.1':
+    resolution: {integrity: sha512-2H5QCYdZlJi+oN4YBiUYPPFTNh/KLCN9i9yz8NwmSkRqXSRXYtEVIRffc9L34jdopKGK/tK21SeuzXVJHQLkfQ==}
+    engines: {node: '>=17'}
     peerDependencies:
       react: '>= 15'
       react-dom: '>= 15'
@@ -5714,11 +5715,11 @@ packages:
       '@types/react':
         optional: true
 
-  react-textarea-autosize@8.3.4:
-    resolution: {integrity: sha512-CdtmP8Dc19xL8/R6sWvtknD/eCXkQr30dtvC4VmGInhRsfF8X/ihXCq6+9l9qbxmKRiq407/7z5fxE7cVWQNgQ==}
+  react-textarea-autosize@8.5.7:
+    resolution: {integrity: sha512-2MqJ3p0Jh69yt9ktFIaZmORHXw4c4bxSIhCeWiFwmJ9EYKgLmuNII3e9c9b2UO+ijl4StnpZdqpxNIhTdHvqtQ==}
     engines: {node: '>=10'}
     peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   react-toastify@10.0.6:
     resolution: {integrity: sha512-yYjp+omCDf9lhZcrZHKbSq7YMuK0zcYkDFTzfRFgTXkTFHZ1ToxwAonzA4JI5CxA91JpjFLmwEsZEgfYfOqI1A==}
@@ -7802,13 +7803,13 @@ snapshots:
 
   '@marijn/find-cluster-break@1.0.2': {}
 
-  '@microlink/react-json-view@1.24.0(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@microlink/react-json-view@1.26.1(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       react: 18.3.1
       react-base16-styling: 0.9.1
       react-dom: 18.3.1(react@18.3.1)
       react-lifecycles-compat: 3.0.4
-      react-textarea-autosize: 8.3.4(@types/react@18.3.18)(react@18.3.1)
+      react-textarea-autosize: 8.5.7(@types/react@18.3.18)(react@18.3.1)
     transitivePeerDependencies:
       - '@types/react'
 
@@ -12240,7 +12241,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 18.3.18
 
-  react-textarea-autosize@8.3.4(@types/react@18.3.18)(react@18.3.1):
+  react-textarea-autosize@8.5.7(@types/react@18.3.18)(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.26.0
       react: 18.3.1

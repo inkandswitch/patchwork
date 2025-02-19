@@ -1,31 +1,30 @@
-import { defineConfig } from "tsup"
-import { EXTERNAL_DEPENDENCIES } from "@patchwork/sdk/shared-dependencies"
+import { defineConfig } from "tsup";
+import { EXTERNAL_DEPENDENCIES } from "@patchwork/sdk/shared-dependencies";
 
 export default defineConfig({
   entry: {
-    'index': 'src/index.ts',
-    'components': 'src/components/index.ts',
+    index: "src/index.ts",
+    components: "src/components/index.ts",
   },
   format: ["esm"],
-  target: 'es2020',
+  target: "es2020",
   dts: true,
   clean: true,
-  external: EXTERNAL_DEPENDENCIES,
   treeshake: true,
   sourcemap: true,
   splitting: false,
   outDir: "dist",
-  noExternal: [/.*/],
+  noExternal: [new RegExp(`^(?!(${EXTERNAL_DEPENDENCIES.join("|")})($|/)).*$`)],
   injectStyle: true,
   // Enable JSX handling
-  jsx: 'automatic',
+  jsx: "automatic",
   // Set module resolution
   esbuildOptions(options) {
-    options.jsx = 'automatic'
+    options.jsx = "automatic";
     options.loader = {
       ...options.loader,
-      '.css': 'css',
-      '.tsx': 'tsx'
-    }
-  }
-})
+      ".css": "css",
+      ".tsx": "tsx",
+    };
+  },
+});

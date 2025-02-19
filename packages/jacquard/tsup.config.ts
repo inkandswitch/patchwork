@@ -14,12 +14,11 @@ export default defineConfig({
   target: "es2020",
   dts: true,
   clean: true,
-  external: EXTERNAL_DEPENDENCIES,
+  noExternal: [new RegExp(`^(?!(${EXTERNAL_DEPENDENCIES.join("|")})($|/)).*$`)],
   treeshake: true,
   sourcemap: true,
   splitting: false,
   outDir: "dist",
-  // noExternal: [/.*/],
   injectStyle: true,
   // Enable JSX handling
   jsx: "automatic",

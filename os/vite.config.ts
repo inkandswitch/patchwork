@@ -78,21 +78,11 @@ const generateImportMapPlugin = (): Plugin => ({
     // in build mode generate import map
     const generator = new Generator({
       env: ["browser", "module"],
+      resolutions: SHARED_MODULES,
     });
 
-    for (const dep of SHARED_DEPENDENCIES) {
-      await generator.install(dep);
-    }
-
+    await generator.install(EXTERNAL_DEPENDENCIES);
     const importMap = generator.getMap();
-
-    if (!importMap.imports) {
-      throw new Error("No imports object in generated import map");
-    }
-
-    for (const [name, url] of Object.entries(SHARED_MODULES)) {
-      importMap.imports[name] = url;
-    }
 
     return {
       html,
@@ -120,7 +110,7 @@ export default defineConfig({
   ],
 
   optimizeDeps: {
-    exclude: ["@syntect/wasm"],
+    exclude: ["@syntect/wasm", "@patchwork/sdk"],
   },
 
   worker: {

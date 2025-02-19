@@ -1,10 +1,6 @@
 import { defineConfig } from "tsup";
 import { EXTERNAL_DEPENDENCIES } from "./dist/shared-dependencies";
 
-const includeRegex = new RegExp(
-  `^(?!(${EXTERNAL_DEPENDENCIES.join("|")})($|/)).*$`
-);
-
 export default defineConfig({
   platform: "browser",
   entry: {
@@ -23,10 +19,8 @@ export default defineConfig({
     utils: "src/utils.ts",
     "shared-dependencies": "src/shared-dependencies.ts",
   },
-  noExternal: [includeRegex],
   format: ["esm"],
   dts: true,
-  splitting: false,
   clean: true,
   treeshake: true,
   sourcemap: false,

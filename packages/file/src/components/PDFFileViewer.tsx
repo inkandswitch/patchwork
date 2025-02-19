@@ -16,7 +16,7 @@ import { FileDoc, isBinaryFileDoc } from "../datatype";
 import { useToolUIState } from "@patchwork/sdk/router";
 import { DocPath } from "@patchwork/sdk/router";
 import { clsx } from "clsx";
-import { eventListenerEffect } from "@patchwork/sdk";
+import { eventListenerEffect } from "@patchwork/sdk/utils";
 
 // react-pdf doesn't make this easy
 type OnPageRenderSuccess = NonNullable<
