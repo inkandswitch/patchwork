@@ -1,10 +1,10 @@
 import OpenAI from "openai";
 
-export const isLLMActive = false; // TODO: import.meta.env["VITE_OPENAI_API_KEY"] !== undefined;
+export const isLLMActive = import.meta.env["VITE_OPENAI_API_KEY"] !== undefined;
 
 export const openaiClient = isLLMActive
   ? new OpenAI({
-      apiKey: undefined, // import.meta.env["VITE_OPENAI_API_KEY"],
+      apiKey: import.meta.env["VITE_OPENAI_API_KEY"],
       dangerouslyAllowBrowser: true,
     })
   : undefined;

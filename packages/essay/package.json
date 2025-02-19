@@ -8,7 +8,7 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "tsc && vite build",
     "push": "pnpm build && pnpm --filter @patchwork/os build:essay",
     "test": "vitest"
   },
@@ -26,6 +26,7 @@
     "@codemirror/view": "^6.28.6",
     "@lezer/common": "^1.2.1",
     "@patchwork/sdk": "workspace:*",
+    "@patchwork/file": "workspace:*",
     "clsx": "^2.1.1",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",

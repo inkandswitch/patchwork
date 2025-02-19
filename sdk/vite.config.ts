@@ -28,6 +28,7 @@ export default defineConfig({
       insertTypesEntry: true,
     }),
     replace({
+      preventAssignment: true,
       "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
     }),
   ],
@@ -71,9 +72,6 @@ export default defineConfig({
       output: {
         entryFileNames: "[name].js",
         chunkFileNames: "chunks/[name].js",
-        // Ensure .d.ts files maintain the same structure as source
-        preserveModules: true,
-        preserveModulesRoot: "src",
       },
     },
   },

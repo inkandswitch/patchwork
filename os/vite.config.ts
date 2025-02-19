@@ -81,9 +81,7 @@ const generateImportMapPlugin = (): Plugin => ({
       resolutions: SHARED_MODULES,
     });
 
-    await generator.install([
-      ...EXTERNAL_DEPENDENCIES,
-    ]);
+    await generator.install([...EXTERNAL_DEPENDENCIES]);
     const importMap = generator.getMap();
 
     return {

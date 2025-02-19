@@ -1,4 +1,3 @@
-export { type FileDoc } from "./FileDoc";
 export {
   type FolderDocWithMetadata,
   useFolderDocWithMetadataOnActiveBranch,

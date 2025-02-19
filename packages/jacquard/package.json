@@ -11,7 +11,7 @@
     "./components": "./dist/components.js"
   },
   "scripts": {
-    "build": "vite build"
+    "build": "tsc && vite build"
   },
   "keywords": [],
   "author": "Ink & Switch",
@@ -19,6 +19,7 @@
     "@automerge/automerge": "2.2.9-alpha.4",
     "@automerge/automerge-repo": "2.0.0-alpha.22",
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.22",
+    "@patchwork/file": "workspace:*",
     "@patchwork/folder": "workspace:*",
     "@patchwork/sdk": "workspace:*",
     "@viz-js/viz": "^3.7.0",

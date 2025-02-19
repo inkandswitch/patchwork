@@ -9,7 +9,7 @@
     "./hooks": "./dist/hooks.js"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "tsc && vite build",
     "push": "pnpm build && pnpm --filter @patchwork/os build:folder"
   },
   "keywords": [],
