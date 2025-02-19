@@ -83,19 +83,6 @@ const generateImportMapPlugin = (): Plugin => ({
 
     await generator.install([
       ...EXTERNAL_DEPENDENCIES,
-      "@patchwork/sdk/async-signals",
-      "@patchwork/sdk/borrowed-bits",
-      "@patchwork/sdk/components",
-      "@patchwork/sdk/files",
-      "@patchwork/sdk/hooks",
-      "@patchwork/sdk/om",
-      "@patchwork/sdk/markdown",
-      "@patchwork/sdk/router",
-      "@patchwork/sdk/textAnchors",
-      "@patchwork/sdk/ui",
-      "@patchwork/sdk/versionControl",
-      "@patchwork/sdk/utils",
-      "@patchwork/sdk/shared-dependencies",
     ]);
     const importMap = generator.getMap();
 
