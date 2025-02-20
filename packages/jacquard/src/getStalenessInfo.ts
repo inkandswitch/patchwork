@@ -1,4 +1,3 @@
-import { FileDoc } from "@patchwork/file";
 import { FolderDocWithMetadata } from "@patchwork/sdk/versionControl";
 import { objectEntries } from "@patchwork/sdk/utils";
 import * as Automerge from "@automerge/automerge";
@@ -6,6 +5,9 @@ import { AutomergeUrl, encodeHeads } from "@automerge/automerge-repo";
 import { BuildRun, Reference } from "./datatype";
 import { fetchMap } from "@patchwork/sdk/async-signals";
 import { DocPathUtils } from "@patchwork/sdk/router";
+
+// TODO: use a proper type here
+type FileDoc = { name: string };
 
 export function headsMatch(heads1: Automerge.Heads, heads2: Automerge.Heads) {
   // TODO: we should be able to use equality to check if heads match, but
