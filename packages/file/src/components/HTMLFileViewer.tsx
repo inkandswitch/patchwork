@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import * as Automerge from "@automerge/automerge";
-import { FileDoc, getFileContents, isBinaryFileDoc } from "../datatype";
+import { getFileContents, isBinaryFileDoc } from "../datatype";
 import { EditorProps } from "@patchwork/sdk";
+import { FileDoc } from "../types";
 
 export type HTMLFileDoc = FileDoc & {
   type: "html" | "htm";

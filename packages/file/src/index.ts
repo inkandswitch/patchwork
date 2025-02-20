@@ -5,7 +5,7 @@ import type {
   ImportMethod,
   ExportMethod,
 } from "@patchwork/sdk";
-import type { FileDoc } from "./datatype";
+import type { FileDoc } from "./types";
 import { universalImport } from "./importMethods";
 import { universalExport } from "./exportMethods";
 

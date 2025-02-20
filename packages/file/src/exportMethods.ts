@@ -1,6 +1,7 @@
 import { ExportMethod } from "@patchwork/sdk";
 import { Doc } from "@automerge/automerge";
-import { FileDoc, getFileContents, isBinaryFileDoc } from "./datatype";
+import { getFileContents, isBinaryFileDoc } from "./datatype";
+import { FileDoc } from "./types";
 import mime from "mime-types";
 import { Repo } from "@automerge/automerge-repo";
 

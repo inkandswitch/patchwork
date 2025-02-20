@@ -1,6 +1,6 @@
 import { ImportMethod } from "@patchwork/sdk";
 import { DocHandle } from "@automerge/automerge-repo";
-import { FileDoc } from "./datatype";
+import { FileDoc } from "./types";
 import { isBinaryCheck } from "./isBinaryFile";
 import { RawString, updateText } from "@automerge/automerge-repo";
 
