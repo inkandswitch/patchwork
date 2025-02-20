@@ -3,13 +3,6 @@ import colors from "tailwindcss/colors";
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
-  content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
-    "../packages/**/!(node_modules)/**/*.{ts,tsx}",
-  ],
   theme: {
     container: {
       center: true,

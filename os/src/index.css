@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
+@source "../../packages";
+@source "../../sdk";
 @config "../tailwind.config.cjs";
 
 @layer base {

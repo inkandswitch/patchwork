@@ -226,7 +226,7 @@ export const Topbar: React.FC<TopbarProps> = ({
           <DropdownMenuTrigger>
             <MoreHorizontal
               size={18}
-              className="mt-1 mr-21 text-gray-500 hover:text-gray-800"
+              className="mt-1 mr-1 text-gray-500 hover:text-gray-800"
             />
           </DropdownMenuTrigger>
           {selectedDoc && (
