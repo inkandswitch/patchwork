@@ -44,7 +44,6 @@ export const SHARED_MODULES = {
 
 export const SDK_SUBMODULES = [
   "@patchwork/sdk/async-signals",
-  "@patchwork/sdk/borrowed-bits",
   "@patchwork/sdk/components",
   "@patchwork/sdk/files",
   "@patchwork/sdk/hooks",
@@ -56,7 +55,7 @@ export const SDK_SUBMODULES = [
   "@patchwork/sdk/versionControl",
   "@patchwork/sdk/utils",
   "@patchwork/sdk/shared-dependencies",
-]
+];
 
 // All dependencies that should not be bundled in and instead are loaded
 // through the import map created by generateImportMapPlugin

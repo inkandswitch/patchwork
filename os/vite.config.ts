@@ -3,11 +3,9 @@ import react from "@vitejs/plugin-react";
 import { build } from "esbuild";
 import path from "path";
 import { Plugin, UserConfig, defineConfig } from "vite";
-import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
 
 import {
-  SHARED_DEPENDENCIES,
   SHARED_MODULES,
   EXTERNAL_DEPENDENCIES,
 } from "../sdk/src/shared-dependencies";
@@ -101,24 +99,15 @@ const generateImportMapPlugin = (): Plugin => ({
 });
 
 export default defineConfig({
-  plugins: [
-    topLevelAwait(),
-    wasm(),
-    react(),
-    generateImportMapPlugin(),
-    swPlugin(),
-  ],
-
-  optimizeDeps: {
-    exclude: ["@syntect/wasm", "@patchwork/sdk"],
-  },
+  plugins: [wasm(), react(), generateImportMapPlugin(), swPlugin()],
 
   worker: {
     format: "es",
     plugins: () => [wasm()],
   },
+
   build: {
-    minify: false,
+    target: "es2022",
     rollupOptions: {
       external: (id) => {
         // More precise external matching

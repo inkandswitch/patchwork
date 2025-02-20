@@ -5,13 +5,13 @@ import {
   useAsyncComputed,
 } from "../async-signals";
 import { Account, useCurrentAccount } from "../account";
-import { fetchOmOnFixedBranch, fetchOmOnActiveBranch } from "../versionControl";
+import { fetchOmOnFixedBranch, fetchOmOnActiveBranch } from ".";
 import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { last } from "lodash-es";
 import { useCallback } from "react";
 import { DocLink, DocPath, DocPathUtils } from "../router/DocLink";
-import { FolderDocMaterialized, FolderDoc } from "./FolderDoc";
+import { FolderDocMaterialized, FolderDoc } from "../FolderDoc";
 
 /**
  * Kinda a convenience type, bundling a (materialized) FolderDoc with

@@ -12,8 +12,8 @@ import { useForceUpdate } from "./hooks/useForceUpdate";
 import { ChangeFn } from "@automerge/automerge";
 import { useEffect, useState } from "react";
 
-import type { FolderDoc } from "./borrowed-bits/FolderDoc";
-import { useFolderDocWithMetadataOnActiveBranch } from "./borrowed-bits/useFolderDocWithMetadata";
+import type { FolderDoc } from "./FolderDoc";
+import { useFolderDocWithMetadataOnActiveBranch } from "./versionControl/useFolderDocWithMetadata";
 import { typeOnlyAssert } from "./utils";
 import { UIStateDoc } from "./router/uiState";
 import {
@@ -24,7 +24,6 @@ import {
 import { createDocFromFile } from "./files";
 
 import { ModuleSettingsDoc } from "./modules";
-// import { FileDoc } from "./borrowed-bits/FileDoc";
 
 export interface AccountDoc {
   contactUrl: AutomergeUrl;

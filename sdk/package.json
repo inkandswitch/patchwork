@@ -14,10 +14,6 @@
       "types": "./dist/types/async-signals/index.d.ts",
       "import": "./dist/async-signals.js"
     },
-    "./borrowed-bits": {
-      "types": "./dist/types/borrowed-bits/index.d.ts",
-      "import": "./dist/borrowed-bits.js"
-    },
     "./components": {
       "types": "./dist/types/components/index.d.ts",
       "import": "./dist/components.js"

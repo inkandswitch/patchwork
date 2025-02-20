@@ -3,7 +3,7 @@ import {
   useAsyncComputed,
 } from "@patchwork/sdk/async-signals";
 import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
-import { FolderDoc } from "@patchwork/sdk/borrowed-bits";
+import { FolderDoc } from "@patchwork/folder";
 import { dataTypeById } from "@patchwork/sdk";
 import { fetchOmOnActiveBranch } from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";

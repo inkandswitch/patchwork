@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { FileDoc } from "./datatype";
+import { FileDoc } from "./types";
 
 export const VIDEO_EXTENSIONS = ["mp4", "webm", "ogg"];
 export const IMAGE_EXTENSIONS = [

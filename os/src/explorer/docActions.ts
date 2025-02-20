@@ -1,6 +1,6 @@
 import { Repo, AutomergeUrl } from "@automerge/automerge-repo";
 import { type DocPath, DocPathUtils } from "@patchwork/sdk/router";
-import { FolderDoc } from "@patchwork/sdk/borrowed-bits";
+import { type FolderDoc } from "@patchwork/folder";
 import {
   UIStateDoc,
   Account,

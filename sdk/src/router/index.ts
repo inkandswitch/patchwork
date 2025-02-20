@@ -1,7 +1,8 @@
 import { dataTypeById } from "../datatypes";
 import { useStaticCallback } from "../hooks/useStaticCallback";
 import { DocPath, DocLink, DocPathUtils } from "./DocLink";
-import { FolderDoc, FolderDocWithMetadata } from "../borrowed-bits/FolderDoc";
+import { FolderDoc } from "../FolderDoc";
+import { FolderDocWithMetadata } from "../versionControl/useFolderDocWithMetadata";
 import { setActiveBranchUrl } from "../versionControl";
 import { BranchDoc } from "../versionControl";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";

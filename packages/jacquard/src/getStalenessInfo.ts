@@ -1,5 +1,5 @@
 import { FileDoc } from "@patchwork/file";
-import { FolderDocWithMetadata } from "@patchwork/sdk/borrowed-bits";
+import { FolderDocWithMetadata } from "@patchwork/sdk/versionControl";
 import { objectEntries } from "@patchwork/sdk/utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, encodeHeads } from "@automerge/automerge-repo";

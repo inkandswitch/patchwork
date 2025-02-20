@@ -37,7 +37,6 @@ export default defineConfig({
       entry: {
         index: "src/index.ts",
         "async-signals": "src/async-signals/index.ts",
-        "borrowed-bits": "src/borrowed-bits/index.ts",
         components: "src/components/index.ts",
         files: "src/files/index.ts",
         hooks: "src/hooks/index.ts",
