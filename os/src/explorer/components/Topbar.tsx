@@ -176,10 +176,10 @@ export const Topbar: React.FC<TopbarProps> = ({
     : [];
 
   return (
-    <div className="h-10 bg-gray-100 flex items-center flex-shrink-0 border-b border-gray-300">
+    <div className="h-10 bg-gray-100 flex items-center shrink-0 border-b border-gray-300">
       {!showSidebar && (
         <div
-          className="ml-1 p-1 text-gray-500 bg-gray-100 hover:bg-gray-300 hover:text-gray-500 cursor-pointer  transition-all rounded-sm"
+          className="ml-1 p-1 text-gray-500 bg-gray-100 hover:bg-gray-300 hover:text-gray-500 cursor-pointer  transition-all rounded-xs"
           onClick={() => setShowSidebar(!showSidebar)}
         >
           <Menu size={18} />

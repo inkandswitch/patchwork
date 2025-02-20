@@ -262,7 +262,7 @@ export const TimelineSidebar: React.FC<{
       <div className="bg-gray-50 border-gray-200 border-b">
         <div className="flex items-center">
           <div
-            className="cursor-pointer text-gray-500 font-semibold underline w-12 flex-shrink-0"
+            className="cursor-pointer text-gray-500 font-semibold underline w-12 shrink-0"
             onClick={() => {
               onSelectBranchUrl(null);
             }}
@@ -290,7 +290,7 @@ export const TimelineSidebar: React.FC<{
               )}
             </div>
           </div>
-          <div className="w-12 flex-shrink-0"></div>
+          <div className="w-12 shrink-0"></div>
         </div>
         {selection && (
           <div className="absolute flex gap-2 p-2 bg-gray-100 z-10 w-full border-b border-t border-gray-300">
@@ -358,7 +358,7 @@ export const TimelineSidebar: React.FC<{
                   key={item.id}
                   data-item-id={item.id}
                   className={`p-2 cursor-default select-none w-full flex items-start gap-2 ${
-                    selected ? "bg-blue-100 bg-opacity-20" : ""
+                    selected ? "bg-blue-100/20" : ""
                   }`}
                   onClick={(e) =>
                     handleClick({
@@ -418,7 +418,7 @@ export const TimelineSidebar: React.FC<{
 
                   {/* User avatars associated with this item */}
                   {item.type !== "discussionThread" && (
-                    <div className="ml-auto flex-shrink-0 flex items-center gap-2">
+                    <div className="ml-auto shrink-0 flex items-center gap-2">
                       <div className="flex items-center space-x-[-4px]">
                         {item.users.map((contactUrl) => (
                           <div className="rounded-full" key={contactUrl}>
@@ -681,7 +681,7 @@ const ChangeGroupItem: React.FC<{
 }> = ({ group, doc }) => {
   return (
     <div className="pl-[7px] pr-1 flex w-full">
-      <div className="flex-shrink-0 w-3 h-3 border-b-2 border-l-2 border-gray-300 rounded-bl-full"></div>
+      <div className="shrink-0 w-3 h-3 border-b-2 border-l-2 border-gray-300 rounded-bl-full"></div>
       <ChangeGroupDescription changeGroup={group} doc={doc} />
     </div>
   );
@@ -758,7 +758,7 @@ const BranchMergedItem: React.FC<{
           {changeGroups.map((group) => (
             <div className="flex" key={group.id}>
               <ChangeGroupDescription changeGroup={group} doc={doc} />
-              <div className="flex flex-shrink-0 items-start space-x-[-4px]">
+              <div className="flex shrink-0 items-start space-x-[-4px]">
                 {group.authorUrls.map((contactUrl) => (
                   <div className="rounded-full" key={contactUrl}>
                     <InlineContactAvatar
@@ -845,7 +845,7 @@ const DiscussionThreadItem = ({
   const comment = discussion.comments[0];
   return (
     <div className="ml-6 mr-16 my-0 w-full min-h-12 flex gap-1 bg-yellow-50 border-yellow-100 text-xs p-2 shadow-md select-none">
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <InlineContactAvatar
           size="default"
           url={comment.contactUrl}

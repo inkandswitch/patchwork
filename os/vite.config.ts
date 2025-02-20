@@ -4,6 +4,7 @@ import { build } from "esbuild";
 import path from "path";
 import { Plugin, UserConfig, defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
+import tailwindcss from "@tailwindcss/vite";
 
 import {
   SHARED_MODULES,
@@ -99,7 +100,13 @@ const generateImportMapPlugin = (): Plugin => ({
 });
 
 export default defineConfig({
-  plugins: [wasm(), react(), generateImportMapPlugin(), swPlugin()],
+  plugins: [
+    wasm(),
+    react(),
+    generateImportMapPlugin(),
+    swPlugin(),
+    tailwindcss(),
+  ],
 
   worker: {
     format: "es",

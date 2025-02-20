@@ -99,8 +99,4 @@ export default {
       },
     },
   },
-  plugins: [
-    import("tailwindcss-animate"),
-    import("@tailwindcss/container-queries"),
-  ],
 };

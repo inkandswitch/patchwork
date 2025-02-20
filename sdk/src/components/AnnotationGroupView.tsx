@@ -339,7 +339,7 @@ export const AnnotationGroupView = <
         className="flex flex-col gap-1"
       >
         <div
-          className={`flex flex-col gap-2 bg-white rounded-sm p-2 border-2 ${
+          className={`flex flex-col gap-2 bg-white rounded-xs p-2 border-2 ${
             isFocused
               ? "border-blue-600 shadow-lg"
               : annotationGroup.state === "focused"
@@ -525,7 +525,7 @@ const DiscussionCommentView = ({
         <div
           className={`text-sm ${
             isBeingEdited
-              ? "border border-1 rounded-sm px-2 border-gray-300 min-h-20"
+              ? "border border-1 rounded-xs px-2 border-gray-300 min-h-20"
               : "border-white"
           }`}
           onKeyDownCapture={(event) => {

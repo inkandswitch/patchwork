@@ -112,7 +112,7 @@ function IssuePage({
   return (
     <>
       <div className="flex flex-col flex-1 overflow-hidden h-full">
-        <div className="flex justify-between flex-shrink-0 border-b border-gray-200 p-2 pl-6">
+        <div className="flex justify-between shrink-0 border-b border-gray-200 p-2 pl-6">
           <div className="flex items-center gap-2">
             <span className="font-semibold">Issue</span>
             <span className="text-gray-500" title={card.id}>

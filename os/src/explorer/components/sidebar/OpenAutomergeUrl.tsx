@@ -59,7 +59,7 @@ export const OpenAutomergeUrl = ({ addNewDocument }: OpenAutomergeUrlProps) => {
                 setOpenNewDocPopoverVisible(false);
               }
             }}
-            className={`outline-none ${
+            className={`outline-hidden ${
               automergeUrlToOpen
                 ? "bg-green-100"
                 : openUrlInput.length > 0

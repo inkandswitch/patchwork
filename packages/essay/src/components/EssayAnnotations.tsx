@@ -7,13 +7,13 @@ export const EssayAnnotations = ({
   annotations,
 }: AnnotationsViewProps<MarkdownDoc, TextAnchor, string>) => {
   return (
-    <div className="px-2 bg-white rounded-sm">
+    <div className="px-2 bg-white rounded-xs">
       {annotations.map((annotation, index) => {
         switch (annotation.type) {
           case "added":
             return (
               <div
-                className="text-md whitespace-nowrap overflow-ellipsis overflow-hidden"
+                className="text-md whitespace-nowrap text-ellipsis overflow-hidden"
                 key={index}
               >
                 <span className="font-serif bg-green-50 border-b border-green-400">
@@ -25,7 +25,7 @@ export const EssayAnnotations = ({
           case "deleted":
             return (
               <div
-                className="text-md whitespace-nowrap overflow-ellipsis overflow-hidden"
+                className="text-md whitespace-nowrap text-ellipsis overflow-hidden"
                 key={index}
               >
                 <span className="font-serif bg-red-50 border-b border-red-400">
@@ -66,7 +66,7 @@ export const EssayAnnotations = ({
 
             return (
               <div
-                className="text-md whitespace-nowrap overflow-ellipsis overflow-hidden"
+                className="text-md whitespace-nowrap text-ellipsis overflow-hidden"
                 key={index}
               >
                 <span className="font-serif bg-yellow-50 border-b border-yellow-400">

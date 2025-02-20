@@ -73,7 +73,7 @@ export const Node = (props: NodeRendererProps<NodeData>) => {
       <div
         className={`${node.isSelected ? "text-gray-800" : "text-gray-500"} ${
           docLink.type === "folder" && "hover:bg-gray-400 text-gray-800"
-        } p-1 mr-0.5 rounded-sm transition-all`}
+        } p-1 mr-0.5 rounded-xs transition-all`}
         onClick={(e) => {
           if (docLink.type === "folder") {
             node.toggle();
