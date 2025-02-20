@@ -8,7 +8,7 @@
  * applies to the initial line of a wrapped line.
  */
 
-import _ from "lodash";
+import { range } from "lodash-es";
 import { StateField } from "@codemirror/state";
 import { EditorView, Decoration } from "@codemirror/view";
 
@@ -29,7 +29,7 @@ const line_wrapping_decorations = StateField.define({
 
     const decorations = [];
 
-    for (const i of _.range(0, tr.state.doc.lines)) {
+    for (const i of range(0, tr.state.doc.lines)) {
       const line = tr.state.doc.line(i + 1);
       if (line.length === 0) continue;
 

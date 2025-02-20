@@ -8,10 +8,9 @@ import {
 } from "@patchwork/sdk/versionControl";
 import { uuid } from "@automerge/automerge";
 import { decodeHeads, DocHandle } from "@automerge/automerge-repo";
-import { next as A } from "@automerge/automerge";
 import { SendHorizontalIcon } from "lucide-react";
 import { useState } from "react";
-import { ChangelogSelection } from "./sidebar/TimelineSidebar";
+import type { ChangelogSelection } from "./sidebar/TimelineSidebar";
 
 type DiscussionInputProps<D> = {
   doc: D;

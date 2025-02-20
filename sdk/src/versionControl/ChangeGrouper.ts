@@ -1,7 +1,7 @@
 import { next as A } from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";
 import EventEmitter from "eventemitter3";
-import { debounce, isEqual } from "lodash";
+import { debounce, isEqual } from "lodash-es";
 import {
   ChangeGroup,
   ChangeGroupingOptions,

@@ -11,9 +11,9 @@ import { next as A, Doc } from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { ReactElement } from "react";
 import { IconType } from "./ui";
-import { DocLink } from "@patchwork/folder";
 import { DocMigration } from "./migrations/DocMigration";
 import { HasPatchworkMetadata } from "./modules/types";
+import { DocLink } from "./router/DocLink";
 
 export type DataType<
   D = unknown,

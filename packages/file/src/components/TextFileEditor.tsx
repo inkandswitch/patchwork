@@ -43,9 +43,8 @@ import {
 import clsx from "clsx";
 import { EditorView } from "codemirror";
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
-import { tool } from "../tool";
 import { selectedAnchorsPlugin } from "@patchwork/sdk/markdown";
-import { FileDoc } from "../datatype";
+import { FileDoc } from "../types";
 import { CodeMirror } from "@patchwork/sdk/components";
 
 export const isTextFile = (doc: FileDoc) => {

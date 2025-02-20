@@ -22,7 +22,7 @@ function Board({
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden h-full">
-      <div className="flex flex-shrink-0 border-b border-gray-200 p-2 pl-4 justify-start">
+      <div className="flex shrink-0 border-b border-gray-200 p-2 pl-4 justify-start">
         <div className="flex gap-2 items-center">
           <span className="font-semibold">Board</span>
           <Button

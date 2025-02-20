@@ -18,7 +18,8 @@ import {
   getBuildRunsWithDocAsPrimaryInput,
   fetchProjectStateFromProjectInfo,
 } from "@patchwork/jacquard/signals";
-import { FileDoc, isRawStringFileDoc } from "../datatype";
+import { isRawStringFileDoc } from "../datatype";
+import { FileDoc } from "../types";
 import { isImageFile } from "../utils";
 import { HTMLFileDoc, HTMLFileViewer, isHTMLFile } from "./HTMLFileViewer";
 import { ImageFileDoc, ImageFileViewer } from "./ImageFileViewer";

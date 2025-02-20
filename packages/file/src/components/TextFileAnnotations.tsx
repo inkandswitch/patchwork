@@ -1,19 +1,19 @@
 import { truncate } from "lodash";
 import { AnnotationsViewProps } from "@patchwork/sdk";
-import { FileDoc } from "../datatype";
+import { FileDoc } from "../types";
 import { TextAnchor } from "@patchwork/sdk/textAnchors";
 
 export const TextFileAnnotations = ({
   annotations,
 }: AnnotationsViewProps<FileDoc, TextAnchor, string>) => {
   return (
-    <div className="px-2 bg-white rounded-sm cursor-default">
+    <div className="px-2 bg-white rounded-xs cursor-default">
       {annotations.map((annotation, index) => {
         switch (annotation.type) {
           case "added":
             return (
               <div
-                className="text-sm whitespace-nowrap overflow-ellipsis overflow-hidden"
+                className="text-sm whitespace-nowrap text-ellipsis overflow-hidden"
                 key={index}
               >
                 <span className="font-mono bg-green-50 border-b border-green-400">
@@ -25,7 +25,7 @@ export const TextFileAnnotations = ({
           case "deleted":
             return (
               <div
-                className="text-sm whitespace-nowrap overflow-ellipsis overflow-hidden"
+                className="text-sm whitespace-nowrap text-ellipsis overflow-hidden"
                 key={index}
               >
                 {annotation.deleted.trim() !== "" ? (
@@ -72,7 +72,7 @@ export const TextFileAnnotations = ({
 
             return (
               <div
-                className="text-sm whitespace-nowrap overflow-ellipsis overflow-hidden"
+                className="text-sm whitespace-nowrap text-ellipsis overflow-hidden"
                 key={index}
               >
                 <span className="font-mono bg-yellow-50 border-b border-yellow-400">

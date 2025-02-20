@@ -1,12 +1,4 @@
-import {
-  allDataTypes,
-  DataType,
-  dataTypeById,
-  initFrom,
-  AccountDoc,
-  ContactDoc,
-  getDefaultImportMethodForDatatype,
-} from "@patchwork/sdk";
+import { initFrom } from "@patchwork/sdk";
 import { FolderDoc } from "@patchwork/folder";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
@@ -27,9 +19,7 @@ import { RunResult } from "./run";
 import {
   formatFileSize,
   omOnCLIActiveBranchPromise,
-  sleep,
   waitForSync,
-  getStoredAccountUrl,
   getStoredParentFolderUrl,
 } from "./util";
 import debugFactory from "debug";
@@ -38,7 +28,7 @@ import { Mime } from "mime";
 import { isBinaryCheck } from "@patchwork/file";
 import standardTypes from "mime/types/standard.js";
 import otherTypes from "mime/types/other.js";
-import { HasPatchworkMetadata } from "@patchwork/sdk/modules/types";
+import { HasPatchworkMetadata } from "@patchwork/sdk/modules";
 import { createDocFromFile, updateDocFromFile } from "@patchwork/sdk/files";
 
 // This is mostly because .ts is otherwise interpreted as a video file

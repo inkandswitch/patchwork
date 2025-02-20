@@ -22,37 +22,44 @@ export const SHARED_DEPENDENCIES = [
   "react/jsx-runtime",
   "@automerge/automerge/slim",
   "@automerge/automerge/slim/next",
+  "lucide-react",
+  "signia",
 ];
 
 // Internal modules that are shared with dynamically loaded packages
 export const SHARED_MODULES = {
   // SDK modules
-  "@patchwork/sdk": "./sdk/index.js",
-  "@patchwork/sdk/async-signals": "./sdk/async-signals.js",
-  "@patchwork/sdk/components": "./sdk/components.js",
-  "@patchwork/sdk/hooks": "./sdk/hooks.js",
-  "@patchwork/sdk/markdown": "./sdk/markdown.js",
-  "@patchwork/sdk/router": "./sdk/router.js",
-  "@patchwork/sdk/textAnchors": "./sdk/textAnchors.js",
-  "@patchwork/sdk/ui": "./sdk/ui.js",
-  "@patchwork/sdk/versionControl": "./sdk/versionControl.js",
+  "@patchwork/sdk": "file:../sdk/",
 
-  "@patchwork/datagrid": "./datagrid/index.js",
-  "@patchwork/essay": "./essay/index.js",
-  "@patchwork/file": "./file/index.js",
-  "@patchwork/file/components": "./file/components.js", // blerf
-  "@patchwork/folder": "./folder/index.js",
-  "@patchwork/jacquard": "./jacquard/index.js",
-  "@patchwork/jacquard/components": "./jacquard/components.js", // blerf
-  "@patchwork/jacquard/hooks": "./jacquard/hooks.js",
-  "@patchwork/kanban": "./kanban/index.js",
-  "@patchwork/my-tools": "./my-tools/index.js",
-  "@patchwork/raw-editor": "./raw-editor/index.js",
-  "@patchwork/tldraw": "./tldraw/index.js",
+  "@patchwork/datagrid": "file:../packages/datagrid",
+  "@patchwork/essay": "file:../packages/essay",
+  "@patchwork/file": "file:../packages/file",
+  "@patchwork/folder": "file:../packages/folder",
+  "@patchwork/jacquard": "file:../packages/jacquard",
+  "@patchwork/kanban": "file:../packages/kanban",
+  "@patchwork/my-tools": "file:../packages/my-tools",
+  "@patchwork/raw-editor": "file:../packages/raw-editor",
+  "@patchwork/tldraw": "file:../packages/tldraw",
 };
+
+export const SDK_SUBMODULES = [
+  "@patchwork/sdk/async-signals",
+  "@patchwork/sdk/components",
+  "@patchwork/sdk/files",
+  "@patchwork/sdk/hooks",
+  "@patchwork/sdk/om",
+  "@patchwork/sdk/markdown",
+  "@patchwork/sdk/modules",
+  "@patchwork/sdk/router",
+  "@patchwork/sdk/textAnchors",
+  "@patchwork/sdk/ui",
+  "@patchwork/sdk/versionControl",
+  "@patchwork/sdk/utils",
+  "@patchwork/sdk/shared-dependencies",
+];
 
 // All dependencies that should not be bundled in and instead are loaded
 // through the import map created by generateImportMapPlugin
 export const EXTERNAL_DEPENDENCIES = SHARED_DEPENDENCIES.concat(
   Object.keys(SHARED_MODULES)
-);
+).concat(SDK_SUBMODULES);

@@ -22,7 +22,7 @@ import { atom, computed, react, Signal } from "signia";
 /******************/
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
-export module AsyncState {
+export namespace AsyncState {
   interface IAsyncState<T> {
     /**
      * Get an AsyncState's value, probably inside an async-signal

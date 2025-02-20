@@ -36,7 +36,7 @@ const IssueItem = ({
     <div
       ref={provided.innerRef}
       className={classNames(
-        "cursor-default flex flex-col w-full px-4 py-3 mb-2 bg-white rounded focus:outline-none shadow border border-gray-200",
+        "cursor-default flex flex-col w-full px-4 py-3 mb-2 bg-white rounded focus:outline-hidden shadow border border-gray-200",
         {
           "shadow-modal": isDragging,
         }
@@ -50,11 +50,11 @@ const IssueItem = ({
     >
       <div className="flex justify-between w-full cursor-default">
         <div className="flex flex-col">
-          <span className="mt-1 text-sm font-medium text-gray-700 line-clamp-2 overflow-ellipsis">
+          <span className="mt-1 text-sm font-medium text-gray-700 line-clamp-2 text-ellipsis">
             {card.title}
           </span>
         </div>
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <ContactAvatar url={card.createdByContactUrl} size="sm" />
         </div>
       </div>

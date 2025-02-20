@@ -10,7 +10,7 @@ import { ModuleContentsDisplay } from "./ModuleContentsDisplay";
 import { ModuleContents } from "../tool";
 import { selectDocLink } from "@patchwork/sdk/router";
 import { dataTypeById, toolsForDataType } from "@patchwork/sdk";
-import { DocLink, DocPathUtils } from "@patchwork/folder";
+import { type DocLink } from "@patchwork/sdk/router";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 
 interface ModuleCardProps {

@@ -1,7 +1,7 @@
 import { DEFAULT_MODEL, getOpenaiClient } from "../versionControl/llm";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { next as A } from "@automerge/automerge";
-import { type DataType } from "..";
+import { type DataType } from "../datatypes";
 import { BranchDoc, UnmergedBranchDoc, HasBotChatHistory } from "./schema";
 import { createBranch } from "./branches";
 

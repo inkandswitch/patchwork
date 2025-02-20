@@ -2,13 +2,14 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
+import dts from "vite-plugin-dts";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 
 import { EXTERNAL_DEPENDENCIES } from "@patchwork/sdk/shared-dependencies";
 
 export default defineConfig({
   base: "./",
-  plugins: [topLevelAwait(), wasm(), react(), cssInjectedByJsPlugin()],
+  plugins: [topLevelAwait(), wasm(), react(), dts(), cssInjectedByJsPlugin()],
 
   build: {
     rollupOptions: {

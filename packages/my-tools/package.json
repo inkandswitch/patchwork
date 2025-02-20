@@ -8,7 +8,7 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "tsc && vite build",
     "push": "pnpm build && pnpm --filter @patchwork/os build:my-tools"
   },
   "keywords": [],
@@ -17,6 +17,7 @@
     "@automerge/automerge-repo": "2.0.0-alpha.22",
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.22",
     "@patchwork/sdk": "workspace:*",
+    "@patchwork/folder": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "resolve.exports": "^2.0.3"

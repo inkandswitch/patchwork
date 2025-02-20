@@ -4,7 +4,7 @@ import {
   useDocHandle,
 } from "@automerge/automerge-repo-react-hooks";
 import * as Automerge from "@automerge/automerge";
-import { FileDoc } from "../datatype";
+import { FileDoc } from "../types";
 import { EditorProps } from "@patchwork/sdk";
 
 export type ImageFileDoc = FileDoc & {

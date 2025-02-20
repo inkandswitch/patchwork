@@ -1,12 +1,12 @@
-import { Account } from "..";
+import { Account } from "../account";
 import { fetchUIStateOm } from "../router/uiState";
 import { Om } from "../om";
-import { DocLink, DocPath, DocPathUtils } from "@patchwork/folder";
+import { DocLink, DocPath, DocPathUtils } from "../router/DocLink";
 import { canBeUndef } from "../utils";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { fetchDocHandle, fetchMap, fetchOm } from "../async-signals";
-import { DataType, dataTypeById } from "..";
+import { dataTypeById } from "../datatypes";
 import {
   BranchDoc,
   DocCloneMap,

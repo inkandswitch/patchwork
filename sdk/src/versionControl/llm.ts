@@ -11,10 +11,12 @@ export const openaiClient = isLLMActive
 
 export const getOpenaiClient = () => {
   if (!openaiClient) {
-    throw new Error("openaiClient not initialized: VITE_OPENAI_API_KEY not provided");
+    throw new Error(
+      "openaiClient not initialized: VITE_OPENAI_API_KEY not provided"
+    );
   }
   return openaiClient;
-}
+};
 
 export const DEFAULT_MODEL = "gpt-4o";
 

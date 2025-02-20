@@ -18,6 +18,7 @@
     "@automerge/automerge-repo-storage-nodefs": "^2.0.0-alpha.22",
     "@patchwork/file": "workspace:*",
     "@patchwork/folder": "workspace:*",
+    "@patchwork/essay": "workspace:*",
     "@patchwork/jacquard": "workspace:*",
     "@patchwork/sdk": "workspace:*",
     "command-line-args": "^5.2.1",

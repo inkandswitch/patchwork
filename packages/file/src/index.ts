@@ -1,8 +1,11 @@
 import type { TextAnchor } from "@patchwork/sdk/textAnchors";
-import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
-import type { ImportMethod } from "@patchwork/sdk";
-import type { ExportMethod } from "@patchwork/sdk";
-import type { FileDoc } from "./datatype";
+import type {
+  DataTypeDescription,
+  ToolDescription,
+  ImportMethod,
+  ExportMethod,
+} from "@patchwork/sdk";
+import type { FileDoc } from "./types";
 import { universalImport } from "./importMethods";
 import { universalExport } from "./exportMethods";
 

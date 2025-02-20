@@ -7,7 +7,7 @@
   "scripts": {
     "preview": "pnpm --filter os preview",
     "build": "pnpm -r build",
-    "tsc": "tsc",
+    "tsc": "pnpm -r exec tsc",
     "preinstall": "npx only-allow pnpm",
     "test": "pnpm --filter \"./os\" test",
     "make-tool": "node scripts/make-tool.mjs",

@@ -3,23 +3,15 @@ import {
   fetchAwaitMissing,
   fetchMap,
   useAsyncComputed,
-} from "@patchwork/sdk/async-signals";
-import { Account, useCurrentAccount } from "@patchwork/sdk";
-import {
-  fetchOmOnFixedBranch,
-  fetchOmOnActiveBranch,
-} from "@patchwork/sdk/versionControl";
+} from "../async-signals";
+import { Account, useCurrentAccount } from "../account";
+import { fetchOmOnFixedBranch, fetchOmOnActiveBranch } from ".";
 import { AutomergeUrl, Doc, Repo } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { last } from "lodash";
+import { last } from "lodash-es";
 import { useCallback } from "react";
-import {
-  DocLink,
-  DocPath,
-  DocPathUtils,
-  FolderDoc,
-  FolderDocMaterialized,
-} from "../datatype";
+import { DocLink, DocPath, DocPathUtils } from "../router/DocLink";
+import { FolderDocMaterialized, FolderDoc } from "../FolderDoc";
 
 /**
  * Kinda a convenience type, bundling a (materialized) FolderDoc with

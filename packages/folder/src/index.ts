@@ -1,14 +1,13 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import type { FolderDoc, DocPath } from "./datatype";
+import type { FolderDoc } from "./datatype";
 
 export type {
-  DocPath,
   FolderDoc,
   FolderDocMaterialized as FolderDocWithChildren,
-  DocLink,
 } from "./datatype";
 
 import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
+import type { DocPath } from "@patchwork/sdk";
 
 export const dataType: DataTypeDescription<FolderDoc, never, never> = {
   type: "patchwork:dataType",
@@ -68,10 +67,3 @@ export const DocPathUtils = {
     return a.every((link, i) => link.url === b[i].url);
   },
 };
-
-export {
-  fetchFolderDocWithMetadata,
-  useFolderDocWithMetadataOnActiveBranch,
-  fetchFolderDocWithMetadataOnFixedBranch,
-  type FolderDocWithMetadata,
-} from "./hooks/fetchFolderDocWithMetadata";

@@ -1,12 +1,8 @@
-import {
-  ToolDescription,
-  isTool,
-  ModuleSettingsDoc,
-  registerDataType,
-  registerTool,
-} from "@patchwork/sdk";
-import { registerImportMethod, ImportMethod } from "@patchwork/sdk";
-import { registerExportMethod, ExportMethod } from "@patchwork/sdk";
+import type { ModuleSettingsDoc } from "./types";
+import { registerDataType } from "../datatypes";
+import { ToolDescription, isTool, registerTool } from "../tools";
+import { registerImportMethod, ImportMethod } from "../importMethods";
+import { registerExportMethod, ExportMethod } from "../exportMethods";
 import {
   AutomergeUrl,
   DocHandle,

@@ -66,10 +66,10 @@ export default function TopFilter({
 
   return (
     <>
-      <div className="flex justify-between flex-shrink-0 pl-2 pr-6 border-b border-gray-200 h-14 lg:pl-9">
+      <div className="flex justify-between shrink-0 pl-2 pr-6 border-b border-gray-200 h-14 lg:pl-9">
         <div className="flex items-center">
           <button
-            className="flex-shrink-0 h-full px-5 lg:hidden"
+            className="shrink-0 h-full px-5 lg:hidden"
             onClick={() => setShowMenu(!showMenu)}
           >
             <MenuIcon className="w-3.5 text-gray-500 hover:text-gray-800" />
@@ -109,7 +109,7 @@ export default function TopFilter({
       </div>
 
       {(!!filterState.status?.length || !!filterState.priority?.length) && (
-        <div className="flex flex-shrink-0 pl-2 pr-6 border-b border-gray-200 lg:pl-9 py-2">
+        <div className="flex shrink-0 pl-2 pr-6 border-b border-gray-200 lg:pl-9 py-2">
           {!!filterState.priority?.length && (
             <div className="flex pr-4 space-x-[1px]">
               <span className="px-1 bg-gray-300 rounded-l">Priority is</span>
@@ -156,7 +156,7 @@ export default function TopFilter({
       )}
 
       {showSearch && (
-        <div className="flex items-center justify-between flex-shrink-0 pl-2 pr-6 border-b border-gray-200 lg:pl-9 py-2">
+        <div className="flex items-center justify-between shrink-0 pl-2 pr-6 border-b border-gray-200 lg:pl-9 py-2">
           <SearchIcon className="w-3.5 h-3.5 ms-3 absolute" />
           <input
             type="search"

@@ -12,8 +12,8 @@ import { useForceUpdate } from "./hooks/useForceUpdate";
 import { ChangeFn } from "@automerge/automerge";
 import { useEffect, useState } from "react";
 
-import type { FolderDoc } from "@patchwork/folder";
-import { useFolderDocWithMetadataOnActiveBranch } from "@patchwork/folder";
+import type { FolderDoc } from "./FolderDoc";
+import { useFolderDocWithMetadataOnActiveBranch } from "./versionControl/useFolderDocWithMetadata";
 import { typeOnlyAssert } from "./utils";
 import { UIStateDoc } from "./router/uiState";
 import {
@@ -24,7 +24,6 @@ import {
 import { createDocFromFile } from "./files";
 
 import { ModuleSettingsDoc } from "./modules";
-import { FileDoc } from "@patchwork/file";
 
 export interface AccountDoc {
   contactUrl: AutomergeUrl;
@@ -305,82 +304,6 @@ export function useCurrentAccount(): Account | undefined {
         account.moduleSettingsUrl = moduleSettingsHandle.url;
       });
     }
-
-    // migrate avatar images from old format to new format.
-    // TODO: create a proper datatype for contacts, and put this migration on there.
-    (async () => {
-      if (!account) {
-        return;
-      }
-      const contactDoc = await account.contactHandle.doc();
-      if (!contactDoc) {
-        return;
-      }
-      if (contactDoc.type === "anonymous") {
-        return;
-      }
-      const avatarUrl = contactDoc.avatarUrl;
-      if (!avatarUrl) {
-        return;
-      }
-      const avatarHandle = await repo.find<{ type: string; data: Uint8Array }>(
-        avatarUrl
-      );
-      const avatarDoc = avatarHandle.doc();
-      if (!avatarDoc) {
-        return;
-      }
-
-      // early return if the migration is not necessary
-      if (!avatarDoc.data) {
-        return;
-      }
-
-      console.log("migrating avatar", avatarDoc, avatarHandle.url);
-
-      // Create new FileDoc for avatar image
-      const fileHandle = repo.create<FileDoc>();
-
-      // Guard against unsupported avatar image types
-      if (
-        !["image/jpeg", "image/jpg", "image/png", "image/svg+xml"].includes(
-          avatarDoc.type
-        )
-      ) {
-        console.log("Unsupported avatar image type:", avatarDoc.type);
-        return;
-      }
-
-      fileHandle.change((file) => {
-        let extension;
-        switch (avatarDoc.type) {
-          case "image/jpeg":
-          case "image/jpg":
-            extension = "jpg";
-            break;
-          case "image/png":
-            extension = "png";
-            break;
-          case "image/svg+xml":
-            extension = "svg";
-            break;
-          default:
-            console.log("unsupported avatar type", avatarDoc.type);
-            return;
-        }
-        file.name = `avatar.${extension}`;
-        file.extension = extension;
-        file.mimeType = avatarDoc.type;
-        file.content = avatarDoc.data;
-      });
-
-      // Update contact to point to new FileDoc
-      account.contactHandle.change((contact) => {
-        if (contact.type === "registered") {
-          contact.avatarUrl = fileHandle.url;
-        }
-      });
-    })();
   }, [account, doc, repo]);
 
   return account;

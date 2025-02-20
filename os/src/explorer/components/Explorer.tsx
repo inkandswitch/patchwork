@@ -3,7 +3,7 @@ import {
   DataTypeImplementation,
   useSuggestedModuleForDocUrl,
 } from "@patchwork/sdk";
-import { type DocPath, DocPathUtils } from "@patchwork/folder";
+import { type DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { Toaster } from "@patchwork/sdk/ui";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
@@ -216,7 +216,7 @@ export const Explorer: React.FC = () => {
         <div
           className={`${
             showSidebar ? "w-64" : "w-0 translate-x-[-100%]"
-          } flex-shrink-0 bg-gray-100 border-r border-gray-400 transition-all duration-100 overflow-hidden  `}
+          } shrink-0 bg-gray-100 border-r border-gray-400 transition-all duration-100 overflow-hidden  `}
         >
           <Sidebar
             rootFolderDoc={rootFolderData}

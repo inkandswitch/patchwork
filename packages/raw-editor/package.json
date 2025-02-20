@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "description": "A raw view and editor for any Automerge document",
   "type": "module",
-  "main": "src/index.js",
+  "exports": "./dist/index.js",
   "scripts": {
-    "build": "vite build",
+    "build": "tsc && vite build",
     "push": "pnpm build && pnpm --filter @patchwork/os build:raw-editor"
   },
   "keywords": [],
@@ -14,7 +14,7 @@
     "@automerge/automerge": "2.2.9-alpha.4",
     "@automerge/automerge-repo": "2.0.0-alpha.22",
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.22",
-    "@microlink/react-json-view": "^1.23.1",
+    "@microlink/react-json-view": "^1.26.1",
     "@patchwork/sdk": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

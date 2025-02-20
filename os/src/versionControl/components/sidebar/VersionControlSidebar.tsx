@@ -1,9 +1,8 @@
 import { next as A } from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { DocLink } from "@patchwork/folder";
+import { DocLink, type DocUIState } from "@patchwork/sdk/router";
 import { DataType, Tool } from "@patchwork/sdk";
 import { Om } from "@patchwork/sdk/om";
-import { DocUIState } from "@patchwork/sdk/router/uiState";
 import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
 import {
   HasVersionControlMetadata,
@@ -18,7 +17,9 @@ import {
   HistoryIcon,
   BotIcon,
 } from "lucide-react";
-import { TimelineSidebar, ReviewSidebar, BotSidebar } from "..";
+import { TimelineSidebar } from "./TimelineSidebar";
+import { ReviewSidebar } from "./ReviewSidebar";
+import { BotSidebar } from "./BotSidebar";
 
 export interface VersionControlSidebarProps {
   docUIState: DocUIState;

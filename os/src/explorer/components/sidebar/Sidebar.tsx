@@ -1,13 +1,8 @@
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { Icon } from "@patchwork/sdk/ui";
-import {
-  DocLink,
-  FolderDoc,
-  DocPath,
-  FolderDocWithChildren,
-  FolderDocWithMetadata,
-  DocPathUtils,
-} from "@patchwork/folder";
+import { DocLink, DocPath, DocPathUtils } from "@patchwork/sdk/router";
+import { FolderDoc, FolderDocWithChildren } from "@patchwork/folder";
+import { FolderDocWithMetadata } from "@patchwork/sdk/versionControl";
 import { dataTypeById } from "@patchwork/sdk";
 import { Input } from "@patchwork/sdk/ui";
 import {
@@ -298,7 +293,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="mw-40 mt-[3px]">My Documents</div>
         <div className="ml-auto">
           <div
-            className="text-gray-400 hover:bg-gray-300 hover:text-gray-500 cursor-pointer  transition-all p-1 m-[-4px] mr-[-8px] rounded-sm"
+            className="text-gray-400 hover:bg-gray-300 hover:text-gray-500 cursor-pointer  transition-all p-1 m-[-4px] mr-[-8px] rounded-xs"
             onClick={hideSidebar}
           >
             <ChevronsLeft />

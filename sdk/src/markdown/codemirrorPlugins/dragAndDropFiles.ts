@@ -1,6 +1,18 @@
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import { EditorSelection } from "@codemirror/state";
-import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from "@patchwork/file";
+
+// borrowed from FileDoc -- really we should be using the importer code here
+// so i'm just duplicating it for now
+export const VIDEO_EXTENSIONS = ["mp4", "webm", "ogg"];
+export const IMAGE_EXTENSIONS = [
+  "svg",
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "bmp",
+];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 

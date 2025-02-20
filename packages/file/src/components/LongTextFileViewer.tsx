@@ -1,5 +1,6 @@
 import { EditorProps } from "@patchwork/sdk";
-import { FileDoc, isRawStringFileDoc } from "../datatype";
+import { isRawStringFileDoc } from "../datatype";
+import { FileDoc } from "../types";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { RawString } from "@automerge/automerge-repo";
 

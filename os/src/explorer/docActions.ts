@@ -1,5 +1,6 @@
 import { Repo, AutomergeUrl } from "@automerge/automerge-repo";
-import { type DocPath, DocPathUtils, FolderDoc } from "@patchwork/folder";
+import { type DocPath, DocPathUtils } from "@patchwork/sdk/router";
+import { type FolderDoc } from "@patchwork/folder";
 import {
   UIStateDoc,
   Account,
@@ -7,7 +8,6 @@ import {
   createDocOfDataType,
 } from "@patchwork/sdk";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
-import { HasPatchworkMetadata } from "@patchwork/sdk/modules/types";
 import { Om } from "@patchwork/sdk/om";
 import {
   fetchBranchScopeAndActiveBranchInfo,

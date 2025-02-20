@@ -8,7 +8,7 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "tsc && vite build",
     "push": "pnpm build && pnpm --filter @patchwork/os build:tldraw"
   },
   "keywords": [],

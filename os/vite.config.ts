@@ -3,11 +3,10 @@ import react from "@vitejs/plugin-react";
 import { build } from "esbuild";
 import path from "path";
 import { Plugin, UserConfig, defineConfig } from "vite";
-import topLevelAwait from "vite-plugin-top-level-await";
 import wasm from "vite-plugin-wasm";
+import tailwindcss from "@tailwindcss/vite";
 
 import {
-  SHARED_DEPENDENCIES,
   SHARED_MODULES,
   EXTERNAL_DEPENDENCIES,
 } from "../sdk/src/shared-dependencies";
@@ -78,21 +77,11 @@ const generateImportMapPlugin = (): Plugin => ({
     // in build mode generate import map
     const generator = new Generator({
       env: ["browser", "module"],
+      resolutions: SHARED_MODULES,
     });
 
-    for (const dep of SHARED_DEPENDENCIES) {
-      await generator.install(dep);
-    }
-
+    await generator.install([...EXTERNAL_DEPENDENCIES]);
     const importMap = generator.getMap();
-
-    if (!importMap.imports) {
-      throw new Error("No imports object in generated import map");
-    }
-
-    for (const [name, url] of Object.entries(SHARED_MODULES)) {
-      importMap.imports[name] = url;
-    }
 
     return {
       html,
@@ -112,25 +101,27 @@ const generateImportMapPlugin = (): Plugin => ({
 
 export default defineConfig({
   plugins: [
-    topLevelAwait(),
     wasm(),
     react(),
     generateImportMapPlugin(),
     swPlugin(),
+    tailwindcss(),
   ],
-
-  optimizeDeps: {
-    exclude: ["@syntect/wasm"],
-  },
 
   worker: {
     format: "es",
     plugins: () => [wasm()],
   },
+
   build: {
-    minify: false,
+    target: "es2022",
     rollupOptions: {
-      external: EXTERNAL_DEPENDENCIES,
+      external: (id) => {
+        // More precise external matching
+        if (id === "@patchwork/sdk") return true;
+        if (id.startsWith("@patchwork/sdk/")) return true;
+        return EXTERNAL_DEPENDENCIES.includes(id);
+      },
       input: {
         main: path.resolve(__dirname, "index.html"),
       },

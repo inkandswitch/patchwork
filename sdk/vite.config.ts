@@ -7,6 +7,7 @@ import typescript from "@rollup/plugin-typescript";
 import postcss from "rollup-plugin-postcss";
 import commonjs from "@rollup/plugin-commonjs";
 import replace from "@rollup/plugin-replace";
+import dts from "vite-plugin-dts";
 import { EXTERNAL_DEPENDENCIES } from "./src/shared-dependencies";
 
 export default defineConfig({
@@ -15,7 +16,21 @@ export default defineConfig({
     tsconfigPaths(),
     topLevelAwait(),
     wasm(),
-    replace({ "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV) }),
+    dts({
+      include: ["src/**/*.ts", "src/**/*.tsx"],
+      exclude: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+      // Enable declaration file generation for multiple entries
+      copyDtsFiles: true,
+      // Specify output directory for .d.ts files
+      outDir: "dist",
+      // Handle multiple entry points
+      entryRoot: "src",
+      insertTypesEntry: true,
+    }),
+    replace({
+      preventAssignment: true,
+      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+    }),
   ],
   build: {
     lib: {
@@ -27,11 +42,12 @@ export default defineConfig({
         hooks: "src/hooks/index.ts",
         om: "src/om.ts",
         markdown: "src/markdown/index.ts",
+        modules: "src/modules/index.ts",
         router: "src/router/index.ts",
         textAnchors: "src/textAnchors/index.ts",
         ui: "src/ui/index.ts",
         versionControl: "src/versionControl/index.ts",
-        utils: "src/utils.ts", // note this is different from the others
+        utils: "src/utils.ts",
         "shared-dependencies": "src/shared-dependencies.ts",
       },
       name: "PatchworkSDK",
@@ -40,7 +56,12 @@ export default defineConfig({
     },
     rollupOptions: {
       plugins: [
-        typescript({ tsconfig: "../tsconfig.json" }),
+        typescript({
+          // Enable declaration file generation in the TypeScript plugin
+          declaration: true,
+          declarationDir: "./dist",
+          exclude: ["**/*.test.ts", "**/*.test.tsx"],
+        }),
         postcss({ extensions: [".css"] }),
         commonjs({
           include: /node_modules/,

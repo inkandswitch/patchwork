@@ -1,6 +1,5 @@
 import { DocMigration } from "@patchwork/sdk";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import { FileDoc } from "../datatype";
 import { updateDocFromFile } from "@patchwork/sdk/files";
 
 type OldLinkFileDoc = {

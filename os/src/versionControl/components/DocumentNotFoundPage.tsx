@@ -1,4 +1,4 @@
-import { DocLink } from "@patchwork/folder";
+import { DocLink } from "@patchwork/sdk/router";
 import { toHashUrl } from "@patchwork/sdk";
 import { BranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 import { CrownIcon } from "lucide-react";
@@ -18,7 +18,7 @@ export const DocumentNotFoundPage = ({
       <div className="text-center">
         <h2 className="text-xl font-bold mb-4">Document not found</h2>
         <p className="text-gray-700 mb-4">
-          <span className="bg-white border border-gray-300 shadow-sm px-2 py-1 rounded-md inline-flex gap-1 items-center">
+          <span className="bg-white border border-gray-300 shadow-xs px-2 py-1 rounded-md inline-flex gap-1 items-center">
             {!selectedBranchName && <CrownIcon className="inline" size={12} />}
             {selectedBranchName ?? "Main"}
           </span>{" "}
