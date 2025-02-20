@@ -42,6 +42,7 @@ export default defineConfig({
         hooks: "src/hooks/index.ts",
         om: "src/om.ts",
         markdown: "src/markdown/index.ts",
+        modules: "src/modules/index.ts",
         router: "src/router/index.ts",
         textAnchors: "src/textAnchors/index.ts",
         ui: "src/ui/index.ts",

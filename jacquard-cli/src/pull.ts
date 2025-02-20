@@ -1,4 +1,5 @@
-import { DocLink, FolderDoc } from "@patchwork/folder";
+import { FolderDoc } from "@patchwork/folder";
+import { DocLink } from "@patchwork/sdk/router";
 import {
   dataTypeById,
   getDefaultExportMethodForDatatype,

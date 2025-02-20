@@ -16,6 +16,7 @@ export * from "./types";
 
 export {
   type FolderDocWithMetadata,
+  fetchFolderDocWithMetadata,
   useFolderDocWithMetadataOnActiveBranch,
   fetchFolderDocWithMetadataOnFixedBranch,
 } from "../versionControl/useFolderDocWithMetadata";

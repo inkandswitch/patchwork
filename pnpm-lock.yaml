@@ -47,6 +47,9 @@ importers:
       '@automerge/automerge-repo-storage-nodefs':
         specifier: ^2.0.0-alpha.22
         version: 2.0.0-collectionsync-alpha.1(@swc/core@1.10.9(@swc/helpers@0.5.15))(@types/node@20.17.16)(typescript@5.7.3)
+      '@patchwork/essay':
+        specifier: workspace:*
+        version: link:../packages/essay
       '@patchwork/file':
         specifier: workspace:*
         version: link:../packages/file

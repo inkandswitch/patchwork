@@ -49,6 +49,7 @@ export const SDK_SUBMODULES = [
   "@patchwork/sdk/hooks",
   "@patchwork/sdk/om",
   "@patchwork/sdk/markdown",
+  "@patchwork/sdk/modules",
   "@patchwork/sdk/router",
   "@patchwork/sdk/textAnchors",
   "@patchwork/sdk/ui",
