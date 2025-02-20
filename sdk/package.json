@@ -1,6 +1,6 @@
 {
   "name": "@patchwork/sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "type": "module",
   "main": "dist/index.js",
@@ -33,6 +33,10 @@
     "./markdown": {
       "types": "./dist/types/markdown/index.d.ts",
       "import": "./dist/markdown.js"
+    },
+    "./modules": {
+      "types": "./dist/types/modules/index.d.ts",
+      "import": "./dist/modules.js"
     },
     "./router": {
       "types": "./dist/types/router/index.d.ts",
