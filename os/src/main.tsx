@@ -16,7 +16,7 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
 import { getAccount } from "@patchwork/sdk";
 import { Explorer } from "./explorer/components/Explorer.js";
-// import "./index.css";
+import "./index.css";
 import { ModuleWatcherProvider } from "./explorer/hooks/useModuleWatcher.js";
 
 // Peer id prefix is added to both the peer id of the client and the service worker
