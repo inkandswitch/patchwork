@@ -4,6 +4,10 @@
 @source "../../sdk";
 @config "../tailwind.config.cjs";
 
+@theme {
+  --color-customGray: #F2F2F2;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
