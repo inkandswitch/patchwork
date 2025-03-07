@@ -77,13 +77,19 @@ export const VersionControlEditor: React.FC<{
     cloneOrMainOm?.doc && docHeadsFromTimelineSidebar
       ? A.view(cloneOrMainOm.doc, docHeadsFromTimelineSidebar)
       : cloneOrMainOm?.doc;
-  const baseHeads = branchScopeAndActiveBranchInfo?.baseHeads;
+  let baseHeads = branchScopeAndActiveBranchInfo?.baseHeads;
 
-  // useEffect(() => {
-  //   console.log("Selected doc URL:", docLink.url);
-  //   console.log("CloneOrMainOm URL:", cloneOrMainOm?.url);
-  // }, [docLink.url, cloneOrMainOm?.url]);
-
+  // PVH hack march 6 2025; some old branches have encoded heads.
+  // this is a workaround to allow the branch picker to work.
+  // I suspect there are a very small number of documents affected but I want to unblock
+  // work until we have a better solution.
+  // If it's very long after this you can probably just delete the lines below
+  try {
+    baseHeads = decodeHeads(baseHeads);
+    log("branch may have bogus encoded baseHeads");
+  } catch (e) {
+    console.error("Error decoding heads", e);
+  }
   const branchDiff = useMemo(() => {
     // only compute branch diff if we are on a branch
     if (baseHeads && cloneOrMainOm && cloneOrMainOm.url !== docLink.url) {
