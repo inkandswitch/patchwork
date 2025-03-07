@@ -85,8 +85,9 @@ export const VersionControlEditor: React.FC<{
   // work until we have a better solution.
   // If it's very long after this you can probably just delete the lines below
   try {
+    // @ts-expect-error-next-line some existing documents have bogus encoded baseHeads
     baseHeads = decodeHeads(baseHeads);
-    log("branch may have bogus encoded baseHeads");
+    console.log("branch may have bogus encoded baseHeads");
   } catch (e) {
     console.error("Error decoding heads", e);
   }
