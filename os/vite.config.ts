@@ -80,7 +80,13 @@ const generateImportMapPlugin = (): Plugin => ({
       resolutions: SHARED_MODULES,
     });
 
-    await generator.install([...EXTERNAL_DEPENDENCIES]);
+    const mungedDeps = EXTERNAL_DEPENDENCIES.map((dep) => {
+      if (dep === "@codemirror/view") {
+        return "npm:@codemirror/view@6.36.3";
+      }
+      return dep;
+    });
+    await generator.install(mungedDeps);
     const importMap = generator.getMap();
 
     return {
