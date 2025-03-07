@@ -89,7 +89,7 @@ export const VersionControlEditor: React.FC<{
     baseHeads = decodeHeads(baseHeads);
     console.log("branch may have bogus encoded baseHeads");
   } catch (e) {
-    console.error("Error decoding heads", e);
+    // the expected result is that the decode will fail
   }
   const branchDiff = useMemo(() => {
     // only compute branch diff if we are on a branch
