@@ -23,6 +23,9 @@ import {
 } from "@patchwork/sdk/textAnchors";
 import { useAnnotationGroupsWithPosition } from "../utils";
 import { CommentsSidebar } from "./CommentsSidebar";
+import { useThrottle } from "@uidotdev/usehooks";
+
+const path = ["content"];
 
 export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const {
@@ -60,17 +63,26 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
     setVisibleAuthorsForEdits(uniq(Object.values(actorIdToAuthor ?? {})));
   }, [actorIdToAuthor]);
 
+  // HACK: comment resolution is a perf bottleneck for large documents with lots of comments.
+  // To workaround, you can set a throttle time on the doc: only resolve comments once every X ms.
+  // Setting this to 500 or 1000 makes keystroke latency feel much better.
+  // The tradeoff is that comments lag behind the text and some interactions w/ comments will feel laggy.
+  // @ts-ignore
+  const throttleTime = doc?.throttleCommentResolution ?? 16;
+  const throttledDoc = useThrottle(doc, throttleTime);
+  const throttledAnnotations = useThrottle(annotations, throttleTime);
+  const throttledAnnotationGroups = useThrottle(annotationGroups, throttleTime);
   const resolvedAnnotations = useResolvedAnnotationAtPath({
-    doc,
-    path: ["content"],
-    annotations,
+    doc: throttledDoc,
+    path,
+    annotations: throttledAnnotations,
   });
 
   const annotationGroupsWithPosition = useAnnotationGroupsWithPosition({
-    doc,
+    doc: throttledDoc,
     editorView,
     editorContainer,
-    annotationGroups,
+    annotationGroups: throttledAnnotationGroups,
   });
 
   if (!doc || !handle) {
