@@ -331,7 +331,10 @@ self.addEventListener("fetch", async (event) => {
 
         // On cache fail, hit the network
         const networkResponse = await fetch(event.request);
-        cache.put(event.request, networkResponse.clone());
+        if (200 <= networkResponse.status && networkResponse.status <= 299) {
+          // only cache successes
+          cache.put(event.request, networkResponse.clone());
+        }
         return networkResponse;
       })()
     );
