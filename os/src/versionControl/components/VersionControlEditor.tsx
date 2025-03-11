@@ -87,7 +87,12 @@ export const VersionControlEditor: React.FC<{
   try {
     // @ts-expect-error-next-line some existing documents have bogus encoded baseHeads
     baseHeads = decodeHeads(baseHeads);
-    console.log("branch may have bogus encoded baseHeads");
+    const notOnMainBranch = baseHeads.length > 0;
+    if (notOnMainBranch) {
+      // If we get to this point, there was actually an encoded baseHeads,
+      // which is a bad state.
+      console.log("branch may have bogus encoded baseHeads");
+    }
   } catch (e) {
     // the expected result is that the decode will fail
   }
