@@ -68,7 +68,7 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   // Setting this to 500 or 1000 makes keystroke latency feel much better.
   // The tradeoff is that comments lag behind the text and some interactions w/ comments will feel laggy.
   // @ts-ignore
-  const throttleTime = doc?.throttleCommentResolution ?? 16;
+  const throttleTime = doc?.throttleCommentResolution ?? 0;
   const throttledDoc = useThrottle(doc, throttleTime);
   const throttledAnnotations = useThrottle(annotations, throttleTime);
   const throttledAnnotationGroups = useThrottle(annotationGroups, throttleTime);
