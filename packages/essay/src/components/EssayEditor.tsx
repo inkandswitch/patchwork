@@ -27,6 +27,15 @@ import { useThrottle } from "@uidotdev/usehooks";
 
 const path = ["content"];
 
+// This is a custom hook that conditionally applies throttling to a value.
+// It's used to prevent the comment resolution from being a performance bottleneck.
+// We only want to throttle when the doc has a throttleCommentResolution property --
+// otherwise just return the unthrottled value.
+function useMaybeThrottled<T>(value: T, time?: number): T {
+  const throttledValue = useThrottle(value, time ?? 0);
+  return time !== undefined ? throttledValue : value;
+}
+
 export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const {
     docUrl,
@@ -68,21 +77,25 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   // Setting this to 500 or 1000 makes keystroke latency feel much better.
   // The tradeoff is that comments lag behind the text and some interactions w/ comments will feel laggy.
   // @ts-ignore
-  const throttleTime = doc?.throttleCommentResolution ?? 0;
-  const throttledDoc = useThrottle(doc, throttleTime);
-  const throttledAnnotations = useThrottle(annotations, throttleTime);
-  const throttledAnnotationGroups = useThrottle(annotationGroups, throttleTime);
+  const throttleTime = doc?.throttleCommentResolution as number | undefined;
+  const docToUse = useMaybeThrottled(doc, throttleTime);
+  const annotationsToUse = useMaybeThrottled(annotations, throttleTime);
+  const annotationGroupsToUse = useMaybeThrottled(
+    annotationGroups,
+    throttleTime
+  );
+
   const resolvedAnnotations = useResolvedAnnotationAtPath({
-    doc: throttledDoc,
+    doc: docToUse,
     path,
-    annotations: throttledAnnotations,
+    annotations: annotationsToUse,
   });
 
   const annotationGroupsWithPosition = useAnnotationGroupsWithPosition({
-    doc: throttledDoc,
+    doc: docToUse,
     editorView,
     editorContainer,
-    annotationGroups: throttledAnnotationGroups,
+    annotationGroups: annotationGroupsToUse,
   });
 
   if (!doc || !handle) {
