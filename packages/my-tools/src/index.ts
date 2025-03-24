@@ -1,12 +1,12 @@
 import type {
-  DataTypeDescription,
+  LoadableDataType,
   ToolDescription,
   ModuleSettingsDoc,
 } from "@patchwork/sdk";
 
 // Kinda weird how ModuleSettingsDoc isn't owned by the type.
 
-export const dataType: DataTypeDescription<ModuleSettingsDoc> = {
+export const dataType: LoadableDataType<ModuleSettingsDoc> = {
   type: "patchwork:dataType",
   id: "my-tools",
   name: "My Tools",

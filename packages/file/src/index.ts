@@ -1,6 +1,6 @@
 import type { TextAnchor } from "@patchwork/sdk/textAnchors";
 import type {
-  DataTypeDescription,
+  LoadableDataType,
   ToolDescription,
   ImportMethod,
   ExportMethod,
@@ -15,7 +15,7 @@ export { isBinaryFileDoc, isTextFileDoc } from "./datatype";
 export { isBinaryCheck } from "./isBinaryFile";
 export { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from "./utils";
 
-export const dataType: DataTypeDescription<FileDoc, TextAnchor, string> = {
+export const dataType: LoadableDataType<FileDoc, TextAnchor, string> = {
   type: "patchwork:dataType",
   id: "file",
   name: "File",

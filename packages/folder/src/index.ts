@@ -6,10 +6,10 @@ export type {
   FolderDocMaterialized as FolderDocWithChildren,
 } from "./datatype";
 
-import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
+import type { LoadableDataType, ToolDescription } from "@patchwork/sdk";
 import type { DocPath } from "@patchwork/sdk";
 
-export const dataType: DataTypeDescription<FolderDoc, never, never> = {
+export const dataType: LoadableDataType<FolderDoc, never, never> = {
   type: "patchwork:dataType",
   id: "folder",
   name: "Folder",

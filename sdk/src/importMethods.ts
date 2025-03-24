@@ -1,11 +1,15 @@
 import EventEmitter from "eventemitter3";
 import { DocHandle } from "@automerge/automerge-repo";
 import { DataType, allDataTypes } from "./datatypes";
+import {
+  SystemElement,
+  getSystemRegistry,
+  getElementFromSystem,
+  loadElementFromSystem,
+} from "./systems";
 
-export type ImportMethod = {
-  id: string;
+export type ImportMethod = SystemElement & {
   type: "patchwork:importMethod";
-  name: string;
   datatypeId: string;
   fileExtensions: string[];
   /**
@@ -19,21 +23,27 @@ export type ImportMethod = {
   ) => Promise<{ didChange: boolean }>;
 };
 
+// For backward compatibility and transition
 type ImportMethodsMap = Record<string, ImportMethod>;
 type ImportMethodEvents = {
   "importMethods:changed": (methods: ImportMethodsMap) => void;
 };
 
 export const importMethodEvents = new EventEmitter<ImportMethodEvents>();
-const GlobalImportMethods: ImportMethodsMap = {};
+
+// Register existing event listeners with the new system
+getSystemRegistry<ImportMethod>("importMethods").onChange((elements) => {
+  importMethodEvents.emit("importMethods:changed", elements);
+});
 
 export const registerImportMethod = (method: ImportMethod) => {
-  GlobalImportMethods[method.id] = method;
-  importMethodEvents.emit("importMethods:changed", { ...GlobalImportMethods });
+  // Use the systems registry to register the method
+  const registry = getSystemRegistry<SystemElement>("importMethods");
+  registry.register(method);
 };
 
 export const allImportMethods = () => {
-  return { ...GlobalImportMethods };
+  return getSystemRegistry<ImportMethod>("importMethods").getAll();
 };
 
 export const isImportMethod = (value: unknown): value is ImportMethod => {
@@ -48,7 +58,9 @@ export const isImportMethod = (value: unknown): value is ImportMethod => {
 export const getImportMethodsForDatatype = (
   datatype: DataType
 ): ImportMethod[] => {
-  const methods = Object.values(GlobalImportMethods)
+  const registry = getSystemRegistry<ImportMethod>("importMethods");
+  const methods = registry
+    .getAllElements()
     .filter(
       (method) => method.datatypeId === datatype.id || method.datatypeId === "*"
     )

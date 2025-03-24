@@ -1,12 +1,8 @@
-import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
+import type { LoadableDataType, ToolDescription } from "@patchwork/sdk";
 import type { TLDrawDoc, TLDrawDocAnchor } from "./datatype";
 import type { TLShape } from "@tldraw/tldraw";
 
-export const dataType: DataTypeDescription<
-  TLDrawDoc,
-  TLDrawDocAnchor,
-  TLShape
-> = {
+export const dataType: LoadableDataType<TLDrawDoc, TLDrawDocAnchor, TLShape> = {
   type: "patchwork:dataType",
   id: "tldraw",
   name: "Drawing",

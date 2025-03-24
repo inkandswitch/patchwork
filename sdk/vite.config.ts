@@ -33,6 +33,8 @@ export default defineConfig({
     }),
   ],
   build: {
+    minify: false,
+    sourcemap: true,
     lib: {
       entry: {
         index: "src/index.ts",

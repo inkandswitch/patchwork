@@ -1,6 +1,7 @@
 import {
   dataTypeById,
   DataTypeImplementation,
+  Tool,
   useSuggestedModuleForDocUrl,
 } from "@patchwork/sdk";
 import { type DocPath, DocPathUtils } from "@patchwork/sdk/router";
@@ -26,7 +27,13 @@ import { ErrorFallback, LoadingScreen } from "@patchwork/sdk/components";
 import { Sidebar } from "./sidebar/Sidebar";
 import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
-import { useToolsForDataType, useTool } from "@patchwork/sdk/hooks";
+import {
+  useToolsForDataType,
+  useTool,
+  useLoadedSystemElement,
+  useLoadedToolsForDataType,
+  useLoadedDataType,
+} from "@patchwork/sdk/hooks";
 import { useModuleWatcher } from "../hooks/useModuleWatcher";
 import { DocHandle } from "@automerge/automerge-repo";
 import { addNewDocument } from "../docActions";
@@ -75,6 +82,22 @@ const useRunMigrationsOnceOnLoad = ({
   }, [handle, doc, dataType, repo]);
 };
 
+// Helper function to check if a tool is compatible with a data type
+const isToolCompatibleWithDataType = (
+  tool: Tool | undefined | null,
+  dataTypeId: string | undefined | null
+): boolean => {
+  if (!tool || !dataTypeId) return false;
+
+  // Safely check supportedDataTypes - it might be undefined in some cases
+  const supportedTypes = tool.supportedDataTypes;
+  if (!supportedTypes) return false;
+
+  if (supportedTypes === "*") return true;
+
+  return Array.isArray(supportedTypes) && supportedTypes.includes(dataTypeId);
+};
+
 export const Explorer: React.FC = () => {
   const repo = useRepo();
   const [accountDoc] = useCurrentAccountDoc();
@@ -110,27 +133,35 @@ export const Explorer: React.FC = () => {
 
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
-  const selectedDataType = dataTypeById(selectedDataTypeId);
+  const { dataType: selectedDataType, isLoading: isLoadingDataType } =
+    useLoadedDataType(selectedDataTypeId);
 
   useRunMigrationsOnceOnLoad({
     handle: selectedDocHandle,
     dataType: selectedDataType,
   });
 
+  // Get the list of compatible tools without loading their implementations
   const toolsForSelection = useToolsForDataType(selectedDataTypeId);
   const [selectedToolId, setSelectedToolId] = useState<string>();
-  const selectedTool = useTool(selectedToolId);
 
-  const currentTool =
-    // make sure the current tool is reset to the fallback tool
-    // if the selected datatype changes and the selected tool is not compatible
-    selectedTool &&
-    (selectedTool.supportedDataTypes === "*" ||
-      selectedTool.supportedDataTypes.some(
-        (supportedDataType) => supportedDataType === selectedDataTypeId
-      ))
-      ? selectedTool
-      : toolsForSelection[0];
+  // Determine which tool ID to load (either selected tool or fallback to first available)
+  const toolIdToLoad = React.useMemo(() => {
+    // If there's a selected tool ID and it's in the list of compatible tools, use it
+    if (
+      selectedToolId &&
+      toolsForSelection.some((tool) => tool.id === selectedToolId)
+    ) {
+      return selectedToolId;
+    }
+
+    // Otherwise, use the first compatible tool
+    return toolsForSelection.length > 0 ? toolsForSelection[0].id : undefined;
+  }, [selectedToolId, toolsForSelection]);
+
+  // Load only the specific tool we need
+  const { element: currentTool, isLoading: isLoadingTool } =
+    useLoadedSystemElement<Tool>("tools", toolIdToLoad);
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();
@@ -261,13 +292,21 @@ export const Explorer: React.FC = () => {
                   </div>
                 )}
 
+              {/* Show loading state while tool is loading */}
+              {selectedDocUrl && isLoadingTool && (
+                <div className="flex items-center justify-center h-full">
+                  <LoadingScreen what="tool" />
+                </div>
+              )}
+
               {/* NOTE: we set the URL as the component key, to force re-mount on URL change.
                 If we want more continuity we could not do this. */}
               {selectedDocUrl &&
                 selectedDocPath &&
                 currentTool &&
+                !isLoadingTool &&
                 (currentTool.supportedDataTypes.includes(selectedDataTypeId!) ||
-                  currentTool.supportedDataTypes.includes("*")) &&
+                  currentTool.supportedDataTypes === "*") &&
                 flatDocPaths && (
                   <VersionControlEditor
                     key={DocPathUtils.toString(selectedDocPath)}

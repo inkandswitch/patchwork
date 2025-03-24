@@ -45,7 +45,7 @@ import { getJacquardConfig } from "./util";
 import { watch } from "./watch";
 import { watchRefreshRequests } from "./watchRefreshRequests";
 import {
-  DataTypeDescription,
+  LoadableDataType,
   ToolDescription,
   registerDataType,
 } from "@patchwork/sdk";
@@ -211,7 +211,7 @@ const main = async () => {
   await Promise.all([
     ...Object.entries(jacquardDataTypes).map(async ([id, importName]) => {
       const module = (await import(importName)) as {
-        dataType: DataTypeDescription<unknown>;
+        dataType: LoadableDataType<unknown>;
         tools: ToolDescription[];
         importMethods?: ImportMethod[];
         exportMethods?: ExportMethod[];

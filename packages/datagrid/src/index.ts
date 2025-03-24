@@ -1,7 +1,7 @@
-import type { DataTypeDescription, ToolDescription } from "@patchwork/sdk";
+import type { LoadableDataType, ToolDescription } from "@patchwork/sdk";
 import type { DataGridDoc, DataGridDocAnchor } from "./datatype";
 
-export const dataType: DataTypeDescription<
+export const dataType: LoadableDataType<
   DataGridDoc,
   DataGridDocAnchor,
   string

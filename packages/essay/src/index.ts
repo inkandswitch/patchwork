@@ -1,5 +1,5 @@
 import {
-  DataTypeDescription,
+  LoadableDataType,
   ToolDescription,
   ImportMethod,
   ExportMethod,
@@ -13,7 +13,7 @@ export { isMarkdownDoc } from "./utils";
 export type { MarkdownDoc };
 export { getTitle } from "./datatype";
 
-export const dataType: DataTypeDescription<MarkdownDoc, TextAnchor, string> = {
+export const dataType: LoadableDataType<MarkdownDoc, TextAnchor, string> = {
   id: "essay",
   type: "patchwork:dataType",
   name: "Essay",

@@ -15,35 +15,35 @@ import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "./router/DocLink";
 import EventEmitter from "eventemitter3";
+import {
+  SystemElement,
+  getSystemRegistry,
+  getElementFromSystem,
+  loadElementFromSystem,
+} from "./systems";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
 // well-defined type parameters". This is what's known as an existential type,
 // which TypeScript doesn't have. In hackish but reasonable lieu of that, we
 // just stuff a bunch of unknowns in there.
-
-export type Tool = ToolBase & ToolImplementation;
-
 export type ToolImplementation = ToolTyped<
   HasVersionControlMetadata<unknown, unknown>,
   unknown,
   unknown
 >;
 
-type ToolBase = {
-  id: string;
+export type ToolDescription = SystemElement & {
   type: "patchwork:tool";
   supportedDataTypes: "*" | string[];
   name: string;
   icon?: IconType;
-  importUrl?: string; // populated at registration-time
-};
-
-export type ToolDescription = ToolBase & {
   load: () => Promise<
     ToolTyped<HasVersionControlMetadata<unknown, unknown>, unknown, unknown>
   >;
 };
+
+export type Tool = SystemElement<ToolDescription, ToolImplementation>;
 
 export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
   EditorComponent: React.FC<EditorProps<A, V>>;
@@ -64,25 +64,25 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
   return tool as ToolImplementation;
 }
 
+// For backward compatibility and transition
 export type ToolsMap = Record<string, Tool>;
 export type ToolsEvents = {
   "tools:changed": (datatypes: ToolsMap) => void;
 };
 export const toolsEvents = new EventEmitter<ToolsEvents>();
-const GlobalTools: ToolsMap = {};
+
+// Register existing event listeners with the new system
+getSystemRegistry<Tool>("tools").onChange((elements) => {
+  toolsEvents.emit("tools:changed", elements);
+});
+
 export const registerTool = async (
   tool: ToolDescription,
   importUrl: string
 ) => {
-  const { id } = tool;
-  console.log("registering tool", id, tool);
-  if (GlobalTools[id]) {
-    console.warn("Replacing tool", id, tool);
-  }
-  const loadedTool = await tool.load();
-  console.log("loaded tool", id, loadedTool);
-  GlobalTools[id] = { ...tool, importUrl, ...loadedTool };
-  toolsEvents.emit("tools:changed", { ...GlobalTools });
+  // Use the systems registry to register the tool
+  const registry = getSystemRegistry<SystemElement>("tools");
+  await registry.register(tool, importUrl);
 };
 
 export const isTool = (value: unknown): value is Tool => {
@@ -106,7 +106,7 @@ export const isToolDescription = (value: unknown): value is ToolDescription => {
 };
 
 export const allTools = () => {
-  return { ...GlobalTools };
+  return getSystemRegistry<Tool>("tools").getAll();
 };
 
 export const toolsForDataType = (dataType: string | undefined): Tool[] => {
@@ -114,13 +114,16 @@ export const toolsForDataType = (dataType: string | undefined): Tool[] => {
     return [];
   }
 
-  const specificTools = Object.values(GlobalTools).filter((tool) =>
-    tool.supportedDataTypes.includes(dataType)
+  const registry = getSystemRegistry<Tool>("tools");
+  const tools = registry.getAllElements();
+
+  const specificTools = tools.filter(
+    (tool) =>
+      Array.isArray(tool.supportedDataTypes) &&
+      tool.supportedDataTypes.includes(dataType)
   );
 
-  const genericTools = Object.values(GlobalTools).filter((tool) =>
-    tool.supportedDataTypes.includes("*")
-  );
+  const genericTools = tools.filter((tool) => tool.supportedDataTypes === "*");
 
   return [...specificTools, ...genericTools];
 };
@@ -129,7 +132,7 @@ export const toolById = (id: string | undefined): Tool | undefined => {
   if (!id) {
     return undefined;
   }
-  return GlobalTools[id];
+  return getElementFromSystem<Tool>("tools", id);
 };
 
 export type EditorProps<A, V> = {
@@ -174,4 +177,47 @@ export type AnnotationsViewProps<
   doc: D;
   handle: DocHandle<D>;
   annotations: Annotation<TAnchor, TAnchorValue>[];
+};
+
+/**
+ * Check if a tool is compatible with a given data type
+ */
+export const isToolCompatibleWithDataType = (
+  tool: Tool | undefined,
+  dataTypeId: string | undefined
+): boolean => {
+  if (!tool || !dataTypeId) return false;
+
+  return (
+    tool.supportedDataTypes === "*" ||
+    (Array.isArray(tool.supportedDataTypes) &&
+      tool.supportedDataTypes.includes(dataTypeId))
+  );
+};
+
+/**
+ * Find the best compatible tool for a data type from a list of tools
+ * If the currently selected tool is compatible, it will be returned
+ * Otherwise, the first compatible tool will be returned
+ */
+export const findCompatibleToolForDataType = (
+  currentTool: Tool | undefined,
+  availableTools: Tool[],
+  dataTypeId: string | undefined
+): Tool | undefined => {
+  // If no data type ID, we can't determine compatibility
+  if (!dataTypeId) return undefined;
+
+  // If current tool is compatible, keep using it
+  if (isToolCompatibleWithDataType(currentTool, dataTypeId)) {
+    return currentTool;
+  }
+
+  // Safety check for availableTools
+  if (!availableTools || !Array.isArray(availableTools)) return undefined;
+
+  // Otherwise return the first compatible tool
+  return availableTools.find((tool) =>
+    isToolCompatibleWithDataType(tool, dataTypeId)
+  );
 };

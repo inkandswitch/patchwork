@@ -4,11 +4,12 @@ import {
 } from "@patchwork/sdk/async-signals";
 import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { FolderDoc } from "@patchwork/folder";
-import { dataTypeById } from "@patchwork/sdk";
+import { DataType, loadElementFromSystem } from "@patchwork/sdk";
 import { fetchOmOnActiveBranch } from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";
 import { useCurrentAccount } from "@patchwork/sdk";
+import {} from "../../../../sdk/dist/systems";
 
 // This hook keeps the name of the link synced with the title of the document.
 // The update is triggered every time the selected doc changes.
@@ -31,7 +32,6 @@ export const useSyncDocTitle = ({
   // counter is incremented each time the title is re computed so we can detect async operations that should be aborted because they are based on old state
   const counterRef = useRef(0);
   const selectedDocTitleRef = useRef<{ url: AutomergeUrl; title?: string }>();
-  const dataType = dataTypeById(selectedDocLink?.type);
   const account = useCurrentAccount();
 
   const selectedDoc = useAsyncComputed(
@@ -53,7 +53,7 @@ export const useSyncDocTitle = ({
   ).ifPending(undefined).value;
 
   useEffect(() => {
-    if (!selectedDocLink || !selectedDoc || !dataType || !parentFolderOm) {
+    if (!selectedDocLink || !selectedDoc || !parentFolderOm) {
       selectedDocTitleRef.current = undefined;
       return;
     }
@@ -65,45 +65,51 @@ export const useSyncDocTitle = ({
 
     const counter = (counterRef.current = counterRef.current + 1);
 
-    // load title
-    dataType.getTitle(selectedDoc, repo).then((title) => {
-      // do nothing if selectedDocLink has changed in between
-      // or if this promise resolved after newer update
-      if (
-        selectedDocLink.url !== selectedDocTitleRef.current?.url ||
-        counter !== counterRef.current
-      ) {
-        return;
-      }
+    loadElementFromSystem<DataType>("dataTypes", selectedDocLink.type).then(
+      (dataType) => {
+        // Skip if dataType is undefined
+        if (!dataType) return;
 
-      // title has changed compared to previous computation
-      if (title !== selectedDocTitleRef.current?.title) {
-        selectedDocTitleRef.current.title = title;
-
-        parentFolderOm.handle.change((d) => {
-          const existingDocLink = d.docs.find(
-            (link) => link.url === selectedDocLink.url
-          );
-          // check if the doc link matches the current title
+        // load title
+        dataType.getTitle(selectedDoc, repo).then((title) => {
+          // do nothing if selectedDocLink has changed in between
+          // or if this promise resolved after newer update
           if (
-            existingDocLink &&
-            existingDocLink.name &&
-            existingDocLink.name !== title
+            selectedDocLink.url !== selectedDocTitleRef.current?.url ||
+            counter !== counterRef.current
           ) {
-            existingDocLink.name = title;
+            return;
+          }
 
-            // update url
-            selectDocPath([
-              ...DocPathUtils.parent(selectedDocPath),
-              { ...selectedDocLink, name: title },
-            ]);
+          // title has changed compared to previous computation
+          if (title !== selectedDocTitleRef.current?.title) {
+            selectedDocTitleRef.current.title = title;
+
+            parentFolderOm.handle.change((d) => {
+              const existingDocLink = d.docs.find(
+                (link) => link.url === selectedDocLink.url
+              );
+              // check if the doc link matches the current title
+              if (
+                existingDocLink &&
+                existingDocLink.name &&
+                existingDocLink.name !== title
+              ) {
+                existingDocLink.name = title;
+
+                // update url
+                selectDocPath([
+                  ...DocPathUtils.parent(selectedDocPath),
+                  { ...selectedDocLink, name: title },
+                ]);
+              }
+            });
           }
         });
       }
-    });
+    );
   }, [
     selectedDoc,
-    dataType,
     selectedDocPath,
     repo,
     selectDocPath,

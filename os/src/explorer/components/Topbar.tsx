@@ -78,7 +78,7 @@ export const Topbar: React.FC<TopbarProps> = ({
 
   const selectedDataType = dataTypeById(selectedDataTypeId);
 
-  const toolsWithEditorComponent = tools.filter((tool) => tool.EditorComponent);
+  const toolsWithEditorComponent = tools; //.filter((tool) => tool.EditorComponent);
 
   const onClickMakeCopy = async () => {
     if (

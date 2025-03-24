@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   allTools,
   Tool,
@@ -7,48 +7,48 @@ import {
   toolsForDataType,
   ToolsMap,
 } from "../tools";
+import {
+  useSystemElement,
+  useSystemElements,
+  useFilteredSystemElements,
+} from "./useSystem";
 
-export function useTool(id: string | undefined) {
-  const [tool, setTool] = useState<Tool | undefined>(toolById(id));
-
-  useEffect(() => {
-    setTool(toolById(id));
-
-    const handler = () => setTool(toolById(id));
-    toolsEvents.on("tools:changed", handler);
-    return () => {
-      toolsEvents.off("tools:changed", handler);
-    };
-  }, [id]);
-
-  return tool;
+/**
+ * Hook to get a specific tool by ID
+ */
+export function useTool(id: string | undefined): Tool | undefined {
+  return useSystemElement<Tool>("tools", id);
 }
 
-export function useTools() {
-  const [tools, setTools] = useState<ToolsMap>(allTools());
-
-  useEffect(() => {
-    const handler = () => setTools(allTools());
-    toolsEvents.on("tools:changed", handler);
-    return () => {
-      toolsEvents.off("tools:changed", handler);
-    };
-  }, []);
-
-  return tools;
+/**
+ * Hook to get all registered tools
+ */
+export function useTools(): ToolsMap {
+  return useSystemElements<Tool>("tools") as ToolsMap;
 }
 
-export function useToolsForDataType(id: string | undefined) {
-  const [tools, setTools] = useState<Tool[]>(toolsForDataType(id));
+/**
+ * Hook to get tools for a specific data type
+ */
+export function useToolsForDataType(dataTypeId: string | undefined): Tool[] {
+  // Create a stable filter function with useMemo
+  const filterFn = useMemo(() => {
+    return (tool: Tool | undefined) => {
+      // Safety check for null/undefined tools
+      if (!tool || !dataTypeId) return false;
 
-  useEffect(() => {
-    setTools(toolsForDataType(id));
-    const handler = () => setTools(toolsForDataType(id));
-    toolsEvents.on("tools:changed", handler);
-    return () => {
-      toolsEvents.off("tools:changed", handler);
+      // Safety check for supportedDataTypes
+      const supportedTypes = tool.supportedDataTypes;
+      if (!supportedTypes) return false;
+
+      if (supportedTypes === "*") return true;
+
+      return (
+        Array.isArray(supportedTypes) && supportedTypes.includes(dataTypeId)
+      );
     };
-  }, [id]);
+  }, [dataTypeId]);
 
-  return tools;
+  // Use the filtered hook
+  return useFilteredSystemElements<Tool>("tools", filterFn);
 }
