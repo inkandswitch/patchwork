@@ -1,10 +1,6 @@
 import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { FolderDoc } from "@patchwork/folder";
-import {
-  dataTypeById,
-  getExportMethodsForDatatype,
-  ExportMethod,
-} from "@patchwork/sdk";
+import { getExportMethodsForDatatype, ExportMethod } from "@patchwork/sdk";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +26,10 @@ import {
 import React, { useRef } from "react";
 import { saveFile } from "@patchwork/sdk/files";
 import { AccountPicker } from "./AccountPicker";
+import {
+  useDataTypeDescription,
+  useLoadedDataType,
+} from "../hooks/useDataTypeUtils";
 import {
   AUTOMERGE_SYNC_SERVER_STORAGE_ID,
   SyncIndicator,
@@ -76,9 +76,14 @@ export const Topbar: React.FC<TopbarProps> = ({
   const selectedDataTypeRef = useRef<string>();
   selectedDataTypeRef.current = selectedDataTypeId;
 
-  const selectedDataType = dataTypeById(selectedDataTypeId);
+  // Get the data type description for immediate display needs
+  const selectedDataTypeDesc = useDataTypeDescription(selectedDataTypeId);
 
-  const toolsWithEditorComponent = tools; //.filter((tool) => tool.EditorComponent);
+  // Load the full data type for operations that need implementation
+  const { dataType: selectedDataType, isLoading: dataTypeLoading } =
+    useLoadedDataType(selectedDataTypeId);
+
+  const toolsWithEditorComponent = tools;
 
   const onClickMakeCopy = async () => {
     if (
@@ -171,6 +176,8 @@ export const Topbar: React.FC<TopbarProps> = ({
     ]);
   };
 
+  // Get export methods based on the data type description when available
+  // or the full data type when needed for implementation details
   const exportMethods = selectedDataType
     ? getExportMethodsForDatatype(selectedDataType)
     : [];
@@ -186,8 +193,8 @@ export const Topbar: React.FC<TopbarProps> = ({
         </div>
       )}
       <div className="ml-3 text-sm text-gray-700 font-bold">
-        {/* {selectedDataType &&
-          React.createElement(selectedDataType.icon, {
+        {/* {selectedDataTypeDesc &&
+          React.createElement(selectedDataTypeDesc.icon, {
             className: "inline mr-1",
             size: 14,
           })} */}

@@ -5,11 +5,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@patchwork/sdk/ui";
-import { DataTypesMap } from "@patchwork/sdk";
+import { DataTypeDescription } from "@patchwork/sdk";
 import sortBy from "lodash-es/sortBy";
 
 interface DataTypeSelectorProps {
-  dataTypes: DataTypesMap;
+  dataTypes: Record<string, DataTypeDescription>;
   addNewDocument: (doc: { type: string }) => void;
 }
 
@@ -30,7 +30,8 @@ const DataTypeSelector = ({
       <DropdownMenuContent className="min-w-[180px]">
         {sortBy(Object.values(dataTypes), (dataType) => dataType.name).map(
           (dataType) => {
-            if (!dataType.init || dataType.unlisted) return null;
+            // Show all data types except those marked as unlisted
+            if (dataType.unlisted) return null;
 
             return (
               <DropdownMenuItem

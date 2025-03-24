@@ -1,5 +1,5 @@
 import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
-import { dataTypeById } from "@patchwork/sdk";
+import { useDataTypeDescription } from "../../../explorer/hooks/useDataTypeUtils";
 import {
   Icon,
   IconType,
@@ -27,7 +27,7 @@ export const Node = (props: NodeRendererProps<NodeData>) => {
   const { node, style, dragHandle } = props;
   const docPath = node.data.docPath;
   const docLink = DocPathUtils.toLink(docPath);
-  const dataType = dataTypeById(docLink.type);
+  const dataType = useDataTypeDescription(docLink.type);
 
   const flatDocPaths = useContext(FlatDocPathsContext);
 

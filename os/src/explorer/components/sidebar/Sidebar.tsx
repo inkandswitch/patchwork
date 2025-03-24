@@ -3,7 +3,7 @@ import { Icon } from "@patchwork/sdk/ui";
 import { DocLink, DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { FolderDoc, FolderDocWithChildren } from "@patchwork/folder";
 import { FolderDocWithMetadata } from "@patchwork/sdk/versionControl";
-import { dataTypeById } from "@patchwork/sdk";
+import { dataTypeById, allDataTypes } from "@patchwork/sdk";
 import { Input } from "@patchwork/sdk/ui";
 import {
   fetchBranchScopeAndActiveBranchInfo,
@@ -22,7 +22,7 @@ import { useCurrentAccount, useCurrentAccountDoc } from "@patchwork/sdk";
 import { UIStateDoc } from "@patchwork/sdk/router";
 import { AccountPicker } from "../AccountPicker";
 import { FillFlexParent } from "../FillFlexParent";
-import { useDataTypes } from "@patchwork/sdk/hooks";
+import { useDataTypeDescriptions } from "@patchwork/sdk/hooks";
 import DataTypeSelector from "./DataTypeSelector";
 import { OpenAutomergeUrl } from "./OpenAutomergeUrl";
 import { Node, FlatDocPathsContext, NodeData } from "./Node";
@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   rootFolderDoc,
 }) => {
   const repo = useRepo();
-  const dataTypes = useDataTypes();
+  const dataTypes = useDataTypeDescriptions();
 
   const {
     doc: rootFolderDocWithChildren,

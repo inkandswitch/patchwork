@@ -107,5 +107,15 @@ export function useLoadedToolsForDataType(
     };
   }
 
-  return useLoadedFilteredSystemElements<Tool>("tools", filterFn, wait);
+  const { elements, isLoading, error } = useLoadedFilteredSystemElements<Tool>(
+    "tools",
+    filterFn,
+    wait
+  );
+
+  return {
+    tools: elements,
+    isLoading,
+    error,
+  };
 }

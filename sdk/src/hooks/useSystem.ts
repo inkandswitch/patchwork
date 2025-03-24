@@ -108,16 +108,14 @@ export function useSystemElements<T extends SystemElement>(
  */
 export function useFilteredSystemElements<T extends SystemElement>(
   systemType: string,
-  filterFn: (element: T | undefined) => boolean
+  filterFn: (element: T) => boolean
 ): T[] {
   const elements = useSystemElements<T>(systemType);
 
   const [filteredElements, setFilteredElements] = useState<T[]>(() => {
     // Safely handle the case where elements might be undefined or empty
     if (!elements) return [];
-    return Object.values(elements).filter(
-      (element) => element && filterFn(element)
-    ) as T[];
+    return Object.values(elements).filter(filterFn) as T[];
   });
 
   useEffect(() => {
@@ -126,11 +124,7 @@ export function useFilteredSystemElements<T extends SystemElement>(
       setFilteredElements([]);
       return;
     }
-    setFilteredElements(
-      Object.values(elements).filter(
-        (element) => element && filterFn(element)
-      ) as T[]
-    );
+    setFilteredElements(Object.values(elements).filter(filterFn) as T[]);
   }, [elements, filterFn]);
 
   return filteredElements;

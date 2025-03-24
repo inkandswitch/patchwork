@@ -1,9 +1,9 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import {
   DataType,
   DataTypeDescription,
-  LoadableDataType,
-  dataTypeById,
+  getDataTypeDescriptionById,
+  loadDataTypeById,
 } from "../datatypes";
 import {
   useSystemElement,
@@ -12,6 +12,7 @@ import {
   useFilteredSystemElements,
   useLoadedFilteredSystemElements,
 } from "./useSystem";
+import { onSystemElementsChange } from "../systems";
 
 /**
  * Hook to get a specific data type by ID
@@ -88,4 +89,52 @@ export function useLoadedFilteredDataTypes<
     isLoading: result.isLoading,
     error: result.error,
   };
+}
+
+/**
+ * Hook to get a data type description by ID
+ * Only returns the description (metadata), not the implementation
+ */
+export function useDataTypeDescription<D = unknown, T = unknown, V = unknown>(
+  id: string | undefined
+): DataTypeDescription | undefined {
+  const [description, setDescription] = useState<
+    DataTypeDescription | undefined
+  >(id ? getDataTypeDescriptionById(id) : undefined);
+
+  useEffect(() => {
+    if (!id) {
+      setDescription(undefined);
+      return;
+    }
+
+    // Set initial state
+    setDescription(getDataTypeDescriptionById(id));
+
+    // Listen for changes
+    let unsubscribe: (() => void) | null = null;
+
+    try {
+      unsubscribe = onSystemElementsChange("dataTypes", () => {
+        setDescription(getDataTypeDescriptionById(id));
+      });
+    } catch (err) {
+      console.warn(`Error subscribing to data type description changes:`, err);
+    }
+
+    return function cleanupDataTypeDescriptionListener() {
+      try {
+        if (unsubscribe && typeof unsubscribe === "function") {
+          unsubscribe();
+        }
+      } catch (err) {
+        console.warn(
+          `Error during cleanup for data type description ${id}:`,
+          err
+        );
+      }
+    };
+  }, [id]);
+
+  return description;
 }

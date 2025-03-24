@@ -20,6 +20,8 @@ import {
   SystemElement,
   getSystemRegistry,
   getElementFromSystem,
+  loadElementFromSystem,
+  isLoadableElement,
 } from "./systems";
 
 // DataType implementation interface
@@ -109,15 +111,66 @@ export const registerDataType = async <D = unknown, T = unknown, V = unknown>(
   await registry.register(datatype, importUrl || datatype.importUrl);
 };
 
-export const allDataTypes = () => {
-  return getSystemRegistry<DataType>("dataTypes").getAll();
+/**
+ * Get all data type descriptions
+ * Returns only descriptions without loading implementations
+ */
+export const getDataTypeDescriptions = (): Record<
+  string,
+  DataTypeDescription
+> => {
+  return getSystemRegistry<DataTypeDescription>("dataTypes").getAll();
 };
 
+/**
+ * Get a specific data type description by ID
+ * Returns only the description without loading implementation
+ */
+export const getDataTypeDescriptionById = (
+  id: string | undefined
+): DataTypeDescription | undefined => {
+  if (!id) return undefined;
+  return getSystemRegistry<DataTypeDescription>("dataTypes").getById(id);
+};
+
+/**
+ * Load a data type by ID
+ * Returns a fully loaded data type with implementation
+ * @param id The data type ID
+ * @param shouldWait If true, wait for registration if not yet registered
+ * @returns A Promise resolving to the loaded data type
+ */
+export const loadDataTypeById = async <D = unknown, T = unknown, V = unknown>(
+  id: string | undefined,
+  shouldWait = false
+): Promise<DataType<D, T, V> | undefined> => {
+  if (!id) return undefined;
+  return loadElementFromSystem<DataType<D, T, V>>("dataTypes", id, shouldWait);
+};
+
+/**
+ * Get all data types (backward compatibility)
+ * @deprecated Use getDataTypeDescriptions() or loadAllDataTypes() instead
+ */
+export const allDataTypes = () => {
+  console.warn(
+    "allDataTypes() is deprecated. Use getDataTypeDescriptions() instead."
+  );
+  return getDataTypeDescriptions();
+};
+
+/**
+ * Get a data type by ID (backward compatibility)
+ * @deprecated Use getDataTypeDescriptionById() or loadDataTypeById() instead
+ */
 export const dataTypeById = <D = unknown, T = unknown, V = unknown>(
   id: string | undefined
 ) => {
+  console.warn(
+    "dataTypeById() is deprecated. Use getDataTypeDescriptionById() or loadDataTypeById() instead."
+  );
   if (!id) return undefined;
-  return getElementFromSystem<DataType<D, T, V>>("dataTypes", id);
+  return getDataTypeDescriptionById(id) as DataType<D, T, V> | undefined;
 };
 
 /** Creates a new document initialized with the given datatype */
@@ -147,4 +200,36 @@ export const initFrom = <D extends object>(
   init: Omit<D, keyof HasVersionControlMetadata<unknown, unknown>>
 ) => {
   Object.assign(doc, init);
+};
+
+/**
+ * Load all data types
+ * Returns fully loaded data types with implementations
+ * @param skipUnlisted Skip data types marked as unlisted
+ * @returns A Promise resolving to a record of loaded data types
+ */
+export const loadAllDataTypes = async (
+  skipUnlisted = false
+): Promise<Record<string, DataType>> => {
+  const descriptions = getDataTypeDescriptions();
+  const loadPromises: [string, Promise<DataType | undefined>][] = [];
+
+  for (const [id, desc] of Object.entries(descriptions)) {
+    if (skipUnlisted && desc.unlisted) continue;
+    loadPromises.push([id, loadDataTypeById(id, true)]);
+  }
+
+  const results = await Promise.all(
+    loadPromises.map(async ([id, promise]) => {
+      const dataType = await promise;
+      return [id, dataType];
+    })
+  );
+
+  return Object.fromEntries(
+    results.filter(([_, dataType]) => dataType !== undefined) as [
+      string,
+      DataType
+    ][]
+  );
 };
