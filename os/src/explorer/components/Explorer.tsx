@@ -1,5 +1,4 @@
 import {
-  dataTypeById,
   DataTypeImplementation,
   Tool,
   useSuggestedModuleForDocUrl,

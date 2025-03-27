@@ -1,4 +1,4 @@
-import { dataTypeById } from "@patchwork/sdk";
+import { DataType } from "@patchwork/sdk";
 import { useCurrentAccount } from "@patchwork/sdk";
 import { ErrorFallback } from "@patchwork/sdk/components";
 import { LoadingScreen } from "@patchwork/sdk/components";
@@ -10,6 +10,7 @@ import {
 } from "@patchwork/sdk/router";
 import { useToast } from "@patchwork/sdk/ui";
 import { Tool } from "@patchwork/sdk";
+import { useDataType } from "@patchwork/sdk/hooks";
 
 import { AutomergeUrl, decodeHeads } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -109,7 +110,8 @@ export const VersionControlEditor: React.FC<{
 
   const diff = diffFromTimelineSidebar ?? branchDiff;
 
-  const dataType = dataTypeById(docLink.type);
+  // Use the hook to get and load the data type
+  const dataType = useDataType(docLink.type);
 
   const branchOms = branchScopeAndActiveBranchInfo?.branchOms;
   const branchScopeUrl = branchScopeAndActiveBranchInfo?.branchScopeOm?.url;

@@ -1,7 +1,7 @@
 import { UIStateDoc } from "../router/uiState";
 import { Om } from "../om";
 import { DocPath, DocPathUtils } from "../router/DocLink";
-import { dataTypeById } from "../datatypes";
+import { loadDataTypeById } from "../datatypes";
 import {
   DocCloneMap,
   ensureMetadataHandleIsBranchScope,
@@ -91,12 +91,12 @@ export const cloneDocWithLinks = async (
   };
 
   // clone links
-  const links = dataTypeById(dataTypeId)?.links;
-  if (links) {
+  const dataType = await loadDataTypeById(dataTypeId);
+  if (dataType?.links) {
     const doc = handle.doc();
-    const links_ = links(doc);
+    const links_ = dataType.links(doc);
     await Promise.all(
-      links_.map(async (link) => {
+      links_.map(async (link: { url: AutomergeUrl; type: string }) => {
         const handle = await repo.find(link.url);
         await cloneDocWithLinks(repo, handle, link.type, docCloneMap);
       })

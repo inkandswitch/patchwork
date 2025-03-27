@@ -8,6 +8,8 @@ import {
   onSystemElementsChange,
   loadElementFromSystem,
   isLoadableElement,
+  loadAllElementsFromSystem,
+  SystemElementDescription,
 } from "../systems";
 
 /**
@@ -343,6 +345,55 @@ export function useLoadedFilteredSystemElements<
 
     loadElements();
   }, [systemType, allElements, filterFn, wait]);
+
+  return { elements: loadedElements, isLoading, error };
+}
+
+/**
+ * Hook to get all system elements that are loaded
+ */
+export function useLoadedSystemElements<T extends SystemElement>(
+  systemType: string,
+  filter?: (element: SystemElementDescription) => boolean,
+  shouldWait = true
+): {
+  elements: Record<string, T>;
+  isLoading: boolean;
+  error: Error | undefined;
+} {
+  const allElements = useSystemElements<T>(systemType);
+  const [loadedElements, setLoadedElements] = useState<Record<string, T>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | undefined>(undefined);
+
+  useEffect(() => {
+    if (!Object.keys(allElements).length) {
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoading(true);
+    setError(undefined);
+
+    loadAllElementsFromSystem<T>(systemType, filter, shouldWait)
+      .then((loaded) => {
+        if (isMounted) {
+          setLoadedElements(loaded);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          console.error(`Error loading ${systemType} elements:`, err);
+          setError(err instanceof Error ? err : new Error(String(err)));
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [systemType, allElements, filter, shouldWait]);
 
   return { elements: loadedElements, isLoading, error };
 }

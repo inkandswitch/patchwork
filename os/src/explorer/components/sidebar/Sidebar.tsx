@@ -3,13 +3,13 @@ import { Icon } from "@patchwork/sdk/ui";
 import { DocLink, DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { FolderDoc, FolderDocWithChildren } from "@patchwork/folder";
 import { FolderDocWithMetadata } from "@patchwork/sdk/versionControl";
-import { dataTypeById, allDataTypes } from "@patchwork/sdk";
 import { Input } from "@patchwork/sdk/ui";
 import {
   fetchBranchScopeAndActiveBranchInfo,
   fetchOmOnActiveBranch,
 } from "@patchwork/sdk/versionControl";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
+import { getDataTypeDescriptionById, loadDataTypeById } from "@patchwork/sdk";
 
 import capitalize from "lodash-es/capitalize";
 import clone from "lodash-es/clone";
@@ -199,12 +199,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const onRename: RenameHandler<NodeData> = async ({ node, name }) => {
     const docPath = node.data.docPath;
     const docLink = DocPathUtils.toLink(docPath);
-    const dataType = dataTypeById(docLink?.type)!; // TODO: JAH strict fix
+
+    // First get the description, then load the full data type if needed for setTitle
+    const dataTypeDesc = getDataTypeDescriptionById(docLink.type);
+
+    if (!dataTypeDesc) {
+      console.warn(`Could not find data type for ${docLink.type}`);
+      return;
+    }
+
+    const dataType = await loadDataTypeById(docLink.type);
 
     if (!dataType?.setTitle) {
       alert(
         `${capitalize(
-          dataType.name
+          dataTypeDesc.name
         )} documents can only be renamed in the main editor, not the sidebar.`
       );
       return;

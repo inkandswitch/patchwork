@@ -1,31 +1,36 @@
-import { ImportMethod as ImportMethodType, dataTypeById } from "@patchwork/sdk";
+import {
+  ImportMethod as ImportMethodType,
+  getDataTypeDescriptionById,
+} from "@patchwork/sdk";
 import { Icon } from "@patchwork/sdk/ui";
+import React from "react";
 
-export const ImportMethod: React.FC<{ method: ImportMethodType }> = ({
-  method,
-}) => {
-  const dataType = dataTypeById(method.datatypeId);
-  const dataTypeName = dataType?.name ?? method.datatypeId;
-
+export const ImportMethod = ({ method }: { method: ImportMethodType }) => {
+  const dataType = getDataTypeDescriptionById(method.datatypeId);
   return (
-    <div className="border rounded p-3">
-      <div className="flex items-center gap-2 font-medium mb-2">
-        <Icon type="Download" size={14} />
-        <span>Import Method: {method.name}</span>
-        {method.useAsDefaultMethod && (
-          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-            Default
-          </span>
+    <div className="border border-gray-200 rounded-md p-4">
+      <div className="flex gap-2 items-center">
+        <Icon
+          type={dataType?.icon ?? "Package"}
+          size={16}
+          className="text-gray-500"
+        />
+        <div className="text-gray-700 font-bold">{method.name}</div>
+        {dataType && (
+          <div className="text-xs text-gray-400">
+            {method.datatypeId === "*"
+              ? "All document types"
+              : `For ${dataType.name} documents`}
+          </div>
         )}
       </div>
-      <div className="text-sm space-y-1 text-gray-600">
-        <div>DataType: {dataTypeName}</div>
-        <div>
-          File Extensions:{" "}
-          {method.fileExtensions.length > 0
-            ? method.fileExtensions.join(", ")
-            : "none"}
-        </div>
+      <div className="text-xs mt-2 text-gray-500">
+        <div className="font-bold">File extensions:</div>
+        {method.fileExtensions.map((ext: string) => (
+          <div key={ext} className="inline-block mr-1">
+            {ext}
+          </div>
+        ))}
       </div>
     </div>
   );

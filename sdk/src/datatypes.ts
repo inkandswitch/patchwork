@@ -22,6 +22,7 @@ import {
   getElementFromSystem,
   loadElementFromSystem,
   isLoadableElement,
+  loadAllElementsFromSystem,
 } from "./systems";
 
 // DataType implementation interface
@@ -211,25 +212,11 @@ export const initFrom = <D extends object>(
 export const loadAllDataTypes = async (
   skipUnlisted = false
 ): Promise<Record<string, DataType>> => {
-  const descriptions = getDataTypeDescriptions();
-  const loadPromises: [string, Promise<DataType | undefined>][] = [];
-
-  for (const [id, desc] of Object.entries(descriptions)) {
-    if (skipUnlisted && desc.unlisted) continue;
-    loadPromises.push([id, loadDataTypeById(id, true)]);
-  }
-
-  const results = await Promise.all(
-    loadPromises.map(async ([id, promise]) => {
-      const dataType = await promise;
-      return [id, dataType];
-    })
-  );
-
-  return Object.fromEntries(
-    results.filter(([_, dataType]) => dataType !== undefined) as [
-      string,
-      DataType
-    ][]
+  return loadAllElementsFromSystem<DataType>(
+    "dataTypes",
+    skipUnlisted
+      ? (element) => !(element as DataTypeDescription).unlisted
+      : undefined,
+    true
   );
 };

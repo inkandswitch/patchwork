@@ -127,3 +127,21 @@ export function onSystemElementsChange<T extends SystemElement<any, any>>(
   const registry = getSystemRegistry(systemType);
   return registry.onChange(callback as any);
 }
+
+/**
+ * Load all registered elements of a specific system type
+ * @param systemType The type of system to load elements from
+ * @param filter Optional filter function to determine which elements to load
+ * @param shouldWait Whether to wait for elements to be registered if they aren't already
+ * @returns A Promise resolving to a record of loaded elements
+ */
+export async function loadAllElementsFromSystem<
+  T extends SystemElement<any, any>
+>(
+  systemType: string,
+  filter?: (element: SystemElementDescription) => boolean,
+  shouldWait = false
+): Promise<Record<string, T>> {
+  const registry = getSystemRegistry(systemType);
+  return registry.loadAll(filter, shouldWait) as Promise<Record<string, T>>;
+}

@@ -3,11 +3,13 @@ import { selectDocLink, DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { useDocUIState } from "@patchwork/sdk/router";
 import { Icon, IconType } from "@patchwork/sdk/ui";
 import {
-  dataTypeById,
+  getDataTypeDescriptionById,
+  loadDataTypeById,
   makeTool,
   toolsForDataType,
   type EditorProps,
 } from "@patchwork/sdk";
+import { useDataType } from "@patchwork/sdk/hooks";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
 import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
@@ -76,11 +78,13 @@ export const FolderEntryView = ({
     useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
-  const dataType = dataTypeById(docLink.type);
+  const dataType = useDataType(docLink.type);
+  
+  const dataTypeDesc = getDataTypeDescriptionById(docLink.type);
 
   const tool = toolsForDataType(docLink.type)[0];
 
-  const icon = tool?.icon ?? dataType?.icon;
+  const icon = tool?.icon ?? dataTypeDesc?.icon;
 
   // TODO: we shouldn't have to duplicate this code here, also right now the change highlights can't be disabled
   const diff = useMemo(() => {

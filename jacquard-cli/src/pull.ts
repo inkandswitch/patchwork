@@ -1,7 +1,7 @@
 import { FolderDoc } from "@patchwork/folder";
 import { DocLink } from "@patchwork/sdk/router";
 import {
-  dataTypeById,
+  loadDataTypeById,
   getDefaultExportMethodForDatatype,
 } from "@patchwork/sdk";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
@@ -69,7 +69,7 @@ async function pullDoc({
   const dataTypeId = docLink.type;
   const filePath = path.join(dir, docLink.name);
 
-  const dataType = dataTypeById(dataTypeId);
+  const dataType = await loadDataTypeById(dataTypeId);
   if (!dataType) {
     console.error(`skipping doc ${filePath} - unknown type ${dataTypeId}`);
     return;

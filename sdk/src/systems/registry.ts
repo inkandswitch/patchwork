@@ -9,7 +9,7 @@ export interface SystemElementDescription {
   type: string;
   name: string;
   icon?: IconType;
-  importUrl?: string;
+  importUrl?: string; // TODO: the module loader uses this; is this the right design?
 }
 
 /**
@@ -35,35 +35,73 @@ export type SystemElement<
 
 /**
  * Registry for managing elements of a specific system type
+ * D = Description type that extends SystemElementDescription
+ * I = Implementation type that will be loaded and combined with the description
  */
-export class SystemRegistry<T extends SystemElementDescription> {
-  private elements = new Map<string, T>();
-  private loadPromises = new Map<string, Promise<T>>();
+export class SystemRegistry<D extends SystemElementDescription, I = any> {
+  private elements = new Map<
+    string,
+    SystemElement<D, I> | LoadableSystemElement<D, I>
+  >();
+  private loadPromises = new Map<string, Promise<SystemElement<D, I>>>();
   private events = new EventEmitter<{
-    "elements:changed": (elements: Record<string, T>) => void;
+    "elements:changed": (
+      elements: Record<string, D | SystemElement<D, I>>
+    ) => void;
   }>();
 
   /**
    * Register an element with this registry
    */
-  async register(element: T, importUrl?: string): Promise<void> {
+  async register(
+    element: D | LoadableSystemElement<D, I>,
+    importUrl?: string
+  ): Promise<void> {
     // If an import URL was provided, attach it to the element
     if (importUrl && !element.importUrl) {
       element.importUrl = importUrl;
     }
 
-    // Store the element, regardless of whether it's immediate or deferred
-    this.elements.set(element.id, element);
+    // Convert D to LoadableSystemElement if needed
+    const loadableElement = isLoadableElement(element)
+      ? element
+      : { ...element, load: async () => element as unknown as I };
+
+    // Store the element
+    this.elements.set(element.id, loadableElement);
 
     // Notify listeners
     this.events.emit("elements:changed", this.getAll());
   }
 
   /**
-   * Get an element by ID without loading it (synchronous)
-   * Returns the element as-is, whether loaded or not
+   * Get an element description by ID without loading it (synchronous)
+   * Returns the description part of an element, whether loaded or not
    */
-  getById(id: string): T | undefined {
+  getDescriptionById(id: string): D | undefined {
+    const element = this.elements.get(id);
+    if (!element) return undefined;
+
+    // Extract just the description part by omitting any implementation-specific fields
+    const { load, ...description } = element as any;
+    return description as D;
+  }
+
+  /**
+   * Get a loaded element by ID (synchronous)
+   * Returns undefined if the element hasn't been loaded yet
+   */
+  getLoadedElementById(id: string): SystemElement<D, I> | undefined {
+    const element = this.elements.get(id);
+    if (!element) return undefined;
+    if (isLoadableElement(element)) return undefined;
+    return element;
+  }
+
+  /**
+   * Get an element by ID, returning either its description or loaded state
+   */
+  getById(id: string): D | SystemElement<D, I> | undefined {
     return this.elements.get(id);
   }
 
@@ -75,22 +113,28 @@ export class SystemRegistry<T extends SystemElementDescription> {
     id: string,
     shouldWait = false,
     timeout = 10000
-  ): Promise<T | undefined> {
+  ): Promise<SystemElement<D, I> | undefined> {
+    // Check if we already have a loaded element
+    const element = this.elements.get(id);
+    if (element && !isLoadableElement(element)) {
+      return element;
+    }
+
     // Check if we're already loading this element
     if (this.loadPromises.has(id)) {
       return this.loadPromises.get(id);
     }
 
-    // Get the element
-    const element = this.getById(id);
-    if (!element) {
+    // Get the element description
+    const description = this.elements.get(id);
+    if (!description) {
       // If the element isn't registered and we shouldn't wait, return undefined
       if (!shouldWait) {
         return undefined;
       }
 
       // If shouldWait is true, set up a promise that will listen for element registration events
-      return new Promise<T | undefined>((resolve, reject) => {
+      return new Promise<SystemElement<D, I> | undefined>((resolve, reject) => {
         const timeoutId = setTimeout(() => {
           this.events.off("elements:changed", checkForElement);
           reject(new Error(`Timeout waiting for element ${id}`));
@@ -114,55 +158,95 @@ export class SystemRegistry<T extends SystemElementDescription> {
     }
 
     // If the element is loadable, load it
-    if (isLoadableElement(element)) {
-      const loadPromise = (element as LoadableSystemElement<T>)
-        .load()
-        .then((implementation) => {
-          // Merge the implementation with the element metadata to create a complete SystemElement
-          // Omit the load method as it's no longer needed
-          const { load, ...elementWithoutLoad } = element;
-          const loadedElement = {
-            ...elementWithoutLoad,
-            ...implementation,
-          } as T;
+    if (isLoadableElement(description)) {
+      const loadPromise = description.load().then((implementation) => {
+        // Merge the implementation with the element metadata to create a complete SystemElement
+        // Omit the load method as it's no longer needed
+        const { load, ...descriptionWithoutLoad } = description;
+        const loadedElement = createElement(
+          descriptionWithoutLoad,
+          implementation
+        ) as SystemElement<D, I>;
 
-          // Replace the original element with the loaded version
-          this.elements.set(element.id, loadedElement);
-          this.loadPromises.delete(id);
+        // Store the loaded version
+        this.elements.set(description.id, loadedElement);
+        this.loadPromises.delete(id);
 
-          // Notify listeners that an element has been loaded
-          this.events.emit("elements:changed", this.getAll());
+        // Notify listeners that an element has been loaded
+        this.events.emit("elements:changed", this.getAll());
 
-          return loadedElement;
-        });
+        return loadedElement;
+      });
 
       // Store the promise so we don't load twice
       this.loadPromises.set(id, loadPromise);
       return loadPromise;
     }
 
-    // Element doesn't need loading, return as is
-    return element;
+    // Element is already loaded
+    return description as SystemElement<D, I>;
   }
 
   /**
-   * Get all elements, both immediate and deferred
+   * Get all elements, both descriptions and loaded
    */
-  getAll(): Record<string, T> {
+  getAll(): Record<string, D | SystemElement<D, I>> {
     return Object.fromEntries(this.elements.entries());
   }
 
   /**
    * Get all registered elements as an array
    */
-  getAllElements(): T[] {
+  getAllElements(): (D | SystemElement<D, I>)[] {
     return Array.from(this.elements.values());
+  }
+
+  /**
+   * Load all registered elements
+   * @param filter Optional filter function to determine which elements to load
+   * @param shouldWait Whether to wait for elements to be registered if they aren't already
+   * @param timeout Timeout in milliseconds for waiting operations
+   * @returns A promise resolving to a record of loaded elements
+   */
+  async loadAll(
+    filter?: (element: D | SystemElement<D, I>) => boolean,
+    shouldWait = false,
+    timeout = 10000
+  ): Promise<Record<string, SystemElement<D, I>>> {
+    // Get all elements or filter them if a filter function is provided
+    const elementsToLoad = filter
+      ? Array.from(this.elements.entries()).filter(([_, element]) =>
+          filter(element)
+        )
+      : Array.from(this.elements.entries());
+
+    // Create an array of promises for loading each element
+    const loadPromises = elementsToLoad.map(async ([id, _]) => {
+      try {
+        const loadedElement = await this.loadById(id, shouldWait, timeout);
+        return [id, loadedElement];
+      } catch (error) {
+        console.warn(`Failed to load element ${id}:`, error);
+        return [id, undefined];
+      }
+    });
+
+    // Wait for all elements to load
+    const results = await Promise.all(loadPromises);
+
+    // Filter out any elements that failed to load and convert to a record
+    return Object.fromEntries(
+      results.filter(([_, element]) => element !== undefined) as [
+        string,
+        SystemElement<D, I>
+      ][]
+    );
   }
 
   /**
    * Get an element by ID
    */
-  getElementById(id: string): T | undefined {
+  getElementById(id: string): D | SystemElement<D, I> | undefined {
     return this.getById(id);
   }
 
@@ -176,7 +260,9 @@ export class SystemRegistry<T extends SystemElementDescription> {
   /**
    * Subscribe to element changes
    */
-  onChange(callback: (elements: Record<string, T>) => void): () => void {
+  onChange(
+    callback: (elements: Record<string, D | SystemElement<D, I>>) => void
+  ): () => void {
     if (!callback || typeof callback !== "function") {
       console.warn("Invalid callback provided to SystemRegistry.onChange");
       return () => {}; // Return a no-op function
@@ -209,14 +295,14 @@ export class SystemRegistry<T extends SystemElementDescription> {
   /**
    * Check if a value is an element of the expected type
    */
-  isElement(value: unknown): value is T {
+  isElement(value: unknown): value is D | SystemElement<D, I> {
     return (
       value !== null &&
       typeof value === "object" &&
       "type" in value &&
-      typeof (value as T).type === "string" &&
+      typeof (value as D).type === "string" &&
       "id" in value &&
-      typeof (value as T).id === "string"
+      typeof (value as D).id === "string"
     );
   }
 }

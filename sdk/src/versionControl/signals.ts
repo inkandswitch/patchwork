@@ -2,7 +2,7 @@ import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { Account } from "../account";
 import { fetchDoc, fetchMap, fetchOm } from "../async-signals";
-import { dataTypeById } from "../datatypes";
+import { loadDataTypeById } from "../datatypes";
 import { Om } from "../om";
 import { DocLink, DocPath, DocPathUtils } from "../router/DocLink";
 import { fetchUIStateOm } from "../router/uiState";
@@ -112,31 +112,34 @@ export const fetchActiveBranchInfo = (
   };
 };
 
-export const fetchAllLinkedDocLinks = (
+export const fetchAllLinkedDocLinks = async (
   url: AutomergeUrl,
   dataTypeId: string,
   repo: Repo,
   cloneMap?: DocCloneMap
-): DocLink[] => {
+): Promise<DocLink[]> => {
   const mappedUrl = cloneMap ? cloneMap[url].url ?? url : url;
   const doc = fetchDoc(mappedUrl, repo);
 
-  const links = dataTypeById(dataTypeId)?.links;
-  if (!links) {
+  // Load the full data type implementation to get access to links function
+  const dataType = await loadDataTypeById(dataTypeId);
+  if (!dataType?.links) {
     return [];
   }
 
-  const directLinks = links(doc);
+  const directLinks = dataType.links(doc);
 
-  return fetchMap(directLinks, (link) => {
-    const childLinks = fetchAllLinkedDocLinks(
-      link.url,
-      link.type,
-      repo,
-      cloneMap
-    );
-    return [link, ...childLinks].flat();
-  }).flat();
+  return Promise.all(
+    directLinks.map(async (link: DocLink) => {
+      const childLinks = await fetchAllLinkedDocLinks(
+        link.url,
+        link.type,
+        repo,
+        cloneMap
+      );
+      return [link, ...childLinks].flat();
+    })
+  ).then((results) => results.flat());
 };
 
 export const fetchResolveUrlOnFixedBranch = (
@@ -200,7 +203,7 @@ export const fetchBranchScopeAndActiveBranchInfo = <
 /**
  *  Get all linked documents contained in a document on a specific branch and check if one of them matches the docLink
  */
-export const fetchDoesDocLinkExistInBranchScope = (
+export const fetchDoesDocLinkExistInBranchScope = async (
   docLink: DocLink,
   repo: Repo,
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo
@@ -213,7 +216,7 @@ export const fetchDoesDocLinkExistInBranchScope = (
     return true;
   }
 
-  const linksInBranchScope = fetchAllLinkedDocLinks(
+  const linksInBranchScope = await fetchAllLinkedDocLinks(
     branchScopeDocLink.url,
     branchScopeDocLink.type,
     repo,

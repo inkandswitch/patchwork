@@ -1,4 +1,4 @@
-import { dataTypeById } from "../datatypes";
+import { loadDataTypeById } from "../datatypes";
 import { useStaticCallback } from "../hooks/useStaticCallback";
 import { DocPath, DocLink, DocPathUtils } from "./DocLink";
 import { FolderDoc } from "../FolderDoc";
@@ -215,7 +215,12 @@ export const useRouter = ({
       // make sure that the branch scope doc is in the root folder and that the right branch is checked out
       if (branchScopeUrl) {
         if (!branchScopePathInRootFolder) {
-          const folderDataType = dataTypeById("folder")!;
+          const folderDataType = await loadDataTypeById("folder");
+
+          if (!folderDataType) {
+            console.error("Could not load folder data type");
+            return null;
+          }
 
           const branchScopeHandle = await repo.find<FolderDoc>(branchScopeUrl);
           const title = await folderDataType.getTitle(
@@ -280,7 +285,7 @@ export const useRouter = ({
         // special case: the url references a branch scope that doesn't contain the referenced docUrl
         // -> create a doc link that will lead to a 404 page
         if (branchScopePathInRootFolder) {
-          const dataType = dataTypeById(urlParams.type);
+          const dataType = await loadDataTypeById(urlParams.type);
           const doc = (await repo.find(urlParams.url)).doc();
           const title = (await dataType?.getTitle(doc, repo)) ?? "Unknown";
 

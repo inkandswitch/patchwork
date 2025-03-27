@@ -12,7 +12,7 @@ import process from "process";
 import {
   allDataTypes,
   DataType,
-  dataTypeById,
+  loadDataTypeById,
   initFrom,
   AccountDoc,
   ContactDoc,
@@ -20,6 +20,7 @@ import {
   registerExportMethod,
   ExportMethod,
   ImportMethod,
+  getSystemRegistry,
 } from "@patchwork/sdk";
 import { FolderDoc } from "@patchwork/folder";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
