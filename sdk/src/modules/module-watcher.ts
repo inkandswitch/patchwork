@@ -1,8 +1,8 @@
 import type { ModuleSettingsDoc } from "./types";
 import {
+  DataType,
   DataTypeDescription,
   isDataType,
-  LoadableDataType,
   registerDataType,
 } from "../datatypes";
 import { ToolDescription, isTool, registerTool } from "../tools";
@@ -75,7 +75,7 @@ export class ModuleWatcher {
     // Load and register dataTypes if present
     if (mod.dataTypes?.length) {
       const dataTypes = mod.dataTypes.filter(isDataType);
-      dataTypes.forEach((dataType: LoadableDataType<unknown>) =>
+      dataTypes.forEach((dataType: DataTypeDescription<unknown>) =>
         registerDataType(dataType, importName)
       );
     }
