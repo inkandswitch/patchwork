@@ -17,8 +17,8 @@
   "dependencies": {
     "@automerge/automerge": "2.2.9-alpha.4",
     "@automerge/automerge-codemirror": "^0.0.12",
-    "@automerge/automerge-repo": "^2.0.0-alpha.22",
-    "@automerge/automerge-repo-react-hooks": "^2.0.0-alpha.22",
+    "@automerge/automerge-repo": "^2.0.0-alpha.27",
+    "@automerge/automerge-repo-react-hooks": "^2.0.0-alpha.27",
     "@codemirror/lang-markdown": "^6.2.5",
     "@codemirror/language": "^6.10.2",
     "@codemirror/language-data": "^6.5.1",

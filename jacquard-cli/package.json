@@ -13,9 +13,9 @@
   "author": "Ink & Switch",
   "dependencies": {
     "@automerge/automerge": "2.2.9-alpha.4",
-    "@automerge/automerge-repo": "2.0.0-alpha.22",
-    "@automerge/automerge-repo-network-websocket": "2.0.0-alpha.22",
-    "@automerge/automerge-repo-storage-nodefs": "^2.0.0-alpha.22",
+    "@automerge/automerge-repo": "2.0.0-alpha.27",
+    "@automerge/automerge-repo-network-websocket": "2.0.0-alpha.27",
+    "@automerge/automerge-repo-storage-nodefs": "^2.0.0-alpha.27",
     "@patchwork/file": "workspace:*",
     "@patchwork/folder": "workspace:*",
     "@patchwork/essay": "workspace:*",

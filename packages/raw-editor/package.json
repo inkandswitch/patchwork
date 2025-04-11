@@ -12,8 +12,8 @@
   "author": "Ink & Switch",
   "dependencies": {
     "@automerge/automerge": "2.2.9-alpha.4",
-    "@automerge/automerge-repo": "2.0.0-alpha.22",
-    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.22",
+    "@automerge/automerge-repo": "2.0.0-alpha.27",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.27",
     "@microlink/react-json-view": "^1.26.1",
     "@patchwork/sdk": "workspace:*",
     "react": "^18.3.1",

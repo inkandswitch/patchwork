@@ -70,7 +70,7 @@ Flags:
 --projectFolderUrl <url>  URL of existing folder to update
 --parentFolderUrl <url>   Parent folder to add new projects to (overrides stored value)
 --test                    Don't actually sync, just output the doc
---syncServerUrl <url>     Sync server URL (default: wss://sync.automerge.org)
+--syncServerUrl <url>     Sync server URL (default: wss://sync3.automerge.org)
 --syncServerStorageId <id> Sync server storage ID
 ```
 

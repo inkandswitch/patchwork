@@ -71,7 +71,7 @@ const { promise: repoReady, resolve: resolveRepoReady } = resolvablePromise();
 
   const newRepo = new Repo({
     storage: new IndexedDBStorageAdapter(),
-    network: [new BrowserWebSocketClientAdapter("wss://sync.automerge.org")],
+    network: [new BrowserWebSocketClientAdapter("wss://sync3.automerge.org")],
     peerId: PEER_ID,
     sharePolicy: async (peerId) => peerId.includes("storage-server"),
     enableRemoteHeadsGossiping: true,

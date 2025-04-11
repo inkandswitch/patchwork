@@ -141,7 +141,7 @@ counter/package.json:
   "keywords": [],
   "author": "Ink & Switch",
   "dependencies": {
-    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.22",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.27",
     "@patchwork/sdk": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
