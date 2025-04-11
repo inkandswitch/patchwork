@@ -21,12 +21,12 @@
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
-    "@vitest/ui": "^2.1.2",
+    "@vitest/ui": "^2.1.9",
     "prompts": "^2.4.2",
-    "typescript": "^5.5.4",
-    "vite": "^5.3.4",
-    "vite-tsconfig-paths": "^5.0.1",
-    "vitest": "^2.0.5",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.17",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.1.9",
     "yargs-parser": "^21.1.1"
   }
 }

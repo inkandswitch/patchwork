@@ -12,34 +12,15 @@ import {
   isExportMethod,
   isImportMethod,
 } from "@patchwork/sdk";
-import {
-  Icon,
-  Input,
-  Label,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Button,
-  Alert,
-  AlertTitle,
-  AlertDescription,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@patchwork/sdk/ui";
+
 import React, { useCallback, useState, useEffect } from "react";
-import { DataTypeModule } from "./components/DataTypeModule";
-import { ToolsModule } from "./components/ToolsModule";
 import { RegisterModuleDialog } from "./components/RegisterModuleDialog";
 import { RegisteredModules } from "./components/RegisteredModules";
 import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 
 export type ModuleContents = {
   url: string;
-  dataType?: DataType;
+  dataTypes?: DataType[];
   tools?: Tool[];
   importMethods?: ImportMethod[];
   exportMethods?: ExportMethod[];
@@ -61,9 +42,11 @@ export const ModuleSettingsEditor: React.FC<
       const module = isValidAutomergeUrl(url)
         ? await importModuleFromFolderDocUrl(url)
         : import(url);
+      const dataTypes =
+        module.dataTypes || (module.dataType ? [module.dataType] : []);
       return {
         url,
-        dataType: module.dataType,
+        dataTypes,
         tools: module.tools?.filter(isTool) || [],
         importMethods: module.importMethods?.filter(isImportMethod) || [],
         exportMethods: module.exportMethods?.filter(isExportMethod) || [],

@@ -19,11 +19,15 @@ interface ModuleCardProps {
 }
 
 export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onRemove }) => {
+  const name = module.dataTypes?.length
+    ? module.dataTypes[0].name
+    : "Unnamed Module";
+
   // Create a doc link from the module URL
   const docLink = {
     type: "folder", // assuming modules are stored in folders
     url: module.url,
-    name: module.dataType?.name || "Unnamed Module", // helper function to get readable name
+    name, // helper function to get readable name
   };
 
   // Look up the data type and tool info

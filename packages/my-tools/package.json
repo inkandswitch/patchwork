@@ -16,18 +16,18 @@
   "dependencies": {
     "@automerge/automerge-repo": "2.0.0-alpha.27",
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.27",
-    "@patchwork/sdk": "workspace:*",
     "@patchwork/folder": "workspace:*",
+    "@patchwork/sdk": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "resolve.exports": "^2.0.3"
   },
   "devDependencies": {
-    "@types/react": "^18.3.3",
-    "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.3.4",
+    "@types/react": "^18.3.20",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.17",
     "vite-plugin-css-injected-by-js": "^3.5.2",
-    "vite-plugin-top-level-await": "^1.4.2",
-    "vite-plugin-wasm": "^3.3.0"
+    "vite-plugin-top-level-await": "^1.5.0",
+    "vite-plugin-wasm": "^3.4.1"
   }
 }

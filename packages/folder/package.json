@@ -22,18 +22,18 @@
     "lodash": "^4.17.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-error-boundary": "^4.0.13"
+    "react-error-boundary": "^4.1.2"
   },
   "devDependencies": {
-    "@types/lodash": "^4.17.7",
-    "@types/react": "^18.3.3",
+    "@types/lodash": "^4.17.16",
+    "@types/react": "^18.3.20",
     "@typescript-eslint/parser": "^6.21.0",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
     "eslint-plugin-react-hooks": "^4.6.2",
-    "vite": "^6.0.3",
+    "vite": "^6.2.5",
     "vite-plugin-css-injected-by-js": "^3.5.2",
-    "vite-plugin-dts": "^4.5.0",
-    "vite-plugin-top-level-await": "^1.4.2",
-    "vite-plugin-wasm": "^3.3.0"
+    "vite-plugin-dts": "^4.5.3",
+    "vite-plugin-top-level-await": "^1.5.0",
+    "vite-plugin-wasm": "^3.4.1"
   }
 }

@@ -16,23 +16,23 @@
     "@automerge/automerge-repo": "2.0.0-alpha.27",
     "@automerge/automerge-repo-network-websocket": "2.0.0-alpha.27",
     "@automerge/automerge-repo-storage-nodefs": "^2.0.0-alpha.27",
+    "@patchwork/essay": "workspace:*",
     "@patchwork/file": "workspace:*",
     "@patchwork/folder": "workspace:*",
-    "@patchwork/essay": "workspace:*",
     "@patchwork/jacquard": "workspace:*",
     "@patchwork/sdk": "workspace:*",
     "command-line-args": "^5.2.1",
-    "debug": "^4.3.7",
+    "debug": "^4.4.0",
     "file-type": "^19.6.0",
-    "isbinaryfile": "^5.0.2",
+    "isbinaryfile": "^5.0.4",
     "lodash": "^4.17.21",
-    "mime": "^4.0.6"
+    "mime": "^4.0.7"
   },
   "devDependencies": {
     "@types/command-line-args": "^5.2.3",
     "@types/debug": "^4.1.12",
-    "@types/lodash": "^4.17.7",
-    "@types/node": "^20.14.12",
-    "vitest": "^2.0.5"
+    "@types/lodash": "^4.17.16",
+    "@types/node": "^20.17.30",
+    "vitest": "^2.1.9"
   }
 }

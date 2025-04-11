@@ -1,5 +1,10 @@
 import type { ModuleSettingsDoc } from "./types";
-import { registerDataType } from "../datatypes";
+import {
+  DataType,
+  DataTypeDescription,
+  isDataType,
+  registerDataType,
+} from "../datatypes";
 import { ToolDescription, isTool, registerTool } from "../tools";
 import { registerImportMethod, ImportMethod } from "../importMethods";
 import { registerExportMethod, ExportMethod } from "../exportMethods";
@@ -65,6 +70,14 @@ export class ModuleWatcher {
     // Load and register dataType if present
     if (mod.dataType) {
       registerDataType(mod.dataType, importName);
+    }
+
+    // Load and register dataTypes if present
+    if (mod.dataTypes?.length) {
+      const dataTypes = mod.dataTypes.filter(isDataType);
+      dataTypes.forEach((dataType: DataTypeDescription<unknown>) =>
+        registerDataType(dataType, importName)
+      );
     }
 
     // Load and register tools if present

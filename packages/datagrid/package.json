@@ -16,21 +16,21 @@
   "dependencies": {
     "@automerge/automerge": "3.0.0-alpha.0",
     "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.27",
-    "@handsontable/react": "^14.4.0",
+    "@handsontable/react": "^14.6.2",
     "@patchwork/sdk": "workspace:*",
-    "handsontable": "^14.4.0",
+    "handsontable": "^14.6.2",
     "hyperformula": "^2.7.1",
     "lodash": "^4.17.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/lodash": "^4.17.7",
-    "@types/react": "^18.3.3",
-    "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.3.4",
+    "@types/lodash": "^4.17.16",
+    "@types/react": "^18.3.20",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.17",
     "vite-plugin-css-injected-by-js": "^3.5.2",
-    "vite-plugin-top-level-await": "^1.4.2",
-    "vite-plugin-wasm": "^3.3.0"
+    "vite-plugin-top-level-await": "^1.5.0",
+    "vite-plugin-wasm": "^3.4.1"
   }
 }

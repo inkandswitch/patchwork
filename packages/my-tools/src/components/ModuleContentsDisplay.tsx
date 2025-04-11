@@ -1,6 +1,6 @@
 import { Alert, AlertTitle, AlertDescription } from "@patchwork/sdk/ui";
 import { ModuleContents } from "../tool";
-import { DataTypeModule } from "./DataTypeModule";
+import { DataTypesModule } from "./DataTypesModule";
 import { ToolsModule } from "./ToolsModule";
 import { ImportMethod } from "./ImportMethod";
 import { ExportMethod } from "./ExportMethod";
@@ -10,7 +10,7 @@ export const ModuleContentsDisplay: React.FC<{ contents: ModuleContents }> = ({
   contents,
 }) => {
   const {
-    dataType,
+    dataTypes = [],
     tools = [],
     importMethods = [],
     exportMethods = [],
@@ -28,7 +28,7 @@ export const ModuleContentsDisplay: React.FC<{ contents: ModuleContents }> = ({
 
   return (
     <div className="space-y-2 text-sm">
-      {dataType && <DataTypeModule dataType={dataType} />}
+      {dataTypes.length > 0 && <DataTypesModule dataTypes={dataTypes} />}
       {importMethods.map((method, i) => (
         <ImportMethod key={`import-${i}`} method={method} />
       ))}
@@ -36,7 +36,7 @@ export const ModuleContentsDisplay: React.FC<{ contents: ModuleContents }> = ({
         <ExportMethod key={`export-${i}`} method={method} />
       ))}
       {tools.length > 0 && <ToolsModule tools={tools} />}
-      {!dataType &&
+      {!dataTypes.length &&
         !tools.length &&
         !importMethods.length &&
         !exportMethods.length && (
