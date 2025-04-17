@@ -693,7 +693,7 @@ export const getGroupedChanges = <T>({
       changeHashes: getChangesFromMergedBranch({
         decodedChangesForDoc: changes,
         branchHeads: mergeHeads,
-        mainHeads: encodeHeads(getHeads(doc)),
+        mainHeads: getHeads(doc),
         baseHeads,
       }),
       mergeMetadata: {

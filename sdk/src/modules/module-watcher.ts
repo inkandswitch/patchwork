@@ -1,10 +1,5 @@
 import type { ModuleSettingsDoc } from "./types";
-import {
-  DataTypeDescription,
-  isDataType,
-  LoadableDataType,
-  registerDataType,
-} from "../datatypes";
+import { isDataType, LoadableDataType, registerDataType } from "../datatypes";
 import { ToolDescription, isTool, registerTool } from "../tools";
 import { registerImportMethod, ImportMethod } from "../importMethods";
 import { registerExportMethod, ExportMethod } from "../exportMethods";
