@@ -16,11 +16,10 @@ import { IconType } from "./ui/icons";
 import { DocPath } from "./router/DocLink";
 import EventEmitter from "eventemitter3";
 import {
-  SystemElement,
-  getSystemRegistry,
-  getElementFromSystem,
-  loadElementFromSystem,
-} from "./systems";
+  Plugin,
+  getPluginRegistry,
+  getPluginFromRegistry,
+} from "./plugins";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -33,7 +32,7 @@ export type ToolImplementation = ToolTyped<
   unknown
 >;
 
-export type ToolDescription = SystemElement & {
+export type ToolDescription = Plugin & {
   type: "patchwork:tool";
   supportedDataTypes: "*" | string[];
   name: string;
@@ -43,7 +42,7 @@ export type ToolDescription = SystemElement & {
   >;
 };
 
-export type Tool = SystemElement<ToolDescription, ToolImplementation>;
+export type Tool = Plugin<ToolDescription, ToolImplementation>;
 
 export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
   EditorComponent: React.FC<EditorProps<A, V>>;
@@ -72,7 +71,7 @@ export type ToolsEvents = {
 export const toolsEvents = new EventEmitter<ToolsEvents>();
 
 // Register existing event listeners with the new system
-getSystemRegistry<Tool>("tools").onChange((elements) => {
+getPluginRegistry<Tool>("tools").onChange((elements) => {
   toolsEvents.emit("tools:changed", elements);
 });
 
@@ -81,7 +80,7 @@ export const registerTool = async (
   importUrl: string
 ) => {
   // Use the systems registry to register the tool
-  const registry = getSystemRegistry<SystemElement>("tools");
+  const registry = getPluginRegistry<Plugin>("tools");
   await registry.register(tool, importUrl);
 };
 
@@ -106,7 +105,7 @@ export const isToolDescription = (value: unknown): value is ToolDescription => {
 };
 
 export const allTools = () => {
-  return getSystemRegistry<Tool>("tools").getAll();
+  return getPluginRegistry<Tool>("tools").getAll();
 };
 
 export const toolsForDataType = (dataType: string | undefined): Tool[] => {
@@ -114,8 +113,8 @@ export const toolsForDataType = (dataType: string | undefined): Tool[] => {
     return [];
   }
 
-  const registry = getSystemRegistry<Tool>("tools");
-  const tools = registry.getAllElements();
+  const registry = getPluginRegistry<Tool>("tools");
+  const tools = registry.getAllPlugins();
 
   const specificTools = tools.filter(
     (tool) =>
@@ -129,10 +128,7 @@ export const toolsForDataType = (dataType: string | undefined): Tool[] => {
 };
 
 export const toolById = (id: string | undefined): Tool | undefined => {
-  if (!id) {
-    return undefined;
-  }
-  return getElementFromSystem<Tool>("tools", id);
+  return getPluginFromRegistry<Tool>("tools", id);
 };
 
 export type EditorProps<A, V> = {

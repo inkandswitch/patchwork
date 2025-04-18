@@ -2,13 +2,13 @@ import EventEmitter from "eventemitter3";
 import { DocHandle } from "@automerge/automerge-repo";
 import { DataType, DataTypeDescription, allDataTypes } from "./datatypes";
 import {
-  SystemElement,
-  getSystemRegistry,
-  getElementFromSystem,
-  loadElementFromSystem,
-} from "./systems";
+  Plugin,
+  getPluginRegistry,
+  getPluginFromRegistry,
+  loadPluginFromRegistry,
+} from "./plugins";
 
-export type ImportMethod = SystemElement & {
+export type ImportMethod = Plugin & {
   type: "patchwork:importMethod";
   datatypeId: string;
   fileExtensions: string[];
@@ -31,19 +31,18 @@ type ImportMethodEvents = {
 
 export const importMethodEvents = new EventEmitter<ImportMethodEvents>();
 
-// Register existing event listeners with the new system
-getSystemRegistry<ImportMethod>("importMethods").onChange((elements) => {
-  importMethodEvents.emit("importMethods:changed", elements);
+getPluginRegistry<ImportMethod>("importMethods").onChange((plugins) => {
+  importMethodEvents.emit("importMethods:changed", plugins);
 });
 
 export const registerImportMethod = (method: ImportMethod) => {
-  // Use the systems registry to register the method
-  const registry = getSystemRegistry<SystemElement>("importMethods");
+  // Use the plugin registry to register the method
+  const registry = getPluginRegistry<Plugin>("importMethods");
   registry.register(method);
 };
 
 export const allImportMethods = () => {
-  return getSystemRegistry<ImportMethod>("importMethods").getAll();
+  return getPluginRegistry<ImportMethod>("importMethods").getAll();
 };
 
 export const isImportMethod = (value: unknown): value is ImportMethod => {
@@ -58,9 +57,9 @@ export const isImportMethod = (value: unknown): value is ImportMethod => {
 export const getImportMethodsForDatatype = (
   datatype: DataTypeDescription
 ): ImportMethod[] => {
-  const registry = getSystemRegistry<ImportMethod>("importMethods");
+  const registry = getPluginRegistry<ImportMethod>("importMethods");
   const methods = registry
-    .getAllElements()
+    .getAllPlugins()
     .filter(
       (method) => method.datatypeId === datatype.id || method.datatypeId === "*"
     )

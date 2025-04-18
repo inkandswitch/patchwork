@@ -1,17 +1,15 @@
 export * from "./useScrollPosition";
 export { useTools, useToolsForDataType, useTool } from "./useTool";
 
-// Export system element hooks
 export {
-  useSystemElement,
-  useSystemElements,
-  useFilteredSystemElements,
-  useHasSystemElement,
-  useLoadedSystemElement,
-  useLoadedFilteredSystemElements,
-} from "./useSystem";
+  usePlugin,
+  usePlugins,
+  useFilteredPlugins,
+  useHasPlugin,
+  useLoadedPlugin,
+  useLoadedFilteredPlugins,
+} from "./usePlugin";
 
-// Export data type hooks
 export {
   useDataType,
   useLoadedDataType,
@@ -21,7 +19,6 @@ export {
   useLoadedFilteredDataTypes,
 } from "./useDataType";
 
-// Export new tool hooks
 export {
   useTool as useToolById,
   useLoadedTool,

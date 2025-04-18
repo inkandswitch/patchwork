@@ -29,7 +29,7 @@ import { VersionControlEditor } from "../../versionControl/components";
 import {
   useToolsForDataType,
   useTool,
-  useLoadedSystemElement,
+  useLoadedPlugin,
   useLoadedToolsForDataType,
   useLoadedDataType,
 } from "@patchwork/sdk/hooks";
@@ -159,8 +159,8 @@ export const Explorer: React.FC = () => {
   }, [selectedToolId, toolsForSelection]);
 
   // Load only the specific tool we need
-  const { element: currentTool, isLoading: isLoadingTool } =
-    useLoadedSystemElement<Tool>("tools", toolIdToLoad);
+  const { plugin: currentTool, isLoading: isLoadingTool } =
+    useLoadedPlugin<Tool>("tools", toolIdToLoad);
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();

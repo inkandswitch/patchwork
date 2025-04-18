@@ -7,7 +7,7 @@ import {
   Repo,
 } from "@automerge/automerge-repo";
 import { importModuleFromFolderDocUrl } from "./utils";
-import { registerExportedSystemElements } from "../systems";
+import { registerExportedPlugins } from "../plugins";
 
 /**
  * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
@@ -69,7 +69,7 @@ export class ModuleWatcher {
       plugins.dataTypes = [plugins.dataType];
       delete plugins.dataType;
     }
-    registerExportedSystemElements(plugins, importName);
+    registerExportedPlugins(plugins, importName);
   }
 
   // TODO: This is a bit janky and relies on a bunch of heuristics.

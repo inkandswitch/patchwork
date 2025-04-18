@@ -4,12 +4,11 @@ import {
 } from "@patchwork/sdk/async-signals";
 import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { FolderDoc } from "@patchwork/folder";
-import { DataType, loadElementFromSystem } from "@patchwork/sdk";
+import { DataType, loadPluginFromRegistry } from "@patchwork/sdk";
 import { fetchOmOnActiveBranch } from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";
 import { useCurrentAccount } from "@patchwork/sdk";
-import {} from "../../../../sdk/dist/systems";
 
 // This hook keeps the name of the link synced with the title of the document.
 // The update is triggered every time the selected doc changes.
@@ -65,7 +64,7 @@ export const useSyncDocTitle = ({
 
     const counter = (counterRef.current = counterRef.current + 1);
 
-    loadElementFromSystem<DataType>("dataTypes", selectedDocLink.type).then(
+    loadPluginFromRegistry<DataType>("dataTypes", selectedDocLink.type).then(
       (dataType) => {
         // Skip if dataType is undefined
         if (!dataType) return;

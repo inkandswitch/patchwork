@@ -15,15 +15,15 @@ import { DocMigration } from "./migrations/DocMigration";
 import { HasPatchworkMetadata } from "./modules/types";
 import { DocLink } from "./router/DocLink";
 import {
-  SystemElementDescription,
-  LoadableSystemElement,
-  SystemElement,
-  getSystemRegistry,
-  getElementFromSystem,
-  loadElementFromSystem,
+  PluginDescription,
+  LoadablePlugin,
+  Plugin,
+  getPluginRegistry,
+  getPluginFromRegistry,
+  loadPluginFromRegistry,
   isLoadableElement,
-  loadAllElementsFromSystem,
-} from "./systems";
+  loadAllPluginsFromRegistry,
+} from "./plugins";
 
 // DataType implementation interface
 export type DataTypeImplementation<D = unknown, T = unknown, V = unknown> = {
@@ -62,22 +62,22 @@ export type DataTypeImplementation<D = unknown, T = unknown, V = unknown> = {
   migrations?: DocMigration[];
 };
 
-// The DataType description extends the base SystemElementDescription
-export interface DataTypeDescription extends SystemElementDescription {
+// The DataType description extends the base PluginDescription
+export interface DataTypeDescription extends PluginDescription {
   type: "patchwork:dataType";
   icon: IconType;
   unlisted?: boolean;
 }
 
-// Loadable DataType description using the generic LoadableSystemElement
+// Loadable DataType description using the generic LoadablePlugin
 export type LoadableDataType<
   D = unknown,
   T = unknown,
   V = unknown
-> = LoadableSystemElement<DataTypeDescription, DataTypeImplementation<D, T, V>>;
+> = LoadablePlugin<DataTypeDescription, DataTypeImplementation<D, T, V>>;
 
-// The complete loaded DataType using the generic SystemElement
-export type DataType<D = unknown, T = unknown, V = unknown> = SystemElement<
+// The complete loaded DataType using the generic Plugin
+export type DataType<D = unknown, T = unknown, V = unknown> = Plugin<
   DataTypeDescription,
   DataTypeImplementation<D, T, V>
 >;
@@ -91,27 +91,6 @@ export const isDataType = (value: unknown): value is DataType => {
   );
 };
 
-// For backward compatibility and transition
-export type DataTypesMap = Record<string, DataType<unknown, unknown, unknown>>;
-export type DataTypeEvents = {
-  "datatypes:changed": (datatypes: DataTypesMap) => void;
-};
-export const datatypeEvents = new EventEmitter<DataTypeEvents>();
-
-// Register existing event listeners with the new system
-getSystemRegistry<DataType>("dataTypes").onChange((elements) => {
-  datatypeEvents.emit("datatypes:changed", elements);
-});
-
-export const registerDataType = async <D = unknown, T = unknown, V = unknown>(
-  datatype: LoadableDataType<D, T, V>,
-  importUrl?: string
-) => {
-  // Use the systems registry to register the datatype
-  const registry = getSystemRegistry<DataTypeDescription>("dataTypes");
-  await registry.register(datatype, importUrl || datatype.importUrl);
-};
-
 /**
  * Get all data type descriptions
  * Returns only descriptions without loading implementations
@@ -120,7 +99,7 @@ export const getDataTypeDescriptions = (): Record<
   string,
   DataTypeDescription
 > => {
-  return getSystemRegistry<DataTypeDescription>("dataTypes").getAll();
+  return getPluginRegistry<DataTypeDescription>("dataTypes").getAll();
 };
 
 /**
@@ -131,7 +110,7 @@ export const getDataTypeDescriptionById = (
   id: string | undefined
 ): DataTypeDescription | undefined => {
   if (!id) return undefined;
-  return getSystemRegistry<DataTypeDescription>("dataTypes").getById(id);
+  return getPluginRegistry<DataTypeDescription>("dataTypes").getById(id);
 };
 
 /**
@@ -146,7 +125,7 @@ export const loadDataTypeById = async <D = unknown, T = unknown, V = unknown>(
   shouldWait = false
 ): Promise<DataType<D, T, V> | undefined> => {
   if (!id) return undefined;
-  return loadElementFromSystem<DataType<D, T, V>>("dataTypes", id, shouldWait);
+  return loadPluginFromRegistry<DataType<D, T, V>>("dataTypes", id, shouldWait);
 };
 
 /**
@@ -212,7 +191,7 @@ export const initFrom = <D extends object>(
 export const loadAllDataTypes = async (
   skipUnlisted = false
 ): Promise<Record<string, DataType>> => {
-  return loadAllElementsFromSystem<DataType>(
+  return loadAllPluginsFromRegistry<DataType>(
     "dataTypes",
     skipUnlisted
       ? (element) => !(element as DataTypeDescription).unlisted

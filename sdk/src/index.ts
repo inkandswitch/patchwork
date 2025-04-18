@@ -1,4 +1,4 @@
-export * from "./systems/index.js";
+export * from "./plugins/index.js";
 // TODO: deprecate these
 export * from "./datatypes.js";
 export * from "./tools.js";

@@ -1,18 +1,18 @@
 import { useMemo } from "react";
 import { Tool } from "../tools";
 import {
-  useSystemElement,
-  useLoadedSystemElement,
-  useSystemElements,
-  useFilteredSystemElements,
-  useLoadedFilteredSystemElements,
-} from "./useSystem";
+  usePlugin,
+  useLoadedPlugin,
+  usePlugins,
+  useFilteredPlugins,
+  useLoadedFilteredPlugins,
+} from "./usePlugin";
 
 /**
  * Hook to get a specific tool by ID
  */
 export function useTool(id: string | undefined): Tool | undefined {
-  return useSystemElement<Tool>("tools", id);
+  return usePlugin<Tool>("tools", id);
 }
 
 /**
@@ -26,10 +26,10 @@ export function useLoadedTool(
   isLoading: boolean;
   error: Error | undefined;
 } {
-  const result = useLoadedSystemElement<Tool>("tools", id, wait);
+  const result = useLoadedPlugin<Tool>("tools", id, wait);
 
   return {
-    tool: result.element,
+    tool: result.plugin,
     isLoading: result.isLoading,
     error: result.error,
   };
@@ -39,7 +39,7 @@ export function useLoadedTool(
  * Hook to get all registered tools
  */
 export function useTools(): Record<string, Tool> {
-  return useSystemElements<Tool>("tools");
+  return usePlugins<Tool>("tools");
 }
 
 /**
@@ -65,7 +65,7 @@ export function useToolsForDataType(dataTypeId: string | undefined): Tool[] {
   }, [dataTypeId]);
 
   // Use the filtered hook
-  return useFilteredSystemElements<Tool>("tools", filterFn);
+  return useFilteredPlugins<Tool>("tools", filterFn);
 }
 
 /**
@@ -104,7 +104,7 @@ export function useLoadedToolsForDataType(
     };
   }
 
-  const { elements, isLoading, error } = useLoadedFilteredSystemElements<Tool>(
+  const { elements, isLoading, error } = useLoadedFilteredPlugins<Tool>(
     "tools",
     filterFn,
     wait

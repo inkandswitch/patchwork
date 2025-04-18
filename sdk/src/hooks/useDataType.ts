@@ -6,13 +6,13 @@ import {
   loadDataTypeById,
 } from "../datatypes";
 import {
-  useSystemElement,
-  useLoadedSystemElement,
-  useSystemElements,
-  useFilteredSystemElements,
-  useLoadedFilteredSystemElements,
-} from "./useSystem";
-import { onSystemElementsChange } from "../systems";
+  usePlugin,
+  useLoadedPlugin,
+  usePlugins,
+  useFilteredPlugins,
+  useLoadedFilteredPlugins,
+} from "./usePlugin";
+import { onPluginsChange } from "../plugins";
 
 /**
  * Hook to get a specific data type by ID
@@ -20,7 +20,7 @@ import { onSystemElementsChange } from "../systems";
 export function useDataType<D = unknown, T = unknown, V = unknown>(
   id: string | undefined
 ): DataType<D, T, V> | undefined {
-  return useSystemElement<DataType<D, T, V>>("dataTypes", id);
+  return usePlugin<DataType<D, T, V>>("dataTypes", id);
 }
 
 /**
@@ -34,14 +34,14 @@ export function useLoadedDataType<D = unknown, T = unknown, V = unknown>(
   isLoading: boolean;
   error: Error | undefined;
 } {
-  const result = useLoadedSystemElement<DataType<D, T, V>>(
+  const result = useLoadedPlugin<DataType<D, T, V>>(
     "dataTypes",
     id,
     wait
   );
 
   return {
-    dataType: result.element,
+    dataType: result.plugin,
     isLoading: result.isLoading,
     error: result.error,
   };
@@ -51,7 +51,7 @@ export function useLoadedDataType<D = unknown, T = unknown, V = unknown>(
  * Hook to get all registered data types
  */
 export function useDataTypes(): Record<string, DataType> {
-  return useSystemElements<DataType>("dataTypes");
+  return usePlugins<DataType>("dataTypes");
 }
 
 /**
@@ -60,7 +60,7 @@ export function useDataTypes(): Record<string, DataType> {
 export function useFilteredDataTypes<D = unknown, T = unknown, V = unknown>(
   filterFn: (dataType: DataType<D, T, V>) => boolean
 ): DataType<D, T, V>[] {
-  return useFilteredSystemElements<DataType<D, T, V>>("dataTypes", filterFn);
+  return useFilteredPlugins<DataType<D, T, V>>("dataTypes", filterFn);
 }
 
 /**
@@ -78,14 +78,14 @@ export function useLoadedFilteredDataTypes<
   isLoading: boolean;
   error: Error | undefined;
 } {
-  const result = useLoadedFilteredSystemElements<DataType<D, T, V>>(
+  const result = useLoadedFilteredPlugins<DataType<D, T, V>>(
     "dataTypes",
     filterFn,
     wait
   );
 
   return {
-    dataTypes: result.elements,
+    dataTypes: result.plugins,
     isLoading: result.isLoading,
     error: result.error,
   };
@@ -115,7 +115,7 @@ export function useDataTypeDescription<D = unknown, T = unknown, V = unknown>(
     let unsubscribe: (() => void) | null = null;
 
     try {
-      unsubscribe = onSystemElementsChange("dataTypes", () => {
+      unsubscribe = onPluginsChange("dataTypes", () => {
         setDescription(getDataTypeDescriptionById(id));
       });
     } catch (err) {
