@@ -64,9 +64,6 @@ export function useToolsForDataType(dataTypeId: string | undefined): Tool[] {
     };
   }, [dataTypeId]);
 
-  // If no dataType provided, return empty array immediately
-  if (!dataTypeId) return [];
-
   // Use the filtered hook
   return useFilteredSystemElements<Tool>("tools", filterFn);
 }
