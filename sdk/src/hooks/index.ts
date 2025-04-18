@@ -1,10 +1,5 @@
 export * from "./useScrollPosition";
-export { useTools, useToolsForDataType, useTool } from "./useTools";
-export {
-  useDataTypes,
-  useDataTypeDescriptions,
-  useLoadedDataTypes,
-} from "./useDataTypes";
+export { useTools, useToolsForDataType, useTool } from "./useTool";
 
 // Export system element hooks
 export {

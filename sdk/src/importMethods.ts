@@ -1,6 +1,6 @@
 import EventEmitter from "eventemitter3";
 import { DocHandle } from "@automerge/automerge-repo";
-import { DataType, allDataTypes } from "./datatypes";
+import { DataType, DataTypeDescription, allDataTypes } from "./datatypes";
 import {
   SystemElement,
   getSystemRegistry,
@@ -56,7 +56,7 @@ export const isImportMethod = (value: unknown): value is ImportMethod => {
 };
 
 export const getImportMethodsForDatatype = (
-  datatype: DataType
+  datatype: DataTypeDescription
 ): ImportMethod[] => {
   const registry = getSystemRegistry<ImportMethod>("importMethods");
   const methods = registry
@@ -80,7 +80,7 @@ export const getImportMethodsForDatatype = (
 };
 
 export const getDefaultImportMethodForDatatype = (
-  datatype: DataType
+  datatype: DataTypeDescription
 ): ImportMethod | undefined => {
   const methods = getImportMethodsForDatatype(datatype);
   return methods[0];

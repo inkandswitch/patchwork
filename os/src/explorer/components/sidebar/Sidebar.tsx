@@ -10,7 +10,7 @@ import {
 } from "@patchwork/sdk/versionControl";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { getDataTypeDescriptionById, loadDataTypeById } from "@patchwork/sdk";
-
+import { useAllDataTypes } from "@patchwork/sdk/hooks";
 import capitalize from "lodash-es/capitalize";
 import clone from "lodash-es/clone";
 import uniqBy from "lodash-es/uniqBy";
@@ -22,7 +22,6 @@ import { useCurrentAccount, useCurrentAccountDoc } from "@patchwork/sdk";
 import { UIStateDoc } from "@patchwork/sdk/router";
 import { AccountPicker } from "../AccountPicker";
 import { FillFlexParent } from "../FillFlexParent";
-import { useDataTypeDescriptions } from "@patchwork/sdk/hooks";
 import DataTypeSelector from "./DataTypeSelector";
 import { OpenAutomergeUrl } from "./OpenAutomergeUrl";
 import { Node, FlatDocPathsContext, NodeData } from "./Node";
@@ -66,7 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   rootFolderDoc,
 }) => {
   const repo = useRepo();
-  const dataTypes = useDataTypeDescriptions();
+  const dataTypes = useAllDataTypes(); // TODO: name
 
   const {
     doc: rootFolderDocWithChildren,

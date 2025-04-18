@@ -1,4 +1,4 @@
-import { Doc, DocHandle, Repo } from "@automerge/automerge-repo";
+import { AutomergeUrl, Doc, DocHandle, Repo } from "@automerge/automerge-repo";
 import {
   allDataTypes,
   dataTypeById,
@@ -81,7 +81,7 @@ export const importFile = async (
   const fileExt = file.name.split(".").pop()?.toLowerCase() ?? "";
   if (
     !importMethod.fileExtensions.some(
-      (ext) => ext.toLowerCase() === `.${fileExt}`
+      (ext: string) => ext.toLowerCase() === `.${fileExt}`
     )
   ) {
     return null;
@@ -108,9 +108,10 @@ export const importFile = async (
 
     // Import the file and create a document
     const doc = await importer(text, file.name);
+    const type = importMethod.datatypeId;
 
     // Create a new document link
-    const docLink = new DocLink(url, doc);
+    const docLink = { url, type, name: file.name };
 
     // Apply changeDocLink if provided
     if (changeDocLink) {
