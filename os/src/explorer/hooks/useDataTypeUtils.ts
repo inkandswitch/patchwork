@@ -13,20 +13,7 @@ import {
 export function useDataTypeDescription(
   id: string | undefined
 ): DataTypeDescription | undefined {
-  const [description, setDescription] = useState<
-    DataTypeDescription | undefined
-  >(id ? getDataTypeDescriptionById(id) : undefined);
-
   useEffect(() => {
-    if (!id) {
-      setDescription(undefined);
-      return;
-    }
-
-    setDescription(getDataTypeDescriptionById(id));
-
-    // Also trigger loading in the background
-    // This ensures implementations will be ready when needed
     if (id) {
       loadDataTypeById(id, true).catch((err) =>
         console.warn(`Background loading of data type ${id} failed:`, err)
@@ -34,7 +21,7 @@ export function useDataTypeDescription(
     }
   }, [id]);
 
-  return description;
+  return getDataTypeDescriptionById(id);
 }
 
 /**
