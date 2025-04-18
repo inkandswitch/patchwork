@@ -52,7 +52,7 @@ async function registerElementsForSystemType(
 /**
  * Register all system elements from an export
  */
-export async function registerSystemsExport(
+export async function registerExportedSystemElements(
   systems: SystemsExport,
   sourceModule: string
 ): Promise<void> {

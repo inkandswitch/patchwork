@@ -1,8 +1,4 @@
 import type { ModuleSettingsDoc } from "./types";
-import { isDataType, LoadableDataType, registerDataType } from "../datatypes";
-import { ToolDescription, isTool, registerTool } from "../tools";
-import { registerImportMethod, ImportMethod } from "../importMethods";
-import { registerExportMethod, ExportMethod } from "../exportMethods";
 import {
   AutomergeUrl,
   DocHandle,
@@ -11,6 +7,7 @@ import {
   Repo,
 } from "@automerge/automerge-repo";
 import { importModuleFromFolderDocUrl } from "./utils";
+import { registerExportedSystemElements } from "../systems";
 
 /**
  * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
@@ -62,38 +59,17 @@ export class ModuleWatcher {
     const mod = await this.importModuleSafe(importName);
     if (!mod) return;
 
-    // Load and register dataType if present
-    if (mod.dataType) {
-      registerDataType(mod.dataType, importName);
-    }
-
-    // Load and register dataTypes if present
-    if (mod.dataTypes?.length) {
-      const dataTypes = mod.dataTypes.filter(isDataType);
-      dataTypes.forEach((dataType: LoadableDataType<unknown>) =>
-        registerDataType(dataType, importName)
+    const plugins = { ...mod };
+    // TODO: backwards compatibility as of apr 18 2025
+    // remove this if it's in the distant future
+    if (plugins.dataType) {
+      console.warn(
+        `Module ${importName} has a dataType property. This is deprecated. Please use dataTypes instead.`
       );
+      plugins.dataTypes = [plugins.dataType];
+      delete plugins.dataType;
     }
-
-    // Load and register tools if present
-    if (mod.tools?.length) {
-      const tools = mod.tools.filter(isTool);
-      tools.forEach((t: ToolDescription) => registerTool(t, importName));
-    }
-
-    // Load and register import methods if present
-    if (mod.importMethods?.length) {
-      mod.importMethods.forEach((method: ImportMethod) => {
-        registerImportMethod(method);
-      });
-    }
-
-    // Load and register export methods if present
-    if (mod.exportMethods?.length) {
-      mod.exportMethods.forEach((method: ExportMethod) => {
-        registerExportMethod(method);
-      });
-    }
+    registerExportedSystemElements(plugins, importName);
   }
 
   // TODO: This is a bit janky and relies on a bunch of heuristics.
