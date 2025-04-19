@@ -1,7 +1,7 @@
-import EventEmitter from "eventemitter3";
 import { DataType } from "./datatypes";
 import { Doc, save } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
+import { loadAllPluginsFromRegistry, registerExportedPlugins } from "./plugins";
 
 export type ExportMethod = {
   id: string;
@@ -17,23 +17,6 @@ export type ExportMethod = {
   exportData: (doc: Doc<unknown>, repo: Repo) => Promise<File>;
 };
 
-type ExportMethodsMap = Record<string, ExportMethod>;
-type ExportMethodEvents = {
-  "exportMethods:changed": (methods: ExportMethodsMap) => void;
-};
-
-export const exportMethodEvents = new EventEmitter<ExportMethodEvents>();
-const GlobalExportMethods: ExportMethodsMap = {};
-
-export const registerExportMethod = (method: ExportMethod) => {
-  GlobalExportMethods[method.id] = method;
-  exportMethodEvents.emit("exportMethods:changed", { ...GlobalExportMethods });
-};
-
-export const allExportMethods = () => {
-  return { ...GlobalExportMethods };
-};
-
 export const isExportMethod = (value: unknown): value is ExportMethod => {
   return (
     value !== null &&
@@ -46,7 +29,9 @@ export const isExportMethod = (value: unknown): value is ExportMethod => {
 export const getExportMethodsForDatatype = (
   datatype: DataType
 ): ExportMethod[] => {
-  const methods = Object.values(GlobalExportMethods)
+  const methods = Object.values(
+    loadAllPluginsFromRegistry<ExportMethod>("exportMethods")
+  )
     .filter(
       (method) => method.datatypeId === datatype.id || method.datatypeId === "*"
     )
@@ -100,5 +85,10 @@ export const jsonExport: ExportMethod = {
 };
 
 // Register the generic methods
-registerExportMethod(automergeExport);
-registerExportMethod(jsonExport);
+// TODO: maybe these should be somewhere else?
+registerExportedPlugins(
+  {
+    exportMethods: [automergeExport, jsonExport],
+  },
+  "exportMethods.ts"
+);

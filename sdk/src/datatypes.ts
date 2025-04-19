@@ -115,21 +115,3 @@ export const initFrom = <D extends object>(
 ) => {
   Object.assign(doc, init);
 };
-
-/**
- * Load all data types
- * Returns fully loaded data types with implementations
- * @param skipUnlisted Skip data types marked as unlisted
- * @returns A Promise resolving to a record of loaded data types
- */
-export const loadAllDataTypes = async (
-  skipUnlisted = false
-): Promise<Record<string, DataType>> => {
-  return loadAllPluginsFromRegistry<DataType>(
-    "dataTypes",
-    skipUnlisted
-      ? (element) => !(element as DataTypeDescription).unlisted
-      : undefined,
-    true
-  );
-};
