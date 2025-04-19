@@ -2,6 +2,7 @@ import { DataType } from "./datatypes";
 import { Doc, save } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import { loadAllPluginsFromRegistry, registerExportedPlugins } from "./plugins";
+import { findMatchingPlugins } from "./plugins";
 
 export type ExportMethod = {
   id: string;
@@ -29,25 +30,12 @@ export const isExportMethod = (value: unknown): value is ExportMethod => {
 export const getExportMethodsForDatatype = (
   datatype: DataType
 ): ExportMethod[] => {
-  const methods = Object.values(
-    loadAllPluginsFromRegistry<ExportMethod>("exportMethods")
-  )
-    .filter(
-      (method) => method.datatypeId === datatype.id || method.datatypeId === "*"
-    )
-    .sort((a, b) => {
-      // First sort by datatype-specific vs generic
-      if (a.datatypeId === datatype.id && b.datatypeId === "*") return -1;
-      if (a.datatypeId === "*" && b.datatypeId === datatype.id) return 1;
-
-      // Then sort by default status
-      if (a.useAsDefaultMethod && !b.useAsDefaultMethod) return -1;
-      if (!a.useAsDefaultMethod && b.useAsDefaultMethod) return 1;
-
-      return 0;
-    });
-
-  return methods;
+  return findMatchingPlugins<ExportMethod>(
+    "exportMethods",
+    "datatypeId",
+    datatype.id,
+    "useAsDefaultMethod"
+  );
 };
 
 export const getDefaultExportMethodForDatatype = (

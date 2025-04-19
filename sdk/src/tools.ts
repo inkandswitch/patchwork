@@ -15,6 +15,7 @@ import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "./router/DocLink";
 import { Plugin, getPluginRegistry } from "./plugins";
+import { findMatchingPlugins } from "./plugins";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -119,18 +120,7 @@ export const toolsForDataType = (dataType: string | undefined): Tool[] => {
     return [];
   }
 
-  const registry = getPluginRegistry<Tool>("tools");
-  const tools = registry.getAllPlugins() as Tool[]; // TODO: TS is giving up on our types
-
-  const specificTools = tools.filter(
-    (tool) =>
-      Array.isArray(tool.supportedDataTypes) &&
-      tool.supportedDataTypes.includes(dataType)
-  );
-
-  const genericTools = tools.filter((tool) => tool.supportedDataTypes === "*");
-
-  return [...specificTools, ...genericTools];
+  return findMatchingPlugins<Tool>("tools", "supportedDataTypes", dataType);
 };
 
 /**

@@ -126,3 +126,41 @@ export async function loadAllPluginsFromRegistry<T extends Plugin<any, any>>(
   const registry = getPluginRegistry(pluginType);
   return registry.loadAll(filter, shouldWait) as Promise<Record<string, T>>;
 }
+
+/**
+ * Find plugins that match a specific value or wildcard, preferring specific matches.
+ * This is useful for finding plugins that support a specific type (e.g. tools for a datatype)
+ * where some plugins support all types ("*") and others support specific types.
+ */
+export function findMatchingPlugins<T extends PluginDescription>(
+  pluginType: string,
+  matchField: keyof T,
+  matchValue: string,
+  sortField?: keyof T
+): T[] {
+  const registry = getPluginRegistry<T>(pluginType);
+  const plugins = Object.values(registry.getAllPlugins());
+
+  return plugins
+    .filter((plugin) => {
+      const value = plugin[matchField];
+      return value === "*" || value === matchValue;
+    })
+    .sort((a, b) => {
+      // First sort by specific vs wildcard match
+      const aValue = a[matchField];
+      const bValue = b[matchField];
+      if (aValue === matchValue && bValue === "*") return -1;
+      if (aValue === "*" && bValue === matchValue) return 1;
+
+      // Then sort by optional sort field if provided
+      if (sortField) {
+        const aSort = a[sortField];
+        const bSort = b[sortField];
+        if (aSort && !bSort) return -1;
+        if (!aSort && bSort) return 1;
+      }
+
+      return 0;
+    });
+}
