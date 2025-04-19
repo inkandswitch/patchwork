@@ -79,7 +79,7 @@ export const Topbar: React.FC<TopbarProps> = ({
 
   // Load the full data type for operations that need implementation
   const { plugin: selectedDataType } = useLoadedPlugin<DataType>(
-    "dataTypes",
+    "patchwork:dataType",
     selectedDataTypeId
   );
 

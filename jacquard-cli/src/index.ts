@@ -9,22 +9,8 @@ import fs from "fs";
 import path from "path";
 import process from "process";
 
-import {
-  ExportMethod,
-  ImportMethod,
-  registerExportedPlugins,
-} from "@patchwork/sdk";
-import { FolderDoc } from "@patchwork/folder";
-import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
-import * as Automerge from "@automerge/automerge";
-import { next as A } from "@automerge/automerge";
-import {
-  AutomergeUrl,
-  DocHandle,
-  Repo,
-  StorageId,
-  parseAutomergeUrl,
-} from "@automerge/automerge-repo";
+import { registerExportedPlugins, isPlugin } from "@patchwork/sdk";
+import { AutomergeUrl, Repo, StorageId } from "@automerge/automerge-repo";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { NodeFSStorageAdapter } from "@automerge/automerge-repo-storage-nodefs";
 
@@ -37,7 +23,6 @@ import { buildRunSpecFromArgs, run } from "./run";
 import { getJacquardConfig } from "./util";
 import { watch } from "./watch";
 import { watchRefreshRequests } from "./watchRefreshRequests";
-import { LoadableDataType, ToolDescription } from "@patchwork/sdk";
 import { login } from "./login";
 import { install } from "./install";
 import { logout } from "./logout";
@@ -197,11 +182,17 @@ const main = async () => {
   await Promise.all([
     ...Object.entries(jacquardDataTypes).map(async ([id, importName]) => {
       const module = await import(importName);
-      const plugins = { ...module };
-      if (module.dataType) {
-        plugins.dataTypes = [module.dataType];
-        delete plugins.dataType;
-      }
+      const plugins = Object.values(module).flatMap((value) => {
+        if (isPlugin(value)) {
+          // TypeScript now knows value is a Plugin
+          return [value];
+        }
+        if (Array.isArray(value)) {
+          // TypeScript now knows each v is a Plugin after filtering
+          return value.filter((v): v is Plugin => isPlugin(v));
+        }
+        return [];
+      });
       await registerExportedPlugins(plugins, importName);
     }),
   ]);

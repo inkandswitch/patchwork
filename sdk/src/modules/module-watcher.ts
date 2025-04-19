@@ -8,6 +8,7 @@ import {
 } from "@automerge/automerge-repo";
 import { importModuleFromFolderDocUrl } from "./utils";
 import { registerExportedPlugins } from "../plugins";
+import { isPlugin } from "../plugins";
 
 /**
  * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
@@ -59,16 +60,17 @@ export class ModuleWatcher {
     const mod = await this.importModuleSafe(importName);
     if (!mod) return;
 
-    const plugins = { ...mod };
-    // TODO: backwards compatibility as of apr 18 2025
-    // remove this if it's in the distant future
-    if (plugins.dataType) {
-      console.warn(
-        `Module ${importName} has a dataType property. This is deprecated. Please use dataTypes instead.`
-      );
-      plugins.dataTypes = [plugins.dataType];
-      delete plugins.dataType;
-    }
+    const plugins = Object.values(mod).flatMap((value) => {
+      if (isPlugin(value)) {
+        // TypeScript now knows value is a Plugin
+        return [value];
+      }
+      if (Array.isArray(value)) {
+        // TypeScript now knows each v is a Plugin after filtering
+        return value.filter((v): v is Plugin => isPlugin(v));
+      }
+      return [];
+    });
     registerExportedPlugins(plugins, importName);
   }
 

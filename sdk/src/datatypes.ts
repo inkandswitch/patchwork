@@ -13,13 +13,8 @@ import { IconType } from "./ui";
 import { DocMigration } from "./migrations/DocMigration";
 import { HasPatchworkMetadata } from "./modules/types";
 import { DocLink } from "./router/DocLink";
-import {
-  PluginDescription,
-  LoadablePlugin,
-  Plugin,
-  loadPluginFromRegistry,
-  loadAllPluginsFromRegistry,
-} from "./plugins";
+import { PluginDescription, LoadablePlugin, Plugin } from "./plugins";
+import { isPlugin } from "./plugins";
 
 // DataType implementation interface
 export type DataTypeImplementation<D = unknown, T = unknown, V = unknown> = {
@@ -79,12 +74,7 @@ export type DataType<D = unknown, T = unknown, V = unknown> = Plugin<
 >;
 
 export const isDataType = (value: unknown): value is DataType => {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "type" in value &&
-    (value as DataType).type === "patchwork:dataType"
-  );
+  return isPlugin<DataTypeDescription>(value, "patchwork:dataType");
 };
 
 /** Creates a new document initialized with the given datatype */

@@ -93,7 +93,7 @@ export const cloneDocWithLinks = async (
 
   // clone links
   const dataType = await loadPluginFromRegistry<DataType>(
-    "dataTypes",
+    "patchwork:dataType",
     dataTypeId
   );
   if (dataType?.links) {

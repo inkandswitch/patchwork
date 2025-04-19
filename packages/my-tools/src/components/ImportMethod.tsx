@@ -8,7 +8,7 @@ import React from "react";
 
 export const ImportMethod = ({ method }: { method: ImportMethodType }) => {
   const dataType = getPluginFromRegistry<DataTypeDescription>(
-    "dataTypes",
+    "patchwork:dataType",
     method.datatypeId
   );
   return (

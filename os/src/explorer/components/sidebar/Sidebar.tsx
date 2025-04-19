@@ -65,7 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   rootFolderDoc,
 }) => {
   const repo = useRepo();
-  const dataTypes = usePlugins<DataType>("dataTypes");
+  const dataTypes = usePlugins<DataType>("patchwork:dataType");
 
   const {
     doc: rootFolderDocWithChildren,
@@ -200,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const docLink = DocPathUtils.toLink(docPath);
 
     const dataType = await loadPluginFromRegistry<DataType>(
-      "dataTypes",
+      "patchwork:dataType",
       docLink.type
     );
 

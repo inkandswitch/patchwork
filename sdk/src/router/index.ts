@@ -290,7 +290,7 @@ export const useRouter = ({
         // -> create a doc link that will lead to a 404 page
         if (branchScopePathInRootFolder) {
           const dataType = await loadPluginFromRegistry<DataType>(
-            "dataTypes",
+            "patchwork:dataType",
             urlParams.type
           );
           const doc = (await repo.find(urlParams.url)).doc();

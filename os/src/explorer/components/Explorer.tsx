@@ -113,7 +113,7 @@ export const Explorer: React.FC = () => {
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
   const { plugin: selectedDataType } = useLoadedPlugin<DataType>(
-    "dataTypes",
+    "patchwork:dataType",
     selectedDataTypeId
   );
 
@@ -124,7 +124,7 @@ export const Explorer: React.FC = () => {
 
   // Get the list of compatible tools without loading their implementations
   const toolsForSelection = getMatchingPlugins<Tool>(
-    "tools",
+    "patchwork:tool",
     "supportedDataTypes",
     selectedDataTypeId
   );
@@ -146,7 +146,7 @@ export const Explorer: React.FC = () => {
 
   // Load only the specific tool we need
   const { plugin: currentTool, isLoading: isLoadingTool } =
-    useLoadedPlugin<Tool>("tools", toolIdToLoad);
+    useLoadedPlugin<Tool>("patchwork:tool", toolIdToLoad);
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();

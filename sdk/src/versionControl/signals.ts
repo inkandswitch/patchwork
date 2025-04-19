@@ -124,7 +124,7 @@ export const fetchAllLinkedDocLinks = async (
 
   // Load the full data type implementation to get access to links function
   const dataType = await loadPluginFromRegistry<DataType>(
-    "dataTypes",
+    "patchwork:dataType",
     dataTypeId,
     true
   );

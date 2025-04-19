@@ -42,7 +42,7 @@ export async function addNewDocument({
 
   // Load the data type (ensures it's fully loaded with implementation)
   const dataType = await loadPluginFromRegistry<DataType>(
-    "dataTypes",
+    "patchwork:dataType",
     type,
     true
   );

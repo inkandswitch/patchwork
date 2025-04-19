@@ -71,7 +71,7 @@ async function pullDoc({
   const filePath = path.join(dir, docLink.name);
 
   const dataType = await loadPluginFromRegistry<DataType>(
-    "dataTypes",
+    "patchwork:dataType",
     dataTypeId
   );
 

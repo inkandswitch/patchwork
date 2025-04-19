@@ -16,6 +16,7 @@ import { IconType } from "./ui/icons";
 import { DocPath } from "./router/DocLink";
 import { Plugin, getPluginRegistry } from "./plugins";
 import { getMatchingPlugins } from "./plugins";
+import { isPlugin } from "./plugins";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -63,12 +64,7 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
 }
 
 export const isTool = (value: unknown): value is Tool => {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "type" in value &&
-    (value as Tool).type === "patchwork:tool"
-  );
+  return isPlugin<ToolDescription>(value, "patchwork:tool");
 };
 
 export type EditorProps<A, V> = {
@@ -115,14 +111,6 @@ export type AnnotationsViewProps<
   annotations: Annotation<TAnchor, TAnchorValue>[];
 };
 
-export const toolsForDataType = (dataType: string | undefined): Tool[] => {
-  if (!dataType) {
-    return [];
-  }
-
-  return getMatchingPlugins<Tool>("tools", "supportedDataTypes", dataType);
-};
-
 /**
  * Check if a tool is compatible with a given data type
  */
@@ -148,14 +136,15 @@ export const findCompatibleToolForDataType = (
   currentTool: Tool | undefined,
   dataTypeId: string | undefined
 ): Tool | undefined => {
-  // If no data type ID, we can't determine compatibility
-  if (!dataTypeId) return undefined;
-
   // If current tool is compatible, keep using it
   if (isToolCompatibleWithDataType(currentTool, dataTypeId)) {
     return currentTool;
   }
 
-  const tools = toolsForDataType(dataTypeId);
-  return tools[0];
+  const tool: Tool | undefined = getMatchingPlugins<Tool>(
+    "patchwork:tool",
+    "supportedDataTypes",
+    dataTypeId
+  )[0];
+  return tool;
 };

@@ -29,7 +29,7 @@ export const isImportMethod = (value: unknown): value is ImportMethod => {
 export const getImportMethodsForDatatype = (
   datatype: DataTypeDescription
 ): ImportMethod[] => {
-  const registry = getPluginRegistry<ImportMethod>("importMethods");
+  const registry = getPluginRegistry<ImportMethod>("patchwork:importMethod");
   const methods = registry
     .getAllPlugins()
     .filter(

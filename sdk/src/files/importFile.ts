@@ -18,7 +18,7 @@ const getImportMethodForFile = async (
   }
 
   const dataTypes = Object.values(
-    getAllPluginsFromRegistry<DataType>("dataTypes")
+    getAllPluginsFromRegistry<DataType>("patchwork:dataType")
   );
   const importMethod = dataTypes
     .map((dt) => getDefaultImportMethodForDatatype(dt))
@@ -33,7 +33,7 @@ const getImportMethodForFile = async (
   }
 
   const dataType = await loadPluginFromRegistry<DataType>(
-    "dataTypes",
+    "patchwork:dataType",
     importMethod.datatypeId
   );
   if (!dataType) {

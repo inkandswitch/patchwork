@@ -1,8 +1,7 @@
 import { DataType } from "./datatypes";
 import { Doc, save } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
-import { loadAllPluginsFromRegistry, registerExportedPlugins } from "./plugins";
-import { getMatchingPlugins } from "./plugins";
+import { getMatchingPlugins, registerExportedPlugins } from "./plugins";
 
 export type ExportMethod = {
   id: string;
@@ -31,7 +30,7 @@ export const getExportMethodsForDatatype = (
   datatype: DataType
 ): ExportMethod[] => {
   return getMatchingPlugins<ExportMethod>(
-    "exportMethods",
+    "patchwork:exportMethod",
     "datatypeId",
     datatype.id,
     "useAsDefaultMethod"
@@ -74,9 +73,4 @@ export const jsonExport: ExportMethod = {
 
 // Register the generic methods
 // TODO: maybe these should be somewhere else?
-registerExportedPlugins(
-  {
-    exportMethods: [automergeExport, jsonExport],
-  },
-  "exportMethods.ts"
-);
+registerExportedPlugins([automergeExport, jsonExport], "exportMethods.ts");

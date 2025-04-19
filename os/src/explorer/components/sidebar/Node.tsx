@@ -27,7 +27,10 @@ export const Node = (props: NodeRendererProps<NodeData>) => {
   const { node, style, dragHandle } = props;
   const docPath = node.data.docPath;
   const docLink = DocPathUtils.toLink(docPath);
-  const dataType = getPluginFromRegistry<DataType>("dataTypes", docLink.type);
+  const dataType = getPluginFromRegistry<DataType>(
+    "patchwork:dataType",
+    docLink.type
+  );
 
   const flatDocPaths = useContext(FlatDocPathsContext);
 

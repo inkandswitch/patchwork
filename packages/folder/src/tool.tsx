@@ -6,9 +6,10 @@ import {
   DataTypeDescription,
   getPluginFromRegistry,
   makeTool,
-  toolsForDataType,
   type EditorProps,
   DataType,
+  getMatchingPlugins,
+  Tool,
 } from "@patchwork/sdk";
 import { usePlugin } from "@patchwork/sdk/hooks";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
@@ -79,14 +80,18 @@ export const FolderEntryView = ({
     useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
-  const dataType = usePlugin<DataType>("dataTypes", docLink.type);
+  const dataType = usePlugin<DataType>("patchwork:dataType", docLink.type);
 
   const dataTypeDesc = getPluginFromRegistry<DataTypeDescription>(
     "dataType",
     docLink.type
   );
 
-  const tool = toolsForDataType(docLink.type)[0];
+  const tool: Tool | undefined = getMatchingPlugins<Tool>(
+    "patchwork:tool",
+    "supportedDataTypes",
+    docLink.type
+  )[0];
 
   const icon = tool?.icon ?? dataTypeDesc?.icon;
 

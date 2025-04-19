@@ -30,32 +30,30 @@ export function getPluginRegistry<T extends PluginDescription>(
 }
 
 /**
- * Register plugins for a specific plugin type
+ * Get a registry for a plugin based on its type
  */
-async function registerPluginsForType(
-  pluginType: string,
-  plugins: Plugin<any, any>[],
-  sourceModule: string
-): Promise<void> {
-  const registry = getPluginRegistry(pluginType);
-
-  // Register each element with the registry
-  for (const plugin of plugins) {
-    await registry.register(plugin, sourceModule);
-  }
+export function getPluginRegistryByType<T extends PluginDescription>(
+  plugin: T
+): PluginRegistry<T> {
+  return getPluginRegistry<T>(plugin.type);
 }
 
 /**
- * Register all plugins from an export
+ * Register plugins for a specific plugin type
  */
 export async function registerExportedPlugins(
-  plugins: PluginsExport,
+  plugins: Plugin<any, any>[],
   sourceModule: string
 ): Promise<void> {
-  for (const [pluginType, pluginList] of Object.entries(plugins)) {
-    if (!plugins || !Array.isArray(pluginList)) continue;
-    await registerPluginsForType(pluginType, pluginList, sourceModule);
-  }
+  // Register each group with its appropriate registry
+  plugins.forEach(async (plugin) => {
+    if (!plugin.type) {
+      console.log("Plugin has no type", plugin);
+      throw new Error(`Plugin has no type: ${plugin}`);
+    }
+    const registry = getPluginRegistry(plugin.type);
+    registry.register(plugin, sourceModule);
+  });
 }
 
 /**
@@ -218,4 +216,23 @@ export function loadMatchingPlugins<T extends PluginDescription>(
     isLoading,
     error,
   };
+}
+
+/**
+ * Check if a value is a plugin, optionally of a specific type
+ */
+export function isPlugin<T extends PluginDescription>(
+  value: unknown,
+  pluginType?: string
+): value is Plugin<T> {
+  if (!value || typeof value !== "object") return false;
+
+  const obj = value as Record<string, unknown>;
+  if (!("type" in obj) || typeof obj.type !== "string") return false;
+  if (!("id" in obj) || typeof obj.id !== "string") return false;
+  if (!("name" in obj) || typeof obj.name !== "string") return false;
+
+  if (pluginType && obj.type !== pluginType) return false;
+
+  return true;
 }
