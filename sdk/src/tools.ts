@@ -14,9 +14,8 @@ import {
 import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "./router/DocLink";
-import { Plugin, getPluginRegistry } from "./plugins";
+import { Plugin } from "./plugins";
 import { getMatchingPlugins } from "./plugins";
-import { isPlugin } from "./plugins";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -62,10 +61,6 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
   );
   return tool as ToolImplementation;
 }
-
-export const isTool = (value: unknown): value is Tool => {
-  return isPlugin<ToolDescription>(value, "patchwork:tool");
-};
 
 export type EditorProps<A, V> = {
   docPath: DocPath;

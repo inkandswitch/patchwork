@@ -7,8 +7,7 @@ import {
   Repo,
 } from "@automerge/automerge-repo";
 import { importModuleFromFolderDocUrl } from "./utils";
-import { registerExportedPlugins } from "../plugins";
-import { isPlugin } from "../plugins";
+import { registerExportedPlugins, isPlugin } from "../plugins";
 
 /**
  * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
@@ -62,11 +61,9 @@ export class ModuleWatcher {
 
     const plugins = Object.values(mod).flatMap((value) => {
       if (isPlugin(value)) {
-        // TypeScript now knows value is a Plugin
         return [value];
       }
       if (Array.isArray(value)) {
-        // TypeScript now knows each v is a Plugin after filtering
         return value.filter((v): v is Plugin => isPlugin(v));
       }
       return [];

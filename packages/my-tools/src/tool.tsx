@@ -2,15 +2,16 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import {
   type ModuleSettingsDoc,
   EditorProps,
-  isTool,
   type DataType,
   type Tool,
   makeTool,
   importModuleFromFolderDocUrl,
   ImportMethod,
   ExportMethod,
-  isExportMethod,
-  isImportMethod,
+  isPlugin,
+  type DataTypeDescription,
+  type ToolDescription,
+  type Plugin,
 } from "@patchwork/sdk";
 
 import React, { useCallback, useState, useEffect } from "react";
@@ -42,14 +43,33 @@ export const ModuleSettingsEditor: React.FC<
       const module = isValidAutomergeUrl(url)
         ? await importModuleFromFolderDocUrl(url)
         : import(url);
-      const dataTypes =
-        module.dataTypes || (module.dataType ? [module.dataType] : []);
+
+      const plugins = Object.values(module).flatMap((value) => {
+        if (isPlugin(value)) {
+          return [value];
+        }
+        if (Array.isArray(value)) {
+          return (value as Plugin[]).filter((v): v is Plugin => isPlugin(v));
+        }
+        return [];
+      });
+
+      // We keep the structure here (at least for now) so that we can
+      // organize the display in the UI.
       return {
         url,
-        dataTypes,
-        tools: module.tools?.filter(isTool) || [],
-        importMethods: module.importMethods?.filter(isImportMethod) || [],
-        exportMethods: module.exportMethods?.filter(isExportMethod) || [],
+        dataTypes: plugins.filter((p): p is Plugin<DataTypeDescription> =>
+          isPlugin(p, "patchwork:dataType")
+        ),
+        tools: plugins.filter((p): p is Plugin<ToolDescription> =>
+          isPlugin(p, "patchwork:tool")
+        ),
+        importMethods: plugins.filter((p): p is Plugin<ImportMethod> =>
+          isPlugin(p, "patchwork:importMethod")
+        ),
+        exportMethods: plugins.filter((p): p is Plugin<ExportMethod> =>
+          isPlugin(p, "patchwork:exportMethod")
+        ),
       };
     } catch (err) {
       return {

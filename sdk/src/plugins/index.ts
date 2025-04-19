@@ -1,5 +1,9 @@
 import { PluginRegistry, Plugin, PluginDescription } from "./registry";
 import { useLoadedFilteredPlugins } from "../hooks/usePlugin";
+import { ToolDescription } from "../tools";
+import { DataTypeDescription } from "../datatypes";
+import { ImportMethod } from "../importMethods";
+import { ExportMethod } from "../exportMethods";
 
 // Re-export the registry module
 export * from "./registry";
@@ -219,20 +223,27 @@ export function loadMatchingPlugins<T extends PluginDescription>(
 }
 
 /**
- * Check if a value is a plugin, optionally of a specific type
+ * Map of plugin type strings to their corresponding description types
  */
-export function isPlugin<T extends PluginDescription>(
+export type PluginTypeMap = {
+  "patchwork:tool": ToolDescription;
+  "patchwork:dataType": DataTypeDescription;
+  "patchwork:importMethod": ImportMethod;
+  "patchwork:exportMethod": ExportMethod;
+  [key: string]: PluginDescription; // Allow for user-defined plugin types
+};
+
+/**
+ * Check if a value is a plugin, optionally of a specific type
+ * If a type is provided, it will be used to infer the correct plugin type
+ */
+export function isPlugin<T extends PluginDescription = PluginDescription>(
   value: unknown,
-  pluginType?: string
+  pluginType?: keyof PluginTypeMap
 ): value is Plugin<T> {
   if (!value || typeof value !== "object") return false;
-
-  const obj = value as Record<string, unknown>;
-  if (!("type" in obj) || typeof obj.type !== "string") return false;
-  if (!("id" in obj) || typeof obj.id !== "string") return false;
-  if (!("name" in obj) || typeof obj.name !== "string") return false;
-
-  if (pluginType && obj.type !== pluginType) return false;
-
+  const plugin = value as Plugin;
+  if (!plugin.type || !plugin.name || !plugin.description) return false;
+  if (pluginType && plugin.type !== pluginType) return false;
   return true;
 }

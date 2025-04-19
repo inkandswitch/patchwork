@@ -17,15 +17,6 @@ export type ImportMethod = Plugin & {
   ) => Promise<{ didChange: boolean }>;
 };
 
-export const isImportMethod = (value: unknown): value is ImportMethod => {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "type" in value &&
-    value.type === "patchwork:importMethod"
-  );
-};
-
 export const getImportMethodsForDatatype = (
   datatype: DataTypeDescription
 ): ImportMethod[] => {
