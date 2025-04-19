@@ -1,5 +1,5 @@
 import EventEmitter from "eventemitter3";
-import { DataType, allDataTypes } from "./datatypes";
+import { DataType } from "./datatypes";
 import { Doc, save } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 

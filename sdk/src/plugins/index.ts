@@ -1,8 +1,4 @@
-import {
-  PluginRegistry,
-  Plugin,
-  PluginDescription,
-} from "./registry";
+import { PluginRegistry, Plugin, PluginDescription } from "./registry";
 
 // Re-export the registry module
 export * from "./registry";
@@ -91,9 +87,9 @@ export async function loadPluginFromRegistry<T extends Plugin<any, any>>(
  */
 export function getAllPluginsFromRegistry<T extends Plugin<any, any>>(
   pluginType: string
-): T[] {
+): Record<string, T> {
   const registry = getPluginRegistry<any>(pluginType);
-  return registry.getAllPlugins() as T[];
+  return registry.getAllPlugins();
 }
 
 /**
@@ -122,9 +118,7 @@ export function onPluginsChange<T extends Plugin<any, any>>(
  * @param shouldWait Whether to wait for plugins to be registered if they aren't already
  * @returns A Promise resolving to a record of plugins
  */
-export async function loadAllPluginsFromRegistry<
-  T extends Plugin<any, any>
->(
+export async function loadAllPluginsFromRegistry<T extends Plugin<any, any>>(
   pluginType: string,
   filter?: (plugin: PluginDescription) => boolean,
   shouldWait = false

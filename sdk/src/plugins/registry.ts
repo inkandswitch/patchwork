@@ -39,15 +39,10 @@ export type Plugin<
  * I = Implementation type that will be loaded and combined with the description
  */
 export class PluginRegistry<D extends PluginDescription, I = any> {
-  private plugins = new Map<
-    string,
-    Plugin<D, I> | LoadablePlugin<D, I>
-  >();
+  private plugins = new Map<string, Plugin<D, I> | LoadablePlugin<D, I>>();
   private loadPromises = new Map<string, Promise<Plugin<D, I>>>();
   private events = new EventEmitter<{
-    "plugins:changed": (
-      plugins: Record<string, D | Plugin<D, I>>
-    ) => void;
+    "plugins:changed": (plugins: Record<string, D | Plugin<D, I>>) => void;
   }>();
 
   /**
@@ -71,7 +66,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     this.plugins.set(plugin.id, loadablePlugin);
 
     // Notify listeners
-    this.events.emit("plugins:changed", this.getAll());
+    this.events.emit("plugins:changed", this.getAllPlugins());
   }
 
   /**
@@ -85,17 +80,6 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     // Extract just the description part by omitting any implementation-specific fields
     const { load, ...description } = plugin as any;
     return description as D;
-  }
-
-  /**
-   * Get a loaded plugin by ID (synchronous)
-   * Returns undefined if the plugin hasn't been loaded yet
-   */
-  getloadedPluginById(id: string): Plugin<D, I> | undefined {
-    const plugin = this.plugins.get(id);
-    if (!plugin) return undefined;
-    if (isLoadablePlugin(plugin)) return undefined;
-    return plugin;
   }
 
   /**
@@ -173,7 +157,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
         this.loadPromises.delete(id);
 
         // Notify listeners that an plugin has been loaded
-        this.events.emit("plugins:changed", this.getAll());
+        this.events.emit("plugins:changed", this.getAllPlugins());
 
         return loadedPlugin;
       });
@@ -189,15 +173,8 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   /**
    * Get all plugins, both descriptions and loaded
    */
-  getAll(): Record<string, D | Plugin<D, I>> {
+  getAllPlugins(): Record<string, D | Plugin<D, I>> {
     return Object.fromEntries(this.plugins.entries());
-  }
-
-  /**
-   * Get all registered plugins as an array
-   */
-  getAllPlugins(): (D | Plugin<D, I>)[] {
-    return Array.from(this.plugins.values());
   }
 
   /**
@@ -309,9 +286,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
 /**
  * Type guard to check if a value is a plugin
  */
-export function isPlugin(
-  value: unknown
-): value is PluginDescription {
+export function isPlugin(value: unknown): value is PluginDescription {
   return (
     value !== null &&
     typeof value === "object" &&

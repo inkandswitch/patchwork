@@ -1,12 +1,6 @@
-import EventEmitter from "eventemitter3";
 import { DocHandle } from "@automerge/automerge-repo";
-import { DataType, DataTypeDescription, allDataTypes } from "./datatypes";
-import {
-  Plugin,
-  getPluginRegistry,
-  getPluginFromRegistry,
-  loadPluginFromRegistry,
-} from "./plugins";
+import type { DataTypeDescription } from "./datatypes";
+import { Plugin, getPluginRegistry } from "./plugins";
 
 export type ImportMethod = Plugin & {
   type: "patchwork:importMethod";
@@ -21,28 +15,6 @@ export type ImportMethod = Plugin & {
     file: File,
     handle: DocHandle<unknown>
   ) => Promise<{ didChange: boolean }>;
-};
-
-// For backward compatibility and transition
-type ImportMethodsMap = Record<string, ImportMethod>;
-type ImportMethodEvents = {
-  "importMethods:changed": (methods: ImportMethodsMap) => void;
-};
-
-export const importMethodEvents = new EventEmitter<ImportMethodEvents>();
-
-getPluginRegistry<ImportMethod>("importMethods").onChange((plugins) => {
-  importMethodEvents.emit("importMethods:changed", plugins);
-});
-
-export const registerImportMethod = (method: ImportMethod) => {
-  // Use the plugin registry to register the method
-  const registry = getPluginRegistry<Plugin>("importMethods");
-  registry.register(method);
-};
-
-export const allImportMethods = () => {
-  return getPluginRegistry<ImportMethod>("importMethods").getAll();
 };
 
 export const isImportMethod = (value: unknown): value is ImportMethod => {
@@ -61,9 +33,10 @@ export const getImportMethodsForDatatype = (
   const methods = registry
     .getAllPlugins()
     .filter(
-      (method) => method.datatypeId === datatype.id || method.datatypeId === "*"
+      (method: ImportMethod) =>
+        method.datatypeId === datatype.id || method.datatypeId === "*"
     )
-    .sort((a, b) => {
+    .sort((a: ImportMethod, b: ImportMethod) => {
       // First sort by datatype-specific vs generic
       if (a.datatypeId === datatype.id && b.datatypeId === "*") return -1;
       if (a.datatypeId === "*" && b.datatypeId === datatype.id) return 1;

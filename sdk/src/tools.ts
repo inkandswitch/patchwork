@@ -14,12 +14,7 @@ import {
 import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "./router/DocLink";
-import EventEmitter from "eventemitter3";
-import {
-  Plugin,
-  getPluginRegistry,
-  getPluginFromRegistry,
-} from "./plugins";
+import { Plugin, getPluginRegistry } from "./plugins";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -60,29 +55,11 @@ export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
 export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
   tool: ToolTyped<D, A, V>
 ): ToolImplementation {
+  console.warn(
+    "makeTool is deprecated: it does nothing but a cast to ToolImplementation"
+  );
   return tool as ToolImplementation;
 }
-
-// For backward compatibility and transition
-export type ToolsMap = Record<string, Tool>;
-export type ToolsEvents = {
-  "tools:changed": (datatypes: ToolsMap) => void;
-};
-export const toolsEvents = new EventEmitter<ToolsEvents>();
-
-// Register existing event listeners with the new system
-getPluginRegistry<Tool>("tools").onChange((elements) => {
-  toolsEvents.emit("tools:changed", elements);
-});
-
-export const registerTool = async (
-  tool: ToolDescription,
-  importUrl: string
-) => {
-  // Use the systems registry to register the tool
-  const registry = getPluginRegistry<Plugin>("tools");
-  await registry.register(tool, importUrl);
-};
 
 export const isTool = (value: unknown): value is Tool => {
   return (
@@ -91,44 +68,6 @@ export const isTool = (value: unknown): value is Tool => {
     "type" in value &&
     (value as Tool).type === "patchwork:tool"
   );
-};
-
-export const isToolDescription = (value: unknown): value is ToolDescription => {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "type" in value &&
-    (value as ToolDescription).type === "patchwork:tool" &&
-    "load" in value &&
-    (value as ToolDescription).load instanceof Function
-  );
-};
-
-export const allTools = () => {
-  return getPluginRegistry<Tool>("tools").getAll();
-};
-
-export const toolsForDataType = (dataType: string | undefined): Tool[] => {
-  if (!dataType) {
-    return [];
-  }
-
-  const registry = getPluginRegistry<Tool>("tools");
-  const tools = registry.getAllPlugins();
-
-  const specificTools = tools.filter(
-    (tool) =>
-      Array.isArray(tool.supportedDataTypes) &&
-      tool.supportedDataTypes.includes(dataType)
-  );
-
-  const genericTools = tools.filter((tool) => tool.supportedDataTypes === "*");
-
-  return [...specificTools, ...genericTools];
-};
-
-export const toolById = (id: string | undefined): Tool | undefined => {
-  return getPluginFromRegistry<Tool>("tools", id);
 };
 
 export type EditorProps<A, V> = {
@@ -175,6 +114,25 @@ export type AnnotationsViewProps<
   annotations: Annotation<TAnchor, TAnchorValue>[];
 };
 
+export const toolsForDataType = (dataType: string | undefined): Tool[] => {
+  if (!dataType) {
+    return [];
+  }
+
+  const registry = getPluginRegistry<Tool>("tools");
+  const tools = registry.getAllPlugins() as Tool[]; // TODO: TS is giving up on our types
+
+  const specificTools = tools.filter(
+    (tool) =>
+      Array.isArray(tool.supportedDataTypes) &&
+      tool.supportedDataTypes.includes(dataType)
+  );
+
+  const genericTools = tools.filter((tool) => tool.supportedDataTypes === "*");
+
+  return [...specificTools, ...genericTools];
+};
+
 /**
  * Check if a tool is compatible with a given data type
  */
@@ -198,7 +156,6 @@ export const isToolCompatibleWithDataType = (
  */
 export const findCompatibleToolForDataType = (
   currentTool: Tool | undefined,
-  availableTools: Tool[],
   dataTypeId: string | undefined
 ): Tool | undefined => {
   // If no data type ID, we can't determine compatibility
@@ -209,11 +166,6 @@ export const findCompatibleToolForDataType = (
     return currentTool;
   }
 
-  // Safety check for availableTools
-  if (!availableTools || !Array.isArray(availableTools)) return undefined;
-
-  // Otherwise return the first compatible tool
-  return availableTools.find((tool) =>
-    isToolCompatibleWithDataType(tool, dataTypeId)
-  );
+  const tools = toolsForDataType(dataTypeId);
+  return tools[0];
 };

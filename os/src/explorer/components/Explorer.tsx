@@ -81,22 +81,6 @@ const useRunMigrationsOnceOnLoad = ({
   }, [handle, doc, dataType, repo]);
 };
 
-// Helper function to check if a tool is compatible with a data type
-const isToolCompatibleWithDataType = (
-  tool: Tool | undefined | null,
-  dataTypeId: string | undefined | null
-): boolean => {
-  if (!tool || !dataTypeId) return false;
-
-  // Safely check supportedDataTypes - it might be undefined in some cases
-  const supportedTypes = tool.supportedDataTypes;
-  if (!supportedTypes) return false;
-
-  if (supportedTypes === "*") return true;
-
-  return Array.isArray(supportedTypes) && supportedTypes.includes(dataTypeId);
-};
-
 export const Explorer: React.FC = () => {
   const repo = useRepo();
   const [accountDoc] = useCurrentAccountDoc();

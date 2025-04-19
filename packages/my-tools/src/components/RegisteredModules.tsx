@@ -9,7 +9,11 @@ import {
 import { ModuleContentsDisplay } from "./ModuleContentsDisplay";
 import { ModuleContents } from "../tool";
 import { selectDocLink } from "@patchwork/sdk/router";
-import { getDataTypeDescriptionById, toolsForDataType } from "@patchwork/sdk";
+import {
+  DataTypeDescription,
+  getPluginFromRegistry,
+  toolsForDataType,
+} from "@patchwork/sdk";
 import { useDataType } from "@patchwork/sdk/hooks";
 import { type DocLink } from "@patchwork/sdk/router";
 import { AutomergeUrl } from "@automerge/automerge-repo";
@@ -32,8 +36,10 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onRemove }) => {
   };
 
   // Look up the data type and tool info
-  const dataTypeDesc = getDataTypeDescriptionById(docLink.type);
-  const dataType = useDataType(docLink.type);
+  const dataTypeDesc = getPluginFromRegistry<DataTypeDescription>(
+    "dataTypes",
+    docLink.type
+  );
   const tool = toolsForDataType(docLink.type)[0];
   const icon = tool?.icon ?? dataTypeDesc?.icon ?? "Package";
 

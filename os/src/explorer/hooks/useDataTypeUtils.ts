@@ -1,28 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  DataType,
-  DataTypeDescription,
-  getDataTypeDescriptionById,
-  loadDataTypeById,
-} from "@patchwork/sdk";
-
-/**
- * Hook to get a data type description (metadata only)
- * Also triggers loading of the implementation in the background
- */
-export function useDataTypeDescription(
-  id: string | undefined
-): DataTypeDescription | undefined {
-  useEffect(() => {
-    if (id) {
-      loadDataTypeById(id, true).catch((err) =>
-        console.warn(`Background loading of data type ${id} failed:`, err)
-      );
-    }
-  }, [id]);
-
-  return getDataTypeDescriptionById(id);
-}
+import { DataType, loadDataTypeById } from "@patchwork/sdk";
 
 /**
  * Hook to load a data type with full implementation

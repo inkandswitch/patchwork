@@ -18,10 +18,7 @@ import {
   PluginDescription,
   LoadablePlugin,
   Plugin,
-  getPluginRegistry,
-  getPluginFromRegistry,
   loadPluginFromRegistry,
-  isLoadableElement,
   loadAllPluginsFromRegistry,
 } from "./plugins";
 
@@ -92,28 +89,6 @@ export const isDataType = (value: unknown): value is DataType => {
 };
 
 /**
- * Get all data type descriptions
- * Returns only descriptions without loading implementations
- */
-export const getDataTypeDescriptions = (): Record<
-  string,
-  DataTypeDescription
-> => {
-  return getPluginRegistry<DataTypeDescription>("dataTypes").getAll();
-};
-
-/**
- * Get a specific data type description by ID
- * Returns only the description without loading implementation
- */
-export const getDataTypeDescriptionById = (
-  id: string | undefined
-): DataTypeDescription | undefined => {
-  if (!id) return undefined;
-  return getPluginRegistry<DataTypeDescription>("dataTypes").getById(id);
-};
-
-/**
  * Load a data type by ID
  * Returns a fully loaded data type with implementation
  * @param id The data type ID
@@ -126,31 +101,6 @@ export const loadDataTypeById = async <D = unknown, T = unknown, V = unknown>(
 ): Promise<DataType<D, T, V> | undefined> => {
   if (!id) return undefined;
   return loadPluginFromRegistry<DataType<D, T, V>>("dataTypes", id, shouldWait);
-};
-
-/**
- * Get all data types (backward compatibility)
- * @deprecated Use getDataTypeDescriptions() or loadAllDataTypes() instead
- */
-export const allDataTypes = () => {
-  console.warn(
-    "allDataTypes() is deprecated. Use getDataTypeDescriptions() instead."
-  );
-  return getDataTypeDescriptions();
-};
-
-/**
- * Get a data type by ID (backward compatibility)
- * @deprecated Use getDataTypeDescriptionById() or loadDataTypeById() instead
- */
-export const dataTypeById = <D = unknown, T = unknown, V = unknown>(
-  id: string | undefined
-) => {
-  console.warn(
-    "dataTypeById() is deprecated. Use getDataTypeDescriptionById() or loadDataTypeById() instead."
-  );
-  if (!id) return undefined;
-  return getDataTypeDescriptionById(id) as DataType<D, T, V> | undefined;
 };
 
 /** Creates a new document initialized with the given datatype */

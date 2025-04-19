@@ -1,6 +1,10 @@
 import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { FolderDoc } from "@patchwork/folder";
-import { getExportMethodsForDatatype, ExportMethod } from "@patchwork/sdk";
+import {
+  getExportMethodsForDatatype,
+  ExportMethod,
+  DataType,
+} from "@patchwork/sdk";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,14 +30,12 @@ import {
 import React, { useRef } from "react";
 import { saveFile } from "@patchwork/sdk/files";
 import { AccountPicker } from "./AccountPicker";
-import {
-  useDataTypeDescription,
-  useLoadedDataType,
-} from "../hooks/useDataTypeUtils";
+import { useLoadedDataType } from "../hooks/useDataTypeUtils";
 import {
   AUTOMERGE_SYNC_SERVER_STORAGE_ID,
   SyncIndicator,
 } from "./SyncIndicator";
+import { useLoadedPlugin } from "@patchwork/sdk/hooks";
 
 type TopbarProps = {
   showSidebar: boolean;
@@ -76,12 +78,11 @@ export const Topbar: React.FC<TopbarProps> = ({
   const selectedDataTypeRef = useRef<string>();
   selectedDataTypeRef.current = selectedDataTypeId;
 
-  // Get the data type description for immediate display needs
-  const selectedDataTypeDesc = useDataTypeDescription(selectedDataTypeId);
-
   // Load the full data type for operations that need implementation
-  const { dataType: selectedDataType, isLoading: dataTypeLoading } =
-    useLoadedDataType(selectedDataTypeId);
+  const { plugin: selectedDataType } = useLoadedPlugin<DataType>(
+    "dataTypes",
+    selectedDataTypeId
+  );
 
   const toolsWithEditorComponent = tools;
 
@@ -321,3 +322,9 @@ export const Topbar: React.FC<TopbarProps> = ({
     </div>
   );
 };
+function usePluginFromRegistry(
+  arg0: string,
+  selectedDataTypeId: string | undefined
+) {
+  throw new Error("Function not implemented.");
+}

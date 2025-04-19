@@ -9,7 +9,7 @@ import {
   fetchOmOnActiveBranch,
 } from "@patchwork/sdk/versionControl";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { getDataTypeDescriptionById, loadDataTypeById } from "@patchwork/sdk";
+import { DataType, loadPluginFromRegistry } from "@patchwork/sdk";
 import { useAllDataTypes } from "@patchwork/sdk/hooks";
 import capitalize from "lodash-es/capitalize";
 import clone from "lodash-es/clone";
@@ -199,20 +199,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const docPath = node.data.docPath;
     const docLink = DocPathUtils.toLink(docPath);
 
-    // First get the description, then load the full data type if needed for setTitle
-    const dataTypeDesc = getDataTypeDescriptionById(docLink.type);
+    const dataType = await loadPluginFromRegistry<DataType>(
+      "dataTypes",
+      docLink.type
+    );
 
-    if (!dataTypeDesc) {
+    if (!dataType) {
       console.warn(`Could not find data type for ${docLink.type}`);
       return;
     }
 
-    const dataType = await loadDataTypeById(docLink.type);
-
     if (!dataType?.setTitle) {
       alert(
         `${capitalize(
-          dataTypeDesc.name
+          dataType.name
         )} documents can only be renamed in the main editor, not the sidebar.`
       );
       return;

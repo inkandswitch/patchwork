@@ -1,12 +1,16 @@
 import {
+  DataTypeDescription,
   ImportMethod as ImportMethodType,
-  getDataTypeDescriptionById,
+  getPluginFromRegistry,
 } from "@patchwork/sdk";
 import { Icon } from "@patchwork/sdk/ui";
 import React from "react";
 
 export const ImportMethod = ({ method }: { method: ImportMethodType }) => {
-  const dataType = getDataTypeDescriptionById(method.datatypeId);
+  const dataType = getPluginFromRegistry<DataTypeDescription>(
+    "dataTypes",
+    method.datatypeId
+  );
   return (
     <div className="border border-gray-200 rounded-md p-4">
       <div className="flex gap-2 items-center">

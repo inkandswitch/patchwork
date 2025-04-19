@@ -1,14 +1,9 @@
 import { AutomergeUrl, Doc, DocHandle, Repo } from "@automerge/automerge-repo";
-import {
-  allDataTypes,
-  dataTypeById,
-  DataType,
-  createDocOfDataType,
-  loadDataTypeById,
-} from "../datatypes";
+import { DataType, createDocOfDataType, loadDataTypeById } from "../datatypes";
 import { getDefaultImportMethodForDatatype } from "../importMethods";
 import { ImportMethod } from "../importMethods";
 import { DocLink } from "../router/DocLink";
+import { getAllPluginsFromRegistry } from "../plugins";
 
 /**
  * Helper function to find the appropriate import method and datatype for a file
@@ -22,7 +17,8 @@ const getImportMethodForFile = async (
     throw new Error("File has no extension, not sure how to proceed");
   }
 
-  const importMethod = Object.values(allDataTypes())
+  const dataTypes = Object.values(getAllPluginsFromRegistry<DataType>("dataTypes"));
+  const importMethod = dataTypes
     .map((dt) => getDefaultImportMethodForDatatype(dt))
     .find(
       (method) =>

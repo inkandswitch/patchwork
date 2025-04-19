@@ -3,8 +3,8 @@ import { selectDocLink, DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { useDocUIState } from "@patchwork/sdk/router";
 import { Icon, IconType } from "@patchwork/sdk/ui";
 import {
-  getDataTypeDescriptionById,
-  loadDataTypeById,
+  DataTypeDescription,
+  getPluginFromRegistry,
   makeTool,
   toolsForDataType,
   type EditorProps,
@@ -79,8 +79,11 @@ export const FolderEntryView = ({
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
   const dataType = useDataType(docLink.type);
-  
-  const dataTypeDesc = getDataTypeDescriptionById(docLink.type);
+
+  const dataTypeDesc = getPluginFromRegistry<DataTypeDescription>(
+    "dataType",
+    docLink.type
+  );
 
   const tool = toolsForDataType(docLink.type)[0];
 

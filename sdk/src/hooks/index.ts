@@ -13,7 +13,6 @@ export {
 export {
   useDataType,
   useLoadedDataType,
-  useDataTypeDescription,
   useDataTypes as useAllDataTypes,
   useFilteredDataTypes,
   useLoadedFilteredDataTypes,

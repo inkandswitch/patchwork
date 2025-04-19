@@ -1,10 +1,5 @@
-import { useCallback, useMemo, useState, useEffect } from "react";
-import {
-  DataType,
-  DataTypeDescription,
-  getDataTypeDescriptionById,
-  loadDataTypeById,
-} from "../datatypes";
+import { useState, useEffect } from "react";
+import { DataType, DataTypeDescription } from "../datatypes";
 import {
   usePlugin,
   useLoadedPlugin,
@@ -12,7 +7,7 @@ import {
   useFilteredPlugins,
   useLoadedFilteredPlugins,
 } from "./usePlugin";
-import { onPluginsChange } from "../plugins";
+import { getPluginFromRegistry, onPluginsChange } from "../plugins";
 
 /**
  * Hook to get a specific data type by ID
@@ -34,11 +29,7 @@ export function useLoadedDataType<D = unknown, T = unknown, V = unknown>(
   isLoading: boolean;
   error: Error | undefined;
 } {
-  const result = useLoadedPlugin<DataType<D, T, V>>(
-    "dataTypes",
-    id,
-    wait
-  );
+  const result = useLoadedPlugin<DataType<D, T, V>>("dataTypes", id, wait);
 
   return {
     dataType: result.plugin,
@@ -89,52 +80,4 @@ export function useLoadedFilteredDataTypes<
     isLoading: result.isLoading,
     error: result.error,
   };
-}
-
-/**
- * Hook to get a data type description by ID
- * Only returns the description (metadata), not the implementation
- */
-export function useDataTypeDescription<D = unknown, T = unknown, V = unknown>(
-  id: string | undefined
-): DataTypeDescription | undefined {
-  const [description, setDescription] = useState<
-    DataTypeDescription | undefined
-  >(id ? getDataTypeDescriptionById(id) : undefined);
-
-  useEffect(() => {
-    if (!id) {
-      setDescription(undefined);
-      return;
-    }
-
-    // Set initial state
-    setDescription(getDataTypeDescriptionById(id));
-
-    // Listen for changes
-    let unsubscribe: (() => void) | null = null;
-
-    try {
-      unsubscribe = onPluginsChange("dataTypes", () => {
-        setDescription(getDataTypeDescriptionById(id));
-      });
-    } catch (err) {
-      console.warn(`Error subscribing to data type description changes:`, err);
-    }
-
-    return function cleanupDataTypeDescriptionListener() {
-      try {
-        if (unsubscribe && typeof unsubscribe === "function") {
-          unsubscribe();
-        }
-      } catch (err) {
-        console.warn(
-          `Error during cleanup for data type description ${id}:`,
-          err
-        );
-      }
-    };
-  }, [id]);
-
-  return description;
 }

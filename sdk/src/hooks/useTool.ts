@@ -104,14 +104,14 @@ export function useLoadedToolsForDataType(
     };
   }
 
-  const { elements, isLoading, error } = useLoadedFilteredPlugins<Tool>(
+  const { plugins, isLoading, error } = useLoadedFilteredPlugins<Tool>(
     "tools",
     filterFn,
     wait
   );
 
   return {
-    tools: elements,
+    tools: plugins,
     isLoading,
     error,
   };

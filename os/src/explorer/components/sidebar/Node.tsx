@@ -1,5 +1,4 @@
 import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
-import { useDataTypeDescription } from "../../../explorer/hooks/useDataTypeUtils";
 import {
   Icon,
   IconType,
@@ -13,6 +12,7 @@ import { createContext, useContext, useMemo } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { NodeActiveBranchInfo } from "./NodeActiveBranchInfo";
 import { Edit } from "./Edit";
+import { DataType, getPluginFromRegistry } from "@patchwork/sdk";
 
 export const FlatDocPathsContext = createContext<DocPath[]>([]);
 
@@ -27,7 +27,7 @@ export const Node = (props: NodeRendererProps<NodeData>) => {
   const { node, style, dragHandle } = props;
   const docPath = node.data.docPath;
   const docLink = DocPathUtils.toLink(docPath);
-  const dataType = useDataTypeDescription(docLink.type);
+  const dataType = getPluginFromRegistry<DataType>("dataTypes", docLink.type);
 
   const flatDocPaths = useContext(FlatDocPathsContext);
 
