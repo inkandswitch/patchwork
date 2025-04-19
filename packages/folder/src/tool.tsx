@@ -8,8 +8,9 @@ import {
   makeTool,
   toolsForDataType,
   type EditorProps,
+  DataType,
 } from "@patchwork/sdk";
-import { useDataType } from "@patchwork/sdk/hooks";
+import { usePlugin } from "@patchwork/sdk/hooks";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
 import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
@@ -78,7 +79,7 @@ export const FolderEntryView = ({
     useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
-  const dataType = useDataType(docLink.type);
+  const dataType = usePlugin<DataType>("dataTypes", docLink.type);
 
   const dataTypeDesc = getPluginFromRegistry<DataTypeDescription>(
     "dataType",

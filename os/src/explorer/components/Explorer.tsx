@@ -1,4 +1,5 @@
 import {
+  DataType,
   DataTypeImplementation,
   Tool,
   useSuggestedModuleForDocUrl,
@@ -18,6 +19,7 @@ import {
   useCurrentAccount,
   useCurrentAccountDoc,
   useRootFolderDocWithMetadata,
+  getMatchingPlugins,
 } from "@patchwork/sdk";
 import { useRouter } from "@patchwork/sdk/router";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
@@ -26,13 +28,7 @@ import { ErrorFallback, LoadingScreen } from "@patchwork/sdk/components";
 import { Sidebar } from "./sidebar/Sidebar";
 import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
-import {
-  useToolsForDataType,
-  useTool,
-  useLoadedPlugin,
-  useLoadedToolsForDataType,
-  useLoadedDataType,
-} from "@patchwork/sdk/hooks";
+import { useLoadedPlugin } from "@patchwork/sdk/hooks";
 import { useModuleWatcher } from "../hooks/useModuleWatcher";
 import { DocHandle } from "@automerge/automerge-repo";
 import { addNewDocument } from "../docActions";
@@ -116,8 +112,10 @@ export const Explorer: React.FC = () => {
 
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
-  const { dataType: selectedDataType, isLoading: isLoadingDataType } =
-    useLoadedDataType(selectedDataTypeId);
+  const { plugin: selectedDataType } = useLoadedPlugin<DataType>(
+    "dataTypes",
+    selectedDataTypeId
+  );
 
   useRunMigrationsOnceOnLoad({
     handle: selectedDocHandle,
@@ -125,7 +123,11 @@ export const Explorer: React.FC = () => {
   });
 
   // Get the list of compatible tools without loading their implementations
-  const toolsForSelection = useToolsForDataType(selectedDataTypeId);
+  const toolsForSelection = getMatchingPlugins<Tool>(
+    "tools",
+    "supportedDataTypes",
+    selectedDataTypeId
+  );
   const [selectedToolId, setSelectedToolId] = useState<string>();
 
   // Determine which tool ID to load (either selected tool or fallback to first available)

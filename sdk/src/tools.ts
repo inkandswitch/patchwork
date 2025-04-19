@@ -15,7 +15,7 @@ import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "./router/DocLink";
 import { Plugin, getPluginRegistry } from "./plugins";
-import { findMatchingPlugins } from "./plugins";
+import { getMatchingPlugins } from "./plugins";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -120,7 +120,7 @@ export const toolsForDataType = (dataType: string | undefined): Tool[] => {
     return [];
   }
 
-  return findMatchingPlugins<Tool>("tools", "supportedDataTypes", dataType);
+  return getMatchingPlugins<Tool>("tools", "supportedDataTypes", dataType);
 };
 
 /**

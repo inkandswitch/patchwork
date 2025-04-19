@@ -14,7 +14,6 @@ import {
   getPluginFromRegistry,
   toolsForDataType,
 } from "@patchwork/sdk";
-import { useDataType } from "@patchwork/sdk/hooks";
 import { type DocLink } from "@patchwork/sdk/router";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 

@@ -10,7 +10,7 @@ import {
 } from "@patchwork/sdk/versionControl";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { DataType, loadPluginFromRegistry } from "@patchwork/sdk";
-import { useAllDataTypes } from "@patchwork/sdk/hooks";
+import { usePlugins } from "@patchwork/sdk/hooks";
 import capitalize from "lodash-es/capitalize";
 import clone from "lodash-es/clone";
 import uniqBy from "lodash-es/uniqBy";
@@ -65,7 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   rootFolderDoc,
 }) => {
   const repo = useRepo();
-  const dataTypes = useAllDataTypes(); // TODO: name
+  const dataTypes = usePlugins<DataType>("dataTypes");
 
   const {
     doc: rootFolderDocWithChildren,

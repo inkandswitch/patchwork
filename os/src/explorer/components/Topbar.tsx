@@ -30,7 +30,6 @@ import {
 import React, { useRef } from "react";
 import { saveFile } from "@patchwork/sdk/files";
 import { AccountPicker } from "./AccountPicker";
-import { useLoadedDataType } from "../hooks/useDataTypeUtils";
 import {
   AUTOMERGE_SYNC_SERVER_STORAGE_ID,
   SyncIndicator,

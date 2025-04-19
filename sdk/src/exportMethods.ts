@@ -2,7 +2,7 @@ import { DataType } from "./datatypes";
 import { Doc, save } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import { loadAllPluginsFromRegistry, registerExportedPlugins } from "./plugins";
-import { findMatchingPlugins } from "./plugins";
+import { getMatchingPlugins } from "./plugins";
 
 export type ExportMethod = {
   id: string;
@@ -30,7 +30,7 @@ export const isExportMethod = (value: unknown): value is ExportMethod => {
 export const getExportMethodsForDatatype = (
   datatype: DataType
 ): ExportMethod[] => {
-  return findMatchingPlugins<ExportMethod>(
+  return getMatchingPlugins<ExportMethod>(
     "exportMethods",
     "datatypeId",
     datatype.id,
