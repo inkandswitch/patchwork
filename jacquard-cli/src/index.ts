@@ -10,17 +10,9 @@ import path from "path";
 import process from "process";
 
 import {
-  allDataTypes,
-  DataType,
-  loadDataTypeById,
-  initFrom,
-  AccountDoc,
-  ContactDoc,
-  registerImportMethod,
-  registerExportMethod,
   ExportMethod,
   ImportMethod,
-  getSystemRegistry,
+  registerExportedPlugins,
 } from "@patchwork/sdk";
 import { FolderDoc } from "@patchwork/folder";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
@@ -45,18 +37,11 @@ import { buildRunSpecFromArgs, run } from "./run";
 import { getJacquardConfig } from "./util";
 import { watch } from "./watch";
 import { watchRefreshRequests } from "./watchRefreshRequests";
-import {
-  LoadableDataType,
-  ToolDescription,
-  registerDataType,
-} from "@patchwork/sdk";
-import { Mime } from "mime";
+import { LoadableDataType, ToolDescription } from "@patchwork/sdk";
 import { login } from "./login";
 import { install } from "./install";
 import { logout } from "./logout";
 import { whoami } from "./whoami";
-import { JacquardBuildMetadata } from "@patchwork/jacquard";
-import { RunResult } from "./run";
 
 // those marked non-optional here are those with defaults provided in allFlags below
 export type CommandLineArgs = {
@@ -211,19 +196,13 @@ const main = async () => {
 
   await Promise.all([
     ...Object.entries(jacquardDataTypes).map(async ([id, importName]) => {
-      const module = (await import(importName)) as {
-        dataType: LoadableDataType<unknown>;
-        tools: ToolDescription[];
-        importMethods?: ImportMethod[];
-        exportMethods?: ExportMethod[];
-      };
-      await registerDataType(module.dataType, importName);
-      for (const method of module.importMethods ?? []) {
-        await registerImportMethod(method);
+      const module = await import(importName);
+      const plugins = { ...module };
+      if (module.dataType) {
+        plugins.dataTypes = [module.dataType];
+        delete plugins.dataType;
       }
-      for (const method of module.exportMethods ?? []) {
-        await registerExportMethod(method);
-      }
+      await registerExportedPlugins(plugins, importName);
     }),
   ]);
 

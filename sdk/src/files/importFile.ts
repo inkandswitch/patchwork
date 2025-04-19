@@ -1,9 +1,9 @@
 import { AutomergeUrl, Doc, DocHandle, Repo } from "@automerge/automerge-repo";
-import { DataType, createDocOfDataType, loadDataTypeById } from "../datatypes";
+import { DataType, createDocOfDataType } from "../datatypes";
 import { getDefaultImportMethodForDatatype } from "../importMethods";
 import { ImportMethod } from "../importMethods";
 import { DocLink } from "../router/DocLink";
-import { getAllPluginsFromRegistry } from "../plugins";
+import { getAllPluginsFromRegistry, loadPluginFromRegistry } from "../plugins";
 
 /**
  * Helper function to find the appropriate import method and datatype for a file
@@ -17,7 +17,9 @@ const getImportMethodForFile = async (
     throw new Error("File has no extension, not sure how to proceed");
   }
 
-  const dataTypes = Object.values(getAllPluginsFromRegistry<DataType>("dataTypes"));
+  const dataTypes = Object.values(
+    getAllPluginsFromRegistry<DataType>("dataTypes")
+  );
   const importMethod = dataTypes
     .map((dt) => getDefaultImportMethodForDatatype(dt))
     .find(
@@ -30,7 +32,10 @@ const getImportMethodForFile = async (
     throw new Error("No import method found for this file.");
   }
 
-  const dataType = await loadDataTypeById(importMethod.datatypeId);
+  const dataType = await loadPluginFromRegistry<DataType>(
+    "dataTypes",
+    importMethod.datatypeId
+  );
   if (!dataType) {
     throw new Error(
       `Could not find data type for import method (datatypeId: ${importMethod.datatypeId})`
@@ -92,7 +97,10 @@ export const importFile = async (
     // Get either dataType implementation or a wildcard importer function
     let importer: (text: string, fileName: string) => Promise<object>;
     if (importMethod.datatypeId !== "*") {
-      const dataType = await loadDataTypeById(importMethod.datatypeId);
+      const dataType = await loadPluginFromRegistry<DataType>(
+        "dataType",
+        importMethod.datatypeId
+      );
       if (!dataType) {
         console.warn(`Could not find data type for ${importMethod.datatypeId}`);
         return null;

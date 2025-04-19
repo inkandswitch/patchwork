@@ -2,7 +2,6 @@ import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { Account } from "../account";
 import { fetchDoc, fetchMap, fetchOm } from "../async-signals";
-import { loadDataTypeById } from "../datatypes";
 import { Om } from "../om";
 import { DocLink, DocPath, DocPathUtils } from "../router/DocLink";
 import { fetchUIStateOm } from "../router/uiState";
@@ -13,6 +12,8 @@ import {
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
 } from "./schema";
+import { loadPluginFromRegistry } from "../plugins";
+import { DataType } from "../datatypes";
 
 export const fetchVersionControlMetadataOm = (
   doc: Automerge.Doc<HasVersionControlMetadata>,
@@ -122,7 +123,11 @@ export const fetchAllLinkedDocLinks = async (
   const doc = fetchDoc(mappedUrl, repo);
 
   // Load the full data type implementation to get access to links function
-  const dataType = await loadDataTypeById(dataTypeId);
+  const dataType = await loadPluginFromRegistry<DataType>(
+    "dataTypes",
+    dataTypeId,
+    true
+  );
   if (!dataType?.links) {
     return [];
   }

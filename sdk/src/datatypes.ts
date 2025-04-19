@@ -1,4 +1,3 @@
-import EventEmitter from "eventemitter3";
 import {
   ChangeGroup,
   DecodedChangeWithMetadata,
@@ -86,21 +85,6 @@ export const isDataType = (value: unknown): value is DataType => {
     "type" in value &&
     (value as DataType).type === "patchwork:dataType"
   );
-};
-
-/**
- * Load a data type by ID
- * Returns a fully loaded data type with implementation
- * @param id The data type ID
- * @param shouldWait If true, wait for registration if not yet registered
- * @returns A Promise resolving to the loaded data type
- */
-export const loadDataTypeById = async <D = unknown, T = unknown, V = unknown>(
-  id: string | undefined,
-  shouldWait = false
-): Promise<DataType<D, T, V> | undefined> => {
-  if (!id) return undefined;
-  return loadPluginFromRegistry<DataType<D, T, V>>("dataTypes", id, shouldWait);
 };
 
 /** Creates a new document initialized with the given datatype */

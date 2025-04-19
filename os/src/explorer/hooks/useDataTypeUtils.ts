@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { DataType, loadDataTypeById } from "@patchwork/sdk";
+import { DataType, loadPluginFromRegistry } from "@patchwork/sdk";
 
 /**
  * Hook to load a data type with full implementation
@@ -30,7 +30,11 @@ export function useLoadedDataType<D = unknown, T = unknown, V = unknown>(
     setIsLoading(true);
     setError(undefined);
 
-    loadDataTypeById<D, T, V>(id, waitForRegistration)
+    loadPluginFromRegistry<DataType<D, T, V>>(
+      "dataTypes",
+      id,
+      waitForRegistration
+    )
       .then((loadedType) => {
         if (isMounted) {
           setDataType(loadedType);

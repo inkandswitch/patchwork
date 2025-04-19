@@ -1,7 +1,6 @@
 import { UIStateDoc } from "../router/uiState";
 import { Om } from "../om";
 import { DocPath, DocPathUtils } from "../router/DocLink";
-import { loadDataTypeById } from "../datatypes";
 import {
   DocCloneMap,
   ensureMetadataHandleIsBranchScope,
@@ -21,6 +20,8 @@ import {
   VersionControlSidecarDoc,
 } from "./schema";
 import { BranchScopeAndActiveBranchInfo } from "./signals";
+import { loadPluginFromRegistry } from "../plugins";
+import { DataType } from "../datatypes";
 
 type Hash = string;
 
@@ -91,7 +92,10 @@ export const cloneDocWithLinks = async (
   };
 
   // clone links
-  const dataType = await loadDataTypeById(dataTypeId);
+  const dataType = await loadPluginFromRegistry<DataType>(
+    "dataTypes",
+    dataTypeId
+  );
   if (dataType?.links) {
     const doc = handle.doc();
     const links_ = dataType.links(doc);
