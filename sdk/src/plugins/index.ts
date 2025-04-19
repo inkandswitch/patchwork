@@ -1,5 +1,4 @@
 import { PluginRegistry, Plugin, PluginDescription } from "./registry";
-import { useLoadedFilteredPlugins } from "../hooks/usePlugin";
 import { ToolDescription } from "../tools";
 import { DataTypeDescription } from "../datatypes";
 import { ImportMethod } from "../importMethods";
@@ -7,13 +6,6 @@ import { ExportMethod } from "../exportMethods";
 
 // Re-export the registry module
 export * from "./registry";
-
-/**
- * Structure for plugin exported from a module
- */
-export interface PluginsExport {
-  [key: string]: Plugin<any, any>[] | undefined;
-}
 
 // Map of plugin types to their registries
 const pluginRegistries: Record<string, PluginRegistry<any>> = {};
@@ -175,51 +167,62 @@ export function getMatchingPlugins<T extends PluginDescription>(
  * This is useful for loading plugins that support a specific type (e.g. tools for a datatype)
  * where some plugins support all types ("*") and others support specific types.
  */
-export function loadMatchingPlugins<T extends PluginDescription>(
+export async function loadMatchingPlugins<T extends PluginDescription>(
   pluginType: string,
   matchField: keyof T,
   matchValue: string | undefined,
   sortField?: keyof T,
   wait: boolean = false
-): {
+): Promise<{
   plugins: T[];
   isLoading: boolean;
   error: Error | undefined;
-} {
-  const { plugins, isLoading, error } = useLoadedFilteredPlugins<T>(
-    pluginType,
-    (plugin: T) => {
-      if (!matchValue) return false;
-      const value = plugin[matchField];
-      return value === "*" || value === matchValue;
-    },
-    wait
-  );
+}> {
+  try {
+    // Use loadAllPluginsFromRegistry with a filter function
+    const plugins = await loadAllPluginsFromRegistry<T>(
+      pluginType,
+      (plugin: PluginDescription) => {
+        if (!matchValue) return false;
+        const value = (plugin as T)[matchField];
+        return value === "*" || value === matchValue;
+      },
+      wait
+    );
 
-  // Sort the plugins if we have any
-  const sortedPlugins = plugins.sort((a: T, b: T) => {
-    // First sort by specific vs wildcard match
-    const aValue = a[matchField];
-    const bValue = b[matchField];
-    if (aValue === matchValue && bValue === "*") return -1;
-    if (aValue === "*" && bValue === matchValue) return 1;
-
-    // Then sort by optional sort field if provided
+    // Convert to array and sort if needed
+    const pluginArray = Object.values(plugins);
     if (sortField) {
-      const aSort = a[sortField];
-      const bSort = b[sortField];
-      if (aSort && !bSort) return -1;
-      if (!aSort && bSort) return 1;
+      pluginArray.sort((a, b) => {
+        const aValue = a[matchField];
+        const bValue = b[matchField];
+        // First sort by specific vs wildcard match
+        if (aValue === matchValue && bValue === "*") return -1;
+        if (aValue === "*" && bValue === matchValue) return 1;
+        // Then sort by optional sort field
+        const aSort = a[sortField];
+        const bSort = b[sortField];
+        if (aSort && !bSort) return -1;
+        if (!aSort && bSort) return 1;
+        return 0;
+      });
     }
 
-    return 0;
-  });
-
-  return {
-    plugins: sortedPlugins,
-    isLoading,
-    error,
-  };
+    return {
+      plugins: pluginArray,
+      isLoading: false,
+      error: undefined,
+    };
+  } catch (error) {
+    return {
+      plugins: [],
+      isLoading: false,
+      error:
+        error instanceof Error
+          ? error
+          : new Error("Unknown error loading plugins"),
+    };
+  }
 }
 
 /**

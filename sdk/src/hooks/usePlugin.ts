@@ -106,82 +106,6 @@ export function usePlugins<T extends Plugin>(
 }
 
 /**
- * Hook to get a filtered list of plugins
- */
-export function useFilteredPlugins<T extends Plugin>(
-  pluginType: string,
-  filterFn: (plugin: T) => boolean
-): T[] {
-  const plugins = usePlugins<T>(pluginType);
-
-  const [filteredPlugins, setFilteredPlugins] = useState<T[]>(() => {
-    // Safely handle the case where plugins might be undefined or empty
-    if (!plugins) return [];
-    return Object.values(plugins).filter(filterFn) as T[];
-  });
-
-  useEffect(() => {
-    // Safely handle the case where plugins might be undefined or empty
-    if (!plugins) {
-      setFilteredPlugins([]);
-      return;
-    }
-    setFilteredPlugins(Object.values(plugins).filter(filterFn) as T[]);
-  }, [plugins, filterFn]);
-
-  return filteredPlugins;
-}
-
-/**
- * Hook to check if a plugin exists
- */
-export function useHasPlugin(
-  pluginType: string,
-  id: string | undefined
-): boolean {
-  const [exists, setExists] = useState<boolean>(
-    id ? hasPlugin(pluginType, id) : false
-  );
-
-  useEffect(() => {
-    if (!id) {
-      setExists(false);
-      return;
-    }
-
-    // Set initial state
-    setExists(hasPlugin(pluginType, id));
-
-    // Listen for changes
-    let unsubscribe: (() => void) | null = null;
-
-    try {
-      unsubscribe = onPluginsChange(pluginType, () => {
-        setExists(hasPlugin(pluginType, id));
-      });
-    } catch (err) {
-      console.warn(
-        `Error subscribing to plugin existence changes:`,
-        err
-      );
-    }
-
-    // Return a simple function with no properties for cleanup
-    return function cleanupHasPluginListener() {
-      try {
-        if (unsubscribe && typeof unsubscribe === "function") {
-          unsubscribe();
-        }
-      } catch (err) {
-        console.warn(`Error during cleanup for has plugin ${id}:`, err);
-      }
-    };
-  }, [pluginType, id]);
-
-  return exists;
-}
-
-/**
  * Hook to get and load a plugin by ID.
  * If the plugin is loadable but not yet loaded, it will load it automatically.
  */
@@ -260,10 +184,7 @@ export function useLoadedPlugin<T extends Plugin>(
           unsubscribe();
         }
       } catch (err) {
-        console.warn(
-          `Error during cleanup for loaded plugin ${id}:`,
-          err
-        );
+        console.warn(`Error during cleanup for loaded plugin ${id}:`, err);
       }
     };
   }, [pluginType, id, loadPlugin]);
@@ -275,9 +196,7 @@ export function useLoadedPlugin<T extends Plugin>(
  * Hook to get and load all plugins of a specific type that match a filter.
  * If an plugin is loadable but not yet loaded, it will load it automatically.
  */
-export function useLoadedFilteredPlugins<
-  T extends Plugin<any, any>
->(
+export function useLoadedFilteredPlugins<T extends Plugin<any, any>>(
   pluginType: string,
   filterFn: (plugin: T) => boolean,
   wait: boolean = false
@@ -325,10 +244,7 @@ export function useLoadedFilteredPlugins<
                 results.push(loadedPlugin);
               }
             } catch (err) {
-              console.warn(
-                `Error loading plugin ${(plugin as any).id}:`,
-                err
-              );
+              console.warn(`Error loading plugin ${(plugin as any).id}:`, err);
               // Continue with other plugins
             }
           })
