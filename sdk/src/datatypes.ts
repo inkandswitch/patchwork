@@ -14,7 +14,6 @@ import { DocMigration } from "./migrations/DocMigration";
 import { HasPatchworkMetadata } from "./modules/types";
 import { DocLink } from "./router/DocLink";
 import { PluginDescription, LoadablePlugin, Plugin } from "./plugins";
-import { isPlugin } from "./plugins";
 
 // DataType implementation interface
 export type DataTypeImplementation<D = unknown, T = unknown, V = unknown> = {
@@ -73,10 +72,6 @@ export type DataType<D = unknown, T = unknown, V = unknown> = Plugin<
   DataTypeImplementation<D, T, V>
 >;
 
-export const isDataType = (value: unknown): value is DataType => {
-  return isPlugin<DataTypeDescription>(value, "patchwork:dataType");
-};
-
 /** Creates a new document initialized with the given datatype */
 export const createDocOfDataType = <D>(
   dataType: DataType<D>,
@@ -97,6 +92,7 @@ export const createDocOfDataType = <D>(
   return handle;
 };
 
+// TODO: How do we do away with this?
 /** Kinda hacky utility function to initialize an object in
  * handle.change in a type-safe way. */
 export const initFrom = <D extends object>(

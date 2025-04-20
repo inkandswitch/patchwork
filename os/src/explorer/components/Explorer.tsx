@@ -28,7 +28,7 @@ import { ErrorFallback, LoadingScreen } from "@patchwork/sdk/components";
 import { Sidebar } from "./sidebar/Sidebar";
 import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
-import { useLoadedPlugin } from "@patchwork/sdk/hooks";
+import { usePlugin } from "@patchwork/sdk/hooks";
 import { useModuleWatcher } from "../hooks/useModuleWatcher";
 import { DocHandle } from "@automerge/automerge-repo";
 import { addNewDocument } from "../docActions";
@@ -112,7 +112,7 @@ export const Explorer: React.FC = () => {
 
   const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
-  const { plugin: selectedDataType } = useLoadedPlugin<DataType>(
+  const { plugin: selectedDataType } = usePlugin<DataType>(
     "patchwork:dataType",
     selectedDataTypeId
   );
@@ -145,8 +145,10 @@ export const Explorer: React.FC = () => {
   }, [selectedToolId, toolsForSelection]);
 
   // Load only the specific tool we need
-  const { plugin: currentTool, isLoading: isLoadingTool } =
-    useLoadedPlugin<Tool>("patchwork:tool", toolIdToLoad);
+  const { plugin: currentTool, isLoading: isLoadingTool } = usePlugin<Tool>(
+    "patchwork:tool",
+    toolIdToLoad
+  );
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();

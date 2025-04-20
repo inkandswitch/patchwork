@@ -1,8 +1,3 @@
 export * from "./useScrollPosition";
 
-export {
-  usePlugin,
-  usePlugins,
-  useLoadedPlugin,
-  useLoadedFilteredPlugins,
-} from "./usePlugin";
+export { usePlugin, usePluginDescriptions } from "./usePlugin";

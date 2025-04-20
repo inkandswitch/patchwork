@@ -34,7 +34,7 @@ import {
   AUTOMERGE_SYNC_SERVER_STORAGE_ID,
   SyncIndicator,
 } from "./SyncIndicator";
-import { useLoadedPlugin } from "@patchwork/sdk/hooks";
+import { usePlugin } from "@patchwork/sdk/hooks";
 
 type TopbarProps = {
   showSidebar: boolean;
@@ -77,8 +77,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   const selectedDataTypeRef = useRef<string>();
   selectedDataTypeRef.current = selectedDataTypeId;
 
-  // Load the full data type for operations that need implementation
-  const { plugin: selectedDataType } = useLoadedPlugin<DataType>(
+  const { plugin: selectedDataType } = usePlugin<DataType>(
     "patchwork:dataType",
     selectedDataTypeId
   );
@@ -321,9 +320,3 @@ export const Topbar: React.FC<TopbarProps> = ({
     </div>
   );
 };
-function usePluginFromRegistry(
-  arg0: string,
-  selectedDataTypeId: string | undefined
-) {
-  throw new Error("Function not implemented.");
-}

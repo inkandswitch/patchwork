@@ -1,16 +1,5 @@
-import {
-  PluginRegistry,
-  Plugin,
-  PluginDescription,
-  PluginTypeMap,
-} from "./registry";
-import { ToolDescription } from "../tools";
-import { DataTypeDescription } from "../datatypes";
-import { ImportMethod } from "../importMethods";
-import { ExportMethod } from "../exportMethods";
-
-// Re-export the registry module
-export * from "./registry";
+export type { Plugin, PluginDescription } from "./registry";
+import { PluginRegistry, Plugin, PluginDescription } from "./registry";
 
 // Map of plugin types to their registries
 const pluginRegistries: Record<string, PluginRegistry<any>> = {};
@@ -18,8 +7,10 @@ const pluginRegistries: Record<string, PluginRegistry<any>> = {};
 /**
  * Get a registry for a specific plugin type, creating it if it doesn't exist
  * This implicitly registers the plugin type if it hasn't been registered yet
+ * Only used internally to this file; instead of exposing the object we use
+ * the utility functions below.
  */
-export function getPluginRegistry<T extends PluginDescription>(
+function getPluginRegistry<T extends PluginDescription>(
   pluginType: string
 ): PluginRegistry<T> {
   // If the registry doesn't exist yet, create it
@@ -28,15 +19,6 @@ export function getPluginRegistry<T extends PluginDescription>(
   }
 
   return pluginRegistries[pluginType] as PluginRegistry<T>;
-}
-
-/**
- * Get a registry for a plugin based on its type
- */
-export function getPluginRegistryByType<T extends PluginDescription>(
-  plugin: T
-): PluginRegistry<T> {
-  return getPluginRegistry<T>(plugin.type);
 }
 
 /**
