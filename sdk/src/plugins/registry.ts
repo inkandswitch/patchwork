@@ -1,5 +1,20 @@
 import EventEmitter from "eventemitter3";
 import { IconType } from "../ui";
+import { ToolDescription } from "../tools";
+import { DataTypeDescription } from "../datatypes";
+import { ImportMethod } from "../importMethods";
+import { ExportMethod } from "../exportMethods";
+
+/**
+ * Map of plugin type strings to their corresponding description types
+ */
+export type PluginTypeMap = {
+  "patchwork:tool": ToolDescription;
+  "patchwork:dataType": DataTypeDescription;
+  "patchwork:importMethod": ImportMethod;
+  "patchwork:exportMethod": ExportMethod;
+  [key: string]: PluginDescription; // Allow for user-defined plugin types
+};
 
 /**
  * Base interface for all plugin descriptions
@@ -9,7 +24,7 @@ export interface PluginDescription {
   type: string;
   name: string;
   icon?: IconType;
-  importUrl?: string; // TODO: the module loader uses this; is this the right design?
+  importUrl?: string;
 }
 
 /**
@@ -220,13 +235,6 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   }
 
   /**
-   * Get an plugin by ID
-   */
-  getPluginById(id: string): D | Plugin<D, I> | undefined {
-    return this.getById(id);
-  }
-
-  /**
    * Check if an plugin ID is registered
    */
   hasPlugin(id: string): boolean {
@@ -248,79 +256,55 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
       this.events.on("plugins:changed", callback);
 
       // Create a simple cleanup function with no additional properties
-      const cleanupFn = () => {
-        console.log("cleanupFn");
-        try {
-          // Check if the events object still exists before trying to remove the listener
-          if (this.events && typeof this.events.off === "function") {
-            this.events.off("plugins:changed", callback);
-          }
-        } catch (error) {
-          console.error("Error removing onChange listener:", error);
-        }
+      return () => {
+        this.events.off("plugins:changed", callback);
       };
-
-      // Return a pure function with no properties
-      return cleanupFn;
     } catch (error) {
-      console.error("Error registering onChange listener:", error);
+      console.warn("Error setting up plugin change listener:", error);
       return () => {}; // Return a no-op function
     }
   }
-
-  /**
-   * Check if a value is an plugin of the expected type
-   */
-  isPlugin(value: unknown): value is D | Plugin<D, I> {
-    return (
-      value !== null &&
-      typeof value === "object" &&
-      "type" in value &&
-      typeof (value as D).type === "string" &&
-      "id" in value &&
-      typeof (value as D).id === "string"
-    );
-  }
 }
 
 /**
- * Type guard to check if a value is a plugin
+ * Check if a value is a plugin, optionally of a specific type
+ * If a type is provided, it will be used to infer the correct plugin type
  */
-export function isPlugin(value: unknown): value is PluginDescription {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "type" in value &&
-    typeof (value as PluginDescription).type === "string" &&
-    "id" in value &&
-    typeof (value as PluginDescription).id === "string"
-  );
+export function isPlugin<T extends PluginDescription = PluginDescription>(
+  value: unknown,
+  pluginType?: keyof PluginTypeMap
+): value is Plugin<T> {
+  if (!value || typeof value !== "object") return false;
+  const plugin = value as Plugin;
+  if (!plugin.type || !plugin.name || !plugin.description) return false;
+  if (pluginType && plugin.type !== pluginType) return false;
+  return true;
 }
 
 /**
- * Type guard to check if a plugin has a loader
+ * Check if a value is a loadable plugin
  */
 export function isLoadablePlugin<
   D extends PluginDescription = PluginDescription,
   I = any
 >(value: unknown): value is LoadablePlugin<D, I> {
+  if (!value || typeof value !== "object") return false;
+  const plugin = value as LoadablePlugin;
   return (
-    isPlugin(value) &&
-    "load" in value &&
-    typeof (value as LoadablePlugin<D, I>).load === "function"
+    "id" in plugin &&
+    "type" in plugin &&
+    "name" in plugin &&
+    "load" in plugin &&
+    typeof plugin.load === "function"
   );
 }
 
 /**
- * Helper function to create a plugin
- * This helps ensure type safety when creating complete plugins
+ * Create a plugin by combining a description and implementation
  */
 export function createPlugin<D extends PluginDescription, I>(
   description: D,
   implementation: I
 ): Plugin<D, I> {
-  return {
-    ...description,
-    ...implementation,
-  } as Plugin<D, I>;
+  return { ...description, ...implementation } as Plugin<D, I>;
 }

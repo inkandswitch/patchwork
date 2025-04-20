@@ -1,4 +1,9 @@
-import { PluginRegistry, Plugin, PluginDescription } from "./registry";
+import {
+  PluginRegistry,
+  Plugin,
+  PluginDescription,
+  PluginTypeMap,
+} from "./registry";
 import { ToolDescription } from "../tools";
 import { DataTypeDescription } from "../datatypes";
 import { ImportMethod } from "../importMethods";
@@ -44,11 +49,11 @@ export async function registerExportedPlugins(
   // Register each group with its appropriate registry
   plugins.forEach(async (plugin) => {
     if (!plugin.type) {
-      console.log("Plugin has no type", plugin);
-      throw new Error(`Plugin has no type: ${plugin}`);
+      console.warn("Plugin has no type", plugin);
+      return;
     }
     const registry = getPluginRegistry(plugin.type);
-    registry.register(plugin, sourceModule);
+    await registry.register(plugin, sourceModule);
   });
 }
 
@@ -65,7 +70,7 @@ export function getPluginFromRegistry<T extends Plugin<any, any>>(
 
 /**
  * Load a plugin by type and ID
- * If shouldWait is true, will wait for the plugin to be registered if it isn't already available
+ * If shouldWait is true, will wait for the plugin to be registered if it isn't already
  */
 export async function loadPluginFromRegistry<T extends Plugin<any, any>>(
   pluginType: string,
@@ -224,17 +229,6 @@ export async function loadMatchingPlugins<T extends PluginDescription>(
     };
   }
 }
-
-/**
- * Map of plugin type strings to their corresponding description types
- */
-export type PluginTypeMap = {
-  "patchwork:tool": ToolDescription;
-  "patchwork:dataType": DataTypeDescription;
-  "patchwork:importMethod": ImportMethod;
-  "patchwork:exportMethod": ExportMethod;
-  [key: string]: PluginDescription; // Allow for user-defined plugin types
-};
 
 /**
  * Check if a value is a plugin, optionally of a specific type
