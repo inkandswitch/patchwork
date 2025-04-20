@@ -229,18 +229,3 @@ export async function loadMatchingPlugins<T extends PluginDescription>(
     };
   }
 }
-
-/**
- * Check if a value is a plugin, optionally of a specific type
- * If a type is provided, it will be used to infer the correct plugin type
- */
-export function isPlugin<T extends PluginDescription = PluginDescription>(
-  value: unknown,
-  pluginType?: keyof PluginTypeMap
-): value is Plugin<T> {
-  if (!value || typeof value !== "object") return false;
-  const plugin = value as Plugin;
-  if (!plugin.type || !plugin.name || !plugin.description) return false;
-  if (pluginType && plugin.type !== pluginType) return false;
-  return true;
-}
