@@ -3,7 +3,7 @@ import { DataType, createDocOfDataType } from "../datatypes";
 import { getDefaultImportMethodForDatatype } from "../importMethods";
 import { ImportMethod } from "../importMethods";
 import { DocLink } from "../router/DocLink";
-import { getAllPluginsFromRegistry, loadPluginFromRegistry } from "../plugins";
+import { getPluginsFromRegistry, loadPluginFromRegistry } from "../plugins";
 
 /**
  * Helper function to find the appropriate import method and datatype for a file
@@ -18,7 +18,7 @@ const getImportMethodForFile = async (
   }
 
   const dataTypes = Object.values(
-    getAllPluginsFromRegistry<DataType>("patchwork:dataType")
+    getPluginsFromRegistry<DataType>("patchwork:dataType")
   );
   const importMethod = dataTypes
     .map((dt) => getDefaultImportMethodForDatatype(dt))

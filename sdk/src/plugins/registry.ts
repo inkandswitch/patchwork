@@ -57,7 +57,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   private plugins = new Map<string, Plugin<D, I> | LoadablePlugin<D, I>>();
   private loadPromises = new Map<string, Promise<Plugin<D, I>>>();
   private events = new EventEmitter<{
-    "plugins:changed": (plugins: Record<string, D | Plugin<D, I>>) => void;
+    "plugins:changed": (plugins: Plugin<D, I>[]) => void;
   }>();
 
   /**
@@ -81,7 +81,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     this.plugins.set(plugin.id, loadablePlugin);
 
     // Notify listeners
-    this.events.emit("plugins:changed", this.getAllPlugins());
+    this.events.emit("plugins:changed", this.getPlugins());
   }
 
   /**
@@ -172,7 +172,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
         this.loadPromises.delete(id);
 
         // Notify listeners that an plugin has been loaded
-        this.events.emit("plugins:changed", this.getAllPlugins());
+        this.events.emit("plugins:changed", this.getPlugins());
 
         return loadedPlugin;
       });
@@ -187,9 +187,15 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
 
   /**
    * Get all plugins, both descriptions and loaded
+   * @param filter Optional filter function to determine which plugins to return
    */
-  getAllPlugins(): Record<string, D | Plugin<D, I>> {
-    return Object.fromEntries(this.plugins.entries());
+  getPlugins(filter?: (plugin: Plugin<D, I>) => boolean): Plugin<D, I>[] {
+    const entries = Array.from(this.plugins.values());
+    return filter
+      ? entries.filter((plugin): plugin is Plugin<D, I> =>
+          filter(plugin as Plugin<D, I>)
+        )
+      : (entries as Plugin<D, I>[]);
   }
 
   /**
@@ -197,13 +203,13 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
    * @param filter Optional filter function to determine which plugins to load
    * @param shouldWait Whether to wait for plugins to be registered if they aren't already
    * @param timeout Timeout in milliseconds for waiting operations
-   * @returns A promise resolving to a record of loaded plugins
+   * @returns A promise resolving to an array of loaded plugins
    */
   async loadAll(
     filter?: (plugin: D | Plugin<D, I>) => boolean,
     shouldWait = false,
     timeout = 10000
-  ): Promise<Record<string, Plugin<D, I>>> {
+  ): Promise<Plugin<D, I>[]> {
     // Get all plugins or filter them if a filter function is provided
     const pluginsToLoad = filter
       ? Array.from(this.plugins.entries()).filter(([_, plugin]) =>
@@ -215,22 +221,17 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     const loadPromises = pluginsToLoad.map(async ([id, _]) => {
       try {
         const loadedPlugin = await this.loadById(id, shouldWait, timeout);
-        return [id, loadedPlugin];
+        return loadedPlugin;
       } catch (error) {
         console.warn(`Failed to load plugin ${id}:`, error);
-        return [id, undefined];
+        return undefined;
       }
     });
 
-    // Wait for all plugins to load
+    // Wait for all plugins to load and filter out any that failed
     const results = await Promise.all(loadPromises);
-
-    // Filter out any plugins that failed to load and convert to a record
-    return Object.fromEntries(
-      results.filter(([_, plugin]) => plugin !== undefined) as [
-        string,
-        Plugin<D, I>
-      ][]
+    return results.filter(
+      (plugin): plugin is Awaited<Plugin<D, I>> => plugin !== undefined
     );
   }
 
@@ -244,9 +245,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   /**
    * Subscribe to plugin changes
    */
-  onChange(
-    callback: (plugins: Record<string, D | Plugin<D, I>>) => void
-  ): () => void {
+  onChange(callback: (plugins: Plugin<D, I>[]) => void): () => void {
     if (!callback || typeof callback !== "function") {
       console.warn("Invalid callback provided to PluginRegistry.onChange");
       return () => {}; // Return a no-op function
@@ -265,7 +264,6 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     }
   }
 }
-
 /**
  * Check if a value is a plugin, optionally of a specific type
  * If a type is provided, it will be used to infer the correct plugin type
@@ -276,7 +274,7 @@ export function isPlugin<T extends PluginDescription = PluginDescription>(
 ): value is Plugin<T> {
   if (!value || typeof value !== "object") return false;
   const plugin = value as Plugin;
-  if (!plugin.type || !plugin.name || !plugin.description) return false;
+  if (!plugin.type || !plugin.name || !plugin.id) return false;
   if (pluginType && plugin.type !== pluginType) return false;
   return true;
 }
@@ -307,4 +305,69 @@ export function createPlugin<D extends PluginDescription, I>(
   implementation: I
 ): Plugin<D, I> {
   return { ...description, ...implementation } as Plugin<D, I>;
+}
+
+/**
+ * Create a filter function that matches plugins based on a field value
+ */
+export function matchPlugins<T extends PluginDescription>(
+  matchField: keyof T,
+  matchValue: string | undefined
+): (plugin: T) => boolean {
+  return (plugin: T) => {
+    if (!matchValue) return false;
+    const value = plugin[matchField];
+
+    // Handle array values
+    if (Array.isArray(value)) {
+      return value.includes("*") || value.includes(matchValue);
+    }
+
+    // Handle string values
+    return value === "*" || value === matchValue;
+  };
+}
+
+/**
+ * Sort plugins based on a field value
+ */
+export function sortPlugins<T extends PluginDescription>(
+  plugins: T[],
+  matchField: keyof T,
+  matchValue: string | undefined,
+  sortField?: keyof T
+): T[] {
+  return [...plugins].sort((a, b) => {
+    // First sort by specific vs wildcard match
+    const aValue = a[matchField];
+    const bValue = b[matchField];
+
+    // Handle array values
+    if (Array.isArray(aValue) && Array.isArray(bValue)) {
+      const aHasMatch = aValue.includes(matchValue);
+      const bHasMatch = bValue.includes(matchValue);
+      const aHasWildcard = aValue.includes("*");
+      const bHasWildcard = bValue.includes("*");
+
+      // Prioritize specific matches over wildcards
+      if (aHasMatch && !bHasMatch) return -1;
+      if (!aHasMatch && bHasMatch) return 1;
+      if (aHasWildcard && !bHasWildcard) return 1;
+      if (!aHasWildcard && bHasWildcard) return -1;
+    } else {
+      // Handle string values
+      if (aValue === matchValue && bValue === "*") return -1;
+      if (aValue === "*" && bValue === matchValue) return 1;
+    }
+
+    // Then sort by optional sort field if provided
+    if (sortField) {
+      const aSort = a[sortField];
+      const bSort = b[sortField];
+      if (aSort && !bSort) return -1;
+      if (!aSort && bSort) return 1;
+    }
+
+    return 0;
+  });
 }

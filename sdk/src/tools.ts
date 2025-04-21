@@ -136,10 +136,11 @@ export const findCompatibleToolForDataType = (
     return currentTool;
   }
 
-  const tool: Tool | undefined = getMatchingPlugins<Tool>(
+  const { plugins } = getMatchingPlugins<Tool>(
     "patchwork:tool",
     "supportedDataTypes",
     dataTypeId
-  )[0];
-  return tool;
+  );
+
+  return plugins[0];
 };

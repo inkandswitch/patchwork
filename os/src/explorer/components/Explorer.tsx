@@ -3,6 +3,7 @@ import {
   DataTypeImplementation,
   Tool,
   useSuggestedModuleForDocUrl,
+  getMatchingPlugins,
 } from "@patchwork/sdk";
 import { type DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { Toaster } from "@patchwork/sdk/ui";
@@ -19,7 +20,6 @@ import {
   useCurrentAccount,
   useCurrentAccountDoc,
   useRootFolderDocWithMetadata,
-  getMatchingPlugins,
 } from "@patchwork/sdk";
 import { useRouter } from "@patchwork/sdk/router";
 import { useSyncDocTitle } from "../hooks/useSyncDocTitle";
@@ -123,7 +123,7 @@ export const Explorer: React.FC = () => {
   });
 
   // Get the list of compatible tools without loading their implementations
-  const toolsForSelection = getMatchingPlugins<Tool>(
+  const { plugins: toolsForSelection } = getMatchingPlugins<Tool>(
     "patchwork:tool",
     "supportedDataTypes",
     selectedDataTypeId

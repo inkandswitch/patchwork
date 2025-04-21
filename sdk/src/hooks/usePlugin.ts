@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Plugin,
+  PluginDescription,
   getPluginFromRegistry,
-  getAllPluginsFromRegistry,
+  getPluginsFromRegistry,
   onPluginsChange,
-  loadPluginFromRegistry,
   isLoadablePlugin,
+  loadPluginFromRegistry,
 } from "../plugins";
 
 /**
@@ -16,7 +17,7 @@ import {
  * @param options.load Whether to load the plugin if it's loadable. Defaults to true.
  * @param options.wait Whether to wait for the plugin to be registered if it isn't already. Defaults to false.
  */
-export function usePlugin<T extends Plugin>(
+export function usePlugin<T extends Plugin<PluginDescription>>(
   pluginType: string,
   id: string | undefined,
   options: { load?: boolean; wait?: boolean } = {}
@@ -38,23 +39,18 @@ export function usePlugin<T extends Plugin>(
     try {
       setIsLoading(true);
       setError(undefined);
-
-      // Try to get the plugin normally first
-      let Plugin = getPluginFromRegistry<T>(pluginType, id);
-
-      // If not found or is a loadable plugin and load is true, load it
-      if (load && (!Plugin || isLoadablePlugin(Plugin))) {
-        Plugin = await loadPluginFromRegistry<T>(pluginType, id, wait);
-      }
-
-      setPlugin(Plugin);
+      const loadedPlugin = await loadPluginFromRegistry<T>(
+        pluginType,
+        id,
+        wait
+      );
+      setPlugin(loadedPlugin);
     } catch (err) {
-      console.error(`Error loading plugin ${id}:`, err);
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setIsLoading(false);
     }
-  }, [pluginType, id, load, wait]);
+  }, [pluginType, id, wait]);
 
   useEffect(() => {
     if (!id) {
@@ -64,44 +60,30 @@ export function usePlugin<T extends Plugin>(
       return;
     }
 
-    // Try to load immediately if load is true
-    if (load) {
+    // Get initial plugin state
+    const initialPlugin = getPluginFromRegistry<T>(pluginType, id);
+    setPlugin(initialPlugin);
+
+    // Load if needed
+    if (load && (!initialPlugin || isLoadablePlugin(initialPlugin))) {
       loadPlugin();
-    } else {
-      // Just get the plugin without loading
-      setPlugin(getPluginFromRegistry<T>(pluginType, id));
     }
 
-    // Listen for changes to the plugin
-    let unsubscribe: (() => void) | null = null;
-
-    try {
-      unsubscribe = onPluginsChange<T>(pluginType, (plugins) => {
-        if (plugins && plugins[id]) {
-          const updatedPlugin = plugins[id];
-
-          // If the plugin exists but needs loading and load is true, load it
-          if (load && isLoadablePlugin(updatedPlugin)) {
-            loadPlugin();
-          } else {
-            // It's already fully loaded or we don't want to load it
-            setPlugin(updatedPlugin);
-          }
+    // Subscribe to plugin changes
+    const unsubscribe = onPluginsChange<T>(pluginType, (plugins) => {
+      const updatedPlugin = plugins.find(
+        (p) => (p as PluginDescription).id === id
+      );
+      if (updatedPlugin) {
+        if (load && isLoadablePlugin(updatedPlugin)) {
+          loadPlugin();
+        } else {
+          setPlugin(updatedPlugin);
         }
-      });
-    } catch (err) {
-      console.warn(`Error subscribing to plugin changes:`, err);
-    }
-
-    return function cleanupPluginListener() {
-      try {
-        if (unsubscribe && typeof unsubscribe === "function") {
-          unsubscribe();
-        }
-      } catch (err) {
-        console.warn(`Error during cleanup for plugin ${id}:`, err);
       }
-    };
+    });
+
+    return () => unsubscribe();
   }, [pluginType, id, load, loadPlugin]);
 
   return { plugin, isLoading, error };
@@ -111,41 +93,21 @@ export function usePlugin<T extends Plugin>(
  * Hook to get all plugin descriptions of a specific type
  * @param pluginType The type of plugins to get
  */
-export function usePluginDescriptions<T extends Plugin>(
+export function usePluginDescriptions<T extends Plugin<PluginDescription>>(
   pluginType: string
-): Record<string, T> {
-  const [plugins, setPlugins] = useState<Record<string, T>>(
-    getAllPluginsFromRegistry<T>(pluginType) || {}
-  );
+): T[] {
+  const [plugins, setPlugins] = useState<T[]>([]);
 
   useEffect(() => {
     // Initial fetch
-    setPlugins(getAllPluginsFromRegistry<T>(pluginType) || {});
+    setPlugins(getPluginsFromRegistry<T>(pluginType));
 
     // Listen for changes
-    let unsubscribe: (() => void) | null = null;
+    const unsubscribe = onPluginsChange<T>(pluginType, (newPlugins) => {
+      setPlugins(newPlugins);
+    });
 
-    try {
-      unsubscribe = onPluginsChange<T>(pluginType, (newPlugins) => {
-        if (newPlugins) {
-          setPlugins(newPlugins);
-        } else {
-          setPlugins({});
-        }
-      });
-    } catch (err) {
-      console.warn(`Error subscribing to plugins changes:`, err);
-    }
-
-    return function cleanupPluginsListener() {
-      try {
-        if (unsubscribe && typeof unsubscribe === "function") {
-          unsubscribe();
-        }
-      } catch (err) {
-        console.warn(`Error during cleanup for plugins:`, err);
-      }
-    };
+    return () => unsubscribe();
   }, [pluginType]);
 
   return plugins;

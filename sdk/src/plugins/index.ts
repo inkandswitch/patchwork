@@ -1,5 +1,12 @@
-export type { Plugin, PluginDescription } from "./registry";
-import { PluginRegistry, Plugin, PluginDescription } from "./registry";
+export type { Plugin, LoadablePlugin, PluginDescription } from "./registry";
+export { isLoadablePlugin, isPlugin } from "./registry";
+import {
+  PluginRegistry,
+  Plugin,
+  PluginDescription,
+  matchPlugins,
+  sortPlugins,
+} from "./registry";
 
 // Map of plugin types to their registries
 const pluginRegistries: Record<string, PluginRegistry<any>> = {};
@@ -66,12 +73,31 @@ export async function loadPluginFromRegistry<T extends Plugin<any, any>>(
 
 /**
  * Get all registered plugins of a specific type
+ * @param pluginType The type of plugins to get
+ * @param filter Optional filter function to determine which plugins to return
  */
-export function getAllPluginsFromRegistry<T extends Plugin<any, any>>(
-  pluginType: string
-): Record<string, T> {
+export function getPluginsFromRegistry<T extends Plugin<any, any>>(
+  pluginType: string,
+  filter?: (plugin: PluginDescription) => boolean
+): T[] {
   const registry = getPluginRegistry<any>(pluginType);
-  return registry.getAllPlugins();
+  return registry.getPlugins(filter) as T[];
+}
+
+/**
+ * Load all registered plugins for a given type, returning them
+ * @param pluginType The plugin registry type: tools, dataTypes, etc
+ * @param filter Optional filter function to determine which plugins to load
+ * @param shouldWait Whether to wait for plugins to be registered if they aren't already
+ * @returns A Promise resolving to an array of plugins
+ */
+export async function loadAllPluginsFromRegistry<T extends Plugin<any, any>>(
+  pluginType: string,
+  filter?: (plugin: PluginDescription) => boolean,
+  shouldWait = false
+): Promise<T[]> {
+  const registry = getPluginRegistry(pluginType);
+  return registry.loadAll(filter, shouldWait) as Promise<T[]>;
 }
 
 /**
@@ -87,26 +113,10 @@ export function hasPlugin(pluginType: string, id: string): boolean {
  */
 export function onPluginsChange<T extends Plugin<any, any>>(
   pluginType: string,
-  callback: (plugins: Record<string, T>) => void
+  callback: (plugins: T[]) => void
 ): () => void {
   const registry = getPluginRegistry(pluginType);
-  return registry.onChange(callback as any);
-}
-
-/**
- * Load all registered plugins for a given type, returning them
- * @param pluginType The plugin registry type: tools, dataTypes, etc
- * @param filter Optional filter function to determine which plugins to load
- * @param shouldWait Whether to wait for plugins to be registered if they aren't already
- * @returns A Promise resolving to a record of plugins
- */
-export async function loadAllPluginsFromRegistry<T extends Plugin<any, any>>(
-  pluginType: string,
-  filter?: (plugin: PluginDescription) => boolean,
-  shouldWait = false
-): Promise<Record<string, T>> {
-  const registry = getPluginRegistry(pluginType);
-  return registry.loadAll(filter, shouldWait) as Promise<Record<string, T>>;
+  return registry.onChange(callback);
 }
 
 /**
@@ -119,34 +129,30 @@ export function getMatchingPlugins<T extends PluginDescription>(
   matchField: keyof T,
   matchValue: string | undefined,
   sortField?: keyof T
-): T[] {
-  if (!matchValue) return [];
+): { plugins: T[]; error: Error | undefined } {
+  try {
+    const registry = getPluginRegistry<T>(pluginType);
+    const plugins = registry.getPlugins(matchPlugins(matchField, matchValue));
+    const sortedPlugins = sortPlugins(
+      plugins,
+      matchField,
+      matchValue,
+      sortField
+    );
 
-  const registry = getPluginRegistry<T>(pluginType);
-  const plugins = Object.values(registry.getAllPlugins());
-
-  return plugins
-    .filter((plugin) => {
-      const value = plugin[matchField];
-      return value === "*" || value === matchValue;
-    })
-    .sort((a, b) => {
-      // First sort by specific vs wildcard match
-      const aValue = a[matchField];
-      const bValue = b[matchField];
-      if (aValue === matchValue && bValue === "*") return -1;
-      if (aValue === "*" && bValue === matchValue) return 1;
-
-      // Then sort by optional sort field if provided
-      if (sortField) {
-        const aSort = a[sortField];
-        const bSort = b[sortField];
-        if (aSort && !bSort) return -1;
-        if (!aSort && bSort) return 1;
-      }
-
-      return 0;
-    });
+    return {
+      plugins: sortedPlugins,
+      error: undefined,
+    };
+  } catch (error) {
+    return {
+      plugins: [],
+      error:
+        error instanceof Error
+          ? error
+          : new Error("Unknown error getting plugins"),
+    };
+  }
 }
 
 /**
@@ -162,48 +168,28 @@ export async function loadMatchingPlugins<T extends PluginDescription>(
   wait: boolean = false
 ): Promise<{
   plugins: T[];
-  isLoading: boolean;
   error: Error | undefined;
 }> {
   try {
-    // Use loadAllPluginsFromRegistry with a filter function
-    const plugins = await loadAllPluginsFromRegistry<T>(
-      pluginType,
-      (plugin: PluginDescription) => {
-        if (!matchValue) return false;
-        const value = (plugin as T)[matchField];
-        return value === "*" || value === matchValue;
-      },
+    const registry = getPluginRegistry(pluginType);
+    const plugins = await registry.loadAll(
+      matchPlugins(matchField, matchValue),
       wait
     );
-
-    // Convert to array and sort if needed
-    const pluginArray = Object.values(plugins);
-    if (sortField) {
-      pluginArray.sort((a, b) => {
-        const aValue = a[matchField];
-        const bValue = b[matchField];
-        // First sort by specific vs wildcard match
-        if (aValue === matchValue && bValue === "*") return -1;
-        if (aValue === "*" && bValue === matchValue) return 1;
-        // Then sort by optional sort field
-        const aSort = a[sortField];
-        const bSort = b[sortField];
-        if (aSort && !bSort) return -1;
-        if (!aSort && bSort) return 1;
-        return 0;
-      });
-    }
+    const sortedPlugins = sortPlugins(
+      plugins,
+      matchField,
+      matchValue,
+      sortField
+    );
 
     return {
-      plugins: pluginArray,
-      isLoading: false,
+      plugins: sortedPlugins,
       error: undefined,
     };
   } catch (error) {
     return {
       plugins: [],
-      isLoading: false,
       error:
         error instanceof Error
           ? error

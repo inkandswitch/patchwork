@@ -64,7 +64,7 @@ export class ModuleWatcher {
         return [value];
       }
       if (Array.isArray(value)) {
-        return value.filter((v): v is Plugin => isPlugin(v));
+        return value.filter((v: any): v is Plugin => isPlugin(v));
       }
       return [];
     });

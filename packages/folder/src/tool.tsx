@@ -80,18 +80,22 @@ export const FolderEntryView = ({
     useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
-  const dataType = usePlugin<DataType>("patchwork:dataType", docLink.type);
+  const { plugin: dataType } = usePlugin<DataType>(
+    "patchwork:dataType",
+    docLink.type
+  );
 
   const dataTypeDesc = getPluginFromRegistry<DataTypeDescription>(
     "dataType",
     docLink.type
   );
 
-  const tool: Tool | undefined = getMatchingPlugins<Tool>(
+  const { plugins } = getMatchingPlugins<Tool>(
     "patchwork:tool",
     "supportedDataTypes",
     docLink.type
-  )[0];
+  );
+  const tool = plugins[0];
 
   const icon = tool?.icon ?? dataTypeDesc?.icon;
 

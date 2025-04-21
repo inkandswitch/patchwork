@@ -111,7 +111,10 @@ export const VersionControlEditor: React.FC<{
   const diff = diffFromTimelineSidebar ?? branchDiff;
 
   // Use the hook to get and load the data type
-  const dataType = usePlugin<DataType>("patchwork:dataType", docLink.type);
+  const { plugin: dataType } = usePlugin<DataType>(
+    "patchwork:dataType",
+    docLink.type
+  );
 
   const branchOms = branchScopeAndActiveBranchInfo?.branchOms;
   const branchScopeUrl = branchScopeAndActiveBranchInfo?.branchScopeOm?.url;
