@@ -9,16 +9,24 @@ Patchwork is a malleable, local-first collaboration environment in the browser. 
 - **Plugin**: A modular component that can be a data type, tool, import method, or export method. Plugins can be loaded dynamically and are managed by the plugin registry.
 
 ## Plugin System
+The Patchwork plugin system is a runtime extensible architecture that allows user-developers to contribute code to various places in the project. The most obvious example of this is "tools" and "data types", which are run-time loaded document schemas and editors that can be contributed as part of modules. These modules can be loaded from anywhere, but are generally either bundled into the distribution (for some core types and tools) or loaded from folders of files at runtime using module-watcher.
 
-Patchwork features a flexible plugin architecture that allows for dynamic registration and consumption of system elements. The plugin system is built around the following key components:
+### Plugins
+A plugin looks minimally like this:
 
-### Plugin Registry
+```
+export interface PluginDescription {
+  id: string;
+  type: string;
+  name: string;
+  icon?: IconType;
+  importUrl?: string;
+}
+```
 
-The `PluginRegistry` class manages plugins of a specific type, providing methods for:
-- Registering new plugins
-- Loading plugins on demand
-- Filtering and sorting plugins
-- Subscribing to plugin changes
+The id defines an internal name used for deduplication, the type is used to discover plugins, the name and icon are used in user-facing contexts and the importUrl is written into new documents so that it can be discovered automatically on shared links.
+
+Plugins should be exported from the entry point for a module as an array called `plugins`.
 
 ### Plugin Types
 
@@ -28,15 +36,9 @@ The system supports several built-in plugin types:
 - `patchwork:importMethod`: Ways to import files into documents
 - `patchwork:exportMethod`: Ways to export documents to files
 
-### Plugin Matching and Sorting
+### Plugin Discovery
 
-The system includes sophisticated plugin matching and sorting capabilities:
-- Plugins can be filtered based on field values
-- Array values (like `supportedDataTypes`) are handled specially
-- Wildcard matches ("*") are supported
-- Plugins can be sorted by specificity (specific matches before wildcards)
-
-Datatypes and tools are exported from JavaScript modules. At runtime, Patchwork can load arbitrary JS modules stored in an Automerge document (or at any URL). There are also some "built-in" modules which are built into the OS bundle directly. Over time we plan to move all modules to loading dynamically out of Automerge; the built-ins are there for historical legacy / convenience as we bootstrap.
+Plugins can be loaded using either hooks or pure JS functions. See `usePlugin()` and `usePluginDescriptions()` for example use in React. For the most common cases in non-react contexts you can use `getPluginFromRegistry(type, id)` or `getMatchingPlugins()`. 
 
 ## Development
 
