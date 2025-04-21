@@ -9,7 +9,7 @@ import fs from "fs";
 import path from "path";
 import process from "process";
 
-import { registerExportedPlugins, isPlugin } from "@patchwork/sdk";
+import { registerPlugins, isPlugin } from "@patchwork/sdk";
 import { AutomergeUrl, Repo, StorageId } from "@automerge/automerge-repo";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { NodeFSStorageAdapter } from "@automerge/automerge-repo-storage-nodefs";
@@ -193,7 +193,7 @@ const main = async () => {
         }
         return [];
       });
-      await registerExportedPlugins(plugins, importName);
+      await registerPlugins(plugins, importName);
     }),
   ]);
 

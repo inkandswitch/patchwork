@@ -7,7 +7,7 @@ import {
   Repo,
 } from "@automerge/automerge-repo";
 import { importModuleFromFolderDocUrl } from "./utils";
-import { registerExportedPlugins, isPlugin } from "../plugins";
+import { registerPlugins, isPlugin } from "../plugins";
 
 /**
  * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
@@ -68,7 +68,7 @@ export class ModuleWatcher {
       }
       return [];
     });
-    registerExportedPlugins(plugins, importName);
+    registerPlugins(plugins, importName);
   }
 
   // TODO: This is a bit janky and relies on a bunch of heuristics.

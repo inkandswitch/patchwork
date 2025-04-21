@@ -31,7 +31,7 @@ function getPluginRegistry<T extends PluginDescription>(
 /**
  * Register plugins for a specific plugin type
  */
-export async function registerExportedPlugins(
+export async function registerPlugins(
   plugins: Plugin<any, any>[],
   sourceModule: string
 ): Promise<void> {

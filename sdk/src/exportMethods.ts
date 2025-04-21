@@ -1,7 +1,7 @@
 import { DataType } from "./datatypes";
 import { Doc, save } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
-import { getMatchingPlugins, registerExportedPlugins } from "./plugins";
+import { getMatchingPlugins, registerPlugins } from "./plugins";
 
 export type ExportMethod = {
   id: string;
@@ -74,4 +74,4 @@ export const jsonExport: ExportMethod = {
 
 // Register the generic methods
 // TODO: maybe these should be somewhere else?
-registerExportedPlugins([automergeExport, jsonExport], "exportMethods.ts");
+registerPlugins([automergeExport, jsonExport], "exportMethods.ts");
