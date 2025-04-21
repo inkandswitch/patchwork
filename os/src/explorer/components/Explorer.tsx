@@ -122,32 +122,37 @@ export const Explorer: React.FC = () => {
     dataType: selectedDataType,
   });
 
-  // Get the list of compatible tools without loading their implementations
   const { plugins: toolsForSelection } = getMatchingPlugins<Tool>(
     "patchwork:tool",
     "supportedDataTypes",
-    selectedDataTypeId
+    selectedDataTypeId,
+    "name"
   );
-  const [selectedToolId, setSelectedToolId] = useState<string>();
 
-  // Determine which tool ID to load (either selected tool or fallback to first available)
-  const toolIdToLoad = React.useMemo(() => {
-    // If there's a selected tool ID and it's in the list of compatible tools, use it
-    if (
-      selectedToolId &&
-      toolsForSelection.some((tool) => tool.id === selectedToolId)
-    ) {
-      return selectedToolId;
-    }
+  // Track the selected tool ID in state
+  const [selectedToolId, setSelectedToolId] = useState(
+    toolsForSelection[0]?.id
+  );
 
-    // Otherwise, use the first compatible tool
-    return toolsForSelection.length > 0 ? toolsForSelection[0].id : undefined;
-  }, [selectedToolId, toolsForSelection]);
+  // Reset tool selection when document changes
+  useEffect(() => {
+    setSelectedToolId(toolsForSelection[0]?.id);
+  }, [selectedDocPath, toolsForSelection]);
 
-  // Load only the specific tool we need
+  // Use the selected tool
   const { plugin: currentTool, isLoading: isLoadingTool } = usePlugin<Tool>(
     "patchwork:tool",
-    toolIdToLoad
+    selectedToolId
+  );
+
+  const handleToolChange = useCallback(
+    (toolId: string) => {
+      const newTool = toolsForSelection.find((t) => t.id === toolId);
+      if (newTool) {
+        setSelectedToolId(toolId);
+      }
+    },
+    [toolsForSelection]
   );
 
   const uiStateOm = useUIStateOm();
@@ -259,9 +264,9 @@ export const Explorer: React.FC = () => {
               selectedDocHandle={selectedDocHandle}
               removeDocPath={removeDocPathCallback}
               addNewDocument={addNewDoc}
-              setToolId={setSelectedToolId}
               tool={currentTool}
               tools={toolsForSelection}
+              onToolChange={handleToolChange}
               docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
             />
             <div className="flex-grow overflow-hidden z-0">

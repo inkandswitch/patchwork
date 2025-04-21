@@ -331,43 +331,50 @@ export function matchPlugins<T extends PluginDescription>(
 /**
  * Sort plugins based on a field value
  */
-export function sortPlugins<T extends PluginDescription>(
+export const sortPlugins = <
+  T extends Plugin<D, I>,
+  D extends PluginDescription,
+  I
+>(
   plugins: T[],
-  matchField: keyof T,
-  matchValue: string | undefined,
-  sortField?: keyof T
-): T[] {
+  matchField: keyof D,
+  matchValue: string,
+  sortField?: keyof D
+): T[] => {
   return [...plugins].sort((a, b) => {
-    // First sort by specific vs wildcard match
     const aValue = a[matchField];
     const bValue = b[matchField];
 
-    // Handle array values
-    if (Array.isArray(aValue) && Array.isArray(bValue)) {
-      const aHasMatch = aValue.includes(matchValue);
-      const bHasMatch = bValue.includes(matchValue);
-      const aHasWildcard = aValue.includes("*");
-      const bHasWildcard = bValue.includes("*");
+    // Convert string values to arrays for consistent comparison
+    const aArray = Array.isArray(aValue)
+      ? (aValue as string[])
+      : [aValue as string];
+    const bArray = Array.isArray(bValue)
+      ? (bValue as string[])
+      : [bValue as string];
 
-      // Prioritize specific matches over wildcards
-      if (aHasMatch && !bHasMatch) return -1;
-      if (!aHasMatch && bHasMatch) return 1;
-      if (aHasWildcard && !bHasWildcard) return 1;
-      if (!aHasWildcard && bHasWildcard) return -1;
-    } else {
-      // Handle string values
-      if (aValue === matchValue && bValue === "*") return -1;
-      if (aValue === "*" && bValue === matchValue) return 1;
-    }
+    const aHasWildcard = aArray.includes("*");
+    const bHasWildcard = bArray.includes("*");
+    const aHasMatch = aArray.includes(matchValue);
+    const bHasMatch = bArray.includes(matchValue);
 
-    // Then sort by optional sort field if provided
+    // Specific matches come first
+    if (aHasMatch && !bHasMatch) return -1;
+    if (!aHasMatch && bHasMatch) return 1;
+
+    // Then wildcard matches come last
+    if (aHasWildcard && !bHasWildcard) return 1;
+    if (!aHasWildcard && bHasWildcard) return -1;
+
+    // If both are wildcards or both are specific matches, sort by the optional sort field
     if (sortField) {
       const aSort = a[sortField];
       const bSort = b[sortField];
-      if (aSort && !bSort) return -1;
-      if (!aSort && bSort) return 1;
+      if (typeof aSort === "string" && typeof bSort === "string") {
+        return aSort.localeCompare(bSort);
+      }
     }
 
     return 0;
   });
-}
+};
