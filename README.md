@@ -4,8 +4,37 @@ Patchwork is a malleable, local-first collaboration environment in the browser. 
 
 ## Key Concepts
 
-- **Datatype**: A "file format" or "schema" for automerge documents. eg: markdown, drawing. In addition to a schema, a datatype also defines some useful functionality that's not tied to a particular UI: e.g., how to initialize a new document of that type.
-- **Tool**: a UI for viewing and editing documents. eg: markdown editor, tldraw canvas, raw json editor.
+- **Data Type**: A "file format" or "schema" for automerge documents. eg: markdown, drawing. In addition to a schema, a data type also defines some useful functionality that's not tied to a particular UI: e.g., how to initialize a new document of that type.
+- **Tool**: A UI for viewing and editing documents. eg: markdown editor, spreadsheet, raw json editor.
+- **Plugin**: A modular component that can be a data type, tool, import method, or export method. Plugins can be loaded dynamically and are managed by the plugin registry.
+
+## Plugin System
+
+Patchwork features a flexible plugin architecture that allows for dynamic registration and consumption of system elements. The plugin system is built around the following key components:
+
+### Plugin Registry
+
+The `PluginRegistry` class manages plugins of a specific type, providing methods for:
+- Registering new plugins
+- Loading plugins on demand
+- Filtering and sorting plugins
+- Subscribing to plugin changes
+
+### Plugin Types
+
+The system supports several built-in plugin types:
+- `patchwork:tool`: UI components for editing documents
+- `patchwork:dataType`: Document schemas and behaviors
+- `patchwork:importMethod`: Ways to import files into documents
+- `patchwork:exportMethod`: Ways to export documents to files
+
+### Plugin Matching and Sorting
+
+The system includes sophisticated plugin matching and sorting capabilities:
+- Plugins can be filtered based on field values
+- Array values (like `supportedDataTypes`) are handled specially
+- Wildcard matches ("*") are supported
+- Plugins can be sorted by specificity (specific matches before wildcards)
 
 Datatypes and tools are exported from JavaScript modules. At runtime, Patchwork can load arbitrary JS modules stored in an Automerge document (or at any URL). There are also some "built-in" modules which are built into the OS bundle directly. Over time we plan to move all modules to loading dynamically out of Automerge; the built-ins are there for historical legacy / convenience as we bootstrap.
 
