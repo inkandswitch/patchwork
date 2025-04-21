@@ -14,7 +14,7 @@ import {
 import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "./router/DocLink";
-import { Plugin } from "./plugins";
+import { getPluginFromRegistry, Plugin } from "./plugins";
 import { getMatchingPlugins } from "./plugins";
 
 // To construct well-typed tools, we need ToolTyped with specific type
@@ -104,43 +104,4 @@ export type AnnotationsViewProps<
   doc: D;
   handle: DocHandle<D>;
   annotations: Annotation<TAnchor, TAnchorValue>[];
-};
-
-/**
- * Check if a tool is compatible with a given data type
- */
-export const isToolCompatibleWithDataType = (
-  tool: Tool | undefined,
-  dataTypeId: string | undefined
-): boolean => {
-  if (!tool || !dataTypeId) return false;
-
-  return (
-    tool.supportedDataTypes === "*" ||
-    (Array.isArray(tool.supportedDataTypes) &&
-      tool.supportedDataTypes.includes(dataTypeId))
-  );
-};
-
-/**
- * Find the best compatible tool for a data type from a list of tools
- * If the currently selected tool is compatible, it will be returned
- * Otherwise, the first compatible tool will be returned
- */
-export const findCompatibleToolForDataType = (
-  currentTool: Tool | undefined,
-  dataTypeId: string | undefined
-): Tool | undefined => {
-  // If current tool is compatible, keep using it
-  if (isToolCompatibleWithDataType(currentTool, dataTypeId)) {
-    return currentTool;
-  }
-
-  const { plugins } = getMatchingPlugins<Tool>(
-    "patchwork:tool",
-    "supportedDataTypes",
-    dataTypeId
-  );
-
-  return plugins[0];
 };

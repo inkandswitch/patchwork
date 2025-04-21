@@ -4,6 +4,7 @@ import {
   Tool,
   useSuggestedModuleForDocUrl,
   getMatchingPlugins,
+  getPluginFromRegistry,
 } from "@patchwork/sdk";
 import { type DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { Toaster } from "@patchwork/sdk/ui";
@@ -77,6 +78,49 @@ const useRunMigrationsOnceOnLoad = ({
   }, [handle, doc, dataType, repo]);
 };
 
+/**
+ * Check if a tool is compatible with a given data type
+ */
+const isToolCompatibleWithDataType = (
+  tool: Tool | undefined,
+  dataTypeId: string | undefined
+): boolean => {
+  if (!tool || !dataTypeId) return false;
+
+  return (
+    tool.supportedDataTypes === "*" ||
+    (Array.isArray(tool.supportedDataTypes) &&
+      tool.supportedDataTypes.includes(dataTypeId))
+  );
+};
+
+/**
+ * Find the best compatible tool for a data type from a list of tools
+ * If the currently selected tool is compatible, it will be returned
+ * Otherwise, the first compatible tool will be returned
+ */
+const findCompatibleToolForDataType = (
+  currentToolId: string | undefined,
+  dataTypeId: string | undefined
+): string | undefined => {
+  if (currentToolId) {
+    const tool = getPluginFromRegistry<Tool>("patchwork:tool", currentToolId);
+    // If current tool is compatible, keep using it
+    if (tool && isToolCompatibleWithDataType(tool, dataTypeId)) {
+      return tool.id;
+    }
+  }
+
+  // Otherwise, find the first compatible tool
+  const { plugins } = getMatchingPlugins<Tool>(
+    "patchwork:tool",
+    "supportedDataTypes",
+    dataTypeId
+  );
+
+  return plugins[0]?.id;
+};
+
 export const Explorer: React.FC = () => {
   const repo = useRepo();
   const [accountDoc] = useCurrentAccountDoc();
@@ -110,7 +154,6 @@ export const Explorer: React.FC = () => {
     window.flatDocPaths = flatDocPaths;
   }, [selectedDocHandle, flatDocPaths]);
 
-  const selectedDocName = selectedDocLink?.name;
   const selectedDataTypeId = selectedDocLink?.type;
   const { plugin: selectedDataType } = usePlugin<DataType>(
     "patchwork:dataType",
@@ -130,21 +173,19 @@ export const Explorer: React.FC = () => {
   );
 
   // Track the selected tool ID in state
-  const [selectedToolId, setSelectedToolId] = useState(
-    toolsForSelection[0]?.id
+  const [selectedToolId, setSelectedToolId] = useState("");
+
+  const currentToolId = findCompatibleToolForDataType(
+    selectedToolId,
+    selectedDataTypeId
   );
 
-  // Reset tool selection when document changes
-  useEffect(() => {
-    setSelectedToolId(toolsForSelection[0]?.id);
-  }, [selectedDocPath, toolsForSelection]);
-
-  // Use the selected tool
   const { plugin: currentTool, isLoading: isLoadingTool } = usePlugin<Tool>(
     "patchwork:tool",
-    selectedToolId
+    currentToolId
   );
 
+  /* Used by the topbar to change the tool if the user selects another */
   const handleToolChange = useCallback(
     (toolId: string) => {
       const newTool = toolsForSelection.find((t) => t.id === toolId);
@@ -197,11 +238,6 @@ export const Explorer: React.FC = () => {
 
   // TODO: this only reads the main branch
   useSyncDocTitle({ selectedDocPath, selectDocPath, repo });
-
-  // update tab title to be the selected doc
-  useEffect(() => {
-    document.title = selectedDocName ?? "Patchwork";
-  }, [selectedDocName]);
 
   // keyboard shortcuts
   useEffect(() => {
