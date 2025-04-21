@@ -1,10 +1,4 @@
-import type { TextAnchor } from "@patchwork/sdk/textAnchors";
-import type {
-  LoadableDataType,
-  ToolDescription,
-  ImportMethod,
-  ExportMethod,
-} from "@patchwork/sdk";
+import type { Plugin } from "@patchwork/sdk";
 import type { FileDoc } from "./types";
 import { universalImport } from "./importMethods";
 import { universalExport } from "./exportMethods";
@@ -15,18 +9,17 @@ export { isBinaryFileDoc, isTextFileDoc } from "./datatype";
 export { isBinaryCheck } from "./isBinaryFile";
 export { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from "./utils";
 
-export const dataType: LoadableDataType<FileDoc, TextAnchor, string> = {
-  type: "patchwork:dataType",
-  id: "file",
-  name: "File",
-  icon: "File",
-  async load() {
-    const { dataType } = await import("./datatype");
-    return dataType;
+export const plugins: Plugin[] = [
+  {
+    type: "patchwork:dataType",
+    id: "file",
+    name: "File",
+    icon: "File",
+    async load() {
+      const { dataType } = await import("./datatype");
+      return dataType;
+    },
   },
-};
-
-export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "file",
@@ -37,7 +30,6 @@ export const tools: ToolDescription[] = [
       return tool;
     },
   },
+  universalImport,
+  universalExport,
 ];
-
-export const importMethods: ImportMethod[] = [universalImport];
-export const exportMethods: ExportMethod[] = [universalExport];

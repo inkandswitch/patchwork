@@ -59,16 +59,23 @@ export class ModuleWatcher {
     const mod = await this.importModuleSafe(importName);
     if (!mod) return;
 
-    const plugins = Object.values(mod).flatMap((value) => {
-      if (isPlugin(value)) {
-        return [value];
-      }
-      if (Array.isArray(value)) {
-        return value.filter((v: any): v is Plugin => isPlugin(v));
-      }
-      return [];
-    });
-    registerPlugins(plugins, importName);
+    if (mod.plugins) {
+      registerPlugins(mod.plugins, importName);
+    } else {
+      console.warn(
+        `Loading legacy module ${importName}, please update it to use 'export const plugins' style.`
+      );
+      const plugins = Object.values(mod).flatMap((value) => {
+        if (isPlugin(value)) {
+          return [value];
+        }
+        if (Array.isArray(value)) {
+          return value.filter((v: any): v is Plugin => isPlugin(v));
+        }
+        return [];
+      });
+      registerPlugins(plugins, importName);
+    }
   }
 
   // TODO: This is a bit janky and relies on a bunch of heuristics.

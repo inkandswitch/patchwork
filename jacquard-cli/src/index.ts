@@ -171,6 +171,9 @@ const main = async () => {
 
   repo.subscribeToRemotes([syncServerStorageId]);
 
+  // TODO: i have a branch where i'm using the module-watcher to load plugins that we should switch to
+  //       so i'm just going to leave this here for now
+
   // Gotta get all the datatypes loaded before we can do much of anything
   const jacquardDataTypes = {
     file: "@patchwork/file",

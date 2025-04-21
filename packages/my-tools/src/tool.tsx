@@ -4,7 +4,6 @@ import {
   EditorProps,
   type DataType,
   type Tool,
-  makeTool,
   importModuleFromFolderDocUrl,
   ImportMethod,
   ExportMethod,
@@ -135,6 +134,6 @@ export const ModuleSettingsEditor: React.FC<
   );
 };
 
-export const tool = makeTool({
+export const tool = {
   EditorComponent: ModuleSettingsEditor,
-});
+};

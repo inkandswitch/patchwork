@@ -1,26 +1,24 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import type { FolderDoc } from "./datatype";
 
 export type {
   FolderDoc,
   FolderDocMaterialized as FolderDocWithChildren,
 } from "./datatype";
 
-import type { LoadableDataType, ToolDescription } from "@patchwork/sdk";
+import type { Plugin } from "@patchwork/sdk";
 import type { DocPath } from "@patchwork/sdk";
 
-export const dataType: LoadableDataType<FolderDoc, never, never> = {
-  type: "patchwork:dataType",
-  id: "folder",
-  name: "Folder",
-  icon: "Folder",
-  async load() {
-    const { dataType } = await import("./datatype");
-    return dataType;
+export const plugins: Plugin[] = [
+  {
+    type: "patchwork:dataType",
+    id: "folder",
+    name: "Folder",
+    icon: "Folder",
+    async load() {
+      const { dataType } = await import("./datatype");
+      return dataType;
+    },
   },
-};
-
-export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "folder-embeds",

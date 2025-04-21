@@ -5,7 +5,6 @@ import { Icon, IconType } from "@patchwork/sdk/ui";
 import {
   DataTypeDescription,
   getPluginFromRegistry,
-  makeTool,
   type EditorProps,
   DataType,
   getMatchingPlugins,
@@ -204,7 +203,7 @@ export const FolderEntryView = ({
   );
 };
 
-export const tool = makeTool({
+export const tool = {
   EditorComponent: FolderViewerWithEmbeds,
   supportsCollapseContentWithoutAnnotations: true,
-});
+};

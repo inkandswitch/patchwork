@@ -1,10 +1,4 @@
-import {
-  LoadableDataType,
-  ToolDescription,
-  ImportMethod,
-  ExportMethod,
-} from "@patchwork/sdk";
-import { TextAnchor } from "@patchwork/sdk/textAnchors";
+import { Plugin, ImportMethod, ExportMethod } from "@patchwork/sdk";
 import type { MarkdownDoc } from "./datatype";
 import { markdownImport } from "./importMethods";
 import { markdownExport } from "./exportMethods";
@@ -13,24 +7,23 @@ export { isMarkdownDoc } from "./utils";
 export type { MarkdownDoc };
 export { getTitle } from "./datatype";
 
-export const dataType: LoadableDataType<MarkdownDoc, TextAnchor, string> = {
-  id: "essay",
-  type: "patchwork:dataType",
-  name: "Essay",
-  icon: "FileText",
-  async load() {
-    const { dataType } = await import("./datatype");
-    const importMethods = await import("./importMethods");
-    const exportMethods = await import("./exportMethods");
-    return {
-      ...dataType,
-      ...importMethods,
-      ...exportMethods,
-    };
+export const plugins: Plugin[] = [
+  {
+    id: "essay",
+    type: "patchwork:dataType",
+    name: "Essay",
+    icon: "FileText",
+    async load() {
+      const { dataType } = await import("./datatype");
+      const importMethods = await import("./importMethods");
+      const exportMethods = await import("./exportMethods");
+      return {
+        ...dataType,
+        ...importMethods,
+        ...exportMethods,
+      };
+    },
   },
-};
-
-export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "essay",
@@ -42,7 +35,6 @@ export const tools: ToolDescription[] = [
       return tool;
     },
   },
+  markdownImport,
+  markdownExport,
 ];
-
-export const importMethods: ImportMethod[] = [markdownImport];
-export const exportMethods: ExportMethod[] = [markdownExport];

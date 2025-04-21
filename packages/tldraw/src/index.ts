@@ -1,19 +1,16 @@
-import type { LoadableDataType, ToolDescription } from "@patchwork/sdk";
-import type { TLDrawDoc, TLDrawDocAnchor } from "./datatype";
-import type { TLShape } from "@tldraw/tldraw";
+import type { Plugin } from "@patchwork/sdk";
 
-export const dataType: LoadableDataType<TLDrawDoc, TLDrawDocAnchor, TLShape> = {
-  type: "patchwork:dataType",
-  id: "tldraw",
-  name: "Drawing",
-  icon: "PenLine",
-  async load() {
-    const { dataType } = await import("./datatype");
-    return dataType;
+export const plugins: Plugin[] = [
+  {
+    type: "patchwork:dataType",
+    id: "tldraw",
+    name: "Drawing",
+    icon: "PenLine",
+    async load() {
+      const { dataType } = await import("./datatype");
+      return dataType;
+    },
   },
-};
-
-export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "tldraw",

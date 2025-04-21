@@ -14,7 +14,7 @@ The Patchwork plugin system is a runtime extensible architecture that allows use
 ### Plugins
 A plugin looks minimally like this:
 
-```
+```typescript
 export interface PluginDescription {
   id: string;
   type: string;
@@ -244,7 +244,7 @@ counter/src/tool.tsx
 
 ```
 import { useDocument, useDocHandle } from "@automerge/automerge-repo-react-hooks";
-import { EditorProps, makeTool } from "@patchwork/sdk";
+import { EditorProps } from "@patchwork/sdk";
 import { Button } from "@patchwork/sdk/ui";
 import { Doc } from "./datatype";
 import React from "react";
@@ -306,26 +306,23 @@ counter/src/index.ts
 
 ```
 import {
-  makeTool,
-  type LoadableDataType,
-  type ToolDescription,
+  type Plugin,
 } from "@patchwork/sdk";
 import type { Doc } from "./datatype";
 
 import "./index.css";
 
-export const dataType: LoadableDataType<Doc> = {
-  type: "patchwork:dataType",
-  id: "counter",
-  name: "Counter",
-  icon: "CirclePlus",
-  async load() {
-    const { dataType } = await import("./datatype");
-    return dataType;
+export const plugins: Plugin[] = [
+  {
+    type: "patchwork:dataType",
+    id: "counter",
+    name: "Counter",
+    icon: "CirclePlus",
+    async load() {
+      const { dataType } = await import("./datatype");
+      return dataType;
+    },
   },
-};
-
-export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "counter",
@@ -334,7 +331,7 @@ export const tools: ToolDescription[] = [
     supportedDataTypes: ["counter"],
     async load() {
       const { Tool } = await import("./tool");
-      return makeTool({ EditorComponent: Tool });
+      return { EditorComponent: Tool };
     },
   },
 ];

@@ -1,6 +1,6 @@
-import { ToolDescription } from "@patchwork/sdk";
+import type { Plugin } from "@patchwork/sdk";
 
-export const tools: ToolDescription[] = [
+export const plugins: Plugin[] = [
   {
     type: "patchwork:tool",
     id: "raw",

@@ -1,6 +1,4 @@
-import type { LoadableDataType, ToolDescription } from "@patchwork/sdk";
-import type { JacquardBuildMetadata } from "./datatype";
-
+import type { Plugin } from "@patchwork/sdk";
 export type { JacquardBuildMetadata, BuildRunRefreshState } from "./datatype";
 
 export {
@@ -9,7 +7,7 @@ export {
   type ProjectState,
 } from "./getStalenessInfo";
 
-export const dataType: LoadableDataType<JacquardBuildMetadata, never, string> =
+export const plugins: Plugin[] = [
   {
     type: "patchwork:dataType",
     id: "jacquard-build-metadata",
@@ -20,9 +18,7 @@ export const dataType: LoadableDataType<JacquardBuildMetadata, never, string> =
       const { dataType } = await import("./datatype");
       return dataType;
     },
-  };
-
-export const tools: ToolDescription[] = [
+  },
   {
     type: "patchwork:tool",
     id: "jacquard-build-metadata-log-view",

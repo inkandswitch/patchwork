@@ -1,22 +1,16 @@
-import type { LoadableDataType, ToolDescription } from "@patchwork/sdk";
-import type { DataGridDoc, DataGridDocAnchor } from "./datatype";
+import type { Plugin } from "@patchwork/sdk";
 
-export const dataType: LoadableDataType<
-  DataGridDoc,
-  DataGridDocAnchor,
-  string
-> = {
-  type: "patchwork:dataType",
-  id: "datagrid",
-  name: "Spreadsheet",
-  icon: "Sheet",
-  async load() {
-    const { dataType } = await import("./datatype");
-    return dataType;
+export const plugins: Plugin[] = [
+  {
+    type: "patchwork:dataType",
+    id: "datagrid",
+    name: "Spreadsheet",
+    icon: "Sheet",
+    async load() {
+      const { dataType } = await import("./datatype");
+      return dataType;
+    },
   },
-};
-
-export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "datagrid",

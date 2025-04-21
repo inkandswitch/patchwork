@@ -1,25 +1,18 @@
-import type {
-  LoadableDataType,
-  ToolDescription,
-  ModuleSettingsDoc,
-} from "@patchwork/sdk";
+import type { Plugin } from "@patchwork/sdk";
 
-// Kinda weird how ModuleSettingsDoc isn't owned by the type.
+export const plugins: Plugin[] = [
+  {
+    type: "patchwork:dataType",
+    id: "my-tools",
+    name: "My Tools",
+    icon: "Cog",
+    unlisted: true,
 
-export const dataType: LoadableDataType<ModuleSettingsDoc> = {
-  type: "patchwork:dataType",
-  id: "my-tools",
-  name: "My Tools",
-  icon: "Cog",
-  unlisted: true,
-
-  async load() {
-    const { dataType } = await import("./datatype");
-    return dataType;
+    async load() {
+      const { dataType } = await import("./datatype");
+      return dataType;
+    },
   },
-};
-
-export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "my-tools",

@@ -1,22 +1,21 @@
 import type { KanbanBoardDoc } from "./datatype";
-import type { LoadableDataType, ToolDescription } from "@patchwork/sdk";
+import type { Plugin } from "@patchwork/sdk";
 
 // For others to enjoy
 export type { KanbanBoardDoc };
 
-export const dataType: LoadableDataType<KanbanBoardDoc, never, never> = {
-  type: "patchwork:dataType",
-  id: "kanban",
-  name: "Kanban Board",
-  icon: "SquareKanban",
+export const plugins: Plugin[] = [
+  {
+    type: "patchwork:dataType",
+    id: "kanban",
+    name: "Kanban Board",
+    icon: "SquareKanban",
 
-  async load() {
-    const { dataType } = await import("./datatype");
-    return dataType;
+    async load() {
+      const { dataType } = await import("./datatype");
+      return dataType;
+    },
   },
-};
-
-export const tools: ToolDescription[] = [
   {
     type: "patchwork:tool",
     id: "kanban",
