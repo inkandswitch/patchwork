@@ -29,12 +29,12 @@ export const isExportMethod = (value: unknown): value is ExportMethod => {
 export const getExportMethodsForDatatype = (
   datatype: DataType
 ): ExportMethod[] => {
-  const { plugins } = getMatchingPlugins<ExportMethod>(
-    "patchwork:exportMethod",
-    "datatypeId",
-    datatype.id,
-    "useAsDefaultMethod"
-  );
+  const { plugins } = getMatchingPlugins<ExportMethod>({
+    pluginType: "patchwork:exportMethod",
+    matchField: "datatypeId",
+    matchValue: datatype.id,
+    sortField: "useAsDefaultMethod",
+  });
   return plugins;
 };
 

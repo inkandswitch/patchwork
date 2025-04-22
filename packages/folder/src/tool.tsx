@@ -89,11 +89,11 @@ export const FolderEntryView = ({
     docLink.type
   );
 
-  const { plugins } = getMatchingPlugins<Tool>(
-    "patchwork:tool",
-    "supportedDataTypes",
-    docLink.type
-  );
+  const { plugins } = getMatchingPlugins<Tool>({
+    pluginType: "patchwork:tool",
+    matchField: "supportedDataTypes",
+    matchValue: docLink.type,
+  });
   const tool = plugins[0];
 
   const icon = tool?.icon ?? dataTypeDesc?.icon;

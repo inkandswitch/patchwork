@@ -124,19 +124,24 @@ export function onPluginsChange<T extends Plugin<any, any>>(
  * This is useful for finding plugins that support a specific type (e.g. tools for a datatype)
  * where some plugins support all types ("*") and others support specific types.
  */
-export function getMatchingPlugins<T extends PluginDescription>(
-  pluginType: string,
-  matchField: keyof T,
-  matchValue: string | undefined,
-  sortField?: keyof T
-): { plugins: T[]; error: Error | undefined } {
+export function getMatchingPlugins<T extends PluginDescription>({
+  pluginType,
+  matchField,
+  matchValue,
+  sortField,
+}: {
+  pluginType: string;
+  matchField: keyof T;
+  matchValue: string | undefined;
+  sortField?: keyof T;
+}): { plugins: T[]; error: Error | undefined } {
   try {
     const registry = getPluginRegistry<T>(pluginType);
     const plugins = registry.getPlugins(matchPlugins(matchField, matchValue));
     const sortedPlugins = sortPlugins(
       plugins,
       matchField,
-      matchValue,
+      matchValue ?? "",
       sortField
     );
 
@@ -179,7 +184,7 @@ export async function loadMatchingPlugins<T extends PluginDescription>(
     const sortedPlugins = sortPlugins(
       plugins,
       matchField,
-      matchValue,
+      matchValue ?? "",
       sortField
     );
 

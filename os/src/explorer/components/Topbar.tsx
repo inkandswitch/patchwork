@@ -48,7 +48,7 @@ type TopbarProps = {
   addNewDocument: (doc: { type: string }) => void;
   removeDocPath: (docPath: DocPath) => void;
   tools: Tool[];
-  tool: Tool;
+  tool: Tool | undefined;
   onToolChange: (toolId: string) => void;
   docHeadsFromTimelineSidebar?: Automerge.Heads;
 };

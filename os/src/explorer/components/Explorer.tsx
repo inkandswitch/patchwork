@@ -112,11 +112,11 @@ const findCompatibleToolForDataType = (
   }
 
   // Otherwise, find the first compatible tool
-  const { plugins } = getMatchingPlugins<Tool>(
-    "patchwork:tool",
-    "supportedDataTypes",
-    dataTypeId
-  );
+  const { plugins } = getMatchingPlugins<Tool>({
+    pluginType: "patchwork:tool",
+    matchField: "supportedDataTypes",
+    matchValue: dataTypeId,
+  });
 
   return plugins[0]?.id;
 };
@@ -165,12 +165,12 @@ export const Explorer: React.FC = () => {
     dataType: selectedDataType,
   });
 
-  const { plugins: toolsForSelection } = getMatchingPlugins<Tool>(
-    "patchwork:tool",
-    "supportedDataTypes",
-    selectedDataTypeId,
-    "name"
-  );
+  const { plugins: toolsForSelection } = getMatchingPlugins<Tool>({
+    pluginType: "patchwork:tool",
+    matchField: "supportedDataTypes",
+    matchValue: selectedDataTypeId,
+    sortField: "name",
+  });
 
   // Track the selected tool ID in state
   const [selectedToolId, setSelectedToolId] = useState("");

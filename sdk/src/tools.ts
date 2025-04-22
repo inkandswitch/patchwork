@@ -14,8 +14,6 @@ import {
 import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "./router/DocLink";
-import { getPluginFromRegistry, Plugin } from "./plugins";
-import { getMatchingPlugins } from "./plugins";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -29,6 +27,7 @@ export type ToolImplementation = ToolTyped<
 >;
 
 export type ToolDescription = Plugin & {
+  id: string;
   type: "patchwork:tool";
   supportedDataTypes: "*" | string[];
   name: string;
@@ -38,7 +37,7 @@ export type ToolDescription = Plugin & {
   >;
 };
 
-export type Tool = Plugin<ToolDescription, ToolImplementation>;
+export type Tool = ToolDescription & ToolImplementation;
 
 export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
   EditorComponent: React.FC<EditorProps<A, V>>;
