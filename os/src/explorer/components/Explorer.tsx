@@ -37,6 +37,7 @@ import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
 import { usePlugin } from "@patchwork/sdk/hooks";
 import { useModuleWatcher } from "../hooks/useModuleWatcher";
+import { useSelectedTool } from "../hooks/useSelectedTool";
 import { DocHandle } from "@automerge/automerge-repo";
 import { addNewDocument } from "../docActions";
 import { removeDocPath } from "../docActions";
@@ -84,68 +85,6 @@ const useRunMigrationsOnceOnLoad = ({
   }, [handle, doc, dataType, repo]);
 };
 
-// Hook to encapsulate selection logic for tools
-const useSelectedTool = (
-  selectedDataTypeId: string | undefined,
-  selectedDocUrl: string | undefined
-) => {
-  // Get all tools compatible with the current datatype
-  const { plugins: toolDescriptions } =
-    useMatchingPluginDescriptions<ToolDescription>({
-      pluginType: "patchwork:tool",
-      matchField: "supportedDataTypes",
-      matchValue: selectedDataTypeId,
-      sortField: "name",
-    });
-
-  // Only track user selections in state.
-  const [userSelectedToolId, setUserSelectedToolId] = useState<string | null>(
-    null
-  );
-
-  // Whenever the document or datatype changes, clear any prior user choice so the
-  // fallback logic (first tool in list) runs again.
-  useEffect(() => {
-    setUserSelectedToolId(null);
-  }, [selectedDataTypeId, selectedDocUrl]);
-
-  // Determine which tool ID should be active right now. If the user has
-  // explicitly selected a tool and it remains available, use it; otherwise
-  // fall back to the first compatible tool.
-  const currentToolId = useMemo(() => {
-    if (
-      userSelectedToolId &&
-      toolDescriptions.some((t) => t.id === userSelectedToolId)
-    ) {
-      return userSelectedToolId;
-    }
-    return toolDescriptions.length > 0 ? toolDescriptions[0].id : "";
-  }, [userSelectedToolId, toolDescriptions]);
-
-  const { plugin: currentTool, isLoading: isLoadingTool } = usePlugin<Tool>(
-    "patchwork:tool",
-    currentToolId
-  );
-
-  // Expose a handler for user‑initiated tool changes.
-  const handleToolChange = useCallback(
-    (toolId: string) => {
-      const newTool = toolDescriptions.find((t) => t.id === toolId);
-      if (newTool) {
-        setUserSelectedToolId(toolId);
-      }
-    },
-    [toolDescriptions]
-  );
-
-  return {
-    currentTool,
-    isLoadingTool,
-    handleToolChange,
-    toolDescriptions,
-  } as const;
-};
-
 export const Explorer: React.FC = () => {
   const repo = useRepo();
   const [accountDoc] = useCurrentAccountDoc();
@@ -190,7 +129,6 @@ export const Explorer: React.FC = () => {
     dataType: selectedDataType,
   });
 
-  // ---- Tool selection ----------------------------------------------
   const { currentTool, isLoadingTool, handleToolChange, toolDescriptions } =
     useSelectedTool(selectedDataTypeId, selectedDocUrl);
 
