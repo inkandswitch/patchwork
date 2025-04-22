@@ -64,7 +64,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
    * Register an plugin with this registry
    */
   async register(
-    plugin: D | LoadablePlugin<D, I>,
+    plugin: Plugin<D, I> | LoadablePlugin<D, I>,
     importUrl?: string
   ): Promise<void> {
     // If an import URL was provided, attach it to the plugin
