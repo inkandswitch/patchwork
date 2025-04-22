@@ -117,7 +117,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   ): Promise<Plugin<D, I> | undefined> {
     // Check if we already have a loaded plugin
     const plugin = this.plugins.get(id);
-    if (plugin && isPlugin<D, I>(plugin)) {
+    if (plugin && !isLoadablePlugin<D, I>(plugin)) {
       return plugin;
     }
 

@@ -18,19 +18,17 @@ import {
  * @param options.load Whether to load the plugin if it's loadable. Defaults to true.
  * @param options.wait Whether to wait for the plugin to be registered if it isn't already. Defaults to false.
  */
-export function usePlugin<T extends Plugin<PluginDescription>>(
+export function usePlugin<T extends Plugin>(
   pluginType: string,
   id: string | undefined,
   options: { load?: boolean; wait?: boolean } = {}
 ): {
-  plugin: T | undefined;
+  plugin: Plugin<T> | undefined;
   isLoading: boolean;
   error: Error | undefined;
 } {
   const { load = true, wait = false } = options;
-  const [plugin, setPlugin] = useState<T | undefined>(
-    id ? getPlugin<T>(pluginType, id) : undefined
-  );
+  const [plugin, setPlugin] = useState<Plugin<T> | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | undefined>(undefined);
 
@@ -40,7 +38,7 @@ export function usePlugin<T extends Plugin<PluginDescription>>(
     try {
       setIsLoading(true);
       setError(undefined);
-      const loadedPlugin = await loadPlugin<T>(pluginType, id, wait);
+      const loadedPlugin = await loadPlugin<Plugin<T>>(pluginType, id, wait);
       setPlugin(loadedPlugin);
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
@@ -58,8 +56,10 @@ export function usePlugin<T extends Plugin<PluginDescription>>(
     }
 
     // Get initial plugin state
-    const initialPlugin = getPlugin<T>(pluginType, id);
-    setPlugin(initialPlugin);
+    const initialPlugin = getPlugin<Plugin<T>>(pluginType, id);
+    if (initialPlugin && !isLoadablePlugin(initialPlugin)) {
+      setPlugin(initialPlugin);
+    }
 
     // Load if needed
     if (load && (!initialPlugin || isLoadablePlugin(initialPlugin))) {
@@ -67,7 +67,7 @@ export function usePlugin<T extends Plugin<PluginDescription>>(
     }
 
     // Subscribe to plugin changes
-    const unsubscribe = onPluginsChange<T>(pluginType, (plugins) => {
+    const unsubscribe = onPluginsChange<Plugin<T>>(pluginType, (plugins) => {
       const updatedPlugin = plugins.find(
         (p) => (p as PluginDescription).id === id
       );
@@ -81,7 +81,7 @@ export function usePlugin<T extends Plugin<PluginDescription>>(
     });
 
     return () => unsubscribe();
-  }, [pluginType, id, load, loadPlugin]);
+  }, [pluginType, id, load, loadPluginCB]);
 
   return { plugin, isLoading, error };
 }
