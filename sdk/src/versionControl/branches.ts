@@ -20,7 +20,7 @@ import {
   VersionControlSidecarDoc,
 } from "./schema";
 import { BranchScopeAndActiveBranchInfo } from "./signals";
-import { loadPluginFromRegistry } from "../plugins";
+import { loadPlugin } from "../plugins";
 import { DataType } from "../datatypes";
 
 type Hash = string;
@@ -92,10 +92,7 @@ export const cloneDocWithLinks = async (
   };
 
   // clone links
-  const dataType = await loadPluginFromRegistry<DataType>(
-    "patchwork:dataType",
-    dataTypeId
-  );
+  const dataType = await loadPlugin<DataType>("patchwork:dataType", dataTypeId);
   if (dataType?.links) {
     const doc = handle.doc();
     const links_ = dataType.links(doc);

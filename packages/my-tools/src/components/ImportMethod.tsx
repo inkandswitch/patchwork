@@ -1,13 +1,13 @@
 import {
   DataTypeDescription,
   ImportMethod as ImportMethodType,
-  getPluginFromRegistry,
+  getPlugin,
 } from "@patchwork/sdk";
 import { Icon } from "@patchwork/sdk/ui";
 import React from "react";
 
 export const ImportMethod = ({ method }: { method: ImportMethodType }) => {
-  const dataType = getPluginFromRegistry<DataTypeDescription>(
+  const dataType = getPlugin<DataTypeDescription>(
     "patchwork:dataType",
     method.datatypeId
   );

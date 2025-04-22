@@ -11,7 +11,7 @@ import { ModuleContents } from "../tool";
 import { selectDocLink } from "@patchwork/sdk/router";
 import {
   getMatchingPlugins,
-  getPluginFromRegistry,
+  getPlugin,
   Tool,
   DataTypeDescription,
 } from "@patchwork/sdk";
@@ -36,7 +36,7 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onRemove }) => {
   };
 
   // Look up the data type and tool info
-  const dataTypeDesc = getPluginFromRegistry<DataTypeDescription>(
+  const dataTypeDesc = getPlugin<DataTypeDescription>(
     "patchwork:dataType",
     docLink.type
   );

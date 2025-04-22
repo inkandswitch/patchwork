@@ -49,7 +49,7 @@ export async function registerPlugins(
 /**
  * Get a plugin by type and ID without loading it
  */
-export function getPluginFromRegistry<T extends Plugin<any, any>>(
+export function getPlugin<T extends Plugin<any, any>>(
   pluginType: string,
   id: string
 ): T | undefined {
@@ -61,7 +61,7 @@ export function getPluginFromRegistry<T extends Plugin<any, any>>(
  * Load a plugin by type and ID
  * If shouldWait is true, will wait for the plugin to be registered if it isn't already
  */
-export async function loadPluginFromRegistry<T extends Plugin<any, any>>(
+export async function loadPlugin<T extends Plugin<any, any>>(
   pluginType: string,
   id: string,
   shouldWait = false,
@@ -76,7 +76,7 @@ export async function loadPluginFromRegistry<T extends Plugin<any, any>>(
  * @param pluginType The type of plugins to get
  * @param filter Optional filter function to determine which plugins to return
  */
-export function getPluginsFromRegistry<T extends Plugin<any, any>>(
+export function getPlugins<T extends Plugin<any, any>>(
   pluginType: string,
   filter?: (plugin: PluginDescription) => boolean
 ): T[] {
@@ -91,7 +91,7 @@ export function getPluginsFromRegistry<T extends Plugin<any, any>>(
  * @param shouldWait Whether to wait for plugins to be registered if they aren't already
  * @returns A Promise resolving to an array of plugins
  */
-export async function loadAllPluginsFromRegistry<T extends Plugin<any, any>>(
+export async function loadAllPlugins<T extends Plugin<any, any>>(
   pluginType: string,
   filter?: (plugin: PluginDescription) => boolean,
   shouldWait = false

@@ -2,11 +2,11 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Plugin,
   PluginDescription,
-  getPluginFromRegistry,
-  getPluginsFromRegistry,
+  getPlugin,
+  getPlugins,
   onPluginsChange,
   isLoadablePlugin,
-  loadPluginFromRegistry,
+  loadPlugin,
   getMatchingPlugins,
 } from "../plugins";
 
@@ -29,7 +29,7 @@ export function usePlugin<T extends Plugin<PluginDescription>>(
 } {
   const { load = true, wait = false } = options;
   const [plugin, setPlugin] = useState<T | undefined>(
-    id ? getPluginFromRegistry<T>(pluginType, id) : undefined
+    id ? getPlugin<T>(pluginType, id) : undefined
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -40,11 +40,7 @@ export function usePlugin<T extends Plugin<PluginDescription>>(
     try {
       setIsLoading(true);
       setError(undefined);
-      const loadedPlugin = await loadPluginFromRegistry<T>(
-        pluginType,
-        id,
-        wait
-      );
+      const loadedPlugin = await loadPlugin<T>(pluginType, id, wait);
       setPlugin(loadedPlugin);
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
@@ -62,7 +58,7 @@ export function usePlugin<T extends Plugin<PluginDescription>>(
     }
 
     // Get initial plugin state
-    const initialPlugin = getPluginFromRegistry<T>(pluginType, id);
+    const initialPlugin = getPlugin<T>(pluginType, id);
     setPlugin(initialPlugin);
 
     // Load if needed
@@ -101,7 +97,7 @@ export function usePluginDescriptions<T extends Plugin<PluginDescription>>(
 
   useEffect(() => {
     // Initial fetch
-    setPlugins(getPluginsFromRegistry<T>(pluginType));
+    setPlugins(getPlugins<T>(pluginType));
 
     // Listen for changes
     const unsubscribe = onPluginsChange<T>(pluginType, (newPlugins) => {

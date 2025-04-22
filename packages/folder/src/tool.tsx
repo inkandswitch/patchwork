@@ -4,7 +4,7 @@ import { useDocUIState } from "@patchwork/sdk/router";
 import { Icon, IconType } from "@patchwork/sdk/ui";
 import {
   DataTypeDescription,
-  getPluginFromRegistry,
+  getPlugin,
   type EditorProps,
   DataType,
   getMatchingPlugins,
@@ -84,10 +84,7 @@ export const FolderEntryView = ({
     docLink.type
   );
 
-  const dataTypeDesc = getPluginFromRegistry<DataTypeDescription>(
-    "dataType",
-    docLink.type
-  );
+  const dataTypeDesc = getPlugin<DataTypeDescription>("dataType", docLink.type);
 
   const { plugins } = getMatchingPlugins<Tool>({
     pluginType: "patchwork:tool",

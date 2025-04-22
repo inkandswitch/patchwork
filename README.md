@@ -38,7 +38,7 @@ The system supports several built-in plugin types:
 
 ### Plugin Discovery
 
-Plugins can be loaded using either hooks or pure JS functions. See `usePlugin()` and `usePluginDescriptions()` for example use in React. For the most common cases in non-react contexts you can use `getPluginFromRegistry(type, id)` or `getMatchingPlugins()`. 
+Plugins can be loaded using either hooks or pure JS functions. See `usePlugin()` and `usePluginDescriptions()` for example use in React. For the most common cases in non-react contexts you can use `getPlugin(type, id)` or `getMatchingPlugins()`. 
 
 ## Development
 

@@ -3,7 +3,7 @@ import { DataType, createDocOfDataType } from "../datatypes";
 import { getDefaultImportMethodForDatatype } from "../importMethods";
 import { ImportMethod } from "../importMethods";
 import { DocLink } from "../router/DocLink";
-import { getPluginsFromRegistry, loadPluginFromRegistry } from "../plugins";
+import { getPlugins, loadPlugin } from "../plugins";
 
 /**
  * Helper function to find the appropriate import method and datatype for a file
@@ -17,9 +17,7 @@ const getImportMethodForFile = async (
     throw new Error("File has no extension, not sure how to proceed");
   }
 
-  const dataTypes = Object.values(
-    getPluginsFromRegistry<DataType>("patchwork:dataType")
-  );
+  const dataTypes = Object.values(getPlugins<DataType>("patchwork:dataType"));
   const importMethod = dataTypes
     .map((dt) => getDefaultImportMethodForDatatype(dt))
     .find(
@@ -32,7 +30,7 @@ const getImportMethodForFile = async (
     throw new Error("No import method found for this file.");
   }
 
-  const dataType = await loadPluginFromRegistry<DataType>(
+  const dataType = await loadPlugin<DataType>(
     "patchwork:dataType",
     importMethod.datatypeId
   );
@@ -97,7 +95,7 @@ export const importFile = async (
     // Get either dataType implementation or a wildcard importer function
     let importer: (text: string, fileName: string) => Promise<object>;
     if (importMethod.datatypeId !== "*") {
-      const dataType = await loadPluginFromRegistry<DataType>(
+      const dataType = await loadPlugin<DataType>(
         "dataType",
         importMethod.datatypeId
       );

@@ -9,7 +9,7 @@ import {
   fetchOmOnActiveBranch,
 } from "@patchwork/sdk/versionControl";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { DataType, loadPluginFromRegistry } from "@patchwork/sdk";
+import { DataType, loadPlugin } from "@patchwork/sdk";
 import { usePluginDescriptions } from "@patchwork/sdk/hooks";
 import capitalize from "lodash-es/capitalize";
 import clone from "lodash-es/clone";
@@ -199,7 +199,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const docPath = node.data.docPath;
     const docLink = DocPathUtils.toLink(docPath);
 
-    const dataType = await loadPluginFromRegistry<DataType>(
+    const dataType = await loadPlugin<DataType>(
       "patchwork:dataType",
       docLink.type
     );

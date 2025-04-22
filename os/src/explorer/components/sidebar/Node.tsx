@@ -12,7 +12,7 @@ import { createContext, useContext, useMemo } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { NodeActiveBranchInfo } from "./NodeActiveBranchInfo";
 import { Edit } from "./Edit";
-import { DataType, getPluginFromRegistry } from "@patchwork/sdk";
+import { DataType, getPlugin } from "@patchwork/sdk";
 
 export const FlatDocPathsContext = createContext<DocPath[]>([]);
 
@@ -27,10 +27,7 @@ export const Node = (props: NodeRendererProps<NodeData>) => {
   const { node, style, dragHandle } = props;
   const docPath = node.data.docPath;
   const docLink = DocPathUtils.toLink(docPath);
-  const dataType = getPluginFromRegistry<DataType>(
-    "patchwork:dataType",
-    docLink.type
-  );
+  const dataType = getPlugin<DataType>("patchwork:dataType", docLink.type);
 
   const flatDocPaths = useContext(FlatDocPathsContext);
 

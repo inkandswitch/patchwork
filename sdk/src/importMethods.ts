@@ -1,6 +1,6 @@
 import { DocHandle } from "@automerge/automerge-repo";
 import type { DataTypeDescription } from "./datatypes";
-import { Plugin, getPluginsFromRegistry } from "./plugins";
+import { Plugin, getPlugins } from "./plugins";
 
 export type ImportMethod = Plugin & {
   type: "patchwork:importMethod";
@@ -20,7 +20,7 @@ export type ImportMethod = Plugin & {
 export const getImportMethodsForDatatype = (
   datatype: DataTypeDescription
 ): ImportMethod[] => {
-  const methods = getPluginsFromRegistry<ImportMethod>("patchwork:importMethod")
+  const methods = getPlugins<ImportMethod>("patchwork:importMethod")
     .filter(
       (method: ImportMethod) =>
         method.datatypeId === datatype.id || method.datatypeId === "*"

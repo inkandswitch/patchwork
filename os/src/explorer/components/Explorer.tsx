@@ -1,8 +1,6 @@
 import {
   DataType,
   DataTypeImplementation,
-  Tool,
-  ToolDescription,
   useSuggestedModuleForDocUrl,
 } from "@patchwork/sdk";
 import { useMatchingPluginDescriptions } from "@patchwork/sdk/hooks";
