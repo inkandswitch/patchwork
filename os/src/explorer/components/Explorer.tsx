@@ -50,7 +50,7 @@ const useRunMigrationsOnceOnLoad = ({
   dataType,
 }: {
   handle: DocHandle<unknown> | undefined;
-  dataType: DataTypeImplementation<any> | undefined;
+  dataType: DataType<any> | undefined;
 }) => {
   const repo = useRepo();
   const hasRunForCurrentHandle = useRef<string | null>(null);
@@ -67,8 +67,8 @@ const useRunMigrationsOnceOnLoad = ({
     // Only run if we have a doc and haven't run for this handle yet
     if (doc && hasRunForCurrentHandle.current !== handleId) {
       (async () => {
-        if (!dataType.migrations) return;
-        for (const migration of dataType.migrations) {
+        if (!dataType.module.migrations) return;
+        for (const migration of dataType.module.migrations) {
           if (await migration.migrationNeedsToRun(handle, repo)) {
             console.log(
               `Running migration "${migration.description}" on document ${handle.url}`

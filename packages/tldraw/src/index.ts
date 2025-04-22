@@ -1,6 +1,6 @@
-import type { Plugin } from "@patchwork/sdk";
+import type { LoadablePlugin } from "@patchwork/sdk";
 
-export const plugins: Plugin[] = [
+export const plugins: LoadablePlugin<any>[] = [
   {
     type: "patchwork:dataType",
     id: "tldraw",

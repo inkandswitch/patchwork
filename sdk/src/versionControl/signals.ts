@@ -128,11 +128,11 @@ export const fetchAllLinkedDocLinks = async (
     dataTypeId,
     true
   );
-  if (!dataType?.links) {
+  if (!dataType?.module.links) {
     return [];
   }
 
-  const directLinks = dataType.links(doc);
+  const directLinks = dataType.module.links(doc);
 
   return Promise.all(
     directLinks.map(async (link: DocLink) => {

@@ -32,12 +32,9 @@ export type ToolDescription = Plugin & {
   supportedDataTypes: "*" | string[];
   name: string;
   icon?: IconType;
-  load: () => Promise<
-    ToolTyped<HasVersionControlMetadata<unknown, unknown>, unknown, unknown>
-  >;
 };
 
-export type Tool = ToolDescription & ToolImplementation;
+export type Tool = Plugin<ToolDescription, ToolImplementation>;
 
 export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
   EditorComponent: React.FC<EditorProps<A, V>>;

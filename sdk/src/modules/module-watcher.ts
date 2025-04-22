@@ -7,7 +7,12 @@ import {
   Repo,
 } from "@automerge/automerge-repo";
 import { importModuleFromFolderDocUrl } from "./utils";
-import { registerPlugins, isPlugin } from "../plugins";
+import {
+  registerPlugins,
+  isPlugin,
+  PluginDescription,
+  Plugin,
+} from "../plugins";
 
 /**
  * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
@@ -65,12 +70,12 @@ export class ModuleWatcher {
       console.warn(
         `Loading legacy module ${importName}, please update it to use 'export const plugins' style.`
       );
-      const plugins = Object.values(mod).flatMap((value) => {
+      const plugins = Object.values(mod).flatMap((value: unknown) => {
         if (isPlugin(value)) {
           return [value];
         }
         if (Array.isArray(value)) {
-          return value.filter((v: any): v is Plugin => isPlugin(v));
+          return value.filter((v: unknown): v is Plugin => isPlugin(v));
         }
         return [];
       });

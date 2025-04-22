@@ -1,10 +1,10 @@
 import type { KanbanBoardDoc } from "./datatype";
-import type { Plugin } from "@patchwork/sdk";
+import type { LoadablePlugin } from "@patchwork/sdk";
 
 // For others to enjoy
 export type { KanbanBoardDoc };
 
-export const plugins: Plugin[] = [
+export const plugins: LoadablePlugin<any>[] = [
   {
     type: "patchwork:dataType",
     id: "kanban",

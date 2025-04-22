@@ -12,17 +12,21 @@ export const universalExport: ExportMethod = {
   useAsDefaultMethod: true, // This is the native format for files
   datatypeId: "file",
   fileExtensions: ["*"], // Support any file extension
-  async exportData(doc: Doc<unknown>, repo: Repo) {
-    const fileDoc = doc as Doc<FileDoc>;
-    const isBinary = isBinaryFileDoc(fileDoc);
-    const extension = fileDoc.extension ?? (isBinary ? "dat" : "txt");
-    const hasExtensionAlready = /\.[a-z0-9]+$/.test(fileDoc.name);
-    const fileName = hasExtensionAlready
-      ? fileDoc.name
-      : `${fileDoc.name}.${extension}`;
-    const type =
-      fileDoc.mimeType ?? mime.lookup(extension) ?? "application/octet-stream";
+  module: {
+    async exportData(doc: Doc<unknown>, repo: Repo) {
+      const fileDoc = doc as Doc<FileDoc>;
+      const isBinary = isBinaryFileDoc(fileDoc);
+      const extension = fileDoc.extension ?? (isBinary ? "dat" : "txt");
+      const hasExtensionAlready = /\.[a-z0-9]+$/.test(fileDoc.name);
+      const fileName = hasExtensionAlready
+        ? fileDoc.name
+        : `${fileDoc.name}.${extension}`;
+      const type =
+        fileDoc.mimeType ??
+        mime.lookup(extension) ??
+        "application/octet-stream";
 
-    return new File([getFileContents(fileDoc)], fileName, { type });
+      return new File([getFileContents(fileDoc)], fileName, { type });
+    },
   },
 };

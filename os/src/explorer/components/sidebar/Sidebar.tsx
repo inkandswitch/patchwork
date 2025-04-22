@@ -209,7 +209,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       return;
     }
 
-    if (!dataType?.setTitle) {
+    if (!dataType?.module.setTitle) {
       alert(
         `${capitalize(
           dataType.name
@@ -240,7 +240,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     // rename doc title
     docOm.handle.change((doc) => {
-      dataType.setTitle?.(doc, name);
+      dataType.module.setTitle?.(doc, name);
     });
 
     selectDocPath([...parentPath, { ...docLink, name }]); // TODO: JAH strict fix

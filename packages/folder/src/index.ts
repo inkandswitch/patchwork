@@ -5,10 +5,10 @@ export type {
   FolderDocMaterialized as FolderDocWithChildren,
 } from "./datatype";
 
-import type { Plugin } from "@patchwork/sdk";
+import type { LoadablePlugin, Plugin } from "@patchwork/sdk";
 import type { DocPath } from "@patchwork/sdk";
 
-export const plugins: Plugin[] = [
+export const plugins: LoadablePlugin<any>[] = [
   {
     type: "patchwork:dataType",
     id: "folder",

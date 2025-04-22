@@ -70,7 +70,7 @@ export const useSyncDocTitle = ({
         if (!dataType) return;
 
         // load title
-        dataType.getTitle(selectedDoc, repo).then((title) => {
+        dataType.module.getTitle(selectedDoc, repo).then((title) => {
           // do nothing if selectedDocLink has changed in between
           // or if this promise resolved after newer update
           if (

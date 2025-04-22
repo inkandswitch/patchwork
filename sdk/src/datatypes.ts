@@ -146,7 +146,7 @@ export const createDocOfDataType = <D>(
 ): DocHandle<D & HasPatchworkMetadata> => {
   const handle = repo.create<D & HasPatchworkMetadata>();
   handle.change((doc) => {
-    dataType.init(doc, repo);
+    dataType.module.init(doc, repo);
     (doc as any)["@patchwork"] = {
       type: dataType.id,
       suggestedImportUrl: dataType.importUrl,

@@ -1,5 +1,5 @@
 export type { Plugin, LoadablePlugin, PluginDescription } from "./registry";
-export { isLoadablePlugin, isPlugin } from "./registry";
+export { isLoadablePlugin, isPluginDescription, isPlugin } from "./registry";
 import {
   PluginRegistry,
   Plugin,
@@ -61,14 +61,13 @@ export function getPlugin<T extends Plugin<any, any>>(
  * Load a plugin by type and ID
  * If shouldWait is true, will wait for the plugin to be registered if it isn't already
  */
-export async function loadPlugin<T extends Plugin<any, any>>(
+export async function loadPlugin<T extends Plugin>(
   pluginType: string,
   id: string,
   shouldWait = false,
   timeout = 10000
 ): Promise<T | undefined> {
-  const registry = getPluginRegistry(pluginType);
-  return registry.loadById(id, shouldWait, timeout) as Promise<T | undefined>;
+  return getPluginRegistry<T>(pluginType).loadById(id, shouldWait, timeout);
 }
 
 /**
@@ -111,11 +110,11 @@ export function hasPlugin(pluginType: string, id: string): boolean {
 /**
  * Subscribe to changes in a plugin registry
  */
-export function onPluginsChange<T extends Plugin<any, any>>(
+export function onPluginsChange<T extends PluginDescription>(
   pluginType: string,
   callback: (plugins: T[]) => void
 ): () => void {
-  const registry = getPluginRegistry(pluginType);
+  const registry = getPluginRegistry<T>(pluginType);
   return registry.onChange(callback);
 }
 
@@ -176,7 +175,7 @@ export async function loadMatchingPlugins<T extends PluginDescription>(
   error: Error | undefined;
 }> {
   try {
-    const registry = getPluginRegistry(pluginType);
+    const registry = getPluginRegistry<T>(pluginType);
     const plugins = await registry.loadAll(
       matchPlugins(matchField, matchValue),
       wait

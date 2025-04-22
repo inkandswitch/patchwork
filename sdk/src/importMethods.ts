@@ -1,8 +1,8 @@
 import { DocHandle } from "@automerge/automerge-repo";
 import type { DataTypeDescription } from "./datatypes";
-import { Plugin, getPlugins } from "./plugins";
+import { Plugin, PluginDescription, getPlugins } from "./plugins";
 
-export type ImportMethod = Plugin & {
+export type ImportMethodDescription = PluginDescription & {
   type: "patchwork:importMethod";
   datatypeId: string;
   fileExtensions: string[];
@@ -11,11 +11,19 @@ export type ImportMethod = Plugin & {
    * If multiple methods have this set to true, one will be chosen arbitrarily.
    */
   useAsDefaultMethod?: boolean;
+};
+
+export type ImportMethodImplementation = {
   importData: (
     file: File,
     handle: DocHandle<unknown>
   ) => Promise<{ didChange: boolean }>;
 };
+
+export type ImportMethod = Plugin<
+  ImportMethodDescription,
+  ImportMethodImplementation
+>;
 
 export const getImportMethodsForDatatype = (
   datatype: DataTypeDescription

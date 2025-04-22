@@ -178,7 +178,7 @@ export const TimelineSidebar: React.FC<{
     promptForAIChangeGroupSummary: promptForAutoChangeGroupDescription,
     fallbackSummaryForChangeGroup,
     groupChanges,
-  } = dataType ?? {};
+  } = dataType?.module ?? {};
 
   // todo: extract this as an interface that different doc types can implement
   const changeGroupingOptions = useMemo<

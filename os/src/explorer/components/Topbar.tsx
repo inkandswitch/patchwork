@@ -133,12 +133,12 @@ export const Topbar: React.FC<TopbarProps> = ({
     }
 
     newHandle.change((doc) => {
-      selectedDataType.markCopy(doc);
+      selectedDataType.module.markCopy(doc);
     });
 
     const newDocLink = {
       url: newHandle.url,
-      name: await selectedDataType.getTitle(newHandle.doc(), repo),
+      name: await selectedDataType.module.getTitle(newHandle.doc(), repo),
       type: selectedDocLink.type,
     };
 
@@ -164,7 +164,7 @@ export const Topbar: React.FC<TopbarProps> = ({
       throw new Error("something unexpected is missing idk");
     }
 
-    const file = await method.exportData(selectedDoc, repo);
+    const file = await method.module.exportData(selectedDoc, repo);
     const extension = file.name.split(".").pop();
 
     saveFile(file, [

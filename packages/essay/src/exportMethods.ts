@@ -12,16 +12,18 @@ export const markdownExport: ExportMethod = {
   useAsDefaultMethod: true,
   datatypeId: "essay",
   fileExtensions: ["md"],
-  async exportData(doc: Doc<unknown>, repo: Repo) {
-    const markdownDoc = doc as Doc<MarkdownDoc>;
-    const content = markdownDoc.content;
+  module: {
+    async exportData(doc: Doc<unknown>, repo: Repo) {
+      const markdownDoc = doc as Doc<MarkdownDoc>;
+      const content = markdownDoc.content;
 
-    const prefix = markdownDoc.fileName ?? (await getTitle(markdownDoc));
-    const extension = markdownDoc.extension ?? "md";
-    const hasExtensionAlready = /\.[a-z0-9]+$/.test(prefix);
-    const fileName = hasExtensionAlready ? prefix : `${prefix}.${extension}`;
-    const type = markdownDoc.mimeType ?? "text/markdown";
+      const prefix = markdownDoc.fileName ?? (await getTitle(markdownDoc));
+      const extension = markdownDoc.extension ?? "md";
+      const hasExtensionAlready = /\.[a-z0-9]+$/.test(prefix);
+      const fileName = hasExtensionAlready ? prefix : `${prefix}.${extension}`;
+      const type = markdownDoc.mimeType ?? "text/markdown";
 
-    return new File([content], fileName, { type });
-  },
+      return new File([content], fileName, { type });
+    },
+  }
 };

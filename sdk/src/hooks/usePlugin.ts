@@ -34,7 +34,7 @@ export function usePlugin<T extends Plugin<PluginDescription>>(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | undefined>(undefined);
 
-  const loadPlugin = useCallback(async () => {
+  const loadPluginCB = useCallback(async () => {
     if (!id) return;
 
     try {
@@ -63,7 +63,7 @@ export function usePlugin<T extends Plugin<PluginDescription>>(
 
     // Load if needed
     if (load && (!initialPlugin || isLoadablePlugin(initialPlugin))) {
-      loadPlugin();
+      loadPluginCB();
     }
 
     // Subscribe to plugin changes
@@ -73,7 +73,7 @@ export function usePlugin<T extends Plugin<PluginDescription>>(
       );
       if (updatedPlugin) {
         if (load && isLoadablePlugin(updatedPlugin)) {
-          loadPlugin();
+          loadPluginCB();
         } else {
           setPlugin(updatedPlugin);
         }

@@ -46,7 +46,9 @@ export type LoadablePlugin<
 export type Plugin<
   D extends PluginDescription = PluginDescription,
   I = any
-> = D & I;
+> = D & {
+  module: I;
+};
 
 /**
  * Registry for managing plugins of a specific type
@@ -115,13 +117,8 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   ): Promise<Plugin<D, I> | undefined> {
     // Check if we already have a loaded plugin
     const plugin = this.plugins.get(id);
-    if (plugin && !isLoadablePlugin(plugin)) {
+    if (plugin && isPlugin<D, I>(plugin)) {
       return plugin;
-    }
-
-    // Check if we're already loading this plugin
-    if (this.loadPromises.has(id)) {
-      return this.loadPromises.get(id);
     }
 
     // Get the plugin description
@@ -162,19 +159,22 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
         // Merge the implementation with the plugin metadata to create a complete Plugin
         // Omit the load method as it's no longer needed
         const { load, ...descriptionWithoutLoad } = description;
-        const loadedPlugin = createPlugin(
-          descriptionWithoutLoad,
-          implementation
-        ) as Plugin<D, I>;
+        if (!isPluginDescription<D>(descriptionWithoutLoad)) {
+          throw new Error("Invalid plugin description");
+        }
+        const Plugin = {
+          ...descriptionWithoutLoad,
+          module: implementation,
+        } as Plugin<D, I>;
 
         // Store the loaded version
-        this.plugins.set(description.id, loadedPlugin);
+        this.plugins.set(description.id, Plugin);
         this.loadPromises.delete(id);
 
         // Notify listeners that an plugin has been loaded
         this.events.emit("plugins:changed", this.getPlugins());
 
-        return loadedPlugin;
+        return Plugin;
       });
 
       // Store the promise so we don't load twice
@@ -206,7 +206,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
    * @returns A promise resolving to an array of loaded plugins
    */
   async loadAll(
-    filter?: (plugin: D | Plugin<D, I>) => boolean,
+    filter?: (plugin: D) => boolean,
     shouldWait = false,
     timeout = 10000
   ): Promise<Plugin<D, I>[]> {
@@ -220,8 +220,8 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     // Create an array of promises for loading each plugin
     const loadPromises = pluginsToLoad.map(async ([id, _]) => {
       try {
-        const loadedPlugin = await this.loadById(id, shouldWait, timeout);
-        return loadedPlugin;
+        const Plugin = await this.loadById(id, shouldWait, timeout);
+        return Plugin;
       } catch (error) {
         console.warn(`Failed to load plugin ${id}:`, error);
         return undefined;
@@ -264,52 +264,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     }
   }
 }
-/**
- * Check if a value is a plugin, optionally of a specific type
- * If a type is provided, it will be used to infer the correct plugin type
- */
-export function isPlugin<T extends PluginDescription = PluginDescription>(
-  value: unknown,
-  pluginType?: keyof PluginTypeMap
-): value is Plugin<T> {
-  if (!value || typeof value !== "object") return false;
-  const plugin = value as Plugin;
-  if (!plugin.type || !plugin.name || !plugin.id) return false;
-  if (pluginType && plugin.type !== pluginType) return false;
-  return true;
-}
 
-/**
- * Check if a value is a loadable plugin
- */
-export function isLoadablePlugin<
-  D extends PluginDescription = PluginDescription,
-  I = any
->(value: unknown): value is LoadablePlugin<D, I> {
-  if (!value || typeof value !== "object") return false;
-  const plugin = value as LoadablePlugin;
-  return (
-    "id" in plugin &&
-    "type" in plugin &&
-    "name" in plugin &&
-    "load" in plugin &&
-    typeof plugin.load === "function"
-  );
-}
-
-/**
- * Create a plugin by combining a description and implementation
- */
-export function createPlugin<D extends PluginDescription, I>(
-  description: D,
-  implementation: I
-): Plugin<D, I> {
-  return { ...description, ...implementation } as Plugin<D, I>;
-}
-
-/**
- * Create a filter function that matches plugins based on a field value
- */
 export function matchPlugins<T extends PluginDescription>(
   matchField: keyof T,
   matchValue: string | undefined
@@ -326,6 +281,50 @@ export function matchPlugins<T extends PluginDescription>(
     // Handle string values
     return value === "*" || value === matchValue;
   };
+}
+
+/**
+ * Check if a value is a plugin, optionally of a specific type
+ * If a type is provided, it will be used to infer the correct plugin type
+ */
+export function isPlugin<
+  T extends PluginDescription = PluginDescription,
+  I = any
+>(value: unknown, pluginType?: keyof PluginTypeMap): value is Plugin<T, I> {
+  if (!value || typeof value !== "object") return false;
+  const plugin = value as Plugin<T, I>;
+  if (!plugin.type || !plugin.name || !plugin.id) return false;
+  if (pluginType && plugin.type !== pluginType) return false;
+  return true;
+}
+
+/**
+ * Type predicate to ensure a value is of type D
+ */
+export function isPluginDescription<D extends PluginDescription>(
+  value: unknown
+): value is D {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "id" in value &&
+    "type" in value &&
+    "name" in value
+  );
+}
+
+/**
+ * Check if a value is a loadable plugin
+ */
+export function isLoadablePlugin<
+  D extends PluginDescription = PluginDescription,
+  I = any
+>(value: unknown): value is LoadablePlugin<D, I> {
+  return (
+    isPluginDescription<D>(value) &&
+    "load" in value &&
+    typeof value.load === "function"
+  );
 }
 
 /**

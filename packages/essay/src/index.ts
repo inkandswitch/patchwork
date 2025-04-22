@@ -1,4 +1,4 @@
-import { Plugin, ImportMethod, ExportMethod } from "@patchwork/sdk";
+import { LoadablePlugin } from "@patchwork/sdk";
 import type { MarkdownDoc } from "./datatype";
 import { markdownImport } from "./importMethods";
 import { markdownExport } from "./exportMethods";
@@ -7,7 +7,7 @@ export { isMarkdownDoc } from "./utils";
 export type { MarkdownDoc };
 export { getTitle } from "./datatype";
 
-export const plugins: Plugin[] = [
+export const plugins: LoadablePlugin<any>[] = [
   {
     id: "essay",
     type: "patchwork:dataType",

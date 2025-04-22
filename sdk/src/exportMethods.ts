@@ -1,9 +1,9 @@
 import { DataType } from "./datatypes";
 import { Doc, save } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
-import { getMatchingPlugins, registerPlugins } from "./plugins";
+import { getMatchingPlugins, Plugin, registerPlugins } from "./plugins";
 
-export type ExportMethod = {
+export type ExportMethodDescription = {
   id: string;
   name: string;
   type: "patchwork:exportMethod";
@@ -14,17 +14,16 @@ export type ExportMethod = {
    * If multiple methods have this set to true, one will be chosen arbitrarily.
    */
   useAsDefaultMethod?: boolean;
+};
+
+export type ExportMethodImplementation = {
   exportData: (doc: Doc<unknown>, repo: Repo) => Promise<File>;
 };
 
-export const isExportMethod = (value: unknown): value is ExportMethod => {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "type" in value &&
-    value.type === "patchwork:exportMethod"
-  );
-};
+export type ExportMethod = Plugin<
+  ExportMethodDescription,
+  ExportMethodImplementation
+>;
 
 export const getExportMethodsForDatatype = (
   datatype: DataType
@@ -52,10 +51,12 @@ export const automergeExport: ExportMethod = {
   name: "Automerge Binary",
   datatypeId: "*",
   fileExtensions: ["automerge"],
-  async exportData(doc: Doc<unknown>, repo: Repo) {
-    return new File([save(doc)], "document.automerge", {
-      type: "application/octet-stream",
-    });
+  module: {
+    async exportData(doc: Doc<unknown>, repo: Repo) {
+      return new File([save(doc)], "document.automerge", {
+        type: "application/octet-stream",
+      });
+    },
   },
 };
 
@@ -65,10 +66,12 @@ export const jsonExport: ExportMethod = {
   name: "JSON",
   datatypeId: "*",
   fileExtensions: ["json"],
-  async exportData(doc: Doc<unknown>, repo: Repo) {
-    return new File([JSON.stringify(doc)], "document.json", {
-      type: "application/json",
-    });
+  module: {
+    async exportData(doc: Doc<unknown>, repo: Repo) {
+      return new File([JSON.stringify(doc)], "document.json", {
+        type: "application/json",
+      });
+    },
   },
 };
 

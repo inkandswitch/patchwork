@@ -227,7 +227,7 @@ export const useRouter = ({
           }
 
           const branchScopeHandle = await repo.find<FolderDoc>(branchScopeUrl);
-          const title = await folderDataType.getTitle(
+          const title = await folderDataType.module.getTitle(
             branchScopeHandle.doc(),
             repo
           );
@@ -294,7 +294,7 @@ export const useRouter = ({
             urlParams.type
           );
           const doc = (await repo.find(urlParams.url)).doc();
-          const title = (await dataType?.getTitle(doc, repo)) ?? "Unknown";
+          const title = (await dataType?.module.getTitle(doc, repo)) ?? "Unknown";
 
           docPath = branchScopePathInRootFolder.concat({
             type: urlParams.type,

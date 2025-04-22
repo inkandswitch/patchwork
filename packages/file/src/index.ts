@@ -1,4 +1,4 @@
-import type { Plugin } from "@patchwork/sdk";
+import type { LoadablePlugin, Plugin } from "@patchwork/sdk";
 import type { FileDoc } from "./types";
 import { universalImport } from "./importMethods";
 import { universalExport } from "./exportMethods";
@@ -9,7 +9,7 @@ export { isBinaryFileDoc, isTextFileDoc } from "./datatype";
 export { isBinaryCheck } from "./isBinaryFile";
 export { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from "./utils";
 
-export const plugins: Plugin[] = [
+export const plugins: LoadablePlugin<any>[] = [
   {
     type: "patchwork:dataType",
     id: "file",

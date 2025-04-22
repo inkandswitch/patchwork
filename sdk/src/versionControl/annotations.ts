@@ -135,8 +135,8 @@ export function useAnnotations({
       return { annotations: [], annotationGroups: [] };
     }
 
-    const patchesToAnnotations = dataType.patchesToAnnotations;
-    const valueOfAnchor = dataType.valueOfAnchor ?? (() => null);
+    const patchesToAnnotations = dataType.module.patchesToAnnotations;
+    const valueOfAnchor = dataType.module.valueOfAnchor ?? (() => null);
     const discussions: (PendingDiscussion<unknown> | Discussion<unknown>)[] =
       Object.values(doc?.discussions ?? []);
 
@@ -258,13 +258,13 @@ export function useAnnotations({
       highlightAnnotations.push(...selectionAnnotations);
     }
 
-    const sortedAnnotationGroups = dataType.sortAnchorsBy
+    const sortedAnnotationGroups = dataType.module.sortAnchorsBy
       ? sortBy(combinedAnnotationGroups, (annotationGroup) =>
           annotationGroup.annotations.length === 0
             ? -Infinity // annotation groups without annotations are global comments which are always shown on top
             : min(
                 annotationGroup.annotations.map((annotation) =>
-                  dataType.sortAnchorsBy!(doc, annotation.anchor)
+                  dataType.module.sortAnchorsBy!(doc, annotation.anchor)
                 )
               )
         )
@@ -471,7 +471,7 @@ export const doAnchorsOverlap = (
   b: unknown,
   doc: HasVersionControlMetadata<unknown, unknown>
 ) => {
-  const comperator = datatype.doAnchorsOverlap;
+  const comperator = datatype.module.doAnchorsOverlap;
   return comperator ? comperator(doc, a, b) : isEqual(a, b);
 };
 
@@ -520,7 +520,7 @@ export function groupAnnotations<D, T, V>(
   annotations: Annotation<T, V>[]
 ): Annotation<T, V>[][] {
   const grouper =
-    datatype.groupAnnotations ??
+    datatype.module.groupAnnotations ??
     ((annotations: Annotation<T, V>[]) =>
       annotations.map((annotation) => [annotation]));
 

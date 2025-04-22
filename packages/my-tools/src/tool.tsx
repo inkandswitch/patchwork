@@ -20,8 +20,8 @@ import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 
 export type ModuleContents = {
   url: string;
-  dataTypes?: DataType[];
-  tools?: Tool[];
+  dataTypes?: DataTypeDescription[];
+  tools?: ToolDescription[];
   importMethods?: ImportMethod[];
   exportMethods?: ExportMethod[];
   error?: string;

@@ -312,7 +312,7 @@ import type { Doc } from "./datatype";
 
 import "./index.css";
 
-export const plugins: Plugin[] = [
+export const plugins: LoadablePlugin<any>[] = [
   {
     type: "patchwork:dataType",
     id: "counter",

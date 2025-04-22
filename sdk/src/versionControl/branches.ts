@@ -93,9 +93,9 @@ export const cloneDocWithLinks = async (
 
   // clone links
   const dataType = await loadPlugin<DataType>("patchwork:dataType", dataTypeId);
-  if (dataType?.links) {
+  if (dataType?.module.links) {
     const doc = handle.doc();
-    const links_ = dataType.links(doc);
+    const links_ = dataType.module.links(doc);
     await Promise.all(
       links_.map(async (link: { url: AutomergeUrl; type: string }) => {
         const handle = await repo.find(link.url);
