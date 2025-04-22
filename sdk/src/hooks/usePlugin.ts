@@ -7,6 +7,7 @@ import {
   onPluginsChange,
   isLoadablePlugin,
   loadPluginFromRegistry,
+  getMatchingPlugins,
 } from "../plugins";
 
 /**
@@ -111,4 +112,46 @@ export function usePluginDescriptions<T extends Plugin<PluginDescription>>(
   }, [pluginType]);
 
   return plugins;
+}
+
+/**
+ * Hook to get all plugin descriptions that match certain criteria
+ * Similar to getMatchingPlugins but reactive to plugin registry changes
+ */
+export function useMatchingPluginDescriptions<T extends PluginDescription>({
+  pluginType,
+  matchField,
+  matchValue,
+  sortField,
+}: {
+  pluginType: string;
+  matchField: keyof T;
+  matchValue: string | undefined;
+  sortField?: keyof T;
+}): {
+  plugins: T[];
+  error: Error | undefined;
+} {
+  const [result, setResult] = useState<{
+    plugins: T[];
+    error: Error | undefined;
+  }>({ plugins: [], error: undefined });
+
+  useEffect(() => {
+    // Get initial plugins
+    setResult(
+      getMatchingPlugins<T>({ pluginType, matchField, matchValue, sortField })
+    );
+
+    // Subscribe to plugin changes
+    const unsubscribe = onPluginsChange<T>(pluginType, () => {
+      setResult(
+        getMatchingPlugins<T>({ pluginType, matchField, matchValue, sortField })
+      );
+    });
+
+    return () => unsubscribe();
+  }, [pluginType, matchField, matchValue, sortField]);
+
+  return result;
 }

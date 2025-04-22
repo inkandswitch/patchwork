@@ -2,10 +2,10 @@ import {
   DataType,
   DataTypeImplementation,
   Tool,
+  ToolDescription,
   useSuggestedModuleForDocUrl,
-  getMatchingPlugins,
-  getPluginFromRegistry,
 } from "@patchwork/sdk";
+import { useMatchingPluginDescriptions } from "@patchwork/sdk/hooks";
 import { type DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { Toaster } from "@patchwork/sdk/ui";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
@@ -15,7 +15,13 @@ import {
   useRepo,
   useDocHandle,
 } from "@automerge/automerge-repo-react-hooks";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+} from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import {
   useCurrentAccount,
@@ -78,47 +84,66 @@ const useRunMigrationsOnceOnLoad = ({
   }, [handle, doc, dataType, repo]);
 };
 
-/**
- * Check if a tool is compatible with a given data type
- */
-const isToolCompatibleWithDataType = (
-  tool: Tool | undefined,
-  dataTypeId: string | undefined
-): boolean => {
-  if (!tool || !dataTypeId) return false;
+// Hook to encapsulate selection logic for tools
+const useSelectedTool = (
+  selectedDataTypeId: string | undefined,
+  selectedDocUrl: string | undefined
+) => {
+  // Get all tools compatible with the current datatype
+  const { plugins: toolDescriptions } =
+    useMatchingPluginDescriptions<ToolDescription>({
+      pluginType: "patchwork:tool",
+      matchField: "supportedDataTypes",
+      matchValue: selectedDataTypeId,
+      sortField: "name",
+    });
 
-  return (
-    tool.supportedDataTypes === "*" ||
-    (Array.isArray(tool.supportedDataTypes) &&
-      tool.supportedDataTypes.includes(dataTypeId))
+  // Only track user selections in state.
+  const [userSelectedToolId, setUserSelectedToolId] = useState<string | null>(
+    null
   );
-};
 
-/**
- * Find the best compatible tool for a data type from a list of tools
- * If the currently selected tool is compatible, it will be returned
- * Otherwise, the first compatible tool will be returned
- */
-const findCompatibleToolForDataType = (
-  currentToolId: string | undefined,
-  dataTypeId: string | undefined
-): string | undefined => {
-  if (currentToolId) {
-    const tool = getPluginFromRegistry<Tool>("patchwork:tool", currentToolId);
-    // If current tool is compatible, keep using it
-    if (tool && isToolCompatibleWithDataType(tool, dataTypeId)) {
-      return tool.id;
+  // Whenever the document or datatype changes, clear any prior user choice so the
+  // fallback logic (first tool in list) runs again.
+  useEffect(() => {
+    setUserSelectedToolId(null);
+  }, [selectedDataTypeId, selectedDocUrl]);
+
+  // Determine which tool ID should be active right now. If the user has
+  // explicitly selected a tool and it remains available, use it; otherwise
+  // fall back to the first compatible tool.
+  const currentToolId = useMemo(() => {
+    if (
+      userSelectedToolId &&
+      toolDescriptions.some((t) => t.id === userSelectedToolId)
+    ) {
+      return userSelectedToolId;
     }
-  }
+    return toolDescriptions.length > 0 ? toolDescriptions[0].id : "";
+  }, [userSelectedToolId, toolDescriptions]);
 
-  // Otherwise, find the first compatible tool
-  const { plugins } = getMatchingPlugins<Tool>({
-    pluginType: "patchwork:tool",
-    matchField: "supportedDataTypes",
-    matchValue: dataTypeId,
-  });
+  const { plugin: currentTool, isLoading: isLoadingTool } = usePlugin<Tool>(
+    "patchwork:tool",
+    currentToolId
+  );
 
-  return plugins[0]?.id;
+  // Expose a handler for user‑initiated tool changes.
+  const handleToolChange = useCallback(
+    (toolId: string) => {
+      const newTool = toolDescriptions.find((t) => t.id === toolId);
+      if (newTool) {
+        setUserSelectedToolId(toolId);
+      }
+    },
+    [toolDescriptions]
+  );
+
+  return {
+    currentTool,
+    isLoadingTool,
+    handleToolChange,
+    toolDescriptions,
+  } as const;
 };
 
 export const Explorer: React.FC = () => {
@@ -165,36 +190,9 @@ export const Explorer: React.FC = () => {
     dataType: selectedDataType,
   });
 
-  const { plugins: toolsForSelection } = getMatchingPlugins<Tool>({
-    pluginType: "patchwork:tool",
-    matchField: "supportedDataTypes",
-    matchValue: selectedDataTypeId,
-    sortField: "name",
-  });
-
-  // Track the selected tool ID in state
-  const [selectedToolId, setSelectedToolId] = useState("");
-
-  const currentToolId = findCompatibleToolForDataType(
-    selectedToolId,
-    selectedDataTypeId
-  );
-
-  const { plugin: currentTool, isLoading: isLoadingTool } = usePlugin<Tool>(
-    "patchwork:tool",
-    currentToolId
-  );
-
-  /* Used by the topbar to change the tool if the user selects another */
-  const handleToolChange = useCallback(
-    (toolId: string) => {
-      const newTool = toolsForSelection.find((t) => t.id === toolId);
-      if (newTool) {
-        setSelectedToolId(toolId);
-      }
-    },
-    [toolsForSelection]
-  );
+  // ---- Tool selection ----------------------------------------------
+  const { currentTool, isLoadingTool, handleToolChange, toolDescriptions } =
+    useSelectedTool(selectedDataTypeId, selectedDocUrl);
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();
@@ -301,7 +299,7 @@ export const Explorer: React.FC = () => {
               removeDocPath={removeDocPathCallback}
               addNewDocument={addNewDoc}
               tool={currentTool}
-              tools={toolsForSelection}
+              tools={toolDescriptions}
               onToolChange={handleToolChange}
               docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
             />
@@ -310,7 +308,7 @@ export const Explorer: React.FC = () => {
 
               {selectedDocUrl &&
                 selectedDoc &&
-                toolsForSelection.length === 0 && (
+                toolDescriptions.length === 0 && (
                   <div className="flex items-center justify-center h-full text-gray-500">
                     <div className="text-center">
                       <p className="text-sm">

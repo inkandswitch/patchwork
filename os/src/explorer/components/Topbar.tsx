@@ -4,6 +4,7 @@ import {
   getExportMethodsForDatatype,
   ExportMethod,
   DataType,
+  ToolDescription,
 } from "@patchwork/sdk";
 import {
   DropdownMenu,
@@ -47,7 +48,7 @@ type TopbarProps = {
     | undefined;
   addNewDocument: (doc: { type: string }) => void;
   removeDocPath: (docPath: DocPath) => void;
-  tools: Tool[];
+  tools: ToolDescription[];
   tool: Tool | undefined;
   onToolChange: (toolId: string) => void;
   docHeadsFromTimelineSidebar?: Automerge.Heads;
