@@ -14,6 +14,7 @@ import {
 import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "./router/DocLink";
+import { Plugin } from "./plugins";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but

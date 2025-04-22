@@ -201,7 +201,7 @@ export const VersionControlEditor: React.FC<{
 
   // global comment keyboard shortcut
   // with cmd + shift + m a new comment is created
-  const supportsInlineComments = tool.supportsInlineComments;
+  const supportsInlineComments = tool.module.supportsInlineComments;
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {

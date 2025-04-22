@@ -597,7 +597,7 @@ export const VersionControlBar = ({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          {tool.supportsCollapseContentWithoutAnnotations && (
+          {tool.module.supportsCollapseContentWithoutAnnotations && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

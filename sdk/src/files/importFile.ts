@@ -52,7 +52,7 @@ export const createDocFromFile = async (
 ): Promise<DocHandle<unknown>> => {
   const { importMethod, dataType } = await getImportMethodForFile(file);
   const handle = createDocOfDataType(dataType, repo);
-  await importMethod.importData(file, handle);
+  await importMethod.module.importData(file, handle);
   return handle;
 };
 
@@ -64,7 +64,7 @@ export const updateDocFromFile = async (
   handle: DocHandle<unknown>
 ): Promise<{ didChange: boolean }> => {
   const { importMethod } = await getImportMethodForFile(file);
-  return importMethod.importData(file, handle);
+  return importMethod.module.importData(file, handle);
 };
 
 /**

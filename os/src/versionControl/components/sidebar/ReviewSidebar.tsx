@@ -53,7 +53,7 @@ export const ReviewSidebar = React.memo(
                 doc={doc}
                 readonly={readonly}
                 handle={handle}
-                AnnotationsViewComponent={tool.AnnotationsViewComponent}
+                AnnotationsViewComponent={tool.module.AnnotationsViewComponent}
                 key={id}
                 annotationGroup={annotationGroup}
                 setIsHovered={(isHovered) => {

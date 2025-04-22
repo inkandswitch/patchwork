@@ -29,7 +29,7 @@ export const DocEditor = <T, V>({
     return;
   }
 
-  const Component = tool.EditorComponent as React.FC<EditorProps<T, V>>;
+  const Component = tool.module.EditorComponent as React.FC<EditorProps<T, V>>;
 
   const docUrlWithHeads = stringifyAutomergeUrl({
     ...parseAutomergeUrl(docUrl),

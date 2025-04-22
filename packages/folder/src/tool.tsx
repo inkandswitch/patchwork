@@ -146,7 +146,7 @@ export const FolderEntryView = ({
   const toolView =
     cloneOrMainOm && tool && docLink.type !== "folder" ? (
       <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <tool.EditorComponent
+        <tool.module.EditorComponent
           docPath={docPath}
           docUrl={cloneOrMainOm.url}
           mainDocUrl={docLink.url}
@@ -180,7 +180,7 @@ export const FolderEntryView = ({
           <div className="border border-gray-300">
             {!tool && <div>No editor available</div>}
             {toolView &&
-              (tool.supportsCollapseContentWithoutAnnotations &&
+              (tool.module.supportsCollapseContentWithoutAnnotations &&
               collapseContentWithoutChanges ? (
                 toolView
               ) : (
