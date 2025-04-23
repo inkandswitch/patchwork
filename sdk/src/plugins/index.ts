@@ -22,6 +22,7 @@ function getPluginRegistry<T extends PluginDescription>(
 ): PluginRegistry<T> {
   // If the registry doesn't exist yet, create it
   if (!pluginRegistries[pluginType]) {
+    console.log("Creating plugin registry:", pluginType);
     pluginRegistries[pluginType] = new PluginRegistry<T>();
   }
 
@@ -67,7 +68,15 @@ export async function getLoadedPlugin<T extends LoadedPlugin>(
   shouldWait = false,
   timeout = 10000
 ): Promise<T | undefined> {
-  return getPluginRegistry<T>(pluginType).loadById(id, shouldWait, timeout);
+  const plugin = await getPluginRegistry<T>(pluginType).loadById(
+    id,
+    shouldWait,
+    timeout
+  );
+  if (!plugin) {
+    console.error(`Plugin not found: type ${pluginType}, id ${id}`);
+  }
+  return plugin;
 }
 
 /**

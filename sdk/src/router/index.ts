@@ -217,12 +217,11 @@ export const useRouter = ({
       if (branchScopeUrl) {
         if (!branchScopePathInRootFolder) {
           const folderDataType = await getLoadedPlugin<DataType>(
-            "dataType",
+            "patchwork:dataType",
             "folder"
           );
 
           if (!folderDataType) {
-            console.error("Could not load folder data type");
             return null;
           }
 
