@@ -52,61 +52,64 @@ export const useSyncDocTitle = ({
   ).ifPending(undefined).value;
 
   useEffect(() => {
-    if (!selectedDocLink || !selectedDoc || !parentFolderOm) {
-      selectedDocTitleRef.current = undefined;
-      return;
-    }
+    (async () => {
+      if (!selectedDocLink || !selectedDoc || !parentFolderOm) {
+        selectedDocTitleRef.current = undefined;
+        return;
+      }
 
-    // reset title if url has changed
-    if (selectedDocTitleRef.current?.url !== selectedDocLink.url) {
-      selectedDocTitleRef.current = { url: selectedDocLink.url };
-    }
+      // reset title if url has changed
+      if (selectedDocTitleRef.current?.url !== selectedDocLink.url) {
+        selectedDocTitleRef.current = { url: selectedDocLink.url };
+      }
 
-    const counter = (counterRef.current = counterRef.current + 1);
+      const counter = (counterRef.current = counterRef.current + 1);
 
-    loadPlugin<DataType>("patchwork:dataType", selectedDocLink.type).then(
-      (dataType) => {
-        // Skip if dataType is undefined
-        if (!dataType) return;
+      const dataType = await loadPlugin<DataType>(
+        "patchwork:dataType",
+        selectedDocLink.type
+      );
 
-        // load title
-        dataType.module.getTitle(selectedDoc, repo).then((title) => {
-          // do nothing if selectedDocLink has changed in between
-          // or if this promise resolved after newer update
+      // Skip if dataType is undefined
+      if (!dataType) return;
+
+      // load title
+      const title = await dataType.module.getTitle(selectedDoc, repo);
+
+      // do nothing if selectedDocLink has changed in between
+      // or if this promise resolved after newer update
+      if (
+        selectedDocLink.url !== selectedDocTitleRef.current?.url ||
+        counter !== counterRef.current
+      ) {
+        return;
+      }
+
+      // title has changed compared to previous computation
+      if (title !== selectedDocTitleRef.current?.title) {
+        selectedDocTitleRef.current.title = title;
+
+        parentFolderOm.handle.change((d) => {
+          const existingDocLink = d.docs.find(
+            (link) => link.url === selectedDocLink.url
+          );
+          // check if the doc link matches the current title
           if (
-            selectedDocLink.url !== selectedDocTitleRef.current?.url ||
-            counter !== counterRef.current
+            existingDocLink &&
+            existingDocLink.name &&
+            existingDocLink.name !== title
           ) {
-            return;
-          }
+            existingDocLink.name = title;
 
-          // title has changed compared to previous computation
-          if (title !== selectedDocTitleRef.current?.title) {
-            selectedDocTitleRef.current.title = title;
-
-            parentFolderOm.handle.change((d) => {
-              const existingDocLink = d.docs.find(
-                (link) => link.url === selectedDocLink.url
-              );
-              // check if the doc link matches the current title
-              if (
-                existingDocLink &&
-                existingDocLink.name &&
-                existingDocLink.name !== title
-              ) {
-                existingDocLink.name = title;
-
-                // update url
-                selectDocPath([
-                  ...DocPathUtils.parent(selectedDocPath),
-                  { ...selectedDocLink, name: title },
-                ]);
-              }
-            });
+            // update url
+            selectDocPath([
+              ...DocPathUtils.parent(selectedDocPath),
+              { ...selectedDocLink, name: title },
+            ]);
           }
         });
       }
-    );
+    })();
   }, [
     selectedDoc,
     selectedDocPath,
