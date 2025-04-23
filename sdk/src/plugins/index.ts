@@ -22,7 +22,6 @@ function getPluginRegistry<T extends PluginDescription>(
 ): PluginRegistry<T> {
   // If the registry doesn't exist yet, create it
   if (!pluginRegistries[pluginType]) {
-    console.log("Creating plugin registry:", pluginType);
     pluginRegistries[pluginType] = new PluginRegistry<T>();
   }
 
