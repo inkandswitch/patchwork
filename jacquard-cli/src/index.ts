@@ -185,6 +185,12 @@ const main = async () => {
   await Promise.all([
     ...Object.entries(jacquardDataTypes).map(async ([id, importName]) => {
       const module = await import(importName);
+      // Modern modules should export plugins like this:
+      // export const plugins = [plugin1, plugin2]
+      // but this code handles backwards compatibility for the old way like this:
+      // export const tools = [tool1, tool2]
+      // export const dataTypes = [dataType1, dataType2]
+      // ...
       const plugins = Object.values(module).flatMap((value) => {
         if (isPlugin(value)) {
           // TypeScript now knows value is a Plugin

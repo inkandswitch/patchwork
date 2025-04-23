@@ -67,6 +67,10 @@ export class ModuleWatcher {
     if (mod.plugins) {
       registerPlugins(mod.plugins, importName);
     } else {
+      // This is a backwards compatibility shim to handle the way plugins used to be exported, like this:
+      // export const tools = [tool1, tool2]
+      // export const dataTypes = [dataType1, dataType2]
+      // ...
       console.warn(
         `Loading legacy module ${importName}, please update it to use 'export const plugins' style.`
       );

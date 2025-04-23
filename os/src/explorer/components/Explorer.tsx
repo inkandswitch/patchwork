@@ -1,9 +1,4 @@
-import {
-  DataType,
-  DataTypeImplementation,
-  useSuggestedModuleForDocUrl,
-} from "@patchwork/sdk";
-import { useMatchingPluginDescriptions } from "@patchwork/sdk/hooks";
+import { DataType, useSuggestedModuleForDocUrl } from "@patchwork/sdk";
 import { type DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { Toaster } from "@patchwork/sdk/ui";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
@@ -13,13 +8,7 @@ import {
   useRepo,
   useDocHandle,
 } from "@automerge/automerge-repo-react-hooks";
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useMemo,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import {
   useCurrentAccount,
@@ -267,8 +256,6 @@ export const Explorer: React.FC = () => {
                 selectedDocPath &&
                 currentTool &&
                 !isLoadingTool &&
-                (currentTool.supportedDataTypes.includes(selectedDataTypeId!) ||
-                  currentTool.supportedDataTypes === "*") &&
                 flatDocPaths && (
                   <VersionControlEditor
                     key={DocPathUtils.toString(selectedDocPath)}
