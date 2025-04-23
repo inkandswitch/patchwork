@@ -3,7 +3,7 @@ import { DocLink } from "@patchwork/sdk/router";
 import {
   getDefaultExportMethodForDatatype,
   DataType,
-  loadPlugin,
+  getLoadedPlugin,
 } from "@patchwork/sdk";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import fs from "fs/promises";
@@ -70,7 +70,10 @@ async function pullDoc({
   const dataTypeId = docLink.type;
   const filePath = path.join(dir, docLink.name);
 
-  const dataType = await loadPlugin<DataType>("patchwork:dataType", dataTypeId);
+  const dataType = await getLoadedPlugin<DataType>(
+    "patchwork:dataType",
+    dataTypeId
+  );
 
   if (!dataType) {
     console.error(`skipping doc ${filePath} - unknown type ${dataTypeId}`);
@@ -87,7 +90,7 @@ async function pullDoc({
 
   const docOm = await omOnCLIActiveBranchPromise(docLink.url, repo);
 
-  const file = await exportMethod.exportData(docOm.doc, repo);
+  const file = await exportMethod.module.exportData(docOm.doc, repo);
   await fs.writeFile(
     path.join(dir, file.name),
     Buffer.from(await file.arrayBuffer())
