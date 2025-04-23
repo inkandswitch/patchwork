@@ -6,8 +6,9 @@ import {
   getPlugins,
   onPluginsChange,
   isLoadablePlugin,
-  loadPlugin,
+  getLoadedPlugin,
   getMatchingPlugins,
+  LoadedPlugin,
 } from "../plugins";
 
 /**
@@ -38,7 +39,11 @@ export function usePlugin<T extends Plugin>(
     try {
       setIsLoading(true);
       setError(undefined);
-      const loadedPlugin = await loadPlugin<Plugin<T>>(pluginType, id, wait);
+      const loadedPlugin = await getLoadedPlugin<LoadedPlugin<T>>(
+        pluginType,
+        id,
+        wait
+      );
       setPlugin(loadedPlugin);
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
@@ -114,7 +119,7 @@ export function usePluginDescriptions<T extends Plugin<PluginDescription>>(
  * Hook to get all plugin descriptions that match certain criteria
  * Similar to getMatchingPlugins but reactive to plugin registry changes
  */
-export function useMatchingPluginDescriptions<T extends PluginDescription>({
+export function useMatchingPluginDescriptions<T extends Plugin>({
   pluginType,
   matchField,
   matchValue,

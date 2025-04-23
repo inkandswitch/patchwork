@@ -12,7 +12,7 @@ import {
   HasVersionControlMetadata,
   VersionControlSidecarDoc,
 } from "./schema";
-import { loadPlugin } from "../plugins";
+import { getLoadedPlugin } from "../plugins";
 import { DataType } from "../datatypes";
 
 export const fetchVersionControlMetadataOm = (
@@ -123,7 +123,7 @@ export const fetchAllLinkedDocLinks = async (
   const doc = fetchDoc(mappedUrl, repo);
 
   // Load the full data type implementation to get access to links function
-  const dataType = await loadPlugin<DataType>(
+  const dataType = await getLoadedPlugin<DataType>(
     "patchwork:dataType",
     dataTypeId,
     true

@@ -14,7 +14,7 @@ import {
 import React from "react";
 import { IconType } from "./ui/icons";
 import { DocPath } from "./router/DocLink";
-import { Plugin } from "./plugins";
+import { LoadedPlugin, Plugin } from "./plugins";
 
 // To construct well-typed tools, we need ToolTyped with specific type
 // parameters. But then we need Tool, which means "ToolTyped with unknown but
@@ -35,7 +35,7 @@ export type ToolDescription = Plugin & {
   icon?: IconType;
 };
 
-export type Tool = Plugin<ToolDescription, ToolImplementation>;
+export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;
 
 export type ToolTyped<D extends HasVersionControlMetadata<A, V>, A, V> = {
   EditorComponent: React.FC<EditorProps<A, V>>;

@@ -12,7 +12,7 @@ import { getDocPathInRootFolder } from "./getDocPathInRootFolder";
 import { URLParams } from "./types";
 import { parseLegacyUrl, parseUrl, toUrl } from "./urls";
 import { useSelectedDocPathState } from "./useSelectedDocPathState";
-import { loadPlugin } from "../plugins";
+import { getLoadedPlugin } from "../plugins";
 import { DataType } from "../datatypes";
 
 export { type DocLink, type DocPath, DocPathUtils };
@@ -216,7 +216,7 @@ export const useRouter = ({
       // make sure that the branch scope doc is in the root folder and that the right branch is checked out
       if (branchScopeUrl) {
         if (!branchScopePathInRootFolder) {
-          const folderDataType = await loadPlugin<DataType>(
+          const folderDataType = await getLoadedPlugin<DataType>(
             "dataType",
             "folder"
           );
@@ -289,12 +289,13 @@ export const useRouter = ({
         // special case: the url references a branch scope that doesn't contain the referenced docUrl
         // -> create a doc link that will lead to a 404 page
         if (branchScopePathInRootFolder) {
-          const dataType = await loadPlugin<DataType>(
+          const dataType = await getLoadedPlugin<DataType>(
             "patchwork:dataType",
             urlParams.type
           );
           const doc = (await repo.find(urlParams.url)).doc();
-          const title = (await dataType?.module.getTitle(doc, repo)) ?? "Unknown";
+          const title =
+            (await dataType?.module.getTitle(doc, repo)) ?? "Unknown";
 
           docPath = branchScopePathInRootFolder.concat({
             type: urlParams.type,

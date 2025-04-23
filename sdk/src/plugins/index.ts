@@ -1,12 +1,12 @@
-export type { Plugin, LoadablePlugin, PluginDescription } from "./registry";
-export { isLoadablePlugin, isPluginDescription, isPlugin } from "./registry";
-import {
-  PluginRegistry,
+export type {
   Plugin,
+  LoadedPlugin,
+  LoadablePlugin,
   PluginDescription,
-  matchPlugins,
-  sortPlugins,
-} from "./registry";
+} from "./types";
+export { isLoadablePlugin, isPluginDescription, isPlugin } from "./registry";
+import { PluginRegistry, matchPlugins, sortPlugins } from "./registry";
+import { LoadedPlugin, PluginDescription, Plugin } from "./types";
 
 // Map of plugin types to their registries
 const pluginRegistries: Record<string, PluginRegistry<any>> = {};
@@ -31,8 +31,8 @@ function getPluginRegistry<T extends PluginDescription>(
 /**
  * Register plugins for a specific plugin type
  */
-export async function registerPlugins(
-  plugins: Plugin<any, any>[],
+export async function registerPlugins<D extends PluginDescription, I>(
+  plugins: Plugin<D, I>[],
   sourceModule: string
 ): Promise<void> {
   // Register each group with its appropriate registry
@@ -47,9 +47,9 @@ export async function registerPlugins(
 }
 
 /**
- * Get a plugin by type and ID without loading it
+ * Get a plugin by type and ID; it may be loaded or not
  */
-export function getPlugin<T extends Plugin<any, any>>(
+export function getPlugin<T extends Plugin>(
   pluginType: string,
   id: string
 ): T | undefined {
@@ -58,10 +58,10 @@ export function getPlugin<T extends Plugin<any, any>>(
 }
 
 /**
- * Load a plugin by type and ID
+ * Get a plugin by type and ID, ensuring it is loaded before returning
  * If shouldWait is true, will wait for the plugin to be registered if it isn't already
  */
-export async function loadPlugin<T extends Plugin>(
+export async function getLoadedPlugin<T extends LoadedPlugin>(
   pluginType: string,
   id: string,
   shouldWait = false,
@@ -75,7 +75,7 @@ export async function loadPlugin<T extends Plugin>(
  * @param pluginType The type of plugins to get
  * @param filter Optional filter function to determine which plugins to return
  */
-export function getPlugins<T extends Plugin<any, any>>(
+export function getPlugins<T extends Plugin>(
   pluginType: string,
   filter?: (plugin: PluginDescription) => boolean
 ): T[] {
@@ -90,7 +90,7 @@ export function getPlugins<T extends Plugin<any, any>>(
  * @param shouldWait Whether to wait for plugins to be registered if they aren't already
  * @returns A Promise resolving to an array of plugins
  */
-export async function loadAllPlugins<T extends Plugin<any, any>>(
+export async function getLoadedPlugins<T extends LoadedPlugin>(
   pluginType: string,
   filter?: (plugin: PluginDescription) => boolean,
   shouldWait = false
@@ -110,7 +110,7 @@ export function hasPlugin(pluginType: string, id: string): boolean {
 /**
  * Subscribe to changes in a plugin registry
  */
-export function onPluginsChange<T extends PluginDescription>(
+export function onPluginsChange<T extends Plugin>(
   pluginType: string,
   callback: (plugins: T[]) => void
 ): () => void {
@@ -123,7 +123,7 @@ export function onPluginsChange<T extends PluginDescription>(
  * This is useful for finding plugins that support a specific type (e.g. tools for a datatype)
  * where some plugins support all types ("*") and others support specific types.
  */
-export function getMatchingPlugins<T extends PluginDescription>({
+export function getMatchingPlugins<T extends Plugin>({
   pluginType,
   matchField,
   matchValue,
@@ -164,13 +164,19 @@ export function getMatchingPlugins<T extends PluginDescription>({
  * This is useful for loading plugins that support a specific type (e.g. tools for a datatype)
  * where some plugins support all types ("*") and others support specific types.
  */
-export async function loadMatchingPlugins<T extends PluginDescription>(
-  pluginType: string,
-  matchField: keyof T,
-  matchValue: string | undefined,
-  sortField?: keyof T,
-  wait: boolean = false
-): Promise<{
+export async function getMatchingLoadedPlugins<T extends LoadedPlugin>({
+  pluginType,
+  matchField,
+  matchValue,
+  sortField,
+  wait = false,
+}: {
+  pluginType: string;
+  matchField: keyof T;
+  matchValue: string | undefined;
+  sortField?: keyof T;
+  wait?: boolean;
+}): Promise<{
   plugins: T[];
   error: Error | undefined;
 }> {

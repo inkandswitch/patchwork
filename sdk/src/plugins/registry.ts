@@ -4,51 +4,12 @@ import { ToolDescription } from "../tools";
 import { DataTypeDescription } from "../datatypes";
 import { ImportMethod } from "../importMethods";
 import { ExportMethod } from "../exportMethods";
-
-/**
- * Map of plugin type strings to their corresponding description types
- */
-export type PluginTypeMap = {
-  "patchwork:tool": ToolDescription;
-  "patchwork:dataType": DataTypeDescription;
-  "patchwork:importMethod": ImportMethod;
-  "patchwork:exportMethod": ExportMethod;
-  [key: string]: PluginDescription; // Allow for user-defined plugin types
-};
-
-/**
- * Base interface for all plugin descriptions
- */
-export interface PluginDescription {
-  id: string;
-  type: string;
-  name: string;
-  icon?: IconType;
-  importUrl?: string;
-}
-
-/**
- * Generic loadable plugin
- * D = Description type that extends PluginDescription
- * I = Implementation type that will be loaded
- */
-export type LoadablePlugin<
-  D extends PluginDescription = PluginDescription,
-  I = any
-> = D & {
-  load: () => Promise<I>;
-};
-
-/**
- * A fully loaded plugin combining description and implementation
- * D = Description type, I = Implementation type
- */
-export type Plugin<
-  D extends PluginDescription = PluginDescription,
-  I = any
-> = D & {
-  module: I;
-};
+import {
+  LoadablePlugin,
+  LoadedPlugin,
+  PluginDescription,
+  PluginTypeMap,
+} from "./types";
 
 /**
  * Registry for managing plugins of a specific type
@@ -56,17 +17,20 @@ export type Plugin<
  * I = Implementation type that will be loaded and combined with the description
  */
 export class PluginRegistry<D extends PluginDescription, I = any> {
-  private plugins = new Map<string, Plugin<D, I> | LoadablePlugin<D, I>>();
-  private loadPromises = new Map<string, Promise<Plugin<D, I>>>();
+  private plugins = new Map<
+    string,
+    LoadedPlugin<D, I> | LoadablePlugin<D, I>
+  >();
+  private loadPromises = new Map<string, Promise<LoadedPlugin<D, I>>>();
   private events = new EventEmitter<{
-    "plugins:changed": (plugins: Plugin<D, I>[]) => void;
+    "plugins:changed": (plugins: LoadedPlugin<D, I>[]) => void;
   }>();
 
   /**
    * Register an plugin with this registry
    */
   async register(
-    plugin: Plugin<D, I> | LoadablePlugin<D, I>,
+    plugin: LoadedPlugin<D, I> | LoadablePlugin<D, I>,
     importUrl?: string
   ): Promise<void> {
     // If an import URL was provided, attach it to the plugin
@@ -102,7 +66,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   /**
    * Get an plugin by ID, returning either its description or loaded state
    */
-  getById(id: string): D | Plugin<D, I> | undefined {
+  getById(id: string): D | LoadedPlugin<D, I> | undefined {
     return this.plugins.get(id);
   }
 
@@ -114,7 +78,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     id: string,
     shouldWait = false,
     timeout = 10000
-  ): Promise<Plugin<D, I> | undefined> {
+  ): Promise<LoadedPlugin<D, I> | undefined> {
     // Check if we already have a loaded plugin
     const plugin = this.plugins.get(id);
     if (plugin && !isLoadablePlugin<D, I>(plugin)) {
@@ -130,7 +94,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
       }
 
       // If shouldWait is true, set up a promise that will listen for plugin registration events
-      return new Promise<Plugin<D, I> | undefined>((resolve, reject) => {
+      return new Promise<LoadedPlugin<D, I> | undefined>((resolve, reject) => {
         const timeoutId = setTimeout(() => {
           this.events.off("plugins:changed", checkForPlugin);
           reject(new Error(`Timeout waiting for plugin ${id}`));
@@ -165,7 +129,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
         const Plugin = {
           ...descriptionWithoutLoad,
           module: implementation,
-        } as Plugin<D, I>;
+        } as LoadedPlugin<D, I>;
 
         // Store the loaded version
         this.plugins.set(description.id, Plugin);
@@ -182,20 +146,22 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
       return loadPromise;
     }
 
-    return description as Plugin<D, I>;
+    return description as LoadedPlugin<D, I>;
   }
 
   /**
    * Get all plugins, both descriptions and loaded
    * @param filter Optional filter function to determine which plugins to return
    */
-  getPlugins(filter?: (plugin: Plugin<D, I>) => boolean): Plugin<D, I>[] {
+  getPlugins(
+    filter?: (plugin: LoadedPlugin<D, I>) => boolean
+  ): LoadedPlugin<D, I>[] {
     const entries = Array.from(this.plugins.values());
     return filter
-      ? entries.filter((plugin): plugin is Plugin<D, I> =>
-          filter(plugin as Plugin<D, I>)
+      ? entries.filter((plugin): plugin is LoadedPlugin<D, I> =>
+          filter(plugin as LoadedPlugin<D, I>)
         )
-      : (entries as Plugin<D, I>[]);
+      : (entries as LoadedPlugin<D, I>[]);
   }
 
   /**
@@ -209,7 +175,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     filter?: (plugin: D) => boolean,
     shouldWait = false,
     timeout = 10000
-  ): Promise<Plugin<D, I>[]> {
+  ): Promise<LoadedPlugin<D, I>[]> {
     // Get all plugins or filter them if a filter function is provided
     const pluginsToLoad = filter
       ? Array.from(this.plugins.entries()).filter(([_, plugin]) =>
@@ -231,7 +197,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     // Wait for all plugins to load and filter out any that failed
     const results = await Promise.all(loadPromises);
     return results.filter(
-      (plugin): plugin is Awaited<Plugin<D, I>> => plugin !== undefined
+      (plugin): plugin is Awaited<LoadedPlugin<D, I>> => plugin !== undefined
     );
   }
 
@@ -245,7 +211,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   /**
    * Subscribe to plugin changes
    */
-  onChange(callback: (plugins: Plugin<D, I>[]) => void): () => void {
+  onChange(callback: (plugins: LoadedPlugin<D, I>[]) => void): () => void {
     if (!callback || typeof callback !== "function") {
       console.warn("Invalid callback provided to PluginRegistry.onChange");
       return () => {}; // Return a no-op function
@@ -290,9 +256,12 @@ export function matchPlugins<T extends PluginDescription>(
 export function isPlugin<
   T extends PluginDescription = PluginDescription,
   I = any
->(value: unknown, pluginType?: keyof PluginTypeMap): value is Plugin<T, I> {
+>(
+  value: unknown,
+  pluginType?: keyof PluginTypeMap
+): value is LoadedPlugin<T, I> {
   if (!value || typeof value !== "object") return false;
-  const plugin = value as Plugin<T, I>;
+  const plugin = value as LoadedPlugin<T, I>;
   if (!plugin.type || !plugin.name || !plugin.id) return false;
   if (pluginType && plugin.type !== pluginType) return false;
   return true;
@@ -331,7 +300,7 @@ export function isLoadablePlugin<
  * Sort plugins based on a field value
  */
 export const sortPlugins = <
-  T extends Plugin<D, I>,
+  T extends LoadedPlugin<D, I>,
   D extends PluginDescription,
   I
 >(

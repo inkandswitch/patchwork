@@ -13,7 +13,8 @@ import { IconType } from "./ui";
 import { DocMigration } from "./migrations/DocMigration";
 import { HasPatchworkMetadata } from "./modules/types";
 import { DocLink } from "./router/DocLink";
-import { PluginDescription, LoadablePlugin, Plugin } from "./plugins";
+import { LoadablePlugin, Plugin } from "./plugins";
+import { LoadedPlugin, PluginDescription } from "./plugins/types";
 
 // DataType implementation interface
 export type DataTypeImplementation<D = unknown, T = unknown, V = unknown> = {
@@ -133,7 +134,7 @@ export type LoadableDataType<
 > = LoadablePlugin<DataTypeDescription, DataTypeImplementation<D, T, V>>;
 
 // The complete loaded DataType using the generic Plugin
-export type DataType<D = unknown, T = unknown, V = unknown> = Plugin<
+export type DataType<D = unknown, T = unknown, V = unknown> = LoadedPlugin<
   DataTypeDescription,
   DataTypeImplementation<D, T, V>
 >;

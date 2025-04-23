@@ -3,14 +3,13 @@ import { selectDocLink, DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { useDocUIState } from "@patchwork/sdk/router";
 import { Icon, IconType } from "@patchwork/sdk/ui";
 import {
-  DataTypeDescription,
-  getPlugin,
   type EditorProps,
   DataType,
+  getMatchingLoadedPlugins,
   getMatchingPlugins,
   Tool,
 } from "@patchwork/sdk";
-import { usePlugin } from "@patchwork/sdk/hooks";
+import { useMatchingPluginDescriptions, usePlugin } from "@patchwork/sdk/hooks";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
 import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
@@ -84,16 +83,18 @@ export const FolderEntryView = ({
     docLink.type
   );
 
-  const dataTypeDesc = getPlugin<DataTypeDescription>("dataType", docLink.type);
-
-  const { plugins } = getMatchingPlugins<Tool>({
+  const { plugins: toolDescriptions } = useMatchingPluginDescriptions<Tool>({
     pluginType: "patchwork:tool",
     matchField: "supportedDataTypes",
     matchValue: docLink.type,
   });
-  const tool = plugins[0];
+  const { plugin: tool } = usePlugin<Tool>(
+    "patchwork:tool",
+    toolDescriptions.length > 0 ? toolDescriptions[0].id : "",
+    { load: true }
+  );
 
-  const icon = tool?.icon ?? dataTypeDesc?.icon;
+  const icon = tool?.icon ?? dataType?.icon;
 
   // TODO: we shouldn't have to duplicate this code here, also right now the change highlights can't be disabled
   const diff = useMemo(() => {

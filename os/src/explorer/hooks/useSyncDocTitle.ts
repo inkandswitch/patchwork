@@ -4,7 +4,7 @@ import {
 } from "@patchwork/sdk/async-signals";
 import { DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { FolderDoc } from "@patchwork/folder";
-import { DataType, loadPlugin } from "@patchwork/sdk";
+import { DataType, getLoadedPlugin } from "@patchwork/sdk";
 import { fetchOmOnActiveBranch } from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { useCallback, useEffect, useRef } from "react";
@@ -65,7 +65,7 @@ export const useSyncDocTitle = ({
 
       const counter = (counterRef.current = counterRef.current + 1);
 
-      const dataType = await loadPlugin<DataType>(
+      const dataType = await getLoadedPlugin<DataType>(
         "patchwork:dataType",
         selectedDocLink.type
       );

@@ -1,4 +1,4 @@
-import { Tool, ToolDescription } from "@patchwork/sdk";
+import { Tool } from "@patchwork/sdk";
 import { useMatchingPluginDescriptions, usePlugin } from "@patchwork/sdk/hooks";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -35,13 +35,12 @@ export const useSelectedTool = (
   selectedDocUrl: string | undefined
 ) => {
   // Get all tools compatible with the current datatype
-  const { plugins: toolDescriptions } =
-    useMatchingPluginDescriptions<ToolDescription>({
-      pluginType: "patchwork:tool",
-      matchField: "supportedDataTypes",
-      matchValue: selectedDataTypeId,
-      sortField: "name",
-    });
+  const { plugins: toolDescriptions } = useMatchingPluginDescriptions<Tool>({
+    pluginType: "patchwork:tool",
+    matchField: "supportedDataTypes",
+    matchValue: selectedDataTypeId,
+    sortField: "name",
+  });
 
   // Only track user selections in state.
   const [userSelectedToolId, setUserSelectedToolId] = useState<string | null>(

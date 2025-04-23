@@ -1,7 +1,12 @@
 import { DataType } from "./datatypes";
 import { Doc, save } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
-import { getMatchingPlugins, Plugin, registerPlugins } from "./plugins";
+import {
+  getMatchingPlugins,
+  LoadedPlugin,
+  Plugin,
+  registerPlugins,
+} from "./plugins";
 
 export type ExportMethodDescription = {
   id: string;
@@ -20,7 +25,7 @@ export type ExportMethodImplementation = {
   exportData: (doc: Doc<unknown>, repo: Repo) => Promise<File>;
 };
 
-export type ExportMethod = Plugin<
+export type ExportMethod = LoadedPlugin<
   ExportMethodDescription,
   ExportMethodImplementation
 >;

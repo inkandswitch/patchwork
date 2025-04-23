@@ -6,7 +6,7 @@ import {
   Account,
   createDocOfDataType,
   DataType,
-  loadPlugin,
+  getLoadedPlugin,
 } from "@patchwork/sdk";
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { Om } from "@patchwork/sdk/om";
@@ -40,8 +40,11 @@ export async function addNewDocument({
     throw new Error("uiStateHandle not ready");
   }
 
-  // Load the data type (ensures it's fully loaded with implementation)
-  const dataType = await loadPlugin<DataType>("patchwork:dataType", type, true);
+  const dataType = await getLoadedPlugin<DataType>(
+    "patchwork:dataType",
+    type,
+    true
+  );
   if (!dataType) {
     throw new Error(`Failed to load data type: ${type}`);
   }
