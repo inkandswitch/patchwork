@@ -21,6 +21,7 @@
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
+    "@types/react-dom": "^18.3.6",
     "@vitest/ui": "^2.1.9",
     "prompts": "^2.4.2",
     "typescript": "^5.8.3",

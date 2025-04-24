@@ -211,3 +211,14 @@ export const Root = () => (
 );
 
 ReactDom.createRoot(document.getElementById("root")!).render(<Root />);
+
+// Register the custom element in a try/catch for HMR support
+try {
+  const { PatchworkEmbed } = await import("@patchwork/sdk/embed");
+  if (!customElements.get("patchwork-embed")) {
+    customElements.define("patchwork-embed", PatchworkEmbed);
+    console.log("Registered patchwork-embed custom element");
+  }
+} catch (err) {
+  console.warn("Failed to register patchwork-embed custom element:", err);
+}

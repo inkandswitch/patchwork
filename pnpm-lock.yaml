@@ -11,6 +11,9 @@ importers:
 
   .:
     devDependencies:
+      '@types/react-dom':
+        specifier: ^18.3.6
+        version: 18.3.6(@types/react@18.3.20)
       '@vitest/ui':
         specifier: ^2.1.9
         version: 2.1.9(vitest@2.1.9)
@@ -9859,6 +9862,14 @@ snapshots:
       chai: 5.2.0
       tinyrainbow: 1.2.0
 
+  '@vitest/mocker@2.1.9(vite@5.4.17(@types/node@20.17.30)(lightningcss@1.29.2)(terser@5.37.0))':
+    dependencies:
+      '@vitest/spy': 2.1.9
+      estree-walker: 3.0.3
+      magic-string: 0.30.17
+    optionalDependencies:
+      vite: 5.4.17(@types/node@20.17.30)(lightningcss@1.29.2)(terser@5.37.0)
+
   '@vitest/mocker@2.1.9(vite@5.4.17(@types/node@22.10.9)(lightningcss@1.29.2)(terser@5.37.0))':
     dependencies:
       '@vitest/spy': 2.1.9
@@ -13422,7 +13433,7 @@ snapshots:
   vitest@2.1.9(@types/node@20.17.30)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(lightningcss@1.29.2)(terser@5.37.0):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(vite@5.4.17(@types/node@22.10.9)(lightningcss@1.29.2)(terser@5.37.0))
+      '@vitest/mocker': 2.1.9(vite@5.4.17(@types/node@20.17.30)(lightningcss@1.29.2)(terser@5.37.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9

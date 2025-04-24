@@ -18,6 +18,10 @@
       "types": "./dist/types/components/index.d.ts",
       "import": "./dist/components.js"
     },
+    "./embed": {
+      "types": "./dist/types/embed/index.d.ts",
+      "import": "./dist/embed.js"
+    },
     "./files": {
       "types": "./dist/types/files/index.d.ts",
       "import": "./dist/files.js"
@@ -37,6 +41,10 @@
     "./modules": {
       "types": "./dist/types/modules/index.d.ts",
       "import": "./dist/modules.js"
+    },
+    "./plugins": {
+      "types": "./dist/types/plugins/index.d.ts",
+      "import": "./dist/plugins.js"
     },
     "./router": {
       "types": "./dist/types/router/index.d.ts",

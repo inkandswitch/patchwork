@@ -45,11 +45,13 @@ export const SHARED_MODULES = {
 export const SDK_SUBMODULES = [
   "@patchwork/sdk/async-signals",
   "@patchwork/sdk/components",
+  "@patchwork/sdk/embed",
   "@patchwork/sdk/files",
   "@patchwork/sdk/hooks",
   "@patchwork/sdk/om",
   "@patchwork/sdk/markdown",
   "@patchwork/sdk/modules",
+  "@patchwork/sdk/plugins",
   "@patchwork/sdk/router",
   "@patchwork/sdk/textAnchors",
   "@patchwork/sdk/ui",
