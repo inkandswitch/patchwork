@@ -29,6 +29,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
  *    - Select a specific tool
  *    - Verify selection persists even if tool list updates
  *    - Verify selection clears when switching to a different document
+ *
+ * @param selectedDataTypeId - The ID of the currently selected data type
+ * @param selectedDocUrl - The URL of the currently selected document
+ * @returns An object containing:
+ *   - currentToolId: The ID of the currently selected tool (always available even when tool is loading)
+ *   - currentTool: The actual tool object (may be undefined while loading)
+ *   - isLoadingTool: Whether the tool is currently loading
+ *   - error: Any error that occurred while loading the tool
+ *   - handleToolChange: Function to change the selected tool
+ *   - toolDescriptions: List of available tool descriptions
+ *
+ * Note: We return the ID and tool separately because the ID represents the desired selection
+ * that's immediately available, while the actual tool object may be in a loading or error state.
  */
 export const useSelectedTool = (
   selectedDataTypeId: string | undefined,
@@ -66,10 +79,11 @@ export const useSelectedTool = (
     return toolDescriptions.length > 0 ? toolDescriptions[0].id : "";
   }, [userSelectedToolId, toolDescriptions]);
 
-  const { plugin: currentTool, isLoading: isLoadingTool } = usePlugin<Tool>(
-    "patchwork:tool",
-    currentToolId
-  );
+  const {
+    plugin: currentTool,
+    isLoading: isLoadingTool,
+    error,
+  } = usePlugin<Tool>("patchwork:tool", currentToolId);
 
   // Expose a handler for user-initiated tool changes.
   const handleToolChange = useCallback(
@@ -84,9 +98,11 @@ export const useSelectedTool = (
 
   return {
     currentTool,
+    currentToolId,
     isLoadingTool,
     handleToolChange,
     toolDescriptions,
+    error,
   } as const;
 };
 

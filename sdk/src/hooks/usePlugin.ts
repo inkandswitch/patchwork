@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Plugin,
   PluginDescription,
@@ -53,10 +53,11 @@ export function usePlugin<T extends Plugin>(
   }, [pluginType, id, wait]);
 
   useEffect(() => {
+    setPlugin(undefined);
+    setIsLoading(false);
+    setError(undefined);
+
     if (!id) {
-      setPlugin(undefined);
-      setIsLoading(false);
-      setError(undefined);
       return;
     }
 

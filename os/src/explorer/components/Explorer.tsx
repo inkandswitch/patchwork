@@ -116,8 +116,14 @@ export const Explorer: React.FC = () => {
     dataType: selectedDataType,
   });
 
-  const { currentTool, isLoadingTool, handleToolChange, toolDescriptions } =
-    useSelectedTool(selectedDataTypeId, selectedDocUrl);
+  const {
+    currentToolId,
+    currentTool,
+    isLoadingTool,
+    error,
+    handleToolChange,
+    toolDescriptions,
+  } = useSelectedTool(selectedDataTypeId, selectedDocUrl);
 
   const uiStateOm = useUIStateOm();
   const account = useCurrentAccount();
@@ -223,7 +229,7 @@ export const Explorer: React.FC = () => {
               selectedDocHandle={selectedDocHandle}
               removeDocPath={removeDocPathCallback}
               addNewDocument={addNewDoc}
-              tool={currentTool}
+              currentToolId={currentToolId}
               tools={toolDescriptions}
               onToolChange={handleToolChange}
               docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
@@ -244,14 +250,24 @@ export const Explorer: React.FC = () => {
                 )}
 
               {/* Show loading state while tool is loading */}
-              {selectedDocUrl && isLoadingTool && (
+              {selectedDocUrl && isLoadingTool && !error && (
                 <div className="flex items-center justify-center h-full">
                   <LoadingScreen what="tool" />
                 </div>
               )}
 
+              {selectedDocUrl && error && (
+                <div className="flex items-center justify-center h-full">
+                  <div className="flex items-center justify-center h-full w-full">
+                    <div className="text-red-700 text-center font-medium font-mono w-1/2 mx-auto">
+                      Error loading tool {currentToolId}: {error.message}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* NOTE: we set the URL as the component key, to force re-mount on URL change.
-                If we want more continuity we could not do this. */}
+                  This avoids lots of problems with component state sticking around after navigating between documents. */}
               {selectedDocUrl &&
                 selectedDocPath &&
                 currentTool &&

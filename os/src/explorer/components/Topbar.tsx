@@ -49,7 +49,7 @@ type TopbarProps = {
   addNewDocument: (doc: { type: string }) => void;
   removeDocPath: (docPath: DocPath) => void;
   tools: ToolDescription[];
-  tool: Tool | undefined;
+  currentToolId: string | undefined;
   onToolChange: (toolId: string) => void;
   docHeadsFromTimelineSidebar?: Automerge.Heads;
 };
@@ -62,7 +62,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   selectedDoc,
   selectedDocHandle,
   tools,
-  tool,
+  currentToolId,
   onToolChange,
   removeDocPath,
   docHeadsFromTimelineSidebar,
@@ -213,7 +213,11 @@ export const Topbar: React.FC<TopbarProps> = ({
       </div>
 
       {toolsWithEditorComponent.length > 1 && selectedDocLink && (
-        <Tabs value={tool?.id} className="ml-auto" onValueChange={onToolChange}>
+        <Tabs
+          value={currentToolId}
+          className="ml-auto"
+          onValueChange={onToolChange}
+        >
           <TabsList>
             {toolsWithEditorComponent.map((tool) => (
               <TabsTrigger value={tool.id} className="px-2 py-1" key={tool.id}>
