@@ -1,14 +1,10 @@
 import EventEmitter from "eventemitter3";
-import { IconType } from "../ui";
-import { ToolDescription } from "../tools";
-import { DataTypeDescription } from "../datatypes";
-import { ImportMethod } from "../importMethods";
-import { ExportMethod } from "../exportMethods";
 import {
   LoadablePlugin,
   LoadedPlugin,
   PluginDescription,
   PluginTypeMap,
+  Plugin,
 } from "./types";
 
 /**
@@ -17,10 +13,7 @@ import {
  * I = Implementation type that will be loaded and combined with the description
  */
 export class PluginRegistry<D extends PluginDescription, I = any> {
-  private plugins = new Map<
-    string,
-    LoadedPlugin<D, I> | LoadablePlugin<D, I>
-  >();
+  private plugins = new Map<string, Plugin<D, I>>();
   private loadPromises = new Map<string, Promise<LoadedPlugin<D, I>>>();
   private events = new EventEmitter<{
     "plugins:changed": (plugins: LoadedPlugin<D, I>[]) => void;
@@ -29,22 +22,14 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   /**
    * Register an plugin with this registry
    */
-  async register(
-    plugin: LoadedPlugin<D, I> | LoadablePlugin<D, I>,
-    importUrl?: string
-  ): Promise<void> {
+  async register(plugin: Plugin<D, I>, importUrl?: string): Promise<void> {
     // If an import URL was provided, attach it to the plugin
     if (importUrl && !plugin.importUrl) {
       plugin.importUrl = importUrl;
     }
 
-    // Convert D to LoadablePlugin if needed
-    const loadablePlugin = isLoadablePlugin(plugin)
-      ? plugin
-      : { ...plugin, load: async () => plugin as unknown as I };
-
     // Store the plugin
-    this.plugins.set(plugin.id, loadablePlugin);
+    this.plugins.set(plugin.id, plugin);
 
     // Notify listeners
     this.events.emit("plugins:changed", this.getPlugins());
