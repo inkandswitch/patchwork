@@ -73,7 +73,7 @@ const main = async () => {
       name: "syncServerUrl",
       type: String,
       defaultValue:
-        jacquardConfig?.syncServer?.url ?? "wss://sync.automerge.org",
+        jacquardConfig?.syncServer?.url ?? "wss://sync3.automerge.org",
     },
     {
       name: "syncServerStorageId",

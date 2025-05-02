@@ -84,6 +84,9 @@ const generateImportMapPlugin = (): Plugin => ({
       if (dep === "@codemirror/view") {
         return "npm:@codemirror/view@6.36.3";
       }
+      if (dep === "@automerge/automerge") {
+        return "npm:@automerge/automerge@3.0.0-alpha.0";
+      }
       return dep;
     });
     await generator.install(mungedDeps);
