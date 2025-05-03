@@ -15,17 +15,17 @@
   },
   "pnpm": {
     "overrides": {
-      "@automerge/automerge": "3.0.0-alpha.0"
+      "@automerge/automerge": "3.0.0-alpha.3"
     }
   },
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
-    "@types/react-dom": "^18.3.6",
+    "@types/react-dom": "^18.3.7",
     "@vitest/ui": "^2.1.9",
     "prompts": "^2.4.2",
     "typescript": "^5.8.3",
-    "vite": "^5.4.17",
+    "vite": "^5.4.19",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^2.1.9",
     "yargs-parser": "^21.1.1"

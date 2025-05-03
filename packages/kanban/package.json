@@ -12,11 +12,11 @@
   },
   "keywords": [],
   "dependencies": {
-    "@automerge/automerge": "3.0.0-alpha.0",
-    "@automerge/automerge-repo": "2.0.0-alpha.27",
-    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.27",
+    "@automerge/automerge": "3.0.0-alpha.3",
+    "@automerge/automerge-repo": "2.0.0-beta.2",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-beta.2",
     "@firefox-devtools/react-contextmenu": "^5.2.2",
-    "@headlessui/react": "^2.2.1",
+    "@headlessui/react": "^2.2.2",
     "@hello-pangea/dnd": "^16.6.0",
     "@patchwork/sdk": "workspace:*",
     "animate.css": "^4.1.1",
@@ -32,14 +32,14 @@
     "react-window": "^1.8.11"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.3",
+    "@tailwindcss/vite": "^4.1.5",
     "@types/react": "^18.3.20",
-    "@types/react-dom": "^18.3.6",
+    "@types/react-dom": "^18.3.7",
     "@types/react-window": "^1.8.8",
-    "@vitejs/plugin-react": "^4.3.4",
-    "tailwindcss": "^4.1.3",
+    "@vitejs/plugin-react": "^4.4.1",
+    "tailwindcss": "^4.1.5",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5",
+    "vite": "^6.3.4",
     "vite-plugin-top-level-await": "^1.5.0",
     "vite-plugin-wasm": "^3.4.1"
   }

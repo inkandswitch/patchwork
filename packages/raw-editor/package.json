@@ -11,20 +11,20 @@
   "keywords": [],
   "author": "Ink & Switch",
   "dependencies": {
-    "@automerge/automerge": "3.0.0-alpha.0",
-    "@automerge/automerge-repo": "2.0.0-alpha.27",
-    "@automerge/automerge-repo-react-hooks": "2.0.0-alpha.27",
+    "@automerge/automerge": "3.0.0-alpha.3",
+    "@automerge/automerge-repo": "2.0.0-beta.2",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-beta.2",
     "@microlink/react-json-view": "^1.26.1",
     "@patchwork/sdk": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/node": "^20.17.30",
+    "@types/node": "^20.17.32",
     "@types/react": "^18.3.20",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^4.4.1",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5",
+    "vite": "^6.3.4",
     "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-top-level-await": "^1.5.0",
     "vite-plugin-wasm": "^3.4.1"
