@@ -1,3 +1,4 @@
+import { RawString } from "@automerge/automerge/next";
 import { RecordsDiff, TLRecord } from "@tldraw/tldraw";
 import _ from "lodash";
 
@@ -10,15 +11,8 @@ import _ from "lodash";
  */
 export function tldrawValueToAutomergeValue(value: any): any {
   if (typeof value === "string") {
-    // todo: this breaks in the build version, RawString values are turned into map
-    // for some reason when they are asigned to a document which breaks tldraw
-    //
-    // for now go back to using normal strings
-
-    //const rawString = new Automerge.RawString(value);
-    //return rawString;
-
-    return value;
+    const rawString = new RawString(value);
+    return rawString;
   }
   if (Array.isArray(value)) {
     return value.map(tldrawValueToAutomergeValue);
