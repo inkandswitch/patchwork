@@ -113,7 +113,7 @@ export const useDiffStyling = ({
                   : annotation.added.id;
 
               const shapeElem = container.querySelector(
-                `#${id.replace(":", "\\:")}`
+                `#${id.toString().replace(":", "\\:")}`
               ) as HTMLElement;
               if (!shapeElem) {
                 return;

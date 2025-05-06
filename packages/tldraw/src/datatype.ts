@@ -43,7 +43,7 @@ export const markCopy = (doc: TLDrawDoc) => {
 
 export const getTitle = async (doc: TLDrawDoc) => {
   const page = doc.store["page:page" as any] as TLPage;
-  return page.name || "Drawing";
+  return page.name.toString() || "Drawing";
 };
 
 export const setTitle = (doc: TLDrawDoc, title: string) => {
@@ -311,8 +311,8 @@ const getBounds = (shape: TLShape): Bounds => {
   return {
     x: shape.x,
     y: shape.y,
-    w: geometry.bounds.width,
-    h: geometry.bounds.height,
+    w: geometry?.bounds?.width,
+    h: geometry?.bounds?.height,
   };
 };
 
