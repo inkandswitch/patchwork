@@ -1,9 +1,5 @@
 import { useForceUpdate } from "../hooks/useForceUpdate";
-import {
-  AutomergeUrl,
-  decodeHeads,
-  encodeHeads,
-} from "@automerge/automerge-repo";
+import { AutomergeUrl, encodeHeads } from "@automerge/automerge-repo";
 import {
   useDocument,
   useDocHandle,
@@ -45,66 +41,6 @@ export const diffWithProvenance = (
     toHeads,
     patches,
   };
-};
-
-// hook to create an incrementally maintained map of actorId -> authorUrl
-export const useActorIdToAuthorMap = (
-  url: AutomergeUrl
-): Record<A.ActorId, AutomergeUrl> => {
-  const handle = useDocHandle<any>(url);
-  const forceUpdate = useForceUpdate();
-  const actorIdToAuthorRef = useRef<Record<A.ActorId, AutomergeUrl>>({});
-
-  useEffect(() => {
-    if (!handle) {
-      return;
-    }
-
-    let lastHeads: A.Heads;
-
-    const addChangesToActorIdMap = (changes: A.Change[]) => {
-      changes.map((change) => {
-        const decodedChange = A.decodeChange(change);
-
-        let metadata;
-        try {
-          const message = decodedChange.message;
-          if (typeof message === "string") {
-            metadata = JSON.parse(message);
-          }
-        } catch (e) {
-          // ignore
-        }
-
-        actorIdToAuthorRef.current[decodedChange.actor] = metadata?.author;
-      });
-
-      forceUpdate();
-    };
-
-    const doc = handle.doc();
-    lastHeads = decodeHeads(handle.heads());
-    addChangesToActorIdMap(A.getAllChanges(doc));
-
-    const onChange = () => {
-      if (!lastHeads) {
-        return;
-      }
-
-      const doc = handle.doc();
-      const changes = A.getChanges(A.view(doc, lastHeads), doc);
-      lastHeads = decodeHeads(handle.heads());
-      addChangesToActorIdMap(changes);
-    };
-
-    handle.on("change", onChange);
-
-    return () => {
-      handle.off("change", onChange);
-    };
-  }, [forceUpdate, handle]);
-
-  return actorIdToAuthorRef.current;
 };
 
 interface TextReplacePatch {

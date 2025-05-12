@@ -14,7 +14,6 @@ export const DocEditor = <T, V>({
   docHeads,
   annotations,
   annotationGroups,
-  actorIdToAuthor,
   hideInlineComments,
   setSelectedAnchors,
   setHoveredAnchor,
@@ -43,7 +42,6 @@ export const DocEditor = <T, V>({
       docHeads={undefined}
       annotations={annotations}
       annotationGroups={annotationGroups}
-      actorIdToAuthor={actorIdToAuthor}
       hideInlineComments={hideInlineComments}
       collapseContentWithoutChanges={collapseContentWithoutChanges}
       setSelectedAnchors={setSelectedAnchors}

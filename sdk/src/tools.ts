@@ -72,9 +72,6 @@ export type EditorProps<A, V> = {
   setSelectedAnchors?: (anchors: A[]) => void;
   setHoveredAnchor?: (anchor: A | null) => void;
 
-  /** just some metadata to help render authors */
-  actorIdToAuthor?: Record<ActorId, AutomergeUrl>; // todo: can we replace that with memoize?
-
   /** A typical editor only needs to deal with annotations, not annotation groups.
    *  The exception is if you want to display comments in the editor itself,
    *  as we do in the essay editor comments sidebar.

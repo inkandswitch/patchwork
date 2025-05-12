@@ -231,6 +231,8 @@ export const useRouter = ({
             repo
           );
 
+          console.log({doc: branchScopeHandle.doc(), title})
+
           const handle = await repo.find<FolderDoc>(
             rootFolderDocWithMetadata.rootFolderUrl
           );
@@ -238,7 +240,7 @@ export const useRouter = ({
           handle.change((doc) => {
             doc.docs.unshift({
               type: branchScopeType,
-              name: title,
+              name: title ?? "Unknown Title",
               url: branchScopeUrl,
             });
           });

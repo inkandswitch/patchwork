@@ -28,7 +28,6 @@ import {
 import { fetchDoesDocLinkExistInBranchScope } from "@patchwork/sdk/versionControl";
 import {
   diffWithProvenance,
-  useActorIdToAuthorMap,
 } from "@patchwork/sdk/versionControl";
 import { VersionControlBar } from "./VersionControlBar";
 import { useAsyncComputed } from "@patchwork/sdk/async-signals";
@@ -66,9 +65,6 @@ export const VersionControlEditor: React.FC<{
     useState<DiffWithProvenance>();
 
   const docHeads = docHeadsFromTimelineSidebar ?? undefined;
-
-  // TODO: this mapping should use the branch doc url, not the main doc url
-  const actorIdToAuthor = useActorIdToAuthorMap(docLink.url);
 
   const branchScopeAndActiveBranchInfo =
     useBranchScopeAndActiveBranchInfo(docPath);
@@ -360,7 +356,6 @@ export const VersionControlEditor: React.FC<{
                     docHeads={docHeads}
                     annotations={filteredAnnotations}
                     annotationGroups={filteredAnnotationGroups}
-                    actorIdToAuthor={actorIdToAuthor}
                     setSelectedAnchors={setSelectedAnchors}
                     setHoveredAnchor={setHoveredAnchor}
                     setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
@@ -384,7 +379,6 @@ export const VersionControlEditor: React.FC<{
                     docHeads={docHeads}
                     annotations={filteredAnnotations}
                     annotationGroups={filteredAnnotationGroups}
-                    actorIdToAuthor={actorIdToAuthor}
                     setSelectedAnchors={setSelectedAnchors}
                     setHoveredAnchor={setHoveredAnchor}
                     setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}

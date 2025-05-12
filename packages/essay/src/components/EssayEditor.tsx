@@ -43,7 +43,6 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
     annotations = [],
     annotationGroups = [],
     setSelectedAnchors = () => {},
-    actorIdToAuthor,
     hideInlineComments = false,
     setSelectedAnnotationGroupId,
     setHoveredAnnotationGroupId,
@@ -62,15 +61,6 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const readOnly = !!docHeads;
 
   const doc = docHeads && _doc ? Automerge.view(_doc, docHeads) : _doc;
-
-  const [visibleAuthorsForEdits, setVisibleAuthorsForEdits] = useState<
-    AutomergeUrl[]
-  >([]);
-
-  // If the authors on the doc change, show changes by all authors
-  useEffect(() => {
-    setVisibleAuthorsForEdits(uniq(Object.values(actorIdToAuthor ?? {})));
-  }, [actorIdToAuthor]);
 
   // HACK: comment resolution is a perf bottleneck for large documents with lots of comments.
   // To workaround, you can set a throttle time on the doc: only resolve comments once every X ms.
