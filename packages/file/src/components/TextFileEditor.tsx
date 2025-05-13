@@ -49,7 +49,7 @@ import { CodeMirror } from "@patchwork/sdk/components";
 
 export const isTextFile = (doc: FileDoc) => {
   return (
-    doc?.mimeType.match("text/") || doc?.mimeType.match("application/json")
+    doc?.mimeType?.match("text/") || doc?.mimeType?.match("application/json")
   );
 };
 
