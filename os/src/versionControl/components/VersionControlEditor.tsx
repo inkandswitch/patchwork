@@ -60,6 +60,7 @@ export const VersionControlEditor: React.FC<{
   const repo = useRepo();
 
   const [isCommentInputFocused, setIsCommentInputFocused] = useState(false);
+  const [showComments, setShowComments] = useState(true);
 
   const [diffFromTimelineSidebar, setDiffFromTimelineSidebar] =
     useState<DiffWithProvenance>();
@@ -151,24 +152,28 @@ export const VersionControlEditor: React.FC<{
     diff: docUIState.highlightChanges ? diff : undefined,
   });
 
+  // Filter highlighted annotations if content is collapsed or if comments are explicitly hidden
+  const omitHighlightAnnotations =
+    collapseContentWithoutChanges || !showComments;
+
   const filteredAnnotations = useMemo(
     () =>
-      collapseContentWithoutChanges
+      omitHighlightAnnotations
         ? annotations.filter((annotation) => annotation.type !== "highlighted")
         : annotations,
-    [annotations, collapseContentWithoutChanges]
+    [annotations, omitHighlightAnnotations]
   );
 
   const filteredAnnotationGroups = useMemo(
     () =>
-      collapseContentWithoutChanges
+      omitHighlightAnnotations
         ? annotationGroups.filter((annotationGroup) =>
             annotationGroup.annotations.some(
               (annotation) => annotation.type !== "highlighted"
             )
           )
         : annotationGroups,
-    [annotationGroups, collapseContentWithoutChanges]
+    [annotationGroups, omitHighlightAnnotations]
   );
 
   const onSelectBranch = useCallback(
@@ -331,6 +336,8 @@ export const VersionControlEditor: React.FC<{
             }
             onMergeBranch={onMergeBranch}
             onDeleteBranch={onDeleteBranch}
+            showComments={showComments}
+            onSetShowComments={setShowComments}
           />
         ) : (
           <div>Loading version control information...</div>

@@ -79,6 +79,8 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   InfoIcon,
+  EyeIcon,
+  EyeOffIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -133,6 +135,8 @@ export const VersionControlBar = ({
   onSelectBranch,
   onMergeBranch,
   onDeleteBranch,
+  showComments,
+  onSetShowComments,
 }: {
   docPath: DocPath;
   tool: Tool;
@@ -142,6 +146,8 @@ export const VersionControlBar = ({
   onSelectBranch: (branchUrl: AutomergeUrl | null) => void;
   onMergeBranch: (branchUrl: AutomergeUrl) => void;
   onDeleteBranch: (branchUrl: AutomergeUrl) => void;
+  showComments: boolean;
+  onSetShowComments: (show: boolean) => void;
 }) => {
   const docLink = DocPathUtils.toLink(docPath);
 
@@ -633,6 +639,31 @@ export const VersionControlBar = ({
           )}
         </>
       )}
+
+      {/* "Show/Hide Comments" button */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              onClick={() => onSetShowComments(!showComments)}
+              className={`h-8 px-2 text-xs ${
+                showComments
+                  ? "shadow-inner shadow-gray-300 border-gray-400"
+                  : "shadow-none"
+              }`}
+            >
+              <EyeIcon className="h-4 w-4 mr-1" />
+              <span className="whitespace-nowrap text-ellipsis">
+                Show Comments
+              </span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{showComments ? "Hide comments" : "Show comments"}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* "Review" sidebar toggle */}
       {!docUIState.sidebarMode && (
