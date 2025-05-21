@@ -198,6 +198,9 @@ export const annotationDecorations = EditorView.decorations.compute(
         }
 
         case "highlighted": {
+          if (fromPos == toPos) {
+            return [];
+          }
           const decoration = annotation.isEmphasized
             ? highlightDecorationActive
             : highlightDecoration;
