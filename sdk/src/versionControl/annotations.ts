@@ -130,9 +130,9 @@ export function useAnnotations({
     [doc]
   );
 
-  const { annotations, annotationGroups } = useMemo(() => {
+  const { mostAnnotations, annotationGroups } = useMemo(() => {
     if (!doc || !dataType) {
-      return { annotations: [], annotationGroups: [] };
+      return { mostAnnotations: [], annotationGroups: [] };
     }
 
     const patchesToAnnotations = dataType.module.patchesToAnnotations;
@@ -246,18 +246,6 @@ export function useAnnotations({
       computedAnnotationGroups
     );
 
-    // If the comment input is focused, then we highlight the selected anchors
-    // which will be the target of the pending comment.
-    if (isCommentInputFocused && selectedState?.type === "anchors") {
-      const selectionAnnotations = selectedState.anchors.map((anchor) => ({
-        type: "highlighted" as const,
-        anchor,
-        value: null,
-      }));
-
-      highlightAnnotations.push(...selectionAnnotations);
-    }
-
     const sortedAnnotationGroups = dataType.module.sortAnchorsBy
       ? sortBy(combinedAnnotationGroups, (annotationGroup) =>
           annotationGroup.annotations.length === 0
@@ -271,10 +259,28 @@ export function useAnnotations({
       : combinedAnnotationGroups;
 
     return {
-      annotations: editAnnotations.concat(highlightAnnotations),
+      mostAnnotations: editAnnotations.concat(highlightAnnotations),
       annotationGroups: sortedAnnotationGroups,
     };
-  }, [doc, diff, selectedState, isCommentInputFocused, dataType, commentState]);
+  }, [commentState, dataType, diff, doc]);
+
+  const selectionAnnotations = useMemo(() => {
+    // If the comment input is focused, then we highlight the selected anchors
+    // which will be the target of the pending comment.
+    if (isCommentInputFocused && selectedState?.type === "anchors") {
+      return selectedState.anchors.map((anchor) => ({
+        type: "highlighted" as const,
+        anchor,
+        value: null,
+      }));
+    } else {
+      return [];
+    }
+  }, [selectedState, isCommentInputFocused]);
+
+  const annotations = useMemo(() => {
+    return [...mostAnnotations, ...selectionAnnotations];
+  }, [mostAnnotations, selectionAnnotations]);
 
   const {
     selectedAnchors,
