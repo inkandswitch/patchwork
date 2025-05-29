@@ -42,6 +42,23 @@ const JSPM_ORIGIN = "https://ga.jspm.io";
 
 let PEER_ID = `patchwork-service-worker-${Math.round(Math.random() * 1000000)}`;
 
+// A simple counter to uniquely identify each fetch we handle. Useful when many overlap.
+self.__fetchCounter = 0;
+self.__activeFetches = 0;
+
+// Debug logging control - disabled by default
+let debugEnabled = false;
+
+// ---------------------------------------------------------------------------
+// Debug logging helper – prepends ISO timestamp and peer id to every log entry
+// ---------------------------------------------------------------------------
+const debugLog = (...args) => {
+  if (!debugEnabled) return;
+  const ts = new Date().toISOString();
+  // eslint-disable-next-line no-console
+  console.log(`${ts} [${PEER_ID}]`, ...args);
+};
+
 const resolvablePromise = () => {
   let resolve;
   const promise = new Promise((r) => (resolve = r));
@@ -62,11 +79,15 @@ let repo = null;
 const { promise: repoReady, resolve: resolveRepoReady } = resolvablePromise();
 // Initialize the repo
 (async () => {
+  debugLog("Waiting for INIT message with config...");
   const { wasmBlobUrl, peerIdPrefix } = await config;
+  debugLog("Config received", { wasmBlobUrl, peerIdPrefix });
   await Automerge.initializeWasm(wasmBlobUrl);
+  debugLog("Automerge WASM initialized");
 
   if (peerIdPrefix) {
     PEER_ID = `${peerIdPrefix}-${PEER_ID}`;
+    debugLog("Updated PEER_ID with prefix", PEER_ID);
   }
 
   const newRepo = new Repo({
@@ -82,6 +103,7 @@ const { promise: repoReady, resolve: resolveRepoReady } = resolvablePromise();
   self.Automerge = Automerge;
 
   repo = newRepo;
+  debugLog("Repo created", { peerId: PEER_ID });
   resolveRepoReady(newRepo);
 })();
 
@@ -100,34 +122,53 @@ self.addEventListener("install", () => {
   /* We skip waiting which means the service worker immediately takes over once it's installed
    * Any existing tab that is connected to a previous worker gets sent an "controllerchange" event to switch over to the new service worker
    */
+  debugLog("Install event – skipping waiting");
   self.skipWaiting();
 });
 
 self.addEventListener("message", async (event) => {
-  // console.log(`${PEER_ID}: Client messaged`, event.data);
+  debugLog("Message received from client", event.data);
 
   switch (event.data.type) {
     case "PING":
       // don't do anything, message is only needed to keep service worker running
+      debugLog("Received PING from client");
+      return;
+
+    case "DEBUG":
+      // toggle debug logging
+      debugEnabled = !debugEnabled;
+      console.log(`Debug logging ${debugEnabled ? 'ENABLED' : 'DISABLED'}`);
       return;
 
     case "INIT":
       // load config and connect with client through message channel
       // if config is already loaded the new config is ignored
+      debugLog("INIT message – applying config", event.data.config);
       setConfig(event.data.config);
       if (!repo) await repoReady;
+      debugLog("Repo ready – adding MessageChannel network adapter");
       repo.networkSubsystem.addNetworkAdapter(
         new MessageChannelNetworkAdapter(event.ports[0], { useWeakRef: true })
       );
       return;
 
     case "ADD_SYNC_SERVER":
+      debugLog("ADD_SYNC_SERVER message", event.data.url);
       addSyncServer(event.data.url);
+      return;
+
+    case "MARK":
+      // manual marker injected from client console for timeline correlation
+      debugLog(`MARK: ${event.data.label || "(no label)"}`, {
+        atClient: event.data.when,
+      });
       return;
   }
 });
 
 async function addSyncServer(url) {
+  debugLog("Adding sync server", url);
   if (!repo) {
     await repoReady;
   }
@@ -150,8 +191,9 @@ async function clearOldCaches() {
 }
 
 self.addEventListener("activate", async (event) => {
-  console.log(`${PEER_ID}: Activating service worker.`);
+  debugLog("Activate event – clearing old caches and claiming clients");
   await clearOldCaches();
+  debugLog("Activate event – caches cleared. Claiming clients");
   clients.claim();
 });
 
@@ -169,7 +211,26 @@ const headsEqual = (doc, heads) => {
 self.addEventListener("fetch", async (event) => {
   const url = new URL(event.request.url);
 
+  const fetchId = ++self.__fetchCounter;
+  self.__activeFetches++;
+  if (self.__activeFetches % 10 === 0) {
+    debugLog(`ACTIVE_FETCHES: ${self.__activeFetches}`);
+  }
+  const fetchStart = performance.now();
+  const finish = (phase, response) => {
+    self.__activeFetches--;
+    const elapsed = (performance.now() - fetchStart).toFixed(1);
+    debugLog(`FETCH_${fetchId} ${phase} – completed in ${elapsed} ms`, {
+      status: response?.status,
+      url: url.href,
+    });
+    return response;
+  };
+
+  debugLog("Fetch intercepted", { url: url.href, method: event.request.method, id: fetchId });
+
   if (AUTOMERGE_REQUEST_URL_REGEX.test(event.request.url)) {
+    debugLog("AUTOMERGE request matched", url.href);
     const [, , maybeAutomergeUrl, ...encodedParts] = url.pathname.split("/");
     const parts = encodedParts.map((part) => decodeURIComponent(part));
 
@@ -178,7 +239,10 @@ self.addEventListener("fetch", async (event) => {
       ? maybeAutomergeUrl
       : `automerge:${maybeAutomergeUrl}`;
 
+    debugLog("Resolved automergeUrl", automergeUrl, "parts", parts);
+
     if (!isValidAutomergeUrl(automergeUrl)) {
+      debugLog("Invalid automergeUrl", automergeUrl);
       event.respondWith(
         new Response(`Invalid document id ${automergeUrl}`, {
           status: 404,
@@ -190,12 +254,23 @@ self.addEventListener("fetch", async (event) => {
 
     event.respondWith(
       (async () => {
+        debugLog("Handling automerge fetch for", automergeUrl);
         if (!repo) await repoReady;
+        debugLog("Repo ready – calling repo.find");
 
+        const findStart = performance.now();
         const handle = await repo.find(automergeUrl);
+        debugLog("Repo.find finished", {
+          id: fetchId,
+          duration: (performance.now() - findStart).toFixed(1),
+          state: handle.state,
+        });
+        debugLog("Handle obtained", { state: handle.state });
         let doc = handle.doc();
+        debugLog("Initial doc present", !!doc);
 
         if (!doc) {
+          debugLog("Document unavailable – returning 500");
           return new Response(
             `Document unavailable.\n${automergeUrl}: ${handle.state}`,
             {
@@ -220,7 +295,10 @@ self.addEventListener("fetch", async (event) => {
         const startTime = Date.now();
 
         const queryHeads = url.searchParams.get("heads")?.split(",");
+        debugLog("Requested heads", queryHeads);
+
         if (queryHeads?.length > 0) {
+          debugLog("Waiting for heads to match...");
           while (
             !headsEqual(doc, queryHeads) &&
             Date.now() - startTime < TIMEOUT_MS
@@ -230,7 +308,11 @@ self.addEventListener("fetch", async (event) => {
           }
 
           if (!headsEqual(doc, queryHeads)) {
-            return new Response(
+            debugLog("Heads mismatch after waiting", {
+              requested: queryHeads,
+              current: Automerge.getHeads(doc),
+            });
+            return finish("heads-mismatch", new Response(
               `Heads mismatch: requested ${queryHeads} but had ${Automerge.getHeads(
                 doc
               )}`,
@@ -238,10 +320,13 @@ self.addEventListener("fetch", async (event) => {
                 status: 404,
                 headers: { "Content-Type": "text/plain" },
               }
-            );
+            ));
+          } else {
+            debugLog("Heads matched", Automerge.getHeads(doc));
           }
         }
 
+        debugLog("Resolving file path parts", parts);
         let file;
 
         if (doc.docs) {
@@ -264,7 +349,8 @@ self.addEventListener("fetch", async (event) => {
         }
 
         if (!file) {
-          return new Response(
+          debugLog("File not found for path", url.pathname);
+          return finish("file-not-found", new Response(
             `Not found\nObject path: ${url.pathname}\n${JSON.stringify(
               doc,
               null,
@@ -274,8 +360,10 @@ self.addEventListener("fetch", async (event) => {
               status: 404,
               headers: { "Content-Type": "text/plain" },
             }
-          );
+          ));
         }
+
+        debugLog("File resolved", { mimeType: file.mimeType });
 
         let dataToReturn = file.content;
 
@@ -284,10 +372,12 @@ self.addEventListener("fetch", async (event) => {
         const isOldFormat =
           typeof file.content === "object" && file.content.value !== undefined;
         if (isOldFormat) {
+          debugLog("Old file format detected – using nested value");
           dataToReturn = file.content.value;
         }
 
         if (!file.mimeType) {
+          debugLog("File entry missing mimeType – invalid entry");
           // Detect old file format
           if (file?.content?.value) {
             return new Response(
@@ -310,15 +400,26 @@ self.addEventListener("fetch", async (event) => {
           );
         }
 
-        return new Response(dataToReturn, {
-          headers: { "Content-Type": file.mimeType },
+        debugLog("Responding with file content", {
+          size:
+            typeof dataToReturn === "string"
+              ? dataToReturn.length
+              : dataToReturn?.byteLength || 0,
         });
+
+        return finish(
+          "success",
+          new Response(dataToReturn, {
+            headers: { "Content-Type": file.mimeType },
+          })
+        );
       })()
     );
   } else if (
     event.request.method === "GET" &&
     (url.origin === self.location.origin || url.origin === JSPM_ORIGIN)
   ) {
+    debugLog("Static or JSPM fetch – attempting cache", url.href);
     event.respondWith(
       (async () => {
         const cache = await caches.open(CACHE_NAME);
@@ -326,16 +427,21 @@ self.addEventListener("fetch", async (event) => {
         // Try cache first -- this site is all static
         const cachedResponse = await cache.match(event.request);
         if (cachedResponse) {
-          return cachedResponse;
+          debugLog("Cache hit", url.href);
+          return finish("cache-hit", cachedResponse);
         }
+
+        debugLog("Cache miss – fetching from network", url.href);
 
         // On cache fail, hit the network
         const networkResponse = await fetch(event.request);
+        debugLog("Network response status", networkResponse.status);
         if (200 <= networkResponse.status && networkResponse.status <= 299) {
           // only cache successes
           cache.put(event.request, networkResponse.clone());
+          debugLog("Network success – response cached");
         }
-        return networkResponse;
+        return finish("network", networkResponse);
       })()
     );
   }
