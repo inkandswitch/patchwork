@@ -18,7 +18,6 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { Card, KanbanBoardDoc, Lane } from "../datatype";
 import { Status } from "../types/issue";
 import { showInfo } from "../utils/notification";
-import { uuid } from "@automerge/automerge";
 
 interface Props {
   docHandle: DocHandle<unknown>;
@@ -49,7 +48,7 @@ function IssueModal({ isOpen, onDismiss, changeDoc, lanes, docHandle }: Props) {
     changeDoc((doc) => {
       const timestamp = Date.now();
 
-      const cardId = uuid();
+      const cardId = crypto.randomUUID();
 
       doc.cards.push({
         id: cardId,

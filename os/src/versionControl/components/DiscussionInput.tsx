@@ -6,7 +6,6 @@ import {
   DiscussionComment,
   HasVersionControlMetadata,
 } from "@patchwork/sdk/versionControl";
-import { uuid } from "@automerge/automerge";
 import { decodeHeads, DocHandle } from "@automerge/automerge-repo";
 import { SendHorizontalIcon } from "lucide-react";
 import { useState } from "react";
@@ -40,12 +39,12 @@ export const DiscussionInput = function <
     /** migration for legacy docs */
 
     const comment: DiscussionComment = {
-      id: uuid(),
+      id: crypto.randomUUID(),
       content: commentBoxContent,
       timestamp: Date.now(),
       contactUrl: account.contactHandle.url,
     };
-    const discussionId = uuid();
+    const discussionId = crypto.randomUUID();
 
     handle.change((doc) => {
       if (!doc.discussions) {
