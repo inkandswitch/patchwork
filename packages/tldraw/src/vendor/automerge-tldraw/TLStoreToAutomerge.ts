@@ -1,4 +1,4 @@
-import { RawString } from "@automerge/automerge/next";
+import { ImmutableString } from "@automerge/automerge";
 import { RecordsDiff, TLRecord } from "@tldraw/tldraw";
 import _ from "lodash";
 
@@ -11,7 +11,7 @@ import _ from "lodash";
  */
 export function tldrawValueToAutomergeValue(value: any): any {
   if (typeof value === "string") {
-    const rawString = new RawString(value);
+    const rawString = new ImmutableString(value);
     return rawString;
   }
   if (Array.isArray(value)) {

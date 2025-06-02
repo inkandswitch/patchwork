@@ -2,7 +2,6 @@ import { initFrom } from "@patchwork/sdk";
 import { FolderDoc } from "@patchwork/folder";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
-import { next as A, Doc } from "@automerge/automerge";
 import {
   AutomergeUrl,
   DocHandle,
@@ -28,7 +27,6 @@ import { Mime } from "mime";
 import { isBinaryCheck } from "@patchwork/file";
 import standardTypes from "mime/types/standard.js";
 import otherTypes from "mime/types/other.js";
-import { HasPatchworkMetadata } from "@patchwork/sdk/modules";
 import { createDocFromFile, updateDocFromFile } from "@patchwork/sdk/files";
 
 // This is mostly because .ts is otherwise interpreted as a video file
@@ -96,7 +94,7 @@ export async function push(
     );
     buildMetadataHandle.change((doc) => {
       doc.buildRuns.push({
-        id: Automerge.uuid(),
+        id: crypto.randomUUID(),
         spec: runResult.spec,
         timestamp: runResult.timestamp,
         duration: runResult.duration,
@@ -410,7 +408,7 @@ const pushFile = async ({
   } else {
     handle = await createDocFromFile(file, repo);
     didChange = true; // New doc always counts as a change
-    const newDoc = handle.doc() as Doc<HasPatchworkMetadata>;
+    const newDoc = handle.doc() as Automerge.Doc<HasPatchworkMetadata>;
     const dataTypeId = newDoc["@patchwork"].type;
 
     folderHandle.change((d) => {

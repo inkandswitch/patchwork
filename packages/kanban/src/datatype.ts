@@ -1,6 +1,5 @@
 import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
-import { uuid } from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 
 // SCHEMA
@@ -44,6 +43,7 @@ const getTitle = async (doc: KanbanBoardDoc) => {
 };
 
 export const init = (doc: KanbanBoardDoc) => {
+  const uuid = crypto.randomUUID;
   initFrom(doc, {
     title: "Untitled Kanban Board",
     lanes: [
