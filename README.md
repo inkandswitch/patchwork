@@ -33,6 +33,7 @@ export interface PluginDescription {
 
 The id defines an internal name used for deduplication, the type is used to discover plugins, the name and icon are used in user-facing contexts and the importUrl is written into new documents so that it can be discovered automatically on shared links.
 
+
 In addition to metadata, most plugins have some code.
 A plugin can define a `load` function which returns a module for the code, eg using an async import. The plugin system will handle loading this code on-demand when it is needed.
 
@@ -53,16 +54,16 @@ A plugin can define a `load` function which returns a module for the code, eg us
 A plugin can also just directly define code in a `module` key, skipping the deferred loading step—try to only include small amounts of code this way, because this code gets loaded immediately whenever the system inspects the metadata on the plugin:
 
 export const markdownExport: ExportMethod = {
-id: "essay-markdown-export",
-type: "patchwork:exportMethod",
-name: "Markdown",
-useAsDefaultMethod: true,
-datatypeId: "essay",
-fileExtensions: ["md"],
-module: {
-async exportData(doc: Doc<unknown>, repo: Repo) {
-const markdownDoc = doc as Doc<MarkdownDoc>;
-const content = markdownDoc.content;
+  id: "essay-markdown-export",
+  type: "patchwork:exportMethod",
+  name: "Markdown",
+  useAsDefaultMethod: true,
+  datatypeId: "essay",
+  fileExtensions: ["md"],
+  module: {
+    async exportData(doc: Doc<unknown>, repo: Repo) {
+      const markdownDoc = doc as Doc<MarkdownDoc>;
+      const content = markdownDoc.content;
 
       const prefix = markdownDoc.fileName ?? (await getTitle(markdownDoc));
       const extension = markdownDoc.extension ?? "md";
@@ -72,9 +73,9 @@ const content = markdownDoc.content;
 
       return new File([content], fileName, { type });
     },
-
-}
+  }
 };
+
 
 Plugins should be exported from the entry point for a module:
 
@@ -94,6 +95,7 @@ For the most common cases in non-react contexts you can use:
 
 - `getPlugin(type, id)` or `getMatchingPlugins()`, to synchronously access plugins which may or may not be loaded
 - `getLoadedPlugin(type, id)` or `getMatchingLoadedPlugins()`, to asynchronously access plugins, ensuring they are loaded before returning
+
 
 ## Development
 
@@ -202,6 +204,7 @@ You can get the lab OpenAI key from Geoffrey.
 
 This is a guide to creating a custom tool in Patchwork.
 
+
 We'll walk through an example tool: a simple counter with persistence.
 
 First, here's the package.json. Give your package a name (in the @patchwork/ namespace) and a description. This is just a regular JavaScript package. If you need more dependencies, you can add them here. The "push" command bundles the package and pushes it to Automerge, from which you can install it into Patchwork.
@@ -226,7 +229,7 @@ counter/package.json:
   "keywords": [],
   "author": "Ink & Switch",
   "dependencies": {
-    "@automerge/automerge-repo-react-hooks": "2.0.1",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-beta.2",
     "@patchwork/sdk": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -577,7 +580,6 @@ export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
 };
 ```
-
 ### Development tips
 
 - Use tailwind for styling.
@@ -590,3 +592,4 @@ export type ModuleSettingsDoc = {
   - You are not allowed to set fields to undefined set them to null instead
   - Any data that came from an Automerge doc must be passed through structuredClone before getting written back into the doc.
   - .indexOf cannot be called directly on an array in the proxy; you must do [...list].indexOf(item)
+

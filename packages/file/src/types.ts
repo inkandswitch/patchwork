@@ -1,4 +1,4 @@
-import { ImmutableString } from "@automerge/automerge";
+import { RawString } from "@automerge/automerge-repo";
 import { TextAnchor } from "@patchwork/sdk/textAnchors";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 
@@ -9,7 +9,7 @@ export type TextFileDoc = HasVersionControlMetadata<TextAnchor, string> & {
   name: string;
   extension: string;
   mimeType: string;
-  content: string | ImmutableString;
+  content: string | RawString;
 };
 
 export type BinaryFileDoc = HasVersionControlMetadata<TextAnchor, string> & {

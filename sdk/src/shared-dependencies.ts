@@ -21,6 +21,7 @@ export const SHARED_DEPENDENCIES = [
   "react-dom/server",
   "react/jsx-runtime",
   "@automerge/automerge/slim",
+  "@automerge/automerge/slim/next",
   "lucide-react",
   "signia",
 ];

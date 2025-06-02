@@ -14,8 +14,8 @@
   "keywords": [],
   "author": "Ink & Switch",
   "dependencies": {
-    "@automerge/automerge-repo": "^2.0.1",
-    "@automerge/automerge-repo-react-hooks": "^2.0.1",
+    "@automerge/automerge-repo": "2.0.0-beta.2",
+    "@automerge/automerge-repo-react-hooks": "2.0.0-beta.2",
     "@patchwork/folder": "workspace:*",
     "@patchwork/sdk": "workspace:*",
     "react": "^18.3.1",

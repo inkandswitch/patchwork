@@ -1,6 +1,6 @@
 import { TLRecord, RecordId, TLStore } from "@tldraw/tldraw";
 import { next as Automerge } from "@automerge/automerge";
-import { isImmutableString } from "@automerge/automerge";
+import { isRawString } from "@automerge/automerge/next";
 
 /** Convert a value from an automerge doc to a value consumable by TLDraw.
  *  The main thing we need to do is convert RawStrings to regular strings,
@@ -19,7 +19,10 @@ export function translateAutomergePatchesToTLStoreUpdates(
 
   patches.forEach((rawPatch) => {
     let patch = rawPatch;
-    if (rawPatch.action === "put" && isImmutableString(rawPatch.value)) {
+    if (
+      rawPatch.action === "put" &&
+      isRawString(rawPatch.value)
+    ) {
       patch = {
         ...rawPatch,
         value: rawPatch.value.toString(),
