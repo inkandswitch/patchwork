@@ -1,4 +1,4 @@
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import { AnnotationGroupWithPosition } from "../utils";
 import { Button } from "@patchwork/sdk/ui";
 import {

@@ -6,7 +6,7 @@ import {
   initVersionControlMetadata,
 } from "@patchwork/sdk/versionControl";
 import { TextPatch } from "@patchwork/sdk/versionControl";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import { pick } from "lodash";
 import { EssayImageStorageMigration } from "./migrations/EssayImageStorageMigration";

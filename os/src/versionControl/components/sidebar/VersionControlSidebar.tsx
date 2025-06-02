@@ -1,4 +1,4 @@
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { DocLink, type DocUIState } from "@patchwork/sdk/router";
 import { DataType, Tool } from "@patchwork/sdk";

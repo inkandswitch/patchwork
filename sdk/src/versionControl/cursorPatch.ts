@@ -1,4 +1,4 @@
-import { next as Automerge } from "@automerge/automerge";
+import * as Automerge from "@automerge/automerge";
 
 // These patches use cursors instead of indexes so they can be applied
 // without thinking about how to adjust the indexes when another patch

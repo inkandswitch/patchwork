@@ -1,4 +1,4 @@
-import * as A from "@automerge/automerge";
+import * as Automerge from "@automerge/automerge";
 import ReactDom from "react-dom/client";
 import {
   AutomergeUrl,
@@ -10,7 +10,6 @@ import {
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 
 import wasmBlobUrl from "@automerge/automerge/automerge.wasm?url";
-import { next as Automerge } from "@automerge/automerge";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
@@ -162,10 +161,10 @@ const account = await setupAccount();
  */
 const oldChange = DocHandle.prototype.change;
 DocHandle.prototype.change = function <T>(
-  callback: A.ChangeFn<T>,
-  options: A.ChangeOptions<T> = {}
+  callback: Automerge.ChangeFn<T>,
+  options: Automerge.ChangeOptions<T> = {}
 ) {
-  const optionsWithAttribution: A.ChangeOptions<T> = {
+  const optionsWithAttribution: Automerge.ChangeOptions<T> = {
     time: Date.now(),
     message: JSON.stringify({ author }),
     ...options,
@@ -173,17 +172,17 @@ DocHandle.prototype.change = function <T>(
   oldChange.call(
     this,
     callback,
-    optionsWithAttribution as A.ChangeOptions<any>
+    optionsWithAttribution as Automerge.ChangeOptions<any>
   );
 };
 
 const oldChangeAt = DocHandle.prototype.changeAt;
 DocHandle.prototype.changeAt = function <T>(
   heads: UrlHeads,
-  callback: A.ChangeFn<T>,
-  options: A.ChangeOptions<T> = {}
+  callback: Automerge.ChangeFn<T>,
+  options: Automerge.ChangeOptions<T> = {}
 ) {
-  const optionsWithAttribution: A.ChangeOptions<T> = {
+  const optionsWithAttribution: Automerge.ChangeOptions<T> = {
     time: Date.now(),
     message: JSON.stringify({ author }),
     ...options,
@@ -192,7 +191,7 @@ DocHandle.prototype.changeAt = function <T>(
     this,
     heads,
     callback,
-    optionsWithAttribution as A.ChangeOptions<any>
+    optionsWithAttribution as Automerge.ChangeOptions<any>
   );
 };
 

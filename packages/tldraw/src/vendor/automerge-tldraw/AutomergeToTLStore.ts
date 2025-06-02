@@ -1,5 +1,5 @@
 import { TLRecord, RecordId, TLStore } from "@tldraw/tldraw";
-import { next as Automerge } from "@automerge/automerge";
+import * as Automerge from "@automerge/automerge";
 import { isImmutableString } from "@automerge/automerge";
 
 /** Convert a value from an automerge doc to a value consumable by TLDraw.

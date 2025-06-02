@@ -4,7 +4,7 @@ import {
 } from "@automerge/automerge-repo-react-hooks";
 
 import { EditorProps } from "@patchwork/sdk";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import Handsontable from "handsontable";
 import { HotTable } from "@handsontable/react";
 import "handsontable/dist/handsontable.full.min.css";

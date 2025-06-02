@@ -1,6 +1,6 @@
 import assert from "assert";
 import { describe, it } from "vitest";
-import { next as Automerge } from "@automerge/automerge";
+import * as Automerge from "@automerge/automerge";
 import { TextAnchor, textAnchorsAtPath } from "@patchwork/sdk/textAnchors";
 import {
   AddAnnotation,

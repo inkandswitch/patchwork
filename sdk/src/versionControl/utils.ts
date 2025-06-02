@@ -4,7 +4,7 @@ import {
   useDocument,
   useDocHandle,
 } from "@automerge/automerge-repo-react-hooks";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { DiffWithProvenance } from "./schema";
 

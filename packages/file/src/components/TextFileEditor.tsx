@@ -15,7 +15,7 @@ import {
   getCursorPositionSafely,
   getCursorSafely,
 } from "@patchwork/sdk/versionControl";
-import { next as Automerge } from "@automerge/automerge";
+import * as Automerge from "@automerge/automerge";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import {
   useDocument,

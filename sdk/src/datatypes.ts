@@ -6,8 +6,7 @@ import {
   HasVersionControlMetadata,
   TextPatch,
 } from "./versionControl";
-import { next as A, Doc } from "@automerge/automerge";
-import { DocHandle, Repo } from "@automerge/automerge-repo";
+import { Doc, DocHandle, Patch, Repo } from "@automerge/automerge-repo";
 import { ReactElement } from "react";
 import { IconType } from "./ui";
 import { DocMigration } from "./migrations/DocMigration";
@@ -38,7 +37,7 @@ export type DataTypeImplementation<D = unknown, T = unknown, V = unknown> = {
   ) => (change: DecodedChangeWithMetadata) => boolean;
 
   // Mark whether a given patch should be included in the history
-  includePatchInChangeGroup?: (patch: A.Patch | TextPatch) => boolean; // todo: can we get rid of TextPatch here?
+  includePatchInChangeGroup?: (patch: Patch | TextPatch) => boolean; // todo: can we get rid of TextPatch here?
 
   /** A datatype can define two ways of summarizing a change group.
    *  - The first is a "fallback summary": computed deterministically based on the group contents,
@@ -66,7 +65,7 @@ export type DataTypeImplementation<D = unknown, T = unknown, V = unknown> = {
   patchesToAnnotations?: (
     doc: D,
     docBefore: D,
-    patches: A.Patch[]
+    patches: Patch[]
   ) => Annotation<T, V>[];
 
   /* Group annotations into logical units. This function get's passed all annotations

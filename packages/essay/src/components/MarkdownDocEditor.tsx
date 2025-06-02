@@ -12,7 +12,7 @@ import {
 } from "@patchwork/sdk/textAnchors";
 import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import { type DocHandle } from "@automerge/automerge-repo";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import clsx from "clsx";
 import { frontmatterPlugin } from "../codemirrorPlugins/frontmatter";
 import { previewFiguresPlugin } from "../codemirrorPlugins/previewFigures";

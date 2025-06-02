@@ -1,5 +1,5 @@
 import { EditorProps } from "@patchwork/sdk";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import {
   useDocument,
   useDocHandle,

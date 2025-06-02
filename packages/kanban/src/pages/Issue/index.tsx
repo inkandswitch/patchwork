@@ -1,8 +1,7 @@
 import { ContactAvatar } from "@patchwork/sdk/components";
 import { MarkdownEditor } from "@patchwork/sdk/markdown";
 import { Button } from "@patchwork/sdk/ui";
-import { next as A, Prop } from "@automerge/automerge";
-import { DocHandle } from "@automerge/automerge-repo";
+import { DocHandle, Prop, updateText } from "@automerge/automerge-repo";
 import { TrashIcon, XIcon } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import SelectLane from "../../components/contextmenu/StatusMenu";
@@ -75,7 +74,7 @@ function IssuePage({
     changeDoc((doc) => {
       const index = doc.cards.findIndex((issue) => issue.id === id);
       if (index !== -1) {
-        A.updateText(doc, ["cards", index, "title"], title);
+        updateText(doc, ["cards", index, "title"], title);
       }
     });
   };

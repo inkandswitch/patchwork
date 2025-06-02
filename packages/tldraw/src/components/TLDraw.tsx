@@ -9,7 +9,7 @@ import { useMemo, useState } from "react";
 import { useCurrentAccount } from "@patchwork/sdk";
 import { EditorProps } from "@patchwork/sdk";
 import { AnnotationWithUIState } from "@patchwork/sdk/versionControl";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import { Editor, TLCamera, TLShape, Tldraw } from "@tldraw/tldraw";
 import "@tldraw/tldraw/tldraw.css";
 import { useAutomergeStore } from "../vendor/automerge-tldraw";

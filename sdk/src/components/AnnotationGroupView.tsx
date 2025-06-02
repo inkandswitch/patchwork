@@ -9,11 +9,11 @@ import {
   CommentState,
   HasVersionControlMetadata,
 } from "../versionControl";
-import { next as A, uuid } from "@automerge/automerge";
 import {
   AutomergeUrl,
   decodeHeads,
   DocHandle,
+  updateText,
 } from "@automerge/automerge-repo";
 import { Check, MessageCircle, PencilIcon } from "lucide-react";
 import React, {
@@ -25,6 +25,7 @@ import React, {
 } from "react";
 import { getAnnotationGroupId } from "../versionControl";
 import { applyCursorPatches, CursorPatch } from "../versionControl";
+import { uuid } from "@automerge/automerge";
 
 export interface AnnotationGroupViewProps<
   D extends HasVersionControlMetadata<T, V>,
@@ -171,7 +172,7 @@ export const AnnotationGroupView = <
           (comment) => comment.id === id
         );
 
-        A.updateText(
+        updateText(
           doc,
           ["discussions", discussionId, "comments", index, "content"],
           content
@@ -201,7 +202,7 @@ export const AnnotationGroupView = <
         if (annotationGroup.discussion?.id) {
           discussionId = annotationGroup.discussion?.id;
         } else {
-          discussionId = uuid();
+          discussionId = crypto.randomUUID();
           discussions[discussionId] = {
             id: discussionId,
             heads: decodeHeads(handle.heads()),
@@ -214,7 +215,7 @@ export const AnnotationGroupView = <
         }
 
         discussions[discussionId].comments.push({
-          id: uuid(),
+          id: crypto.randomUUID(),
           content,
           contactUrl: account.contactHandle.url,
           timestamp: Date.now(),

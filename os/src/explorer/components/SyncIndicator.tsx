@@ -1,6 +1,6 @@
 // TODO move these utils
 import { getRelativeTimeString } from "@patchwork/sdk/versionControl";
-import { next as A, Heads } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import {
   AutomergeUrl,
   DocHandle,

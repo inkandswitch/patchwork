@@ -14,7 +14,7 @@ import { usePlugin } from "@patchwork/sdk/hooks";
 
 import { AutomergeUrl, decodeHeads } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
@@ -26,9 +26,7 @@ import {
   HasVersionControlMetadata,
 } from "@patchwork/sdk/versionControl";
 import { fetchDoesDocLinkExistInBranchScope } from "@patchwork/sdk/versionControl";
-import {
-  diffWithProvenance,
-} from "@patchwork/sdk/versionControl";
+import { diffWithProvenance } from "@patchwork/sdk/versionControl";
 import { VersionControlBar } from "./VersionControlBar";
 import { useAsyncComputed } from "@patchwork/sdk/async-signals";
 import { DocEditor } from "./DocEditor";

@@ -3,7 +3,7 @@ import { type DataTypeImplementation, initFrom } from "@patchwork/sdk";
 import { ChangeGroup, noGrouping } from "@patchwork/sdk/versionControl";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { TextPatch } from "@patchwork/sdk/versionControl";
-import { next as Automerge } from "@automerge/automerge/slim";
+import * as Automerge from "@automerge/automerge/slim";
 import { RawString } from "@automerge/automerge-repo";
 import mime from "mime-types";
 import { isImageFile, useBinaryUrl } from "./utils";

@@ -1,7 +1,7 @@
 import { TextAnchor } from "../../textAnchors";
 import { AnnotationWithUIState } from "../../versionControl";
 import { DocHandle } from "@automerge/automerge-repo";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import { ViewPlugin, ViewUpdate } from "@codemirror/view";
 
 export function selectedAnchorsPlugin({

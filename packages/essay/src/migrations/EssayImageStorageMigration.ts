@@ -1,7 +1,7 @@
 import { DocMigration } from "@patchwork/sdk";
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import { FileDoc } from "@patchwork/file";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 
 type AssetsDoc = {
   files: {

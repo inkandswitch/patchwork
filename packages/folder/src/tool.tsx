@@ -15,7 +15,7 @@ import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import { diffWithProvenance } from "@patchwork/sdk/versionControl";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import React, { useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { FolderDoc } from "./datatype";

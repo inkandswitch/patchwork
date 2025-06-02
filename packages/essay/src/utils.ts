@@ -1,5 +1,5 @@
 import { EditorView } from "@codemirror/view";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import { ReactElement, useMemo } from "react";
 import ReactDOMServer from "react-dom/server";
 import { AnnotationGroupWithUIState } from "@patchwork/sdk/versionControl";

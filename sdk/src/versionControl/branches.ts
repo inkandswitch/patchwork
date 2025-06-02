@@ -12,7 +12,7 @@ import {
   DocHandle,
   Repo,
 } from "@automerge/automerge-repo";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import {
   BranchDoc,
   HasVersionControlMetadata,

@@ -1,5 +1,5 @@
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import { TextPatch } from "./utils";
 import { CursorPatch as CursorPatch } from "./cursorPatch";
 import { ChatMessage } from "./bots";

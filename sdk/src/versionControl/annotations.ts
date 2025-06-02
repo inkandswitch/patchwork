@@ -1,6 +1,6 @@
 import { DataType } from "../datatypes";
 import { useStaticCallback } from "../hooks/useStaticCallback";
-import { next as A } from "@automerge/automerge";
+import * as A from "@automerge/automerge";
 import { isEqual, min, sortBy } from "lodash-es";
 import { useMemo, useState } from "react";
 import {
