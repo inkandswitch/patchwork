@@ -39,7 +39,9 @@ if (!serviceWorker) {
 }
 
 const repo = await setupRepo();
+let globalMessageChannelAdapter: MessageChannelNetworkAdapter | undefined;
 
+console.log("establishMessageChannel: initial startup");
 establishMessageChannel(serviceWorker);
 
 async function setupServiceWorker(): Promise<ServiceWorker> {
@@ -97,6 +99,9 @@ navigator.serviceWorker.addEventListener("controllerchange", (event) => {
   // even if we wait above in setupServiceWorker() until the service worker state changes to activated.
   // To make sure we don't call establishMessageChannel twice check if this is actually a new service worker
   if (newServiceWorker !== serviceWorker) {
+    console.log(
+      "establishMessageChannel: controllerchange to new service worker"
+    );
     establishMessageChannel(newServiceWorker);
   }
 });
@@ -105,6 +110,7 @@ navigator.serviceWorker.addEventListener("message", (event) => {
   switch (event.data.type) {
     case "SERVICE_WORKER_RESTARTED":
       // Re-establish the MessageChannel if the service worker restarts
+      console.log("establishMessageChannel: SERVICE_WORKER_RESTARTED message");
       establishMessageChannel(serviceWorker);
       break;
   }
@@ -114,13 +120,21 @@ navigator.serviceWorker.addEventListener("message", (event) => {
 // The repo in the tab takes advantage of loaded state in the SW.
 // With the init message we also pass the config for initializing the repo. The config only
 // takes effect if the service worker hasn't been initialized before
-// TODO: clean up MessageChannels to old repos
 function establishMessageChannel(serviceWorker: ServiceWorker) {
   // Send one side of a MessageChannel to the service worker and register the other with the repo.
   const messageChannel = new MessageChannel();
-  repo.networkSubsystem.addNetworkAdapter(
-    new MessageChannelNetworkAdapter(messageChannel.port1)
+
+  if (globalMessageChannelAdapter) {
+    repo.networkSubsystem.removeNetworkAdapter(globalMessageChannelAdapter);
+  }
+  globalMessageChannelAdapter = new MessageChannelNetworkAdapter(
+    messageChannel.port1
   );
+  repo.networkSubsystem.addNetworkAdapter(globalMessageChannelAdapter);
+
+  /**
+   * if we remove firefox support we could remove this
+   */
   serviceWorker.postMessage(
     {
       type: "INIT",
