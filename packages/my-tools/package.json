@@ -23,8 +23,8 @@
     "resolve.exports": "^2.0.3"
   },
   "devDependencies": {
-    "@types/react": "^18.3.20",
-    "@vitejs/plugin-react": "^4.4.1",
+    "@types/react": "^18.3.23",
+    "@vitejs/plugin-react": "^4.5.1",
     "typescript": "^5.8.3",
     "vite": "^5.4.19",
     "vite-plugin-css-injected-by-js": "^3.5.2",
