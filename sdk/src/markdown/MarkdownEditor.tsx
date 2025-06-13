@@ -4,7 +4,10 @@ import { EditorView } from "@codemirror/view";
 import { useEffect, useState } from "react";
 import { useMarkdownPlugins } from "./useMarkdownPlugins";
 import { theme } from "./codemirrorPlugins/theme";
-import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
+import {
+  automergeSyncPlugin,
+  DocHandle as CodeMirrorDocHandle,
+} from "@automerge/automerge-codemirror";
 import { get } from "lodash-es";
 
 type MarkdownEditorProps = {
@@ -28,7 +31,7 @@ export const MarkdownEditor = ({ handle, path }: MarkdownEditorProps) => {
         ...plugins,
         theme("sans"),
         automergeSyncPlugin({
-          handle,
+          handle: handle as CodeMirrorDocHandle<unknown>,
           path,
         }),
       ],

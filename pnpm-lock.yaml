@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@automerge/automerge': 3.0.0-beta.1
+  '@automerge/automerge': 3.0.0-beta.4
 
 importers:
 
@@ -31,7 +31,7 @@ importers:
         version: 5.1.4(typescript@5.8.3)(vite@5.4.19(@types/node@22.10.9)(lightningcss@1.30.1)(terser@5.37.0))
       vitest:
         specifier: ^2.1.9
-        version: 2.1.9(@types/node@22.10.9)(@vitest/ui@2.1.9)(jsdom@22.1.0)(lightningcss@1.30.1)(terser@5.37.0)
+        version: 2.1.9(@types/node@22.10.9)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(lightningcss@1.30.1)(terser@5.37.0)
       yargs-parser:
         specifier: ^21.1.1
         version: 21.1.1
@@ -39,8 +39,8 @@ importers:
   jacquard-cli:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.1
-        version: 3.0.0-beta.1
+        specifier: 3.0.0-beta.4
+        version: 3.0.0-beta.4
       '@automerge/automerge-repo':
         specifier: ^2.0.1
         version: 2.0.1
@@ -101,15 +101,15 @@ importers:
         version: 5.8.3
       vitest:
         specifier: ^2.1.9
-        version: 2.1.9(@types/node@20.17.57)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2))(lightningcss@1.30.1)(terser@5.37.0)
+        version: 2.1.9(@types/node@20.17.57)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(lightningcss@1.30.1)(terser@5.37.0)
 
-  os: {dependencies: {'@automerge/automerge': {specifier: 3.0.0-beta.1, version: 3.0.0-beta.1}, '@automerge/automerge-repo': {specifier: ^2.0.1, version: 2.0.1}, '@automerge/automerge-repo-network-messagechannel': {specifier: ^2.0.1, version: 2.0.1}, '@automerge/automerge-repo-network-websocket': {specifier: ^2.0.1, version: 2.0.1}, '@automerge/automerge-repo-react-hooks': {specifier: ^2.0.1, version: 2.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@automerge/automerge-repo-storage-indexeddb': {specifier: ^2.0.1, version: 2.0.1}, '@patchwork/file': {specifier: workspace:*, version: link:../packages/file}, '@patchwork/folder': {specifier: workspace:*, version: link:../packages/folder}, '@patchwork/jacquard': {specifier: workspace:*, version: link:../packages/jacquard}, '@patchwork/sdk': {specifier: workspace:*, version: link:../sdk}, '@tailwindcss/container-queries': {specifier: ^0.1.1, version: 0.1.1(tailwindcss@4.1.8)}, '@xstate/react': {specifier: ^4.1.3, version: 4.1.3(@types/react@18.3.23)(react@18.3.1)(xstate@5.19.4)}, class-variance-authority: {specifier: ^0.7.1, version: 0.7.1}, esbuild: {specifier: ^0.23.1, version: 0.23.1}, lodash-es: {specifier: ^4.17.21, version: 4.17.21}, lucide-react: {specifier: ^0.456.0, version: 0.456.0(react@18.3.1)}, react: {specifier: ^18.3.1, version: 18.3.1}, react-arborist: {specifier: ^3.4.3, version: 3.4.3(@types/hoist-non-react-statics@3.3.6)(@types/node@20.17.57)(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, react-dom: {specifier: ^18.3.1, version: 18.3.1(react@18.3.1)}, react-error-boundary: {specifier: ^4.1.2, version: 4.1.2(react@18.3.1)}, react-markdown: {specifier: ^9.1.0, version: 9.1.0(@types/react@18.3.23)(react@18.3.1)}, tailwindcss-animate: {specifier: ^1.0.7, version: 1.0.7(tailwindcss@4.1.8)}, use-resize-observer: {specifier: ^9.1.0, version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, xstate: {specifier: ^5.19.4, version: 5.19.4}}, devDependencies: {'@jspm/generator': {specifier: ^2.6.1, version: 2.6.1}, '@tailwindcss/postcss': {specifier: ^4.1.8, version: 4.1.8}, '@tailwindcss/vite': {specifier: ^4.1.8, version: 4.1.8(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, '@types/lodash-es': {specifier: ^4.17.12, version: 4.17.12}, '@types/node': {specifier: ^20.17.57, version: 20.17.57}, '@types/react': {specifier: ^18.3.23, version: 18.3.23}, '@types/react-dom': {specifier: ^18.3.7, version: 18.3.7(@types/react@18.3.23)}, '@types/uuid': {specifier: ^10.0.0, version: 10.0.0}, '@typescript-eslint/eslint-plugin': {specifier: ^6.21.0, version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)}, '@typescript-eslint/parser': {specifier: ^6.21.0, version: 6.21.0(eslint@8.57.1)(typescript@5.8.3)}, '@vitejs/plugin-react': {specifier: ^4.5.1, version: 4.5.1(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, eslint: {specifier: ^8.57.1, version: 8.57.1}, eslint-plugin-react-hooks: {specifier: ^4.6.2, version: 4.6.2(eslint@8.57.1)}, eslint-plugin-react-refresh: {specifier: ^0.4.20, version: 0.4.20(eslint@8.57.1)}, jsdom: {specifier: ^22.1.0, version: 22.1.0(canvas@2.11.2)}, pnpm: {specifier: ^8.15.9, version: 8.15.9}, tailwindcss: {specifier: ^4.1.8, version: 4.1.8}, typescript: {specifier: ^5.8.3, version: 5.8.3}, vite: {specifier: ^5.4.19, version: 5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0)}, vite-plugin-top-level-await: {specifier: ^1.5.0, version: 1.5.0(@swc/helpers@0.5.17)(rollup@4.41.1)(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, vite-plugin-wasm: {specifier: ^3.4.1, version: 3.4.1(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, vitest: {specifier: ^2.1.9, version: 2.1.9(@types/node@20.17.57)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2))(lightningcss@1.30.1)(terser@5.37.0)}}}
+  os: {dependencies: {'@automerge/automerge': {specifier: 3.0.0-beta.4, version: 3.0.0-beta.4}, '@automerge/automerge-repo': {specifier: ^2.0.1, version: 2.0.1}, '@automerge/automerge-repo-network-messagechannel': {specifier: ^2.0.1, version: 2.0.1}, '@automerge/automerge-repo-network-websocket': {specifier: ^2.0.1, version: 2.0.1}, '@automerge/automerge-repo-react-hooks': {specifier: ^2.0.1, version: 2.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@automerge/automerge-repo-storage-indexeddb': {specifier: ^2.0.1, version: 2.0.1}, '@patchwork/file': {specifier: workspace:*, version: link:../packages/file}, '@patchwork/folder': {specifier: workspace:*, version: link:../packages/folder}, '@patchwork/jacquard': {specifier: workspace:*, version: link:../packages/jacquard}, '@patchwork/sdk': {specifier: workspace:*, version: link:../sdk}, '@tailwindcss/container-queries': {specifier: ^0.1.1, version: 0.1.1(tailwindcss@4.1.8)}, '@xstate/react': {specifier: ^4.1.3, version: 4.1.3(@types/react@18.3.23)(react@18.3.1)(xstate@5.19.4)}, class-variance-authority: {specifier: ^0.7.1, version: 0.7.1}, esbuild: {specifier: ^0.23.1, version: 0.23.1}, lodash-es: {specifier: ^4.17.21, version: 4.17.21}, lucide-react: {specifier: ^0.456.0, version: 0.456.0(react@18.3.1)}, react: {specifier: ^18.3.1, version: 18.3.1}, react-arborist: {specifier: ^3.4.3, version: 3.4.3(@types/hoist-non-react-statics@3.3.6)(@types/node@20.17.57)(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, react-dom: {specifier: ^18.3.1, version: 18.3.1(react@18.3.1)}, react-error-boundary: {specifier: ^4.1.2, version: 4.1.2(react@18.3.1)}, react-markdown: {specifier: ^9.1.0, version: 9.1.0(@types/react@18.3.23)(react@18.3.1)}, tailwindcss-animate: {specifier: ^1.0.7, version: 1.0.7(tailwindcss@4.1.8)}, use-resize-observer: {specifier: ^9.1.0, version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, xstate: {specifier: ^5.19.4, version: 5.19.4}}, devDependencies: {'@jspm/generator': {specifier: ^2.6.1, version: 2.6.1}, '@tailwindcss/postcss': {specifier: ^4.1.8, version: 4.1.8}, '@tailwindcss/vite': {specifier: ^4.1.8, version: 4.1.8(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, '@types/lodash-es': {specifier: ^4.17.12, version: 4.17.12}, '@types/node': {specifier: ^20.17.57, version: 20.17.57}, '@types/react': {specifier: ^18.3.23, version: 18.3.23}, '@types/react-dom': {specifier: ^18.3.7, version: 18.3.7(@types/react@18.3.23)}, '@types/uuid': {specifier: ^10.0.0, version: 10.0.0}, '@typescript-eslint/eslint-plugin': {specifier: ^6.21.0, version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)}, '@typescript-eslint/parser': {specifier: ^6.21.0, version: 6.21.0(eslint@8.57.1)(typescript@5.8.3)}, '@vitejs/plugin-react': {specifier: ^4.5.1, version: 4.5.1(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, eslint: {specifier: ^8.57.1, version: 8.57.1}, eslint-plugin-react-hooks: {specifier: ^4.6.2, version: 4.6.2(eslint@8.57.1)}, eslint-plugin-react-refresh: {specifier: ^0.4.20, version: 0.4.20(eslint@8.57.1)}, jsdom: {specifier: ^22.1.0, version: 22.1.0(canvas@2.11.2(encoding@0.1.13))}, pnpm: {specifier: ^8.15.9, version: 8.15.9}, tailwindcss: {specifier: ^4.1.8, version: 4.1.8}, typescript: {specifier: ^5.8.3, version: 5.8.3}, vite: {specifier: ^5.4.19, version: 5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0)}, vite-plugin-top-level-await: {specifier: ^1.5.0, version: 1.5.0(@swc/helpers@0.5.17)(rollup@4.41.1)(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, vite-plugin-wasm: {specifier: ^3.4.1, version: 3.4.1(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, vitest: {specifier: ^2.1.9, version: 2.1.9(@types/node@20.17.57)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(lightningcss@1.30.1)(terser@5.37.0)}}}
 
   packages/datagrid:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.1
-        version: 3.0.0-beta.1
+        specifier: 3.0.0-beta.4
+        version: 3.0.0-beta.4
       '@automerge/automerge-repo-react-hooks':
         specifier: ^2.0.1
         version: 2.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -163,8 +163,8 @@ importers:
   packages/essay:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.1
-        version: 3.0.0-beta.1
+        specifier: 3.0.0-beta.4
+        version: 3.0.0-beta.4
       '@automerge/automerge-codemirror':
         specifier: ^0.1.0
         version: 0.1.0
@@ -255,13 +255,13 @@ importers:
         version: 3.4.1(vite@5.4.19(@types/node@22.10.9)(lightningcss@1.30.1)(terser@5.37.0))
       vitest:
         specifier: ^2.1.9
-        version: 2.1.9(@types/node@22.10.9)(@vitest/ui@2.1.9)(jsdom@22.1.0)(lightningcss@1.30.1)(terser@5.37.0)
+        version: 2.1.9(@types/node@22.10.9)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(lightningcss@1.30.1)(terser@5.37.0)
 
   packages/file:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.1
-        version: 3.0.0-beta.1
+        specifier: 3.0.0-beta.4
+        version: 3.0.0-beta.4
       '@automerge/automerge-codemirror':
         specifier: ^0.1.0
         version: 0.1.0
@@ -372,8 +372,8 @@ importers:
   packages/folder:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.1
-        version: 3.0.0-beta.1
+        specifier: 3.0.0-beta.4
+        version: 3.0.0-beta.4
       '@automerge/automerge-repo':
         specifier: ^2.0.1
         version: 2.0.1
@@ -433,8 +433,8 @@ importers:
   packages/jacquard:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.1
-        version: 3.0.0-beta.1
+        specifier: 3.0.0-beta.4
+        version: 3.0.0-beta.4
       '@automerge/automerge-repo':
         specifier: ^2.0.1
         version: 2.0.1
@@ -494,8 +494,8 @@ importers:
   packages/kanban:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.1
-        version: 3.0.0-beta.1
+        specifier: 3.0.0-beta.4
+        version: 3.0.0-beta.4
       '@automerge/automerge-repo':
         specifier: ^2.0.1
         version: 2.0.1
@@ -628,8 +628,8 @@ importers:
   packages/raw-editor:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.1
-        version: 3.0.0-beta.1
+        specifier: 3.0.0-beta.4
+        version: 3.0.0-beta.4
       '@automerge/automerge-repo':
         specifier: ^2.0.1
         version: 2.0.1
@@ -677,8 +677,8 @@ importers:
   packages/tldraw:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.1
-        version: 3.0.0-beta.1
+        specifier: 3.0.0-beta.4
+        version: 3.0.0-beta.4
       '@automerge/automerge-repo':
         specifier: ^2.0.1
         version: 2.0.1
@@ -729,8 +729,8 @@ importers:
   sdk:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.1
-        version: 3.0.0-beta.1
+        specifier: 3.0.0-beta.4
+        version: 3.0.0-beta.4
       '@automerge/automerge-codemirror':
         specifier: ^0.1.0
         version: 0.1.0
@@ -929,7 +929,7 @@ importers:
         version: 5.1.4(typescript@5.8.3)(vite@5.4.19(@types/node@22.10.9)(lightningcss@1.30.1)(terser@5.37.0))
       vitest:
         specifier: ^2.1.9
-        version: 2.1.9(@types/node@22.10.9)(@vitest/ui@2.1.9)(jsdom@22.1.0)(lightningcss@1.30.1)(terser@5.37.0)
+        version: 2.1.9(@types/node@22.10.9)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(lightningcss@1.30.1)(terser@5.37.0)
 
 packages:
 
@@ -965,8 +965,8 @@ packages:
   '@automerge/automerge-repo@2.0.1':
     resolution: {integrity: sha512-1V8pyX5s8PtyPDKmkdEaK/lSuwc9j1HWRYxiWwx2/7FYshfKjl3+mMTAEemzKrwQNE3f3+0zKlI4gChBebAevg==}
 
-  '@automerge/automerge@3.0.0-beta.1':
-    resolution: {integrity: sha512-oGl8MhOVDVdl+FUWpfRqyh3WB2q5LKguy4y0gGNDi/aS/ddTK18iGxxKzDqa4rhsQ64PdFNOkcHaMg9ebWV3Nw==}
+  '@automerge/automerge@3.0.0-beta.4':
+    resolution: {integrity: sha512-eI3aGxd2RxhXJevza5LWi9JFb4pmgdWcijrADasJnhwkzXptAMGlhEaJEalesF5Z789DIDA+BJrXOuKNqOp5yg==}
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -6955,7 +6955,7 @@ snapshots:
 
   '@automerge/automerge-codemirror@0.1.0':
     dependencies:
-      '@automerge/automerge': 3.0.0-beta.1
+      '@automerge/automerge': 3.0.0-beta.4
       '@codemirror/state': 6.5.2
       '@codemirror/view': 6.37.1
       codemirror: 6.0.1
@@ -6983,7 +6983,7 @@ snapshots:
 
   '@automerge/automerge-repo-react-hooks@2.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@automerge/automerge': 3.0.0-beta.1
+      '@automerge/automerge': 3.0.0-beta.4
       '@automerge/automerge-repo': 2.0.1
       eventemitter3: 5.0.1
       react: 18.3.1
@@ -7007,7 +7007,7 @@ snapshots:
 
   '@automerge/automerge-repo@2.0.1':
     dependencies:
-      '@automerge/automerge': 3.0.0-beta.1
+      '@automerge/automerge': 3.0.0-beta.4
       bs58check: 3.0.1
       cbor-x: 1.6.0
       debug: 4.4.1
@@ -7018,7 +7018,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@automerge/automerge@3.0.0-beta.1': {}
+  '@automerge/automerge@3.0.0-beta.4': {}
 
   '@babel/code-frame@7.27.1':
     dependencies:
@@ -7971,7 +7971,7 @@ snapshots:
       '@lezer/highlight': 1.2.1
       '@lezer/lr': 1.4.2
 
-  '@mapbox/node-pre-gyp@1.0.11':
+  '@mapbox/node-pre-gyp@1.0.11(encoding@0.1.13)':
     dependencies:
       detect-libc: 2.0.4
       https-proxy-agent: 5.0.1
@@ -9990,14 +9990,6 @@ snapshots:
       chai: 5.2.0
       tinyrainbow: 1.2.0
 
-  '@vitest/mocker@2.1.9(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))':
-    dependencies:
-      '@vitest/spy': 2.1.9
-      estree-walker: 3.0.3
-      magic-string: 0.30.17
-    optionalDependencies:
-      vite: 5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0)
-
   '@vitest/mocker@2.1.9(vite@5.4.19(@types/node@22.10.9)(lightningcss@1.30.1)(terser@5.37.0))':
     dependencies:
       '@vitest/spy': 2.1.9
@@ -10034,7 +10026,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.14
       tinyrainbow: 1.2.0
-      vitest: 2.1.9(@types/node@22.10.9)(@vitest/ui@2.1.9)(jsdom@22.1.0)(lightningcss@1.30.1)(terser@5.37.0)
+      vitest: 2.1.9(@types/node@22.10.9)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(lightningcss@1.30.1)(terser@5.37.0)
 
   '@vitest/utils@2.1.9':
     dependencies:
@@ -10328,9 +10320,9 @@ snapshots:
 
   canvas-size@1.2.6: {}
 
-  canvas@2.11.2:
+  canvas@2.11.2(encoding@0.1.13):
     dependencies:
-      '@mapbox/node-pre-gyp': 1.0.11
+      '@mapbox/node-pre-gyp': 1.0.11(encoding@0.1.13)
       nan: 2.22.2
       simple-get: 3.1.1
     transitivePeerDependencies:
@@ -11400,7 +11392,7 @@ snapshots:
 
   jsbn@1.1.0: {}
 
-  jsdom@22.1.0(canvas@2.11.2):
+  jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)):
     dependencies:
       abab: 2.0.6
       cssstyle: 3.0.0
@@ -11426,7 +11418,7 @@ snapshots:
       ws: 8.18.2
       xml-name-validator: 4.0.0
     optionalDependencies:
-      canvas: 2.11.2
+      canvas: 2.11.2(encoding@0.1.13)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -13619,10 +13611,10 @@ snapshots:
       terser: 5.37.0
       yaml: 2.7.0
 
-  vitest@2.1.9(@types/node@20.17.57)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2))(lightningcss@1.30.1)(terser@5.37.0):
+  vitest@2.1.9(@types/node@20.17.57)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(lightningcss@1.30.1)(terser@5.37.0):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))
+      '@vitest/mocker': 2.1.9(vite@5.4.19(@types/node@22.10.9)(lightningcss@1.30.1)(terser@5.37.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
@@ -13644,7 +13636,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.17.57
       '@vitest/ui': 2.1.9(vitest@2.1.9)
-      jsdom: 22.1.0(canvas@2.11.2)
+      jsdom: 22.1.0(canvas@2.11.2(encoding@0.1.13))
     transitivePeerDependencies:
       - less
       - lightningcss
@@ -13656,7 +13648,7 @@ snapshots:
       - supports-color
       - terser
 
-  vitest@2.1.9(@types/node@22.10.9)(@vitest/ui@2.1.9)(jsdom@22.1.0)(lightningcss@1.30.1)(terser@5.37.0):
+  vitest@2.1.9(@types/node@22.10.9)(@vitest/ui@2.1.9)(jsdom@22.1.0(canvas@2.11.2(encoding@0.1.13)))(lightningcss@1.30.1)(terser@5.37.0):
     dependencies:
       '@vitest/expect': 2.1.9
       '@vitest/mocker': 2.1.9(vite@5.4.19(@types/node@22.10.9)(lightningcss@1.30.1)(terser@5.37.0))
@@ -13681,7 +13673,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 22.10.9
       '@vitest/ui': 2.1.9(vitest@2.1.9)
-      jsdom: 22.1.0(canvas@2.11.2)
+      jsdom: 22.1.0(canvas@2.11.2(encoding@0.1.13))
     transitivePeerDependencies:
       - less
       - lightningcss
