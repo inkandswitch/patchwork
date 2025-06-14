@@ -80,7 +80,10 @@ const generateImportMapPlugin = (): Plugin => ({
     // in build mode generate import map
     const generator = new Generator({
       env: ["browser", "module"],
-      resolutions: SHARED_MODULES,
+      resolutions: {
+        "@automerge/automerge": "@automerge/automerge@3.0.0-beta.4",
+        ...SHARED_MODULES,
+      },
     });
 
     const mungedDeps = EXTERNAL_DEPENDENCIES.map((dep) => {
