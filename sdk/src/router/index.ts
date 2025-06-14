@@ -231,14 +231,14 @@ export const useRouter = ({
             repo
           );
 
-          console.log({doc: branchScopeHandle.doc(), title})
+          console.log({ doc: branchScopeHandle.doc(), title });
 
           const handle = await repo.find<FolderDoc>(
             rootFolderDocWithMetadata.rootFolderUrl
           );
 
           handle.change((doc) => {
-            doc.docs.unshift({
+            doc.docs.push({
               type: branchScopeType,
               name: title ?? "Unknown Title",
               url: branchScopeUrl,
@@ -330,7 +330,7 @@ export const useRouter = ({
             rootFolderDocWithMetadata.rootFolderUrl
           );
           handle.change((doc) => {
-            doc.docs.unshift(docLink);
+            doc.docs.push(docLink);
           });
 
           docPath = [
