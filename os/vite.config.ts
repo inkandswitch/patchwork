@@ -57,6 +57,9 @@ function swPlugin(): Plugin {
           bundle: true,
           format: "iife",
           write: false,
+          define: {
+            CACHE_VERSION: `"cache-${Date.now()}"`, // Note the nested quotes for string
+          },
         });
         return result.outputFiles[0].text;
       }

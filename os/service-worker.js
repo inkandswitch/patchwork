@@ -6,6 +6,7 @@ self;
 
 // @ts-check
 import * as Automerge from "@automerge/automerge/slim";
+import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64";
 import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo/slim";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
@@ -65,30 +66,13 @@ const resolvablePromise = () => {
   return { promise, resolve };
 };
 
-/* Config is passed by the client in the init message
-{
-  wasmBlobUrl: string  // url to the wasm blob
-  peerIdPrefix: string // prefix that is added to peer to make it easier to find own messages in server log
-}*/
-let setConfig;
-const config = new Promise((resolve) => {
-  setConfig = resolve;
-});
-
 let repo = null;
 const { promise: repoReady, resolve: resolveRepoReady } = resolvablePromise();
 // Initialize the repo
 (async () => {
-  debugLog("Waiting for INIT message with config...");
-  const { wasmBlobUrl, peerIdPrefix } = await config;
-  debugLog("Config received", { wasmBlobUrl, peerIdPrefix });
-  await Automerge.initializeWasm(wasmBlobUrl);
+  debugLog("Initializing Automerge WASM");
+  await Automerge.initializeBase64Wasm(automergeWasmBase64);
   debugLog("Automerge WASM initialized");
-
-  if (peerIdPrefix) {
-    PEER_ID = `${peerIdPrefix}-${PEER_ID}`;
-    debugLog("Updated PEER_ID with prefix", PEER_ID);
-  }
 
   const newRepo = new Repo({
     storage: new IndexedDBStorageAdapter(),
@@ -138,18 +122,17 @@ self.addEventListener("message", async (event) => {
     case "DEBUG":
       // toggle debug logging
       debugEnabled = !debugEnabled;
-      console.log(`Debug logging ${debugEnabled ? 'ENABLED' : 'DISABLED'}`);
+      console.log(`Debug logging ${debugEnabled ? "ENABLED" : "DISABLED"}`);
       return;
 
     case "INIT":
       // load config and connect with client through message channel
       // if config is already loaded the new config is ignored
-      debugLog("INIT message – applying config", event.data.config);
-      setConfig(event.data.config);
+      debugLog("INIT message");
       if (!repo) await repoReady;
       debugLog("Repo ready – adding MessageChannel network adapter");
       repo.networkSubsystem.addNetworkAdapter(
-        new MessageChannelNetworkAdapter(event.ports[0], { useWeakRef: true })
+        new MessageChannelNetworkAdapter(event.ports[0], { useWeakRef: true }),
       );
       return;
 
@@ -173,7 +156,7 @@ async function addSyncServer(url) {
     await repoReady;
   }
   repo.networkSubsystem.addNetworkAdapter(
-    new BrowserWebSocketClientAdapter(url)
+    new BrowserWebSocketClientAdapter(url),
   );
 }
 // add this to window so it can be called from the service worker's REPL
@@ -227,7 +210,11 @@ self.addEventListener("fetch", async (event) => {
     return response;
   };
 
-  debugLog("Fetch intercepted", { url: url.href, method: event.request.method, id: fetchId });
+  debugLog("Fetch intercepted", {
+    url: url.href,
+    method: event.request.method,
+    id: fetchId,
+  });
 
   if (AUTOMERGE_REQUEST_URL_REGEX.test(event.request.url)) {
     debugLog("AUTOMERGE request matched", url.href);
@@ -247,7 +234,7 @@ self.addEventListener("fetch", async (event) => {
         new Response(`Invalid document id ${automergeUrl}`, {
           status: 404,
           headers: { "Content-Type": "text/plain" },
-        })
+        }),
       );
       return;
     }
@@ -276,7 +263,7 @@ self.addEventListener("fetch", async (event) => {
             {
               status: 500,
               headers: { "Content-Type": "text/plain" },
-            }
+            },
           );
         }
 
@@ -312,15 +299,18 @@ self.addEventListener("fetch", async (event) => {
               requested: queryHeads,
               current: Automerge.getHeads(doc),
             });
-            return finish("heads-mismatch", new Response(
-              `Heads mismatch: requested ${queryHeads} but had ${Automerge.getHeads(
-                doc
-              )}`,
-              {
-                status: 404,
-                headers: { "Content-Type": "text/plain" },
-              }
-            ));
+            return finish(
+              "heads-mismatch",
+              new Response(
+                `Heads mismatch: requested ${queryHeads} but had ${Automerge.getHeads(
+                  doc,
+                )}`,
+                {
+                  status: 404,
+                  headers: { "Content-Type": "text/plain" },
+                },
+              ),
+            );
           } else {
             debugLog("Heads matched", Automerge.getHeads(doc));
           }
@@ -350,17 +340,20 @@ self.addEventListener("fetch", async (event) => {
 
         if (!file) {
           debugLog("File not found for path", url.pathname);
-          return finish("file-not-found", new Response(
-            `Not found\nObject path: ${url.pathname}\n${JSON.stringify(
-              doc,
-              null,
-              2
-            )}`,
-            {
-              status: 404,
-              headers: { "Content-Type": "text/plain" },
-            }
-          ));
+          return finish(
+            "file-not-found",
+            new Response(
+              `Not found\nObject path: ${url.pathname}\n${JSON.stringify(
+                doc,
+                null,
+                2,
+              )}`,
+              {
+                status: 404,
+                headers: { "Content-Type": "text/plain" },
+              },
+            ),
+          );
         }
 
         debugLog("File resolved", { mimeType: file.mimeType });
@@ -385,18 +378,18 @@ self.addEventListener("fetch", async (event) => {
               {
                 status: 500,
                 headers: { "Content-Type": "text/plain" },
-              }
+              },
             );
           }
 
           return new Response(
             `Invalid file entry.\n${url.pathname}:\nfileEntry:${JSON.stringify(
-              file
+              file,
             )}`,
             {
               status: 404,
               headers: { "Content-Type": "text/plain" },
-            }
+            },
           );
         }
 
@@ -411,9 +404,9 @@ self.addEventListener("fetch", async (event) => {
           "success",
           new Response(dataToReturn, {
             headers: { "Content-Type": file.mimeType },
-          })
+          }),
         );
-      })()
+      })(),
     );
   } else if (
     event.request.method === "GET" &&
@@ -442,7 +435,7 @@ self.addEventListener("fetch", async (event) => {
           debugLog("Network success – response cached");
         }
         return finish("network", networkResponse);
-      })()
+      })(),
     );
   }
 });
