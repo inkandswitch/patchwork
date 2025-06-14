@@ -20,6 +20,8 @@ export type UIStateDoc = {
    */
   docPathsToggledOpenInSidebar: string[];
 
+  documentSidebarMode?: DocumentSidebarMode;
+
   /** Documents in the folder hierarchy that have a branch checked out.
    *  Map from branch scope path string (made with DocPathUtils.toString) to branch URL.
    */
@@ -28,6 +30,8 @@ export type UIStateDoc = {
   /** Document-specific UI states */
   docUIStates: { [docPathString: string]: DocUIState };
 };
+
+export type DocumentSidebarMode = "open" | "closed";
 
 export type DocUIState = {
   mainViewMode: MainViewMode;

@@ -81,8 +81,6 @@ export const Explorer: React.FC = () => {
   const rootFolderUrl = rootFolderData?.rootFolderUrl;
   const flatDocPaths = rootFolderData?.flatDocPaths;
 
-  const [showSidebar, setShowSidebar] = useState(true);
-
   const { selectedDocPath, selectDocPath } = useRouter({
     rootFolderDocWithMetadata: rootFolderData,
   });
@@ -126,6 +124,9 @@ export const Explorer: React.FC = () => {
   } = useSelectedTool(selectedDataTypeId, selectedDocUrl);
 
   const uiStateOm = useUIStateOm();
+
+  const uiOmStateHandle = uiStateOm?.handle;
+
   const account = useCurrentAccount();
 
   const [docHeadsFromTimelineSidebar, setDocHeadsFromTimelineSidebar] =
@@ -168,12 +169,22 @@ export const Explorer: React.FC = () => {
   // TODO: this only reads the main branch
   useSyncDocTitle({ selectedDocPath, selectDocPath, repo });
 
+  const showSidebar = uiOmStateHandle?.doc()?.documentSidebarMode === "open";
+  const setShowSidebar = useCallback(
+    (show: boolean) => {
+      uiStateOm?.handle.change((doc) => {
+        doc.documentSidebarMode = show ? "open" : "closed";
+      });
+    },
+    [uiStateOm]
+  );
+
   // keyboard shortcuts
   useEffect(() => {
     const keydownHandler = (event: KeyboardEvent) => {
       // toggle the sidebar open/closed when the user types cmd-backslash
       if (event.key === "\\" && event.metaKey) {
-        setShowSidebar((prev) => !prev);
+        setShowSidebar(!showSidebar);
       }
 
       // if there's no document selected and the user hits enter, make a new document
@@ -188,7 +199,7 @@ export const Explorer: React.FC = () => {
     return () => {
       window.removeEventListener("keydown", keydownHandler);
     };
-  }, [addNewDoc, selectedDocUrl]);
+  }, [addNewDoc, selectedDocUrl, showSidebar, setShowSidebar]);
 
   if (!accountDoc) {
     return <LoadingScreen what="account" />;
