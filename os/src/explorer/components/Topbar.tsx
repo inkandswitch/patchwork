@@ -206,7 +206,7 @@ export const Topbar: React.FC<TopbarProps> = ({
             <SyncIndicator
               docUrl={selectedDocUrl}
               storageId={AUTOMERGE_SYNC_SERVER_STORAGE_ID}
-              name={"sync.automerge.org"}
+              name={"sync3.automerge.org"}
             />
           </>
         )}
