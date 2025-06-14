@@ -131,6 +131,12 @@ function establishMessageChannel(serviceWorker: ServiceWorker) {
     messageChannel.port1,
   );
   repo.networkSubsystem.addNetworkAdapter(globalMessageChannelAdapter);
+  serviceWorker.postMessage(
+    {
+      type: "INIT",
+    },
+    [messageChannel.port2],
+  );
 
   console.log("Connected to service worker");
 }
