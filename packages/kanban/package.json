@@ -12,7 +12,7 @@
   },
   "keywords": [],
   "dependencies": {
-    "@automerge/automerge": "3.0.0-beta.1",
+    "@automerge/automerge": "3.0.0-beta.4",
     "@automerge/automerge-repo": "^2.0.1",
     "@automerge/automerge-repo-react-hooks": "^2.0.1",
     "@firefox-devtools/react-contextmenu": "^5.2.2",
@@ -32,12 +32,12 @@
     "react-window": "^1.8.11"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.10",
+    "@tailwindcss/vite": "^4.1.8",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
     "@types/react-window": "^1.8.8",
-    "@vitejs/plugin-react": "^4.5.2",
-    "tailwindcss": "^4.1.10",
+    "@vitejs/plugin-react": "^4.5.1",
+    "tailwindcss": "^4.1.8",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vite-plugin-top-level-await": "^1.5.0",
