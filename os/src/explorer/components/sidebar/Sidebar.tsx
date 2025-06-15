@@ -334,7 +334,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="mx-2 my-2 flex gap-2 items-center">
         <Input
-          placeholder="Search my docs..."
+          placeholder="Filter by Title"
           className="h-6"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
