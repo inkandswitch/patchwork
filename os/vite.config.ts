@@ -1,6 +1,7 @@
 import { Generator } from "@jspm/generator";
 import react from "@vitejs/plugin-react";
 import { build } from "esbuild";
+import { execSync } from "child_process";
 import path from "path";
 import { Plugin, UserConfig, defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
@@ -166,5 +167,9 @@ export default defineConfig({
     "process.env": {
       NODE_ENV: "production",
     },
+    __PATCHWORK_VERSION__: JSON.stringify({
+      gitHash: execSync("git rev-parse HEAD", { encoding: "utf8" }).trim(),
+      buildTimestamp: Date.now(),
+    }),
   },
 } satisfies UserConfig);

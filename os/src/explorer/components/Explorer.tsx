@@ -29,6 +29,7 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { addNewDocument } from "../docActions";
 import { removeDocPath } from "../docActions";
 import { NoDocumentSelected } from "./NoDocumentSelected";
+import { DevOverlay } from "./DevOverlay";
 
 // A hook that runs any needed data migrations when a doc is selected and fully loaded.
 // We have to be careful to only run:
@@ -132,6 +133,8 @@ export const Explorer: React.FC = () => {
   const [docHeadsFromTimelineSidebar, setDocHeadsFromTimelineSidebar] =
     useState<Automerge.Heads>();
 
+  const [showDevOverlay, setShowDevOverlay] = useState(false);
+
   const addNewDoc = useCallback(
     (args: { type: string; change?: (doc: unknown) => void }) =>
       addNewDocument({
@@ -187,6 +190,11 @@ export const Explorer: React.FC = () => {
         setShowSidebar(!showSidebar);
       }
 
+      // toggle the dev overlay when the user types ctrl-backtick
+      if (event.key === "`" && event.ctrlKey) {
+        setShowDevOverlay(!showDevOverlay);
+      }
+
       // if there's no document selected and the user hits enter, make a new document
       if (!selectedDocUrl && event.key === "Enter") {
         addNewDoc({ type: "essay" });
@@ -199,7 +207,7 @@ export const Explorer: React.FC = () => {
     return () => {
       window.removeEventListener("keydown", keydownHandler);
     };
-  }, [addNewDoc, selectedDocUrl, showSidebar, setShowSidebar]);
+  }, [addNewDoc, selectedDocUrl, showSidebar, setShowSidebar, showDevOverlay]);
 
   if (!accountDoc) {
     return <LoadingScreen what="account" />;
@@ -302,6 +310,7 @@ export const Explorer: React.FC = () => {
       </div>
 
       <Toaster />
+      <DevOverlay visible={showDevOverlay} />
     </ErrorBoundary>
   );
 };

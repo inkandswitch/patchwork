@@ -26,6 +26,7 @@ import DataTypeSelector from "./DataTypeSelector";
 import { OpenAutomergeUrl } from "./OpenAutomergeUrl";
 import { Node, FlatDocPathsContext, NodeData } from "./Node";
 
+
 const prepareDataForTree = (
   folderDoc: FolderDocWithChildren,
   folderPath: DocPath
