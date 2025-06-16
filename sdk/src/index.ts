@@ -1,4 +1,4 @@
-export * from "./plugins/index.js";
+export * from "./plugins";
 // TODO: deprecate these
 export * from "./datatypes.js";
 export * from "./tools.js";
@@ -22,3 +22,6 @@ export {
 export * from "./router/index.js";
 export * from "./modules";
 export { DocMigration } from "./migrations/DocMigration";
+export * from "./llm";
+export * from "./llm/types";
+export * from "./aiPrompts";

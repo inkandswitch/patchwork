@@ -43,6 +43,7 @@ export default defineConfig({
         embed: "src/PatchworkEmbed.tsx",
         files: "src/files/index.ts",
         hooks: "src/hooks/index.ts",
+        llm: "src/llm/index.ts",
         om: "src/om.ts",
         markdown: "src/markdown/index.ts",
         modules: "src/modules/index.ts",

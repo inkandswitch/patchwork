@@ -38,6 +38,8 @@ export const SHARED_MODULES = {
   "@patchwork/my-tools": "file:../packages/my-tools",
   "@patchwork/raw-editor": "file:../packages/raw-editor",
   "@patchwork/tldraw": "file:../packages/tldraw",
+  "@patchwork/anthropic": "file:../packages/anthropic",
+  "@patchwork/openai": "file:../packages/openai",
 };
 
 export const SDK_SUBMODULES = [
@@ -46,6 +48,7 @@ export const SDK_SUBMODULES = [
   "@patchwork/sdk/embed",
   "@patchwork/sdk/files",
   "@patchwork/sdk/hooks",
+  "@patchwork/sdk/llm",
   "@patchwork/sdk/om",
   "@patchwork/sdk/markdown",
   "@patchwork/sdk/modules",

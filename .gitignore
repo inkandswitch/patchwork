@@ -3,4 +3,5 @@ node_modules
 */dist
 packages/*/dist
 .env
-
+**/.env
+**/.env.local

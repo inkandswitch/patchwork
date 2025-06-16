@@ -2,6 +2,7 @@ import { LoadablePlugin } from "@patchwork/sdk";
 import type { MarkdownDoc } from "./datatype";
 import { markdownImport } from "./importMethods";
 import { markdownExport } from "./exportMethods";
+import { essayAIPrompt } from "./aiPrompt";
 
 export { isMarkdownDoc } from "./utils";
 export type { MarkdownDoc };
@@ -37,4 +38,5 @@ export const plugins: LoadablePlugin<any>[] = [
   },
   markdownImport,
   markdownExport,
+  essayAIPrompt,
 ];

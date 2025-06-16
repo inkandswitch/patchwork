@@ -8,4 +8,6 @@ export const BUNDLED_MODULES = [
   "@patchwork/tldraw",
   "@patchwork/my-tools",
   "@patchwork/raw-editor",
+  "@patchwork/openai",
+  "@patchwork/anthropic",
 ];

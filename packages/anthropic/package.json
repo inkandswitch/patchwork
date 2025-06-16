@@ -1,0 +1,30 @@
+{
+  "name": "@patchwork/anthropic",
+  "version": "0.0.1",
+  "description": "Anthropic provider for Patchwork LLM",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc && vite build",
+    "push": "pnpm build && pnpm --filter @patchwork/os build:anthropic",
+    "test": "vitest"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@patchwork/sdk": "workspace:*",
+    "@anthropic-ai/sdk": "^0.27.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^6.21.0",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.19",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vite-plugin-top-level-await": "^1.5.0",
+    "vite-plugin-wasm": "^3.4.1",
+    "vitest": "^2.1.9"
+  }
+}

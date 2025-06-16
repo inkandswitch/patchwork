@@ -2,13 +2,7 @@ import { ErrorFallback } from "@patchwork/sdk/components";
 import { selectDocLink, DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { useDocUIState } from "@patchwork/sdk/router";
 import { Icon, IconType } from "@patchwork/sdk/ui";
-import {
-  type EditorProps,
-  DataType,
-  getMatchingLoadedPlugins,
-  getMatchingPlugins,
-  Tool,
-} from "@patchwork/sdk";
+import { type EditorProps, DataType, Tool } from "@patchwork/sdk";
 import { useMatchingPluginDescriptions, usePlugin } from "@patchwork/sdk/hooks";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
 import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";

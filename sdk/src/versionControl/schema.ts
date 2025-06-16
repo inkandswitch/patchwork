@@ -2,10 +2,12 @@ import { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import * as A from "@automerge/automerge";
 import { TextPatch } from "./utils";
 import { CursorPatch as CursorPatch } from "./cursorPatch";
-import { ChatMessage } from "./bots";
+import { ChatMessage, ModelId } from "../llm";
 
 export type HasBotChatHistory = {
   botChatHistory: ChatMessage[];
+  botModelId?: ModelId;
+  botPromptId?: string;
 };
 
 export const withHasBotChatHistory = <D extends object>(

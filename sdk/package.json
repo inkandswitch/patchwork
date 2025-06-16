@@ -30,6 +30,10 @@
       "types": "./dist/types/hooks/index.d.ts",
       "import": "./dist/hooks.js"
     },
+    "./llm": {
+      "types": "./dist/types/llm/index.d.ts",
+      "import": "./dist/llm.js"
+    },
     "./om": {
       "types": "./dist/types/om.d.ts",
       "import": "./dist/om.js"
@@ -116,7 +120,6 @@
     "lodash-es": "^4.17.21",
     "lucide": "^0.433.0",
     "lucide-react": "^0.456.0",
-    "openai": "^4.104.0",
     "query-string": "^8.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

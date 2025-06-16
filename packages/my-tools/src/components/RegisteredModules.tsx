@@ -25,8 +25,14 @@ interface ModuleCardProps {
 }
 
 export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onRemove }) => {
-  const name = module.dataTypes?.length
-    ? module.dataTypes[0].name
+  const name = module.plugins.length
+    ? `${module.plugins[0].name}${
+        module.plugins.length > 1
+          ? ` (and ${module.plugins.length - 1} other plugin${
+              module.plugins.length > 2 ? "s" : ""
+            })`
+          : ""
+      }`
     : "Unnamed Module";
 
   // Create a doc link from the module URL

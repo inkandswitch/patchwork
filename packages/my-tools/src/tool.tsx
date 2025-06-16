@@ -11,6 +11,7 @@ import {
   type DataTypeDescription,
   type ToolDescription,
   type Plugin,
+  PluginDescription,
 } from "@patchwork/sdk";
 
 import React, { useCallback, useState, useEffect } from "react";
@@ -20,10 +21,7 @@ import { AutomergeUrl, isValidAutomergeUrl } from "@automerge/automerge-repo";
 
 export type ModuleContents = {
   url: string;
-  dataTypes?: DataTypeDescription[];
-  tools?: ToolDescription[];
-  importMethods?: ImportMethod[];
-  exportMethods?: ExportMethod[];
+  plugins: PluginDescription[];
   error?: string;
 };
 
@@ -57,22 +55,12 @@ export const ModuleSettingsEditor: React.FC<
       // organize the display in the UI.
       return {
         url,
-        dataTypes: plugins.filter((p): p is Plugin<DataTypeDescription> =>
-          isPlugin(p, "patchwork:dataType")
-        ),
-        tools: plugins.filter((p): p is Plugin<ToolDescription> =>
-          isPlugin(p, "patchwork:tool")
-        ),
-        importMethods: plugins.filter((p): p is Plugin<ImportMethod> =>
-          isPlugin(p, "patchwork:importMethod")
-        ),
-        exportMethods: plugins.filter((p): p is Plugin<ExportMethod> =>
-          isPlugin(p, "patchwork:exportMethod")
-        ),
+        plugins,
       };
     } catch (err) {
       return {
         url,
+        plugins: [],
         error: "Failed to load module. Please check the URL and try again.",
       };
     }

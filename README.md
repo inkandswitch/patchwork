@@ -196,6 +196,8 @@ Create a file at `sdk/.env.local`:
 VITE_OPENAI_API_KEY=<OpenAI key>
 ```
 
+TODO: document anthropic
+
 You can get the lab OpenAI key from Geoffrey.
 
 ## Creating a new tool in Patchwork
