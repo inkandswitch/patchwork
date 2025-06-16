@@ -417,7 +417,39 @@ self.addEventListener("fetch", async (event) => {
       (async () => {
         const cache = await caches.open(CACHE_NAME);
 
-        // Try cache first -- this site is all static
+        // We use a network-first strategy for the root index.html to avoid references to stale asset files.
+        // The problem this solves: when we rebuild the app, we get new JS asset filenames. But the old
+        // index.html still has references to the old asset filenames. If the service worker serves the old
+        // index.html, the browser will try to fetch the old asset files which 404.
+        // So, to avoid that, we always check the network first for the root index.html.
+        // For all the other asset files we can stick with a cache-first approach, which is faster.
+        if (url.pathname === "/") {
+          debugLog("HTML request – trying network first", url.href);
+          try {
+            const networkResponse = await fetch(event.request);
+            debugLog("Network response status", networkResponse.status);
+            if (200 <= networkResponse.status && networkResponse.status <= 299) {
+              // Cache successful responses
+              cache.put(event.request, networkResponse.clone());
+              debugLog("Network success – HTML cached");
+              return finish("network", networkResponse);
+            }
+          } catch (error) {
+            debugLog("Network failed for HTML – falling back to cache", error.message);
+          }
+
+          // Fallback to cache if network fails
+          const cachedResponse = await cache.match(event.request);
+          if (cachedResponse) {
+            debugLog("Cache fallback hit for HTML", url.href);
+            return finish("cache-fallback", cachedResponse);
+          }
+
+          // If both network and cache fail, return error
+          return finish("html-unavailable", new Response("HTML unavailable", { status: 503 }));
+        }
+
+        // For most assets, use cache-first strategy
         const cachedResponse = await cache.match(event.request);
         if (cachedResponse) {
           debugLog("Cache hit", url.href);
