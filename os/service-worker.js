@@ -123,6 +123,19 @@ self.addEventListener("message", async (event) => {
       // toggle debug logging
       debugEnabled = !debugEnabled;
       console.log(`Debug logging ${debugEnabled ? "ENABLED" : "DISABLED"}`);
+      // Send response back to client with current state
+      event.source.postMessage({
+        type: "DEBUG_STATUS",
+        enabled: debugEnabled
+      });
+      return;
+
+    case "GET_DEBUG_STATUS":
+      // query current debug logging state
+      event.source.postMessage({
+        type: "DEBUG_STATUS",
+        enabled: debugEnabled
+      });
       return;
 
     case "INIT":

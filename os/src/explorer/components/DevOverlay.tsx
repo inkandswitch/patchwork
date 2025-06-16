@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 const getRelativeTime = (timestampMs: number): string => {
   const nowUtc = Date.now();
@@ -26,11 +26,47 @@ interface DevOverlayProps {
 }
 
 export const DevOverlay: React.FC<DevOverlayProps> = ({ visible }) => {
+  const [debugEnabled, setDebugEnabled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    // Query initial debug status
+    if (navigator.serviceWorker?.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: "GET_DEBUG_STATUS" });
+    }
+
+    // Listen for debug status messages from service worker
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === "DEBUG_STATUS") {
+        setDebugEnabled(event.data.enabled);
+      }
+    };
+
+    navigator.serviceWorker?.addEventListener("message", handleMessage);
+    return () => navigator.serviceWorker?.removeEventListener("message", handleMessage);
+  }, [visible]);
+
+  const toggleDebug = () => {
+    if (navigator.serviceWorker?.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: "DEBUG" });
+    }
+  };
+
   if (!visible) return null;
 
   return (
     <div className="fixed bottom-0 right-0 bg-black bg-opacity-50 text-white px-3 py-2 text-xs font-mono">
-      Version {__PATCHWORK_VERSION__.gitHash.slice(0, 7)}, {getRelativeTime(__PATCHWORK_VERSION__.buildTimestamp)}
+      <div>Version {__PATCHWORK_VERSION__.gitHash.slice(0, 7)}, {getRelativeTime(__PATCHWORK_VERSION__.buildTimestamp)}</div>
+      <div className="mt-1">
+        SW Debug Logs: {debugEnabled === null ? "..." : debugEnabled ? "ON" : "OFF"}{" "}
+        <span
+          className="underline cursor-pointer"
+          onClick={toggleDebug}
+        >
+          toggle
+        </span>
+      </div>
     </div>
   );
 };
