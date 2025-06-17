@@ -1,5 +1,7 @@
 # Patchwork
 
+[![Typescript / Playwright tests](https://github.com/inkandswitch/patchwork/actions/workflows/checks.yml/badge.svg)](https://github.com/inkandswitch/patchwork/actions/workflows/checks.yml)
+
 Patchwork is a malleable, local-first collaboration environment in the browser. It lets you edit many types of automerge documents using various UI tools.
 
 ## Plugins
