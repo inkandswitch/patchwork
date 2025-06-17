@@ -28,3 +28,6 @@ tsc
 
 
 src/os/secrets.ts
+playwright-report/
+test-results/
+

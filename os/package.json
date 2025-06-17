@@ -28,7 +28,9 @@
     "build:no-tsc": "vite build && node ./build-service-worker.js",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "ui-test": "playwright test",
+    "ui-test:headed": "playwright test --headed"
   },
   "dependencies": {
     "@automerge/automerge": "3.0.0-beta.4",
@@ -58,6 +60,7 @@
   },
   "devDependencies": {
     "@jspm/generator": "^2.6.1",
+    "@playwright/test": "^1.48.0",
     "@tailwindcss/postcss": "^4.1.8",
     "@tailwindcss/vite": "^4.1.8",
     "@types/lodash-es": "^4.17.12",

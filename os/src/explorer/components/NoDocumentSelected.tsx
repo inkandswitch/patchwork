@@ -19,6 +19,7 @@ export const NoDocumentSelected = ({
         <Button
           onClick={() => addNewDoc({ type: "essay" })} // Default type for new document
           variant="outline"
+          data-testid="create-new-document-btn"
         >
           Create new document
           <span className="ml-2">(&#9166;)</span>

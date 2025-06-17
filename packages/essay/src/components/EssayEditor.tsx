@@ -110,6 +110,7 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
                 ? "border-2 border-dashed border-gray-400"
                 : "border border-gray-200 "
             }`}
+            data-testid="essay-editor"
           >
             <MarkdownDocEditor
               handle={handle}

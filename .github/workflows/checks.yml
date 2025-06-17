@@ -1,4 +1,4 @@
-name: TypeScript Check
+name: Checks
 
 on:
   push:
@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  typescript:
+    name: TypeScript Check
     runs-on: ubuntu-latest
 
     steps:
@@ -33,8 +34,46 @@ jobs:
       - name: Run TypeScript compiler
         run: pnpm tsc
 
-      # Tests disabled for now because there's an import issue with running them
-      # - name: Run tests
-      #   run: pnpm test
-      #   # see https://stackoverflow.com/q/58858429
-      #   if: success() || failure()
+  playwright:
+    name: Playwright Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build for Playwright tests
+        run: pnpm build
+
+      - name: Verify build output
+        run: ls -la dist/
+        working-directory: ./os
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        working-directory: ./os
+
+      - name: Run Playwright tests
+        run: pnpm ui-test
+        working-directory: ./os
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: os/playwright-report/
+          retention-days: 30
