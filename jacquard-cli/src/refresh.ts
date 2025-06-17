@@ -1,6 +1,6 @@
 import { asyncComputedPromise } from "@patchwork/sdk/async-signals";
 import { FolderDoc } from "@patchwork/folder";
-import { DocPath } from "@patchwork/folder";
+import { DocPath } from "@patchwork/sdk/router";
 import { fetchFolderDocWithMetadata } from "@patchwork/sdk/versionControl";
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import debugFactory from "debug";

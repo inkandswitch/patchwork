@@ -2,7 +2,7 @@ import { Repo } from "@automerge/automerge-repo";
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
-import { BuildRunSpec } from "@patchwork/jacquard/datatype.js";
+import { BuildRunSpec } from "@patchwork/jacquard";
 import { CommandLineArgs } from "./index.js";
 import { push } from "./push.js";
 import { addPrefix, replaceExtension } from "./util.js";

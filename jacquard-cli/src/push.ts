@@ -1,5 +1,6 @@
 import { initFrom } from "@patchwork/sdk";
 import { FolderDoc } from "@patchwork/folder";
+import { HasPatchworkMetadata } from "@patchwork/sdk/modules";
 import { initVersionControlMetadata } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import {

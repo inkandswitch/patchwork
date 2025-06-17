@@ -1,5 +1,5 @@
 import type { LoadableDataType, LoadablePlugin, Plugin } from "@patchwork/sdk";
-export type { JacquardBuildMetadata, BuildRunRefreshState } from "./datatype";
+export type { JacquardBuildMetadata, BuildRunRefreshState, BuildRunSpec } from "./datatype";
 
 export {
   getStalenessInfo,

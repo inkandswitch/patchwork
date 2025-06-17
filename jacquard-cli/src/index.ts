@@ -9,7 +9,7 @@ import fs from "fs";
 import path from "path";
 import process from "process";
 
-import { registerPlugins, isPlugin } from "@patchwork/sdk";
+import { registerPlugins, isPlugin, Plugin } from "@patchwork/sdk";
 import { AutomergeUrl, Repo, StorageId } from "@automerge/automerge-repo";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { NodeFSStorageAdapter } from "@automerge/automerge-repo-storage-nodefs";
@@ -191,14 +191,12 @@ const main = async () => {
       // export const tools = [tool1, tool2]
       // export const dataTypes = [dataType1, dataType2]
       // ...
-      const plugins = Object.values(module).flatMap((value) => {
+      const plugins: Plugin[] = Object.values(module).flatMap((value): Plugin[] => {
         if (isPlugin(value)) {
-          // TypeScript now knows value is a Plugin
-          return [value];
+          return [value as unknown as Plugin];
         }
         if (Array.isArray(value)) {
-          // TypeScript now knows each v is a Plugin after filtering
-          return value.filter((v): v is Plugin => isPlugin(v));
+          return value.filter((v): v is Plugin => isPlugin(v)) as Plugin[];
         }
         return [];
       });

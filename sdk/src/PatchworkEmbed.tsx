@@ -4,10 +4,10 @@ import {
   RepoContext,
   useDocument,
 } from "@automerge/automerge-repo-react-hooks";
-import { Tool } from "@patchwork/sdk";
-import { useMatchingPluginDescriptions, usePlugin } from "@patchwork/sdk/hooks";
+import { Tool } from "./tools";
+import { useMatchingPluginDescriptions, usePlugin } from "./hooks";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { Icon } from "@patchwork/sdk/ui";
+import { Icon } from "./ui";
 import { HasPatchworkMetadata } from "./modules/types";
 
 class ErrorBoundary extends React.Component<
