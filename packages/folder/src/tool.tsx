@@ -68,9 +68,8 @@ export const FolderEntryView = ({
   highlightChanges,
 }: FolderEntryView) => {
   const docLink = DocPathUtils.toLink(docPath);
-  const branchState = useBranchScopeAndActiveBranchInfo(docPath);
   const branchScopeAndActiveBranchInfo =
-    branchState.status === "ready" ? branchState.data : undefined;
+    useBranchScopeAndActiveBranchInfo(docPath);
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
   const { plugin: dataType } = usePlugin<DataType>(
@@ -131,20 +130,6 @@ export const FolderEntryView = ({
     }),
     [annotationProps, collapseContentWithoutChanges]
   );
-
-  // Handle error state
-  if (branchState.status === "error") {
-    return (
-      <div className="h-72">
-        <div className="flex gap-2 items-center font-medium mb-1">
-          <div>{docLink.name}</div>
-        </div>
-        <div className="border border-red-300 bg-red-100 text-red-800 p-2">
-          Error loading document {docLink.name} ({docLink.url})
-        </div>
-      </div>
-    );
-  }
 
   if (
     collapseContentWithoutChanges &&

@@ -21,9 +21,8 @@ export const useSelectedDocPathState = (): {
     selectedDocPath && DocPathUtils.toLink(selectedDocPath);
 
   // sync selected branch to url
-  const maybeBranchInfo = useBranchScopeAndActiveBranchInfo(selectedDocPath);
   const branchScopeAndActiveBranchInfo =
-    maybeBranchInfo.status === "ready" ? maybeBranchInfo.data : undefined;
+    useBranchScopeAndActiveBranchInfo(selectedDocPath);
 
   const activeBranchScopeUrl = branchScopeAndActiveBranchInfo?.isRealBranchScope
     ? branchScopeAndActiveBranchInfo?.branchScopeOm.url

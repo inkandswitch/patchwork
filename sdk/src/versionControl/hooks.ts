@@ -8,11 +8,6 @@ import {
   fetchBranchScopeAndActiveBranchInfo,
 } from "./signals";
 
-export type MaybeBranchScopeAndActiveBranchInfo =
-  | { status: "loading" }
-  | { status: "error"; error: unknown }
-  | { status: "ready"; data: BranchScopeAndActiveBranchInfo };
-
 /**
  * Given a doc path representing current selected doc, resolve a
  * branch scope and return relevant information about branches. This
@@ -22,24 +17,18 @@ export type MaybeBranchScopeAndActiveBranchInfo =
  */
 export const useBranchScopeAndActiveBranchInfo = (
   docPath: DocPath | undefined
-): MaybeBranchScopeAndActiveBranchInfo => {
+): BranchScopeAndActiveBranchInfo | undefined => {
   const repo = useRepo();
   const account = useCurrentAccount();
-  const maybeBranchInfo = useAsyncComputed(
+  const branchScopeAndActiveBranchInfo = useAsyncComputed(
     useCallback(
       () =>
-        docPath && {
-          status: "ready" as const,
-          data: fetchBranchScopeAndActiveBranchInfo(docPath, account, repo),
-        },
+        docPath && fetchBranchScopeAndActiveBranchInfo(docPath, account, repo),
       [docPath, account, repo]
     )
   )
-    .ifPending(() => ({ status: "loading" }) as const)
-    .ifRejected((error) => ({ status: "error", error }) as const).value;
-
-  const branchScopeAndActiveBranchInfo =
-    maybeBranchInfo?.status === "ready" ? maybeBranchInfo.data : undefined;
+    .ifPending(undefined)
+    .ifRejected(undefined).value;
 
   // This is really gnarly, but BranchScopeAndActiveBranchInfo has two
   // properties "branchOms" and "branchScopePath" that are recreated as new object
@@ -78,14 +67,8 @@ export const useBranchScopeAndActiveBranchInfo = (
   );
 
   // reconstruct BranchScopeAndActiveBranchInfo with memoized version of branchOms and branchScopePath
-  return useMemo<MaybeBranchScopeAndActiveBranchInfo>(() => {
-    if (maybeBranchInfo?.status === "loading") {
-      return maybeBranchInfo;
-    } else if (maybeBranchInfo?.status === "error") {
-      return maybeBranchInfo;
-    }
 
-    // Check if all required values are defined before creating the ready state
+  return useMemo(() => {
     if (
       memoizedBranchOms === undefined ||
       branchScopeOm === undefined ||
@@ -95,25 +78,21 @@ export const useBranchScopeAndActiveBranchInfo = (
       cloneOrMainOm === undefined ||
       baseHeads === undefined
     ) {
-      return { status: "loading" };
+      return;
     }
 
     return {
-      status: "ready" as const,
-      data: {
-        activeBranchOm,
-        baseHeads,
-        branchOms: memoizedBranchOms,
-        branchScopeOm,
-        branchScopePath: memoizedBranchScopePath,
-        branchScopeVersionControlMetadataOm,
-        isRealBranchScope,
-        originalUrl,
-        cloneOrMainOm,
-      },
+      activeBranchOm,
+      baseHeads,
+      branchOms: memoizedBranchOms,
+      branchScopeOm,
+      branchScopePath: memoizedBranchScopePath,
+      branchScopeVersionControlMetadataOm,
+      isRealBranchScope,
+      originalUrl,
+      cloneOrMainOm,
     };
   }, [
-    maybeBranchInfo,
     activeBranchOm,
     baseHeads,
     memoizedBranchOms,
