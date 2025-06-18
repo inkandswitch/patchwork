@@ -126,7 +126,16 @@ export function MarkdownDocEditor({
           const selection = view.state.selection.ranges[0];
 
           if (selection) {
-            const coords = view.coordsAtPos(selection.from);
+            let coords;
+            try {
+              coords = view.coordsAtPos(
+                Math.min(view.state.doc.length - 1, selection.from)
+              );
+            } catch (e) {
+              // don't propagate the selection if we get an out of bounds error
+              return;
+            }
+
             if (coords) {
               setSelection({
                 from: selection.from,
