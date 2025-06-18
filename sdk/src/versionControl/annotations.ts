@@ -440,13 +440,13 @@ export function useAnnotations({
             (!expandedAnnotationGroupId && isCommentBeingCreated)
               ? "expanded"
               : id && selectedAnnotationGroupIds.has(id)
-              ? "focused"
-              : "neutral",
+                ? "focused"
+                : "neutral",
           comment: isCommentBeingEdited
             ? commentState
             : isCommentBeingCreated
-            ? { type: "create" }
-            : undefined,
+              ? { type: "create" }
+              : undefined,
         };
       }),
     [

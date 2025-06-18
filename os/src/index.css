@@ -117,7 +117,8 @@
   font-family: "Merriweather";
   font-style: normal;
   font-weight: 400;
-  src: local("Merriweather Regular"),
+  src:
+    local("Merriweather Regular"),
     local("Merriweather-Regular")
       /*, url("../assets/merriweather/merriweather-v20-latin-regular.woff2") format("woff2"), */
       /* Chrome 26+, Opera 23+, Firefox 39+ */
@@ -129,7 +130,8 @@
   font-family: "Merriweather";
   font-style: normal;
   font-weight: 700;
-  src: local("Merriweather Bold"),
+  src:
+    local("Merriweather Bold"),
     local("Merriweather-Bold")
       /*, url("../assets/merriweather/merriweather-v20-latin-700.woff2") format("woff2"),*/
       /* Chrome 26+, Opera 23+, Firefox 39+ */
@@ -143,7 +145,9 @@
   font-family: "Merriweather Sans";
   font-style: normal;
   font-weight: 300;
-  src: local("Merriweather Sans Light"), local("MerriweatherSans-Light"),
+  src:
+    local("Merriweather Sans Light"),
+    local("MerriweatherSans-Light"),
     /*url("../assets/merriweather/merriweather-sans-v10-latin-300.woff2") format("woff2"),*/
       /* Chrome 26+, Opera 23+, Firefox 39+ */
       /*url("../assets/merriweather/merriweather-sans-v10-latin-300.woff") format("woff")*/; /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -154,7 +158,9 @@
   font-family: "Merriweather Sans";
   font-style: normal;
   font-weight: 400;
-  src: local("Merriweather Sans"), local("MerriweatherSans-Regular"),
+  src:
+    local("Merriweather Sans"),
+    local("MerriweatherSans-Regular"),
     /* url("../assets/merriweather/merriweather-sans-v10-latin-regular.woff2") format("woff2"), */
       /* Chrome 26+, Opera 23+, Firefox 39+ */
       /*url("../assets/merriweather/merriweather-sans-v10-latin-regular.woff") format("woff")*/; /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -165,7 +171,9 @@
   font-family: "Merriweather Sans";
   font-style: normal;
   font-weight: 700;
-  src: local("Merriweather Sans Bold"), local("MerriweatherSans-Bold"),
+  src:
+    local("Merriweather Sans Bold"),
+    local("MerriweatherSans-Bold"),
     /* url("../assets/merriweather/merriweather-sans-v10-latin-700.woff2") format("woff2"),*/
       /* Chrome 26+, Opera 23+, Firefox 39+ */
       /*url("../assets/merriweather/merriweather-sans-v10-latin-700.woff") format("woff")*/; /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -176,7 +184,9 @@
   font-family: "Merriweather Sans";
   font-style: normal;
   font-weight: 300;
-  src: local("Merriweather Sans Light"), local("MerriweatherSans-Light"),
+  src:
+    local("Merriweather Sans Light"),
+    local("MerriweatherSans-Light"),
     /* url("../assets/merriweather/merriweather-sans-v10-latin-300.woff2") format("woff2"),*/
       /* Chrome 26+, Opera 23+, Firefox 39+ */
       /*url("../assets/merriweather/merriweather-sans-v10-latin-300.woff") format("woff")*/; /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -189,7 +199,9 @@
   font-family: "Fira Mono";
   font-style: normal;
   font-weight: 400;
-  src: local("Fira Mono Regular"), local("FiraMono-Regular"),
+  src:
+    local("Fira Mono Regular"),
+    local("FiraMono-Regular"),
     /*url('../assets/fira/fira-mono-v7-latin-regular.woff2') format('woff2'),*/
       /* Chrome 26+, Opera 23+, Firefox 39+ */
       /*url('../assets/fira/fira-mono-v7-latin-regular.woff') format('woff')*/; /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -200,7 +212,9 @@
   font-family: "Fira Mono";
   font-style: normal;
   font-weight: 500;
-  src: local("Fira Mono Medium"), local("FiraMono-Medium"),
+  src:
+    local("Fira Mono Medium"),
+    local("FiraMono-Medium"),
     /*url('../assets/fira/fira-mono-v7-latin-500.woff2') format('woff2'),*/
       /* Chrome 26+, Opera 23+, Firefox 39+ */
       /*url('../assets/fira/fira-mono-v7-latin-500.woff') format('woff')*/; /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */

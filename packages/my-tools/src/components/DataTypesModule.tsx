@@ -1,7 +1,9 @@
 import { DataTypeDescription } from "@patchwork/sdk";
 import { Icon } from "@patchwork/sdk/ui";
 
-const DataTypeModule: React.FC<{ dataType: DataTypeDescription }> = ({ dataType }) => (
+const DataTypeModule: React.FC<{ dataType: DataTypeDescription }> = ({
+  dataType,
+}) => (
   <div className="flex items-center gap-2 font-medium mb-2">
     <Icon type="Database" size={14} />
     <span>DataType: {dataType.name}</span>

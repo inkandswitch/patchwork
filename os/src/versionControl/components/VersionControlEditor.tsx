@@ -329,8 +329,8 @@ export const VersionControlEditor: React.FC<{
               !diffFromTimelineSidebar
                 ? "branch"
                 : diffFromTimelineSidebar
-                ? "history"
-                : undefined
+                  ? "history"
+                  : undefined
             }
             onMergeBranch={onMergeBranch}
             onDeleteBranch={onDeleteBranch}

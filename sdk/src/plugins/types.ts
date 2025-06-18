@@ -34,7 +34,7 @@ export interface PluginDescription {
 
 export type LoadablePlugin<
   D extends PluginDescription = PluginDescription,
-  I = any
+  I = any,
 > = D & {
   load: () => Promise<I>;
 };
@@ -45,7 +45,7 @@ export type LoadablePlugin<
 
 export type LoadedPlugin<
   D extends PluginDescription = PluginDescription,
-  I = any
+  I = any,
 > = D & {
   module: I;
 };

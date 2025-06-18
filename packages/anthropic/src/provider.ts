@@ -1,9 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import {
-  LLMAdapter,
-  LLMChatMessage,
-  PromptOptions,
-} from "@patchwork/sdk/llm";
+import { LLMAdapter, LLMChatMessage, PromptOptions } from "@patchwork/sdk/llm";
 
 export const ANTHROPIC_MODEL_IDS = ["claude-sonnet-4-0"] as const;
 export type AnthropicModelId = (typeof ANTHROPIC_MODEL_IDS)[number];

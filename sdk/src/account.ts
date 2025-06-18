@@ -311,7 +311,7 @@ export function useCurrentAccount(): Account | undefined {
 
 export function useCurrentAccountDoc(): [
   AccountDoc | undefined,
-  (changeFn: ChangeFn<AccountDoc>) => void
+  (changeFn: ChangeFn<AccountDoc>) => void,
 ] {
   const account = useCurrentAccount();
   const [accountDoc, changeAccountDoc] = useDocument<AccountDoc>(

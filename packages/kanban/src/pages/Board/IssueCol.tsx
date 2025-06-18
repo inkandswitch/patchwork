@@ -85,7 +85,7 @@ function IssueCol({ lane, cards, changeDoc, setOpenIssueId }: Props) {
         type="category"
         mode="virtual"
         renderClone={(provided, snapshot, rubric) => {
-          const card = cards.find(({ id }) => id === rubric.draggableId)!;  // TODO: JAH strict fix
+          const card = cards.find(({ id }) => id === rubric.draggableId)!; // TODO: JAH strict fix
 
           return (
             <IssueItem

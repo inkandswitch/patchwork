@@ -63,8 +63,8 @@ export const OpenAutomergeUrl = ({ addNewDocument }: OpenAutomergeUrlProps) => {
               automergeUrlToOpen
                 ? "bg-green-100"
                 : openUrlInput.length > 0
-                ? "bg-red-100"
-                : ""
+                  ? "bg-red-100"
+                  : ""
             }`}
           />
           <div className="text-xs text-gray-500 text-right mt-1">

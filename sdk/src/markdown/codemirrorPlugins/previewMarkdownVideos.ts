@@ -123,7 +123,7 @@ export const previewVideosPlugin = (handle: DocHandle<unknown>, repo: Repo) => [
       view: EditorView;
 
       constructor(view: EditorView) {
-        this.view = view
+        this.view = view;
         this.decorations = getVideos([], undefined, view);
       }
 

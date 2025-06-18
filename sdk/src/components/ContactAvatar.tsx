@@ -59,8 +59,8 @@ export const ContactAvatar = ({
   const avatarUrl = avatarOverrideUrl
     ? avatarOverrideUrl
     : url && contact?.avatarUrl
-    ? avatarImgUrl
-    : undefined;
+      ? avatarImgUrl
+      : undefined;
   const name = nameOverride ?? contact?.name;
 
   return (

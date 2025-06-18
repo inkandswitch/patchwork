@@ -106,7 +106,7 @@ navigator.serviceWorker.addEventListener("controllerchange", (event) => {
   // To make sure we don't call establishMessageChannel twice check if this is actually a new service worker
   if (newServiceWorker !== serviceWorker) {
     console.log(
-      "establishMessageChannel: controllerchange to new service worker",
+      "establishMessageChannel: controllerchange to new service worker"
     );
     establishMessageChannel(newServiceWorker);
   }
@@ -134,14 +134,14 @@ function establishMessageChannel(serviceWorker: ServiceWorker) {
     repo.networkSubsystem.removeNetworkAdapter(globalMessageChannelAdapter);
   }
   globalMessageChannelAdapter = new MessageChannelNetworkAdapter(
-    messageChannel.port1,
+    messageChannel.port1
   );
   repo.networkSubsystem.addNetworkAdapter(globalMessageChannelAdapter);
   serviceWorker.postMessage(
     {
       type: "INIT",
     },
-    [messageChannel.port2],
+    [messageChannel.port2]
   );
 
   console.log("Connected to service worker");
@@ -175,7 +175,7 @@ const account = await setupAccount();
 const oldChange = DocHandle.prototype.change;
 DocHandle.prototype.change = function <T>(
   callback: Automerge.ChangeFn<T>,
-  options: Automerge.ChangeOptions<T> = {},
+  options: Automerge.ChangeOptions<T> = {}
 ) {
   const optionsWithAttribution: Automerge.ChangeOptions<T> = {
     time: Date.now(),
@@ -185,7 +185,7 @@ DocHandle.prototype.change = function <T>(
   oldChange.call(
     this,
     callback,
-    optionsWithAttribution as Automerge.ChangeOptions<any>,
+    optionsWithAttribution as Automerge.ChangeOptions<any>
   );
 };
 
@@ -193,7 +193,7 @@ const oldChangeAt = DocHandle.prototype.changeAt;
 DocHandle.prototype.changeAt = function <T>(
   heads: UrlHeads,
   callback: Automerge.ChangeFn<T>,
-  options: Automerge.ChangeOptions<T> = {},
+  options: Automerge.ChangeOptions<T> = {}
 ) {
   const optionsWithAttribution: Automerge.ChangeOptions<T> = {
     time: Date.now(),
@@ -204,7 +204,7 @@ DocHandle.prototype.changeAt = function <T>(
     this,
     heads,
     callback,
-    optionsWithAttribution as Automerge.ChangeOptions<any>,
+    optionsWithAttribution as Automerge.ChangeOptions<any>
   );
 };
 

@@ -18,7 +18,7 @@ type DiscussionInputProps<D> = {
   changelogSelection: ChangelogSelection;
 };
 export const DiscussionInput = function <
-  D extends HasVersionControlMetadata<unknown, unknown>
+  D extends HasVersionControlMetadata<unknown, unknown>,
 >({
   doc,
   handle,

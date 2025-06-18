@@ -26,7 +26,6 @@ import DataTypeSelector from "./DataTypeSelector";
 import { OpenAutomergeUrl } from "./OpenAutomergeUrl";
 import { Node, FlatDocPathsContext, NodeData } from "./Node";
 
-
 const prepareDataForTree = (
   folderDoc: FolderDocWithChildren,
   folderPath: DocPath
@@ -280,10 +279,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const initialOpenState = useMemo(
     () =>
-      (uiStateDoc?.docPathsToggledOpenInSidebar ?? []).reduce((acc, key) => {
-        acc[key] = true;
-        return acc;
-      }, {} as Record<string, true>),
+      (uiStateDoc?.docPathsToggledOpenInSidebar ?? []).reduce(
+        (acc, key) => {
+          acc[key] = true;
+          return acc;
+        },
+        {} as Record<string, true>
+      ),
     [uiStateDoc]
   );
 

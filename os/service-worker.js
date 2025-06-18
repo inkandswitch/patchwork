@@ -126,7 +126,7 @@ self.addEventListener("message", async (event) => {
       // Send response back to client with current state
       event.source.postMessage({
         type: "DEBUG_STATUS",
-        enabled: debugEnabled
+        enabled: debugEnabled,
       });
       return;
 
@@ -134,7 +134,7 @@ self.addEventListener("message", async (event) => {
       // query current debug logging state
       event.source.postMessage({
         type: "DEBUG_STATUS",
-        enabled: debugEnabled
+        enabled: debugEnabled,
       });
       return;
 
@@ -145,7 +145,7 @@ self.addEventListener("message", async (event) => {
       if (!repo) await repoReady;
       debugLog("Repo ready – adding MessageChannel network adapter");
       repo.networkSubsystem.addNetworkAdapter(
-        new MessageChannelNetworkAdapter(event.ports[0], { useWeakRef: true }),
+        new MessageChannelNetworkAdapter(event.ports[0], { useWeakRef: true })
       );
       return;
 
@@ -169,7 +169,7 @@ async function addSyncServer(url) {
     await repoReady;
   }
   repo.networkSubsystem.addNetworkAdapter(
-    new BrowserWebSocketClientAdapter(url),
+    new BrowserWebSocketClientAdapter(url)
   );
 }
 // add this to window so it can be called from the service worker's REPL
@@ -247,7 +247,7 @@ self.addEventListener("fetch", async (event) => {
         new Response(`Invalid document id ${automergeUrl}`, {
           status: 404,
           headers: { "Content-Type": "text/plain" },
-        }),
+        })
       );
       return;
     }
@@ -276,7 +276,7 @@ self.addEventListener("fetch", async (event) => {
             {
               status: 500,
               headers: { "Content-Type": "text/plain" },
-            },
+            }
           );
         }
 
@@ -316,13 +316,13 @@ self.addEventListener("fetch", async (event) => {
               "heads-mismatch",
               new Response(
                 `Heads mismatch: requested ${queryHeads} but had ${Automerge.getHeads(
-                  doc,
+                  doc
                 )}`,
                 {
                   status: 404,
                   headers: { "Content-Type": "text/plain" },
-                },
-              ),
+                }
+              )
             );
           } else {
             debugLog("Heads matched", Automerge.getHeads(doc));
@@ -359,13 +359,13 @@ self.addEventListener("fetch", async (event) => {
               `Not found\nObject path: ${url.pathname}\n${JSON.stringify(
                 doc,
                 null,
-                2,
+                2
               )}`,
               {
                 status: 404,
                 headers: { "Content-Type": "text/plain" },
-              },
-            ),
+              }
+            )
           );
         }
 
@@ -391,18 +391,18 @@ self.addEventListener("fetch", async (event) => {
               {
                 status: 500,
                 headers: { "Content-Type": "text/plain" },
-              },
+              }
             );
           }
 
           return new Response(
             `Invalid file entry.\n${url.pathname}:\nfileEntry:${JSON.stringify(
-              file,
+              file
             )}`,
             {
               status: 404,
               headers: { "Content-Type": "text/plain" },
-            },
+            }
           );
         }
 
@@ -417,9 +417,9 @@ self.addEventListener("fetch", async (event) => {
           "success",
           new Response(dataToReturn, {
             headers: { "Content-Type": file.mimeType },
-          }),
+          })
         );
-      })(),
+      })()
     );
   } else if (
     event.request.method === "GET" &&
@@ -441,14 +441,20 @@ self.addEventListener("fetch", async (event) => {
           try {
             const networkResponse = await fetch(event.request);
             debugLog("Network response status", networkResponse.status);
-            if (200 <= networkResponse.status && networkResponse.status <= 299) {
+            if (
+              200 <= networkResponse.status &&
+              networkResponse.status <= 299
+            ) {
               // Cache successful responses
               cache.put(event.request, networkResponse.clone());
               debugLog("Network success – HTML cached");
               return finish("network", networkResponse);
             }
           } catch (error) {
-            debugLog("Network failed for HTML – falling back to cache", error.message);
+            debugLog(
+              "Network failed for HTML – falling back to cache",
+              error.message
+            );
           }
 
           // Fallback to cache if network fails
@@ -459,7 +465,10 @@ self.addEventListener("fetch", async (event) => {
           }
 
           // If both network and cache fail, return error
-          return finish("html-unavailable", new Response("HTML unavailable", { status: 503 }));
+          return finish(
+            "html-unavailable",
+            new Response("HTML unavailable", { status: 503 })
+          );
         }
 
         // For most assets, use cache-first strategy
@@ -480,7 +489,7 @@ self.addEventListener("fetch", async (event) => {
           debugLog("Network success – response cached");
         }
         return finish("network", networkResponse);
-      })(),
+      })()
     );
   }
 });

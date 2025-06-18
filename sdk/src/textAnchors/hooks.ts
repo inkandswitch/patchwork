@@ -76,11 +76,11 @@ export const useResolvedAnnotationAtPath = ({
       return fromPos === null || toPos === null
         ? []
         : [
-          {
-            ...annotation,
-            anchor: { fromPos, toPos, fromCursor, toCursor },
-          },
-        ];
+            {
+              ...annotation,
+              anchor: { fromPos, toPos, fromCursor, toCursor },
+            },
+          ];
     });
   }, [doc, annotations, path]);
 

@@ -1,7 +1,9 @@
 import { ToolDescription } from "@patchwork/sdk";
 import { Icon } from "@patchwork/sdk/ui";
 
-export const ToolsModule: React.FC<{ tools: ToolDescription[] }> = ({ tools }) => (
+export const ToolsModule: React.FC<{ tools: ToolDescription[] }> = ({
+  tools,
+}) => (
   <div className="border rounded p-3">
     <div className="flex items-center gap-2 font-medium mb-2">
       <Icon type="Wrench" size={14} />

@@ -34,7 +34,7 @@ const GROUPER_DEBOUNCE_MS = 1000;
  * by maintaining a cache of decoded changes and by debouncing updates.
  */
 export class ChangeGrouper<
-  D extends HasVersionControlMetadata
+  D extends HasVersionControlMetadata,
 > extends EventEmitter {
   // An array of decoded changes on the doc.
   private decodedChanges: DecodedChangeWithMetadata[];

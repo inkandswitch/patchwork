@@ -240,7 +240,7 @@ export function matchPlugins<T extends PluginDescription>(
  */
 export function isPlugin<
   T extends PluginDescription = PluginDescription,
-  I = any
+  I = any,
 >(
   value: unknown,
   pluginType?: keyof PluginTypeMap
@@ -272,7 +272,7 @@ export function isPluginDescription<D extends PluginDescription>(
  */
 export function isLoadablePlugin<
   D extends PluginDescription = PluginDescription,
-  I = any
+  I = any,
 >(value: unknown): value is LoadablePlugin<D, I> {
   return (
     isPluginDescription<D>(value) &&
@@ -287,7 +287,7 @@ export function isLoadablePlugin<
 export const sortPlugins = <
   T extends LoadedPlugin<D, I>,
   D extends PluginDescription,
-  I
+  I,
 >(
   plugins: T[],
   matchField: keyof D,

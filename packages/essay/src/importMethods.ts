@@ -9,7 +9,7 @@ export const markdownImport: ImportMethod = {
   datatypeId: "essay",
   useAsDefaultMethod: true,
   fileExtensions: ["md"],
-    module: {
+  module: {
     async importData(file: File, handle: DocHandle<unknown>) {
       const content = await file.text();
       if (typeof content !== "string") {
@@ -31,5 +31,5 @@ export const markdownImport: ImportMethod = {
 
       return { didChange: true };
     },
-  }
+  },
 };

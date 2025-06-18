@@ -167,7 +167,7 @@ export const withHasChangeGroupSummaries = <D>(
 
 export type HasVersionControlMetadata<
   TAnchor = unknown,
-  TAnchorValue = unknown
+  TAnchorValue = unknown,
 > = HasChangeGroupSummaries &
   Discussable<TAnchor> &
   // @Paul 5/24/24
@@ -181,7 +181,7 @@ export type HasVersionControlMetadata<
 export const withHasVersionControlMetadata = <
   D = unknown,
   T = unknown,
-  V = unknown
+  V = unknown,
 >(
   doc: D,
   {

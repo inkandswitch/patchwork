@@ -49,4 +49,3 @@ export type LoadedLLMProviderPlugin = LoadedPlugin<
   LLMProviderDescription,
   LLMProviderImplementation
 >;
-

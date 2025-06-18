@@ -34,7 +34,7 @@ export async function getLLMAdapter(
   modelId?: ModelId
 ): Promise<LLMAdapter | undefined> {
   try {
-    const targetModel = modelId || await getDefaultModelId();
+    const targetModel = modelId || (await getDefaultModelId());
     if (!targetModel) return undefined;
 
     return await createAdapter(targetModel);

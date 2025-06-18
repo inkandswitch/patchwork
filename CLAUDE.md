@@ -5,18 +5,21 @@
 The SDK must only expose exports at a single level depth. This means:
 
 ✅ CORRECT:
+
 ```typescript
 import { something } from "@patchwork/sdk/ui";
 import { otherThing } from "@patchwork/sdk/llm";
 ```
 
 ❌ INCORRECT:
+
 ```typescript
 import { something } from "@patchwork/sdk/ui/components";
 import { otherThing } from "@patchwork/sdk/llm/providers/openai";
 ```
 
 ### Implementation
+
 - All public exports should be re-exported through the main entry point of each SDK module
 - Internal structure should be hidden from consumers
 - Use barrel exports (index.ts files) to aggregate and expose public APIs
@@ -26,9 +29,11 @@ import { otherThing } from "@patchwork/sdk/llm/providers/openai";
 When making changes to the SDK that affect TypeScript types or exports, you MUST rebuild the SDK before expecting those changes to be available in dependent packages like OS.
 
 ### Common Issue
+
 If you're seeing TypeScript errors in OS after modifying the SDK:
 
 1. ✅ FIRST: Rebuild the SDK
+
 ```bash
 cd sdk
 pnpm build
@@ -38,6 +43,7 @@ pnpm build
 3. ❌ DON'T: Ignore type errors or use @ts-ignore
 
 ### Why This Matters
+
 - The SDK build process generates type definitions that are consumed by dependent packages
 - Without rebuilding, dependent packages will use stale type definitions
 - This can lead to confusing type errors that seem unrelated to your changes
@@ -48,10 +54,6 @@ You need must rebuild / re-push the project for the user to see the results of y
 
 Follow the instructions below to rebuild / re-push:
 
-- If you only edited files in packages/* (most common case for general tool dev), run `pnpm push` inside packages/something which will build the package and then make the changes visible. Sometimes, the push will fail with an error message mentioning "document unavailable" - this is a network failure, not your fault -- you should retry once and then give up.
+- If you only edited files in packages/\* (most common case for general tool dev), run `pnpm push` inside packages/something which will build the package and then make the changes visible. Sometimes, the push will fail with an error message mentioning "document unavailable" - this is a network failure, not your fault -- you should retry once and then give up.
 - If you touched anything in ./sdk, rebuild the entire project by running pnpm build in the root.
 - If you only edited files in ./os, just run pnpm build in ./os.
-
-
-
-

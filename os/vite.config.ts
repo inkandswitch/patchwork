@@ -33,7 +33,7 @@ function swPlugin(): Plugin {
           type: "full-reload",
         });
         const module = ctx.server.moduleGraph.getModuleById(
-          SERVICE_WORKER_MODULE_ID,
+          SERVICE_WORKER_MODULE_ID
         );
         if (module != null) {
           ctx.server.moduleGraph.invalidateModule(module);

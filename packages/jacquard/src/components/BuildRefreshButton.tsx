@@ -117,8 +117,8 @@ export const BuildRefreshButton = ({
               {refreshState.type === "idle"
                 ? "The following commands need to rerun:"
                 : refreshState.type === "requesting"
-                ? "Waiting to start build"
-                : "Running commands"}
+                  ? "Waiting to start build"
+                  : "Running commands"}
             </div>
             <div className="w-full border-t border-gray-300"></div>
 

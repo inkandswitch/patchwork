@@ -93,7 +93,7 @@ export type EditorProps<A, V> = {
 export type AnnotationsViewProps<
   D extends HasVersionControlMetadata<TAnchor, TAnchorValue>,
   TAnchor,
-  TAnchorValue
+  TAnchorValue,
 > = {
   doc: D;
   handle: DocHandle<D>;

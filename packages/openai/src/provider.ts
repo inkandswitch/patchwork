@@ -1,9 +1,5 @@
 import OpenAI from "openai";
-import {
-  LLMAdapter,
-  LLMChatMessage,
-  PromptOptions,
-} from "@patchwork/sdk/llm";
+import { LLMAdapter, LLMChatMessage, PromptOptions } from "@patchwork/sdk/llm";
 
 export const OPENAI_MODEL_IDS = ["gpt-4o"] as const;
 export type OpenAIModelId = (typeof OPENAI_MODEL_IDS)[number];

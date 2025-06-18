@@ -129,7 +129,7 @@ export interface DataTypeDescription extends PluginDescription {
 export type LoadableDataType<
   D = unknown,
   T = unknown,
-  V = unknown
+  V = unknown,
 > = LoadablePlugin<DataTypeDescription, DataTypeImplementation<D, T, V>>;
 
 // The complete loaded DataType using the generic Plugin

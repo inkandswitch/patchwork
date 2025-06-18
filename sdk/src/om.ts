@@ -35,8 +35,8 @@ export function useOm<T>(omable: Omable<T> | undefined): Om<T> | undefined {
   const url = !omable
     ? undefined
     : typeof omable === "string"
-    ? omable
-    : omable.url;
+      ? omable
+      : omable.url;
   const id = !url ? undefined : parseAutomergeUrl(url).documentId;
   const handle = useDocHandle<T>(url);
   const [doc] = useDocument<T>(url);

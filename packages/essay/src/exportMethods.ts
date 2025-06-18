@@ -25,5 +25,5 @@ export const markdownExport: ExportMethod = {
 
       return new File([content], fileName, { type });
     },
-  }
+  },
 };

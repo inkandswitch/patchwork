@@ -138,4 +138,4 @@ export const DEFAULT_STORE = {
       },
     },
   },
-}
+};

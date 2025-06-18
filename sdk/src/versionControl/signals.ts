@@ -119,7 +119,7 @@ export const fetchAllLinkedDocLinks = async (
   repo: Repo,
   cloneMap?: DocCloneMap
 ): Promise<DocLink[]> => {
-  const mappedUrl = cloneMap ? cloneMap[url].url ?? url : url;
+  const mappedUrl = cloneMap ? (cloneMap[url].url ?? url) : url;
   const doc = fetchDoc(mappedUrl, repo);
 
   // Load the full data type implementation to get access to links function
@@ -162,7 +162,7 @@ export const fetchResolveUrlOnFixedBranch = (
 };
 
 export type BranchScopeAndActiveBranchInfo<
-  T extends HasVersionControlMetadata = HasVersionControlMetadata
+  T extends HasVersionControlMetadata = HasVersionControlMetadata,
 > = BranchScopeInfo &
   ActiveBranchInfo & {
     baseHeads: Automerge.Heads;
@@ -175,7 +175,7 @@ const EMPTY_HEADS: Automerge.Heads = [];
 // This hook goes a bit further than useBranchScope. It asks for the UI state,
 // and uses that to figure out what branch is active in the branch scope.
 export const fetchBranchScopeAndActiveBranchInfo = <
-  T extends HasVersionControlMetadata = HasVersionControlMetadata
+  T extends HasVersionControlMetadata = HasVersionControlMetadata,
 >(
   docPath: DocPath,
   account: Account | undefined,

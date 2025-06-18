@@ -394,8 +394,8 @@ const pushFile = async ({
   const buffer = fs.readFileSync(filePath);
   const isBinary = isBinaryCheck(buffer, buffer.length);
   const mimeType = isBinary
-    ? (await fileTypeFromBuffer(buffer))?.mime ?? "application/octet-stream"
-    : mime.getType(path.extname(filePath).slice(1)) ?? "text/plain";
+    ? ((await fileTypeFromBuffer(buffer))?.mime ?? "application/octet-stream")
+    : (mime.getType(path.extname(filePath).slice(1)) ?? "text/plain");
 
   const file = new File([buffer], fileName, { type: mimeType });
 

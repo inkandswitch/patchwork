@@ -1,13 +1,13 @@
-import { toast } from 'react-toastify'
+import { toast } from "react-toastify";
 
-export function showWarning(msg: string, title: string = '') {
+export function showWarning(msg: string, title: string = "") {
   //TODO: make notification showing from bottom
   const content = (
     <div className="flex flex-col">
-      {title !== '' && (
+      {title !== "" && (
         <div
           className={
-            'font-medium text-sm w-full text-gray-700 flex items-center'
+            "font-medium text-sm w-full text-gray-700 flex items-center"
           }
         >
           <span className="flex items-center justify-center w-4 h-4 bg-gray-200 rounded-full">
@@ -20,20 +20,20 @@ export function showWarning(msg: string, title: string = '') {
       )}
       <div className="w-full mt-2 text-xs font-normal text-gray-500">{msg}</div>
     </div>
-  )
+  );
   toast(content, {
-    position: 'bottom-right',
-  })
+    position: "bottom-right",
+  });
 }
 
-export function showInfo(msg: string, title: string = '') {
+export function showInfo(msg: string, title: string = "") {
   //TODO: make notification showing from bottom
   const content = (
     <div className="flex flex-col">
-      {title !== '' && (
+      {title !== "" && (
         <div
           className={
-            'font-medium text-sm w-full text-gray-700 flex items-center'
+            "font-medium text-sm w-full text-gray-700 flex items-center"
           }
         >
           <span className="flex items-center justify-center w-4 h-4 bg-indigo-700 rounded-full">
@@ -46,8 +46,8 @@ export function showInfo(msg: string, title: string = '') {
       )}
       <div className="w-full mt-2 text-xs font-normal text-gray-500">{msg}</div>
     </div>
-  )
+  );
   toast(content, {
-    position: 'bottom-right',
-  })
+    position: "bottom-right",
+  });
 }

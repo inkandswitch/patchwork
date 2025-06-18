@@ -19,6 +19,7 @@ $ npm link
 ### Account Management
 
 #### `jacquard login`
+
 Log in to your account and set up the default parent folder.
 
 ```bash
@@ -30,11 +31,13 @@ jacquard login --accountUrl automerge:xyz789
 ```
 
 Flags:
+
 ```
 --accountUrl <url>     Account URL or token to log in with
 ```
 
 #### `jacquard logout`
+
 Log out and clear stored account information.
 
 ```bash
@@ -42,6 +45,7 @@ jacquard logout
 ```
 
 #### `jacquard whoami`
+
 Show current login status.
 
 ```bash
@@ -51,6 +55,7 @@ jacquard whoami
 ### Project Management
 
 #### `jacquard push`
+
 Push local files to a Jacquard folder.
 
 ```bash
@@ -65,6 +70,7 @@ jacquard push --dir myproject --parentFolderUrl automerge:xyz789
 ```
 
 Flags:
+
 ```
 --dir <path>              Directory to sync (default: ".")
 --projectFolderUrl <url>  URL of existing folder to update
@@ -75,6 +81,7 @@ Flags:
 ```
 
 #### `jacquard pull`
+
 Pull files from a Jacquard folder to local filesystem.
 
 ```bash
@@ -86,6 +93,7 @@ jacquard pull --dir myproject --projectFolderUrl automerge:abc123
 ```
 
 Flags:
+
 ```
 --dir <path>              Directory to sync to
 --projectFolderUrl <url>  URL of folder to pull (required)
@@ -94,6 +102,7 @@ Flags:
 ### Branch Management
 
 #### `jacquard branch`
+
 List available branches.
 
 ```bash
@@ -101,11 +110,13 @@ jacquard branch --projectFolderUrl automerge:abc123
 ```
 
 Flags:
+
 ```
 --projectFolderUrl <url>  URL of folder to list branches for
 ```
 
 #### `jacquard activate`
+
 Activate a specific branch.
 
 ```bash
@@ -113,6 +124,7 @@ jacquard activate --branchUrl automerge:xyz789
 ```
 
 Flags:
+
 ```
 --branchUrl <url>         URL of branch to activate
 ```
@@ -120,6 +132,7 @@ Flags:
 ### Build System
 
 #### `jacquard run`
+
 Run a command with dependency tracking.
 
 ```bash
@@ -134,6 +147,7 @@ jacquard run --latexDeps --command "pdflatex paper.tex"
 ```
 
 Flags:
+
 ```
 --dir <path>              Working directory
 --inputs <paths>          Input files (multiple allowed)
@@ -145,6 +159,7 @@ Flags:
 ```
 
 #### `jacquard refresh`
+
 Refresh outdated builds.
 
 ```bash
@@ -152,6 +167,7 @@ jacquard refresh
 ```
 
 #### `jacquard watch`
+
 Watch for file changes and rebuild.
 
 ```bash
@@ -159,6 +175,7 @@ jacquard watch
 ```
 
 #### `jacquard watch-requests`
+
 Watch for refresh requests.
 
 ```bash
@@ -168,6 +185,7 @@ jacquard watch-requests
 ### Module Management
 
 #### `jacquard install`
+
 Install a module.
 
 ```bash
@@ -175,6 +193,7 @@ jacquard install --moduleUrl automerge:abc123
 ```
 
 Flags:
+
 ```
 --moduleUrl <url>         URL of module to install
 ```
@@ -182,6 +201,7 @@ Flags:
 ## Configuration
 
 You can configure defaults in two places:
+
 - `.jacquard/config.json` in your home directory: Stores account and global settings
 - `jacquard.json` in your project directory: Stores project-specific settings
 

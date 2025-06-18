@@ -9,7 +9,7 @@ import {
   initVersionControlSidecarDoc,
 } from "./schema";
 export const populateChangeGroupSummaries = async <
-  T extends HasLinkToVersionControlSidecar
+  T extends HasLinkToVersionControlSidecar,
 >({
   groups,
   handle,
@@ -69,7 +69,7 @@ export const populateChangeGroupSummaries = async <
 };
 
 const populateGroupSummary = async <
-  DocType extends HasLinkToVersionControlSidecar
+  DocType extends HasLinkToVersionControlSidecar,
 >({
   group,
   docBefore,
@@ -102,7 +102,7 @@ const populateGroupSummary = async <
 };
 
 export const useAutoPopulateChangeGroupSummaries = <
-  DocType extends HasLinkToVersionControlSidecar
+  DocType extends HasLinkToVersionControlSidecar,
 >({
   changeGroups,
   handle,

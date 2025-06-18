@@ -347,19 +347,22 @@ type SlotElements<Config extends SlotConfig> = {
 
 type SlotValue<
   Config,
-  Property extends keyof Config
+  Property extends keyof Config,
 > = Config[Property] extends React.ElementType // config option 1
   ? React.ReactElement<
       React.ComponentPropsWithoutRef<Config[Property]>,
       Config[Property]
     >
   : Config[Property] extends readonly [
-      infer ElementType extends React.ElementType, // config option 2, infer array[0] as component
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      infer _testFn // even though we don't use testFn, we need to infer it to support types for slots.*.props
-    ]
-  ? React.ReactElement<React.ComponentPropsWithoutRef<ElementType>, ElementType>
-  : never; // useful for narrowing types, third option is not possible
+        infer ElementType extends React.ElementType, // config option 2, infer array[0] as component
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        infer _testFn, // even though we don't use testFn, we need to infer it to support types for slots.*.props
+      ]
+    ? React.ReactElement<
+        React.ComponentPropsWithoutRef<ElementType>,
+        ElementType
+      >
+    : never; // useful for narrowing types, third option is not possible
 
 /**
  * Extract components from `children` so we can render them in different places,
@@ -427,10 +430,13 @@ function mapValues<T extends Record<string, unknown>, V>(
   obj: T,
   fn: (value: T[keyof T]) => V
 ) {
-  return Object.keys(obj).reduce((result, key: keyof T) => {
-    result[key] = fn(obj[key]);
-    return result;
-  }, {} as Record<keyof T, V>);
+  return Object.keys(obj).reduce(
+    (result, key: keyof T) => {
+      result[key] = fn(obj[key]);
+      return result;
+    },
+    {} as Record<keyof T, V>
+  );
 }
 
 export function useDebounce<T>(value: T, delay?: number): T {

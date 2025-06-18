@@ -7,6 +7,30 @@ on:
     branches: [main]
 
 jobs:
+  prettier:
+    name: Prettier Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Prettier check
+        run: pnpm format:check
+
   typescript:
     name: TypeScript Check
     runs-on: ubuntu-latest

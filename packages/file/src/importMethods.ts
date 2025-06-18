@@ -70,5 +70,5 @@ export const universalImport: ImportMethod = {
       const historyGrew = handle.history()!.length > historyLength;
       return { didChange: historyGrew };
     },
-  }
+  },
 };

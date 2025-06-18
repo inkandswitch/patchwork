@@ -14,12 +14,15 @@ import { Range } from "@codemirror/state";
 const EMBARK_ASSET_URL = "https://www.inkandswitch.com/essay-embark";
 
 class Figure extends WidgetType {
-  constructor(protected url: string, protected caption: string) {
+  constructor(
+    protected url: string,
+    protected caption: string
+  ) {
     super();
   }
 
   toDOM(view: EditorView): HTMLElement {
-    return undefined as any;  // TODO: JAH strict fix
+    return undefined as any; // TODO: JAH strict fix
   }
 
   eq(other: Figure) {

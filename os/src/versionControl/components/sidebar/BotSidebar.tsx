@@ -68,7 +68,7 @@ export const BotSidebar = ({
   // Set default model ID if none is set
   useEffect(() => {
     if (!modelId) {
-      getDefaultModelId().then(defaultId => {
+      getDefaultModelId().then((defaultId) => {
         if (defaultId) {
           setModelId(defaultId);
         }
@@ -82,7 +82,7 @@ export const BotSidebar = ({
   // Initialize prompt from document if present
   useEffect(() => {
     if (doc.botPromptId && prompts.length > 0) {
-      const savedPrompt = prompts.find(p => p.id === doc.botPromptId);
+      const savedPrompt = prompts.find((p) => p.id === doc.botPromptId);
       if (savedPrompt) {
         handlePromptChange(doc.botPromptId);
       }
@@ -185,9 +185,8 @@ export const BotSidebar = ({
     });
 
     // need to also do the update on the main doc because we're not merging the branch...
-    const mainDocHandle = await repo.find<
-      HasVersionControlMetadata<unknown, unknown>
-    >(mainDocUrl);
+    const mainDocHandle =
+      await repo.find<HasVersionControlMetadata<unknown, unknown>>(mainDocUrl);
     mainDocHandle.change((d) => {
       d.botChatHistory.push({
         role: "user",
@@ -333,7 +332,9 @@ export const BotSidebar = ({
             currentPrompt={currentPrompt}
             onChange={handlePromptChangeWithPersistence}
           />
-          {modelId && <ModelPicker modelId={modelId} onChange={handleModelChange} />}
+          {modelId && (
+            <ModelPicker modelId={modelId} onChange={handleModelChange} />
+          )}
         </div>
       </div>
     </div>

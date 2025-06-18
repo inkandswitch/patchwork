@@ -11,7 +11,9 @@
     "preinstall": "npx only-allow pnpm",
     "test": "pnpm --filter \"./os\" test",
     "make-tool": "node scripts/make-tool.mjs",
-    "clean": "rm -rf **/node_modules **/dist"
+    "clean": "rm -rf **/node_modules **/dist",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md,html,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md,html,yaml,yml}\""
   },
   "pnpm": {
     "overrides": {
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@types/react-dom": "^18.3.7",
     "@vitest/ui": "^2.1.9",
+    "prettier": "^3.5.3",
     "prompts": "^2.4.2",
     "typescript": "^5.8.3",
     "vite": "^5.4.19",

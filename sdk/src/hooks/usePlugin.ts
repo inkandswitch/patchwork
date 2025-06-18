@@ -148,7 +148,12 @@ export function useMatchingPluginDescriptions<T extends Plugin>({
     // Subscribe to plugin changes
     const unsubscribe = onPluginsChange<T>(pluginType, () => {
       setResult(
-        getMatchingPlugins<T>({ pluginType, matchField, matchValue, sortField })
+        getMatchingPlugins<T>({
+          pluginType,
+          matchField,
+          matchValue,
+          sortField,
+        })
       );
     });
 

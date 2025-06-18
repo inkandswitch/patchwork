@@ -79,11 +79,11 @@ export const AnnotationGroupView = <
     // all change annotations have inverse patches
     annotationGroup.annotations.every(
       (annotation) =>
-        annotation.type === "highlighted" || annotation.inversePatches,
+        annotation.type === "highlighted" || annotation.inversePatches
     ) &&
     // ... and the annotation group consists not only of highlight annotations
     annotationGroup.annotations.some(
-      (annotation) => annotation.type !== "highlighted",
+      (annotation) => annotation.type !== "highlighted"
     );
   const hasComment = annotationGroup.discussion || annotationGroup.comment;
 
@@ -96,14 +96,14 @@ export const AnnotationGroupView = <
         domRef.current = element;
       }
     },
-    [domRef],
+    [domRef]
   );
 
   const onRevert = useCallback(() => {
     const patches = annotationGroup.annotations.flatMap((annotation) =>
       "inversePatches" in annotation && annotation.inversePatches
         ? annotation.inversePatches
-        : ([] as CursorPatch[]),
+        : ([] as CursorPatch[])
     );
 
     handle.change((doc) => {
@@ -168,17 +168,17 @@ export const AnnotationGroupView = <
 
       handle.change((doc) => {
         const index = doc.discussions[discussionId].comments.findIndex(
-          (comment) => comment.id === id,
+          (comment) => comment.id === id
         );
 
         updateText(
           doc,
           ["discussions", discussionId, "comments", index, "content"],
-          content,
+          content
         );
       });
     },
-    [annotationGroup.discussion?.id, handle],
+    [annotationGroup.discussion?.id, handle]
   );
 
   const addCommentToAnnotationGroup = useCallback(
@@ -208,7 +208,7 @@ export const AnnotationGroupView = <
             comments: [],
             resolved: false,
             anchors: annotationGroup.annotations.map(
-              (annotation) => annotation.anchor,
+              (annotation) => annotation.anchor
             ),
           };
         }
@@ -226,7 +226,7 @@ export const AnnotationGroupView = <
       annotationGroup.annotations,
       annotationGroup.discussion?.id,
       handle,
-    ],
+    ]
   );
 
   // handle keyboard shortcuts
@@ -384,7 +384,7 @@ export const AnnotationGroupView = <
                   setCommentState(
                     isBeingEdited
                       ? { type: "edit", commentId: comment.id }
-                      : undefined,
+                      : undefined
                   );
                 }}
               />

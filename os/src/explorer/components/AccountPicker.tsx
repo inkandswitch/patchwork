@@ -321,12 +321,12 @@ export const AccountPicker = ({
               {isLoggedIn
                 ? "Save"
                 : activeTab === "signUp"
-                ? "Sign up"
-                : `Log in${
-                    contactToLogin && contactToLogin.type === "registered"
-                      ? ` as ${contactToLogin.name}`
-                      : ""
-                  }`}
+                  ? "Sign up"
+                  : `Log in${
+                      contactToLogin && contactToLogin.type === "registered"
+                        ? ` as ${contactToLogin.name}`
+                        : ""
+                    }`}
             </Button>
           </DialogTrigger>
         </DialogFooter>

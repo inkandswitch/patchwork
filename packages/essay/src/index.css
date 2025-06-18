@@ -11,14 +11,25 @@
   /* Sans Serif, most other text */
   /* TODO: Why header>ul li and not #byline li? */
   /* TODO: What's the usage difference between nav and .nav? */
-  aside, figcaption, nav, header>ul li, h1, h2, h3, h4, blockquote, figure table, .nav {
+  aside,
+  figcaption,
+  nav,
+  header > ul li,
+  h1,
+  h2,
+  h3,
+  h4,
+  blockquote,
+  figure table,
+  .nav {
     font-family: "Merriweather Sans", sans-serif;
     font-weight: 400;
   }
 
   /* Monospace */
-  pre, code {
-    font-family: 'Fira Mono', monospace;
+  pre,
+  code {
+    font-family: "Fira Mono", monospace;
   }
 
   a {
@@ -27,9 +38,9 @@
     background-position: bottom;
     background-repeat: no-repeat;
     color: #000;
-    padding-bottom: .05rem;
+    padding-bottom: 0.05rem;
     text-decoration: none;
-    -webkit-tap-highlight-color:hsla(1, 76%, 51%, .4);
+    -webkit-tap-highlight-color: hsla(1, 76%, 51%, 0.4);
   }
 
   a.plain {
@@ -37,31 +48,32 @@
     /* Shouldn't these have the padding removed, and some other affordance added? */
   }
 
-  figcaption a, aside a {
+  figcaption a,
+  aside a {
     padding-bottom: 0;
   }
   nav a {
     background-image: none;
   }
-  a:hover{
+  a:hover {
     background-image: url("/assets/splat-underline-2-hover.svg");
-    color: #D70A1B;
+    color: #d70a1b;
   }
 
   /* Should these use .outro instead of the less-clear p:last-of-type? */
   header p:last-of-type span a {
     background-image: url("/assets/splat-underline-1-default.svg");
-    padding-bottom: .1rem;
+    padding-bottom: 0.1rem;
   }
-  header p:last-of-type span a:hover{
+  header p:last-of-type span a:hover {
     background-image: url("/assets/splat-underline-1-hover.svg");
   }
 
   /* This is bad for accessibility, and Safari / Chrome don't seem to respect it */
   ::-moz-selection,
-  ::selection{
-      background: hsla(1, 0%, 75%, 0.4);
-      text-shadow: none;
+  ::selection {
+    background: hsla(1, 0%, 75%, 0.4);
+    text-shadow: none;
   }
 
   /* Separator ----------------------------------- */
@@ -107,14 +119,15 @@
     margin: 2rem 0 1rem 0;
   }
 
-  h1+h2, h2+h3 {
-    margin: -.5rem 0 1rem 0;
+  h1 + h2,
+  h2 + h3 {
+    margin: -0.5rem 0 1rem 0;
   }
 
   /* Text -------------------------------------- */
 
-
-  p, li {
+  p,
+  li {
     /* By default, don't use hyphens — current browsers do an awful job of it. */
     /* See the HYPHENS section below for more */
     /* -ms-hyphens: auto; */
@@ -126,8 +139,9 @@
     text-align: justify;
   }
 
-  small, sup {
-    font-size: .8125em;
+  small,
+  sup {
+    font-size: 0.8125em;
   }
 
   strong {
@@ -140,12 +154,12 @@
 
   sup {
     display: inline-block;
-    padding-left: .125rem;
-    padding-right: .125rem;
+    padding-left: 0.125rem;
+    padding-right: 0.125rem;
     position: relative;
-    top: .125rem;
+    top: 0.125rem;
     vertical-align: top;
-    line-height: .75rem;
+    line-height: 0.75rem;
   }
   sup a {
     background: none;
@@ -161,14 +175,15 @@
   blockquote {
     -ms-hyphens: none;
     -webkit-hyphens: none;
-    border-left: .2rem solid #f2f2f2;
+    border-left: 0.2rem solid #f2f2f2;
     hyphens: none;
     line-height: 1.5rem;
     margin-bottom: 1rem;
-    padding: 1rem 0 1rem .8rem;
+    padding: 1rem 0 1rem 0.8rem;
   }
 
-  blockquote, blockquote>* {
+  blockquote,
+  blockquote > * {
     -ms-hyphens: none;
     -webkit-hyphens: none;
     font-size: 1rem;
@@ -185,7 +200,7 @@
   }
 
   blockquote footer::before {
-    content: "– "
+    content: "– ";
   }
   blockquote p:last-child {
     margin-bottom: 0;
@@ -193,7 +208,8 @@
 
   /* Lists ------------------------------------- */
 
-  ul, ol {
+  ul,
+  ol {
     margin-bottom: 1.5rem;
     margin-left: 1.3em;
   }
@@ -206,7 +222,7 @@
   }
 
   li {
-    margin-bottom: .5rem;
+    margin-bottom: 0.5rem;
     white-space: normal;
   }
 
@@ -214,20 +230,19 @@
     list-style-type: none;
     margin-left: -1.3em;
   }
-  li h3, li h4 {
+  li h3,
+  li h4 {
     display: inline;
     font-size: inherit;
   }
   li ul {
-    margin-top: .5rem;
+    margin-top: 0.5rem;
   }
 }
 
 :root {
   --cm-padding-x: 20px;
-
 }
-
 
 /* TODO: change this media query into a container query? */
 /* @media (max-width: 1000px) {
@@ -236,7 +251,6 @@
   }
 } */
 
-
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -244,8 +258,8 @@
 
 /* Hide scrollbar for IE, Edge and Firefox */
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 /* Hack: hide tldraw page menu */

@@ -17,10 +17,10 @@ export const ANNOTATION_STYLES = {
     backgroundColor: "rgb(100 202 0 / 5%)",
   },
   ".cm-patch-splice .cm-comment-thread.active, .cm-comment-thread.active .cm-patch-splice":
-  {
-    backgroundColor: "rgb(100 202 0 / 30%)",
-    borderBottom: "rgb(0 222 0 / 100%) 2px solid",
-  },
+    {
+      backgroundColor: "rgb(100 202 0 / 30%)",
+      borderBottom: "rgb(0 222 0 / 100%) 2px solid",
+    },
   ".cm-comment-thread": {
     backgroundColor: "rgb(255 249 194)",
   },

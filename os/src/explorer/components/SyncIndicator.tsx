@@ -428,8 +428,8 @@ function useSyncIndicatorState(
     syncState: machine.matches("sync.unknown")
       ? SyncState.Unknown
       : machine.matches("sync.inSync")
-      ? SyncState.InSync
-      : SyncState.OutOfSync,
+        ? SyncState.InSync
+        : SyncState.OutOfSync,
 
     // todo: add reachability check, currently this value will be always true
     syncServerConnectionError: machine.matches("syncServer.disconnected.error"),

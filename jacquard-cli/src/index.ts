@@ -191,15 +191,17 @@ const main = async () => {
       // export const tools = [tool1, tool2]
       // export const dataTypes = [dataType1, dataType2]
       // ...
-      const plugins: Plugin[] = Object.values(module).flatMap((value): Plugin[] => {
-        if (isPlugin(value)) {
-          return [value as unknown as Plugin];
+      const plugins: Plugin[] = Object.values(module).flatMap(
+        (value): Plugin[] => {
+          if (isPlugin(value)) {
+            return [value as unknown as Plugin];
+          }
+          if (Array.isArray(value)) {
+            return value.filter((v): v is Plugin => isPlugin(v)) as Plugin[];
+          }
+          return [];
         }
-        if (Array.isArray(value)) {
-          return value.filter((v): v is Plugin => isPlugin(v)) as Plugin[];
-        }
-        return [];
-      });
+      );
       await registerPlugins(plugins, importName);
     }),
   ]);

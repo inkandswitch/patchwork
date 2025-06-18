@@ -26,7 +26,7 @@ import { DataType } from "../datatypes";
 type Hash = string;
 
 export const createBranch = async <
-  DocType extends HasVersionControlMetadata<unknown, unknown>
+  DocType extends HasVersionControlMetadata<unknown, unknown>,
 >({
   repo,
   branchScopeHandle,
