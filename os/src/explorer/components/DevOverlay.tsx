@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const getRelativeTime = (timestampMs: number): string => {
+export const getRelativeTime = (timestampMs: number): string => {
   const nowUtc = Date.now();
   const diffMs = nowUtc - timestampMs;
   const diffSeconds = Math.floor(diffMs / 1000);
