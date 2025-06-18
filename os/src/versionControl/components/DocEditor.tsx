@@ -39,7 +39,7 @@ export const DocEditor = <T, V>({
     <Component
       docPath={docPath}
       docUrl={docUrlWithHeads}
-      docHeads={undefined}
+      docHeads={docHeads}
       annotations={annotations}
       annotationGroups={annotationGroups}
       hideInlineComments={hideInlineComments}
