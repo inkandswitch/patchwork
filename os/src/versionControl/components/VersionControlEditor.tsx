@@ -65,8 +65,9 @@ export const VersionControlEditor: React.FC<{
 
   const docHeads = docHeadsFromTimelineSidebar ?? undefined;
 
+  const branchState = useBranchScopeAndActiveBranchInfo(docPath);
   const branchScopeAndActiveBranchInfo =
-    useBranchScopeAndActiveBranchInfo(docPath);
+    branchState.status === "ready" ? branchState.data : undefined;
 
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
   const cloneOrMainDocAtHeads =
@@ -297,6 +298,32 @@ export const VersionControlEditor: React.FC<{
   ).ifPending(undefined).value;
 
   // ---- ALL HOOKS MUST GO ABOVE THIS EARLY RETURN ----
+
+  // Handle error state
+  if (branchState.status === "error") {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-sm px-8">
+        <div className="min-w-0 overflow-x-auto max-w-[50ch]">
+          The document "{docLink.name}" (
+          <span className="font-mono text-xs bg-gray-100 rounded px-1">
+            {docLink.url}
+          </span>
+          ) is currently unavailable.
+          {navigator.onLine ? (
+            <div className="mt-2">
+              This means there are no devices you're connected to which are able
+              to share this document. It could also reflect a sync issue.
+            </div>
+          ) : (
+            <div className="mt-2">
+              Since you are offline, it's possible that this document will
+              become available once you reconnect.
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (!cloneOrMainOm) {
     return <LoadingScreen what="document" />;
