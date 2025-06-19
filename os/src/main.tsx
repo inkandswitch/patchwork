@@ -23,10 +23,9 @@ import { getRelativeTime } from "./explorer/components/DevOverlay.js";
 // to make it easier to grep for logs that are related to your own changes / sync state
 const PEER_ID_PREFIX = localStorage.getItem("PEER_ID_PREFIX");
 
-console.log("PATCHWORK_VERSION", {
-  gitHash: __PATCHWORK_VERSION__.gitHash,
-  buildTimestamp: getRelativeTime(__PATCHWORK_VERSION__.buildTimestamp),
-});
+console.log(
+  `Running commit ${__PATCHWORK_VERSION__.gitHash}, built ${getRelativeTime(__PATCHWORK_VERSION__.buildTimestamp)}`
+);
 
 const serviceWorker = await setupServiceWorker();
 
