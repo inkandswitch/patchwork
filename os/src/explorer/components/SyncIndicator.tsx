@@ -329,14 +329,6 @@ function useSyncIndicatorState(
   >();
   const [ownHeads, setOwnHeads] = useState<UrlHeads | undefined>();
 
-  useEffect(() => {
-    // hack: since we have two sync indictators we hard code the storage ids here
-    // otherwise one of the subscriptions would win, since subscribe unsubscribes any existing storageIds that are not in the list
-    // maybe we should reconsider this api
-    // todo: remove this once we got rid of the duplicte
-    repo.subscribeToRemotes([AUTOMERGE_SYNC_SERVER_STORAGE_ID]);
-  }, [repo]);
-
   const [machineConfig] = useState(() =>
     getSyncIndicatorMachine({
       connectionInitTimeout: 2000,
@@ -406,7 +398,7 @@ function useSyncIndicatorState(
       handle.off("change", onChange);
       handle.off("remote-heads", onRemoteHeads);
     };
-  }, [handle]);
+  }, [handle, machine, send, storageId]);
 
   useEffect(() => {
     if (!ownHeads || !syncServerHeads) {
@@ -418,7 +410,7 @@ function useSyncIndicatorState(
     } else {
       send({ type: "IS_OUT_OF_SYNC" });
     }
-  }, [ownHeads, syncServerHeads]);
+  }, [ownHeads, send, syncServerHeads]);
 
   return {
     ownHeads,

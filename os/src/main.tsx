@@ -18,6 +18,7 @@ import { Explorer } from "./explorer/components/Explorer.js";
 import "./index.css";
 import { ModuleWatcherProvider } from "./explorer/hooks/useModuleWatcher.js";
 import { getRelativeTime } from "./explorer/components/DevOverlay.js";
+import { AUTOMERGE_SYNC_SERVER_STORAGE_ID } from "./explorer/components/SyncIndicator.js";
 
 // Peer id prefix is added to both the peer id of the client and the service worker
 // to make it easier to grep for logs that are related to your own changes / sync state
@@ -212,6 +213,11 @@ window.Automerge = Automerge;
 
 // @ts-expect-error - adding property to window
 window.repo = repo;
+
+// we need to subscribe to the storage id of the sync server before we boot up patchwork
+// so we don't miss any remote heads updates
+// TODO: fix this in automerge-repo
+repo.subscribeToRemotes([AUTOMERGE_SYNC_SERVER_STORAGE_ID]);
 
 export const Root = () => (
   <RepoContext.Provider value={repo}>
