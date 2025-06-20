@@ -7,6 +7,6 @@ await build({
   bundle: true,
   format: "iife",
   define: {
-    CACHE_VERSION: `"cache-${Date.now()}"`, // Note the nested quotes for string
+    CACHE_VERSION: `"cache-${new Date().toISOString()}"`, // Note the nested quotes for string
   },
 });

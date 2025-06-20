@@ -439,7 +439,13 @@ self.addEventListener("fetch", async (event) => {
         if (url.pathname === "/") {
           debugLog("HTML request – trying network first", url.href);
           try {
-            const networkResponse = await fetch(event.request);
+            // NOTE: we specifically bypass the browser cache for this network request with cache: "reload".
+            // This is because some files like sdk/dist/*.js don't have hashes in their names, so the native
+            // browser cache can serve old versions. Given that we are caching requests in this service worker
+            // anyway, it's fine to force a load from the network here, when we know we need the latest version.
+            const networkResponse = await fetch(event.request, {
+              cache: "reload",
+            });
             debugLog("Network response status", networkResponse.status);
             if (
               200 <= networkResponse.status &&
@@ -480,8 +486,12 @@ self.addEventListener("fetch", async (event) => {
 
         debugLog("Cache miss – fetching from network", url.href);
 
-        // On cache fail, hit the network
-        const networkResponse = await fetch(event.request);
+        // On cache fail, hit the network.
+        // NOTE: we specifically bypass the browser cache for this network request with cache: "reload".
+        // This is because some files like sdk/dist/*.js don't have hashes in their names, so the native
+        // browser cache can serve old versions. Given that we are caching requests in this service worker
+        // anyway, it's fine to force a load from the network here, when we know we need the latest version.
+        const networkResponse = await fetch(event.request, { cache: "reload" });
         debugLog("Network response status", networkResponse.status);
         if (200 <= networkResponse.status && networkResponse.status <= 299) {
           // only cache successes
