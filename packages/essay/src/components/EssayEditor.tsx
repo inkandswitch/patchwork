@@ -1,5 +1,5 @@
 import * as Automerge from "@automerge/automerge";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
   useDocHandle,
@@ -14,7 +14,6 @@ import { EditorView } from "@codemirror/view";
 // TODO: audit the CSS being imported here;
 // it should be all 1) specific to TEE, 2) not dependent on viewport / media queries
 import { EditorProps } from "@patchwork/sdk";
-import { uniq } from "lodash";
 import "../index.css";
 
 import {
@@ -39,7 +38,6 @@ function useMaybeThrottled<T>(value: T, time?: number): T {
 export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
   const {
     docUrl,
-    docHeads,
     annotations = [],
     annotationGroups = [],
     setSelectedAnchors = () => {},
@@ -52,15 +50,16 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
 
   const [hasEditorFocus, setHasEditorFocus] = useState(false);
   const [selection, setSelection] = useState<TextSelection>();
-  const [_doc] = useDocument<MarkdownDoc>(docUrl); // used to trigger re-rendering when the doc loads
+  const [doc] = useDocument<MarkdownDoc>(docUrl); // used to trigger re-rendering when the doc loads
   const handle = useDocHandle<MarkdownDoc>(docUrl);
   const [editorView, setEditorView] = useState<EditorView>();
   const [editorContainer, setEditorContainer] = useState<HTMLDivElement | null>(
     null
   );
-  const readOnly = !!docHeads;
 
-  const doc = docHeads && _doc ? Automerge.view(_doc, docHeads) : _doc;
+  // TODO: [] is true so make sure we have good data here
+  const readOnly = !!parseAutomergeUrl(docUrl).heads;
+  console.log("going into read only mode?", readOnly);
 
   // HACK: comment resolution is a perf bottleneck for large documents with lots of comments.
   // To workaround, you can set a throttle time on the doc: only resolve comments once every X ms.
@@ -121,7 +120,6 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
               setHasFocus={setHasEditorFocus}
               annotations={resolvedAnnotations}
               readOnly={readOnly}
-              docHeads={docHeads}
               collapseContentWithoutAnnotations={
                 collapseContentWithoutAnnotations
               }

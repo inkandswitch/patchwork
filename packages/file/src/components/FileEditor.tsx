@@ -33,13 +33,11 @@ import { LongTextFileViewer } from "./LongTextFileViewer";
 // if this tool supports the data type
 
 export const FileEditor = (props: EditorProps<any, any>) => {
-  const { docPath, docUrl, mainDocUrl, docHeads, activeBranchUrl } = props;
+  const { docPath, docUrl, mainDocUrl, activeBranchUrl } = props;
 
   const [docUIState] = useDocUIState(docPath);
 
-  const [_doc] = useDocument<FileDoc>(docUrl);
-
-  const doc = _doc && docHeads ? Automerge.view<FileDoc>(_doc, docHeads) : _doc;
+  const [doc] = useDocument<FileDoc>(docUrl);
 
   const repo = useRepo();
   const account = useCurrentAccount();

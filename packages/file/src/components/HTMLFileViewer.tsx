@@ -13,14 +13,8 @@ export const isHTMLFile = (doc: FileDoc) => {
   return ["html", "htm"].includes(doc.extension);
 };
 
-export const HTMLFileViewer = ({
-  docUrl,
-  docHeads,
-}: EditorProps<HTMLFileDoc, never>) => {
-  const [_doc] = useDocument<HTMLFileDoc>(docUrl);
-
-  const doc =
-    _doc && docHeads ? Automerge.view<HTMLFileDoc>(_doc, docHeads) : _doc;
+export const HTMLFileViewer = ({ docUrl }: EditorProps<HTMLFileDoc, never>) => {
+  const [doc] = useDocument<HTMLFileDoc>(docUrl);
 
   const textData = useMemo(() => {
     if (!doc) {

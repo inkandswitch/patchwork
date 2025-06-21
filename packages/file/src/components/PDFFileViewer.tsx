@@ -11,13 +11,14 @@ import { useResizeObserver } from "@wojtekmaj/react-hooks";
 import { pdfjs, Document, Page } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
-import { EditorProps } from "@patchwork/sdk";
+import { DocLink, EditorProps } from "@patchwork/sdk";
 import { isBinaryFileDoc } from "../datatype";
 import { FileDoc } from "../types";
 import { useToolUIState } from "@patchwork/sdk/router";
 import { DocPath } from "@patchwork/sdk/router";
 import { clsx } from "clsx";
 import { eventListenerEffect } from "@patchwork/sdk/utils";
+import { AutomergeUrl } from "@automerge/automerge-repo";
 
 // react-pdf doesn't make this easy
 type OnPageRenderSuccess = NonNullable<
@@ -36,18 +37,8 @@ export const isPDFFile = (file: FileDoc): file is PDFFileDoc => {
   return file.mimeType === "application/pdf";
 };
 
-export const PDFFileViewer = ({
-  docUrl,
-  docHeads,
-  docPath,
-}: EditorProps<PDFFileDoc, never>) => {
-  const [_doc] = useDocument<PDFFileDoc>(docUrl);
-
-  const doc = useMemo(
-    () =>
-      _doc && docHeads ? Automerge.view<PDFFileDoc>(_doc, docHeads) : _doc,
-    [docHeads, _doc]
-  );
+export const PDFFileViewer = ({ docUrl }: EditorProps<PDFFileDoc, never>) => {
+  const [doc] = useDocument<PDFFileDoc>(docUrl);
 
   if (!doc || !isBinaryFileDoc(doc)) {
     return;
@@ -55,7 +46,7 @@ export const PDFFileViewer = ({
 
   return (
     <div className="overflow-auto h-full">
-      <PDFViewer data={doc.content} docPath={docPath} />
+      <PDFViewer data={doc.content} docUrl={docUrl} />
     </div>
   );
 };
@@ -81,10 +72,10 @@ const maxWidth = 800;
 
 export const PDFViewer = ({
   data,
-  docPath,
+  docUrl,
 }: {
   data: Uint8Array;
-  docPath: DocPath;
+  docUrl: AutomergeUrl;
 }) => {
   // TODO: why slice?
   const file = useMemo(() => ({ data: data.slice(0) }), [data]);
@@ -131,7 +122,9 @@ export const PDFViewer = ({
 
   const [toolUIState, changeToolUIState] = useToolUIState<{
     scrollTop: number;
-  }>(docPath, "file", () => ({ scrollTop: 0 }));
+  }>([{ url: docUrl, type: "file", name: "TODO" }], "file", () => ({
+    scrollTop: 0,
+  }));
 
   const [didInitialScroll, setDidInitialScroll] = useState(false);
 

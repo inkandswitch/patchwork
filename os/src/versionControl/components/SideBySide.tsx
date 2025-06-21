@@ -19,7 +19,6 @@ export const SideBySide = <T, V>(props: SideBySideProps<T, V>) => {
             docUrl={mainDocUrl}
             // note: we don't want to pass in docheads here, the doc heads in the parent
             // should not affect the heads we show for main
-            docHeads={undefined}
             annotations={[]}
             annotationGroups={[]}
           />

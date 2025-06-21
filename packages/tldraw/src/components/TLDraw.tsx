@@ -1,4 +1,4 @@
-import { DocHandle } from "@automerge/automerge-repo";
+import { DocHandle, parseAutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
   useDocHandle,
@@ -24,7 +24,6 @@ interface TLDrawProps extends EditorProps<TLDrawDocAnchor, TLShape> {
 
 export const TLDraw = ({
   docUrl,
-  docHeads,
   annotations = [],
   camera,
   onChangeCamera,
@@ -37,14 +36,11 @@ export const TLDraw = ({
   const userId = account ? account.contactHandle.url : "no-account";
 
   const [doc] = useDocument<TLDrawDoc>(docUrl);
-  const docAtHeads = useMemo(
-    () => (doc && docHeads ? A.view(doc, docHeads) : undefined),
-    [doc, docHeads]
-  );
+  const readOnly = !!parseAutomergeUrl(docUrl).heads;
 
   const [localCamera, setLocalCamera] = useState<TLCamera>();
 
-  if (!handle) {
+  if (!handle || !doc) {
     return;
   }
 
@@ -59,20 +55,18 @@ export const TLDraw = ({
 
   return (
     <div className="tldraw__editor h-full overflow-auto">
-      {docHeads ? (
-        docAtHeads ? (
-          <ReadOnlyTLDraw
-            key={JSON.stringify(docHeads)}
-            userId={userId}
-            doc={docAtHeads}
-            annotations={annotations}
-            handle={handle}
-            camera={camera ?? localCamera}
-            onChangeCamera={setCamera}
-            setSelectedAnchors={setSelectedAnchors}
-            setHoveredAnchor={setHoveredAnchor}
-          />
-        ) : null
+      {readOnly ? (
+        <ReadOnlyTLDraw
+          key={JSON.stringify(handle.url)}
+          userId={userId}
+          doc={doc}
+          annotations={annotations}
+          handle={handle}
+          camera={camera ?? localCamera}
+          onChangeCamera={setCamera}
+          setSelectedAnchors={setSelectedAnchors}
+          setHoveredAnchor={setHoveredAnchor}
+        />
       ) : (
         <EditableTLDraw
           userId={userId}
@@ -170,7 +164,6 @@ export const SideBySide = ({
   docUrl,
   mainDocUrl,
   docPath,
-  docHeads,
   annotations,
   setSelectedAnchors,
   setHoveredAnchor,
@@ -195,7 +188,6 @@ export const SideBySide = ({
       <div className="h-full flex-1 overflow-auto border-l border-l-gray-200">
         <TLDraw
           docUrl={docUrl}
-          docHeads={docHeads}
           key={mainDocUrl}
           annotations={
             annotations as AnnotationWithUIState<TLDrawDocAnchor, TLShape>[]

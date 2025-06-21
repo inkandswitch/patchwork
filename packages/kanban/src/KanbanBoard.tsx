@@ -18,22 +18,17 @@ interface MenuContextInterface {
 
 export const MenuContext = createContext(null as MenuContextInterface | null);
 
-export const KanbanBoard = ({
-  docUrl,
-  docHeads,
-}: EditorProps<KanbanBoardDoc, never>) => {
+export const KanbanBoard = ({ docUrl }: EditorProps<KanbanBoardDoc, never>) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showIssueModal, setShowIssueModal] = useState(false);
 
-  const [_doc, changeDoc] = useDocument<KanbanBoardDoc>(docUrl);
+  const [doc, changeDoc] = useDocument<KanbanBoardDoc>(docUrl);
   const handle = useDocHandle<KanbanBoardDoc>(docUrl);
   const [openIssueId, setOpenIssueId] = useState<string | undefined>();
 
-  if (!_doc || !handle) {
+  if (!doc || !handle) {
     return;
   }
-
-  const doc = docHeads ? A.view(_doc, docHeads) : _doc;
 
   return (
     <MenuContext.Provider value={{ showMenu, setShowMenu }}>

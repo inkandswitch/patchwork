@@ -46,6 +46,7 @@ import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import { selectedAnchorsPlugin } from "@patchwork/sdk/markdown";
 import { FileDoc } from "../types";
 import { CodeMirror } from "@patchwork/sdk/components";
+import { parseAutomergeUrl } from "@automerge/automerge-repo";
 
 export const isTextFile = (doc: FileDoc) => {
   return (
@@ -57,7 +58,6 @@ const pathToText = ["content"];
 
 export const TextFileEditor = ({
   docUrl,
-  docHeads,
   annotations,
   setSelectedAnchors,
   docPath,
@@ -71,13 +71,8 @@ export const TextFileEditor = ({
   // better at it. Anyway, for now I'm just using this.
   const containerRef = useRef<HTMLDivElement>(null);
   const [editor, setEditor] = useState<EditorView>();
-  const [_fileDoc] = useDocument<FileDoc>(docUrl);
+  const [fileDoc] = useDocument<FileDoc>(docUrl);
   const handle = useDocHandle<FileDoc>(docUrl);
-
-  const fileDoc =
-    docHeads && _fileDoc
-      ? Automerge.view<FileDoc>(_fileDoc, docHeads)
-      : _fileDoc;
 
   const resolvedAnnotations = useResolvedAnnotationAtPath({
     doc: fileDoc,
@@ -102,7 +97,9 @@ export const TextFileEditor = ({
 
   const fileDocRef = useRefForCallback(fileDoc);
 
-  const readOnly = docHeads !== undefined;
+  // XXX: this should probably be docHandle.readOnly()
+  // esp. since that will dovetail nicely with the upcoming keyhive work
+  const readOnly = !!parseAutomergeUrl(docUrl).heads;
 
   const [toolUIState, changeToolUIState] = useToolUIState<{
     scrollTopCursor?: Automerge.Cursor;
@@ -191,7 +188,7 @@ export const TextFileEditor = ({
       <CodeMirror
         ref={containerRef}
         setEditorView={setEditor}
-        key={JSON.stringify(docHeads)} // remount component whenever the passed in heads change
+        key={JSON.stringify(docUrl)}
         initialDoc={fileDoc.content.toString()}
         extensions={allExtensions}
         editorViewConfig={{

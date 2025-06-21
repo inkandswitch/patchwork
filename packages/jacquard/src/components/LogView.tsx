@@ -11,16 +11,8 @@ import { Button } from "@patchwork/sdk/ui";
 
 export const LogView = ({
   docUrl,
-  docHeads,
 }: EditorProps<JacquardBuildMetadata, never>) => {
-  const [latestDoc, changeLatestDoc] =
-    useDocument<JacquardBuildMetadata>(docUrl);
-
-  const doc = useMemo(
-    () =>
-      latestDoc && docHeads ? Automerge.view(latestDoc, docHeads) : latestDoc,
-    [latestDoc, docHeads]
-  );
+  const [doc, changeLatestDoc] = useDocument<JacquardBuildMetadata>(docUrl);
 
   if (!doc) {
     return null;
@@ -90,7 +82,7 @@ export const LogView = ({
                   </div>
                   <CopyButton text={runSpecToCommand(run.spec)} size={16} />
                 </div>
-                {doc === latestDoc && (
+                {
                   <Button
                     variant="destructive"
                     className="flex gap-2 w-fit h-8 text-xs px-2"
@@ -102,7 +94,7 @@ export const LogView = ({
                   >
                     <Trash2Icon size={14} /> Remove build run from log
                   </Button>
-                )}
+                }
               </div>
             </details>
           </div>
