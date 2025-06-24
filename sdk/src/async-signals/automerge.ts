@@ -123,7 +123,10 @@ function getOmSignal<T>(
   const docSignal = getDocSignal<T>(url, repo, heads);
   const id = parseAutomergeUrl(url).documentId;
 
-  const handleSignal = asyncSignalFromPromise(repo.find<T>(id));
+  const handleSignal = asyncSignalFromPromise(
+    repo.find<T>(id).catch(() => Promise.reject(new DocHandleMissingError(url)))
+  );
+
   const omSignal = asyncComputed(() => {
     return {
       url,

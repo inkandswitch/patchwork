@@ -236,7 +236,8 @@ export const Topbar: React.FC<TopbarProps> = ({
               className="mt-1 mr-1 text-gray-500 hover:text-gray-800"
             />
           </DropdownMenuTrigger>
-          {selectedDoc && (
+
+          {selectedDocPath && (
             <DropdownMenuContent className="mr-4">
               <DropdownMenuItem
                 onClick={() => {
@@ -250,6 +251,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 />{" "}
                 Copy share URL
               </DropdownMenuItem>
+
               <DropdownMenuItem
                 onClick={() => {
                   if (!selectedDocPath) {
@@ -268,28 +270,34 @@ export const Topbar: React.FC<TopbarProps> = ({
                 />{" "}
                 Copy Automerge URL
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onClickMakeCopy}>
-                <GitForkIcon
-                  className="inline-block text-gray-500 mr-2"
-                  size={14}
-                />{" "}
-                {!docHeadsFromTimelineSidebar
-                  ? "Make a copy of latest version"
-                  : "Make a copy of visible version"}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {exportMethods.map((method) => (
-                <DropdownMenuItem
-                  key={method.id}
-                  onClick={() => onClickExport(method)}
-                >
-                  <Download
-                    size={14}
-                    className="inline-block text-gray-500 mr-2"
-                  />{" "}
-                  Export as {method.name}
-                </DropdownMenuItem>
-              ))}
+
+              {selectedDoc && (
+                <>
+                  <DropdownMenuItem onClick={onClickMakeCopy}>
+                    <GitForkIcon
+                      className="inline-block text-gray-500 mr-2"
+                      size={14}
+                    />{" "}
+                    {!docHeadsFromTimelineSidebar
+                      ? "Make a copy of latest version"
+                      : "Make a copy of visible version"}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+                  {exportMethods.map((method) => (
+                    <DropdownMenuItem
+                      key={method.id}
+                      onClick={() => onClickExport(method)}
+                    >
+                      <Download
+                        size={14}
+                        className="inline-block text-gray-500 mr-2"
+                      />{" "}
+                      Export as {method.name}
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
 
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -305,7 +313,8 @@ export const Topbar: React.FC<TopbarProps> = ({
               </DropdownMenuItem>
             </DropdownMenuContent>
           )}
-          {!selectedDoc && (
+
+          {!selectedDoc && !selectedDocPath && (
             <DropdownMenuContent className="mr-4 p-4">
               <div className="text-gray-500 text-xs">
                 Open a document to see actions

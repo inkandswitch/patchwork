@@ -35,7 +35,8 @@ export const useSelectedDocPathState = (): {
   useEffect(() => {
     if (
       selectedDocLink &&
-      branchScopeAndActiveBranchInfo?.originalUrl === selectedDocLink.url
+      (!branchScopeAndActiveBranchInfo ||
+        branchScopeAndActiveBranchInfo?.originalUrl === selectedDocLink.url)
     ) {
       location.hash = toUrl({
         ...selectedDocLink,
@@ -54,6 +55,7 @@ export const useSelectedDocPathState = (): {
     selectedDocPath,
     activeBranchScopeUrl,
     selectedDocLink,
+    branchScopeAndActiveBranchInfo,
   ]);
 
   const selectDocPath = useCallback(async (docPath: DocPath | undefined) => {

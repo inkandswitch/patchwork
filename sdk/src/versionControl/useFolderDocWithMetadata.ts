@@ -86,7 +86,7 @@ function fetchMaterializeFolderDoc(
     // figure out how to render that in the UI.
     if (e instanceof DocHandleMissingError) {
       return {
-        title: "Loading...",
+        title: "Unavailable Folder",
         docs: [],
       } as unknown as FolderDocMaterialized;
     }
