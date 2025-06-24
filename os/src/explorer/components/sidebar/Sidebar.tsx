@@ -122,6 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         !parentNode || parentNode.level < 0
           ? DocPathUtils.forRoot(rootFolderUrl)
           : parentNode.data.docPath;
+
       const dstParentOm = await asyncComputedPromise(() =>
         fetchOmOnActiveBranch<FolderDoc>(dstParentPath, account, repo)
       );
@@ -396,6 +397,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   // That seems fine for this state where it's not a huge problem if the component desyncs
                   // from the automerge doc.
                   initialOpenState={initialOpenState}
+                  disableDrop={({ parentNode }) => {
+                    if (!parentNode || !parentNode.data.docPath) return false; // Allow dropping at root
+                    const link = DocPathUtils.toLink(parentNode.data.docPath);
+                    return link.type !== "folder"; // Disable drop if not a folder
+                  }}
                   onToggle={onToggle}
                   onRename={onRename}
                 >
