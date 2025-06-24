@@ -57,9 +57,7 @@ export const EssayEditor = (props: EditorProps<TextAnchor, string>) => {
     null
   );
 
-  // TODO: [] is true so make sure we have good data here
   const readOnly = !!parseAutomergeUrl(docUrl).heads;
-  console.log("going into read only mode?", readOnly);
 
   // HACK: comment resolution is a perf bottleneck for large documents with lots of comments.
   // To workaround, you can set a throttle time on the doc: only resolve comments once every X ms.
