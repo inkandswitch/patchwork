@@ -380,10 +380,10 @@ export const VersionControlEditor: React.FC<{
               <div className="flex-1 min-h-0 relative">
                 {docUIState.mainViewMode === "compareWithMain" ? (
                   <SideBySide
-                    key={cloneOrMainOm.url}
+                    key={cloneOrMainHandleAtHeads.url}
                     tool={tool}
                     docPath={docPath}
-                    docUrl={cloneOrMainOm.url}
+                    docUrl={cloneOrMainHandleAtHeads.url}
                     annotations={filteredAnnotations}
                     annotationGroups={filteredAnnotationGroups}
                     setSelectedAnchors={setSelectedAnchors}
