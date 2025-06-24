@@ -120,9 +120,11 @@ export const PDFViewer = ({
 
   const [viewportElem, setViewportElem] = useState<HTMLElement | null>(null);
 
+  // useToolUIState only uses the urls from the path, and we only pass in the one here
+  // so the other arguments are just placeholders
   const [toolUIState, changeToolUIState] = useToolUIState<{
     scrollTop: number;
-  }>([{ url: docUrl, type: "file", name: "TODO" }], "file", () => ({
+  }>([{ url: docUrl, type: "file", name: "<unused>" }], "file", () => ({
     scrollTop: 0,
   }));
 
