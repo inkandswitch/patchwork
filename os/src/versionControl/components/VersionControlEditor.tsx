@@ -324,7 +324,7 @@ export const VersionControlEditor: React.FC<{
     );
   }
 
-  if (!cloneOrMainOm) {
+  if (!cloneOrMainOm || !cloneOrMainHandleAtHeads) {
     return <LoadingScreen what="document" />;
   }
 
@@ -402,10 +402,10 @@ export const VersionControlEditor: React.FC<{
                   />
                 ) : (
                   <DocEditor
-                    key={cloneOrMainOm.url}
+                    key={cloneOrMainHandleAtHeads.url}
                     tool={tool}
                     docPath={docPath}
-                    docUrl={cloneOrMainOm.url}
+                    docUrl={cloneOrMainHandleAtHeads.url}
                     annotations={filteredAnnotations}
                     annotationGroups={filteredAnnotationGroups}
                     setSelectedAnchors={setSelectedAnchors}
