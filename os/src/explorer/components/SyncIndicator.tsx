@@ -6,6 +6,7 @@ import {
   DocHandle,
   StorageId,
   UrlHeads,
+  SyncInfo,
 } from "@automerge/automerge-repo";
 import { useDocHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
 import {
@@ -18,6 +19,7 @@ import { useMachine } from "@xstate/react";
 import { WifiIcon, WifiOffIcon, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createMachine, raise, stateIn } from "xstate";
+import { useForceUpdate } from "@patchwork/sdk/hooks";
 
 export const AUTOMERGE_SYNC_SERVER_STORAGE_ID = (import.meta.env
   ?.VITE_SYNC_SERVER_STORAGE_ID ??
@@ -68,8 +70,20 @@ const SyncIndicatorInner = ({
   } = useSyncIndicatorState(handle, storageId);
   const repo = useRepo();
   const isSynced = syncState === SyncState.InSync;
+  const forceUpdate = useForceUpdate();
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const prevHandle = useRef<DocHandle<unknown> | undefined>(undefined);
+
+  // rerender every second to update the lastSyncUpdate only when popover is open
+  useEffect(() => {
+    if (!isPopoverOpen) return;
+
+    const interval = setInterval(() => {
+      forceUpdate();
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [forceUpdate, isPopoverOpen]);
 
   useEffect(() => {
     if (prevHandle.current && prevHandle.current.url !== handle.url) {
@@ -170,7 +184,7 @@ const SyncIndicatorInner = ({
   if (isInternetConnected) {
     if (!syncServerConnectionError && !syncServerResponseError) {
       return (
-        <Popover>
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger className=" p-1 rounded-md text-gray-500 hover:text-gray-900 align-top">
             <WifiIcon size={"20px"} />
           </PopoverTrigger>
@@ -199,7 +213,7 @@ const SyncIndicatorInner = ({
       );
     } else {
       return (
-        <Popover>
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger className="bg-red-50 border border-red-100 hover:bg-red-100 p-2 rounded-md">
             <div className="text-red-500 flex items-center text-sm">
               <WifiIcon
@@ -255,7 +269,7 @@ const SyncIndicatorInner = ({
     }
   } else {
     return (
-      <Popover>
+      <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger className="hover:bg-gray-100 p-2 rounded-md">
           <div className="text-gray-500">
             <WifiOffIcon
@@ -322,11 +336,7 @@ function useSyncIndicatorState(
   handle: DocHandle<unknown>,
   storageId: StorageId
 ): SyncIndicatorState {
-  const repo = useRepo();
-  const [lastSyncUpdate, setLastSyncUpdate] = useState<number | undefined>(); // todo: should load that from persisted sync state
-  const [syncServerHeads, setSyncServerHeads] = useState<
-    UrlHeads | undefined
-  >();
+  const [syncInfo, setSyncInfo] = useState<SyncInfo | undefined>();
   const [ownHeads, setOwnHeads] = useState<UrlHeads | undefined>();
 
   const [machineConfig] = useState(() =>
@@ -365,8 +375,12 @@ function useSyncIndicatorState(
   // heads change listener
   useEffect(() => {
     if (machine.matches("sync.unknown")) {
-      const syncServerHeads = handle.getRemoteHeads(storageId);
-      setSyncServerHeads(syncServerHeads ?? ([] as unknown as UrlHeads)); // initialize to empty heads if we have no state
+      const syncInfo = handle.getSyncInfo(storageId);
+
+      if (syncInfo) {
+        setSyncInfo(syncInfo);
+      }
+
       setOwnHeads(handle.heads());
     }
 
@@ -380,14 +394,24 @@ function useSyncIndicatorState(
     const onRemoteHeads = ({
       storageId: remoteStorageId,
       heads,
+      timestamp,
     }: {
       storageId: StorageId;
       heads: UrlHeads;
+      timestamp: number;
     }) => {
       if (storageId === remoteStorageId) {
+        console.log("RECEIVED_SYNC_MESSAGE", {
+          timestamp: timestamp ? getRelativeTimeString(timestamp) : "unknown",
+          heads,
+          storageId,
+          remoteStorageId,
+        });
         send({ type: "RECEIVED_SYNC_MESSAGE" });
-        setSyncServerHeads(heads);
-        setLastSyncUpdate(Date.now());
+        setSyncInfo({
+          lastHeads: heads,
+          lastSyncTimestamp: timestamp,
+        });
       }
     };
 
@@ -401,21 +425,21 @@ function useSyncIndicatorState(
   }, [handle, machine, send, storageId]);
 
   useEffect(() => {
-    if (!ownHeads || !syncServerHeads) {
+    if (!ownHeads || !syncInfo) {
       return;
     }
 
-    if (A.equals(ownHeads, syncServerHeads)) {
+    if (A.equals(ownHeads, syncInfo.lastHeads)) {
       send({ type: "IS_IN_SYNC" });
     } else {
       send({ type: "IS_OUT_OF_SYNC" });
     }
-  }, [ownHeads, send, syncServerHeads]);
+  }, [ownHeads, send, syncInfo]);
 
   return {
     ownHeads,
-    syncServerHeads,
-    lastSyncUpdate,
+    lastSyncUpdate: syncInfo?.lastSyncTimestamp,
+    syncServerHeads: syncInfo?.lastHeads,
     isInternetConnected: machine.matches("internet.connected"),
     syncState: machine.matches("sync.unknown")
       ? SyncState.Unknown
