@@ -46,7 +46,6 @@ export type MarkdownDocEditorProps = {
   setView?: (view: EditorView) => void;
   setSelectedAnchors?: (anchors: TextAnchor[]) => void;
   readOnly?: boolean;
-  docHeads?: A.Heads;
   annotations?: AnnotationWithUIState<ResolvedTextAnchor, string>[];
   collapseContentWithoutAnnotations?: boolean;
 };
@@ -59,7 +58,6 @@ export function MarkdownDocEditor({
   setView = () => {},
   setSelectedAnchors = () => {},
   readOnly,
-  docHeads,
   annotations = [], // TODO: JAH strict fix
   collapseContentWithoutAnnotations,
 }: MarkdownDocEditorProps) {
@@ -67,8 +65,7 @@ export function MarkdownDocEditor({
   const markdownPlugins = useMarkdownPlugins({ docHandle: handle });
 
   const [doc] = useDocument(handle.url);
-  const docAtHeads = doc && docHeads ? A.view(doc, docHeads) : doc;
-  const content = get(docAtHeads, path);
+  const content = get(doc, path);
 
   const annotationsRef = useRef<
     AnnotationWithUIState<ResolvedTextAnchor, string>[]
@@ -166,7 +163,7 @@ export function MarkdownDocEditor({
           editorRoot.current = view;
           setView(view);
         }}
-        key={JSON.stringify(docHeads)} // remount component whenever the passed in heads change
+        key={handle.url} // remount component whenever the passed in heads change
         initialDoc={content}
         extensions={extensions}
         className={clsx("codemirror-editor h-full scroll-instant")}

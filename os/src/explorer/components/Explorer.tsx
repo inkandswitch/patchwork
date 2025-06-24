@@ -130,8 +130,7 @@ export const Explorer: React.FC = () => {
 
   const account = useCurrentAccount();
 
-  const [docHeadsFromTimelineSidebar, setDocHeadsFromTimelineSidebar] =
-    useState<Automerge.Heads>();
+  const [docHeads, setDocHeads] = useState<Automerge.Heads>();
 
   const [showDevOverlay, setShowDevOverlay] = useState(false);
 
@@ -251,7 +250,7 @@ export const Explorer: React.FC = () => {
               currentToolId={currentToolId}
               tools={toolDescriptions}
               onToolChange={handleToolChange}
-              docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
+              docHeads={docHeads}
             />
             <div className="flex-grow overflow-hidden z-0">
               {!selectedDocUrl && <NoDocumentSelected addNewDoc={addNewDoc} />}
@@ -298,10 +297,8 @@ export const Explorer: React.FC = () => {
                     tool={currentTool}
                     addNewDocument={addNewDoc}
                     flatDocPaths={flatDocPaths}
-                    docHeadsFromTimelineSidebar={docHeadsFromTimelineSidebar}
-                    setDocHeadsFromTimelineSidebar={
-                      setDocHeadsFromTimelineSidebar
-                    }
+                    docHeads={docHeads}
+                    setDocHeads={setDocHeads}
                   />
                 )}
             </div>

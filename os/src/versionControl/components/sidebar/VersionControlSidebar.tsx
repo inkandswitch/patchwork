@@ -27,14 +27,14 @@ export interface VersionControlSidebarProps {
   onChangeSidebarMode: (mode: string) => void;
   dataType: DataType<unknown, unknown, unknown> | undefined;
   cloneOrMainOm: Om<HasVersionControlMetadata>;
-  setDocHeadsFromTimelineSidebar: (heads: A.Heads | undefined) => void;
+  setDocHeads: (heads: A.Heads | undefined) => void;
   setDiffFromTimelineSidebar: React.Dispatch<
     React.SetStateAction<DiffWithProvenance | undefined>
   >;
   branchScopeAndActiveBranchInfo: BranchScopeAndActiveBranchInfo;
   onSelectBranch: (branchUrl: AutomergeUrl | null) => void;
   cloneOrMainDocAtHeads: A.Doc<HasVersionControlMetadata> | undefined;
-  docHeadsFromTimelineSidebar: A.Heads | undefined;
+  docHeads: A.Heads | undefined;
   tool: Tool;
   filteredAnnotationGroups: AnnotationGroupWithUIState<unknown, unknown>[];
   selectedAnchors: unknown[];
@@ -54,12 +54,12 @@ export function VersionControlSidebar({
   onChangeSidebarMode,
   dataType,
   cloneOrMainOm,
-  setDocHeadsFromTimelineSidebar,
+  setDocHeads,
   setDiffFromTimelineSidebar,
   branchScopeAndActiveBranchInfo,
   onSelectBranch,
   cloneOrMainDocAtHeads,
-  docHeadsFromTimelineSidebar,
+  docHeads,
   tool,
   filteredAnnotationGroups,
   selectedAnchors,
@@ -111,7 +111,7 @@ export function VersionControlSidebar({
               key={cloneOrMainOm.url}
               dataType={dataType}
               docUrl={cloneOrMainOm.url}
-              setDocHeads={setDocHeadsFromTimelineSidebar}
+              setDocHeads={setDocHeads}
               setDiff={setDiffFromTimelineSidebar}
               branchScopeAndActiveBranchInfo={branchScopeAndActiveBranchInfo}
               onSelectBranchUrl={onSelectBranch}
@@ -124,7 +124,7 @@ export function VersionControlSidebar({
               <ReviewSidebar
                 doc={cloneOrMainDocAtHeads}
                 handle={cloneOrMainOm.handle}
-                readonly={!!docHeadsFromTimelineSidebar}
+                readonly={!!docHeads}
                 tool={tool}
                 annotationGroups={filteredAnnotationGroups}
                 selectedAnchors={selectedAnchors}

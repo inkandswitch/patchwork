@@ -12,7 +12,13 @@ import { useToast } from "@patchwork/sdk/ui";
 import { Tool } from "@patchwork/sdk";
 import { usePlugin } from "@patchwork/sdk/hooks";
 
-import { AutomergeUrl, decodeHeads } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  decodeHeads,
+  encodeHeads,
+  parseAutomergeUrl,
+  stringifyAutomergeUrl,
+} from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -40,14 +46,9 @@ export const VersionControlEditor: React.FC<{
   tool: Tool;
   addNewDocument: (doc: { type: string; change?: (doc: any) => void }) => void;
   flatDocPaths: DocPath[];
-  docHeadsFromTimelineSidebar: A.Heads | undefined;
-  setDocHeadsFromTimelineSidebar: (heads: A.Heads | undefined) => void;
-}> = ({
-  docPath,
-  tool,
-  docHeadsFromTimelineSidebar,
-  setDocHeadsFromTimelineSidebar,
-}) => {
+  docHeads: A.Heads | undefined;
+  setDocHeads: (heads: A.Heads | undefined) => void;
+}> = ({ docPath, tool, docHeads, setDocHeads }) => {
   const docLink = DocPathUtils.toLink(docPath);
 
   const [docUIState, changeDocUIState] = useDocUIState(docPath);
@@ -63,17 +64,15 @@ export const VersionControlEditor: React.FC<{
   const [diffFromTimelineSidebar, setDiffFromTimelineSidebar] =
     useState<DiffWithProvenance>();
 
-  const docHeads = docHeadsFromTimelineSidebar ?? undefined;
-
   const branchState = useBranchScopeAndActiveBranchInfo(docPath);
   const branchScopeAndActiveBranchInfo =
     branchState.status === "ready" ? branchState.data : undefined;
 
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
-  const cloneOrMainDocAtHeads =
-    cloneOrMainOm?.doc && docHeadsFromTimelineSidebar
-      ? A.view(cloneOrMainOm.doc, docHeadsFromTimelineSidebar)
-      : cloneOrMainOm?.doc;
+  const cloneOrMainHandleAtHeads =
+    cloneOrMainOm?.handle && docHeads
+      ? cloneOrMainOm.handle.view(encodeHeads(docHeads))
+      : cloneOrMainOm?.handle;
   let baseHeads = branchScopeAndActiveBranchInfo?.baseHeads;
 
   // PVH hack march 6 2025; some old branches have encoded heads.
@@ -145,7 +144,7 @@ export const VersionControlEditor: React.FC<{
     setSelectedAnnotationGroupId,
     setCommentState,
   } = useAnnotations({
-    doc: cloneOrMainDocAtHeads as A.Doc<HasVersionControlMetadata>,
+    doc: cloneOrMainHandleAtHeads?.doc() as A.Doc<HasVersionControlMetadata>,
     dataType,
     isCommentInputFocused,
     diff: docUIState.highlightChanges ? diff : undefined,
@@ -184,10 +183,10 @@ export const VersionControlEditor: React.FC<{
       const { branchScopePath } = branchScopeAndActiveBranchInfo;
 
       setDiffFromTimelineSidebar(undefined);
-      setDocHeadsFromTimelineSidebar(undefined);
+      setDocHeads(undefined);
       setActiveBranchUrl(uiStateOm, branchScopePath, branchUrl);
     },
-    [branchScopeAndActiveBranchInfo, setDocHeadsFromTimelineSidebar, uiStateOm]
+    [branchScopeAndActiveBranchInfo, setDocHeads, uiStateOm]
   );
 
   const onChangeSidebarMode = useCallback(
@@ -325,7 +324,7 @@ export const VersionControlEditor: React.FC<{
     );
   }
 
-  if (!cloneOrMainOm) {
+  if (!cloneOrMainOm || !cloneOrMainHandleAtHeads) {
     return <LoadingScreen what="document" />;
   }
 
@@ -381,11 +380,10 @@ export const VersionControlEditor: React.FC<{
               <div className="flex-1 min-h-0 relative">
                 {docUIState.mainViewMode === "compareWithMain" ? (
                   <SideBySide
-                    key={cloneOrMainOm.url}
+                    key={cloneOrMainHandleAtHeads.url}
                     tool={tool}
                     docPath={docPath}
-                    docUrl={cloneOrMainOm.url}
-                    docHeads={docHeads}
+                    docUrl={cloneOrMainHandleAtHeads.url}
                     annotations={filteredAnnotations}
                     annotationGroups={filteredAnnotationGroups}
                     setSelectedAnchors={setSelectedAnchors}
@@ -404,11 +402,10 @@ export const VersionControlEditor: React.FC<{
                   />
                 ) : (
                   <DocEditor
-                    key={cloneOrMainOm.url}
+                    key={cloneOrMainHandleAtHeads.url}
                     tool={tool}
                     docPath={docPath}
-                    docUrl={cloneOrMainOm.url}
-                    docHeads={docHeads}
+                    docUrl={cloneOrMainHandleAtHeads.url}
                     annotations={filteredAnnotations}
                     annotationGroups={filteredAnnotationGroups}
                     setSelectedAnchors={setSelectedAnchors}
@@ -439,12 +436,12 @@ export const VersionControlEditor: React.FC<{
           onChangeSidebarMode,
           dataType,
           cloneOrMainOm,
-          setDocHeadsFromTimelineSidebar,
+          setDocHeads,
           setDiffFromTimelineSidebar,
           branchScopeAndActiveBranchInfo,
           onSelectBranch,
-          cloneOrMainDocAtHeads,
-          docHeadsFromTimelineSidebar,
+          cloneOrMainDocAtHeads: cloneOrMainHandleAtHeads?.doc(),
+          docHeads,
           tool,
           filteredAnnotationGroups,
           selectedAnchors,

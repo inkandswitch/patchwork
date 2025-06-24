@@ -74,7 +74,6 @@ function getImages(
 
       const url = match.groups!.url;
       const caption = match.groups!.caption;
-      const { protocol, host } = window.location;
 
       const image = new Image(
         heads,

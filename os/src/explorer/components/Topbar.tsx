@@ -51,7 +51,7 @@ type TopbarProps = {
   tools: ToolDescription[];
   currentToolId: string | undefined;
   onToolChange: (toolId: string) => void;
-  docHeadsFromTimelineSidebar?: Automerge.Heads;
+  docHeads?: Automerge.Heads;
 };
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -65,7 +65,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   currentToolId,
   onToolChange,
   removeDocPath,
-  docHeadsFromTimelineSidebar,
+  docHeads,
 }) => {
   const repo = useRepo();
   const { toast } = useToast();
@@ -98,7 +98,7 @@ export const Topbar: React.FC<TopbarProps> = ({
 
     let newHandle: DocHandle<HasVersionControlMetadata>;
 
-    if (docHeadsFromTimelineSidebar) {
+    if (docHeads) {
       newHandle = repo.create<HasVersionControlMetadata>();
 
       const originalDoc = selectedDocHandle.doc();
@@ -114,7 +114,7 @@ export const Topbar: React.FC<TopbarProps> = ({
         cutOff += 1;
         const decodeChange = Automerge.decodeChange(change);
 
-        if (decodeChange.hash === docHeadsFromTimelineSidebar[0]) {
+        if (decodeChange.hash === docHeads[0]) {
           break;
         }
       }
@@ -144,7 +144,7 @@ export const Topbar: React.FC<TopbarProps> = ({
 
     const folderDocPath = DocPathUtils.parent(selectedDocPath);
 
-    if (!docHeadsFromTimelineSidebar) {
+    if (!docHeads) {
       const folderHandle = await repo.find<FolderDoc>(
         DocPathUtils.toLink(folderDocPath).url
       );
@@ -278,7 +278,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                       className="inline-block text-gray-500 mr-2"
                       size={14}
                     />{" "}
-                    {!docHeadsFromTimelineSidebar
+                    {!docHeads
                       ? "Make a copy of latest version"
                       : "Make a copy of visible version"}
                   </DropdownMenuItem>

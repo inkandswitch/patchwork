@@ -26,16 +26,10 @@ registerRenderer("addedCell", (hotInstance, TD, ...rest) => {
 
 export const DataGrid = ({
   docUrl,
-  docHeads,
   annotations = [],
 }: EditorProps<DataGridDocAnchor, string>) => {
-  const [latestDoc] = useDocument<DataGridDoc>(docUrl); // used to trigger re-rendering when the doc loads
+  const [doc] = useDocument<DataGridDoc>(docUrl); // used to trigger re-rendering when the doc loads
   const handle = useDocHandle<DataGridDoc>(docUrl)!; // TODO: JAH strict fix
-
-  const doc = useMemo(
-    () => (latestDoc && docHeads ? A.view(latestDoc, docHeads) : latestDoc),
-    [latestDoc, docHeads]
-  );
 
   const onBeforeHotChange = (
     changes: Array<Handsontable.CellChange | null>

@@ -21,15 +21,13 @@ export const FolderViewerWithEmbeds: React.FC<
 > = ({
   docPath,
   docUrl,
-  docHeads,
   collapseContentWithoutChanges: collapseContentWithoutAnnotations,
 }: EditorProps<unknown, unknown>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
-  const folderAtHeads = folder && docHeads ? A.view(folder, docHeads) : folder;
 
   const [docUIState] = useDocUIState(docPath);
 
-  if (!folder || !folderAtHeads) {
+  if (!folder) {
     return null;
   }
 
@@ -37,11 +35,11 @@ export const FolderViewerWithEmbeds: React.FC<
     <div className="p-2 h-full overflow-hidden flex flex-col gap-4">
       <div className="flex border-b border-gray-300 justify-between items-center p-2">
         <div className="text-gray-500 text-sm">
-          {folderAtHeads.docs.length} documents
+          {folder.docs.length} documents
         </div>
       </div>
       <div className="flex flex-col gap-10 px-4 h-full overflow-y-auto pb-24">
-        {folderAtHeads.docs.map((docLink, index) => (
+        {folder.docs.map((docLink, index) => (
           <FolderEntryView
             docPath={[...docPath, docLink]}
             key={index}

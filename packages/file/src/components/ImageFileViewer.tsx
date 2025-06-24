@@ -13,7 +13,6 @@ export type ImageFileDoc = FileDoc & {
 
 export const ImageFileViewer = ({
   docUrl,
-  docHeads,
 }: EditorProps<ImageFileDoc, never>) => {
   const handle = useDocHandle<ImageFileDoc>(docUrl);
 

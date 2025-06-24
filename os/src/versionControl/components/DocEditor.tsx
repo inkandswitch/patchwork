@@ -1,8 +1,3 @@
-import {
-  parseAutomergeUrl,
-  stringifyAutomergeUrl,
-  encodeHeads,
-} from "@automerge/automerge-repo";
 import { EditorProps } from "@patchwork/sdk";
 import { EditorPropsWithTool } from "@patchwork/sdk/versionControl";
 
@@ -11,7 +6,6 @@ export const DocEditor = <T, V>({
   tool,
   docPath,
   docUrl,
-  docHeads,
   annotations,
   annotationGroups,
   hideInlineComments,
@@ -30,16 +24,10 @@ export const DocEditor = <T, V>({
 
   const Component = tool.module.EditorComponent as React.FC<EditorProps<T, V>>;
 
-  const docUrlWithHeads = stringifyAutomergeUrl({
-    ...parseAutomergeUrl(docUrl),
-    heads: docHeads ? encodeHeads(docHeads) : undefined,
-  });
-
   return (
     <Component
       docPath={docPath}
-      docUrl={docUrlWithHeads}
-      docHeads={docHeads}
+      docUrl={docUrl}
       annotations={annotations}
       annotationGroups={annotationGroups}
       hideInlineComments={hideInlineComments}
