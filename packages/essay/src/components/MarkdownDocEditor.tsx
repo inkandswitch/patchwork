@@ -163,7 +163,7 @@ export function MarkdownDocEditor({
           editorRoot.current = view;
           setView(view);
         }}
-        key={JSON.stringify(handle.url)} // remount component whenever the passed in heads change
+        key={handle.url} // remount component whenever the passed in heads change
         initialDoc={content}
         extensions={extensions}
         className={clsx("codemirror-editor h-full scroll-instant")}

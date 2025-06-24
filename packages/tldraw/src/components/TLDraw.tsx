@@ -57,7 +57,7 @@ export const TLDraw = ({
     <div className="tldraw__editor h-full overflow-auto">
       {readOnly ? (
         <ReadOnlyTLDraw
-          key={JSON.stringify(handle.url)}
+          key={handle.url}
           userId={userId}
           doc={doc}
           annotations={annotations}
