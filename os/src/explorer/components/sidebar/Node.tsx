@@ -86,9 +86,7 @@ export const Node = (props: NodeRendererProps<NodeData>) => {
 
       {!node.isEditing && (
         <div className="flex items-center">
-          <div className="">
-            {dataType ? docLink.name : `Unknown type: ${docLink.type}`}
-          </div>
+          <div className="">{docLink.name}</div>
           {docLink.type === "folder" && (
             <div className="ml-2 text-gray-500 text-xs py-0.5 px-1.5 rounded-lg bg-gray-200">
               {node.children?.length || 0}
