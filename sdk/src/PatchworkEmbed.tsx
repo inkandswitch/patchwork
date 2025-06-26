@@ -53,6 +53,8 @@ const DocumentLoader = ({
   }); // Enable suspense
 
   const dataTypeId = doc["@patchwork"]?.type;
+
+  // todo: we don't handle loading suggested modules here
   const { plugins: tools } = useMatchingPluginDescriptions<Tool>({
     pluginType: "patchwork:tool",
     matchField: "supportedDataTypes",

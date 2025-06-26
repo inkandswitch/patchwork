@@ -67,12 +67,12 @@ export function ModuleWatcherProvider({
   );
 }
 
-export function useModuleWatcher() {
+export function useModuleWatcher(): ModuleWatcher | null {
   const context = useContext(ModuleWatcherContext);
   if (context === null) {
     throw new Error(
       "useModuleWatcher must be used within a ModuleWatcherProvider"
     );
   }
-  return context;
+  return context.watcher;
 }
