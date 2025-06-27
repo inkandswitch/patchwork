@@ -5,4 +5,5 @@ export {
   automergeUrlToServiceWorkerUrl,
   docHandleToServiceWorkerUrl,
   importModuleFromFolderDocUrl,
+  useSuggestedModuleForDocUrl, // todo: move this
 } from "./utils";

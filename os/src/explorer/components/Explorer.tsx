@@ -1,4 +1,4 @@
-import { DataType } from "@patchwork/sdk";
+import { DataType, useSuggestedModuleForDocUrl } from "@patchwork/sdk";
 import { type DocPath, DocPathUtils } from "@patchwork/sdk/router";
 import { Toaster } from "@patchwork/sdk/ui";
 import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
@@ -23,6 +23,7 @@ import { Sidebar } from "./sidebar/Sidebar";
 import { Topbar } from "./Topbar";
 import { VersionControlEditor } from "../../versionControl/components";
 import { usePlugin } from "@patchwork/sdk/hooks";
+import { useModuleWatcher } from "../hooks/useModuleWatcher";
 import { useSelectedTool } from "../hooks/useSelectedTool";
 import { DocHandle } from "@automerge/automerge-repo";
 import { addNewDocument } from "../docActions";
@@ -93,6 +94,9 @@ export const Explorer: React.FC = () => {
   const [selectedDoc] =
     useDocument<HasVersionControlMetadata<unknown, unknown>>(selectedDocUrl);
 
+  const { watcher } = useModuleWatcher();
+  useSuggestedModuleForDocUrl(selectedDocUrl, watcher);
+
   useEffect(() => {
     // @ts-expect-error global window
     window.handle = selectedDocHandle;
@@ -114,7 +118,7 @@ export const Explorer: React.FC = () => {
   const {
     currentToolId,
     currentTool,
-    isLoading: isLoadingTool,
+    isLoadingTool,
     error,
     handleToolChange,
     toolDescriptions,

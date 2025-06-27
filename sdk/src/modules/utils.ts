@@ -1,5 +1,16 @@
-import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  DocHandle,
+  parseAutomergeUrl,
+} from "@automerge/automerge-repo";
+import {
+  useDocument,
+  useDocHandle,
+} from "@automerge/automerge-repo-react-hooks";
 import { resolve } from "resolve.exports";
+import { HasPatchworkMetadata } from "./types";
+import { useEffect } from "react";
+import { ModuleWatcher } from "./module-watcher";
 
 export function automergeUrlToServiceWorkerUrl(
   automergeUrl: AutomergeUrl
@@ -12,6 +23,23 @@ export function docHandleToServiceWorkerUrl(handle: DocHandle<any>): string {
   const automergeUrl = handle.url;
   return `/automerge/${automergeUrl}/`;
 }
+
+export const useSuggestedModuleForDocUrl = (
+  docUrl: AutomergeUrl | undefined,
+  watcher: ModuleWatcher | null
+) => {
+  const [selectedDoc] = useDocument<HasPatchworkMetadata>(docUrl);
+  const patchworkMetadata = selectedDoc?.["@patchwork"];
+  useEffect(() => {
+    if (!watcher || !patchworkMetadata?.suggestedImportUrl) return;
+
+    console.log(
+      "Found a patchwork recommended modules document",
+      patchworkMetadata
+    );
+    watcher.loadModules([patchworkMetadata.suggestedImportUrl]);
+  }, [patchworkMetadata, watcher]);
+};
 
 export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
   const entryPointUrl = await packageEntryPointUrl(folderDocUrl);
