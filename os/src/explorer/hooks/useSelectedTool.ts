@@ -1,6 +1,9 @@
-import { Tool } from "@patchwork/sdk";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import { AutomergeUrl } from "@automerge/automerge-repo";
+import { HasPatchworkMetadata, Tool } from "@patchwork/sdk";
 import { useMatchingPluginDescriptions, usePlugin } from "@patchwork/sdk/hooks";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useModuleWatcher } from "./useModuleWatcher";
 
 /**
  * Hook to manage tool selection in the Explorer, handling both user-selected tools
@@ -16,7 +19,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
  *    - Instead, we dynamically update to the best available tool until user makes a choice
  *
  * Our solution:
- * - Let the UI reflect the current best default (may flicker briefly while tools load)
+ * - If the document has a suggested import url, we wait until the module is loaded
+ * - If other modules are loaded in the meantime, the UI reflects the current best default (may flicker briefly while tools load)
  * - Once user makes an explicit selection, stick with it (unless tool becomes unavailable)
  * - Reset to default behavior when switching documents
  *
@@ -29,6 +33,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
  *    - Select a specific tool
  *    - Verify selection persists even if tool list updates
  *    - Verify selection clears when switching to a different document
+ * 3. Suggested module:
+ *    - Open a document with a suggested module
+ *    - Verify the suggested module is loaded and the raw viewer doesn't show up first
+ *
  *
  * @param selectedDataTypeId - The ID of the currently selected data type
  * @param selectedDocUrl - The URL of the currently selected document
@@ -45,8 +53,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
  */
 export const useSelectedTool = (
   selectedDataTypeId: string | undefined,
-  selectedDocUrl: string | undefined
+  selectedDocUrl: AutomergeUrl | undefined
 ) => {
+  // load the suggested module for the doc url
+  const isSuggestedModuleLoading = useSuggestedModuleForDocUrl(selectedDocUrl);
+
   // Get all tools compatible with the current datatype
   const { plugins: toolDescriptions } = useMatchingPluginDescriptions<Tool>({
     pluginType: "patchwork:tool",
@@ -99,11 +110,50 @@ export const useSelectedTool = (
   return {
     currentTool,
     currentToolId,
-    isLoadingTool,
+    isLoading: isLoadingTool || isSuggestedModuleLoading,
     handleToolChange,
     toolDescriptions,
     error,
   } as const;
+};
+
+// loads the suggested module for the doc url if it has a suggestedImportUrl
+// return boolean indicating whether the suggested module is still loading
+const useSuggestedModuleForDocUrl = (docUrl?: AutomergeUrl): boolean => {
+  const [selectedDoc] = useDocument<HasPatchworkMetadata>(docUrl);
+  const patchworkMetadata = selectedDoc?.["@patchwork"];
+  const [isLoadingModule, setIsLoadingModule] = useState(true);
+  const watcher = useModuleWatcher();
+
+  const selectedDocIsLoaded = selectedDoc !== undefined;
+
+  useEffect(() => {
+    let aborted = false;
+    if (!watcher) return;
+
+    if (!patchworkMetadata?.suggestedImportUrl) {
+      if (selectedDocIsLoaded) {
+        setIsLoadingModule(false);
+      }
+      return;
+    }
+
+    console.log(
+      "Found a patchwork recommended modules document",
+      patchworkMetadata
+    );
+    watcher.loadModules([patchworkMetadata.suggestedImportUrl]).then(() => {
+      if (!aborted) {
+        setIsLoadingModule(false);
+      }
+    });
+
+    return () => {
+      aborted = true;
+    };
+  }, [patchworkMetadata, watcher, selectedDocIsLoaded]);
+
+  return isLoadingModule;
 };
 
 export type UseSelectedToolResult = ReturnType<typeof useSelectedTool>;

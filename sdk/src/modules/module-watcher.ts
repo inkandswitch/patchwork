@@ -43,7 +43,7 @@ export class ModuleWatcher {
   async loadModules(modules: string[]) {
     await Promise.all(
       modules.map(async (importName) => {
-        this.registerModule(importName);
+        await this.registerModule(importName);
         this.setDocWatcher(importName);
       })
     );
@@ -65,7 +65,7 @@ export class ModuleWatcher {
     if (!mod) return;
 
     if (mod.plugins) {
-      registerPlugins(mod.plugins, importName);
+      await registerPlugins(mod.plugins, importName);
     } else {
       // This is a backwards compatibility shim to handle the way plugins used to be exported, like this:
       // export const tools = [tool1, tool2]
@@ -83,7 +83,7 @@ export class ModuleWatcher {
         }
         return [];
       });
-      registerPlugins(plugins, importName);
+      await registerPlugins(plugins, importName);
     }
   }
 
