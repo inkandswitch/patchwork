@@ -42,11 +42,13 @@ export function useAnnotations({
   dataType,
   diff,
   isCommentInputFocused,
+  showComments,
 }: {
   doc: A.Doc<HasVersionControlMetadata<unknown, unknown>>;
   dataType: DataType | undefined;
   diff?: DiffWithProvenance;
   isCommentInputFocused: boolean;
+  showComments: boolean; // todo: remove this option once resolving cursors is faster
 }): {
   annotations: AnnotationWithUIState<unknown, unknown>[];
   annotationGroups: AnnotationGroupWithUIState<unknown, unknown>[];
@@ -138,7 +140,7 @@ export function useAnnotations({
     const patchesToAnnotations = dataType.module.patchesToAnnotations;
     const valueOfAnchor = dataType.module.valueOfAnchor ?? (() => null);
     const discussions: (PendingDiscussion<unknown> | Discussion<unknown>)[] =
-      Object.values(doc?.discussions ?? []);
+      showComments ? Object.values(doc?.discussions ?? []) : [];
 
     const discussionGroups: AnnotationGroup<unknown, unknown>[] = [];
     const highlightAnnotations: HighlightAnnotation<unknown, unknown>[] = [];

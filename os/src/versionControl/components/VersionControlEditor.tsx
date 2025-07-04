@@ -147,6 +147,7 @@ export const VersionControlEditor: React.FC<{
     doc: cloneOrMainHandleAtHeads?.doc() as A.Doc<HasVersionControlMetadata>,
     dataType,
     isCommentInputFocused,
+    showComments,
     diff: docUIState.highlightChanges ? diff : undefined,
   });
 

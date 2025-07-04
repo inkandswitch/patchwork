@@ -108,6 +108,7 @@ export const FolderEntryView = ({
     doc: cloneOrMainOm?.doc as A.Doc<HasVersionControlMetadata>,
     dataType,
     isCommentInputFocused: false,
+    showComments: false,
     diff: highlightChanges ? diff : undefined,
   });
 
