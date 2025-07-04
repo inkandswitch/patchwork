@@ -29,6 +29,7 @@ import { addNewDocument } from "../docActions";
 import { removeDocPath } from "../docActions";
 import { NoDocumentSelected } from "./NoDocumentSelected";
 import { DevOverlay } from "./DevOverlay";
+import { dataType } from "../../../../packages/folder/dist/datatype";
 
 // A hook that runs any needed data migrations when a doc is selected and fully loaded.
 // We have to be careful to only run:
@@ -105,6 +106,17 @@ export const Explorer: React.FC = () => {
     "patchwork:dataType",
     selectedDataTypeId
   );
+
+  // Reflect title of current document in title of browser
+  useEffect(() => {
+    if (!selectedDataType || !selectedDoc) {
+      document.title = "Patchwork";
+      return;
+    }
+    selectedDataType.module.getTitle(selectedDoc).then((title: string) => {
+      document.title = title;
+    });
+  }, [selectedDataType, selectedDoc]);
 
   useRunMigrationsOnceOnLoad({
     handle: selectedDocHandle,
