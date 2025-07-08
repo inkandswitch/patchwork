@@ -60,7 +60,6 @@ export const TextFileEditor = ({
   docUrl,
   annotations,
   setSelectedAnchors,
-  docPath,
   collapseContentWithoutChanges: collapseContentWithoutAnnotations,
 }: EditorProps<TextAnchor, string>) => {
   // TODO: Only reason we need containerRef is for scrollObserverPlugin.
@@ -101,6 +100,8 @@ export const TextFileEditor = ({
   // esp. since that will dovetail nicely with the upcoming keyhive work
   const readOnly = !!parseAutomergeUrl(docUrl).heads;
 
+  // XXX TODO PVH -- gotta sort out useToolUIState
+  const docPath = [{ type: "file", url: docUrl, name: "Text File Editor" }];
   const [toolUIState, changeToolUIState] = useToolUIState<{
     scrollTopCursor?: Automerge.Cursor;
   }>(docPath, "file", () => ({}));

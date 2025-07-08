@@ -387,7 +387,7 @@ self.addEventListener("fetch", async (event) => {
           // Detect old file format
           if (file?.content?.value) {
             return new Response(
-              "The requested file uses a deprecated storage format (from before 1/14/25) and can't be loaded. You can re-push from Jacquard or open it in the editor to migrate it to the new format.",
+              "The requested file uses a deprecated storage format (from before 1/14/25) and can't be loaded. You can re-push via the CLI or open it in the editor to migrate it to the new format.",
               {
                 status: 500,
                 headers: { "Content-Type": "text/plain" },

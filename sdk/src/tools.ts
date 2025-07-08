@@ -60,8 +60,8 @@ export function makeTool<D extends HasVersionControlMetadata<A, V>, A, V>(
 }
 
 export type EditorProps<A, V> = {
-  docPath: DocPath;
   docUrl: AutomergeUrl;
+
   activeDiscussionIds?: string[];
 
   /** These props are used to display annotations (diff highlights and comment highlights)
@@ -83,10 +83,6 @@ export type EditorProps<A, V> = {
 
   hideInlineComments?: boolean;
   collapseContentWithoutChanges?: boolean;
-
-  // HACK
-  mainDocUrl: AutomergeUrl;
-  activeBranchUrl?: AutomergeUrl;
 };
 
 export type AnnotationsViewProps<

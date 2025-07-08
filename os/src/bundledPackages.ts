@@ -3,7 +3,6 @@ export const BUNDLED_MODULES = [
   "@patchwork/essay",
   "@patchwork/file",
   "@patchwork/folder",
-  "@patchwork/jacquard",
   "@patchwork/kanban",
   "@patchwork/tldraw",
   "@patchwork/my-tools",

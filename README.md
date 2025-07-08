@@ -119,13 +119,13 @@ First, here's a quick orientation — this monorepo (managed with pnpm workspace
 
 ### Prereq
 
-A prerequisite is to install the jacquard cli which is used to push to automerge.
+A prerequisite is to install the patchwork cli which is used to push to automerge.
 
 First install [bun](https://bun.sh/). Then run:
 
-`cd jacquard-cli`
+`cd patchwork-cli`
 `pnpm i`
-`npm link`
+`pnpm link --global`
 
 ### Editing a module
 
@@ -146,7 +146,7 @@ If the package is bundled:
 One thing you can do is to push the package into Automerge temporarily:
 
 `cd packages/<yourpackage`
-`jacquard push`
+`patchwork push`
 
 and then register the resulting folder as a custom tool.
 
@@ -171,7 +171,7 @@ If you want to add a package, here are the steps:
 
 This output should say something like: `pushing to folder: automerge:<docid>`
 
-Now, to install your module in Patchwork: in the UI you can go to "My Tools" and register a new module at the given automerge url. Or, on the CLI you can run `jacquard install --moduleUrl <your-automerge-url>`.
+Now, to install your module in Patchwork: in the UI you can go to "My Tools" and register a new module at the given automerge url. Or, on the CLI you can run `patchwork install --moduleUrl <your-automerge-url>`.
 
 Now in Patchwork when you click "create new" you should see a new option letting you create a doc of your new datatype.
 Click that and you should see your new tool running!
@@ -224,7 +224,7 @@ counter/package.json:
   },
   "scripts": {
     "build": "vite build",
-    "push": "pnpm build && jacquard push",
+    "push": "pnpm build && patchwork push",
     "watch": "nodemon --watch src -e js,tsx,ts,tsx,css,json --exec 'pnpm build && pnpm push'"
   },
   "keywords": [],
@@ -419,7 +419,7 @@ This will give you an automerge URL for a Patchwork folder.
 
 You can install the tool into your Patchwork account by copying this automerge URL into the My Tools UI, or you can also install via CLI:
 
-`jacquard install --moduleUrl <your-automerge-url>`
+`patchwork install --moduleUrl <your-automerge-url>`
 
 ### SDK functions
 

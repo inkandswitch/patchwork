@@ -4,7 +4,6 @@ import { EditorPropsWithTool } from "@patchwork/sdk/versionControl";
 /* Wrapper component that dispatches to the tool for the doc type */
 export const DocEditor = <T, V>({
   tool,
-  docPath,
   docUrl,
   annotations,
   annotationGroups,
@@ -14,8 +13,6 @@ export const DocEditor = <T, V>({
   setSelectedAnnotationGroupId,
   setHoveredAnnotationGroupId,
   setCommentState,
-  mainDocUrl,
-  activeBranchUrl,
   collapseContentWithoutChanges,
 }: EditorPropsWithTool<T, V>) => {
   if (!tool) {
@@ -26,7 +23,6 @@ export const DocEditor = <T, V>({
 
   return (
     <Component
-      docPath={docPath}
       docUrl={docUrl}
       annotations={annotations}
       annotationGroups={annotationGroups}
@@ -37,8 +33,6 @@ export const DocEditor = <T, V>({
       setSelectedAnnotationGroupId={setSelectedAnnotationGroupId}
       setHoveredAnnotationGroupId={setHoveredAnnotationGroupId}
       setCommentState={setCommentState}
-      mainDocUrl={mainDocUrl}
-      activeBranchUrl={activeBranchUrl}
     />
   );
 };

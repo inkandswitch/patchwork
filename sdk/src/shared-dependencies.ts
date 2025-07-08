@@ -33,7 +33,6 @@ export const SHARED_MODULES = {
   "@patchwork/essay": "file:../packages/essay",
   "@patchwork/file": "file:../packages/file",
   "@patchwork/folder": "file:../packages/folder",
-  "@patchwork/jacquard": "file:../packages/jacquard",
   "@patchwork/kanban": "file:../packages/kanban",
   "@patchwork/my-tools": "file:../packages/my-tools",
   "@patchwork/raw-editor": "file:../packages/raw-editor",

@@ -44,20 +44,6 @@ import { useToast } from "@patchwork/sdk/ui";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 
-import {
-  BuildRefreshButton,
-  DisabledBuildRefreshButton,
-} from "@patchwork/jacquard/components";
-import { getStalenessInfo, ProjectState } from "@patchwork/jacquard";
-import {
-  fetchJacquardProjectInfoWithActiveBranch,
-  JacquardProjectInfo,
-} from "@patchwork/jacquard/hooks";
-import {
-  fetchProjectStateFromProjectInfo,
-  getBuildRunsWithDocAsPrimaryInput,
-} from "@patchwork/jacquard/signals";
-
 import truncate from "lodash-es/truncate";
 
 import {
@@ -191,30 +177,6 @@ export const VersionControlBar = ({
 
   const isInsideBranchScope =
     isRealBranchScope && branchScopeOm?.url !== docLink.url;
-
-  const jacquardProjectInfo = useAsyncComputed(
-    useCallback(() => {
-      fetchAwaitMissing(account);
-      return fetchJacquardProjectInfoWithActiveBranch(docPath, account, repo);
-    }, [account, docPath, repo])
-  ).ifPending(undefined).value;
-
-  const projectState = useAsyncComputed(
-    useCallback(() => {
-      fetchAwaitMissing(jacquardProjectInfo);
-      return fetchProjectStateFromProjectInfo(jacquardProjectInfo, repo);
-    }, [jacquardProjectInfo, repo])
-  ).ifPending(undefined).value;
-
-  const buildRunWithFileAsInput = useMemo(
-    () =>
-      projectState &&
-      getBuildRunsWithDocAsPrimaryInput(projectState, docLink.url),
-    [projectState, docLink.url]
-  );
-
-  const hasOutputFiles =
-    buildRunWithFileAsInput && buildRunWithFileAsInput.length > 0;
 
   // const rebaseBranch = (draftUrl: AutomergeUrl) => {
   //   const draftHandle =
@@ -497,17 +459,6 @@ export const VersionControlBar = ({
         )}
       </div>
 
-      {jacquardProjectInfo && projectState && (
-        <>
-          {VerticalSeparator}
-          <JacquardSection
-            jacquardProjectInfo={jacquardProjectInfo}
-            projectState={projectState}
-            datatypeId={docLink.type}
-          />
-        </>
-      )}
-
       {VerticalSeparator}
 
       {/* View mode selector */}
@@ -543,14 +494,6 @@ export const VersionControlBar = ({
                   Show just this doc
                 </div>
               </SelectItem>
-              {hasOutputFiles && (
-                <SelectItem value="showOutputs">
-                  <div className="flex gap-2">
-                    <ArrowRightFromLineIcon className="h-4 w-4" />
-                    Show with build outputs
-                  </div>
-                </SelectItem>
-              )}
               {activeBranchOm && (
                 <SelectItem value="compareWithMain">
                   <div className="flex gap-2">
@@ -817,64 +760,5 @@ const BranchActions: React.FC<{
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-};
-
-const JacquardSection = ({
-  jacquardProjectInfo,
-  projectState,
-  datatypeId,
-}: {
-  jacquardProjectInfo: JacquardProjectInfo;
-  projectState: ProjectState;
-  datatypeId: string;
-}) => {
-  const stalenessInfo = getStalenessInfo(projectState);
-
-  const numStaleDocs = stalenessInfo
-    ? Object.values(stalenessInfo.docStatuses).reduce(
-        (acc, docStatus) => acc + docStatus.length,
-        0
-      )
-    : 0;
-
-  const enableRefreshButton =
-    jacquardProjectInfo?.buildMetadataOm && numStaleDocs > 0;
-
-  return (
-    <div className="flex flex-col gap-0.5">
-      {enableRefreshButton ? (
-        <BuildRefreshButton
-          projectBuildMetadataOm={jacquardProjectInfo.buildMetadataOm}
-          projectState={projectState}
-          alignTooltip="start"
-        />
-      ) : (
-        <DisabledBuildRefreshButton />
-      )}
-
-      <div className="text-xs text-gray-500">
-        {numStaleDocs > 0 && (
-          <span>
-            {numStaleDocs} file{numStaleDocs > 1 && "s"} to rebuild
-          </span>
-        )}
-        {numStaleDocs === 0 && <span>project up to date</span>}
-        {datatypeId !== "jacquard-build-metadata" && (
-          <span
-            className="underline cursor-pointer ml-1"
-            onClick={() =>
-              selectDocLink({
-                url: jacquardProjectInfo.buildMetadataMainDocUrl,
-                name: "Build Metadata",
-                type: "jacquard-build-metadata",
-              })
-            }
-          >
-            see details
-          </span>
-        )}
-      </div>
-    </div>
   );
 };

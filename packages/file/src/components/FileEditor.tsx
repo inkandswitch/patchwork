@@ -1,23 +1,7 @@
-import { useCurrentAccount, EditorProps } from "@patchwork/sdk";
-import {
-  fetchFlatMap,
-  fetchMap,
-  useAsyncComputed,
-  fetchAwaitMissing,
-} from "@patchwork/sdk/async-signals";
-import { useDocUIState } from "@patchwork/sdk/router";
+import { EditorProps } from "@patchwork/sdk";
 import { TextAnchor } from "@patchwork/sdk/textAnchors";
-import { fetchResolveUrlOnFixedBranch } from "@patchwork/sdk/versionControl";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
 
-import * as Automerge from "@automerge/automerge";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-
-import { useCallback } from "react";
-import { fetchJacquardProjectInfoWithActiveBranch } from "@patchwork/jacquard/hooks";
-import {
-  getBuildRunsWithDocAsPrimaryInput,
-  fetchProjectStateFromProjectInfo,
-} from "@patchwork/jacquard/signals";
 import { isRawStringFileDoc } from "../datatype";
 import { FileDoc } from "../types";
 import { isImageFile } from "../utils";
@@ -33,51 +17,7 @@ import { LongTextFileViewer } from "./LongTextFileViewer";
 // if this tool supports the data type
 
 export const FileEditor = (props: EditorProps<any, any>) => {
-  const { docPath, docUrl, mainDocUrl, activeBranchUrl } = props;
-
-  const [docUIState] = useDocUIState(docPath);
-
-  const [doc] = useDocument<FileDoc>(docUrl);
-
-  const repo = useRepo();
-  const account = useCurrentAccount();
-
-  const outputFiles = useAsyncComputed(
-    useCallback(() => {
-      fetchAwaitMissing(account);
-      const jacquardProjectInfo = fetchJacquardProjectInfoWithActiveBranch(
-        docPath,
-        account,
-        repo
-      );
-      if (!jacquardProjectInfo) {
-        return;
-      }
-      const projectState = fetchProjectStateFromProjectInfo(
-        jacquardProjectInfo,
-        repo
-      );
-      const buildRuns = getBuildRunsWithDocAsPrimaryInput(
-        projectState,
-        mainDocUrl
-      );
-      return fetchFlatMap(buildRuns, (buildRun) =>
-        fetchMap(buildRun.outputs, (output) =>
-          activeBranchUrl
-            ? {
-                ...output,
-                docUrl: fetchResolveUrlOnFixedBranch(
-                  output.docUrl,
-                  activeBranchUrl,
-                  repo
-                ).url,
-                mainDocUrl: output.docUrl,
-              }
-            : { ...output, mainDocUrl: output.docUrl }
-        )
-      );
-    }, [account, docPath, repo, mainDocUrl, activeBranchUrl])
-  ).ifPending(undefined).value;
+  const [doc] = useDocument<FileDoc>(props.docUrl);
 
   if (!doc) {
     return null;
@@ -86,7 +26,6 @@ export const FileEditor = (props: EditorProps<any, any>) => {
   return (
     <div className="h-full flex">
       <div className="overflow-auto h-full flex-1">
-        {" "}
         {isTextFile(doc) && !isRawStringFileDoc(doc) ? (
           <TextFileEditor {...(props as EditorProps<TextAnchor, string>)} />
         ) : isTextFile(doc) && isRawStringFileDoc(doc) ? (
@@ -107,20 +46,6 @@ export const FileEditor = (props: EditorProps<any, any>) => {
           </>
         )}
       </div>
-      {docUIState.mainViewMode === "showOutputs" && (
-        <div className="flex-1 overflow-auto border-l border-gray-200">
-          {outputFiles
-            ? outputFiles.map(({ docUrl, mainDocUrl }) => (
-                <FileEditor
-                  key={docUrl}
-                  {...props}
-                  docUrl={docUrl}
-                  mainDocUrl={mainDocUrl}
-                />
-              ))
-            : "Loading..."}
-        </div>
-      )}
     </div>
   );
 };

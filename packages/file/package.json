@@ -28,7 +28,6 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.37.1",
     "@patchwork/folder": "workspace:*",
-    "@patchwork/jacquard": "workspace:*",
     "@patchwork/sdk": "workspace:*",
     "@wojtekmaj/react-hooks": "^1.22.0",
     "clsx": "^2.1.1",

@@ -1,8 +1,8 @@
 import { ErrorFallback } from "@patchwork/sdk/components";
-import { selectDocLink, DocPath, DocPathUtils } from "@patchwork/sdk/router";
+import { selectDocLink } from "@patchwork/sdk/router";
 import { useDocUIState } from "@patchwork/sdk/router";
 import { Icon, IconType } from "@patchwork/sdk/ui";
-import { type EditorProps, DataType, Tool } from "@patchwork/sdk";
+import { type EditorProps, DataType, DocLink, Tool } from "@patchwork/sdk";
 import { useMatchingPluginDescriptions, usePlugin } from "@patchwork/sdk/hooks";
 import { useAnnotations } from "@patchwork/sdk/versionControl";
 import { useBranchScopeAndActiveBranchInfo } from "@patchwork/sdk/versionControl";
@@ -19,13 +19,14 @@ import { decodeHeads } from "@automerge/automerge-repo";
 export const FolderViewerWithEmbeds: React.FC<
   EditorProps<unknown, unknown>
 > = ({
-  docPath,
   docUrl,
   collapseContentWithoutChanges: collapseContentWithoutAnnotations,
 }: EditorProps<unknown, unknown>) => {
   const [folder] = useDocument<FolderDoc>(docUrl); // used to trigger re-rendering when the doc loads
 
-  const [docUIState] = useDocUIState(docPath);
+  const [docUIState] = useDocUIState([
+    { type: "folder", url: docUrl, name: "PVH TODO: Folder Viewer" },
+  ]);
 
   if (!folder) {
     return null;
@@ -41,7 +42,7 @@ export const FolderViewerWithEmbeds: React.FC<
       <div className="flex flex-col gap-10 px-4 h-full overflow-y-auto pb-24">
         {folder.docs.map((docLink, index) => (
           <FolderEntryView
-            docPath={[...docPath, docLink]}
+            docLink={docLink}
             key={index}
             collapseContentWithoutChanges={
               collapseContentWithoutAnnotations ?? false
@@ -55,41 +56,54 @@ export const FolderViewerWithEmbeds: React.FC<
 };
 
 type FolderEntryView = {
-  docPath: DocPath;
+  docLink: DocLink;
   collapseContentWithoutChanges: boolean;
   highlightChanges: boolean;
 };
 
 export const FolderEntryView = ({
-  docPath,
+  docLink,
   collapseContentWithoutChanges,
   highlightChanges,
 }: FolderEntryView) => {
-  const docLink = DocPathUtils.toLink(docPath);
-  const branchState = useBranchScopeAndActiveBranchInfo(docPath);
+  // PVH TODO
+  // I'm not pushing down the docPath anymore so we fake it here but this
+  // is going to break the branch scope stuff
+
+  /** First, we dereference the branch scope and active branch info from the docLink */
+  // This is broken by my removal of docPath.
+  const branchState = useBranchScopeAndActiveBranchInfo([docLink]);
   const branchScopeAndActiveBranchInfo =
     branchState.status === "ready" ? branchState.data : undefined;
   const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
+  // Now we get the dataType... for reasons?
   const { plugin: dataType } = usePlugin<DataType>(
     "patchwork:dataType",
     docLink.type
   );
+
+  // Next the tool *descriptions*
 
   const { plugins: toolDescriptions } = useMatchingPluginDescriptions<Tool>({
     pluginType: "patchwork:tool",
     matchField: "supportedDataTypes",
     matchValue: docLink.type,
   });
+
+  // And now the tool. Okay, that's the full set.
   const { plugin: tool } = usePlugin<Tool>(
     "patchwork:tool",
     toolDescriptions.length > 0 ? toolDescriptions[0].id : "",
     { load: true }
   );
 
+  // Maybe to guess the icon? We should pick a lane here.
   const icon = tool?.icon ?? dataType?.icon;
 
   // TODO: we shouldn't have to duplicate this code here, also right now the change highlights can't be disabled
+
+  // Alright, for some reason we're calculating diffs here. That's a whole vibe.
   const diff = useMemo(() => {
     if (!branchScopeAndActiveBranchInfo) {
       return;
@@ -104,6 +118,7 @@ export const FolderEntryView = ({
     }
   }, [branchScopeAndActiveBranchInfo, docLink.url]);
 
+  // And... now annotations? Why are we doing annotations?
   const annotationProps = useAnnotations({
     doc: cloneOrMainOm?.doc as A.Doc<HasVersionControlMetadata>,
     dataType,
@@ -112,6 +127,7 @@ export const FolderEntryView = ({
     diff: highlightChanges ? diff : undefined,
   });
 
+  // Annotation ... props? With filtered annotations?
   const annotationPropsWithFilteredAnnotations = useMemo(
     () => ({
       ...annotationProps,
@@ -131,7 +147,9 @@ export const FolderEntryView = ({
     [annotationProps, collapseContentWithoutChanges]
   );
 
-  // Handle error state
+  // Handle error state if the branch won't load
+  // this is different from the document not loading
+  // and honestly this whole thing is a disaster and we should delete all of it
   if (branchState.status === "error") {
     return (
       <div className="h-72">
@@ -145,6 +163,10 @@ export const FolderEntryView = ({
     );
   }
 
+  // The folder viewer can hide unchanged documents
+  // ahh, this explains all the business with the annotations.
+  // If we don't have annotations (and we've toggled on collapseContent) then we hide this document.
+  // This is expensive. Is there a cleaner approach?
   if (
     collapseContentWithoutChanges &&
     annotationProps.annotations.length === 0
@@ -152,13 +174,14 @@ export const FolderEntryView = ({
     return null;
   }
 
+  // And at last, here, we have the tool itself.
+  // mainDocUrl is the main-branch url.
+  // note that we exclude folders; the recursion would destroy us
   const toolView =
     cloneOrMainOm && tool && docLink.type !== "folder" ? (
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <tool.module.EditorComponent
-          docPath={docPath}
           docUrl={cloneOrMainOm.url}
-          mainDocUrl={docLink.url}
           collapseContentWithoutChanges={collapseContentWithoutChanges}
           {...annotationPropsWithFilteredAnnotations}
         />
@@ -173,6 +196,7 @@ export const FolderEntryView = ({
         </div>
       ) : (
         <>
+          {/* This is the header bar */}
           <div className="flex gap-2 items-center font-medium mb-1">
             <Icon type={icon as IconType} size={16} />
             <div>{docLink.name}</div>
@@ -186,6 +210,7 @@ export const FolderEntryView = ({
             </button>
           </div>
 
+          {/* Here we mount the display -- but only when visible */}
           <div className="border border-gray-300">
             {!tool && <div>No editor available</div>}
             {toolView &&

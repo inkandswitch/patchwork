@@ -16,8 +16,6 @@ import {
   AutomergeUrl,
   decodeHeads,
   encodeHeads,
-  parseAutomergeUrl,
-  stringifyAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import * as A from "@automerge/automerge";
@@ -383,7 +381,6 @@ export const VersionControlEditor: React.FC<{
                   <SideBySide
                     key={cloneOrMainHandleAtHeads.url}
                     tool={tool}
-                    docPath={docPath}
                     docUrl={cloneOrMainHandleAtHeads.url}
                     annotations={filteredAnnotations}
                     annotationGroups={filteredAnnotationGroups}
@@ -397,15 +394,11 @@ export const VersionControlEditor: React.FC<{
                     }
                     setCommentState={setCommentState}
                     mainDocUrl={docLink.url}
-                    activeBranchUrl={
-                      branchScopeAndActiveBranchInfo.activeBranchOm?.url
-                    }
                   />
                 ) : (
                   <DocEditor
                     key={cloneOrMainHandleAtHeads.url}
                     tool={tool}
-                    docPath={docPath}
                     docUrl={cloneOrMainHandleAtHeads.url}
                     annotations={filteredAnnotations}
                     annotationGroups={filteredAnnotationGroups}
@@ -418,10 +411,6 @@ export const VersionControlEditor: React.FC<{
                       collapseContentWithoutChanges
                     }
                     setCommentState={setCommentState}
-                    mainDocUrl={docLink.url}
-                    activeBranchUrl={
-                      branchScopeAndActiveBranchInfo.activeBranchOm?.url
-                    }
                   />
                 )}
               </div>
