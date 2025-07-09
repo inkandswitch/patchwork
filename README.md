@@ -125,7 +125,7 @@ First install [bun](https://bun.sh/). Then run:
 
 `cd patchwork-cli`
 `pnpm i`
-`pnpm link --global`
+`npm link`
 
 ### Editing a module
 
