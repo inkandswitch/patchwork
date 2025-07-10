@@ -15,8 +15,10 @@ import {
 } from "@patchwork/sdk/ui";
 import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
 import { useToast } from "@patchwork/sdk/ui";
-import { Tool } from "@patchwork/sdk";
-import { HasVersionControlMetadata } from "@patchwork/sdk/versionControl";
+import {
+  HasVersionControlMetadata,
+  useBranchScopeAndActiveBranchInfo,
+} from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
 import { Doc, DocHandle, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -59,7 +61,6 @@ export const Topbar: React.FC<TopbarProps> = ({
   setShowSidebar,
   selectDocPath,
   selectedDocPath,
-  selectedDoc,
   selectedDocHandle,
   tools,
   currentToolId,
@@ -77,6 +78,12 @@ export const Topbar: React.FC<TopbarProps> = ({
   const selectedDataTypeId = selectedDocLink?.type;
   const selectedDataTypeRef = useRef<string>();
   selectedDataTypeRef.current = selectedDataTypeId;
+
+  const branchState = useBranchScopeAndActiveBranchInfo(selectedDocPath);
+  const branchScopeAndActiveBranchInfo =
+    branchState.status === "ready" ? branchState.data : undefined;
+
+  const cloneOrMainOm = branchScopeAndActiveBranchInfo?.cloneOrMainOm;
 
   const { plugin: selectedDataType } = usePlugin<DataType>(
     "patchwork:dataType",
@@ -160,11 +167,11 @@ export const Topbar: React.FC<TopbarProps> = ({
   };
 
   const onClickExport = async (method: ExportMethod) => {
-    if (!selectedDoc || !selectedDocLink) {
+    if (!cloneOrMainOm || !selectedDocLink) {
       throw new Error("something unexpected is missing idk");
     }
 
-    const file = await method.module.exportData(selectedDoc, repo);
+    const file = await method.module.exportData(cloneOrMainOm.doc, repo);
     const extension = file.name.split(".").pop();
 
     saveFile(file, [
@@ -271,7 +278,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 Copy Automerge URL
               </DropdownMenuItem>
 
-              {selectedDoc && (
+              {cloneOrMainOm && (
                 <>
                   <DropdownMenuItem onClick={onClickMakeCopy}>
                     <GitForkIcon
@@ -314,7 +321,7 @@ export const Topbar: React.FC<TopbarProps> = ({
             </DropdownMenuContent>
           )}
 
-          {!selectedDoc && !selectedDocPath && (
+          {!cloneOrMainOm && !selectedDocPath && (
             <DropdownMenuContent className="mr-4 p-4">
               <div className="text-gray-500 text-xs">
                 Open a document to see actions
