@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@automerge/automerge': 3.0.0-beta.4
+  '@automerge/automerge': 3.0.0
 
 importers:
 
@@ -39,7 +39,7 @@ importers:
         specifier: ^21.1.1
         version: 21.1.1
 
-  os: {dependencies: {'@automerge/automerge': {specifier: 3.0.0-beta.4, version: 3.0.0-beta.4}, '@automerge/automerge-repo': {specifier: ^2.0.7, version: 2.0.7}, '@automerge/automerge-repo-network-messagechannel': {specifier: ^2.0.7, version: 2.0.7}, '@automerge/automerge-repo-network-websocket': {specifier: ^2.0.7, version: 2.0.7}, '@automerge/automerge-repo-react-hooks': {specifier: ^2.0.7, version: 2.0.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@automerge/automerge-repo-storage-indexeddb': {specifier: ^2.0.7, version: 2.0.7}, '@patchwork/file': {specifier: workspace:*, version: link:../packages/file}, '@patchwork/folder': {specifier: workspace:*, version: link:../packages/folder}, '@patchwork/sdk': {specifier: workspace:*, version: link:../sdk}, '@tailwindcss/container-queries': {specifier: ^0.1.1, version: 0.1.1(tailwindcss@4.1.8)}, '@xstate/react': {specifier: ^4.1.3, version: 4.1.3(@types/react@18.3.23)(react@18.3.1)(xstate@5.19.4)}, class-variance-authority: {specifier: ^0.7.1, version: 0.7.1}, esbuild: {specifier: ^0.23.1, version: 0.23.1}, lodash-es: {specifier: ^4.17.21, version: 4.17.21}, lucide-react: {specifier: ^0.456.0, version: 0.456.0(react@18.3.1)}, react: {specifier: ^18.3.1, version: 18.3.1}, react-arborist: {specifier: ^3.4.3, version: 3.4.3(@types/hoist-non-react-statics@3.3.6)(@types/node@20.17.57)(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, react-dom: {specifier: ^18.3.1, version: 18.3.1(react@18.3.1)}, react-error-boundary: {specifier: ^4.1.2, version: 4.1.2(react@18.3.1)}, react-markdown: {specifier: ^9.1.0, version: 9.1.0(@types/react@18.3.23)(react@18.3.1)}, tailwindcss-animate: {specifier: ^1.0.7, version: 1.0.7(tailwindcss@4.1.8)}, use-resize-observer: {specifier: ^9.1.0, version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, xstate: {specifier: ^5.19.4, version: 5.19.4}}, devDependencies: {'@jspm/generator': {specifier: ^2.6.1, version: 2.6.1}, '@playwright/test': {specifier: ^1.48.0, version: 1.53.0}, '@tailwindcss/postcss': {specifier: ^4.1.8, version: 4.1.8}, '@tailwindcss/vite': {specifier: ^4.1.8, version: 4.1.8(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, '@types/lodash-es': {specifier: ^4.17.12, version: 4.17.12}, '@types/node': {specifier: ^20.17.57, version: 20.17.57}, '@types/react': {specifier: ^18.3.23, version: 18.3.23}, '@types/react-dom': {specifier: ^18.3.7, version: 18.3.7(@types/react@18.3.23)}, '@types/uuid': {specifier: ^10.0.0, version: 10.0.0}, '@typescript-eslint/eslint-plugin': {specifier: ^6.21.0, version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)}, '@typescript-eslint/parser': {specifier: ^6.21.0, version: 6.21.0(eslint@8.57.1)(typescript@5.8.3)}, '@vitejs/plugin-react': {specifier: ^4.5.1, version: 4.5.1(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, eslint: {specifier: ^8.57.1, version: 8.57.1}, eslint-plugin-react-hooks: {specifier: ^4.6.2, version: 4.6.2(eslint@8.57.1)}, eslint-plugin-react-refresh: {specifier: ^0.4.20, version: 0.4.20(eslint@8.57.1)}, jsdom: {specifier: ^22.1.0, version: 22.1.0}, pnpm: {specifier: ^8.15.9, version: 8.15.9}, tailwindcss: {specifier: ^4.1.8, version: 4.1.8}, typescript: {specifier: ^5.8.3, version: 5.8.3}, vite: {specifier: ^5.4.19, version: 5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0)}, vite-plugin-top-level-await: {specifier: ^1.5.0, version: 1.5.0(@swc/helpers@0.5.17)(rollup@4.41.1)(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, vite-plugin-wasm: {specifier: ^3.4.1, version: 3.4.1(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, vitest: {specifier: ^2.1.9, version: 2.1.9(@types/node@20.17.57)(@vitest/ui@2.1.9)(jsdom@22.1.0)(lightningcss@1.30.1)(terser@5.37.0)}}}
+  os: {dependencies: {'@automerge/automerge': {specifier: 3.0.0, version: 3.0.0}, '@automerge/automerge-repo': {specifier: ^2.0.7, version: 2.0.7}, '@automerge/automerge-repo-network-messagechannel': {specifier: ^2.0.7, version: 2.0.7}, '@automerge/automerge-repo-network-websocket': {specifier: ^2.0.7, version: 2.0.7}, '@automerge/automerge-repo-react-hooks': {specifier: ^2.0.7, version: 2.0.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, '@automerge/automerge-repo-storage-indexeddb': {specifier: ^2.0.7, version: 2.0.7}, '@patchwork/file': {specifier: workspace:*, version: link:../packages/file}, '@patchwork/folder': {specifier: workspace:*, version: link:../packages/folder}, '@patchwork/sdk': {specifier: workspace:*, version: link:../sdk}, '@tailwindcss/container-queries': {specifier: ^0.1.1, version: 0.1.1(tailwindcss@4.1.8)}, '@xstate/react': {specifier: ^4.1.3, version: 4.1.3(@types/react@18.3.23)(react@18.3.1)(xstate@5.19.4)}, class-variance-authority: {specifier: ^0.7.1, version: 0.7.1}, esbuild: {specifier: ^0.23.1, version: 0.23.1}, lodash-es: {specifier: ^4.17.21, version: 4.17.21}, lucide-react: {specifier: ^0.456.0, version: 0.456.0(react@18.3.1)}, react: {specifier: ^18.3.1, version: 18.3.1}, react-arborist: {specifier: ^3.4.3, version: 3.4.3(@types/hoist-non-react-statics@3.3.6)(@types/node@20.17.57)(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, react-dom: {specifier: ^18.3.1, version: 18.3.1(react@18.3.1)}, react-error-boundary: {specifier: ^4.1.2, version: 4.1.2(react@18.3.1)}, react-markdown: {specifier: ^9.1.0, version: 9.1.0(@types/react@18.3.23)(react@18.3.1)}, tailwindcss-animate: {specifier: ^1.0.7, version: 1.0.7(tailwindcss@4.1.8)}, use-resize-observer: {specifier: ^9.1.0, version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)}, xstate: {specifier: ^5.19.4, version: 5.19.4}}, devDependencies: {'@jspm/generator': {specifier: ^2.6.1, version: 2.6.1}, '@playwright/test': {specifier: ^1.48.0, version: 1.53.0}, '@tailwindcss/postcss': {specifier: ^4.1.8, version: 4.1.8}, '@tailwindcss/vite': {specifier: ^4.1.8, version: 4.1.8(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, '@types/lodash-es': {specifier: ^4.17.12, version: 4.17.12}, '@types/node': {specifier: ^20.17.57, version: 20.17.57}, '@types/react': {specifier: ^18.3.23, version: 18.3.23}, '@types/react-dom': {specifier: ^18.3.7, version: 18.3.7(@types/react@18.3.23)}, '@types/uuid': {specifier: ^10.0.0, version: 10.0.0}, '@typescript-eslint/eslint-plugin': {specifier: ^6.21.0, version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)}, '@typescript-eslint/parser': {specifier: ^6.21.0, version: 6.21.0(eslint@8.57.1)(typescript@5.8.3)}, '@vitejs/plugin-react': {specifier: ^4.5.1, version: 4.5.1(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, eslint: {specifier: ^8.57.1, version: 8.57.1}, eslint-plugin-react-hooks: {specifier: ^4.6.2, version: 4.6.2(eslint@8.57.1)}, eslint-plugin-react-refresh: {specifier: ^0.4.20, version: 0.4.20(eslint@8.57.1)}, jsdom: {specifier: ^22.1.0, version: 22.1.0}, pnpm: {specifier: ^8.15.9, version: 8.15.9}, tailwindcss: {specifier: ^4.1.8, version: 4.1.8}, typescript: {specifier: ^5.8.3, version: 5.8.3}, vite: {specifier: ^5.4.19, version: 5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0)}, vite-plugin-top-level-await: {specifier: ^1.5.0, version: 1.5.0(@swc/helpers@0.5.17)(rollup@4.41.1)(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, vite-plugin-wasm: {specifier: ^3.4.1, version: 3.4.1(vite@5.4.19(@types/node@20.17.57)(lightningcss@1.30.1)(terser@5.37.0))}, vitest: {specifier: ^2.1.9, version: 2.1.9(@types/node@20.17.57)(@vitest/ui@2.1.9)(jsdom@22.1.0)(lightningcss@1.30.1)(terser@5.37.0)}}}
 
   packages/anthropic:
     dependencies:
@@ -75,8 +75,8 @@ importers:
   packages/datagrid:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.4
-        version: 3.0.0-beta.4
+        specifier: 3.0.0
+        version: 3.0.0
       '@automerge/automerge-repo-react-hooks':
         specifier: ^2.0.7
         version: 2.0.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -130,8 +130,8 @@ importers:
   packages/essay:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.4
-        version: 3.0.0-beta.4
+        specifier: 3.0.0
+        version: 3.0.0
       '@automerge/automerge-codemirror':
         specifier: ^0.1.0
         version: 0.1.0
@@ -227,8 +227,8 @@ importers:
   packages/file:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.4
-        version: 3.0.0-beta.4
+        specifier: 3.0.0
+        version: 3.0.0
       '@automerge/automerge-codemirror':
         specifier: ^0.1.0
         version: 0.1.0
@@ -336,8 +336,8 @@ importers:
   packages/folder:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.4
-        version: 3.0.0-beta.4
+        specifier: 3.0.0
+        version: 3.0.0
       '@automerge/automerge-repo':
         specifier: ^2.0.7
         version: 2.0.7
@@ -397,8 +397,8 @@ importers:
   packages/kanban:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.4
-        version: 3.0.0-beta.4
+        specifier: 3.0.0
+        version: 3.0.0
       '@automerge/automerge-repo':
         specifier: ^2.0.7
         version: 2.0.7
@@ -562,8 +562,8 @@ importers:
   packages/raw-editor:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.4
-        version: 3.0.0-beta.4
+        specifier: 3.0.0
+        version: 3.0.0
       '@automerge/automerge-repo':
         specifier: ^2.0.7
         version: 2.0.7
@@ -611,8 +611,8 @@ importers:
   packages/tldraw:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.4
-        version: 3.0.0-beta.4
+        specifier: 3.0.0
+        version: 3.0.0
       '@automerge/automerge-repo':
         specifier: ^2.0.7
         version: 2.0.7
@@ -663,8 +663,8 @@ importers:
   patchwork-cli:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.4
-        version: 3.0.0-beta.4
+        specifier: 3.0.0
+        version: 3.0.0
       '@automerge/automerge-repo':
         specifier: ^2.0.7
         version: 2.0.7
@@ -727,8 +727,8 @@ importers:
   sdk:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.0.0-beta.4
-        version: 3.0.0-beta.4
+        specifier: 3.0.0
+        version: 3.0.0
       '@automerge/automerge-codemirror':
         specifier: ^0.1.0
         version: 0.1.0
@@ -963,7 +963,7 @@ packages:
   '@automerge/automerge-repo@2.0.7':
     resolution: {integrity: sha512-mesv+b5KfN3L1pQCgy2yjhC3Yvg9FttzaFdbDCQ7p/Eed44npPByiB4TXHOzf2tlehAjBB7V5ruejxCRB3NAzQ==}
 
-  '@automerge/automerge@3.0.0-beta.4':
+  '@automerge/automerge@3.0.0':
     resolution: {integrity: sha512-eI3aGxd2RxhXJevza5LWi9JFb4pmgdWcijrADasJnhwkzXptAMGlhEaJEalesF5Z789DIDA+BJrXOuKNqOp5yg==}
 
   '@babel/code-frame@7.27.1':
@@ -6710,7 +6710,7 @@ snapshots:
 
   '@automerge/automerge-codemirror@0.1.0':
     dependencies:
-      '@automerge/automerge': 3.0.0-beta.4
+      '@automerge/automerge': 3.0.0
       '@codemirror/state': 6.5.2
       '@codemirror/view': 6.37.1
       codemirror: 6.0.1
@@ -6738,7 +6738,7 @@ snapshots:
 
   '@automerge/automerge-repo-react-hooks@2.0.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@automerge/automerge': 3.0.0-beta.4
+      '@automerge/automerge': 3.0.0
       '@automerge/automerge-repo': 2.0.7
       eventemitter3: 5.0.1
       react: 18.3.1
@@ -6762,7 +6762,7 @@ snapshots:
 
   '@automerge/automerge-repo@2.0.7':
     dependencies:
-      '@automerge/automerge': 3.0.0-beta.4
+      '@automerge/automerge': 3.0.0
       bs58check: 3.0.1
       cbor-x: 1.6.0
       debug: 4.4.1
@@ -6773,7 +6773,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@automerge/automerge@3.0.0-beta.4': {}
+  '@automerge/automerge@3.0.0': {}
 
   '@babel/code-frame@7.27.1':
     dependencies:
