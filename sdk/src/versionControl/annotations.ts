@@ -229,8 +229,8 @@ export function useAnnotations({
       });
 
       discussionGroups.push({
-        annotations: discussionHighlightAnnotations.concat(
-          overlappingAnnotations
+        annotations: filterOutDuplicateHighlightAnnotations(
+          discussionHighlightAnnotations.concat(overlappingAnnotations)
         ),
         discussion: "id" in discussion ? discussion : undefined,
       });
@@ -533,4 +533,19 @@ export function groupAnnotations<D, T, V>(
       annotations.map((annotation) => [annotation]));
 
   return grouper(annotations) as Annotation<T, V>[][];
+}
+
+export function filterOutDuplicateHighlightAnnotations(
+  annotations: Annotation<unknown, unknown>[]
+) {
+  return annotations.filter((annotation) => {
+    if (annotation.type !== "highlighted") {
+      return true;
+    }
+
+    return !annotations.some(
+      (other) =>
+        other.type !== "highlighted" && isEqual(annotation.anchor, other.anchor)
+    );
+  });
 }
