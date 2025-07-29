@@ -95,13 +95,13 @@
   html {
     filter: invert(0.9) hue-rotate(180deg);
   }
-  img {
+  img, video {
     filter: invert(1) contrast(1.1) hue-rotate(180deg);
   }
 
   html.dontdarkmode {
     filter: none;
-    img {
+    img, video {
       filter: none;
     }
   }
