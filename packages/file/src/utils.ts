@@ -26,7 +26,7 @@ export const useBinaryUrl = (value: Uint8Array | undefined) => {
       return;
     }
 
-    return URL.createObjectURL(new Blob([value]));
+    return URL.createObjectURL(new Blob([value as BlobPart]));
   }, [value]);
 };
 

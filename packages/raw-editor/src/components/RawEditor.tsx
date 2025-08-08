@@ -102,7 +102,7 @@ export const RawEditor = ({
       const data = Automerge.save(doc);
       const filename = `${handle.documentId}.automerge`;
       const blobURL = URL.createObjectURL(
-        new Blob([data], { type: "application/octet-stream" })
+        new Blob([data as BlobPart], { type: "application/octet-stream" })
       );
 
       const tempLink = document.createElement("a");

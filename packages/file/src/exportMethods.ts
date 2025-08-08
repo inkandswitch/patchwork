@@ -26,7 +26,9 @@ export const universalExport: ExportMethod = {
         mime.lookup(extension) ??
         "application/octet-stream";
 
-      return new File([getFileContents(fileDoc)], fileName, { type });
+      return new File([getFileContents(fileDoc) as BlobPart], fileName, {
+        type,
+      });
     },
   },
 };

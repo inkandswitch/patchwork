@@ -30,7 +30,8 @@ var _self =
           },
           objId: function (e) {
             return (
-              e.__id || Object.defineProperty(e, "__id", { value: ++n }), e.__id
+              e.__id || Object.defineProperty(e, "__id", { value: ++n }),
+              e.__id
             );
           },
           clone: function t(e, r) {
@@ -136,11 +137,11 @@ var _self =
             selector:
               'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code',
           };
-          M.hooks.run("before-highlightall", r),
+          (M.hooks.run("before-highlightall", r),
             (r.elements = Array.prototype.slice.apply(
               r.container.querySelectorAll(r.selector)
             )),
-            M.hooks.run("before-all-elements-highlight", r);
+            M.hooks.run("before-all-elements-highlight", r));
           for (var a, i = 0; (a = r.elements[i++]); )
             M.highlightElement(a, !0 === n, r.callback);
         },
@@ -158,19 +159,19 @@ var _self =
               r);
           var l = { element: e, language: r, grammar: a, code: e.textContent };
           function o(e) {
-            (l.highlightedCode = e),
+            ((l.highlightedCode = e),
               M.hooks.run("before-insert", l),
               (l.element.innerHTML = l.highlightedCode),
               M.hooks.run("after-highlight", l),
               M.hooks.run("complete", l),
-              t && t.call(l.element);
+              t && t.call(l.element));
           }
           if ((M.hooks.run("before-sanity-check", l), !l.code))
-            return M.hooks.run("complete", l), void (t && t.call(l.element));
+            return (M.hooks.run("complete", l), void (t && t.call(l.element)));
           if ((M.hooks.run("before-highlight", l), l.grammar))
             if (n && u.Worker) {
               var s = new Worker(M.filename);
-              (s.onmessage = function (e) {
+              ((s.onmessage = function (e) {
                 o(e.data);
               }),
                 s.postMessage(
@@ -179,7 +180,7 @@ var _self =
                     code: l.code,
                     immediateClose: !0,
                   })
-                );
+                ));
             } else o(M.highlight(l.code, l.grammar, l.language));
           else o(M.util.encode(l.code));
         },
@@ -235,7 +236,7 @@ var _self =
                             P = w.index + w[0].length,
                             S = k;
                           for (S += y.value.length; S <= A; )
-                            (y = y.next), (S += y.value.length);
+                            ((y = y.next), (S += y.value.length));
                           if (
                             ((S -= y.value.length),
                             (k = S),
@@ -248,8 +249,8 @@ var _self =
                             (S < P || "string" == typeof E.value);
                             E = E.next
                           )
-                            x++, (S += E.value.length);
-                          x--, (b = n.slice(k, S)), (w.index -= k);
+                            (x++, (S += E.value.length));
+                          (x--, (b = n.slice(k, S)), (w.index -= k));
                         } else {
                           m.lastIndex = 0;
                           var w = m.exec(b);
@@ -264,15 +265,16 @@ var _self =
                             j = k + b.length;
                           l && j > l.reach && (l.reach = j);
                           var C = y.prev;
-                          L && ((C = I(t, C, L)), (k += L.length)), z(t, C, x);
+                          (L && ((C = I(t, C, L)), (k += L.length)),
+                            z(t, C, x));
                           var _ = new W(o, g ? M.tokenize(O, g) : O, v, O);
-                          (y = I(t, C, _)),
+                          ((y = I(t, C, _)),
                             N && I(t, y, N),
                             1 < x &&
                               e(n, t, r, y.prev, k, {
                                 cause: o + "," + u,
                                 reach: j,
-                              });
+                              }));
                         }
                       }
                     }
@@ -282,7 +284,7 @@ var _self =
             (function (e) {
               var n = [],
                 t = e.head.next;
-              for (; t !== e.tail; ) n.push(t.value), (t = t.next);
+              for (; t !== e.tail; ) (n.push(t.value), (t = t.next));
               return n;
             })(a)
           );
@@ -291,7 +293,7 @@ var _self =
           all: {},
           add: function (e, n) {
             var t = M.hooks.all;
-            (t[e] = t[e] || []), t[e].push(n);
+            ((t[e] = t[e] || []), t[e].push(n));
           },
           run: function (e, n) {
             var t = M.hooks.all[e];
@@ -301,24 +303,24 @@ var _self =
         Token: W,
       };
     function W(e, n, t, r) {
-      (this.type = e),
+      ((this.type = e),
         (this.content = n),
         (this.alias = t),
-        (this.length = 0 | (r || "").length);
+        (this.length = 0 | (r || "").length));
     }
     function i() {
       var e = { value: null, prev: null, next: null },
         n = { value: null, prev: e, next: null };
-      (e.next = n), (this.head = e), (this.tail = n), (this.length = 0);
+      ((e.next = n), (this.head = e), (this.tail = n), (this.length = 0));
     }
     function I(e, n, t) {
       var r = n.next,
         a = { value: t, prev: n, next: r };
-      return (n.next = a), (r.prev = a), e.length++, a;
+      return ((n.next = a), (r.prev = a), e.length++, a);
     }
     function z(e, n, t) {
       for (var r = n.next, a = 0; a < t && r !== e.tail; a++) r = r.next;
-      ((n.next = r).prev = n), (e.length -= a);
+      (((n.next = r).prev = n), (e.length -= a));
     }
     if (
       ((u.Prism = M),
@@ -342,11 +344,11 @@ var _self =
             language: t,
           },
           i = e.alias;
-        i &&
+        (i &&
           (Array.isArray(i)
             ? Array.prototype.push.apply(a.classes, i)
             : a.classes.push(i)),
-          M.hooks.run("wrap", a);
+          M.hooks.run("wrap", a));
         var l = "";
         for (var o in a.attributes)
           l +=
@@ -381,8 +383,8 @@ var _self =
                   t = n.language,
                   r = n.code,
                   a = n.immediateClose;
-                u.postMessage(M.highlight(r, M.languages[t], t)),
-                  a && u.close();
+                (u.postMessage(M.highlight(r, M.languages[t], t)),
+                  a && u.close());
               },
               !1
             )),
@@ -407,9 +409,9 @@ var _self =
     }
     return M;
   })(_self);
-"undefined" != typeof module && module.exports && (module.exports = Prism),
-  "undefined" != typeof global && (global.Prism = Prism);
-(Prism.languages.markup = {
+("undefined" != typeof module && module.exports && (module.exports = Prism),
+  "undefined" != typeof global && (global.Prism = Prism));
+((Prism.languages.markup = {
   comment: /<!--[\s\S]*?-->/,
   prolog: /<\?[\s\S]+?\?>/,
   doctype: {
@@ -468,18 +470,18 @@ var _self =
   Object.defineProperty(Prism.languages.markup.tag, "addInlined", {
     value: function (a, e) {
       var s = {};
-      (s["language-" + e] = {
+      ((s["language-" + e] = {
         pattern: /(^<!\[CDATA\[)[\s\S]+?(?=\]\]>$)/i,
         lookbehind: !0,
         inside: Prism.languages[e],
       }),
-        (s.cdata = /^<!\[CDATA\[|\]\]>$/i);
+        (s.cdata = /^<!\[CDATA\[|\]\]>$/i));
       var n = {
         "included-cdata": { pattern: /<!\[CDATA\[[\s\S]*?\]\]>/i, inside: s },
       };
       n["language-" + e] = { pattern: /[\s\S]+/, inside: Prism.languages[e] };
       var t = {};
-      (t[a] = {
+      ((t[a] = {
         pattern: RegExp(
           "(<__[^]*?>)(?:<!\\[CDATA\\[(?:[^\\]]|\\](?!\\]>))*\\]\\]>|(?!<!\\[CDATA\\[)[^])*?(?=</__>)".replace(
             /__/g,
@@ -493,7 +495,7 @@ var _self =
         greedy: !0,
         inside: n,
       }),
-        Prism.languages.insertBefore("markup", "cdata", t);
+        Prism.languages.insertBefore("markup", "cdata", t));
     },
   }),
   (Prism.languages.html = Prism.languages.markup),
@@ -502,10 +504,10 @@ var _self =
   (Prism.languages.xml = Prism.languages.extend("markup", {})),
   (Prism.languages.ssml = Prism.languages.xml),
   (Prism.languages.atom = Prism.languages.xml),
-  (Prism.languages.rss = Prism.languages.xml);
+  (Prism.languages.rss = Prism.languages.xml));
 !(function (e) {
   var s = /("|')(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/;
-  (e.languages.css = {
+  ((e.languages.css = {
     comment: /\/\*[\s\S]*?\*\//,
     atrule: {
       pattern: /@[\w-]+[\s\S]*?(?:;|(?=\s*\{))/,
@@ -542,7 +544,7 @@ var _self =
     function: /[-a-z0-9]+(?=\()/i,
     punctuation: /[(){};:,]/,
   }),
-    (e.languages.css.atrule.inside.rest = e.languages.css);
+    (e.languages.css.atrule.inside.rest = e.languages.css));
   var t = e.languages.markup;
   t &&
     (t.tag.addInlined("style", "css"),
@@ -586,7 +588,7 @@ Prism.languages.clike = {
   operator: /[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,
   punctuation: /[{}[\];(),.:]/,
 };
-(Prism.languages.javascript = Prism.languages.extend("clike", {
+((Prism.languages.javascript = Prism.languages.extend("clike", {
   "class-name": [
     Prism.languages.clike["class-name"],
     {
@@ -683,7 +685,7 @@ Prism.languages.clike = {
   }),
   Prism.languages.markup &&
     Prism.languages.markup.tag.addInlined("script", "javascript"),
-  (Prism.languages.js = Prism.languages.javascript);
+  (Prism.languages.js = Prism.languages.javascript));
 !(function (i) {
   i.languages.diff = {
     coord: [/^(?:\*{3}|-{3}|\+{3}).*$/m, /^@@.*@@$/m, /^\d+.*$/m],
@@ -696,10 +698,10 @@ Prism.languages.clike = {
     unchanged: " ",
     diff: "!",
   };
-  Object.keys(r).forEach(function (e) {
+  (Object.keys(r).forEach(function (e) {
     var n = r[e],
       a = [];
-    /^\w+$/.test(e) || a.push(/\w+/.exec(e)[0]),
+    (/^\w+$/.test(e) || a.push(/\w+/.exec(e)[0]),
       "diff" === e && a.push("bold"),
       (i.languages.diff[e] = {
         pattern: RegExp("^(?:[" + n + "].*(?:\r\n?|\n|(?![\\s\\S])))+", "m"),
@@ -708,11 +710,11 @@ Prism.languages.clike = {
           line: { pattern: /(.)(?=[\s\S]).*(?:\r\n?|\n)?/, lookbehind: !0 },
           prefix: { pattern: /[\s\S]/, alias: /\w+/.exec(e)[0] },
         },
-      });
+      }));
   }),
-    Object.defineProperty(i.languages.diff, "PREFIXES", { value: r });
+    Object.defineProperty(i.languages.diff, "PREFIXES", { value: r }));
 })(Prism);
-(Prism.languages.json = {
+((Prism.languages.json = {
   property: { pattern: /"(?:\\.|[^\\"\r\n])*"(?=\s*:)/, greedy: !0 },
   string: { pattern: /"(?:\\.|[^\\"\r\n])*"(?!\s*:)/, greedy: !0 },
   comment: { pattern: /\/\/.*|\/\*[\s\S]*?(?:\*\/|$)/, greedy: !0 },
@@ -722,7 +724,7 @@ Prism.languages.clike = {
   boolean: /\b(?:true|false)\b/,
   null: { pattern: /\bnull\b/, alias: "keyword" },
 }),
-  (Prism.languages.webmanifest = Prism.languages.json);
+  (Prism.languages.webmanifest = Prism.languages.json));
 !(function (n) {
   var e = /("|')(?:\\(?:\r\n?|\n|.)|(?!\1)[^\\\r\n])*\1/;
   n.languages.json5 = n.languages.extend("json", {
@@ -739,7 +741,7 @@ Prism.languages.clike = {
   });
 })(Prism);
 !(function (e) {
-  (e.languages.typescript = e.languages.extend("javascript", {
+  ((e.languages.typescript = e.languages.extend("javascript", {
     "class-name": {
       pattern:
         /(\b(?:class|extends|implements|instanceof|interface|new|type)\s+)(?!keyof\b)[_$a-zA-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?:\s*<(?:[^<>]|<(?:[^<>]|<[^<>]*>)*>)*>)?/,
@@ -752,9 +754,9 @@ Prism.languages.clike = {
     builtin:
       /\b(?:string|Function|any|number|boolean|Array|symbol|console|Promise|unknown|never)\b/,
   })),
-    delete e.languages.typescript.parameter;
+    delete e.languages.typescript.parameter);
   var n = e.languages.extend("typescript", {});
-  delete n["class-name"],
+  (delete n["class-name"],
     (e.languages.typescript["class-name"].inside = n),
     e.languages.insertBefore("typescript", "function", {
       "generic-function": {
@@ -767,7 +769,7 @@ Prism.languages.clike = {
         },
       },
     }),
-    (e.languages.ts = e.languages.typescript);
+    (e.languages.ts = e.languages.typescript));
 })(Prism);
 !(function (n) {
   var t = /[*&][^\s[\]{},]+/,
@@ -795,7 +797,7 @@ Prism.languages.clike = {
         });
     return RegExp(e, t);
   }
-  (n.languages.yaml = {
+  ((n.languages.yaml = {
     scalar: {
       pattern: RegExp(
         "([\\-:]\\s*(?:\\s<<prop>>[ \t]+)?[|>])[ \t]*(?:((?:\r?\n|\r)[ \t]+)[^\r\n]+(?:\\2[^\r\n]+)*)".replace(
@@ -851,7 +853,7 @@ Prism.languages.clike = {
     important: t,
     punctuation: /---|[:[\]{}\-,|>?]|\.\.\./,
   }),
-    (n.languages.yml = n.languages.yaml);
+    (n.languages.yml = n.languages.yaml));
 })(Prism);
 !(function () {
   if (
@@ -864,30 +866,30 @@ Prism.languages.clike = {
       s = function () {
         if (void 0 === t) {
           var e = document.createElement("div");
-          (e.style.fontSize = "13px"),
+          ((e.style.fontSize = "13px"),
             (e.style.lineHeight = "1.5"),
             (e.style.padding = "0"),
             (e.style.border = "0"),
             (e.innerHTML = "&nbsp;<br />&nbsp;"),
             document.body.appendChild(e),
             (t = 38 === e.offsetHeight),
-            document.body.removeChild(e);
+            document.body.removeChild(e));
         }
         return t;
       },
       l = !0,
       a = 0;
-    Prism.hooks.add("before-sanity-check", function (e) {
+    (Prism.hooks.add("before-sanity-check", function (e) {
       var t = e.element.parentNode,
         n = t && t.getAttribute("data-line");
       if (t && n && /pre/i.test(t.nodeName)) {
         var i = 0;
-        g(".line-highlight", t).forEach(function (e) {
-          (i += e.textContent.length), e.parentNode.removeChild(e);
+        (g(".line-highlight", t).forEach(function (e) {
+          ((i += e.textContent.length), e.parentNode.removeChild(e));
         }),
           i &&
             /^( \n)+$/.test(e.code.slice(-i)) &&
-            (e.code = e.code.slice(0, -i));
+            (e.code = e.code.slice(0, -i)));
       }
     }),
       Prism.hooks.add("complete", function e(t) {
@@ -899,7 +901,7 @@ Prism.languages.clike = {
             o = t.plugins && t.plugins.lineNumbers;
           if (b(n, "line-numbers") && r && !o)
             Prism.hooks.add("line-numbers", e);
-          else u(n, i)(), (a = setTimeout(c, 1));
+          else (u(n, i)(), (a = setTimeout(c, 1)));
         }
       }),
       window.addEventListener("hashchange", c),
@@ -909,7 +911,7 @@ Prism.languages.clike = {
             return u(e);
           })
           .forEach(v);
-      });
+      }));
   }
   function g(e, t) {
     return Array.prototype.slice.call((t || document).querySelectorAll(e));
@@ -942,9 +944,9 @@ Prism.languages.clike = {
           document.createElement("div");
       if (
         (h.push(function () {
-          r.setAttribute("aria-hidden", "true"),
+          (r.setAttribute("aria-hidden", "true"),
             r.setAttribute("data-range", e),
-            (r.className = (c || "") + " line-highlight");
+            (r.className = (c || "") + " line-highlight"));
         }),
         m && Prism.plugins.lineNumbers)
       ) {
@@ -964,10 +966,10 @@ Prism.languages.clike = {
         }
       } else
         h.push(function () {
-          r.setAttribute("data-start", n),
+          (r.setAttribute("data-start", n),
             n < i && r.setAttribute("data-end", i),
             (r.style.top = (n - d - 1) * f + "px"),
-            (r.textContent = new Array(i - n + 2).join(" \n"));
+            (r.textContent = new Array(i - n + 2).join(" \n")));
         });
       h.push(function () {
         p.appendChild(r);
@@ -992,11 +994,11 @@ Prism.languages.clike = {
           var n = t + a;
           e.onclick = function () {
             var e = i + "." + n;
-            (l = !1),
+            ((l = !1),
               (location.hash = e),
               setTimeout(function () {
                 l = !0;
-              }, 1);
+              }, 1));
           };
         });
       }
@@ -1015,12 +1017,12 @@ Prism.languages.clike = {
       var n = e.slice(0, e.lastIndexOf(".")),
         i = document.getElementById(n);
       if (i)
-        i.hasAttribute("data-line") || i.setAttribute("data-line", ""),
+        (i.hasAttribute("data-line") || i.setAttribute("data-line", ""),
           u(i, t, "temporary ")(),
           l &&
             document
               .querySelector(".temporary.line-highlight")
-              .scrollIntoView();
+              .scrollIntoView());
     }
   }
 })();
@@ -1034,7 +1036,7 @@ Prism.languages.clike = {
             var t = e.querySelector(".line-numbers-rows"),
               i = parseInt(e.getAttribute("data-start"), 10) || 1,
               r = i + (t.children.length - 1);
-            n < i && (n = i), r < n && (n = r);
+            (n < i && (n = i), r < n && (n = r));
             var s = n - i;
             return t.children[s];
           }
@@ -1052,7 +1054,7 @@ Prism.languages.clike = {
           : null;
       },
       n = void 0;
-    window.addEventListener("resize", function () {
+    (window.addEventListener("resize", function () {
       (e.assumeViewportIndependence && n === window.innerWidth) ||
         ((n = window.innerWidth),
         u(Array.prototype.slice.call(document.querySelectorAll("pre." + o))));
@@ -1067,12 +1069,12 @@ Prism.languages.clike = {
             !n.querySelector(".line-numbers-rows") &&
             Prism.util.isActive(n, o)
           ) {
-            n.classList.remove(o), t.classList.add(o);
+            (n.classList.remove(o), t.classList.add(o));
             var i,
               r = e.code.match(a),
               s = r ? r.length + 1 : 1,
               l = new Array(s + 1).join("<span></span>");
-            (i = document.createElement("span")).setAttribute(
+            ((i = document.createElement("span")).setAttribute(
               "aria-hidden",
               "true"
             ),
@@ -1084,13 +1086,13 @@ Prism.languages.clike = {
                   (parseInt(t.getAttribute("data-start"), 10) - 1)),
               e.element.appendChild(i),
               u([t]),
-              Prism.hooks.run("line-numbers", e);
+              Prism.hooks.run("line-numbers", e));
           }
         }
       }),
       Prism.hooks.add("line-numbers", function (e) {
-        (e.plugins = e.plugins || {}), (e.plugins.lineNumbers = !0);
-      });
+        ((e.plugins = e.plugins || {}), (e.plugins.lineNumbers = !0));
+      }));
   }
   function u(e) {
     if (
@@ -1107,12 +1109,12 @@ Prism.languages.clike = {
           if (n && t) {
             var i = e.querySelector(".line-numbers-sizer"),
               r = n.textContent.split(a);
-            i ||
+            (i ||
               (((i = document.createElement("span")).className =
                 "line-numbers-sizer"),
               n.appendChild(i)),
               (i.innerHTML = "0"),
-              (i.style.display = "block");
+              (i.style.display = "block"));
             var s = i.getBoundingClientRect().height;
             return (
               (i.innerHTML = ""),
@@ -1127,18 +1129,18 @@ Prism.languages.clike = {
           }
         })
         .filter(Boolean);
-      n.forEach(function (e) {
+      (n.forEach(function (e) {
         var i = e.sizer,
           n = e.lines,
           r = e.lineHeights,
           s = e.oneLinerHeight;
-        (r[n.length - 1] = void 0),
+        ((r[n.length - 1] = void 0),
           n.forEach(function (e, n) {
             if (e && 1 < e.length) {
               var t = i.appendChild(document.createElement("span"));
-              (t.style.display = "block"), (t.textContent = e);
+              ((t.style.display = "block"), (t.textContent = e));
             } else r[n] = s;
-          });
+          }));
       }),
         n.forEach(function (e) {
           for (
@@ -1152,12 +1154,12 @@ Prism.languages.clike = {
         n.forEach(function (e) {
           var n = e.sizer,
             t = e.element.querySelector(".line-numbers-rows");
-          (n.style.display = "none"),
+          ((n.style.display = "none"),
             (n.innerHTML = ""),
             e.lineHeights.forEach(function (e, n) {
               t.children[n].style.height = e + "px";
-            });
-        });
+            }));
+        }));
     }
   }
 })();
@@ -1176,7 +1178,7 @@ Prism.languages.clike = {
         "gi"
       ),
       d = Prism.languages.diff.PREFIXES;
-    Prism.hooks.add("before-sanity-check", function (e) {
+    (Prism.hooks.add("before-sanity-check", function (e) {
       var a = e.language;
       o.test(a) &&
         !e.grammar &&
@@ -1193,7 +1195,7 @@ Prism.languages.clike = {
         if ("diff" !== e.language) {
           var n = o.exec(e.language);
           if (!n) return;
-          (a = n[1]), (s = Prism.languages[a]);
+          ((a = n[1]), (s = Prism.languages[a]));
         }
         if (e.type in d) {
           var r,
@@ -1208,10 +1210,10 @@ Prism.languages.clike = {
             u = Prism.Token.stringify(t, e.language),
             l = [];
           for (c.lastIndex = 0; (f = c.exec(r)); ) l.push(u + f[0]);
-          /(?:^|[\r\n]).$/.test(i) && l.push(u),
+          (/(?:^|[\r\n]).$/.test(i) && l.push(u),
             (e.content = l.join("")),
-            s && e.classes.push("language-" + a);
+            s && e.classes.push("language-" + a));
         }
-      });
+      }));
   }
 })();

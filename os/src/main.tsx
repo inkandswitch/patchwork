@@ -15,10 +15,10 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
 import { getAccount } from "@patchwork/sdk";
 import { Explorer } from "./explorer/components/Explorer.js";
-import "./index.css";
 import { ModuleWatcherProvider } from "./explorer/hooks/useModuleWatcher.js";
 import { getRelativeTime } from "./explorer/components/DevOverlay.js";
 import { AUTOMERGE_SYNC_SERVER_STORAGE_ID } from "./explorer/components/SyncIndicator.js";
+import "./index.css";
 
 // Peer id prefix is added to both the peer id of the client and the service worker
 // to make it easier to grep for logs that are related to your own changes / sync state

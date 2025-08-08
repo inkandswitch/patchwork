@@ -58,7 +58,7 @@ export const automergeExport: ExportMethod = {
   fileExtensions: ["automerge"],
   module: {
     async exportData(doc: Doc<unknown>, repo: Repo) {
-      return new File([save(doc)], "document.automerge", {
+      return new File([save(doc) as BlobPart], "document.automerge", {
         type: "application/octet-stream",
       });
     },

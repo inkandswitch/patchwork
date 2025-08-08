@@ -119,7 +119,7 @@ const updateFileFromDoc = async (doc: FileDoc): Promise<File> => {
   const type =
     doc.mimeType ?? mime.lookup(extension) ?? "application/octet-stream";
 
-  return new File([getFileContents(doc)], fileName, { type });
+  return new File([getFileContents(doc) as BlobPart], fileName, { type });
 };
 
 export const dataType: DataTypeImplementation<FileDoc, TextAnchor, string> = {
