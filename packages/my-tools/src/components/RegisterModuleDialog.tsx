@@ -57,12 +57,12 @@ export const RegisterModuleDialog: React.FC<{
       <DialogTrigger asChild>
         <Button className="w-full">
           <Icon type="Plus" className="mr-2" />
-          Register New Module
+          Register a Module
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Register New Module</DialogTitle>
+          <DialogTitle>Register a Module</DialogTitle>
         </DialogHeader>
 
         {!preview ? (

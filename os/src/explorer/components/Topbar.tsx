@@ -5,6 +5,8 @@ import {
   ExportMethod,
   DataType,
   ToolDescription,
+  getPlugins,
+  ModuleSettingsDoc,
 } from "@patchwork/sdk";
 import {
   DropdownMenu,
@@ -12,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Button,
 } from "@patchwork/sdk/ui";
 import { Tabs, TabsList, TabsTrigger } from "@patchwork/sdk/ui";
 import { useToast } from "@patchwork/sdk/ui";
@@ -20,8 +23,13 @@ import {
   useBranchScopeAndActiveBranchInfo,
 } from "@patchwork/sdk/versionControl";
 import * as Automerge from "@automerge/automerge";
-import { Doc, DocHandle, isValidAutomergeUrl } from "@automerge/automerge-repo";
-import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import {
+  Doc,
+  DocHandle,
+  isValidAutomergeUrl,
+  AutomergeUrl,
+} from "@automerge/automerge-repo";
+import { useRepo, useDocument } from "@automerge/automerge-repo-react-hooks";
 import {
   Download,
   GitForkIcon,
@@ -29,8 +37,9 @@ import {
   MoreHorizontal,
   ShareIcon,
   Trash2Icon,
+  Plus,
 } from "lucide-react";
-import React, { useRef } from "react";
+import React, { useRef, useMemo, useCallback } from "react";
 import { saveFile } from "@patchwork/sdk/files";
 import { AccountPicker } from "./AccountPicker";
 import {
@@ -38,6 +47,7 @@ import {
   SyncIndicator,
 } from "./SyncIndicator";
 import { usePlugin } from "@patchwork/sdk/hooks";
+import { useModuleWatcher } from "../hooks/useModuleWatcher";
 
 type TopbarProps = {
   showSidebar: boolean;
@@ -70,6 +80,7 @@ export const Topbar: React.FC<TopbarProps> = ({
 }) => {
   const repo = useRepo();
   const { toast } = useToast();
+  const moduleWatcher = useModuleWatcher();
 
   const selectedDocLink =
     selectedDocPath && DocPathUtils.toLink(selectedDocPath);
@@ -88,6 +99,54 @@ export const Topbar: React.FC<TopbarProps> = ({
   const { plugin: selectedDataType } = usePlugin<DataType>(
     "patchwork:dataType",
     selectedDataTypeId
+  );
+
+  // Get the ModuleSettingsDoc to check which modules are already registered
+  const moduleSettingsUrl = moduleWatcher?.moduleSettingsHandle?.url;
+  const [moduleSettingsDoc] = useDocument<ModuleSettingsDoc>(moduleSettingsUrl);
+
+  // Find which tools come from unregistered modules
+  const unregisteredToolModules = useMemo(() => {
+    if (!tools.length || !moduleSettingsDoc) return new Map<string, string>();
+
+    const registeredModules = new Set(moduleSettingsDoc.modules || []);
+    const toolToModuleMap = new Map<string, string>();
+
+    // Get all tool plugins to find their import URLs
+    const allToolPlugins = getPlugins("patchwork:tool");
+
+    // Find module URLs for tools that are currently available
+    tools.forEach((tool) => {
+      const pluginMatch = allToolPlugins.find((p) => p.id === tool.id);
+      if (
+        pluginMatch &&
+        (pluginMatch as any).importUrl &&
+        isValidAutomergeUrl((pluginMatch as any).importUrl)
+      ) {
+        const moduleUrl = (pluginMatch as any).importUrl;
+        if (!registeredModules.has(moduleUrl as AutomergeUrl)) {
+          toolToModuleMap.set(tool.id, moduleUrl);
+        }
+      }
+    });
+
+    return toolToModuleMap;
+  }, [tools, moduleSettingsDoc]);
+
+  const registerModule = useCallback(
+    (moduleUrl: AutomergeUrl) => {
+      if (!moduleSettingsDoc || !moduleWatcher?.moduleSettingsHandle) return;
+
+      moduleWatcher.moduleSettingsHandle.change((doc) => {
+        if (!doc.modules) doc.modules = [];
+        if (!doc.modules.includes(moduleUrl)) {
+          doc.modules.push(moduleUrl);
+        }
+      });
+
+      toast({ title: "Module registered successfully" });
+    },
+    [moduleSettingsDoc, moduleWatcher, toast]
   );
 
   const toolsWithEditorComponent = tools;
@@ -226,16 +285,39 @@ export const Topbar: React.FC<TopbarProps> = ({
           onValueChange={onToolChange}
         >
           <TabsList>
-            {toolsWithEditorComponent.map((tool) => (
-              <TabsTrigger value={tool.id} className="px-2 py-1" key={tool.id}>
-                {tool.name}
-              </TabsTrigger>
-            ))}
+            {toolsWithEditorComponent.map((tool) => {
+              const isUnregistered = unregisteredToolModules.has(tool.id);
+              const moduleUrl = unregisteredToolModules.get(tool.id);
+
+              return (
+                <div key={tool.id} className="relative">
+                  <TabsTrigger value={tool.id} className="px-2 py-1">
+                    {tool.name}
+                  </TabsTrigger>
+                  {isUnregistered && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="absolute -top-1 -right-1 h-4 w-4 p-0 bg-green-500 hover:bg-green-600 text-white rounded-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (moduleUrl) {
+                          registerModule(moduleUrl as AutomergeUrl);
+                        }
+                      }}
+                      title="Register this module"
+                    >
+                      <Plus size={10} />
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
           </TabsList>
         </Tabs>
       )}
 
-      <div className={`mr-4 ${tools.length <= 1 ? "ml-auto" : "ml-4"}`}>
+      <div className="mr-4">
         <DropdownMenu>
           <DropdownMenuTrigger>
             <MoreHorizontal
