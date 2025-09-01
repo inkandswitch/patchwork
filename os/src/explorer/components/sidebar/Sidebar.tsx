@@ -16,7 +16,7 @@ import clone from "lodash-es/clone";
 import uniqBy from "lodash-es/uniqBy";
 
 import { ChevronsLeft } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { MoveHandler, RenameHandler, Tree } from "react-arborist";
 import { useCurrentAccount, useCurrentAccountDoc } from "@patchwork/sdk";
 import { UIStateDoc } from "@patchwork/sdk/router";
@@ -64,6 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   addNewDocument,
   rootFolderDoc,
 }) => {
+  const [dndRoot, setDndRoot] = useState<HTMLDivElement | null>(null);
   const repo = useRepo();
   const dataTypes = usePluginDescriptions<DataType>("patchwork:dataType");
 
@@ -358,55 +359,67 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {({ width, height }) => {
             return (
               <FlatDocPathsContext.Provider value={flatDocPaths}>
-                <Tree
-                  data={dataForTree}
-                  width={width}
-                  height={height}
-                  openByDefault={false}
-                  searchTerm={searchQuery}
-                  searchMatch={(node, term) => {
-                    const docName = DocPathUtils.toLink(node.data.docPath).name;
-                    return docName.toLowerCase().includes(term.toLowerCase());
-                  }}
-                  rowHeight={28}
-                  selection={treeSelection}
-                  idAccessor={idAccessor}
-                  onSelect={(selections) => {
-                    if (
-                      !selections ||
-                      selections.length === 0 ||
-                      // ignore on select if the selection hasn't changed
-                      // this can happens when the tree component is being initialized
-                      selections[0].id === treeSelection
-                    ) {
-                      return false;
-                    }
-                    selectDocPath(selections[0].data.docPath);
-                  }}
-                  // For now, don't allow deleting w/ backspace key in the sidebar—
-                  // it's too unsafe without undo.
-                  // onDelete={({ ids }) => {
-                  //   for (const id of ids) {
-                  //     deleteFromAccountDocList(id as AutomergeUrl);
-                  //   }
-                  // }}
-                  onMove={onMove}
-                  // Notably toggle state is "uncontrolled" state that the component manages privately --
-                  // after initial mount, the component stores in-memory state privately, and we also
-                  // send all updates to automerge in order to rehydrate on next page load or next mount.
-                  // That seems fine for this state where it's not a huge problem if the component desyncs
-                  // from the automerge doc.
-                  initialOpenState={initialOpenState}
-                  disableDrop={({ parentNode }) => {
-                    if (!parentNode || !parentNode.data.docPath) return false; // Allow dropping at root
-                    const link = DocPathUtils.toLink(parentNode.data.docPath);
-                    return link.type !== "folder"; // Disable drop if not a folder
-                  }}
-                  onToggle={onToggle}
-                  onRename={onRename}
-                >
-                  {Node}
-                </Tree>
+                <div ref={setDndRoot}>
+                  {dndRoot && (
+                    <Tree
+                      data={dataForTree}
+                      width={width}
+                      height={height}
+                      openByDefault={false}
+                      searchTerm={searchQuery}
+                      searchMatch={(node, term) => {
+                        const docName = DocPathUtils.toLink(
+                          node.data.docPath
+                        ).name;
+                        return docName
+                          .toLowerCase()
+                          .includes(term.toLowerCase());
+                      }}
+                      rowHeight={28}
+                      selection={treeSelection}
+                      idAccessor={idAccessor}
+                      onSelect={(selections) => {
+                        if (
+                          !selections ||
+                          selections.length === 0 ||
+                          // ignore on select if the selection hasn't changed
+                          // this can happens when the tree component is being initialized
+                          selections[0].id === treeSelection
+                        ) {
+                          return false;
+                        }
+                        selectDocPath(selections[0].data.docPath);
+                      }}
+                      // For now, don't allow deleting w/ backspace key in the sidebar—
+                      // it's too unsafe without undo.
+                      // onDelete={({ ids }) => {
+                      //   for (const id of ids) {
+                      //     deleteFromAccountDocList(id as AutomergeUrl);
+                      //   }
+                      // }}
+                      onMove={onMove}
+                      // Notably toggle state is "uncontrolled" state that the component manages privately --
+                      // after initial mount, the component stores in-memory state privately, and we also
+                      // send all updates to automerge in order to rehydrate on next page load or next mount.
+                      // That seems fine for this state where it's not a huge problem if the component desyncs
+                      // from the automerge doc.
+                      initialOpenState={initialOpenState}
+                      disableDrop={({ parentNode }) => {
+                        if (!parentNode || !parentNode.data.docPath)
+                          return false; // Allow dropping at root
+                        const link = DocPathUtils.toLink(
+                          parentNode.data.docPath
+                        );
+                        return link.type !== "folder"; // Disable drop if not a folder
+                      }}
+                      onToggle={onToggle}
+                      onRename={onRename}
+                      dndRootElement={dndRoot} // scope the root of the dnd library to the outer div instead of window
+                    >
+                      {Node}
+                    </Tree>
+                  )}
+                </div>
               </FlatDocPathsContext.Provider>
             );
           }}
