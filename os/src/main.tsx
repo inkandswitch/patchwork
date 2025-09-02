@@ -219,16 +219,6 @@ window.repo = repo;
 // TODO: fix this in automerge-repo
 repo.subscribeToRemotes([AUTOMERGE_SYNC_SERVER_STORAGE_ID]);
 
-export const Root = () => (
-  <RepoContext.Provider value={repo}>
-    <ModuleWatcherProvider account={account} repo={repo}>
-      <Explorer />
-    </ModuleWatcherProvider>
-  </RepoContext.Provider>
-);
-
-ReactDom.createRoot(document.getElementById("root")!).render(<Root />);
-
 // Register the custom element in a try/catch for HMR support
 try {
   const { PatchworkEmbed } = await import("@patchwork/sdk/embed");
@@ -239,3 +229,18 @@ try {
 } catch (err) {
   console.warn("Failed to register patchwork-embed custom element:", err);
 }
+
+const params = new URLSearchParams(document.location.search);
+const docUrl = params.get("docUrl");
+
+if (!docUrl) throw new Error("Need a docUrl for now");
+
+export const Root = () => (
+  <RepoContext.Provider value={repo}>
+    <ModuleWatcherProvider account={account} repo={repo}>
+      <patchwork-embed doc-url={docUrl} className="w-full h-full" />
+    </ModuleWatcherProvider>
+  </RepoContext.Provider>
+);
+
+ReactDom.createRoot(document.getElementById("root")!).render(<Root />);
