@@ -1,7 +1,5 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
-@source "../../packages";
-@source "../../sdk";
 @config "../tailwind.config.cjs";
 
 @theme {
@@ -221,31 +219,4 @@
       /* Chrome 26+, Opera 23+, Firefox 39+ */
       /*url('../assets/fira/fira-mono-v7-latin-500.woff') format('woff')*/; /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
   font-display: swap;
-}
-
-/* draw a vertical line for the timeline */
-.timeline-line {
-  @apply fixed;
-  @apply w-full;
-  @apply h-full;
-}
-
-.timeline-line::before {
-  @apply bg-neutral-300;
-  @apply absolute;
-  border-radius: 3px;
-  bottom: 15px;
-  content: "";
-  left: 15px;
-  top: 8px;
-  width: 2px;
-}
-
-.timeline-item {
-  @apply relative;
-}
-
-ol {
-  list-style-type: decimal;
-  list-style-position: inside;
 }

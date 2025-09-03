@@ -1,7 +1,6 @@
 node_modules
 .DS_Store
 */dist
-packages/*/dist
 .env
 **/.env
 **/.env.local

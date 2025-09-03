@@ -82,7 +82,7 @@ const generateImportMapPlugin = (): Plugin => ({
     const generator = new Generator({
       env: ["browser", "module"],
       resolutions: {
-        "@automerge/automerge": "@automerge/automerge@3.0.0",
+        "@automerge/automerge": "@automerge/automerge@3.1.1",
         ...SHARED_MODULES,
       },
     });
@@ -92,7 +92,7 @@ const generateImportMapPlugin = (): Plugin => ({
         return "npm:@codemirror/view@6.36.3";
       }
       if (dep === "@automerge/automerge") {
-        return "npm:@automerge/automerge@3.0.0";
+        return "npm:@automerge/automerge@3.1.1";
       }
       return dep;
     });
