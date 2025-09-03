@@ -5,10 +5,11 @@ import {
   useDocument,
 } from "@automerge/automerge-repo-react-hooks";
 import { Tool } from "./tools";
-import { useMatchingPluginDescriptions, usePlugin } from "./hooks";
+import { useMatchingPluginDescriptions, usePlugin } from "./hooks/usePlugin";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { Icon } from "./ui";
+import { Icon } from "./ui/icons";
 import { HasPatchworkMetadata } from "./modules/types";
+import { ModuleWatcher } from "./modules";
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -39,6 +40,53 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+// Hook to load suggested modules for a document URL
+const useSuggestedModuleForDocUrl = (docUrl?: AutomergeUrl): boolean => {
+  const [doc] = useDocument<HasPatchworkMetadata>(docUrl);
+  const patchworkMetadata = doc?.["@patchwork"];
+  const [isLoadingModule, setIsLoadingModule] = useState(true);
+
+  // Access ModuleWatcher from global window object
+  const moduleWatcher = (window as any).moduleWatcher;
+
+  const selectedDocIsLoaded = doc !== undefined;
+
+  useEffect(() => {
+    let aborted = false;
+    if (!moduleWatcher) {
+      if (selectedDocIsLoaded) {
+        setIsLoadingModule(false);
+      }
+      return;
+    }
+
+    if (!patchworkMetadata?.suggestedImportUrl) {
+      if (selectedDocIsLoaded) {
+        setIsLoadingModule(false);
+      }
+      return;
+    }
+
+    console.log(
+      "Found a patchwork recommended modules document",
+      patchworkMetadata
+    );
+    moduleWatcher
+      .loadModules([patchworkMetadata.suggestedImportUrl])
+      .then(() => {
+        if (!aborted) {
+          setIsLoadingModule(false);
+        }
+      });
+
+    return () => {
+      aborted = true;
+    };
+  }, [patchworkMetadata, moduleWatcher, selectedDocIsLoaded]);
+
+  return isLoadingModule;
+};
+
 // Component that loads the document and renders the appropriate tool
 const DocumentLoader = ({
   docUrl,
@@ -52,9 +100,11 @@ const DocumentLoader = ({
     suspense: true,
   }); // Enable suspense
 
+  // Load suggested modules for this document
+  const isSuggestedModuleLoading = useSuggestedModuleForDocUrl(docUrlTyped);
+
   const dataTypeId = doc["@patchwork"]?.type;
 
-  // todo: we don't handle loading suggested modules here
   const { plugins: tools } = useMatchingPluginDescriptions<Tool>({
     pluginType: "patchwork:tool",
     matchField: "supportedDataTypes",
@@ -130,7 +180,7 @@ const DocumentLoader = ({
     );
   }
 
-  if (isLoading) {
+  if (isLoading || isSuggestedModuleLoading) {
     return (
       <div className="p-4 border border-gray-200 rounded">
         <div className="flex items-center justify-center h-32">
@@ -140,7 +190,11 @@ const DocumentLoader = ({
               size={24}
               className="animate-spin mx-auto mb-2"
             />
-            <div className="text-gray-500 text-sm">Loading tool...</div>
+            <div className="text-gray-500 text-sm">
+              {isSuggestedModuleLoading
+                ? "Loading modules..."
+                : "Loading tool..."}
+            </div>
           </div>
         </div>
       </div>

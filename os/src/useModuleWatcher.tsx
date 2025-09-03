@@ -57,6 +57,11 @@ export function ModuleWatcherProvider({
       // Initialize asynchronously
       manager.initialize().catch(console.error);
     }
+
+    // Expose ModuleWatcher globally for web components
+    if (managerRef.current?.watcher) {
+      (window as any).moduleWatcher = managerRef.current.watcher;
+    }
   }, [account, repo]);
 
   return (

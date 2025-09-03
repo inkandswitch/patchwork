@@ -13,14 +13,7 @@ import { ChangeFn } from "@automerge/automerge";
 import { useEffect, useState } from "react";
 
 import type { FolderDoc } from "./FolderDoc";
-import { useFolderDocWithMetadataOnActiveBranch } from "./versionControl/useFolderDocWithMetadata";
 import { typeOnlyAssert } from "./utils";
-import { UIStateDoc } from "./router/uiState";
-import {
-  VersionControlSidecarDoc,
-  withHasChangeGroupSummaries,
-  withHasVersionControlMetadata,
-} from "./versionControl";
 import { createDocFromFile } from "./files";
 
 import { ModuleSettingsDoc } from "./modules";
@@ -204,24 +197,17 @@ const createAccount = (
     type: "anonymous",
   });
 
-  const versionControlMetadataDocHandle = repo.create<VersionControlSidecarDoc>(
-    withHasChangeGroupSummaries({
-      isBranchScope: false,
-    })
-  );
+  const versionControlMetadataDocHandle = repo.create<any>({
+    changeGroupSummaries: {},
+    isBranchScope: false,
+  });
 
-  const rootFolderHandle = repo.create<FolderDoc>(
-    withHasVersionControlMetadata(
-      {
-        title: "root",
-        docs: [],
-      },
-      {
-        versionControlMetadataUrl: versionControlMetadataDocHandle.url,
-      }
-    )
-  );
-  const uiStateHandle = repo.create<UIStateDoc>({
+  const rootFolderHandle = repo.create<FolderDoc>({
+    title: "root",
+    docs: [],
+    versionControlMetadataUrl: versionControlMetadataDocHandle.url,
+  });
+  const uiStateHandle = repo.create<any>({
     docPathsToggledOpenInSidebar: [],
     openBranches: {},
     docUIStates: {},
@@ -285,7 +271,7 @@ export function useCurrentAccount(): Account | undefined {
     }
 
     if (account && doc && doc.uiStateUrl === undefined) {
-      const uiStateHandle = repo.create<UIStateDoc>();
+      const uiStateHandle = repo.create<any>();
       uiStateHandle.change((uiState) => {
         uiState.docPathsToggledOpenInSidebar = [];
         uiState.openBranches = {};
@@ -320,7 +306,6 @@ export function useCurrentAccountDoc(): [
   return [accountDoc, changeAccountDoc];
 }
 
-// TODO: is it ok to load this multiple times in the UI tree? Is that extra overhead?
 export function useRootFolderDocWithMetadata() {
   const [accountDoc] = useCurrentAccountDoc();
 
@@ -334,7 +319,7 @@ export function useRootFolderDocWithMetadata() {
     }
   }, [repo, accountDoc]);
 
-  return useFolderDocWithMetadataOnActiveBranch(accountDoc?.rootFolderUrl);
+  return accountDoc?.rootFolderUrl;
 }
 
 export function useSelf(): ContactDoc | undefined {

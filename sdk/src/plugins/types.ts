@@ -2,7 +2,6 @@ import { DataTypeDescription } from "../datatypes";
 import { ExportMethod } from "../exportMethods";
 import { ImportMethod } from "../importMethods";
 import { ToolDescription } from "../tools";
-import { IconType } from "../ui";
 
 /**
  * Map of plugin type strings to their corresponding description types
@@ -23,7 +22,7 @@ export interface PluginDescription {
   id: string;
   type: string;
   name: string;
-  icon?: IconType;
+  icon?: string; // an icon name from the icon font
   importUrl?: string;
 }
 /**

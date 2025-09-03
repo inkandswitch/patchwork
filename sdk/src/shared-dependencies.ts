@@ -28,35 +28,13 @@ export const SHARED_DEPENDENCIES = [
 export const SHARED_MODULES = {
   // SDK modules
   "@patchwork/sdk": "file:../sdk/",
-
-  "@patchwork/datagrid": "file:../packages/datagrid",
-  "@patchwork/essay": "file:../packages/essay",
-  "@patchwork/file": "file:../packages/file",
-  "@patchwork/folder": "file:../packages/folder",
-  "@patchwork/kanban": "file:../packages/kanban",
-  "@patchwork/my-tools": "file:../packages/my-tools",
-  "@patchwork/raw-editor": "file:../packages/raw-editor",
-  "@patchwork/tldraw": "file:../packages/tldraw",
-  "@patchwork/anthropic": "file:../packages/anthropic",
-  "@patchwork/openai": "file:../packages/openai",
 };
 
 export const SDK_SUBMODULES = [
-  "@patchwork/sdk/async-signals",
-  "@patchwork/sdk/components",
   "@patchwork/sdk/embed",
-  "@patchwork/sdk/files",
-  "@patchwork/sdk/hooks",
-  "@patchwork/sdk/llm",
-  "@patchwork/sdk/om",
-  "@patchwork/sdk/markdown",
+  "@patchwork/sdk/ui",
   "@patchwork/sdk/modules",
   "@patchwork/sdk/plugins",
-  "@patchwork/sdk/router",
-  "@patchwork/sdk/textAnchors",
-  "@patchwork/sdk/ui",
-  "@patchwork/sdk/versionControl",
-  "@patchwork/sdk/utils",
   "@patchwork/sdk/shared-dependencies",
 ];
 

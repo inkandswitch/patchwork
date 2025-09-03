@@ -2,7 +2,6 @@ import { AutomergeUrl, Doc, DocHandle, Repo } from "@automerge/automerge-repo";
 import { DataType, createDocOfDataType } from "../datatypes";
 import { getDefaultImportMethodForDatatype } from "../importMethods";
 import { ImportMethod } from "../importMethods";
-import { DocLink } from "../router/DocLink";
 import { getPlugins, getLoadedPlugin } from "../plugins";
 
 /**

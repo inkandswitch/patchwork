@@ -10,37 +10,9 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./async-signals": {
-      "types": "./dist/types/async-signals/index.d.ts",
-      "import": "./dist/async-signals.js"
-    },
-    "./components": {
-      "types": "./dist/types/components/index.d.ts",
-      "import": "./dist/components.js"
-    },
     "./embed": {
       "types": "./dist/types/embed/index.d.ts",
       "import": "./dist/embed.js"
-    },
-    "./files": {
-      "types": "./dist/types/files/index.d.ts",
-      "import": "./dist/files.js"
-    },
-    "./hooks": {
-      "types": "./dist/types/hooks/index.d.ts",
-      "import": "./dist/hooks.js"
-    },
-    "./llm": {
-      "types": "./dist/types/llm/index.d.ts",
-      "import": "./dist/llm.js"
-    },
-    "./om": {
-      "types": "./dist/types/om.d.ts",
-      "import": "./dist/om.js"
-    },
-    "./markdown": {
-      "types": "./dist/types/markdown/index.d.ts",
-      "import": "./dist/markdown.js"
     },
     "./modules": {
       "types": "./dist/types/modules/index.d.ts",
@@ -50,21 +22,9 @@
       "types": "./dist/types/plugins/index.d.ts",
       "import": "./dist/plugins.js"
     },
-    "./router": {
-      "types": "./dist/types/router/index.d.ts",
-      "import": "./dist/router.js"
-    },
-    "./textAnchors": {
-      "types": "./dist/types/textAnchors/index.d.ts",
-      "import": "./dist/textAnchors.js"
-    },
     "./ui": {
-      "types": "./dist/types/ui/index.d.ts",
+      "types": "./dist/types/ui.d.ts",
       "import": "./dist/ui.js"
-    },
-    "./versionControl": {
-      "types": "./dist/types/versionControl/index.d.ts",
-      "import": "./dist/versionControl.js"
     },
     "./utils": {
       "types": "./dist/types/utils.d.ts",

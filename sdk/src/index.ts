@@ -19,9 +19,4 @@ export {
   accountTokenToAutomergeUrl,
   useRootFolderDocWithMetadata,
 } from "./account.js";
-export * from "./router/index.js";
 export * from "./modules";
-export { DocMigration } from "./migrations/DocMigration";
-export * from "./llm";
-export * from "./llm/types";
-export * from "./aiPrompts";
