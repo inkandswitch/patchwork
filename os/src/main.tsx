@@ -5,20 +5,22 @@ import {
   DocHandle,
   PeerId,
   Repo,
+  StorageId,
   UrlHeads,
 } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 
-import wasmBlobUrl from "@automerge/automerge/automerge.wasm?url";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
-
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
 import { getAccount } from "@patchwork/sdk";
-import { Explorer } from "./explorer/components/Explorer.js";
-import { ModuleWatcherProvider } from "./explorer/hooks/useModuleWatcher.js";
-import { getRelativeTime } from "./explorer/components/DevOverlay.js";
-import { AUTOMERGE_SYNC_SERVER_STORAGE_ID } from "./explorer/components/SyncIndicator.js";
+import { ModuleWatcherProvider } from "./useModuleWatcher.js";
+import { getRelativeTime } from "./getRelativeTime.js";
+
 import "./index.css";
+
+const AUTOMERGE_SYNC_SERVER_STORAGE_ID = (import.meta.env
+  ?.VITE_SYNC_SERVER_STORAGE_ID ??
+  "3760df37-a4c6-4f66-9ecd-732039a9385d") as StorageId;
 
 // Peer id prefix is added to both the peer id of the client and the service worker
 // to make it easier to grep for logs that are related to your own changes / sync state

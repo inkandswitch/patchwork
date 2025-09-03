@@ -129,12 +129,6 @@ First install [bun](https://bun.sh/). Then run:
 
 ### Editing a module
 
-First, check if the package is bundled into the OS by looking at the list in `os/src/bundledPackages.ts`.
-
-#### Dynamic packages
-
-If the package is "dynamic", i.e. _not_ a built-in:
-
 You can install the tool in the production deploy of Patchwork, in the My Tools menu. You do not need to run the Patchwork OS locally to develop on a dynamic package.
 
 When doing updates: Run `pnpm watch` in the package directory; this will build the package after each code change and push changes to Automerge, and any tools will live-reload. Alternatively, you can manually run `pnpm push` after each code change.

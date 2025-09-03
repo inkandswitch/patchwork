@@ -1,6 +1,5 @@
 import { Account, ModuleWatcher } from "@patchwork/sdk";
 import React, { createContext, useContext, useRef, useEffect } from "react";
-import { BUNDLED_MODULES } from "../../bundledPackages";
 import { Repo } from "@automerge/automerge-repo";
 
 class ModuleWatcherManager {
@@ -11,7 +10,7 @@ class ModuleWatcherManager {
     if (moduleSettingsUrl) {
       this._watcher = new ModuleWatcher(
         moduleSettingsUrl,
-        BUNDLED_MODULES,
+        [], // nothing bundled in this build
         repo
       );
     }
