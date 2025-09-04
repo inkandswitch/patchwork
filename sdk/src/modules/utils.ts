@@ -14,14 +14,17 @@ export function docHandleToServiceWorkerUrl(handle: DocHandle<any>): string {
 }
 
 export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
+  console.log(`Importing module from folder doc url ${folderDocUrl}`);
   const entryPointUrl = await packageEntryPointUrl(folderDocUrl);
   if (!entryPointUrl) {
     throw new Error("No entry point found in package.json");
   }
+
+  console.log(`Importing module from entry point url ${entryPointUrl}`);
   // this should use heads() but we want to put them in the URL prefix
   // (so as to make sure the versions of assets & relative required files are consistent)
   // and that really requires some changes to the service-worker I'm not ready to make
-  return import(entryPointUrl + "?rand=" + Math.random());
+  return import(entryPointUrl);
 }
 
 async function packageJsonContentsFromFolderDocUrl(

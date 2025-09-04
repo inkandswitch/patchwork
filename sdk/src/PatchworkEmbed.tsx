@@ -47,7 +47,7 @@ const useSuggestedModuleForDocUrl = (docUrl?: AutomergeUrl): boolean => {
   const [isLoadingModule, setIsLoadingModule] = useState(true);
 
   // Access ModuleWatcher from global window object
-  const moduleWatcher = (window as any).moduleWatcher;
+  const moduleWatcher: ModuleWatcher = (window as any).moduleWatcher;
 
   const selectedDocIsLoaded = doc !== undefined;
 

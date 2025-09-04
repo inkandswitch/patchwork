@@ -53,7 +53,7 @@ export class ModuleWatcher {
     try {
       return await (isValidAutomergeUrl(importName)
         ? importModuleFromFolderDocUrl(importName)
-        : import(importName)); // allow reimporting; note this doesn't work for referenced files inside the import
+        : import(importName));
     } catch (err) {
       console.error(`Failed to import ${importName}`, err);
       return null;
@@ -62,6 +62,7 @@ export class ModuleWatcher {
 
   private async registerModule(importName: string) {
     const mod = await this.importModuleSafe(importName);
+    console.log(`Loaded module ${importName}`, mod);
     if (!mod) return;
 
     if (mod.plugins) {
@@ -100,13 +101,7 @@ export class ModuleWatcher {
 
     this.repo.find(docUrl).then((handle) => {
       handle.on("change", async () => {
-        // Note that because the heads are going into a query parameter,
-        // modules loaded *below* this one will not be reloaded unless their filename has changed.
-        const versionedImport = `${importName}`;
-        // This needs heads support in AutomergeUrl
-        /* ?heads=${(
-          handle.heads() || []
-        ).join(",")} */
+        const versionedImport = handle.view(handle.heads()).url;
         this.registerModule(versionedImport);
       });
     });
