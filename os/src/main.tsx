@@ -3,6 +3,7 @@ import ReactDom from "react-dom/client";
 import {
   AutomergeUrl,
   DocHandle,
+  isValidAutomergeUrl,
   PeerId,
   Repo,
   StorageId,
@@ -237,9 +238,18 @@ const docUrl = params.get("docUrl");
 
 if (!docUrl) throw new Error("Need a docUrl for now");
 
+// Hardcode a module settings url for now
+const moduleSettingsUrl =
+  localStorage.getItem("moduleSettingsUrl") ||
+  "automerge:3n51DZbA1FRwHAV8K2sW1g2aA3P2";
+
+if (!isValidAutomergeUrl(moduleSettingsUrl)) {
+  throw new Error("Invalid module settings url");
+}
+
 export const Root = () => (
   <RepoContext.Provider value={repo}>
-    <ModuleWatcherProvider account={account} repo={repo}>
+    <ModuleWatcherProvider moduleSettingsUrl={moduleSettingsUrl} repo={repo}>
       <patchwork-embed doc-url={docUrl} className="w-full h-full" />
     </ModuleWatcherProvider>
   </RepoContext.Provider>

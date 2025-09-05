@@ -1,12 +1,11 @@
-import { Account, ModuleWatcher } from "@patchwork/sdk";
+import { ModuleWatcher } from "@patchwork/sdk";
 import React, { createContext, useContext, useRef, useEffect } from "react";
-import { Repo } from "@automerge/automerge-repo";
+import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 
 class ModuleWatcherManager {
   private _watcher: ModuleWatcher | null = null;
 
-  constructor(account: Account, repo: Repo) {
-    const moduleSettingsUrl = account.handle.doc()?.moduleSettingsUrl;
+  constructor(moduleSettingsUrl: AutomergeUrl, repo: Repo) {
     if (moduleSettingsUrl) {
       this._watcher = new ModuleWatcher(
         moduleSettingsUrl,
@@ -36,23 +35,23 @@ class ModuleWatcherManager {
 const ModuleWatcherContext = createContext<ModuleWatcherManager | null>(null);
 
 interface ModuleWatcherProviderProps {
-  account: Account;
+  moduleSettingsUrl: AutomergeUrl;
   repo: Repo;
   children: React.ReactNode;
 }
 
 export function ModuleWatcherProvider({
-  account,
+  moduleSettingsUrl,
   repo,
   children,
 }: ModuleWatcherProviderProps) {
   const managerRef = useRef<ModuleWatcherManager | null>(
-    new ModuleWatcherManager(account, repo)
+    new ModuleWatcherManager(moduleSettingsUrl, repo)
   );
 
   useEffect(() => {
     if (managerRef.current === null) {
-      const manager = new ModuleWatcherManager(account, repo);
+      const manager = new ModuleWatcherManager(moduleSettingsUrl, repo);
       managerRef.current = manager;
       // Initialize asynchronously
       manager.initialize().catch(console.error);
@@ -62,7 +61,7 @@ export function ModuleWatcherProvider({
     if (managerRef.current?.watcher) {
       (window as any).moduleWatcher = managerRef.current.watcher;
     }
-  }, [account, repo]);
+  }, [moduleSettingsUrl, repo]);
 
   return (
     <ModuleWatcherContext.Provider value={managerRef.current}>

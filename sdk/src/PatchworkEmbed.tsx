@@ -74,6 +74,10 @@ const useSuggestedModuleForDocUrl = (docUrl?: AutomergeUrl): boolean => {
     moduleWatcher
       .loadModules([patchworkMetadata.suggestedImportUrl])
       .then(() => {
+        console.log(
+          "Loaded suggested module",
+          patchworkMetadata.suggestedImportUrl
+        );
         if (!aborted) {
           setIsLoadingModule(false);
         }
@@ -103,7 +107,7 @@ const DocumentLoader = ({
   // Load suggested modules for this document
   const isSuggestedModuleLoading = useSuggestedModuleForDocUrl(docUrlTyped);
 
-  const dataTypeId = doc["@patchwork"]?.type;
+  const dataTypeId = doc["@patchwork"]?.type || "unknown";
 
   const { plugins: tools } = useMatchingPluginDescriptions<Tool>({
     pluginType: "patchwork:tool",
