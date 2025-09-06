@@ -36,49 +36,48 @@ The id defines an internal name used for deduplication, the type is used to disc
 In addition to metadata, most plugins have some code.
 A plugin can define a `load` function which returns a module for the code, eg using an async import. The plugin system will handle loading this code on-demand when it is needed.
 
-```
+```typescript
 {
-    type: "patchwork:tool",
-    id: "essay",
-    name: "Editor",
-    supportedDataTypes: ["essay"],
+  type: "patchwork:tool",
+  id: "essay",
+  name: "Editor",
+  supportedDataTypes: ["essay"],
 
-    async load() {
-      const { tool } = await import("./tool");
-      return tool;
-    },
+  async load() {
+    const { tool } = await import("./tool");
+    return tool;
   },
+},
 ```
 
 A plugin can also just directly define code in a `module` key, skipping the deferred loading step—try to only include small amounts of code this way, because this code gets loaded immediately whenever the system inspects the metadata on the plugin:
 
+```typescript
 export const markdownExport: ExportMethod = {
-id: "essay-markdown-export",
-type: "patchwork:exportMethod",
-name: "Markdown",
-useAsDefaultMethod: true,
-datatypeId: "essay",
-fileExtensions: ["md"],
-module: {
-async exportData(doc: Doc<unknown>, repo: Repo) {
-const markdownDoc = doc as Doc<MarkdownDoc>;
-const content = markdownDoc.content;
-
+  id: "essay-markdown-export",
+  type: "patchwork:exportMethod",
+  name: "Markdown",
+  useAsDefaultMethod: true,
+  datatypeId: "essay",
+  fileExtensions: ["md"],
+  module: {
+    async exportData(doc: Doc<unknown>, repo: Repo) {
+      const markdownDoc = doc as Doc<MarkdownDoc>;
+      const content = markdownDoc.content;
       const prefix = markdownDoc.fileName ?? (await getTitle(markdownDoc));
       const extension = markdownDoc.extension ?? "md";
       const hasExtensionAlready = /\.[a-z0-9]+$/.test(prefix);
       const fileName = hasExtensionAlready ? prefix : `${prefix}.${extension}`;
       const type = markdownDoc.mimeType ?? "text/markdown";
-
       return new File([content], fileName, { type });
     },
-
-}
+  }
 };
+```
 
 Plugins should be exported from the entry point for a module:
 
-```
+```typescript
 export const plugins = [plugin1, plugin2]
 ```
 
@@ -117,7 +116,7 @@ You should use shadcn for standard UI elements whenever possible instead of roll
 
 Many of the components from @shadcn/ui are available in the UI SDK. You can import them like this:
 
-```
+```typescript
 import {
   Button,
   Dialog,
