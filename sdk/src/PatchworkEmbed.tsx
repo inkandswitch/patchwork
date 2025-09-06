@@ -41,54 +41,23 @@ class ErrorBoundary extends React.Component<
 }
 
 // Hook to load suggested modules for a document URL
-const useSuggestedModuleForDocUrl = (docUrl?: AutomergeUrl): boolean => {
-  const [doc] = useDocument<HasPatchworkMetadata>(docUrl);
-  const patchworkMetadata = doc?.["@patchwork"];
-  const [isLoadingModule, setIsLoadingModule] = useState(true);
+const useSuggestedModuleForDocUrl = (docUrl: AutomergeUrl): boolean => {
+  const [loadingModule, setLoadingModule] = useState(false);
+  const [doc] = useDocument<HasPatchworkMetadata>(docUrl, { suspense: true });
+  const suggestedImportUrl = doc["@patchwork"]?.suggestedImportUrl;
 
-  // Access ModuleWatcher from global window object
-  const moduleWatcher: ModuleWatcher = (window as any).moduleWatcher;
-
-  const selectedDocIsLoaded = doc !== undefined;
+  const moduleWatcher: ModuleWatcher = (window as any).moduleWatcher!;
 
   useEffect(() => {
-    let aborted = false;
-    if (!moduleWatcher) {
-      if (selectedDocIsLoaded) {
-        setIsLoadingModule(false);
-      }
-      return;
-    }
-
-    if (!patchworkMetadata?.suggestedImportUrl) {
-      if (selectedDocIsLoaded) {
-        setIsLoadingModule(false);
-      }
-      return;
-    }
-
-    console.log(
-      "Found a patchwork recommended modules document",
-      patchworkMetadata
-    );
-    moduleWatcher
-      .loadModules([patchworkMetadata.suggestedImportUrl])
-      .then(() => {
-        console.log(
-          "Loaded suggested module",
-          patchworkMetadata.suggestedImportUrl
-        );
-        if (!aborted) {
-          setIsLoadingModule(false);
-        }
+    if (suggestedImportUrl) {
+      setLoadingModule(true);
+      moduleWatcher.loadModules([suggestedImportUrl]).then(() => {
+        setLoadingModule(false);
       });
+    }
+  }, [moduleWatcher, suggestedImportUrl]);
 
-    return () => {
-      aborted = true;
-    };
-  }, [patchworkMetadata, moduleWatcher, selectedDocIsLoaded]);
-
-  return isLoadingModule;
+  return loadingModule;
 };
 
 // Component that loads the document and renders the appropriate tool
@@ -102,10 +71,10 @@ const DocumentLoader = ({
   const docUrlTyped = docUrl as AutomergeUrl;
   const [doc] = useDocument<HasPatchworkMetadata>(docUrlTyped, {
     suspense: true,
-  }); // Enable suspense
+  });
 
   // Load suggested modules for this document
-  const isSuggestedModuleLoading = useSuggestedModuleForDocUrl(docUrlTyped);
+  const loadingModule = useSuggestedModuleForDocUrl(docUrlTyped);
 
   const dataTypeId = doc["@patchwork"]?.type || "unknown";
 
@@ -116,6 +85,34 @@ const DocumentLoader = ({
     sortField: "name",
   });
 
+  // Debug logging for tool matching
+  console.log("[PatchworkEmbed] Tool matching debug:", {
+    docUrl,
+    dataTypeId,
+    toolsFound: tools.length,
+    toolIds: tools.map((t) => t.id),
+    toolDetails: tools.map((t) => ({
+      id: t.id,
+      name: t.name,
+      supportedDataTypes: t.supportedDataTypes,
+    })),
+  });
+
+  // Also log ALL registered tools to see what's available
+  useEffect(() => {
+    import("./plugins").then(({ getPlugins }) => {
+      const allTools = getPlugins<Tool>("patchwork:tool");
+      console.log("[PatchworkEmbed] ALL registered tools:", {
+        totalTools: allTools.length,
+        allToolDetails: allTools.map((t: Tool) => ({
+          id: t.id,
+          name: t.name,
+          supportedDataTypes: t.supportedDataTypes,
+        })),
+      });
+    });
+  }, []);
+
   const resolveToolId = (toolId: string | undefined) => {
     if (toolId && tools.some((t) => t.id === toolId)) {
       return toolId;
@@ -124,10 +121,23 @@ const DocumentLoader = ({
   };
 
   const resolvedToolId = resolveToolId(toolId);
-  const { plugin: selectedTool, isLoading } = usePlugin(
+  console.log("[PatchworkEmbed] Tool resolution debug:", {
+    inputToolId: toolId,
+    resolvedToolId,
+    availableTools: tools.map((t) => t.id),
+  });
+
+  const { plugin: selectedTool, isLoading: isToolLoading } = usePlugin(
     "patchwork:tool",
     resolvedToolId
   );
+
+  console.log("[PatchworkEmbed] Tool loading debug:", {
+    resolvedToolId,
+    selectedTool: selectedTool?.id || null,
+    isToolLoading,
+    hasSelectedTool: !!selectedTool,
+  });
   // Create a callback for tools that need to request tool changes
   // This will be passed down to tools but won't directly emit events
   const handleToolChange = (newToolId: string) => {
@@ -184,7 +194,7 @@ const DocumentLoader = ({
     );
   }
 
-  if (isLoading || isSuggestedModuleLoading) {
+  if (isToolLoading || loadingModule) {
     return (
       <div className="p-4 border border-gray-200 rounded">
         <div className="flex items-center justify-center h-32">
@@ -195,9 +205,7 @@ const DocumentLoader = ({
               className="animate-spin mx-auto mb-2"
             />
             <div className="text-gray-500 text-sm">
-              {isSuggestedModuleLoading
-                ? "Loading modules..."
-                : "Loading tool..."}
+              {loadingModule ? "Loading modules..." : "Loading tool..."}
             </div>
           </div>
         </div>

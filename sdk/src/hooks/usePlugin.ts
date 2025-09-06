@@ -37,6 +37,7 @@ export function usePlugin<T extends Plugin>(
     if (!id) return;
 
     try {
+      console.log(`[usePlugin] Loading plugin: ${pluginType}:${id}`);
       setIsLoading(true);
       setError(undefined);
       const loadedPlugin = await getLoadedPlugin<LoadedPlugin<T>>(
@@ -44,8 +45,16 @@ export function usePlugin<T extends Plugin>(
         id,
         wait
       );
+      console.log(
+        `[usePlugin] Successfully loaded plugin: ${pluginType}:${id}`,
+        loadedPlugin
+      );
       setPlugin(loadedPlugin);
     } catch (err) {
+      console.error(
+        `[usePlugin] Failed to load plugin: ${pluginType}:${id}`,
+        err
+      );
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setIsLoading(false);
@@ -63,12 +72,24 @@ export function usePlugin<T extends Plugin>(
 
     // Get initial plugin state
     const initialPlugin = getPlugin<Plugin<T>>(pluginType, id);
+    console.log(`[usePlugin] Initial plugin check: ${pluginType}:${id}`, {
+      initialPlugin: !!initialPlugin,
+      isLoadable: initialPlugin ? isLoadablePlugin(initialPlugin) : "N/A",
+      willLoad: load && (!initialPlugin || isLoadablePlugin(initialPlugin)),
+    });
+
     if (initialPlugin && !isLoadablePlugin(initialPlugin)) {
+      console.log(
+        `[usePlugin] Using non-loadable plugin immediately: ${pluginType}:${id}`
+      );
       setPlugin(initialPlugin);
     }
 
     // Load if needed
     if (load && (!initialPlugin || isLoadablePlugin(initialPlugin))) {
+      console.log(
+        `[usePlugin] Will attempt to load plugin: ${pluginType}:${id}`
+      );
       loadPluginCB();
     }
 
