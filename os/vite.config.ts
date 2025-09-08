@@ -1,11 +1,9 @@
 import { Generator } from "@jspm/generator";
-import react from "@vitejs/plugin-react";
 import { build } from "esbuild";
 import { execSync } from "child_process";
 import path from "path";
 import { Plugin, UserConfig, defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
-import tailwindcss from "@tailwindcss/vite";
 
 import {
   SHARED_MODULES,
@@ -116,13 +114,7 @@ const generateImportMapPlugin = (): Plugin => ({
 });
 
 export default defineConfig({
-  plugins: [
-    wasm(),
-    react(),
-    generateImportMapPlugin(),
-    swPlugin(),
-    tailwindcss(),
-  ],
+  plugins: [wasm(), generateImportMapPlugin(), swPlugin()],
 
   worker: {
     format: "es",
@@ -142,22 +134,6 @@ export default defineConfig({
       },
       input: {
         main: path.resolve(__dirname, "index.html"),
-      },
-      output: {
-        // We put index.css in dist instead of dist/assets so that we can link to fonts
-        // using relative URLs like "./assets/font.woff2", which is the correct form
-        // for deployment to trailrunner.
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name === "index.css") {
-            return "[name][extname]";
-          }
-          // For all other assets, keep the default behavior
-          return "assets/[name]-[hash][extname]";
-        },
-        entryFileNames: (chunkInfo) => {
-          return "assets/[name]-[hash].js"; // Default behavior for other entries
-        },
-        exports: "named",
       },
       preserveEntrySignatures: "allow-extension",
     },

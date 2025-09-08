@@ -71,14 +71,14 @@ export const markdownExport: ExportMethod = {
       const type = markdownDoc.mimeType ?? "text/markdown";
       return new File([content], fileName, { type });
     },
-  }
+  },
 };
 ```
 
 Plugins should be exported from the entry point for a module:
 
 ```typescript
-export const plugins = [plugin1, plugin2]
+export const plugins = [plugin1, plugin2];
 ```
 
 ### Using plugins

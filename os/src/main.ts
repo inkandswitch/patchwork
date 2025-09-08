@@ -1,5 +1,4 @@
 import * as Automerge from "@automerge/automerge";
-import ReactDom from "react-dom/client";
 import {
   AutomergeUrl,
   DocHandle,
@@ -10,12 +9,9 @@ import {
   UrlHeads,
 } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
-
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 import { getAccount, ModuleWatcher } from "@patchwork/sdk";
 import { getRelativeTime } from "./getRelativeTime.js";
-
-import "./index.css";
 
 const AUTOMERGE_SYNC_SERVER_STORAGE_ID = (import.meta.env
   ?.VITE_SYNC_SERVER_STORAGE_ID ??
@@ -209,12 +205,6 @@ DocHandle.prototype.changeAt = function <T>(
   );
 };
 
-// @ts-expect-error - adding property to window
-window.Automerge = Automerge;
-
-// @ts-expect-error - adding property to window
-window.repo = repo;
-
 // we need to subscribe to the storage id of the sync server before we boot up patchwork
 // so we don't miss any remote heads updates
 // TODO: fix this in automerge-repo
@@ -245,14 +235,18 @@ if (!isValidAutomergeUrl(moduleSettingsUrl)) {
   throw new Error("Invalid module settings url");
 }
 
-(window as any).moduleWatcher = new ModuleWatcher(
-  moduleSettingsUrl,
-  [], // nothing bundled in this build
-  repo
-);
+const moduleWatcher = new ModuleWatcher(moduleSettingsUrl, [], repo);
 
-export const Root = () => (
-  <patchwork-embed doc-url={docUrl} className="w-full h-full" />
-);
+declare global {
+  interface Window {
+    Automerge: typeof Automerge;
+    repo: typeof repo;
+    moduleWatcher: typeof moduleWatcher;
+  }
+}
 
-ReactDom.createRoot(document.getElementById("root")!).render(<Root />);
+window.Automerge = Automerge;
+window.repo = repo;
+window.moduleWatcher = moduleWatcher;
+
+document.getElementById("root")!.setAttribute("doc-url", docUrl);
