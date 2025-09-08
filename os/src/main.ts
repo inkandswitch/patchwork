@@ -7,9 +7,9 @@ import {
   Repo,
   StorageId,
   UrlHeads,
-} from "@automerge/automerge-repo";
-import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
-import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
+  MessageChannelNetworkAdapter,
+  IndexedDBStorageAdapter,
+} from "@automerge/vanillajs";
 import { getAccount, ModuleWatcher } from "@patchwork/sdk";
 import { getRelativeTime } from "./getRelativeTime.js";
 
