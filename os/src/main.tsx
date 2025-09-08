@@ -12,9 +12,7 @@ import {
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
-import { RepoContext } from "@automerge/automerge-repo-react-hooks";
-import { getAccount } from "@patchwork/sdk";
-import { ModuleWatcherProvider } from "./useModuleWatcher.js";
+import { getAccount, ModuleWatcher } from "@patchwork/sdk";
 import { getRelativeTime } from "./getRelativeTime.js";
 
 import "./index.css";
@@ -247,12 +245,14 @@ if (!isValidAutomergeUrl(moduleSettingsUrl)) {
   throw new Error("Invalid module settings url");
 }
 
+(window as any).moduleWatcher = new ModuleWatcher(
+  moduleSettingsUrl,
+  [], // nothing bundled in this build
+  repo
+);
+
 export const Root = () => (
-  <RepoContext.Provider value={repo}>
-    <ModuleWatcherProvider moduleSettingsUrl={moduleSettingsUrl} repo={repo}>
-      <patchwork-embed doc-url={docUrl} className="w-full h-full" />
-    </ModuleWatcherProvider>
-  </RepoContext.Provider>
+  <patchwork-embed doc-url={docUrl} className="w-full h-full" />
 );
 
 ReactDom.createRoot(document.getElementById("root")!).render(<Root />);
