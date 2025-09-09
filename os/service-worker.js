@@ -7,10 +7,13 @@ self;
 // @ts-check
 import * as Automerge from "@automerge/automerge/slim";
 import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64";
-import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo/slim";
-import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
-import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
-import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
+import {
+  Repo,
+  isValidAutomergeUrl,
+  IndexedDBStorageAdapter,
+  WebSocketClientAdapter,
+  MessageChannelNetworkAdapter,
+} from "@automerge/vanillajs/slim";
 
 /**
  * This file is not built using the standard Vite toolchain, it is built by the
@@ -76,10 +79,7 @@ const { promise: repoReady, resolve: resolveRepoReady } = resolvablePromise();
 
   const newRepo = new Repo({
     storage: new IndexedDBStorageAdapter(),
-    network: [
-      new BrowserWebSocketClientAdapter("wss://sync3.automerge.org"),
-      new BrowserWebSocketClientAdapter("wss://sync.automerge.org"),
-    ],
+    network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
     peerId: PEER_ID,
     sharePolicy: async (peerId) => peerId.includes("storage-server"),
     enableRemoteHeadsGossiping: true,
