@@ -47,7 +47,7 @@ importers:
         specifier: 3.0.0
         version: 3.0.0
       '@automerge/automerge-repo':
-        specifier: ^2.0.7
+        specifier: ^2.2.0
         version: 2.2.0
       '@automerge/automerge-repo-react-hooks':
         specifier: ^2.0.7
