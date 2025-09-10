@@ -22,10 +22,6 @@
       "types": "./dist/types/plugins/index.d.ts",
       "import": "./dist/plugins.js"
     },
-    "./ui": {
-      "types": "./dist/types/ui.d.ts",
-      "import": "./dist/ui.js"
-    },
     "./utils": {
       "types": "./dist/types/utils.d.ts",
       "import": "./dist/utils.js"

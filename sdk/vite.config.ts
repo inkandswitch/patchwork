@@ -38,11 +38,10 @@ export default defineConfig({
     lib: {
       entry: {
         index: "src/index.ts",
-        embed: "src/PatchworkEmbed.tsx",
+        embed: "src/elements/patchwork-embed.tsx",
         files: "src/files/index.ts",
         modules: "src/modules/index.ts",
         plugins: "src/plugins/index.ts",
-        ui: "src/ui/index.ts",
         "shared-dependencies": "src/shared-dependencies.ts",
       },
       name: "PatchworkSDK",

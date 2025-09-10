@@ -12,7 +12,7 @@ import { useForceUpdate } from "./hooks/useForceUpdate";
 import { ChangeFn } from "@automerge/automerge";
 import { useEffect, useState } from "react";
 
-import type { FolderDoc } from "./folder-doc";
+import type { FolderDoc } from "./files/folder-doc";
 import { typeOnlyAssert } from "./utils";
 import { createDocFromFile } from "./files";
 

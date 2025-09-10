@@ -32,7 +32,6 @@ export const SHARED_MODULES = {
 
 export const SDK_SUBMODULES = [
   "@patchwork/sdk/embed",
-  "@patchwork/sdk/ui",
   "@patchwork/sdk/modules",
   "@patchwork/sdk/plugins",
   "@patchwork/sdk/shared-dependencies",

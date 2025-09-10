@@ -1,6 +1,6 @@
 import { DocHandle } from "@automerge/automerge-repo";
-import type { DataTypeDescription } from "../datatypes";
-import { LoadedPlugin, PluginDescription, getPlugins } from "../plugins";
+import type { DataTypeDescription } from "./datatypes";
+import { LoadedPlugin, PluginDescription, getPlugins } from "./plugins";
 
 export type ImportMethodDescription = PluginDescription & {
   type: "patchwork:importMethod";
