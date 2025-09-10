@@ -1,12 +1,7 @@
 import { DataType } from "./datatypes";
 import { Doc, save } from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
-import {
-  getMatchingPlugins,
-  LoadedPlugin,
-  Plugin,
-  registerPlugins,
-} from "./plugins";
+import { getMatchingPlugins, LoadedPlugin, registerPlugins } from "./plugins";
 
 export type ExportMethodDescription = {
   id: string;

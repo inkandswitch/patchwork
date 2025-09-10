@@ -4,12 +4,11 @@ import {
   RepoContext,
   useDocument,
 } from "@automerge/automerge-repo-react-hooks";
-import { Tool } from "./tools";
-import { useMatchingPluginDescriptions, usePlugin } from "./hooks/usePlugin";
+import { Tool } from "../tools";
+import { useMatchingPluginDescriptions, usePlugin } from "../hooks/usePlugin";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { Icon } from "./ui/icons";
-import { HasPatchworkMetadata } from "./modules/types";
-import { ModuleWatcher } from "./modules";
+import { HasPatchworkMetadata } from "../modules/types";
+import { ModuleWatcher } from "../modules";
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -100,7 +99,7 @@ const DocumentLoader = ({
 
   // Also log ALL registered tools to see what's available
   useEffect(() => {
-    import("./plugins").then(({ getPlugins }) => {
+    import("../plugins").then(({ getPlugins }) => {
       const allTools = getPlugins<Tool>("patchwork:tool");
       console.log("[PatchworkEmbed] ALL registered tools:", {
         totalTools: allTools.length,
@@ -199,11 +198,6 @@ const DocumentLoader = ({
       <div className="p-4 border border-gray-200 rounded">
         <div className="flex items-center justify-center h-32">
           <div className="text-center">
-            <Icon
-              type="Loader"
-              size={24}
-              className="animate-spin mx-auto mb-2"
-            />
             <div className="text-gray-500 text-sm">
               {loadingModule ? "Loading modules..." : "Loading tool..."}
             </div>
@@ -245,7 +239,6 @@ const LoadingFallback = () => (
   <div className="p-4 border border-gray-200 rounded">
     <div className="flex items-center justify-center h-32">
       <div className="text-center">
-        <Icon type="Loader" size={24} className="animate-spin mx-auto mb-2" />
         <div className="text-gray-500 text-sm">Loading document...</div>
       </div>
     </div>

@@ -7,12 +7,7 @@ import {
   Repo,
 } from "@automerge/automerge-repo";
 import { importModuleFromFolderDocUrl } from "./utils";
-import {
-  registerPlugins,
-  isPlugin,
-  PluginDescription,
-  Plugin,
-} from "../plugins";
+import { registerPlugins, isPlugin, Plugin } from "../plugins";
 
 /**
  * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
