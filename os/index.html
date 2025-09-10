@@ -17,7 +17,24 @@
       href="https://fonts.googleapis.com/css2?family=Merriweather+Sans:ital,wght@0,300..800;1,300..800&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Schoolbell&display=swap"
       rel="stylesheet"
     />
-    <link href="main.css" re="stylesheet" />
+    <style>
+      html {
+        font-size: 16px;
+        height: 100%;
+        height: 100vh;
+        height: 100dvh;
+        @media all and (display-mode: standalone) {
+          height: 100lvh;
+        }
+      }
+      body {
+        height: 100%;
+        > patchwork-embed {
+          height: 100dvh;
+          display: block;
+        }
+      }
+    </style>
   </head>
   <body>
     <patchwork-embed id="root"></patchwork-embed>
