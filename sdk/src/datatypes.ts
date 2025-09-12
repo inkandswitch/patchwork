@@ -5,7 +5,7 @@ import { LoadedPlugin, PluginDescription } from "./plugins/types";
 import { DocLink } from "./files/folder-doc";
 
 // DataType implementation interface
-export type DataTypeImplementation<D = unknown, T = unknown, V = unknown> = {
+export type DataTypeImplementation<D = unknown> = {
   init: (doc: D, repo: Repo) => void;
   getTitle: (doc: D, repo: Repo) => Promise<string>;
   setTitle?: (doc: any, title: string) => void;
@@ -27,16 +27,15 @@ export interface DataTypeDescription extends PluginDescription {
 }
 
 // Loadable DataType description using the generic LoadablePlugin
-export type LoadableDataType<
-  D = unknown,
-  T = unknown,
-  V = unknown,
-> = LoadablePlugin<DataTypeDescription, DataTypeImplementation<D, T, V>>;
+export type LoadableDataType<D = unknown> = LoadablePlugin<
+  DataTypeDescription,
+  DataTypeImplementation<D>
+>;
 
 // The complete loaded DataType using the generic Plugin
-export type DataType<D = unknown, T = unknown, V = unknown> = LoadedPlugin<
+export type DataType<D = unknown> = LoadedPlugin<
   DataTypeDescription,
-  DataTypeImplementation<D, T, V>
+  DataTypeImplementation<D>
 >;
 
 /** Creates a new document initialized with the given datatype */
