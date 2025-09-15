@@ -80,20 +80,18 @@ const generateImportMapPlugin = (): Plugin => ({
     const generator = new Generator({
       env: ["browser", "module"],
       resolutions: {
-        "@automerge/automerge": "@automerge/automerge@3.1.1",
         ...SHARED_MODULES,
+        "@automerge/automerge": "@automerge/automerge@3.1.1",
       },
     });
 
     const mungedDeps = EXTERNAL_DEPENDENCIES.map((dep) => {
-      if (dep === "@codemirror/view") {
-        return "npm:@codemirror/view@6.36.3";
-      }
-      if (dep === "@automerge/automerge") {
-        return "npm:@automerge/automerge@3.1.1";
-      }
-      return dep;
-    });
+      return ({
+        "@codemirror/view": "npm:@codemirror/view@6.36.3",
+        "@automerge/automerge": "npm:@automerge/automerge@3.1.1",
+        "@automerge/automerge-repo": "npm:@automerge/automerge-repo@2.2.0"
+      })[dep] || dep
+    }).concat("npm:debug@4.4.0");
     await generator.install(mungedDeps);
     const importMap = generator.getMap();
 

@@ -5,6 +5,7 @@
 
 export const SHARED_DEPENDENCIES = [
   "@automerge/automerge-repo",
+  "@automerge/vanillajs",
   "@automerge/automerge-repo-react-hooks",
   "@automerge/automerge",
   "@codemirror/autocomplete",
