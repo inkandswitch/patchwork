@@ -22,7 +22,7 @@ const AUTOMERGE_SYNC_SERVER_STORAGE_ID = (import.meta.env
 const PEER_ID_PREFIX = localStorage.getItem("PEER_ID_PREFIX");
 
 console.log(
-  `Running commit ${__PATCHWORK_VERSION__.gitHash}, built ${getRelativeTime(__PATCHWORK_VERSION__.buildTimestamp)}`
+  `Running commit ${__ROOTSTOCK_VERSION__.gitHash}, built ${getRelativeTime(__ROOTSTOCK_VERSION__.buildTimestamp)}`
 );
 
 const serviceWorker = await setupServiceWorker();
@@ -210,22 +210,6 @@ DocHandle.prototype.changeAt = function <T>(
 // TODO: fix this in automerge-repo
 repo.subscribeToRemotes([AUTOMERGE_SYNC_SERVER_STORAGE_ID]);
 
-// Register the custom element in a try/catch for HMR support
-try {
-  const { PatchworkEmbed } = await import("@patchwork/sdk/embed");
-  if (!customElements.get("patchwork-embed")) {
-    customElements.define("patchwork-embed", PatchworkEmbed);
-    console.log("Registered patchwork-embed custom element");
-  }
-} catch (err) {
-  console.warn("Failed to register patchwork-embed custom element:", err);
-}
-
-const params = new URLSearchParams(document.location.search);
-const docUrl = params.get("docUrl");
-
-if (!docUrl) throw new Error("Need a docUrl for now");
-
 // Hardcode a module settings url for now
 const moduleSettingsUrl =
   localStorage.getItem("moduleSettingsUrl") ||
@@ -237,6 +221,31 @@ if (!isValidAutomergeUrl(moduleSettingsUrl)) {
 
 const moduleWatcher = new ModuleWatcher(moduleSettingsUrl, [], repo);
 
+window.Automerge = Automerge;
+window.repo = repo;
+window.moduleWatcher = moduleWatcher;
+
+// Register the custom element in a try/catch for HMR support
+try {
+  const { RootstockTool } = await import("@patchwork/sdk/embed");
+  if (!customElements.get("rootstock-tool")) {
+    customElements.define("rootstock-tool", RootstockTool);
+    console.log("Registered rootstock-tool custom element");
+  }
+} catch (err) {
+  console.warn("Failed to register rootstock-tool custom element:", err);
+}
+
+const params = new URLSearchParams(document.location.search);
+const docUrl = params.get("docUrl");
+const toolId = params.get("toolId");
+const modules = params.getAll("loadModules");
+await moduleWatcher.loadModules(modules);
+
+if (!docUrl || !toolId) {
+  throw new Error("Need a docUrl and toolId");
+}
+
 declare global {
   interface Window {
     Automerge: typeof Automerge;
@@ -245,8 +254,7 @@ declare global {
   }
 }
 
-window.Automerge = Automerge;
-window.repo = repo;
-window.moduleWatcher = moduleWatcher;
+const rootElement = document.getElementById("root")!;
 
-document.getElementById("root")!.setAttribute("doc-url", docUrl);
+rootElement.setAttribute("doc-url", docUrl);
+toolId && rootElement.setAttribute("tool-id", toolId);

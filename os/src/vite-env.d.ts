@@ -4,7 +4,7 @@ interface ImportMeta {
   dirname: string;
 }
 
-declare const __PATCHWORK_VERSION__: {
+declare const __ROOTSTOCK_VERSION__: {
   gitHash: string;
   buildTimestamp: number;
 };
