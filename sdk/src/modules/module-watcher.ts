@@ -5,7 +5,7 @@ import {
   DocumentId,
   isValidAutomergeUrl,
   Repo,
-} from "@automerge/automerge-repo";
+} from "@automerge/automerge-repo/slim";
 import { importModuleFromFolderDocUrl } from "./utils";
 import { registerPlugins, isPlugin, Plugin } from "../plugins";
 
