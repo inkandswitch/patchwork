@@ -1,5 +1,4 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -8,17 +7,15 @@ import postcss from "rollup-plugin-postcss";
 import commonjs from "@rollup/plugin-commonjs";
 import replace from "@rollup/plugin-replace";
 import dts from "vite-plugin-dts";
-import { EXTERNAL_DEPENDENCIES } from "./src/shared-dependencies";
 
 export default defineConfig({
   plugins: [
-    react(),
     tsconfigPaths(),
     topLevelAwait(),
     wasm(),
     dts({
-      include: ["src/**/*.ts", "src/**/*.tsx"],
-      exclude: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+      include: ["src/**/*.ts"],
+      exclude: ["src/**/*.test.ts"],
       // Enable declaration file generation for multiple entries
       copyDtsFiles: true,
       // Specify output directory for .d.ts files
@@ -38,11 +35,10 @@ export default defineConfig({
     lib: {
       entry: {
         index: "src/index.ts",
-        embed: "src/elements/patchwork-embed.tsx",
+        embed: "src/elements/rootstock-tool.ts",
         files: "src/files/index.ts",
         modules: "src/modules/index.ts",
         plugins: "src/plugins/index.ts",
-        "shared-dependencies": "src/shared-dependencies.ts",
       },
       name: "PatchworkSDK",
       formats: ["es"],
@@ -62,7 +58,7 @@ export default defineConfig({
           requireReturnsDefault: "auto",
         }),
       ],
-      external: EXTERNAL_DEPENDENCIES,
+      external: (id) => id.startsWith("@automerge/"),
       output: {
         entryFileNames: "[name].js",
         chunkFileNames: "chunks/[name].js",

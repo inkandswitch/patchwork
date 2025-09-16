@@ -1,14 +1,8 @@
-import { Generator } from "@jspm/generator";
 import { build } from "esbuild";
 import { execSync } from "child_process";
 import path from "path";
 import { Plugin, UserConfig, defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
-
-import {
-  SHARED_MODULES,
-  EXTERNAL_DEPENDENCIES,
-} from "../sdk/src/shared-dependencies";
 
 const SERVICE_WORKER_MODULE_ID = "/service-worker.js";
 const SERVICE_WORKER_PATH = path.join(import.meta.dirname, "service-worker.js");
@@ -67,52 +61,8 @@ function swPlugin(): Plugin {
   };
 }
 
-// Generates an import map for the external dependencies
-const generateImportMapPlugin = (): Plugin => ({
-  name: "shared-deps-import-map",
-  async transformIndexHtml(html, { server }) {
-    // do nothing in dev mode
-    if (server) {
-      return html;
-    }
-
-    // in build mode generate import map
-    const generator = new Generator({
-      env: ["browser", "module"],
-      resolutions: {
-        ...SHARED_MODULES,
-        "@automerge/automerge": "@automerge/automerge@3.1.1",
-      },
-    });
-
-    const mungedDeps = EXTERNAL_DEPENDENCIES.map((dep) => {
-      return ({
-        "@codemirror/view": "npm:@codemirror/view@6.36.3",
-        "@automerge/automerge": "npm:@automerge/automerge@3.1.1",
-        "@automerge/automerge-repo": "npm:@automerge/automerge-repo@2.2.0"
-      })[dep] || dep
-    }).concat("npm:debug@4.4.0");
-    await generator.install(mungedDeps);
-    const importMap = generator.getMap();
-
-    return {
-      html,
-      tags: [
-        {
-          tag: "script",
-          attrs: {
-            type: "importmap",
-          },
-          children: JSON.stringify(importMap, null, 2),
-          injectTo: "head-prepend",
-        },
-      ],
-    };
-  },
-});
-
 export default defineConfig({
-  plugins: [wasm(), generateImportMapPlugin(), swPlugin()],
+  plugins: [wasm(), swPlugin()],
 
   worker: {
     format: "es",
@@ -120,16 +70,10 @@ export default defineConfig({
   },
 
   build: {
-    target: "es2022",
+    target: "firefox137",
     minify: false,
     sourcemap: true,
     rollupOptions: {
-      external: (id) => {
-        // More precise external matching
-        if (id === "@patchwork/sdk") return true;
-        if (id.startsWith("@patchwork/sdk/")) return true;
-        return EXTERNAL_DEPENDENCIES.includes(id);
-      },
       input: {
         main: path.resolve(__dirname, "index.html"),
       },
@@ -141,7 +85,7 @@ export default defineConfig({
     "process.env": {
       NODE_ENV: "production",
     },
-    __PATCHWORK_VERSION__: JSON.stringify({
+    __ROOTSTOCK_VERSION__: JSON.stringify({
       gitHash: execSync("git rev-parse HEAD", { encoding: "utf8" }).trim(),
       buildTimestamp: Date.now(),
     }),
