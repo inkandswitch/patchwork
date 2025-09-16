@@ -11,12 +11,7 @@ export {
   type ContactDoc,
   type RegisteredContactDoc,
   getAccount,
-  useCurrentAccount,
-  useCurrentAccountDoc,
-  useDatatypeSettings,
-  useSelf,
   automergeUrlToAccountToken,
   accountTokenToAutomergeUrl,
-  useRootFolderDocWithMetadata,
 } from "./account.js";
 export * from "./modules";

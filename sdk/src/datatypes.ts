@@ -1,8 +1,8 @@
-import { Doc, DocHandle, Repo } from "@automerge/automerge-repo";
-import { HasPatchworkMetadata } from "./modules/types";
-import { LoadablePlugin } from "./plugins";
-import { LoadedPlugin, PluginDescription } from "./plugins/types";
-import { DocLink } from "./files/folder-doc";
+import type { Doc, DocHandle, Repo } from "@automerge/automerge-repo";
+import type { HasPatchworkMetadata } from "./modules/types";
+import type { LoadablePlugin } from "./plugins";
+import type { LoadedPlugin, PluginDescription } from "./plugins/types";
+import type { DocLink } from "./files/folder-doc";
 
 // DataType implementation interface
 export type DataTypeImplementation<D = unknown> = {

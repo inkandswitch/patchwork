@@ -5,17 +5,10 @@ import {
   isValidAutomergeUrl,
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import EventEmitter from "eventemitter3";
 
-import { useForceUpdate } from "./hooks/useForceUpdate";
-import { ChangeFn } from "@automerge/automerge";
-import { useEffect, useState } from "react";
-
 import type { FolderDoc } from "./files/folder-doc";
-import { typeOnlyAssert } from "./utils";
 import { createDocFromFile } from "./files";
-
 import { ModuleSettingsDoc } from "./modules";
 
 export interface AccountDoc {
@@ -45,6 +38,8 @@ interface ContactProps {
   name: string;
   avatar: File;
 }
+
+function typeOnlyAssert(condition: boolean): asserts condition {}
 
 export class Account extends EventEmitter<AccountEvents> {
   #repo: Repo;
@@ -225,117 +220,6 @@ const createAccount = (
   });
 
   return { accountHandle, contactHandle, rootFolderHandle };
-};
-
-/**
- * Returns `undefined` if account information is pending; otherwise
- * there should always be an account.
- */
-export function useCurrentAccount(): Account | undefined {
-  const repo = useRepo();
-  const [account, setAccount] = useState<Account | undefined>(undefined);
-
-  // @ts-expect-error useful for debugging
-  window.currentAccount = account;
-
-  const forceUpdate = useForceUpdate();
-
-  useEffect(() => {
-    getAccount(repo).then(setAccount);
-  }, [repo]);
-
-  useEffect(() => {
-    if (!account) {
-      return;
-    }
-
-    account.on("change", forceUpdate);
-
-    return () => {
-      account.off("change", forceUpdate);
-    };
-  }, [account, forceUpdate]);
-
-  // Add new fields to an old account doc that doesn't have one yet.
-  // In the future, replace this with a more principled schema migration system.
-  const doc = account?.handle.doc();
-  useEffect(() => {
-    if (account && doc && doc.rootFolderUrl === undefined) {
-      const rootFolderHandle = repo.create<FolderDoc>();
-      rootFolderHandle.change((rootFolder) => {
-        rootFolder.docs = [];
-      });
-      account.handle.change((account) => {
-        account.rootFolderUrl = rootFolderHandle.url;
-      });
-    }
-
-    if (account && doc && doc.uiStateUrl === undefined) {
-      const uiStateHandle = repo.create<any>();
-      uiStateHandle.change((uiState) => {
-        uiState.docPathsToggledOpenInSidebar = [];
-        uiState.openBranches = {};
-      });
-      account.handle.change((account) => {
-        account.uiStateUrl = uiStateHandle.url;
-      });
-    }
-
-    if (account && doc && doc.moduleSettingsUrl === undefined) {
-      const moduleSettingsHandle = repo.create<ModuleSettingsDoc>();
-      moduleSettingsHandle.change((settings) => {
-        settings.modules = [];
-      });
-      account.handle.change((account) => {
-        account.moduleSettingsUrl = moduleSettingsHandle.url;
-      });
-    }
-  }, [account, doc, repo]);
-
-  return account;
-}
-
-export function useCurrentAccountDoc(): [
-  AccountDoc | undefined,
-  (changeFn: ChangeFn<AccountDoc>) => void,
-] {
-  const account = useCurrentAccount();
-  const [accountDoc, changeAccountDoc] = useDocument<AccountDoc>(
-    account?.handle.url
-  );
-  return [accountDoc, changeAccountDoc];
-}
-
-export function useRootFolderDocWithMetadata() {
-  const [accountDoc] = useCurrentAccountDoc();
-
-  // debugging aid: put root folder handle on window
-  const repo = useRepo();
-  useEffect(() => {
-    if (accountDoc) {
-      (window as any).rootFolderHandle = repo.find<FolderDoc>(
-        accountDoc.rootFolderUrl
-      );
-    }
-  }, [repo, accountDoc]);
-
-  return accountDoc?.rootFolderUrl;
-}
-
-export function useSelf(): ContactDoc | undefined {
-  const [accountDoc] = useCurrentAccountDoc();
-  const [contactDoc] = useDocument<ContactDoc>(accountDoc?.contactUrl);
-
-  return contactDoc;
-}
-
-export const useDatatypeSettings = (): ModuleSettingsDoc | undefined => {
-  const [accountDoc] = useCurrentAccountDoc();
-  const [datatypeSettingsDoc] = useDocument<ModuleSettingsDoc>(
-    accountDoc?.moduleSettingsUrl
-  );
-
-  return datatypeSettingsDoc;
 };
 
 // Helpers to convert an automerge URL to/from an Account Token that the user can
