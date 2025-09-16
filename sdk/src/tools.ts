@@ -1,9 +1,10 @@
-import { AutomergeUrl } from "@automerge/automerge-repo";
-import React from "react";
-import { LoadedPlugin, PluginDescription } from "./plugins";
+import type { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
+import type { LoadedPlugin, PluginDescription } from "./plugins";
 
 export type ToolImplementation = {
-  EditorComponent: React.FC<EditorProps>;
+  // TODO: chee 2025-09-12 remove this when everything has been migrated to have a render()
+  EditorComponent?: React.FC<LegacyEditorProps>;
+  render(props: ToolProps): void | (() => void);
 };
 
 export type ToolDescription = PluginDescription & {
@@ -16,6 +17,12 @@ export type ToolDescription = PluginDescription & {
 
 export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;
 
-export type EditorProps = {
+export type LegacyEditorProps = {
   docUrl: AutomergeUrl;
+};
+
+export type ToolProps<T = unknown> = {
+  handle: DocHandle<T>;
+  element: ShadowRoot;
+  repo: import("@automerge/automerge-repo").Repo;
 };
