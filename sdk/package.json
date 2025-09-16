@@ -41,10 +41,7 @@
   "dependencies": {
     "@automerge/automerge": "3.0.0",
     "@automerge/automerge-repo": "^2.2.0",
-    "@automerge/automerge-repo-react-hooks": "^2.0.7",
     "eventemitter3": "^5.0.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "resolve.exports": "^2.0.3"
   },
   "devDependencies": {
@@ -53,10 +50,8 @@
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/diff": "^5.2.3",
     "@types/lodash": "^4.17.17",
-    "@types/react": "^18.3.23",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/parser": "^6.21.0",
-    "@vitejs/plugin-react": "^4.5.1",
     "rollup": "^4.41.1",
     "rollup-plugin-postcss": "^4.0.2",
     "tsup": "^8.5.0",
