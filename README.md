@@ -85,12 +85,6 @@ export const plugins = [plugin1, plugin2];
 
 Although the Patchwork system already handles loading and using tools/datatypes etc, sometimes you will need to write code that directly deals with loading plugins - eg if you're loading a datatype to access some functionality, or you're adding a new part of the system which relies on loading plugins.
 
-Plugins can be loaded using either hooks or pure JS functions.
-
-See `usePlugin()` and `usePluginDescriptions()` for example use in React.
-
-For the most common cases in non-react contexts you can use:
-
 - `getPlugin(type, id)` or `getMatchingPlugins()`, to synchronously access plugins which may or may not be loaded
 - `getLoadedPlugin(type, id)` or `getMatchingLoadedPlugins()`, to asynchronously access plugins, ensuring they are loaded before returning
 
