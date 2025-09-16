@@ -40,9 +40,8 @@ import {
 /* global CACHE_VERSION */
 const CACHE_NAME = CACHE_VERSION;
 
-// We also cache any JSPM.io requests because that's where our importMap
-// packages live
-const JSPM_ORIGIN = "https://ga.jspm.io";
+// We also cache these common module hosts
+const CACHED_ORIGINS = ["https://ga.jspm.io", "https://esm.sh"];
 
 let PEER_ID = `patchwork-service-worker-${Math.round(Math.random() * 1000000)}`;
 
@@ -426,7 +425,7 @@ self.addEventListener("fetch", async (event) => {
     );
   } else if (
     event.request.method === "GET" &&
-    (url.origin === self.location.origin || url.origin === JSPM_ORIGIN)
+    (url.origin === self.location.origin || CACHED_ORIGINS.includes(url.origin))
   ) {
     debugLog("Static or JSPM fetch – attempting cache", url.href);
     event.respondWith(
