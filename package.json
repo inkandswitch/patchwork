@@ -5,7 +5,7 @@
   "main": "index.js",
   "packageManager": "pnpm@9.5.0",
   "scripts": {
-    "preview": "pnpm --filter os preview",
+    "preview": "pnpm --filter gaios preview",
     "build": "pnpm -r build",
     "tsc": "pnpm -r exec tsc",
     "preinstall": "npx only-allow pnpm",
