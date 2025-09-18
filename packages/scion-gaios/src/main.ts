@@ -1,6 +1,7 @@
+import "./styles/global.css";
+
 import { start } from "@patchwork/rootstock";
 
-document.body.style.background = "orange";
 const { repo, moduleWatcher } = await start();
 
 const params = new URLSearchParams(document.location.search);
@@ -17,7 +18,3 @@ const rootElement = document.getElementById("root")!;
 
 rootElement.setAttribute("doc-url", docUrl);
 toolId && rootElement.setAttribute("tool-id", toolId);
-
-document.body.style.background = "pink";
-document.body.style.background = "blue";
-document.body.style.background = "green";

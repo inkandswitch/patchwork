@@ -1,0 +1,21 @@
+@import "./patchwork-compat.css";
+
+html {
+  font-size: 16px;
+  height: 100%;
+  height: 100vh;
+  height: 100dvh;
+
+  @media all and (display-mode: standalone) {
+    height: 100lvh;
+  }
+}
+
+body {
+  height: 100%;
+
+  > rootstock-tool {
+    height: 100dvh;
+    display: flow-root;
+  }
+}
