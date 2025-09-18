@@ -1,0 +1,8 @@
+{
+  "name": "@patchwork/shared-dependencies",
+  "type": "module",
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "jsdom": "^22.1.0"
+  }
+}

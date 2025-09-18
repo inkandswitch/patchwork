@@ -1,0 +1,43 @@
+{
+  "name": "@patchwork/rootstock",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "vite --force --port 5173",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "eventemitter3": "^5.0.1",
+    "resolve.exports": "^2.0.3"
+  },
+  "devDependencies": {
+    "@automerge/automerge": "3.1.2",
+    "@automerge/automerge-repo": "^2.3.0",
+    "@automerge/vanillajs": "^2.2.0",
+    "@rollup/plugin-commonjs": "^26.0.3",
+    "@rollup/plugin-replace": "^6.0.2",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/node": "^20.17.57",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vitejs/plugin-react": "^4.5.1",
+    "eslint": "^8.57.1",
+    "jsdom": "^22.1.0",
+    "pnpm": "^8.15.9",
+    "rollup-plugin-postcss": "^4.0.2",
+    "tslib": "^2.8.1",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.19",
+    "vite-plugin-dts": "^4.5.4",
+    "vite-plugin-wasm": "^3.4.1",
+    "vitest": "^2.1.9"
+  }
+}

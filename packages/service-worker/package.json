@@ -1,0 +1,15 @@
+{
+  "name": "@patchwork/service-worker",
+  "type": "module",
+  "main": "./dist/service-worker.js",
+  "devDependencies": {
+    "esbuild": "^0.23.1"
+  },
+  "dependencies": {
+    "@automerge/automerge": "3.0.0",
+    "@automerge/vanillajs": "^2.2.0"
+  },
+  "scripts": {
+    "build": "node ./build.js && echo built service worker at $(date)"
+  }
+}

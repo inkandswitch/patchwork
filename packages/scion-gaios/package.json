@@ -1,0 +1,20 @@
+{
+  "name": "gaios",
+  "type": "module",
+  "devDependencies": {
+    "@patchwork/service-worker": "workspace:^",
+    "vite": "^5.4.19",
+    "vite-plugin-module-alias": "^1.3.5",
+    "vite-plugin-wasm": "^3.4.1"
+  },
+  "scripts": {
+    "build:rootstock": "pnpm --filter @patchwork/rootstock build",
+    "build:sw": "pnpm --filter @patchwork/service-worker build && cp node_modules/@patchwork/service-worker/dist/service-worker.js dist/service-worker.js",
+    "build:main": "vite build",
+    "build": "pnpm build:rootstock && pnpm build:main && pnpm build:sw",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@patchwork/rootstock": "workspace:^"
+  }
+}
