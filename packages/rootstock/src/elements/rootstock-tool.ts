@@ -15,12 +15,18 @@ function getSuggestedImportUrl(doc: HasPatchworkMetadata) {
   return doc["@patchwork"].suggestedImportUrl;
 }
 
+const USE_SHADOWROOT = false;
+
 export class RootstockTool extends HTMLElement {
   // attributes, if these change it's new game +
   #docUrl: AutomergeUrl | null = null;
   #toolId: string | null = null;
   #handle: DocHandle<HasPatchworkMetadata> | null = null;
   #tool: Tool | null = null;
+
+  get rootElement(): ShadowRoot | HTMLElement {
+    return USE_SHADOWROOT ? this.shadowRoot! : this;
+  }
 
   get docUrl() {
     return this.#docUrl;
@@ -56,8 +62,9 @@ export class RootstockTool extends HTMLElement {
 
   constructor() {
     super();
-    // todo bring back shadow
-    //this.attachShadow({ mode: "open" });
+    if (USE_SHADOWROOT) {
+      this.attachShadow({ mode: "open" });
+    }
   }
 
   connectedCallback() {
@@ -131,7 +138,7 @@ export class RootstockTool extends HTMLElement {
     }
     this.#teardowns.clear();
     this.#handle = null;
-    //this.shadowRoot!.textContent = "";
+    this.rootElement!.textContent = "";
     this.#tool = null;
   }
 
@@ -179,18 +186,17 @@ export class RootstockTool extends HTMLElement {
       this.#teardowns.add(
         (await shim(this.#tool.module.EditorComponent))({
           handle: this.#handle,
-          element: this!,
+          element: this.rootElement!,
           repo: window.repo,
         })
       );
     } else if (this.#tool.module.render) {
       console.log("rendering with tool's render()");
       const teardown = this.#tool.module.render({
-        // todo should this be handle or docUrl
+        // todo: should this be handle or docUrl?
         handle: this.#handle,
-        // todo naming
-        // todo also make this shadow again
-        element: this! as unknown as ShadowRoot,
+        // todo: naming
+        element: this.rootElement!,
         repo: window.repo,
       });
       teardown && this.#teardowns.add(teardown);
@@ -199,7 +205,8 @@ export class RootstockTool extends HTMLElement {
   }
 }
 
-// todo move
+// todo how can we make this be part of gaios?
+// anyway, a transitional shim until patchwork uses the .render() pattern
 async function shim(tool: any) {
   const { createElement } = await import(/* @vite-ignore */ `${"react"}`);
   const { createRoot } = await import(

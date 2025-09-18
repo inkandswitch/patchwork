@@ -23,6 +23,6 @@ export type LegacyEditorProps = {
 
 export type ToolProps<T = unknown> = {
   handle: DocHandle<T>;
-  element: ShadowRoot;
+  element: ShadowRoot | HTMLElement;
   repo: import("@automerge/automerge-repo").Repo;
 };
