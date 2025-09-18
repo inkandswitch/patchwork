@@ -3,7 +3,7 @@ import path from "node:path";
 import { UserConfig, defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 import rootstockServiceWorkerPlugin from "@patchwork/service-worker/vite-plugin.ts";
-import importmap from "../shared-dependencies/importmap.json" with { type: "json" };
+import importmap from "./importmap.json" with { type: "json" };
 
 const SERVICE_WORKER_MODULE_ID = "/service-worker.js";
 const SERVICE_WORKER_PATH = path.join(
