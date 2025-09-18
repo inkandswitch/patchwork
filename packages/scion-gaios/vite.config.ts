@@ -1,4 +1,3 @@
-import { execSync } from "node:child_process";
 import path from "node:path";
 import { UserConfig, defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
