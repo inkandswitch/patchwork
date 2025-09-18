@@ -15,6 +15,8 @@ function getSuggestedImportUrl(doc: HasPatchworkMetadata) {
   return doc["@patchwork"].suggestedImportUrl;
 }
 
+// todo(chee): enable this when patchwork tools understand they should put their
+// css in the shadows
 const USE_SHADOWROOT = false;
 
 export class RootstockTool extends HTMLElement {
