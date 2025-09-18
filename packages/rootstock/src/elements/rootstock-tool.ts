@@ -210,7 +210,7 @@ export class RootstockTool extends HTMLElement {
 // todo how can we make this be part of gaios?
 // anyway, a transitional shim until patchwork uses the .render() pattern
 async function shim(tool: any) {
-  const { createElement } = await import(/* @vite-ignore */ `${"react"}`);
+  const { jsx } = await import(/* @vite-ignore */ `${"react/jsx-runtime"}`);
   const { createRoot } = await import(
     /* @vite-ignore */ `${"react-dom/client"}`
   );
@@ -218,17 +218,24 @@ async function shim(tool: any) {
     /* @vite-ignore */
     `${"@automerge/automerge-repo-react-hooks"}`
   );
+
   return (props: any) => {
     const root = createRoot(props.element);
-    root.render(
-      createElement(
-        RepoContext.Provider,
-        { value: props.repo },
-        createElement(tool, { docUrl: props.handle.url })
-      )
-    );
+    const component = () =>
+      jsx(RepoContext.Provider, {
+        value: props.repo,
+        children: jsx(tool, { docUrl: props.handle.url }),
+      });
+    // a hack to recreate the behaviour of patchwork, that rerenders children on
+    // any change
+    function rerender() {
+      root.render(component());
+    }
+    rerender();
+    props.handle.on("change", rerender);
     return () => {
       root.unmount();
+      props.handle.off("change", rerender);
     };
   };
 }
