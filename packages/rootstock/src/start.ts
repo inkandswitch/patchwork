@@ -129,23 +129,24 @@ export default async function start(options: RootstockOptions = {}) {
 
   await setupAccount({ repo });
   monkeyPatchDocHandle();
+
   const moduleWatcher = new ModuleWatcher(moduleSettingsUrl, [], repo);
   window.moduleWatcher = moduleWatcher;
-
-  async function setupAccount(options: { repo: Repo }) {
-    const account = await getAccount(options.repo);
-    globalAuthor = account.contactHandle.url;
-
-    account.on("change", () => {
-      globalAuthor = account.contactHandle.url;
-    });
-
-    return account;
-  }
 
   defineRootstockToolElement();
 
   return { repo, moduleWatcher };
+}
+
+async function setupAccount(options: { repo: Repo }) {
+  const account = await getAccount(options.repo);
+  globalAuthor = account.contactHandle.url;
+
+  account.on("change", () => {
+    globalAuthor = account.contactHandle.url;
+  });
+
+  return account;
 }
 
 async function setupServiceWorker(
