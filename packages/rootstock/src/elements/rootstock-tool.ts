@@ -187,16 +187,8 @@ export class RootstockTool extends HTMLElement {
     }
 
     this!.textContent = "";
-    if (this.#tool.module.EditorComponent && !this.#tool.module.render) {
-      this.#teardowns.add(
-        (await shim(this.#tool.module.EditorComponent))({
-          handle: this.#handle,
-          element: this.rootElement!,
-          repo: window.repo,
-        })
-      );
-    } else if (this.#tool.module.render) {
-      console.log("rendering with tool's render()");
+    if (this.#tool.module.render) {
+      log("rendering with tool's render()");
       const teardown = this.#tool.module.render({
         // todo: should this be handle or docUrl?
         handle: this.#handle,
@@ -205,6 +197,15 @@ export class RootstockTool extends HTMLElement {
         repo: window.repo,
       });
       teardown && this.#teardowns.add(teardown);
+    } else if (this.#tool.module.EditorComponent) {
+      log("falling back to legacy patchwork react shim");
+      this.#teardowns.add(
+        (await shim(this.#tool.module.EditorComponent))({
+          handle: this.#handle,
+          element: this.rootElement!,
+          repo: window.repo,
+        })
+      );
     }
     this.#renderQueued = false;
   }
