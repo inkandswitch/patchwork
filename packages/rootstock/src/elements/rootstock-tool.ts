@@ -12,8 +12,8 @@ function getType(doc: HasPatchworkMetadata) {
   return doc["@patchwork"].type;
 }
 
-function getSuggestedImportUrl(doc: HasPatchworkMetadata) {
-  return doc["@patchwork"].suggestedImportUrl;
+function getSuggestedImportUrl(doc: Partial<HasPatchworkMetadata>) {
+  return doc["@patchwork"]?.suggestedImportUrl;
 }
 
 // todo(chee): enable this when patchwork tools understand they should put their
