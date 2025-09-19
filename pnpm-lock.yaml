@@ -39,8 +39,20 @@ importers:
         specifier: ^21.1.1
         version: 21.1.1
 
+  meta/shared-dependencies:
+    devDependencies:
+      '@types/jsdom':
+        specifier: ^21.1.7
+        version: 21.1.7
+      jsdom:
+        specifier: ^22.1.0
+        version: 22.1.0
+
   packages/rootstock:
     dependencies:
+      '@patchwork/rootstock-patchwork-react-shim':
+        specifier: workspace:^
+        version: link:../rootstock-patchwork-react-shim
       eventemitter3:
         specifier: ^5.0.1
         version: 5.0.1
@@ -109,6 +121,12 @@ importers:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@20.19.9)(@vitest/ui@2.1.9)(jsdom@22.1.0)(less@4.4.1)(lightningcss@1.30.1)(sass@1.92.1)(stylus@0.64.0)(terser@5.37.0)
 
+  packages/rootstock-patchwork-react-shim:
+    devDependencies:
+      '@patchwork/rootstock':
+        specifier: workspace:^
+        version: link:../rootstock
+
   packages/scion-gaios:
     dependencies:
       '@patchwork/rootstock':
@@ -140,15 +158,6 @@ importers:
       esbuild:
         specifier: ^0.23.1
         version: 0.23.1
-
-  packages/shared-dependencies:
-    devDependencies:
-      '@types/jsdom':
-        specifier: ^21.1.7
-        version: 21.1.7
-      jsdom:
-        specifier: ^22.1.0
-        version: 22.1.0
 
 packages:
 
