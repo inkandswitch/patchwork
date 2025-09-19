@@ -39,6 +39,15 @@ importers:
         specifier: ^21.1.1
         version: 21.1.1
 
+  meta/patchwork-compat-generate-import-map:
+    devDependencies:
+      '@types/jsdom':
+        specifier: ^21.1.7
+        version: 21.1.7
+      jsdom:
+        specifier: ^22.1.0
+        version: 22.1.0
+
   meta/shared-dependencies:
     devDependencies:
       '@types/jsdom':
@@ -154,6 +163,9 @@ importers:
       '@automerge/vanillajs':
         specifier: ^2.2.0
         version: 2.3.0
+      resolve.exports:
+        specifier: ^2.0.3
+        version: 2.0.3
     devDependencies:
       esbuild:
         specifier: ^0.23.1
