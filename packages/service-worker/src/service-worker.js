@@ -14,6 +14,7 @@ import {
   WebSocketClientAdapter,
   MessageChannelNetworkAdapter,
 } from "@automerge/vanillajs/slim";
+import * as resolve from "resolve.exports";
 
 /**
  * This file is not built using the standard Vite toolchain, it is built by the
@@ -238,6 +239,10 @@ self.addEventListener(
       debugLog("AUTOMERGE request matched", url.href);
       const [, , maybeAutomergeUrl, ...encodedParts] = url.pathname.split("/");
       const parts = encodedParts.map((part) => decodeURIComponent(part));
+      // in case we end with a /
+      if (parts[parts.length - 1] === "") {
+        parts.pop();
+      }
 
       // support old docID style URLs
       const automergeUrl = maybeAutomergeUrl.startsWith("automerge:")
@@ -337,15 +342,21 @@ self.addEventListener(
           debugLog("Resolving file path parts", parts);
           let file;
 
-          if (doc.docs) {
-            file = await parts.reduce(async (acc, curr) => {
-              let target = (await acc)?.docs?.find((doc) => doc.name === curr);
+          if (parts.length == 0) {
+            debugLog("asking for a folder");
+            const entrypointParts = await findEntrypointPartsFromFolder(doc);
+            debugLog("found entrypoint", entrypointParts);
+            parts.push(...entrypointParts);
+          }
 
-              if (isValidAutomergeUrl(target?.url)) {
-                target = (await repo.find(target.url)).doc();
-              }
-              return target;
-            }, doc);
+          if (doc.docs) {
+            file = await findFileInFolder(doc, parts);
+            if (file.docs) {
+              debugLog("ended on a folder, looking for a main");
+              const entrypointParts = await findEntrypointPartsFromFolder(file);
+              debugLog("found an entrypoint", entrypointParts);
+              file = await findFileInFolder(file, entrypointParts);
+            }
           } else {
             file = await parts.reduce(async (acc, curr) => {
               let target = (await acc)?.[curr];
@@ -639,11 +650,47 @@ async function asyncBtoa(bytes) {
       if (typeof reader.result == "string") {
         resolve(reader.result.split(",")[1]);
       } else {
-        console.warn(
+        debugLog(
           "this if statement is only here to shut typescript up so i'm pretty surprised ngl"
         );
       }
     };
     reader.readAsDataURL(blob);
   });
+}
+
+// TODO(chee@2025-09-19): merge this with the similar thing in rootstock
+async function findEntrypointPartsFromFolder(doc) {
+  const pkgUrl = doc.docs.find((doc) => doc.name === "package.json")?.url;
+  if (isValidAutomergeUrl(pkgUrl)) {
+    const pkgFile = (await repo.find(pkgUrl)).doc();
+    const pkg = JSON.parse(pkgFile.content);
+    const mains =
+      resolve.exports(pkg, ".", {
+        conditions: ["patchwork", "import"],
+      }) ??
+      pkg.browser ??
+      pkg.module ??
+      pkg.main;
+    if (!mains) return [];
+    const main = Array.isArray(mains) ? mains[0] : mains;
+    const mainParts = main.split("/");
+    if (mainParts[0] == ".") {
+      mainParts.shift();
+    }
+    return mainParts;
+  }
+}
+
+async function findFileInFolder(doc, parts) {
+  if (!parts.length) return doc;
+  return parts.reduce(async (acc, curr, index, all) => {
+    let target = (await acc)?.docs?.find((doc) => doc.name === curr);
+
+    if (isValidAutomergeUrl(target?.url)) {
+      target = (await repo.find(target.url)).doc();
+    }
+
+    return target;
+  }, doc);
 }
