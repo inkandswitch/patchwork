@@ -51,7 +51,12 @@ export default defineConfig({
         }),
       ],
       external(id) {
-        return id.startsWith("@automerge/");
+        return (
+          id.startsWith("@automerge/") ||
+          id == "debug" ||
+          // TODO(chee): temporary while rootstock-patchwork-react-shim is a requirement
+          ["react/jsx-runtime", "react-dom/client"].includes(id)
+        );
       },
       output: {
         entryFileNames: "[name].js",
