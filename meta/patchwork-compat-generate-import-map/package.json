@@ -1,5 +1,6 @@
 {
-  "name": "@patchwork/shared-dependencies",
+  "name": "patchwork-compat-generate-import-map",
+  "private": true,
   "type": "module",
   "devDependencies": {
     "@types/jsdom": "^21.1.7",
