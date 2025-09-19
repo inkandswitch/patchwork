@@ -344,18 +344,37 @@ self.addEventListener(
 
           if (parts.length == 0) {
             debugLog("asking for a folder");
-            const entrypointParts = await findEntrypointPartsFromFolder(doc);
-            debugLog("found entrypoint", entrypointParts);
-            parts.push(...entrypointParts);
+            const entrypoint = await findEntrypointFromFolder(doc);
+            if (entrypoint) {
+              debugLog("found entrypoint", entrypoint);
+              return finish(
+                "success",
+                new Response(/* js */ `export * from "${url}/${entrypoint}"`, {
+                  headers: { "Content-Type": "application/javascript" },
+                })
+              );
+            }
           }
 
           if (doc.docs) {
             file = await findFileInFolder(doc, parts);
             if (file.docs) {
               debugLog("ended on a folder, looking for a main");
-              const entrypointParts = await findEntrypointPartsFromFolder(file);
-              debugLog("found an entrypoint", entrypointParts);
-              file = await findFileInFolder(file, entrypointParts);
+              const entrypoint = await findEntrypointFromFolder(file);
+              if (entrypoint) {
+                debugLog("found an entrypoint", entrypoint);
+                return finish(
+                  "success",
+                  new Response(
+                    /* js */ `export * from "${url}/${entrypoint}"`,
+                    {
+                      headers: { "Content-Type": "application/javascript" },
+                    }
+                  )
+                );
+              } else {
+                file = undefined;
+              }
             }
           } else {
             file = await parts.reduce(async (acc, curr) => {
@@ -660,7 +679,7 @@ async function asyncBtoa(bytes) {
 }
 
 // TODO(chee@2025-09-19): merge this with the similar thing in rootstock
-async function findEntrypointPartsFromFolder(doc) {
+async function findEntrypointFromFolder(doc) {
   const pkgUrl = doc.docs.find((doc) => doc.name === "package.json")?.url;
   if (isValidAutomergeUrl(pkgUrl)) {
     const pkgFile = (await repo.find(pkgUrl)).doc();
@@ -678,7 +697,7 @@ async function findEntrypointPartsFromFolder(doc) {
     if (mainParts[0] == ".") {
       mainParts.shift();
     }
-    return mainParts;
+    return mainParts.join("/");
   }
 }
 
