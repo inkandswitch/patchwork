@@ -3,6 +3,9 @@
   "type": "module",
   "main": "index.js",
   "devDependencies": {
-    "@patchwork/rootstock": "workspace:^"
+    "@automerge/automerge-repo-react-hooks": "^2.3.0",
+    "@patchwork/rootstock": "workspace:^",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^18.3.7"
   }
 }

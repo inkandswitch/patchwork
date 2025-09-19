@@ -1,21 +1,18 @@
 // @ts-check
+import { jsx } from "react/jsx-runtime";
+import { createRoot } from "react-dom/client";
+import { RepoContext } from "@automerge/automerge-repo-react-hooks";
+
+/**
+ * @import {LegacyEditorProps, ToolImplementation} from "@patchwork/rootstock"
+ */
+
 // a transitional shim until patchwork uses the .render() pattern
 /**
- * @param {import("@patchwork/rootstock").ToolImplementation['EditorComponent']} editorComponent
- * @returns{Promise<import("@patchwork/rootstock").ToolImplementation['render']>}}
+ * @param {React.FC<LegacyEditorProps>} editorComponent
+ * @returns {ToolImplementation['render']}}
  */
-export default async function shim(editorComponent) {
-  // this handsome incantation is to prevent tools from trying to include react
-  // in the bundle, and use the one from the importmap
-  const { jsx } = await import(/* @vite-ignore */ `${"react/jsx-runtime"}`);
-  const { createRoot } = await import(
-    /* @vite-ignore */ `${"react-dom/client"}`
-  );
-  const { RepoContext } = await import(
-    /* @vite-ignore */
-    `${"@automerge/automerge-repo-react-hooks"}`
-  );
-
+export default function shim(editorComponent) {
   return (props) => {
     const root = createRoot(props.element);
     const component = () =>
