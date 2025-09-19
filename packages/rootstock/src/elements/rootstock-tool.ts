@@ -7,6 +7,8 @@ import type {
   DocHandleChangePayload,
 } from "@automerge/automerge-repo";
 import shim from "@patchwork/rootstock-patchwork-react-shim";
+import debug from "debug";
+const log = debug("rootstock:elements:rootstock-tool");
 
 function getType(doc: HasPatchworkMetadata) {
   return doc["@patchwork"].type;
@@ -112,7 +114,7 @@ export class RootstockTool extends HTMLElement {
     if (!window.repo) throw new Error("No repo");
     // todo should moduleWatcher be settable as a prop?
     if (!window.moduleWatcher) throw new Error("No module watcher");
-    console.debug("setup", {
+    log("setup", {
       docUrl: this.docUrl,
       toolId: this.toolId,
     });
@@ -153,14 +155,14 @@ export class RootstockTool extends HTMLElement {
   }
 
   async #render() {
-    console.debug("render", {
+    log("render", {
       docUrl: this.docUrl,
       toolId: this.toolId,
       handleUrl: this.#handle?.url,
     });
     // i already found a friend
     if (this.#tool) {
-      console.debug("already have a tool, skipping render");
+      log("already have a tool, skipping render");
       this.#renderQueued = false;
       return;
     }
@@ -170,7 +172,7 @@ export class RootstockTool extends HTMLElement {
       return;
     }
 
-    console.log("rendering", {
+    log("rendering", {
       docUrl: this.docUrl,
       toolId: this.toolId,
     });
