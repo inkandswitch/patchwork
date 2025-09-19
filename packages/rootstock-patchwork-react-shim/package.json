@@ -1,0 +1,8 @@
+{
+  "name": "@patchwork/rootstock-patchwork-react-shim",
+  "type": "module",
+  "main": "index.js",
+  "devDependencies": {
+    "@patchwork/rootstock": "workspace:^"
+  }
+}

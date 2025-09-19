@@ -6,6 +6,7 @@ import type {
   DocHandle,
   DocHandleChangePayload,
 } from "@automerge/automerge-repo";
+import shim from "@patchwork/rootstock-patchwork-react-shim";
 
 function getType(doc: HasPatchworkMetadata) {
   return doc["@patchwork"].type;
@@ -136,7 +137,7 @@ export class RootstockTool extends HTMLElement {
 
   #teardown() {
     for (const fn of this.#teardowns) {
-      fn();
+      fn?.();
     }
     this.#teardowns.clear();
     this.#handle = null;
@@ -205,37 +206,4 @@ export class RootstockTool extends HTMLElement {
     }
     this.#renderQueued = false;
   }
-}
-
-// todo how can we make this be part of gaios?
-// anyway, a transitional shim until patchwork uses the .render() pattern
-async function shim(tool: any) {
-  const { jsx } = await import(/* @vite-ignore */ `${"react/jsx-runtime"}`);
-  const { createRoot } = await import(
-    /* @vite-ignore */ `${"react-dom/client"}`
-  );
-  const { RepoContext } = await import(
-    /* @vite-ignore */
-    `${"@automerge/automerge-repo-react-hooks"}`
-  );
-
-  return (props: any) => {
-    const root = createRoot(props.element);
-    const component = () =>
-      jsx(RepoContext.Provider, {
-        value: props.repo,
-        children: jsx(tool, { docUrl: props.handle.url }),
-      });
-    // a hack to recreate the behaviour of patchwork, that rerenders children on
-    // any change
-    function rerender() {
-      root.render(component());
-    }
-    rerender();
-    props.handle.on("change", rerender);
-    return () => {
-      root.unmount();
-      props.handle.off("change", rerender);
-    };
-  };
 }

@@ -4,7 +4,7 @@ import type { LoadedPlugin, PluginDescription } from ".";
 export type ToolImplementation = {
   // TODO: chee 2025-09-12 remove this when everything has been migrated to have a render()
   EditorComponent?: React.FC<LegacyEditorProps>;
-  render(props: ToolProps): void | (() => void);
+  render(props: ToolProps): () => void;
 };
 
 export type ToolDescription = PluginDescription & {
