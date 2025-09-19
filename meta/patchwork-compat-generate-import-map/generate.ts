@@ -72,7 +72,7 @@ function findRelativeImports(source: string): string[] {
   return out;
 }
 
-async function downloadRecursively(
+export async function downloadRecursively(
   entryUrl: string,
   fetched: Set<string>,
   written: Set<string>
@@ -161,7 +161,9 @@ async function main() {
   console.log(JSON.stringify({ imports }, null, 2));
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}
