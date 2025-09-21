@@ -358,7 +358,7 @@ self.addEventListener(
 
           if (doc.docs) {
             file = await findFileInFolder(doc, parts);
-            if (file.docs) {
+            if (file?.docs) {
               debugLog("ended on a folder, looking for a main");
               const entrypoint = await findEntrypointFromFolder(file);
               if (entrypoint) {
@@ -644,37 +644,16 @@ async function createWasmResponse(bytes) {
     })
     .join("\n");
 
-  const b64 = await asyncBtoa(bytes);
-
   const script = /* js */ `
     ${esmImports}
     ${names}
-    const bytes = Uint8Array.from(atob("${b64}"), c => c.charCodeAt(0));
+    const bytes = new Uint8Array([${Array.from(bytes)}]);
     const { instance } = await WebAssembly.instantiate(bytes, { ${keyvals} });
     ${assigns}
   `;
 
   return new Response(script, {
     headers: { "content-type": "application/javascript" },
-  });
-}
-
-// chatgpt
-/** @param {Uint8Array<ArrayBuffer>} bytes */
-async function asyncBtoa(bytes) {
-  const blob = new Blob([bytes], { type: "application/wasm" });
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result == "string") {
-        resolve(reader.result.split(",")[1]);
-      } else {
-        debugLog(
-          "this if statement is only here to shut typescript up so i'm pretty surprised ngl"
-        );
-      }
-    };
-    reader.readAsDataURL(blob);
   });
 }
 
