@@ -21,7 +21,6 @@ export default defineConfig({
       name: "naïve-importmap",
       transformIndexHtml: {
         order: "pre",
-
         handler(html) {
           return {
             html,
@@ -46,6 +45,7 @@ export default defineConfig({
     minify: false,
     sourcemap: true,
     rollupOptions: {
+      external: Object.keys(importmap.imports),
       input: {
         main: path.resolve(__dirname, "index.html"),
       },
