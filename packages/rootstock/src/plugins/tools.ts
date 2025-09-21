@@ -1,10 +1,12 @@
 import type { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import type { LoadedPlugin, PluginDescription } from ".";
+import { HasPatchworkMetadata } from "../modules";
+import shim from "@patchwork/rootstock-patchwork-react-shim";
 
 export type ToolImplementation = {
   // TODO: chee 2025-09-12 remove this when everything has been migrated to have a render()
   EditorComponent?: React.FC<LegacyEditorProps>;
-  render(props: ToolProps): () => void;
+  render?(props: ToolProps): () => void;
 };
 
 export type ToolDescription = PluginDescription & {
@@ -22,7 +24,22 @@ export type LegacyEditorProps = {
 };
 
 export type ToolProps<T = unknown> = {
+  // todo: should this be handle or docUrl?
   handle: DocHandle<T>;
+  // todo: naming
   element: ShadowRoot | HTMLElement;
   repo: import("@automerge/automerge-repo").Repo;
 };
+
+export function render({
+  handle,
+  tool,
+  element,
+  repo,
+}: ToolProps & { tool: ToolImplementation }): void | (() => void) {
+  if (tool.render) {
+    return tool.render({ handle, element, repo });
+  } else if (tool.EditorComponent) {
+    return shim(tool.EditorComponent)!({ handle, element, repo });
+  }
+}

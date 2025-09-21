@@ -1,12 +1,11 @@
 import type { HasPatchworkMetadata } from "../modules/types.js";
 import { getLoadedPlugin, onPluginsChange } from "../plugins/index.js";
-import type { Tool } from "../plugins/tools.js";
+import { render, type Tool } from "../plugins/tools.js";
 import type {
   AutomergeUrl,
   DocHandle,
   DocHandleChangePayload,
 } from "@automerge/automerge-repo";
-import shim from "@patchwork/rootstock-patchwork-react-shim";
 import debug from "debug";
 const log = debug("rootstock:elements:rootstock-tool");
 
@@ -127,9 +126,7 @@ export class RootstockTool extends HTMLElement {
       })
     );
     this.#handle = await window.repo.find<HasPatchworkMetadata>(this.docUrl!);
-    const suggestedImportUrl = getSuggestedImportUrl(this.#handle.doc());
-    suggestedImportUrl &&
-      window.moduleWatcher.loadModules([suggestedImportUrl]);
+    self.moduleWatcher.loadSuggestedImportUrl(this.docUrl);
     this.#handle.on("change", this.#onDocChange);
     this.#teardowns.add(() => this.#handle!.off("change", this.#onDocChange));
     this.#queueRender();
@@ -187,26 +184,13 @@ export class RootstockTool extends HTMLElement {
     }
 
     this!.textContent = "";
-    if (this.#tool.module.render) {
-      log("rendering with tool's render()");
-      const teardown = this.#tool.module.render({
-        // todo: should this be handle or docUrl?
-        handle: this.#handle,
-        // todo: naming
-        element: this.rootElement!,
-        repo: window.repo,
-      });
-      teardown && this.#teardowns.add(teardown);
-    } else if (this.#tool.module.EditorComponent) {
-      log("falling back to legacy patchwork react shim");
-      this.#teardowns.add(
-        (await shim(this.#tool.module.EditorComponent))({
-          handle: this.#handle,
-          element: this.rootElement!,
-          repo: window.repo,
-        })
-      );
-    }
+    const cleanup = render({
+      handle: this.#handle,
+      element: this.rootElement,
+      repo: window.repo,
+      tool: this.#tool.module,
+    });
+    cleanup && this.#teardowns.add(cleanup);
     this.#renderQueued = false;
   }
 }

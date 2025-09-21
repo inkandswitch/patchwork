@@ -55,11 +55,13 @@ export default async function start(options: RootstockOptions = {}) {
     import.meta.env.ROOTSTOCK_STORAGE_ID ??
     ("3760df37-a4c6-4f66-9ecd-732039a9385d" as StorageId);
 
+  // TODO(chee): will this come from your identity document?
   const peerIdPrefix =
     options.peerIdPrefix ??
     import.meta.env.ROOTSTOCK_PEER_ID_PREFIX ??
     localStorage.getItem("PEER_ID_PREFIX");
 
+  // TODO(chee): this will probably come from your identity document
   const moduleSettingsUrl =
     options.moduleSettingsUrl ??
     import.meta.env.ROOTSTOCK_MODULE_SETTINGS_URL ??
