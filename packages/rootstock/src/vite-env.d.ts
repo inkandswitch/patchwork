@@ -5,7 +5,7 @@ interface ImportMeta {
 }
 
 interface Window {
-  __ROOTSTOCK_VERSION_: {
+  __ROOTSTOCK_VERSION__: {
     gitHash: string;
     buildTimestamp: number;
   };

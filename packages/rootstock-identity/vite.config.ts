@@ -17,27 +17,17 @@ export default defineConfig({
     lib: {
       entry: {
         index: "src/index.ts",
-        "rootstock-tool": "src/elements/rootstock-tool.ts",
-        datatypes: "src/datatypes/index.ts",
-        files: "src/files/index.ts",
-        modules: "src/modules/index.ts",
-        plugins: "src/plugins/index.ts",
       },
-      name: "Rootstock",
+      name: "Rootstock-Identity",
       formats: ["es"],
       fileName: (format) => `index.js`,
     },
     rollupOptions: {
-      external: [
-        "@keyhive/keyhive",
-        "@keyhive/keyhive/slim",
-        "@keyhive/keyhive/keyhive_wasm.base64.js",
-      ],
       plugins: [
         replace({
           preventAssignment: true,
           "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
-          "window.__ROOTSTOCK_VERSION__": JSON.stringify({
+          __ROOTSTOCK_VERSION__: JSON.stringify({
             gitHash: execSync("git rev-parse HEAD", {
               encoding: "utf8",
             }).trim(),
@@ -56,6 +46,15 @@ export default defineConfig({
           requireReturnsDefault: "auto",
         }),
       ],
+      external(id) {
+        return (
+          id.startsWith("@automerge/") ||
+          id.startsWith("@keyhive/") ||
+          id == "debug" ||
+          // TODO(chee): temporary while rootstock-patchwork-react-shim is a requirement
+          ["react/jsx-runtime", "react-dom/client"].includes(id)
+        );
+      },
       output: {
         entryFileNames: "[name].js",
         chunkFileNames: "chunks/[name].js",

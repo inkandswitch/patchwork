@@ -43,7 +43,9 @@ export default defineConfig({
     minify: false,
     sourcemap: true,
     rollupOptions: {
-      external: Object.keys(importmap.imports),
+      external(id) {
+        return id.startsWith("@keyhive/");
+      },
       input: {
         main: path.resolve(__dirname, "index.html"),
       },

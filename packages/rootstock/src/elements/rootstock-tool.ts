@@ -187,8 +187,10 @@ export class RootstockTool extends HTMLElement {
     const cleanup = render({
       handle: this.#handle,
       element: this.rootElement,
-      repo: window.repo,
       tool: this.#tool.module,
+
+      repo: window.repo,
+      keyhiveKit: window.keyhiveKit,
     });
     cleanup && this.#teardowns.add(cleanup);
     this.#renderQueued = false;

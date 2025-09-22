@@ -1,6 +1,6 @@
 export default async function setupServiceWorker(): Promise<ServiceWorker> {
   return navigator.serviceWorker
-    .register("/service-worker.js")
+    .register("/service-worker.js", { type: "module" })
     .then((registration) => {
       // If the service worker is still installing, we wait until it is activated
       const installing = registration.installing;

@@ -12,7 +12,13 @@ import {
   PeerId,
   AutomergeUrl,
 } from "@automerge/vanillajs/slim";
+import { KeyhiveNetworkAdapter } from "@automerge/automerge-keyhive-network-adapter";
 import * as resolve from "resolve.exports";
+import * as keyhive from "@keyhive/keyhive/slim";
+import { setPanicHook } from "@keyhive/keyhive/slim";
+// @ts-expect-error
+import { wasmBase64 } from "@keyhive/keyhive/keyhive_wasm.base64.js";
+import { initializeKeyhive } from "@patchwork/rootstock-identity";
 
 /**
  * This file is not built using the standard Vite toolchain, it is built by the
@@ -56,6 +62,13 @@ declare global {
   var __activeFetches: number;
 }
 
+declare global {
+  interface Window {
+    Automerge: typeof import("@automerge/automerge");
+    repo: import("@automerge/vanillaJS").Repo;
+  }
+}
+
 // Debug logging control - disabled by default
 let debugEnabled = false;
 
@@ -82,22 +95,43 @@ const { promise: repoReady, resolve: resolveRepoReady } = resolvablePromise();
   debugLog("Initializing Automerge WASM");
   await Automerge.initializeBase64Wasm(automergeWasmBase64);
   debugLog("Automerge WASM initialized");
+  keyhive.initFromBase64Wasm(wasmBase64);
+  setPanicHook();
 
-  const newRepo = new Repo({
-    storage: new IndexedDBStorageAdapter(),
-    network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
-    peerId: PEER_ID,
-    sharePolicy: async (peerId) => peerId.includes("storage-server"),
-    enableRemoteHeadsGossiping: true,
+  const peerIdSuffix =
+    Math.random().toString(36).substring(2, 15) + "-service-worker";
+  const storage = new IndexedDBStorageAdapter();
+
+  const kh = await initializeKeyhive({
+    storage,
+    peerIdSuffix,
+    eventHandler: (event) => {
+      console.log(`[Keyhive Event] ${event}`);
+    },
   });
 
+  const network = new KeyhiveNetworkAdapter(
+    new WebSocketClientAdapter("wss://keyhive.sync.automerge.org"),
+    kh.keyhive,
+    storage,
+    kh.syncServer.peerId
+  );
+
+  const newRepo = new Repo({
+    storage,
+    network: [network],
+    peerId: kh.peerId,
+    sharePolicy: async (peerId) => peerId === kh.syncServer.peerId,
+    enableRemoteHeadsGossiping: true,
+  });
+  repo = newRepo;
+
   // Put the repo on the global context for interactive use
-  self.repo = newRepo;
+  self.repo = repo;
   self.Automerge = Automerge;
 
-  repo = newRepo;
-  debugLog("Repo created", { peerId: PEER_ID });
-  resolveRepoReady(newRepo);
+  debugLog("Repo created", { peerId: kh.active.peerId });
+  resolveRepoReady(repo);
 })();
 
 function sendMessageToClients(message: any) {
@@ -157,6 +191,9 @@ self.addEventListener("message", async (event) => {
       repo!.networkSubsystem.addNetworkAdapter(
         new MessageChannelNetworkAdapter(event.ports[0], { useWeakRef: true })
       );
+
+      // Notify client that service worker is ready
+      event.source?.postMessage({ type: "SERVICE_WORKER_READY" });
       return;
 
     case "ADD_SYNC_SERVER":
