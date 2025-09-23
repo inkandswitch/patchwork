@@ -57,14 +57,14 @@ export class ModuleWatcher {
         ? importModuleFromFolderDocUrl(importName)
         : import(/* @vite-ignore */ importName));
     } catch (err) {
-      console.error(`Failed to import ${importName}`, err);
+      console.error(`%c Failed to import ${importName}`, "color: #ff2a50", err);
       return null;
     }
   }
 
   private async registerModule(importName: string) {
     const mod = await this.importModuleSafe(importName);
-    console.log(`Loaded module ${importName}`, mod);
+    console.log(`%c Loaded module ${importName}`, "color: #3399cc", mod);
     if (!mod) return;
 
     if (mod.plugins) {
