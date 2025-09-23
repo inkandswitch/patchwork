@@ -2,11 +2,16 @@ import build from "./build.js";
 import path from "node:path";
 
 export interface RootstockServiceWorkerPluginOptions {
-  /** The vite module ID for the service worker (how it is imported) */
-  moduleId: string;
   /** The path to the service worker source file (its real loc on disk) */
   path: string;
 }
+
+const MODULE_ID = "/service-worker.js";
+const DEFAULT_PATH_TO_SERVICE_WORKER = path.join(
+  import.meta.dirname,
+  "src",
+  "service-worker.js"
+);
 
 /**
  * This plugin builds the service worker in service-worker.js using esbuild
@@ -19,8 +24,7 @@ export interface RootstockServiceWorkerPluginOptions {
  */
 export default function rootstockServiceWorkerPlugin(
   options: RootstockServiceWorkerPluginOptions = {
-    moduleId: "/service-worker.js",
-    path: path.join(import.meta.dirname, "src", "service-worker.js"),
+    path: DEFAULT_PATH_TO_SERVICE_WORKER,
   }
 ): import("vite").Plugin {
   return {
@@ -32,7 +36,7 @@ export default function rootstockServiceWorkerPlugin(
         ctx.server.hot.send({
           type: "full-reload",
         });
-        const module = ctx.server.moduleGraph.getModuleById(options.moduleId);
+        const module = ctx.server.moduleGraph.getModuleById(MODULE_ID);
         //console.log({ module });
         if (module != null) {
           ctx.server.moduleGraph.invalidateModule(module);
@@ -41,8 +45,8 @@ export default function rootstockServiceWorkerPlugin(
       }
     },
     async resolveId(id) {
-      if (id === options.moduleId) {
-        return options.moduleId;
+      if (id === MODULE_ID) {
+        return MODULE_ID;
       }
       if (id === options.path) {
         return options.path;
@@ -50,9 +54,9 @@ export default function rootstockServiceWorkerPlugin(
       return null;
     },
     async load(id) {
-      if (id === options.moduleId || id === options.path) {
+      if (id === MODULE_ID || id === options.path) {
         const result = await build();
-        return result.outputFiles?.[0].text;
+        return result[0].outputFiles?.[0].text;
       }
       return null;
     },

@@ -2,15 +2,21 @@
   "name": "@patchwork/service-worker",
   "type": "module",
   "main": "./dist/service-worker.js",
+  "exports": {
+    ".": "./dist/service-worker.js",
+    "./setup": "./dist/setup-service-worker.js",
+    "./vite": "./vite-plugin.ts"
+  },
   "devDependencies": {
     "esbuild": "^0.23.1"
   },
   "dependencies": {
     "@automerge/automerge": "3.0.0",
     "@automerge/vanillajs": "^2.2.0",
-    "resolve.exports": "^2.0.3"
+    "resolve.exports": "^2.0.3",
+    "service-worker-types": "npm:@types/serviceworker@^0.0.153"
   },
   "scripts": {
-    "build": "node ./build.js && echo built service worker at $(date)"
+    "build": "node ./build.js && echo built service worker at $(date) && tsc --declaration src/setup-service-worker.ts --emitDeclarationOnly --lib esnext,dom --outDir ./dist"
   }
 }
