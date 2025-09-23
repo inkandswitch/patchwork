@@ -28,6 +28,7 @@ let globalMessageChannelAdapter: MessageChannelNetworkAdapter | undefined;
 let globalAuthor: AutomergeUrl;
 
 export interface RootstockOptions {
+  serviceWorker: ServiceWorker;
   storageId?: StorageId;
   /**
    * Peer id prefix is added to both the peer id of the client and the service
@@ -36,14 +37,21 @@ export interface RootstockOptions {
    */
   peerIdPrefix?: PeerId;
   moduleSettingsUrl?: AutomergeUrl;
-  serviceWorkerUrl?: string;
 }
 
 let started = false;
-export default async function start(options: RootstockOptions = {}) {
+export default async function start(options: RootstockOptions) {
   if (started) {
     throw new Error("Rootstock is already started");
   }
+
+  // This case should never happen
+  // if the service worker is not defined here either the initialization failed
+  // or we found a new case that we haven't considered yet
+  if (!options.serviceWorker) {
+    throw new Error("serviceWorker is a required option");
+  }
+
   started = true;
 
   console.info(
@@ -68,15 +76,10 @@ export default async function start(options: RootstockOptions = {}) {
     localStorage.getItem("moduleSettingsUrl") ??
     ("automerge:3n51DZbA1FRwHAV8K2sW1g2aA3P2" as AutomergeUrl);
 
-  const serviceWorkerUrl =
-    options.serviceWorkerUrl ??
-    import.meta.env.ROOTSTOCK_SERVICE_WORKER_URL ??
-    "/service-worker.js";
-
   if (!isValidAutomergeUrl(moduleSettingsUrl)) {
     throw new Error("Invalid module settings URL");
   }
-  const serviceWorker = await setupServiceWorker(serviceWorkerUrl);
+
   const repo = await setupRepo({ peerIdPrefix });
   window.repo = repo;
 
@@ -89,18 +92,11 @@ export default async function start(options: RootstockOptions = {}) {
   // Here we ping the service worker while the tab is running
   // to keep it alive (and make it restart if it did stop.)
   setInterval(() => {
-    serviceWorker.postMessage({ type: "PING" });
+    options.serviceWorker.postMessage({ type: "PING" });
   }, 5000);
 
-  // This case should never happen
-  // if the service worker is not defined here either the initialization failed
-  // or we found a new case that we haven't considered yet
-  if (!serviceWorker) {
-    throw new Error("Failed to setup service worker");
-  }
-
   console.log("establishMessageChannel: initial startup");
-  establishMessageChannel({ serviceWorker, repo });
+  establishMessageChannel({ serviceWorker: options.serviceWorker, repo });
 
   // Re-establish the MessageChannel if the controlling service worker changes.
   navigator.serviceWorker.addEventListener("controllerchange", (event) => {
@@ -109,7 +105,7 @@ export default async function start(options: RootstockOptions = {}) {
     // controllerchange is fired after a new service worker is installed
     // even if we wait above in setupServiceWorker() until the service worker state changes to activated.
     // To make sure we don't call establishMessageChannel twice check if this is actually a new service worker
-    if (newServiceWorker !== serviceWorker) {
+    if (newServiceWorker !== options.serviceWorker) {
       console.log(
         "establishMessageChannel: controllerchange to new service worker"
       );
@@ -124,7 +120,7 @@ export default async function start(options: RootstockOptions = {}) {
         console.log(
           "establishMessageChannel: SERVICE_WORKER_RESTARTED message"
         );
-        establishMessageChannel({ serviceWorker, repo });
+        establishMessageChannel({ serviceWorker: options.serviceWorker, repo });
         break;
     }
   });
@@ -149,32 +145,6 @@ async function setupAccount(options: { repo: Repo }) {
   });
 
   return account;
-}
-
-async function setupServiceWorker(
-  serviceWorkerUrl: string
-): Promise<ServiceWorker> {
-  return navigator.serviceWorker
-    .register(serviceWorkerUrl)
-    .then((registration) => {
-      // If the service worker is still installing, we wait until it is activated
-      const installing = registration.installing;
-      if (installing) {
-        console.log("spawing new service worker");
-        return new Promise((resolve) => {
-          installing.onstatechange = (event) => {
-            const serviceWorker = event.target as ServiceWorker;
-            if (serviceWorker.state === "activated") {
-              resolve(serviceWorker);
-            }
-          };
-        });
-      }
-
-      // otherwise return the active service worker
-      // TODO: JAH strict fix... docs suggest there are more states than just installing and active
-      return registration.active!;
-    });
 }
 
 async function setupRepo(options: { peerIdPrefix?: string } = {}) {
