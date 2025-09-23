@@ -1,8 +1,12 @@
 import "./styles/global.css";
 
-import { start } from "@patchwork/rootstock";
+import setupServiceWorker from "@patchwork/service-worker/setup";
 
-const { repo, moduleWatcher } = await start();
+const serviceWorker = await setupServiceWorker();
+
+const rootstock = await import("@patchwork/rootstock");
+
+const { repo, moduleWatcher } = await rootstock.start({ serviceWorker });
 
 const params = new URLSearchParams(document.location.search);
 const docUrl = params.get("docUrl");
