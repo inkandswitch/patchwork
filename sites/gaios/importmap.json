@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "@patchwork/context": "/automerge/automerge:2UwRoTSEoK5ZJ1vf8tC9eJJiDJYB/dist/index.js",
+    "@patchwork/context/react": "/automerge/automerge:2UwRoTSEoK5ZJ1vf8tC9eJJiDJYB/dist/react.js",
+    "@patchwork/context/diff": "/automerge/automerge:2UwRoTSEoK5ZJ1vf8tC9eJJiDJYB/dist/diff.js",
+    "@patchwork/context/selection": "/automerge/automerge:2UwRoTSEoK5ZJ1vf8tC9eJJiDJYB/dist/selection.js"
+  }
+}
