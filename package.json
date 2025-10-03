@@ -1,5 +1,6 @@
 {
-  "name": "patchwork",
+  "name": "@patchwork/monorepo",
+  "private": true,
   "version": "1.0.0",
   "description": "A malleable software environment for collaborative work",
   "main": "index.js",
