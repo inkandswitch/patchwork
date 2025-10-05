@@ -99,10 +99,26 @@ export function connectServiceWorkerToRepo(
 export default async function bootstrap(): Promise<Repo> {
   let sw = await installServiceWorker();
   const repo = await createRepo();
-  connectServiceWorkerToRepo(sw, repo);
+  const { promise: serviceWorkerInitEcho, resolve } =
+    Promise.withResolvers<void>();
+
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    switch ((event as MessageEvent).data.type) {
+      case "SERVICE_WORKER_RESTARTED":
+        // Re-establish the MessageChannel if the service worker restarts
+        console.log(
+          "establishMessageChannel: SERVICE_WORKER_RESTARTED message"
+        );
+        connectServiceWorkerToRepo(sw, repo);
+        break;
+      case "SERVICE_WORKER_READY":
+        resolve();
+        break;
+    }
+  });
 
   // Re-establish the MessageChannel if the controlling service worker changes.
-  sw.addEventListener("controllerchange", (event) => {
+  navigator.serviceWorker.addEventListener("controllerchange", (event) => {
     const newServiceWorker = (event.target as ServiceWorkerContainer)
       .controller!;
     // controllerchange is fired after a new service worker is installed
@@ -117,17 +133,7 @@ export default async function bootstrap(): Promise<Repo> {
     }
   });
 
-  sw.addEventListener("message", (event) => {
-    switch ((event as MessageEvent).data.type) {
-      case "SERVICE_WORKER_RESTARTED":
-        // Re-establish the MessageChannel if the service worker restarts
-        console.log(
-          "establishMessageChannel: SERVICE_WORKER_RESTARTED message"
-        );
-        connectServiceWorkerToRepo(sw, repo);
-        break;
-    }
-  });
-
+  connectServiceWorkerToRepo(sw, repo);
+  await serviceWorkerInitEcho;
   return repo;
 }

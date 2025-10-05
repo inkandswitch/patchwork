@@ -189,13 +189,11 @@ self.addEventListener("message", async (event) => {
       // load config and connect with client through message channel
       // if config is already loaded the new config is ignored
       debugLog("INIT message");
-
       if (!repo) await repoReady;
       debugLog("Repo ready – adding MessageChannel network adapter");
       repo!.networkSubsystem.addNetworkAdapter(
         new MessageChannelNetworkAdapter(event.ports[0], { useWeakRef: true })
       );
-
       // Notify client that service worker is ready
       event.source?.postMessage({ type: "SERVICE_WORKER_READY" });
       return;
@@ -387,7 +385,11 @@ self.addEventListener("fetch", async (event: FetchEvent) => {
         }
 
         debugLog("Resolving file path parts", parts);
-        let file;
+        let file:
+          | Automerge.Doc<
+              { content?: any; mimeType?: string } | { docs: DocLink[] }
+            >
+          | undefined;
 
         if (parts.length == 0 && isFolder(doc)) {
           debugLog("asking for a folder");
@@ -405,9 +407,11 @@ self.addEventListener("fetch", async (event: FetchEvent) => {
 
         if (isFolder(doc)) {
           file = await findFileInFolder(doc, parts);
-          if (file?.docs) {
+          if (file && "docs" in file) {
             debugLog("ended on a folder, looking for a main");
-            const entrypoint = await findEntrypointFromFolder(file);
+            const entrypoint = await findEntrypointFromFolder(
+              file as { docs: DocLink[] }
+            );
             if (entrypoint) {
               debugLog("found an entrypoint", entrypoint);
               return finish(
@@ -742,7 +746,7 @@ async function findFileInFolder(doc: { docs: DocLink[] }, parts: string[]) {
       return target!;
     },
     doc
-  );
+  ) as Automerge.Doc<unknown>;
 }
 
 function isFolder(
