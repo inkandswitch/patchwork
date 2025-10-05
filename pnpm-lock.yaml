@@ -98,9 +98,6 @@ importers:
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../filesystem
-      '@patchwork/react':
-        specifier: workspace:^
-        version: link:../react
       '@types/node':
         specifier: ^20.17.57
         version: 20.19.19
