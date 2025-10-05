@@ -1,0 +1,21 @@
+{
+  "name": "@patchwork/filesystem",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "license": "ISC",
+  "dependencies": {
+    "@automerge/automerge": "3.1.2",
+    "@automerge/automerge-repo": "^2.3.0",
+    "@types/node": "^20.17.57",
+    "resolve.exports": "^2.0.3"
+  }
+}

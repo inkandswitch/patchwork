@@ -1,5 +1,5 @@
 /*@import "./patchwork-compat.css";*/
-
+/* todo should this be in the bootloader ?*/
 html {
   font-size: 16px;
   height: 100%;
@@ -11,10 +11,15 @@ html {
   }
 }
 
+patchwork-view {
+  height: 100%;
+  width: 100%;
+}
+
 body {
   height: 100%;
 
-  > rootstock-tool {
+  > patchwork-view {
     height: 100dvh;
     display: flow-root;
   }

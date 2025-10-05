@@ -1,5 +1,0 @@
-{
-  "app": "gaios",
-  "title": "Gaios",
-  "importmap": "../shared-dependencies/importmap.json"
-}

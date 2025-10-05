@@ -1,38 +1,14 @@
-import path from "node:path";
-import { UserConfig, defineConfig } from "vite";
+import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
-import rootstockServiceWorkerPlugin from "@patchwork/service-worker/vite";
-import importmap from "./importmap.json" with { type: "json" };
-
-const SERVICE_WORKER_PATH = path.join(
-  import.meta.dirname,
-  "node_modules/@patchwork/service-worker/dist/service-worker.js"
-);
+import patchwork from "@patchwork/bootloader/vite";
 
 export default defineConfig({
   plugins: [
     wasm(),
-    rootstockServiceWorkerPlugin({
-      path: SERVICE_WORKER_PATH,
+    patchwork({
+      syncServerStorageId: "3760df37-a4c6-4f66-9ecd-732039a9385d",
+      syncServerUrl: "wss://sync3.automerge.org",
     }),
-    {
-      name: "naïve-importmap",
-      transformIndexHtml: {
-        order: "pre",
-        handler(html) {
-          return {
-            html,
-            tags: [
-              {
-                tag: "script",
-                attrs: { type: "importmap" },
-                children: JSON.stringify(importmap, null, 2),
-              },
-            ],
-          };
-        },
-      },
-    },
   ],
   worker: {
     format: "es",
@@ -42,24 +18,5 @@ export default defineConfig({
     target: "firefox137",
     minify: false,
     sourcemap: true,
-    rollupOptions: {
-      external(id) {
-        return id.startsWith("@keyhive/");
-      },
-      input: {
-        main: path.resolve(__dirname, "index.html"),
-      },
-      preserveEntrySignatures: "allow-extension",
-      output: {
-        entryFileNames: "[name].js",
-        chunkFileNames: "chunks/[name].js",
-      },
-    },
   },
-
-  define: {
-    "process.env": {
-      NODE_ENV: "production",
-    },
-  },
-} satisfies UserConfig);
+});

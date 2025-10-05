@@ -1,0 +1,27 @@
+{
+  "name": "@patchwork/plugins",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "license": "ISC",
+  "dependencies": {
+    "@automerge/automerge": "3.0.0",
+    "@automerge/automerge-repo": "^2.3.0",
+    "@patchwork/filesystem": "workspace:^",
+    "@patchwork/react": "workspace:^",
+    "@types/node": "^20.17.57",
+    "eventemitter3": "^5.0.1",
+    "resolve.exports": "^2.0.3"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.25"
+  }
+}

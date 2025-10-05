@@ -1,0 +1,32 @@
+{
+  "name": "@patchwork/bootloader",
+  "type": "module",
+  "bin": {
+    "generate-patchwork-bootloader": "./dist/generate.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.1"
+  },
+  "exports": {
+    "./vite": "./dist/patchwork-vite-plugin.js",
+    ".": "./index.d.ts"
+  },
+  "dependencies": {
+    "@automerge/automerge": "3.0.0",
+    "@automerge/automerge-repo": "^2.3.0",
+    "@automerge/vanillajs": "^2.3.0",
+    "resolve.exports": "^2.0.3",
+    "service-worker-types": "npm:@types/serviceworker@^0.0.153",
+    "tinyargs": "^0.1.4"
+  },
+  "peerDependencies": {
+    "@automerge/automerge": "3.0.0",
+    "@automerge/automerge-repo": "^2.3.0",
+    "@automerge/vanillajs": "^2.3.0"
+  },
+  "author": "Ink & Switch",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput"
+  }
+}

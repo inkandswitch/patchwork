@@ -1,0 +1,133 @@
+import {
+  IndexedDBStorageAdapter,
+  MessageChannelNetworkAdapter,
+  Repo,
+  type PeerId,
+  type StorageId,
+} from "@automerge/vanillajs";
+
+// will be replaced during build
+declare global {
+  var __SYNC_SERVER_STORAGE_ID__: StorageId;
+  var __SERVICE_WORKER_PATH__: string;
+  var __SERVICE_WORKER_TYPE__: WorkerType;
+  var __KEYHIVE_ENABLED__: boolean;
+  var repo: Repo;
+}
+
+export async function installServiceWorker(): Promise<ServiceWorker> {
+  const sw: ServiceWorker = await navigator.serviceWorker
+    .register(__SERVICE_WORKER_PATH__, { type: __SERVICE_WORKER_TYPE__ })
+    .then((registration) => {
+      // If the service worker is still installing, we wait until it is activated
+      const installing = registration.installing;
+      if (installing) {
+        console.log("%c spawing new service worker", "color: pink");
+        return new Promise((resolve) => {
+          installing.onstatechange = (event) => {
+            const serviceWorker = event.target as ServiceWorker;
+            if (serviceWorker.state === "activated") {
+              resolve(serviceWorker);
+            }
+          };
+        });
+      }
+
+      // otherwise return the active service worker
+      // TODO: JAH strict fix... docs suggest there are more states than just installing and active
+      return registration.active!;
+    });
+
+  // Service workers stop on their own, which breaks sync.
+  // Here we ping the service worker while the tab is running
+  // to keep it alive (and make it restart if it did stop.)
+  setInterval(() => {
+    sw.postMessage({ type: "PING" });
+  }, 5000);
+
+  return sw;
+}
+
+export async function createRepo() {
+  const storage = new IndexedDBStorageAdapter();
+
+  // todo keyhive
+
+  const peerId = Math.random().toString(36).slice(2) as PeerId;
+
+  const repo = new Repo({
+    network: [],
+    storage,
+    peerId,
+    enableRemoteHeadsGossiping: true,
+  });
+
+  self.repo = repo;
+
+  // we need to subscribe to the storage id of the sync server before we boot up patchwork
+  // so we don't miss any remote heads updates
+  // TODO: fix this in automerge-repo
+  repo.subscribeToRemotes([__SYNC_SERVER_STORAGE_ID__]);
+
+  return repo;
+}
+
+let globalMessageChannelAdapter: MessageChannelNetworkAdapter | undefined;
+
+// Connects the repo in the tab with the repo in the service worker through a message channel.
+// The repo in the tab takes advantage of loaded state in the SW.
+// With the init message we also pass the config for initializing the repo. The config only
+// takes effect if the service worker hasn't been initialized before
+export function connectServiceWorkerToRepo(
+  serviceWorker: ServiceWorker,
+  repo: Repo
+) {
+  // Send one side of a MessageChannel to the service worker and register the other with the repo.
+  const messageChannel = new MessageChannel();
+
+  if (globalMessageChannelAdapter) {
+    repo.networkSubsystem.removeNetworkAdapter(globalMessageChannelAdapter);
+  }
+  globalMessageChannelAdapter = new MessageChannelNetworkAdapter(
+    messageChannel.port1
+  );
+  repo.networkSubsystem.addNetworkAdapter(globalMessageChannelAdapter);
+  serviceWorker.postMessage({ type: "INIT" }, [messageChannel.port2]);
+  console.log("%c Connected to service worker", "color: blue");
+}
+
+export default async function bootstrap(): Promise<Repo> {
+  let sw = await installServiceWorker();
+  const repo = await createRepo();
+  connectServiceWorkerToRepo(sw, repo);
+
+  // Re-establish the MessageChannel if the controlling service worker changes.
+  sw.addEventListener("controllerchange", (event) => {
+    const newServiceWorker = (event.target as ServiceWorkerContainer)
+      .controller!;
+    // controllerchange is fired after a new service worker is installed
+    // even if we wait above in setupServiceWorker() until the service worker state changes to activated.
+    // To make sure we don't call establishMessageChannel twice check if this is actually a new service worker
+    if (newServiceWorker !== sw) {
+      console.log(
+        "establishMessageChannel: controllerchange to new service worker"
+      );
+      sw = newServiceWorker;
+      connectServiceWorkerToRepo(newServiceWorker, repo);
+    }
+  });
+
+  sw.addEventListener("message", (event) => {
+    switch ((event as MessageEvent).data.type) {
+      case "SERVICE_WORKER_RESTARTED":
+        // Re-establish the MessageChannel if the service worker restarts
+        console.log(
+          "establishMessageChannel: SERVICE_WORKER_RESTARTED message"
+        );
+        connectServiceWorkerToRepo(sw, repo);
+        break;
+    }
+  });
+
+  return repo;
+}
