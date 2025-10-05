@@ -13,7 +13,7 @@ export interface PatchworkVitePluginOptions {
   syncServerStorageId: string;
   /** extra importmap to be merged into the index.html */
   importmap?: ImportMap;
-  /** optionally build the serviceworker as a module if you don't care about firefox or it's 2027 */
+  /** currently unused */
   serviceWorkerType?: "classic" | "module";
   /** currently unused */
   keyhiveEnabled?: boolean;
