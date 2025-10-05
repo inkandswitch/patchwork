@@ -21,9 +21,6 @@ export function getBuildOptions({
   return {
     absWorkingDir: import.meta.dirname,
     outdir,
-    banner: {
-      js: `const __KEYHIVE_ENABLED__ = ${keyhiveEnabled};`,
-    },
     define: {
       __CACHE_VERSION__: JSON.stringify(`cache-${new Date().toISOString()}`),
       __SYNC_SERVER_URL__: JSON.stringify(syncServer),
@@ -32,6 +29,7 @@ export function getBuildOptions({
         serviceWorkerPath || "/service-worker.js"
       ),
       __SERVICE_WORKER_TYPE__: JSON.stringify(serviceWorkerType),
+      __KEYHIVE_ENABLED__: `${keyhiveEnabled}`,
     },
   } satisfies esbuild.BuildOptions as esbuild.BuildOptions;
 }
