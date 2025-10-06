@@ -1,4 +1,7 @@
-import { PeerId, StorageAdapterInterface } from "@automerge/react";
+import type {
+  PeerId,
+  StorageAdapterInterface,
+} from "@automerge/automerge-repo";
 import { Individual, Keyhive, Signer } from "@keyhive/keyhive/slim";
 import { peerIdFromSigner } from "@automerge/automerge-keyhive-network-adapter";
 
