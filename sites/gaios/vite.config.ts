@@ -19,4 +19,7 @@ export default defineConfig({
     minify: false,
     sourcemap: true,
   },
+  server: {
+    port: process.env.PORT ? +process.env.PORT : undefined,
+  },
 });
