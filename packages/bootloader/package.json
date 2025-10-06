@@ -5,6 +5,8 @@
     "generate-patchwork-bootloader": "./dist/generate.js"
   },
   "devDependencies": {
+    "@automerge/automerge-keyhive-network-adapter": "0.0.0-alpha.22",
+    "@keyhive/keyhive": "0.0.0-alpha.23",
     "esbuild": "^0.23.1"
   },
   "exports": {
@@ -15,14 +17,17 @@
     "@automerge/automerge": "3.0.0",
     "@automerge/automerge-repo": "^2.3.0",
     "@automerge/vanillajs": "^2.3.0",
+    "@patchwork/identity": "workspace:^",
     "resolve.exports": "^2.0.3",
     "service-worker-types": "npm:@types/serviceworker@^0.0.153",
     "tinyargs": "^0.1.4"
   },
   "peerDependencies": {
     "@automerge/automerge": "3.0.0",
+    "@automerge/automerge-keyhive-network-adapter": "0.0.0-alpha.22",
     "@automerge/automerge-repo": "^2.3.0",
-    "@automerge/vanillajs": "^2.3.0"
+    "@automerge/vanillajs": "^2.3.0",
+    "@keyhive/keyhive": "0.0.0-alpha.23"
   },
   "author": "Ink & Switch",
   "scripts": {

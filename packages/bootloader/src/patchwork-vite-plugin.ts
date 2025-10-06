@@ -34,6 +34,10 @@ export const builtins = {
     "/packages/@automerge/automerge-repo/slim.js",
   "@automerge/vanillajs": "/packages/@automerge/vanillajs/index.js",
   "@automerge/vanillajs/slim": "/packages/@automerge/vanillajs/slim.js",
+  "@keyhive/keyhive": "/packages/@keyhive/keyhive/index.js",
+  "@keyhive/keyhive/slim": "/packages/@keyhive/keyhive/slim.js",
+  "@keyhive/keyhive/keyhive_wasm.base64.js":
+    "/packages/@keyhive/keyhive/keyhive_wasm.base64.js",
 };
 
 async function generateJavaScript(options: esbuild.BuildOptions) {

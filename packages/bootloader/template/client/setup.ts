@@ -2,7 +2,9 @@ import {
   IndexedDBStorageAdapter,
   MessageChannelNetworkAdapter,
   Repo,
+  WebSocketClientAdapter,
   type PeerId,
+  type StorageAdapterInterface,
   type StorageId,
 } from "@automerge/vanillajs";
 
@@ -48,12 +50,33 @@ export async function installServiceWorker(): Promise<ServiceWorker> {
   return sw;
 }
 
-export async function createRepo() {
-  const storage = new IndexedDBStorageAdapter();
+export async function createRepo(storage: StorageAdapterInterface) {
+  const peerIdSuffix =
+    `patchwork-${Math.random().toString(36).slice(2)}` as PeerId;
+  const identity = await (async function () {
+    if (!__KEYHIVE_ENABLED__) return;
 
-  // todo keyhive
+    const keyhive = await import("@keyhive/keyhive/slim");
 
-  const peerId = Math.random().toString(36).slice(2) as PeerId;
+    const { wasmBase64 } = await import(
+      // @ts-expect-error
+      "@keyhive/keyhive/keyhive_wasm.base64.js"
+    );
+    const { initializeKeyhive } = await import("@patchwork/identity");
+
+    keyhive.initFromBase64Wasm(wasmBase64);
+    keyhive.setPanicHook();
+    const identity = await initializeKeyhive({
+      storage,
+      peerIdSuffix,
+      eventHandler(event) {
+        console.log("[Keyhive Event]", event);
+      },
+    });
+    return identity;
+  })();
+
+  const peerId = identity ? identity.peerId : peerIdSuffix;
 
   const repo = new Repo({
     network: [],
@@ -69,7 +92,7 @@ export async function createRepo() {
   // TODO: fix this in automerge-repo
   repo.subscribeToRemotes([__SYNC_SERVER_STORAGE_ID__]);
 
-  return repo;
+  return [repo, identity] as const;
 }
 
 let globalMessageChannelAdapter: MessageChannelNetworkAdapter | undefined;
@@ -96,44 +119,62 @@ export function connectServiceWorkerToRepo(
   console.log("%c Connected to service worker", "color: blue");
 }
 
-export default async function bootstrap(): Promise<Repo> {
+export default async function bootstrap(): Promise<[Repo, typeof identity]> {
   let sw = await installServiceWorker();
-  const repo = await createRepo();
+  const storage = new IndexedDBStorageAdapter();
+  const [repo, identity] = await createRepo(storage);
   const { promise: serviceWorkerInitEcho, resolve } =
     Promise.withResolvers<void>();
 
-  navigator.serviceWorker.addEventListener("message", (event) => {
-    switch ((event as MessageEvent).data.type) {
-      case "SERVICE_WORKER_RESTARTED":
-        // Re-establish the MessageChannel if the service worker restarts
+  // TODO(chee)<2025-10-06>: due to issues identified when using keyhive with
+  // the messagechannel we connect to the sync server directly when using keyhive in the main thread
+  if (identity) {
+    const { KeyhiveNetworkAdapter } = await import(
+      "@automerge/automerge-keyhive-network-adapter"
+    );
+    repo.networkSubsystem.addNetworkAdapter(
+      new KeyhiveNetworkAdapter!(
+        new WebSocketClientAdapter(__SYNC_SERVER_URL__),
+        identity.keyhive,
+        storage,
+        identity.syncServer.peerId
+      )
+    );
+  } else {
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      switch ((event as MessageEvent).data.type) {
+        case "SERVICE_WORKER_RESTARTED":
+          // Re-establish the MessageChannel if the service worker restarts
+          console.log(
+            "establishMessageChannel: SERVICE_WORKER_RESTARTED message"
+          );
+          connectServiceWorkerToRepo(sw, repo);
+          break;
+        case "SERVICE_WORKER_READY":
+          resolve();
+          break;
+      }
+    });
+
+    // Re-establish the MessageChannel if the controlling service worker changes.
+    navigator.serviceWorker.addEventListener("controllerchange", (event) => {
+      const newServiceWorker = (event.target as ServiceWorkerContainer)
+        .controller!;
+      // controllerchange is fired after a new service worker is installed
+      // even if we wait above in setupServiceWorker() until the service worker state changes to activated.
+      // To make sure we don't call establishMessageChannel twice check if this is actually a new service worker
+      if (newServiceWorker !== sw) {
         console.log(
-          "establishMessageChannel: SERVICE_WORKER_RESTARTED message"
+          "establishMessageChannel: controllerchange to new service worker"
         );
-        connectServiceWorkerToRepo(sw, repo);
-        break;
-      case "SERVICE_WORKER_READY":
-        resolve();
-        break;
-    }
-  });
+        sw = newServiceWorker;
+        connectServiceWorkerToRepo(newServiceWorker, repo);
+      }
+    });
 
-  // Re-establish the MessageChannel if the controlling service worker changes.
-  navigator.serviceWorker.addEventListener("controllerchange", (event) => {
-    const newServiceWorker = (event.target as ServiceWorkerContainer)
-      .controller!;
-    // controllerchange is fired after a new service worker is installed
-    // even if we wait above in setupServiceWorker() until the service worker state changes to activated.
-    // To make sure we don't call establishMessageChannel twice check if this is actually a new service worker
-    if (newServiceWorker !== sw) {
-      console.log(
-        "establishMessageChannel: controllerchange to new service worker"
-      );
-      sw = newServiceWorker;
-      connectServiceWorkerToRepo(newServiceWorker, repo);
-    }
-  });
+    connectServiceWorkerToRepo(sw, repo);
+    await serviceWorkerInitEcho;
+  }
 
-  connectServiceWorkerToRepo(sw, repo);
-  await serviceWorkerInitEcho;
-  return repo;
+  return [repo, identity] as const;
 }

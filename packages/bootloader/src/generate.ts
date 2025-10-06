@@ -39,14 +39,14 @@ export default async function createContext(contextOptions: ContextOptions) {
 
   const sw = await esbuild.context({
     ...sharedOptions,
-    entryPoints: ["./service-worker/service-worker.ts"],
+    entryPoints: ["../template/service-worker/service-worker.ts"],
     bundle: contextOptions.serviceWorkerType != "module",
     format: contextOptions.serviceWorkerType == "module" ? "esm" : "iife",
   });
 
   const setup = await esbuild.context({
     ...sharedOptions,
-    entryPoints: ["./client/setup.ts"],
+    entryPoints: ["../template/client/setup.ts"],
     format: "esm",
     bundle: false,
   });
@@ -94,7 +94,7 @@ if (import.meta.main) {
   });
 
   if (!syncServer || !storageId) {
-    throw new Error("lol");
+    throw new Error("--sync-server and --storage-id are required args");
   }
 
   const { sw, setup } = await createContext({

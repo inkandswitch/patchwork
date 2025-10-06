@@ -11,13 +11,9 @@ import {
   MessageChannelNetworkAdapter,
   PeerId,
   AutomergeUrl,
+  type SharePolicy,
 } from "@automerge/vanillajs/slim";
-import { KeyhiveNetworkAdapter } from "@automerge/automerge-keyhive-network-adapter";
 import * as resolve from "resolve.exports";
-import * as keyhive from "@keyhive/keyhive/slim";
-// @ts-expect-error
-import { wasmBase64 } from "@keyhive/keyhive/keyhive_wasm.base64.js";
-import { initializeKeyhive } from "@patchwork/rootstock-identity";
 
 /**
  * This file is not built using the standard Vite toolchain, it is built by the
@@ -100,12 +96,20 @@ function sendMessageToClients(message: any) {
     Math.random().toString(36).substring(2, 15) + "-service-worker";
   const storage = new IndexedDBStorageAdapter();
 
-  const kh = await (function () {
+  const identity = await (async function () {
     if (!__KEYHIVE_ENABLED__) return;
+
+    const keyhive = await import("@keyhive/keyhive/slim");
+
+    const { wasmBase64 } = await import(
+      // @ts-expect-error
+      "@keyhive/keyhive/keyhive_wasm.base64.js"
+    );
+    const { initializeKeyhive } = await import("@patchwork/identity");
 
     keyhive.initFromBase64Wasm(wasmBase64);
     keyhive.setPanicHook();
-    return initializeKeyhive({
+    return await initializeKeyhive({
       storage,
       peerIdSuffix,
       eventHandler(event) {
@@ -115,20 +119,34 @@ function sendMessageToClients(message: any) {
   })();
 
   const ws = new WebSocketClientAdapter(__SYNC_SERVER_URL__);
+  const KeyhiveNetworkAdapter =
+    identity &&
+    (await import("@automerge/automerge-keyhive-network-adapter"))
+      .KeyhiveNetworkAdapter;
 
-  const network = kh
-    ? [new KeyhiveNetworkAdapter(ws, kh.keyhive, storage, kh.syncServer.peerId)]
+  const network = identity
+    ? [
+        new KeyhiveNetworkAdapter!(
+          ws,
+          identity.keyhive,
+          storage,
+          identity.syncServer.peerId
+        ),
+      ]
     : [ws];
 
-  const peerId = kh ? kh.peerId : `patchwork-service-worker-${peerIdSuffix}`;
-  const sharePolicy = kh
-    ? (peerId: PeerId) => peerId === kh.syncServer.peerId
-    : peerId.includes("storage-server");
+  const serviceWorkerPeerId = identity
+    ? identity.peerId
+    : (`patchwork-service-worker-${peerIdSuffix}` as PeerId);
+
+  const sharePolicy: SharePolicy = identity
+    ? async (peerId) => peerId === identity.syncServer.peerId
+    : async (peerId) => peerId.includes("storage-server");
 
   const newRepo = new Repo({
     storage,
     network,
-    peerId,
+    peerId: serviceWorkerPeerId,
     sharePolicy,
     enableRemoteHeadsGossiping: true,
   });
@@ -139,7 +157,7 @@ function sendMessageToClients(message: any) {
   self.repo = repo;
   self.Automerge = Automerge;
 
-  debugLog("Repo created", { peerId });
+  debugLog("Repo created", { peerId: serviceWorkerPeerId });
   resolveRepoReady(repo);
 })();
 
