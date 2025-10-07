@@ -25,4 +25,15 @@ export const plugins: Plugin<any>[] = [
       return { render: renderSidebar };
     },
   },
+  {
+    type: "patchwork:tool",
+    id: "funky-sidebar",
+    name: "Simple Sidebar",
+    icon: "Sidebar",
+    supportedDataTypes: ["folder"],
+    async load() {
+      const { renderSidebar } = await import("./FunkySidebar");
+      return { render: renderSidebar };
+    },
+  },
 ];

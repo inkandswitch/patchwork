@@ -3,7 +3,7 @@ import { DocLink } from "@patchwork/filesystem";
 
 export class OpenDocumentEvent extends Event {
   constructor(public docLink: DocLink) {
-    super("patchwork:open-document", { bubbles: true });
+    super("patchwork:open-document", { bubbles: true, composed: true });
   }
 }
 
