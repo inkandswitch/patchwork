@@ -1,13 +1,16 @@
 import type { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import type { LoadedPlugin, PluginDescription } from "../registry/index.js";
+import type { KeyhiveKit } from "@patchwork/identity";
 
-export type ToolImplementation = {
-  // TODO: chee 2025-09-12 remove this when everything has been migrated to
-  // have a render()
-  EditorComponent?: import("react").FC<LegacyEditorProps>;
-  // todo revisit signature. `render(handle, element, {extras})`
-  render?(props: ToolProps): () => void;
+export type ToolImplementation<T = unknown> = {
+  render: ToolRender<T>;
 };
+
+export type ToolRender<T = unknown> = (
+  handle: DocHandle<T>,
+  element: ShadowRoot | HTMLElement,
+  { repo, identity }: { repo: Repo; identity?: KeyhiveKit }
+) => () => void;
 
 export type ToolDescription = PluginDescription & {
   id: string;
@@ -21,12 +24,4 @@ export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;
 
 export type LegacyEditorProps = {
   docUrl: AutomergeUrl;
-};
-
-export type ToolProps<T = unknown> = {
-  // todo: should this be handle or docUrl?
-  handle: DocHandle<T>;
-  // todo: naming
-  element: ShadowRoot | HTMLElement;
-  repo: Repo;
 };

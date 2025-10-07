@@ -10,6 +10,7 @@
   "dependencies": {
     "@automerge/automerge-repo": "^2.3.1",
     "@patchwork/filesystem": "workspace:^",
+    "@patchwork/identity": "workspace:^",
     "@patchwork/plugins": "workspace:^"
   },
   "scripts": {

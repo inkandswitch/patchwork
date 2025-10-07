@@ -15,14 +15,19 @@ import {
   onPluginsChange,
   type Tool,
 } from "@patchwork/plugins";
+import type { KeyhiveKit } from "@patchwork/identity";
 
 interface RegisterPatchworkViewElementParams {
   name?: string;
   shadow?: false | "open" | "closed";
   repo: Repo;
 
-  // todo do not need the below whens tools are URLs
+  // todo do not need the below when tools are URLs
   moduleWatcher: ModuleWatcher;
+
+  // todo is passing the keyhive kit in the render function really the right
+  // pattern?
+  identity?: KeyhiveKit;
 }
 
 export function registerPatchworkViewElement(
@@ -33,6 +38,7 @@ export function registerPatchworkViewElement(
   const shadowMode = typeof params.shadow == "string" ? params.shadow : "open";
   const repo = params.repo;
   const moduleWatcher = params.moduleWatcher;
+  const identity = params.identity;
   if (customElements.get(name)) {
     console.error(`can't redefine a custom element. defining "${name}"`);
     return;
@@ -192,11 +198,14 @@ export function registerPatchworkViewElement(
         // let them get repo, keyhive etc via a singleton import(?)
         // the plugin system is prior art here
         // if not that then maybe render(handle, element, {repo, keyhive})
-        const cleanup = this.#tool.module.render?.({
-          handle: this.#handle,
-          element: this.rootElement,
-          repo,
-        });
+        const cleanup = this.#tool.module.render(
+          this.#handle,
+          this.rootElement,
+          {
+            repo,
+            identity,
+          }
+        );
         cleanup && this.#teardowns.add(cleanup);
         this.#renderQueued = false;
       }
