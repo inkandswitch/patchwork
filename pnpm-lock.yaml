@@ -204,17 +204,23 @@ importers:
         specifier: ^3.4.1
         version: 3.5.0(vite@7.1.9(@types/node@20.19.19)(less@4.4.1)(lightningcss@1.30.1)(sass@1.92.1)(stylus@0.64.0)(terser@5.37.0))
 
-  sites/with-keyhive:
+  sites/hive:
     dependencies:
       '@automerge/automerge':
         specifier: 3.1.2
         version: 3.1.2
+      '@automerge/automerge-keyhive-network-adapter':
+        specifier: 0.0.0-alpha.22
+        version: 0.0.0-alpha.22
       '@automerge/automerge-repo':
         specifier: 2.3.1
         version: 2.3.1
       '@automerge/vanillajs':
         specifier: ^2.3.1
         version: 2.3.1
+      '@keyhive/keyhive':
+        specifier: 0.0.0-alpha.23
+        version: 0.0.0-alpha.23
       '@patchwork/elements':
         specifier: workspace:^
         version: link:../../packages/elements
@@ -228,12 +234,6 @@ importers:
         specifier: workspace:^
         version: link:../../packages/plugins
     devDependencies:
-      '@automerge/automerge-keyhive-network-adapter':
-        specifier: 0.0.0-alpha.22
-        version: 0.0.0-alpha.22
-      '@keyhive/keyhive':
-        specifier: 0.0.0-alpha.23
-        version: 0.0.0-alpha.23
       '@patchwork/bootloader':
         specifier: workspace:^
         version: link:../../packages/bootloader
