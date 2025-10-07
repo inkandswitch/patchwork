@@ -3,10 +3,18 @@ import {
   MessageChannelNetworkAdapter,
   Repo,
   WebSocketClientAdapter,
+  type AutomergeUrl,
   type PeerId,
   type StorageAdapterInterface,
   type StorageId,
 } from "@automerge/vanillajs";
+import type { Keyhive } from "@keyhive/keyhive/slim";
+import {
+  getOrCreateAccountUrl,
+  type Active,
+  type KeyhiveKit,
+  type SyncServer,
+} from "@patchwork/identity";
 
 // will be replaced during build
 declare global {
@@ -119,7 +127,13 @@ export function connectServiceWorkerToRepo(
   console.log("%c Connected to service worker", "color: blue");
 }
 
-export default async function bootstrap(): Promise<[Repo, typeof identity]> {
+export default async function bootstrap(): Promise<{
+  repo: Repo;
+  active?: Active;
+  keyhive?: Keyhive;
+  syncServer?: SyncServer;
+  accountUrl?: AutomergeUrl;
+}> {
   let sw = await installServiceWorker();
   const storage = new IndexedDBStorageAdapter();
   const [repo, identity] = await createRepo(storage);
@@ -176,5 +190,17 @@ export default async function bootstrap(): Promise<[Repo, typeof identity]> {
     await serviceWorkerInitEcho;
   }
 
-  return [repo, identity] as const;
+  return {
+    repo,
+    active: identity?.active,
+    keyhive: identity?.keyhive,
+    syncServer: identity?.syncServer,
+    accountUrl:
+      identity &&
+      (await getOrCreateAccountUrl({
+        active: identity!.active,
+        repo,
+        storage,
+      })),
+  };
 }
