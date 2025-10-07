@@ -1,8 +1,8 @@
 import { use, useMemo } from "react";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { AutomergeUrl } from "@automerge/vanillajs";
-import { toolify } from "../utils";
-import { AccountDoc, getAccountDocHandle } from "../account";
+import { toolify } from "../lib/toolify";
+import { AccountDoc, getAccountDocHandle } from "../lib/account";
 
 export type PatchworkFrameDoc = {
   sidebarToolId: string;
@@ -18,8 +18,6 @@ export const renderFrame = toolify(({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [account] = useDocument<AccountDoc>(accountDocHandle.url, {
     suspense: true,
   });
-
-  console.log("account", account);
 
   return (
     <div className="w-screen h-screen flex">

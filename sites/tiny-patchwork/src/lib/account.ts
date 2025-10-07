@@ -1,4 +1,4 @@
-import { rootDirectoryUrl } from "../.pushwork/snapshot.json";
+import { rootDirectoryUrl } from "../../.pushwork/snapshot.json";
 import { FolderDoc, ModuleSettingsDoc } from "@patchwork/filesystem";
 
 // todo: this will be removed once we have keyhive
@@ -6,7 +6,7 @@ import { FolderDoc, ModuleSettingsDoc } from "@patchwork/filesystem";
 console.log("rootDirectoryUrl", rootDirectoryUrl);
 
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/vanillajs";
-import { PatchworkFrameDoc } from "./tools/PatchworkFrame";
+import { PatchworkFrameDoc } from "../tools/PatchworkFrame";
 
 export type AccountDoc = {
   rootToolId: string;
@@ -27,13 +27,19 @@ export const getAccountDocHandle = (
 
     const rootFolderHandle = repo.create<FolderDoc>();
     rootFolderHandle.change((doc) => {
+      (doc as any)["@patchwork"] = {
+        type: "folder",
+      };
       doc.title = "root";
       doc.docs = [];
     });
 
     const moduleSettingsHandle = repo.create<ModuleSettingsDoc>();
     moduleSettingsHandle.change((doc) => {
-      doc.modules = [rootDirectoryUrl as AutomergeUrl];
+      doc.modules = [
+        //rootDirectoryUrl as AutomergeUrl,
+        //"automerge:3oivpA9JtHpaZme42DTToAZD8Hts" as AutomergeUrl,
+      ];
     });
 
     const frameDocHandle = repo.create<PatchworkFrameDoc>();
@@ -47,6 +53,8 @@ export const getAccountDocHandle = (
       doc.rootFolderUrl = rootFolderHandle.url;
       doc.moduleSettingsUrl = moduleSettingsHandle.url;
     });
+
+    localStorage.setItem("tiny-patchwork:accountDocUrl", accountDocHandle.url);
 
     return Promise.resolve(accountDocHandle);
   }

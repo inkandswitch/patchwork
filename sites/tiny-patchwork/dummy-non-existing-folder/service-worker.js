@@ -14194,7 +14194,7 @@ ${err.message}`);
   }
 
   // ../template/service-worker/service-worker.ts
-  var CACHE_NAME = "cache-2025-10-06T15:02:56.758Z";
+  var CACHE_NAME = "cache-2025-10-07T08:33:58.857Z";
   var CACHED_ORIGINS = ["https://ga.jspm.io", "https://esm.sh"];
   var PEER_ID = `patchwork-service-worker-${Math.round(Math.random() * 1e6)}`;
   var __fetchCounter = 0;

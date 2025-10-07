@@ -1,6 +1,8 @@
 import { Plugin } from "@patchwork/plugins";
+import { plugins as markdownPlugins } from "./markdown";
 
 export const plugins: Plugin<any>[] = [
+  ...markdownPlugins,
   {
     type: "patchwork:tool",
     id: "patchwork-frame",

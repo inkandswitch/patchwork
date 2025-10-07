@@ -4,7 +4,7 @@ import { ToolProps } from "@patchwork/plugins";
 import { FC, Suspense, createElement } from "react";
 import { createRoot } from "react-dom/client";
 
-type ReactToolProps = {
+export type ReactToolProps = {
   docUrl: AutomergeUrl;
 };
 
