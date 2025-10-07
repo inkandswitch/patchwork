@@ -31,11 +31,11 @@ const toolId = params.get("toolId");
 const modules = params.getAll("loadModules");
 await moduleWatcher.loadModules(modules);
 
-if (!docUrl || !toolId) {
+if (!toolId) {
   throw new Error("need docUrl and toolId query params");
 }
 
 const rootElement = document.getElementById("root")!;
 
-rootElement.setAttribute("doc-url", docUrl);
+rootElement.setAttribute("doc-url", docUrl ?? identity.accountUrl);
 toolId && rootElement.setAttribute("tool-id", toolId);
