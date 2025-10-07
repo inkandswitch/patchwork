@@ -1,8 +1,0 @@
-[build]
-command = "pnpm build"
-publish = "sites/gaios/dist"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
