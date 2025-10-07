@@ -13,8 +13,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@automerge/automerge-keyhive-network-adapter": "0.0.0-alpha.22",
-    "@keyhive/keyhive": "0.0.0-alpha.23"
+    "@automerge/automerge-keyhive-network-adapter": "0.0.0-alpha.32",
+    "@keyhive/keyhive": "0.0.0-alpha.24"
   },
   "devDependencies": {
     "@automerge/automerge": "3.0.0",

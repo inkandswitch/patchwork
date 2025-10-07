@@ -5,8 +5,8 @@
     "generate-patchwork-bootloader": "./dist/generate.js"
   },
   "devDependencies": {
-    "@automerge/automerge-keyhive-network-adapter": "0.0.0-alpha.22",
-    "@keyhive/keyhive": "0.0.0-alpha.23",
+    "@automerge/automerge-keyhive-network-adapter": "0.0.0-alpha.32",
+    "@keyhive/keyhive": "0.0.0-alpha.24",
     "esbuild": "^0.23.1"
   },
   "exports": {
@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@automerge/automerge": "3.0.0",
-    "@automerge/automerge-repo": "^2.3.0",
-    "@automerge/vanillajs": "^2.3.0",
+    "@automerge/automerge-repo": "2.4.0-alpha.2",
+    "@automerge/vanillajs": "2.4.0-alpha.2",
     "@patchwork/identity": "workspace:^",
     "resolve.exports": "^2.0.3",
     "service-worker-types": "npm:@types/serviceworker@^0.0.153",
@@ -24,10 +24,10 @@
   },
   "peerDependencies": {
     "@automerge/automerge": "3.0.0",
-    "@automerge/automerge-keyhive-network-adapter": "0.0.0-alpha.22",
-    "@automerge/automerge-repo": "^2.3.0",
-    "@automerge/vanillajs": "^2.3.0",
-    "@keyhive/keyhive": "0.0.0-alpha.23"
+    "@automerge/automerge-keyhive-network-adapter": "0.0.0-alpha.32",
+    "@automerge/automerge-repo": "2.4.0-alpha.2",
+    "@automerge/vanillajs": "2.4.0-alpha.2",
+    "@keyhive/keyhive": "0.0.0-alpha.24"
   },
   "author": "Ink & Switch",
   "scripts": {

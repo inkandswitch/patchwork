@@ -70,16 +70,20 @@ export async function createRepo(storage: StorageAdapterInterface) {
       // @ts-expect-error
       "@keyhive/keyhive/keyhive_wasm.base64.js"
     );
-    const { initializeKeyhive } = await import("@patchwork/identity");
-
     keyhive.initFromBase64Wasm(wasmBase64);
     keyhive.setPanicHook();
+    const ws = new WebSocketClientAdapter(__SYNC_SERVER_URL__);
+
+    const { initializeKeyhive } = await import(
+      "@automerge/automerge-keyhive-network-adapter"
+    );
     const identity = await initializeKeyhive({
       storage,
       peerIdSuffix,
       eventHandler(event) {
         console.log("[Keyhive Event]", event);
       },
+      networkAdapter: ws,
     });
     return identity;
   })();
@@ -87,10 +91,11 @@ export async function createRepo(storage: StorageAdapterInterface) {
   const peerId = identity ? identity.peerId : peerIdSuffix;
 
   const repo = new Repo({
-    network: [],
+    network: identity ? [identity.networkAdapter] : [],
     storage,
     peerId,
     enableRemoteHeadsGossiping: true,
+    idFactory: identity?.idFactory,
   });
 
   self.repo = repo;
@@ -142,19 +147,7 @@ export default async function bootstrap(): Promise<{
 
   // TODO(chee)<2025-10-06>: due to issues identified when using keyhive with
   // the messagechannel we connect to the sync server directly when using keyhive in the main thread
-  if (identity) {
-    const { KeyhiveNetworkAdapter } = await import(
-      "@automerge/automerge-keyhive-network-adapter"
-    );
-    repo.networkSubsystem.addNetworkAdapter(
-      new KeyhiveNetworkAdapter!(
-        new WebSocketClientAdapter(__SYNC_SERVER_URL__),
-        identity.keyhive,
-        storage,
-        identity.syncServer.peerId
-      )
-    );
-  } else {
+  if (!identity) {
     navigator.serviceWorker.addEventListener("message", (event) => {
       switch ((event as MessageEvent).data.type) {
         case "SERVICE_WORKER_RESTARTED":
