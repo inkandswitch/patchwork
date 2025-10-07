@@ -5,7 +5,7 @@ import bootstrap from "virtual:patchwork/setup";
 import { registerPlugins } from "@patchwork/plugins";
 import { type AutomergeUrl } from "@automerge/vanillajs";
 import { registerPatchworkViewElement } from "@patchwork/elements";
-const [repo] = await bootstrap();
+const { repo } = await bootstrap();
 
 const moduleWatcher = new ModuleWatcher(
   "automerge:3n51DZbA1FRwHAV8K2sW1g2aA3P2" as AutomergeUrl,
