@@ -1,9 +1,11 @@
 import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 import patchwork from "@patchwork/bootloader/vite";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     wasm(),
     patchwork({
       syncServerStorageId: "37915c96-8df9-4fa6-8058-1360edd2ebe2",

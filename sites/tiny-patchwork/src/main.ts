@@ -1,10 +1,9 @@
 import { ModuleWatcher } from "@patchwork/filesystem";
 import "./styles/global.css";
 
-import bootstrap from "virtual:patchwork/setup";
-import { registerPlugins } from "@patchwork/plugins";
-import { type AutomergeUrl } from "@automerge/vanillajs";
 import { registerPatchworkViewElement } from "@patchwork/elements";
+import { registerPlugins } from "@patchwork/plugins";
+import bootstrap from "virtual:patchwork/setup";
 const repo = await bootstrap();
 
 import { getAccountDocHandle } from "./account";
@@ -17,8 +16,6 @@ declare global {
 
 const accountDocHandle = (window.accountDocHandle =
   await getAccountDocHandle(repo));
-
-console.log("accountDocHandle", accountDocHandle.doc());
 
 const moduleWatcher = new ModuleWatcher(
   accountDocHandle.doc().moduleSettingsUrl,
@@ -38,5 +35,12 @@ registerPatchworkViewElement({
 
 const rootElement = document.getElementById("root")!;
 
-rootElement.setAttribute("doc-url", accountDocHandle.url);
+console.log(
+  "load doc",
+  accountDocHandle.doc().rootDocUrl,
+  "with tool",
+  accountDocHandle.doc().rootToolId
+);
+
+rootElement.setAttribute("doc-url", accountDocHandle.doc().rootDocUrl);
 rootElement.setAttribute("tool-id", accountDocHandle.doc().rootToolId);

@@ -6,10 +6,12 @@ import { FolderDoc, ModuleSettingsDoc } from "@patchwork/filesystem";
 console.log("rootDirectoryUrl", rootDirectoryUrl);
 
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/vanillajs";
+import { PatchworkFrameDoc } from "./tools/PatchworkFrame";
 
-type AccountDoc = {
+export type AccountDoc = {
   rootToolId: string;
   rootFolderUrl: AutomergeUrl;
+  rootDocUrl: AutomergeUrl;
   moduleSettingsUrl: AutomergeUrl;
 };
 
@@ -34,8 +36,14 @@ export const getAccountDocHandle = (
       doc.modules = [rootDirectoryUrl as AutomergeUrl];
     });
 
+    const frameDocHandle = repo.create<PatchworkFrameDoc>();
+    frameDocHandle.change((doc) => {
+      doc.sidebarToolId = "simple-sidebar";
+    });
+
     accountDocHandle.change((doc) => {
       doc.rootToolId = "patchwork-frame";
+      doc.rootDocUrl = frameDocHandle.url;
       doc.rootFolderUrl = rootFolderHandle.url;
       doc.moduleSettingsUrl = moduleSettingsHandle.url;
     });
