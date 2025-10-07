@@ -3,7 +3,7 @@ import { toolify } from "../../lib/toolify";
 export const plugins = [
   {
     type: "patchwork:tool",
-    id: "markdow",
+    id: "markdown",
     name: "Markdown",
     icon: "FileText",
     supportedDataTypes: ["markdown"],

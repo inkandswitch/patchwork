@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 
 export type ReactToolProps = {
   docUrl: AutomergeUrl;
+  element: HTMLElement | ShadowRoot;
 };
 
 export const toolify = (
@@ -20,7 +21,10 @@ export const toolify = (
         createElement(
           RepoContext.Provider,
           { value: toolProps.repo },
-          createElement(component, { docUrl: toolProps.handle.url })
+          createElement(component, {
+            docUrl: toolProps.handle.url,
+            element: toolProps.element,
+          })
         )
       )
     );

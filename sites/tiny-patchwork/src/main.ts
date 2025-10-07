@@ -20,9 +20,7 @@ const loadedPlugins = await Promise.all(
   plugins.map(async (plugin) => ({ ...plugin, module: await plugin.load() }))
 );
 
-registerPlugins(loadedPlugins, "./tools");
-
-console.log(plugins);
+registerPlugins(loadedPlugins, "DEV");
 
 const accountDocHandle = (window.accountDocHandle =
   await getAccountDocHandle(repo));

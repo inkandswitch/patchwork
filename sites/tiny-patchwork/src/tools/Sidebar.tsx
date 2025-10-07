@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { createDocOfDataType, DataType } from "@patchwork/plugins";
 import { useDatatypeDescriptions } from "../lib/useDatatypeDescriptions";
 import { PlusIcon } from "lucide-react";
+import { triggerOpenDocument } from "../lib/navigation";
 
 type FolderEntryProps = {
   docLink: DocLink;
@@ -15,33 +16,41 @@ type FolderEntryProps = {
 const FolderEntry = ({ docLink, depth = 0 }: FolderEntryProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [doc] = useDocument<FolderDoc>(docLink.url);
+  const [scope, setScope] = useState<HTMLElement | null>(null);
 
   const isFolder = docLink.type === "folder";
   const paddingLeft = `${depth * 16}px`;
+
+  const onOpenDocument = () => {
+    console.log("open document");
+    triggerOpenDocument(scope!, docLink);
+  };
 
   if (!isFolder) {
     // If it's not a folder, just render the document name
     return (
       <div
+        ref={setScope}
         className="text-sm py-1 px-2 hover:bg-gray-200 cursor-pointer truncate"
         style={{ paddingLeft }}
         title={docLink.name}
+        onClick={onOpenDocument}
       >
-        📄 {docLink.name}
+        {docLink.name}
       </div>
     );
   }
 
   // If it's a folder, render it recursively
   return (
-    <div>
+    <div ref={setScope}>
       <div
         className="text-sm py-1 px-2 hover:bg-gray-200 cursor-pointer font-medium flex items-center gap-1"
         style={{ paddingLeft }}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <span className="text-xs">{isExpanded ? "▼" : "▶"}</span>
-        <span>📁 {docLink.name}</span>
+        <button onClick={onOpenDocument}>{docLink.name}</button>
       </div>
       {isExpanded && doc && doc.docs && (
         <div>
@@ -76,8 +85,8 @@ const FolderView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   };
 
   return (
-    <div className="w-[200px] flex-shrink-0 flex flex-col bg-gray-100 border-r border-gray-300 overflow-y-auto">
-      <div className="p-2 border-b border-gray-300 font-semibold text-gray-700">
+    <div className="w-[200px] flex-shrink-0 flex flex-col bg-gray-100  overflow-y-auto">
+      <div className="p-2">
         {folderDoc.title} <AddDocumentButton onAddDocument={onAddDocument} />
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -129,13 +138,13 @@ const AddDocumentButton = ({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="w-full px-3 py-2 text-sm text-white rounded flex items-center justify-between"
+        className="w-full px-3 py-2 text-sm rounded flex items-center justify-between"
       >
         <PlusIcon />
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute bottom-full left-0 right-0 mb-1 bg-white border border-gray-300 rounded shadow-lg max-h-48 overflow-y-auto z-10">
+        <div className="absolute top-full left-0 right-0 mb-1 bg-white  rounded shadow-lg max-h-48 overflow-y-auto z-10">
           {datatypes.length === 0 ? (
             <div className="px-3 py-2 text-sm text-gray-500">
               No datatypes available
@@ -148,9 +157,6 @@ const AddDocumentButton = ({
                 className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
               >
                 <div className="font-medium">{dataType.name}</div>
-                <div className="text-xs text-gray-500 truncate">
-                  {dataType.name}
-                </div>
               </button>
             ))
           )}

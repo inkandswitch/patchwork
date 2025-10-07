@@ -44,6 +44,10 @@ export const getAccountDocHandle = (
 
     const frameDocHandle = repo.create<PatchworkFrameDoc>();
     frameDocHandle.change((doc) => {
+      (doc as any)["@patchwork"] = {
+        type: "patchwork-frame",
+      };
+
       doc.sidebarToolId = "simple-sidebar";
     });
 
