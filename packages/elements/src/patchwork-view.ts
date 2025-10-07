@@ -198,14 +198,12 @@ export function registerPatchworkViewElement(
         // let them get repo, keyhive etc via a singleton import(?)
         // the plugin system is prior art here
         // if not that then maybe render(handle, element, {repo, keyhive})
-        const cleanup = this.#tool.module.render(
-          this.#handle,
-          this.rootElement,
-          {
-            repo,
-            identity,
-          }
-        );
+        const cleanup = this.#tool.module.render({
+          handle: this.#handle,
+          element: this.rootElement,
+          repo,
+          keyhiveKit: identity,
+        });
         cleanup && this.#teardowns.add(cleanup);
         this.#renderQueued = false;
       }
