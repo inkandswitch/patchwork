@@ -1,4 +1,4 @@
-import { ModuleWatcher } from "@patchwork/filesystem";
+import { FolderDoc, ModuleWatcher } from "@patchwork/filesystem";
 import "./styles/global.css";
 
 import { registerPatchworkViewElement } from "@patchwork/elements";
@@ -6,15 +6,18 @@ import { getPluginRegistry, registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
 const repo = await bootstrap();
 
-import { getAccountDocHandle } from "./lib/account";
+import { AccountDoc, getAccountDocHandle } from "./lib/account";
 
 declare global {
   interface Window {
-    accountDocHandle: Awaited<ReturnType<typeof getAccountDocHandle>>;
+    accountDocHandle: DocHandle<AccountDoc>;
+    rootDocHandle: DocHandle<unknown>;
   }
 }
 
 import { plugins } from "./tools";
+import { DocHandle } from "@automerge/automerge-repo";
+import { PatchworkFrameDoc } from "./tools/PatchworkFrame";
 
 const loadedPlugins = await Promise.all(
   plugins.map(async (plugin) => ({ ...plugin, module: await plugin.load() }))
@@ -24,6 +27,8 @@ registerPlugins(loadedPlugins, "DEV");
 
 const accountDocHandle = (window.accountDocHandle =
   await getAccountDocHandle(repo));
+
+window.rootDocHandle = await repo.find(accountDocHandle.doc().rootDocUrl);
 
 const moduleWatcher = new ModuleWatcher(
   accountDocHandle.doc().moduleSettingsUrl,
@@ -42,13 +47,6 @@ registerPatchworkViewElement({
 });
 
 const rootElement = document.getElementById("root")!;
-
-console.log(
-  "load doc",
-  accountDocHandle.doc().rootDocUrl,
-  "with tool",
-  accountDocHandle.doc().rootToolId
-);
 
 rootElement.setAttribute("doc-url", accountDocHandle.doc().rootDocUrl);
 rootElement.setAttribute("tool-id", accountDocHandle.doc().rootToolId);

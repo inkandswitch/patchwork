@@ -116,6 +116,8 @@ const FolderView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
 
   return (
     <div className="w-full flex flex-col gap-2" ref={setRoot}>
+      <hr className="border-gray-200" />
+
       <AddDocumentDropdown
         onAddDocument={onAddDocument}
         className="btn btn-ghost text-left btn-sm w-full justify-start font-medium"

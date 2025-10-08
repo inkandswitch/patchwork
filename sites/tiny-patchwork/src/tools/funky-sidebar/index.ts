@@ -4,7 +4,7 @@ export const plugins: Plugin<any>[] = [
   {
     type: "patchwork:tool",
     id: "funky-sidebar",
-    name: "Funky Sidebar",
+    name: "Simple Sidebar",
     icon: "Sidebar",
     supportedDataTypes: ["folder"],
     async load() {

@@ -46,7 +46,7 @@ export const renderFrame = toolify(
     return (
       <div className="w-screen h-screen flex">
         <div className="w-[300px] bg-gray-100 p-2">
-          <h2 className="text-xl p-2 mb-8">
+          <h2 className="text-xl p-3">
             <span className="text-xs">tiny</span> patchwork
           </h2>
 
