@@ -22,6 +22,7 @@ export default defineConfig({
             "https://ga.jspm.io/npm:react@18.3.1/jsx-runtime.js",
           signia: "https://ga.jspm.io/npm:signia@0.1.5/dist/esm/index.mjs",
           "@patchwork/account": "/@patchwork/account",
+          "@patchwork/context": "/@patchwork/context",
         },
       },
     }),

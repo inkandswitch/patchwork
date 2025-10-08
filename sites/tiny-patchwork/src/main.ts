@@ -1,23 +1,25 @@
-import { FolderDoc, ModuleWatcher } from "@patchwork/filesystem";
+import { ModuleWatcher } from "@patchwork/filesystem";
 import "./styles/global.css";
 
 import { registerPatchworkViewElement } from "@patchwork/elements";
-import { getPluginRegistry, registerPlugins } from "@patchwork/plugins";
+import { registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
 const repo = await bootstrap();
 
 import { AccountDoc, getAccountDocHandle } from "./lib/account";
-
+import { Context, CONTEXT } from "@patchwork/context";
 declare global {
   interface Window {
     accountDocHandle: DocHandle<AccountDoc>;
     rootDocHandle: DocHandle<unknown>;
+    CONTEXT: Context;
   }
 }
 
-import { plugins } from "./tools";
+window.CONTEXT = CONTEXT;
+
 import { DocHandle } from "@automerge/automerge-repo";
-import { PatchworkFrameDoc } from "./tools/PatchworkFrame";
+import { plugins } from "./tools";
 
 const loadedPlugins = await Promise.all(
   plugins.map(async (plugin) => ({ ...plugin, module: await plugin.load() }))

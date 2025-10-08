@@ -1,10 +1,17 @@
 import { use, useEffect, useMemo, useState } from "react";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocHandle,
+  useDocument,
+  useRepo,
+} from "@automerge/automerge-repo-react-hooks";
 import { AutomergeUrl } from "@automerge/vanillajs";
 import { toolify } from "../../lib/toolify";
 import { AccountDoc, getAccountDocHandle } from "../../lib/account";
 import { DocLink } from "@patchwork/filesystem";
 import { OpenDocumentEvent } from "../../lib/navigation";
+import { useReactive } from "@patchwork/context/react";
+import { SelectionAPI } from "@patchwork/context/selection";
+import { useDocRef } from "@patchwork/context/react";
 
 export type PatchworkFrameDoc = {
   sidebarToolId: string;
@@ -19,6 +26,8 @@ export const renderFrame = toolify(
     docUrl: AutomergeUrl;
     element: HTMLElement | ShadowRoot;
   }) => {
+    const selection = useReactive(SelectionAPI);
+
     const repo = useRepo();
     const accountDocHandle = use(
       useMemo(() => getAccountDocHandle(repo), [repo])
@@ -42,6 +51,13 @@ export const renderFrame = toolify(
         });
       }
     }, [element]);
+
+    // add selectedDocument to context
+    const selectedDocRef = useDocRef(frame.selectedDocLink?.url);
+    useEffect(
+      () => selection.setSelection(selectedDocRef ? [selectedDocRef] : []),
+      [selectedDocRef, selection]
+    );
 
     return (
       <div className="w-screen h-screen flex">

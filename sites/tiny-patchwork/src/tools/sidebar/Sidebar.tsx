@@ -1,5 +1,9 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocHandle,
+  useDocument,
+  useRepo,
+} from "@automerge/automerge-repo-react-hooks";
 import { toolify } from "../../lib/toolify";
 import { FolderDoc, DocLink } from "@patchwork/filesystem";
 import { useState } from "react";
@@ -7,8 +11,16 @@ import { createDocOfDataType, DataType } from "@patchwork/plugins";
 import { useDatatypeDescriptions } from "../../lib/useDatatypeDescriptions";
 import { PlusIcon } from "lucide-react";
 import { triggerOpenDocument } from "../../lib/navigation";
+import { useDocRef, useReactive } from "@patchwork/context/react";
+import { SelectionAPI } from "@patchwork/context/selection";
 
-const FileEntry = ({ docLink }: { docLink: DocLink }) => {
+const FileEntry = ({
+  docLink,
+  isSelected,
+}: {
+  docLink: DocLink;
+  isSelected: boolean;
+}) => {
   const [root, setRoot] = useState<HTMLElement | null>(null);
 
   const onOpenDocument = (e: React.MouseEvent) => {
@@ -20,14 +32,24 @@ const FileEntry = ({ docLink }: { docLink: DocLink }) => {
 
   return (
     <li ref={setRoot}>
-      <a onClick={onOpenDocument} title={docLink.name}>
+      <a
+        onClick={onOpenDocument}
+        title={docLink.name}
+        className={`${isSelected ? "bg-gray-200" : ""}`}
+      >
         {docLink.name}
       </a>
     </li>
   );
 };
 
-const FolderEntry = ({ docUrl }: { docUrl: AutomergeUrl }) => {
+const FolderEntry = ({
+  docUrl,
+  isSelected,
+}: {
+  docUrl: AutomergeUrl;
+  isSelected: boolean;
+}) => {
   const [folderDoc, changeFolderDoc] = useDocument<FolderDoc>(docUrl, {
     suspense: true,
   });
@@ -63,7 +85,7 @@ const FolderEntry = ({ docUrl }: { docUrl: AutomergeUrl }) => {
         <summary>
           <button
             onClick={onOpenDocument}
-            className="flex justify-between items-center w-full"
+            className={`flex justify-between items-center w-full ${isSelected ? "bg-gray-200" : ""}`}
           >
             {folderDoc.title}
 
@@ -88,10 +110,14 @@ const FolderEntry = ({ docUrl }: { docUrl: AutomergeUrl }) => {
 };
 
 const DocLinkEntry = ({ docLink }: { docLink: DocLink }) => {
+  const docRef = useDocRef<FolderDoc>(docLink.url);
+  const selection = useReactive(SelectionAPI);
+  const isSelected = !!(docRef && selection.isSelected(docRef));
+
   if (docLink.type === "folder") {
-    return <FolderEntry docUrl={docLink.url} />;
+    return <FolderEntry docUrl={docLink.url} isSelected={isSelected} />;
   }
-  return <FileEntry docLink={docLink} />;
+  return <FileEntry docLink={docLink} isSelected={isSelected} />;
 };
 
 const FolderView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
