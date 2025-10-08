@@ -307,6 +307,9 @@ importers:
       '@automerge/automerge-codemirror':
         specifier: ^0.2.0
         version: 0.2.0
+      '@automerge/automerge-keyhive-network-adapter':
+        specifier: 0.0.0-alpha.22
+        version: 0.0.0-alpha.22
       '@automerge/automerge-repo':
         specifier: 2.4.0-alpha.2
         version: 2.4.0-alpha.2
@@ -340,6 +343,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.4
         version: 6.38.5
+      '@keyhive/keyhive':
+        specifier: 0.0.0-alpha.23
+        version: 0.0.0-alpha.23
       '@lezer/highlight':
         specifier: ^1.2.1
         version: 1.2.1
@@ -352,6 +358,9 @@ importers:
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../packages/filesystem
+      '@patchwork/identity':
+        specifier: workspace:^
+        version: link:../../packages/identity
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../../packages/plugins

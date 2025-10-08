@@ -4,14 +4,14 @@ import "./styles/global.css";
 import { registerPatchworkViewElement } from "@patchwork/elements";
 import { registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
-const repo = await bootstrap();
+const { repo, ...identity } = await bootstrap();
 
-import { AccountDoc, getAccountDocHandle } from "./lib/account";
+import { TinyPatchworkAccountDoc, initAccountDoc } from "./lib/account-doc";
 import { Context, CONTEXT } from "@patchwork/context";
+
 declare global {
   interface Window {
-    accountDocHandle: DocHandle<AccountDoc>;
-    rootDocHandle: DocHandle<unknown>;
+    accountDocHandle: DocHandle<TinyPatchworkAccountDoc>;
     CONTEXT: Context;
   }
 }
@@ -27,13 +27,14 @@ const loadedPlugins = await Promise.all(
 
 registerPlugins(loadedPlugins, "DEV");
 
-const accountDocHandle = (window.accountDocHandle =
-  await getAccountDocHandle(repo));
+const accountDocHandle = await repo.find<TinyPatchworkAccountDoc>(
+  identity.accountUrl
+);
 
-window.rootDocHandle = await repo.find(accountDocHandle.doc().rootDocUrl);
+initAccountDoc(repo, accountDocHandle);
 
 const moduleWatcher = new ModuleWatcher(
-  accountDocHandle.doc().moduleSettingsUrl,
+  accountDocHandle.doc()["@tiny-patchwork"].moduleSettingsUrl,
   [],
   repo,
   (name, mod) => {
@@ -50,5 +51,8 @@ registerPatchworkViewElement({
 
 const rootElement = document.getElementById("root")!;
 
-rootElement.setAttribute("doc-url", accountDocHandle.doc().rootDocUrl);
-rootElement.setAttribute("tool-id", accountDocHandle.doc().rootToolId);
+rootElement.setAttribute("doc-url", accountDocHandle.url);
+rootElement.setAttribute(
+  "tool-id",
+  accountDocHandle.doc()["@tiny-patchwork"].frameToolId
+);

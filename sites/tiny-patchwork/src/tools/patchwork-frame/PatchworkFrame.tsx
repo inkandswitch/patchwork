@@ -1,22 +1,12 @@
-import { use, useEffect, useMemo, useState } from "react";
-import {
-  useDocHandle,
-  useDocument,
-  useRepo,
-} from "@automerge/automerge-repo-react-hooks";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { AutomergeUrl } from "@automerge/vanillajs";
-import { toolify } from "../../lib/toolify";
-import { AccountDoc, getAccountDocHandle } from "../../lib/account";
-import { DocLink } from "@patchwork/filesystem";
-import { OpenDocumentEvent } from "../../lib/navigation";
-import { useReactive } from "@patchwork/context/react";
+import { useDocRef, useReactive } from "@patchwork/context/react";
 import { SelectionAPI } from "@patchwork/context/selection";
-import { useDocRef } from "@patchwork/context/react";
-
-export type PatchworkFrameDoc = {
-  sidebarToolId: string;
-  selectedDocLink?: DocLink;
-};
+import { DocLink } from "@patchwork/filesystem";
+import { useEffect } from "react";
+import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
+import { OpenDocumentEvent } from "../../lib/navigation";
+import { toolify } from "../../lib/toolify";
 
 export const renderFrame = toolify(
   ({
@@ -28,16 +18,15 @@ export const renderFrame = toolify(
   }) => {
     const selection = useReactive(SelectionAPI);
 
-    const repo = useRepo();
-    const accountDocHandle = use(
-      useMemo(() => getAccountDocHandle(repo), [repo])
+    const [accountDoc, changeAccountDoc] = useDocument<TinyPatchworkAccountDoc>(
+      docUrl,
+      {
+        suspense: true,
+      }
     );
-    const [frame, changeFrame] = useDocument<PatchworkFrameDoc>(docUrl, {
-      suspense: true,
-    });
-    const [account] = useDocument<AccountDoc>(accountDocHandle.url, {
-      suspense: true,
-    });
+
+    const { rootFolderUrl, sidebarToolId, selectedDocLink } =
+      accountDoc["@tiny-patchwork"];
 
     // listen to open document events
     useEffect(() => {
@@ -45,15 +34,17 @@ export const renderFrame = toolify(
         element.addEventListener("patchwork:open-document", (event) => {
           const { docLink } = event as OpenDocumentEvent;
 
-          changeFrame((frame) => {
-            frame.selectedDocLink = docLink;
+          console.log("handle open document event", event);
+
+          changeAccountDoc((accountDoc) => {
+            accountDoc["@tiny-patchwork"].selectedDocLink = docLink;
           });
         });
       }
     }, [element]);
 
     // add selectedDocument to context
-    const selectedDocRef = useDocRef(frame.selectedDocLink?.url);
+    const selectedDocRef = useDocRef(selectedDocLink?.url);
     useEffect(
       () => selection.setSelection(selectedDocRef ? [selectedDocRef] : []),
       [selectedDocRef, selection]
@@ -66,18 +57,13 @@ export const renderFrame = toolify(
             <span className="text-xs">tiny</span> patchwork
           </h2>
 
-          <patchwork-view
-            doc-url={account.rootFolderUrl}
-            tool-id={frame.sidebarToolId}
-          />
+          <patchwork-view doc-url={rootFolderUrl} tool-id={sidebarToolId} />
         </div>
 
         <div className="w-full h-full overflow-auto">
-          {frame.selectedDocLink && (
-            <MainView
-              docLink={frame.selectedDocLink}
-              key={frame.selectedDocLink.url}
-            />
+          {selectedDocLink && (
+            // todo: patchwork-view does't update if  doc url changes
+            <MainView docLink={selectedDocLink} key={selectedDocLink.url} />
           )}
         </div>
       </div>

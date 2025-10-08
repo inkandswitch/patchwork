@@ -8,8 +8,9 @@ export default defineConfig({
     tailwindcss(),
     wasm(),
     patchwork({
-      syncServerStorageId: "37915c96-8df9-4fa6-8058-1360edd2ebe2",
-      syncServerUrl: "ws://localhost:3030",
+      syncServerStorageId: "a565270c-bf7c-4df9-a531-f6be1d3152f0",
+      syncServerUrl: "wss://keyhive.sync.automerge.org",
+      keyhiveEnabled: true,
       importmap: {
         imports: {
           react: "https://ga.jspm.io/npm:react@18.3.1/index.js",
