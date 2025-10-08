@@ -1,39 +1,12 @@
 import { Plugin } from "@patchwork/plugins";
 import { plugins as markdownPlugins } from "./markdown";
+import { plugins as patchworkFramePlugins } from "./patchwork-frame";
+import { plugins as sidebarPlugins } from "./sidebar";
+import { plugins as funkySidebarPlugins } from "./funky-sidebar";
 
 export const plugins: Plugin<any>[] = [
   ...markdownPlugins,
-  {
-    type: "patchwork:tool",
-    id: "patchwork-frame",
-    name: "Patchwork Frame",
-    icon: "Window",
-    supportedDataTypes: ["patchwork-frame"],
-    async load() {
-      const { renderFrame } = await import("./PatchworkFrame");
-      return { render: renderFrame };
-    },
-  },
-  {
-    type: "patchwork:tool",
-    id: "simple-sidebar",
-    name: "Simple Sidebar",
-    icon: "Sidebar",
-    supportedDataTypes: ["folder"],
-    async load() {
-      const { renderSidebar } = await import("./Sidebar");
-      return { render: renderSidebar };
-    },
-  },
-  {
-    type: "patchwork:tool",
-    id: "funky-sidebar",
-    name: "Simple Sidebar",
-    icon: "Sidebar",
-    supportedDataTypes: ["folder"],
-    async load() {
-      const { renderSidebar } = await import("./FunkySidebar");
-      return { render: renderSidebar };
-    },
-  },
+  ...patchworkFramePlugins,
+  ...sidebarPlugins,
+  ...funkySidebarPlugins,
 ];

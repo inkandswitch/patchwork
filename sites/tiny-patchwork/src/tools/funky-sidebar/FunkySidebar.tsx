@@ -1,12 +1,12 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { toolify } from "../lib/toolify";
+import { toolify } from "../../lib/toolify";
 import { FolderDoc, DocLink } from "@patchwork/filesystem";
 import { useState, useRef, useEffect } from "react";
 import { createDocOfDataType, DataType } from "@patchwork/plugins";
-import { useDatatypeDescriptions } from "../lib/useDatatypeDescriptions";
+import { useDatatypeDescriptions } from "../../lib/useDatatypeDescriptions";
 import { PlusIcon } from "lucide-react";
-import { triggerOpenDocument } from "../lib/navigation";
+import { triggerOpenDocument } from "../../lib/navigation";
 
 type FolderEntryProps = {
   docLink: DocLink;

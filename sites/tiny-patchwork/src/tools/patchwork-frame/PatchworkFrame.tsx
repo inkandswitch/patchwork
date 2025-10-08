@@ -1,10 +1,10 @@
 import { use, useEffect, useMemo, useState } from "react";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { AutomergeUrl } from "@automerge/vanillajs";
-import { toolify } from "../lib/toolify";
-import { AccountDoc, getAccountDocHandle } from "../lib/account";
+import { toolify } from "../../lib/toolify";
+import { AccountDoc, getAccountDocHandle } from "../../lib/account";
 import { DocLink } from "@patchwork/filesystem";
-import { OpenDocumentEvent } from "../lib/navigation";
+import { OpenDocumentEvent } from "../../lib/navigation";
 
 export type PatchworkFrameDoc = {
   sidebarToolId: string;
@@ -46,7 +46,9 @@ export const renderFrame = toolify(
     return (
       <div className="w-screen h-screen flex">
         <div className="w-[300px] bg-gray-100 p-2">
-          <h2 className="text-xl mb-4">tiny patchwork</h2>
+          <h2 className="text-xl p-2 mb-8">
+            <span className="text-xs">tiny</span> patchwork
+          </h2>
 
           <patchwork-view
             doc-url={account.rootFolderUrl}
