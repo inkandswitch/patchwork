@@ -5,7 +5,7 @@
     "./shim": "./shim.js"
   },
   "devDependencies": {
-    "@automerge/automerge-repo-react-hooks": "^2.3.0",
+    "@automerge/automerge-repo-react-hooks": "2.4.0-alpha.2",
     "@patchwork/plugins": "workspace:^",
     "@types/react": "^18.3.25",
     "@types/react-dom": "^18.3.7"

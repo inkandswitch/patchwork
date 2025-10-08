@@ -13,11 +13,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@automerge/automerge-keyhive-network-adapter": "0.0.0-alpha.22",
-    "@keyhive/keyhive": "0.0.0-alpha.23",
+    "@automerge/automerge-keyhive-network-adapter": "0.0.0-alpha.32",
+    "@keyhive/keyhive": "0.0.0-alpha.24",
     "@automerge/automerge": "3.0.0",
-    "@automerge/automerge-repo": "^2.3.0",
-    "@automerge/vanillajs": "^2.3.1",
+    "@automerge/automerge-repo": "2.4.0-alpha.2",
+    "@automerge/vanillajs": "2.4.0-alpha.2",
     "@patchwork/elements": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/identity": "workspace:^",

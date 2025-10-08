@@ -96,6 +96,7 @@ function sendMessageToClients(message: any) {
     Math.random().toString(36).substring(2, 15) + "-service-worker";
   const storage = new IndexedDBStorageAdapter();
 
+  const ws = new WebSocketClientAdapter(__SYNC_SERVER_URL__);
   const identity = await (async function () {
     if (!__KEYHIVE_ENABLED__) return;
 
@@ -105,35 +106,24 @@ function sendMessageToClients(message: any) {
       // @ts-expect-error
       "@keyhive/keyhive/keyhive_wasm.base64.js"
     );
-    const { initializeKeyhive } = await import("@patchwork/identity");
 
     keyhive.initFromBase64Wasm(wasmBase64);
     keyhive.setPanicHook();
+
+    const { initializeKeyhive } = await import(
+      "@automerge/automerge-keyhive-network-adapter"
+    );
     return await initializeKeyhive({
       storage,
       peerIdSuffix,
       eventHandler(event) {
         console.log("[Keyhive Event]", event);
       },
+      networkAdapter: ws,
     });
   })();
 
-  const ws = new WebSocketClientAdapter(__SYNC_SERVER_URL__);
-  const KeyhiveNetworkAdapter =
-    identity &&
-    (await import("@automerge/automerge-keyhive-network-adapter"))
-      .KeyhiveNetworkAdapter;
-
-  const network = identity
-    ? [
-        new KeyhiveNetworkAdapter!(
-          ws,
-          identity.keyhive,
-          storage,
-          identity.syncServer.peerId
-        ),
-      ]
-    : [ws];
+  const network = identity ? [identity.networkAdapter] : [ws];
 
   const serviceWorkerPeerId = identity
     ? identity.peerId
@@ -149,6 +139,7 @@ function sendMessageToClients(message: any) {
     peerId: serviceWorkerPeerId,
     sharePolicy,
     enableRemoteHeadsGossiping: true,
+    idFactory: identity?.idFactory,
   });
 
   repo = newRepo;

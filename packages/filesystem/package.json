@@ -14,7 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "@automerge/automerge": "3.1.2",
-    "@automerge/automerge-repo": "^2.3.0",
+    "@automerge/automerge-repo": "2.4.0-alpha.2",
     "@types/node": "^20.17.57",
     "resolve.exports": "^2.0.3"
   }
