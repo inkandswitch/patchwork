@@ -1,18 +1,14 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import {
-  useDocHandle,
-  useDocument,
-  useRepo,
-} from "@automerge/automerge-repo-react-hooks";
-import { toolify } from "../../lib/toolify";
-import { FolderDoc, DocLink } from "@patchwork/filesystem";
-import { useState } from "react";
-import { createDocOfDataType, DataType } from "@patchwork/plugins";
-import { useDatatypeDescriptions } from "../../lib/useDatatypeDescriptions";
-import { PlusIcon } from "lucide-react";
-import { triggerOpenDocument } from "../../lib/navigation";
+import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useDocRef, useReactive } from "@patchwork/context/react";
 import { SelectionAPI } from "@patchwork/context/selection";
+import { DocLink, FolderDoc } from "@patchwork/filesystem";
+import { createDocOfDataType, DataType } from "@patchwork/plugins";
+import { PlusIcon } from "lucide-react";
+import { useState } from "react";
+import { triggerOpenDocument } from "../../lib/navigation";
+import { toolify } from "../../lib/toolify";
+import { useDatatypeDescriptions } from "../../lib/useDatatypeDescriptions";
 
 const FileEntry = ({
   docLink,

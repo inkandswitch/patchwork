@@ -2,9 +2,9 @@ import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
-import { globalIgnores } from "eslint/config";
+import { defineConfig, globalIgnores } from "eslint/config";
 
-export default tseslint.config([
+export default defineConfig([
   globalIgnores(["dist"]),
   {
     files: ["**/*.{ts,tsx}"],
@@ -18,11 +18,9 @@ export default tseslint.config([
       globals: globals.browser,
     },
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
+      "no-unused-vars": "warn",
       "@typescript-eslint/no-unused-vars": "warn",
-    },
-    parserOptions: {
-      project: "./tsconfig.json",
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 ]);

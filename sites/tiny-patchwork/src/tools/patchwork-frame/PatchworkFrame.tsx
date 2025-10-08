@@ -1,12 +1,17 @@
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { AutomergeUrl } from "@automerge/vanillajs";
-import { useDocRef, useReactive } from "@patchwork/context/react";
+import { CONTEXT, PathRef } from "@patchwork/context";
+import { useReactive } from "@patchwork/context/react";
 import { SelectionAPI } from "@patchwork/context/selection";
 import { DocLink } from "@patchwork/filesystem";
 import { useEffect } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
 import { OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
+
+CONTEXT.subscribe(() => {
+  console.log("CONTEXT changed", CONTEXT.refs);
+});
 
 export const renderFrame = toolify(
   ({
@@ -28,6 +33,8 @@ export const renderFrame = toolify(
     const { rootFolderUrl, sidebarToolId, selectedDocLink } =
       accountDoc["@tiny-patchwork"];
 
+    const repo = useRepo();
+
     // listen to open document events
     useEffect(() => {
       if (element) {
@@ -36,19 +43,16 @@ export const renderFrame = toolify(
 
           console.log("handle open document event", event);
 
+          repo.find(docLink.url).then((handle) => {
+            selection.setSelection([new PathRef(handle, [])]);
+          });
+
           changeAccountDoc((accountDoc) => {
             accountDoc["@tiny-patchwork"].selectedDocLink = docLink;
           });
         });
       }
-    }, [element]);
-
-    // add selectedDocument to context
-    const selectedDocRef = useDocRef(selectedDocLink?.url);
-    useEffect(
-      () => selection.setSelection(selectedDocRef ? [selectedDocRef] : []),
-      [selectedDocRef, selection]
-    );
+    }, [changeAccountDoc, element, repo, selection]);
 
     return (
       <div className="w-screen h-screen flex">
@@ -56,7 +60,7 @@ export const renderFrame = toolify(
           <h2 className="text-xl p-3">
             <span className="text-xs">tiny</span> patchwork
           </h2>
-
+          {/* @ts-expect-error fix later */}
           <patchwork-view doc-url={rootFolderUrl} tool-id={sidebarToolId} />
         </div>
 
@@ -76,5 +80,6 @@ type MainViewProps = {
 };
 
 const MainView = ({ docLink }: MainViewProps) => {
+  // @ts-expect-error fix later
   return <patchwork-view doc-url={docLink.url} tool-id={docLink.type} />;
 };

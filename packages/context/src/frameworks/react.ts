@@ -33,6 +33,7 @@ export const useDocRef = <T = unknown>(
   docUrl?: AutomergeUrl
 ): Ref<T, T, never> | undefined => {
   const docHandle = useDocHandle(docUrl);
+
   return useMemo(
     () =>
       docHandle ? (new PathRef(docHandle, []) as Ref<T, T, never>) : undefined,

@@ -4,31 +4,23 @@ import { defineField } from "../core/fields";
 import { Ref } from "../core/refs";
 
 const IsSelectedSymbol = Symbol("IsSelected");
-type IsSelected = typeof IsSelectedSymbol;
-const IsSelected = defineField<IsSelected, boolean>(
+export type IsSelected = typeof IsSelectedSymbol;
+export const IsSelected = defineField<IsSelected, boolean>(
   "IsSelected",
   IsSelectedSymbol
 );
 
-type SelectionAPIProps = {
+type SelectionAPI = {
   isSelected: (ref: Ref) => boolean;
   setSelection: (refs: Ref[]) => void;
   selectedRefs: Ref[];
 };
 
-export const SelectionAPI = (): Reactive<SelectionAPIProps> => {
-  const api = new Reactive<SelectionAPIProps>({
-    isSelected: () => false,
-    setSelection: () => {},
-    selectedRefs: [],
-  });
+export const SelectionAPI = (): Reactive<SelectionAPI> => {
+  const getSelectionAPI = (): SelectionAPI => {
+    const selectedRefs = CONTEXT.refsWith(IsSelected);
 
-  const selectionContext = CONTEXT.subcontext();
-
-  const onChangeContext = () => {
-    const selectedRefs = selectionContext.refsWith(IsSelected);
-
-    api.set({
+    return {
       selectedRefs,
 
       isSelected(ref) {
@@ -36,15 +28,29 @@ export const SelectionAPI = (): Reactive<SelectionAPIProps> => {
       },
 
       setSelection(refs) {
+        console.log(
+          "CONTEXT setSelection",
+          refs.map((ref) => ref.toId())
+        );
+
         selectionContext.replace(refs.map((ref) => ref.with(IsSelected(true))));
       },
-    });
+    };
+  };
+
+  const selectionContext = CONTEXT.subcontext();
+
+  const api = new Reactive<SelectionAPI>(getSelectionAPI());
+
+  const onChangeContext = () => {
+    api.set(getSelectionAPI());
   };
 
   CONTEXT.subscribe(onChangeContext);
 
   api.on("destroy", () => {
     CONTEXT.remove(selectionContext);
+    CONTEXT.unsubscribe(onChangeContext);
   });
 
   return api;
