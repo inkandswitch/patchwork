@@ -383,6 +383,9 @@ importers:
         specifier: ^4.1.14
         version: 4.1.14
     devDependencies:
+      '@eslint/js':
+        specifier: ^9.37.0
+        version: 9.37.0
       '@patchwork/bootloader':
         specifier: workspace:^
         version: link:../../packages/bootloader
@@ -395,9 +398,24 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.0
         version: 19.2.1(@types/react@19.2.2)
+      '@typescript-eslint/parser':
+        specifier: ^8.40.0
+        version: 8.46.0(eslint@9.37.0(jiti@2.6.1))(typescript@5.9.3)
       daisyui:
         specifier: ^5.1.29
         version: 5.1.30
+      eslint:
+        specifier: ^9.34.0
+        version: 9.37.0(jiti@2.6.1)
+      eslint-plugin-react-hooks:
+        specifier: ^5.2.0
+        version: 5.2.0(eslint@9.37.0(jiti@2.6.1))
+      globals:
+        specifier: ^16.4.0
+        version: 16.4.0
+      typescript-eslint:
+        specifier: ^8.41.0
+        version: 8.46.0(eslint@9.37.0(jiti@2.6.1))(typescript@5.9.3)
       vite:
         specifier: ^7.1.9
         version: 7.1.9(@types/node@20.19.9)(jiti@2.6.1)(less@4.4.1)(lightningcss@1.30.1)(sass@1.92.1)(stylus@0.64.0)(terser@5.37.0)
@@ -418,6 +436,9 @@ packages:
 
   '@automerge/automerge-codemirror@0.2.0':
     resolution: {integrity: sha512-GBNh4ESZHFNHZKLznf/2G2KdmBD+unEdk64+l621LsjIsJs6HBmQmO8RCY1v7vIq31kFyoVHNcBMGQOnLgy4GA==}
+
+  '@automerge/automerge-keyhive-network-adapter@0.0.0-alpha.22':
+    resolution: {integrity: sha512-sNtrgCssqF6monDXGglujv/kLFYo0GFP7t+NdBnNG8NijeLxYwQk1zaEQSKhK+vKqxGnNCsQ0U7NtWmdb8smQg==}
 
   '@automerge/automerge-keyhive-network-adapter@0.0.0-alpha.32':
     resolution: {integrity: sha512-6BErhq8SYuqaXeFhssgxbjbT4SN0eLUoybHF30eD4Dq5ZZw4Iuvo+IEJUCGTNnNTMLlLon55ebrMkME8RKSX0g==}
@@ -1023,6 +1044,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.29':
     resolution: {integrity: sha512-uw6guiW/gcAGPDhLmd77/6lW8QLeiV5RUTsAX46Db6oLhGaVj4lhnPwb184s1bkc8kdVg/+h988dro8GRDpmYQ==}
+
+  '@keyhive/keyhive@0.0.0-alpha.23':
+    resolution: {integrity: sha512-7bA4Aj9LWGWGo1Tai+cOnQAZdvqt45rP2ZMroFOU2wQPY04EY3hrSoxU38eH9MniZWQe6tTdK5i7qcxgBxZNJQ==}
 
   '@keyhive/keyhive@0.0.0-alpha.24':
     resolution: {integrity: sha512-5FsM8E35TsGQNTg6Wf0qZt8Ki0yQ3KNhhpB0TpwRS/vJ+Ih3M13A9T1adbgRi6Zs8p0MDptyj/vKev1ra1tyZA==}
@@ -2990,6 +3014,17 @@ snapshots:
       '@codemirror/view': 6.38.5
       codemirror: 6.0.2
 
+  '@automerge/automerge-keyhive-network-adapter@0.0.0-alpha.22':
+    dependencies:
+      '@automerge/automerge-repo': 2.4.0-alpha.2
+      '@automerge/automerge-repo-network-websocket': 2.4.0-alpha.2
+      '@keyhive/keyhive': 0.0.0-alpha.24
+      eventemitter3: 5.0.1
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
   '@automerge/automerge-keyhive-network-adapter@0.0.0-alpha.32':
     dependencies:
       '@automerge/automerge-repo': 2.4.0-alpha.2
@@ -3682,6 +3717,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@keyhive/keyhive@0.0.0-alpha.23': {}
 
   '@keyhive/keyhive@0.0.0-alpha.24': {}
 
