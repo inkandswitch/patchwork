@@ -2,6 +2,7 @@ import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { TinyPatchworkAccountDoc } from "./lib/account-doc";
 import { TabViewDoc } from "./tools/tab-view/datatype";
 import { SingleViewDoc } from "./tools/single-view/datatype";
+import { BranchViewDoc } from "./tools/branch-view/datatype";
 
 declare global {
   interface Window {
@@ -10,6 +11,7 @@ declare global {
       switchToNormalSidebar: () => void;
       switchToTabView: () => void;
       switchToSingleView: () => void;
+      switchToBranchView: () => void;
     };
   }
 }
@@ -67,12 +69,30 @@ export const initCommands = (
     console.log("Switched to single view");
   };
 
+  const switchToBranchView = () => {
+    // Create a new branch-view document
+    const branchViewHandle = repo.create({
+      ["@patchwork"]: {
+        type: "branch-view",
+      },
+    }) as DocHandle<BranchViewDoc>;
+
+    accountDocHandle.change((doc) => {
+      doc["@tiny-patchwork"].mainView = {
+        documentUrl: branchViewHandle.url,
+        toolId: "branch-view",
+      };
+    });
+    console.log("Switched to branch view");
+  };
+
   // Attach to window
   window.$command = {
     switchToFunkySidebar,
     switchToNormalSidebar,
     switchToTabView,
     switchToSingleView,
+    switchToBranchView,
   };
 
   console.log("Commands initialized. Available commands:");
@@ -80,4 +100,5 @@ export const initCommands = (
   console.log("- $command.switchToNormalSidebar()");
   console.log("- $command.switchToTabView()");
   console.log("- $command.switchToSingleView()");
+  console.log("- $command.switchToBranchView()");
 };

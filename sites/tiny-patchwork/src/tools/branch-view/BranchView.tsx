@@ -7,10 +7,12 @@ import {
 } from "@automerge/automerge-repo-react-hooks";
 import { useDocRef, useSubcontext } from "@patchwork/context/react";
 import { IsSelected } from "@patchwork/context/selection";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 import { BranchViewDoc, Branch } from "./datatype";
+import { PathRef, RefWith } from "@patchwork/context";
+import { Diff, getDiffOfDoc } from "@patchwork/context/diff";
 
 type BranchesDoc = {
   branches: Branch[];
@@ -36,6 +38,7 @@ const BranchView = ({
   );
 
   const selectionContext = useSubcontext("BRANCH_VIEW");
+  const diffContext = useSubcontext("BRANCH_VIEW_DIFF");
   const [highlightChanges, setHighlightChanges] = useState(true);
 
   // The main document URL (could be undefined if nothing is open)
@@ -44,16 +47,18 @@ const BranchView = ({
   // The currently checked out doc URL (either a branch or the main doc)
   const checkedOutDocUrl = branchViewDoc.selectedBranchDocUrl ?? mainDocUrl;
 
-  // Get the current document reference for context
-  const currentDocRef = useDocRef(checkedOutDocUrl);
+  // Get the main document reference for selection context
+  // Note: We always use the main document for selection, not the branch
+  const mainDocRef = useDocRef(mainDocUrl);
 
-  // Update selection context when current document changes
+  // Update selection context when main document changes
+  // Always select the main document, even when viewing a branch
   useEffect(() => {
-    console.log("!! set currentDocRef in branch view", currentDocRef);
+    console.log("!! set mainDocRef in branch view", mainDocRef);
     selectionContext.replace(
-      currentDocRef ? [currentDocRef.with(IsSelected(true))] : []
+      mainDocRef ? [mainDocRef.with(IsSelected(true))] : []
     );
-  }, [currentDocRef, selectionContext]);
+  }, [mainDocRef, selectionContext]);
 
   // Listen for open document events
   useEffect(() => {
@@ -66,7 +71,7 @@ const BranchView = ({
           // If it's a different document, switch to it and reset to main branch
           if (doc.currentDocument?.url !== docLink.url) {
             doc.currentDocument = docLink;
-            doc.selectedBranchDocUrl = undefined; // Reset to main branch
+            delete doc.selectedBranchDocUrl; // Reset to main branch
           }
         });
       };
@@ -84,7 +89,6 @@ const BranchView = ({
   // Get the main document and its branch metadata
   const [mainDoc, changeMainDoc] =
     useDocument<DocWithBranchesMetadata>(mainDocUrl);
-  const [checkedOutDoc] = useDocument(checkedOutDocUrl);
 
   // Create branches doc if it doesn't exist on the main document
   const shouldAddBranchesDocUrl =
@@ -107,8 +111,52 @@ const BranchView = ({
   );
 
   const checkedOutDocHandle = useDocHandle(checkedOutDocUrl);
+  const [checkedOutDoc] = useDocument(checkedOutDocUrl);
+
+  const isOnBranch = branchViewDoc.selectedBranchDocUrl !== undefined;
+
+  // Compute diffs when on a branch with highlight changes enabled
+  const diffsOfDoc = useMemo<RefWith<Diff>[]>(() => {
+    // make eslint happy, we need checkedOutDoc as a dependency because we need
+    // to re-run the diff when the checked out doc changes
+    void checkedOutDoc;
+
+    if (!isOnBranch || !highlightChanges) {
+      return [];
+    }
+
+    const currentBranch = branchesDoc?.branches.find(
+      (b) => b.docUrl === branchViewDoc.selectedBranchDocUrl
+    );
+
+    if (!currentBranch) {
+      return [];
+    }
+
+    return getDiffOfDoc(
+      checkedOutDocHandle,
+      highlightChanges ? currentBranch.forkedAt : undefined
+    );
+  }, [
+    checkedOutDocHandle,
+    highlightChanges,
+    isOnBranch,
+    branchViewDoc.selectedBranchDocUrl,
+    branchesDoc,
+    checkedOutDoc,
+  ]);
+
+  // Update diff context
+  useEffect(() => {
+    diffContext.replace(diffsOfDoc);
+  }, [diffContext, diffsOfDoc]);
 
   const createBranch = () => {
+    // Close the dropdown by blurring the active element
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     if (!mainDoc || !checkedOutDocHandle) {
       return;
     }
@@ -120,6 +168,7 @@ const BranchView = ({
         name: "Branch #" + (branchesDoc.branches.length + 1),
         forkedAt: Automerge.getHeads(checkedOutDoc || mainDoc),
         docUrl: branchDocHandle.url,
+        merged: false,
       };
 
       branchesDoc.branches.push(branch);
@@ -131,13 +180,55 @@ const BranchView = ({
     });
   };
 
-  const handleBranchChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const mergeBranch = async () => {
+    if (!mainDoc || !isOnBranch || !branchViewDoc.selectedBranchDocUrl) {
+      return;
+    }
+
+    const currentBranch = branchesDoc?.branches.find(
+      (b) => b.docUrl === branchViewDoc.selectedBranchDocUrl
+    );
+
+    if (!currentBranch) {
+      return;
+    }
+
+    const branchHandle = await repo.find<any>(currentBranch.docUrl);
+    const mainHandle = await repo.find<any>(mainDocUrl!);
+
+    // Merge the branch into main
+    mainHandle.merge(branchHandle);
+
+    // Mark the branch as merged
+    changeBranchesDoc((branchesDoc) => {
+      const branch = branchesDoc.branches.find(
+        (b) => b.docUrl === currentBranch.docUrl
+      );
+      if (branch) {
+        branch.merged = true;
+      }
+    });
+
+    // Switch back to main
+    changeBranchViewDoc((doc) => {
+      delete doc.selectedBranchDocUrl;
+    });
+
+    console.log("Merged branch:", currentBranch.name);
+  };
+
+  const handleBranchSelect = (branchDocUrl: AutomergeUrl | undefined) => {
+    // Close the dropdown by blurring the active element
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     startTransition(() => {
       changeBranchViewDoc((doc) => {
-        if (event.target.value === mainDocUrl) {
-          doc.selectedBranchDocUrl = undefined; // Main branch
+        if (branchDocUrl === undefined) {
+          delete doc.selectedBranchDocUrl; // Main branch
         } else {
-          doc.selectedBranchDocUrl = event.target.value as AutomergeUrl;
+          doc.selectedBranchDocUrl = branchDocUrl;
         }
       });
     });
@@ -155,41 +246,89 @@ const BranchView = ({
     return <div>Loading...</div>;
   }
 
-  const isOnBranch = branchViewDoc.selectedBranchDocUrl !== undefined;
+  // Filter out merged branches
+  const activeBranches = branchesDoc.branches.filter((b) => !b.merged);
+
+  // Get the current branch name for display
+  const currentBranch = branchesDoc.branches.find(
+    (b) => b.docUrl === branchViewDoc.selectedBranchDocUrl
+  );
+  const currentBranchName = currentBranch?.name || "Main";
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex flex-row gap-2 p-2 border-b border-gray-200">
-        <select
-          value={checkedOutDocUrl}
-          onChange={handleBranchChange}
-          className="w-[200px] border border-gray-300 rounded-md p-2"
-        >
-          <option value={mainDocUrl}>Main</option>
-          {branchesDoc?.branches.map((branch) => (
-            <option value={branch.docUrl} key={branch.docUrl}>
-              {branch.name}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-row gap-2 p-2 border-b border-base-300 bg-base-100">
+        <div className="dropdown">
+          <div tabIndex={0} role="button" className="btn btn-sm btn-ghost">
+            {currentBranchName}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+              />
+            </svg>
+          </div>
+          <ul
+            tabIndex={0}
+            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300"
+          >
+            <li>
+              <a onClick={() => handleBranchSelect(undefined)}>Main</a>
+            </li>
+            {activeBranches.map((branch) => (
+              <li key={branch.docUrl}>
+                <a onClick={() => handleBranchSelect(branch.docUrl)}>
+                  {branch.name}
+                </a>
+              </li>
+            ))}
+            <li className="border-t border-base-300 mt-1 pt-1">
+              <a onClick={createBranch}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4.5v15m7.5-7.5h-15"
+                  />
+                </svg>
+                Create Branch
+              </a>
+            </li>
+          </ul>
+        </div>
 
-        <button
-          onClick={createBranch}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md"
-        >
-          Create Branch
-        </button>
+        {isOnBranch && (
+          <button onClick={mergeBranch} className="btn btn-sm btn-ghost">
+            Merge Branch
+          </button>
+        )}
 
         <div className="flex-1" />
 
         {isOnBranch && (
-          <label className="flex items-center gap-2">
+          <label className="label cursor-pointer gap-2">
+            <span className="label-text">Highlight changes</span>
             <input
               type="checkbox"
               checked={highlightChanges}
               onChange={() => setHighlightChanges(!highlightChanges)}
+              className="checkbox checkbox-sm"
             />
-            Highlight changes
           </label>
         )}
       </div>

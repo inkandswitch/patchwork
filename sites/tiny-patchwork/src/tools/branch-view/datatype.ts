@@ -7,6 +7,7 @@ export type Branch = {
   name: string;
   forkedAt: Automerge.Heads;
   docUrl: AutomergeUrl;
+  merged?: boolean; // True if this branch has been merged
 };
 
 export interface BranchViewDoc {
