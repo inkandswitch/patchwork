@@ -1,6 +1,8 @@
 import { DocLink, FolderDoc, ModuleSettingsDoc } from "@patchwork/filesystem";
+import { createDocOfDataType, getPlugin, DataType } from "@patchwork/plugins";
 
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/vanillajs";
+import { TabViewDoc } from "../tools/tab-view/datatype";
 
 export type TinyPatchworkAccountDoc = {
   ["@tiny-patchwork"]: {
@@ -8,7 +10,10 @@ export type TinyPatchworkAccountDoc = {
     moduleSettingsUrl: AutomergeUrl;
     frameToolId: string;
     sidebarToolId: string;
-    selectedDocLink?: DocLink;
+    mainView: {
+      documentUrl: AutomergeUrl;
+      toolId: string;
+    };
   };
 };
 
@@ -39,6 +44,11 @@ export const initAccountDoc = (
     ];
   });
 
+  // Create a tab-view document for the main view
+  const tabViewHandle = repo.create<TabViewDoc>({
+    tabs: [],
+  });
+
   handle.change((doc) => {
     (doc as any)["@patchwork"] = {
       type: "account",
@@ -49,6 +59,10 @@ export const initAccountDoc = (
       sidebarToolId: "simple-sidebar",
       rootFolderUrl: rootFolderHandle.url,
       moduleSettingsUrl: moduleSettingsHandle.url,
+      mainView: {
+        documentUrl: tabViewHandle.url,
+        toolId: "tab-view",
+      },
     };
   });
 };

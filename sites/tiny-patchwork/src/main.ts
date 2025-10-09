@@ -38,6 +38,8 @@ const accountDocHandle = await repo.find<TinyPatchworkAccountDoc>(
   identity.accountUrl
 );
 
+(window as any).accountDocHandle = accountDocHandle;
+
 initAccountDoc(repo, accountDocHandle);
 
 const moduleWatcher = new ModuleWatcher(

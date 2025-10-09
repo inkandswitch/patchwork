@@ -1,16 +1,9 @@
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { AutomergeUrl } from "@automerge/vanillajs";
-import { CONTEXT, PathRef } from "@patchwork/context";
-import {
-  useDocRef,
-  useReactive,
-  useSubcontext,
-} from "@patchwork/context/react";
-import { IsSelected } from "@patchwork/context/selection";
-import { DocLink } from "@patchwork/filesystem";
+import { CONTEXT } from "@patchwork/context";
 import { useEffect, useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
-import { OpenDocumentEvent } from "../../lib/navigation";
+import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 
 CONTEXT.subscribe(() => {
@@ -32,8 +25,12 @@ export const renderFrame = toolify(
       }
     );
 
-    const { rootFolderUrl, sidebarToolId, selectedDocLink } =
+    const { rootFolderUrl, sidebarToolId, mainView } =
       accountDoc["@tiny-patchwork"];
+
+    const [mainViewElement, setMainViewElement] = useState<HTMLElement | null>(
+      null
+    );
 
     const repo = useRepo();
 
@@ -43,26 +40,12 @@ export const renderFrame = toolify(
         element.addEventListener("patchwork:open-document", (event) => {
           const { docLink } = event as OpenDocumentEvent;
 
-          console.log("handle open document event", event);
+          console.log("!! open document", docLink, mainViewElement);
 
-          changeAccountDoc((accountDoc) => {
-            accountDoc["@tiny-patchwork"].selectedDocLink = docLink;
-          });
+          openDocument(mainViewElement!, docLink);
         });
       }
-    }, [changeAccountDoc, element, repo]);
-
-    const selectionContext = useSubcontext("FRAME");
-
-    // add open doc to context
-    const selectedDocRef = useDocRef(selectedDocLink?.url);
-    useEffect(() => {
-      console.log("!! set selectedDocRef", selectedDocRef);
-
-      selectionContext.replace(
-        selectedDocRef ? [selectedDocRef.with(IsSelected(true))] : []
-      );
-    }, [selectedDocRef]);
+    }, [changeAccountDoc, element, repo, mainViewElement]);
 
     return (
       <div className="w-screen h-screen flex">
@@ -75,21 +58,17 @@ export const renderFrame = toolify(
         </div>
 
         <div className="w-full h-full overflow-auto">
-          {selectedDocLink && (
-            // todo: patchwork-view does't update if  doc url changes
-            <MainView docLink={selectedDocLink} key={selectedDocLink.url} />
+          {mainView && (
+            // @ts-expect-error fix later
+            <patchwork-view
+              ref={setMainViewElement}
+              doc-url={mainView.documentUrl}
+              tool-id={mainView.toolId}
+              key={mainView.documentUrl}
+            />
           )}
         </div>
       </div>
     );
   }
 );
-
-type MainViewProps = {
-  docLink: DocLink;
-};
-
-const MainView = ({ docLink }: MainViewProps) => {
-  // @ts-expect-error fix later
-  return <patchwork-view doc-url={docLink.url} tool-id={docLink.type} />;
-};
