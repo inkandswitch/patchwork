@@ -14,12 +14,12 @@ import { BranchViewDoc, Branch } from "./datatype";
 import { PathRef, RefWith } from "@patchwork/context";
 import { Diff, getDiffOfDoc } from "@patchwork/context/diff";
 
-type BranchesDoc = {
+type VersionControl = {
   branches: Branch[];
 };
 
-type DocWithBranchesMetadata = {
-  branchesDocUrl?: AutomergeUrl;
+type DocWithVersionControl = {
+  "@version-control"?: VersionControl;
 };
 
 const BranchView = ({
@@ -86,34 +86,26 @@ const BranchView = ({
     }
   }, [changeBranchViewDoc, element]);
 
-  // Get the main document and its branch metadata
+  // Get the main document and its version control metadata
   const [mainDoc, changeMainDoc] =
-    useDocument<DocWithBranchesMetadata>(mainDocUrl);
+    useDocument<DocWithVersionControl>(mainDocUrl);
 
-  // Create branches doc if it doesn't exist on the main document
-  const shouldAddBranchesDocUrl =
-    mainDoc && mainDoc.branchesDocUrl === undefined;
-
+  // Initialize version control if it doesn't exist on the main document
   useEffect(() => {
-    if (shouldAddBranchesDocUrl) {
+    if (mainDoc && !mainDoc["@version-control"]) {
       changeMainDoc((doc) => {
-        const handle = repo.create<BranchesDoc>();
-        handle.change((doc) => {
-          doc.branches = [];
-        });
-        doc.branchesDocUrl = handle.url;
+        doc["@version-control"] = {
+          branches: [],
+        };
       });
     }
-  }, [shouldAddBranchesDocUrl, mainDocUrl, repo, changeMainDoc]);
-
-  const [branchesDoc, changeBranchesDoc] = useDocument<BranchesDoc>(
-    mainDoc?.branchesDocUrl
-  );
+  }, [mainDoc, changeMainDoc]);
 
   const checkedOutDocHandle = useDocHandle(checkedOutDocUrl);
   const [checkedOutDoc] = useDocument(checkedOutDocUrl);
 
   const isOnBranch = branchViewDoc.selectedBranchDocUrl !== undefined;
+  const branches = mainDoc?.["@version-control"]?.branches || [];
 
   // Compute diffs when on a branch with highlight changes enabled
   const diffsOfDoc = useMemo<RefWith<Diff>[]>(() => {
@@ -125,7 +117,7 @@ const BranchView = ({
       return [];
     }
 
-    const currentBranch = branchesDoc?.branches.find(
+    const currentBranch = branches.find(
       (b) => b.docUrl === branchViewDoc.selectedBranchDocUrl
     );
 
@@ -142,14 +134,32 @@ const BranchView = ({
     highlightChanges,
     isOnBranch,
     branchViewDoc.selectedBranchDocUrl,
-    branchesDoc,
+    branches,
     checkedOutDoc,
   ]);
 
   // Update diff context
   useEffect(() => {
+    console.log("Branch View: computed diffs", {
+      diffsOfDoc,
+      count: diffsOfDoc.length,
+      isOnBranch,
+      highlightChanges,
+      checkedOutDocUrl,
+      currentBranch: branches.find(
+        (b) => b.docUrl === branchViewDoc.selectedBranchDocUrl
+      ),
+    });
     diffContext.replace(diffsOfDoc);
-  }, [diffContext, diffsOfDoc]);
+  }, [
+    diffContext,
+    diffsOfDoc,
+    isOnBranch,
+    highlightChanges,
+    checkedOutDocUrl,
+    branches,
+    branchViewDoc.selectedBranchDocUrl,
+  ]);
 
   const createBranch = () => {
     // Close the dropdown by blurring the active element
@@ -163,19 +173,23 @@ const BranchView = ({
 
     const branchDocHandle = repo.clone(checkedOutDocHandle);
 
-    changeBranchesDoc((branchesDoc) => {
+    changeMainDoc((doc) => {
+      if (!doc["@version-control"]) {
+        doc["@version-control"] = { branches: [] };
+      }
+
       const branch: Branch = {
-        name: "Branch #" + (branchesDoc.branches.length + 1),
+        name: "Branch #" + (doc["@version-control"].branches.length + 1),
         forkedAt: Automerge.getHeads(checkedOutDoc || mainDoc),
         docUrl: branchDocHandle.url,
         merged: false,
       };
 
-      branchesDoc.branches.push(branch);
+      doc["@version-control"].branches.push(branch);
 
       // Update the branch view doc to select this new branch
-      changeBranchViewDoc((doc) => {
-        doc.selectedBranchDocUrl = branch.docUrl;
+      changeBranchViewDoc((viewDoc) => {
+        viewDoc.selectedBranchDocUrl = branch.docUrl;
       });
     });
   };
@@ -185,7 +199,7 @@ const BranchView = ({
       return;
     }
 
-    const currentBranch = branchesDoc?.branches.find(
+    const currentBranch = branches.find(
       (b) => b.docUrl === branchViewDoc.selectedBranchDocUrl
     );
 
@@ -200,8 +214,10 @@ const BranchView = ({
     mainHandle.merge(branchHandle);
 
     // Mark the branch as merged
-    changeBranchesDoc((branchesDoc) => {
-      const branch = branchesDoc.branches.find(
+    changeMainDoc((doc) => {
+      if (!doc["@version-control"]) return;
+
+      const branch = doc["@version-control"].branches.find(
         (b) => b.docUrl === currentBranch.docUrl
       );
       if (branch) {
@@ -242,15 +258,15 @@ const BranchView = ({
     );
   }
 
-  if (!branchesDoc) {
+  if (!mainDoc?.["@version-control"]) {
     return <div>Loading...</div>;
   }
 
   // Filter out merged branches
-  const activeBranches = branchesDoc.branches.filter((b) => !b.merged);
+  const activeBranches = branches.filter((b) => !b.merged);
 
   // Get the current branch name for display
-  const currentBranch = branchesDoc.branches.find(
+  const currentBranch = branches.find(
     (b) => b.docUrl === branchViewDoc.selectedBranchDocUrl
   );
   const currentBranchName = currentBranch?.name || "Main";
