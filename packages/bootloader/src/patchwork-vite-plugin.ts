@@ -13,6 +13,7 @@ export interface PatchworkVitePluginOptions {
   syncServerStorageId: string;
   /** extra importmap to be merged into the index.html */
   importmap?: ImportMap;
+  extraBuiltins?: Record<string, string>;
   /** currently unused */
   serviceWorkerType?: "classic" | "module";
   /** currently unused */
@@ -26,7 +27,7 @@ export default function patchwork(options: PatchworkVitePluginOptions) {
 /**
  * these dependencies will be built into the outdir, and injected into the importmap
  */
-export const builtins = {
+export const defaultBuiltins = {
   "@automerge/automerge": "/packages/@automerge/automerge/index.js",
   "@automerge/automerge/slim": "/packages/@automerge/automerge/slim.js",
   "@automerge/automerge-repo": "/packages/@automerge/automerge-repo/index.js",
@@ -54,17 +55,22 @@ async function generateJavaScript(options: esbuild.BuildOptions) {
  * merge the importmap option with our builtins
  */
 function createImportMap(options: PatchworkVitePluginOptions) {
+  const builtins = Object.assign(
+    {},
+    defaultBuiltins,
+    options.extraBuiltins ?? {}
+  );
   const importmap: ImportMap = structuredClone(
     options.importmap ?? { imports: {}, scopes: {} }
   );
   importmap.imports ??= {};
   importmap.scopes ??= {};
   Object.assign(importmap.imports, builtins);
-  return importmap;
+  return { importmap, builtins };
 }
 
 export function plugin(options: PatchworkVitePluginOptions): Plugin {
-  const importmap = createImportMap(options);
+  const { importmap, builtins } = createImportMap(options);
 
   const serviceWorkerModuleId = "service-worker.js";
   const serviceWorkerSource = path.resolve(
