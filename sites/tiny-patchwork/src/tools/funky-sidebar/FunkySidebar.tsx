@@ -12,7 +12,7 @@ import {
   SparklesIcon,
   RocketIcon,
 } from "lucide-react";
-import { triggerOpenDocument } from "../../lib/navigation";
+import { openDocument } from "../../lib/navigation";
 
 const FileEntry = ({ docLink }: { docLink: DocLink }) => {
   const [root, setRoot] = useState<HTMLElement | null>(null);
@@ -22,7 +22,7 @@ const FileEntry = ({ docLink }: { docLink: DocLink }) => {
     e.preventDefault();
     e.stopPropagation();
     console.log("open document");
-    triggerOpenDocument(root!, docLink);
+    openDocument(root!, docLink);
   };
 
   const getRandomColor = () => {
@@ -77,7 +77,7 @@ const FolderEntry = ({ docUrl }: { docUrl: AutomergeUrl }) => {
     e.preventDefault();
     e.stopPropagation();
     console.log("open document");
-    triggerOpenDocument(root!, {
+    openDocument(root!, {
       url: docUrl,
       name: folderDoc.title,
       type: "folder",
@@ -181,7 +181,7 @@ const FolderView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
       doc.docs.push(docLink);
     });
 
-    triggerOpenDocument(root!, docLink);
+    openDocument(root!, docLink);
   };
 
   return (

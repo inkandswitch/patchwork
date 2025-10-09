@@ -7,7 +7,7 @@ export class OpenDocumentEvent extends Event {
   }
 }
 
-export const triggerOpenDocument = (
+export const openDocument = (
   element: HTMLElement | ShadowRoot,
   docLink: DocLink
 ) => {

@@ -6,7 +6,7 @@ import { DocLink, FolderDoc } from "@patchwork/filesystem";
 import { createDocOfDataType, DataType } from "@patchwork/plugins";
 import { PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { triggerOpenDocument } from "../../lib/navigation";
+import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 import { useDatatypeDescriptions } from "../../lib/useDatatypeDescriptions";
 import { CONTEXT, contextComputation } from "@patchwork/context";
@@ -24,7 +24,7 @@ const FileEntry = ({
     e.preventDefault();
     e.stopPropagation();
     console.log("open document");
-    triggerOpenDocument(root!, docLink);
+    openDocument(root!, docLink);
   };
 
   return (
@@ -57,7 +57,7 @@ const FolderEntry = ({
     e.preventDefault();
     e.stopPropagation();
     console.log("open document");
-    triggerOpenDocument(root!, {
+    openDocument(root!, {
       url: docUrl,
       name: folderDoc.title,
       type: "folder",
@@ -134,7 +134,7 @@ const FolderView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
       doc.docs.push(docLink);
     });
 
-    triggerOpenDocument(root!, docLink);
+    openDocument(root!, docLink);
   };
 
   return (
