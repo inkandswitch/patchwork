@@ -4,6 +4,7 @@ import { plugins as patchworkFramePlugins } from "./patchwork-frame";
 import { plugins as sidebarPlugins } from "./sidebar";
 import { plugins as funkySidebarPlugins } from "./funky-sidebar";
 import { plugins as tabViewerPlugins } from "./tab-view";
+import { plugins as singleViewPlugins } from "./single-view";
 
 export const plugins: Plugin<any>[] = [
   ...markdownPlugins,
@@ -11,4 +12,5 @@ export const plugins: Plugin<any>[] = [
   ...sidebarPlugins,
   ...funkySidebarPlugins,
   ...tabViewerPlugins,
+  ...singleViewPlugins,
 ];

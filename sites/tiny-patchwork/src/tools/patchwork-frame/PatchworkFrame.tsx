@@ -40,9 +40,11 @@ export const renderFrame = toolify(
         element.addEventListener("patchwork:open-document", (event) => {
           const { docLink } = event as OpenDocumentEvent;
 
-          console.log("!! open document", docLink, mainViewElement);
+          if (!mainViewElement) {
+            return;
+          }
 
-          openDocument(mainViewElement!, docLink);
+          openDocument(mainViewElement, docLink);
         });
       }
     }, [changeAccountDoc, element, repo, mainViewElement]);
