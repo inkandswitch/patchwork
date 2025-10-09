@@ -1,3 +1,7 @@
+import type {
+  Active,
+  SyncServer,
+} from "@automerge/automerge-keyhive-network-adapter";
 import {
   IndexedDBStorageAdapter,
   MessageChannelNetworkAdapter,
@@ -9,15 +13,11 @@ import {
   type StorageId,
 } from "@automerge/vanillajs";
 import type { Keyhive } from "@keyhive/keyhive/slim";
-import {
-  getOrCreateAccountUrl,
-  type Active,
-  type KeyhiveKit,
-  type SyncServer,
-} from "@patchwork/identity";
+import { getOrCreateAccountUrl } from "@patchwork/identity";
 
 // will be replaced during build
 declare global {
+  var __SYNC_SERVER_URL__: string;
   var __SYNC_SERVER_STORAGE_ID__: StorageId;
   var __SERVICE_WORKER_PATH__: string;
   var __SERVICE_WORKER_TYPE__: WorkerType;
