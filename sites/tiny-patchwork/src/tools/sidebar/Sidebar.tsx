@@ -1,14 +1,15 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useDocRef, useReactive } from "@patchwork/context/react";
-import { SelectionAPI } from "@patchwork/context/selection";
+import { IsSelected, isSelected } from "@patchwork/context/selection";
 import { DocLink, FolderDoc } from "@patchwork/filesystem";
 import { createDocOfDataType, DataType } from "@patchwork/plugins";
 import { PlusIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { triggerOpenDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 import { useDatatypeDescriptions } from "../../lib/useDatatypeDescriptions";
+import { CONTEXT, contextComputation } from "@patchwork/context";
 
 const FileEntry = ({
   docLink,
@@ -107,13 +108,13 @@ const FolderEntry = ({
 
 const DocLinkEntry = ({ docLink }: { docLink: DocLink }) => {
   const docRef = useDocRef<FolderDoc>(docLink.url);
-  const selection = useReactive(SelectionAPI);
-  const isSelected = !!(docRef && selection.isSelected(docRef));
+
+  const selected = useReactive(isSelected(docRef));
 
   if (docLink.type === "folder") {
-    return <FolderEntry docUrl={docLink.url} isSelected={isSelected} />;
+    return <FolderEntry docUrl={docLink.url} isSelected={selected} />;
   }
-  return <FileEntry docLink={docLink} isSelected={isSelected} />;
+  return <FileEntry docLink={docLink} isSelected={selected} />;
 };
 
 const FolderView = ({ docUrl }: { docUrl: AutomergeUrl }) => {

@@ -116,6 +116,14 @@ export class Context {
     context.unsubscribe(this.#notify);
     this.#subcontexts.delete(context);
   }
+
+  // ==== debug methods ====
+
+  dump() {
+    return this.refs.flatMap((ref) =>
+      ref.fields.map(([key, value]) => [ref.toId(), key, value])
+    );
+  }
 }
 
 const addTo = (refsById: Map<string, Ref>, ref: Ref | Ref[]) => {

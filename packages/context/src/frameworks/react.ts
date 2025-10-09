@@ -1,9 +1,13 @@
+import {
+  AnyDocumentId,
+  AutomergeUrl,
+  DocHandle,
+} from "@automerge/automerge-repo";
+import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Reactive } from "../reactive";
 import { CONTEXT, PathRef, Ref } from "../core";
 import { Context } from "../core/context";
-import { useDocHandle } from "@automerge/automerge-repo-react-hooks";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { Reactive } from "../reactive";
 
 export const useReactive = <T>(
   reactiveOrFn: Reactive<T> | (() => Reactive<T>)
@@ -21,6 +25,8 @@ export const useReactive = <T>(
 
     reactive.on("change", setValue);
 
+    setValue(reactive.value);
+
     return () => {
       reactive.emit("destroy");
     };
@@ -32,7 +38,9 @@ export const useReactive = <T>(
 export const useDocRef = <T = unknown>(
   docUrl?: AutomergeUrl
 ): Ref<T, T, never> | undefined => {
-  const docHandle = useDocHandle(docUrl);
+  // todo: useDochandle has a bug
+  // const docHandle = useDocHandle(docUrl);
+  const docHandle = useSimpleDocHandle(docUrl);
 
   return useMemo(
     () =>
@@ -41,7 +49,31 @@ export const useDocRef = <T = unknown>(
   );
 };
 
-export const useSubcontext = () => {
+export const useSimpleDocHandle = (id?: AnyDocumentId) => {
+  const repo = useRepo();
+  const [handle, setHandle] = useState<DocHandle<unknown> | undefined>();
+
+  useEffect(() => {
+    if (!id) return;
+
+    let canceled = false;
+
+    setHandle(undefined);
+
+    repo.find(id).then((handle) => {
+      if (canceled) return;
+      setHandle(handle);
+    });
+
+    return () => {
+      canceled = true;
+    };
+  }, [id]);
+
+  return handle;
+};
+
+export const useSubcontext = (id?: string) => {
   const [subcontext] = useState<Context>(() => CONTEXT.subcontext());
   const subcontextRef = useRef<Context>(subcontext);
 

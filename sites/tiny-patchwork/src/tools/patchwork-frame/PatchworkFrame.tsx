@@ -1,16 +1,20 @@
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { AutomergeUrl } from "@automerge/vanillajs";
 import { CONTEXT, PathRef } from "@patchwork/context";
-import { useReactive } from "@patchwork/context/react";
-import { SelectionAPI } from "@patchwork/context/selection";
+import {
+  useDocRef,
+  useReactive,
+  useSubcontext,
+} from "@patchwork/context/react";
+import { IsSelected } from "@patchwork/context/selection";
 import { DocLink } from "@patchwork/filesystem";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
 import { OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 
 CONTEXT.subscribe(() => {
-  console.log("CONTEXT changed", CONTEXT.refs);
+  console.log("!! CONTEXT changed", CONTEXT.dump());
 });
 
 export const renderFrame = toolify(
@@ -21,8 +25,6 @@ export const renderFrame = toolify(
     docUrl: AutomergeUrl;
     element: HTMLElement | ShadowRoot;
   }) => {
-    const selection = useReactive(SelectionAPI);
-
     const [accountDoc, changeAccountDoc] = useDocument<TinyPatchworkAccountDoc>(
       docUrl,
       {
@@ -43,16 +45,24 @@ export const renderFrame = toolify(
 
           console.log("handle open document event", event);
 
-          repo.find(docLink.url).then((handle) => {
-            selection.setSelection([new PathRef(handle, [])]);
-          });
-
           changeAccountDoc((accountDoc) => {
             accountDoc["@tiny-patchwork"].selectedDocLink = docLink;
           });
         });
       }
-    }, [changeAccountDoc, element, repo, selection]);
+    }, [changeAccountDoc, element, repo]);
+
+    const selectionContext = useSubcontext("FRAME");
+
+    // add open doc to context
+    const selectedDocRef = useDocRef(selectedDocLink?.url);
+    useEffect(() => {
+      console.log("!! set selectedDocRef", selectedDocRef);
+
+      selectionContext.replace(
+        selectedDocRef ? [selectedDocRef.with(IsSelected(true))] : []
+      );
+    }, [selectedDocRef]);
 
     return (
       <div className="w-screen h-screen flex">

@@ -34,7 +34,7 @@ export type SerializedRef =
 export abstract class Ref<
   Value = unknown,
   Doc = unknown,
-  Fields extends symbol = never
+  Fields extends symbol = never,
 > {
   [$fields] = new Map<symbol, any>();
 
@@ -152,7 +152,7 @@ export abstract class Ref<
 export class PathRef<
   Value = unknown,
   Doc = unknown,
-  Fields extends symbol = never
+  Fields extends symbol = never,
 > extends Ref<Value, Doc, Fields> {
   constructor(docHandle: DocHandle<Doc>, path: Automerge.Prop[]) {
     super(docHandle, path);
@@ -180,7 +180,7 @@ export class PathRef<
 export class IdRef<
   Value = unknown,
   Doc = unknown,
-  Fields extends symbol = never
+  Fields extends symbol = never,
 > extends Ref<Value, Doc, Fields> {
   #id: any;
   #key: Automerge.Prop;
@@ -222,7 +222,7 @@ export class IdRef<
 export class TextSpanRef<
   Value = string,
   Doc = unknown,
-  Fields extends symbol = never
+  Fields extends symbol = never,
 > extends Ref<Value, Doc, Fields> {
   #fromCursor: Automerge.Cursor;
   #toCursor: Automerge.Cursor;
