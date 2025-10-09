@@ -42,6 +42,8 @@ export default async function createContext(contextOptions: ContextOptions) {
     entryPoints: ["../template/service-worker/service-worker.ts"],
     bundle: contextOptions.serviceWorkerType != "module",
     format: contextOptions.serviceWorkerType == "module" ? "esm" : "iife",
+    sourcemap: false,
+    minify: true,
   });
 
   const setup = await esbuild.context({

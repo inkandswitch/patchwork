@@ -2,7 +2,6 @@
 
 // @ts-check
 import * as Automerge from "@automerge/automerge/slim";
-import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64";
 import {
   Repo,
   isValidAutomergeUrl,
@@ -88,40 +87,51 @@ function sendMessageToClients(message: any) {
   });
 }
 
+const automergeResponse = fetch("/automerge.wasm");
+
+async function importKeyhive() {
+  if (!__KEYHIVE_ENABLED__) return;
+  const [keyhive, { wasmBase64 }] = await Promise.all([
+    import("@keyhive/keyhive/slim"),
+    import(
+      // @ts-expect-error
+      "@keyhive/keyhive/keyhive_wasm.base64.js"
+    ),
+  ]);
+
+  keyhive.initFromBase64Wasm(wasmBase64);
+  keyhive.setPanicHook();
+  return keyhive;
+}
+
+const keyhivePromise = importKeyhive();
+
 (async () => {
   debugLog("Initializing Automerge WASM");
-  await Automerge.initializeBase64Wasm(automergeWasmBase64);
-  debugLog("Automerge WASM initialized");
   const peerIdSuffix =
     Math.random().toString(36).substring(2, 15) + "-service-worker";
   const storage = new IndexedDBStorageAdapter();
 
   const ws = new WebSocketClientAdapter(__SYNC_SERVER_URL__);
-  const identity = await (async function () {
-    if (!__KEYHIVE_ENABLED__) return;
-
-    const keyhive = await import("@keyhive/keyhive/slim");
-
-    const { wasmBase64 } = await import(
-      // @ts-expect-error
-      "@keyhive/keyhive/keyhive_wasm.base64.js"
-    );
-
-    keyhive.initFromBase64Wasm(wasmBase64);
-    keyhive.setPanicHook();
-
-    const { initializeKeyhive } = await import(
-      "@automerge/automerge-keyhive-network-adapter"
-    );
-    return await initializeKeyhive({
-      storage,
-      peerIdSuffix,
-      eventHandler(event) {
-        console.log("[Keyhive Event]", event);
-      },
-      networkAdapter: ws,
-    });
-  })();
+  const [identity] = await Promise.all([
+    (async function () {
+      if (!__KEYHIVE_ENABLED__) return;
+      const [_keyhive, adapter] = await Promise.all([
+        keyhivePromise,
+        import("@automerge/automerge-keyhive-network-adapter"),
+      ]);
+      return await adapter.initializeKeyhive({
+        storage,
+        peerIdSuffix,
+        eventHandler(event) {
+          console.log("[Keyhive Event]", event);
+        },
+        networkAdapter: ws,
+      });
+    })(),
+    Automerge.initializeWasm((await automergeResponse).bytes()),
+  ]);
+  debugLog("Automerge WASM initialized");
 
   const network = identity ? [identity.networkAdapter] : [ws];
 

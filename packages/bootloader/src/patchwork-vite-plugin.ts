@@ -2,6 +2,8 @@ import type { Plugin, ResolvedBuildOptions } from "vite";
 import * as esbuild from "esbuild";
 import { getBuildOptions } from "./generate.js";
 import * as path from "node:path";
+import { createReadStream, readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 
 type Imports = { [name: string]: string };
 type ImportMap = { imports: Imports; scopes?: { [scope: string]: Imports } };
@@ -78,6 +80,11 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
     "../template/service-worker/service-worker.ts"
   );
 
+  const automergeWasmSource = path.resolve(
+    import.meta.dirname,
+    "../node_modules/@automerge/automerge/dist/automerge.wasm"
+  );
+
   // https://vite.dev/guide/api-plugin.html#importing-a-virtual-file
   const patchworkSetupModuleId = "virtual:patchwork/setup";
   const resolvedPatchworkSetupModuleId = "\0" + patchworkSetupModuleId;
@@ -98,6 +105,8 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
     entryPoints: [serviceWorkerSource],
     bundle: options.serviceWorkerType != "module",
     format: options.serviceWorkerType == "module" ? "esm" : "iife",
+    minify: true,
+    sourcemap: "external",
   } satisfies esbuild.BuildOptions as esbuild.BuildOptions;
 
   const patchworkSetupBuildOptions = {
@@ -112,7 +121,6 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
   return {
     name: "@patchwork/vite",
     async buildStart() {
-      // this adds entrypoints for the builtins
       if (this.environment.mode == "build") {
         for (const [id, fileName] of Object.entries(builtins)) {
           this.emitFile({
@@ -122,6 +130,11 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
             preserveSignature: "strict",
           });
         }
+        this.emitFile({
+          type: "asset",
+          fileName: "automerge.wasm",
+          source: await this.fs.readFile(automergeWasmSource),
+        });
       }
     },
     resolveId(id) {
@@ -161,6 +174,23 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
     },
     configResolved(config) {
       viteBuildInfo = config.build;
+    },
+    configureServer: {
+      handler(server) {
+        server.middlewares.use((request, response, next) => {
+          const url = new URL(request.url!, "http://example.com");
+          if (url.pathname == "/automerge.wasm") {
+            response.setHeaders(
+              new Headers({
+                "content-type": "application/wasm",
+              })
+            );
+            createReadStream(automergeWasmSource).pipe(response);
+          } else {
+            next();
+          }
+        });
+      },
     },
     closeBundle: {
       sequential: true,
