@@ -121,7 +121,13 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
     // if keyhive is disabled,
     // but the setup code is still importing keyhive,
     // then we should emit an empty keyhive file so the build works
-    return !options.keyhiveEnabled && id.startsWith("@keyhive/");
+    return (
+      (!options.keyhiveEnabled && id.startsWith("@keyhive/")) ||
+      [
+        "@automerge/automerge-keyhive-network-adapter",
+        "@automerge/automerge-repo-keyhive",
+      ].includes(id)
+    );
   }
 
   return {
