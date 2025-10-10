@@ -6,10 +6,10 @@ import { registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
 const { repo, ...identity } = await bootstrap();
 
-import { TinyPatchworkAccountDoc, initAccountDoc } from "./lib/account-doc";
 import { Context, CONTEXT } from "@patchwork/context";
-import { openDocument, OpenDocumentEvent } from "./lib/navigation";
 import { initCommands } from "./commands";
+import { initAccountDoc, TinyPatchworkAccountDoc } from "./lib/account-doc";
+import { openDocument, OpenDocumentEvent } from "./lib/navigation";
 
 declare global {
   interface Window {
@@ -21,9 +21,7 @@ declare global {
 window.CONTEXT = CONTEXT;
 
 import {
-  AutomergeUrl,
   DocHandle,
-  isValidAutomergeUrl,
   isValidDocumentId,
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";

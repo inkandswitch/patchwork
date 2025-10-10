@@ -17,6 +17,7 @@ export const plugins: Plugin<any>[] = [
     id: "single-view",
     name: "Single View",
     icon: "Eye",
+    unlisted: true,
     async load() {
       const { SingleViewDataType } = await import("./datatype");
       return SingleViewDataType;

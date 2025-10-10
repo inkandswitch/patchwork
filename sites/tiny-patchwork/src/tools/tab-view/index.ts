@@ -17,6 +17,7 @@ export const plugins: Plugin<any>[] = [
     id: "tab-view",
     name: "Tab View",
     icon: "Tabs",
+    unlisted: true,
     async load() {
       const { TabViewDataType } = await import("./datatype");
       return TabViewDataType;

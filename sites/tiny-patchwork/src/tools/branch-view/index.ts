@@ -17,6 +17,7 @@ export const plugins: Plugin<any>[] = [
     id: "branch-view",
     name: "Branch View",
     icon: "GitBranch",
+    unlisted: true,
     async load() {
       const { BranchViewDataType } = await import("./datatype");
       return BranchViewDataType;
