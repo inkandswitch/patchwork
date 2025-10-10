@@ -11,6 +11,10 @@ export default defineConfig({
       syncServerStorageId: "a565270c-bf7c-4df9-a531-f6be1d3152f0",
       syncServerUrl: "wss://keyhive.sync.automerge.org",
       keyhiveEnabled: true,
+      extraBuiltins: {
+        "@patchwork/plugins": "/packages/@patchwork/plugins/index.js",
+        "@patchwork/context": "/packages/@patchwork/context/index.js",
+      },
       importmap: {
         imports: {
           react: "https://ga.jspm.io/npm:react@18.3.1/index.js",
@@ -22,9 +26,6 @@ export default defineConfig({
           "react/jsx-runtime":
             "https://ga.jspm.io/npm:react@18.3.1/jsx-runtime.js",
           signia: "https://ga.jspm.io/npm:signia@0.1.5/dist/esm/index.mjs",
-          "@patchwork/account": "/@patchwork/account",
-          "@patchwork/context": "/@patchwork/context",
-          "@patchwork/plugins": "/@patchwork/plugins",
         },
       },
     }),
