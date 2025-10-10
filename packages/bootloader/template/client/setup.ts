@@ -1,7 +1,8 @@
 import type {
   Active,
+  KeyhiveEventEmitter,
   SyncServer,
-} from "@automerge/automerge-keyhive-network-adapter";
+} from "@automerge/automerge-repo-keyhive";
 import {
   IndexedDBStorageAdapter,
   MessageChannelNetworkAdapter,
@@ -75,15 +76,13 @@ export async function createRepo(storage: StorageAdapterInterface) {
     const ws = new WebSocketClientAdapter(__SYNC_SERVER_URL__);
 
     const { initializeKeyhive } = await import(
-      "@automerge/automerge-keyhive-network-adapter"
+      "@automerge/automerge-repo-keyhive"
     );
     const identity = await initializeKeyhive({
       storage,
       peerIdSuffix,
-      eventHandler(event) {
-        console.log("[Keyhive Event]", event);
-      },
       networkAdapter: ws,
+      automaticArchiveIngestion: true,
     });
     return identity;
   })();
@@ -138,6 +137,7 @@ export default async function bootstrap(): Promise<{
   keyhive?: Keyhive;
   syncServer?: SyncServer;
   accountUrl?: AutomergeUrl;
+  emitter?: KeyhiveEventEmitter;
 }> {
   let sw = await installServiceWorker();
   const storage = new IndexedDBStorageAdapter();
@@ -195,5 +195,6 @@ export default async function bootstrap(): Promise<{
         repo,
         storage,
       })),
+    emitter: identity?.emitter,
   };
 }
