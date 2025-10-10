@@ -34,14 +34,14 @@ export const initCommands = (
     console.log("Switched to normal sidebar");
   };
 
-  const switchToTabView = () => {
+  const switchToTabView = async () => {
     // Create a new tab-view document
-    const tabViewHandle = repo.create({
+    const tabViewHandle = (await repo.create2({
       ["@patchwork"]: {
         type: "tab-view",
       },
       tabs: [],
-    }) as DocHandle<TabViewDoc>;
+    })) as DocHandle<TabViewDoc>;
 
     accountDocHandle.change((doc) => {
       doc["@tiny-patchwork"].mainView = {
@@ -52,13 +52,13 @@ export const initCommands = (
     console.log("Switched to tab view");
   };
 
-  const switchToSingleView = () => {
+  const switchToSingleView = async () => {
     // Create a new single-view document
-    const singleViewHandle = repo.create({
+    const singleViewHandle = (await repo.create2({
       ["@patchwork"]: {
         type: "single-view",
       },
-    }) as DocHandle<SingleViewDoc>;
+    })) as DocHandle<SingleViewDoc>;
 
     accountDocHandle.change((doc) => {
       doc["@tiny-patchwork"].mainView = {
@@ -69,13 +69,13 @@ export const initCommands = (
     console.log("Switched to single view");
   };
 
-  const switchToBranchView = () => {
+  const switchToBranchView = async () => {
     // Create a new branch-view document
-    const branchViewHandle = repo.create({
+    const branchViewHandle = (await repo.create2({
       ["@patchwork"]: {
         type: "branch-view",
       },
-    }) as DocHandle<BranchViewDoc>;
+    })) as DocHandle<BranchViewDoc>;
 
     accountDocHandle.change((doc) => {
       doc["@tiny-patchwork"].mainView = {
