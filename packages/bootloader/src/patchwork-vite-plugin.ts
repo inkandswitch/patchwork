@@ -159,6 +159,8 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
         return resolvedPatchworkSetupModuleId;
       } else if (shouldPlaceholdKeyhive(id)) {
         return id;
+      } else if (id in importmap.imports && !(id in builtins)) {
+        return { id: importmap.imports[id], external: true };
       }
     },
     async load(id) {
@@ -173,10 +175,12 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
     transformIndexHtml: {
       order: "pre",
       handler(html, ctx) {
+        const map = structuredClone(importmap);
         if (ctx.server) {
-          // serve builtins from dev server in dev mode
+          // serve builtins from dev server in dev
+          // mode
           for (const id of Object.keys(builtins)) {
-            importmap.imports[id] = `/@id/${id}`;
+            map.imports[id] = `/@id/${id}`;
           }
         }
         return {
@@ -185,7 +189,7 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
             {
               tag: "script",
               attrs: { type: "importmap" },
-              children: JSON.stringify(importmap, null, 2),
+              children: JSON.stringify(map, null, 2),
             },
           ],
         };
