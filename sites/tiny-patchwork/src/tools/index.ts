@@ -6,6 +6,7 @@ import { plugins as funkySidebarPlugins } from "./funky-sidebar";
 import { plugins as tabViewerPlugins } from "./tab-view";
 import { plugins as singleViewPlugins } from "./single-view";
 import { plugins as branchViewPlugins } from "./branch-view";
+import { plugins as todoPlugins } from "./todo";
 
 export const plugins: Plugin<any>[] = [
   ...markdownPlugins,
@@ -15,4 +16,5 @@ export const plugins: Plugin<any>[] = [
   ...tabViewerPlugins,
   ...singleViewPlugins,
   ...branchViewPlugins,
+  ...todoPlugins,
 ];
