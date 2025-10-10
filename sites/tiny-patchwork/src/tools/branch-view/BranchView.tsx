@@ -102,6 +102,7 @@ const BranchView = ({
     }
   }, [mainDoc, changeMainDoc]);
 
+  const mainDocHandle = useDocHandle(mainDocUrl);
   const checkedOutDocHandle = useDocHandle(checkedOutDocUrl);
   const [checkedOutDoc] = useDocument(checkedOutDocUrl);
 
@@ -152,11 +153,11 @@ const BranchView = ({
       document.activeElement.blur();
     }
 
-    if (!mainDoc || !checkedOutDocHandle) {
+    if (!mainDoc || !mainDocHandle) {
       return;
     }
 
-    const branchDocHandle = repo.clone(checkedOutDocHandle);
+    const branchDocHandle = repo.clone(mainDocHandle);
 
     changeMainDoc((doc) => {
       if (!doc["@version-control"]) {
@@ -165,7 +166,7 @@ const BranchView = ({
 
       const branch: Branch = {
         name: "Branch #" + (doc["@version-control"].branches.length + 1),
-        forkedAt: Automerge.getHeads(checkedOutDoc || mainDoc),
+        forkedAt: Automerge.getHeads(mainDoc),
         docUrl: branchDocHandle.url,
         merged: false,
       };
