@@ -24,6 +24,7 @@ export default defineConfig({
           signia: "https://ga.jspm.io/npm:signia@0.1.5/dist/esm/index.mjs",
           "@patchwork/account": "/@patchwork/account",
           "@patchwork/context": "/@patchwork/context",
+          "@patchwork/plugins": "/@patchwork/plugins",
         },
       },
     }),
