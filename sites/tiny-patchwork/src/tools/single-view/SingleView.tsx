@@ -1,7 +1,9 @@
+import { docIdFromAutomergeUrl } from "@automerge/automerge-keyhive-network-adapter";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { useDocRef, useSubcontext } from "@patchwork/context/react";
 import { IsSelected } from "@patchwork/context/selection";
+import { KeyhiveKit } from "@patchwork/identity";
 import { useEffect } from "react";
 import { OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
@@ -10,9 +12,11 @@ import { SingleViewDoc } from "./datatype";
 const SingleView = ({
   docUrl,
   element,
+  keyhiveKit,
 }: {
   docUrl: AutomergeUrl;
   element: HTMLElement | ShadowRoot;
+  keyhiveKit?: KeyhiveKit;
 }) => {
   const [singleViewDoc, changeSingleViewDoc] = useDocument<SingleViewDoc>(
     docUrl,
@@ -55,6 +59,28 @@ const SingleView = ({
       };
     }
   }, [changeSingleViewDoc, element]);
+
+  let hasAccess = false;
+  const currentDocument = singleViewDoc.currentDocument;
+
+  if (currentDocument) {
+    const id = keyhiveKit!.active.individual.id;
+    const keyhiveDocId = docIdFromAutomergeUrl(
+      singleViewDoc.currentDocument.url
+    );
+    hasAccess =
+      keyhiveKit!.keyhive.accessForDoc(id, keyhiveDocId) !== undefined;
+  }
+
+  console.log("!! has access", hasAccess, currentDocument?.url);
+
+  if (!hasAccess) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-500">
+        No access
+      </div>
+    );
+  }
 
   if (!singleViewDoc.currentDocument) {
     return (

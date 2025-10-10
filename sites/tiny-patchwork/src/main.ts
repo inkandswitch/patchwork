@@ -26,6 +26,7 @@ import {
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { plugins } from "./tools";
+import { KeyhiveKit } from "@patchwork/identity";
 
 const loadedPlugins = await Promise.all(
   plugins.map(async (plugin) => ({ ...plugin, module: await plugin.load() }))
@@ -58,6 +59,7 @@ registerPatchworkViewElement({
   repo,
   // todo remove when css is solved
   shadow: false,
+  identity: identity as KeyhiveKit,
 });
 
 const rootElement = document.getElementById("root")!;

@@ -1,6 +1,7 @@
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { AutomergeUrl } from "@automerge/vanillajs";
 import { CONTEXT } from "@patchwork/context";
+import { KeyhiveKit } from "@patchwork/identity";
 import { useEffect, useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
 import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
@@ -17,6 +18,7 @@ export const renderFrame = toolify(
   }: {
     docUrl: AutomergeUrl;
     element: HTMLElement | ShadowRoot;
+    keyhiveKit?: KeyhiveKit;
   }) => {
     const [accountDoc, changeAccountDoc] = useDocument<TinyPatchworkAccountDoc>(
       docUrl,

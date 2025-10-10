@@ -3,11 +3,8 @@ import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useDocRef, useReactive } from "@patchwork/context/react";
 import { isSelected } from "@patchwork/context/selection";
 import { DocLink, FolderDoc } from "@patchwork/filesystem";
-import {
-  createDocOfDataType,
-  createDocOfDataType2,
-  DataType,
-} from "@patchwork/plugins";
+import { KeyhiveKit } from "@patchwork/identity";
+import { createDocOfDataType2, DataType } from "@patchwork/plugins";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { openDocument } from "../../lib/navigation";
@@ -120,13 +117,19 @@ const DocLinkEntry = ({ docLink }: { docLink: DocLink }) => {
   return <FileEntry docLink={docLink} isSelected={selected} />;
 };
 
-const FolderView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
+const FolderView = ({
+  docUrl,
+}: {
+  docUrl: AutomergeUrl;
+  keyhiveKit?: KeyhiveKit;
+}) => {
   const [rootFolder, changeRootFolder] = useDocument<FolderDoc>(docUrl);
   const [root, setRoot] = useState<HTMLElement | null>(null);
   const repo = useRepo();
 
   const onAddDocument = async (dataType: DataType<unknown>) => {
-    const docHandle = createDocOfDataType(dataType, repo);
+    const docHandle = await createDocOfDataType2(dataType, repo);
+
     const docLink = {
       name: dataType.name,
       type: dataType.id,
