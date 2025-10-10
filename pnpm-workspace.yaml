@@ -1,7 +1,7 @@
 packages:
-  - "os"
-  - "sdk"
   - "packages/*"
-  - "patchwork-cli"
+  - "meta/*"
+  - "sites/*"
 overrides:
-  "@automerge/automerge": "3.0.0"
+  "@automerge/automerge": "3.1.2"
+  "@automerge/automerge-repo": "2.4.0-alpha.2"

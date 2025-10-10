@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true
+  },
+  "include": [
+    "src",
+    "../rootstock-identity/active.ts",
+    "../rootstock-identity/db.ts",
+    "../rootstock-identity/identities.ts",
+    "../rootstock-identity/identity.ts",
+    "../rootstock-identity/index.ts",
+    "../rootstock-identity/keyhive.ts"
+  ]
+}

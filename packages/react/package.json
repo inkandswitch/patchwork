@@ -1,0 +1,12 @@
+{
+  "name": "@patchwork/react",
+  "type": "module",
+  "exports": {
+    "./shim": "./shim.js"
+  },
+  "devDependencies": {
+    "@patchwork/plugins": "workspace:^",
+    "@types/react": "^18.3.25",
+    "@types/react-dom": "^18.3.7"
+  }
+}
