@@ -2,8 +2,7 @@ import type { Plugin, ResolvedBuildOptions } from "vite";
 import * as esbuild from "esbuild";
 import { getBuildOptions } from "./generate.js";
 import * as path from "node:path";
-import { createReadStream, readFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { createReadStream } from "node:fs";
 
 type Imports = { [name: string]: string };
 type ImportMap = { imports: Imports; scopes?: { [scope: string]: Imports } };
@@ -118,11 +117,21 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
 
   let viteBuildInfo: ResolvedBuildOptions;
 
+  function shouldPlaceholdKeyhive(id: string) {
+    // if keyhive is disabled,
+    // but the setup code is still importing keyhive,
+    // then we should emit an empty keyhive file so the build works
+    return !options.keyhiveEnabled && id.startsWith("@keyhive/");
+  }
+
   return {
     name: "@patchwork/vite",
     async buildStart() {
       if (this.environment.mode == "build") {
         for (const [id, fileName] of Object.entries(builtins)) {
+          if (shouldPlaceholdKeyhive(id)) {
+            continue;
+          }
           this.emitFile({
             type: "chunk",
             fileName: fileName.slice(1),
@@ -142,6 +151,8 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
         return serviceWorkerModuleId;
       } else if (id == patchworkSetupModuleId) {
         return resolvedPatchworkSetupModuleId;
+      } else if (shouldPlaceholdKeyhive(id)) {
+        return id;
       }
     },
     async load(id) {
@@ -149,6 +160,8 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
         return generateJavaScript(patchworkSetupBuildOptions);
       } else if (id == serviceWorkerModuleId) {
         return generateJavaScript(serviceWorkerBuildOptions);
+      } else if (shouldPlaceholdKeyhive(id)) {
+        return "export default {}";
       }
     },
     transformIndexHtml: {
