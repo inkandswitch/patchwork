@@ -1,8 +1,6 @@
-import { DocLink, FolderDoc, ModuleSettingsDoc } from "@patchwork/filesystem";
-import { createDocOfDataType, getPlugin, DataType } from "@patchwork/plugins";
+import { FolderDoc, ModuleSettingsDoc } from "@patchwork/filesystem";
 
 import { AutomergeUrl, DocHandle, Repo } from "@automerge/vanillajs";
-import { TabViewDoc } from "../tools/tab-view/datatype";
 import { SingleViewDoc } from "../tools/single-view/datatype";
 
 export type TinyPatchworkAccountDoc = {
@@ -18,7 +16,7 @@ export type TinyPatchworkAccountDoc = {
   };
 };
 
-export const initAccountDoc = (
+export const initAccountDoc = async (
   repo: Repo,
   handle: DocHandle<Partial<TinyPatchworkAccountDoc>>
 ) => {
@@ -28,15 +26,20 @@ export const initAccountDoc = (
     return;
   }
 
-  const rootFolderHandle = repo.create({
+  const rootFolderHandle = (await repo.create2({
     ["@patchwork"]: {
       type: "folder",
     },
     title: "root",
     docs: [],
-  }) as DocHandle<FolderDoc>;
+  })) as DocHandle<FolderDoc>;
 
-  const moduleSettingsHandle = repo.create<ModuleSettingsDoc>();
+  const moduleSettingsHandle = (await repo.create2({
+    ["@patchwork"]: {
+      type: "module-settings",
+    },
+    modules: [],
+  })) as DocHandle<ModuleSettingsDoc>;
   moduleSettingsHandle.change((doc) => {
     doc.modules = [
       //rootDirectoryUrl as AutomergeUrl,
@@ -45,11 +48,11 @@ export const initAccountDoc = (
   });
 
   // Create a tab-view document for the main view
-  const singleViewHandle = repo.create({
+  const singleViewHandle = (await repo.create2({
     ["@patchwork"]: {
       type: "single-view",
     },
-  }) as DocHandle<SingleViewDoc>;
+  })) as DocHandle<SingleViewDoc>;
 
   handle.change((doc) => {
     (doc as any)["@patchwork"] = {

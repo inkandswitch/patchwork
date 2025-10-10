@@ -60,6 +60,26 @@ export const createDocOfDataType = <D>(
   return handle;
 };
 
+/** Creates a new document initialized with the given datatype using create2 */
+export const createDocOfDataType2 = async <D>(
+  dataType: DataType<D>,
+  repo: Repo,
+  change?: (doc: D) => void
+): Promise<DocHandle<D & HasPatchworkMetadata>> => {
+  const handle = await repo.create2<D & HasPatchworkMetadata>();
+  handle.change((doc) => {
+    dataType.module.init(doc, repo);
+    (doc as any)["@patchwork"] = {
+      type: dataType.id,
+      suggestedImportUrl: dataType.importUrl,
+    };
+    if (change) {
+      change(doc);
+    }
+  });
+  return handle;
+};
+
 // TODO: How do we do away with this?
 /** Kinda hacky utility function to initialize an object in
  * handle.change in a type-safe way. */

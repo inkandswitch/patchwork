@@ -1,15 +1,18 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useDocRef, useReactive } from "@patchwork/context/react";
-import { IsSelected, isSelected } from "@patchwork/context/selection";
+import { isSelected } from "@patchwork/context/selection";
 import { DocLink, FolderDoc } from "@patchwork/filesystem";
-import { createDocOfDataType, DataType } from "@patchwork/plugins";
+import {
+  createDocOfDataType,
+  createDocOfDataType2,
+  DataType,
+} from "@patchwork/plugins";
 import { PlusIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 import { useDatatypeDescriptions } from "../../lib/useDatatypeDescriptions";
-import { CONTEXT, contextComputation } from "@patchwork/context";
 
 const FileEntry = ({
   docLink,
@@ -65,7 +68,7 @@ const FolderEntry = ({
   };
 
   const onAddDocument = async (dataType: DataType<unknown>) => {
-    const docHandle = createDocOfDataType(dataType, repo);
+    const docHandle = await createDocOfDataType2(dataType, repo);
     changeFolderDoc((doc) => {
       doc.docs.push({
         name: dataType.name,
