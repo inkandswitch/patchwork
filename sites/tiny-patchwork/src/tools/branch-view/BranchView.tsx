@@ -5,14 +5,15 @@ import {
   useDocument,
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
+import { RefWith } from "@patchwork/context";
+import { Diff, getDiffOfDoc } from "@patchwork/context/diff";
 import { useDocRef, useSubcontext } from "@patchwork/context/react";
 import { IsSelected } from "@patchwork/context/selection";
+import { ChevronDown } from "lucide-react";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
-import { BranchViewDoc, Branch } from "./datatype";
-import { PathRef, RefWith } from "@patchwork/context";
-import { Diff, getDiffOfDoc } from "@patchwork/context/diff";
+import { Branch, BranchViewDoc } from "./datatype";
 
 type VersionControl = {
   branches: Branch[];
@@ -107,21 +108,22 @@ const BranchView = ({
   const isOnBranch = branchViewDoc.selectedBranchDocUrl !== undefined;
   const branches = mainDoc?.["@version-control"]?.branches || [];
 
+  // Filter out merged branches
+  const activeBranches = branches.filter((b) => !b.merged);
+
+  // Get the current branch name for display
+  const currentBranch = branches.find(
+    (b) => b.docUrl === branchViewDoc.selectedBranchDocUrl
+  );
+  const currentBranchName = currentBranch?.name || "Main";
+
   // Compute diffs when on a branch with highlight changes enabled
   const diffsOfDoc = useMemo<RefWith<Diff>[]>(() => {
     // make eslint happy, we need checkedOutDoc as a dependency because we need
     // to re-run the diff when the checked out doc changes
     void checkedOutDoc;
 
-    if (!isOnBranch || !highlightChanges) {
-      return [];
-    }
-
-    const currentBranch = branches.find(
-      (b) => b.docUrl === branchViewDoc.selectedBranchDocUrl
-    );
-
-    if (!currentBranch) {
+    if (!isOnBranch || !highlightChanges || !currentBranch) {
       return [];
     }
 
@@ -140,26 +142,9 @@ const BranchView = ({
 
   // Update diff context
   useEffect(() => {
-    console.log("Branch View: computed diffs", {
-      diffsOfDoc,
-      count: diffsOfDoc.length,
-      isOnBranch,
-      highlightChanges,
-      checkedOutDocUrl,
-      currentBranch: branches.find(
-        (b) => b.docUrl === branchViewDoc.selectedBranchDocUrl
-      ),
-    });
+    console.log("add diffs", diffsOfDoc);
     diffContext.replace(diffsOfDoc);
-  }, [
-    diffContext,
-    diffsOfDoc,
-    isOnBranch,
-    highlightChanges,
-    checkedOutDocUrl,
-    branches,
-    branchViewDoc.selectedBranchDocUrl,
-  ]);
+  }, [diffContext, diffsOfDoc]);
 
   const createBranch = () => {
     // Close the dropdown by blurring the active element
@@ -262,35 +247,13 @@ const BranchView = ({
     return <div>Loading...</div>;
   }
 
-  // Filter out merged branches
-  const activeBranches = branches.filter((b) => !b.merged);
-
-  // Get the current branch name for display
-  const currentBranch = branches.find(
-    (b) => b.docUrl === branchViewDoc.selectedBranchDocUrl
-  );
-  const currentBranchName = currentBranch?.name || "Main";
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-row gap-2 p-2 border-b border-base-300 bg-base-100">
         <div className="dropdown">
-          <div tabIndex={0} role="button" className="btn btn-sm btn-ghost">
+          <div tabIndex={0} role="button" className="btn">
             {currentBranchName}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-4 h-4"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-              />
-            </svg>
+            <ChevronDown size={16} />
           </div>
           <ul
             tabIndex={0}
@@ -329,7 +292,7 @@ const BranchView = ({
         </div>
 
         {isOnBranch && (
-          <button onClick={mergeBranch} className="btn btn-sm btn-ghost">
+          <button onClick={mergeBranch} className="btn btn-ghost">
             Merge Branch
           </button>
         )}

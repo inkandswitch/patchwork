@@ -270,7 +270,7 @@ export class TextSpanRef<
   }
 
   isElementOf(other: Ref): boolean {
-    return this.doesOverlap(other);
+    return new PathRef(this.docHandle, this.path).isEqual(other);
   }
 
   doesOverlap(other: Ref): boolean {

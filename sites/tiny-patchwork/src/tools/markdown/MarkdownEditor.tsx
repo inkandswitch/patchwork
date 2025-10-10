@@ -1,8 +1,6 @@
-import { DocHandle, DocumentId, Repo } from "@automerge/automerge-repo";
 import {
   useDocHandle,
   useDocument,
-  useRepo,
 } from "@automerge/automerge-repo-react-hooks";
 import { completionKeymap } from "@codemirror/autocomplete";
 import {
@@ -28,18 +26,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Codemirror } from "../../lib/codemirror";
 import { useStaticCallback } from "../../lib/useStaticCallback";
 
-//import { Diff, DiffValue, getRefsWithDiffAt } from "../../sdk/diff";
-// import {
-//   Extension,
-//   useRefsWithExtensionsAt,
-// } from "../../sdk/extensions";
-// import { useSubcontext } from "../../sdk/context/react";
-// import { Link } from "../../sdk/link";
-// import { useReactive } from "../../sdk/reactive/react";
-// import { SelectionAPI } from "../../sdk/selection";
-// import { ToolProps } from "../../sdk/types";
-import { theme } from "./theme";
+import { PathRef, TextSpanRefWith } from "@patchwork/context";
+import { Diff, DiffValue, getRefsWithDiffAt } from "@patchwork/context/diff";
+import { useReactive } from "@patchwork/context/react";
 import { ReactToolProps } from "../../lib/toolify";
+import { theme } from "./theme";
 
 export type MarkdownDoc = {
   content: string;
@@ -48,7 +39,6 @@ export type MarkdownDoc = {
 const PATH = ["content"];
 
 export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
-  const repo = useRepo();
   const [doc] = useDocument<MarkdownDoc>(docUrl);
   const handle = useDocHandle<MarkdownDoc>(docUrl);
   //  const { isSelected, setSelection, selectedRefs } = useReactive(SelectionAPI);
@@ -58,140 +48,48 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   const [commentBtnTop, setCommentBtnTop] = useState<number | null>(null);
 
   // todo:  another weird doc handle issue
+  const contentRef = useMemo(() => {
+    // ignore hack
+    if (!handle || (handle.doc() as any)["@patchwork"]?.type !== "markdown") {
+      return undefined;
+    }
 
-  // const contentRef = useMemo(() => {
-  //   // ignore hack
-  //   if (!handle || (handle.doc() as any)["@patchwork"]?.type !== "markdown") {
-  //     return undefined;
-  //   }
+    return new PathRef(handle, ["content"]);
+  }, [handle]);
 
-  //   return new PathRef(handle, ["content"]);
-  // }, [handle]);
-
-  // parse links
-  // const [docLinks, setDocLinks] = useState<TextSpanRefWith<Link>[]>([]);
-  // useEffect(() => {
-  //   let isCanceled = false;
-
-  //   if (!handle) {
-  //     setDocLinks([]);
-  //     return;
-  //   }
-
-  //   parseMarkdownLinks(repo, handle).then((links) => {
-  //     if (isCanceled) {
-  //       return;
-  //     }
-  //     setDocLinks(links);
-  //   });
-
-  //   return () => {
-  //     isCanceled = true;
-  //   };
-  // }, [repo, handle, doc]);
-
-  // const docLinksContext = useSubcontext();
-
-  // useEffect(
-  //   () =>
-  //     docLinksContext.replace(
-  //       docLinks.flatMap((docLink) => [docLink, docLink.get(Link).ref])
-  //     ),
-  //   [docLinks, docLinksContext]
-  // );
-
-  // const refsWithExtensions = (
-  //   contentRef
-  // ) as TextSpanRefWith<Extension>[];
-
-  // const refsWithDiff = useReactive(
-  //   getRefsWithDiffAt(contentRef)
-  // ) as TextSpanRefWith<Diff>[];
+  const refsWithDiff = useReactive(
+    getRefsWithDiffAt(contentRef)
+  ) as TextSpanRefWith<Diff>[];
 
   // compute decorations
-  // const decorations = useMemo<DecorationSet>(() => {
-  //   return RangeSet.of<Decoration>(
-  //     [
-  //       // links
-  //       ...docLinks.map((docLink) => {
-  //         const isLinkSelected =
-  //           isSelected(docLink) || isSelected(docLink.docRef);
+  const decorations = useMemo<DecorationSet>(() => {
+    return RangeSet.of<Decoration>(
+      [
+        // diff
+        ...refsWithDiff.flatMap((ref) => {
+          const diff = ref.get(Diff) as DiffValue<string>;
 
-  //         return Decoration.mark({
-  //           class: isLinkSelected ? "bg-yellow-200" : "bg-yellow-100",
-  //         }).range(docLink.from, docLink.to);
-  //       }),
+          if (diff.type === "deleted") {
+            return makeDeleteDecoration({
+              deletedText: diff.before,
+              isActive: false, //isSelected(ref),
+            }).range(ref.from, ref.from);
+          }
 
-  //       // diff
-  //       ...refsWithDiff.flatMap((ref) => {
-  //         const diff = ref.get(Diff) as DiffValue<string>;
+          if (diff.type === "added") {
+            return Decoration.mark({
+              class: `border-b border-green-300 ${
+                false ? "bg-green-300" : "bg-green-100"
+              }`,
+            }).range(ref.from, ref.to);
+          }
 
-  //         if (diff.type === "deleted") {
-  //           return makeDeleteDecoration({
-  //             deletedText: diff.before,
-  //             isActive: isSelected(ref),
-  //           }).range(ref.from, ref.from);
-  //         }
-
-  //         if (diff.type === "added") {
-  //           return Decoration.mark({
-  //             class: `border-b border-green-300 ${
-  //               isSelected(ref) ? "bg-green-300" : "bg-green-100"
-  //             }`,
-  //           }).range(ref.from, ref.to);
-  //         }
-
-  //         return [];
-  //       }),
-
-  //       // extensions as widgets (before | after | replace)
-  //       // ...refsWithExtensions.flatMap((ref) => {
-  //       //   const extension = ref.get(Extension);
-  //       //   const slot = (extension.slot || "").toLowerCase();
-
-  //       //   const from = ref.from;
-  //       //   const to = ref.to;
-
-  //       //   if (slot === "before") {
-  //       //     return makeTextSlipDecoration({
-  //       //       text: extension.value,
-  //       //       side: -1,
-  //       //     }).range(from, from);
-  //       //   }
-
-  //       //   if (slot === "replace") {
-  //       //     return Decoration.replace({
-  //       //       widget: new TextSlipWidget(extension.value),
-  //       //       inclusive: true,
-  //       //     }).range(from, to);
-  //       //   }
-
-  //       //   // default: render after
-  //       //   return makeTextSlipDecoration({
-  //       //     text: extension.value,
-  //       //     side: 1,
-  //       //   }).range(to, to);
-  //       // }),
-
-  //       // selection
-  //       ...selectedRefs.flatMap((selectedRef) => {
-  //         if (
-  //           !(selectedRef instanceof TextSpanRef) ||
-  //           !contentRef ||
-  //           !selectedRef.isPartOf(contentRef) ||
-  //           selectedRef.from === selectedRef.to
-  //         ) {
-  //           return [];
-  //         }
-
-  //         return Decoration.mark({
-  //           class: "bg-blue-200",
-  //         }).range(selectedRef.from, selectedRef.to);
-  //       }),
-  //     ],
-  //     true // sort ranges
-  //   );
-  // }, [docLinks, refsWithDiff, selectedRefs, isSelected, contentRef]);
+          return [];
+        }),
+      ],
+      true // sort ranges
+    );
+  }, [refsWithDiff]);
 
   const onChangeSelection = useStaticCallback((from: number, to: number) => {
     if (!handle) {
@@ -286,7 +184,7 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
               docUrl={docUrl}
               path={PATH}
               onChangeSelection={onChangeSelection}
-              decorations={Decoration.none}
+              decorations={decorations}
               extensions={cmExtensions}
               viewRef={setCmView}
             />
