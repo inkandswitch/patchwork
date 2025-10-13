@@ -1,4 +1,4 @@
-import { docIdFromAutomergeUrl } from "@automerge/automerge-keyhive-network-adapter";
+import { docIdFromAutomergeUrl } from "@automerge/automerge-repo-keyhive";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { useDocRef, useSubcontext } from "@patchwork/context/react";
