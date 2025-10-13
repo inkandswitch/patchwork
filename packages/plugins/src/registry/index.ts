@@ -17,7 +17,7 @@ const pluginRegistries: Record<string, PluginRegistry<any>> = {};
  * Only used internally to this file; instead of exposing the object we use
  * the utility functions below.
  */
-function getPluginRegistry<T extends PluginDescription>(
+export function getPluginRegistry<T extends PluginDescription>(
   pluginType: string
 ): PluginRegistry<T> {
   // If the registry doesn't exist yet, create it
