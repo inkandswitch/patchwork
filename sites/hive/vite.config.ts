@@ -22,5 +22,8 @@ export default defineConfig({
   },
   server: {
     port: process.env.PORT ? +process.env.PORT : undefined,
+    hmr: {
+      port: process.env.PORT ? +process.env.PORT : undefined,
+    },
   },
 });

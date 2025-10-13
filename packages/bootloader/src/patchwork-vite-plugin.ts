@@ -2,8 +2,7 @@ import type { Plugin, ResolvedBuildOptions } from "vite";
 import * as esbuild from "esbuild";
 import { getBuildOptions } from "./generate.js";
 import * as path from "node:path";
-import { createReadStream, readFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { createReadStream } from "node:fs";
 
 type Imports = { [name: string]: string };
 type ImportMap = { imports: Imports; scopes?: { [scope: string]: Imports } };
@@ -118,11 +117,27 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
 
   let viteBuildInfo: ResolvedBuildOptions;
 
+  function shouldPlaceholdKeyhive(id: string) {
+    // if keyhive is disabled,
+    // but the setup code is still importing keyhive,
+    // then we should emit an empty keyhive file so the build works
+    return (
+      (!options.keyhiveEnabled && id.startsWith("@keyhive/")) ||
+      [
+        "@automerge/automerge-keyhive-network-adapter",
+        "@automerge/automerge-repo-keyhive",
+      ].includes(id)
+    );
+  }
+
   return {
     name: "@patchwork/vite",
     async buildStart() {
       if (this.environment.mode == "build") {
         for (const [id, fileName] of Object.entries(builtins)) {
+          if (shouldPlaceholdKeyhive(id)) {
+            continue;
+          }
           this.emitFile({
             type: "chunk",
             fileName: fileName.slice(1),
@@ -142,6 +157,10 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
         return serviceWorkerModuleId;
       } else if (id == patchworkSetupModuleId) {
         return resolvedPatchworkSetupModuleId;
+      } else if (shouldPlaceholdKeyhive(id)) {
+        return id;
+      } else if (id in importmap.imports && !(id in builtins)) {
+        return { id: importmap.imports[id], external: true };
       }
     },
     async load(id) {
@@ -149,15 +168,19 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
         return generateJavaScript(patchworkSetupBuildOptions);
       } else if (id == serviceWorkerModuleId) {
         return generateJavaScript(serviceWorkerBuildOptions);
+      } else if (shouldPlaceholdKeyhive(id)) {
+        return "export default {}";
       }
     },
     transformIndexHtml: {
       order: "pre",
       handler(html, ctx) {
+        const map = structuredClone(importmap);
         if (ctx.server) {
-          // serve builtins from dev server in dev mode
+          // serve builtins from dev server in dev
+          // mode
           for (const id of Object.keys(builtins)) {
-            importmap.imports[id] = `/@id/${id}`;
+            map.imports[id] = `/@id/${id}`;
           }
         }
         return {
@@ -166,7 +189,7 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
             {
               tag: "script",
               attrs: { type: "importmap" },
-              children: JSON.stringify(importmap, null, 2),
+              children: JSON.stringify(map, null, 2),
             },
           ],
         };

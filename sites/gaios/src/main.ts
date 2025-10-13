@@ -1,10 +1,19 @@
-import { ModuleWatcher } from "@patchwork/filesystem";
+import {
+  ModuleWatcher,
+  type HasPatchworkMetadata,
+} from "@patchwork/filesystem";
 import "./styles/global.css";
 
 import bootstrap from "virtual:patchwork/setup";
-import { registerPlugins } from "@patchwork/plugins";
+import {
+  getLoadedPlugins,
+  registerPlugins,
+  type Tool,
+  type ToolDescription,
+} from "@patchwork/plugins";
 import { type AutomergeUrl } from "@automerge/vanillajs";
 import { registerPatchworkViewElement } from "@patchwork/elements";
+import patchworkReactShim from "@patchwork/react/shim";
 const { repo } = await bootstrap();
 
 const moduleWatcher = new ModuleWatcher(
@@ -26,12 +35,35 @@ registerPatchworkViewElement({
 });
 
 const docUrl = params.get("docUrl");
-const toolId = params.get("toolId");
+let toolId = params.get("toolId");
 const modules = params.getAll("loadModules");
 await moduleWatcher.loadModules(modules);
 
-if (!docUrl || !toolId) {
-  throw new Error("need docUrl and toolId query params");
+if (!docUrl) {
+  throw new Error("need docUrl query params");
+}
+
+if (!toolId) {
+  const doc = await repo.find<HasPatchworkMetadata>(docUrl as AutomergeUrl);
+  const suggestedImportUrl = doc.doc()["@patchwork"].suggestedImportUrl;
+  if (suggestedImportUrl) {
+    await moduleWatcher.loadModules([suggestedImportUrl]);
+  }
+
+  const type = doc.doc()["@patchwork"].type;
+
+  const [plugin] = await getLoadedPlugins("patchwork:tool", (desc) => {
+    if (desc.id == "raw") return false;
+    return (
+      (desc as ToolDescription).supportedDataTypes.includes(type) ||
+      (desc as ToolDescription).supportedDataTypes.includes("*")
+    );
+  });
+  if (plugin && "EditorComponent" in (plugin as Tool).module) {
+    plugin.module.render = patchworkReactShim(plugin.module.EditorComponent);
+  }
+
+  toolId = plugin?.id;
 }
 
 const rootElement = document.getElementById("root")!;

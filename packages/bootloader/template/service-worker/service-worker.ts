@@ -118,15 +118,13 @@ const keyhivePromise = importKeyhive();
       if (!__KEYHIVE_ENABLED__) return;
       const [_keyhive, adapter] = await Promise.all([
         keyhivePromise,
-        import("@automerge/automerge-keyhive-network-adapter"),
+        import("@automerge/automerge-repo-keyhive"),
       ]);
       return await adapter.initializeKeyhive({
         storage,
         peerIdSuffix,
-        eventHandler(event) {
-          console.log("[Keyhive Event]", event);
-        },
         networkAdapter: ws,
+        automaticArchiveIngestion: true,
       });
     })(),
     Automerge.initializeWasm((await automergeResponse).bytes()),
