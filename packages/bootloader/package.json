@@ -5,8 +5,8 @@
     "generate-patchwork-bootloader": "./dist/generate.js"
   },
   "devDependencies": {
-    "@automerge/automerge-repo-keyhive": "0.0.0-alpha.53",
-    "@keyhive/keyhive": "0.0.0-alpha.33",
+    "@automerge/automerge-repo-keyhive": "0.0.0-alpha.56",
+    "@keyhive/keyhive": "0.0.0-alpha.35",
     "esbuild": "^0.23.1"
   },
   "exports": {
@@ -24,7 +24,7 @@
   },
   "peerDependencies": {
     "@automerge/automerge": "3.0.0",
-    "@automerge/automerge-repo-keyhive": "0.0.0-alpha.53",
+    "@automerge/automerge-repo-keyhive": "0.0.0-alpha.56",
     "@automerge/automerge-repo": "2.4.0-alpha.2",
     "@automerge/vanillajs": "2.4.0-alpha.2",
     "@keyhive/keyhive": "0.0.0-alpha.24"
