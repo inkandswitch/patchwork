@@ -2,41 +2,18 @@ import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { contextComputation } from "@patchwork/context";
-import { useReactive } from "@patchwork/context/react";
+import {
+  useDocRef,
+  useReactive,
+  useSubcontext,
+} from "@patchwork/context/react";
 import { IsSelected } from "@patchwork/context/selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import { useEffect, useState, useRef } from "react";
 import { useDatatype, useTitle } from "../../lib/datatype-hooks";
 import { toolify } from "../../lib/toolify";
-
-const formatRelativeTime = (timestamp: number): string => {
-  const now = Date.now();
-  const diff = now - timestamp;
-
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  const weeks = Math.floor(days / 7);
-  const months = Math.floor(days / 30);
-  const years = Math.floor(days / 365);
-
-  if (seconds < 60) {
-    return "just now";
-  } else if (minutes < 60) {
-    return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
-  } else if (hours < 24) {
-    return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-  } else if (days < 7) {
-    return `${days} day${days === 1 ? "" : "s"} ago`;
-  } else if (weeks < 4) {
-    return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
-  } else if (months < 12) {
-    return `${months} month${months === 1 ? "" : "s"} ago`;
-  } else {
-    return `${years} year${years === 1 ? "" : "s"} ago`;
-  }
-};
+import { relativeTime } from "../../lib/relative-time";
+import { ViewHeads } from "@patchwork/context/diff";
 
 const HistoryView = () => {
   const selectedDocUrls = useReactive($selectedDocUrls);
@@ -44,7 +21,7 @@ const HistoryView = () => {
   return (
     <div className="h-full flex flex-col">
       <div className="p-2">
-        <h2 className="text-xl font-bold mb-4">History Viewer</h2>
+        <h2 className="text-md font-bold">History</h2>
       </div>
 
       {selectedDocUrls.map((url) => (
@@ -58,11 +35,30 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const repo = useRepo();
   const [history, setHistory] = useState<Automerge.State<unknown>[]>([]);
   const [loading, setLoading] = useState(true);
-  const datatype = useDatatype(docUrl);
+  const [selectedHash, setSelectedHash] = useState<string | null>(null);
   const [doc] = useDocument<HasPatchworkMetadata>(docUrl, {
     suspense: true,
   });
   const title = useTitle(doc, repo);
+
+  const docRef = useDocRef(docUrl);
+
+  const headsSelectionContext = useSubcontext("HEADS_SELECTION");
+  useEffect(() => {
+    if (!docRef || !selectedHash) {
+      headsSelectionContext.replace([]);
+      return;
+    }
+
+    headsSelectionContext.replace(
+      docRef.with(
+        ViewHeads({
+          fromHeads: [selectedHash],
+          toHeads: [selectedHash],
+        })
+      )
+    );
+  }, [selectedHash, headsSelectionContext]);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -95,19 +91,31 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
         <div className="font-medium">{title}</div>
       </div>
       <div className="space-y-1 flex-1 overflow-y-auto p-2">
-        {history.map(({ change }, index) => (
-          <div
-            key={index}
-            className="text-xs bg-gray-50 p-2 rounded border border-gray-200 flex justify-between"
-          >
-            <div>{change.hash.slice(0, 6)}</div>
-            {change.time && (
-              <div className="text-gray-600">
-                {formatRelativeTime(change.time * 1000)}
-              </div>
-            )}
-          </div>
-        ))}
+        {history.map(({ change }, index) => {
+          const isSelected = change.hash === selectedHash;
+          return (
+            <div
+              key={index}
+              role="button"
+              tabIndex={0}
+              aria-selected={isSelected}
+              onClick={() => setSelectedHash(change.hash)}
+              className={
+                "text-xs p-2 rounded border flex justify-between cursor-pointer " +
+                (isSelected
+                  ? "bg-blue-100 border-blue-300"
+                  : "bg-gray-50 border-gray-200 hover:bg-gray-100")
+              }
+            >
+              <div>{change.hash.slice(0, 6)}</div>
+              {change.time && (
+                <div className="text-gray-600">
+                  {relativeTime(change.time * 1000)}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

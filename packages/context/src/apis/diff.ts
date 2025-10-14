@@ -31,6 +31,26 @@ const DiffSymbol = Symbol("diff");
 export type Diff = typeof DiffSymbol;
 export const Diff = defineField<Diff, DiffValue>("diff", DiffSymbol);
 
+type ViewHeadsValue = {
+  fromHeads: Automerge.Heads;
+  toHeads: Automerge.Heads;
+};
+
+const ViewHeadsSymbol = Symbol("viewHeads");
+export type ViewHeads = typeof ViewHeadsSymbol;
+export const ViewHeads = defineField<ViewHeads, ViewHeadsValue>(
+  "viewHeads",
+  ViewHeadsSymbol
+);
+
+export const getViewHeads = memoize(
+  (ref?: Ref) =>
+    contextComputation(() =>
+      ref ? CONTEXT.resolve(ref).get(ViewHeads) : undefined
+    ),
+  (ref?: Ref) => ref?.toId()
+);
+
 export const getDiffOfDoc = (
   docHandle?: DocHandle<unknown>,
   headsBefore?: Automerge.Heads

@@ -18,7 +18,6 @@ export const isSelected = memoize(
       const result = ref
         ? CONTEXT.resolve(ref).get(IsSelected) === true
         : false;
-      console.log("!! rerun isSelected", ref?.toId(), result);
 
       return result;
     }),

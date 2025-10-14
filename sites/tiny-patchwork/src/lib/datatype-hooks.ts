@@ -72,3 +72,9 @@ export const useTitle = (doc: HasPatchworkMetadata, repo: Repo) => {
 
   return title;
 };
+
+const getListedDatatypes = (registry: PluginRegistry<DataTypeDescription>) => {
+  return (registry.getPlugins() as LoadedPlugin<DataTypeDescription>[]).filter(
+    (plugin) => !plugin.unlisted
+  ) as DataType<unknown>[];
+};

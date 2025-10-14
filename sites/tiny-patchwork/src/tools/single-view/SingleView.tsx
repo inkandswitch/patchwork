@@ -1,13 +1,23 @@
 import { docIdFromAutomergeUrl } from "@automerge/automerge-repo-keyhive";
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import {
+  AutomergeUrl,
+  encodeHeads,
+  parseAutomergeUrl,
+  stringifyAutomergeUrl,
+} from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { useDocRef, useSubcontext } from "@patchwork/context/react";
+import {
+  useDocRef,
+  useReactive,
+  useSubcontext,
+} from "@patchwork/context/react";
 import { IsSelected } from "@patchwork/context/selection";
 import { KeyhiveKit } from "@patchwork/identity";
 import { useEffect } from "react";
 import { OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 import { SingleViewDoc } from "./datatype";
+import { getViewHeads } from "@patchwork/context/diff";
 
 const SingleView = ({
   docUrl,
@@ -26,8 +36,13 @@ const SingleView = ({
   );
   const selectionContext = useSubcontext("SINGLE_VIEW");
 
+  const { currentDocument } = singleViewDoc;
+
   // Get the current document reference for context
-  const currentDocRef = useDocRef(singleViewDoc.currentDocument?.url);
+  const currentDocRef = useDocRef(currentDocument?.url);
+
+  // get view heads
+  const viewHeads = useReactive(getViewHeads(currentDocRef));
 
   // Update selection context when current document changes
   useEffect(() => {
@@ -61,13 +76,10 @@ const SingleView = ({
   }, [changeSingleViewDoc, element]);
 
   let hasAccess = false;
-  const currentDocument = singleViewDoc.currentDocument;
 
   if (currentDocument) {
     const id = keyhiveKit!.active.individual.id;
-    const keyhiveDocId = docIdFromAutomergeUrl(
-      singleViewDoc.currentDocument.url
-    );
+    const keyhiveDocId = docIdFromAutomergeUrl(currentDocument.url);
     hasAccess =
       keyhiveKit!.keyhive.accessForDoc(id, keyhiveDocId) !== undefined;
   }
@@ -82,7 +94,7 @@ const SingleView = ({
     );
   }
 
-  if (!singleViewDoc.currentDocument) {
+  if (!currentDocument) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500">
         No document open
@@ -90,13 +102,21 @@ const SingleView = ({
     );
   }
 
+  const currentDocumentId = parseAutomergeUrl(currentDocument.url).documentId;
+  const currentDocUrl = viewHeads
+    ? stringifyAutomergeUrl({
+        documentId: currentDocumentId,
+        heads: encodeHeads(viewHeads.toHeads),
+      })
+    : currentDocument.url;
+
   return (
     <div className="w-full h-full">
       {/* @ts-expect-error patchwork-view is a custom element */}
       <patchwork-view
-        doc-url={singleViewDoc.currentDocument.url}
-        tool-id={singleViewDoc.currentDocument.type}
-        key={singleViewDoc.currentDocument.url}
+        doc-url={currentDocUrl}
+        tool-id={currentDocument.type}
+        key={currentDocUrl}
       />
     </div>
   );
