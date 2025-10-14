@@ -27,7 +27,7 @@ export const renderFrame = toolify(
       }
     );
 
-    const { rootFolderUrl, sidebarToolId, mainView } =
+    const { rootFolderUrl, contextSidebarToolId, rootFolderToolId, mainView } =
       accountDoc["@tiny-patchwork"];
 
     const [mainViewElement, setMainViewElement] = useState<HTMLElement | null>(
@@ -53,12 +53,19 @@ export const renderFrame = toolify(
 
     return (
       <div className="w-screen h-screen flex">
-        <div className="w-[300px] bg-gray-100 p-2">
-          <h2 className="text-xl p-3">
-            <span className="text-xs">tiny</span> patchwork
-          </h2>
-          {/* @ts-expect-error fix later */}
-          <patchwork-view doc-url={rootFolderUrl} tool-id={sidebarToolId} />
+        <div className="w-[400px] bg-gray-100 p-2 flex flex-col">
+          <div className="p-2">
+            <h2 className="text-xl p-3">
+              <span className="text-xs">tiny</span> patchwork
+            </h2>
+          </div>
+          {rootFolderToolId && (
+            // @ts-expect-error fix later
+            <patchwork-view
+              doc-url={rootFolderUrl}
+              tool-id={rootFolderToolId}
+            />
+          )}
         </div>
 
         <div className="w-full h-full overflow-auto">
@@ -72,6 +79,16 @@ export const renderFrame = toolify(
             />
           )}
         </div>
+
+        {contextSidebarToolId && (
+          <div className="w-[400px] bg-gray-100">
+            {/* @ts-expect-error fix later */}
+            <patchwork-view
+              doc-url={rootFolderUrl} // todo: context tool doesn't have a doc url
+              tool-id={contextSidebarToolId}
+            />
+          </div>
+        )}
       </div>
     );
   }

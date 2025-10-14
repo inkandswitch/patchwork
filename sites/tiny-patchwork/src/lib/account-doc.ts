@@ -8,11 +8,12 @@ export type TinyPatchworkAccountDoc = {
     rootFolderUrl: AutomergeUrl;
     moduleSettingsUrl: AutomergeUrl;
     frameToolId: string;
-    sidebarToolId: string;
+    rootFolderToolId?: string;
     mainView: {
       documentUrl: AutomergeUrl;
       toolId: string;
     };
+    contextSidebarToolId?: string;
   };
 };
 
@@ -61,7 +62,8 @@ export const initAccountDoc = async (
 
     doc["@tiny-patchwork"] = {
       frameToolId: "patchwork-frame",
-      sidebarToolId: "simple-sidebar",
+      rootFolderToolId: "simple-sidebar",
+      contextSidebarToolId: "history-view",
       rootFolderUrl: rootFolderHandle.url,
       moduleSettingsUrl: moduleSettingsHandle.url,
       mainView: {

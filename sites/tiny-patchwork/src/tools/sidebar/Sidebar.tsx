@@ -9,7 +9,7 @@ import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
-import { useDatatypeDescriptions } from "../../lib/useDatatypeDescriptions";
+import { useDatatypeDescriptions } from "../../lib/datatype-hooks";
 
 const FileEntry = ({
   docLink,

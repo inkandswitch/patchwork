@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { useEffect } from "react";
 import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
-import { useDatatypeDescriptions } from "../../lib/useDatatypeDescriptions";
+import { useDatatypeDescriptions } from "../../lib/datatype-hooks";
 import { TabViewDoc } from "./datatype";
 
 const TabViewer = ({
