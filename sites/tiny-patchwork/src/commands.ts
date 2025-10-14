@@ -7,11 +7,11 @@ import { BranchViewDoc } from "./tools/branch-view/datatype";
 declare global {
   interface Window {
     $command: {
-      switchToFunkySidebar: () => void;
-      switchToNormalSidebar: () => void;
-      switchToTabView: () => void;
-      switchToSingleView: () => void;
-      switchToBranchView: () => void;
+      funkySidebar: () => void;
+      normalSidebar: () => void;
+      tabView: () => void;
+      singleView: () => void;
+      branchView: () => void;
     };
   }
 }
@@ -20,21 +20,21 @@ export const initCommands = (
   accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
   repo: Repo
 ) => {
-  const switchToFunkySidebar = () => {
+  const funkySidebar = () => {
     accountDocHandle.change((doc) => {
       doc["@tiny-patchwork"].sidebarToolId = "funky-sidebar";
     });
     console.log("Switched to funky sidebar");
   };
 
-  const switchToNormalSidebar = () => {
+  const normalSidebar = () => {
     accountDocHandle.change((doc) => {
       doc["@tiny-patchwork"].sidebarToolId = "simple-sidebar";
     });
     console.log("Switched to normal sidebar");
   };
 
-  const switchToTabView = async () => {
+  const tabView = async () => {
     // Create a new tab-view document
     const tabViewHandle = (await repo.create2({
       ["@patchwork"]: {
@@ -52,7 +52,7 @@ export const initCommands = (
     console.log("Switched to tab view");
   };
 
-  const switchToSingleView = async () => {
+  const singleView = async () => {
     // Create a new single-view document
     const singleViewHandle = (await repo.create2({
       ["@patchwork"]: {
@@ -69,7 +69,7 @@ export const initCommands = (
     console.log("Switched to single view");
   };
 
-  const switchToBranchView = async () => {
+  const branchView = async () => {
     // Create a new branch-view document
     const branchViewHandle = (await repo.create2({
       ["@patchwork"]: {
@@ -88,17 +88,10 @@ export const initCommands = (
 
   // Attach to window
   window.$command = {
-    switchToFunkySidebar,
-    switchToNormalSidebar,
-    switchToTabView,
-    switchToSingleView,
-    switchToBranchView,
+    funkySidebar,
+    normalSidebar,
+    tabView,
+    singleView,
+    branchView,
   };
-
-  console.log("Commands initialized. Available commands:");
-  console.log("- $command.switchToFunkySidebar()");
-  console.log("- $command.switchToNormalSidebar()");
-  console.log("- $command.switchToTabView()");
-  console.log("- $command.switchToSingleView()");
-  console.log("- $command.switchToBranchView()");
 };
