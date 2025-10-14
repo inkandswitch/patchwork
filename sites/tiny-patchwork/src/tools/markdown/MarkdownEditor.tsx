@@ -13,7 +13,7 @@ import { markdown } from "@codemirror/lang-markdown";
 import { foldKeymap, indentOnInput, indentUnit } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
 import { searchKeymap } from "@codemirror/search";
-import { RangeSet } from "@codemirror/state";
+import { EditorState, RangeSet } from "@codemirror/state";
 import {
   Decoration,
   DecorationSet,
@@ -31,6 +31,7 @@ import { Diff, DiffValue, getRefsWithDiffAt } from "@patchwork/context/diff";
 import { useReactive } from "@patchwork/context/react";
 import { ReactToolProps } from "../../lib/toolify";
 import { theme } from "./theme";
+import { parseAutomergeUrl } from "@automerge/automerge-repo";
 
 export type MarkdownDoc = {
   content: string;
@@ -46,6 +47,7 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   const [cmView, setCmView] = useState<EditorView | null>(null);
   const selectionRangeRef = useRef<{ from: number; to: number } | null>(null);
   const [commentBtnTop, setCommentBtnTop] = useState<number | null>(null);
+  const isReadOnly = parseAutomergeUrl(docUrl).heads !== undefined;
 
   // todo:  another weird doc handle issue
   const contentRef = useMemo(() => {
@@ -166,13 +168,16 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
         ...completionKeymap,
         indentWithTab,
       ]),
+      isReadOnly
+        ? [EditorState.readOnly.of(true), EditorView.editable.of(false)]
+        : [],
       EditorView.lineWrapping,
       markdown({
         codeLanguages: languages,
       }),
       indentUnit.of("    "),
     ],
-    []
+    [isReadOnly]
   );
 
   return (
