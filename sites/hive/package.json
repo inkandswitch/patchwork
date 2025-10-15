@@ -13,7 +13,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@automerge/automerge-repo-keyhive": "0.0.0-alpha.58",
+    "@automerge/automerge-repo-keyhive": "0.0.0-alpha.60",
     "@keyhive/keyhive": "0.0.0-alpha.36",
     "@automerge/automerge": "3.0.0",
     "@automerge/automerge-repo": "2.4.0-alpha.2",
