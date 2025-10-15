@@ -49,7 +49,15 @@ async function generateJavaScript(options: esbuild.BuildOptions) {
     outdir: ".",
   });
   const code = rb.outputFiles?.find((x) => x.path.endsWith(".js"))?.text;
-  if (code) return { code };
+
+  if (code)
+    return {
+      code,
+      map: ["external", false, undefined].includes(options.sourcemap)
+        ? // force vite not to generate a sourcemap for the service worker to reduce size
+          { mappings: "", names: [], sources: [], version: 0 }
+        : undefined,
+    };
 }
 
 /**
@@ -113,6 +121,7 @@ export function plugin(options: PatchworkVitePluginOptions): Plugin {
     format: "esm",
     entryPoints: [patchworkSetupSource],
     bundle: false,
+    sourcemap: true,
   } satisfies esbuild.BuildOptions as esbuild.BuildOptions;
 
   let viteBuildInfo: ResolvedBuildOptions;
