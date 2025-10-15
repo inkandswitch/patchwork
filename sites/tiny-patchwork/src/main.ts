@@ -40,13 +40,13 @@ const accountDocHandle = await repo.find<TinyPatchworkAccountDoc>(
 
 (window as any).accountDocHandle = accountDocHandle;
 
-initAccountDoc(repo, accountDocHandle);
+await initAccountDoc(repo, accountDocHandle);
 
 // Initialize global commands
 initCommands(accountDocHandle, repo);
 
 const moduleWatcher = new ModuleWatcher(
-  accountDocHandle.doc()["@tiny-patchwork"].moduleSettingsUrl,
+  accountDocHandle.doc()?.["@tiny-patchwork"]?.moduleSettingsUrl,
   [],
   repo,
   (name, mod) => {
