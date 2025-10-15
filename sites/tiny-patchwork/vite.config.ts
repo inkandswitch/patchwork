@@ -17,7 +17,6 @@ export default defineConfig({
         "@patchwork/context/selection":
           "/packages/@patchwork/context/selection.js",
         "@patchwork/context/react": "/packages/@patchwork/context/react.js",
-        "@patchwork/context/solid": "/packages/@patchwork/context/solid.js",
         "@patchwork/context/diff": "/packages/@patchwork/context/diff.js",
         "@patchwork/context/comments":
           "/packages/@patchwork/context/comments.js",
