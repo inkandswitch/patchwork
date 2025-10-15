@@ -41,6 +41,9 @@ export default defineConfig({
     format: "es",
     plugins: () => [wasm()],
   },
+  server: {
+    port: process.env.PORT ? +process.env.PORT : 5173,
+  },
   build: {
     target: "firefox137",
     minify: false,
