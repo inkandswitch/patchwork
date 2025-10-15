@@ -1,6 +1,7 @@
 import { docIdFromAutomergeUrl } from "@automerge/automerge-repo-keyhive";
 import {
   AutomergeUrl,
+  DocHandle,
   encodeHeads,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
@@ -19,6 +20,7 @@ import { toolify } from "../../lib/toolify";
 import { SingleViewDoc } from "./datatype";
 import { Diff, getDiffOfDoc, getViewHeads } from "@patchwork/context/diff";
 import { RefWith } from "@patchwork/context";
+import { DocWithComments, getCommentsOfDoc } from "@patchwork/context/comments";
 
 const SingleView = ({
   docUrl,
@@ -35,6 +37,7 @@ const SingleView = ({
       suspense: true,
     }
   );
+
   const selectionContext = useSubcontext("SINGLE_VIEW");
 
   const { currentDocument } = singleViewDoc;
@@ -93,6 +96,13 @@ const SingleView = ({
     }
   }, [changeSingleViewDoc, element]);
 
+  // add doc handle to window
+  useEffect(() => {
+    if (currentDocRef) {
+      (window as any).currentDoc = currentDocRef.docHandle;
+    }
+  }, [currentDocRef]);
+
   let hasAccess = false;
 
   if (currentDocument) {
@@ -101,6 +111,25 @@ const SingleView = ({
     hasAccess =
       keyhiveKit!.keyhive.accessForDoc(id, keyhiveDocId) !== undefined;
   }
+
+  // add comments to context
+  const commentsContext = useSubcontext();
+
+  const [currentDoc] = useDocument<DocWithComments>(currentDocument?.url);
+
+  useEffect(() => {
+    console.log("!! update refsWithComments", currentDocRef);
+
+    if (currentDocRef) {
+      const refsWithComments = getCommentsOfDoc(
+        currentDocRef.docHandle as DocHandle<DocWithComments>
+      );
+
+      console.log("!! update refsWithComments", refsWithComments);
+
+      commentsContext.replace(refsWithComments);
+    }
+  }, [currentDoc, currentDocRef, commentsContext]);
 
   console.log("!! has access", hasAccess, currentDocument?.url);
 

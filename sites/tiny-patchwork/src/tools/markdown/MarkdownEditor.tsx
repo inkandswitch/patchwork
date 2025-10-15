@@ -21,17 +21,18 @@ import {
   WidgetType,
   keymap,
 } from "@codemirror/view";
-import { MessageCircle } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Codemirror } from "../../lib/codemirror";
 import { useStaticCallback } from "../../lib/useStaticCallback";
 
-import { PathRef, TextSpanRefWith } from "@patchwork/context";
+import { PathRef, TextSpanRef, TextSpanRefWith } from "@patchwork/context";
 import { Diff, DiffValue, getRefsWithDiffAt } from "@patchwork/context/diff";
 import { useReactive } from "@patchwork/context/react";
 import { ReactToolProps } from "../../lib/toolify";
 import { theme } from "./theme";
 import { parseAutomergeUrl } from "@automerge/automerge-repo";
+import { commentButtonGutter } from "./commentButtonGutter";
+import { createComment } from "@patchwork/context/comments";
 
 export type MarkdownDoc = {
   content: string;
@@ -45,8 +46,6 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   //  const { isSelected, setSelection, selectedRefs } = useReactive(SelectionAPI);
   const cmContainerRef = useRef<HTMLDivElement | null>(null);
   const [cmView, setCmView] = useState<EditorView | null>(null);
-  const selectionRangeRef = useRef<{ from: number; to: number } | null>(null);
-  const [commentBtnTop, setCommentBtnTop] = useState<number | null>(null);
   const isReadOnly = parseAutomergeUrl(docUrl).heads !== undefined;
 
   // todo:  another weird doc handle issue
@@ -110,50 +109,22 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
     // console.log(selectedObjects);
 
     // setSelection(selectedObjects);
-
-    // // Track current selection range for comment button rendering
-    // selectionRangeRef.current = { from, to };
-    // recomputeCommentButtonPosition();
   });
 
-  // Recompute comment button position using current selection and cmView
-  const recomputeCommentButtonPosition = useStaticCallback(() => {
-    if (!cmView || !cmContainerRef.current) {
-      setCommentBtnTop(null);
-      return;
+  const onComment = useStaticCallback(
+    (from: number, to: number, view: EditorView) => {
+      if (!handle) {
+        return;
+      }
+
+      console.log("create comment", from, to);
+      createComment({
+        refs: [new TextSpanRef(handle, ["content"], from, to)],
+        content: "",
+        contactUrl: docUrl,
+      });
     }
-    const range = selectionRangeRef.current;
-    if (!range || range.from === range.to) {
-      setCommentBtnTop(null);
-      return;
-    }
-
-    const coords = cmView.coordsAtPos(range.from);
-    if (!coords) {
-      setCommentBtnTop(null);
-      return;
-    }
-    const containerRect = cmContainerRef.current.getBoundingClientRect();
-    const top = coords.top - containerRect.top;
-    setCommentBtnTop(top);
-  });
-
-  // Recompute on window resize
-  useEffect(() => {
-    const onResize = () => recomputeCommentButtonPosition();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [recomputeCommentButtonPosition]);
-
-  // Recompute when view becomes available
-  useEffect(() => {
-    recomputeCommentButtonPosition();
-  }, [cmView, recomputeCommentButtonPosition]);
-
-  // Recompute when doc hanges
-  useEffect(() => {
-    recomputeCommentButtonPosition();
-  }, [doc?.content, recomputeCommentButtonPosition]);
+  );
 
   const cmExtensions = useMemo(
     () => [
@@ -176,6 +147,8 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
         codeLanguages: languages,
       }),
       indentUnit.of("    "),
+      // Add the selection listener and comment button gutter
+      commentButtonGutter(onComment),
     ],
     [isReadOnly]
   );
@@ -193,18 +166,6 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
               extensions={cmExtensions}
               viewRef={setCmView}
             />
-          </div>
-          <div className="relative w-8 ml-2">
-            {commentBtnTop !== null && (
-              <button
-                type="button"
-                className="hover:bg-gray-100 p-2 rounded-md"
-                style={{ transform: `translateY(${commentBtnTop}px)` }}
-                aria-label="Add comment"
-              >
-                <MessageCircle className="text-gray-500" size={20} />
-              </button>
-            )}
           </div>
         </div>
       </div>

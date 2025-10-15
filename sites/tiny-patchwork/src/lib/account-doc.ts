@@ -63,7 +63,7 @@ export const initAccountDoc = async (
     doc["@tiny-patchwork"] = {
       frameToolId: "patchwork-frame",
       rootFolderToolId: "simple-sidebar",
-      contextSidebarToolId: "history-view",
+      contextSidebarToolId: "comments-view",
       rootFolderUrl: rootFolderHandle.url,
       moduleSettingsUrl: moduleSettingsHandle.url,
       mainView: {

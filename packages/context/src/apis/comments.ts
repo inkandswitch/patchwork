@@ -10,7 +10,6 @@ export type DocWithComments = {
 
 export type Comment = {
   refs: SerializedRef[];
-  isDraft: boolean;
   id: string;
   content?: string;
   draftContent?: string;
@@ -93,7 +92,6 @@ export const createComment = ({
 
     doc["@comments"].push({
       refs: refs.map((ref) => ref.serialize()),
-      isDraft: true,
       id: crypto.randomUUID(),
       contactUrl,
       timestamp: Date.now(),

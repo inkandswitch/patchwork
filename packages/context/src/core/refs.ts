@@ -56,6 +56,10 @@ export abstract class Ref<
 
   abstract serialize(): SerializedRef;
 
+  destroy() {
+    throw new Error("not implemented");
+  }
+
   // ==== value methods ====
 
   get value(): Value {
@@ -175,6 +179,17 @@ export class PathRef<
   serialize(): SerializedRef {
     return { type: "path", path: this.path };
   }
+
+  destroy(): void {
+    this.docHandle.change((doc) => {
+      const parentPath = this.path.slice(0, -1);
+      const key = this.path[this.path.length - 1];
+
+      const parent = lookup(doc, parentPath);
+
+      delete parent[key];
+    });
+  }
 }
 
 export class IdRef<
@@ -216,6 +231,18 @@ export class IdRef<
       id: this.#id,
       key: this.#key,
     };
+  }
+
+  destroy(): void {
+    this.docHandle.change((doc) => {
+      const items = lookup(doc, this.path);
+
+      const indexToDelete = items.findIndex(
+        (item: any) => item[this.#key] === this.#id
+      );
+
+      items.splice(indexToDelete, 1);
+    });
   }
 }
 
