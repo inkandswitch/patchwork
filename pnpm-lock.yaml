@@ -56,8 +56,8 @@ importers:
         version: 0.1.4
     devDependencies:
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.0.0-alpha.57
-        version: 0.0.0-alpha.57
+        specifier: 0.0.0-alpha.58
+        version: 0.0.0-alpha.58
       '@keyhive/keyhive':
         specifier: 0.0.0-alpha.36
         version: 0.0.0-alpha.36
@@ -154,8 +154,8 @@ importers:
   packages/identity:
     dependencies:
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.0.0-alpha.57
-        version: 0.0.0-alpha.57
+        specifier: 0.0.0-alpha.58
+        version: 0.0.0-alpha.58
       '@keyhive/keyhive':
         specifier: 0.0.0-alpha.36
         version: 0.0.0-alpha.36
@@ -259,8 +259,8 @@ importers:
         specifier: 2.4.0-alpha.2
         version: 2.4.0-alpha.2
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.0.0-alpha.57
-        version: 0.0.0-alpha.57
+        specifier: 0.0.0-alpha.58
+        version: 0.0.0-alpha.58
       '@automerge/vanillajs':
         specifier: 2.4.0-alpha.2
         version: 2.4.0-alpha.2
@@ -305,8 +305,8 @@ importers:
         specifier: 2.4.0-alpha.2
         version: 2.4.0-alpha.2
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.0.0-alpha.57
-        version: 0.0.0-alpha.57
+        specifier: 0.0.0-alpha.58
+        version: 0.0.0-alpha.58
       '@automerge/automerge-repo-react-hooks':
         specifier: ^2.4.0-alpha.2
         version: 2.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -428,8 +428,8 @@ packages:
   '@automerge/automerge-codemirror@0.2.0':
     resolution: {integrity: sha512-GBNh4ESZHFNHZKLznf/2G2KdmBD+unEdk64+l621LsjIsJs6HBmQmO8RCY1v7vIq31kFyoVHNcBMGQOnLgy4GA==}
 
-  '@automerge/automerge-repo-keyhive@0.0.0-alpha.57':
-    resolution: {integrity: sha512-plUYyOpKXP7dxzq67L0D0MJRq0yHlLuorRrzmWlw3B5odSYJUP3aXxP5a+52Py39Nd1Oo3iXFwcGRFhs9hJUqg==}
+  '@automerge/automerge-repo-keyhive@0.0.0-alpha.58':
+    resolution: {integrity: sha512-8b9zfbcgukEgFCxqow8rzKYXpIB1LQABM+Vn1hllrIdxXtDc3MyZ3scIPqwovqphiLljtVj/nTeyY4HQiwBR4A==}
 
   '@automerge/automerge-repo-network-broadcastchannel@2.4.0-alpha.2':
     resolution: {integrity: sha512-l3VJomRii8T7jZD9kmJ0vXO3c/Usnir6y2DoO5t4nlxIU9cikf/pr0FaJp8p3RyZOwe2aACrzTPbJnU9KAXRYA==}
@@ -2669,7 +2669,7 @@ snapshots:
       '@codemirror/view': 6.38.6
       codemirror: 6.0.2
 
-  '@automerge/automerge-repo-keyhive@0.0.0-alpha.57':
+  '@automerge/automerge-repo-keyhive@0.0.0-alpha.58':
     dependencies:
       '@automerge/automerge-repo': 2.4.0-alpha.2
       '@automerge/automerge-repo-network-websocket': 2.4.0-alpha.2
