@@ -31,9 +31,9 @@ const DiffSymbol = Symbol("diff");
 export type Diff = typeof DiffSymbol;
 export const Diff = defineField<Diff, DiffValue>("diff", DiffSymbol);
 
-type ViewHeadsValue = {
-  fromHeads: Automerge.Heads;
-  toHeads: Automerge.Heads;
+export type ViewHeadsValue = {
+  beforeHeads: Automerge.Heads;
+  afterHeads: Automerge.Heads;
 };
 
 const ViewHeadsSymbol = Symbol("viewHeads");

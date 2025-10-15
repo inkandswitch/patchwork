@@ -2,6 +2,7 @@ import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { contextComputation } from "@patchwork/context";
+import { ViewHeads, ViewHeadsValue } from "@patchwork/context/diff";
 import {
   useDocRef,
   useReactive,
@@ -9,11 +10,10 @@ import {
 } from "@patchwork/context/react";
 import { IsSelected } from "@patchwork/context/selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
-import { useEffect, useState, useRef } from "react";
-import { useDatatype, useTitle } from "../../lib/datatype-hooks";
-import { toolify } from "../../lib/toolify";
+import { useEffect, useState } from "react";
+import { useTitle } from "../../lib/datatype-hooks";
 import { relativeTime } from "../../lib/relative-time";
-import { ViewHeads } from "@patchwork/context/diff";
+import { toolify } from "../../lib/toolify";
 
 const HistoryView = () => {
   const selectedDocUrls = useReactive($selectedDocUrls);
@@ -35,7 +35,7 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const repo = useRepo();
   const [history, setHistory] = useState<Automerge.State<unknown>[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedHash, setSelectedHash] = useState<string | null>(null);
+  const [viewHeads, setViewHeads] = useState<ViewHeadsValue | null>(null);
   const [doc] = useDocument<HasPatchworkMetadata>(docUrl, {
     suspense: true,
   });
@@ -45,20 +45,13 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
 
   const headsSelectionContext = useSubcontext("HEADS_SELECTION");
   useEffect(() => {
-    if (!docRef || !selectedHash) {
+    if (!docRef || !viewHeads) {
       headsSelectionContext.replace([]);
       return;
     }
 
-    headsSelectionContext.replace(
-      docRef.with(
-        ViewHeads({
-          fromHeads: [selectedHash],
-          toHeads: [selectedHash],
-        })
-      )
-    );
-  }, [selectedHash, headsSelectionContext]);
+    headsSelectionContext.replace(docRef.with(ViewHeads(viewHeads)));
+  }, [viewHeads, headsSelectionContext]);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -85,21 +78,39 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
     return <div className="text-gray-500">Loading history...</div>;
   }
 
+  const onSelectHashAt = (index: number) => {
+    const beforeHeads =
+      index === history.length - 1 ? [] : [history[index + 1].change.hash];
+    const afterHeads = [history[index].change.hash];
+
+    setViewHeads({
+      beforeHeads,
+      afterHeads,
+    });
+  };
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="p-2">
+      <div className="p-2 flex justify-between items-center">
         <div className="font-medium">{title}</div>
+
+        <button
+          className={`btn btn-sm btn-ghost ${viewHeads ? "" : "invisible"}`}
+          onClick={() => setViewHeads(null)}
+        >
+          Reset to now
+        </button>
       </div>
       <div className="space-y-1 flex-1 overflow-y-auto p-2">
         {history.map(({ change }, index) => {
-          const isSelected = change.hash === selectedHash;
+          const isSelected = change.hash === viewHeads?.afterHeads[0];
           return (
             <div
               key={index}
               role="button"
               tabIndex={0}
               aria-selected={isSelected}
-              onClick={() => setSelectedHash(change.hash)}
+              onClick={() => onSelectHashAt(index)}
               className={
                 "text-xs p-2 rounded border flex justify-between cursor-pointer " +
                 (isSelected

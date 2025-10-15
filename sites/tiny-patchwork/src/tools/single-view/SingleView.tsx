@@ -13,11 +13,12 @@ import {
 } from "@patchwork/context/react";
 import { IsSelected } from "@patchwork/context/selection";
 import { KeyhiveKit } from "@patchwork/identity";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 import { SingleViewDoc } from "./datatype";
-import { getViewHeads } from "@patchwork/context/diff";
+import { Diff, getDiffOfDoc, getViewHeads } from "@patchwork/context/diff";
+import { RefWith } from "@patchwork/context";
 
 const SingleView = ({
   docUrl,
@@ -51,6 +52,23 @@ const SingleView = ({
       currentDocRef ? [currentDocRef.with(IsSelected(true))] : []
     );
   }, [currentDocRef, selectionContext]);
+
+  // Compute diffs when on a branch with highlight changes enabled
+  const diffsOfDoc = useMemo<RefWith<Diff>[]>(() => {
+    if (!currentDocRef || !viewHeads) {
+      return [];
+    }
+
+    return getDiffOfDoc(
+      currentDocRef.docHandle.view(encodeHeads(viewHeads.afterHeads)),
+      viewHeads.beforeHeads
+    );
+  }, [currentDocRef, viewHeads]);
+
+  const diffContext = useSubcontext("SINGLE_VIEW_DIFF");
+  useEffect(() => {
+    diffContext.replace(diffsOfDoc);
+  }, [diffContext, diffsOfDoc]);
 
   // Listen for open document events
   useEffect(() => {
@@ -106,12 +124,14 @@ const SingleView = ({
   const currentDocUrl = viewHeads
     ? stringifyAutomergeUrl({
         documentId: currentDocumentId,
-        heads: encodeHeads(viewHeads.toHeads),
+        heads: encodeHeads(viewHeads.afterHeads),
       })
     : currentDocument.url;
 
   return (
-    <div className="w-full h-full">
+    <div
+      className={`w-full h-full ${viewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
+    >
       {/* @ts-expect-error patchwork-view is a custom element */}
       <patchwork-view
         doc-url={currentDocUrl}
