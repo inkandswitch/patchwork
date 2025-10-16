@@ -13,6 +13,8 @@ import {
   RocketIcon,
 } from "lucide-react";
 import { openDocument } from "../../lib/navigation";
+import { useDocRef } from "@patchwork/context/react";
+import type { TinyPatchworkAccountDoc } from "../../lib/account-doc.js";
 
 const FileEntry = ({ docLink }: { docLink: DocLink }) => {
   const [root, setRoot] = useState<HTMLElement | null>(null);
@@ -333,4 +335,20 @@ const AddDocumentDropdown = ({
   );
 };
 
-export const renderSidebar = toolify(FolderView);
+function FunkySidebar({ docUrl }: { docUrl: AutomergeUrl }) {
+  const doc = useDocRef<TinyPatchworkAccountDoc | FolderDoc>(docUrl);
+
+  return (
+    doc && (
+      <FolderView
+        docUrl={
+          "@tiny-patchwork" in doc.value
+            ? doc.value["@tiny-patchwork"].rootFolderUrl
+            : docUrl
+        }
+      />
+    )
+  );
+}
+
+export const renderSidebar = toolify(FunkySidebar);

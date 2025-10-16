@@ -58,7 +58,7 @@ export const renderFrame = toolify(
           {sidebarToolId && (
             <patchwork-view
               class="h-full"
-              doc-url={rootFolderUrl}
+              doc-url={docUrl}
               tool-id={sidebarToolId}
             />
           )}

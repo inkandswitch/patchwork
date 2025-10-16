@@ -10,6 +10,7 @@ import { useState } from "react";
 import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 import { useDatatypeDescriptions } from "../../lib/datatype-hooks";
+import type { TinyPatchworkAccountDoc } from "../../lib/account-doc.js";
 
 const FileEntry = ({
   docLink,
@@ -210,12 +211,22 @@ const AddDocumentDropdown = ({
 };
 
 function Sidebar({ docUrl }: { docUrl: AutomergeUrl }) {
+  const doc = useDocRef<TinyPatchworkAccountDoc | FolderDoc>(docUrl);
+
   return (
     <div className="p-2">
       <h2 className="text-xl p-3">
         <span className="text-xs">tiny</span> patchwork
       </h2>
-      <FolderView docUrl={docUrl} />
+      {doc && (
+        <FolderView
+          docUrl={
+            "@tiny-patchwork" in doc.value
+              ? doc.value["@tiny-patchwork"].rootFolderUrl
+              : docUrl
+          }
+        />
+      )}
     </div>
   );
 }

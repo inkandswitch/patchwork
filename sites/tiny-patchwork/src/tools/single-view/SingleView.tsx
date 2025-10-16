@@ -31,9 +31,7 @@ const SingleView = ({
 }) => {
   const [singleViewDoc, changeSingleViewDoc] = useDocument<SingleViewDoc>(
     docUrl,
-    {
-      suspense: true,
-    }
+    { suspense: true }
   );
   const selectionContext = useSubcontext("SINGLE_VIEW");
 
