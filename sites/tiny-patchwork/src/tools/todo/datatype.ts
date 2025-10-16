@@ -6,7 +6,7 @@ export const TodoDataType: DataTypeImplementation<TodoDoc> = {
     doc.title = "My Todo List";
     doc.todos = [];
   },
-  async getTitle(doc: TodoDoc) {
+  getTitle(doc: TodoDoc) {
     return doc.title || "Todo List";
   },
   markCopy: (doc: TodoDoc) => {

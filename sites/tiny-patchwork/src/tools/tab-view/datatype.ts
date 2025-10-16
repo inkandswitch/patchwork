@@ -10,7 +10,7 @@ export const TabViewDataType: DataTypeImplementation<TabViewDoc> = {
   init: (doc: TabViewDoc) => {
     doc.tabs = [];
   },
-  async getTitle(doc: TabViewDoc) {
+  getTitle(doc: TabViewDoc) {
     return "Tab Viewer";
   },
   markCopy: (doc: TabViewDoc) => {
