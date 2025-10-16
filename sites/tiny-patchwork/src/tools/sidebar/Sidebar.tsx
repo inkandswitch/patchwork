@@ -210,4 +210,15 @@ const AddDocumentDropdown = ({
   );
 };
 
-export const renderSidebar = toolify(FolderView);
+function Sidebar({ docUrl }: { docUrl: AutomergeUrl }) {
+  return (
+    <div className="p-2">
+      <h2 className="text-xl p-3">
+        <span className="text-xs">tiny</span> patchwork
+      </h2>
+      <FolderView docUrl={docUrl} />
+    </div>
+  );
+}
+
+export const renderSidebar = toolify(Sidebar);

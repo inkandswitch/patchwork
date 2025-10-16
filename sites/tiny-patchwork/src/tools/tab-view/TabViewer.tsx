@@ -172,6 +172,7 @@ declare global {
       > & {
         "doc-url": string;
         "tool-id"?: string | null;
+        class?: string;
       };
     }
   }

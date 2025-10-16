@@ -54,14 +54,10 @@ export const renderFrame = toolify(
 
     return (
       <div className="w-screen h-screen flex">
-        <div className="w-[400px] bg-gray-100 p-2 flex flex-col">
-          <div className="p-2">
-            <h2 className="text-xl p-3">
-              <span className="text-xs">tiny</span> patchwork
-            </h2>
-          </div>
+        <div className="w-[400px] flex flex-col">
           {rootFolderToolId && (
             <patchwork-view
+              class="h-full"
               doc-url={rootFolderUrl}
               tool-id={rootFolderToolId}
             />
