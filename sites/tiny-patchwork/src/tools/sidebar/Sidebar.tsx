@@ -23,7 +23,6 @@ const FileEntry = ({
   const onOpenDocument = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("open document");
     openDocument(root!, docLink.url);
   };
 
