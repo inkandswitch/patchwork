@@ -16,6 +16,9 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      parserOptions: {
+        tsconfigRootDir: "/tsconfig.json",
+      },
     },
     rules: {
       "no-unused-vars": "warn",
