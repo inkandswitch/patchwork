@@ -14,11 +14,15 @@ const CommentsView = () => {
   const documentsWithComments = useReactive($documentsWithComments);
 
   return (
-    <div className="h-full flex flex-col p-2">
+    <div className="h-full flex flex-col p-2 gap-2">
       <h2 className="text-md font-bold">Comments</h2>
 
       {documentsWithComments.map(({ docUrl, refsWithComments }) => (
-        <DocCommentsView docUrl={docUrl} refsWithComments={refsWithComments} />
+        <DocCommentsView
+          docUrl={docUrl}
+          refsWithComments={refsWithComments}
+          showTitle={documentsWithComments.length > 1}
+        />
       ))}
     </div>
   );
@@ -27,9 +31,11 @@ const CommentsView = () => {
 const DocCommentsView = ({
   docUrl,
   refsWithComments,
+  showTitle = false,
 }: {
   docUrl: AutomergeUrl;
   refsWithComments: RefWith<Comments>[];
+  showTitle?: boolean;
 }) => {
   const repo = useRepo();
   const [doc] = useDocument<HasPatchworkMetadata>(docUrl, { suspense: true });
@@ -37,7 +43,9 @@ const DocCommentsView = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="text-sm font-bold">{title}</h3>
+      {showTitle && (
+        <h3 className="text-sm font-bold text-gray-400">{title}</h3>
+      )}
       {refsWithComments.map((refWithComments) => (
         <CommentThread
           key={refWithComments.toId()}
@@ -65,7 +73,7 @@ const CommentThread = ({
 
   const onCancelDraft = (commentRef: Ref<Comment>) => {
     if (commentRef.value.content === undefined) {
-      commentRef.destory();
+      commentRef.destroy();
       return;
     }
 
@@ -84,6 +92,10 @@ const CommentThread = ({
     <div>
       <div className="space-y-4">
         {commentRefs.map((commentRef) => {
+          if (!commentRef.value) {
+            return null;
+          }
+
           const { content, timestamp, draftContent } = commentRef.value;
 
           const isDraft = draftContent || content === undefined;
@@ -95,14 +107,14 @@ const CommentThread = ({
             >
               <div className="card-body p-2 space-y-2">
                 {/* Metadata line: relative timestamp */}
-                <div className="flex items-center justify-between">
-                  <span>Author</span>
-                  {!isDraft && (
+                {!isDraft && (
+                  <div className="flex items-center justify-end">
+                    {/* TODO: display author */}
                     <span className="text-xs text-gray-400">
                       {relativeTime(timestamp)}
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
                 {/* Content or textarea */}
                 {isDraft ? (
                   <textarea

@@ -21,18 +21,22 @@ import {
   WidgetType,
   keymap,
 } from "@codemirror/view";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { Codemirror } from "../../lib/codemirror";
 import { useStaticCallback } from "../../lib/useStaticCallback";
 
+import { parseAutomergeUrl } from "@automerge/automerge-repo";
 import { PathRef, TextSpanRef, TextSpanRefWith } from "@patchwork/context";
+import {
+  Comments,
+  createComment,
+  getCommentsAt,
+} from "@patchwork/context/comments";
 import { Diff, DiffValue, getRefsWithDiffAt } from "@patchwork/context/diff";
 import { useReactive } from "@patchwork/context/react";
 import { ReactToolProps } from "../../lib/toolify";
-import { theme } from "./theme";
-import { parseAutomergeUrl } from "@automerge/automerge-repo";
 import { commentButtonGutter } from "./commentButtonGutter";
-import { createComment } from "@patchwork/context/comments";
+import { theme } from "./theme";
 
 export type MarkdownDoc = {
   content: string;
@@ -45,7 +49,6 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   const handle = useDocHandle<MarkdownDoc>(docUrl);
   //  const { isSelected, setSelection, selectedRefs } = useReactive(SelectionAPI);
   const cmContainerRef = useRef<HTMLDivElement | null>(null);
-  const [cmView, setCmView] = useState<EditorView | null>(null);
   const isReadOnly = parseAutomergeUrl(docUrl).heads !== undefined;
 
   // todo:  another weird doc handle issue
@@ -61,6 +64,10 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   const refsWithDiff = useReactive(
     getRefsWithDiffAt(contentRef)
   ) as TextSpanRefWith<Diff>[];
+
+  const refsWithComments = useReactive(
+    getCommentsAt(contentRef)
+  ) as TextSpanRefWith<Comments>[];
 
   // compute decorations
   const decorations = useMemo<DecorationSet>(() => {
@@ -87,10 +94,21 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
 
           return [];
         }),
+
+        // comments
+        ...refsWithComments.flatMap((ref) => {
+          console.log("!! add highlight ", ref.from, ref.to);
+
+          return Decoration.mark({
+            class: `border-b border-yellow-300 ${
+              false ? "bg-yellow-300" : "bg-yellow-100"
+            }`,
+          }).range(ref.from, ref.to);
+        }),
       ],
       true // sort ranges
     );
-  }, [refsWithDiff]);
+  }, [refsWithComments, refsWithDiff]);
 
   const onChangeSelection = useStaticCallback((from: number, to: number) => {
     if (!handle) {
@@ -150,7 +168,7 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
       // Add the selection listener and comment button gutter
       commentButtonGutter(onComment),
     ],
-    [isReadOnly]
+    [isReadOnly, onComment]
   );
 
   return (
@@ -164,7 +182,6 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
               onChangeSelection={onChangeSelection}
               decorations={decorations}
               extensions={cmExtensions}
-              viewRef={setCmView}
             />
           </div>
         </div>

@@ -61,6 +61,20 @@ export const getCommentsOfDoc = (docHandle: DocHandle<DocWithComments>) => {
   return refsWithComments;
 };
 
+export const getCommentsAt = memoize(
+  (ref?: Ref) =>
+    contextComputation(() => {
+      if (!ref) {
+        return [];
+      }
+
+      return CONTEXT.refsWith(Comments).filter((refWithComments) => {
+        return refWithComments.isElementOf(ref);
+      });
+    }),
+  (ref?: Ref) => ref?.toId()
+);
+
 export const createComment = ({
   refs,
   contactUrl,
