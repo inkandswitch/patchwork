@@ -47,7 +47,7 @@ export function registerPatchworkViewElement(
 
   customElements.define(
     name,
-    class RootstockTool extends HTMLElement {
+    class PatchworkViewElement extends HTMLElement {
       // attributes, if these change it's new game +
       #docUrl: AutomergeUrl | null = null;
       #toolId: string | null = null;
