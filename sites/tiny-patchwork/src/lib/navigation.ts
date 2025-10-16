@@ -7,7 +7,11 @@ interface OpenDocumentEventDetail {
 
 export class OpenDocumentEvent extends CustomEvent<OpenDocumentEventDetail> {
   constructor(detail: OpenDocumentEventDetail) {
-    super("patchwork:open-document", { detail });
+    super("patchwork:open-document", {
+      detail,
+      composed: true,
+      bubbles: true,
+    });
   }
 }
 
