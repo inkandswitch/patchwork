@@ -8,7 +8,7 @@ export type TinyPatchworkAccountDoc = {
     rootFolderUrl: AutomergeUrl;
     moduleSettingsUrl: AutomergeUrl;
     frameToolId: string;
-    rootFolderToolId?: string;
+    sidebarToolId?: string;
     mainView: {
       documentUrl: AutomergeUrl;
       toolId: string;
@@ -33,6 +33,17 @@ export const initAccountDoc = async (
     if (!moduleSettings.doc()["@patchwork"]) {
       moduleSettings.change((doc) => {
         doc["@patchwork"] = { type: "patchwork:module-settings" };
+      });
+    }
+
+    const rootFolderToolId =
+      "rootFolderToolId" in tinyPatchworkConfig &&
+      tinyPatchworkConfig.rootFolderToolId;
+
+    if (typeof rootFolderToolId == "string") {
+      handle.change((doc) => {
+        doc["@tiny-patchwork"]!.sidebarToolId = rootFolderToolId;
+        delete (doc["@tiny-patchwork"]! as any).rootFolderToolId;
       });
     }
 
@@ -74,7 +85,7 @@ export const initAccountDoc = async (
 
     doc["@tiny-patchwork"] = {
       frameToolId: "patchwork-frame",
-      rootFolderToolId: "simple-sidebar",
+      sidebarToolId: "simple-sidebar",
       contextSidebarToolId: "history-view",
       rootFolderUrl: rootFolderHandle.url,
       moduleSettingsUrl: moduleSettingsHandle.url,

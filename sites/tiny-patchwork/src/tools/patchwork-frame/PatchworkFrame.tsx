@@ -27,7 +27,7 @@ export const renderFrame = toolify(
       }
     );
 
-    const { rootFolderUrl, contextSidebarToolId, rootFolderToolId, mainView } =
+    const { rootFolderUrl, contextSidebarToolId, sidebarToolId, mainView } =
       accountDoc["@tiny-patchwork"];
 
     const [mainViewElement, setMainViewElement] = useState<HTMLElement | null>(
@@ -55,11 +55,11 @@ export const renderFrame = toolify(
     return (
       <div className="w-screen h-screen flex">
         <div className="w-[400px] flex flex-col">
-          {rootFolderToolId && (
+          {sidebarToolId && (
             <patchwork-view
               class="h-full"
               doc-url={rootFolderUrl}
-              tool-id={rootFolderToolId}
+              tool-id={sidebarToolId}
             />
           )}
         </div>

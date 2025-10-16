@@ -22,14 +22,14 @@ export const initCommands = (
 ) => {
   const funkySidebar = () => {
     accountDocHandle.change((doc) => {
-      doc["@tiny-patchwork"].rootFolderToolId = "funky-sidebar";
+      doc["@tiny-patchwork"].sidebarToolId = "funky-sidebar";
     });
     console.log("Switched to funky sidebar");
   };
 
   const normalSidebar = () => {
     accountDocHandle.change((doc) => {
-      doc["@tiny-patchwork"].rootFolderToolId = "simple-sidebar";
+      doc["@tiny-patchwork"].sidebarToolId = "simple-sidebar";
     });
     console.log("Switched to normal sidebar");
   };
