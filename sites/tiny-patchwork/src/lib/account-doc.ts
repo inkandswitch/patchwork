@@ -23,7 +23,19 @@ export const initAccountDoc = async (
 ) => {
   const tinyPatchworkConfig = handle.doc()["@tiny-patchwork"];
 
+  // todo(2025-10) remove when everyone's probably been updated
   if (tinyPatchworkConfig) {
+    const { moduleSettingsUrl } = tinyPatchworkConfig;
+
+    const moduleSettings =
+      await repo.find<ModuleSettingsDoc>(moduleSettingsUrl);
+
+    if (!moduleSettings.doc()["@patchwork"]) {
+      moduleSettings.change((doc) => {
+        doc["@patchwork"] = { type: "patchwork:module-settings" };
+      });
+    }
+
     return;
   }
 
@@ -37,7 +49,7 @@ export const initAccountDoc = async (
 
   const moduleSettingsHandle = (await repo.create2({
     ["@patchwork"]: {
-      type: "module-settings",
+      type: "patchwork:module-settings",
     },
     modules: [],
   })) as DocHandle<ModuleSettingsDoc>;

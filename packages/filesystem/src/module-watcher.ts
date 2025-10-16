@@ -10,7 +10,9 @@ import type { HasPatchworkMetadata } from "./metadata.js";
 
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
-};
+} & HasPatchworkMetadata & {
+    "@patchwork": { type: "patchwork:module-settings" };
+  };
 
 // todo this can be a function that takes a plugin system and returns a change
 // handler
