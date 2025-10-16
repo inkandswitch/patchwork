@@ -73,19 +73,22 @@ const SingleView = ({
   // Listen for open document events
   useEffect(() => {
     if (element) {
-      const handleOpenDocument = (event: Event) => {
-        const { docLink } = event as OpenDocumentEvent;
+      const handleOpenDocument = (event: OpenDocumentEvent) => {
+        const { url, toolId } = event.detail;
         console.log("single view: handle open document event", event);
 
         changeSingleViewDoc((doc) => {
           // Simply replace the current document
-          doc.currentDocument = docLink;
+          doc.currentDocument = { url, toolId: toolId ?? null };
         });
       };
 
-      element.addEventListener("patchwork:open-document", handleOpenDocument);
+      (element as HTMLElement).addEventListener(
+        "patchwork:open-document",
+        handleOpenDocument
+      );
       return () => {
-        element.removeEventListener(
+        (element as HTMLElement).removeEventListener(
           "patchwork:open-document",
           handleOpenDocument
         );
@@ -132,10 +135,9 @@ const SingleView = ({
     <div
       className={`w-full h-full ${viewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
     >
-      {/* @ts-expect-error patchwork-view is a custom element */}
       <patchwork-view
         doc-url={currentDocUrl}
-        tool-id={currentDocument.type}
+        tool-id={currentDocument.toolId}
         key={currentDocUrl}
       />
     </div>

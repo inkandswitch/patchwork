@@ -1,8 +1,8 @@
 import { DataTypeImplementation } from "@patchwork/plugins";
-import { DocLink } from "@patchwork/filesystem";
+import type { AutomergeUrl } from "@automerge/automerge-repo";
 
 export interface TabViewDoc {
-  tabs: DocLink[];
+  tabs: { url: AutomergeUrl; toolId?: string }[];
   activeTabIndex?: number;
 }
 

@@ -4,7 +4,7 @@ import { CONTEXT } from "@patchwork/context";
 import { KeyhiveKit } from "@patchwork/identity";
 import { useEffect, useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
-import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
+import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 
 CONTEXT.subscribe(() => {
@@ -39,15 +39,16 @@ export const renderFrame = toolify(
     // listen to open document events
     useEffect(() => {
       if (element) {
-        element.addEventListener("patchwork:open-document", (event) => {
-          const { docLink } = event as OpenDocumentEvent;
+        (element as HTMLElement).addEventListener(
+          "patchwork:open-document",
+          (event) => {
+            if (!mainViewElement) {
+              return;
+            }
 
-          if (!mainViewElement) {
-            return;
+            openDocument(mainViewElement, event.detail.url);
           }
-
-          openDocument(mainViewElement, docLink);
-        });
+        );
       }
     }, [changeAccountDoc, element, repo, mainViewElement]);
 
@@ -60,7 +61,6 @@ export const renderFrame = toolify(
             </h2>
           </div>
           {rootFolderToolId && (
-            // @ts-expect-error fix later
             <patchwork-view
               doc-url={rootFolderUrl}
               tool-id={rootFolderToolId}
@@ -70,7 +70,6 @@ export const renderFrame = toolify(
 
         <div className="w-full h-full overflow-auto">
           {mainView && (
-            // @ts-expect-error fix later
             <patchwork-view
               ref={setMainViewElement}
               doc-url={mainView.documentUrl}
@@ -82,7 +81,6 @@ export const renderFrame = toolify(
 
         {contextSidebarToolId && (
           <div className="w-[400px] bg-gray-100">
-            {/* @ts-expect-error fix later */}
             <patchwork-view
               doc-url={rootFolderUrl} // todo: context tool doesn't have a doc url
               tool-id={contextSidebarToolId}

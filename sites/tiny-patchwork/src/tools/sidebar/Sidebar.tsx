@@ -24,7 +24,7 @@ const FileEntry = ({
     e.preventDefault();
     e.stopPropagation();
     console.log("open document");
-    openDocument(root!, docLink);
+    openDocument(root!, docLink.url);
   };
 
   return (
@@ -57,11 +57,7 @@ const FolderEntry = ({
     e.preventDefault();
     e.stopPropagation();
     console.log("open document");
-    openDocument(root!, {
-      url: docUrl,
-      name: folderDoc.title,
-      type: "folder",
-    });
+    openDocument(root!, docUrl);
   };
 
   const onAddDocument = async (dataType: DataType<unknown>) => {
@@ -140,7 +136,7 @@ const FolderView = ({
       doc.docs.push(docLink);
     });
 
-    openDocument(root!, docLink);
+    openDocument(root!, docLink.url);
   };
 
   return (

@@ -11,7 +11,7 @@ export type Branch = {
 };
 
 export interface BranchViewDoc {
-  currentDocument?: DocLink;
+  currentDocument?: { url: AutomergeUrl; toolId?: string }; // The document being viewed
   selectedBranchDocUrl?: AutomergeUrl; // The currently checked out branch, or undefined for main
 }
 

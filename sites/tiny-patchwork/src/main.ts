@@ -22,8 +22,10 @@ window.CONTEXT = CONTEXT;
 
 import {
   DocHandle,
+  isValidAutomergeUrl,
   isValidDocumentId,
   parseAutomergeUrl,
+  type AutomergeUrl,
 } from "@automerge/automerge-repo";
 import { plugins } from "./tools";
 import { KeyhiveKit } from "@patchwork/identity";
@@ -57,9 +59,9 @@ const moduleWatcher = new ModuleWatcher(
 registerPatchworkViewElement({
   moduleWatcher,
   repo,
-  // todo remove when css is solved
-  shadow: false,
   identity: identity as KeyhiveKit,
+  // todo remove when css is fixed
+  shadow: false,
 });
 
 const rootElement = document.getElementById("root")!;
@@ -71,23 +73,15 @@ rootElement.setAttribute(
 );
 
 rootElement.addEventListener("patchwork:open-document", (event) => {
-  const { docLink } = event as OpenDocumentEvent;
-  window.location.hash = parseAutomergeUrl(docLink.url).documentId;
+  window.location.hash = parseAutomergeUrl(event.detail.url).documentId;
 });
 
 const handleUrlChange = async (url: string) => {
   if (isValidDocumentId(url)) {
-    const handle = await repo.find<any>(url);
-    const doc = handle.doc();
-
-    const type = doc["@patchwork"].type;
-    const name = doc.title ?? "Unknown"; // todo: load data type to figure out the name
-
-    openDocument(rootElement, {
-      url: handle.url,
-      name,
-      type,
-    });
+    openDocument(
+      rootElement,
+      isValidAutomergeUrl(url) ? url : (`automerge:${url}` as AutomergeUrl)
+    );
   } else {
     window.location.hash = "";
   }
