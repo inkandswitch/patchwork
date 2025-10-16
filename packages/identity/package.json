@@ -13,7 +13,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@automerge/automerge-repo-keyhive": "0.0.0-alpha.60b",
+    "@automerge/automerge-repo-keyhive": "0.0.0-alpha.60d",
     "@keyhive/keyhive": "0.0.0-alpha.38"
   },
   "devDependencies": {
