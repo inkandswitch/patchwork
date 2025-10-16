@@ -21,22 +21,23 @@ import {
   WidgetType,
   keymap,
 } from "@codemirror/view";
-import { useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Codemirror } from "../../lib/codemirror";
 import { useStaticCallback } from "../../lib/useStaticCallback";
 
 import { parseAutomergeUrl } from "@automerge/automerge-repo";
-import { PathRef, TextSpanRef, TextSpanRefWith } from "@patchwork/context";
+import { PathRef, Ref, TextSpanRef, TextSpanRefWith } from "@patchwork/context";
 import {
   Comments,
   createComment,
   getCommentsAt,
 } from "@patchwork/context/comments";
 import { Diff, DiffValue, getRefsWithDiffAt } from "@patchwork/context/diff";
-import { useReactive } from "@patchwork/context/react";
+import { useReactive, useSubcontext } from "@patchwork/context/react";
 import { ReactToolProps } from "../../lib/toolify";
 import { commentButtonGutter } from "./commentButtonGutter";
 import { theme } from "./theme";
+import { $selectedRefs, IsSelected } from "@patchwork/context/selection";
 
 export type MarkdownDoc = {
   content: string;
@@ -45,9 +46,8 @@ export type MarkdownDoc = {
 const PATH = ["content"];
 
 export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
-  const [doc] = useDocument<MarkdownDoc>(docUrl);
   const handle = useDocHandle<MarkdownDoc>(docUrl);
-  //  const { isSelected, setSelection, selectedRefs } = useReactive(SelectionAPI);
+
   const cmContainerRef = useRef<HTMLDivElement | null>(null);
   const isReadOnly = parseAutomergeUrl(docUrl).heads !== undefined;
 
@@ -69,6 +69,15 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
     getCommentsAt(contentRef)
   ) as TextSpanRefWith<Comments>[];
 
+  const selectedRefs = useReactive($selectedRefs);
+
+  const isSelected = useCallback(
+    (otherRef: Ref) => {
+      return selectedRefs.some((ref) => ref.doesOverlap(otherRef));
+    },
+    [selectedRefs]
+  );
+
   // compute decorations
   const decorations = useMemo<DecorationSet>(() => {
     return RangeSet.of<Decoration>(
@@ -80,14 +89,14 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
           if (diff.type === "deleted") {
             return makeDeleteDecoration({
               deletedText: diff.before,
-              isActive: false, //isSelected(ref),
+              isActive: isSelected(ref),
             }).range(ref.from, ref.from);
           }
 
           if (diff.type === "added") {
             return Decoration.mark({
               class: `border-b border-green-300 ${
-                false ? "bg-green-300" : "bg-green-100"
+                isSelected(ref) ? "bg-green-300" : "bg-green-100"
               }`,
             }).range(ref.from, ref.to);
           }
@@ -96,37 +105,27 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
         }),
 
         // comments
-        ...refsWithComments.flatMap((ref) => {
-          console.log("!! add highlight ", ref.from, ref.to);
-
-          return Decoration.mark({
+        ...refsWithComments.flatMap((ref) =>
+          Decoration.mark({
             class: `border-b border-yellow-300 ${
-              false ? "bg-yellow-300" : "bg-yellow-100"
+              isSelected(ref) ? "bg-yellow-300" : "bg-yellow-100"
             }`,
-          }).range(ref.from, ref.to);
-        }),
+          }).range(ref.from, ref.to)
+        ),
       ],
       true // sort ranges
     );
-  }, [refsWithComments, refsWithDiff]);
+  }, [refsWithComments, refsWithDiff, isSelected]);
+
+  const selectionContext = useSubcontext("SELECTION");
 
   const onChangeSelection = useStaticCallback((from: number, to: number) => {
     if (!handle) {
       return;
     }
 
-    // const selectedText = new TextSpanRef(handle, ["content"], from, to);
-    // const overlappingLinks = docLinks.filter((docLink) =>
-    //   selectedText.doesOverlap(docLink)
-    // );
-    // const selectedObjects: Ref[] = [
-    //   selectedText,
-    //   ...overlappingLinks.map((docLink) => docLink.get(Link).ref),
-    // ];
-
-    // console.log(selectedObjects);
-
-    // setSelection(selectedObjects);
+    const selectedText = new TextSpanRef(handle, ["content"], from, to);
+    selectionContext.replace([selectedText.with(IsSelected(true))]);
   });
 
   const onComment = useStaticCallback(
