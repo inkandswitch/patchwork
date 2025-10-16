@@ -1,15 +1,29 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { DocLink } from "@patchwork/filesystem";
 
-export class OpenDocumentEvent extends Event {
-  constructor(public docLink: DocLink) {
-    super("patchwork:open-document", { bubbles: true, composed: true });
+interface OpenDocumentEventDetail {
+  url: AutomergeUrl;
+  toolId?: string;
+}
+
+export class OpenDocumentEvent extends CustomEvent<OpenDocumentEventDetail> {
+  constructor(detail: OpenDocumentEventDetail) {
+    super("patchwork:open-document", { detail });
+  }
+}
+
+declare global {
+  interface ShadowRootEventMap extends ElementEventMap {
+    "patchwork:open-document": OpenDocumentEvent;
+  }
+  interface ElementEventMap {
+    "patchwork:open-document": OpenDocumentEvent;
   }
 }
 
 export const openDocument = (
   element: HTMLElement | ShadowRoot,
-  docLink: DocLink
+  url: AutomergeUrl,
+  toolId?: string
 ) => {
-  element.dispatchEvent(new OpenDocumentEvent(docLink));
+  element.dispatchEvent(new OpenDocumentEvent({ url, toolId }));
 };
