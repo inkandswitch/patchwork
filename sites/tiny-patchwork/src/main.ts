@@ -6,10 +6,10 @@ import { registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
 const { repo, ...identity } = await bootstrap();
 
-import { Context, CONTEXT } from "@patchwork/context";
+import { CONTEXT, Context } from "@patchwork/context";
 import { initCommands } from "./commands";
 import { initAccountDoc, TinyPatchworkAccountDoc } from "./lib/account-doc";
-import { openDocument, OpenDocumentEvent } from "./lib/navigation";
+import { openDocument } from "./lib/navigation";
 
 declare global {
   interface Window {
@@ -21,11 +21,11 @@ declare global {
 window.CONTEXT = CONTEXT;
 
 import {
+  type AutomergeUrl,
   DocHandle,
   isValidAutomergeUrl,
   isValidDocumentId,
   parseAutomergeUrl,
-  type AutomergeUrl,
 } from "@automerge/automerge-repo";
 import { plugins } from "./tools";
 import { KeyhiveKit } from "@patchwork/identity";
@@ -76,28 +76,27 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
   window.location.hash = parseAutomergeUrl(event.detail.url).documentId;
 });
 
-const handleUrlChange = async (url: string) => {
-  if (isValidDocumentId(url)) {
-    openDocument(
-      rootElement,
-      isValidAutomergeUrl(url) ? url : (`automerge:${url}` as AutomergeUrl)
-    );
+const handleHashChange = async (hash: string) => {
+  if (isValidDocumentId(hash)) {
+    const url = isValidAutomergeUrl(hash)
+      ? hash
+      : (`automerge:${hash}` as AutomergeUrl);
+    openDocument(rootElement, url);
   } else {
     window.location.hash = "";
   }
 };
 
-// Listen for hash changes and interpret them as automerge URLs
+// Listen for hash changes and interpret them as Automerge URLs
 window.addEventListener("hashchange", () => {
   const hash = window.location.hash;
-  handleUrlChange(hash.slice(1));
+  handleHashChange(hash.slice(1));
 });
 
-// Also log the initial hash if present
 if (window.location.hash) {
   const initialAutomergeUrl = window.location.hash.slice(1);
   // todo: actually wait for root to be mounted
   setTimeout(() => {
-    handleUrlChange(initialAutomergeUrl);
+    handleHashChange(initialAutomergeUrl);
   }, 100);
 }
