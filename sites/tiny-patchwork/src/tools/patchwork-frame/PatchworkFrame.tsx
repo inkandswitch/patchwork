@@ -41,12 +41,16 @@ export const renderFrame = toolify(
       if (element) {
         (element as HTMLElement).addEventListener(
           "patchwork:open-document",
-          (event) => {
+          function (event) {
             if (!mainViewElement) {
               return;
             }
+            event.stopPropagation();
+            event.stopImmediatePropagation();
 
-            openDocument(mainViewElement, event.detail.url);
+            if (event.target === this) {
+              openDocument(mainViewElement, event.detail.url);
+            }
           }
         );
       }
