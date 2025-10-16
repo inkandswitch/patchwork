@@ -65,9 +65,8 @@ export const useTitle = (doc: HasPatchworkMetadata, repo: Repo) => {
   const [title, setTitle] = useState<string>("");
 
   useEffect(() => {
-    datatype?.module.getTitle(doc, repo).then((title) => {
-      setTitle(title);
-    });
+    const title = datatype?.module?.getTitle(doc);
+    title && setTitle(title);
   }, [doc, repo, datatype]);
 
   return title;
