@@ -166,7 +166,7 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   );
 
   return (
-    <div className="w-full h-full overflow-auto">
+    <div className="w-full h-full overflow-auto bg-white">
       <div className="p-4">
         <div className="flex">
           <div ref={cmContainerRef} className="relative flex-1">

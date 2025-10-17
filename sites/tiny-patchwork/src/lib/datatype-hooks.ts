@@ -1,4 +1,5 @@
 import { Repo } from "@automerge/automerge-repo";
+import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import {
   DataType,
@@ -30,7 +31,7 @@ export const useDatatypeDescriptions = () => {
   return datatypes;
 };
 
-export const useDatatype = (id: string) => {
+export const useDatatype = (id?: string) => {
   const [datatype, setDatatype] = useState<
     LoadedPlugin<DataTypeDescription, DataTypeImplementation> | undefined
   >(undefined);
@@ -41,6 +42,10 @@ export const useDatatype = (id: string) => {
     ) as PluginRegistry<DataTypeDescription>;
 
     const loadDatatype = () => {
+      if (!id) {
+        setDatatype(undefined);
+        return;
+      }
       registry.loadById(id).then((datatype) => {
         setDatatype(
           datatype as LoadedPlugin<DataTypeDescription, DataTypeImplementation>
@@ -60,13 +65,19 @@ export const useDatatype = (id: string) => {
   return datatype;
 };
 
-export const useTitle = (doc: HasPatchworkMetadata, repo: Repo) => {
-  const datatype = useDatatype(doc["@patchwork"].type);
+export const useTitle = (doc?: HasPatchworkMetadata) => {
+  const repo = useRepo();
+  const datatype = useDatatype(doc?.["@patchwork"]?.type);
   const [title, setTitle] = useState<string>("");
 
   useEffect(() => {
+    if (!doc) {
+      setTitle("Untitled");
+      return;
+    }
+
     const title = datatype?.module?.getTitle(doc);
-    title && setTitle(title);
+    setTitle(title ? title : "Untitled");
   }, [doc, repo, datatype]);
 
   return title;

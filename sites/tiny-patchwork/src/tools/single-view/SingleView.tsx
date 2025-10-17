@@ -9,6 +9,7 @@ import {
 import {
   useDocHandle,
   useDocument,
+  useRepo,
 } from "@automerge/automerge-repo-react-hooks";
 import {
   useDocRef,
@@ -18,7 +19,7 @@ import {
 import { IsSelected } from "@patchwork/context/selection";
 import { KeyhiveKit } from "@patchwork/identity";
 import { useEffect, useMemo } from "react";
-import { OpenDocumentEvent } from "../../lib/navigation";
+import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 import { SingleViewDoc } from "./datatype";
 import { Diff, getDiffOfDoc, getViewHeads } from "@patchwork/context/diff";
@@ -28,6 +29,8 @@ import {
   getStoredThreads,
   ThreadField,
 } from "@patchwork/context/comments";
+import { useTitle } from "../../lib/datatype-hooks";
+import { HasPatchworkMetadata } from "@patchwork/filesystem";
 
 const SingleView = ({
   docUrl,
@@ -65,10 +68,14 @@ const SingleView = ({
   }, [selection?.url, viewHeads]);
 
   const selectedDocHandle = useDocHandle(selectedDocUrl);
-  const [selectedDoc] = useDocument<DocWithComments>(selectedDocUrl);
+  const [selectedDoc] = useDocument<DocWithComments & HasPatchworkMetadata>(
+    selectedDocUrl
+  );
+
+  const originalDocUrl = selectedDoc?.["@patchwork"]?.copyOf;
+  const [originalDoc] = useDocument<HasPatchworkMetadata>(originalDocUrl);
 
   // mark the current document as selected
-
   const selectionContext = useSubcontext("SINGLE_VIEW");
   useEffect(() => {
     console.log("!! set currentDocRef in single view", currentDocRef);
@@ -133,6 +140,9 @@ const SingleView = ({
       keyhiveKit!.keyhive.accessForDoc(id, keyhiveDocId) !== undefined;
   }
 
+  const title = useTitle(selectedDoc as HasPatchworkMetadata);
+  const titleOfOriginalDoc = useTitle(originalDoc);
+
   // add comments to context
   const commentsContext = useSubcontext();
   useEffect(() => {
@@ -164,10 +174,30 @@ const SingleView = ({
   }
 
   return (
-    <div
-      className={`w-full h-full ${viewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
-    >
-      <patchwork-view doc-url={selectedDocUrl} key={selectedDocUrl} />
+    <div className="w-full h-full flex flex-col bg-gray-200">
+      <div className="p-2 bg-gray-100 border-gray-200 border-l border-r">
+        {title}{" "}
+        {originalDoc && originalDocUrl && (
+          <span className="text-gray-500 text-sm">
+            (Copy of{" "}
+            <button
+              className="link"
+              onClick={() => {
+                openDocument(element, originalDocUrl);
+              }}
+            >
+              {titleOfOriginalDoc}
+            </button>
+            )
+          </span>
+        )}
+      </div>
+
+      <div
+        className={`flex-1 ${viewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
+      >
+        <patchwork-view doc-url={selectedDocUrl} key={selectedDocUrl} />
+      </div>
     </div>
   );
 };

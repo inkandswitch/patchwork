@@ -115,18 +115,16 @@ export const initCommands = (
       return Automerge.clone(currentDocHandle.doc());
     });
 
+    copyDocHandle.change((doc) => {
+      doc["@patchwork"].copyOf = currentDocHandle.url;
+    });
+
     currentDocHandle.change((doc) => {
       if (!doc["@patchwork"].copies) {
         doc["@patchwork"].copies = [];
       }
 
       doc["@patchwork"].copies.push(copyDocHandle.url);
-    });
-
-    console.log("!!lco", {
-      name: originalDocLink.name,
-      type: originalDocLink.type,
-      url: copyDocHandle.url,
     });
 
     rootFolderDocHandle.change((doc) => {
