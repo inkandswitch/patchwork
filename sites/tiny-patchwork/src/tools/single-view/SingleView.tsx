@@ -120,7 +120,7 @@ const SingleView = ({
   // add doc handle to window
   useEffect(() => {
     if (currentDocRef) {
-      (window as any).currentDoc = currentDocRef.docHandle;
+      (window as any).currentDocHandle = currentDocRef.docHandle;
     }
   }, [currentDocRef]);
 

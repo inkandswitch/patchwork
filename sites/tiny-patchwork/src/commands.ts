@@ -4,6 +4,8 @@ import { TabViewDoc } from "./tools/tab-view/datatype";
 import { SingleViewDoc } from "./tools/single-view/datatype";
 import { BranchViewDoc } from "./tools/branch-view/datatype";
 import { HistoryViewDoc } from "./tools/history-view/datatype";
+import { FolderDoc, HasPatchworkMetadata } from "@patchwork/filesystem";
+import { Automerge } from "@automerge/automerge-repo/slim";
 
 export const initCommands = (
   accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
@@ -87,6 +89,55 @@ export const initCommands = (
     });
   };
 
+  const copyCurrentDoc = async () => {
+    const currentDocHandle = (window as any)
+      .currentDocHandle as DocHandle<HasPatchworkMetadata>;
+    const repo = (window as any).repo as Repo;
+    if (!currentDocHandle) {
+      return;
+    }
+
+    const rootFolderDocHandle = await repo.find<FolderDoc>(
+      accountDocHandle.doc()["@tiny-patchwork"].rootFolderUrl
+    );
+
+    const originalDocLink = rootFolderDocHandle
+      .doc()
+      .docs.find((doc) => doc.url === currentDocHandle.url);
+    if (!originalDocLink) {
+      console.log("can only copy docs that are in the root folder");
+      return;
+    }
+
+    const copyDocHandle = await repo.create2<HasPatchworkMetadata>();
+
+    copyDocHandle.update(() => {
+      return Automerge.clone(currentDocHandle.doc());
+    });
+
+    currentDocHandle.change((doc) => {
+      if (!doc["@patchwork"].copies) {
+        doc["@patchwork"].copies = [];
+      }
+
+      doc["@patchwork"].copies.push(copyDocHandle.url);
+    });
+
+    console.log("!!lco", {
+      name: originalDocLink.name,
+      type: originalDocLink.type,
+      url: copyDocHandle.url,
+    });
+
+    rootFolderDocHandle.change((doc) => {
+      doc.docs.push({
+        name: originalDocLink.name,
+        type: originalDocLink.type,
+        url: copyDocHandle.url,
+      });
+    });
+  };
+
   // Attach to window
   (window as any).$command = {
     funkySidebar,
@@ -96,5 +147,6 @@ export const initCommands = (
     branchView,
     historyView,
     commentsView,
+    copyCurrentDoc,
   };
 };
