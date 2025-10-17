@@ -18,6 +18,7 @@ const CommentsView = () => {
   const allThreadRefs = useReactive($allActiveThreadRefs) as Ref<Thread>[];
 
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+
   const selectedThreadRef = useMemo(() => {
     return allThreadRefs.find(
       (threadRef) => threadRef.value?.id === selectedThreadId
@@ -93,6 +94,14 @@ const ThreadView = ({
     });
   };
 
+  const onDeleteComment = (commentRef: Ref<Comment>) => {
+    commentRef.destroy();
+
+    if (threadRef.value.comments.length === 0) {
+      threadRef.destroy();
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <div
@@ -112,14 +121,17 @@ const ThreadView = ({
               <CommentView
                 key={commentRef.toId()}
                 commentRef={commentRef as Ref<Comment>}
+                onDeleteComment={() =>
+                  onDeleteComment(commentRef as Ref<Comment>)
+                }
               />
             );
           })}
         </div>
       </div>
       {isSelected && (
-        <div className="flex gap-2">
-          <button
+        <div className="flex gap-2 justify-end">
+          {/* <button
             className="btn btn-ghost btn-sm"
             onClick={(e) => {
               e.stopPropagation();
@@ -128,7 +140,7 @@ const ThreadView = ({
             title="Resolve comment"
           >
             Resolve
-          </button>
+          </button> */}
           <button
             className="btn btn-ghost btn-sm"
             onClick={(e) => {
@@ -147,9 +159,10 @@ const ThreadView = ({
 
 type CommentViewProps = {
   commentRef: Ref<Comment>;
+  onDeleteComment: () => void;
 };
 
-const CommentView = ({ commentRef }: CommentViewProps) => {
+const CommentView = ({ commentRef, onDeleteComment }: CommentViewProps) => {
   const comment = useRefValue(commentRef);
 
   if (!comment) {
@@ -169,7 +182,7 @@ const CommentView = ({ commentRef }: CommentViewProps) => {
 
   const onCancelDraft = (commentRef: Ref<Comment>) => {
     if (commentRef.value.content === undefined) {
-      commentRef.destroy();
+      onDeleteComment();
       return;
     }
 

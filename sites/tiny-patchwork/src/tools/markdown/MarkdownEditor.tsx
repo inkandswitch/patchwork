@@ -126,20 +126,17 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
     selectionContext.replace([selectedText.with(IsSelected(true))]);
   });
 
-  const onComment = useStaticCallback(
-    async (from: number, to: number, view: EditorView) => {
-      if (!handle) {
-        return;
-      }
-
-      console.log("create comment", from, to);
-      createComment({
-        refs: [new TextSpanRef(handle, ["content"], from, to)],
-        content: "",
-        authorId: (await repo.storageId())!,
-      });
+  const onComment = useStaticCallback(async (from: number, to: number) => {
+    if (!handle) {
+      return;
     }
-  );
+
+    createComment({
+      refs: [new TextSpanRef(handle, ["content"], from, to)],
+      content: "",
+      authorId: (await repo.storageId())!,
+    });
+  });
 
   const cmExtensions = useMemo(
     () => [

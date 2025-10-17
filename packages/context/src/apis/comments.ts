@@ -112,9 +112,13 @@ export const createReply = ({
     thread.comments.push(comment);
   });
 
+  const threadIndex = (threadRef.docHandle.doc() as DocWithComments)[
+    "@comments"
+  ]!.threads.findIndex((thread) => thread.id === threadRef.value.id);
+
   return new IdRef(
     docRef.docHandle,
-    ["@comments", "threads", threadRef.value.id, "comments"],
+    ["@comments", "threads", threadIndex, "comments"],
     commentId,
     "id"
   );
@@ -164,13 +168,26 @@ export const createComment = ({
 
 export const $allActiveThreadRefs = contextComputation<Ref<Thread>[]>(
   (context) => {
-    const threadRefsById = new Map<string, Ref<Thread>>();
+    const threadRefs = context
+      .refsWith(ThreadField)
+      .flatMap((refWithThread) => {
+        const threadRef = refWithThread.get(ThreadField);
 
-    for (const refWithThread of context.refsWith(ThreadField)) {
-      const threadRef = refWithThread.get(ThreadField);
-      threadRefsById.set(threadRef.value.id, threadRef);
-    }
+        if (threadRef.value.isResolved) {
+          return [];
+        }
 
-    return Array.from(threadRefsById.values());
+        return [threadRef];
+      });
+
+    // we need to preserver some order
+    // hack: Sort by timestamp of first comment (ascending: oldest first)
+    threadRefs.sort((a, b) => {
+      const aTimestamp = a.value.comments[0]?.timestamp ?? 0;
+      const bTimestamp = b.value.comments[0]?.timestamp ?? 0;
+      return aTimestamp - bTimestamp;
+    });
+
+    return threadRefs;
   }
 );

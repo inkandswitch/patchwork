@@ -3,6 +3,7 @@ import { TinyPatchworkAccountDoc } from "./lib/account-doc";
 import { TabViewDoc } from "./tools/tab-view/datatype";
 import { SingleViewDoc } from "./tools/single-view/datatype";
 import { BranchViewDoc } from "./tools/branch-view/datatype";
+import { HistoryViewDoc } from "./tools/history-view/datatype";
 
 export const initCommands = (
   accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
@@ -74,6 +75,18 @@ export const initCommands = (
     console.log("Switched to branch view");
   };
 
+  const historyView = async () => {
+    accountDocHandle.change((doc) => {
+      doc["@tiny-patchwork"].contextSidebarToolId = "history-view";
+    });
+  };
+
+  const commentsView = () => {
+    accountDocHandle.change((doc) => {
+      doc["@tiny-patchwork"].contextSidebarToolId = "comments-view";
+    });
+  };
+
   // Attach to window
   (window as any).$command = {
     funkySidebar,
@@ -81,5 +94,7 @@ export const initCommands = (
     tabView,
     singleView,
     branchView,
+    historyView,
+    commentsView,
   };
 };
