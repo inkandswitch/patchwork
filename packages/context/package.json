@@ -2,11 +2,10 @@
   "name": "@patchwork/context",
   "type": "module",
   "scripts": {
-    "push": "yarn build && pushwork sync",
-    "build": "vite build",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "push": "pnpm build && pushwork sync"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,24 +15,24 @@
       "types": "./dist/index.d.ts"
     },
     "./react": {
-      "import": "./dist/react.js",
-      "types": "./dist/react.d.ts"
+      "import": "./dist/frameworks/react.js",
+      "types": "./dist/frameworks/react.d.ts"
     },
     "./solid": {
-      "import": "./dist/solid.js",
-      "types": "./dist/solid.d.ts"
+      "import": "./dist/frameworks/solid.js",
+      "types": "./dist/frameworks/solid.d.ts"
     },
     "./diff": {
-      "import": "./dist/diff.js",
-      "types": "./dist/diff.d.ts"
+      "import": "./dist/apis/diff.js",
+      "types": "./dist/apis/diff.d.ts"
     },
     "./selection": {
-      "import": "./dist/selection.js",
-      "types": "./dist/selection.d.ts"
+      "import": "./dist/apis/selection.js",
+      "types": "./dist/apis/selection.d.ts"
     },
     "./comments": {
-      "import": "./dist/comments.js",
-      "types": "./dist/comments.d.ts"
+      "import": "./dist/apis/comments.js",
+      "types": "./dist/apis/comments.d.ts"
     }
   },
   "dependencies": {
@@ -50,6 +49,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^16.3.0",
     "jsdom": "^26.1.0",
+    "solid-js": "^1.9.9",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.41.0",
     "vite": "^7.1.3",
