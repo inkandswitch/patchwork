@@ -23,3 +23,9 @@ export const isSelected = memoize(
     }),
   (ref?: Ref) => ref?.toId()
 );
+
+export const $selectedRefs = contextComputation(() => {
+  return CONTEXT.refsWith(IsSelected).filter(
+    (ref) => ref.get(IsSelected) === true
+  );
+});

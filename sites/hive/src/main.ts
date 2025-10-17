@@ -18,6 +18,8 @@ const moduleWatcher = new ModuleWatcher(
 
 const params = new URLSearchParams(document.location.search);
 
+(window as any).repo = repo;
+
 registerPatchworkViewElement({
   moduleWatcher,
   repo,

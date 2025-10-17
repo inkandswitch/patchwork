@@ -1,106 +1,193 @@
-import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
+import { DocHandle } from "@automerge/automerge-repo";
 import { CONTEXT, defineField } from "../core";
 import { contextComputation } from "../core/computation";
 import { IdRef, loadRef, Ref, RefWith, SerializedRef } from "../core/refs";
 import { memoize } from "../utils/memoize";
 
+export type Thread = {
+  id: string;
+  refs: SerializedRef[];
+  isResolved: boolean;
+  comments: Comment[];
+};
+
 export type DocWithComments = {
-  "@comments"?: Comment[];
+  "@comments"?: {
+    threads: Thread[];
+  };
 };
 
 export type Comment = {
-  refs: SerializedRef[];
-  isDraft: boolean;
   id: string;
   content?: string;
   draftContent?: string;
-  contactUrl: AutomergeUrl;
+  authorId: string;
   timestamp: number;
 };
 
 // todo: add support for collection fields
-const CommentsSymbol = Symbol("comments");
-export type Comments = typeof CommentsSymbol;
-export const Comments = defineField<Comments, Ref<Comment>>(
-  "comments",
-  CommentsSymbol
+const ThreadSymbol = Symbol("thread");
+export type ThreadField = typeof ThreadSymbol;
+export const ThreadField = defineField<ThreadField, Ref<Thread>>(
+  "commentThreads",
+  ThreadSymbol
 );
 
-export const getComments = memoize(
+export const getCommentThreads = memoize(
   (ref: Ref) =>
     contextComputation(() => {
-      const comments = CONTEXT.resolve(ref).get(Comments);
-      return comments ? [comments] : [];
+      const threads = CONTEXT.resolve(ref).get(ThreadField);
+      return threads ? [threads] : [];
     }),
   (ref: Ref) => ref.toId()
 );
 
-export const getCommentsOfDoc = (docHandle: DocHandle<DocWithComments>) => {
-  const refsWithComments: RefWith<Comments>[] = [];
+export const getStoredThreads = (
+  docHandle: DocHandle<DocWithComments>
+): RefWith<ThreadField>[] => {
+  const refsWithThreads: RefWith<ThreadField>[] = [];
 
-  const comments = docHandle.doc()["@comments"];
+  const storedThreads = docHandle.doc()["@comments"]?.threads;
 
-  if (!comments) {
+  if (!storedThreads) {
     return [];
   }
 
-  for (const comment of comments) {
-    const commentRef = new IdRef<Comment>(
+  for (const thread of Object.values(storedThreads)) {
+    const threadRef = new IdRef<Thread>(
       docHandle,
-      ["@comments"],
-      comment.id,
+      ["@comments", "threads"],
+      thread.id,
       "id"
     );
 
-    for (const serializedRef of comment.refs) {
+    for (const serializedRef of thread.refs) {
       const ref = loadRef(docHandle, serializedRef);
 
-      refsWithComments.push(ref.with(Comments(commentRef)));
+      refsWithThreads.push(ref.with(ThreadField(threadRef)));
     }
   }
 
-  return refsWithComments;
+  return refsWithThreads;
+};
+
+export const getThreadsAt = memoize(
+  (ref?: Ref) =>
+    contextComputation(() => {
+      if (!ref) {
+        return [];
+      }
+
+      return CONTEXT.refsWith(ThreadField).filter((refWithComments) => {
+        return refWithComments.isElementOf(ref);
+      });
+    }),
+  (ref?: Ref) => ref?.toId()
+);
+
+export const createReply = ({
+  threadRef,
+  content,
+  authorId,
+}: {
+  threadRef: Ref<Thread>;
+  content?: string;
+  authorId: string;
+}): Ref<Comment> => {
+  const docRef = threadRef.docRef as Ref<DocWithComments, DocWithComments>;
+
+  const commentId = crypto.randomUUID();
+
+  threadRef.change((thread) => {
+    const comment: Comment = {
+      id: commentId,
+      authorId,
+      timestamp: Date.now(),
+    };
+
+    if (content) {
+      comment.content = content;
+    }
+
+    thread.comments.push(comment);
+  });
+
+  const threadIndex = (threadRef.docHandle.doc() as DocWithComments)[
+    "@comments"
+  ]!.threads.findIndex((thread) => thread.id === threadRef.value.id);
+
+  return new IdRef(
+    docRef.docHandle,
+    ["@comments", "threads", threadIndex, "comments"],
+    commentId,
+    "id"
+  );
+};
+
+export const createCommentThread = (refs: Ref[]): Ref<Thread> => {
+  // todo: handle comments across documents
+  const docRef = refs[0].docRef as Ref<DocWithComments, DocWithComments>;
+
+  const threadId = crypto.randomUUID();
+
+  docRef.change((doc) => {
+    if (!doc["@comments"]) {
+      doc["@comments"] = {
+        threads: [],
+      };
+    }
+
+    doc["@comments"].threads.push({
+      id: threadId,
+      refs: refs.map((ref) => ref.serialize()),
+      isResolved: false,
+      comments: [],
+    });
+  });
+
+  return new IdRef(docRef.docHandle, ["@comments", "threads"], threadId, "id");
 };
 
 export const createComment = ({
   refs,
-  contactUrl,
+  content,
+  authorId,
 }: {
   refs: Ref[];
   content: string;
-  contactUrl: AutomergeUrl;
-}): RefWith<Comments> => {
-  if (refs.length === 0) {
-    throw new Error("A comments needs to be attached to at least one ref");
-  }
+  authorId: string;
+}): Ref<Comment> => {
+  const threadRef = createCommentThread(refs);
 
-  const docRef = refs[0].docRef as Ref<DocWithComments, DocWithComments>;
-
-  for (const ref of refs) {
-    if (!ref.docRef.isEqual(docRef)) {
-      throw new Error(
-        "Creating comments across documents is currently not supported"
-      );
-    }
-  }
-
-  const commentId = crypto.randomUUID();
-
-  docRef.change((doc) => {
-    if (!doc["@comments"]) {
-      doc["@comments"] = [];
-    }
-
-    doc["@comments"].push({
-      refs: refs.map((ref) => ref.serialize()),
-      isDraft: true,
-      id: crypto.randomUUID(),
-      contactUrl,
-      timestamp: Date.now(),
-    });
+  return createReply({
+    threadRef,
+    content,
+    authorId,
   });
-
-  return new IdRef(docRef.docHandle, ["@comments"], commentId, "id");
 };
 
-export const allComments = contextComputation(() => CONTEXT.refsWith(Comments));
+export const $allActiveThreadRefs = contextComputation<Ref<Thread>[]>(
+  (context) => {
+    const threadRefs = context
+      .refsWith(ThreadField)
+      .flatMap((refWithThread) => {
+        const threadRef = refWithThread.get(ThreadField);
+
+        if (threadRef.value.isResolved) {
+          return [];
+        }
+
+        return [threadRef];
+      });
+
+    // we need to preserver some order
+    // hack: Sort by timestamp of first comment (ascending: oldest first)
+    threadRefs.sort((a, b) => {
+      const aTimestamp = a.value.comments[0]?.timestamp ?? 0;
+      const bTimestamp = b.value.comments[0]?.timestamp ?? 0;
+      return aTimestamp - bTimestamp;
+    });
+
+    return threadRefs;
+  }
+);

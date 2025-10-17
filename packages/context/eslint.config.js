@@ -16,14 +16,14 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      parserOptions: {
+        tsconfigRootDir: "/tsconfig.json",
+      },
     },
     rules: {
       "no-unused-vars": "warn",
       "@typescript-eslint/no-unused-vars": "warn",
       "@typescript-eslint/no-explicit-any": "off",
-    },
-    parserOptions: {
-      project: "./tsconfig.json",
     },
   },
 ]);
