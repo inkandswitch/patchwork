@@ -1,8 +1,8 @@
 import { DataTypeImplementation } from "@patchwork/plugins";
-import { DocLink } from "@patchwork/filesystem";
+import type { AutomergeUrl } from "@automerge/automerge-repo";
 
 export interface TabViewDoc {
-  tabs: DocLink[];
+  tabs: { url: AutomergeUrl; toolId?: string }[];
   activeTabIndex?: number;
 }
 
@@ -10,7 +10,7 @@ export const TabViewDataType: DataTypeImplementation<TabViewDoc> = {
   init: (doc: TabViewDoc) => {
     doc.tabs = [];
   },
-  async getTitle(doc: TabViewDoc) {
+  getTitle(doc: TabViewDoc) {
     return "Tab Viewer";
   },
   markCopy: (doc: TabViewDoc) => {

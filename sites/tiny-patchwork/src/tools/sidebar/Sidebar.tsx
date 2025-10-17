@@ -10,6 +10,7 @@ import { useState } from "react";
 import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 import { useDatatypeDescriptions } from "../../lib/datatype-hooks";
+import type { TinyPatchworkAccountDoc } from "../../lib/account-doc.js";
 
 const FileEntry = ({
   docLink,
@@ -23,8 +24,7 @@ const FileEntry = ({
   const onOpenDocument = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("open document");
-    openDocument(root!, docLink);
+    openDocument(root!, docLink.url);
   };
 
   return (
@@ -57,11 +57,7 @@ const FolderEntry = ({
     e.preventDefault();
     e.stopPropagation();
     console.log("open document");
-    openDocument(root!, {
-      url: docUrl,
-      name: folderDoc.title,
-      type: "folder",
-    });
+    openDocument(root!, docUrl);
   };
 
   const onAddDocument = async (dataType: DataType<unknown>) => {
@@ -140,7 +136,7 @@ const FolderView = ({
       doc.docs.push(docLink);
     });
 
-    openDocument(root!, docLink);
+    openDocument(root!, docLink.url);
   };
 
   return (
@@ -214,4 +210,25 @@ const AddDocumentDropdown = ({
   );
 };
 
-export const renderSidebar = toolify(FolderView);
+function Sidebar({ docUrl }: { docUrl: AutomergeUrl }) {
+  const doc = useDocRef<TinyPatchworkAccountDoc | FolderDoc>(docUrl);
+
+  return (
+    <div className="p-2">
+      <h2 className="text-xl p-3">
+        <span className="text-xs">tiny</span> patchwork
+      </h2>
+      {doc && (
+        <FolderView
+          docUrl={
+            "@tiny-patchwork" in doc.value
+              ? doc.value["@tiny-patchwork"].rootFolderUrl
+              : docUrl
+          }
+        />
+      )}
+    </div>
+  );
+}
+
+export const renderSidebar = toolify(Sidebar);

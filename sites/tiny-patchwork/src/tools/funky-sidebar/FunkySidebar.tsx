@@ -13,6 +13,8 @@ import {
   RocketIcon,
 } from "lucide-react";
 import { openDocument } from "../../lib/navigation";
+import { useDocRef } from "@patchwork/context/react";
+import type { TinyPatchworkAccountDoc } from "../../lib/account-doc.js";
 
 const FileEntry = ({ docLink }: { docLink: DocLink }) => {
   const [root, setRoot] = useState<HTMLElement | null>(null);
@@ -22,7 +24,7 @@ const FileEntry = ({ docLink }: { docLink: DocLink }) => {
     e.preventDefault();
     e.stopPropagation();
     console.log("open document");
-    openDocument(root!, docLink);
+    openDocument(root!, docLink.url);
   };
 
   const getRandomColor = () => {
@@ -47,7 +49,7 @@ const FileEntry = ({ docLink }: { docLink: DocLink }) => {
         title={docLink.name}
         className={`
           flex items-center gap-3 p-3 rounded-xl cursor-pointer
-          bg-gradient-to-r ${getRandomColor()} 
+          bg-gradient-to-r ${getRandomColor()}
           text-white font-medium shadow-lg
           hover:shadow-xl hover:shadow-purple-500/25
           transition-all duration-300 ease-out
@@ -77,11 +79,7 @@ const FolderEntry = ({ docUrl }: { docUrl: AutomergeUrl }) => {
     e.preventDefault();
     e.stopPropagation();
     console.log("open document");
-    openDocument(root!, {
-      url: docUrl,
-      name: folderDoc.title,
-      type: "folder",
-    });
+    openDocument(root!, docUrl);
   };
 
   const onAddDocument = async (dataType: DataType<unknown>) => {
@@ -119,7 +117,7 @@ const FolderEntry = ({ docUrl }: { docUrl: AutomergeUrl }) => {
               <FolderIcon
                 size={24}
                 className={`
-                  transition-all duration-300 
+                  transition-all duration-300
                   ${isOpen ? "rotate-12 text-yellow-400" : "text-blue-400"}
                   ${isHovered ? "animate-bounce" : ""}
                 `}
@@ -181,7 +179,7 @@ const FolderView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
       doc.docs.push(docLink);
     });
 
-    openDocument(root!, docLink);
+    openDocument(root!, docLink.url);
   };
 
   return (
@@ -337,4 +335,20 @@ const AddDocumentDropdown = ({
   );
 };
 
-export const renderSidebar = toolify(FolderView);
+function FunkySidebar({ docUrl }: { docUrl: AutomergeUrl }) {
+  const doc = useDocRef<TinyPatchworkAccountDoc | FolderDoc>(docUrl);
+
+  return (
+    doc && (
+      <FolderView
+        docUrl={
+          "@tiny-patchwork" in doc.value
+            ? doc.value["@tiny-patchwork"].rootFolderUrl
+            : docUrl
+        }
+      />
+    )
+  );
+}
+
+export const renderSidebar = toolify(FunkySidebar);

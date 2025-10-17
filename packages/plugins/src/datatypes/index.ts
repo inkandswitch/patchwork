@@ -9,7 +9,7 @@ import type { DocLink, HasPatchworkMetadata } from "@patchwork/filesystem";
 // DataType implementation interface
 export type DataTypeImplementation<D = unknown> = {
   init: (doc: D, repo: Repo) => void;
-  getTitle: (doc: D, repo: Repo) => Promise<string>;
+  getTitle: (doc: D) => string;
   setTitle?: (doc: any, title: string) => void;
   markCopy: (doc: D) => void;
   actions?: Record<string, (doc: Doc<D>, args: object) => void>;

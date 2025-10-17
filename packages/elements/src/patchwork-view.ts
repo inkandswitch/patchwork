@@ -11,6 +11,7 @@ import {
   type ModuleWatcher,
 } from "@patchwork/filesystem";
 import {
+  getLoadedFallbackToolId,
   getLoadedPlugin,
   onPluginsChange,
   type Tool,
@@ -46,7 +47,7 @@ export function registerPatchworkViewElement(
 
   customElements.define(
     name,
-    class RootstockTool extends HTMLElement {
+    class PatchworkViewElement extends HTMLElement {
       // attributes, if these change it's new game +
       #docUrl: AutomergeUrl | null = null;
       #toolId: string | null = null;
@@ -135,7 +136,12 @@ export function registerPatchworkViewElement(
       async #reinit() {
         this.#teardown();
         if (!this.docUrl) return;
-        if (!this.toolId) return;
+        this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
+        moduleWatcher.loadSuggestedImportUrl(this.docUrl);
+
+        if (!this.toolId) {
+          this.toolId = await getLoadedFallbackToolId(this.#handle.doc());
+        }
 
         this.#teardowns.add(
           onPluginsChange("patchwork:tool", (tools) => {
@@ -144,12 +150,12 @@ export function registerPatchworkViewElement(
             }
           })
         );
-        this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
-        moduleWatcher.loadSuggestedImportUrl(this.docUrl);
+
         this.#handle.on("change", this.#onDocChange);
         this.#teardowns.add(() =>
           this.#handle!.off("change", this.#onDocChange)
         );
+
         this.#queueRender();
       }
 

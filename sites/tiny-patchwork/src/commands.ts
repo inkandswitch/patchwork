@@ -4,32 +4,20 @@ import { TabViewDoc } from "./tools/tab-view/datatype";
 import { SingleViewDoc } from "./tools/single-view/datatype";
 import { BranchViewDoc } from "./tools/branch-view/datatype";
 
-declare global {
-  interface Window {
-    $command: {
-      funkySidebar: () => void;
-      normalSidebar: () => void;
-      tabView: () => void;
-      singleView: () => void;
-      branchView: () => void;
-    };
-  }
-}
-
 export const initCommands = (
   accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
   repo: Repo
 ) => {
   const funkySidebar = () => {
     accountDocHandle.change((doc) => {
-      doc["@tiny-patchwork"].rootFolderToolId = "funky-sidebar";
+      doc["@tiny-patchwork"].sidebarToolId = "funky-sidebar";
     });
     console.log("Switched to funky sidebar");
   };
 
   const normalSidebar = () => {
     accountDocHandle.change((doc) => {
-      doc["@tiny-patchwork"].rootFolderToolId = "simple-sidebar";
+      doc["@tiny-patchwork"].sidebarToolId = "simple-sidebar";
     });
     console.log("Switched to normal sidebar");
   };
@@ -87,7 +75,7 @@ export const initCommands = (
   };
 
   // Attach to window
-  window.$command = {
+  (window as any).$command = {
     funkySidebar,
     normalSidebar,
     tabView,

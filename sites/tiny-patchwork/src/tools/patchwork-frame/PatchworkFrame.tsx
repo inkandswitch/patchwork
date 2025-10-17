@@ -4,7 +4,7 @@ import { CONTEXT } from "@patchwork/context";
 import { KeyhiveKit } from "@patchwork/identity";
 import { useEffect, useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
-import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
+import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 
 CONTEXT.subscribe(() => {
@@ -27,7 +27,7 @@ export const renderFrame = toolify(
       }
     );
 
-    const { rootFolderUrl, contextSidebarToolId, rootFolderToolId, mainView } =
+    const { rootFolderUrl, contextSidebarToolId, sidebarToolId, mainView } =
       accountDoc["@tiny-patchwork"];
 
     const [mainViewElement, setMainViewElement] = useState<HTMLElement | null>(
@@ -39,38 +39,37 @@ export const renderFrame = toolify(
     // listen to open document events
     useEffect(() => {
       if (element) {
-        element.addEventListener("patchwork:open-document", (event) => {
-          const { docLink } = event as OpenDocumentEvent;
+        (element as HTMLElement).addEventListener(
+          "patchwork:open-document",
+          function (event) {
+            if (!mainViewElement) {
+              return;
+            }
+            event.stopPropagation();
+            event.stopImmediatePropagation();
 
-          if (!mainViewElement) {
-            return;
+            if (event.target === this) {
+              openDocument(mainViewElement, event.detail.url);
+            }
           }
-
-          openDocument(mainViewElement, docLink);
-        });
+        );
       }
     }, [changeAccountDoc, element, repo, mainViewElement]);
 
     return (
       <div className="w-screen h-screen flex">
-        <div className="w-[500px] bg-gray-100 p-2 flex flex-col">
-          <div className="p-2">
-            <h2 className="text-xl p-3">
-              <span className="text-xs">tiny</span> patchwork
-            </h2>
-          </div>
-          {rootFolderToolId && (
-            // @ts-expect-error fix later
+        <div className="w-[400px] flex flex-col">
+          {sidebarToolId && (
             <patchwork-view
-              doc-url={rootFolderUrl}
-              tool-id={rootFolderToolId}
+              class="h-full"
+              doc-url={docUrl}
+              tool-id={sidebarToolId}
             />
           )}
         </div>
 
         <div className="w-full h-full overflow-auto">
           {mainView && (
-            // @ts-expect-error fix later
             <patchwork-view
               ref={setMainViewElement}
               doc-url={mainView.documentUrl}
@@ -81,8 +80,7 @@ export const renderFrame = toolify(
         </div>
 
         {contextSidebarToolId && (
-          <div className="w-[500px] bg-gray-100">
-            {/* @ts-expect-error fix later */}
+          <div className="w-[400px] bg-gray-100">
             <patchwork-view
               doc-url={rootFolderUrl} // todo: context tool doesn't have a doc url
               tool-id={contextSidebarToolId}

@@ -64,22 +64,24 @@ const BranchView = ({
   // Listen for open document events
   useEffect(() => {
     if (element) {
-      const handleOpenDocument = (event: Event) => {
-        const { docLink } = event as OpenDocumentEvent;
+      const handleOpenDocument = (event: OpenDocumentEvent) => {
         console.log("branch view: handle open document event", event);
 
         changeBranchViewDoc((doc) => {
           // If it's a different document, switch to it and reset to main branch
-          if (doc.currentDocument?.url !== docLink.url) {
-            doc.currentDocument = docLink;
+          if (doc.currentDocument?.url !== event.detail.url) {
+            doc.currentDocument = event.detail;
             delete doc.selectedBranchDocUrl; // Reset to main branch
           }
         });
       };
 
-      element.addEventListener("patchwork:open-document", handleOpenDocument);
+      (element as HTMLElement).addEventListener(
+        "patchwork:open-document",
+        handleOpenDocument
+      );
       return () => {
-        element.removeEventListener(
+        (element as HTMLElement).removeEventListener(
           "patchwork:open-document",
           handleOpenDocument
         );
@@ -314,10 +316,9 @@ const BranchView = ({
       </div>
       <div className="flex-1">
         {checkedOutDocUrl && (
-          // @ts-expect-error patchwork-view is a custom element
           <patchwork-view
             doc-url={checkedOutDocUrl}
-            tool-id={branchViewDoc.currentDocument.type}
+            tool-id={branchViewDoc.currentDocument?.toolId}
             key={checkedOutDocUrl}
           />
         )}

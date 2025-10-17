@@ -5,7 +5,7 @@ export const MarkdownDataType: DataTypeImplementation<MarkdownDoc> = {
   init: (doc: MarkdownDoc) => {
     doc.content = "# Untitled";
   },
-  async getTitle(doc: MarkdownDoc) {
+  getTitle(doc: MarkdownDoc) {
     const content = doc.content;
     const frontmatterRegex = /---\n([\s\S]+?)\n---/;
     const frontmatterMatch = content.match(frontmatterRegex);

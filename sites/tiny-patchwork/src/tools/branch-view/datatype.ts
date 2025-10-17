@@ -11,7 +11,7 @@ export type Branch = {
 };
 
 export interface BranchViewDoc {
-  currentDocument?: DocLink;
+  currentDocument?: { url: AutomergeUrl; toolId?: string }; // The document being viewed
   selectedBranchDocUrl?: AutomergeUrl; // The currently checked out branch, or undefined for main
 }
 
@@ -20,7 +20,7 @@ export const BranchViewDataType: DataTypeImplementation<BranchViewDoc> = {
     doc.currentDocument = undefined;
     doc.selectedBranchDocUrl = undefined;
   },
-  async getTitle(doc: BranchViewDoc) {
+  getTitle(doc: BranchViewDoc) {
     return "Branch View";
   },
   markCopy: (doc: BranchViewDoc) => {

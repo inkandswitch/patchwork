@@ -37,9 +37,7 @@ const SingleView = ({
 }) => {
   const [singleViewDoc, changeSingleViewDoc] = useDocument<SingleViewDoc>(
     docUrl,
-    {
-      suspense: true,
-    }
+    { suspense: true }
   );
 
   const selectionContext = useSubcontext("SINGLE_VIEW");
@@ -80,19 +78,22 @@ const SingleView = ({
   // Listen for open document events
   useEffect(() => {
     if (element) {
-      const handleOpenDocument = (event: Event) => {
-        const { docLink } = event as OpenDocumentEvent;
+      const handleOpenDocument = (event: OpenDocumentEvent) => {
+        const { url, toolId } = event.detail;
         console.log("single view: handle open document event", event);
 
         changeSingleViewDoc((doc) => {
           // Simply replace the current document
-          doc.currentDocument = docLink;
+          doc.currentDocument = { url, toolId: toolId ?? null };
         });
       };
 
-      element.addEventListener("patchwork:open-document", handleOpenDocument);
+      (element as HTMLElement).addEventListener(
+        "patchwork:open-document",
+        handleOpenDocument
+      );
       return () => {
-        element.removeEventListener(
+        (element as HTMLElement).removeEventListener(
           "patchwork:open-document",
           handleOpenDocument
         );
@@ -118,27 +119,16 @@ const SingleView = ({
 
   // add comments to context
   const commentsContext = useSubcontext();
-
   const [currentDoc] = useDocument<DocWithComments>(currentDocument?.url);
-
   useEffect(() => {
-    console.log("!! currentDoc changed", currentDoc);
-
     if (currentDocRef) {
       const storedThreads = getStoredThreads(
         currentDocRef.docHandle as DocHandle<DocWithComments>
       );
 
-      console.log(
-        "!! storedThreads",
-        storedThreads[0]?.get(ThreadField)?.value?.comments[0]
-      );
-
       commentsContext.replace(storedThreads as RefWith<ThreadField>[]);
     }
   }, [currentDoc, currentDocRef, commentsContext]);
-
-  console.log("!! has access", hasAccess, currentDocument?.url);
 
   if (!hasAccess) {
     return (
@@ -168,12 +158,7 @@ const SingleView = ({
     <div
       className={`w-full h-full ${viewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
     >
-      {/* @ts-expect-error patchwork-view is a custom element */}
-      <patchwork-view
-        doc-url={currentDocUrl}
-        tool-id={currentDocument.type}
-        key={currentDocUrl}
-      />
+      <patchwork-view doc-url={currentDocUrl} key={currentDocUrl} />
     </div>
   );
 };

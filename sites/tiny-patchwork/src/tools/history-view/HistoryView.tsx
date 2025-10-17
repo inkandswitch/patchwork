@@ -25,7 +25,7 @@ const HistoryView = () => {
       </div>
 
       {selectedDocUrls.map((url) => (
-        <DocHistoryView docUrl={url} />
+        <DocHistoryView docUrl={url} key={url} />
       ))}
     </div>
   );

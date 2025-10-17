@@ -8,6 +8,7 @@ import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
 import { useDatatypeDescriptions } from "../../lib/datatype-hooks";
 import { TabViewDoc } from "./datatype";
+import type { HasPatchworkMetadata } from "@patchwork/filesystem";
 
 const TabViewer = ({
   docUrl,
@@ -41,14 +42,16 @@ const TabViewer = ({
   // Listen for open document events
   useEffect(() => {
     if (element) {
-      const handleOpenDocument = (event: Event) => {
-        const { docLink } = event as OpenDocumentEvent;
+      const handleOpenDocument = (event: OpenDocumentEvent) => {
+        const {
+          detail: { url, toolId },
+        } = event;
         console.log("!! tab viewer: handle open document event", event);
 
         changeTabViewDoc((doc) => {
           // Check if tab already exists
           const existingTabIndex = doc.tabs.findIndex(
-            (tab) => tab.url === docLink.url
+            (tab) => tab.url === url && tab.toolId === toolId
           );
 
           if (existingTabIndex >= 0) {
@@ -56,15 +59,18 @@ const TabViewer = ({
             doc.activeTabIndex = existingTabIndex;
           } else {
             // Create new tab
-            doc.tabs.push(docLink);
+            doc.tabs.push({ url, toolId });
             doc.activeTabIndex = doc.tabs.length - 1;
           }
         });
       };
 
-      element.addEventListener("patchwork:open-document", handleOpenDocument);
+      (element as HTMLElement).addEventListener(
+        "patchwork:open-document",
+        handleOpenDocument
+      );
       return () => {
-        element.removeEventListener(
+        (element as HTMLElement).removeEventListener(
           "patchwork:open-document",
           handleOpenDocument
         );
@@ -77,7 +83,7 @@ const TabViewer = ({
       doc.activeTabIndex = index;
     });
 
-    openDocument(element, tabViewDoc.tabs[index]);
+    openDocument(element, tabViewDoc.tabs[index]?.url);
   };
 
   const handleCloseTab = (index: number, event: React.MouseEvent) => {
@@ -111,12 +117,16 @@ const TabViewer = ({
       {/* Tab Bar */}
       <div role="tablist" className="tabs tabs-lifted">
         {tabViewDoc.tabs.map((tab, index) => {
-          const datatype = datatypes.find((dt) => dt.id === tab.type);
-          const toolName = datatype?.name || tab.type;
+          const ref = useDocRef<HasPatchworkMetadata>(tab?.url);
+          const type = ref?.value["@patchwork"].type;
+
+          const datatype = datatypes.find((dt) => dt.id === type);
+          const datatypeName = datatype?.name || type;
+          const tabName = datatype?.module.getTitle(ref?.value) ?? datatypeName;
 
           return (
             <a
-              key={`${tab.url}-${index}`}
+              key={`${tab}-${index}`}
               role="tab"
               className={`tab ${
                 index === tabViewDoc.activeTabIndex ? "tab-active" : ""
@@ -125,7 +135,7 @@ const TabViewer = ({
             >
               <div className="flex items-center gap-2">
                 <div className="flex flex-col items-start">
-                  <span className="text-sm">{tab.name}</span>
+                  <span className="text-sm">{tabName}</span>
                 </div>
                 <button
                   className="btn btn-ghost btn-xs"
@@ -144,7 +154,7 @@ const TabViewer = ({
         {activeTab && (
           <View
             docUrl={activeTab.url}
-            toolId={activeTab.type}
+            toolId={activeTab.toolId}
             key={activeTab.url}
           />
         )}
@@ -153,11 +163,29 @@ const TabViewer = ({
   );
 };
 
-const View = ({ docUrl, toolId }: { docUrl: AutomergeUrl; toolId: string }) => {
-  return (
-    // @ts-expect-error patchwork-view is a custom element
-    <patchwork-view doc-url={docUrl} tool-id={toolId} />
-  );
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "patchwork-view": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        "doc-url": string;
+        "tool-id"?: string | null;
+        class?: string;
+      };
+    }
+  }
+}
+
+const View = ({
+  docUrl,
+  toolId,
+}: {
+  docUrl: AutomergeUrl;
+  toolId?: string;
+}) => {
+  return <patchwork-view doc-url={docUrl} tool-id={toolId} />;
 };
 
 export const renderTabViewer = toolify(TabViewer);

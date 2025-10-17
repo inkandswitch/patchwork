@@ -8,7 +8,7 @@ export type TinyPatchworkAccountDoc = {
     rootFolderUrl: AutomergeUrl;
     moduleSettingsUrl: AutomergeUrl;
     frameToolId: string;
-    rootFolderToolId?: string;
+    sidebarToolId?: string;
     mainView: {
       documentUrl: AutomergeUrl;
       toolId: string;
@@ -23,7 +23,30 @@ export const initAccountDoc = async (
 ) => {
   const tinyPatchworkConfig = handle.doc()["@tiny-patchwork"];
 
+  // todo(2025-10) remove when everyone's probably been updated
   if (tinyPatchworkConfig) {
+    const { moduleSettingsUrl } = tinyPatchworkConfig;
+
+    const moduleSettings =
+      await repo.find<ModuleSettingsDoc>(moduleSettingsUrl);
+
+    if (!moduleSettings.doc()["@patchwork"]) {
+      moduleSettings.change((doc) => {
+        doc["@patchwork"] = { type: "patchwork:module-settings" };
+      });
+    }
+
+    const rootFolderToolId =
+      "rootFolderToolId" in tinyPatchworkConfig &&
+      tinyPatchworkConfig.rootFolderToolId;
+
+    if (typeof rootFolderToolId == "string") {
+      handle.change((doc) => {
+        doc["@tiny-patchwork"]!.sidebarToolId = rootFolderToolId;
+        delete (doc["@tiny-patchwork"]! as any).rootFolderToolId;
+      });
+    }
+
     return;
   }
 
@@ -37,7 +60,7 @@ export const initAccountDoc = async (
 
   const moduleSettingsHandle = (await repo.create2({
     ["@patchwork"]: {
-      type: "module-settings",
+      type: "patchwork:module-settings",
     },
     modules: [],
   })) as DocHandle<ModuleSettingsDoc>;
@@ -62,8 +85,8 @@ export const initAccountDoc = async (
 
     doc["@tiny-patchwork"] = {
       frameToolId: "patchwork-frame",
-      rootFolderToolId: "simple-sidebar",
-      contextSidebarToolId: "comments-view",
+      sidebarToolId: "simple-sidebar",
+      contextSidebarToolId: "history-view",
       rootFolderUrl: rootFolderHandle.url,
       moduleSettingsUrl: moduleSettingsHandle.url,
       mainView: {
