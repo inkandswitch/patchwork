@@ -46,27 +46,35 @@ const SingleView = ({
     { suspense: true }
   );
 
-  const { selection } = singleViewDoc;
+  const { selection, highlightChanges } = singleViewDoc;
 
   const currentDocRef = useDocRef(selection?.url);
 
-  const viewHeads = useReactive(getViewHeads(currentDocRef));
+  const contextViewHeads = useReactive(getViewHeads(currentDocRef));
+
+  const afterHeads = useMemo(() => {
+    if (contextViewHeads) {
+      return contextViewHeads.afterHeads;
+    }
+
+    return undefined;
+  }, [contextViewHeads, highlightChanges, currentDocRef]);
+
   const selectedDocUrl = useMemo(() => {
     if (!selection?.url) {
       return undefined;
     }
 
-    if (!viewHeads) {
+    if (!afterHeads) {
       return selection.url;
     }
 
     const currentDocumentId = parseAutomergeUrl(selection.url).documentId;
     return stringifyAutomergeUrl({
       documentId: currentDocumentId,
-      heads: encodeHeads(viewHeads.afterHeads),
+      heads: encodeHeads(afterHeads),
     });
-  }, [selection?.url, viewHeads]);
-
+  }, [selection?.url, afterHeads]);
   const selectedDocHandle = useDocHandle(selectedDocUrl);
   const [selectedDoc] = useDocument<DocWithComments & HasPatchworkMetadata>(
     selectedDocUrl
@@ -74,6 +82,18 @@ const SingleView = ({
 
   const originalDocUrl = selectedDoc?.["@patchwork"]?.copyOf;
   const [originalDoc] = useDocument<HasPatchworkMetadata>(originalDocUrl);
+
+  const beforeHeads = useMemo(() => {
+    if (contextViewHeads) {
+      return contextViewHeads.beforeHeads;
+    }
+
+    if (highlightChanges && originalDocUrl) {
+      return parseAutomergeUrl(originalDocUrl).hexHeads;
+    }
+
+    return undefined;
+  }, [contextViewHeads, highlightChanges, originalDocUrl]);
 
   // mark the current document as selected
   const selectionContext = useSubcontext("SINGLE_VIEW");
@@ -86,12 +106,13 @@ const SingleView = ({
 
   // Compute diffs when on a branch with highlight changes enabled
   const diffsOfDoc = useMemo<RefWith<Diff>[]>(() => {
-    if (!selectedDocHandle || !viewHeads) {
+    void selectedDoc;
+    if (!selectedDocHandle || !beforeHeads) {
       return [];
     }
 
-    return getDiffOfDoc(selectedDocHandle, viewHeads.beforeHeads);
-  }, [selectedDocHandle, viewHeads]);
+    return getDiffOfDoc(selectedDocHandle, beforeHeads);
+  }, [selectedDocHandle, beforeHeads, selectedDoc]);
 
   const diffContext = useSubcontext("SINGLE_VIEW_DIFF");
   useEffect(() => {
@@ -175,26 +196,45 @@ const SingleView = ({
 
   return (
     <div className="w-full h-full flex flex-col bg-gray-200">
-      <div className="p-2 bg-gray-100 border-gray-200 border-l border-r">
-        {title}{" "}
-        {originalDoc && originalDocUrl && (
-          <span className="text-gray-500 text-sm">
-            (Copy of{" "}
-            <button
-              className="link"
-              onClick={() => {
-                openDocument(element, originalDocUrl);
+      <div className="p-2 bg-gray-100 border-gray-200 border-l border-r flex items-center">
+        <div className="flex items-center gap-2">
+          {title}{" "}
+          {originalDoc && originalDocUrl && (
+            <div className="text-gray-500 text-sm">
+              (Copy of{" "}
+              <button
+                className="link"
+                onClick={() => {
+                  openDocument(element, originalDocUrl);
+                }}
+              >
+                {titleOfOriginalDoc}
+              </button>
+              )
+            </div>
+          )}
+        </div>
+        <div className="flex-1" />
+        {originalDoc && !contextViewHeads && (
+          <label className="label text-sm">
+            <input
+              type="checkbox"
+              defaultChecked
+              className="checkbox checkbox-sm"
+              checked={highlightChanges}
+              onChange={(e) => {
+                changeSingleViewDoc((doc) => {
+                  doc.highlightChanges = e.target.checked;
+                });
               }}
-            >
-              {titleOfOriginalDoc}
-            </button>
-            )
-          </span>
+            />
+            Highlight changes
+          </label>
         )}
       </div>
 
       <div
-        className={`flex-1 ${viewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
+        className={`flex-1 ${contextViewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
       >
         <patchwork-view doc-url={selectedDocUrl} key={selectedDocUrl} />
       </div>

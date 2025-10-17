@@ -1,4 +1,9 @@
-import { DocHandle, Repo } from "@automerge/automerge-repo";
+import {
+  DocHandle,
+  encodeHeads,
+  Repo,
+  stringifyAutomergeUrl,
+} from "@automerge/automerge-repo";
 import { TinyPatchworkAccountDoc } from "./lib/account-doc";
 import { TabViewDoc } from "./tools/tab-view/datatype";
 import { SingleViewDoc } from "./tools/single-view/datatype";
@@ -116,7 +121,12 @@ export const initCommands = (
     });
 
     copyDocHandle.change((doc) => {
-      doc["@patchwork"].copyOf = currentDocHandle.url;
+      const heads = encodeHeads(Automerge.getHeads(currentDocHandle.doc()));
+
+      doc["@patchwork"].copyOf = stringifyAutomergeUrl({
+        documentId: currentDocHandle.documentId,
+        heads,
+      });
     });
 
     currentDocHandle.change((doc) => {
