@@ -1,67 +1,163 @@
-import { AutomergeUrl } from "@automerge/automerge-repo";
-import { CONTEXT, contextComputation, Ref, RefWith } from "@patchwork/context";
-import { Comments } from "@patchwork/context/comments";
-import { useReactive } from "@patchwork/context/react";
+import { IdRef, loadRef, Ref } from "@patchwork/context";
+import type { Comment, Thread } from "@patchwork/context/comments";
+import { $allActiveThreadRefs, createReply } from "@patchwork/context/comments";
+import {
+  useReactive,
+  useRefValue,
+  useSubcontext,
+} from "@patchwork/context/react";
+import { useEffect, useMemo, useState } from "react";
+import Avatar from "boring-avatars";
 
-import { Comment } from "@patchwork/context/comments";
+import { IsSelected } from "@patchwork/context/selection";
 import { relativeTime } from "../../lib/relative-time";
 import { toolify } from "../../lib/toolify";
-import { useTitle } from "../../lib/datatype-hooks";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { HasPatchworkMetadata } from "@patchwork/filesystem";
+import { useRepo } from "@automerge/automerge-repo-react-hooks";
 
 const CommentsView = () => {
-  const documentsWithComments = useReactive($documentsWithComments);
+  const allThreadRefs = useReactive($allActiveThreadRefs) as Ref<Thread>[];
+
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  const selectedThreadRef = useMemo(() => {
+    return allThreadRefs.find(
+      (threadRef) => threadRef.value?.id === selectedThreadId
+    );
+  }, [allThreadRefs, selectedThreadId]);
+
+  const selectedThread = useRefValue(selectedThreadRef);
+
+  const selectionContext = useSubcontext();
+  useEffect(() => {
+    if (!selectedThreadRef || !selectedThread) {
+      selectionContext.replace([]);
+      return;
+    }
+
+    const highlightedRefs = selectedThread.refs.map((ref) =>
+      loadRef(selectedThreadRef?.docHandle, ref).with(IsSelected(true))
+    );
+
+    selectionContext.replace(highlightedRefs);
+  }, [selectedThread, selectedThreadRef, selectionContext]);
 
   return (
     <div className="h-full flex flex-col p-2 gap-2">
       <h2 className="text-md font-bold">Comments</h2>
 
-      {documentsWithComments.map(({ docUrl, refsWithComments }) => (
-        <DocCommentsView
-          docUrl={docUrl}
-          refsWithComments={refsWithComments}
-          showTitle={documentsWithComments.length > 1}
+      {allThreadRefs.map((threadRef, index) => (
+        <ThreadView
+          key={threadRef.toId()}
+          index={index}
+          threadRef={threadRef}
+          isSelected={threadRef.value?.id === selectedThreadId}
+          onSelect={() => setSelectedThreadId(threadRef.value?.id)}
         />
       ))}
     </div>
   );
 };
 
-const DocCommentsView = ({
-  docUrl,
-  refsWithComments,
-  showTitle = false,
+export const renderCommentsView = toolify(CommentsView);
+
+const ThreadView = ({
+  threadRef,
+  index,
+  isSelected,
+  onSelect,
 }: {
-  docUrl: AutomergeUrl;
-  refsWithComments: RefWith<Comments>[];
-  showTitle?: boolean;
+  threadRef: Ref<Thread>;
+  index: number;
+  isSelected: boolean;
+  onSelect: () => void;
 }) => {
+  const thread = useRefValue(threadRef);
   const repo = useRepo();
-  const [doc] = useDocument<HasPatchworkMetadata>(docUrl, { suspense: true });
-  const title = useTitle(doc, repo);
+
+  if (!thread) {
+    return null;
+  }
+
+  const { comments } = thread;
+
+  const onResolveThread = () => {
+    threadRef.change((thread) => {
+      thread.isResolved = true;
+    });
+  };
+
+  const onReplyToComment = async () => {
+    createReply({
+      threadRef,
+      content: "",
+      authorId: (await repo.storageId())!,
+    });
+  };
 
   return (
     <div className="flex flex-col gap-2">
-      {showTitle && (
-        <h3 className="text-sm font-bold text-gray-400">{title}</h3>
+      <div
+        className={`card card-bordered shadow-sm bg-white cursor-pointer hover:shadow-md transition-shadow border border-gray-200 ${isSelected ? "border-blue-400 shadow-md" : ""}`}
+        onClick={onSelect}
+      >
+        <div className="card-body p-2 space-y-2">
+          {comments.map((comment) => {
+            const commentRef = new IdRef(
+              threadRef.docHandle,
+              ["@comments", "threads", index, "comments"],
+              comment.id,
+              "id"
+            );
+
+            return (
+              <CommentView
+                key={commentRef.toId()}
+                commentRef={commentRef as Ref<Comment>}
+              />
+            );
+          })}
+        </div>
+      </div>
+      {isSelected && (
+        <div className="flex gap-2">
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onResolveThread();
+            }}
+            title="Resolve comment"
+          >
+            Resolve
+          </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReplyToComment();
+            }}
+            title="Reply to comment"
+          >
+            Reply
+          </button>
+        </div>
       )}
-      {refsWithComments.map((refWithComments) => (
-        <CommentThread
-          key={refWithComments.toId()}
-          refWithComments={refWithComments}
-        />
-      ))}
     </div>
   );
 };
 
-const CommentThread = ({
-  refWithComments,
-}: {
-  refWithComments: RefWith<Comments>;
-}) => {
-  const commentRefs = [refWithComments.get(Comments)]; // todo: make comments a multi value field
+type CommentViewProps = {
+  commentRef: Ref<Comment>;
+};
+
+const CommentView = ({ commentRef }: CommentViewProps) => {
+  const comment = useRefValue(commentRef);
+
+  if (!comment) {
+    return null;
+  }
+
+  const { content, timestamp, draftContent } = comment;
+  const isDraft = draftContent || content === undefined;
 
   const onSaveComment = (commentRef: Ref<Comment>) => {
     commentRef.change((comment) => {
@@ -82,93 +178,59 @@ const CommentThread = ({
     });
   };
 
-  const onUpdateDraft = (commentRef: Ref<Comment>, draftContent: string) => {
+  const onChangeDraft = (commentRef: Ref<Comment>, draftContent: string) => {
+    console.log("!! onChangeDraft", draftContent, commentRef.value);
+
     commentRef.change((comment) => {
       comment.draftContent = draftContent;
     });
   };
 
   return (
-    <div>
-      <div className="space-y-4">
-        {commentRefs.map((commentRef) => {
-          if (!commentRef.value) {
-            return null;
-          }
-
-          const { content, timestamp, draftContent } = commentRef.value;
-
-          const isDraft = draftContent || content === undefined;
-
-          return (
-            <div
-              key={commentRef.toId()}
-              className="card card-bordered shadow-sm bg-white"
+    <div className="space-y-2">
+      {!isDraft && (
+        <div className="flex justify-between">
+          <Avatar size={20} name={comment.authorId} />
+          <span className="text-xs text-gray-400">
+            {relativeTime(timestamp)}
+          </span>
+        </div>
+      )}
+      {/* Content or textarea */}
+      {isDraft ? (
+        <div className="space-y-2">
+          <textarea
+            className="textarea textarea-bordered w-full min-h-[6rem]"
+            value={draftContent ?? ""}
+            onChange={(e) => onChangeDraft(commentRef, e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              className="btn btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSaveComment(commentRef);
+              }}
             >
-              <div className="card-body p-2 space-y-2">
-                {/* Metadata line: relative timestamp */}
-                {!isDraft && (
-                  <div className="flex items-center justify-end">
-                    {/* TODO: display author */}
-                    <span className="text-xs text-gray-400">
-                      {relativeTime(timestamp)}
-                    </span>
-                  </div>
-                )}
-                {/* Content or textarea */}
-                {isDraft ? (
-                  <textarea
-                    className="textarea textarea-bordered w-full min-h-[4rem]"
-                    placeholder="Write your comment..."
-                    value={draftContent ?? ""}
-                    onChange={(e) => onUpdateDraft(commentRef, e.target.value)}
-                  />
-                ) : (
-                  <p className="text-base text-gray-800">{content}</p>
-                )}
-                {/* Save button for draft */}
-
-                {isDraft && (
-                  <div className="flex justify-end">
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => onCancelDraft(commentRef)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => onSaveComment(commentRef)}
-                    >
-                      Save
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              Save
+            </button>
+            <button
+              className="btn btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCancelDraft(commentRef);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="text-base text-gray-800 whitespace-pre-wrap">
+          {content}
+        </div>
+      )}
     </div>
   );
 };
-
-type DocumentWithComments = {
-  docUrl: AutomergeUrl;
-  refsWithComments: RefWith<Comments>[];
-};
-
-const $documentsWithComments = contextComputation(
-  (context): DocumentWithComments[] => {
-    const refsWithComments = context.refsWith(Comments);
-
-    return Object.entries(
-      Object.groupBy(refsWithComments, (ref) => ref.docUrl)
-    ).map(([docUrl, comments]) => ({
-      docUrl: docUrl as AutomergeUrl,
-      refsWithComments: comments as RefWith<Comments>[],
-    }));
-  }
-);
-
-export const renderHistoryView = toolify(CommentsView);

@@ -36,11 +36,3 @@ export function deepEqual(a: unknown, b: unknown): boolean {
   // Fallback (numbers, strings, booleans, symbols, bigints, functions)
   return false;
 }
-
-
-
-
-
-
-
-

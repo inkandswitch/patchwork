@@ -20,7 +20,11 @@ import { toolify } from "../../lib/toolify";
 import { SingleViewDoc } from "./datatype";
 import { Diff, getDiffOfDoc, getViewHeads } from "@patchwork/context/diff";
 import { RefWith } from "@patchwork/context";
-import { DocWithComments, getCommentsOfDoc } from "@patchwork/context/comments";
+import {
+  DocWithComments,
+  getStoredThreads,
+  ThreadField,
+} from "@patchwork/context/comments";
 
 const SingleView = ({
   docUrl,
@@ -118,16 +122,19 @@ const SingleView = ({
   const [currentDoc] = useDocument<DocWithComments>(currentDocument?.url);
 
   useEffect(() => {
-    console.log("!! update refsWithComments", currentDocRef);
+    console.log("!! currentDoc changed", currentDoc);
 
     if (currentDocRef) {
-      const refsWithComments = getCommentsOfDoc(
+      const storedThreads = getStoredThreads(
         currentDocRef.docHandle as DocHandle<DocWithComments>
       );
 
-      console.log("!! update refsWithComments", refsWithComments);
+      console.log(
+        "!! storedThreads",
+        storedThreads[0]?.get(ThreadField)?.value?.comments[0]
+      );
 
-      commentsContext.replace(refsWithComments);
+      commentsContext.replace(storedThreads as RefWith<ThreadField>[]);
     }
   }, [currentDoc, currentDocRef, commentsContext]);
 

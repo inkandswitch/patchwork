@@ -3,7 +3,7 @@ import {
   AutomergeUrl,
   DocHandle,
 } from "@automerge/automerge-repo";
-import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CONTEXT, PathRef, Ref } from "../core";
 import { Context } from "../core/context";
@@ -84,4 +84,18 @@ export const useSubcontext = (id?: string) => {
   }, []);
 
   return subcontext;
+};
+
+export const useRefValue = <T>(ref?: Ref<T>): T | undefined => {
+  const [doc] = useDocument(ref?.docHandle.url);
+
+  return useMemo(() => {
+    void doc; // make eslint happy memo should rerun when doc changes
+
+    if (!ref) {
+      return undefined;
+    }
+
+    return ref.value;
+  }, [ref, doc]);
 };

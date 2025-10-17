@@ -160,6 +160,12 @@ export class PathRef<
 > extends Ref<Value, Doc, Fields> {
   constructor(docHandle: DocHandle<Doc>, path: Automerge.Prop[]) {
     super(docHandle, path);
+
+    try {
+      this.resolve(docHandle.doc());
+    } catch (error) {
+      throw new Error("invalid ref");
+    }
   }
 
   protected resolve(doc: Automerge.Doc<Doc>): Value {
@@ -209,6 +215,12 @@ export class IdRef<
     super(docHandle, path);
     this.#id = id;
     this.#key = key;
+
+    try {
+      this.resolve(docHandle.doc());
+    } catch (error) {
+      throw new Error("invalid ref");
+    }
   }
 
   protected resolve(doc: Automerge.Doc<Doc>): Value {

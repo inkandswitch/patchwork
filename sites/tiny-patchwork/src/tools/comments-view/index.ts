@@ -8,8 +8,8 @@ export const plugins: Plugin<any>[] = [
     icon: "",
     supportedDataTypes: "*",
     async load() {
-      const { renderHistoryView } = await import("./CommentsView");
-      return { render: renderHistoryView };
+      const { renderCommentsView } = await import("./CommentsView");
+      return { render: renderCommentsView };
     },
   },
 ];

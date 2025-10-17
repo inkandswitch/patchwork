@@ -1,7 +1,4 @@
-import {
-  useDocHandle,
-  useDocument,
-} from "@automerge/automerge-repo-react-hooks";
+import { useDocHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { completionKeymap } from "@codemirror/autocomplete";
 import {
   defaultKeymap,
@@ -21,23 +18,23 @@ import {
   WidgetType,
   keymap,
 } from "@codemirror/view";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { Codemirror } from "../../lib/codemirror";
 import { useStaticCallback } from "../../lib/useStaticCallback";
 
 import { parseAutomergeUrl } from "@automerge/automerge-repo";
 import { PathRef, Ref, TextSpanRef, TextSpanRefWith } from "@patchwork/context";
 import {
-  Comments,
   createComment,
-  getCommentsAt,
+  getThreadsAt,
+  ThreadField,
 } from "@patchwork/context/comments";
 import { Diff, DiffValue, getRefsWithDiffAt } from "@patchwork/context/diff";
 import { useReactive, useSubcontext } from "@patchwork/context/react";
+import { $selectedRefs, IsSelected } from "@patchwork/context/selection";
 import { ReactToolProps } from "../../lib/toolify";
 import { commentButtonGutter } from "./commentButtonGutter";
 import { theme } from "./theme";
-import { $selectedRefs, IsSelected } from "@patchwork/context/selection";
 
 export type MarkdownDoc = {
   content: string;
@@ -46,6 +43,7 @@ export type MarkdownDoc = {
 const PATH = ["content"];
 
 export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
+  const repo = useRepo();
   const handle = useDocHandle<MarkdownDoc>(docUrl);
 
   const cmContainerRef = useRef<HTMLDivElement | null>(null);
@@ -66,8 +64,8 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   ) as TextSpanRefWith<Diff>[];
 
   const refsWithComments = useReactive(
-    getCommentsAt(contentRef)
-  ) as TextSpanRefWith<Comments>[];
+    getThreadsAt(contentRef)
+  ) as TextSpanRefWith<ThreadField>[];
 
   const selectedRefs = useReactive($selectedRefs);
 
@@ -129,7 +127,7 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   });
 
   const onComment = useStaticCallback(
-    (from: number, to: number, view: EditorView) => {
+    async (from: number, to: number, view: EditorView) => {
       if (!handle) {
         return;
       }
@@ -138,7 +136,7 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
       createComment({
         refs: [new TextSpanRef(handle, ["content"], from, to)],
         content: "",
-        contactUrl: docUrl,
+        authorId: (await repo.storageId())!,
       });
     }
   );
