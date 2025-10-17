@@ -1,11 +1,15 @@
 import { docIdFromAutomergeUrl } from "@automerge/automerge-repo-keyhive";
 import {
   AutomergeUrl,
+  DocHandle,
   encodeHeads,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
 } from "@automerge/automerge-repo";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocHandle,
+  useDocument,
+} from "@automerge/automerge-repo-react-hooks";
 import {
   useDocRef,
   useReactive,
@@ -19,6 +23,11 @@ import { toolify } from "../../lib/toolify";
 import { SingleViewDoc } from "./datatype";
 import { Diff, getDiffOfDoc, getViewHeads } from "@patchwork/context/diff";
 import { RefWith } from "@patchwork/context";
+import {
+  DocWithComments,
+  getStoredThreads,
+  ThreadField,
+} from "@patchwork/context/comments";
 
 const SingleView = ({
   docUrl,
@@ -33,17 +42,34 @@ const SingleView = ({
     docUrl,
     { suspense: true }
   );
-  const selectionContext = useSubcontext("SINGLE_VIEW");
 
-  const { currentDocument } = singleViewDoc;
+  const { selection } = singleViewDoc;
 
-  // Get the current document reference for context
-  const currentDocRef = useDocRef(currentDocument?.url);
+  const currentDocRef = useDocRef(selection?.url);
 
-  // get view heads
   const viewHeads = useReactive(getViewHeads(currentDocRef));
+  const selectedDocUrl = useMemo(() => {
+    if (!selection?.url) {
+      return undefined;
+    }
 
-  // Update selection context when current document changes
+    if (!viewHeads) {
+      return selection.url;
+    }
+
+    const currentDocumentId = parseAutomergeUrl(selection.url).documentId;
+    return stringifyAutomergeUrl({
+      documentId: currentDocumentId,
+      heads: encodeHeads(viewHeads.afterHeads),
+    });
+  }, [selection?.url, viewHeads]);
+
+  const selectedDocHandle = useDocHandle(selectedDocUrl);
+  const [selectedDoc] = useDocument<DocWithComments>(selectedDocUrl);
+
+  // mark the current document as selected
+
+  const selectionContext = useSubcontext("SINGLE_VIEW");
   useEffect(() => {
     console.log("!! set currentDocRef in single view", currentDocRef);
     selectionContext.replace(
@@ -53,15 +79,12 @@ const SingleView = ({
 
   // Compute diffs when on a branch with highlight changes enabled
   const diffsOfDoc = useMemo<RefWith<Diff>[]>(() => {
-    if (!currentDocRef || !viewHeads) {
+    if (!selectedDocHandle || !viewHeads) {
       return [];
     }
 
-    return getDiffOfDoc(
-      currentDocRef.docHandle.view(encodeHeads(viewHeads.afterHeads)),
-      viewHeads.beforeHeads
-    );
-  }, [currentDocRef, viewHeads]);
+    return getDiffOfDoc(selectedDocHandle, viewHeads.beforeHeads);
+  }, [selectedDocHandle, viewHeads]);
 
   const diffContext = useSubcontext("SINGLE_VIEW_DIFF");
   useEffect(() => {
@@ -77,7 +100,7 @@ const SingleView = ({
 
         changeSingleViewDoc((doc) => {
           // Simply replace the current document
-          doc.currentDocument = { url, toolId: toolId ?? null };
+          doc.selection = { url, toolId: toolId ?? null };
         });
       };
 
@@ -94,16 +117,43 @@ const SingleView = ({
     }
   }, [changeSingleViewDoc, element]);
 
+  // add doc handle to window
+  useEffect(() => {
+    if (currentDocRef) {
+      (window as any).currentDoc = currentDocRef.docHandle;
+    }
+  }, [currentDocRef]);
+
   let hasAccess = false;
 
-  if (currentDocument) {
+  if (selectedDocUrl) {
     const id = keyhiveKit!.active.individual.id;
-    const keyhiveDocId = docIdFromAutomergeUrl(currentDocument.url);
+    const keyhiveDocId = docIdFromAutomergeUrl(selectedDocUrl);
     hasAccess =
       keyhiveKit!.keyhive.accessForDoc(id, keyhiveDocId) !== undefined;
   }
 
-  console.log("!! has access", hasAccess, currentDocument?.url);
+  // add comments to context
+  const commentsContext = useSubcontext();
+  useEffect(() => {
+    void selectedDoc;
+
+    if (selectedDocHandle) {
+      const storedThreads = getStoredThreads(
+        selectedDocHandle as DocHandle<DocWithComments>
+      );
+
+      commentsContext.replace(storedThreads as RefWith<ThreadField>[]);
+    }
+  }, [selectedDocHandle, commentsContext, selectedDoc]);
+
+  if (!selectedDocUrl) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-500">
+        No document open
+      </div>
+    );
+  }
 
   if (!hasAccess) {
     return (
@@ -113,31 +163,11 @@ const SingleView = ({
     );
   }
 
-  if (!currentDocument) {
-    return (
-      <div className="flex items-center justify-center h-full text-gray-500">
-        No document open
-      </div>
-    );
-  }
-
-  const currentDocumentId = parseAutomergeUrl(currentDocument.url).documentId;
-  const currentDocUrl = viewHeads
-    ? stringifyAutomergeUrl({
-        documentId: currentDocumentId,
-        heads: encodeHeads(viewHeads.afterHeads),
-      })
-    : currentDocument.url;
-
   return (
     <div
       className={`w-full h-full ${viewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
     >
-      <patchwork-view
-        doc-url={currentDocUrl}
-        tool-id={currentDocument.toolId}
-        key={currentDocUrl}
-      />
+      <patchwork-view doc-url={selectedDocUrl} key={selectedDocUrl} />
     </div>
   );
 };

@@ -2,17 +2,15 @@ import { DataTypeImplementation } from "@patchwork/plugins";
 import type { AutomergeUrl } from "@automerge/vanillajs";
 
 export interface SingleViewDoc {
-  currentDocument?: { url: AutomergeUrl; toolId?: string | null };
+  selection?: { url: AutomergeUrl; toolId?: string | null };
 }
 
 export const SingleViewDataType: DataTypeImplementation<SingleViewDoc> = {
   init: (doc: SingleViewDoc) => {
-    doc.currentDocument = undefined;
+    doc.selection = undefined;
   },
-  getTitle(doc: SingleViewDoc) {
+  getTitle() {
     return "Single View";
   },
-  markCopy: (doc: SingleViewDoc) => {
-    doc.currentDocument = doc.currentDocument;
-  },
+  markCopy: () => {},
 };

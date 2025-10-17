@@ -214,7 +214,7 @@ function Sidebar({ docUrl }: { docUrl: AutomergeUrl }) {
   const doc = useDocRef<TinyPatchworkAccountDoc | FolderDoc>(docUrl);
 
   return (
-    <div className="p-2">
+    <div className="p-2 border-r border-gray-200 h-full">
       <h2 className="text-xl p-3">
         <span className="text-xs">tiny</span> patchwork
       </h2>

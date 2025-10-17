@@ -1,7 +1,4 @@
-import {
-  useDocHandle,
-  useDocument,
-} from "@automerge/automerge-repo-react-hooks";
+import { useDocHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { completionKeymap } from "@codemirror/autocomplete";
 import {
   defaultKeymap,
@@ -21,17 +18,23 @@ import {
   WidgetType,
   keymap,
 } from "@codemirror/view";
-import { MessageCircle } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { Codemirror } from "../../lib/codemirror";
 import { useStaticCallback } from "../../lib/useStaticCallback";
 
-import { PathRef, TextSpanRefWith } from "@patchwork/context";
-import { Diff, DiffValue, getRefsWithDiffAt } from "@patchwork/context/diff";
-import { useReactive } from "@patchwork/context/react";
-import { ReactToolProps } from "../../lib/toolify";
-import { theme } from "./theme";
 import { parseAutomergeUrl } from "@automerge/automerge-repo";
+import { PathRef, Ref, TextSpanRef, TextSpanRefWith } from "@patchwork/context";
+import {
+  createComment,
+  getThreadsAt,
+  ThreadField,
+} from "@patchwork/context/comments";
+import { Diff, DiffValue, getRefsWithDiffAt } from "@patchwork/context/diff";
+import { useReactive, useSubcontext } from "@patchwork/context/react";
+import { $selectedRefs, IsSelected } from "@patchwork/context/selection";
+import { ReactToolProps } from "../../lib/toolify";
+import { commentButtonGutter } from "./commentButtonGutter";
+import { theme } from "./theme";
 
 export type MarkdownDoc = {
   content: string;
@@ -40,13 +43,10 @@ export type MarkdownDoc = {
 const PATH = ["content"];
 
 export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
-  const [doc] = useDocument<MarkdownDoc>(docUrl);
+  const repo = useRepo();
   const handle = useDocHandle<MarkdownDoc>(docUrl);
-  //  const { isSelected, setSelection, selectedRefs } = useReactive(SelectionAPI);
+
   const cmContainerRef = useRef<HTMLDivElement | null>(null);
-  const [cmView, setCmView] = useState<EditorView | null>(null);
-  const selectionRangeRef = useRef<{ from: number; to: number } | null>(null);
-  const [commentBtnTop, setCommentBtnTop] = useState<number | null>(null);
   const isReadOnly = parseAutomergeUrl(docUrl).heads !== undefined;
 
   // todo:  another weird doc handle issue
@@ -63,6 +63,19 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
     getRefsWithDiffAt(contentRef)
   ) as TextSpanRefWith<Diff>[];
 
+  const refsWithComments = useReactive(
+    getThreadsAt(contentRef)
+  ) as TextSpanRefWith<ThreadField>[];
+
+  const selectedRefs = useReactive($selectedRefs);
+
+  const isSelected = useCallback(
+    (otherRef: Ref) => {
+      return selectedRefs.some((ref) => ref.doesOverlap(otherRef));
+    },
+    [selectedRefs]
+  );
+
   // compute decorations
   const decorations = useMemo<DecorationSet>(() => {
     return RangeSet.of<Decoration>(
@@ -74,86 +87,56 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
           if (diff.type === "deleted") {
             return makeDeleteDecoration({
               deletedText: diff.before,
-              isActive: false, //isSelected(ref),
+              isActive: isSelected(ref),
             }).range(ref.from, ref.from);
           }
 
           if (diff.type === "added") {
             return Decoration.mark({
               class: `border-b border-green-300 ${
-                false ? "bg-green-300" : "bg-green-100"
+                isSelected(ref) ? "bg-green-300" : "bg-green-100"
               }`,
             }).range(ref.from, ref.to);
           }
 
           return [];
         }),
+
+        // comments
+        ...refsWithComments.flatMap((ref) =>
+          Decoration.mark({
+            class: `border-b border-yellow-300 ${
+              isSelected(ref) ? "bg-yellow-300" : "bg-yellow-100"
+            }`,
+          }).range(ref.from, ref.to)
+        ),
       ],
       true // sort ranges
     );
-  }, [refsWithDiff]);
+  }, [refsWithComments, refsWithDiff, isSelected]);
+
+  const selectionContext = useSubcontext("SELECTION");
 
   const onChangeSelection = useStaticCallback((from: number, to: number) => {
     if (!handle) {
       return;
     }
 
-    // const selectedText = new TextSpanRef(handle, ["content"], from, to);
-    // const overlappingLinks = docLinks.filter((docLink) =>
-    //   selectedText.doesOverlap(docLink)
-    // );
-    // const selectedObjects: Ref[] = [
-    //   selectedText,
-    //   ...overlappingLinks.map((docLink) => docLink.get(Link).ref),
-    // ];
-
-    // console.log(selectedObjects);
-
-    // setSelection(selectedObjects);
-
-    // // Track current selection range for comment button rendering
-    // selectionRangeRef.current = { from, to };
-    // recomputeCommentButtonPosition();
+    const selectedText = new TextSpanRef(handle, ["content"], from, to);
+    selectionContext.replace([selectedText.with(IsSelected(true))]);
   });
 
-  // Recompute comment button position using current selection and cmView
-  const recomputeCommentButtonPosition = useStaticCallback(() => {
-    if (!cmView || !cmContainerRef.current) {
-      setCommentBtnTop(null);
-      return;
-    }
-    const range = selectionRangeRef.current;
-    if (!range || range.from === range.to) {
-      setCommentBtnTop(null);
+  const onComment = useStaticCallback(async (from: number, to: number) => {
+    if (!handle) {
       return;
     }
 
-    const coords = cmView.coordsAtPos(range.from);
-    if (!coords) {
-      setCommentBtnTop(null);
-      return;
-    }
-    const containerRect = cmContainerRef.current.getBoundingClientRect();
-    const top = coords.top - containerRect.top;
-    setCommentBtnTop(top);
+    createComment({
+      refs: [new TextSpanRef(handle, ["content"], from, to)],
+      content: "",
+      authorId: (await repo.storageId())!,
+    });
   });
-
-  // Recompute on window resize
-  useEffect(() => {
-    const onResize = () => recomputeCommentButtonPosition();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [recomputeCommentButtonPosition]);
-
-  // Recompute when view becomes available
-  useEffect(() => {
-    recomputeCommentButtonPosition();
-  }, [cmView, recomputeCommentButtonPosition]);
-
-  // Recompute when doc hanges
-  useEffect(() => {
-    recomputeCommentButtonPosition();
-  }, [doc?.content, recomputeCommentButtonPosition]);
 
   const cmExtensions = useMemo(
     () => [
@@ -176,8 +159,10 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
         codeLanguages: languages,
       }),
       indentUnit.of("    "),
+      // Add the selection listener and comment button gutter
+      commentButtonGutter(onComment),
     ],
-    [isReadOnly]
+    [isReadOnly, onComment]
   );
 
   return (
@@ -191,20 +176,7 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
               onChangeSelection={onChangeSelection}
               decorations={decorations}
               extensions={cmExtensions}
-              viewRef={setCmView}
             />
-          </div>
-          <div className="relative w-8 ml-2">
-            {commentBtnTop !== null && (
-              <button
-                type="button"
-                className="hover:bg-gray-100 p-2 rounded-md"
-                style={{ transform: `translateY(${commentBtnTop}px)` }}
-                aria-label="Add comment"
-              >
-                <MessageCircle className="text-gray-500" size={20} />
-              </button>
-            )}
           </div>
         </div>
       </div>
