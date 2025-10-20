@@ -58,7 +58,7 @@ if (!toolId) {
     );
   });
   if (plugin && "EditorComponent" in (plugin as Tool).module) {
-    plugin.module.render = patchworkReactShim(plugin.module.EditorComponent);
+    plugin.module = patchworkReactShim(plugin.module.EditorComponent);
   }
 
   toolId = plugin?.id;
