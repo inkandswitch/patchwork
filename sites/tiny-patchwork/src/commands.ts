@@ -8,7 +8,6 @@ import { TinyPatchworkAccountDoc } from "./lib/account-doc";
 import { TabViewDoc } from "./tools/tab-view/datatype";
 import { SingleViewDoc } from "./tools/single-view/datatype";
 import { BranchViewDoc } from "./tools/branch-view/datatype";
-import { HistoryViewDoc } from "./tools/history-view/datatype";
 import { FolderDoc, HasPatchworkMetadata } from "@patchwork/filesystem";
 import { Automerge } from "@automerge/automerge-repo/slim";
 
@@ -18,14 +17,14 @@ export const initCommands = (
 ) => {
   const funkySidebar = () => {
     accountDocHandle.change((doc) => {
-      doc["@tiny-patchwork"].sidebarToolId = "funky-sidebar";
+      doc.sidebarToolId = "funky-sidebar";
     });
     console.log("Switched to funky sidebar");
   };
 
   const normalSidebar = () => {
     accountDocHandle.change((doc) => {
-      doc["@tiny-patchwork"].sidebarToolId = "simple-sidebar";
+      doc.sidebarToolId = "simple-sidebar";
     });
     console.log("Switched to normal sidebar");
   };
@@ -40,7 +39,7 @@ export const initCommands = (
     })) as DocHandle<TabViewDoc>;
 
     accountDocHandle.change((doc) => {
-      doc["@tiny-patchwork"].mainView = {
+      doc.mainView = {
         documentUrl: tabViewHandle.url,
         toolId: "tab-view",
       };
@@ -54,10 +53,11 @@ export const initCommands = (
       ["@patchwork"]: {
         type: "single-view",
       },
+      highlightChanges: false,
     })) as DocHandle<SingleViewDoc>;
 
     accountDocHandle.change((doc) => {
-      doc["@tiny-patchwork"].mainView = {
+      doc.mainView = {
         documentUrl: singleViewHandle.url,
         toolId: "single-view",
       };
@@ -74,7 +74,7 @@ export const initCommands = (
     })) as DocHandle<BranchViewDoc>;
 
     accountDocHandle.change((doc) => {
-      doc["@tiny-patchwork"].mainView = {
+      doc.mainView = {
         documentUrl: branchViewHandle.url,
         toolId: "branch-view",
       };
@@ -84,13 +84,13 @@ export const initCommands = (
 
   const historyView = async () => {
     accountDocHandle.change((doc) => {
-      doc["@tiny-patchwork"].contextSidebarToolId = "history-view";
+      doc.contextSidebarToolId = "history-view";
     });
   };
 
   const commentsView = () => {
     accountDocHandle.change((doc) => {
-      doc["@tiny-patchwork"].contextSidebarToolId = "comments-view";
+      doc.contextSidebarToolId = "comments-view";
     });
   };
 
@@ -103,7 +103,7 @@ export const initCommands = (
     }
 
     const rootFolderDocHandle = await repo.find<FolderDoc>(
-      accountDocHandle.doc()["@tiny-patchwork"].rootFolderUrl
+      accountDocHandle.doc().rootFolderUrl
     );
 
     const originalDocLink = rootFolderDocHandle

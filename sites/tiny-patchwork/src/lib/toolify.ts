@@ -22,9 +22,7 @@ export function toolify(
     root.render(
       createElement(
         RepoContext.Provider,
-        {
-          value: element.repo,
-        },
+        { value: element.repo },
         createElement(editorComponent, {
           docUrl: handle.url,
           element,
