@@ -1,98 +1,68 @@
-import { FolderDoc, ModuleSettingsDoc } from "@patchwork/filesystem";
+import {
+  FolderDoc,
+  ModuleSettingsDoc,
+  type HasPatchworkMetadata,
+} from "@patchwork/filesystem";
 
-import { AutomergeUrl, DocHandle, Repo } from "@automerge/vanillajs";
+import { AutomergeUrl, Repo } from "@automerge/vanillajs";
 import { SingleViewDoc } from "../tools/single-view/datatype";
 
 export type TinyPatchworkAccountDoc = {
-  ["@tiny-patchwork"]: {
-    rootFolderUrl: AutomergeUrl;
-    moduleSettingsUrl: AutomergeUrl;
-    frameToolId: string;
-    sidebarToolId?: string;
-    mainView: {
-      documentUrl: AutomergeUrl;
-      toolId: string;
-    };
-    contextSidebarToolId?: string;
+  rootFolderUrl: AutomergeUrl;
+  moduleSettingsUrl: AutomergeUrl;
+  frameToolId: string;
+  sidebarToolId?: string;
+  mainView: {
+    documentUrl: AutomergeUrl;
+    toolId: string;
   };
+  contextSidebarToolId?: string;
 };
 
-export const initAccountDoc = async (
-  repo: Repo,
-  handle: DocHandle<Partial<TinyPatchworkAccountDoc>>
-) => {
-  const tinyPatchworkConfig = handle.doc()["@tiny-patchwork"];
+const accountDocKey = "tinyPatchworkAccountUrl";
 
-  // todo(2025-10) remove when everyone's probably been updated
-  if (tinyPatchworkConfig) {
-    const { moduleSettingsUrl } = tinyPatchworkConfig;
+function getExisting() {
+  return localStorage.getItem(accountDocKey) as AutomergeUrl | undefined;
+}
 
-    const moduleSettings =
-      await repo.find<ModuleSettingsDoc>(moduleSettingsUrl);
-
-    if (!moduleSettings.doc()["@patchwork"]) {
-      moduleSettings.change((doc) => {
-        doc["@patchwork"] = { type: "patchwork:module-settings" };
-      });
-    }
-
-    const rootFolderToolId =
-      "rootFolderToolId" in tinyPatchworkConfig &&
-      tinyPatchworkConfig.rootFolderToolId;
-
-    if (typeof rootFolderToolId == "string") {
-      handle.change((doc) => {
-        doc["@tiny-patchwork"]!.sidebarToolId = rootFolderToolId;
-        delete (doc["@tiny-patchwork"]! as any).rootFolderToolId;
-      });
-    }
-
-    return;
+export async function getOrCreateAccountDocHandle(repo: Repo) {
+  const existing = getExisting();
+  if (existing) {
+    return await repo.find<TinyPatchworkAccountDoc & HasPatchworkMetadata>(
+      existing
+    );
   }
 
-  const rootFolderHandle = (await repo.create2({
-    ["@patchwork"]: {
-      type: "folder",
-    },
-    title: "root",
-    docs: [],
-  })) as DocHandle<FolderDoc>;
+  const rootFolderHandle = await repo.create2<FolderDoc & HasPatchworkMetadata>(
+    {
+      ["@patchwork"]: { type: "folder" },
+      title: "root",
+      docs: [],
+    }
+  );
 
-  const moduleSettingsHandle = (await repo.create2({
-    ["@patchwork"]: {
-      type: "patchwork:module-settings",
-    },
+  const moduleSettingsHandle = await repo.create2<
+    ModuleSettingsDoc & HasPatchworkMetadata
+  >({
+    ["@patchwork"]: { type: "patchwork:module-settings" },
     modules: [],
-  })) as DocHandle<ModuleSettingsDoc>;
-  moduleSettingsHandle.change((doc) => {
-    doc.modules = [
-      //rootDirectoryUrl as AutomergeUrl,
-      //"automerge:3oivpA9JtHpaZme42DTToAZD8Hts" as AutomergeUrl,
-    ];
   });
 
   // Create a tab-view document for the main view
-  const singleViewHandle = (await repo.create2({
-    ["@patchwork"]: {
-      type: "single-view",
-    },
-  })) as DocHandle<SingleViewDoc>;
-
-  handle.change((doc) => {
-    (doc as any)["@patchwork"] = {
-      type: "account",
-    };
-
-    doc["@tiny-patchwork"] = {
-      frameToolId: "patchwork-frame",
-      sidebarToolId: "simple-sidebar",
-      contextSidebarToolId: "history-view",
-      rootFolderUrl: rootFolderHandle.url,
-      moduleSettingsUrl: moduleSettingsHandle.url,
-      mainView: {
-        documentUrl: singleViewHandle.url,
-        toolId: "single-view",
-      },
-    };
+  const singleViewHandle = await repo.create2<
+    SingleViewDoc & HasPatchworkMetadata
+  >({
+    ["@patchwork"]: { type: "single-view" },
+    highlightChanges: false,
   });
-};
+
+  return await repo.create2<TinyPatchworkAccountDoc & HasPatchworkMetadata>({
+    ["@patchwork"]: { type: "account" },
+    frameToolId: "patchwork-frame",
+    sidebarToolId: "simple-sidebar",
+    contextSidebarToolId: "history-view",
+    rootFolderUrl: rootFolderHandle.url,
+    moduleSettingsUrl: moduleSettingsHandle.url,
+    mainView: { documentUrl: singleViewHandle.url, toolId: "single-view" },
+  });
+}
