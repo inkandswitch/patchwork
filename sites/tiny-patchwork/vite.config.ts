@@ -23,6 +23,8 @@ export default defineConfig({
         "@patchwork/context/diff": "/packages/@patchwork/context/diff.js",
         "@patchwork/context/comments":
           "/packages/@patchwork/context/comments.js",
+        "@automerge/automerge-repo-react-hooks":
+          "/packages/@automerge/automerge-repo-react-hooks/index.js",
       },
       importmap: {
         imports: {
