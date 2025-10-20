@@ -6,6 +6,7 @@ import {
 
 import { AutomergeUrl, Repo } from "@automerge/vanillajs";
 import { SingleViewDoc } from "../tools/single-view/datatype";
+import type { AutomergeRepoKeyhive } from "virtual:patchwork/setup";
 
 export type TinyPatchworkAccountDoc = {
   rootFolderUrl: AutomergeUrl;
@@ -19,14 +20,15 @@ export type TinyPatchworkAccountDoc = {
   contextSidebarToolId?: string;
 };
 
-const accountDocKey = "tinyPatchworkAccountUrl";
+export async function getOrCreateAccountDocHandle(
+  repo: Repo,
+  hive?: AutomergeRepoKeyhive
+) {
+  const accountDocKey = `tinyPatchwork${hive ? "Keyhive" : ""}AccountUrl`;
+  const existing = localStorage.getItem(accountDocKey) as
+    | AutomergeUrl
+    | undefined;
 
-function getExisting() {
-  return localStorage.getItem(accountDocKey) as AutomergeUrl | undefined;
-}
-
-export async function getOrCreateAccountDocHandle(repo: Repo) {
-  const existing = getExisting();
   if (existing) {
     return await repo.find<TinyPatchworkAccountDoc & HasPatchworkMetadata>(
       existing
@@ -56,7 +58,9 @@ export async function getOrCreateAccountDocHandle(repo: Repo) {
     highlightChanges: false,
   });
 
-  return await repo.create2<TinyPatchworkAccountDoc & HasPatchworkMetadata>({
+  const account = await repo.create2<
+    TinyPatchworkAccountDoc & HasPatchworkMetadata
+  >({
     ["@patchwork"]: { type: "account" },
     frameToolId: "patchwork-frame",
     sidebarToolId: "simple-sidebar",
@@ -65,4 +69,6 @@ export async function getOrCreateAccountDocHandle(repo: Repo) {
     moduleSettingsUrl: moduleSettingsHandle.url,
     mainView: { documentUrl: singleViewHandle.url, toolId: "single-view" },
   });
+  localStorage.setItem(accountDocKey, account.url);
+  return account;
 }

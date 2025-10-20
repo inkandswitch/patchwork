@@ -8,9 +8,12 @@ export default defineConfig({
     tailwindcss(),
     wasm(),
     patchwork({
-      syncServerStorageId: "a565270c-bf7c-4df9-a531-f6be1d3152f0",
-      syncServerUrl: "wss://keyhive.sync.automerge.org",
-      keyhiveEnabled: true,
+      // keyhive settings
+      // syncServerStorageId: "a565270c-bf7c-4df9-a531-f6be1d3152f0",
+      // syncServerUrl: "wss://keyhive.sync.automerge.org",
+      // keyhiveEnabled: true,
+      syncServerStorageId: "3760df37-a4c6-4f66-9ecd-732039a9385d",
+      syncServerUrl: "wss://sync3.automerge.org",
       extraBuiltins: {
         "@patchwork/plugins": "/packages/@patchwork/plugins/index.js",
         "@patchwork/context": "/packages/@patchwork/context/index.js",

@@ -38,9 +38,9 @@ const loadedPlugins = await Promise.all(
 
 registerPlugins(loadedPlugins, "DEV");
 
-const accountDocHandle = await getOrCreateAccountDocHandle(repo);
+const accountDocHandle = await getOrCreateAccountDocHandle(repo, hive);
 
-(window as any).accountDocHandle = accountDocHandle;
+window.accountDocHandle = accountDocHandle;
 
 // Initialize global commands
 initCommands(accountDocHandle, repo);
