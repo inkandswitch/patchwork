@@ -6,7 +6,7 @@ packages:
 catalog:
   "@automerge/automerge": 3.1.2
   "@automerge/automerge-repo": 2.4.0-alpha.2
-  "@automerge/automerge-repo-keyhive": 0.0.0-alpha.68
+  "@automerge/automerge-repo-keyhive": 0.0.0-alpha.60f
   "@automerge/automerge-repo-react-hooks": 2.4.0-alpha.2
   "@automerge/react": 2.4.0-alpha.2
   "@automerge/vanillajs": 2.4.0-alpha.2
