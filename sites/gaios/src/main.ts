@@ -30,8 +30,6 @@ const params = new URLSearchParams(document.location.search);
 registerPatchworkViewElement({
   moduleWatcher,
   repo,
-  // todo remove when css is solved
-  shadow: false,
 });
 
 const docUrl = params.get("docUrl");
