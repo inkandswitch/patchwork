@@ -4,8 +4,7 @@ import bootstrap from "virtual:patchwork/setup";
 import { registerPlugins } from "@patchwork/plugins";
 import { type AutomergeUrl } from "@automerge/vanillajs";
 import { registerPatchworkViewElement } from "@patchwork/elements";
-import type { KeyhiveKit } from "@patchwork/identity";
-const { repo, ...identity } = await bootstrap();
+const { repo, hive } = await bootstrap();
 
 const moduleWatcher = new ModuleWatcher(
   "automerge:3n51DZbA1FRwHAV8K2sW1g2aA3P2" as AutomergeUrl,
@@ -23,9 +22,6 @@ const params = new URLSearchParams(document.location.search);
 registerPatchworkViewElement({
   moduleWatcher,
   repo,
-  // todo remove when css is solved
-  shadow: false,
-  identity: identity as KeyhiveKit,
 });
 
 const docUrl = params.get("docUrl");
@@ -39,5 +35,16 @@ if (!toolId) {
 
 const rootElement = document.getElementById("root")!;
 
-rootElement.setAttribute("doc-url", docUrl ?? identity.accountUrl);
+async function getOrCreateAccountUrl() {
+  const existing = localStorage.getItem("hiveAccountUrl") as
+    | AutomergeUrl
+    | undefined;
+  if (existing) return existing;
+  const account = await repo.create2({ id: hive?.active.peerId ?? null });
+  localStorage.setItem("patchworkAccountUrl", account.url);
+  return account.url;
+}
+const accountUrl = await getOrCreateAccountUrl();
+
+rootElement.setAttribute("doc-url", docUrl ?? accountUrl);
 toolId && rootElement.setAttribute("tool-id", toolId);
