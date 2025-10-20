@@ -6,9 +6,6 @@ settings:
 
 catalogs:
   default:
-    '@automerge/automerge-repo':
-      specifier: 2.4.0-alpha.2
-      version: 2.4.0-alpha.2
     '@automerge/automerge-repo-keyhive':
       specifier: 0.0.0-alpha.68
       version: 0.0.0-alpha.68
@@ -315,7 +312,7 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: 'catalog:'
+        specifier: 2.4.0-alpha.2
         version: 2.4.0-alpha.2
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
