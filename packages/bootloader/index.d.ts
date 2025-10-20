@@ -2,13 +2,13 @@
 // todo generate this at build time with correct type instead of array with `|undefined`?
 declare module "virtual:patchwork/setup" {
   import type { Repo } from "@automerge/vanillajs";
-  import { type KeyhiveKit } from "@patchwork/identity";
+  import type { initializeKeyhive } from "@automerge/automerge-repo-keyhive";
+  export type AutomergeRepoKeyhive = Awaited<
+    ReturnType<typeof initializeKeyhive>
+  >;
   var bootstrap: () => Promise<{
     repo: Repo;
-    active?: Active;
-    keyhive?: Keyhive;
-    syncServer?: SyncServer;
-    accountUrl?: AutomergeUrl;
+    hive?: AutomergeRepoKeyhive;
   }>;
   export default bootstrap;
 }

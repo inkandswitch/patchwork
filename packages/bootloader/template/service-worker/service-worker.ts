@@ -444,7 +444,11 @@ self.addEventListener("fetch", async (event: FetchEvent) => {
         } else {
           file = await parts.reduce(
             async (acc, curr) => {
-              let target = (await acc)?.[curr];
+              let target = (
+                (await acc) as Automerge.Doc<
+                  Record<string, Automerge.Doc<unknown>>
+                >
+              )?.[curr];
               if (isValidAutomergeUrl(target)) {
                 target = (await repo!.find(target)).doc();
               }

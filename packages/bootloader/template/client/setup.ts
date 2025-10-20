@@ -1,20 +1,18 @@
-import type {
-  Active,
-  KeyhiveEventEmitter,
-  SyncServer,
-} from "@automerge/automerge-repo-keyhive";
 import {
   IndexedDBStorageAdapter,
   MessageChannelNetworkAdapter,
   Repo,
   WebSocketClientAdapter,
-  type AutomergeUrl,
   type PeerId,
   type StorageAdapterInterface,
   type StorageId,
 } from "@automerge/vanillajs";
-import type { Keyhive } from "@keyhive/keyhive/slim";
-import { getOrCreateAccountUrl } from "@patchwork/identity";
+
+import type { initializeKeyhive } from "@automerge/automerge-repo-keyhive";
+
+export type AutomergeRepoKeyhive = Awaited<
+  ReturnType<typeof initializeKeyhive>
+>;
 
 // will be replaced during build
 declare global {
@@ -62,7 +60,7 @@ export async function installServiceWorker(): Promise<ServiceWorker> {
 export async function createRepo(storage: StorageAdapterInterface) {
   const peerIdSuffix =
     `patchwork-${Math.random().toString(36).slice(2)}` as PeerId;
-  const identity = await (async function () {
+  const hive = await (async function () {
     if (!__KEYHIVE_ENABLED__) return;
 
     const keyhive = await import("@keyhive/keyhive/slim");
@@ -73,28 +71,31 @@ export async function createRepo(storage: StorageAdapterInterface) {
     );
     keyhive.initFromBase64Wasm(wasmBase64);
     keyhive.setPanicHook();
+
     const ws = new WebSocketClientAdapter(__SYNC_SERVER_URL__);
 
-    const { initializeKeyhive } = await import(
+    const { initializeKeyhive: initializeAutomergeRepoKeyhive } = await import(
       "@automerge/automerge-repo-keyhive"
     );
-    const identity = await initializeKeyhive({
+
+    const hive = await initializeAutomergeRepoKeyhive({
       storage,
       peerIdSuffix,
       networkAdapter: ws,
       automaticArchiveIngestion: true,
     });
-    return identity;
+
+    return hive;
   })();
 
-  const peerId = identity ? identity.peerId : peerIdSuffix;
+  const peerId = hive ? hive.peerId : peerIdSuffix;
 
   const repo = new Repo({
-    network: identity ? [identity.networkAdapter] : [],
+    network: hive ? [hive.networkAdapter] : [],
     storage,
     peerId,
     enableRemoteHeadsGossiping: true,
-    idFactory: identity?.idFactory,
+    idFactory: hive?.idFactory,
   });
 
   self.repo = repo;
@@ -104,7 +105,7 @@ export async function createRepo(storage: StorageAdapterInterface) {
   // TODO: fix this in automerge-repo
   repo.subscribeToRemotes([__SYNC_SERVER_STORAGE_ID__]);
 
-  return [repo, identity] as const;
+  return { repo, hive } as const;
 }
 
 let globalMessageChannelAdapter: MessageChannelNetworkAdapter | undefined;
@@ -133,21 +134,17 @@ export function connectServiceWorkerToRepo(
 
 export default async function bootstrap(): Promise<{
   repo: Repo;
-  active?: Active;
-  keyhive?: Keyhive;
-  syncServer?: SyncServer;
-  accountUrl?: AutomergeUrl;
-  emitter?: KeyhiveEventEmitter;
+  hive?: AutomergeRepoKeyhive;
 }> {
   let sw = await installServiceWorker();
   const storage = new IndexedDBStorageAdapter();
-  const [repo, identity] = await createRepo(storage);
+  const { repo, hive } = await createRepo(storage);
   const { promise: serviceWorkerInitEcho, resolve } =
     Promise.withResolvers<void>();
 
   // TODO(chee)<2025-10-06>: due to issues identified when using keyhive with
   // the messagechannel we connect to the sync server directly when using keyhive in the main thread
-  if (!identity) {
+  if (!hive) {
     navigator.serviceWorker.addEventListener("message", (event) => {
       switch ((event as MessageEvent).data.type) {
         case "SERVICE_WORKER_RESTARTED":
@@ -183,18 +180,5 @@ export default async function bootstrap(): Promise<{
     await serviceWorkerInitEcho;
   }
 
-  return {
-    repo,
-    active: identity?.active,
-    keyhive: identity?.keyhive,
-    syncServer: identity?.syncServer,
-    accountUrl:
-      identity &&
-      (await getOrCreateAccountUrl({
-        active: identity!.active,
-        repo,
-        storage,
-      })),
-    emitter: identity?.emitter,
-  };
+  return { repo, hive };
 }
