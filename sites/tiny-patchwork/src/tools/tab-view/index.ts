@@ -9,7 +9,7 @@ export const plugins: Plugin<any>[] = [
     supportedDataTypes: ["tab-view"],
     async load() {
       const { renderTabViewer } = await import("./TabViewer");
-      return { render: renderTabViewer };
+      return renderTabViewer;
     },
   },
   {

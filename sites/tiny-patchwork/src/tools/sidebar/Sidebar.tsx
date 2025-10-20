@@ -1,9 +1,8 @@
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { type AutomergeUrl } from "@automerge/vanillajs";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { useDocRef, useReactive } from "@patchwork/context/react";
 import { isSelected } from "@patchwork/context/selection";
 import { DocLink, FolderDoc } from "@patchwork/filesystem";
-import { KeyhiveKit } from "@patchwork/identity";
 import { createDocOfDataType2, DataType } from "@patchwork/plugins";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
@@ -113,12 +112,7 @@ const DocLinkEntry = ({ docLink }: { docLink: DocLink }) => {
   return <FileEntry docLink={docLink} isSelected={selected} />;
 };
 
-const FolderView = ({
-  docUrl,
-}: {
-  docUrl: AutomergeUrl;
-  keyhiveKit?: KeyhiveKit;
-}) => {
+const FolderView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [rootFolder, changeRootFolder] = useDocument<FolderDoc>(docUrl);
   const [root, setRoot] = useState<HTMLElement | null>(null);
   const repo = useRepo();
@@ -221,9 +215,7 @@ function Sidebar({ docUrl }: { docUrl: AutomergeUrl }) {
       {doc && (
         <FolderView
           docUrl={
-            "@tiny-patchwork" in doc.value
-              ? doc.value["@tiny-patchwork"].rootFolderUrl
-              : docUrl
+            "rootFolderUrl" in doc.value ? doc.value.rootFolderUrl : docUrl
           }
         />
       )}

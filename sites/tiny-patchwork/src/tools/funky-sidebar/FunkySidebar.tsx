@@ -261,7 +261,7 @@ const AddDocumentDropdown = ({
   onMouseEnter,
   onMouseLeave,
 }: {
-  onAddDocument: (dataType: DataType<unknown>) => void;
+  onAddDocument: (_dataType: DataType<unknown>) => void;
   className?: string;
   children: React.ReactNode;
   onMouseEnter?: () => void;
@@ -341,11 +341,7 @@ function FunkySidebar({ docUrl }: { docUrl: AutomergeUrl }) {
   return (
     doc && (
       <FolderView
-        docUrl={
-          "@tiny-patchwork" in doc.value
-            ? doc.value["@tiny-patchwork"].rootFolderUrl
-            : docUrl
-        }
+        docUrl={"rootFolderUrl" in doc.value ? doc.value.rootFolderUrl : docUrl}
       />
     )
   );

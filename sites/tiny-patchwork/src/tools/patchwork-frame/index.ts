@@ -9,7 +9,7 @@ export const plugins: Plugin<any>[] = [
     supportedDataTypes: ["patchwork-frame"],
     async load() {
       const { renderFrame } = await import("./PatchworkFrame");
-      return { render: renderFrame };
+      return renderFrame;
     },
   },
 ];

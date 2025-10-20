@@ -9,7 +9,7 @@ export const plugins: Plugin<any>[] = [
     supportedDataTypes: ["folder"],
     async load() {
       const { renderSidebar } = await import("./FunkySidebar");
-      return { render: renderSidebar };
+      return renderSidebar;
     },
   },
 ];

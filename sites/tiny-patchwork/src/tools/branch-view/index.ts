@@ -9,7 +9,7 @@ export const plugins: Plugin<any>[] = [
     supportedDataTypes: ["branch-view"],
     async load() {
       const { renderBranchView } = await import("./BranchView");
-      return { render: renderBranchView };
+      return renderBranchView;
     },
   },
   {

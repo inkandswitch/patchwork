@@ -9,7 +9,6 @@ import {
 import {
   useDocHandle,
   useDocument,
-  useRepo,
 } from "@automerge/automerge-repo-react-hooks";
 import {
   useDocRef,
@@ -17,7 +16,6 @@ import {
   useSubcontext,
 } from "@patchwork/context/react";
 import { IsSelected } from "@patchwork/context/selection";
-import { KeyhiveKit } from "@patchwork/identity";
 import { useEffect, useMemo } from "react";
 import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
@@ -31,15 +29,14 @@ import {
 } from "@patchwork/context/comments";
 import { useTitle } from "../../lib/datatype-hooks";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
+import type { ToolElement } from "@patchwork/plugins";
 
 const SingleView = ({
   docUrl,
   element,
-  keyhiveKit,
 }: {
   docUrl: AutomergeUrl;
-  element: HTMLElement | ShadowRoot;
-  keyhiveKit?: KeyhiveKit;
+  element: ToolElement;
 }) => {
   const [singleViewDoc, changeSingleViewDoc] = useDocument<SingleViewDoc>(
     docUrl,
@@ -152,13 +149,13 @@ const SingleView = ({
     }
   }, [currentDocRef]);
 
-  let hasAccess = false;
+  let hasAccess = !element.hive;
 
-  if (selectedDocUrl) {
-    const id = keyhiveKit!.active.individual.id;
+  if (selectedDocUrl && element.hive) {
+    const id = element.hive.active.individual.id;
     const keyhiveDocId = docIdFromAutomergeUrl(selectedDocUrl);
     hasAccess =
-      keyhiveKit!.keyhive.accessForDoc(id, keyhiveDocId) !== undefined;
+      element.hive.keyhive.accessForDoc(id, keyhiveDocId) !== undefined;
   }
 
   const title = useTitle(selectedDoc as HasPatchworkMetadata);

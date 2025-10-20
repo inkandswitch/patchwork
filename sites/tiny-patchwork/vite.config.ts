@@ -33,6 +33,7 @@ export default defineConfig({
             "https://ga.jspm.io/npm:react@18.3.1/jsx-runtime.js",
           signia: "https://ga.jspm.io/npm:signia@0.1.5/dist/esm/index.mjs",
           DEV: "data:text/javascript,export%20const%20DEV%20=%20true;",
+          scheduler: "https://ga.jspm.io/npm:scheduler@0.23.2/index.js",
         },
       },
     }),

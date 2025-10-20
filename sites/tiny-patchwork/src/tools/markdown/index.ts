@@ -9,7 +9,7 @@ export const plugins = [
     supportedDataTypes: ["markdown"],
     async load() {
       const { MarkdownEditor } = await import("./MarkdownEditor");
-      return { render: toolify(MarkdownEditor) };
+      return toolify(MarkdownEditor);
     },
   },
   {
