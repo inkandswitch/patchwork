@@ -16,30 +16,26 @@ import {
   onPluginsChange,
   type Tool,
 } from "@patchwork/plugins";
-import type { KeyhiveKit } from "@patchwork/identity";
 
-interface RegisterPatchworkViewElementParams {
+import type { initializeKeyhive } from "@automerge/automerge-repo-keyhive";
+type AutomergeRepoKeyhive = Awaited<ReturnType<typeof initializeKeyhive>>;
+
+export interface RegisterPatchworkViewElementParams {
   name?: string;
-  shadow?: false | "open" | "closed";
   repo: Repo;
-
+  hive?: AutomergeRepoKeyhive;
   // todo do not need the below when tools are URLs
   moduleWatcher: ModuleWatcher;
-
-  // todo is passing the keyhive kit in the render function really the right
-  // pattern?
-  identity?: KeyhiveKit;
 }
 
 export function registerPatchworkViewElement(
   params: RegisterPatchworkViewElementParams
 ) {
   const name = params.name ?? "patchwork-view";
-  const useShadow = params.shadow !== false;
-  const shadowMode = typeof params.shadow == "string" ? params.shadow : "open";
+
   const repo = params.repo;
   const moduleWatcher = params.moduleWatcher;
-  const identity = params.identity;
+
   if (customElements.get(name)) {
     console.error(`can't redefine a custom element. defining "${name}"`);
     return;
@@ -48,15 +44,13 @@ export function registerPatchworkViewElement(
   customElements.define(
     name,
     class PatchworkViewElement extends HTMLElement {
+      repo = repo;
+      hive = params.hive;
       // attributes, if these change it's new game +
       #docUrl: AutomergeUrl | null = null;
       #toolId: string | null = null;
       #handle: DocHandle<HasPatchworkMetadata> | null = null;
       #tool: Tool | null = null;
-
-      get rootElement(): ShadowRoot | HTMLElement {
-        return useShadow ? this.shadowRoot! : this;
-      }
 
       get docUrl() {
         return this.#docUrl;
@@ -88,13 +82,6 @@ export function registerPatchworkViewElement(
 
       static get observedAttributes() {
         return ["doc-url", "tool-id"];
-      }
-
-      constructor() {
-        super();
-        if (useShadow) {
-          this.attachShadow({ mode: shadowMode });
-        }
       }
 
       connectedCallback() {
@@ -167,7 +154,7 @@ export function registerPatchworkViewElement(
         }
         this.#teardowns.clear();
         this.#handle = null;
-        this.rootElement!.textContent = "";
+        this.textContent = "";
         this.#tool = null;
       }
 
@@ -200,16 +187,7 @@ export function registerPatchworkViewElement(
 
         this!.textContent = "";
 
-        // todo change signature to render(handle, element)
-        // let them get repo, keyhive etc via a singleton import(?)
-        // the plugin system is prior art here
-        // if not that then maybe render(handle, element, {repo, keyhive})
-        const cleanup = this.#tool.module.render({
-          handle: this.#handle,
-          element: this.rootElement,
-          repo,
-          keyhiveKit: identity,
-        });
+        const cleanup = this.#tool.module(this.#handle, this);
         cleanup && this.#teardowns.add(cleanup);
         this.#renderQueued = false;
       }
