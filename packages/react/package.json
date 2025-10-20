@@ -5,8 +5,9 @@
     "./shim": "./shim.js"
   },
   "devDependencies": {
+    "@automerge/automerge-repo-react-hooks": "catalog:",
     "@patchwork/plugins": "workspace:^",
-    "@types/react": "^18.3.25",
-    "@types/react-dom": "^18.3.7"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:"
   }
 }
