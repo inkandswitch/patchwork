@@ -9,7 +9,7 @@ import {
   LoadedPlugin,
 } from "@patchwork/plugins";
 import { PluginRegistry } from "@patchwork/plugins/dist/registry/registry";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const useDatatypeDescriptions = () => {
   const [datatypes, setDatatypes] = useState<DataType<unknown>[]>([]);
@@ -37,16 +37,17 @@ export const useDatatype = (id?: string) => {
   >(undefined);
 
   useEffect(() => {
+    let canceled = false;
     const registry = getPluginRegistry(
       "patchwork:datatype"
     ) as PluginRegistry<DataTypeDescription>;
 
     const loadDatatype = () => {
       if (!id) {
-        setDatatype(undefined);
         return;
       }
       registry.loadById(id).then((datatype) => {
+        if (canceled) return;
         setDatatype(
           datatype as LoadedPlugin<DataTypeDescription, DataTypeImplementation>
         );
@@ -58,29 +59,27 @@ export const useDatatype = (id?: string) => {
     loadDatatype();
 
     return () => {
+      canceled = true;
       unsubscribe();
     };
   }, [id]);
 
-  return datatype;
+  // ensure that we never return an outdated datatype
+  return datatype?.id === id ? datatype : undefined;
 };
 
 export const useTitle = (doc?: HasPatchworkMetadata) => {
-  const repo = useRepo();
   const datatype = useDatatype(doc?.["@patchwork"]?.type);
-  const [title, setTitle] = useState<string>("");
 
-  useEffect(() => {
+  return useMemo(() => {
     if (!doc) {
-      setTitle("Untitled");
       return;
     }
 
     const title = datatype?.module?.getTitle(doc);
-    setTitle(title ? title : "Untitled");
-  }, [doc, repo, datatype]);
 
-  return title;
+    return title ? title : "Untitled";
+  }, [doc, datatype]);
 };
 
 const getListedDatatypes = (registry: PluginRegistry<DataTypeDescription>) => {
