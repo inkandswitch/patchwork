@@ -1,4 +1,4 @@
-import { docIdFromAutomergeUrl } from "@automerge/automerge-repo-keyhive";
+//import { docIdFromAutomergeUrl } from "@automerge/automerge-repo-keyhive";
 import {
   AutomergeUrl,
   DocHandle,
@@ -149,13 +149,13 @@ const SingleView = ({
     }
   }, [currentDocRef]);
 
-  let hasAccess = !element.hive;
+  const hasAccess = !element.hive;
 
   if (selectedDocUrl && element.hive) {
-    const id = element.hive.active.individual.id;
-    const keyhiveDocId = docIdFromAutomergeUrl(selectedDocUrl);
-    hasAccess =
-      element.hive.keyhive.accessForDoc(id, keyhiveDocId) !== undefined;
+    //const id = element.hive.active.individual.id;
+    //const keyhiveDocId = docIdFromAutomergeUrl(selectedDocUrl);
+    //hasAccess =
+    //      element.hive.keyhive.accessForDoc(id, keyhiveDocId) !== undefined;
   }
 
   const title = useTitle(selectedDoc as HasPatchworkMetadata);

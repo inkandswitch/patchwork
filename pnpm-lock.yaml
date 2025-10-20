@@ -6,9 +6,6 @@ settings:
 
 catalogs:
   default:
-    '@automerge/automerge-repo-keyhive':
-      specifier: 0.0.0-alpha.68
-      version: 0.0.0-alpha.68
     '@automerge/automerge-repo-react-hooks':
       specifier: 2.4.0-alpha.2
       version: 2.4.0-alpha.2
@@ -314,9 +311,6 @@ importers:
       '@automerge/automerge-repo':
         specifier: 2.4.0-alpha.2
         version: 2.4.0-alpha.2
-      '@automerge/automerge-repo-keyhive':
-        specifier: 'catalog:'
-        version: 0.0.0-alpha.68
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.4.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -347,9 +341,6 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.4
         version: 6.38.6
-      '@keyhive/keyhive':
-        specifier: 0.0.0-alpha.40
-        version: 0.0.0-alpha.40
       '@lezer/highlight':
         specifier: ^1.2.1
         version: 1.2.1
