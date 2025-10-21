@@ -6,6 +6,9 @@ import {
   PluginTypeMap,
   Plugin,
 } from "./types";
+import debug from "debug";
+
+const log = debug("patchwork:plugins");
 
 /**
  * Registry for managing plugins of a specific type
@@ -64,29 +67,27 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     shouldWait = false,
     timeout = 10000
   ): Promise<LoadedPlugin<D, I> | undefined> {
-    console.log(`[PluginRegistry] loadById called for: ${id}`, {
+    log(`loadById called for: ${id}`, {
       shouldWait,
       timeout,
     });
 
     // Check if we already have a loaded plugin
     const plugin = this.plugins.get(id);
-    console.log(`[PluginRegistry] Found existing plugin: ${id}`, {
+    log(`Found existing plugin: ${id}`, {
       hasPlugin: !!plugin,
       isLoadable: plugin ? isLoadablePlugin<D, I>(plugin) : "N/A",
     });
 
     if (plugin && !isLoadablePlugin<D, I>(plugin)) {
-      console.log(`[PluginRegistry] Returning already loaded plugin: ${id}`);
+      log(`Returning already loaded plugin: ${id}`);
       return plugin;
     }
 
     // Get the plugin description
     const description = this.plugins.get(id);
     if (!description) {
-      console.log(
-        `[PluginRegistry] Plugin not registered: ${id}, shouldWait: ${shouldWait}`
-      );
+      log(`Plugin not registered: ${id}, shouldWait: ${shouldWait}`);
       // If the plugin isn't registered and we shouldn't wait, return undefined
       if (!shouldWait) {
         return undefined;
@@ -118,14 +119,11 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
 
     // If the plugin is loadable, load it
     if (isLoadablePlugin(description)) {
-      console.log(`[PluginRegistry] Loading plugin implementation: ${id}`);
+      log(`Loading plugin implementation: ${id}`);
       const loadPromise = description
         .load()
         .then((implementation) => {
-          console.log(
-            `[PluginRegistry] Successfully loaded implementation for: ${id}`,
-            implementation
-          );
+          log(`Successfully loaded implementation for: ${id}`, implementation);
           // Merge the implementation with the plugin metadata to create a complete Plugin
           // Omit the load method as it's no longer needed
           const { load, ...descriptionWithoutLoad } = description;
@@ -147,10 +145,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
           return Plugin;
         })
         .catch((error) => {
-          console.error(
-            `[PluginRegistry] Failed to load plugin implementation: ${id}`,
-            error
-          );
+          console.error(`Failed to load plugin implementation: ${id}`, error);
           this.loadPromises.delete(id);
           throw error;
         });
