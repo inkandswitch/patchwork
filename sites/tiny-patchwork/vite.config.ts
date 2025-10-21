@@ -23,22 +23,21 @@ export default defineConfig({
         "@patchwork/context/diff": "/packages/@patchwork/context/diff.js",
         "@patchwork/context/comments":
           "/packages/@patchwork/context/comments.js",
+        "@patchwork/filesystem": "/packages/@patchwork/filesystem/index.js",
+
         "@automerge/automerge-repo-react-hooks":
           "/packages/@automerge/automerge-repo-react-hooks/index.js",
+        react: "/packages/react/index.js",
+        "react/jsx-runtime": "/packages/react/jsx-runtime.js",
+        "react-dom": "/packages/react-dom/index.js",
+        "react-dom/client": "/packages/react-dom/client.js",
+        "react-dom/server": "/packages/react-dom/server.js",
+        signia: "/packages/signia/index.js",
+        scheduler: "/packages/scheduler/index.js",
       },
       importmap: {
         imports: {
-          react: "https://ga.jspm.io/npm:react@18.3.1/index.js",
-          "react-dom": "https://ga.jspm.io/npm:react-dom@18.3.1/index.js",
-          "react-dom/client":
-            "https://ga.jspm.io/npm:react-dom@18.3.1/client.js",
-          "react-dom/server":
-            "https://ga.jspm.io/npm:react-dom@18.3.1/server.browser.js",
-          "react/jsx-runtime":
-            "https://ga.jspm.io/npm:react@18.3.1/jsx-runtime.js",
-          signia: "https://ga.jspm.io/npm:signia@0.1.5/dist/esm/index.mjs",
           DEV: "data:text/javascript,export%20const%20DEV%20=%20true;",
-          scheduler: "https://ga.jspm.io/npm:scheduler@0.23.2/index.js",
         },
       },
     }),
