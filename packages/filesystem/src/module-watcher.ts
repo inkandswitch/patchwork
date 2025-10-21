@@ -46,8 +46,8 @@ export class ModuleWatcher {
   async loadModules(modules: string[]) {
     await Promise.all(
       modules.map(async (importName) => {
-        await this.registerModule(importName);
         this.setDocWatcher(importName);
+        await this.report(importName).catch(console.warn);
       })
     );
   }
@@ -61,18 +61,23 @@ export class ModuleWatcher {
 
   private async importModuleSafe(importName: string): Promise<any | null> {
     try {
-      return await (isValidAutomergeUrl(importName)
+      const valid = isValidAutomergeUrl(importName);
+
+      const mod = valid
         ? importModuleFromFolderDocUrl(importName)
-        : import(/* @vite-ignore */ importName));
-    } catch (err) {
-      console.error(`%c Failed to import ${importName}`, "color: #ff2a50", err);
-      return null;
+        : import(/* @vite-ignore */ importName);
+      return mod;
+    } catch (error) {
+      console.error(
+        `%c Failed to import ${importName}`,
+        "color: #000, background: #ffbcef",
+        error
+      );
     }
   }
 
-  private async registerModule(importName: string) {
+  private async report(importName: string) {
     const mod = await this.importModuleSafe(importName);
-    console.log(`%c Loaded module ${importName}`, "color: #3399cc", mod);
     mod && this.callback(importName, mod);
   }
 
@@ -88,9 +93,9 @@ export class ModuleWatcher {
     if (!docUrl) return;
 
     this.repo.find(docUrl).then((handle) => {
-      handle.on("change", async () => {
+      handle.on("change", () => {
         const versionedImport = handle.view(handle.heads()).url;
-        this.registerModule(versionedImport);
+        this.report(versionedImport);
       });
     });
   }

@@ -260,9 +260,6 @@ self.addEventListener("activate", async (event) => {
   clients.claim();
 });
 
-const AUTOMERGE_REQUEST_URL_REGEX =
-  /^https?:\/\/[^/]*\/automerge\/(automerge:)?([a-zA-Z0-9]+)(\/.*)?(\?.*)?$/;
-
 const headsEqual = (doc: Automerge.Doc<unknown>, heads: string[]) => {
   if (!doc) {
     return false;
@@ -296,19 +293,22 @@ self.addEventListener("fetch", async (event: FetchEvent) => {
     id: fetchId,
   });
 
-  if (AUTOMERGE_REQUEST_URL_REGEX.test(event.request.url)) {
+  if (event.request.url.includes("/automerge/automerge:")) {
     debugLog("AUTOMERGE request matched", url.href);
     const [, , maybeAutomergeUrl, ...encodedParts] = url.pathname.split("/");
+    const heads = url.searchParams.get("heads");
     const parts = encodedParts.map((part) => decodeURIComponent(part));
     // in case we end with a /
     if (parts[parts.length - 1] === "") {
       parts.pop();
     }
 
+    const hash = heads ? `#${heads}` : "";
+
     // support old docID style URLs
     const automergeUrl = maybeAutomergeUrl.startsWith("automerge:")
-      ? maybeAutomergeUrl
-      : `automerge:${maybeAutomergeUrl}`;
+      ? maybeAutomergeUrl + hash
+      : `automerge:${maybeAutomergeUrl}${hash}`;
 
     debugLog("Resolved automergeUrl", automergeUrl, "parts", parts);
 
@@ -350,55 +350,6 @@ self.addEventListener("fetch", async (event: FetchEvent) => {
               headers: { "Content-Type": "text/plain" },
             }
           );
-        }
-
-        // If the request asked for a specific heads on the document,
-        // try waiting to see if the document arrives at that heads.
-        // (NOTE: this is overly simplistic because it requires an exact match
-        // between the requested heads and the current doc on the service worker;
-        // we probably want something more sophisticated like waiting until the SW
-        // has a superset of the requested heads and then can return a view at the
-        // requested heads? However, for the simple case of a client tab coordinating
-        // with the service worker, this seems to be enough for now.)
-
-        // Try every INTERVAL_MS for TIMEOUT_MS
-        const INTERVAL_MS = 16;
-        const TIMEOUT_MS = 2000;
-        const startTime = Date.now();
-
-        const queryHeads = url.searchParams.get("heads")?.split(",");
-        debugLog("Requested heads", queryHeads);
-
-        if (queryHeads && queryHeads?.length > 0) {
-          debugLog("Waiting for heads to match...");
-          while (
-            !headsEqual(doc, queryHeads) &&
-            Date.now() - startTime < TIMEOUT_MS
-          ) {
-            await new Promise((resolve) => setTimeout(resolve, INTERVAL_MS));
-            doc = handle.doc();
-          }
-
-          if (!headsEqual(doc, queryHeads)) {
-            debugLog("Heads mismatch after waiting", {
-              requested: queryHeads,
-              current: Automerge.getHeads(doc),
-            });
-            return finish(
-              "heads-mismatch",
-              new Response(
-                `Heads mismatch: requested ${queryHeads} but had ${Automerge.getHeads(
-                  doc
-                )}`,
-                {
-                  status: 404,
-                  headers: { "Content-Type": "text/plain" },
-                }
-              )
-            );
-          } else {
-            debugLog("Heads matched", Automerge.getHeads(doc));
-          }
         }
 
         debugLog("Resolving file path parts", parts);
