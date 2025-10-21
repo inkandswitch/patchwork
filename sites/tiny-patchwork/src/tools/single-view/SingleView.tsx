@@ -229,11 +229,14 @@ const SingleView = ({
           </label>
         )}
       </div>
-
       <div
         className={`flex-1 ${contextViewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
       >
-        <patchwork-view doc-url={selectedDocUrl} key={selectedDocUrl} />
+        <patchwork-view
+          doc-url={selectedDocUrl}
+          tool-id={selection?.toolId}
+          key={selectedDocUrl}
+        />
       </div>
     </div>
   );
