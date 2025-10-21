@@ -5,10 +5,9 @@ import {
   onCleanup,
   Switch,
   Match,
-  createEffect,
   createResource,
+  createEffect,
 } from "solid-js";
-import html from "solid-js/html";
 import { ContextMenu } from "@kobalte/core/context-menu";
 
 import {
@@ -25,23 +24,52 @@ import { createStore, reconcile } from "solid-js/store";
 import {
   getPluginRegistry,
   getLoadedSupportedToolsForType,
+  type Tool,
+  type DataType,
+  type ToolDescription,
+  type DataTypeDescription,
 } from "@patchwork/plugins";
 import type { TinyPatchworkAccountDoc } from "tiny-patchwork/src/lib/account-doc.ts";
 import type { PatchworkToolProps } from "./types.ts";
+import { ModuleWatcher } from "@patchwork/filesystem";
+
+/* const addDocument = async (dataType: DataType<unknown>) => {
+  const docHandle = await createDocOfDataType2(dataType, repo);
+
+  const docLink = {
+    name: dataType.name,
+    type: dataType.id,
+    url: docHandle.url,
+  };
+
+  changeRootFolder((doc) => {
+    doc.docs.push(docLink);
+  });
+
+  openDocument(root!, docLink.url);
+}; */
 
 const [filter, setFilter] = createSignal("");
 
 const [selectedId, setSelectedId] = createSignal(location.hash.slice(1));
 
-const registry = getPluginRegistry("patchwork:tool");
+const toolRegistry = getPluginRegistry<ToolDescription>("patchwork:tool");
+const datatypeRegistry =
+  getPluginRegistry<DataTypeDescription>("patchwork:datatype");
 
-/**
- * @returns {import("@patchwork/plugins").Plugin}
- */
-function usePlugins() {
-  const [plugins, setPlugins] = createStore(registry.getPlugins());
-  const dispose = registry.onChange(() =>
-    setPlugins(reconcile(registry.getPlugins()))
+function useTools(): Tool[] {
+  const [plugins, setPlugins] = createStore(toolRegistry.getPlugins());
+  const dispose = toolRegistry.onChange((change) => {
+    setPlugins(reconcile(toolRegistry.getPlugins()));
+  });
+  onCleanup(dispose);
+  return plugins;
+}
+
+function useDatatypes(): DataType[] {
+  const [plugins, setPlugins] = createStore(datatypeRegistry.getPlugins());
+  const dispose = datatypeRegistry.onChange(() =>
+    setPlugins(reconcile(datatypeRegistry.getPlugins()))
   );
   onCleanup(dispose);
   return plugins;
@@ -52,7 +80,7 @@ function useLoadedSupportedToolsForType(type: string) {
     () => type,
     getLoadedSupportedToolsForType
   );
-  onCleanup(registry.onChange(control.refetch));
+  onCleanup(toolRegistry.onChange(control.refetch));
   return supportedTools;
 }
 
@@ -92,14 +120,35 @@ export default function Sideboard(
   useWindowEvent("hashchange", onHashChange);
 
   const doc = makeDocumentProjection(props.handle);
-  createEffect(() => {
-    console.log(selectedId());
-  });
 
   const moduleSettingsUrl = () => doc.moduleSettingsUrl;
 
+  //const tools = useTools();
+
+  createEffect(() => {
+    new ModuleWatcher(doc.moduleSettingsUrl, [], props.repo, (name) => {
+      console.log("HELLO WORLD?????");
+      if (name === "chee/sideboard") {
+        location.reload();
+      } else {
+        console.log(name);
+        console.info({ name });
+      }
+    });
+  });
+
   return (
     <aside class="sideboard">
+      <header class="sideboard-header">
+        <button
+          onClick={() => {
+            console.log("hey ");
+          }}
+          class="sideboard-header__button"
+        >
+          <PlusIcon /> Create New
+        </button>
+      </header>
       <div class="sideboard__filter-container sideboard-widget">
         <SearchIcon />
         <input
@@ -244,6 +293,26 @@ function SearchIcon() {
     >
       <path d="m21 21-4.34-4.34" />
       <circle cx="11" cy="11" r="8" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="plus-icon icon"
+    >
+      <path d="M5 12h14"></path>
+      <path d="M12 5v14"></path>
     </svg>
   );
 }

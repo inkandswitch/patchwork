@@ -20,7 +20,8 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "typeRoots": ["./node_modules/@node-types"]
+    "typeRoots": ["./node_modules/@node-types"],
+    "outDir": "dist"
   },
   "include": ["esbuild"]
 }
