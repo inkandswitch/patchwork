@@ -47,7 +47,11 @@ export const renderFrame = toolify(
             event.stopImmediatePropagation();
 
             if (event.target === this) {
-              openDocument(mainViewElement, event.detail.url);
+              openDocument(
+                mainViewElement,
+                event.detail.url,
+                event.detail.toolId
+              );
             }
           }
         );
