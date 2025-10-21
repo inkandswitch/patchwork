@@ -13,6 +13,7 @@ import {
 import {
   getLoadedFallbackToolId,
   getLoadedPlugin,
+  getPlugin,
   getPluginRegistry,
   onPluginsChange,
   type Tool,
@@ -112,6 +113,7 @@ export function registerPatchworkViewElement(
 
         if (name === "doc-url") {
           this.docUrl = val as AutomergeUrl;
+          this.#reinit();
         }
       }
 
@@ -141,6 +143,7 @@ export function registerPatchworkViewElement(
         this.#teardowns.add(
           onPluginsChange<Tool>("patchwork:tool", async (tools, newToolId) => {
             if (newToolId == this.toolId) {
+              getPluginRegistry("patchwork:tool").loadById(newToolId);
               if (this.#tool) {
                 this.#tool = null;
                 this.#reinit();
@@ -178,7 +181,7 @@ export function registerPatchworkViewElement(
         queueMicrotask(() => this.#render());
       }
 
-      async #render() {
+      #render() {
         if (this.#tool) {
           this.#renderQueued = false;
           return;
@@ -189,8 +192,7 @@ export function registerPatchworkViewElement(
           return;
         }
 
-        this.#tool = ((await getLoadedPlugin("patchwork:tool", this.toolId)) ??
-          null) as Tool | null;
+        this.#tool = getPlugin<Tool>("patchwork:tool", this.toolId) ?? null;
 
         if (!this.#tool) {
           console.warn("No such tool", this.toolId);
@@ -198,7 +200,11 @@ export function registerPatchworkViewElement(
           return;
         }
 
-        this!.textContent = "";
+        if (!this.#tool.module) {
+          //console.warn("Tool not loaded", this.toolId);
+          this.#renderQueued = false;
+          return;
+        }
 
         try {
           const cleanup = this.#tool.module(this.#handle, this);
@@ -218,6 +224,7 @@ export function registerPatchworkViewElement(
               `,
             })
           );
+          console.error(error);
           this.#tool = null;
         } finally {
           this.#renderQueued = false;
