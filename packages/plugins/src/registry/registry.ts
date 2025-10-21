@@ -10,6 +10,10 @@ import debug from "debug";
 
 const log = debug("patchwork:plugins");
 
+export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
+  "plugins:changed": (plugins: LoadedPlugin<D, I>[], id: string) => void;
+}
+
 /**
  * Registry for managing plugins of a specific type
  * D = Description type that extends PluginDescription
@@ -18,9 +22,7 @@ const log = debug("patchwork:plugins");
 export class PluginRegistry<D extends PluginDescription, I = any> {
   private plugins = new Map<string, Plugin<D, I>>();
   private loadPromises = new Map<string, Promise<LoadedPlugin<D, I>>>();
-  private events = new EventEmitter<{
-    "plugins:changed": (plugins: LoadedPlugin<D, I>[]) => void;
-  }>();
+  private events = new EventEmitter<PluginRegistryEvents<D, I>>();
 
   /**
    * Register an plugin with this registry
@@ -35,7 +37,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     this.plugins.set(plugin.id, plugin);
 
     // Notify listeners
-    this.events.emit("plugins:changed", this.getPlugins());
+    this.events.emit("plugins:changed", this.getPlugins(), plugin.id);
   }
 
   /**
@@ -140,7 +142,11 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
           this.loadPromises.delete(id);
 
           // Notify listeners that an plugin has been loaded
-          this.events.emit("plugins:changed", this.getPlugins());
+          this.events.emit(
+            "plugins:changed",
+            this.getPlugins(),
+            description.id
+          );
 
           return Plugin;
         })
@@ -220,7 +226,9 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   /**
    * Subscribe to plugin changes
    */
-  onChange(callback: (plugins: LoadedPlugin<D, I>[]) => void): () => void {
+  onChange(
+    callback: PluginRegistryEvents<D, I>["plugins:changed"]
+  ): () => void {
     if (!callback || typeof callback !== "function") {
       console.warn("Invalid callback provided to PluginRegistry.onChange");
       return () => {}; // Return a no-op function
