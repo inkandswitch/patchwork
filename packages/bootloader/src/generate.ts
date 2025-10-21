@@ -56,7 +56,6 @@ export default async function createContext(contextOptions: ContextOptions) {
   return { sw, setup };
 }
 
-// @ts-expect-error it does
 if (import.meta.main) {
   const { parseArgs } = await import("node:util");
 
