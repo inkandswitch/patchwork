@@ -4,6 +4,8 @@ import process from "node:process";
 import { solid } from "./plugin-solid.ts";
 import pushworkSync from "./plugin-pushwork-sync.ts";
 
+const pushworking = process.argv.includes("pushwork");
+
 export default {
   entryPoints: [
     "./src/index.tsx",
@@ -16,9 +18,12 @@ export default {
   format: "esm",
   splitting: true,
   logLevel: "debug",
-  sourcemap: true,
+  sourcemap: !pushworking,
   plugins: [
     dynamicExternal(/^((@automerge\/automerge(-repo)?)|@patchwork\/.*)$/),
     solid(),
-  ].concat(process.argv.includes("pushwork") ? pushworkSync() : []),
+  ].concat(pushworking ? pushworkSync() : []),
+  loader: {
+    ".css": "text",
+  },
 } satisfies BuildOptions;
