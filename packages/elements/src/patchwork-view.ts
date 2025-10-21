@@ -28,6 +28,13 @@ export interface RegisterPatchworkViewElementParams {
   moduleWatcher: ModuleWatcher;
 }
 
+export interface PatchworkViewElement extends HTMLElement {
+  repo: Repo;
+  hive?: AutomergeRepoKeyhive;
+  docUrl?: AutomergeUrl;
+  toolId?: string;
+}
+
 export function registerPatchworkViewElement(
   params: RegisterPatchworkViewElementParams
 ) {
