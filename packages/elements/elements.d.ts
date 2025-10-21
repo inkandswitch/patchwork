@@ -11,3 +11,14 @@ declare module "react" {
     }
   }
 }
+
+declare module "solid-js" {
+  export namespace JSX {
+    export interface IntrinsicElements {
+      "patchwork-view": {
+        docUrl: string;
+        toolId: string;
+      };
+    }
+  }
+}
