@@ -2,6 +2,7 @@ packages:
   - packages/*
   - meta/*
   - sites/*
+  - tools/*
 
 catalog:
   "@automerge/automerge": 3.1.2
