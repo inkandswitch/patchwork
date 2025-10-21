@@ -1,0 +1,11 @@
+{
+  "actions" : {
+    "build" : {
+      "enabled" : true
+    },
+    "run" : {
+      "enabled" : true,
+      "script" : "node ~\/soft\/pvh\/pushwork\/dist\/cli.js sync"
+    }
+  }
+}
