@@ -7,12 +7,13 @@ import {
 import {
   getSuggestedImportUrl,
   getType,
+  ModuleWatcher,
   type HasPatchworkMetadata,
-  type ModuleWatcher,
 } from "@patchwork/filesystem";
 import {
   getLoadedFallbackToolId,
   getLoadedPlugin,
+  getPluginRegistry,
   onPluginsChange,
   type Tool,
 } from "@patchwork/plugins";
@@ -138,9 +139,14 @@ export function registerPatchworkViewElement(
         }
 
         this.#teardowns.add(
-          onPluginsChange("patchwork:tool", (tools) => {
-            if (!this.#tool && tools.find((tool) => this.toolId == tool.id)) {
-              this.#queueRender();
+          onPluginsChange<Tool>("patchwork:tool", async (tools, newToolId) => {
+            if (newToolId == this.toolId) {
+              if (this.#tool) {
+                this.#tool = null;
+                this.#reinit();
+              } else {
+                this.#queueRender();
+              }
             }
           })
         );
@@ -194,9 +200,28 @@ export function registerPatchworkViewElement(
 
         this!.textContent = "";
 
-        const cleanup = this.#tool.module(this.#handle, this);
-        cleanup && this.#teardowns.add(cleanup);
-        this.#renderQueued = false;
+        try {
+          const cleanup = this.#tool.module(this.#handle, this);
+          if (typeof cleanup != "function") {
+            console.warn(`return a cleanup function from ${this.toolId}`);
+          }
+          this.#teardowns.add(cleanup);
+        } catch (error) {
+          this.append(
+            Object.assign(document.createElement("div"), {
+              innerHTML: /* html */ `
+                <p>oh no!</p>
+                <details>
+                  <summary>${(error as Error).message ?? error}</summary>
+                  <pre>${(error as Error).stack ?? ""}</pre>
+              </details>
+              `,
+            })
+          );
+          this.#tool = null;
+        } finally {
+          this.#renderQueued = false;
+        }
       }
     }
   );
