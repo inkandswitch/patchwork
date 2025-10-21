@@ -9,7 +9,7 @@ export const plugins: Plugin<any>[] = [
     supportedDataTypes: ["history-view"],
     async load() {
       const { renderHistoryView } = await import("./HistoryView");
-      return { render: renderHistoryView };
+      return renderHistoryView;
     },
   },
 ];

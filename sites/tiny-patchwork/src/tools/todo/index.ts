@@ -9,7 +9,7 @@ export const plugins: Plugin<any>[] = [
     supportedDataTypes: ["todo"],
     async load() {
       const { renderTodoEditor } = await import("./Todo");
-      return { render: renderTodoEditor };
+      return renderTodoEditor;
     },
   },
   {

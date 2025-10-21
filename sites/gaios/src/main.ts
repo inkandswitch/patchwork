@@ -30,8 +30,6 @@ const params = new URLSearchParams(document.location.search);
 registerPatchworkViewElement({
   moduleWatcher,
   repo,
-  // todo remove when css is solved
-  shadow: false,
 });
 
 const docUrl = params.get("docUrl");
@@ -60,7 +58,7 @@ if (!toolId) {
     );
   });
   if (plugin && "EditorComponent" in (plugin as Tool).module) {
-    plugin.module.render = patchworkReactShim(plugin.module.EditorComponent);
+    plugin.module = patchworkReactShim(plugin.module.EditorComponent);
   }
 
   toolId = plugin?.id;

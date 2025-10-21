@@ -9,7 +9,7 @@ export const plugins: Plugin<any>[] = [
     supportedDataTypes: ["single-view"],
     async load() {
       const { renderSingleView } = await import("./SingleView");
-      return { render: renderSingleView };
+      return renderSingleView;
     },
   },
   {

@@ -19,21 +19,26 @@
   },
   "pnpm": {
     "overrides": {
-      "@automerge/automerge": "3.1.2",
-      "@automerge/automerge-repo": "2.4.0-alpha.2"
+      "@automerge/automerge": "catalog:",
+      "@automerge/automerge-repo": "catalog:",
+      "@keyhive/keyhive": "catalog:"
     }
   },
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
     "@vitest/ui": "^3.2.4",
-    "prettier": "^3.5.3",
-    "typescript": "^5.8.3",
-    "vite": "^7.1.9",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.11",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },
   "volta": {
     "node": "22.19.0"
+  },
+  "dependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:"
   }
 }

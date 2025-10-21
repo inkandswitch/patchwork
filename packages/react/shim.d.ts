@@ -1,5 +1,5 @@
-import type { ToolImplementation } from "@patchwork/plugins";
+import type { LegacyEditorProps, ToolImplementation } from "@patchwork/plugins";
 
-export default function patchworkReactShim(
-  editorComponent: ToolImplementation["EditorComponent"]
-): ToolImplementation["render"];
+export default function patchworkReactShim<T = unknown>(
+  editorComponent: (props: LegacyEditorProps) => JSX.Element
+): ToolImplementation<T>;

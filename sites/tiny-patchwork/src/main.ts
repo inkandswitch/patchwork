@@ -1,15 +1,25 @@
-import { ModuleWatcher } from "@patchwork/filesystem";
 import "./styles/global.css";
 
+import bootstrap from "virtual:patchwork/setup";
+import { ModuleWatcher } from "@patchwork/filesystem";
 import { registerPatchworkViewElement } from "@patchwork/elements";
 import { registerPlugins } from "@patchwork/plugins";
-import bootstrap from "virtual:patchwork/setup";
-const { repo, ...identity } = await bootstrap();
-
 import { CONTEXT, Context } from "@patchwork/context";
 import { initCommands } from "./commands";
-import { initAccountDoc, TinyPatchworkAccountDoc } from "./lib/account-doc";
+import {
+  getOrCreateAccountDocHandle,
+  TinyPatchworkAccountDoc,
+} from "./lib/account-doc";
 import { openDocument } from "./lib/navigation";
+import {
+  type AutomergeUrl,
+  DocHandle,
+  isValidAutomergeUrl,
+  isValidDocumentId,
+  parseAutomergeUrl,
+} from "@automerge/vanillajs";
+
+import { plugins } from "./tools";
 
 declare global {
   interface Window {
@@ -18,17 +28,9 @@ declare global {
   }
 }
 
-window.CONTEXT = CONTEXT;
+const { repo, hive } = await bootstrap();
 
-import {
-  type AutomergeUrl,
-  DocHandle,
-  isValidAutomergeUrl,
-  isValidDocumentId,
-  parseAutomergeUrl,
-} from "@automerge/automerge-repo";
-import { plugins } from "./tools";
-import { KeyhiveKit } from "@patchwork/identity";
+window.CONTEXT = CONTEXT;
 
 const loadedPlugins = await Promise.all(
   plugins.map(async (plugin) => ({ ...plugin, module: await plugin.load() }))
@@ -36,41 +38,30 @@ const loadedPlugins = await Promise.all(
 
 registerPlugins(loadedPlugins, "DEV");
 
-const accountDocHandle = await repo.find<TinyPatchworkAccountDoc>(
-  identity.accountUrl
-);
+const accountDocHandle = await getOrCreateAccountDocHandle(repo, hive);
 
-(window as any).accountDocHandle = accountDocHandle;
-
-await initAccountDoc(repo, accountDocHandle);
+window.accountDocHandle = accountDocHandle;
 
 // Initialize global commands
 initCommands(accountDocHandle, repo);
 
 const moduleWatcher = new ModuleWatcher(
-  accountDocHandle.doc()?.["@tiny-patchwork"]?.moduleSettingsUrl,
+  accountDocHandle.doc().moduleSettingsUrl,
   [],
   repo,
   (name, mod) => {
-    Array.isArray(mod.plugins) && registerPlugins(mod.plugins, name);
+    if (Array.isArray(mod.plugins)) {
+      registerPlugins(mod.plugins, name);
+    }
   }
 );
 
-registerPatchworkViewElement({
-  moduleWatcher,
-  repo,
-  identity: identity as KeyhiveKit,
-  // todo remove when css is fixed
-  shadow: false,
-});
+registerPatchworkViewElement({ moduleWatcher, repo, hive });
 
 const rootElement = document.getElementById("root")!;
 
 rootElement.setAttribute("doc-url", accountDocHandle.url);
-rootElement.setAttribute(
-  "tool-id",
-  accountDocHandle.doc()["@tiny-patchwork"].frameToolId
-);
+rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
 
 rootElement.addEventListener("patchwork:open-document", (event) => {
   window.location.hash = parseAutomergeUrl(event.detail.url).documentId;

@@ -10,15 +10,16 @@ import { RepoContext } from "@automerge/automerge-repo-react-hooks";
 // a transitional shim until patchwork uses the .render() pattern
 /**
  * @param {React.FC<LegacyEditorProps>} editorComponent
- * @returns {ToolImplementation['render']}}
+ * @returns {ToolImplementation}}
  */
 export default function patchworkReactShim(editorComponent) {
-  return (props) => {
-    const root = createRoot(props.element);
+  return (handle, element) => {
+    const root = createRoot(element);
+
     const component = () =>
       jsx(RepoContext.Provider, {
-        value: props.repo,
-        children: jsx(editorComponent, { docUrl: props.handle.url }),
+        value: element.repo,
+        children: jsx(editorComponent, { docUrl: handle.url }),
       });
     // a hack to recreate the behaviour of patchwork, that rerenders children on
     // any change
@@ -26,10 +27,10 @@ export default function patchworkReactShim(editorComponent) {
       root.render(component());
     }
     rerender();
-    props.handle.on("change", rerender);
+    handle.on("change", rerender);
     return () => {
       root.unmount();
-      props.handle.off("change", rerender);
+      handle.off("change", rerender);
     };
   };
 }

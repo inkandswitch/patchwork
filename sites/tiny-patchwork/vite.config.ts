@@ -8,9 +8,12 @@ export default defineConfig({
     tailwindcss(),
     wasm(),
     patchwork({
-      syncServerStorageId: "a565270c-bf7c-4df9-a531-f6be1d3152f0",
-      syncServerUrl: "wss://keyhive.sync.automerge.org",
-      keyhiveEnabled: true,
+      // keyhive settings
+      // syncServerStorageId: "a565270c-bf7c-4df9-a531-f6be1d3152f0",
+      // syncServerUrl: "wss://keyhive.sync.automerge.org",
+      // keyhiveEnabled: true,
+      syncServerStorageId: "3760df37-a4c6-4f66-9ecd-732039a9385d",
+      syncServerUrl: "wss://sync3.automerge.org",
       extraBuiltins: {
         "@patchwork/plugins": "/packages/@patchwork/plugins/index.js",
         "@patchwork/context": "/packages/@patchwork/context/index.js",
@@ -20,6 +23,8 @@ export default defineConfig({
         "@patchwork/context/diff": "/packages/@patchwork/context/diff.js",
         "@patchwork/context/comments":
           "/packages/@patchwork/context/comments.js",
+        "@automerge/automerge-repo-react-hooks":
+          "/packages/@automerge/automerge-repo-react-hooks/index.js",
       },
       importmap: {
         imports: {
@@ -33,6 +38,7 @@ export default defineConfig({
             "https://ga.jspm.io/npm:react@18.3.1/jsx-runtime.js",
           signia: "https://ga.jspm.io/npm:signia@0.1.5/dist/esm/index.mjs",
           DEV: "data:text/javascript,export%20const%20DEV%20=%20true;",
+          scheduler: "https://ga.jspm.io/npm:scheduler@0.23.2/index.js",
         },
       },
     }),
