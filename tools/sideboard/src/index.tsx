@@ -2,25 +2,32 @@ import { render } from "solid-js/web";
 import type { ModuleSettingsDoc } from "@patchwork/filesystem";
 import type { ToolImplementation } from "@patchwork/plugins";
 import type { TinyPatchworkAccountDoc } from "tiny-patchwork/src/lib/account-doc.ts";
-import style from "./style.css";
-const sheet = Object.assign(document.createElement("style"), {
-  textContent: style,
-});
-document.head.append(sheet);
+
+function addStyles(element: HTMLElement, textContent: string) {
+  const id = "sideboard-styles";
+  const el = element.querySelector(`#${id}`) ?? document.createElement("style");
+  Object.assign(el, { textContent, id });
+  element.append(el);
+}
+
+async function loadStyles() {
+  return (await import("./style.css?inline")).default;
+}
 
 export const plugins = [
   {
     id: "chee/sideboard",
     type: "patchwork:tool",
     name: "Sideboard",
-    supportedDataTypes: ["folder"],
+    supportedDataTypes: ["patchwork:account"],
     icon: "FolderOpen",
     async load(): Promise<ToolImplementation<TinyPatchworkAccountDoc>> {
-      const sideboard = await import("./sideboard.tsx");
-
+      const { Sideboard } = await import("./sideboard/sideboard.tsx");
+      const css = await loadStyles();
       return (handle, element) => {
+        addStyles(element, css);
         return render(
-          () => <sideboard.default handle={handle} repo={element.repo} />,
+          () => <Sideboard handle={handle} repo={element.repo} />,
           element
         );
       };
@@ -33,10 +40,14 @@ export const plugins = [
     icon: "Settings",
     supportedDataTypes: ["patchwork:module-settings"],
     async load(): Promise<ToolImplementation<ModuleSettingsDoc>> {
-      const modulesettings = await import("./module-settings.jsx");
+      const { ModuleSettings } = await import(
+        "./module-settings/module-settings.tsx"
+      );
+      const styles = await loadStyles();
       return function (handle, element) {
+        addStyles(element, styles);
         return render(
-          () => <modulesettings.default handle={handle} repo={element.repo} />,
+          () => <ModuleSettings handle={handle} repo={element.repo} />,
           element
         );
       };

@@ -23,7 +23,7 @@ import {
   type AutomergeUrl,
 } from "@automerge/automerge-repo";
 import type { ModuleSettingsDoc } from "@patchwork/filesystem";
-import type { PatchworkToolProps } from "./types.ts";
+import type { PatchworkToolProps } from "../types.ts";
 const registry = getPluginRegistry("patchwork:tool");
 
 function swapWithEnd(list: any[], idx: number) {
@@ -81,9 +81,7 @@ const rm = (item: AutomergeUrl) => (doc: ModuleSettingsDoc) => {
   }
 };
 
-export default function ModuleSettings(
-  props: PatchworkToolProps<ModuleSettingsDoc>
-) {
+export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   const tools = useTools();
 
   const doc = makeDocumentProjection(props.handle);
