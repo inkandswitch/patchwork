@@ -1,13 +1,17 @@
-import type { AutomergeUrl, DocHandle } from "@automerge/automerge-repo/slim";
+import {
+  parseAutomergeUrl,
+  type AutomergeUrl,
+  type DocHandle,
+} from "@automerge/automerge-repo/slim";
 
-// TODO: support heads in the URL!
 export function automergeUrlToServiceWorkerUrl(
   automergeUrl: AutomergeUrl
 ): string {
-  return `/automerge/${automergeUrl}/`;
+  const { heads, documentId } = parseAutomergeUrl(automergeUrl);
+  const headQuery = heads ? `?heads=${heads.join("|")}` : "";
+  return `/automerge/automerge:${documentId}/${headQuery}`;
 }
 
-// TODO: support heads in the URL!
 export function docHandleToServiceWorkerUrl(handle: DocHandle<any>): string {
   return automergeUrlToServiceWorkerUrl(handle.url);
 }
