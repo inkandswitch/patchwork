@@ -19,23 +19,6 @@
       "patchwork": "./dist/module-settings.js"
     }
   },
-  "patchwork": {
-    "tools": {
-      "chee/sideboard": {
-        "name": "Sideboard",
-        "icon": "FolderOpen",
-        "export": "./tools/sideboard"
-      },
-      "chee/module-settings": {
-        "name": "Module Settings",
-        "icon": "Settings",
-        "supportedDataTypes": [
-          "patchwork:module-settings"
-        ],
-        "export": "./tools/module-settings"
-      }
-    }
-  },
   "scripts": {
     "build": "node esbuild/build.ts",
     "dev": "node esbuild/watch.ts",
