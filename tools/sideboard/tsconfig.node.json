@@ -23,5 +23,5 @@
     "typeRoots": ["./node_modules/@node-types"],
     "outDir": "dist"
   },
-  "include": ["esbuild"]
+  "include": ["vite.config.ts"]
 }
