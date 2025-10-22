@@ -1,11 +1,11 @@
 import type { DocLink } from "@patchwork/filesystem";
-import { For, Match, Show, Switch } from "solid-js";
+import { createEffect, For, Match, Show, Switch } from "solid-js";
 import { filter, selectedId } from "./state.ts";
 import { parseAutomergeUrl, type Repo } from "@automerge/automerge-repo";
 import { createOpenEvent, createOpenEventHandler } from "./events.ts";
 import Folder from "./folder.tsx";
 import { ContextMenu } from "@kobalte/core/context-menu";
-import { useLoadedSupportedToolsForType } from "./plugins.ts";
+import { useSupportedToolsForType } from "./plugins.ts";
 
 export interface DocumentListProps {
   docs?: DocLink[];
@@ -27,7 +27,7 @@ export function DocumentList(props: DocumentListProps) {
             invisible: !visible(),
           });
 
-          const tools = useLoadedSupportedToolsForType(doc.type);
+          const tools = useSupportedToolsForType(() => doc.type);
 
           return (
             <Switch>
@@ -53,14 +53,14 @@ export function DocumentList(props: DocumentListProps) {
                   </ContextMenu.Trigger>
                   <ContextMenu.Portal>
                     <ContextMenu.Content class="popmenu__content">
-                      <Show when={tools.latest?.length}>
+                      <Show when={tools.length}>
                         <ContextMenu.Sub>
                           <ContextMenu.SubTrigger class="popmenu__sub-trigger">
                             Open with...
                           </ContextMenu.SubTrigger>
                           <ContextMenu.Portal>
                             <ContextMenu.SubContent class="popmenu__sub-content">
-                              <For each={tools.latest}>
+                              <For each={tools}>
                                 {(tool) => {
                                   return (
                                     <ContextMenu.Item
