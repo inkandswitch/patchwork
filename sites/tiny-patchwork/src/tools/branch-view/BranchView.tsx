@@ -38,8 +38,8 @@ const BranchView = ({
     }
   );
 
-  const selectionContext = useSubcontext("BRANCH_VIEW");
-  const diffContext = useSubcontext("BRANCH_VIEW_DIFF");
+  const selectionContext = useSubcontext("BRANCH_VIEW_SELECTION");
+  const diffContext = useSubcontext("BRANCH_VIEW_DIFFS");
   const [highlightChanges, setHighlightChanges] = useState(true);
 
   // The main document URL (could be undefined if nothing is open)

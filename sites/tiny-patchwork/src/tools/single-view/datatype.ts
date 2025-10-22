@@ -2,7 +2,7 @@ import { DataTypeImplementation } from "@patchwork/plugins";
 import type { AutomergeUrl } from "@automerge/vanillajs";
 
 export interface SingleViewDoc {
-  selection?: { url: AutomergeUrl; toolId?: string | null };
+  selection?: { url: AutomergeUrl; toolId?: string };
   highlightChanges: boolean;
 }
 

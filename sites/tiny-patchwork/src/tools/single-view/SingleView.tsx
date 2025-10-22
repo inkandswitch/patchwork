@@ -1,4 +1,3 @@
-//import { docIdFromAutomergeUrl } from "@automerge/automerge-repo-keyhive";
 import {
   AutomergeUrl,
   DocHandle,
@@ -10,26 +9,31 @@ import {
   useDocHandle,
   useDocument,
 } from "@automerge/automerge-repo-react-hooks";
-import {
-  useDocRef,
-  useReactive,
-  useSubcontext,
-} from "@patchwork/context/react";
-import { IsSelected } from "@patchwork/context/selection";
-import { useEffect, useMemo } from "react";
-import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
-import { toolify } from "../../lib/toolify";
-import { SingleViewDoc } from "./datatype";
-import { Diff, getDiffOfDoc, getViewHeads } from "@patchwork/context/diff";
 import { RefWith } from "@patchwork/context";
 import {
   DocWithComments,
   getStoredThreads,
   ThreadField,
 } from "@patchwork/context/comments";
-import { useTitle } from "../../lib/datatype-hooks";
+import {
+  computeDiffOfDoc,
+  Diff,
+  getDiff,
+  getViewHeads,
+} from "@patchwork/context/diff";
+import {
+  useDocRef,
+  useReactive,
+  useSubcontext,
+} from "@patchwork/context/react";
+import { IsSelected } from "@patchwork/context/selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
-import type { ToolElement } from "@patchwork/plugins";
+import { ToolElement } from "@patchwork/plugins";
+import { useEffect, useMemo } from "react";
+import { useTitle } from "../../lib/datatype-hooks";
+import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
+import { toolify } from "../../lib/toolify";
+import { SingleViewDoc } from "./datatype";
 
 const SingleView = ({
   docUrl,
@@ -47,15 +51,14 @@ const SingleView = ({
 
   const currentDocRef = useDocRef(selection?.url);
 
-  const contextViewHeads = useReactive(getViewHeads(currentDocRef));
+  const viewHeads = useReactive(
+    useMemo(
+      () => (currentDocRef ? getViewHeads(currentDocRef) : undefined),
+      [currentDocRef]
+    )
+  );
 
-  const afterHeads = useMemo(() => {
-    if (contextViewHeads) {
-      return contextViewHeads.afterHeads;
-    }
-
-    return undefined;
-  }, [contextViewHeads, highlightChanges, currentDocRef]);
+  const afterHeads = viewHeads?.afterHeads;
 
   const selectedDocUrl = useMemo(() => {
     if (!selection?.url) {
@@ -81,8 +84,8 @@ const SingleView = ({
   const [originalDoc] = useDocument<HasPatchworkMetadata>(originalDocUrl);
 
   const beforeHeads = useMemo(() => {
-    if (contextViewHeads) {
-      return contextViewHeads.beforeHeads;
+    if (viewHeads) {
+      return viewHeads.beforeHeads;
     }
 
     if (highlightChanges && originalDocUrl) {
@@ -90,12 +93,11 @@ const SingleView = ({
     }
 
     return undefined;
-  }, [contextViewHeads, highlightChanges, originalDocUrl]);
+  }, [viewHeads, highlightChanges, originalDocUrl]);
 
   // mark the current document as selected
-  const selectionContext = useSubcontext("SINGLE_VIEW");
+  const selectionContext = useSubcontext("SINGLE_VIEW_SELECTION");
   useEffect(() => {
-    console.log("!! set currentDocRef in single view", currentDocRef);
     selectionContext.replace(
       currentDocRef ? [currentDocRef.with(IsSelected(true))] : []
     );
@@ -108,10 +110,10 @@ const SingleView = ({
       return [];
     }
 
-    return getDiffOfDoc(selectedDocHandle, beforeHeads);
+    return computeDiffOfDoc(selectedDocHandle, beforeHeads);
   }, [selectedDocHandle, beforeHeads, selectedDoc]);
 
-  const diffContext = useSubcontext("SINGLE_VIEW_DIFF");
+  const diffContext = useSubcontext("SINGLE_VIEW_DIFFS");
   useEffect(() => {
     diffContext.replace(diffsOfDoc);
   }, [diffContext, diffsOfDoc]);
@@ -125,7 +127,11 @@ const SingleView = ({
 
         changeSingleViewDoc((doc) => {
           // Simply replace the current document
-          doc.selection = { url, toolId: toolId ?? null };
+          doc.selection = { url };
+
+          if (toolId) {
+            doc.selection.toolId = toolId;
+          }
         });
       };
 
@@ -162,9 +168,11 @@ const SingleView = ({
   const titleOfOriginalDoc = useTitle(originalDoc);
 
   // add comments to context
-  const commentsContext = useSubcontext();
+  const commentsContext = useSubcontext("SINGLE_VIEW_COMMENTS");
   useEffect(() => {
-    void selectedDoc;
+    if (!selectedDoc || !selectedDocHandle) {
+      return;
+    }
 
     if (selectedDocHandle) {
       const storedThreads = getStoredThreads(
@@ -212,11 +220,10 @@ const SingleView = ({
           )}
         </div>
         <div className="flex-1" />
-        {originalDoc && !contextViewHeads && (
+        {originalDoc && !viewHeads && (
           <label className="label text-sm">
             <input
               type="checkbox"
-              defaultChecked
               className="checkbox checkbox-sm"
               checked={highlightChanges}
               onChange={(e) => {
@@ -230,7 +237,7 @@ const SingleView = ({
         )}
       </div>
       <div
-        className={`flex-1 ${contextViewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
+        className={`flex-1 ${viewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
       >
         <patchwork-view
           doc-url={selectedDocUrl}
