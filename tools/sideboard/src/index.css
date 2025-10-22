@@ -241,8 +241,10 @@
   }
 }
 
-.popmenu__trigger {
+.popmenu__trigger,
+.popmenu__sub-trigger {
   cursor: default;
+  user-select: none;
 }
 
 .popmenu__sub-content,
