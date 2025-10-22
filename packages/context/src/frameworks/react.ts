@@ -8,10 +8,6 @@ import { CONTEXT, PathRef, Ref } from "../core";
 import { Context } from "../core/context";
 import { Reactive } from "../reactive";
 
-CONTEXT.subscribe(() => {
-  console.log("!! CONTEXT changed", CONTEXT.dump());
-});
-
 export function useReactive<T>(reactive: Reactive<T>): T;
 export function useReactive<T>(reactive: undefined): undefined;
 export function useReactive<T>(
@@ -67,12 +63,12 @@ export const useSubcontext = (id: string) => {
   const [subcontext] = useState<Context>(() => CONTEXT.subcontext(id));
   const subcontextRef = useRef<Context>(subcontext);
 
-  useEffect(() => {
-    return () => {
-      console.log("__ remove subcontext", id);
+  useEffect(
+    () => () => {
       CONTEXT.remove(subcontextRef!.current);
-    };
-  }, [id]);
+    },
+    []
+  );
 
   return subcontext;
 };
