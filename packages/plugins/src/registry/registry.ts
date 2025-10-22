@@ -163,6 +163,10 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     return description as LoadedPlugin<D, I>;
   }
 
+  isLoading(id: string): boolean {
+    return this.loadPromises.has(id);
+  }
+
   /**
    * Get all plugins, both descriptions and loaded
    * @param filter Optional filter function to determine which plugins to return
