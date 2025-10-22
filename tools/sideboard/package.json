@@ -8,29 +8,44 @@
     ".": {
       "import": "./dist/index.js",
       "patchwork": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.tsx"
+    },
+    "./tools/sideboard": {
+      "import": "./dist/sideboard/sideboard.js",
+      "patchwork": "./dist/sideboard/sideboard.js",
+      "source": "./src/sideboard/sideboard.tsx"
+    },
+    "./tools/module-settings": {
+      "import": "./dist/module-settings/module-settings.js",
+      "patchwork": "./dist/module-settings/module-settings.js",
+      "source": "./src/module-settings/module-settings.tsx"
     }
   },
   "scripts": {
-    "build": "vite build",
-    "dev": "vite build --watch",
+    "build": "node esbuild/build.ts",
+    "dev": "node esbuild/watch.ts",
     "pushwatch": "pnpm dev pushwork"
   },
   "dependencies": {
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-solid-primitives": "^2.4.0",
     "@kobalte/core": "^0.13.11",
     "@patchwork/elements": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
     "solid-js": "^1.9.9"
   },
   "devDependencies": {
-    "@automerge/automerge-repo": "catalog:",
-    "@automerge/automerge-repo-solid-primitives": "^2.4.0",
+    "@babel/core": "7.28.4",
+    "@babel/parser": "7.28.4",
+    "@node-types/node": "npm:@types/node@^24.9.1",
     "@patchwork/context": "workspace:^",
     "@patchwork/plugins": "workspace:^",
+    "@types/babel__core": "^7.20.5",
+    "babel-preset-solid": "^1.9.9",
+    "esbuild": "^0.23.1",
     "tiny-patchwork": "workspace:^",
-    "typescript": "^5.9.3",
-    "vite": "npm:rolldown-vite@^7.1.19",
-    "vite-plugin-solid": "^2.11.9"
+    "typescript": "^5.9.3"
   },
   "volta": {
     "node": "22.21.0"
