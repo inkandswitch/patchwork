@@ -435,12 +435,6 @@ importers:
 
   tools/sideboard:
     dependencies:
-      '@automerge/automerge-repo':
-        specifier: 2.4.0-alpha.2
-        version: 2.4.0-alpha.2
-      '@automerge/automerge-repo-solid-primitives':
-        specifier: ^2.4.0
-        version: 2.4.0(@automerge/automerge@3.1.2)(solid-js@1.9.9)
       '@kobalte/core':
         specifier: ^0.13.11
         version: 0.13.11(solid-js@1.9.9)
@@ -453,34 +447,19 @@ importers:
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9
-      vite-plugin-solid:
-        specifier: ^2.11.9
-        version: 2.11.9(rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.23.1)(jiti@2.6.1)(terser@5.44.0))(solid-js@1.9.9)
     devDependencies:
-      '@babel/core':
-        specifier: 7.28.4
-        version: 7.28.4
-      '@babel/parser':
-        specifier: 7.28.4
-        version: 7.28.4
-      '@node-types/node':
-        specifier: npm:@types/node@^24.9.1
-        version: '@types/node@24.9.1'
+      '@automerge/automerge-repo':
+        specifier: 2.4.0-alpha.2
+        version: 2.4.0-alpha.2
+      '@automerge/automerge-repo-solid-primitives':
+        specifier: ^2.4.0
+        version: 2.4.0(@automerge/automerge@3.1.2)(solid-js@1.9.9)
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../../packages/plugins
-      '@types/babel__core':
-        specifier: ^7.20.5
-        version: 7.20.5
-      babel-preset-solid:
-        specifier: ^1.9.9
-        version: 1.9.9(@babel/core@7.28.4)(solid-js@1.9.9)
-      esbuild:
-        specifier: ^0.23.1
-        version: 0.23.1
       tiny-patchwork:
         specifier: workspace:^
         version: link:../../sites/tiny-patchwork
@@ -489,7 +468,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: npm:rolldown-vite@^7.1.19
-        version: rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.23.1)(jiti@2.6.1)(terser@5.44.0)
+        version: rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.25.11)(jiti@2.6.1)(terser@5.44.0)
+      vite-plugin-solid:
+        specifier: ^2.11.9
+        version: 2.11.9(rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.25.11)(jiti@2.6.1)(terser@5.44.0))(solid-js@1.9.9)
 
 packages:
 
@@ -4480,6 +4462,7 @@ snapshots:
   '@types/node@24.9.1':
     dependencies:
       undici-types: 7.16.0
+    optional: true
 
   '@types/prop-types@15.7.15': {}
 
@@ -5519,7 +5502,7 @@ snapshots:
 
   reusify@1.1.0: {}
 
-  rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.23.1)(jiti@2.6.1)(terser@5.44.0):
+  rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.25.11)(jiti@2.6.1)(terser@5.44.0):
     dependencies:
       '@oxc-project/runtime': 0.95.0
       fdir: 6.5.0(picomatch@4.0.3)
@@ -5530,7 +5513,7 @@ snapshots:
       tinyglobby: 0.2.15
     optionalDependencies:
       '@types/node': 24.9.1
-      esbuild: 0.23.1
+      esbuild: 0.25.11
       fsevents: 2.3.3
       jiti: 2.6.1
       terser: 5.44.0
@@ -5774,7 +5757,8 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici-types@7.16.0: {}
+  undici-types@7.16.0:
+    optional: true
 
   universalify@2.0.1: {}
 
@@ -5838,7 +5822,7 @@ snapshots:
       strip-json-comments: 5.0.3
       vite: 7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
 
-  vite-plugin-solid@2.11.9(rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.23.1)(jiti@2.6.1)(terser@5.44.0))(solid-js@1.9.9):
+  vite-plugin-solid@2.11.9(rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.25.11)(jiti@2.6.1)(terser@5.44.0))(solid-js@1.9.9):
     dependencies:
       '@babel/core': 7.28.4
       '@types/babel__core': 7.20.5
@@ -5846,8 +5830,8 @@ snapshots:
       merge-anything: 5.1.7
       solid-js: 1.9.9
       solid-refresh: 0.6.3(solid-js@1.9.9)
-      vite: rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.23.1)(jiti@2.6.1)(terser@5.44.0)
-      vitefu: 1.1.1(rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.23.1)(jiti@2.6.1)(terser@5.44.0))
+      vite: rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.25.11)(jiti@2.6.1)(terser@5.44.0)
+      vitefu: 1.1.1(rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.25.11)(jiti@2.6.1)(terser@5.44.0))
     transitivePeerDependencies:
       - supports-color
 
@@ -5881,9 +5865,9 @@ snapshots:
       lightningcss: 1.30.2
       terser: 5.44.0
 
-  vitefu@1.1.1(rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.23.1)(jiti@2.6.1)(terser@5.44.0)):
+  vitefu@1.1.1(rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.25.11)(jiti@2.6.1)(terser@5.44.0)):
     optionalDependencies:
-      vite: rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.23.1)(jiti@2.6.1)(terser@5.44.0)
+      vite: rolldown-vite@7.1.19(@types/node@24.9.1)(esbuild@0.25.11)(jiti@2.6.1)(terser@5.44.0)
 
   vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.0):
     dependencies:
