@@ -11,10 +11,9 @@ import {
   type HasPatchworkMetadata,
 } from "@patchwork/filesystem";
 import {
-  getLoadedFallbackToolId,
+  getFallbackTool,
   getPlugin,
   getPluginRegistry,
-  isLoadablePlugin,
   onPluginsChange,
   type Tool,
 } from "@patchwork/plugins";
@@ -137,7 +136,7 @@ export function registerPatchworkViewElement(
         moduleWatcher.loadSuggestedImportUrl(this.docUrl);
 
         if (!this.toolId) {
-          this.toolId = await getLoadedFallbackToolId(this.#handle.doc());
+          this.toolId = getFallbackTool(this.#handle.doc())?.id;
         }
 
         this.#teardowns.add(

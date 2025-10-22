@@ -1,15 +1,13 @@
 import { getType, type HasPatchworkMetadata } from "@patchwork/filesystem";
-import { getLoadedPlugins } from "./registry/index.js";
+import { getLoadedPlugins, getPlugins } from "./registry/index.js";
 import type { Tool, ToolDescription } from "./tools/index.js";
 
 export * from "./tools/index.js";
 export * from "./registry/index.js";
 export * from "./datatypes/index.js";
 
-export async function getLoadedSupportedToolsForType(
-  type: string
-): Promise<Tool[]> {
-  const plugins = await getLoadedPlugins("patchwork:tool", (desc) => {
+export function getSupportedToolsForType(type: string): Tool[] {
+  const plugins = getPlugins("patchwork:tool", (desc) => {
     return (
       (desc as ToolDescription).supportedDataTypes.includes(type) ||
       (desc as ToolDescription).supportedDataTypes.includes("*")
@@ -19,17 +17,15 @@ export async function getLoadedSupportedToolsForType(
   return plugins as Tool[];
 }
 
-export async function getLoadedSupportedTools(
-  doc: HasPatchworkMetadata
-): Promise<Tool[]> {
+export function getSupportedTools(doc: HasPatchworkMetadata): Tool[] {
   const type = getType(doc);
   if (!type) return [];
-  return getLoadedSupportedToolsForType(type);
+  return getSupportedToolsForType(type);
 }
 
-export async function getLoadedFallbackTool(doc: HasPatchworkMetadata) {
+export function getFallbackTool(doc: HasPatchworkMetadata) {
   const type = getType(doc)!;
-  const plugins = await getLoadedSupportedTools(doc);
+  const plugins = getSupportedTools(doc);
   plugins.sort((a, b) => {
     const aSpecificallySupports = a.supportedDataTypes?.includes(type);
     const bSpecificallySupports = b.supportedDataTypes?.includes(type);
@@ -38,9 +34,4 @@ export async function getLoadedFallbackTool(doc: HasPatchworkMetadata) {
     return 1;
   });
   return plugins?.[0];
-}
-
-export async function getLoadedFallbackToolId(doc: HasPatchworkMetadata) {
-  const plugin = await getLoadedFallbackTool(doc);
-  return plugin?.id;
 }
