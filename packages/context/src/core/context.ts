@@ -13,13 +13,11 @@ export class Context {
   // ==== mutation methods ====
 
   add(ref: Ref | Ref[]) {
-    console.log("__ add by", this.name);
     addTo(this.#refsById, ref);
     this.#notify();
   }
 
   replace(ref: Ref | Ref[]) {
-    console.log("__ replace by", this.name);
     const newRefsById = new Map<string, Ref>();
     addTo(newRefsById, ref);
 
