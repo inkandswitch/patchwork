@@ -21,7 +21,7 @@ const TabViewer = ({
     suspense: true,
   });
   const datatypes = useDatatypeDescriptions();
-  const selectionContext = useSubcontext("TAB_VIEWER");
+  const selectionContext = useSubcontext("TAB_VIEWER_SELECTION");
 
   // Get the active tab's document reference for context
   const activeTab =
@@ -37,7 +37,7 @@ const TabViewer = ({
     selectionContext.replace(
       activeDocRef ? [activeDocRef.with(IsSelected(true))] : []
     );
-  }, [activeDocRef]);
+  }, [activeDocRef, selectionContext]);
 
   // Listen for open document events
   useEffect(() => {
@@ -164,6 +164,7 @@ const TabViewer = ({
 };
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
       "patchwork-view": React.DetailedHTMLProps<

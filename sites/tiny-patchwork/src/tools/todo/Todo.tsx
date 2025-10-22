@@ -85,7 +85,6 @@ type TodoItemProps = {
 
 const TodoItem = ({ todoRef }: TodoItemProps) => {
   const todo = todoRef.value;
-
   const diff = useReactive(getDiff(todoRef));
 
   const onToogle = () => {

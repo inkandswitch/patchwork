@@ -8,53 +8,71 @@ import { CONTEXT, PathRef, Ref } from "../core";
 import { Context } from "../core/context";
 import { Reactive } from "../reactive";
 
-export const useReactive = <T>(
-  reactiveOrFn: Reactive<T> | (() => Reactive<T>)
-): T => {
-  const reactive = useMemo(
-    () => (typeof reactiveOrFn === "function" ? reactiveOrFn() : reactiveOrFn),
-    [reactiveOrFn]
-  );
+CONTEXT.subscribe(() => {
+  console.log("!! CONTEXT changed", CONTEXT.dump());
+});
 
-  const [value, setValue] = useState(reactive.value);
+export function useReactive<T>(reactive: Reactive<T>): T;
+export function useReactive<T>(reactive: undefined): undefined;
+export function useReactive<T>(
+  reactive: undefined | Reactive<T>
+): T | undefined;
+export function useReactive<T>(
+  reactive: Reactive<T> | undefined
+): T | undefined {
+  const [value, setValue] = useState(reactive?.value);
 
   useEffect(() => {
-    const reactive =
-      typeof reactiveOrFn === "function" ? reactiveOrFn() : reactiveOrFn;
-
-    reactive.on("change", setValue);
-
-    setValue(reactive.value);
-
-    return () => {
-      reactive.emit("destroy");
-    };
-  }, [reactiveOrFn]);
+    if (reactive) {
+      reactive.on("change", setValue);
+    }
+  }, [reactive]);
 
   return value;
+}
+
+type UseDocRefHandleSuspendingParams = {
+  suspense: true;
+};
+type UseDocRefHandleSynchronousParams = {
+  suspense: false;
 };
 
-export const useDocRef = <T = unknown>(
-  docUrl?: AutomergeUrl
-): Ref<T, T, never> | undefined => {
-  const docHandle = useDocHandle(docUrl);
+type UseDocRefParams =
+  | UseDocRefHandleSuspendingParams
+  | UseDocRefHandleSynchronousParams;
+
+export function useDocRef<T>(
+  docUrl: AutomergeUrl,
+  params: UseDocRefHandleSuspendingParams
+): Ref<T, T, never>;
+export function useDocRef<T>(
+  docUrl?: AutomergeUrl,
+  params?: UseDocRefHandleSynchronousParams
+): Ref<T, T, never> | undefined;
+export function useDocRef<T = unknown>(
+  docUrl?: AutomergeUrl,
+  params?: UseDocRefHandleSynchronousParams
+): Ref<T, T, never> | undefined {
+  const docHandle = useDocHandle(docUrl, params);
 
   return useMemo(
     () =>
       docHandle ? (new PathRef(docHandle, []) as Ref<T, T, never>) : undefined,
     [docHandle]
   );
-};
+}
 
-export const useSubcontext = (id?: string) => {
-  const [subcontext] = useState<Context>(() => CONTEXT.subcontext());
+export const useSubcontext = (id: string) => {
+  const [subcontext] = useState<Context>(() => CONTEXT.subcontext(id));
   const subcontextRef = useRef<Context>(subcontext);
 
   useEffect(() => {
     return () => {
+      console.log("__ remove subcontext", id);
       CONTEXT.remove(subcontextRef!.current);
     };
-  }, []);
+  }, [id]);
 
   return subcontext;
 };

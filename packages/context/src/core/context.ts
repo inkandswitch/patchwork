@@ -8,16 +8,18 @@ export class Context {
   #refsById: Map<string, Ref> = new Map();
   #subcontexts = new Set<Context>();
 
-  constructor() {}
+  constructor(public readonly name?: string) {}
 
   // ==== mutation methods ====
 
   add(ref: Ref | Ref[]) {
+    console.log("__ add by", this.name);
     addTo(this.#refsById, ref);
     this.#notify();
   }
 
   replace(ref: Ref | Ref[]) {
+    console.log("__ replace by", this.name);
     const newRefsById = new Map<string, Ref>();
     addTo(newRefsById, ref);
 
@@ -64,6 +66,10 @@ export class Context {
     return Array.from(refsById.values());
   }
 
+  get subcontexts(): Context[] {
+    return Array.from(this.#subcontexts);
+  }
+
   #resolveAll(refsById: Map<string, Ref>) {
     for (const ref of this.#refsById.values()) {
       const id = ref.toId();
@@ -105,8 +111,8 @@ export class Context {
 
   // ==== subcontext methods ====
 
-  subcontext(): Context {
-    const subcontext = new Context();
+  subcontext(name?: string): Context {
+    const subcontext = new Context(name);
     subcontext.subscribe(this.#notify);
     this.#subcontexts.add(subcontext);
     return subcontext;
@@ -115,6 +121,7 @@ export class Context {
   remove(context: Context) {
     context.unsubscribe(this.#notify);
     this.#subcontexts.delete(context);
+    this.#notify();
   }
 
   // ==== debug methods ====

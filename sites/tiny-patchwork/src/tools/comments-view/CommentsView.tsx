@@ -27,7 +27,7 @@ const CommentsView = () => {
 
   const selectedThread = useRefValue(selectedThreadRef);
 
-  const selectionContext = useSubcontext();
+  const selectionContext = useSubcontext("COMMENTS_VIEW_SELECTION");
   useEffect(() => {
     if (!selectedThreadRef || !selectedThread) {
       selectionContext.replace([]);

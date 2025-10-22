@@ -2,7 +2,6 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { CONTEXT, defineField } from "../core";
 import { contextComputation } from "../core/computation";
 import { IdRef, loadRef, Ref, RefWith, SerializedRef } from "../core/refs";
-import { memoize } from "../utils/memoize";
 
 export type Thread = {
   id: string;
@@ -33,14 +32,11 @@ export const ThreadField = defineField<ThreadField, Ref<Thread>>(
   ThreadSymbol
 );
 
-export const getCommentThreads = memoize(
-  (ref: Ref) =>
-    contextComputation(() => {
-      const threads = CONTEXT.resolve(ref).get(ThreadField);
-      return threads ? [threads] : [];
-    }),
-  (ref: Ref) => ref.toId()
-);
+export const getCommentThreads = (ref: Ref) =>
+  contextComputation(() => {
+    const threads = CONTEXT.resolve(ref).get(ThreadField);
+    return threads ? [threads] : [];
+  });
 
 export const getStoredThreads = (
   docHandle: DocHandle<DocWithComments>
@@ -71,19 +67,16 @@ export const getStoredThreads = (
   return refsWithThreads;
 };
 
-export const getThreadsAt = memoize(
-  (ref?: Ref) =>
-    contextComputation(() => {
-      if (!ref) {
-        return [];
-      }
+export const getThreadsAt = (ref: Ref) =>
+  contextComputation(() => {
+    if (!ref) {
+      return [];
+    }
 
-      return CONTEXT.refsWith(ThreadField).filter((refWithComments) => {
-        return refWithComments.isElementOf(ref);
-      });
-    }),
-  (ref?: Ref) => ref?.toId()
-);
+    return CONTEXT.refsWith(ThreadField).filter((refWithComments) => {
+      return refWithComments.isElementOf(ref);
+    });
+  });
 
 export const createReply = ({
   threadRef,

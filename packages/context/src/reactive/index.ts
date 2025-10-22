@@ -15,13 +15,13 @@ export class Reactive<Value> extends EventEmitter<{
     this.#value = props;
   }
 
-  change(mutate: (props: Value) => void) {
+  change(mutate: (value: Value) => void) {
     mutate(this.#value);
     this.emit("change", this.#value);
   }
 
-  set(props: Value) {
-    this.#value = props;
-    this.emit("change", props);
+  set(value: Value) {
+    this.#value = value;
+    this.emit("change", value);
   }
 }

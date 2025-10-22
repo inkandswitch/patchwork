@@ -1,9 +1,8 @@
-import { Reactive } from "../reactive";
 import { CONTEXT } from "../core";
 import { defineField } from "../core/fields";
 import { Ref } from "../core/refs";
 import { contextComputation } from "../core/computation";
-import { memoize } from "../utils/memoize";
+import { Reactive } from "../reactive";
 
 const IsSelectedSymbol = Symbol("IsSelected");
 export type IsSelected = typeof IsSelectedSymbol;
@@ -12,20 +11,9 @@ export const IsSelected = defineField<IsSelected, boolean>(
   IsSelectedSymbol
 );
 
-export const isSelected = memoize(
-  (ref?: Ref) =>
-    contextComputation(() => {
-      const result = ref
-        ? CONTEXT.resolve(ref).get(IsSelected) === true
-        : false;
+export const isSelected = (ref: Ref): Reactive<boolean> =>
+  contextComputation(() => CONTEXT.resolve(ref).get(IsSelected) ?? false);
 
-      return result;
-    }),
-  (ref?: Ref) => ref?.toId()
+export const $selectedRefs = contextComputation(() =>
+  CONTEXT.refsWith(IsSelected).filter((ref) => ref.get(IsSelected) === true)
 );
-
-export const $selectedRefs = contextComputation(() => {
-  return CONTEXT.refsWith(IsSelected).filter(
-    (ref) => ref.get(IsSelected) === true
-  );
-});

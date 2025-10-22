@@ -2,7 +2,6 @@ import * as Automerge from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";
 import { last } from "../utils/last";
 import { lookup } from "../utils/lookup";
-import { memoize } from "../utils/memoize";
 import { CONTEXT } from "../core";
 import { contextComputation } from "../core/computation";
 import { defineField } from "../core/fields";
@@ -43,15 +42,10 @@ export const ViewHeads = defineField<ViewHeads, ViewHeadsValue>(
   ViewHeadsSymbol
 );
 
-export const getViewHeads = memoize(
-  (ref?: Ref) =>
-    contextComputation(() =>
-      ref ? CONTEXT.resolve(ref).get(ViewHeads) : undefined
-    ),
-  (ref?: Ref) => ref?.toId()
-);
+export const getViewHeads = (ref: Ref) =>
+  contextComputation((context) => context.resolve(ref).get(ViewHeads));
 
-export const getDiffOfDoc = (
+export const computeDiffOfDoc = (
   docHandle?: DocHandle<unknown>,
   headsBefore?: Automerge.Heads
 ): RefWith<Diff>[] => {
@@ -179,21 +173,10 @@ export const getDiffOfDoc = (
   return changedRefs;
 };
 
-export const getDiff = memoize(
-  (ref: Ref) => contextComputation(() => CONTEXT.resolve(ref).get(Diff)),
-  (ref: Ref) => ref.toId()
-);
+export const getDiff = (ref: Ref) =>
+  contextComputation(() => CONTEXT.resolve(ref).get(Diff));
 
-export const getRefsWithDiffAt = memoize(
-  (ref?: Ref) =>
-    contextComputation(() => {
-      if (!ref) {
-        return [];
-      }
-
-      return CONTEXT.refsWith(Diff).filter((refWithDiff) =>
-        refWithDiff.isElementOf(ref)
-      );
-    }),
-  (ref?: Ref) => ref?.toId()
-);
+export const getElementsWithDiff = (ref: Ref) =>
+  contextComputation(() =>
+    CONTEXT.refsWith(Diff).filter((refWithDiff) => refWithDiff.isElementOf(ref))
+  );

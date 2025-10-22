@@ -15,21 +15,27 @@ import {
   Decoration,
   DecorationSet,
   EditorView,
-  WidgetType,
   keymap,
+  WidgetType,
 } from "@codemirror/view";
 import { useCallback, useMemo, useRef } from "react";
 import { Codemirror } from "../../lib/codemirror";
 import { useStaticCallback } from "../../lib/useStaticCallback";
 
 import { parseAutomergeUrl } from "@automerge/automerge-repo";
-import { PathRef, Ref, TextSpanRef, TextSpanRefWith } from "@patchwork/context";
+import {
+  PathRef,
+  Reactive,
+  Ref,
+  TextSpanRef,
+  TextSpanRefWith,
+} from "@patchwork/context";
 import {
   createComment,
   getThreadsAt,
   ThreadField,
 } from "@patchwork/context/comments";
-import { Diff, DiffValue, getRefsWithDiffAt } from "@patchwork/context/diff";
+import { Diff, DiffValue, getElementsWithDiff } from "@patchwork/context/diff";
 import { useReactive, useSubcontext } from "@patchwork/context/react";
 import { $selectedRefs, IsSelected } from "@patchwork/context/selection";
 import { ReactToolProps } from "../../lib/toolify";
@@ -49,22 +55,27 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   const cmContainerRef = useRef<HTMLDivElement | null>(null);
   const isReadOnly = parseAutomergeUrl(docUrl).heads !== undefined;
 
-  // todo:  another weird doc handle issue
+  const docHandle = useDocHandle<MarkdownDoc>(docUrl);
   const contentRef = useMemo(() => {
-    // ignore hack
-    if (!handle || (handle.doc() as any)["@patchwork"]?.type !== "markdown") {
+    if (!docHandle) {
       return undefined;
     }
 
-    return new PathRef(handle, ["content"]);
-  }, [handle]);
+    return new PathRef(docHandle, ["content"]);
+  }, [docHandle]);
 
-  const refsWithDiff = useReactive(
-    getRefsWithDiffAt(contentRef)
-  ) as TextSpanRefWith<Diff>[];
+  const val = useMemo(
+    () =>
+      (contentRef ? getElementsWithDiff(contentRef) : []) as Reactive<
+        TextSpanRefWith<Diff>[]
+      >,
+    [contentRef]
+  );
+  const refsWithDiff = useReactive(val);
 
+  const commentThreads = useMemo(() => getThreadsAt(contentRef), [contentRef]);
   const refsWithComments = useReactive(
-    getThreadsAt(contentRef)
+    commentThreads
   ) as TextSpanRefWith<ThreadField>[];
 
   const selectedRefs = useReactive($selectedRefs);
@@ -77,45 +88,51 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   );
 
   // compute decorations
-  const decorations = useMemo<DecorationSet>(() => {
-    return RangeSet.of<Decoration>(
-      [
-        // diff
-        ...refsWithDiff.flatMap((ref) => {
-          const diff = ref.get(Diff) as DiffValue<string>;
+  const decorations = useMemo<DecorationSet>(
+    () =>
+      RangeSet.of<Decoration>(
+        [
+          // diff
+          ...refsWithDiff.flatMap((ref) => {
+            const diff = ref.get(Diff) as DiffValue<string>;
 
-          if (diff.type === "deleted") {
-            return makeDeleteDecoration({
-              deletedText: diff.before,
-              isActive: isSelected(ref),
-            }).range(ref.from, ref.from);
-          }
+            if (diff.type === "deleted") {
+              return makeDeleteDecoration({
+                deletedText: diff.before,
+                isActive: isSelected(ref),
+              }).range(ref.from, ref.from);
+            }
 
-          if (diff.type === "added") {
-            return Decoration.mark({
-              class: `border-b border-green-300 ${
-                isSelected(ref) ? "bg-green-300" : "bg-green-100"
-              }`,
-            }).range(ref.from, ref.to);
-          }
+            if (diff.type === "added") {
+              return Decoration.mark({
+                class: `border-b border-green-300 ${
+                  isSelected(ref) ? "bg-green-300" : "bg-green-100"
+                }`,
+              }).range(ref.from, ref.to);
+            }
 
-          return [];
-        }),
+            return [];
+          }),
 
-        // comments
-        ...refsWithComments.flatMap((ref) =>
-          Decoration.mark({
-            class: `border-b border-yellow-300 ${
-              isSelected(ref) ? "bg-yellow-300" : "bg-yellow-100"
-            }`,
-          }).range(ref.from, ref.to)
-        ),
-      ],
-      true // sort ranges
-    );
-  }, [refsWithComments, refsWithDiff, isSelected]);
+          // comments
+          ...(refsWithComments
+            ? refsWithComments.flatMap((ref) =>
+                ref.from !== ref.to
+                  ? Decoration.mark({
+                      class: `border-b border-yellow-300 ${
+                        isSelected(ref) ? "bg-yellow-300" : "bg-yellow-100"
+                      }`,
+                    }).range(ref.from, ref.to)
+                  : []
+              )
+            : []),
+        ],
+        true // sort ranges
+      ),
+    [refsWithComments, refsWithDiff, isSelected]
+  );
 
-  const selectionContext = useSubcontext("SELECTION");
+  const selectionContext = useSubcontext("MAKRDOWN_SELECTION");
 
   const onChangeSelection = useStaticCallback((from: number, to: number) => {
     if (!handle) {

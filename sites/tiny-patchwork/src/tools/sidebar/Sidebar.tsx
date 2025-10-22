@@ -102,7 +102,7 @@ const FolderEntry = ({
 };
 
 const DocLinkEntry = ({ docLink }: { docLink: DocLink }) => {
-  const docRef = useDocRef<FolderDoc>(docLink.url);
+  const docRef = useDocRef<FolderDoc>(docLink.url, { suspense: true });
 
   const selected = useReactive(isSelected(docRef));
 
