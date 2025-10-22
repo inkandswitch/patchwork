@@ -12,7 +12,6 @@ import {
 } from "@patchwork/filesystem";
 import {
   getLoadedFallbackToolId,
-  getLoadedPlugin,
   getPlugin,
   getPluginRegistry,
   onPluginsChange,
@@ -141,13 +140,18 @@ export function registerPatchworkViewElement(
         }
 
         this.#teardowns.add(
-          onPluginsChange<Tool>("patchwork:tool", async (tools, newToolId) => {
-            if (newToolId == this.toolId) {
-              getPluginRegistry("patchwork:tool").loadById(newToolId);
+          onPluginsChange<Tool>("patchwork:tool", async (_tools, newTool) => {
+            if (newTool?.id == this.toolId) {
+              if (!newTool.module) {
+                // if it's not loaded, loading it will cause onPluginsChange to fire again
+                getPluginRegistry("patchwork:tool").loadById(newTool.id);
+              }
+              // when a tool has updated we should rerender from scratch
               if (this.#tool) {
                 this.#tool = null;
                 this.#reinit();
               } else {
+                // if we never had a tool we can try rendering again
                 this.#queueRender();
               }
             }
