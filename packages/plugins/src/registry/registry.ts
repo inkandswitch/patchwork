@@ -11,7 +11,10 @@ import debug from "debug";
 const log = debug("patchwork:plugins");
 
 export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
-  "plugins:changed": (plugins: LoadedPlugin<D, I>[], id: string) => void;
+  "plugins:changed": (
+    plugins: LoadedPlugin<D, I>[],
+    target: Plugin<D, I>
+  ) => void;
 }
 
 /**
@@ -37,7 +40,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     this.plugins.set(plugin.id, plugin);
 
     // Notify listeners
-    this.events.emit("plugins:changed", this.getPlugins(), plugin.id);
+    this.events.emit("plugins:changed", this.getPlugins(), plugin);
   }
 
   /**
@@ -142,11 +145,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
           this.loadPromises.delete(id);
 
           // Notify listeners that an plugin has been loaded
-          this.events.emit(
-            "plugins:changed",
-            this.getPlugins(),
-            description.id
-          );
+          this.events.emit("plugins:changed", this.getPlugins(), description);
 
           return Plugin;
         })
