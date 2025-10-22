@@ -39,18 +39,24 @@ type UseDocRefParams =
   | UseDocRefHandleSynchronousParams;
 
 export function useDocRef<T>(
-  docUrl: AutomergeUrl,
+  docUrl: AutomergeUrl | undefined,
   params: UseDocRefHandleSuspendingParams
 ): Ref<T, T, never>;
 export function useDocRef<T>(
-  docUrl?: AutomergeUrl,
-  params?: UseDocRefHandleSynchronousParams
+  docUrl: AutomergeUrl | undefined,
+  params?: UseDocRefHandleSynchronousParams | undefined
 ): Ref<T, T, never> | undefined;
 export function useDocRef<T = unknown>(
-  docUrl?: AutomergeUrl,
-  params?: UseDocRefHandleSynchronousParams
+  docUrl: AutomergeUrl | undefined,
+  params?:
+    | UseDocRefHandleSynchronousParams
+    | UseDocRefHandleSuspendingParams
+    | undefined
 ): Ref<T, T, never> | undefined {
-  const docHandle = useDocHandle(docUrl, params);
+  const docHandle = useDocHandle(
+    docUrl,
+    params as UseDocRefHandleSynchronousParams
+  );
 
   return useMemo(
     () =>
