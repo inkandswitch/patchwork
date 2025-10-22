@@ -2,6 +2,7 @@ import { render } from "solid-js/web";
 import type { ModuleSettingsDoc } from "@patchwork/filesystem";
 import type { ToolImplementation } from "@patchwork/plugins";
 import type { TinyPatchworkAccountDoc } from "tiny-patchwork/src/lib/account-doc.ts";
+import "./index.css";
 
 function addStyles(element: HTMLElement, textContent: string) {
   const id = "sideboard-styles";
@@ -11,7 +12,8 @@ function addStyles(element: HTMLElement, textContent: string) {
 }
 
 async function loadStyles() {
-  return (await import("./style.css?inline")).default;
+  const url = new URL("./index.css", import.meta.url);
+  return (await fetch(url)).text();
 }
 
 export const plugins = [
