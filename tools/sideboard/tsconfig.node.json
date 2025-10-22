@@ -4,7 +4,6 @@
     "target": "ESNext",
     "lib": ["ESNext"],
     "module": "NodeNext",
-    "types": ["node"],
     "skipLibCheck": true,
     "allowJs": true,
 
@@ -20,8 +19,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "typeRoots": ["./node_modules/@node-types"],
-    "outDir": "dist"
+    "typeRoots": ["./node_modules/@node-types"]
   },
-  "include": ["vite.config.ts"]
+  "include": ["esbuild"]
 }
