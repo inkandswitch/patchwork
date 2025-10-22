@@ -17,6 +17,7 @@ import {
   getPluginRegistry,
   getLoadedPlugins,
   type Tool,
+  getPlugins,
 } from "@patchwork/plugins";
 import {
   isValidAutomergeUrl,
@@ -24,6 +25,7 @@ import {
 } from "@automerge/automerge-repo";
 import type { ModuleSettingsDoc } from "@patchwork/filesystem";
 import type { PatchworkToolProps } from "../types.ts";
+import { useTools } from "../sideboard/plugins.ts";
 const registry = getPluginRegistry("patchwork:tool");
 
 function swapWithEnd(list: any[], idx: number) {
@@ -49,18 +51,6 @@ function createDeepSignal<T>(v?: T): Signal<T> {
       store[0]
     ),
   ] as Signal<T>;
-}
-
-function useTools(): Resource<Tool[]> {
-  const [tools, { refetch }] = createResource(
-    () => [],
-    () => getLoadedPlugins<Tool>("patchwork:tool"),
-    { storage: createDeepSignal }
-  );
-  const dispose = registry.onChange(refetch);
-
-  onCleanup(dispose);
-  return tools;
 }
 
 const add = (item: AutomergeUrl) => (doc: ModuleSettingsDoc) => {
@@ -105,7 +95,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
         placeholder="automerge:..."
       />
       <div class="module-settings__tools">
-        <For each={tools()}>
+        <For each={tools}>
           {(tool) => {
             const installed = () =>
               isValidAutomergeUrl(tool.importUrl) &&

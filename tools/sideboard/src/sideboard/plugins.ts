@@ -1,17 +1,21 @@
+import type { MaybeAccessor } from "@automerge/automerge-repo-solid-primitives/dist/types";
 import {
   type ToolDescription,
   type DataTypeDescription,
   type Tool,
   type DataType,
-  getLoadedSupportedToolsForType,
+  getSupportedToolsForType,
   getPluginRegistry,
 } from "@patchwork/plugins";
-import { createResource, onCleanup } from "solid-js";
+import { createEffect, on, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 
 const toolRegistry = getPluginRegistry<ToolDescription>("patchwork:tool");
 const datatypeRegistry =
   getPluginRegistry<DataTypeDescription>("patchwork:datatype");
+
+(window as any).toolRegistry = toolRegistry;
+(window as any).datatypeRegistry = datatypeRegistry;
 
 export function useTools(): Tool[] {
   const [plugins, setPlugins] = createStore(toolRegistry.getPlugins());
@@ -33,11 +37,26 @@ export function useDatatypes(filter: (item: DataType) => boolean): DataType[] {
   return plugins;
 }
 
-export function useLoadedSupportedToolsForType(type: string) {
-  const [supportedTools, control] = createResource(
-    () => type,
-    getLoadedSupportedToolsForType
+function access(thing: MaybeAccessor<string>) {
+  return typeof thing == "function" ? thing() : thing;
+}
+
+export function useSupportedToolsForType(type: MaybeAccessor<string>) {
+  const [plugins, setPlugins] = createStore(
+    getSupportedToolsForType(access(type))
   );
-  onCleanup(toolRegistry.onChange(control.refetch));
-  return supportedTools;
+
+  createEffect(
+    on(
+      () => access(type),
+      (type) => {
+        const dispose = toolRegistry.onChange(() =>
+          setPlugins(reconcile(getSupportedToolsForType(type)))
+        );
+        onCleanup(dispose);
+      }
+    )
+  );
+
+  return plugins;
 }
