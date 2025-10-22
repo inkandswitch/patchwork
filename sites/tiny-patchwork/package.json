@@ -50,6 +50,8 @@
     "pnpm": "^10.18.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
+    "scheduler": "^0.27.0",
+    "signia": "^0.1.5",
     "tailwindcss": "^4.1.14"
   }
 }

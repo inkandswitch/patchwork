@@ -23,7 +23,7 @@ export type DataTypeImplementation<D = unknown> = {
 
 // The DataType description extends the base PluginDescription
 export interface DataTypeDescription extends PluginDescription {
-  type: "patchwork:dataType";
+  type: "patchwork:datatype";
   icon: string;
   unlisted?: boolean;
 }

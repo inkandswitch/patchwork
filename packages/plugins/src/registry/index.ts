@@ -5,7 +5,12 @@ export type {
   PluginDescription,
 } from "./types.js";
 export { isLoadablePlugin, isPluginDescription, isPlugin } from "./registry.js";
-import { PluginRegistry, matchPlugins, sortPlugins } from "./registry.js";
+import {
+  PluginRegistry,
+  matchPlugins,
+  sortPlugins,
+  type PluginRegistryEvents,
+} from "./registry.js";
 import { LoadedPlugin, PluginDescription, Plugin } from "./types.js";
 
 // Map of plugin types to their registries
@@ -67,15 +72,11 @@ export async function getLoadedPlugin<T extends LoadedPlugin>(
   shouldWait = false,
   timeout = 10000
 ): Promise<T | undefined> {
-  const plugin = await getPluginRegistry<T>(pluginType).loadById(
+  return await getPluginRegistry<T>(pluginType).loadById(
     id,
     shouldWait,
     timeout
   );
-  if (!plugin) {
-    console.error(`Plugin not found: type ${pluginType}, id ${id}`);
-  }
-  return plugin;
 }
 
 /**
@@ -120,7 +121,7 @@ export function hasPlugin(pluginType: string, id: string): boolean {
  */
 export function onPluginsChange<T extends Plugin>(
   pluginType: string,
-  callback: (plugins: T[]) => void
+  callback: PluginRegistryEvents<T>["plugins:changed"]
 ): () => void {
   const registry = getPluginRegistry<T>(pluginType);
   return registry.onChange(callback);

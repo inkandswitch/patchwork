@@ -51,7 +51,9 @@ const moduleWatcher = new ModuleWatcher(
   repo,
   (name, mod) => {
     if (Array.isArray(mod.plugins)) {
-      registerPlugins(mod.plugins, name);
+      if (isValidAutomergeUrl(name)) {
+        registerPlugins(mod.plugins, name);
+      }
     }
   }
 );
@@ -64,15 +66,19 @@ rootElement.setAttribute("doc-url", accountDocHandle.url);
 rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
 
 rootElement.addEventListener("patchwork:open-document", (event) => {
-  window.location.hash = parseAutomergeUrl(event.detail.url).documentId;
+  const params = new URLSearchParams();
+  const { url, toolId } = event.detail;
+  params.set("doc", url);
+  if (toolId) params.set("tool", toolId);
+  window.location.hash = params.toString();
 });
 
 const handleHashChange = async (hash: string) => {
-  if (isValidDocumentId(hash)) {
-    const url = isValidAutomergeUrl(hash)
-      ? hash
-      : (`automerge:${hash}` as AutomergeUrl);
-    openDocument(rootElement, url);
+  const params = new URLSearchParams(hash);
+  const docUrl = params.get("doc");
+  const toolId = params.get("tool");
+  if (isValidAutomergeUrl(docUrl)) {
+    openDocument(rootElement, docUrl, toolId ?? undefined);
   } else {
     window.location.hash = "";
   }

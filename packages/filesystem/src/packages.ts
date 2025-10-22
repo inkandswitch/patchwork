@@ -1,4 +1,7 @@
-import type { AutomergeUrl } from "@automerge/automerge-repo";
+import {
+  parseAutomergeUrl,
+  type AutomergeUrl,
+} from "@automerge/automerge-repo";
 import { resolve } from "resolve.exports";
 import { automergeUrlToServiceWorkerUrl } from "./sw.js";
 
@@ -10,27 +13,33 @@ export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
   }
 
   console.log(`Importing module from entry point url ${entryPointUrl}`);
-  // this should use heads() but we want to put them in the URL prefix
-  // (so as to make sure the versions of assets & relative required files are consistent)
-  // and that really requires some changes to the service-worker I'm not ready to make
+
   return import(/* @vite-ignore */ entryPointUrl);
 }
 
 async function packageJsonContentsFromFolderDocUrl(
   folderDocUrl: AutomergeUrl
 ): Promise<Record<string, any> | undefined> {
-  const packageJSONPath = new URL(
+  const packageJSONURL = new URL(
     "package.json",
     new URL(
       automergeUrlToServiceWorkerUrl(folderDocUrl),
       window.location.origin
     )
-  ).href;
+  );
+
+  const { heads } = parseAutomergeUrl(folderDocUrl);
+  if (heads && heads.length) {
+    packageJSONURL.searchParams.set("heads", heads.join("|"));
+  }
+
+  const packageJSONPath = packageJSONURL.href;
 
   const response = await fetch(packageJSONPath);
   if (!response.ok) {
     return undefined;
   }
+
   return response.json();
 }
 
@@ -65,5 +74,12 @@ async function packageEntryPointUrl(folderDocUrl: AutomergeUrl) {
     automergeUrlToServiceWorkerUrl(folderDocUrl),
     window.location.origin
   );
-  return new URL(entryPoint, base).href;
+
+  const entry = new URL(entryPoint, base);
+
+  const heads = parseAutomergeUrl(folderDocUrl).heads;
+
+  heads && entry.searchParams.set("heads", heads.join("|"));
+
+  return entry.href;
 }
