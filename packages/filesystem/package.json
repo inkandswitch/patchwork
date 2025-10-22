@@ -15,7 +15,9 @@
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
+    "@types/debug": "^4.1.12",
     "@types/node": "^20.17.57",
+    "debug": "^4.4.3",
     "resolve.exports": "^2.0.3"
   }
 }

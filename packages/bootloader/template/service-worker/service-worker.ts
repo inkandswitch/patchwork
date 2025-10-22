@@ -260,14 +260,6 @@ self.addEventListener("activate", async (event) => {
   clients.claim();
 });
 
-const headsEqual = (doc: Automerge.Doc<unknown>, heads: string[]) => {
-  if (!doc) {
-    return false;
-  }
-  const docHeads = Automerge.getHeads(doc);
-  return heads.every((head) => docHeads.includes(head));
-};
-
 self.addEventListener("fetch", async (event: FetchEvent) => {
   const url = new URL(event.request.url);
 
@@ -293,22 +285,16 @@ self.addEventListener("fetch", async (event: FetchEvent) => {
     id: fetchId,
   });
 
-  if (event.request.url.includes("/automerge/automerge:")) {
+  if (url.pathname.startsWith("/automerge/automerge%3A")) {
     debugLog("AUTOMERGE request matched", url.href);
-    const [, , maybeAutomergeUrl, ...encodedParts] = url.pathname.split("/");
-    const heads = url.searchParams.get("heads");
-    const parts = encodedParts.map((part) => decodeURIComponent(part));
-    // in case we end with a /
-    if (parts[parts.length - 1] === "") {
-      parts.pop();
-    }
+    const pathname = decodeURIComponent(
+      url.pathname.slice("/automerge/".length)
+    );
+    const [automergeUrl, ...encodedParts] = pathname.split("/");
 
-    const hash = heads ? `#${heads}` : "";
-
-    // support old docID style URLs
-    const automergeUrl = maybeAutomergeUrl.startsWith("automerge:")
-      ? maybeAutomergeUrl + hash
-      : `automerge:${maybeAutomergeUrl}${hash}`;
+    const parts = encodedParts
+      .filter(Boolean)
+      .map((part) => decodeURIComponent(part));
 
     debugLog("Resolved automergeUrl", automergeUrl, "parts", parts);
 

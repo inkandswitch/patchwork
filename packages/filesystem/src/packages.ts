@@ -1,18 +1,17 @@
-import {
-  parseAutomergeUrl,
-  type AutomergeUrl,
-} from "@automerge/automerge-repo";
+import { type AutomergeUrl } from "@automerge/automerge-repo";
 import { resolve } from "resolve.exports";
 import { automergeUrlToServiceWorkerUrl } from "./sw.js";
+import debug from "debug";
+const log = debug("patchwork:filesystem");
 
 export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
-  console.log(`Importing module from folder doc url ${folderDocUrl}`);
+  log(`Importing module from folder doc url ${folderDocUrl}`);
   const entryPointUrl = await packageEntryPointUrl(folderDocUrl);
   if (!entryPointUrl) {
     throw new Error("No entry point found in package.json");
   }
 
-  console.log(`Importing module from entry point url ${entryPointUrl}`);
+  log(`Importing module from entry point url ${entryPointUrl}`);
 
   return import(/* @vite-ignore */ entryPointUrl);
 }
@@ -20,20 +19,13 @@ export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
 async function packageJsonContentsFromFolderDocUrl(
   folderDocUrl: AutomergeUrl
 ): Promise<Record<string, any> | undefined> {
-  const packageJSONURL = new URL(
+  const packageJSONPath = new URL(
     "package.json",
     new URL(
       automergeUrlToServiceWorkerUrl(folderDocUrl),
       window.location.origin
     )
-  );
-
-  const { heads } = parseAutomergeUrl(folderDocUrl);
-  if (heads && heads.length) {
-    packageJSONURL.searchParams.set("heads", heads.join("|"));
-  }
-
-  const packageJSONPath = packageJSONURL.href;
+  ).href;
 
   const response = await fetch(packageJSONPath);
   if (!response.ok) {
@@ -76,10 +68,6 @@ async function packageEntryPointUrl(folderDocUrl: AutomergeUrl) {
   );
 
   const entry = new URL(entryPoint, base);
-
-  const heads = parseAutomergeUrl(folderDocUrl).heads;
-
-  heads && entry.searchParams.set("heads", heads.join("|"));
 
   return entry.href;
 }
