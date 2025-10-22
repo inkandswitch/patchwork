@@ -14,6 +14,7 @@ import {
   getLoadedFallbackToolId,
   getPlugin,
   getPluginRegistry,
+  isLoadablePlugin,
   onPluginsChange,
   type Tool,
 } from "@patchwork/plugins";
@@ -142,9 +143,11 @@ export function registerPatchworkViewElement(
         this.#teardowns.add(
           onPluginsChange<Tool>("patchwork:tool", async (_tools, newTool) => {
             if (newTool?.id == this.toolId) {
-              if (!newTool.module) {
-                // if it's not loaded, loading it will cause onPluginsChange to fire again
-                getPluginRegistry("patchwork:tool").loadById(newTool.id);
+              const toolRegistry = getPluginRegistry("patchwork:tool");
+              if (!newTool.module && !toolRegistry.isLoading(newTool.id)) {
+                // if it's not loaded, loading it will cause onPluginsChange
+                // to fire again when it's ready
+                toolRegistry.loadById(newTool.id);
               }
               // when a tool has updated we should rerender from scratch
               if (this.#tool) {
