@@ -1,31 +1,39 @@
 import {
+  AutomergeUrl,
   DocHandle,
   encodeHeads,
   Repo,
+  isValidAutomergeUrl,
   stringifyAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { TinyPatchworkAccountDoc } from "./lib/account-doc";
 import { TabViewDoc } from "./tools/tab-view/datatype";
 import { SingleViewDoc } from "./tools/single-view/datatype";
 import { BranchViewDoc } from "./tools/branch-view/datatype";
-import { FolderDoc, HasPatchworkMetadata } from "@patchwork/filesystem";
+import {
+  FolderDoc,
+  HasPatchworkMetadata,
+  ModuleSettingsDoc,
+} from "@patchwork/filesystem";
 import { Automerge } from "@automerge/automerge-repo/slim";
 
 export const initCommands = (
   accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
   repo: Repo
 ) => {
-  const funkySidebar = () => {
+  const setSidebarToolId = (sidebarToolId: string) => {
     accountDocHandle.change((doc) => {
-      doc.sidebarToolId = "funky-sidebar";
+      doc.sidebarToolId = sidebarToolId;
     });
+  };
+
+  const funkySidebar = () => {
+    setSidebarToolId("funky-sidebar");
     console.log("Switched to funky sidebar");
   };
 
   const normalSidebar = () => {
-    accountDocHandle.change((doc) => {
-      doc.sidebarToolId = "simple-sidebar";
-    });
+    setSidebarToolId("simple-sidebar");
     console.log("Switched to normal sidebar");
   };
 
@@ -94,6 +102,33 @@ export const initCommands = (
     });
   };
 
+  const installModule = async (url: AutomergeUrl) => {
+    if (!isValidAutomergeUrl(url)) {
+      throw new Error("Invalid URL");
+    }
+
+    const moduleDocHandle = await repo.find<HasPatchworkMetadata>(url);
+    if (!moduleDocHandle) {
+      throw new Error("Module not found");
+    }
+
+    const moduleSettingsHandle = await repo.find<ModuleSettingsDoc>(
+      accountDocHandle.doc().moduleSettingsUrl
+    );
+
+    moduleSettingsHandle.change((doc) => {
+      const doesModuleAlreadyExist = doc.modules.includes(url);
+      if (doesModuleAlreadyExist) {
+        console.log("Module already installed, skipping");
+        return;
+      } else {
+        console.log("Installed module", url);
+      }
+
+      doc.modules.push(url);
+    });
+  };
+
   const copyCurrentDoc = async () => {
     const currentDocHandle = (window as any)
       .currentDocHandle as DocHandle<HasPatchworkMetadata>;
@@ -150,11 +185,13 @@ export const initCommands = (
   (window as any).$command = {
     funkySidebar,
     normalSidebar,
+    setSidebarToolId,
     tabView,
     singleView,
     branchView,
     historyView,
     commentsView,
     copyCurrentDoc,
+    installModule,
   };
 };
