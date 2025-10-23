@@ -87,8 +87,6 @@ const handleHashChange = async (hash: string) => {
       stringifyAutomergeUrl({ documentId, heads }),
       toolId ?? undefined
     );
-  } else {
-    window.location.hash = "";
   }
 };
 
