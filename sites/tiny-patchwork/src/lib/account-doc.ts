@@ -64,7 +64,7 @@ export async function getOrCreateAccountDocHandle(
     ["@patchwork"]: { type: "account" },
     frameToolId: "patchwork-frame",
     sidebarToolId: "simple-sidebar",
-    contextSidebarToolId: "history-view",
+    contextSidebarToolId: "comments-view",
     rootFolderUrl: rootFolderHandle.url,
     moduleSettingsUrl: moduleSettingsHandle.url,
     mainView: { documentUrl: singleViewHandle.url, toolId: "single-view" },
