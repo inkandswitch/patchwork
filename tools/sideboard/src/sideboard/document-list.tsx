@@ -1,7 +1,7 @@
 import type { DocLink } from "@patchwork/filesystem";
 import { For, Match, Show, Switch } from "solid-js";
 import { filter, selectedId } from "./state.ts";
-import { parseAutomergeUrl, type Repo } from "@automerge/automerge-repo";
+import { type Repo } from "@automerge/automerge-repo";
 import { createOpenEvent, createOpenEventHandler } from "./events.ts";
 import Folder from "./folder.tsx";
 import { ContextMenu } from "@kobalte/core/context-menu";
