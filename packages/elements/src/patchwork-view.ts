@@ -98,8 +98,8 @@ export function registerPatchworkViewElement(
         this.#reinit();
       }
 
-      disconnectedCallback() {
-        this.#teardown();
+      async disconnectedCallback() {
+        await this.#teardown();
       }
 
       attributeChangedCallback(name: string, _: string, val: string | null) {
@@ -130,7 +130,7 @@ export function registerPatchworkViewElement(
       };
 
       async #reinit() {
-        this.#teardown();
+        await this.#teardown();
         if (!this.docUrl) return;
         this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
         moduleWatcher.loadSuggestedImportUrl(this.docUrl);
@@ -168,11 +168,11 @@ export function registerPatchworkViewElement(
         this.#queueRender();
       }
 
-      #teardowns = new Set<() => void>();
+      #teardowns = new Set<() => unknown | Promise<void>>();
 
-      #teardown() {
+      async #teardown() {
         for (const fn of this.#teardowns) {
-          fn?.();
+          await fn?.();
         }
         this.#teardowns.clear();
         this.#handle = null;
