@@ -39,7 +39,6 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     // Store the plugin
     this.plugins.set(plugin.id, plugin);
 
-    // Notify listeners
     this.events.emit("plugins:changed", this.getPlugins(), plugin);
   }
 
@@ -161,10 +160,6 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     }
 
     return description as LoadedPlugin<D, I>;
-  }
-
-  isLoading(id: string): boolean {
-    return this.loadPromises.has(id);
   }
 
   /**

@@ -1,6 +1,11 @@
 import { getType, type HasPatchworkMetadata } from "@patchwork/filesystem";
 import { getLoadedPlugins, getPlugins } from "./registry/index.js";
-import type { Tool, ToolDescription } from "./tools/index.js";
+import type {
+  Tool,
+  ToolDescription,
+  ToolImplementation,
+} from "./tools/index.js";
+import { sortPlugins } from "./registry/registry.js";
 
 export * from "./tools/index.js";
 export * from "./registry/index.js";
@@ -26,12 +31,9 @@ export function getSupportedTools(doc: HasPatchworkMetadata): Tool[] {
 export function getFallbackTool(doc: HasPatchworkMetadata) {
   const type = getType(doc)!;
   const plugins = getSupportedTools(doc);
-  plugins.sort((a, b) => {
-    const aSpecificallySupports = a.supportedDataTypes?.includes(type);
-    const bSpecificallySupports = b.supportedDataTypes?.includes(type);
-    if (aSpecificallySupports && bSpecificallySupports) return 0;
-    if (aSpecificallySupports) return -1;
-    return 1;
-  });
-  return plugins?.[0];
+  return sortPlugins<Tool, ToolDescription, ToolImplementation>(
+    plugins,
+    "supportedDataTypes",
+    type
+  )?.[0];
 }
