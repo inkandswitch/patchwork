@@ -183,6 +183,11 @@ export function registerPatchworkViewElement(
               if (isLoadablePlugin(newTool) && !newTool.module) {
                 // if it's not loaded, load it now
                 await toolRegistry.loadById(newTool.id);
+
+                // probably a hot reload
+                if (!newTool.module) {
+                  await newTool.load();
+                }
               }
 
               if (this.#state == "unable") {
