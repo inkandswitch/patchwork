@@ -7,12 +7,27 @@ settings:
 catalogs:
   default:
     '@automerge/automerge-repo-keyhive':
-      specifier: 0.0.0-alpha.60f
-      version: 0.0.0-alpha.60f
+      specifier: 0.0.0-alpha.68
+      version: 0.0.0-alpha.68
+    '@automerge/automerge-repo-react-hooks':
+      specifier: 2.5.0-alpha.2
+      version: 2.5.0-alpha.2
+    '@automerge/react':
+      specifier: 2.5.0-alpha.2
+      version: 2.5.0-alpha.2
+    '@automerge/vanillajs':
+      specifier: 2.5.0-alpha.2
+      version: 2.5.0-alpha.2
+    '@types/react':
+      specifier: ^18.3.26
+      version: 18.3.26
+    '@types/react-dom':
+      specifier: ^18.3.7
+      version: 18.3.7
 
 overrides:
   '@automerge/automerge': 3.1.2
-  '@automerge/automerge-repo': 2.4.0-alpha.2
+  '@automerge/automerge-repo': 2.5.0-alpha.2
   '@keyhive/keyhive': 0.0.0-alpha.40
 
 importers:
@@ -36,11 +51,11 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
       vite:
-        specifier: ^7.1.11
-        version: 7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
+        specifier: ^7.1.12
+        version: 7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
       vite-tsconfig-paths:
         specifier: ^5.1.4
-        version: 5.1.4(typescript@5.9.3)(vite@7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+        version: 5.1.4(typescript@5.9.3)(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.0)
@@ -51,11 +66,11 @@ importers:
         specifier: 3.1.2
         version: 3.1.2
       '@automerge/automerge-repo':
-        specifier: 2.4.0-alpha.2
-        version: 2.4.0-alpha.2
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
       '@automerge/vanillajs':
         specifier: 'catalog:'
-        version: 2.4.0-alpha.2
+        version: 2.5.0-alpha.2
       resolve.exports:
         specifier: ^2.0.3
         version: 2.0.3
@@ -68,7 +83,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.0.0-alpha.60f
+        version: 0.0.0-alpha.68
       '@keyhive/keyhive':
         specifier: 0.0.0-alpha.40
         version: 0.0.0-alpha.40
@@ -82,11 +97,11 @@ importers:
         specifier: 3.1.2
         version: 3.1.2
       '@automerge/automerge-repo':
-        specifier: 2.4.0-alpha.2
-        version: 2.4.0-alpha.2
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.4.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       eventemitter3:
         specifier: ^5.0.1
         version: 5.0.1
@@ -131,8 +146,8 @@ importers:
   packages/elements:
     dependencies:
       '@automerge/automerge-repo':
-        specifier: 2.4.0-alpha.2
-        version: 2.4.0-alpha.2
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -142,7 +157,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.0.0-alpha.60f
+        version: 0.0.0-alpha.68
       '@types/node':
         specifier: ^20.19.9
         version: 20.19.22
@@ -153,8 +168,8 @@ importers:
         specifier: 3.1.2
         version: 3.1.2
       '@automerge/automerge-repo':
-        specifier: 2.4.0-alpha.2
-        version: 2.4.0-alpha.2
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -174,8 +189,8 @@ importers:
         specifier: 3.1.2
         version: 3.1.2
       '@automerge/automerge-repo':
-        specifier: 2.4.0-alpha.2
-        version: 2.4.0-alpha.2
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -197,7 +212,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.0.0-alpha.60f
+        version: 0.0.0-alpha.68
       '@patchwork/bootloader':
         specifier: workspace:^
         version: link:../bootloader
@@ -209,7 +224,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.4.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 2.5.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../plugins
@@ -226,11 +241,11 @@ importers:
         specifier: 3.1.2
         version: 3.1.2
       '@automerge/automerge-repo':
-        specifier: 2.4.0-alpha.2
-        version: 2.4.0-alpha.2
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
       '@automerge/vanillajs':
         specifier: 'catalog:'
-        version: 2.4.0-alpha.2
+        version: 2.5.0-alpha.2
       '@patchwork/elements':
         specifier: workspace:^
         version: link:../../packages/elements
@@ -263,14 +278,14 @@ importers:
         specifier: 3.1.2
         version: 3.1.2
       '@automerge/automerge-repo':
-        specifier: 2.4.0-alpha.2
-        version: 2.4.0-alpha.2
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.0.0-alpha.60f
+        version: 0.0.0-alpha.68
       '@automerge/vanillajs':
         specifier: 'catalog:'
-        version: 2.4.0-alpha.2
+        version: 2.5.0-alpha.2
       '@keyhive/keyhive':
         specifier: 0.0.0-alpha.40
         version: 0.0.0-alpha.40
@@ -306,14 +321,14 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: 2.4.0-alpha.2
-        version: 2.4.0-alpha.2
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.4.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/vanillajs':
         specifier: 'catalog:'
-        version: 2.4.0-alpha.2
+        version: 2.5.0-alpha.2
       '@codemirror/autocomplete':
         specifier: ^6.19.0
         version: 6.19.0
@@ -430,8 +445,8 @@ importers:
   tools/sideboard:
     dependencies:
       '@automerge/automerge-repo':
-        specifier: 2.4.0-alpha.2
-        version: 2.4.0-alpha.2
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.4.0
         version: 2.4.0(@automerge/automerge@3.1.2)(solid-js@1.9.9)
@@ -483,10 +498,10 @@ importers:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.4.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 2.5.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@automerge/react':
         specifier: 'catalog:'
-        version: 2.4.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 2.5.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../packages/filesystem
@@ -510,14 +525,14 @@ importers:
         version: 4.1.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       vite-plugin-wasm:
         specifier: ^3.5.0
-        version: 3.5.0(vite@7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+        version: 3.5.0(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
     devDependencies:
       '@automerge/automerge':
         specifier: 3.1.2
         version: 3.1.2
       '@automerge/automerge-repo':
-        specifier: 2.4.0-alpha.2
-        version: 2.4.0-alpha.2
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
       '@eslint/js':
         specifier: ^9.36.0
         version: 9.38.0
@@ -532,7 +547,7 @@ importers:
         version: 19.2.2(@types/react@19.2.2)
       '@vitejs/plugin-react':
         specifier: ^5.0.4
-        version: 5.0.4(vite@7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+        version: 5.0.4(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
       babel-plugin-react-compiler:
         specifier: 19.1.0-rc.3
         version: 19.1.0-rc.3
@@ -566,20 +581,23 @@ packages:
   '@automerge/automerge-codemirror@0.2.0':
     resolution: {integrity: sha512-GBNh4ESZHFNHZKLznf/2G2KdmBD+unEdk64+l621LsjIsJs6HBmQmO8RCY1v7vIq31kFyoVHNcBMGQOnLgy4GA==}
 
-  '@automerge/automerge-repo-keyhive@0.0.0-alpha.60f':
-    resolution: {integrity: sha512-vbQ7xKPjPZcF17lpdCjZQinG3ZC/A74IKiuXdnCSaK50vOjh+H61C3owOgApfJ71rmeNIm1NBTRLUGpooR8dKA==}
+  '@automerge/automerge-repo-keyhive@0.0.0-alpha.68':
+    resolution: {integrity: sha512-KmN2ENNRkrfl6dVSEJE3uwrOJfCxajSSCptLh+SRnhpmdOClrveOUJxG0r1MJtd2PF1rJRxPaqiUs1W1+rlA7g==}
 
-  '@automerge/automerge-repo-network-broadcastchannel@2.4.0-alpha.2':
-    resolution: {integrity: sha512-l3VJomRii8T7jZD9kmJ0vXO3c/Usnir6y2DoO5t4nlxIU9cikf/pr0FaJp8p3RyZOwe2aACrzTPbJnU9KAXRYA==}
+  '@automerge/automerge-repo-network-broadcastchannel@2.5.0-alpha.2':
+    resolution: {integrity: sha512-8KuVhWDozLj6wi8Pnls6fSESdEcNBJSPoSvLTPbP3gddssvihErrB4nu2EF4l0lSAapLE2k1JVUDiDNKmUiwOQ==}
 
-  '@automerge/automerge-repo-network-messagechannel@2.4.0-alpha.2':
-    resolution: {integrity: sha512-2VPIQF4vBZ8H/Jdy7HpcP5D3vBc3bxNo9vPqR8XTsxVO2AQxi+D3P+j12CCcJenUP/Bzxe/JD3UpF2VqF/mD4Q==}
+  '@automerge/automerge-repo-network-messagechannel@2.5.0-alpha.2':
+    resolution: {integrity: sha512-5eNkpLGpoZFZgXdODYdy9iwFJCMHYj0tz6VZoTT9gacCj4Fl9D39W73NnKGxrc0OlIssT2fv1Ytyl7Ts3wZNIg==}
 
   '@automerge/automerge-repo-network-websocket@2.4.0-alpha.2':
     resolution: {integrity: sha512-HrC99iKdrp3ooA1xSs2nkSVbqvORrsmMSuYwkgibaHOsA6S6fUmJDVdDnsz+DX0wOrUcAfQu+IFmAfb13Ja7qQ==}
 
-  '@automerge/automerge-repo-react-hooks@2.4.0-alpha.2':
-    resolution: {integrity: sha512-CDz8YaIM0VDlq4J/i8wjkhQKmw9lNSDmdbuZhjwdNycRL6GpyXcdCAqETroH2eMjuFMYb2F9BxsezrLrxII1eA==}
+  '@automerge/automerge-repo-network-websocket@2.5.0-alpha.2':
+    resolution: {integrity: sha512-EtdsSA9PhuiWWbvT36DGylBeGCL7Aop8nSe4FrBYchBCWpqqZOBLdbxD0crwbCUwTBTJy76pXhSHjObQi0y4zQ==}
+
+  '@automerge/automerge-repo-react-hooks@2.5.0-alpha.2':
+    resolution: {integrity: sha512-1VAkWHGeKr1y43uqwqBeewL7NK0amERw/3vm4aLDmYx5oAn7w2c+cPc+HBu4m+VTaYDquTLQaaQvo6TFs+wHCg==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -590,22 +608,22 @@ packages:
       '@automerge/automerge': 3.1.2
       solid-js: ^1.9.4
 
-  '@automerge/automerge-repo-storage-indexeddb@2.4.0-alpha.2':
-    resolution: {integrity: sha512-ZtTooes0u4d+LXuJAYbCFMIvYZaX8vRiUhTld07KfqHpG7gQgiTTc0vFypABxeWOv+uvNdmT731PKVWEs541vg==}
+  '@automerge/automerge-repo-storage-indexeddb@2.5.0-alpha.2':
+    resolution: {integrity: sha512-8NMq64tAIMqIL1+lrBBlDBmIE0Joo8t9VrBK7mGdZerMph9+RDTIcZkZiI7ozY70Ya614OWjmjjuRnPH39xAsQ==}
 
-  '@automerge/automerge-repo@2.4.0-alpha.2':
-    resolution: {integrity: sha512-mXqM8865ZOF2QzidD22z9wwgg3eUF5El7iguYj6m2TXeXMYthditN3D/N93J/jumaM80DmC/u6QS6ScasxvIpw==}
+  '@automerge/automerge-repo@2.5.0-alpha.2':
+    resolution: {integrity: sha512-Sjl1CaD4IpmboNIG9/EL9Run+AKrL8/1h3Om1NZp9syBnJN8OWjeG4ttpQce6k8HdPyl8sllAHYy8/Q4Ukh39w==}
 
   '@automerge/automerge@3.1.2':
     resolution: {integrity: sha512-rAZRLAMrboBJGMmZXPOfYiwkmHXho6RjhUOIrlmf+Buukt/DN1oee8kHfpI3U4etetvGgqf5JaFVbydQpKT/Vg==}
 
-  '@automerge/react@2.4.0-alpha.2':
-    resolution: {integrity: sha512-CyAZMjentlk69i3zjSohxGsbgxRcmLzZ3aTQap9hUaNhVQEWtPvLVVMGoSCk1k1QV7v3WBvYfRbTr/SN7LQlvA==}
+  '@automerge/react@2.5.0-alpha.2':
+    resolution: {integrity: sha512-IBBzYKt0QCL2pYasyNMdAeZH/YQff5ewo1nk6RzbheMmwZ7u6V84E6eoye9mgDK/jtiokVFxVUObI+WBcjHK0g==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
 
-  '@automerge/vanillajs@2.4.0-alpha.2':
-    resolution: {integrity: sha512-QCw1HOrI239B2Jhhqz7p/oDrBwOPnekke/6+dD4kmGq1v1niBI9Hbf+n9erAjw70XgWeWMFU0BkUlR+zNbn6fA==}
+  '@automerge/vanillajs@2.5.0-alpha.2':
+    resolution: {integrity: sha512-SdS+1Svu7zcObqqp3AU3fksefK8JiFdMFF+4ZoWEFZvyjWwnhSZpKqXenQAMbWc++RuIa02UUK86V22UPFX4qA==}
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -3893,6 +3911,46 @@ packages:
       yaml:
         optional: true
 
+  vite@7.1.12:
+    resolution: {integrity: sha512-ZWyE8YXEXqJrrSLvYgrRP7p62OziLW7xI5HYGWFzOvupfAlrLvURSzv/FyGyy0eidogEM3ujU+kUG1zuHgb6Ug==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^20.19.0 || >=22.12.0
+      jiti: '>=1.21.0'
+      less: ^4.0.0
+      lightningcss: ^1.21.0
+      sass: ^1.70.0
+      sass-embedded: ^1.70.0
+      stylus: '>=0.54.8'
+      sugarss: ^5.0.0
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      jiti:
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
+        optional: true
+
   vitest@3.2.4:
     resolution: {integrity: sha512-LUCP5ev3GURDysTWiP47wRRUpLKMOfPh+yKTx3kVIEiu5KOMeqzpnYNsKyOoVrULivR8tLcks4+lga33Whn90A==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
@@ -4004,9 +4062,9 @@ snapshots:
       '@codemirror/view': 6.38.6
       codemirror: 6.0.2
 
-  '@automerge/automerge-repo-keyhive@0.0.0-alpha.60f':
+  '@automerge/automerge-repo-keyhive@0.0.0-alpha.68':
     dependencies:
-      '@automerge/automerge-repo': 2.4.0-alpha.2
+      '@automerge/automerge-repo': 2.5.0-alpha.2
       '@automerge/automerge-repo-network-websocket': 2.4.0-alpha.2
       '@keyhive/keyhive': 0.0.0-alpha.40
       eventemitter3: 5.0.1
@@ -4015,15 +4073,15 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@automerge/automerge-repo-network-broadcastchannel@2.4.0-alpha.2':
+  '@automerge/automerge-repo-network-broadcastchannel@2.5.0-alpha.2':
     dependencies:
-      '@automerge/automerge-repo': 2.4.0-alpha.2
+      '@automerge/automerge-repo': 2.5.0-alpha.2
     transitivePeerDependencies:
       - supports-color
 
-  '@automerge/automerge-repo-network-messagechannel@2.4.0-alpha.2':
+  '@automerge/automerge-repo-network-messagechannel@2.5.0-alpha.2':
     dependencies:
-      '@automerge/automerge-repo': 2.4.0-alpha.2
+      '@automerge/automerge-repo': 2.5.0-alpha.2
       debug: 4.4.3
       eventemitter3: 5.0.1
     transitivePeerDependencies:
@@ -4031,7 +4089,7 @@ snapshots:
 
   '@automerge/automerge-repo-network-websocket@2.4.0-alpha.2':
     dependencies:
-      '@automerge/automerge-repo': 2.4.0-alpha.2
+      '@automerge/automerge-repo': 2.5.0-alpha.2
       cbor-x: 1.6.0
       debug: 4.4.3
       eventemitter3: 5.0.1
@@ -4042,10 +4100,23 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@automerge/automerge-repo-react-hooks@2.4.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@automerge/automerge-repo-network-websocket@2.5.0-alpha.2':
+    dependencies:
+      '@automerge/automerge-repo': 2.5.0-alpha.2
+      cbor-x: 1.6.0
+      debug: 4.4.3
+      eventemitter3: 5.0.1
+      isomorphic-ws: 5.0.0(ws@8.18.3)
+      ws: 8.18.3
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  '@automerge/automerge-repo-react-hooks@2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@automerge/automerge': 3.1.2
-      '@automerge/automerge-repo': 2.4.0-alpha.2
+      '@automerge/automerge-repo': 2.5.0-alpha.2
       eventemitter3: 5.0.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -4053,10 +4124,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@automerge/automerge-repo-react-hooks@2.4.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@automerge/automerge-repo-react-hooks@2.5.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       '@automerge/automerge': 3.1.2
-      '@automerge/automerge-repo': 2.4.0-alpha.2
+      '@automerge/automerge-repo': 2.5.0-alpha.2
       eventemitter3: 5.0.1
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
@@ -4069,13 +4140,13 @@ snapshots:
       '@automerge/automerge': 3.1.2
       solid-js: 1.9.9
 
-  '@automerge/automerge-repo-storage-indexeddb@2.4.0-alpha.2':
+  '@automerge/automerge-repo-storage-indexeddb@2.5.0-alpha.2':
     dependencies:
-      '@automerge/automerge-repo': 2.4.0-alpha.2
+      '@automerge/automerge-repo': 2.5.0-alpha.2
     transitivePeerDependencies:
       - supports-color
 
-  '@automerge/automerge-repo@2.4.0-alpha.2':
+  '@automerge/automerge-repo@2.5.0-alpha.2':
     dependencies:
       '@automerge/automerge': 3.1.2
       bs58check: 3.0.1
@@ -4090,14 +4161,14 @@ snapshots:
 
   '@automerge/automerge@3.1.2': {}
 
-  '@automerge/react@2.4.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@automerge/react@2.5.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
-      '@automerge/automerge-repo': 2.4.0-alpha.2
-      '@automerge/automerge-repo-network-broadcastchannel': 2.4.0-alpha.2
-      '@automerge/automerge-repo-network-messagechannel': 2.4.0-alpha.2
-      '@automerge/automerge-repo-network-websocket': 2.4.0-alpha.2
-      '@automerge/automerge-repo-react-hooks': 2.4.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@automerge/automerge-repo-storage-indexeddb': 2.4.0-alpha.2
+      '@automerge/automerge-repo': 2.5.0-alpha.2
+      '@automerge/automerge-repo-network-broadcastchannel': 2.5.0-alpha.2
+      '@automerge/automerge-repo-network-messagechannel': 2.5.0-alpha.2
+      '@automerge/automerge-repo-network-websocket': 2.5.0-alpha.2
+      '@automerge/automerge-repo-react-hooks': 2.5.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@automerge/automerge-repo-storage-indexeddb': 2.5.0-alpha.2
       react: 19.2.0
     transitivePeerDependencies:
       - bufferutil
@@ -4105,13 +4176,13 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@automerge/vanillajs@2.4.0-alpha.2':
+  '@automerge/vanillajs@2.5.0-alpha.2':
     dependencies:
-      '@automerge/automerge-repo': 2.4.0-alpha.2
-      '@automerge/automerge-repo-network-broadcastchannel': 2.4.0-alpha.2
-      '@automerge/automerge-repo-network-messagechannel': 2.4.0-alpha.2
-      '@automerge/automerge-repo-network-websocket': 2.4.0-alpha.2
-      '@automerge/automerge-repo-storage-indexeddb': 2.4.0-alpha.2
+      '@automerge/automerge-repo': 2.5.0-alpha.2
+      '@automerge/automerge-repo-network-broadcastchannel': 2.5.0-alpha.2
+      '@automerge/automerge-repo-network-messagechannel': 2.5.0-alpha.2
+      '@automerge/automerge-repo-network-websocket': 2.5.0-alpha.2
+      '@automerge/automerge-repo-storage-indexeddb': 2.5.0-alpha.2
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -6268,7 +6339,7 @@ snapshots:
       '@use-gesture/core': 10.3.1
       react: 19.2.0
 
-  '@vitejs/plugin-react@5.0.4(vite@7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))':
+  '@vitejs/plugin-react@5.0.4(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))':
     dependencies:
       '@babel/core': 7.28.4
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.4)
@@ -6276,7 +6347,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.38
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
+      vite: 7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -6288,13 +6359,13 @@ snapshots:
       chai: 5.3.3
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.2.4(vite@7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))':
+  '@vitest/mocker@3.2.4(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))':
     dependencies:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
       magic-string: 0.30.19
     optionalDependencies:
-      vite: 7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
+      vite: 7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -7579,7 +7650,7 @@ snapshots:
       debug: 4.4.3
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
+      vite: 7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -7604,13 +7675,17 @@ snapshots:
     dependencies:
       vite: 7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
 
-  vite-tsconfig-paths@5.1.4(typescript@5.9.3)(vite@7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)):
+  vite-plugin-wasm@3.5.0(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)):
+    dependencies:
+      vite: 7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
+
+  vite-tsconfig-paths@5.1.4(typescript@5.9.3)(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)):
     dependencies:
       debug: 4.4.3
       globrex: 0.1.2
       tsconfck: 3.1.6(typescript@5.9.3)
     optionalDependencies:
-      vite: 7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
+      vite: 7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -7630,11 +7705,26 @@ snapshots:
       lightningcss: 1.30.2
       terser: 5.44.0
 
+  vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0):
+    dependencies:
+      esbuild: 0.25.11
+      fdir: 6.5.0(picomatch@4.0.3)
+      picomatch: 4.0.3
+      postcss: 8.5.6
+      rollup: 4.52.5
+      tinyglobby: 0.2.15
+    optionalDependencies:
+      '@types/node': 24.9.1
+      fsevents: 2.3.3
+      jiti: 2.6.1
+      lightningcss: 1.30.2
+      terser: 5.44.0
+
   vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.0):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(vite@7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+      '@vitest/mocker': 3.2.4(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4
@@ -7652,7 +7742,7 @@ snapshots:
       tinyglobby: 0.2.15
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
+      vite: 7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
       vite-node: 3.2.4(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
