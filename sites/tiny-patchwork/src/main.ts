@@ -12,11 +12,12 @@ import {
 } from "./lib/account-doc";
 import { openDocument } from "./lib/navigation";
 import {
-  type AutomergeUrl,
   DocHandle,
   isValidAutomergeUrl,
   isValidDocumentId,
   parseAutomergeUrl,
+  stringifyAutomergeUrl,
+  type UrlHeads,
 } from "@automerge/vanillajs";
 
 import { plugins } from "./tools";
@@ -68,17 +69,24 @@ rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
 rootElement.addEventListener("patchwork:open-document", (event) => {
   const params = new URLSearchParams();
   const { url, toolId } = event.detail;
-  params.set("doc", url);
+  const { documentId, heads } = parseAutomergeUrl(url);
+  params.set("doc", documentId);
+  if (heads) params.set("heads", heads?.join("|"));
   if (toolId) params.set("tool", toolId);
   window.location.hash = params.toString();
 });
 
 const handleHashChange = async (hash: string) => {
   const params = new URLSearchParams(hash);
-  const docUrl = params.get("doc");
+  const documentId = params.get("doc");
+  const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
   const toolId = params.get("tool");
-  if (isValidAutomergeUrl(docUrl)) {
-    openDocument(rootElement, docUrl, toolId ?? undefined);
+  if (isValidDocumentId(documentId)) {
+    openDocument(
+      rootElement,
+      stringifyAutomergeUrl({ documentId, heads }),
+      toolId ?? undefined
+    );
   } else {
     window.location.hash = "";
   }

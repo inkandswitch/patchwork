@@ -14,7 +14,7 @@ import { SearchIcon } from "./icons.tsx";
 import { DocumentList } from "./document-list.tsx";
 
 export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
-  useWindowEvent("hashchange", () => setSelectedId(parseHash().docUrl));
+  useWindowEvent("hashchange", () => setSelectedId(parseHash().documentId));
 
   const doc = makeDocumentProjection(props.handle);
   const [folder, folderHandle] = useDocument<FolderDoc>(

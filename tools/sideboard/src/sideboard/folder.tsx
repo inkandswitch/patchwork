@@ -1,4 +1,8 @@
-import { type AutomergeUrl, type Repo } from "@automerge/automerge-repo";
+import {
+  parseAutomergeUrl,
+  type AutomergeUrl,
+  type Repo,
+} from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-solid-primitives";
 import type { FolderDoc } from "@patchwork/filesystem";
 import { Suspense } from "solid-js";
@@ -15,6 +19,8 @@ export default function Folder(props: {
 
   const depth = () => props.depth ?? 1;
   const depthStyle = () => ({ "--depth": depth() });
+  const documentId = () =>
+    handle() && parseAutomergeUrl(handle()!.url).documentId;
 
   return (
     <Suspense fallback="Loading...">
@@ -28,7 +34,7 @@ export default function Folder(props: {
           href={props.url}
           class="sideboard-folder__link sideboard-folder__link--folder"
           role="treeitem"
-          aria-pressed={selectedId() == handle()?.url}
+          aria-pressed={selectedId() == documentId()}
           data-patchwork-open={props.url}
           onClick={createOpenEventHandler(props.url)}
         >

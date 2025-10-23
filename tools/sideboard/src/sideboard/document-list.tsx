@@ -1,7 +1,7 @@
 import type { DocLink } from "@patchwork/filesystem";
 import { For, Match, Show, Switch } from "solid-js";
 import { filter, selectedId } from "./state.ts";
-import { type Repo } from "@automerge/automerge-repo";
+import { parseAutomergeUrl, type Repo } from "@automerge/automerge-repo";
 import { createOpenEvent, createOpenEventHandler } from "./events.ts";
 import Folder from "./folder.tsx";
 import { ContextMenu } from "@kobalte/core/context-menu";
@@ -28,6 +28,7 @@ export function DocumentList(props: DocumentListProps) {
           });
 
           const tools = useSupportedToolsForType(() => doc.type);
+          const documentId = () => parseAutomergeUrl(doc.url).documentId;
 
           return (
             <Switch>
@@ -45,7 +46,7 @@ export function DocumentList(props: DocumentListProps) {
                   <ContextMenu.Trigger
                     class="popmenu__trigger sideboard-folder__link sideboard-folder__link--file"
                     role="treeitem"
-                    aria-pressed={doc.url === selectedId()}
+                    aria-pressed={documentId() === selectedId()}
                     classList={classes()}
                     onClick={createOpenEventHandler(doc.url)}
                   >

@@ -15,12 +15,7 @@ import {
   getStoredThreads,
   ThreadField,
 } from "@patchwork/context/comments";
-import {
-  computeDiffOfDoc,
-  Diff,
-  getDiff,
-  getViewHeads,
-} from "@patchwork/context/diff";
+import { computeDiffOfDoc, Diff, getViewHeads } from "@patchwork/context/diff";
 import {
   useDocRef,
   useReactive,

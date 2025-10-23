@@ -1,5 +1,3 @@
-import { Repo } from "@automerge/automerge-repo";
-import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import {
   DataType,
