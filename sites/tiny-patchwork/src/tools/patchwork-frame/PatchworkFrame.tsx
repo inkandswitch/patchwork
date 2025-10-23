@@ -1,14 +1,9 @@
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { AutomergeUrl } from "@automerge/vanillajs";
-import { CONTEXT } from "@patchwork/context";
 import { useEffect, useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
 import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
-
-CONTEXT.subscribe(() => {
-  console.log("!! CONTEXT changed", CONTEXT.dump());
-});
 
 export const renderFrame = toolify(
   ({
