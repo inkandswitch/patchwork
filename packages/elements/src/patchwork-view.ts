@@ -7,19 +7,34 @@ import {
 import {
   getSuggestedImportUrl,
   getType,
-  ModuleWatcher,
   type HasPatchworkMetadata,
+  ModuleWatcher,
 } from "@patchwork/filesystem";
 import {
   getFallbackTool,
   getPlugin,
   getPluginRegistry,
+  isLoadablePlugin,
   onPluginsChange,
+  type LoadablePlugin,
   type Tool,
 } from "@patchwork/plugins";
 
 import type { initializeKeyhive } from "@automerge/automerge-repo-keyhive";
+
 type AutomergeRepoKeyhive = Awaited<ReturnType<typeof initializeKeyhive>>;
+
+const State = {
+  none: "none",
+  initializing: "initializing",
+  rendering: "rendering",
+  unable: "unable",
+  rendered: "rendered",
+  fallback: "fallback",
+  error: "error",
+} as const;
+
+type State = (typeof State)[keyof typeof State];
 
 export interface RegisterPatchworkViewElementParams {
   name?: string;
@@ -49,6 +64,11 @@ export function registerPatchworkViewElement(
     return;
   }
 
+  const attrs = {
+    docUrl: "doc-url",
+    toolId: "tool-id",
+  };
+
   customElements.define(
     name,
     class PatchworkViewElement extends HTMLElement {
@@ -59,6 +79,7 @@ export function registerPatchworkViewElement(
       #toolId: string | null = null;
       #handle: DocHandle<HasPatchworkMetadata> | null = null;
       #tool: Tool | null = null;
+      #state: State = State.none;
 
       get docUrl() {
         return this.#docUrl;
@@ -67,10 +88,12 @@ export function registerPatchworkViewElement(
       set docUrl(url: AutomergeUrl | null) {
         if (this.#docUrl === url) return;
         this.#docUrl = url;
+        const attr = this.getAttribute(attrs.docUrl);
+        if (attr == url) return;
         if (url) {
-          this.setAttribute("doc-url", url);
+          this.setAttribute(attrs.docUrl, url);
         } else {
-          this.removeAttribute("doc-url");
+          this.removeAttribute(attrs.docUrl);
         }
       }
 
@@ -81,21 +104,23 @@ export function registerPatchworkViewElement(
       set toolId(id: string | null) {
         if (this.#toolId === id) return;
         this.#toolId = id;
+        const attr = this.getAttribute(attrs.toolId);
+        if (attr == id) return;
         if (id) {
-          this.setAttribute("tool-id", id);
+          this.setAttribute(attrs.toolId, id);
         } else {
-          this.removeAttribute("tool-id");
+          this.removeAttribute(attrs.toolId);
         }
       }
 
       static get observedAttributes() {
-        return ["doc-url", "tool-id"];
+        return [attrs.docUrl, attrs.toolId];
       }
 
       connectedCallback() {
-        this.docUrl = this.getAttribute("doc-url") as AutomergeUrl;
-        this.toolId = this.getAttribute("tool-id");
-        this.#reinit();
+        this.docUrl = this.getAttribute(attrs.docUrl) as AutomergeUrl;
+        this.toolId = this.getAttribute(attrs.toolId);
+        this.#init();
       }
 
       async disconnectedCallback() {
@@ -103,16 +128,16 @@ export function registerPatchworkViewElement(
       }
 
       attributeChangedCallback(name: string, _: string, val: string | null) {
-        if (name === "tool-id") {
+        if (name === attrs.toolId) {
           if (this.toolId != val) {
             this.toolId = val;
-            this.#reinit();
+            this.#init();
           }
         }
 
-        if (name === "doc-url") {
+        if (name === attrs.docUrl) {
           this.docUrl = val as AutomergeUrl;
-          this.#reinit();
+          this.#init();
         }
       }
 
@@ -120,41 +145,55 @@ export function registerPatchworkViewElement(
         payload: DocHandleChangePayload<HasPatchworkMetadata>
       ) => {
         const { before, after } = payload.patchInfo;
+
         if (getSuggestedImportUrl(before) != getSuggestedImportUrl(after)) {
-          this.#reinit();
+          this.#teardown().then(() => this.#init());
         }
 
         if (getType(before) != getType(after)) {
-          this.#reinit();
+          this.#teardown().then(() => this.#init());
         }
       };
 
-      async #reinit() {
-        await this.#teardown();
-        if (!this.docUrl) return;
-        this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
-        moduleWatcher.loadSuggestedImportUrl(this.docUrl);
+      #init = async () => {
+        const toolRegistry = getPluginRegistry("patchwork:tool");
+        if (this.#state != State.none) return;
 
-        if (!this.toolId) {
-          this.toolId = getFallbackTool(this.#handle.doc())?.id;
+        if (!this.docUrl) {
+          return;
         }
+
+        this.#state = State.initializing;
+
+        this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
+
+        moduleWatcher.loadSuggestedImportUrl(this.docUrl).catch(() => {
+          console.warn(
+            `couldn't load suggested import url for ${this.docUrl}`,
+            new Error().stack
+          );
+        });
 
         this.#teardowns.add(
           onPluginsChange<Tool>("patchwork:tool", async (_tools, newTool) => {
-            if (newTool?.id == this.toolId) {
-              const toolRegistry = getPluginRegistry("patchwork:tool");
-              if (!newTool.module && !toolRegistry.isLoading(newTool.id)) {
-                // if it's not loaded, loading it will cause onPluginsChange
-                // to fire again when it's ready
-                toolRegistry.loadById(newTool.id);
+            const newToolId = newTool.id;
+            const isChosenTool = newToolId == this.toolId;
+            const isFallbackTool = newToolId == this.#fallbackId;
+            if (isChosenTool || isFallbackTool) {
+              if (isLoadablePlugin(newTool) && !newTool.module) {
+                // if it's not loaded, load it now
+                await toolRegistry.loadById(newTool.id);
               }
-              // when a tool has updated we should rerender from scratch
-              if (this.#tool) {
-                this.#tool = null;
-                this.#reinit();
-              } else {
-                // if we never had a tool we can try rendering again
+
+              if (this.#state == "unable") {
                 this.#queueRender();
+              }
+
+              if (this.#state == "error" || this.#state == "rendered") {
+                if (newTool.importUrl !== this.#tool?.importUrl) {
+                  await this.#teardown();
+                  this.#init();
+                }
               }
             }
           })
@@ -166,58 +205,71 @@ export function registerPatchworkViewElement(
         );
 
         this.#queueRender();
-      }
+      };
 
       #teardowns = new Set<() => unknown | Promise<void>>();
 
       async #teardown() {
+        if (this.#state == State.none) return;
+
         for (const fn of this.#teardowns) {
           await fn?.();
         }
+
         this.#teardowns.clear();
         this.#handle = null;
-        this.textContent = "";
         this.#tool = null;
+        this.textContent = "";
+        this.#state = State.none;
       }
 
-      #renderQueued = false;
       #queueRender() {
-        if (this.#renderQueued) return;
-        this.#renderQueued = true;
+        if (this.#state == "none") return;
+        if (this.#state == "rendering") return;
+        this.#state = "rendering";
         queueMicrotask(() => this.#render());
       }
 
+      #fallbackId: string | undefined;
+
       #render() {
-        if (this.#tool) {
-          this.#renderQueued = false;
+        if (this.#state != "rendering") return;
+        if (!this.docUrl || !this.#handle) {
+          this.#state = "unable";
           return;
         }
 
-        if (!this.docUrl || !this.toolId || !this.#handle) {
-          this.#renderQueued = false;
-          return;
+        this.#fallbackId = getFallbackTool(this.#handle.doc())?.id;
+        const fallingBack = !this.toolId;
+
+        const toolId = this.toolId ?? this.#fallbackId;
+
+        if (!toolId) {
+          console.warn(`no tool for ${this.#docUrl}`);
         }
 
-        this.#tool = getPlugin<Tool>("patchwork:tool", this.toolId) ?? null;
+        this.#tool = getPlugin<Tool>("patchwork:tool", toolId) ?? null;
 
         if (!this.#tool) {
-          console.warn("No such tool", this.toolId);
-          this.#renderQueued = false;
+          console.warn("Tool not found", toolId);
+          this.#state = "unable";
           return;
         }
 
         if (!this.#tool.module) {
-          //console.warn("Tool not loaded", this.toolId);
-          this.#renderQueued = false;
+          (this.#tool as LoadablePlugin<Tool>)?.load();
+          this.#state = "unable";
+          console.warn("Tool not loaded", toolId);
           return;
         }
 
         try {
           const cleanup = this.#tool.module(this.#handle, this);
           if (typeof cleanup != "function") {
-            console.warn(`return a cleanup function from ${this.toolId}`);
+            console.warn(`return a cleanup function from ${toolId}`);
           }
           this.#teardowns.add(cleanup);
+          this.#state = fallingBack ? "fallback" : "rendered";
         } catch (error) {
           this.append(
             Object.assign(document.createElement("div"), {
@@ -231,9 +283,8 @@ export function registerPatchworkViewElement(
             })
           );
           console.error(error);
-          this.#tool = null;
-        } finally {
-          this.#renderQueued = false;
+
+          this.#state = "error";
         }
       }
     }
