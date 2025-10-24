@@ -23,7 +23,9 @@ export const plugins = [
     id: "tldraw",
     name: "Drawing",
     icon: "PenLine",
-    module: datatype,
+    async load() {
+      return datatype;
+    },
   },
   {
     type: "patchwork:tool",
