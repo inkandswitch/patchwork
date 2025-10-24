@@ -52,8 +52,6 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
         continue;
       }
 
-      console.log("check", docUrl, type);
-
       registry.loadById(type).then((datatype) => {
         if (canceled || !datatype) {
           return;
@@ -109,25 +107,16 @@ export const useAddUnknownDocumentsToSidebarEffect = (
         }
 
         const title = datatype.module.getTitle(docHandle.doc());
+        if (rootFolderDoc.docs.some((doc) => doc.url === docHandle.url)) {
+          return;
+        }
 
         changeRootFolderDoc((rootFolderDoc) => {
-          if (rootFolderDoc.docs.some((doc) => doc.url === docHandle.url)) {
-            return;
-          }
-
-          const docLink = {
+          rootFolderDoc.docs[rootFolderDoc.docs.length] = {
             name: title,
             url: docHandle.url,
             type: type,
           };
-
-          console.log("add", docLink);
-
-          rootFolderDoc.docs.push({
-            name: title,
-            url: docHandle.url,
-            type: type,
-          });
         });
       });
     }
