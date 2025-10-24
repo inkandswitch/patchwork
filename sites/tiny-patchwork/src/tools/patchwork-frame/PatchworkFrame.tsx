@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
 import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
+import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
 
 export const renderFrame = toolify(
   ({
@@ -28,6 +29,9 @@ export const renderFrame = toolify(
     );
 
     const repo = useRepo();
+
+    // update doc links of active documents
+    useUpdateDocLinksOfActiveDocumentsEffect(rootFolderUrl);
 
     // listen to open document events
     useEffect(() => {

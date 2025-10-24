@@ -38,6 +38,12 @@ export const TodoEditor = ({ docUrl }: ReactToolProps) => {
     setText("");
   };
 
+  const setTitle = (title: string) => {
+    changeDoc((doc) => {
+      doc.title = title;
+    });
+  };
+
   // hack: ignore
   if (
     !docHandle ||
@@ -53,7 +59,15 @@ export const TodoEditor = ({ docUrl }: ReactToolProps) => {
   return (
     <div className="p-4  h-full">
       <div className="max-w-[400px] mx-auto flex flex-col gap-2 bg-white rounded-md p-4">
-        <div className="text-2xl font-bold">{doc.title}</div>
+        <div className="text-2xl font-bold">
+          <input
+            type="text"
+            value={doc.title}
+            className="w-full"
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Untitled"
+          />
+        </div>
         <div className="flex gap-2">
           <input
             type="text"
