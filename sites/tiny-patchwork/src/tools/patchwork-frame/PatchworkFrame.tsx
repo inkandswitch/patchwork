@@ -85,9 +85,8 @@ export const renderFrame = toolify(
             />
           )}
         </div>
-
         {contextSidebar && (
-          <div className="w-[450px] bg-gray-100">
+          <div className="w-[400px] bg-base-100">
             <patchwork-view
               doc-url={contextSidebar.documentUrl}
               tool-id={contextSidebar.toolId}

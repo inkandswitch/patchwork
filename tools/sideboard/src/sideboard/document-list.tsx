@@ -44,6 +44,7 @@ export function DocumentList(props: DocumentListProps) {
               <Match when={doc.type != "folder"}>
                 <ContextMenu>
                   <ContextMenu.Trigger
+                    as="button"
                     class="popmenu__trigger sideboard-folder__link sideboard-folder__link--file"
                     role="treeitem"
                     aria-pressed={documentId() === selectedId()}

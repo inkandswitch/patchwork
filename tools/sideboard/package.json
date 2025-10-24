@@ -20,7 +20,8 @@
       "import": "./dist/module-settings/module-settings.js",
       "patchwork": "./dist/module-settings/module-settings.js",
       "source": "./src/module-settings/module-settings.tsx"
-    }
+    },
+    "./styles.css": "./dist/index.css"
   },
   "scripts": {
     "build": "node esbuild/build.ts",
@@ -44,7 +45,6 @@
     "@types/babel__core": "^7.20.5",
     "babel-preset-solid": "^1.9.9",
     "esbuild": "^0.23.1",
-    "tiny-patchwork": "workspace:^",
     "typescript": "^5.9.3"
   },
   "volta": {

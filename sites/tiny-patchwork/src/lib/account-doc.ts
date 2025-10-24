@@ -92,8 +92,8 @@ export async function getOrCreateAccountDocHandle(
     ["@patchwork"]: { type: "account" },
     rootFolderUrl: rootFolderHandle.url,
     frameToolId: "patchwork-frame",
+    sidebarToolId: "chee/sideboard",
     moduleSettingsUrl: moduleSettingsHandle.url,
-    sidebarToolId: "simple-sidebar",
     contextSidebar: {
       documentUrl: contextSidebarDocHandle.url,
       toolId: "tabbed-view",

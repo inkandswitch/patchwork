@@ -6,7 +6,10 @@ import {
   getPluginRegistry,
   LoadedPlugin,
 } from "@patchwork/plugins";
-import { PluginRegistry } from "@patchwork/plugins/dist/registry/registry";
+import {
+  isLoadablePlugin,
+  PluginRegistry,
+} from "@patchwork/plugins/dist/registry/registry";
 import { useEffect, useMemo, useState } from "react";
 
 export const useDatatypeDescriptions = () => {
@@ -74,7 +77,7 @@ export const useTitle = (doc?: HasPatchworkMetadata) => {
       return;
     }
 
-    const title = datatype?.module?.getTitle(doc);
+    const title = datatype?.module?.getTitle?.(doc);
 
     return title ? title : "Untitled";
   }, [doc, datatype]);

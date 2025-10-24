@@ -9,6 +9,12 @@ import { plugins as branchViewPlugins } from "./history-view";
 import { plugins as todoPlugins } from "./todo";
 import { plugins as historyViewPlugins } from "./history-view";
 import { plugins as commentsViewPlugins } from "./comments-view";
+// @ts-expect-error no types
+import { plugins as tldrawPlugins } from "@patchwork/tldraw";
+import "tldraw/tldraw.css";
+// @ts-expect-error no types
+import { plugins as sideboardPlugins } from "@chee/patchwork-sideboard";
+import "@chee/patchwork-sideboard/styles.css";
 
 export const plugins: Plugin<any>[] = [
   ...markdownPlugins,
@@ -21,4 +27,6 @@ export const plugins: Plugin<any>[] = [
   ...todoPlugins,
   ...historyViewPlugins,
   ...commentsViewPlugins,
+  ...sideboardPlugins,
+  ...tldrawPlugins,
 ];

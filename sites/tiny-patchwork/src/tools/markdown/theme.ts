@@ -21,6 +21,7 @@ const MARKDOWN_STYLES: Record<string, any> = {
     // textAlign: "justify",
     textWrap: "pretty",
     lineHeight: "1.5rem",
+    caretColor: "var(--color-base-content)",
   },
   ".cm-content li": {
     marginBottom: 0,
