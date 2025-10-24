@@ -113,13 +113,13 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
               className={
                 "text-xs p-2 rounded border flex justify-between cursor-pointer " +
                 (isSelected
-                  ? "bg-blue-100 border-blue-300"
-                  : "bg-gray-50 border-gray-200 hover:bg-gray-100")
+                  ? "bg-primary border-primary-content"
+                  : "bg-base-50 border-base-200 hover:bg-base-100")
               }
             >
               <div>{change.hash.slice(0, 6)}</div>
               {change.time && (
-                <div className="text-gray-600">
+                <div className="text-base-content">
                   {relativeTime(change.time * 1000)}
                 </div>
               )}

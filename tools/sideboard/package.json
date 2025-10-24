@@ -45,7 +45,6 @@
     "@types/babel__core": "^7.20.5",
     "babel-preset-solid": "^1.9.9",
     "esbuild": "^0.23.1",
-    "tiny-patchwork": "workspace:^",
     "typescript": "^5.9.3"
   },
   "volta": {

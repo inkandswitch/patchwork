@@ -24,7 +24,7 @@ import {
 import { IsSelected } from "@patchwork/context/selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import { ToolElement } from "@patchwork/plugins";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useTitle } from "../../lib/datatype-hooks";
 import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
@@ -42,6 +42,7 @@ const SingleView = ({
     { suspense: true }
   );
 
+  const patchworkViewRef = useRef<HTMLElement | undefined>();
   const { highlightChanges } = singleViewDoc;
 
   const [selection, setSelection] = useState<
@@ -177,7 +178,7 @@ const SingleView = ({
 
   if (!selectedDocUrl) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500">
+      <div className="flex items-center justify-center h-full text-base-content">
         No document open
       </div>
     );
@@ -185,19 +186,19 @@ const SingleView = ({
 
   if (!hasAccess) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500">
+      <div className="flex items-center justify-center h-full text-base-content">
         No access
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-200">
-      <div className="p-2 bg-gray-100 border-gray-200 border-l border-r flex items-center">
+    <div className="w-full h-full flex flex-col bg-base-200">
+      <div className="p-2 bg-base-100 border-base-200 border-l border-r flex items-center">
         <div className="flex items-center gap-2">
           {title}{" "}
           {originalDoc && originalDocUrl && (
-            <div className="text-gray-500 text-sm">
+            <div className="text-base-content text-sm">
               (Copy of{" "}
               <button
                 className="link"
@@ -227,11 +228,34 @@ const SingleView = ({
             Highlight changes
           </label>
         )}
+        <button onClick={() => patchworkViewRef.current?.requestFullscreen()}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ height: "1em" }}
+          >
+            <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+            <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+            <rect width="10" height="8" x="7" y="8" rx="1" />
+          </svg>
+        </button>
       </div>
       <div
-        className={`flex-1 ${viewHeads ? "border border-gray-500 border-dashed" : "border border-gray-200"}`}
+        className={`flex-1 ${viewHeads ? "border-2 border-accent border-dashed" : ""}`}
       >
         <patchwork-view
+          ref={(r) => {
+            if (r) patchworkViewRef.current = r;
+          }}
           doc-url={selectedDocUrl}
           tool-id={selection?.toolId}
           key={selectedDocUrl}

@@ -175,9 +175,7 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
         ? [EditorState.readOnly.of(true), EditorView.editable.of(false)]
         : [],
       EditorView.lineWrapping,
-      markdown({
-        codeLanguages: languages,
-      }),
+      markdown({ codeLanguages: languages }),
       indentUnit.of("    "),
       // Add the selection listener and comment button gutter
       commentButtonGutter(onComment),
@@ -186,7 +184,7 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   );
 
   return (
-    <div className="w-full h-full overflow-auto bg-white">
+    <div className="w-full h-full overflow-auto bg-base">
       <div className="p-4 h-full">
         <div className="flex h-full">
           <div ref={cmContainerRef} className="relative flex-1 h-full">

@@ -87,7 +87,7 @@ export const renderFrame = toolify(
         </div>
 
         {contextSidebarToolId && (
-          <div className="w-[400px] bg-gray-100">
+          <div className="w-[400px] bg-base-100">
             <patchwork-view
               doc-url={rootFolderUrl} // todo: context tool doesn't have a doc url
               tool-id={contextSidebarToolId}

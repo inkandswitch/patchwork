@@ -34,7 +34,10 @@ const { repo, hive } = await bootstrap();
 window.CONTEXT = CONTEXT;
 
 const loadedPlugins = await Promise.all(
-  plugins.map(async (plugin) => ({ ...plugin, module: await plugin.load() }))
+  plugins.map(async (plugin) => ({
+    ...plugin,
+    module: "load" in plugin && (await plugin.load()),
+  }))
 );
 
 registerPlugins(loadedPlugins, "DEV");

@@ -3,7 +3,11 @@ import {
   useDocument,
 } from "@automerge/automerge-repo-solid-primitives";
 
-import type { TinyPatchworkAccountDoc } from "tiny-patchwork/src/lib/account-doc.ts";
+type TinyPatchworkAccountDoc = {
+  rootFolderUrl: AutomergeUrl;
+  moduleSettingsUrl: AutomergeUrl;
+};
+
 import type { PatchworkToolProps } from "../types.ts";
 import { filter, setFilter, setSelectedId } from "./state.ts";
 import CreateNew from "./create-new.tsx";
@@ -12,6 +16,7 @@ import type { FolderDoc } from "@patchwork/filesystem";
 import { createOpenEventHandler } from "./events.ts";
 import { SearchIcon } from "./icons.tsx";
 import { DocumentList } from "./document-list.tsx";
+import type { AutomergeUrl } from "@automerge/automerge-repo";
 
 export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
   useWindowEvent("hashchange", () => setSelectedId(parseHash().documentId));
