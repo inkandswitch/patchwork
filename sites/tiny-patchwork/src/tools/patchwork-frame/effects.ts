@@ -4,7 +4,10 @@ import {
   useDocuments,
 } from "@automerge/automerge-repo-react-hooks";
 import { useReactive } from "@patchwork/context/react";
-import { $selectedDocUrls } from "@patchwork/context/selection";
+import {
+  $selectedDocHandles,
+  $selectedDocUrls,
+} from "@patchwork/context/selection";
 import { FolderDoc, HasPatchworkMetadata } from "@patchwork/filesystem";
 import {
   DataTypeDescription,
@@ -72,4 +75,65 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
       canceled = true;
     };
   }, [changeRootFolderDoc, rootFolderDoc, selectedDocUrls, selectedDocsMap]);
+};
+
+export const useAddUnknownDocumentsToSidebarEffect = (
+  rootFolderUrl: AutomergeUrl
+) => {
+  const selectedDocHandles = useReactive($selectedDocHandles);
+  const [rootFolderDoc, changeRootFolderDoc] =
+    useDocument<FolderDoc>(rootFolderUrl);
+
+  useEffect(() => {
+    if (!rootFolderDoc) {
+      return;
+    }
+
+    let canceled = false;
+
+    const registry = getPluginRegistry("patchwork:datatype") as PluginRegistry<
+      DataTypeDescription,
+      DataTypeImplementation
+    >;
+
+    for (const docHandle of selectedDocHandles) {
+      const type = docHandle.doc()["@patchwork"]?.type;
+
+      if (!type) {
+        continue;
+      }
+
+      registry.loadById(type).then((datatype) => {
+        if (canceled || !datatype) {
+          return;
+        }
+
+        const title = datatype.module.getTitle(docHandle.doc());
+
+        changeRootFolderDoc((rootFolderDoc) => {
+          if (rootFolderDoc.docs.some((doc) => doc.url === docHandle.url)) {
+            return;
+          }
+
+          const docLink = {
+            name: title,
+            url: docHandle.url,
+            type: type,
+          };
+
+          console.log("add", docLink);
+
+          rootFolderDoc.docs.push({
+            name: title,
+            url: docHandle.url,
+            type: type,
+          });
+        });
+      });
+    }
+
+    return () => {
+      canceled = true;
+    };
+  }, [changeRootFolderDoc, rootFolderDoc, selectedDocHandles]);
 };

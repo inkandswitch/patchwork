@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
 import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
-import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
+import {
+  useAddUnknownDocumentsToSidebarEffect,
+  useUpdateDocLinksOfActiveDocumentsEffect,
+} from "./effects";
 
 export const renderFrame = toolify(
   ({
@@ -30,8 +33,11 @@ export const renderFrame = toolify(
 
     const repo = useRepo();
 
-    // update doc links of active documents
+    // Effects
+    // this should be probably a plugin type that allows to run code without rendering something
+
     useUpdateDocLinksOfActiveDocumentsEffect(rootFolderUrl);
+    useAddUnknownDocumentsToSidebarEffect(rootFolderUrl);
 
     // listen to open document events
     useEffect(() => {
