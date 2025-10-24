@@ -12,4 +12,15 @@ export const plugins: Plugin<any>[] = [
       return renderHistoryView;
     },
   },
+  {
+    type: "patchwork:datatype",
+    id: "history-view",
+    name: "History View",
+    icon: "History",
+    async load() {
+      const { HistoryViewDataType } = await import("./datatype");
+      return HistoryViewDataType;
+    },
+    unlisted: true,
+  },
 ];

@@ -2,20 +2,20 @@ import {
   AutomergeUrl,
   DocHandle,
   encodeHeads,
-  Repo,
   isValidAutomergeUrl,
+  Repo,
   stringifyAutomergeUrl,
 } from "@automerge/automerge-repo";
-import { TinyPatchworkAccountDoc } from "./lib/account-doc";
-import { TabViewDoc } from "./tools/tab-view/datatype";
-import { SingleViewDoc } from "./tools/single-view/datatype";
-import { BranchViewDoc } from "./tools/branch-view/datatype";
+import { Automerge } from "@automerge/automerge-repo/slim";
 import {
   FolderDoc,
   HasPatchworkMetadata,
   ModuleSettingsDoc,
 } from "@patchwork/filesystem";
-import { Automerge } from "@automerge/automerge-repo/slim";
+import { TinyPatchworkAccountDoc } from "./lib/account-doc";
+import { BranchViewDoc } from "./tools/branch-view/datatype";
+import { SingleViewDoc } from "./tools/single-view/datatype";
+import { TabbedViewDoc } from "./tools/tabbed-view/datatype";
 
 export const initCommands = (
   accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
@@ -35,24 +35,6 @@ export const initCommands = (
   const normalSidebar = () => {
     setSidebarToolId("simple-sidebar");
     console.log("Switched to normal sidebar");
-  };
-
-  const tabView = async () => {
-    // Create a new tab-view document
-    const tabViewHandle = (await repo.create2({
-      ["@patchwork"]: {
-        type: "tab-view",
-      },
-      tabs: [],
-    })) as DocHandle<TabViewDoc>;
-
-    accountDocHandle.change((doc) => {
-      doc.mainView = {
-        documentUrl: tabViewHandle.url,
-        toolId: "tab-view",
-      };
-    });
-    console.log("Switched to tab view");
   };
 
   const singleView = async () => {
@@ -90,15 +72,16 @@ export const initCommands = (
     console.log("Switched to branch view");
   };
 
-  const historyView = async () => {
-    accountDocHandle.change((doc) => {
-      doc.contextSidebarToolId = "history-view";
-    });
-  };
+  const addContextTab = async (docUrl: AutomergeUrl, toolId: string) => {
+    const tabbedViewDocHandle = await repo.find<TabbedViewDoc>(
+      accountDocHandle.doc().contextSidebar.documentUrl
+    );
 
-  const commentsView = () => {
-    accountDocHandle.change((doc) => {
-      doc.contextSidebarToolId = "comments-view";
+    tabbedViewDocHandle.change((doc) => {
+      doc.tabs.push({
+        url: docUrl,
+        toolId,
+      });
     });
   };
 
@@ -186,11 +169,9 @@ export const initCommands = (
     funkySidebar,
     normalSidebar,
     setSidebarToolId,
-    tabView,
     singleView,
     branchView,
-    historyView,
-    commentsView,
+    addContextTab,
     copyCurrentDoc,
     installModule,
   };
