@@ -31,7 +31,7 @@ const FileEntry = ({
       <a
         onClick={onOpenDocument}
         title={docLink.name}
-        className={`${isSelected ? "bg-gray-200" : ""}`}
+        className={`${isSelected ? "bg-base-200" : ""}`}
       >
         {docLink.name}
       </a>
@@ -77,7 +77,7 @@ const FolderEntry = ({
         <summary>
           <button
             onClick={onOpenDocument}
-            className={`flex justify-between items-center w-full ${isSelected ? "bg-gray-200" : ""}`}
+            className={`flex justify-between items-center w-full ${isSelected ? "bg-base-200" : ""}`}
           >
             {folderDoc.title}
 
@@ -135,17 +135,13 @@ const FolderView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
 
   return (
     <div className="w-full flex flex-col gap-2" ref={setRoot}>
-      <hr className="border-gray-200" />
-
       <AddDocumentDropdown
         onAddDocument={onAddDocument}
-        className="btn btn-ghost text-left btn-sm w-full justify-start font-medium"
+        className="btn btn-ghost text-left btn-sm w-full justify-start font-bold"
       >
         Create new
         <PlusIcon size={16} />
       </AddDocumentDropdown>
-
-      <hr className="border-gray-200" />
 
       <ul className="menu p-0 w-full">
         {rootFolder?.docs.map((docLink, index) => (
@@ -208,7 +204,7 @@ function Sidebar({ docUrl }: { docUrl: AutomergeUrl }) {
   const doc = useDocRef<TinyPatchworkAccountDoc | FolderDoc>(docUrl);
 
   return (
-    <div className="p-2 h-full bg-gray-100">
+    <div className="p-2 h-full bg-base-300">
       <h2 className="text-xl p-3">
         <span className="text-xs">tiny</span> patchwork
       </h2>

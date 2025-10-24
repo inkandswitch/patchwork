@@ -48,14 +48,14 @@ const TabbedView = ({
 
   if (tabs.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500">
+      <div className="flex items-center justify-center h-full text-base-content">
         No tabs open. Open a document to create a tab.
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-full flex flex-col bg-base-300">
       {/* Tab Bar */}
       <div role="tablist" className="tabs tabs-lifted">
         {tabs.map((tab, index) => (
@@ -70,7 +70,7 @@ const TabbedView = ({
         ))}
       </div>
       {/* Active Tab Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden bg-base-300">
         {activeTab && (
           <View
             docUrl={activeTab.url}
