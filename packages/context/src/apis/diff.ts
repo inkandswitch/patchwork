@@ -107,8 +107,6 @@ export const computeDiffOfDoc = (
           const parentPath = patch.path.slice(0, -1);
           const parent = lookup(docBefore, parentPath);
 
-          console.log("position", last(patch.path));
-
           // for text mark the span as deleted
           if (typeof parent === "string") {
             const position = last(patch.path) as number;

@@ -108,8 +108,10 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
 
             if (diff.type === "added") {
               return Decoration.mark({
-                class: `border-b border-green-300 ${
-                  isSelected(ref) ? "bg-green-300" : "bg-green-100"
+                class: `border-b border-green-500 dark:border-green-400 ${
+                  isSelected(ref)
+                    ? "bg-green-300 dark:bg-green-600"
+                    : "bg-green-100 dark:bg-green-900"
                 }`,
               }).range(ref.from, ref.to);
             }
@@ -122,8 +124,10 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
             ? refsWithComments.flatMap((ref) =>
                 ref.from !== ref.to
                   ? Decoration.mark({
-                      class: `border-b border-yellow-300 ${
-                        isSelected(ref) ? "bg-yellow-300" : "bg-yellow-100"
+                      class: `border-b border-yellow-500 dark:border-yellow-400 ${
+                        isSelected(ref)
+                          ? "bg-yellow-300 dark:bg-yellow-600"
+                          : "bg-yellow-100 dark:bg-yellow-900"
                       }`,
                     }).range(ref.from, ref.to)
                   : []
@@ -247,12 +251,12 @@ class DeletionMarker extends WidgetType {
     box.style.display = "inline-block";
     box.style.boxSizing = "border-box";
     box.style.padding = "0 2px";
-    box.style.color = "rgb(236 35 35)";
+    box.style.color = "rgb(239 68 68)"; // red-500
     box.style.margin = "0 4px";
     box.style.fontSize = "0.8em";
     box.style.backgroundColor = this.isActive
-      ? "rgb(255 0 0 / 20%)"
-      : "rgb(255 0 0 / 10%)";
+      ? "rgb(239 68 68 / 20%)" // red-500 with opacity
+      : "rgb(239 68 68 / 10%)";
     box.style.borderRadius = "3px";
     box.style.cursor = "default";
     box.innerText = "⌫";
@@ -260,16 +264,30 @@ class DeletionMarker extends WidgetType {
     const hoverText = document.createElement("div");
     hoverText.style.position = "absolute";
     hoverText.style.zIndex = "1";
-    hoverText.style.padding = "10px";
-    hoverText.style.backgroundColor = "rgb(255 230 230)";
-    hoverText.style.fontSize = "15px";
-    hoverText.style.color = "black";
     hoverText.style.padding = "5px";
-    hoverText.style.border = "rgb(100 55 55)";
+    hoverText.style.backgroundColor = "rgb(254 242 242)"; // red-50
+    hoverText.style.fontSize = "15px";
+    hoverText.style.color = "rgb(17 24 39)"; // gray-900
+    hoverText.style.border = "1px solid rgb(185 28 28)"; // red-700
     hoverText.style.boxShadow = "0px 0px 6px rgba(0, 0, 0, 0.1)";
     hoverText.style.borderRadius = "3px";
     hoverText.style.visibility = "hidden";
     hoverText.innerText = this.deletedText;
+
+    // Add dark mode styles
+    const isDarkMode =
+      document.documentElement.classList.contains("dark") ||
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    if (isDarkMode) {
+      box.style.color = "rgb(248 113 113)"; // red-400 for dark mode
+      box.style.backgroundColor = this.isActive
+        ? "rgb(248 113 113 / 20%)"
+        : "rgb(248 113 113 / 10%)";
+      hoverText.style.backgroundColor = "rgb(69 10 10)"; // red-950
+      hoverText.style.color = "rgb(254 226 226)"; // red-100
+      hoverText.style.border = "1px solid rgb(153 27 27)"; // red-800
+    }
 
     box.appendChild(hoverText);
 
@@ -328,6 +346,19 @@ class TextSlipWidget extends WidgetType {
     box.style.color = "#3c3c3c";
     box.style.fontFamily =
       "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto";
+
+    // Add dark mode styles
+    const isDarkMode =
+      document.documentElement.classList.contains("dark") ||
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    if (isDarkMode) {
+      box.style.backgroundColor = "#1f2937"; // gray-800
+      box.style.border = "1px solid #374151"; // gray-700
+      box.style.color = "#f3f4f6"; // gray-100
+      box.style.boxShadow = "0 1px 2px rgba(0,0,0,0.3)";
+    }
+
     box.textContent = this.text;
     return box;
   }
