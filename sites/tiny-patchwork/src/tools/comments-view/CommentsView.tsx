@@ -43,8 +43,6 @@ const CommentsView = () => {
 
   return (
     <div className="h-full flex flex-col p-2 gap-2">
-      <h2 className="text-md font-bold">Comments</h2>
-
       {allThreadRefs.map((threadRef, index) => (
         <ThreadView
           key={threadRef.toId()}

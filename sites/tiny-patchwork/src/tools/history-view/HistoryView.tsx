@@ -19,10 +19,6 @@ const HistoryView = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="p-2">
-        <h2 className="text-md font-bold">History</h2>
-      </div>
-
       {selectedDocUrls.map((url) => (
         <DocHistoryView docUrl={url} key={url} />
       ))}

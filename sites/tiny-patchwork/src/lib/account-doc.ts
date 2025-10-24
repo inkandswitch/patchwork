@@ -5,8 +5,9 @@ import {
 } from "@patchwork/filesystem";
 
 import { AutomergeUrl, Repo } from "@automerge/vanillajs";
-import { SingleViewDoc } from "../tools/single-view/datatype";
 import type { AutomergeRepoKeyhive } from "virtual:patchwork/setup";
+import { SingleViewDoc } from "../tools/single-view/datatype";
+import { TabbedViewDoc } from "../tools/tabbed-view/datatype";
 
 export type TinyPatchworkAccountDoc = {
   rootFolderUrl: AutomergeUrl;
@@ -17,7 +18,10 @@ export type TinyPatchworkAccountDoc = {
     documentUrl: AutomergeUrl;
     toolId: string;
   };
-  contextSidebarToolId?: string;
+  contextSidebar: {
+    documentUrl: AutomergeUrl;
+    toolId: string;
+  };
 };
 
 export async function getOrCreateAccountDocHandle(
@@ -58,15 +62,42 @@ export async function getOrCreateAccountDocHandle(
     highlightChanges: false,
   });
 
+  const historyViewHandle = await repo.create2<HasPatchworkMetadata>({
+    ["@patchwork"]: { type: "history-view" },
+  });
+
+  const commentsViewHandle = await repo.create2<HasPatchworkMetadata>({
+    ["@patchwork"]: { type: "comments-view" },
+  });
+
+  const contextSidebarDocHandle = await repo.create2<
+    TabbedViewDoc & HasPatchworkMetadata
+  >({
+    ["@patchwork"]: { type: "tab-view" },
+    activeTabIndex: 0,
+    tabs: [
+      {
+        url: commentsViewHandle.url,
+        toolId: "comments-view",
+        name: "Comments",
+      },
+      { url: historyViewHandle.url, toolId: "history-view", name: "History" },
+    ],
+    showCloseButton: false,
+  });
+
   const account = await repo.create2<
     TinyPatchworkAccountDoc & HasPatchworkMetadata
   >({
     ["@patchwork"]: { type: "account" },
-    frameToolId: "patchwork-frame",
-    sidebarToolId: "simple-sidebar",
-    contextSidebarToolId: "comments-view",
     rootFolderUrl: rootFolderHandle.url,
+    frameToolId: "patchwork-frame",
     moduleSettingsUrl: moduleSettingsHandle.url,
+    sidebarToolId: "simple-sidebar",
+    contextSidebar: {
+      documentUrl: contextSidebarDocHandle.url,
+      toolId: "tabbed-view",
+    },
     mainView: { documentUrl: singleViewHandle.url, toolId: "single-view" },
   });
   localStorage.setItem(accountDocKey, account.url);
