@@ -1,10 +1,10 @@
 import "./styles/global.css";
 
-import bootstrap from "virtual:patchwork/setup";
-import { ModuleWatcher } from "@patchwork/filesystem";
-import { registerPatchworkViewElement } from "@patchwork/elements";
-import { registerPlugins } from "@patchwork/plugins";
 import { CONTEXT, Context } from "@patchwork/context";
+import { registerPatchworkViewElement } from "@patchwork/elements";
+import { ModuleWatcher } from "@patchwork/filesystem";
+import { registerPlugins } from "@patchwork/plugins";
+import bootstrap from "virtual:patchwork/setup";
 import { initCommands } from "./commands";
 import {
   getOrCreateAccountDocHandle,
