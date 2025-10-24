@@ -5,7 +5,7 @@ packages:
   - tools/*
 
 catalog:
-  "@automerge/automerge": 3.1.2
+  "@automerge/automerge": 3.2.0
   "@automerge/automerge-repo": 2.5.0-alpha.2
   "@automerge/automerge-repo-keyhive": 0.0.0-alpha.68
   "@automerge/automerge-repo-react-hooks": 2.5.0-alpha.2
@@ -16,7 +16,7 @@ catalog:
   "@types/react-dom": ^18.3.7
 
 overrides:
-  "@automerge/automerge": 3.1.2
+  "@automerge/automerge": 3.2.0
   "@automerge/automerge-repo": 2.5.0-alpha.2
   react: 18.3.26
   react-dom: 18.3.7
