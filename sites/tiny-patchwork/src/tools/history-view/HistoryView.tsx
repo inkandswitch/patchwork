@@ -1,19 +1,18 @@
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { CONTEXT, contextComputation } from "@patchwork/context";
 import { ViewHeads, ViewHeadsValue } from "@patchwork/context/diff";
 import {
   useDocRef,
   useReactive,
   useSubcontext,
 } from "@patchwork/context/react";
-import { IsSelected } from "@patchwork/context/selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import { useEffect, useState } from "react";
 import { useTitle } from "../../lib/datatype-hooks";
 import { relativeTime } from "../../lib/relative-time";
 import { toolify } from "../../lib/toolify";
+import { $selectedDocUrls } from "@patchwork/context/selection";
 
 const HistoryView = () => {
   const selectedDocUrls = useReactive($selectedDocUrls);
@@ -131,17 +130,5 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
     </div>
   );
 };
-
-const $selectedDocUrls = contextComputation((context) => {
-  const selectedRefs = context.refsWith(IsSelected);
-
-  const selectedDocUrls = new Set<AutomergeUrl>();
-
-  for (const ref of selectedRefs) {
-    selectedDocUrls.add(ref.docUrl);
-  }
-
-  return Array.from(selectedDocUrls);
-});
 
 export const renderHistoryView = toolify(HistoryView);

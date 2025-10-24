@@ -102,6 +102,9 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patchwork/filesystem':
+        specifier: workspace:*
+        version: link:../filesystem
       eventemitter3:
         specifier: ^5.0.1
         version: 5.0.1
