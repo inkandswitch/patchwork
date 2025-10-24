@@ -24,7 +24,7 @@ import {
 import { IsSelected } from "@patchwork/context/selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import { ToolElement } from "@patchwork/plugins";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTitle } from "../../lib/datatype-hooks";
 import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
