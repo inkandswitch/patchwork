@@ -39,7 +39,7 @@ type UseDocRefParams =
   | UseDocRefHandleSynchronousParams;
 
 export function useDocRef<T>(
-  docUrl: AutomergeUrl | undefined,
+  docUrl: AutomergeUrl,
   params: UseDocRefHandleSuspendingParams
 ): Ref<T, T, never>;
 export function useDocRef<T>(

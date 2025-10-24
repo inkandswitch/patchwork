@@ -50,7 +50,7 @@ const PATH = ["content"];
 
 export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   const repo = useRepo();
-  const handle = useDocHandle<MarkdownDoc>(docUrl);
+  const handle = useDocHandle<MarkdownDoc>(docUrl, { suspense: true });
 
   const cmContainerRef = useRef<HTMLDivElement | null>(null);
   const isReadOnly = parseAutomergeUrl(docUrl).heads !== undefined;
@@ -73,7 +73,10 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   );
   const refsWithDiff = useReactive(val);
 
-  const commentThreads = useMemo(() => getThreadsAt(contentRef), [contentRef]);
+  const commentThreads = useMemo(
+    () => (contentRef ? getThreadsAt(contentRef) : undefined),
+    [contentRef]
+  );
   const refsWithComments = useReactive(
     commentThreads
   ) as TextSpanRefWith<ThreadField>[];
