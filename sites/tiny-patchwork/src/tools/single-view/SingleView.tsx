@@ -24,7 +24,7 @@ import {
 import { IsSelected } from "@patchwork/context/selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import { ToolElement } from "@patchwork/plugins";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTitle } from "../../lib/datatype-hooks";
 import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
@@ -42,7 +42,11 @@ const SingleView = ({
     { suspense: true }
   );
 
-  const { selection, highlightChanges } = singleViewDoc;
+  const { highlightChanges } = singleViewDoc;
+
+  const [selection, setSelection] = useState<
+    { url: AutomergeUrl; toolId?: string } | undefined
+  >(undefined);
 
   const currentDocRef = useDocRef(selection?.url);
 
@@ -120,14 +124,7 @@ const SingleView = ({
         const { url, toolId } = event.detail;
         console.log("single view: handle open document event", event);
 
-        changeSingleViewDoc((doc) => {
-          // Simply replace the current document
-          doc.selection = { url };
-
-          if (toolId) {
-            doc.selection.toolId = toolId;
-          }
-        });
+        setSelection({ url, toolId });
       };
 
       (element as HTMLElement).addEventListener(
@@ -141,7 +138,7 @@ const SingleView = ({
         );
       };
     }
-  }, [changeSingleViewDoc, element]);
+  }, [element, setSelection]);
 
   // add doc handle to window
   useEffect(() => {
