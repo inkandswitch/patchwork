@@ -23,19 +23,13 @@ import { Codemirror } from "../../lib/codemirror";
 import { useStaticCallback } from "../../lib/useStaticCallback";
 
 import { parseAutomergeUrl } from "@automerge/automerge-repo";
+import { PathRef, Reactive, Ref, TextSpanRef } from "@patchwork/context";
+import { createComment, getThreadsAt } from "@patchwork/context/comments";
 import {
-  PathRef,
-  Reactive,
-  Ref,
-  TextSpanRef,
-  TextSpanRefWith,
-} from "@patchwork/context";
-import {
-  createComment,
-  getThreadsAt,
-  ThreadField,
-} from "@patchwork/context/comments";
-import { Diff, DiffValue, getElementsWithDiff } from "@patchwork/context/diff";
+  Diff,
+  DiffAnnotation,
+  getElementsWithDiff,
+} from "@patchwork/context/diff";
 import { useReactive, useSubcontext } from "@patchwork/context/react";
 import { $selectedRefs, IsSelected } from "@patchwork/context/selection";
 import { ReactToolProps } from "../../lib/toolify";
@@ -64,22 +58,21 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
     return new PathRef(docHandle, ["content"]);
   }, [docHandle]);
 
-  const val = useMemo(
-    () =>
-      (contentRef ? getElementsWithDiff(contentRef) : []) as Reactive<
-        TextSpanRefWith<Diff>[]
-      >,
-    [contentRef]
+  const refsWithDiff = useReactive(
+    useMemo(
+      () =>
+        (contentRef ? getElementsWithDiff(contentRef) : []) as Reactive<
+          TextSpanRef[]
+        >,
+      [contentRef]
+    )
   );
-  const refsWithDiff = useReactive(val);
 
   const commentThreads = useMemo(
     () => (contentRef ? getThreadsAt(contentRef) : undefined),
     [contentRef]
   );
-  const refsWithComments = useReactive(
-    commentThreads
-  ) as TextSpanRefWith<ThreadField>[];
+  const refsWithComments = useReactive(commentThreads) as TextSpanRef[];
 
   const selectedRefs = useReactive($selectedRefs);
 
@@ -97,7 +90,7 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
         [
           // diff
           ...refsWithDiff.flatMap((ref) => {
-            const diff = ref.get(Diff) as DiffValue<string>;
+            const diff = ref.get(DiffAnnotation) as Diff<string>;
 
             if (diff.type === "deleted") {
               return makeDeleteDecoration({
@@ -205,36 +198,6 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
     </div>
   );
 };
-
-// const parseMarkdownLinks = async (
-//   repo: Repo,
-//   handle: DocHandle<MarkdownDoc>
-// ): Promise<TextSpanRefWith<Link>[]> => {
-//   const docLinks: TextSpanRefWith<Link>[] = [];
-//   // Single regex to match markdown links with the specific pattern: [text](anything--documentId) or [text](anything--documentId?params)
-//   const regex = /\[([^\]]*)\]\(([^)]*)--([A-Za-z0-9_-]+)(\?[^)]*)?\)/g;
-//   const content = handle.doc().content;
-
-//   let match;
-//   while ((match = regex.exec(content)) !== null) {
-//     const fullMatch = match[0];
-//     const documentId = match[3];
-//     const from = match.index;
-//     const to = match.index + fullMatch.length;
-
-//     const docHandle = await repo.find(documentId as DocumentId);
-
-//     docLinks.push(
-//       new TextSpanRef(handle, ["content"], from, to).with(
-//         Link({
-//           ref: new PathRef(docHandle, []),
-//         })
-//       ) as TextSpanRefWith<Link>
-//     );
-//   }
-
-//   return docLinks;
-// };
 
 class DeletionMarker extends WidgetType {
   deletedText: string;
@@ -371,15 +334,3 @@ class TextSlipWidget extends WidgetType {
     return true;
   }
 }
-
-const makeTextSlipDecoration = ({
-  text,
-  side,
-}: {
-  text: string;
-  side: -1 | 1;
-}) =>
-  Decoration.widget({
-    widget: new TextSlipWidget(text),
-    side,
-  });

@@ -1,17 +1,12 @@
 import { CONTEXT } from "../core";
-import { defineField } from "../core/fields";
+import { defineAnnotation } from "../core/annotations";
 import { Ref } from "../core/refs";
 import { contextComputation } from "../core/computation";
 import { Reactive } from "../reactive";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 
-const IsSelectedSymbol = Symbol("IsSelected");
-export type IsSelected = typeof IsSelectedSymbol;
-export const IsSelected = defineField<IsSelected, boolean>(
-  "IsSelected",
-  IsSelectedSymbol
-);
+export const IsSelected = defineAnnotation<boolean>("patchwork:isSelected");
 
 export const isSelected = (ref: Ref): Reactive<boolean> =>
   contextComputation(() => CONTEXT.resolve(ref).get(IsSelected) ?? false);
