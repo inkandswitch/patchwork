@@ -70,6 +70,10 @@ export async function getOrCreateAccountDocHandle(
     ["@patchwork"]: { type: "comments-view" },
   });
 
+  const contextViewHandle = await repo.create2<HasPatchworkMetadata>({
+    ["@patchwork"]: { type: "context-view" },
+  });
+
   const contextSidebarDocHandle = await repo.create2<
     TabbedViewDoc & HasPatchworkMetadata
   >({
@@ -82,6 +86,7 @@ export async function getOrCreateAccountDocHandle(
         name: "Comments",
       },
       { url: historyViewHandle.url, toolId: "history-view", name: "History" },
+      { url: contextViewHandle.url, toolId: "context-view", name: "Context" },
     ],
     showCloseButton: false,
   });

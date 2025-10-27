@@ -70,7 +70,7 @@ const TabbedView = ({
         ))}
       </div>
       {/* Active Tab Content */}
-      <div className="flex-1 overflow-hidden bg-base-300">
+      <div className="flex-1 overflow-auto bg-base-300">
         {activeTab && (
           <View
             docUrl={activeTab.url}
