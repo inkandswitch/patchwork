@@ -28,7 +28,8 @@ export function DocumentList(props: DocumentListProps) {
           });
 
           const tools = useSupportedToolsForType(() => doc.type);
-          const documentId = () => parseAutomergeUrl(doc.url).documentId;
+          const documentId = () =>
+            doc.url && parseAutomergeUrl(doc.url)?.documentId;
 
           return (
             <Switch>
@@ -50,6 +51,7 @@ export function DocumentList(props: DocumentListProps) {
                     aria-pressed={documentId() === selectedId()}
                     classList={classes()}
                     onClick={createOpenEventHandler(doc.url)}
+                    data-url={doc.url}
                   >
                     {doc.name}
                   </ContextMenu.Trigger>

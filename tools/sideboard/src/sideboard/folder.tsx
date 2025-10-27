@@ -20,7 +20,7 @@ export default function Folder(props: {
   const depth = () => props.depth ?? 1;
   const depthStyle = () => ({ "--depth": depth() });
   const documentId = () =>
-    handle() && parseAutomergeUrl(handle()!.url).documentId;
+    handle() && handle()!.url && parseAutomergeUrl(handle()!.url).documentId;
 
   return (
     <Suspense fallback="Loading...">
@@ -37,6 +37,7 @@ export default function Folder(props: {
           aria-pressed={selectedId() == documentId()}
           data-patchwork-open={props.url}
           onClick={createOpenEventHandler(props.url)}
+          data-url={props.url}
         >
           {folder()?.title}
         </a>

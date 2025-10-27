@@ -12,7 +12,7 @@ export function useWindowEvent<E extends keyof WindowEventMap>(
 export function parseHash() {
   const params = new URLSearchParams(location.hash.slice(1));
   const documentId = params.get("doc");
-  const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
+  const heads = params.get("heads")?.split?.("|") as UrlHeads | undefined;
   const toolId = params.get("tool");
   return { documentId, toolId, heads };
 }
