@@ -26,7 +26,7 @@ export type Comment = {
 };
 
 const ThreadAnnotation = defineAnnotation<Ref<Thread>>(
-  "patchwork:commentThread"
+  "patchwork/commentThread"
 );
 
 export const getCommentThreads = (ref: Ref) =>

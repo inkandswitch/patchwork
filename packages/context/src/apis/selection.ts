@@ -6,7 +6,7 @@ import { Reactive } from "../reactive";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 
-export const IsSelected = defineAnnotation<boolean>("patchwork:isSelected");
+export const IsSelected = defineAnnotation<boolean>("patchwork/isSelected");
 
 export const isSelected = (ref: Ref): Reactive<boolean> =>
   contextComputation(() => CONTEXT.resolve(ref).get(IsSelected) ?? false);

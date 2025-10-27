@@ -23,7 +23,7 @@ type DeletedDiff<T> = {
 
 export type Diff<T = unknown> = AddedDiff | ChangedDiff<T> | DeletedDiff<T>;
 
-export const DiffAnnotation = defineAnnotation<Diff>("patchwork:diff");
+export const DiffAnnotation = defineAnnotation<Diff>("patchwork/diff");
 
 export type ViewHeads = {
   beforeHeads: Automerge.Heads;
@@ -31,7 +31,7 @@ export type ViewHeads = {
 };
 
 export const ViewHeadsAnnotation = defineAnnotation<ViewHeads>(
-  "patchwork:viewHeads"
+  "patchwork/viewHeads"
 );
 
 export const getViewHeads = (ref: Ref) =>
