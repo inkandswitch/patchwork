@@ -18,6 +18,7 @@ import { plugins as sideboardPlugins } from "@chee/patchwork-sideboard";
 import "@chee/patchwork-sideboard/styles.css";
 // @ts-expect-error no types
 import { plugins as orionMarkwhen } from "@orion/markwhen";
+import { plugins as grjteMarkdownPlugins } from "@grjte/markdown";
 
 export const plugins: Plugin<any>[] = [
   ...markdownPlugins,
@@ -53,4 +54,5 @@ export const plugins: Plugin<any>[] = [
       };
     },
   },
+  ...grjteMarkdownPlugins,
 ];
