@@ -1,7 +1,6 @@
 import { render } from "solid-js/web";
 import type { ModuleSettingsDoc } from "@patchwork/filesystem";
 import type { ToolImplementation } from "@patchwork/plugins";
-import type { TinyPatchworkAccountDoc } from "tiny-patchwork/src/lib/account-doc.ts";
 import "./index.css";
 
 function addStyles(element: HTMLElement, textContent: string) {
