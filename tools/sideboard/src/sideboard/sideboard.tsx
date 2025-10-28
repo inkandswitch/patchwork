@@ -9,9 +9,8 @@ type TinyPatchworkAccountDoc = {
 };
 
 import type { PatchworkToolProps } from "../types.ts";
-import { filter, setFilter, setSelectedId } from "./state.ts";
+import { filter, setFilter } from "./state.ts";
 import CreateNew from "./create-new.tsx";
-import { parseHash, useWindowEvent } from "./util.ts";
 import type { FolderDoc } from "@patchwork/filesystem";
 import { createOpenEventHandler } from "./events.ts";
 import { SearchIcon } from "./icons.tsx";
@@ -19,8 +18,6 @@ import { DocumentList } from "./document-list.tsx";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 
 export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
-  useWindowEvent("hashchange", () => setSelectedId(parseHash().documentId));
-
   const doc = makeDocumentProjection(props.handle);
   const [folder, folderHandle] = useDocument<FolderDoc>(
     () => doc.rootFolderUrl,
