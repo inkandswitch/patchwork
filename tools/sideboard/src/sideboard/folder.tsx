@@ -31,6 +31,7 @@ export default function Folder(props: {
           aria-pressed={selectedDocUrls().includes(props.url)}
           data-patchwork-open={props.url}
           onClick={createOpenEventHandler(props.url)}
+          data-url={props.url}
         >
           {folder()?.title}
         </a>
