@@ -1,7 +1,6 @@
 import { deepEqual } from "../utils/deepEqual";
-import { FieldType } from "./fields";
-import { Ref, RefWith } from "./refs";
-import { $fields } from "./refs";
+import { AnnotationType } from "./annotations";
+import { ANNOTATIONS_SYMBOL, FIELDS_SYMBOL, Ref } from "./refs";
 
 export class Context {
   #subscribers = new Set<() => void>();
@@ -34,8 +33,8 @@ export class Context {
   resolve(ref: Ref): Ref {
     const clone = ref.clone();
 
-    const fields = new Map<symbol, any>();
-    clone[$fields] = fields;
+    const annotations = new Map<string, any>();
+    clone[ANNOTATIONS_SYMBOL] = annotations;
 
     this.#resolveRef(clone);
 
@@ -46,8 +45,8 @@ export class Context {
     const storedRef = this.#refsById.get(ref.toId());
 
     if (storedRef) {
-      for (const [key, value] of storedRef[$fields].entries()) {
-        ref[$fields].set(key, value);
+      for (const [key, value] of storedRef[ANNOTATIONS_SYMBOL].entries()) {
+        ref[ANNOTATIONS_SYMBOL].set(key, value);
       }
     }
 
@@ -77,8 +76,8 @@ export class Context {
         refsById.set(id, resolvedRef);
       }
 
-      for (const [key, value] of ref[$fields].entries()) {
-        resolvedRef[$fields].set(key, value);
+      for (const [key, value] of ref[ANNOTATIONS_SYMBOL].entries()) {
+        resolvedRef[ANNOTATIONS_SYMBOL].set(key, value);
       }
     }
 
@@ -87,10 +86,8 @@ export class Context {
     }
   }
 
-  refsWith<Type extends symbol>(field: FieldType<Type, any>) {
-    return this.refs.filter((ref) =>
-      ref.has(field)
-    ) as unknown as RefWith<Type>[];
+  refsWith<V = unknown>(annotation: AnnotationType<V>): Ref[] {
+    return this.refs.filter((ref) => ref.has(annotation));
   }
 
   // ==== subscription methods ====
@@ -126,7 +123,7 @@ export class Context {
 
   dump() {
     return this.refs.flatMap((ref) =>
-      ref.fields.map(([key, value]) => [ref.toId(), key, value])
+      ref.annotations.map(([key, value]) => [ref.toId(), key, value])
     );
   }
 }
@@ -145,8 +142,8 @@ const addTo = (refsById: Map<string, Ref>, ref: Ref | Ref[]) => {
     refsById.set(ref.toId(), storedRef);
   }
 
-  for (const [key, value] of ref[$fields].entries()) {
-    storedRef[$fields].set(key, value);
+  for (const [key, value] of ref[ANNOTATIONS_SYMBOL].entries()) {
+    storedRef[ANNOTATIONS_SYMBOL].set(key, value);
   }
 };
 
@@ -162,21 +159,21 @@ const isEqual = (a: Map<string, Ref>, b: Map<string, Ref>) => {
       return false;
     }
 
-    const fieldsA = refA[$fields];
-    const fieldsB = refB[$fields];
+    const annotationsA = refA[ANNOTATIONS_SYMBOL];
+    const annotationsB = refB[ANNOTATIONS_SYMBOL];
 
-    if (fieldsA.size !== fieldsB.size) {
+    if (annotationsA.size !== annotationsB.size) {
       return false;
     }
 
-    for (const [fieldTypeA, fieldValueA] of fieldsA.entries()) {
-      const fieldValueB = fieldsB.get(fieldTypeA);
+    for (const [annotationTypeA, annotationValueA] of annotationsA.entries()) {
+      const annotationValueB = annotationsB.get(annotationTypeA);
 
-      if (!fieldValueB) {
+      if (!annotationValueB) {
         return false;
       }
 
-      if (!deepEqual(fieldValueA, fieldValueB)) {
+      if (!deepEqual(annotationValueA, annotationValueB)) {
         return false;
       }
     }

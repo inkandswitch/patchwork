@@ -85,6 +85,21 @@ export const initCommands = (
     });
   };
 
+  const addContextInspector = async () => {
+    const contextInspectorHandle = await repo.create2<HasPatchworkMetadata>({
+      ["@patchwork"]: { type: "patchwork/context-inspector" },
+    });
+
+    accountDocHandle.change((doc) => {
+      doc.contextSidebar = {
+        documentUrl: contextInspectorHandle.url,
+        toolId: "context-inspector",
+      };
+    });
+
+    console.log("Added context inspector");
+  };
+
   const installModule = async (url: AutomergeUrl) => {
     if (!isValidAutomergeUrl(url)) {
       throw new Error("Invalid URL");
@@ -213,5 +228,6 @@ export const initCommands = (
     copyCurrentDoc,
     installModule,
     addTabbedSidebar,
+    addContextInspector,
   };
 };

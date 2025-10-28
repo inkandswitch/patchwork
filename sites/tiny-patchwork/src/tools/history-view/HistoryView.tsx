@@ -1,7 +1,7 @@
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { ViewHeads, ViewHeadsValue } from "@patchwork/context/diff";
+import { ViewHeads, ViewHeadsAnnotation } from "@patchwork/context/diff";
 import {
   useDocRef,
   useReactive,
@@ -30,7 +30,7 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const repo = useRepo();
   const [history, setHistory] = useState<Automerge.State<unknown>[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewHeads, setViewHeads] = useState<ViewHeadsValue | null>(null);
+  const [viewHeads, setViewHeads] = useState<ViewHeads | null>(null);
   const [doc] = useDocument<HasPatchworkMetadata>(docUrl, {
     suspense: true,
   });
@@ -45,7 +45,7 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
       return;
     }
 
-    headsSelectionContext.replace(docRef.with(ViewHeads(viewHeads)));
+    headsSelectionContext.replace(docRef.with(ViewHeadsAnnotation(viewHeads)));
   }, [viewHeads, headsSelectionContext, docRef]);
 
   useEffect(() => {

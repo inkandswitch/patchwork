@@ -1,26 +1,20 @@
-import {
-  parseAutomergeUrl,
-  type AutomergeUrl,
-  type Repo,
-} from "@automerge/automerge-repo";
+import { type AutomergeUrl, type Repo } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-solid-primitives";
 import type { FolderDoc } from "@patchwork/filesystem";
 import { Suspense } from "solid-js";
-import { createOpenEventHandler } from "./events.ts";
-import { selectedId } from "./state.ts";
 import { DocumentList } from "./document-list.tsx";
+import { createOpenEventHandler } from "./events.ts";
+import { selectedDocUrls } from "./state.ts";
 
 export default function Folder(props: {
   url: AutomergeUrl;
   repo: Repo;
   depth?: number;
 }) {
-  const [folder, handle] = useDocument<FolderDoc>(() => props.url, props);
+  const [folder] = useDocument<FolderDoc>(() => props.url, props);
 
   const depth = () => props.depth ?? 1;
   const depthStyle = () => ({ "--depth": depth() });
-  const documentId = () =>
-    handle() && handle()!.url && parseAutomergeUrl(handle()!.url).documentId;
 
   return (
     <Suspense fallback="Loading...">
@@ -34,7 +28,7 @@ export default function Folder(props: {
           href={props.url}
           class="sideboard-folder__link sideboard-folder__link--folder"
           role="treeitem"
-          aria-pressed={selectedId() == documentId()}
+          aria-pressed={selectedDocUrls().includes(props.url)}
           data-patchwork-open={props.url}
           onClick={createOpenEventHandler(props.url)}
           data-url={props.url}

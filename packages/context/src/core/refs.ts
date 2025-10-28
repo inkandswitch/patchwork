@@ -1,11 +1,11 @@
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { lookup } from "../utils/lookup";
-import { FieldType, FieldValue } from "./fields";
+import { AnnotationType, AnnotationValue } from "./annotations";
 
-export const $fields = Symbol("fields");
-
-export type RefWith<Fields extends symbol> = Ref<unknown, unknown, Fields>;
+export const ANNOTATIONS_SYMBOL = Symbol("annotations");
+// Backwards compatibility
+export const FIELDS_SYMBOL = ANNOTATIONS_SYMBOL;
 
 export type SerializedPathRef = {
   type: "path";
@@ -31,12 +31,8 @@ export type SerializedRef =
   | SerializedIdRef
   | SerializedTextSpanRef;
 
-export abstract class Ref<
-  Value = unknown,
-  Doc = unknown,
-  Fields extends symbol = never,
-> {
-  [$fields] = new Map<symbol, any>();
+export abstract class Ref<Value = unknown, Doc = unknown> {
+  [ANNOTATIONS_SYMBOL] = new Map<string, any>();
 
   readonly docHandle: DocHandle<Doc>;
   readonly path: Automerge.Prop[];
@@ -52,7 +48,7 @@ export abstract class Ref<
 
   protected abstract resolve(doc: Doc): Value;
 
-  abstract clone(): Ref<Value, Doc, Fields>;
+  abstract clone(): Ref<Value, Doc>;
 
   abstract serialize(): SerializedRef;
 
@@ -76,7 +72,7 @@ export abstract class Ref<
     return new TextSpanRef(this.docHandle, this.path, from, to);
   }
 
-  get docRef(): Ref<Doc, Doc, Fields> {
+  get docRef(): Ref<Doc, unknown> {
     return new PathRef(this.docHandle, []); // maybe we should have a doc ref as a separate class?
   }
 
@@ -124,40 +120,35 @@ export abstract class Ref<
     return true;
   }
 
-  // ==== field methods ====
+  // ==== annotation methods ====
 
-  with<Type extends symbol, Value>(
-    field: FieldValue<Type, Value>
-  ): Ref<Value, Doc, Fields | Type> {
+  with<V>(annotation: AnnotationValue<V>): Ref<Value, Doc> {
     const clone = this.clone();
-    clone[$fields] = new Map(this[$fields]);
-    clone[$fields].set(field.type, field.value);
+    clone[ANNOTATIONS_SYMBOL] = new Map(this[ANNOTATIONS_SYMBOL]);
+    clone[ANNOTATIONS_SYMBOL].set(annotation.key, annotation.value);
 
-    return clone as unknown as Ref<Value, Doc, Fields | Type>;
+    return clone;
   }
 
-  get<Type extends symbol, Value>(field: FieldType<Type, Value>) {
-    return this[$fields].get(field.type) as Type extends Fields
-      ? Value
-      : Value | undefined;
+  get<V>(annotation: AnnotationType<V>): V {
+    return this[ANNOTATIONS_SYMBOL].get(annotation.key);
   }
 
-  has<Type extends symbol, Value>(field: FieldType<Type, Value>) {
-    return this[$fields].has(field.type) as Type extends Fields
-      ? true
-      : boolean;
+  has<V>(annotation: AnnotationType<V>): boolean {
+    return this[ANNOTATIONS_SYMBOL].has(annotation.key);
   }
 
-  get fields(): [symbol, any][] {
-    return Array.from(this[$fields].entries());
+  get annotations(): [string, any][] {
+    return Array.from(this[ANNOTATIONS_SYMBOL].entries());
+  }
+
+  // Backwards compatibility
+  get fields() {
+    return this.annotations;
   }
 }
 
-export class PathRef<
-  Value = unknown,
-  Doc = unknown,
-  Fields extends symbol = never,
-> extends Ref<Value, Doc, Fields> {
+export class PathRef<Value = unknown, Doc = unknown> extends Ref<Value> {
   constructor(docHandle: DocHandle<Doc>, path: Automerge.Prop[]) {
     super(docHandle, path);
 
@@ -178,7 +169,7 @@ export class PathRef<
     return `${url}:${path}`;
   }
 
-  clone(): Ref<Value, Doc, Fields> {
+  clone(): Ref<Value, unknown> {
     return new PathRef(this.docHandle, this.path);
   }
 
@@ -198,11 +189,7 @@ export class PathRef<
   }
 }
 
-export class IdRef<
-  Value = unknown,
-  Doc = unknown,
-  Fields extends symbol = never,
-> extends Ref<Value, Doc, Fields> {
+export class IdRef<Value = unknown, Doc = unknown> extends Ref<Value, Doc> {
   #id: any;
   #key: Automerge.Prop;
 
@@ -232,7 +219,7 @@ export class IdRef<
     return this.#id;
   }
 
-  clone(): Ref<Value, Doc, Fields> {
+  clone(): Ref<Value, Doc> {
     return new IdRef(this.docHandle, this.path, this.#id, this.#key);
   }
 
@@ -258,11 +245,10 @@ export class IdRef<
   }
 }
 
-export class TextSpanRef<
-  Value = string,
-  Doc = unknown,
-  Fields extends symbol = never,
-> extends Ref<Value, Doc, Fields> {
+export class TextSpanRef<Value = string, Doc = unknown> extends Ref<
+  Value,
+  Doc
+> {
   #fromCursor: Automerge.Cursor;
   #toCursor: Automerge.Cursor;
 
@@ -347,7 +333,7 @@ export class TextSpanRef<
     throw new Error("not implemented");
   }
 
-  clone(): Ref<Value, Doc, Fields> {
+  clone(): Ref<Value, Doc> {
     return new TextSpanRef(this.docHandle, this.path, this.from, this.to);
   }
 
@@ -360,12 +346,6 @@ export class TextSpanRef<
     };
   }
 }
-
-export type TextSpanRefWith<Fields extends symbol> = TextSpanRef<
-  unknown,
-  unknown,
-  Fields
->;
 
 export const loadRef = (
   docHandle: DocHandle<unknown>,

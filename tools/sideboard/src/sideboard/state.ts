@@ -1,7 +1,12 @@
+import type { AutomergeUrl } from "@automerge/automerge-repo";
+import { $selectedDocHandles } from "@patchwork/context/selection";
 import { createSignal } from "solid-js";
-import { parseHash } from "./util.ts";
 
 export const [filter, setFilter] = createSignal("");
-export const [selectedId, setSelectedId] = createSignal<
-  string | undefined | null
->(parseHash()?.documentId);
+const [selectedDocUrls, setSelectedDocUrls] = createSignal<AutomergeUrl[]>([]);
+
+$selectedDocHandles.on("change", (refs) => {
+  setSelectedDocUrls(refs.map((ref) => ref.url));
+});
+
+export { selectedDocUrls };

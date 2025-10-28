@@ -1,7 +1,8 @@
 import { DocHandle } from "@automerge/automerge-repo";
-import { CONTEXT, defineField } from "../core";
+import { CONTEXT } from "../core";
 import { contextComputation } from "../core/computation";
-import { IdRef, loadRef, Ref, RefWith, SerializedRef } from "../core/refs";
+import { IdRef, loadRef, Ref, SerializedRef } from "../core/refs";
+import { defineAnnotation } from "../core/annotations";
 
 export type Thread = {
   id: string;
@@ -24,24 +25,20 @@ export type Comment = {
   timestamp: number;
 };
 
-// todo: add support for collection fields
-const ThreadSymbol = Symbol("thread");
-export type ThreadField = typeof ThreadSymbol;
-export const ThreadField = defineField<ThreadField, Ref<Thread>>(
-  "commentThreads",
-  ThreadSymbol
+const ThreadAnnotation = defineAnnotation<Ref<Thread>>(
+  "patchwork/commentThread"
 );
 
 export const getCommentThreads = (ref: Ref) =>
   contextComputation(() => {
-    const threads = CONTEXT.resolve(ref).get(ThreadField);
+    const threads = CONTEXT.resolve(ref).get(ThreadAnnotation);
     return threads ? [threads] : [];
   });
 
 export const getStoredThreads = (
   docHandle: DocHandle<DocWithComments>
-): RefWith<ThreadField>[] => {
-  const refsWithThreads: RefWith<ThreadField>[] = [];
+): Ref[] => {
+  const refsWithThreads: Ref[] = [];
 
   const storedThreads = docHandle.doc()["@comments"]?.threads;
 
@@ -60,7 +57,7 @@ export const getStoredThreads = (
     for (const serializedRef of thread.refs) {
       const ref = loadRef(docHandle, serializedRef);
 
-      refsWithThreads.push(ref.with(ThreadField(threadRef)));
+      refsWithThreads.push(ref.with(ThreadAnnotation(threadRef)));
     }
   }
 
@@ -73,7 +70,7 @@ export const getThreadsAt = (ref: Ref) =>
       return [];
     }
 
-    return CONTEXT.refsWith(ThreadField).filter((refWithComments) => {
+    return CONTEXT.refsWith(ThreadAnnotation).filter((refWithComments) => {
       return refWithComments.isElementOf(ref);
     });
   });
@@ -162,9 +159,9 @@ export const createComment = ({
 export const $allActiveThreadRefs = contextComputation<Ref<Thread>[]>(
   (context) => {
     const threadRefs = context
-      .refsWith(ThreadField)
+      .refsWith(ThreadAnnotation)
       .flatMap((refWithThread) => {
-        const threadRef = refWithThread.get(ThreadField);
+        const threadRef = refWithThread.get(ThreadAnnotation)!;
 
         if (threadRef.value.isResolved) {
           return [];

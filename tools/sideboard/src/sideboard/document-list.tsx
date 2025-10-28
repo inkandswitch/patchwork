@@ -1,6 +1,6 @@
 import type { DocLink } from "@patchwork/filesystem";
 import { For, Match, Show, Switch } from "solid-js";
-import { filter, selectedId } from "./state.ts";
+import { filter, selectedDocUrls } from "./state.ts";
 import { parseAutomergeUrl, type Repo } from "@automerge/automerge-repo";
 import { createOpenEvent, createOpenEventHandler } from "./events.ts";
 import Folder from "./folder.tsx";
@@ -48,7 +48,7 @@ export function DocumentList(props: DocumentListProps) {
                     as="button"
                     class="popmenu__trigger sideboard-folder__link sideboard-folder__link--file"
                     role="treeitem"
-                    aria-pressed={documentId() === selectedId()}
+                    aria-pressed={selectedDocUrls().includes(doc.url)}
                     classList={classes()}
                     onClick={createOpenEventHandler(doc.url)}
                     data-url={doc.url}

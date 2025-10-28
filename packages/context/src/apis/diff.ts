@@ -4,8 +4,8 @@ import { last } from "../utils/last";
 import { lookup } from "../utils/lookup";
 import { CONTEXT } from "../core";
 import { contextComputation } from "../core/computation";
-import { defineField } from "../core/fields";
-import { PathRef, Ref, RefWith, TextSpanRef } from "../core/refs";
+import { defineAnnotation } from "../core/annotations";
+import { PathRef, Ref, TextSpanRef } from "../core/refs";
 
 type AddedDiff = {
   type: "added";
@@ -21,35 +21,29 @@ type DeletedDiff<T> = {
   before: T;
 };
 
-export type DiffValue<T = unknown> =
-  | AddedDiff
-  | ChangedDiff<T>
-  | DeletedDiff<T>;
+export type Diff<T = unknown> = AddedDiff | ChangedDiff<T> | DeletedDiff<T>;
 
-const DiffSymbol = Symbol("diff");
-export type Diff = typeof DiffSymbol;
-export const Diff = defineField<Diff, DiffValue>("diff", DiffSymbol);
+export const DiffAnnotation = defineAnnotation<Diff>("patchwork/diff");
 
-export type ViewHeadsValue = {
+export type ViewHeads = {
   beforeHeads: Automerge.Heads;
   afterHeads: Automerge.Heads;
 };
 
-const ViewHeadsSymbol = Symbol("viewHeads");
-export type ViewHeads = typeof ViewHeadsSymbol;
-export const ViewHeads = defineField<ViewHeads, ViewHeadsValue>(
-  "viewHeads",
-  ViewHeadsSymbol
+export const ViewHeadsAnnotation = defineAnnotation<ViewHeads>(
+  "patchwork/viewHeads"
 );
 
 export const getViewHeads = (ref: Ref) =>
-  contextComputation((context) => context.resolve(ref).get(ViewHeads));
+  contextComputation((context) =>
+    context.resolve(ref).get(ViewHeadsAnnotation)
+  );
 
 export const computeDiffOfDoc = (
   docHandle?: DocHandle<unknown>,
   headsBefore?: Automerge.Heads
-): RefWith<Diff>[] => {
-  const changedRefs: RefWith<Diff>[] = [];
+): Ref[] => {
+  const changedRefs: Ref[] = [];
 
   if (!headsBefore || !docHandle) {
     return [];
@@ -84,9 +78,11 @@ export const computeDiffOfDoc = (
       const before = lookup(docBefore, ancestorSubPath);
 
       if (before) {
-        changedRefs.push(ancestorRef.with(Diff({ type: "changed", before })));
+        changedRefs.push(
+          ancestorRef.with(DiffAnnotation({ type: "changed", before }))
+        );
       } else {
-        changedRefs.push(ancestorRef.with(Diff({ type: "added" })));
+        changedRefs.push(ancestorRef.with(DiffAnnotation({ type: "added" })));
       }
 
       modifiedPaths.add(key);
@@ -97,7 +93,7 @@ export const computeDiffOfDoc = (
 
     switch (patch.action) {
       case "put":
-        changedRefs.push(objRef.with(Diff({ type: "added" })));
+        changedRefs.push(objRef.with(DiffAnnotation({ type: "added" })));
         break;
 
       case "del": {
@@ -133,7 +129,9 @@ export const computeDiffOfDoc = (
             // todo: implement
             const before = "";
 
-            changedRefs.push(textSpan.with(Diff({ type: "deleted", before })));
+            changedRefs.push(
+              textSpan.with(DiffAnnotation({ type: "deleted", before }))
+            );
 
             // for arrays mark the indiviual objects in the range as deleted
           } else if (Array.isArray(parent)) {
@@ -145,13 +143,15 @@ export const computeDiffOfDoc = (
           // ... otherwise this is a deletion of a key in an object
         } else {
           const before = lookup(docBefore, patch.path);
-          changedRefs.push(objRef.with(Diff({ type: "deleted", before })));
+          changedRefs.push(
+            objRef.with(DiffAnnotation({ type: "deleted", before }))
+          );
         }
         break;
       }
 
       case "insert": {
-        changedRefs.push(objRef.with(Diff({ type: "added" })));
+        changedRefs.push(objRef.with(DiffAnnotation({ type: "added" })));
         break;
       }
 
@@ -162,7 +162,7 @@ export const computeDiffOfDoc = (
           const to = from + patch.value.length;
           const textSpan = new TextSpanRef(docHandle, parentPath, from, to);
 
-          changedRefs.push(textSpan.with(Diff({ type: "added" })));
+          changedRefs.push(textSpan.with(DiffAnnotation({ type: "added" })));
         }
         break;
     }
@@ -172,9 +172,11 @@ export const computeDiffOfDoc = (
 };
 
 export const getDiff = (ref: Ref) =>
-  contextComputation(() => CONTEXT.resolve(ref).get(Diff));
+  contextComputation(() => CONTEXT.resolve(ref).get(DiffAnnotation));
 
 export const getElementsWithDiff = (ref: Ref) =>
   contextComputation(() =>
-    CONTEXT.refsWith(Diff).filter((refWithDiff) => refWithDiff.isElementOf(ref))
+    CONTEXT.refsWith(DiffAnnotation).filter((refWithDiff) =>
+      refWithDiff.isElementOf(ref)
+    )
   );
