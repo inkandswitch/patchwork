@@ -389,4 +389,5 @@
   padding: 1em;
   background: lemonchiffon;
   animation: hello alternate-reverse infinite 2s;
+  color: black;
 }
