@@ -21,6 +21,7 @@ import {
   keymap,
   WidgetType,
 } from "@codemirror/view";
+import { commentButtonGutter } from "./lib/comments/commentButtonGutter";
 
 /** Automerge */
 import type { PatchworkToolProps } from "./types.ts";
@@ -145,8 +146,9 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
     ]),
     EditorView.lineWrapping,
     markdown({ codeLanguages: languages }),
-    indentUnit.of("    ")
-    // TODO: Add the selection listener and comment button gutter
+    indentUnit.of("    "),
+    // Add the selection listener and comment button gutter
+    commentButtonGutter(onComment),
   ];
 
   return (
