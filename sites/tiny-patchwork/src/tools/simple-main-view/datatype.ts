@@ -1,5 +1,4 @@
 import { DataTypeImplementation } from "@patchwork/plugins";
-import type { AutomergeUrl } from "@automerge/vanillajs";
 
 export interface SingleViewDoc {
   highlightChanges: boolean;

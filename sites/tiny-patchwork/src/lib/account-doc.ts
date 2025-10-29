@@ -6,7 +6,7 @@ import {
 
 import { AutomergeUrl, Repo } from "@automerge/vanillajs";
 import type { AutomergeRepoKeyhive } from "virtual:patchwork/setup";
-import { SingleViewDoc } from "../tools/single-view/datatype";
+import { SingleViewDoc } from "../tools/simple-main-view/datatype";
 import { TabbedViewDoc } from "../tools/tabbed-view/datatype";
 
 export type TinyPatchworkAccountDoc = {

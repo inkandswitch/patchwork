@@ -12,4 +12,15 @@ export const plugins: Plugin<any>[] = [
       return renderFrame;
     },
   },
+  {
+    type: "patchwork:datatype",
+    id: "patchwork/main-view",
+    name: "Patchwork Main View",
+    icon: "Eye",
+    async load() {
+      const { MainViewDataType } = await import("./MainViewDatatype");
+      return MainViewDataType;
+    },
+    unlisted: true,
+  },
 ];

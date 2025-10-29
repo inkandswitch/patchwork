@@ -1,6 +1,6 @@
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { AutomergeUrl } from "@automerge/vanillajs";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
 import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";

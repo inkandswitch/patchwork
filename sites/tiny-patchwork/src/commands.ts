@@ -14,8 +14,9 @@ import {
 } from "@patchwork/filesystem";
 import { TinyPatchworkAccountDoc } from "./lib/account-doc";
 import { BranchViewDoc } from "./tools/branch-view/datatype";
-import { SingleViewDoc } from "./tools/single-view/datatype";
+import { SingleViewDoc } from "./tools/simple-main-view/datatype";
 import { TabbedViewDoc } from "./tools/tabbed-view/datatype";
+import { MainViewDoc } from "./tools/patchwork-frame/datatypes";
 
 export const initCommands = (
   accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
@@ -179,6 +180,19 @@ export const initCommands = (
     });
   };
 
+  const initDefaultToolbarItems = async () => {
+    const mainViewDocHandle = await repo.find<MainViewDoc>(
+      accountDocHandle.doc().mainView.documentUrl
+    );
+
+    mainViewDocHandle.change((doc) => {
+      doc.toolbarItems = [
+        { docUrl: "currentDoc", toolId: "document-title" },
+        { docUrl: "currentDoc", toolId: "back-link-button" },
+      ];
+    });
+  };
+
   const addTabbedSidebar = async () => {
     // Create history and comments view documents
     const historyViewHandle = await repo.create2<HasPatchworkMetadata>({
@@ -229,5 +243,6 @@ export const initCommands = (
     installModule,
     addTabbedSidebar,
     addContextInspector,
+    initDefaultToolbarItems,
   };
 };

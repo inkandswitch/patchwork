@@ -20,25 +20,22 @@ import { IsSelected } from "@patchwork/context/selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import { ToolElement } from "@patchwork/plugins";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTitle } from "../../lib/datatype-hooks";
-import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
+import { OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
-import { SingleViewDoc } from "./datatype";
+import { MainViewDoc } from "../patchwork-frame/MainViewDatatype";
 
-const SingleView = ({
+const SimpleMainView = ({
   docUrl,
   element,
 }: {
   docUrl: AutomergeUrl;
   element: ToolElement;
 }) => {
-  const [singleViewDoc, changeSingleViewDoc] = useDocument<SingleViewDoc>(
-    docUrl,
-    { suspense: true }
-  );
+  const [mainViewDoc] = useDocument<MainViewDoc>(docUrl, {
+    suspense: true,
+  });
 
   const patchworkViewRef = useRef<HTMLElement | undefined>();
-  const { highlightChanges } = singleViewDoc;
 
   const [selection, setSelection] = useState<
     { url: AutomergeUrl; toolId?: string } | undefined
@@ -78,17 +75,17 @@ const SingleView = ({
   const originalDocUrl = selectedDoc?.["@patchwork"]?.copyOf;
   const [originalDoc] = useDocument<HasPatchworkMetadata>(originalDocUrl);
 
-  const beforeHeads = useMemo(() => {
-    if (viewHeads) {
-      return viewHeads.beforeHeads;
-    }
+  // const beforeHeads = useMemo(() => {
+  //   if (viewHeads) {
+  //     return viewHeads.beforeHeads;
+  //   }
 
-    if (highlightChanges && originalDocUrl) {
-      return parseAutomergeUrl(originalDocUrl).hexHeads;
-    }
+  //   if (highlightChanges && originalDocUrl) {
+  //     return parseAutomergeUrl(originalDocUrl).hexHeads;
+  //   }
 
-    return undefined;
-  }, [viewHeads, highlightChanges, originalDocUrl]);
+  //   return undefined;
+  // }, [viewHeads, highlightChanges, originalDocUrl]);
 
   // mark the current document as selected
   const selectionContext = useSubcontext("SINGLE_VIEW_SELECTION");
@@ -98,20 +95,20 @@ const SingleView = ({
     );
   }, [currentDocRef, selectionContext]);
 
-  // Compute diffs when on a branch with highlight changes enabled
-  const diffsOfDoc = useMemo(() => {
-    void selectedDoc;
-    if (!selectedDocHandle || !beforeHeads) {
-      return [];
-    }
+  // // Compute diffs when on a branch with highlight changes enabled
+  // const diffsOfDoc = useMemo(() => {
+  //   void selectedDoc;
+  //   if (!selectedDocHandle || !beforeHeads) {
+  //     return [];
+  //   }
 
-    return computeDiffOfDoc(selectedDocHandle, beforeHeads);
-  }, [selectedDocHandle, beforeHeads, selectedDoc]);
+  //   return computeDiffOfDoc(selectedDocHandle, beforeHeads);
+  // }, [selectedDocHandle, beforeHeads, selectedDoc]);
 
-  const diffContext = useSubcontext("SINGLE_VIEW_DIFFS");
-  useEffect(() => {
-    diffContext.replace(diffsOfDoc);
-  }, [diffContext, diffsOfDoc]);
+  // const diffContext = useSubcontext("SINGLE_VIEW_DIFFS");
+  // useEffect(() => {
+  //   diffContext.replace(diffsOfDoc);
+  // }, [diffContext, diffsOfDoc]);
 
   // Listen for open document events
   useEffect(() => {
@@ -152,24 +149,24 @@ const SingleView = ({
     //      element.hive.keyhive.accessForDoc(id, keyhiveDocId) !== undefined;
   }
 
-  const title = useTitle(selectedDoc as HasPatchworkMetadata);
-  const titleOfOriginalDoc = useTitle(originalDoc);
+  // const title = useTitle(selectedDoc as HasPatchworkMetadata);
+  // const titleOfOriginalDoc = useTitle(originalDoc);
 
   // add comments to context
-  const commentsContext = useSubcontext("SINGLE_VIEW_COMMENTS");
-  useEffect(() => {
-    if (!selectedDoc || !selectedDocHandle) {
-      return;
-    }
+  // const commentsContext = useSubcontext("SINGLE_VIEW_COMMENTS");
+  // useEffect(() => {
+  //   if (!selectedDoc || !selectedDocHandle) {
+  //     return;
+  //   }
 
-    if (selectedDocHandle) {
-      const storedThreads = getStoredThreads(
-        selectedDocHandle as DocHandle<DocWithComments>
-      );
+  //   if (selectedDocHandle) {
+  //     const storedThreads = getStoredThreads(
+  //       selectedDocHandle as DocHandle<DocWithComments>
+  //     );
 
-      commentsContext.replace(storedThreads);
-    }
-  }, [selectedDocHandle, commentsContext, selectedDoc]);
+  //     commentsContext.replace(storedThreads);
+  //   }
+  // }, [selectedDocHandle, commentsContext, selectedDoc]);
 
   if (!selectedDocUrl) {
     return (
@@ -189,8 +186,17 @@ const SingleView = ({
 
   return (
     <div className="w-full h-full flex flex-col bg-base-200">
-      <div className="p-2 bg-base-100 border-base-200 border-l border-r flex items-center">
-        <div className="flex items-center gap-2">
+      <div className="p-2 bg-base-100 border-base-200 border-l border-r flex items-center gap-2">
+        {mainViewDoc?.toolbarItems?.map((item, index) => (
+          <patchwork-view
+            doc-url={
+              item.docUrl === "currentDoc" ? selectedDocUrl : item.docUrl
+            }
+            tool-id={item.toolId}
+            key={index}
+          />
+        ))}
+        {/* <div className="flex items-center gap-2">
           {title}{" "}
           {originalDoc && originalDocUrl && (
             <div className="text-base-content text-sm">
@@ -242,7 +248,7 @@ const SingleView = ({
             <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
             <rect width="10" height="8" x="7" y="8" rx="1" />
           </svg>
-        </button>
+        </button> */}
       </div>
       <div
         className={`flex-1 ${viewHeads ? "border-2 border-accent border-dashed" : ""}`}
@@ -260,4 +266,4 @@ const SingleView = ({
   );
 };
 
-export const renderSingleView = toolify(SingleView);
+export const renderSingleView = toolify(SimpleMainView);
