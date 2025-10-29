@@ -3,7 +3,7 @@ import "./styles/global.css";
 import { CONTEXT, Context } from "@patchwork/context";
 import { registerPatchworkViewElement } from "@patchwork/elements";
 import { ModuleWatcher } from "@patchwork/filesystem";
-import { registerPlugins } from "@patchwork/plugins";
+import { getPluginRegistry, registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
 import { initCommands } from "./commands";
 import {
@@ -21,17 +21,21 @@ import {
 } from "@automerge/vanillajs";
 
 import { plugins } from "./tools";
+import { PluginRegistry } from "@patchwork/plugins/dist/registry/registry";
 
 declare global {
   interface Window {
     accountDocHandle: DocHandle<TinyPatchworkAccountDoc>;
     CONTEXT: Context;
+    getPluginRegistry: (pluginType: string) => PluginRegistry<any>;
   }
 }
 
 const { repo, hive } = await bootstrap();
 
 window.CONTEXT = CONTEXT;
+
+window.getPluginRegistry = getPluginRegistry;
 
 const loadedPlugins = await Promise.all(
   plugins.map(async (plugin) => ({
