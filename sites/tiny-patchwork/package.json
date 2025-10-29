@@ -31,6 +31,7 @@
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@automerge/vanillajs": "catalog:",
     "@chee/patchwork-sideboard": "workspace:^",
+    "@orion/markdown": "workspace:^",
     "@codemirror/autocomplete": "^6.19.0",
     "@codemirror/commands": "^6.9.0",
     "@codemirror/lang-markdown": "^6.4.0",
