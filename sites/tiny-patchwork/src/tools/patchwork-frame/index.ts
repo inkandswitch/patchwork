@@ -6,7 +6,7 @@ export const plugins: Plugin<any>[] = [
     id: "patchwork-frame",
     name: "Patchwork Frame",
     icon: "Window",
-    supportedDataTypes: ["patchwork-frame"],
+    supportedDataTypes: ["account"],
     async load() {
       const { renderFrame } = await import("./PatchworkFrame");
       return renderFrame;
