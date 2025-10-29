@@ -28,8 +28,16 @@ export default function CreateNew(props: CreateNewProps) {
 
   return (
     <DropdownMenu>
-      <DropdownMenu.Trigger>
-        <PlusIcon /> Create new
+      <DropdownMenu.Trigger
+        class="create-new-button"
+        aria-label="create new"
+        onClick={(event) => {
+          event.stopImmediatePropagation();
+          event.stopPropagation();
+        }}
+      >
+        <PlusIcon class="create-new-button__icon" />{" "}
+        <span class="create-new-button__text">Create new</span>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content class="popmenu__content">

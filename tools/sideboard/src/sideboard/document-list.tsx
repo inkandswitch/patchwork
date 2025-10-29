@@ -1,7 +1,7 @@
 import type { DocLink } from "@patchwork/filesystem";
-import { For, Match, Show, Switch } from "solid-js";
-import { filter, selectedDocUrls } from "./state.ts";
-import { parseAutomergeUrl, type Repo } from "@automerge/automerge-repo";
+import { For, Match, onMount, Show, Switch } from "solid-js";
+import { filter, filterMatches, selectedDocUrls } from "./state.ts";
+import { type Repo } from "@automerge/automerge-repo";
 import { createOpenEvent, createOpenEventHandler } from "./events.ts";
 import Folder from "./folder.tsx";
 import { ContextMenu } from "@kobalte/core/context-menu";
@@ -14,32 +14,25 @@ export interface DocumentListProps {
 }
 
 export function DocumentList(props: DocumentListProps) {
-  let ref: HTMLDivElement;
   return (
-    <div ref={ref!}>
+    <>
       <For each={props.docs}>
         {(doc) => {
-          const visible = () =>
-            !filter().length || doc.name?.toLowerCase().includes(filter());
+          const visible = () => !filter().length || filterMatches(doc.name);
 
           const classes = () => ({
-            visible: visible(),
-            invisible: !visible(),
+            sideboard__item: true,
+            "sideboard__item--visible": visible(),
+            "sideboard__item--invisible": !visible(),
           });
 
           const tools = useSupportedToolsForType(() => doc.type);
-          const documentId = () =>
-            doc.url && parseAutomergeUrl(doc.url)?.documentId;
 
           return (
             <Switch>
               <Match when={doc.type == "folder"}>
                 <div classList={classes()}>
-                  <Folder
-                    url={doc.url}
-                    depth={props.depth + 1}
-                    repo={props.repo}
-                  />
+                  <Folder url={doc.url} depth={props.depth} repo={props.repo} />
                 </div>
               </Match>
               <Match when={doc.type != "folder"}>
@@ -66,11 +59,22 @@ export function DocumentList(props: DocumentListProps) {
                             <ContextMenu.SubContent class="popmenu__sub-content">
                               <For each={tools}>
                                 {(tool) => {
+                                  let element: HTMLElement;
+                                  let parent: HTMLElement;
+                                  onMount(() => {
+                                    parent = element!?.parentElement!;
+                                    console.log(parent, element!);
+                                  });
                                   return (
                                     <ContextMenu.Item
+                                      ref={element!}
                                       class="popmenu__item"
                                       onSelect={() => {
-                                        ref!?.dispatchEvent(
+                                        console.log({
+                                          element: element!,
+                                          parent,
+                                        });
+                                        parent!?.dispatchEvent(
                                           createOpenEvent(doc.url, tool.id)
                                         );
                                       }}
@@ -92,6 +96,6 @@ export function DocumentList(props: DocumentListProps) {
           );
         }}
       </For>
-    </div>
+    </>
   );
 }
