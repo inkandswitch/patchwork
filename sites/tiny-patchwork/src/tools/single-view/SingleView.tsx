@@ -9,13 +9,8 @@ import {
   useDocHandle,
   useDocument,
 } from "@automerge/automerge-repo-react-hooks";
-import { RefWith } from "@patchwork/context";
-import {
-  DocWithComments,
-  getStoredThreads,
-  ThreadField,
-} from "@patchwork/context/comments";
-import { computeDiffOfDoc, Diff, getViewHeads } from "@patchwork/context/diff";
+import { DocWithComments, getStoredThreads } from "@patchwork/context/comments";
+import { computeDiffOfDoc, getViewHeads } from "@patchwork/context/diff";
 import {
   useDocRef,
   useReactive,
@@ -24,7 +19,7 @@ import {
 import { IsSelected } from "@patchwork/context/selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import { ToolElement } from "@patchwork/plugins";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTitle } from "../../lib/datatype-hooks";
 import { openDocument, OpenDocumentEvent } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
@@ -104,7 +99,7 @@ const SingleView = ({
   }, [currentDocRef, selectionContext]);
 
   // Compute diffs when on a branch with highlight changes enabled
-  const diffsOfDoc = useMemo<RefWith<Diff>[]>(() => {
+  const diffsOfDoc = useMemo(() => {
     void selectedDoc;
     if (!selectedDocHandle || !beforeHeads) {
       return [];
@@ -172,7 +167,7 @@ const SingleView = ({
         selectedDocHandle as DocHandle<DocWithComments>
       );
 
-      commentsContext.replace(storedThreads as RefWith<ThreadField>[]);
+      commentsContext.replace(storedThreads);
     }
   }, [selectedDocHandle, commentsContext, selectedDoc]);
 
