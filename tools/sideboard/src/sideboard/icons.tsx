@@ -1,3 +1,5 @@
+import type { JSX } from "solid-js";
+
 export function SearchIcon() {
   return (
     <svg
@@ -18,7 +20,7 @@ export function SearchIcon() {
   );
 }
 
-export function PlusIcon() {
+export function PlusIcon(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -31,6 +33,7 @@ export function PlusIcon() {
       stroke-linecap="round"
       stroke-linejoin="round"
       class="plus-icon icon"
+      {...props}
     >
       <path d="M5 12h14"></path>
       <path d="M12 5v14"></path>

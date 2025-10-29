@@ -85,7 +85,7 @@
   gap: 1rem;
   padding-inline: var(--sideboard-padding-inline);
 
-  button {
+  .create-new-button {
     display: flex;
     padding-inline: 0.75rem;
     padding-block: 0.25rem;
@@ -182,11 +182,24 @@
 }
 
 .sideboard-folder__link {
+  display: flex;
+  gap: 0.5ch;
   padding-inline: var(--inline-padding);
   padding-block: 0.5rem;
-  display: block;
   font-weight: 400;
   color: var(--sidebar-widget-line);
+  container-name: title;
+  container-type: inline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  .create-new-button {
+    margin-left: auto;
+  }
+
+  .create-new-button__text {
+    display: none;
+  }
 
   &:focus-visible {
     outline-color: #000;
@@ -202,28 +215,40 @@
 
   &[aria-pressed="true"] {
     background: var(--sideboard-primary);
-    &:first-child {
+    .sideboard__doclist > &:first-child {
       border-top-left-radius: var(--sideboard-radius);
       border-top-right-radius: var(--sideboard-radius);
     }
-    &:last-child {
+    .sideboard__doclist > &:last-child {
       border-bottom-left-radius: var(--sideboard-radius);
       border-bottom-right-radius: var(--sideboard-radius);
     }
   }
 }
 
-.invisible {
+.sideboard-folder__toggle {
+  margin-left: -0.5ch;
+  padding-inline: 0.5ch;
+  &:hover {
+    background: #55555533;
+  }
+}
+
+.sideboard-folder__contents--hidden {
   display: none;
 }
 
-.visible,
-.invisible:has(.visible) {
+.sideboard__item--invisible {
+  display: none;
+}
+
+.sideboard__item--visible,
+.sideboard__item--invisible:has(.sideboard__item--visible) {
   display: block;
 }
 
 .sideboard-folder__contents .sideboard-folder__link {
-  padding-left: calc(1.5rem * var(--depth));
+  padding-left: calc(2.2rem * var(--depth));
 }
 
 .sideboard-footer {
