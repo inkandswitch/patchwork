@@ -34,4 +34,23 @@ export const plugins: Plugin<any>[] = [
   ...tldrawPlugins,
   ...contextViewPlugins,
   ...orionMarkwhen,
+  {
+    id: "folder",
+    type: "patchwork:datatype",
+    name: "Folder",
+    async load() {
+      return {
+        init(doc: any) {
+          doc.title = "New folder";
+          doc.docs = [];
+        },
+        getTitle(doc: any) {
+          return doc.title;
+        },
+        setTitle(doc: any, title: string) {
+          doc.title = title;
+        },
+      };
+    },
+  },
 ];
