@@ -16,6 +16,8 @@ import "tldraw/tldraw.css";
 // @ts-expect-error no types
 import { plugins as sideboardPlugins } from "@chee/patchwork-sideboard";
 import "@chee/patchwork-sideboard/styles.css";
+// @ts-expect-error no types
+import { plugins as orionMarkdown } from "@orion/markdown";
 
 export const plugins: Plugin<any>[] = [
   ...markdownPlugins,
@@ -31,4 +33,5 @@ export const plugins: Plugin<any>[] = [
   ...sideboardPlugins,
   ...tldrawPlugins,
   ...contextViewPlugins,
+  ...orionMarkdown,
 ];

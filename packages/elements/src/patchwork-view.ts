@@ -123,21 +123,25 @@ export function registerPatchworkViewElement(
         this.#init();
       }
 
-      async disconnectedCallback() {
-        await this.#teardown();
+      disconnectedCallback() {
+        this.#teardown();
       }
+
+      // When defined, this is called instead of connectedCallback() and disconnectedCallback()
+      // each time the element is moved to a different place in the DOM via Element.moveBefore()
+      connectedMoveCallback() {}
 
       attributeChangedCallback(name: string, _: string, val: string | null) {
         if (name === attrs.toolId) {
           if (this.toolId != val) {
             this.toolId = val;
-            this.#init();
+            this.#teardown().then(() => this.#init());
           }
         }
 
         if (name === attrs.docUrl) {
           this.docUrl = val as AutomergeUrl;
-          this.#init();
+          this.#teardown().then(() => this.#init());
         }
       }
 
