@@ -7,5 +7,4 @@ export const HistoryViewDataType: DataTypeImplementation<HistoryViewDoc> = {
   getTitle() {
     return "History View";
   },
-  markCopy: () => {},
 };

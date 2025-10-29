@@ -14,5 +14,4 @@ export const TabbedViewDataType: DataTypeImplementation<TabbedViewDoc> = {
   getTitle() {
     return "Tabbed View";
   },
-  markCopy: () => {},
 };

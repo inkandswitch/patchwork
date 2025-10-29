@@ -7,5 +7,4 @@ export const ContextViewDataType: DataTypeImplementation<ContextViewDoc> = {
   getTitle() {
     return "Context View";
   },
-  markCopy: () => {},
 };

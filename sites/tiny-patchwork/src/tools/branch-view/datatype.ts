@@ -1,5 +1,4 @@
 import { DataTypeImplementation } from "@patchwork/plugins";
-import { DocLink } from "@patchwork/filesystem";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
 
@@ -22,9 +21,5 @@ export const BranchViewDataType: DataTypeImplementation<BranchViewDoc> = {
   },
   getTitle(doc: BranchViewDoc) {
     return "Branch View";
-  },
-  markCopy: (doc: BranchViewDoc) => {
-    doc.currentDocument = doc.currentDocument;
-    doc.selectedBranchDocUrl = doc.selectedBranchDocUrl;
   },
 };

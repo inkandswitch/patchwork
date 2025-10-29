@@ -1,4 +1,4 @@
-import type { Doc, DocHandle, Repo } from "@automerge/automerge-repo";
+import type { DocHandle, Repo } from "@automerge/automerge-repo";
 import type {
   LoadablePlugin,
   LoadedPlugin,
@@ -11,14 +11,6 @@ export type DataTypeImplementation<D = unknown> = {
   init: (doc: D, repo: Repo) => void;
   getTitle: (doc: D) => string;
   setTitle?: (doc: any, title: string) => void;
-  markCopy: (doc: D) => void;
-  actions?: Record<string, (doc: Doc<D>, args: object) => void>;
-  /**
-   * Specifies what other Automerge documents are "linked to" from this
-   * document. This is currently used to figure out which documents to clone
-   * when a branch is created.
-   */
-  links?: (doc: D) => DocLink[];
 };
 
 // The DataType description extends the base PluginDescription

@@ -9,8 +9,4 @@ export const TodoDataType: DataTypeImplementation<TodoDoc> = {
   getTitle(doc: TodoDoc) {
     return doc.title || "Todo List";
   },
-  markCopy: (doc: TodoDoc) => {
-    doc.title = doc.title;
-    doc.todos = doc.todos;
-  },
 };

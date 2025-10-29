@@ -7,5 +7,4 @@ export const CommentsViewDataType: DataTypeImplementation<CommentsViewDoc> = {
   getTitle() {
     return "Comments View";
   },
-  markCopy: () => {},
 };
