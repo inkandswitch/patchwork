@@ -13,82 +13,31 @@ import {
   ModuleSettingsDoc,
 } from "@patchwork/filesystem";
 import { TinyPatchworkAccountDoc } from "./lib/account-doc";
-import { BranchViewDoc } from "./tools/branch-view/datatype";
-import { SingleViewDoc } from "./tools/simple-main-view/datatype";
-import { TabbedViewDoc } from "./tools/context-sidebar/datatype";
 
 export const initCommands = (
   accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
   repo: Repo
 ) => {
-  const setSidebarToolId = (sidebarToolId: string) => {
+  const setAccountSidebarToolId = (sidebarToolId: string) => {
     accountDocHandle.change((doc) => {
-      doc.sidebarToolId = sidebarToolId;
+      doc.accountSidebarToolId = sidebarToolId;
     });
   };
 
   const funkySidebar = () => {
-    setSidebarToolId("funky-sidebar");
+    setAccountSidebarToolId("funky-sidebar");
     console.log("Switched to funky sidebar");
   };
 
   const normalSidebar = () => {
-    setSidebarToolId("simple-sidebar");
+    setAccountSidebarToolId("simple-sidebar");
     console.log("Switched to normal sidebar");
   };
 
-  const singleView = async () => {
-    // Create a new single-view document
-    const singleViewHandle = (await repo.create2({
-      ["@patchwork"]: {
-        type: "single-view",
-      },
-      highlightChanges: false,
-    })) as DocHandle<SingleViewDoc>;
-
-    accountDocHandle.change((doc) => {
-      doc.mainView = {
-        documentUrl: singleViewHandle.url,
-        toolId: "single-view",
-      };
-    });
-    console.log("Switched to single view");
-  };
-
-  const branchView = async () => {
-    // Create a new branch-view document
-    accountDocHandle.change((doc) => {
-      doc.mainToolId = "simple-main-view";
-    });
-    console.log("Switched to branch view");
-  };
-
   const addContextTab = async (docUrl: AutomergeUrl, toolId: string) => {
-    const tabbedViewDocHandle = await repo.find<TabbedViewDoc>(
-      accountDocHandle.doc().contextSidebar.documentUrl
-    );
-
-    tabbedViewDocHandle.change((doc) => {
-      doc.tabs.push({
-        url: docUrl,
-        toolId,
-      });
-    });
-  };
-
-  const addContextInspector = async () => {
-    const contextInspectorHandle = await repo.create2<HasPatchworkMetadata>({
-      ["@patchwork"]: { type: "patchwork/context-inspector" },
-    });
-
     accountDocHandle.change((doc) => {
-      doc.contextSidebar = {
-        documentUrl: contextInspectorHandle.url,
-        toolId: "context-inspector",
-      };
+      doc.contextToolIds.push(toolId);
     });
-
-    console.log("Added context inspector");
   };
 
   const installModule = async (url: AutomergeUrl) => {
@@ -120,7 +69,7 @@ export const initCommands = (
 
   const copyCurrentDoc = async () => {
     const currentDocHandle = (window as any)
-      .currentDocHandle as DocHandle<HasPatchworkMetadata>;
+      .handle as DocHandle<HasPatchworkMetadata>;
     const repo = (window as any).repo as Repo;
     if (!currentDocHandle) {
       return;
@@ -225,14 +174,8 @@ export const initCommands = (
   (window as any).$command = {
     funkySidebar,
     normalSidebar,
-    setSidebarToolId,
-    singleView,
-    branchView,
-    addContextTab,
+    setAccountSidebarToolId,
     copyCurrentDoc,
     installModule,
-    addTabbedSidebar,
-    addContextInspector,
-    initDefaultToolbarItems,
   };
 };
