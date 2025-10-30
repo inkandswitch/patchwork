@@ -1,6 +1,4 @@
 import { DataTypeDescription } from "../datatypes/index.js";
-import { ExportMethod } from "../datatypes/exportMethods.js";
-import { ImportMethod } from "../datatypes/importMethods.js";
 import { ToolDescription } from "../tools";
 
 /**
@@ -9,9 +7,7 @@ import { ToolDescription } from "../tools";
 
 export type PluginTypeMap = {
   "patchwork:tool": ToolDescription;
-  "patchwork:dataType": DataTypeDescription;
-  "patchwork:importMethod": ImportMethod;
-  "patchwork:exportMethod": ExportMethod;
+  "patchwork:datatype": DataTypeDescription;
 } & {
   // Allow for user-defined plugin types
   [key: string]: PluginDescription;
