@@ -71,10 +71,3 @@ export const createDocOfDataType2 = async <D>(
   });
   return handle;
 };
-
-// TODO: How do we do away with this?
-/** Kinda hacky utility function to initialize an object in
- * handle.change in a type-safe way. */
-export const initFrom = <D extends object>(doc: D, init: D) => {
-  Object.assign(doc, init);
-};
