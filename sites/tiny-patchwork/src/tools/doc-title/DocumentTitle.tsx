@@ -1,8 +1,8 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { HasPatchworkMetadata } from "@patchwork/filesystem";
+import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
 import { ToolElement } from "@patchwork/plugins";
-import { useTitle } from "../../lib/datatype-hooks";
+import { useDatatype } from "../../lib/plugin-hooks";
 
 export const DocumentTitle = ({
   docUrl,
@@ -11,7 +11,8 @@ export const DocumentTitle = ({
   element: ToolElement;
 }) => {
   const [doc] = useDocument<HasPatchworkMetadata>(docUrl);
-  const title = useTitle(doc);
+  const docDatatypeId = doc ? getType(doc) : undefined;
+  const title = useDatatype(docDatatypeId)?.module.getTitle(doc);
 
   return <span className="font-semibold">{title ?? "Untitled"}</span>;
 };

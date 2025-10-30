@@ -4,23 +4,12 @@ export const plugins: Plugin<any>[] = [
   {
     type: "patchwork:tool",
     id: "comments-view",
-    name: "Comments View",
+    name: "Comments",
     icon: "Comments",
-    supportedDataTypes: "comments-view",
+    supportedDataTypes: ["account"],
     async load() {
       const { renderCommentsView } = await import("./CommentsView");
       return renderCommentsView;
     },
-  },
-  {
-    type: "patchwork:datatype",
-    id: "comments-view",
-    name: "Todo List",
-    icon: "Comments",
-    async load() {
-      const { CommentsViewDataType } = await import("./datatype");
-      return CommentsViewDataType;
-    },
-    unlisted: true,
   },
 ];

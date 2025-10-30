@@ -1,9 +1,9 @@
 import { AutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { HasPatchworkMetadata } from "@patchwork/filesystem";
+import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
 import { ToolElement } from "@patchwork/plugins";
-import { useTitle } from "../../lib/datatype-hooks";
 import { openDocument } from "../../lib/navigation";
+import { useDatatype } from "../../lib/plugin-hooks";
 
 export const BackLinkButton = ({
   docUrl,
@@ -17,7 +17,10 @@ export const BackLinkButton = ({
     | AutomergeUrl
     | undefined;
   const [originalDoc] = useDocument<HasPatchworkMetadata>(originalDocUrl);
-  const titleOfOriginalDoc = useTitle(originalDoc);
+  const originalDocDatatypeId = originalDoc ? getType(originalDoc) : undefined;
+  const titleOfOriginalDoc = useDatatype(
+    originalDocDatatypeId
+  )?.module.getTitle(originalDoc);
 
   if (!originalDocUrl) {
     return null;
@@ -33,7 +36,7 @@ export const BackLinkButton = ({
       <button
         className="link"
         onClick={() => {
-          openDocument(element, originalDocUrl);
+          openDocument(element, originalDocWithoutHeads);
         }}
       >
         {titleOfOriginalDoc}

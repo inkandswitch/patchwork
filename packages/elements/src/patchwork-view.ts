@@ -131,13 +131,13 @@ export function registerPatchworkViewElement(
         if (name === attrs.toolId) {
           if (this.toolId != val) {
             this.toolId = val;
-            this.#init();
+            this.#teardown().then(() => this.#init());
           }
         }
 
         if (name === attrs.docUrl) {
           this.docUrl = val as AutomergeUrl;
-          this.#init();
+          this.#teardown().then(() => this.#init());
         }
       }
 
@@ -157,7 +157,9 @@ export function registerPatchworkViewElement(
 
       #init = async () => {
         const toolRegistry = getPluginRegistry("patchwork:tool");
-        if (this.#state != State.none) return;
+        if (this.#state != State.none) {
+          return;
+        }
 
         if (!this.docUrl) {
           return;

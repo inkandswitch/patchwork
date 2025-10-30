@@ -15,8 +15,7 @@ import {
 import { TinyPatchworkAccountDoc } from "./lib/account-doc";
 import { BranchViewDoc } from "./tools/branch-view/datatype";
 import { SingleViewDoc } from "./tools/simple-main-view/datatype";
-import { TabbedViewDoc } from "./tools/tabbed-view/datatype";
-import { MainViewDoc } from "./tools/patchwork-frame/datatypes";
+import { TabbedViewDoc } from "./tools/context-sidebar/datatype";
 
 export const initCommands = (
   accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
@@ -58,17 +57,8 @@ export const initCommands = (
 
   const branchView = async () => {
     // Create a new branch-view document
-    const branchViewHandle = (await repo.create2({
-      ["@patchwork"]: {
-        type: "branch-view",
-      },
-    })) as DocHandle<BranchViewDoc>;
-
     accountDocHandle.change((doc) => {
-      doc.mainView = {
-        documentUrl: branchViewHandle.url,
-        toolId: "branch-view",
-      };
+      doc.mainToolId = "simple-main-view";
     });
     console.log("Switched to branch view");
   };

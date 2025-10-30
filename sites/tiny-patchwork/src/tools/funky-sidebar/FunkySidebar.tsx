@@ -4,7 +4,7 @@ import { toolify } from "../../lib/toolify";
 import { FolderDoc, DocLink } from "@patchwork/filesystem";
 import { useState } from "react";
 import { createDocOfDataType, DataType } from "@patchwork/plugins";
-import { useDatatypeDescriptions } from "../../lib/datatype-hooks";
+import { useDatatypeDescriptions } from "../../lib/plugin-hooks";
 import {
   PlusIcon,
   FolderIcon,

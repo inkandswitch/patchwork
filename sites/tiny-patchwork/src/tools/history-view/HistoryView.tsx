@@ -7,12 +7,12 @@ import {
   useReactive,
   useSubcontext,
 } from "@patchwork/context/react";
-import { HasPatchworkMetadata } from "@patchwork/filesystem";
+import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
 import { useEffect, useState } from "react";
-import { useTitle } from "../../lib/datatype-hooks";
 import { relativeTime } from "../../lib/relative-time";
 import { toolify } from "../../lib/toolify";
 import { $selectedDocUrls } from "@patchwork/context/selection";
+import { useDatatype } from "../../lib/plugin-hooks";
 
 const HistoryView = () => {
   const selectedDocUrls = useReactive($selectedDocUrls);
@@ -34,7 +34,7 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [doc] = useDocument<HasPatchworkMetadata>(docUrl, {
     suspense: true,
   });
-  const title = useTitle(doc);
+  const title = useDatatype(getType(doc))?.module.getTitle(doc);
 
   const docRef = useDocRef(docUrl);
 

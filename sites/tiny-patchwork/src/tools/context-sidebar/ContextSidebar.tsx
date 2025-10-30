@@ -1,0 +1,93 @@
+import { AutomergeUrl } from "@automerge/automerge-repo";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import { useState } from "react";
+import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
+import { useTool } from "../../lib/plugin-hooks";
+import { toolify } from "../../lib/toolify";
+
+const ContextSidebar = ({
+  docUrl: accountDocUrl,
+}: {
+  docUrl: AutomergeUrl;
+  element: HTMLElement | ShadowRoot;
+}) => {
+  const [accountDoc] = useDocument<TinyPatchworkAccountDoc>(accountDocUrl, {
+    suspense: true,
+  });
+
+  const [selectedToolIndex, setSelectedToolIndex] = useState(0);
+  const selectedToolId = accountDoc.contextToolIds[selectedToolIndex];
+
+  const handleTabClick = (index: number) => {
+    setSelectedToolIndex(index);
+  };
+
+  return (
+    <div className="w-full h-full flex flex-col bg-base-300">
+      {/* Tab Bar */}
+      <div role="tablist" className="tabs tabs-lifted">
+        {accountDoc.contextToolIds.map((toolId, index) => (
+          <TabLabel
+            key={index}
+            toolId={toolId}
+            index={index}
+            isActive={index === selectedToolIndex}
+            onSelect={handleTabClick}
+          />
+        ))}
+      </div>
+      {/* Active Tab Content */}
+      <div className="flex-1 overflow-auto bg-base-300">
+        {selectedToolIndex !== undefined && (
+          <patchwork-view doc-url={accountDocUrl} tool-id={selectedToolId} />
+        )}
+      </div>
+    </div>
+  );
+};
+
+interface TabViewProps {
+  toolId: string;
+  index: number;
+  isActive: boolean;
+  onSelect: (index: number) => void;
+}
+
+const TabLabel = ({ toolId, index, isActive, onSelect }: TabViewProps) => {
+  const tool = useTool(toolId);
+  if (!tool) {
+    return null;
+  }
+
+  return (
+    <a
+      role="tab"
+      className={`tab ${isActive ? "tab-active" : ""}`}
+      onClick={() => onSelect(index)}
+    >
+      <div className="flex items-center gap-2">
+        <div className="flex flex-col items-start">
+          <span className="text-sm">{tool.name}</span>
+        </div>
+      </div>
+    </a>
+  );
+};
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      "patchwork-view": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        "doc-url": string;
+        "tool-id"?: string | null;
+        class?: string;
+      };
+    }
+  }
+}
+
+export const renderTabbedView = toolify(ContextSidebar);

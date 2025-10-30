@@ -1,5 +1,6 @@
 import { contextComputation, Ref, TextSpanRef } from "@patchwork/context";
 import { useReactive } from "@patchwork/context/react";
+import { Fragment } from "react/jsx-runtime";
 
 const $refs = contextComputation((context) => context.refs);
 
@@ -26,9 +27,9 @@ export const ContextView = () => {
         </tr>
       </thead>
       <tbody className="bg-white">
-        {sortedRefs.map((ref) => (
-          <>
-            <tr key={ref.toId()}>
+        {sortedRefs.map((ref, index) => (
+          <Fragment key={index}>
+            <tr data-key={index}>
               <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
                 <span className="bg-blue-100 border border-blue-300 rounded-md p-1 font-mono">
                   {refToString(ref)}
@@ -48,7 +49,7 @@ export const ContextView = () => {
                 </td>
               </tr>
             ))}
-            <tr>
+            <tr data-key={`${index}-separator`}>
               <td
                 colSpan={2}
                 className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
@@ -56,7 +57,7 @@ export const ContextView = () => {
                 <hr className="border-gray-200" />
               </td>
             </tr>
-          </>
+          </Fragment>
         ))}
       </tbody>
     </table>
