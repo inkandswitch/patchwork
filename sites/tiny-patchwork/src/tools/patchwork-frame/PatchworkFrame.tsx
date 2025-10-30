@@ -1,5 +1,5 @@
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { AutomergeUrl } from "@automerge/vanillajs";
+import { AutomergeUrl, DocHandle } from "@automerge/vanillajs";
 import { useDocRef, useSubcontext } from "@patchwork/context/react";
 import { IsSelected } from "@patchwork/context/selection";
 import { useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import {
   useAddUnknownDocumentsToSidebarEffect,
   useUpdateDocLinksOfActiveDocumentsEffect,
 } from "./effects";
+import { DocWithComments, getStoredThreads } from "@patchwork/context/comments";
 
 export const PatchworkFrame = ({
   docUrl: accountDocUrl,
@@ -35,13 +36,14 @@ export const PatchworkFrame = ({
     { url: AutomergeUrl; toolId?: string } | undefined
   >(undefined);
 
-  const openDocumentRef = useDocRef(selectedView?.url);
+  const [openDoc] = useDocument<DocWithComments>(selectedView?.url);
+  const openDocRef = useDocRef(selectedView?.url);
   const selectionContext = useSubcontext("SINGLE_VIEW_SELECTION");
   useEffect(() => {
     selectionContext.replace(
-      openDocumentRef ? [openDocumentRef.with(IsSelected(true))] : []
+      openDocRef ? [openDocRef.with(IsSelected(true))] : []
     );
-  }, [openDocumentRef, selectionContext]);
+  }, [openDocRef, selectionContext]);
 
   const repo = useRepo();
 
@@ -78,8 +80,24 @@ export const PatchworkFrame = ({
 
   // Add current handle to window
   useEffect(() => {
-    (window as any).handle = openDocumentRef?.docHandle;
-  }, [openDocumentRef]);
+    (window as any).handle = openDocRef?.docHandle;
+  }, [openDocRef]);
+
+  // Add comments to context
+  const commentsContext = useSubcontext("SINGLE_VIEW_COMMENTS");
+  useEffect(() => {
+    void openDoc;
+
+    if (!selectedView || !openDocRef || !openDocRef.docHandle) {
+      return;
+    }
+
+    const storedThreads = getStoredThreads(
+      openDocRef.docHandle as DocHandle<DocWithComments>
+    );
+
+    commentsContext.replace(storedThreads);
+  }, [commentsContext, selectedView, openDocRef, openDoc]);
 
   return (
     <div className="w-screen h-screen flex" ref={setMainViewElement}>

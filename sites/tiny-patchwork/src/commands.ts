@@ -34,12 +34,6 @@ export const initCommands = (
     console.log("Switched to normal sidebar");
   };
 
-  const addContextTab = async (docUrl: AutomergeUrl, toolId: string) => {
-    accountDocHandle.change((doc) => {
-      doc.contextToolIds.push(toolId);
-    });
-  };
-
   const installModule = async (url: AutomergeUrl) => {
     if (!isValidAutomergeUrl(url)) {
       throw new Error("Invalid URL");
