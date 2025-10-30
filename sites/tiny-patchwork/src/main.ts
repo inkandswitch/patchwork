@@ -36,7 +36,7 @@ window.CONTEXT = CONTEXT;
 const loadedPlugins = await Promise.all(
   plugins.map(async (plugin) => ({
     ...plugin,
-    module: "load" in plugin && (await plugin.load()),
+    module: plugin.module || (await plugin.load()),
   }))
 );
 
