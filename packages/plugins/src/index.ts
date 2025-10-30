@@ -1,5 +1,5 @@
 import { getType, type HasPatchworkMetadata } from "@patchwork/filesystem";
-import { getLoadedPlugins, getPlugins } from "./registry/index.js";
+import { getPlugins } from "./registry/index.js";
 import type {
   Tool,
   ToolDescription,

@@ -4,7 +4,7 @@ import type {
   LoadedPlugin,
   PluginDescription,
 } from "../registry/types.js";
-import type { DocLink, HasPatchworkMetadata } from "@patchwork/filesystem";
+import type { HasPatchworkMetadata } from "@patchwork/filesystem";
 
 // DataType implementation interface
 export type DataTypeImplementation<D = unknown> = {
