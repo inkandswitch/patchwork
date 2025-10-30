@@ -16,8 +16,4 @@ export const dataType: DataTypeImplementation<MarkdownDoc> = {
     const titleMatch = content.match(titleRegex);
     return titleMatch ? titleMatch[2] : "Untitled";
   },
-  markCopy: (doc: MarkdownDoc) => {
-    // Could prepend "Copy of " to first heading if desired
-    doc.content = "Copy of " + doc.content;
-  },
 };

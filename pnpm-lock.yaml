@@ -362,7 +362,7 @@ importers:
       '@lezer/highlight':
         specifier: ^1.2.1
         version: 1.2.2
-      '@orion/markdown':
+      '@orion/markwhen':
         specifier: workspace:^
         version: link:../../tools/orionmark
       '@patchwork/context':

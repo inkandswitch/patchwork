@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import type { ToolImplementation } from "@patchwork/plugins";
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
+import "./main.css";
 
 function addStyles(element: HTMLElement, textContent: string) {
   const sheet = new CSSStyleSheet();
@@ -18,8 +19,8 @@ async function loadStyles() {
 export const plugins = [
   {
     type: "patchwork:tool",
-    id: "orion/markdown",
-    name: "Orionmark",
+    id: "orion/markwhen",
+    name: "Markwhen",
     supportedDataTypes: ["markdown"],
     async load(): Promise<ToolImplementation> {
       const { MarkdownTool } = await import("./tool.tsx");

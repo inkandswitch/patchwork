@@ -1,5 +1,8 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocHandle } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocument,
+  useDocHandle,
+} from "@automerge/automerge-repo-react-hooks";
 import { completionKeymap } from "@codemirror/autocomplete";
 import {
   defaultKeymap,
@@ -16,11 +19,14 @@ import { useMemo } from "react";
 import { Codemirror } from "./codemirror.tsx";
 import { theme } from "./theme.ts";
 import type { MarkdownDoc } from "./datatype.ts";
+import { parseMarkwhenEvents } from "./markwhen.ts";
+import { TimelineView } from "./TimelineView.tsx";
 
 const PATH = ["content"];
 
 export function MarkdownTool({ docUrl }: { docUrl: AutomergeUrl }) {
   useDocHandle<MarkdownDoc>(docUrl, { suspense: true });
+  const [doc] = useDocument<MarkdownDoc>(docUrl);
 
   const cmExtensions = useMemo(
     () => [
@@ -42,16 +48,40 @@ export function MarkdownTool({ docUrl }: { docUrl: AutomergeUrl }) {
     []
   );
 
+  const content = doc?.content || "";
+  const events = useMemo(() => parseMarkwhenEvents(content), [content]);
+
   return (
     <div
       style={{
         width: "100%",
         height: "100%",
-        overflow: "auto",
-        padding: "16px",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <Codemirror docUrl={docUrl} path={PATH} extensions={cmExtensions} />
+      <div
+        style={{
+          flex: events.length > 0 ? "1 1 0" : "1 1 auto",
+          minHeight: 0,
+          overflow: "auto",
+          padding: "16px",
+        }}
+      >
+        <Codemirror docUrl={docUrl} path={PATH} extensions={cmExtensions} />
+      </div>
+
+      {events.length > 0 && (
+        <div
+          style={{
+            flex: "0 0 350px",
+            minHeight: "200px",
+            overflow: "hidden",
+          }}
+        >
+          <TimelineView events={events} />
+        </div>
+      )}
     </div>
   );
 }
