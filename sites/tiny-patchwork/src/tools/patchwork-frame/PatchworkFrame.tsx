@@ -65,7 +65,7 @@ export const renderFrame = toolify(
 
     return (
       <div className="w-screen h-screen flex">
-        <div className="w-[450px] flex flex-col">
+        <div className="w-[300px] flex flex-col">
           {sidebarToolId && (
             <patchwork-view
               class="h-full"

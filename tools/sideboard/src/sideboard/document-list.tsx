@@ -39,14 +39,14 @@ export function DocumentList(props: DocumentListProps) {
                 <ContextMenu>
                   <ContextMenu.Trigger
                     as="button"
-                    class="popmenu__trigger sideboard-folder__link sideboard-folder__link--file"
+                    class="popmenu__trigger sideboard-folder-item sideboard-folder-item--file"
                     role="treeitem"
                     aria-pressed={selectedDocUrls().includes(doc.url)}
                     classList={classes()}
                     onClick={createOpenEventHandler(doc.url)}
                     data-url={doc.url}
                   >
-                    {doc.name}
+                    <span class="sideboard-folder-item__name">{doc.name}</span>
                   </ContextMenu.Trigger>
                   <ContextMenu.Portal>
                     <ContextMenu.Content class="popmenu__content">

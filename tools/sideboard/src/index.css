@@ -26,7 +26,7 @@
   --sideboard-widget-fill: white;
   --sideboard-widget-line: var(--sideboard-line);
 
-  --sideboard-padding-inline: 0.5rem;
+  --sideboard-padding-x: 0.5rem;
   --sideboard-primary: oklch(0.88 0.17 167.51 / 1);
   --sideboard-radius: 0.275rem;
   --placeholder-line: #808e80;
@@ -73,6 +73,7 @@
   flex-direction: column;
   gap: 0.75rem;
   font-family: Jost, system-ui, sans-serif;
+  padding-inline: var(--sideboard-padding-x);
 }
 
 .sideboard-header {
@@ -83,7 +84,6 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding-inline: var(--sideboard-padding-inline);
 
   .create-new-button {
     display: flex;
@@ -166,12 +166,12 @@
 }
 
 .sideboard__doclist {
-  background: var(--sideboard-widget-fill);
-  --inline-padding: 0.75rem;
+  --doclist-padding-x: 0.75rem;
   display: flex;
   flex-direction: column;
   border-radius: var(--sideboard-radius);
   box-shadow: 0 1px 2px rgba(0, 20, 50, 0.05);
+  width: 100%;
 }
 
 .sideboard__folder {
@@ -181,17 +181,14 @@
   padding-left: calc(0.5rem * attr(data-depth));
 }
 
-.sideboard-folder__link {
+.sideboard-folder-item {
   display: flex;
   gap: 0.5ch;
-  padding-inline: var(--inline-padding);
+  padding-inline: var(--doclist-padding-x);
   padding-block: 0.5rem;
   font-weight: 400;
   color: var(--sidebar-widget-line);
-  container-name: title;
-  container-type: inline;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  cursor: default;
 
   .create-new-button {
     margin-left: auto;
@@ -226,6 +223,14 @@
   }
 }
 
+.sideboard-folder-item__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  max-width: 100%;
+}
+
 .sideboard-folder__toggle {
   margin-left: -0.5ch;
   padding-inline: 0.5ch;
@@ -247,7 +252,7 @@
   display: block;
 }
 
-.sideboard-folder__contents .sideboard-folder__link {
+.sideboard-folder__contents .sideboard-folder-item {
   padding-left: calc(2.2rem * var(--depth));
 }
 
@@ -259,7 +264,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding: var(--sideboard-padding-inline);
+  padding: var(--sideboard-padding-x);
   padding-bottom: calc(0.25rem + env(safe-area-inset-bottom));
   background: var(--sideboard-footer-fill);
   color: var(--sideboard-line);
@@ -294,8 +299,10 @@
 }
 
 .sideboard-widget {
-  margin-inline: var(--sideboard-padding-inline);
   margin-top: 0.5rem;
+  width: 100%;
+  background: var(--sideboard-widget-fill);
+  color: var(--sideboard-widget-line);
 }
 
 .module-settings__tools {

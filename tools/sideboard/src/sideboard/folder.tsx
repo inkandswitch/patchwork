@@ -32,7 +32,7 @@ export default function Folder(props: {
   onMount(() => {
     setTimeout(() => {
       const has = !!ref()?.querySelector(
-        ".sideboard-folder__link[aria-pressed='true']"
+        ".sideboard-folder-item[aria-pressed='true']"
       );
       setOpen((open) => open || has);
     }, 200);
@@ -47,8 +47,9 @@ export default function Folder(props: {
         style={folderDepthStyle()}
       >
         <a
+          data-droptarget
           href={props.url}
-          class="sideboard-folder__link sideboard-folder__link--folder"
+          class="sideboard-folder-item sideboard-folder-item--folder"
           role="treeitem"
           aria-pressed={selectedDocUrls().includes(props.url)}
           data-patchwork-open={props.url}
@@ -61,7 +62,7 @@ export default function Folder(props: {
           >
             {open() ? "▼" : "▶︎"}
           </button>
-          {folder()?.title}
+          <span class="sideboard-folder-item__name">{folder()?.title}</span>
           <CreateNew
             repo={props.repo}
             changeFolder={(fn) => handle()?.change(fn)}
