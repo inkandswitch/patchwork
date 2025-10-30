@@ -113,57 +113,6 @@ export const initCommands = (
     });
   };
 
-  const initDefaultToolbarItems = async () => {
-    const mainViewDocHandle = await repo.find<MainViewDoc>(
-      accountDocHandle.doc().mainView.documentUrl
-    );
-
-    mainViewDocHandle.change((doc) => {
-      doc.toolbarItems = [
-        { docUrl: "currentDoc", toolId: "document-title" },
-        { docUrl: "currentDoc", toolId: "back-link-button" },
-      ];
-    });
-  };
-
-  const addTabbedSidebar = async () => {
-    // Create history and comments view documents
-    const historyViewHandle = await repo.create2<HasPatchworkMetadata>({
-      ["@patchwork"]: { type: "history-view" },
-    });
-
-    const commentsViewHandle = await repo.create2<HasPatchworkMetadata>({
-      ["@patchwork"]: { type: "comments-view" },
-    });
-
-    // Create a new tabbed sidebar document
-    const tabbedSidebarHandle = await repo.create2<
-      TabbedViewDoc & HasPatchworkMetadata
-    >({
-      ["@patchwork"]: { type: "tab-view" },
-      activeTabIndex: 0,
-      tabs: [
-        {
-          url: commentsViewHandle.url,
-          toolId: "comments-view",
-          name: "Comments",
-        },
-        { url: historyViewHandle.url, toolId: "history-view", name: "History" },
-      ],
-      showCloseButton: false,
-    });
-
-    // Update the account document to use the new tabbed sidebar
-    accountDocHandle.change((doc) => {
-      doc.contextSidebar = {
-        documentUrl: tabbedSidebarHandle.url,
-        toolId: "tabbed-view",
-      };
-    });
-
-    console.log("Added tabbed sidebar");
-  };
-
   // Attach to window
   (window as any).$command = {
     funkySidebar,

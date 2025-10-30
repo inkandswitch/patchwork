@@ -58,7 +58,12 @@ export async function getOrCreateAccountDocHandle(
     accountSidebarToolId: "chee/sideboard",
     contextSidebarToolId: "context-sidebar",
     contextToolIds: ["comments-view", "history-view", "context-view"],
-    documentToolbarToolIds: ["document-title", "back-link-button"],
+    documentToolbarToolIds: [
+      "document-title",
+      "back-link-button",
+      "spacer",
+      "highlight-changes-checkbox",
+    ],
   });
   localStorage.setItem(accountDocKey, account.url);
   return account;

@@ -17,6 +17,8 @@ import "tldraw/tldraw.css";
 // @ts-expect-error no types
 import { plugins as sideboardPlugins } from "@chee/patchwork-sideboard";
 import "@chee/patchwork-sideboard/styles.css";
+import { plugins as spacerPlugins } from "./spacer";
+import { plugins as highlightChangesCheckboxPlugins } from "./highlight-changes-checkbox";
 
 export const plugins: Plugin<any>[] = [
   ...markdownPlugins,
@@ -33,4 +35,6 @@ export const plugins: Plugin<any>[] = [
   ...contextViewPlugins,
   ...backLinkButtonPlugins,
   ...documentTitlePlugins,
+  ...spacerPlugins,
+  ...highlightChangesCheckboxPlugins,
 ];
