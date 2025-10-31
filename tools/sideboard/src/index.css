@@ -27,13 +27,13 @@
   --sideboard-widget-line: var(--sideboard-line);
 
   --sideboard-padding-x: 0.5rem;
-  --sideboard-primary: oklch(0.88 0.17 167.51 / 1);
+
   --sideboard-radius: 0.275rem;
   --placeholder-line: #808e80;
   --sideboard-search-line: #000;
 
   --sideboard-fill: oklch(from #99eeff l c h);
-  --sideboard-primary: oklch(from #33ccff l c h);
+  --sideboard-primary: oklch(from #d9f4ff l c h);
 
   --sideboard-create-new-fill: white;
   --sideboard-create-new-line: color-mix(
