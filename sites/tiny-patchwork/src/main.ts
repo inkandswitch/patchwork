@@ -113,7 +113,6 @@ window.addEventListener("hashchange", () => {
 
 if (window.location.hash) {
   const initialAutomergeUrl = window.location.hash.slice(1);
-  console.log("hehe", { initialAutomergeUrl });
   // todo: actually wait for root to be mounted
   setTimeout(() => {
     handleHashChange(initialAutomergeUrl);
