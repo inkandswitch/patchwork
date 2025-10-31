@@ -20,14 +20,22 @@ import {
   type UrlHeads,
 } from "@automerge/vanillajs";
 
+import * as Automerge from "@automerge/automerge";
+import * as AutomergeRepo from "@automerge/automerge-repo";
+
 import { plugins } from "./tools";
 
 declare global {
   interface Window {
     accountDocHandle: DocHandle<TinyPatchworkAccountDoc>;
     CONTEXT: Context;
+    Automerge: typeof import("@automerge/automerge");
+    AutomergeRepo: typeof import("@automerge/automerge-repo");
   }
 }
+
+window.Automerge = Automerge;
+window.AutomergeRepo = AutomergeRepo;
 
 const { repo, hive } = await bootstrap();
 
