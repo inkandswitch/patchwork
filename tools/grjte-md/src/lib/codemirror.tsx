@@ -7,7 +7,7 @@ import { EditorState, type Extension } from "@codemirror/state";
 /** Automerge */
 import type { Prop as AutomergeProp } from "@automerge/automerge";
 import type { DocHandle } from "@automerge/automerge-repo";
-import { createSyncExtension, createReadOnlyExtension } from "./extensions";
+import { createSyncExtension, createReadOnlyExtension, createDecorationsExtension } from "./extensions";
 
 /** Utility function to lookup a value along the specified pathin an Automerge document */
 const lookup = <T = any>(doc: any, path: AutomergeProp[]): T | undefined => {
@@ -24,7 +24,7 @@ const lookup = <T = any>(doc: any, path: AutomergeProp[]): T | undefined => {
 type CodeMirrorProps<T> = {
   handle: DocHandle<T>;
   path: AutomergeProp[];
-  decorations: DecorationSet;
+  decorations: () => DecorationSet;
   extensions?: Extension[];
   onChangeSelection: (from: number, to: number) => void;
   readOnly?: boolean
@@ -32,12 +32,12 @@ type CodeMirrorProps<T> = {
 
 
 export function CodeMirror<T>(props: CodeMirrorProps<T>) {
-  console.log("decorations:", props.decorations)
   const parent = (<div class="w-full h-full" />) as HTMLDivElement;
   const initialDoc = () => lookup(props.handle.doc(), props.path) || "";
 
   const [syncExtension, createEffectReconfigureSync] = createSyncExtension(props.handle, props.path, initialDoc)
   const [readOnlyExtension, createEffectReconfigureReadOnly] = createReadOnlyExtension(!!props.readOnly)
+  const [decorationsExtension, createEffectReconfigureDecorations] = createDecorationsExtension(props.decorations);
 
   const selectionExtension = EditorView.updateListener.of((update) => {
     // Bubble all updates to consumers (doc changes, viewport, scroll, etc.)
@@ -49,6 +49,7 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
 
   const extensions = [
     selectionExtension,
+    decorationsExtension,
     ...(props.extensions || []),
     syncExtension,
     readOnlyExtension
@@ -67,6 +68,7 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
   // Create effects to reconfigure the extensions when their props change
   createEffectReconfigureSync(view);
   createEffectReconfigureReadOnly(view);
+  createEffectReconfigureDecorations(view);
   
   onCleanup(() => {
     view.destroy();

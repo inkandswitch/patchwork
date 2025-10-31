@@ -6,12 +6,11 @@ import { StateEffect, StateField } from "@codemirror/state";
 
 /**
  * Create a CodeMirror extension for managing decorations.
- * @param decorations The initial set of decorations.
- * @returns A tuple containing the extension and a function to create an effect for updating the 
+ * @param decorations An accessor function that returns the decorations (for reactivity).
+ * @returns A tuple containing the extension and a function to create an effect for updating the
  decorations.
  */
-export function createDecorationsExtension(decorations: DecorationSet) {
-  console.log("createDecorationsExtension", decorations);
+export function createDecorationsExtension(decorations: () => DecorationSet) {
   const setDecorations = StateEffect.define<DecorationSet>();
   const decorationsField = StateField.define<DecorationSet>({
     create() {
@@ -29,7 +28,7 @@ export function createDecorationsExtension(decorations: DecorationSet) {
 
   const createDecorationsEffect = (view: EditorView) => createEffect(() => {
     view.dispatch({
-      effects: setDecorations.of(decorations),
+      effects: setDecorations.of(decorations()),
     });
   });
 
