@@ -6,7 +6,7 @@ export const [filter, setFilter] = createSignal("");
 const [selectedDocUrls, setSelectedDocUrls] = createSignal<AutomergeUrl[]>([]);
 
 export function filterMatches(string: string) {
-  return string.toLowerCase().includes(filter());
+  return !!string?.toLowerCase().includes(filter());
 }
 
 $selectedDocHandles.on("change", (refs) => {
