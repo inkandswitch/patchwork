@@ -20,15 +20,6 @@ export type TLDrawDocAnchor = TLShapeId;
 
 const pageKey = "page:page" as TLPageId;
 
-// FUNCTIONS
-// When a copy of the document has been made,
-// update the title so it's more clear which one is the copy vs original.
-// (this mechanism needs to be thought out more...)
-export const markCopy = (doc: TLDrawDoc) => {
-  const page = doc.store[pageKey] as TLPage;
-  page.name = "Copy of " + page.name;
-};
-
 export const getTitle = (doc: TLDrawDoc) => {
   const page = doc.store[pageKey] as TLPage;
   return page.name.toString() || "Drawing";
