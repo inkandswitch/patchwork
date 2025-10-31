@@ -73,7 +73,6 @@ function deepCompareAndUpdate(objectA: any, objectB: any) {
         objectA[key] = tldrawValueToAutomergeValue(value);
       } else {
         if (isObject(value) || isArray(value)) {
-          console.log(value);
           // if value is an object or array, recursively compare and update
           deepCompareAndUpdate(objectA[key], value);
         } else if (objectA[key] !== value) {
