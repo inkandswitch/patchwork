@@ -20,7 +20,7 @@ import {
   WidgetType,
 } from "@codemirror/view";
 import { commentButtonGutter } from "./lib/comments/commentButtonGutter";
-import { underlineExtension } from "./lib/extensions/underline";
+import { markdownLinks } from "./lib/extensions/markdownLinks";
 
 /** Automerge */
 import type { PatchworkToolProps } from "./types.ts";
@@ -148,8 +148,7 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
     indentUnit.of("    "),
     // Add the selection listener and comment button gutter
     commentButtonGutter(onComment),
-    // Add the underline extension
-    underlineExtension(),
+    markdownLinks()
   ];
 
   return (
