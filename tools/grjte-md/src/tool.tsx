@@ -1,5 +1,4 @@
 import { CodeMirror } from "./lib/codemirror.tsx";
-import { createEffect, createMemo, createSignal, mapArray } from "solid-js";
 
 /** CodeMirror Extensions */
 import { completionKeymap } from "@codemirror/autocomplete";
@@ -16,7 +15,6 @@ import { searchKeymap } from "@codemirror/search";
 import { RangeSet } from "@codemirror/state";
 import {
   Decoration,
-  type DecorationSet,
   EditorView,
   keymap,
   WidgetType,
@@ -37,7 +35,7 @@ import { createComment, getThreadsAt } from "@patchwork/context/comments";
 import {
   type Diff,
   DiffAnnotation,
-  getElementsWithDiff,
+  getElementsWithDiff
 } from "@patchwork/context/diff";
 
 /** Styles */
@@ -63,9 +61,7 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
 
   // comment references
   const commentThreads = () => getThreadsAt(contentRef());
-  console.log("commentThreads:", commentThreads());
   const refsWithComments = createReactive(() => commentThreads());
-  console.log("refsWithComments:", refsWithComments());
 
   // selection references
   const selectedRefs = createReactive($selectedRefs);
@@ -74,7 +70,7 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
   };
 
   // compute decorations
-  const decorations = RangeSet.of<Decoration>([
+  const decorations = () => RangeSet.of<Decoration>([
       // decorations for diffs
       ...refsWithDiff().flatMap((ref) => {
         if (!(ref instanceof TextSpanRef)) return [];
@@ -103,7 +99,6 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
       // decorations for comments
       ...(refsWithComments()
         ? refsWithComments().flatMap((ref) => {
-          console.log("comment ref:", ref);
           if (!(ref instanceof TextSpanRef)) return [];
           if (ref.from === ref.to) return [];
           return Decoration.mark({
