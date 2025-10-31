@@ -176,6 +176,11 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
       indentUnit.of("    "),
       // Add the selection listener and comment button gutter
       commentButtonGutter(onComment),
+      EditorView.contentAttributes.of({
+        autocorrect: "on",
+        autocapitalize: "on",
+        spellcheck: "true",
+      }),
     ],
     [isReadOnly, onComment]
   );

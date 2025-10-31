@@ -102,7 +102,7 @@ const baseHeadingStyles = {
 
 const baseCodeStyles = {
   fontFamily: "monospace",
-  fontSize: "16px",
+  fontSize: "1em",
 };
 
 const markdownSyntaxHighlighting = (style: "serif" | "sans") =>
