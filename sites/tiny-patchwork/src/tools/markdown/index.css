@@ -6,3 +6,15 @@
     box-shadow: none !important;
   }
 }
+
+@media (prefers-color-scheme: dark) {
+  .cm-content {
+    box-shadow: none !important;
+  }
+  .cm-editor {
+    background: var(--color-base);
+  }
+  .cm-content {
+    background: var(--color-base-100) !important;
+  }
+}
