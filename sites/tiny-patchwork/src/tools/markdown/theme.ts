@@ -46,7 +46,9 @@ const MARKDOWN_STYLES: Record<string, any> = {
     // lol i guess this is the same as box-sizing: content-box
     maxWidth: "calc(var(--max-text-line-width) - 2rem)",
     padding: "2rem",
-    boxShadow: "0 0 4px var(--color-base-300)",
+    boxShadow: "0 0 4px var(--color-primary-content)",
+    marginBottom: "8em",
+    borderRadius: "8px",
   },
   ".cm-content li": {
     marginBottom: 0,
