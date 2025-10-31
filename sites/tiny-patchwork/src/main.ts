@@ -79,7 +79,19 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
   window.location.hash = params.toString();
 });
 
+const bigPatchworkHashRegex =
+  /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;
+
 const handleHashChange = async (hash: string) => {
+  const legacy = bigPatchworkHashRegex.exec(hash);
+
+  if (legacy) {
+    const documentId = legacy.groups?.docId;
+    if (isValidDocumentId(documentId)) {
+      openDocument(rootElement, stringifyAutomergeUrl({ documentId }));
+    }
+    return;
+  }
   const params = new URLSearchParams(hash);
   const documentId = params.get("doc");
   const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
@@ -101,6 +113,7 @@ window.addEventListener("hashchange", () => {
 
 if (window.location.hash) {
   const initialAutomergeUrl = window.location.hash.slice(1);
+  console.log("hehe", { initialAutomergeUrl });
   // todo: actually wait for root to be mounted
   setTimeout(() => {
     handleHashChange(initialAutomergeUrl);
