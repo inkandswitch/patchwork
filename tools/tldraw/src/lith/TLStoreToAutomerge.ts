@@ -1,6 +1,6 @@
 import type { RecordsDiff, TLRecord } from "tldraw";
 import type { TLDrawDoc } from "../datatype.ts";
-import { isObject, forIn, isArray } from "lodash";
+import { isObject, forIn, isArray, mapValues } from "lodash";
 import { ImmutableString } from "@automerge/automerge";
 
 /** Prepares a value for storing in Automerge (deep recursively)
@@ -18,8 +18,8 @@ export function tldrawValueToAutomergeValue(value: any): any {
   if (Array.isArray(value)) {
     return value.map(tldrawValueToAutomergeValue);
   }
-  if (_.isObject(value)) {
-    return _.mapValues(value, tldrawValueToAutomergeValue);
+  if (isObject(value)) {
+    return mapValues(value, tldrawValueToAutomergeValue);
   }
   return value;
 }
