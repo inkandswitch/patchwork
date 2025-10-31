@@ -37,7 +37,8 @@ export const renderFrame = toolify(
     // this should be probably a plugin type that allows to run code without rendering something
 
     useUpdateDocLinksOfActiveDocumentsEffect(rootFolderUrl);
-    useAddUnknownDocumentsToSidebarEffect(rootFolderUrl);
+    //todo disabling this until it supports folders
+    //useAddUnknownDocumentsToSidebarEffect(rootFolderUrl);
 
     // listen to open document events
     useEffect(() => {
