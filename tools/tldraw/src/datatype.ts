@@ -55,5 +55,4 @@ export const dataType: DataTypeImplementation<TLDrawDoc> = {
   init,
   getTitle,
   setTitle,
-  markCopy,
 };
