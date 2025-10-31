@@ -1,13 +1,13 @@
-import { createEffect, createSignal, on, onCleanup, onMount, untrack } from "solid-js";
+import { onCleanup } from "solid-js";
 
 /** CodeMirror */
 import { EditorView, type DecorationSet } from "@codemirror/view";
-import { Compartment, EditorState, type Extension } from "@codemirror/state";
+import { EditorState, type Extension } from "@codemirror/state";
 
 /** Automerge */
 import type { Prop as AutomergeProp } from "@automerge/automerge";
-import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import type { DocHandle } from "@automerge/automerge-repo";
+import { createSyncExtension, createReadOnlyExtension } from "./extensions";
 
 /** Utility function to lookup a value along the specified pathin an Automerge document */
 const lookup = <T = any>(doc: any, path: AutomergeProp[]): T | undefined => {
@@ -32,36 +32,26 @@ type CodeMirrorProps<T> = {
 
 
 export function CodeMirror<T>(props: CodeMirrorProps<T>) {
+  console.log("decorations:", props.decorations)
   const parent = (<div class="w-full h-full" />) as HTMLDivElement;
   const initialDoc = () => lookup(props.handle.doc(), props.path) || "";
-  const readOnly = new Compartment()
-  const sync = new Compartment()
 
-  const readOnlyExtensions = () => props.readOnly ? [
-  EditorState.readOnly.of(true), EditorView.editable.of(false)
-  ] : []
-  
+  const [syncExtension, createEffectReconfigureSync] = createSyncExtension(props.handle, props.path, initialDoc)
+  const [readOnlyExtension, createEffectReconfigureReadOnly] = createReadOnlyExtension(!!props.readOnly)
 
-  const syncExtension = () => automergeSyncPlugin({
-      handle: props.handle as any, // typescript is confused by different version of doc handle
-      path: props.path,
-    })
-
+  const selectionExtension = EditorView.updateListener.of((update) => {
+    // Bubble all updates to consumers (doc changes, viewport, scroll, etc.)
+    if (update.selectionSet) {
+      const sel = update.state.selection.main;
+      props.onChangeSelection(sel.from, sel.to);
+    }
+  })
 
   const extensions = [
-    // handle selection changes
-    EditorView.updateListener.of((update) => {
-      // Bubble all updates to consumers (doc changes, viewport, scroll, etc.)
-      if (update.selectionSet) {
-        const sel = update.state.selection.main;
-        props.onChangeSelection(sel.from, sel.to);
-      }
-    }),
-    // add additional extensions from props
+    selectionExtension,
     ...(props.extensions || []),
-        // add the automerge sync plugin
-    sync.of(syncExtension()),
-    readOnly.of(readOnlyExtensions())
+    syncExtension,
+    readOnlyExtension
   ] as Extension[];
 
   const state = EditorState.create({
@@ -74,25 +64,10 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
     parent,
   });
 
-  createEffect(() => {
-    view.dispatch({
-      effects: readOnly.reconfigure(readOnlyExtensions())
-    })
-  })
-
-
-	createEffect(() => {
-		view.dispatch({
-			effects: sync.reconfigure(syncExtension()),
-			changes: {
-				from: 0,
-				to: view.state.doc.length,
-				insert: initialDoc(),
-			},
-		})
-  })
+  // Create effects to reconfigure the extensions when their props change
+  createEffectReconfigureSync(view);
+  createEffectReconfigureReadOnly(view);
   
-
   onCleanup(() => {
     view.destroy();
   });

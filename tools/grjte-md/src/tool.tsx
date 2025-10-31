@@ -13,7 +13,7 @@ import { markdown } from "@codemirror/lang-markdown";
 import { foldKeymap, indentOnInput, indentUnit } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
 import { searchKeymap } from "@codemirror/search";
-import { Compartment, EditorState, RangeSet } from "@codemirror/state";
+import { RangeSet } from "@codemirror/state";
 import {
   Decoration,
   type DecorationSet,
@@ -22,6 +22,7 @@ import {
   WidgetType,
 } from "@codemirror/view";
 import { commentButtonGutter } from "./lib/comments/commentButtonGutter";
+import { underlineExtension } from "./lib/extensions/underline";
 
 /** Automerge */
 import type { PatchworkToolProps } from "./types.ts";
@@ -30,7 +31,7 @@ import type { DocHandle } from "@automerge/automerge-repo";
 
 /** Patchwork */
 import { createReactive, createSubcontext } from "@patchwork/context/solid";
-import { PathRef, Reactive, Ref, TextSpanRef } from "@patchwork/context";
+import { PathRef, Ref, TextSpanRef } from "@patchwork/context";
 import { $selectedRefs, IsSelected } from "@patchwork/context/selection";
 import { createComment, getThreadsAt } from "@patchwork/context/comments";
 import {
@@ -62,7 +63,9 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
 
   // comment references
   const commentThreads = () => getThreadsAt(contentRef());
+  console.log("commentThreads:", commentThreads());
   const refsWithComments = createReactive(() => commentThreads());
+  console.log("refsWithComments:", refsWithComments());
 
   // selection references
   const selectedRefs = createReactive($selectedRefs);
@@ -100,6 +103,7 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
       // decorations for comments
       ...(refsWithComments()
         ? refsWithComments().flatMap((ref) => {
+          console.log("comment ref:", ref);
           if (!(ref instanceof TextSpanRef)) return [];
           if (ref.from === ref.to) return [];
           return Decoration.mark({
@@ -149,6 +153,8 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
     indentUnit.of("    "),
     // Add the selection listener and comment button gutter
     commentButtonGutter(onComment),
+    // Add the underline extension
+    underlineExtension(),
   ];
 
   return (
