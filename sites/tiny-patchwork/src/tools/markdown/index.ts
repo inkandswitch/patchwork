@@ -6,7 +6,7 @@ export const plugins = [
     id: "markdown",
     name: "Markdown",
     icon: "FileText",
-    supportedDataTypes: ["markdown"],
+    supportedDataTypes: ["markdown", "essay"],
     async load() {
       const { MarkdownEditor } = await import("./MarkdownEditor");
       return toolify(MarkdownEditor);
