@@ -181,20 +181,14 @@ export const MarkdownEditor = ({ docUrl }: ReactToolProps) => {
   );
 
   return (
-    <div className="w-full h-full overflow-auto bg-base-100">
-      <div className="p-4 h-full">
-        <div className="flex h-full">
-          <div ref={cmContainerRef} className="relative flex-1 h-full">
-            <Codemirror
-              docUrl={docUrl}
-              path={PATH}
-              onChangeSelection={onChangeSelection}
-              decorations={decorations}
-              extensions={cmExtensions}
-            />
-          </div>
-        </div>
-      </div>
+    <div ref={cmContainerRef} className="relative flex-1 h-full flex">
+      <Codemirror
+        docUrl={docUrl}
+        path={PATH}
+        onChangeSelection={onChangeSelection}
+        decorations={decorations}
+        extensions={cmExtensions}
+      />
     </div>
   );
 };

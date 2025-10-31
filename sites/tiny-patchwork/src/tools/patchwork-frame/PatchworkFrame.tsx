@@ -76,7 +76,7 @@ export const renderFrame = toolify(
           )}
         </div>
 
-        <div className="w-full h-full overflow-auto">
+        <div className="w-full h-full">
           {mainView && (
             <patchwork-view
               ref={setMainViewElement}

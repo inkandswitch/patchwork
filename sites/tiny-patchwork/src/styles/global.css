@@ -5,7 +5,29 @@
     dark --prefersdark,
     cupcake;
 }
+
+:root {
+  --max-text-line-width: 100ex;
+}
+
 html,
 body {
   overscroll-behavior: none;
+}
+html {
+  font-size: 16px;
+  height: 100%;
+  height: 100vh;
+  height: 100dvh;
+
+  @media all and (display-mode: standalone) {
+    height: 100lvh;
+  }
+}
+
+patchwork-view {
+  display: block;
+  height: 100%;
+  width: 100%;
+  contain: layout;
 }

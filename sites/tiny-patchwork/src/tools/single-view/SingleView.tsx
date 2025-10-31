@@ -212,45 +212,47 @@ const SingleView = ({
             </div>
           )}
         </div>
-        <div className="flex-1" />
-        {originalDoc && !viewHeads && (
-          <label className="label text-sm">
-            <input
-              type="checkbox"
-              className="checkbox checkbox-sm"
-              checked={highlightChanges}
-              onChange={(e) => {
-                changeSingleViewDoc((doc) => {
-                  doc.highlightChanges = e.target.checked;
-                });
-              }}
-            />
-            Highlight changes
-          </label>
-        )}
-        <button onClick={() => patchworkViewRef.current?.requestFullscreen()}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ height: "1em" }}
-          >
-            <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-            <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-            <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-            <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-            <rect width="10" height="8" x="7" y="8" rx="1" />
-          </svg>
-        </button>
+
+        <div className="ml-auto">
+          {originalDoc && !viewHeads && (
+            <label className="label text-sm">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-sm"
+                checked={highlightChanges}
+                onChange={(e) => {
+                  changeSingleViewDoc((doc) => {
+                    doc.highlightChanges = e.target.checked;
+                  });
+                }}
+              />
+              Highlight changes
+            </label>
+          )}
+          <button onClick={() => patchworkViewRef.current?.requestFullscreen()}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ height: "1em" }}
+            >
+              <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+              <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+              <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+              <rect width="10" height="8" x="7" y="8" rx="1" />
+            </svg>
+          </button>
+        </div>
       </div>
       <div
-        className={`flex-1 ${viewHeads ? "border-2 border-accent border-dashed" : ""}`}
+        className={`h-full flex flex-1  ${viewHeads ? "outline-2 outline-accent outline-dashed" : ""}`}
       >
         <patchwork-view
           ref={(r) => {
