@@ -161,6 +161,8 @@
   border-radius: var(--sideboard-radius);
   box-shadow: 0 1px 2px rgba(0, 20, 50, 0.05);
   width: 100%;
+  max-height: 100%;
+  overflow: scroll;
 }
 
 .sideboard__folder {
