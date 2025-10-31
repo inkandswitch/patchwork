@@ -171,12 +171,12 @@ export function registerPatchworkViewElement(
 
         this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
 
-        moduleWatcher.loadSuggestedImportUrl(this.docUrl).catch(() => {
+        /*        moduleWatcher.loadSuggestedImportUrl(this.docUrl).catch(() => {
           console.warn(
             `couldn't load suggested import url for ${this.docUrl}`,
             new Error().stack
           );
-        });
+        }); */
 
         this.#teardowns.add(
           onPluginsChange<Tool>("patchwork:tool", async (_tools, newTool) => {
