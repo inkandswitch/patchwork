@@ -101,5 +101,5 @@ export const Codemirror = ({
     view.dispatch({ effects: setDecorations.of(decorations) });
   }, [decorations, setDecorations, view]);
 
-  return <div ref={setContainer} className="w-full h-full m-auto" />;
+  return <div ref={setContainer} className="@container w-full h-full m-auto" />;
 };

@@ -1,4 +1,5 @@
 import { toolify } from "../../lib/toolify";
+import "./index.css";
 
 export const plugins = [
   {

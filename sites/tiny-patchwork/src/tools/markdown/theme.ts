@@ -19,6 +19,7 @@ const MARKDOWN_STYLES: Record<string, any> = {
   "&.cm-editor.cm-focused": {
     outline: "none",
   },
+
   "&.cm-editor": {
     height: "100%",
     display: "flex",

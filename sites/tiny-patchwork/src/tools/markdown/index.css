@@ -1,0 +1,8 @@
+@container (width < 80ch) {
+  .cm-scroller {
+    background: var(--color-base-100) !important;
+  }
+  .cm-content {
+    box-shadow: none !important;
+  }
+}
