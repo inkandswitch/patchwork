@@ -16,7 +16,7 @@ export const $selectedRefs = contextComputation(() =>
 );
 
 export const $selectedDocRefs = contextComputation((context) => {
-  return context.refsWith(IsSelected);
+  return context.refsWith(IsSelected) as Ref<HasPatchworkMetadata>[];
 });
 
 export const $selectedDocUrls = contextComputation((context) => {
