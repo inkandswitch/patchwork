@@ -92,7 +92,7 @@
     border: 2px solid var(--sideboard-create-new-border-line);
     border-radius: var(--sideboard-radius);
     background: var(--sideboard-create-new-fill);
-    color: var(--sideboard-create-new-line);
+    color: var(--sideboard-line);
     font-weight: 400;
     width: 100%;
     align-items: center;
@@ -101,19 +101,7 @@
     font-size: 0.9rem;
     text-align: left;
     gap: 1ex;
-    box-shadow: 0 2px 4px var(--sideboard-create-new-shadow-color);
-
-    &:hover,
-    &[data-expanded] {
-      --sideboard-create-new-shadow-color: border-color: color-mix(
-          in oklch,
-          var(--sideboard-primary),
-          white 10%
-        );
-      color: var(--sideboard-line);
-      background: var(--sideboard-primary);
-      border-color: var(--sideboard-primary);
-    }
+    position: relative;
   }
 }
 
