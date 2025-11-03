@@ -2,23 +2,14 @@ import {
   createSignal,
   For,
   Suspense,
-  onCleanup,
   createEffect,
-  createResource,
   type Signal,
-  type Resource,
   Show,
 } from "solid-js";
 import html from "solid-js/html";
 import { createStore, unwrap, reconcile } from "solid-js/store";
 import { makeDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
-
-import {
-  getPluginRegistry,
-  getLoadedPlugins,
-  type Tool,
-  getPlugins,
-} from "@patchwork/plugins";
+import { getPluginRegistry } from "@patchwork/plugins";
 import {
   isValidAutomergeUrl,
   type AutomergeUrl,
@@ -26,6 +17,8 @@ import {
 import type { ModuleSettingsDoc } from "@patchwork/filesystem";
 import type { PatchworkToolProps } from "../types.ts";
 import { useTools } from "../sideboard/plugins.ts";
+import { ViewSource } from "./view-source.tsx";
+
 const registry = getPluginRegistry("patchwork:tool");
 
 function swapWithEnd(list: any[], idx: number) {
@@ -138,6 +131,12 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
                       {(dt) => html`<li>${() => dt}</li>`}
                     </For>
                   </ul>
+                  <Show when={isValidAutomergeUrl(tool.importUrl)}>
+                    <ViewSource
+                      moduleUrl={tool.importUrl as AutomergeUrl}
+                      repo={props.repo}
+                    />
+                  </Show>
                 </article>
               </Suspense>
             );
