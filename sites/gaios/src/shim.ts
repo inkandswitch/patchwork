@@ -1,18 +1,12 @@
-// @ts-check
 import { jsx } from "react/jsx-runtime";
 import { createRoot } from "react-dom/client";
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
-
-/**
- * @import {LegacyEditorProps, ToolImplementation} from "@patchwork/plugins"
- */
+import type { LegacyEditorProps, ToolImplementation } from "@patchwork/plugins";
 
 // a transitional shim until patchwork uses the .render() pattern
-/**
- * @param {React.FC<LegacyEditorProps>} editorComponent
- * @returns {ToolImplementation}}
- */
-export default function patchworkReactShim(editorComponent) {
+export default function patchworkReactShim<T = unknown>(
+  editorComponent: (props: LegacyEditorProps) => JSX.Element
+): ToolImplementation<T> {
   return (handle, element) => {
     const root = createRoot(element);
 
