@@ -1,13 +1,11 @@
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { AutomergeUrl } from "@automerge/vanillajs";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
+import { CommandPalette } from "../../lib/commands/CommandPalette";
 import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
-import {
-  useAddUnknownDocumentsToSidebarEffect,
-  useUpdateDocLinksOfActiveDocumentsEffect,
-} from "./effects";
+import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
 
 export const renderFrame = toolify(
   ({
@@ -65,36 +63,39 @@ export const renderFrame = toolify(
     }, [changeAccountDoc, element, repo, mainViewElement]);
 
     return (
-      <div className="w-screen h-screen flex">
-        <div className="w-[300px] flex flex-col">
-          {sidebarToolId && (
-            <patchwork-view
-              class="h-full"
-              doc-url={docUrl}
-              tool-id={sidebarToolId}
-            />
-          )}
-        </div>
-
-        <div className="w-full h-full">
-          {mainView && (
-            <patchwork-view
-              ref={setMainViewElement}
-              doc-url={mainView.documentUrl}
-              tool-id={mainView.toolId}
-              key={mainView.documentUrl}
-            />
-          )}
-        </div>
-        {contextSidebar && (
-          <div className="w-[400px] bg-base-100">
-            <patchwork-view
-              doc-url={contextSidebar.documentUrl}
-              tool-id={contextSidebar.toolId}
-            />
+      <>
+        <div className="w-screen h-screen flex">
+          <div className="w-[300px] flex flex-col">
+            {sidebarToolId && (
+              <patchwork-view
+                class="h-full"
+                doc-url={docUrl}
+                tool-id={sidebarToolId}
+              />
+            )}
           </div>
-        )}
-      </div>
+
+          <div className="w-full h-full">
+            {mainView && (
+              <patchwork-view
+                ref={setMainViewElement}
+                doc-url={mainView.documentUrl}
+                tool-id={mainView.toolId}
+                key={mainView.documentUrl}
+              />
+            )}
+          </div>
+          {contextSidebar && (
+            <div className="w-[400px] bg-base-100">
+              <patchwork-view
+                doc-url={contextSidebar.documentUrl}
+                tool-id={contextSidebar.toolId}
+              />
+            </div>
+          )}
+        </div>
+        <CommandPalette commands={window.commands || []} />
+      </>
     );
   }
 );
