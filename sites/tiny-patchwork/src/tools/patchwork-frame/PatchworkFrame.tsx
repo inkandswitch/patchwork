@@ -39,10 +39,6 @@ export const PatchworkFrame = ({
   const { rootFolderUrl, accountSidebarToolId, contextSidebarToolId } =
     accountDoc;
 
-  const [mainViewElement, setMainViewElement] = useState<HTMLElement | null>(
-    null
-  );
-
   const [selectedView, setSelectedView] = useState<
     { url: AutomergeUrl; toolId?: string } | undefined
   >(undefined);
@@ -91,10 +87,6 @@ export const PatchworkFrame = ({
 
   // listen to open document events
   useEffect(() => {
-    if (!mainViewElement) {
-      return;
-    }
-
     const onOpenDocument = (event: OpenDocumentEvent) => {
       event.stopPropagation();
       event.stopImmediatePropagation();
@@ -103,16 +95,14 @@ export const PatchworkFrame = ({
     };
 
     element.addEventListener("patchwork:open-document", onOpenDocument);
-    mainViewElement.addEventListener("patchwork:open-document", onOpenDocument);
 
     return () => {
-      element.removeEventListener("patchwork:open-document", onOpenDocument);
-      mainViewElement.removeEventListener(
+      (element as HTMLElement).removeEventListener(
         "patchwork:open-document",
         onOpenDocument
       );
     };
-  }, [changeAccountDoc, element, repo, mainViewElement]);
+  }, [changeAccountDoc, element, repo]);
 
   // Add current handle to window
   useEffect(() => {
@@ -136,7 +126,7 @@ export const PatchworkFrame = ({
   }, [commentsContext, selectedView, selectedDocRef, selectedDoc]);
 
   return (
-    <div className="w-screen h-screen flex" ref={setMainViewElement}>
+    <div className="w-screen h-screen flex">
       <div className="w-[400px] flex flex-col">
         {accountSidebarToolId && (
           <patchwork-view
@@ -181,12 +171,6 @@ export const PatchworkFrame = ({
           />
         </div>
       )}
-      <div className="w-[400px] bg-base-100">
-        <patchwork-view
-          doc-url={accountDocUrl}
-          tool-id={contextSidebarToolId}
-        />
-      </div>
     </div>
   );
 };
