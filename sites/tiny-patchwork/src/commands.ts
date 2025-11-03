@@ -46,7 +46,7 @@ export const commands = (
     category: "Layout",
     action: () => {
       accountDocHandle.change((doc) => {
-        doc.sidebarToolId = "simple-sidebar";
+        doc.sidebarToolId = "chee/sideboard";
       });
       console.log("Switched to normal sidebar");
     },
