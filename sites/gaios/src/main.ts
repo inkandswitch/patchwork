@@ -13,7 +13,7 @@ import {
 } from "@patchwork/plugins";
 import { type AutomergeUrl } from "@automerge/vanillajs";
 import { registerPatchworkViewElement } from "@patchwork/elements";
-import patchworkReactShim from "@patchwork/react/shim";
+import patchworkReactShim from "./shim";
 const { repo } = await bootstrap();
 
 const moduleWatcher = new ModuleWatcher(
