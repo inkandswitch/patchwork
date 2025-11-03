@@ -32,26 +32,6 @@ export type DataType<D = unknown> = LoadedPlugin<
   DataTypeImplementation<D>
 >;
 
-/** Creates a new document initialized with the given datatype */
-export const createDocOfDataType = <D>(
-  dataType: DataType<D>,
-  repo: Repo,
-  change?: (doc: D) => void
-): DocHandle<D & HasPatchworkMetadata> => {
-  const handle = repo.create<D & HasPatchworkMetadata>();
-  handle.change((doc) => {
-    dataType.module.init(doc, repo);
-    (doc as any)["@patchwork"] = {
-      type: dataType.id,
-      suggestedImportUrl: dataType.importUrl,
-    };
-    if (change) {
-      change(doc);
-    }
-  });
-  return handle;
-};
-
 /** Creates a new document initialized with the given datatype using create2 */
 export const createDocOfDataType2 = async <D>(
   dataType: DataType<D>,

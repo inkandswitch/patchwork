@@ -3,7 +3,7 @@ import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { toolify } from "../../lib/toolify";
 import { FolderDoc, DocLink } from "@patchwork/filesystem";
 import { useState } from "react";
-import { createDocOfDataType, DataType } from "@patchwork/plugins";
+import { createDocOfDataType2, DataType } from "@patchwork/plugins";
 import { useDatatypeDescriptions } from "../../lib/datatype-hooks";
 import {
   PlusIcon,
@@ -83,7 +83,7 @@ const FolderEntry = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   };
 
   const onAddDocument = async (dataType: DataType<unknown>) => {
-    const docHandle = createDocOfDataType(dataType, repo);
+    const docHandle = await createDocOfDataType2(dataType, repo);
     changeFolderDoc((doc) => {
       doc.docs.push({
         name: dataType.name,
@@ -168,7 +168,7 @@ const FolderView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const repo = useRepo();
 
   const onAddDocument = async (dataType: DataType<unknown>) => {
-    const docHandle = createDocOfDataType(dataType, repo);
+    const docHandle = await createDocOfDataType2(dataType, repo);
     const docLink = {
       name: dataType.name,
       type: dataType.id,
