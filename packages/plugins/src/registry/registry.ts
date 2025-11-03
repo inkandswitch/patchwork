@@ -228,21 +228,14 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     callback: PluginRegistryEvents<D, I>["plugins:changed"]
   ): () => void {
     if (!callback || typeof callback !== "function") {
-      console.warn("Invalid callback provided to PluginRegistry.onChange");
-      return () => {}; // Return a no-op function
+      throw new Error("Invalid callback provided to PluginRegistry.onChange");
     }
 
-    try {
-      this.events.on("plugins:changed", callback);
+    this.events.on("plugins:changed", callback);
 
-      // Create a simple cleanup function with no additional properties
-      return () => {
-        this.events.off("plugins:changed", callback);
-      };
-    } catch (error) {
-      console.warn("Error setting up plugin change listener:", error);
-      return () => {}; // Return a no-op function
-    }
+    return () => {
+      this.events.off("plugins:changed", callback);
+    };
   }
 }
 
