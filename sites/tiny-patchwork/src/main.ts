@@ -41,14 +41,28 @@ const { repo, hive } = await bootstrap();
 
 window.CONTEXT = CONTEXT;
 
-const loadedPlugins = await Promise.all(
-  plugins.map(async (plugin) => ({
-    ...plugin,
-    module: plugin.module || (await plugin.load()),
-  }))
+const loadedPlugins = Object.groupBy(
+  await Promise.allSettled(
+    plugins.map(async (plugin) => ({
+      ...plugin,
+      module: plugin.module || (await plugin.load()),
+    }))
+  ),
+  (result) => result.status
 );
 
-registerPlugins(loadedPlugins, "DEV");
+if (loadedPlugins.fulfilled) {
+  registerPlugins(
+    loadedPlugins.fulfilled
+      .filter((x) => x.status == "fulfilled")
+      .map((x) => x.value),
+    "DEV"
+  );
+}
+
+if (loadedPlugins.rejected) {
+  console.warn("failed to load some plugins:", loadedPlugins.rejected);
+}
 
 const accountDocHandle = await getOrCreateAccountDocHandle(repo, hive);
 
