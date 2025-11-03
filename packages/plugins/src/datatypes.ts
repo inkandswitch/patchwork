@@ -3,7 +3,7 @@ import type {
   LoadablePlugin,
   LoadedPlugin,
   PluginDescription,
-} from "../registry/types.js";
+} from "./registry/types.js";
 import type { HasPatchworkMetadata } from "@patchwork/filesystem";
 
 // DataType implementation interface
