@@ -40,7 +40,6 @@ export function CommandPalette({ commands }: CommandPaletteProps) {
   // Toggle palette with CMD+O and close with Escape
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      console.log(e.key);
       if (e.key === "o" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setOpen((open) => !open);

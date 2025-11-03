@@ -49,7 +49,7 @@
     "@patchwork/tldraw": "workspace:^",
     "add": "^2.0.6",
     "boring-avatars": "^2.0.4",
-    "cmdk": "^1.0.0",
+    "cmdk": "^1.1.1",
     "lucide-react": "^0.545.0",
     "pnpm": "^10.18.1",
     "react": "^18.0.0",
