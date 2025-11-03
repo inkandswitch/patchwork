@@ -198,7 +198,7 @@ const CommentView = ({ commentRef, onDeleteComment }: CommentViewProps) => {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-id={commentRef.toId()}>
       {!isDraft && (
         <div className="flex justify-between">
           <Avatar size={20} name={comment.authorId} />

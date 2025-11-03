@@ -1,24 +1,16 @@
-import type { Doc, DocHandle, Repo } from "@automerge/automerge-repo";
+import type { DocHandle, Repo } from "@automerge/automerge-repo";
 import type {
   LoadablePlugin,
   LoadedPlugin,
   PluginDescription,
 } from "../registry/types.js";
-import type { DocLink, HasPatchworkMetadata } from "@patchwork/filesystem";
+import type { HasPatchworkMetadata } from "@patchwork/filesystem";
 
 // DataType implementation interface
 export type DataTypeImplementation<D = unknown> = {
   init: (doc: D, repo: Repo) => void;
   getTitle: (doc: D) => string;
   setTitle?: (doc: any, title: string) => void;
-  markCopy: (doc: D) => void;
-  actions?: Record<string, (doc: Doc<D>, args: object) => void>;
-  /**
-   * Specifies what other Automerge documents are "linked to" from this
-   * document. This is currently used to figure out which documents to clone
-   * when a branch is created.
-   */
-  links?: (doc: D) => DocLink[];
 };
 
 // The DataType description extends the base PluginDescription
@@ -78,11 +70,4 @@ export const createDocOfDataType2 = async <D>(
     }
   });
   return handle;
-};
-
-// TODO: How do we do away with this?
-/** Kinda hacky utility function to initialize an object in
- * handle.change in a type-safe way. */
-export const initFrom = <D extends object>(doc: D, init: D) => {
-  Object.assign(doc, init);
 };

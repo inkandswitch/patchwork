@@ -26,14 +26,14 @@
   --sideboard-widget-fill: white;
   --sideboard-widget-line: var(--sideboard-line);
 
-  --sideboard-padding-inline: 0.5rem;
-  --sideboard-primary: oklch(0.88 0.17 167.51 / 1);
+  --sideboard-padding-x: 0.5rem;
+
   --sideboard-radius: 0.275rem;
   --placeholder-line: #808e80;
   --sideboard-search-line: #000;
 
   --sideboard-fill: oklch(from #99eeff l c h);
-  --sideboard-primary: oklch(from #33ccff l c h);
+  --sideboard-primary: oklch(from #d9f4ff l c h);
 
   --sideboard-create-new-fill: white;
   --sideboard-create-new-line: color-mix(
@@ -73,9 +73,11 @@
   flex-direction: column;
   gap: 0.75rem;
   font-family: Jost, system-ui, sans-serif;
+  padding-inline: var(--sideboard-padding-x);
 }
 
 .sideboard-header {
+  margin-top: 1rem;
   container-type: inline-size;
   height: 4rem;
   display: flex;
@@ -83,16 +85,15 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding-inline: var(--sideboard-padding-inline);
 
-  button {
+  .create-new-button {
     display: flex;
     padding-inline: 0.75rem;
     padding-block: 0.25rem;
     border: 2px solid var(--sideboard-create-new-border-line);
     border-radius: var(--sideboard-radius);
     background: var(--sideboard-create-new-fill);
-    color: var(--sideboard-create-new-line);
+    color: var(--sideboard-line);
     font-weight: 400;
     width: 100%;
     align-items: center;
@@ -101,45 +102,7 @@
     font-size: 0.9rem;
     text-align: left;
     gap: 1ex;
-    box-shadow: 0 2px 4px var(--sideboard-create-new-shadow-color);
-
-    &:hover,
-    &[data-expanded] {
-      --sideboard-create-new-shadow-color: border-color: color-mix(
-          in oklch,
-          var(--sideboard-primary),
-          white 10%
-        );
-      color: var(--sideboard-line);
-      background: var(--sideboard-primary);
-      border-color: var(--sideboard-primary);
-    }
-  }
-}
-
-.sideboard__filter {
-  background: var(--sideboard-widget-fill);
-  color: var(--sideboard-widget-line);
-
-  position: relative;
-  width: 100%;
-  padding-left: 2em;
-  padding-right: 0.75rem;
-  padding-top: 0.375rem;
-  padding-bottom: 0.375rem;
-  border: none;
-  border-radius: var(--sideboard-radius);
-  box-shadow: 0 1px 2px rgba(0, 20, 50, 0.05);
-
-  &::placeholder {
-    color: var(--placeholder-line);
-  }
-
-  &:focus-visible {
-    outline-color: #000;
-    outline-offset: 1px;
-    box-shadow: 0 0 0 4px #fff;
-    border-radius: var(--sideboard-radius);
+    position: relative;
   }
 }
 
@@ -150,6 +113,7 @@
 .sideboard__filter-container {
   position: relative;
   font-size: 0.875rem;
+  border-radius: var(--sideboard-radius);
   .search-icon {
     height: 1em;
     top: 0.4lh;
@@ -165,13 +129,41 @@
   }
 }
 
-.sideboard__doclist {
+.sideboard__filter {
+  width: 100%;
+
   background: var(--sideboard-widget-fill);
-  --inline-padding: 0.75rem;
+  color: var(--sideboard-widget-line);
+
+  padding-left: 2em;
+  padding-right: 0.75rem;
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+  border: none;
+  box-shadow: 0 1px 2px rgba(0, 20, 50, 0.05);
+  border-radius: var(--sideboard-radius);
+
+  &::placeholder {
+    color: var(--placeholder-line);
+  }
+
+  &:focus-visible {
+    outline-color: #000;
+    outline-offset: 1px;
+    box-shadow: 0 0 0 4px #fff;
+    border-radius: var(--sideboard-radius);
+  }
+}
+
+.sideboard__doclist {
+  --doclist-padding-x: 0.75rem;
   display: flex;
   flex-direction: column;
   border-radius: var(--sideboard-radius);
   box-shadow: 0 1px 2px rgba(0, 20, 50, 0.05);
+  width: 100%;
+  max-height: 100%;
+  overflow: scroll;
 }
 
 .sideboard__folder {
@@ -181,12 +173,22 @@
   padding-left: calc(0.5rem * attr(data-depth));
 }
 
-.sideboard-folder__link {
-  padding-inline: var(--inline-padding);
+.sideboard-folder-item {
+  display: flex;
+  gap: 0.5ch;
+  padding-inline: var(--doclist-padding-x);
   padding-block: 0.5rem;
-  display: block;
   font-weight: 400;
   color: var(--sidebar-widget-line);
+  cursor: default;
+
+  .create-new-button {
+    margin-left: auto;
+  }
+
+  .create-new-button__text {
+    display: none;
+  }
 
   &:focus-visible {
     outline-color: #000;
@@ -202,28 +204,48 @@
 
   &[aria-pressed="true"] {
     background: var(--sideboard-primary);
-    &:first-child {
+    .sideboard__doclist > &:first-child {
       border-top-left-radius: var(--sideboard-radius);
       border-top-right-radius: var(--sideboard-radius);
     }
-    &:last-child {
+    .sideboard__doclist > &:last-child {
       border-bottom-left-radius: var(--sideboard-radius);
       border-bottom-right-radius: var(--sideboard-radius);
     }
   }
 }
 
-.invisible {
+.sideboard-folder-item__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  max-width: 100%;
+}
+
+.sideboard-folder__toggle {
+  margin-left: -0.5ch;
+  padding-inline: 0.5ch;
+  &:hover {
+    background: #55555533;
+  }
+}
+
+.sideboard-folder__contents--hidden {
   display: none;
 }
 
-.visible,
-.invisible:has(.visible) {
+.sideboard__item--invisible {
+  display: none;
+}
+
+.sideboard__item--visible,
+.sideboard__item--invisible:has(.sideboard__item--visible) {
   display: block;
 }
 
-.sideboard-folder__contents .sideboard-folder__link {
-  padding-left: calc(1.5rem * var(--depth));
+.sideboard-folder__contents .sideboard-folder-item {
+  padding-left: calc(2.2rem * var(--depth));
 }
 
 .sideboard-footer {
@@ -234,7 +256,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding: var(--sideboard-padding-inline);
+  padding: var(--sideboard-padding-x);
   padding-bottom: calc(0.25rem + env(safe-area-inset-bottom));
   background: var(--sideboard-footer-fill);
   color: var(--sideboard-line);
@@ -269,8 +291,10 @@
 }
 
 .sideboard-widget {
-  margin-inline: var(--sideboard-padding-inline);
   margin-top: 0.5rem;
+  width: 100%;
+  background: var(--sideboard-widget-fill);
+  color: var(--sideboard-widget-line);
 }
 
 .module-settings__tools {
@@ -389,4 +413,5 @@
   padding: 1em;
   background: lemonchiffon;
   animation: hello alternate-reverse infinite 2s;
+  color: black;
 }

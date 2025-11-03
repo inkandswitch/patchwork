@@ -94,8 +94,8 @@ export function useAutomergeStore({
 
       store.mergeRemoteChanges(() => {
         store.loadStoreSnapshot({
-          store: structuredClone(doc.store),
-          schema: doc.schema,
+          store: JSON.parse(JSON.stringify(doc.store)),
+          schema: JSON.parse(JSON.stringify(doc.schema)),
         });
       });
 

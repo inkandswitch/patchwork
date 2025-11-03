@@ -29,8 +29,4 @@ export const MarkdownDataType: DataTypeImplementation<MarkdownDoc> = {
 
     return `${title}${subtitle && `: ${subtitle}`}`;
   },
-
-  markCopy: (doc: MarkdownDoc) => {
-    doc.content = doc.content;
-  },
 };

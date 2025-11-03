@@ -39,7 +39,7 @@ export function applyAutomergePatchesToTLStore(
   const toPut = Object.values(updatedObjects);
 
   // put / remove the records in the store
-  console.log({ patches, toPut });
+
   store.mergeRemoteChanges(() => {
     if (toRemove.length) store.remove(toRemove);
     if (toPut.length) store.put(toPut);

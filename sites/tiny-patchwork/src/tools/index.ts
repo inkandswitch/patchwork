@@ -20,6 +20,8 @@ import "@chee/patchwork-sideboard/styles.css";
 import { plugins as spacerPlugins } from "./spacer";
 import { plugins as highlightChangesCheckboxPlugins } from "./highlight-changes-checkbox";
 import { plugins as frameConfiguratorPlugins } from "./frame-configurator";
+// @ts-expect-error no types
+import { plugins as orionMarkwhen } from "@orion/markwhen";
 
 export const plugins: Plugin<any>[] = [
   ...markdownPlugins,
@@ -39,4 +41,24 @@ export const plugins: Plugin<any>[] = [
   ...spacerPlugins,
   ...highlightChangesCheckboxPlugins,
   ...frameConfiguratorPlugins,
+  ...orionMarkwhen,
+  {
+    id: "folder",
+    type: "patchwork:datatype",
+    name: "Folder",
+    async load() {
+      return {
+        init(doc: any) {
+          doc.title = "New folder";
+          doc.docs = [];
+        },
+        getTitle(doc: any) {
+          return doc.title;
+        },
+        setTitle(doc: any, title: string) {
+          doc.title = title;
+        },
+      };
+    },
+  },
 ];

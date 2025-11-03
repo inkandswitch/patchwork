@@ -123,9 +123,13 @@ export function registerPatchworkViewElement(
         this.#init();
       }
 
-      async disconnectedCallback() {
-        await this.#teardown();
+      disconnectedCallback() {
+        this.#teardown();
       }
+
+      // When defined, this is called instead of connectedCallback() and disconnectedCallback()
+      // each time the element is moved to a different place in the DOM via Element.moveBefore()
+      connectedMoveCallback() {}
 
       attributeChangedCallback(name: string, _: string, val: string | null) {
         if (name === attrs.toolId) {
@@ -169,12 +173,12 @@ export function registerPatchworkViewElement(
 
         this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
 
-        moduleWatcher.loadSuggestedImportUrl(this.docUrl).catch(() => {
+        /*        moduleWatcher.loadSuggestedImportUrl(this.docUrl).catch(() => {
           console.warn(
             `couldn't load suggested import url for ${this.docUrl}`,
             new Error().stack
           );
-        });
+        }); */
 
         this.#teardowns.add(
           onPluginsChange<Tool>("patchwork:tool", async (_tools, newTool) => {

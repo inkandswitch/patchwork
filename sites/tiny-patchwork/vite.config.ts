@@ -24,7 +24,6 @@ export default defineConfig({
         "@patchwork/context/comments":
           "/packages/@patchwork/context/comments.js",
         "@patchwork/filesystem": "/packages/@patchwork/filesystem/index.js",
-
         "@automerge/automerge-repo-react-hooks":
           "/packages/@automerge/automerge-repo-react-hooks/index.js",
         react: "/packages/react/index.js",
@@ -34,6 +33,11 @@ export default defineConfig({
         "react-dom/server": "/packages/react-dom/server.js",
         signia: "/packages/signia/index.js",
         scheduler: "/packages/scheduler/index.js",
+        "solid-js": "/packages/solid-js/index.js",
+        "solid-js/store": "/packages/solid-js/store.js",
+        "solid-js/html": "/packages/solid-js/html.js",
+        "solid-js/h": "/packages/solid-js/h.js",
+        "solid-js/web": "/packages/solid-js/web.js"
       },
       importmap: {
         imports: {

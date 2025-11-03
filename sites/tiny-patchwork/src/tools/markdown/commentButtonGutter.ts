@@ -43,6 +43,7 @@ class CommentButtonWidget extends WidgetType {
       -webkit-user-select: none;
       -moz-user-select: none;
       -ms-user-select: none;
+      margin-top: 2em;
     `;
 
     button.addEventListener("mouseenter", () => {
