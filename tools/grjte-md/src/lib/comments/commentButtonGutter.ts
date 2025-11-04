@@ -1,6 +1,5 @@
 import { RangeSet } from "@codemirror/state";
 import { EditorView, gutter, GutterMarker, WidgetType } from "@codemirror/view";
-import "./commentButtonGutter.css";
 
 type CommentButtonCallback = (
   from: number,

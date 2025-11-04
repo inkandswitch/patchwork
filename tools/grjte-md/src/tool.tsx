@@ -85,12 +85,17 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
         }
 
         if (diff.type === "added") {
+          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const selected = isSelected(ref);
           return Decoration.mark({
-            class: `border-b border-green-500 dark:border-green-400 ${
-              isSelected(ref)
-                ? "bg-green-300 dark:bg-green-600"
-                : "bg-green-100 dark:bg-green-900"
-            }`,
+            attributes: {
+              style: `
+                border-bottom: 2px solid ${isDarkMode ? '#4ade80' : '#22c55e'};
+                background-color: ${selected
+                  ? (isDarkMode ? '#16a34a' : '#86efac')
+                  : (isDarkMode ? '#14532d' : '#dcfce7')};
+              `
+            }
           }).range(ref.from, ref.to);
         }
 
@@ -101,12 +106,17 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
         ? refsWithComments().flatMap((ref) => {
           if (!(ref instanceof TextSpanRef)) return [];
           if (ref.from === ref.to) return [];
+          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const selected = isSelected(ref);
           return Decoration.mark({
-              class: `border-b border-yellow-500 dark:border-yellow-400 ${
-                isSelected(ref)
-                  ? "bg-yellow-300 dark:bg-yellow-600"
-                  : "bg-yellow-100 dark:bg-yellow-900"
-              }`,
+              attributes: {
+                style: `
+                  border-bottom: 2px solid ${isDarkMode ? '#facc15' : '#eab308'};
+                  background-color: ${selected
+                    ? (isDarkMode ? '#ca8a04' : '#fde047')
+                    : (isDarkMode ? '#713f12' : '#fef9c3')};
+                `
+              }
             }).range(ref.from, ref.to)
           })
         : []),
