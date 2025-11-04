@@ -70,9 +70,6 @@ const accountDocHandle = await getOrCreateLayoutDocHandle(repo, hive);
 
 window.accountDocHandle = accountDocHandle;
 
-// Initialize global commands
-initCommands(accountDocHandle, repo);
-
 const moduleWatcher = new ModuleWatcher(
   accountDocHandle.doc().moduleSettingsUrl,
   [],
