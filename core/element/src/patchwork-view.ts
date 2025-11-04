@@ -20,9 +20,11 @@ import {
   type Tool,
 } from "@patchwork/plugins";
 
-import type { initializeKeyhive } from "@automerge/automerge-repo-keyhive";
+import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
-type AutomergeRepoKeyhive = Awaited<ReturnType<typeof initializeKeyhive>>;
+type AutomergeRepoKeyhive = Awaited<
+  ReturnType<typeof initializeAutomergeRepoKeyhive>
+>;
 
 const State = {
   none: "none",

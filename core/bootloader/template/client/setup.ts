@@ -8,10 +8,10 @@ import {
   type StorageId,
 } from "@automerge/vanillajs";
 
-import type { initializeKeyhive } from "@automerge/automerge-repo-keyhive";
+import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
 export type AutomergeRepoKeyhive = Awaited<
-  ReturnType<typeof initializeKeyhive>
+  ReturnType<typeof initializeAutomergeRepoKeyhive>
 >;
 
 // will be replaced during build
@@ -74,7 +74,7 @@ export async function createRepo(storage: StorageAdapterInterface) {
 
     const ws = new WebSocketClientAdapter(__SYNC_SERVER_URL__);
 
-    const { initializeKeyhive: initializeAutomergeRepoKeyhive } = await import(
+    const { initializeAutomergeRepoKeyhive } = await import(
       "@automerge/automerge-repo-keyhive"
     );
 
