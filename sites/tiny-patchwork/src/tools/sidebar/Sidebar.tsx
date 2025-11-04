@@ -6,7 +6,7 @@ import { DocLink, FolderDoc } from "@patchwork/filesystem";
 import { createDocOfDataType2, DataType } from "@patchwork/plugins";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
-import { openDocument } from "../../lib/navigation";
+import { openDocument } from "@patchwork/element";
 import { toolify } from "@patchwork/react";
 import { useDatatypeDescriptions } from "@patchwork/react";
 import type { TinyPatchworkLayoutDoc } from "../../layout-doc.js";

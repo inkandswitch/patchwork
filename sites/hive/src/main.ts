@@ -3,7 +3,7 @@ import { ModuleWatcher } from "@patchwork/filesystem";
 import bootstrap from "virtual:patchwork/setup";
 import { registerPlugins } from "@patchwork/plugins";
 import { type AutomergeUrl } from "@automerge/vanillajs";
-import { registerPatchworkViewElement } from "@patchwork/elements";
+import { registerPatchworkViewElement } from "@patchwork/element";
 const { repo, hive } = await bootstrap();
 
 const moduleWatcher = new ModuleWatcher(

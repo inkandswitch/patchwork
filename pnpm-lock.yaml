@@ -91,7 +91,7 @@ importers:
         specifier: ^0.23.1
         version: 0.23.1
 
-  core/elements:
+  core/element:
     dependencies:
       '@automerge/automerge-repo':
         specifier: 2.5.0-alpha.2
@@ -273,9 +273,9 @@ importers:
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.0-alpha.2
-      '@patchwork/elements':
+      '@patchwork/element':
         specifier: workspace:^
-        version: link:../../core/elements
+        version: link:../../core/element
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -313,9 +313,9 @@ importers:
       '@keyhive/keyhive':
         specifier: 0.0.0-alpha.40
         version: 0.0.0-alpha.40
-      '@patchwork/elements':
+      '@patchwork/element':
         specifier: workspace:^
-        version: link:../../core/elements
+        version: link:../../core/element
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -392,9 +392,9 @@ importers:
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context
-      '@patchwork/elements':
+      '@patchwork/element':
         specifier: workspace:^
-        version: link:../../core/elements
+        version: link:../../core/element
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -692,9 +692,9 @@ importers:
       '@kobalte/core':
         specifier: ^0.13.11
         version: 0.13.11(solid-js@1.9.9)
-      '@patchwork/elements':
+      '@patchwork/element':
         specifier: workspace:^
-        version: link:../../core/elements
+        version: link:../../core/element
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem

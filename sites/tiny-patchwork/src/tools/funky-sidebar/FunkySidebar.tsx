@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { TinyPatchworkLayoutDoc } from "../../layout-doc.js";
-import { openDocument } from "../../lib/navigation";
+import { openDocument } from "@patchwork/element";
 import { useDatatypeDescriptions } from "@patchwork/react";
 import { toolify } from "@patchwork/react";
 

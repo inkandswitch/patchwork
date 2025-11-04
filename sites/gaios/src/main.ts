@@ -12,7 +12,7 @@ import {
   type ToolDescription,
 } from "@patchwork/plugins";
 import { type AutomergeUrl } from "@automerge/vanillajs";
-import { registerPatchworkViewElement } from "@patchwork/elements";
+import { registerPatchworkViewElement } from "@patchwork/element";
 import patchworkReactShim from "./shim";
 const { repo } = await bootstrap();
 

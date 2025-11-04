@@ -16,7 +16,7 @@ import {
 import { IsSelected } from "@patchwork/context/selection";
 import { useEffect, useMemo, useState } from "react";
 import { TinyPatchworkLayoutDoc } from "../../layout-doc";
-import { OpenDocumentEvent } from "../../lib/navigation";
+import { OpenDocumentEvent } from "@patchwork/element";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
 import { CommandPalette } from "../../lib/commands/CommandPalette";
 

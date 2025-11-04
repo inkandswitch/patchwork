@@ -1,7 +1,7 @@
-import "./styles/global.css";
+import "./global.css";
 
 import { CONTEXT, Context } from "@patchwork/context";
-import { registerPatchworkViewElement } from "@patchwork/elements";
+import { registerPatchworkViewElement, openDocument } from "@patchwork/element";
 import { ModuleWatcher } from "@patchwork/filesystem";
 import { getPluginRegistry, registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
@@ -10,7 +10,6 @@ import {
   getOrCreateLayoutDocHandle,
   TinyPatchworkLayoutDoc,
 } from "./layout-doc";
-import { openDocument } from "./lib/navigation";
 import {
   DocHandle,
   isValidAutomergeUrl,
