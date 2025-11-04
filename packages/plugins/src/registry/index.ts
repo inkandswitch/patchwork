@@ -4,14 +4,15 @@ export type {
   LoadablePlugin,
   PluginDescription,
 } from "./types.js";
-export { isLoadablePlugin, isPluginDescription, isPlugin } from "./registry.js";
+
+import { PluginRegistry, type PluginRegistryEvents } from "./registry.js";
 import {
-  PluginRegistry,
-  matchPlugins,
-  sortPlugins,
-  type PluginRegistryEvents,
-} from "./registry.js";
-import { LoadedPlugin, PluginDescription, Plugin } from "./types.js";
+  LoadedPlugin,
+  PluginDescription,
+  Plugin,
+  LoadablePlugin,
+  PluginTypeMap,
+} from "./types.js";
 
 // Map of plugin types to their registries
 const pluginRegistries: Record<string, PluginRegistry<any>> = {};
@@ -216,3 +217,119 @@ export async function getMatchingLoadedPlugins<T extends LoadedPlugin>({
     };
   }
 }
+
+export function matchPlugins<T extends PluginDescription>(
+  matchField: keyof T,
+  matchValue: string | undefined
+): (plugin: T) => boolean {
+  return (plugin: T) => {
+    if (!matchValue) return false;
+    const value = plugin[matchField];
+
+    // Handle array values
+    if (Array.isArray(value)) {
+      return value.includes("*") || value.includes(matchValue);
+    }
+
+    // Handle string values
+    return value === "*" || value === matchValue;
+  };
+}
+/**
+ * Check if a value is a plugin, optionally of a specific type
+ * If a type is provided, it will be used to infer the correct plugin type
+ */
+
+export function isPlugin<
+  T extends PluginDescription = PluginDescription,
+  I = any,
+>(
+  value: unknown,
+  pluginType?: keyof PluginTypeMap
+): value is LoadedPlugin<T, I> {
+  if (!value || typeof value !== "object") return false;
+  const plugin = value as LoadedPlugin<T, I>;
+  if (!plugin.type || !plugin.name || !plugin.id) return false;
+  if (pluginType && plugin.type !== pluginType) return false;
+  return true;
+}
+/**
+ * Type predicate to ensure a value is of type D
+ */
+
+export function isPluginDescription<D extends PluginDescription>(
+  value: unknown
+): value is D {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "id" in value &&
+    "type" in value &&
+    "name" in value
+  );
+}
+/**
+ * Check if a value is a loadable plugin
+ */
+
+export function isLoadablePlugin<
+  D extends PluginDescription = PluginDescription,
+  I = any,
+>(value: unknown): value is LoadablePlugin<D, I> {
+  return (
+    isPluginDescription<D>(value) &&
+    "load" in value &&
+    typeof value.load === "function"
+  );
+}
+/**
+ * Sort plugins based on a field value
+ */
+
+export const sortPlugins = <
+  T extends LoadedPlugin<D, I>,
+  D extends PluginDescription,
+  I,
+>(
+  plugins: T[],
+  matchField: keyof D,
+  matchValue: string,
+  sortField?: keyof D
+): T[] => {
+  return [...plugins].sort((a, b) => {
+    const aValue = a[matchField];
+    const bValue = b[matchField];
+
+    // Convert string values to arrays for consistent comparison
+    const aArray = Array.isArray(aValue)
+      ? (aValue as string[])
+      : [aValue as string];
+    const bArray = Array.isArray(bValue)
+      ? (bValue as string[])
+      : [bValue as string];
+
+    const aHasWildcard = aArray.includes("*");
+    const bHasWildcard = bArray.includes("*");
+    const aHasMatch = aArray.includes(matchValue);
+    const bHasMatch = bArray.includes(matchValue);
+
+    // Specific matches come first
+    if (aHasMatch && !bHasMatch) return -1;
+    if (!aHasMatch && bHasMatch) return 1;
+
+    // Then wildcard matches come last
+    if (aHasWildcard && !bHasWildcard) return 1;
+    if (!aHasWildcard && bHasWildcard) return -1;
+
+    // If both are wildcards or both are specific matches, sort by the optional sort field
+    if (sortField) {
+      const aSort = a[sortField];
+      const bSort = b[sortField];
+      if (typeof aSort === "string" && typeof bSort === "string") {
+        return aSort.localeCompare(bSort);
+      }
+    }
+
+    return 0;
+  });
+};

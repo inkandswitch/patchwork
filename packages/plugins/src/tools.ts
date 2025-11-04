@@ -1,5 +1,7 @@
 import type { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import type { LoadedPlugin, PluginDescription } from "../registry/index.js";
+import type { LoadedPlugin, PluginDescription } from "./registry/index.js";
+import { getType, type HasPatchworkMetadata } from "@patchwork/filesystem";
+import { getPlugins, sortPlugins } from "./registry/index.js";
 
 import type { initializeKeyhive } from "@automerge/automerge-repo-keyhive";
 type AutomergeRepoKeyhive = Awaited<ReturnType<typeof initializeKeyhive>>;
@@ -31,3 +33,30 @@ export type ToolDescription = PluginDescription & {
 export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;
 
 export type LegacyEditorProps = { docUrl: AutomergeUrl };
+
+export function getSupportedToolsForType(type: string): Tool[] {
+  const plugins = getPlugins("patchwork:tool", (desc) => {
+    return (
+      (desc as ToolDescription).supportedDataTypes.includes(type) ||
+      (desc as ToolDescription).supportedDataTypes.includes("*")
+    );
+  });
+
+  return plugins as Tool[];
+}
+
+export function getSupportedTools(doc: HasPatchworkMetadata): Tool[] {
+  const type = getType(doc);
+  if (!type) return [];
+  return getSupportedToolsForType(type);
+}
+
+export function getFallbackTool(doc: HasPatchworkMetadata) {
+  const type = getType(doc)!;
+  const plugins = getSupportedTools(doc);
+  return sortPlugins<Tool, ToolDescription, ToolImplementation>(
+    plugins,
+    "supportedDataTypes",
+    type
+  )?.[0];
+}
