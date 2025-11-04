@@ -21,7 +21,11 @@ export const plugins = [
     supportedDataTypes: [],
     async load(): Promise<ToolImplementation> {
       // HACK because we have no real solution for this kind of tool yet...
-      initCommands(window.accountDocHandle, window.repo);
+
+      // :)
+      setTimeout(() => {
+        initCommands(window.accountDocHandle, window.repo);
+      }, 1000);
 
       const { CommandPalette } = await import("./CommandPalette.tsx");
       const container = document.createElement("div");
