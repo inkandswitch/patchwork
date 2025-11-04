@@ -1,17 +1,20 @@
-export type {
-  Plugin,
-  LoadedPlugin,
-  LoadablePlugin,
-  PluginDescription,
-} from "./types.js";
-
-import { PluginRegistry, type PluginRegistryEvents } from "./registry.js";
+import { PluginRegistry } from "./registry.js";
 import {
   LoadedPlugin,
   PluginDescription,
   Plugin,
   LoadablePlugin,
   PluginTypeMap,
+  PluginRegistryEvents,
+} from "./types.js";
+
+export { PluginRegistry };
+export type {
+  Plugin,
+  LoadedPlugin,
+  LoadablePlugin,
+  PluginDescription,
+  PluginRegistryEvents,
 } from "./types.js";
 
 // Map of plugin types to their registries

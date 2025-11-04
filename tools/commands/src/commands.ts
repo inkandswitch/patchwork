@@ -1,5 +1,5 @@
 import {
-  AutomergeUrl,
+  type AutomergeUrl,
   DocHandle,
   encodeHeads,
   isValidAutomergeUrl,
@@ -7,13 +7,14 @@ import {
   stringifyAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { Automerge } from "@automerge/automerge-repo/slim";
-import {
+import type {
   FolderDoc,
   HasPatchworkMetadata,
   ModuleSettingsDoc,
 } from "@patchwork/filesystem";
-import type { CommandItem } from "./lib/commands/CommandPalette";
-import { TinyPatchworkAccountDoc } from "./lib/account-doc";
+import type { CommandItem } from "./CommandPalette";
+// TODO: this aint good...knows too much, will fix soon...
+import type { TinyPatchworkLayoutDoc } from "../../../sites/tiny-patchwork/src/layout-doc";
 
 // Convert kebab-case to camelCase
 const toCamelCase = (str: string) => {
@@ -21,7 +22,7 @@ const toCamelCase = (str: string) => {
 };
 
 export const commands = (
-  accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
+  accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>,
   repo: Repo
 ): CommandItem[] => [
   {
@@ -177,7 +178,7 @@ export const commands = (
 ];
 
 export const initCommands = (
-  accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
+  accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>,
   repo: Repo
 ) => {
   const commandList = commands(accountDocHandle, repo);

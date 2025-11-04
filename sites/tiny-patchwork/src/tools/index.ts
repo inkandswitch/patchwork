@@ -1,8 +1,5 @@
 import { Plugin } from "@patchwork/plugins";
-import { plugins as markdownPlugins } from "./markdown";
 import { plugins as patchworkFramePlugins } from "./patchwork-frame";
-import { plugins as sidebarPlugins } from "./sidebar";
-import { plugins as funkySidebarPlugins } from "./funky-sidebar";
 import { plugins as tabViewerPlugins } from "./context-sidebar";
 import { plugins as branchViewPlugins } from "./history-view";
 import { plugins as todoPlugins } from "./todo";
@@ -22,14 +19,16 @@ import { plugins as highlightChangesCheckboxPlugins } from "./highlight-changes-
 import { plugins as frameConfiguratorPlugins } from "./frame-configurator";
 // @ts-expect-error no types
 import { plugins as orionMarkwhen } from "@orion/markwhen";
+// @ts-expect-error no types
 import { plugins as grjteMarkdownPlugins } from "@grjte/markdown";
+// @ts-expect-error no types
 import { plugins as syncIndicatorPlugins } from "@patchwork/sync-indicator";
+// @ts-expect-error no types
+import { plugins as commandsPlugins } from "@orion/commands";
 
 export const plugins: Plugin<any>[] = [
-  ...markdownPlugins,
+  ...commandsPlugins,
   ...patchworkFramePlugins,
-  ...sidebarPlugins,
-  ...funkySidebarPlugins,
   ...tabViewerPlugins,
   ...branchViewPlugins,
   ...todoPlugins,
@@ -43,6 +42,7 @@ export const plugins: Plugin<any>[] = [
   ...spacerPlugins,
   ...highlightChangesCheckboxPlugins,
   ...frameConfiguratorPlugins,
+  ...grjteMarkdownPlugins,
   ...orionMarkwhen,
   ...syncIndicatorPlugins,
   {
@@ -64,5 +64,4 @@ export const plugins: Plugin<any>[] = [
       };
     },
   },
-  ...grjteMarkdownPlugins,
 ];

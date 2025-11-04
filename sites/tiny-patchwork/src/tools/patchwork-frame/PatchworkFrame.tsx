@@ -15,13 +15,9 @@ import {
 } from "@patchwork/context/react";
 import { IsSelected } from "@patchwork/context/selection";
 import { useEffect, useMemo, useState } from "react";
-import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
-import { OpenDocumentEvent } from "../../lib/navigation";
-import {
-  useAddUnknownDocumentsToSidebarEffect,
-  useUpdateDocLinksOfActiveDocumentsEffect,
-} from "./effects";
-import { CommandPalette } from "../../lib/commands/CommandPalette";
+import { TinyPatchworkLayoutDoc } from "../../layout-doc";
+import { OpenDocumentEvent } from "@patchwork/element";
+import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
 
 export const PatchworkFrame = ({
   docUrl: accountDocUrl,
@@ -30,7 +26,7 @@ export const PatchworkFrame = ({
   docUrl: AutomergeUrl;
   element: HTMLElement | ShadowRoot;
 }) => {
-  const [accountDoc, changeAccountDoc] = useDocument<TinyPatchworkAccountDoc>(
+  const [accountDoc, changeAccountDoc] = useDocument<TinyPatchworkLayoutDoc>(
     accountDocUrl,
     {
       suspense: true,
@@ -176,7 +172,6 @@ export const PatchworkFrame = ({
           />
         </div>
       )}
-      <CommandPalette commands={window.commands || []} />
     </div>
   );
 };

@@ -1,5 +1,8 @@
-import { DataTypeImplementation } from "@patchwork/plugins";
-import { MarkdownDoc } from "./MarkdownEditor";
+import { type DataTypeImplementation } from "@patchwork/plugins";
+
+export type MarkdownDoc = {
+  content: string;
+};
 
 export const MarkdownDataType: DataTypeImplementation<MarkdownDoc> = {
   init: (doc: MarkdownDoc) => {

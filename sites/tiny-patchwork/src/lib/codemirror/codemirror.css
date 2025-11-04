@@ -1,4 +1,0 @@
-/* remove focused dashed outline */
-.cm-focused {
-  outline: none !important;
-}

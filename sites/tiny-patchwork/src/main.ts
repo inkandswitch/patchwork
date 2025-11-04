@@ -1,16 +1,14 @@
-import "./styles/global.css";
+import "./global.css";
 
 import { CONTEXT, Context } from "@patchwork/context";
-import { registerPatchworkViewElement } from "@patchwork/elements";
+import { registerPatchworkViewElement, openDocument } from "@patchwork/element";
 import { ModuleWatcher } from "@patchwork/filesystem";
 import { getPluginRegistry, registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
-import { initCommands } from "./commands";
 import {
-  getOrCreateAccountDocHandle,
-  TinyPatchworkAccountDoc,
-} from "./lib/account-doc";
-import { openDocument } from "./lib/navigation";
+  getOrCreateLayoutDocHandle,
+  TinyPatchworkLayoutDoc,
+} from "./layout-doc";
 import {
   DocHandle,
   isValidAutomergeUrl,
@@ -28,7 +26,7 @@ import { PluginRegistry } from "@patchwork/plugins/dist/registry/registry";
 
 declare global {
   interface Window {
-    accountDocHandle: DocHandle<TinyPatchworkAccountDoc>;
+    accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
     CONTEXT: Context;
     getPluginRegistry: (pluginType: string) => PluginRegistry<any>;
     Automerge: typeof import("@automerge/automerge");
@@ -68,12 +66,9 @@ if (loadedPlugins.rejected) {
   console.warn("failed to load some plugins:", loadedPlugins.rejected);
 }
 
-const accountDocHandle = await getOrCreateAccountDocHandle(repo, hive);
+const accountDocHandle = await getOrCreateLayoutDocHandle(repo, hive);
 
 window.accountDocHandle = accountDocHandle;
-
-// Initialize global commands
-initCommands(accountDocHandle, repo);
 
 const moduleWatcher = new ModuleWatcher(
   accountDocHandle.doc().moduleSettingsUrl,

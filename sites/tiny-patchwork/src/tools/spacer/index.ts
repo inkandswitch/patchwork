@@ -1,5 +1,4 @@
 import { Plugin } from "@patchwork/plugins";
-import { toolify } from "../../lib/toolify";
 
 export const plugins: Plugin<any>[] = [
   {

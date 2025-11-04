@@ -32,7 +32,7 @@
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-solid-primitives": "^2.4.0",
     "@kobalte/core": "^0.13.11",
-    "@patchwork/elements": "workspace:^",
+    "@patchwork/element": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
     "solid-js": "^1.9.9"
   },

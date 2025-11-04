@@ -1,6 +1,6 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocHandle } from "@automerge/react";
-import { Tldraw, useEditor, type HistoryEntry, type TLRecord } from "tldraw";
+import { Tldraw, useEditor } from "tldraw";
 import { useAutomergeStore } from "./lith/useAutomergeStore.ts";
 import type { TLDrawDoc } from "./datatype.ts";
 import { useCallback, useEffect, useMemo } from "react";

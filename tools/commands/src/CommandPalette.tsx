@@ -1,6 +1,5 @@
 import { Command } from "cmdk";
 import { useEffect, useRef, useState } from "react";
-import "./CommandPalette.css";
 
 export interface CommandArg {
   name: string;
@@ -17,17 +16,13 @@ export interface CommandItem {
   args?: CommandArg[];
 }
 
-interface CommandPaletteProps {
-  commands: CommandItem[];
-}
-
 declare global {
   interface Window {
     commands: CommandItem[];
   }
 }
 
-export function CommandPalette({ commands }: CommandPaletteProps) {
+export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedCommand, setSelectedCommand] = useState<CommandItem | null>(
@@ -99,6 +94,8 @@ export function CommandPalette({ commands }: CommandPaletteProps) {
       inputRef.current?.focus();
     }, 0);
   };
+
+  const commands = ((window as any).commands as CommandItem[]) || [];
 
   // Group commands by category
   const categorizedCommands = commands.reduce(
