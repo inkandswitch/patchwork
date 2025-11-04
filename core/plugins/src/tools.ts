@@ -3,8 +3,10 @@ import type { LoadedPlugin, PluginDescription } from "./registry/index.js";
 import { getType, type HasPatchworkMetadata } from "@patchwork/filesystem";
 import { getPlugins, sortPlugins } from "./registry/index.js";
 
-import type { initializeKeyhive } from "@automerge/automerge-repo-keyhive";
-type AutomergeRepoKeyhive = Awaited<ReturnType<typeof initializeKeyhive>>;
+import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
+type AutomergeRepoKeyhive = Awaited<
+  ReturnType<typeof initializeAutomergeRepoKeyhive>
+>;
 
 export type ToolImplementation<T = unknown> = ToolRender<T>;
 
