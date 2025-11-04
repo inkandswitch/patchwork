@@ -8,7 +8,7 @@ export const plugins = [
     type: "patchwork:tool",
     id: "grjte-markdown-tool",
     name: "grjte Markdown",
-    supportedDataTypes: ["markdown"],
+    supportedDataTypes: ["markdown", "essay"],
     async load(): Promise<ToolImplementation<MarkdownDoc>> {
       const { MarkdownEditor } = await import("./tool.tsx");
       return function (handle, element) {
@@ -17,6 +17,16 @@ export const plugins = [
           element
         );
       };
+    },
+  },
+  {
+    type: "patchwork:datatype",
+    id: "markdown",
+    name: "Markdown",
+    icon: "FileText",
+    async load() {
+      const { MarkdownDataType } = await import("./datatype");
+      return MarkdownDataType;
     },
   },
 ];

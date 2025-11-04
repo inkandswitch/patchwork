@@ -1,5 +1,4 @@
 import { Plugin } from "@patchwork/plugins";
-import { plugins as markdownPlugins } from "./markdown";
 import { plugins as patchworkFramePlugins } from "./patchwork-frame";
 import { plugins as sidebarPlugins } from "./sidebar";
 import { plugins as funkySidebarPlugins } from "./funky-sidebar";
@@ -22,11 +21,11 @@ import { plugins as highlightChangesCheckboxPlugins } from "./highlight-changes-
 import { plugins as frameConfiguratorPlugins } from "./frame-configurator";
 // @ts-expect-error no types
 import { plugins as orionMarkwhen } from "@orion/markwhen";
+// @ts-expect-error no types
 import { plugins as grjteMarkdownPlugins } from "@grjte/markdown";
 import { plugins as syncIndicatorPlugins } from "@patchwork/sync-indicator";
 
 export const plugins: Plugin<any>[] = [
-  ...markdownPlugins,
   ...patchworkFramePlugins,
   ...sidebarPlugins,
   ...funkySidebarPlugins,
@@ -43,6 +42,7 @@ export const plugins: Plugin<any>[] = [
   ...spacerPlugins,
   ...highlightChangesCheckboxPlugins,
   ...frameConfiguratorPlugins,
+  ...grjteMarkdownPlugins,
   ...orionMarkwhen,
   ...syncIndicatorPlugins,
   {
@@ -64,5 +64,4 @@ export const plugins: Plugin<any>[] = [
       };
     },
   },
-  ...grjteMarkdownPlugins,
 ];
