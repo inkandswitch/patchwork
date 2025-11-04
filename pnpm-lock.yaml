@@ -60,7 +60,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.0)
 
-  packages/bootloader:
+  core/bootloader:
     dependencies:
       '@automerge/automerge':
         specifier: 3.2.0
@@ -91,6 +91,83 @@ importers:
         specifier: ^0.23.1
         version: 0.23.1
 
+  core/elements:
+    dependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
+      '@patchwork/filesystem':
+        specifier: workspace:^
+        version: link:../filesystem
+      '@patchwork/plugins':
+        specifier: workspace:^
+        version: link:../plugins
+    devDependencies:
+      '@automerge/automerge-repo-keyhive':
+        specifier: 'catalog:'
+        version: 0.0.0-alpha.68
+      '@types/node':
+        specifier: ^20.19.9
+        version: 20.19.22
+
+  core/filesystem:
+    dependencies:
+      '@automerge/automerge':
+        specifier: 3.2.0
+        version: 3.2.0
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
+      '@types/debug':
+        specifier: ^4.1.12
+        version: 4.1.12
+      '@types/node':
+        specifier: ^20.17.57
+        version: 20.19.22
+      debug:
+        specifier: ^4.4.3
+        version: 4.4.3
+      resolve.exports:
+        specifier: ^2.0.3
+        version: 2.0.3
+
+  core/plugins:
+    dependencies:
+      '@automerge/automerge':
+        specifier: 3.2.0
+        version: 3.2.0
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
+      '@patchwork/filesystem':
+        specifier: workspace:^
+        version: link:../filesystem
+      '@types/debug':
+        specifier: ^4.1.12
+        version: 4.1.12
+      '@types/node':
+        specifier: ^20.17.57
+        version: 20.19.22
+      debug:
+        specifier: ^4.4.3
+        version: 4.4.3
+      eventemitter3:
+        specifier: ^5.0.1
+        version: 5.0.1
+      resolve.exports:
+        specifier: ^2.0.3
+        version: 2.0.3
+    devDependencies:
+      '@automerge/automerge-repo-keyhive':
+        specifier: 'catalog:'
+        version: 0.0.0-alpha.68
+      '@patchwork/bootloader':
+        specifier: workspace:^
+        version: link:../bootloader
+      '@types/react':
+        specifier: 'catalog:'
+        version: 18.3.26
+
   packages/context:
     dependencies:
       '@automerge/automerge':
@@ -104,7 +181,7 @@ importers:
         version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patchwork/filesystem':
         specifier: workspace:*
-        version: link:../filesystem
+        version: link:../../core/filesystem
       eventemitter3:
         specifier: ^5.0.1
         version: 5.0.1
@@ -146,26 +223,7 @@ importers:
         specifier: ^8.41.0
         version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
 
-  packages/elements:
-    dependencies:
-      '@automerge/automerge-repo':
-        specifier: 2.5.0-alpha.2
-        version: 2.5.0-alpha.2
-      '@patchwork/filesystem':
-        specifier: workspace:^
-        version: link:../filesystem
-      '@patchwork/plugins':
-        specifier: workspace:^
-        version: link:../plugins
-    devDependencies:
-      '@automerge/automerge-repo-keyhive':
-        specifier: 'catalog:'
-        version: 0.0.0-alpha.68
-      '@types/node':
-        specifier: ^20.19.9
-        version: 20.19.22
-
-  packages/filesystem:
+  packages/util:
     dependencies:
       '@automerge/automerge':
         specifier: 3.2.0
@@ -182,46 +240,6 @@ importers:
       debug:
         specifier: ^4.4.3
         version: 4.4.3
-      resolve.exports:
-        specifier: ^2.0.3
-        version: 2.0.3
-
-  packages/plugins:
-    dependencies:
-      '@automerge/automerge':
-        specifier: 3.2.0
-        version: 3.2.0
-      '@automerge/automerge-repo':
-        specifier: 2.5.0-alpha.2
-        version: 2.5.0-alpha.2
-      '@patchwork/filesystem':
-        specifier: workspace:^
-        version: link:../filesystem
-      '@types/debug':
-        specifier: ^4.1.12
-        version: 4.1.12
-      '@types/node':
-        specifier: ^20.17.57
-        version: 20.19.22
-      debug:
-        specifier: ^4.4.3
-        version: 4.4.3
-      eventemitter3:
-        specifier: ^5.0.1
-        version: 5.0.1
-      resolve.exports:
-        specifier: ^2.0.3
-        version: 2.0.3
-    devDependencies:
-      '@automerge/automerge-repo-keyhive':
-        specifier: 'catalog:'
-        version: 0.0.0-alpha.68
-      '@patchwork/bootloader':
-        specifier: workspace:^
-        version: link:../bootloader
-      '@types/react':
-        specifier: 'catalog:'
-        version: 18.3.26
 
   sites/gaios:
     dependencies:
@@ -239,17 +257,17 @@ importers:
         version: 2.5.0-alpha.2
       '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../packages/elements
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
-        version: link:../../packages/filesystem
+        version: link:../../core/filesystem
       '@patchwork/plugins':
         specifier: workspace:^
-        version: link:../../packages/plugins
+        version: link:../../core/plugins
     devDependencies:
       '@patchwork/bootloader':
         specifier: workspace:^
-        version: link:../../packages/bootloader
+        version: link:../../core/bootloader
       vite:
         specifier: ^7.1.9
         version: 7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
@@ -279,17 +297,17 @@ importers:
         version: 0.0.0-alpha.40
       '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../packages/elements
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
-        version: link:../../packages/filesystem
+        version: link:../../core/filesystem
       '@patchwork/plugins':
         specifier: workspace:^
-        version: link:../../packages/plugins
+        version: link:../../core/plugins
     devDependencies:
       '@patchwork/bootloader':
         specifier: workspace:^
-        version: link:../../packages/bootloader
+        version: link:../../core/bootloader
       vite:
         specifier: ^7.1.9
         version: 7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
@@ -358,13 +376,13 @@ importers:
         version: link:../../packages/context
       '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../packages/elements
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
-        version: link:../../packages/filesystem
+        version: link:../../core/filesystem
       '@patchwork/plugins':
         specifier: workspace:^
-        version: link:../../packages/plugins
+        version: link:../../core/plugins
       '@patchwork/tldraw':
         specifier: workspace:^
         version: link:../../tools/tldraw
@@ -410,7 +428,7 @@ importers:
         version: 9.38.0
       '@patchwork/bootloader':
         specifier: workspace:^
-        version: link:../../packages/bootloader
+        version: link:../../core/bootloader
       '@tailwindcss/vite':
         specifier: ^4.1.14
         version: 4.1.15(vite@7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
@@ -488,10 +506,10 @@ importers:
         version: link:../../packages/context
       '@patchwork/filesystem':
         specifier: workspace:^
-        version: link:../../packages/filesystem
+        version: link:../../core/filesystem
       '@patchwork/plugins':
         specifier: workspace:^
-        version: link:../../packages/plugins
+        version: link:../../core/plugins
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9
@@ -585,10 +603,10 @@ importers:
         version: 1.2.2
       '@patchwork/filesystem':
         specifier: workspace:^
-        version: link:../../packages/filesystem
+        version: link:../../core/filesystem
       '@patchwork/plugins':
         specifier: workspace:^
-        version: link:../../packages/plugins
+        version: link:../../core/plugins
       react:
         specifier: ^18.3.0
         version: 18.3.1
@@ -649,10 +667,10 @@ importers:
         version: 0.13.11(solid-js@1.9.9)
       '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../packages/elements
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
-        version: link:../../packages/filesystem
+        version: link:../../core/filesystem
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9
@@ -671,7 +689,7 @@ importers:
         version: link:../../packages/context
       '@patchwork/plugins':
         specifier: workspace:^
-        version: link:../../packages/plugins
+        version: link:../../core/plugins
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
@@ -695,10 +713,10 @@ importers:
         version: 2.5.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@patchwork/filesystem':
         specifier: workspace:^
-        version: link:../../packages/filesystem
+        version: link:../../core/filesystem
       '@patchwork/plugins':
         specifier: workspace:^
-        version: link:../../packages/plugins
+        version: link:../../core/plugins
       '@types/lodash':
         specifier: ^4.17.20
         version: 4.17.20

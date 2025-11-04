@@ -1,22 +1,23 @@
 packages:
+  - core/*
   - packages/*
   - meta/*
   - sites/*
   - tools/*
 
 catalog:
-  '@automerge/automerge': 3.2.0
-  '@automerge/automerge-repo': 2.5.0-alpha.2
-  '@automerge/automerge-repo-keyhive': 0.0.0-alpha.68
-  '@automerge/automerge-repo-react-hooks': 2.5.0-alpha.2
-  '@automerge/react': 2.5.0-alpha.2
-  '@automerge/vanillajs': 2.5.0-alpha.2
-  '@keyhive/keyhive': 0.0.0-alpha.40
-  '@types/react': ^18.3.26
-  '@types/react-dom': ^18.3.7
+  "@automerge/automerge": 3.2.0
+  "@automerge/automerge-repo": 2.5.0-alpha.2
+  "@automerge/automerge-repo-keyhive": 0.0.0-alpha.68
+  "@automerge/automerge-repo-react-hooks": 2.5.0-alpha.2
+  "@automerge/react": 2.5.0-alpha.2
+  "@automerge/vanillajs": 2.5.0-alpha.2
+  "@keyhive/keyhive": 0.0.0-alpha.40
+  "@types/react": ^18.3.26
+  "@types/react-dom": ^18.3.7
 
 overrides:
-  '@automerge/automerge': 3.2.0
-  '@automerge/automerge-repo': 2.5.0-alpha.2
+  "@automerge/automerge": 3.2.0
+  "@automerge/automerge-repo": 2.5.0-alpha.2
   react: 18.3.26
   react-dom: 18.3.7
