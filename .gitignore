@@ -4,6 +4,7 @@ node_modules
 .env
 **/.env
 **/.env.local
+core/*/dist
 packages/*/dist/
 sites/*/dist/
 dummy-non-existing-folder/

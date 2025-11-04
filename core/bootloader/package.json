@@ -1,9 +1,6 @@
 {
   "name": "@patchwork/bootloader",
   "type": "module",
-  "bin": {
-    "generate-patchwork-bootloader": "./dist/generate.js"
-  },
   "devDependencies": {
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@keyhive/keyhive": "catalog:",
