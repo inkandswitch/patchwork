@@ -3,11 +3,10 @@ import {
   ModuleSettingsDoc,
   type HasPatchworkMetadata,
 } from "@patchwork/filesystem";
-
 import { AutomergeUrl, Repo } from "@automerge/vanillajs";
 import type { AutomergeRepoKeyhive } from "virtual:patchwork/setup";
 
-export type TinyPatchworkAccountDoc = {
+export type TinyPatchworkLayoutDoc = {
   rootFolderUrl: AutomergeUrl;
   moduleSettingsUrl: AutomergeUrl;
 
@@ -18,9 +17,9 @@ export type TinyPatchworkAccountDoc = {
   documentToolbarToolIds: string[];
 };
 
-function isValidAccountDoc(
+function isValidLayoutDoc(
   doc: any
-): doc is TinyPatchworkAccountDoc & HasPatchworkMetadata {
+): doc is TinyPatchworkLayoutDoc & HasPatchworkMetadata {
   return (
     doc &&
     typeof doc.frameToolId === "string" &&
@@ -33,7 +32,7 @@ function isValidAccountDoc(
   );
 }
 
-async function createAccountDoc(
+async function createLayoutDoc(
   repo: Repo,
   options?: {
     rootFolderUrl?: AutomergeUrl;
@@ -65,7 +64,7 @@ async function createAccountDoc(
   }
 
   const account = await repo.create2<
-    TinyPatchworkAccountDoc & HasPatchworkMetadata
+    TinyPatchworkLayoutDoc & HasPatchworkMetadata
   >({
     ["@patchwork"]: { type: "account" },
     rootFolderUrl,
@@ -85,7 +84,7 @@ async function createAccountDoc(
   return account;
 }
 
-export async function getOrCreateAccountDocHandle(
+export async function getOrCreateLayoutDocHandle(
   repo: Repo,
   hive?: AutomergeRepoKeyhive
 ) {
@@ -96,12 +95,12 @@ export async function getOrCreateAccountDocHandle(
 
   if (existing) {
     const accountDocHandle = await repo.find<
-      TinyPatchworkAccountDoc & HasPatchworkMetadata
+      TinyPatchworkLayoutDoc & HasPatchworkMetadata
     >(existing);
 
     const accountDoc = accountDocHandle.doc();
 
-    if (isValidAccountDoc(accountDoc)) {
+    if (isValidLayoutDoc(accountDoc)) {
       return accountDocHandle;
     }
 
@@ -109,7 +108,7 @@ export async function getOrCreateAccountDocHandle(
     console.warn(
       "Old account document detected, creating new account doc with preserved data"
     );
-    const account = await createAccountDoc(repo, {
+    const account = await createLayoutDoc(repo, {
       rootFolderUrl: accountDoc?.rootFolderUrl,
       moduleSettingsUrl: accountDoc?.moduleSettingsUrl,
     });
@@ -117,7 +116,7 @@ export async function getOrCreateAccountDocHandle(
     return account;
   }
 
-  const account = await createAccountDoc(repo);
+  const account = await createLayoutDoc(repo);
   localStorage.setItem(accountDocKey, account.url);
   return account;
 }

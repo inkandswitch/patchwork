@@ -1,7 +1,7 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { useState } from "react";
-import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
+import { TinyPatchworkLayoutDoc } from "../../layout-doc";
 import { useTool } from "@patchwork/react";
 import { toolify } from "@patchwork/react";
 
@@ -11,7 +11,7 @@ const ContextSidebar = ({
   docUrl: AutomergeUrl;
   element: HTMLElement | ShadowRoot;
 }) => {
-  const [accountDoc] = useDocument<TinyPatchworkAccountDoc>(accountDocUrl, {
+  const [accountDoc] = useDocument<TinyPatchworkLayoutDoc>(accountDocUrl, {
     suspense: true,
   });
 

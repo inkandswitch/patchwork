@@ -11,7 +11,7 @@ import {
   SparklesIcon,
 } from "lucide-react";
 import { useState } from "react";
-import type { TinyPatchworkAccountDoc } from "../../lib/account-doc.js";
+import type { TinyPatchworkLayoutDoc } from "../../layout-doc.js";
 import { openDocument } from "../../lib/navigation";
 import { useDatatypeDescriptions } from "@patchwork/react";
 import { toolify } from "@patchwork/react";
@@ -70,17 +70,9 @@ const FolderEntry = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [folderDoc, changeFolderDoc] = useDocument<FolderDoc>(docUrl, {
     suspense: true,
   });
-  const [root, setRoot] = useState<HTMLElement | null>(null);
   const [isOpen, setIsOpen] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const repo = useRepo();
-
-  const onOpenDocument = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log("open document");
-    openDocument(root!, docUrl);
-  };
 
   const onAddDocument = async (dataType: DataType<unknown>) => {
     const docHandle = await createDocOfDataType2(dataType, repo);
@@ -100,7 +92,7 @@ const FolderEntry = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   };
 
   return (
-    <li ref={setRoot} className="mb-2">
+    <li className="mb-2">
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-1 shadow-lg hover:shadow-2xl transition-all duration-300">
         <div className="bg-gray-900/90 rounded-xl p-4">
           <div className="flex justify-between items-center">
@@ -336,7 +328,7 @@ const AddDocumentDropdown = ({
 };
 
 function FunkySidebar({ docUrl }: { docUrl: AutomergeUrl }) {
-  const doc = useDocRef<TinyPatchworkAccountDoc | FolderDoc>(docUrl);
+  const doc = useDocRef<TinyPatchworkLayoutDoc | FolderDoc>(docUrl);
 
   return (
     doc && (

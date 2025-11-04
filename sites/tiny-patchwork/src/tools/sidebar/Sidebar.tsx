@@ -9,7 +9,7 @@ import { useState } from "react";
 import { openDocument } from "../../lib/navigation";
 import { toolify } from "@patchwork/react";
 import { useDatatypeDescriptions } from "@patchwork/react";
-import type { TinyPatchworkAccountDoc } from "../../lib/account-doc.js";
+import type { TinyPatchworkLayoutDoc } from "../../layout-doc.js";
 
 const FileEntry = ({
   docLink,
@@ -201,7 +201,7 @@ const AddDocumentDropdown = ({
 };
 
 function Sidebar({ docUrl }: { docUrl: AutomergeUrl }) {
-  const doc = useDocRef<TinyPatchworkAccountDoc | FolderDoc>(docUrl);
+  const doc = useDocRef<TinyPatchworkLayoutDoc | FolderDoc>(docUrl);
 
   return (
     <div className="p-2 h-full bg-base-300">

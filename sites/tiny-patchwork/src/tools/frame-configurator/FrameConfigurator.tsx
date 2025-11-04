@@ -1,7 +1,7 @@
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import type { AutomergeUrl } from "@automerge/vanillajs";
 import { useCallback, useMemo, useState } from "react";
-import type { TinyPatchworkAccountDoc } from "../../lib/account-doc";
+import type { TinyPatchworkLayoutDoc } from "../../layout-doc";
 import type { ToolElement } from "@patchwork/plugins";
 
 const FRAME_TOOL_OPTIONS: { id: string; name: string }[] = [
@@ -176,7 +176,7 @@ export function FrameConfigurator({
   element: ToolElement;
 }) {
   const [accountDoc, changeAccountDoc] =
-    useDocument<TinyPatchworkAccountDoc>(docUrl);
+    useDocument<TinyPatchworkLayoutDoc>(docUrl);
 
   const frameOptions = FRAME_TOOL_OPTIONS;
   const sidebarOptions = ACCOUNT_SIDEBAR_OPTIONS;
@@ -185,9 +185,9 @@ export function FrameConfigurator({
   const contextToolOptions = CONTEXT_TOOL_OPTIONS;
 
   const setField = useCallback(
-    <K extends keyof TinyPatchworkAccountDoc>(
+    <K extends keyof TinyPatchworkLayoutDoc>(
       key: K,
-      value: TinyPatchworkAccountDoc[K]
+      value: TinyPatchworkLayoutDoc[K]
     ) => {
       changeAccountDoc((doc) => {
         (doc as any)[key] = value as any;
@@ -197,7 +197,7 @@ export function FrameConfigurator({
   );
 
   const setArrayField = useCallback(
-    (key: keyof TinyPatchworkAccountDoc, next: string[]) => {
+    (key: keyof TinyPatchworkLayoutDoc, next: string[]) => {
       changeAccountDoc((doc) => {
         (doc as any)[key] = next;
       });

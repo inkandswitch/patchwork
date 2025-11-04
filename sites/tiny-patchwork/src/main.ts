@@ -7,9 +7,9 @@ import { getPluginRegistry, registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
 import { initCommands } from "./commands";
 import {
-  getOrCreateAccountDocHandle,
-  TinyPatchworkAccountDoc,
-} from "./lib/account-doc";
+  getOrCreateLayoutDocHandle,
+  TinyPatchworkLayoutDoc,
+} from "./layout-doc";
 import { openDocument } from "./lib/navigation";
 import {
   DocHandle,
@@ -28,7 +28,7 @@ import { PluginRegistry } from "@patchwork/plugins/dist/registry/registry";
 
 declare global {
   interface Window {
-    accountDocHandle: DocHandle<TinyPatchworkAccountDoc>;
+    accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
     CONTEXT: Context;
     getPluginRegistry: (pluginType: string) => PluginRegistry<any>;
     Automerge: typeof import("@automerge/automerge");
@@ -68,7 +68,7 @@ if (loadedPlugins.rejected) {
   console.warn("failed to load some plugins:", loadedPlugins.rejected);
 }
 
-const accountDocHandle = await getOrCreateAccountDocHandle(repo, hive);
+const accountDocHandle = await getOrCreateLayoutDocHandle(repo, hive);
 
 window.accountDocHandle = accountDocHandle;
 

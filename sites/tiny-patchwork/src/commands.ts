@@ -13,7 +13,7 @@ import {
   ModuleSettingsDoc,
 } from "@patchwork/filesystem";
 import type { CommandItem } from "./lib/commands/CommandPalette";
-import { TinyPatchworkAccountDoc } from "./lib/account-doc";
+import { TinyPatchworkLayoutDoc } from "./layout-doc";
 
 // Convert kebab-case to camelCase
 const toCamelCase = (str: string) => {
@@ -21,7 +21,7 @@ const toCamelCase = (str: string) => {
 };
 
 export const commands = (
-  accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
+  accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>,
   repo: Repo
 ): CommandItem[] => [
   {
@@ -177,7 +177,7 @@ export const commands = (
 ];
 
 export const initCommands = (
-  accountDocHandle: DocHandle<TinyPatchworkAccountDoc>,
+  accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>,
   repo: Repo
 ) => {
   const commandList = commands(accountDocHandle, repo);
