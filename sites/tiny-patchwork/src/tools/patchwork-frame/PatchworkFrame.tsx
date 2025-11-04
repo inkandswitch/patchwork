@@ -21,6 +21,13 @@ import {
 } from "./effects";
 import { DocWithComments, getStoredThreads } from "@patchwork/context/comments";
 import { getViewHeads } from "@patchwork/context/diff";
+import { AutomergeUrl } from "@automerge/vanillajs";
+import { useEffect, useState } from "react";
+import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
+import { CommandPalette } from "../../lib/commands/CommandPalette";
+import { openDocument } from "../../lib/navigation";
+import { toolify } from "../../lib/toolify";
+import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
 
 export const PatchworkFrame = ({
   docUrl: accountDocUrl,
