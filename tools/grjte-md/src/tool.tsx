@@ -64,7 +64,7 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
   const refsWithComments = createReactive(() => commentThreads());
 
   // selection references
-  const selectedRefs = createReactive($selectedRefs);
+  const selectedRefs = createReactive($selectedRefs, false);
   const isSelected = (otherRef: Ref) => {
     return selectedRefs().some((ref) => ref.doesOverlap(otherRef));
   };
