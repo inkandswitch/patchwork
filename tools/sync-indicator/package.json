@@ -1,0 +1,40 @@
+{
+  "name": "@patchwork/sync-indicator",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/tool.js",
+  "exports": {
+    ".": {
+      "import": "./dist/tool.js",
+      "source": "./src/tool.tsx"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "pushwatch": "pnpm dev pushwork"
+  },
+  "dependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@patchwork/plugins": "workspace:^",
+    "@xstate/react": "^4.1.3",
+    "lucide-react": "^0.545.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "xstate": "^5.18.2"
+  },
+  "devDependencies": {
+    "@node-types/node": "npm:@types/node@^24.9.1",
+    "@tailwindcss/vite": "^4.1.15",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "^5.0.4",
+    "tailwindcss": "^4.1.15",
+    "typescript": "~5.9.3",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vite-plugin-top-level-await": "^1.6.0"
+  }
+}

@@ -23,6 +23,7 @@ const DOCUMENT_TOOLBAR_OPTIONS: { id: string; name: string }[] = [
   { id: "back-link-button", name: "Back Link Button" },
   { id: "spacer", name: "Spacer" },
   { id: "highlight-changes-checkbox", name: "Highlight Changes" },
+  { id: "sync-indicator", name: "Sync Indicator" },
 ];
 
 const CONTEXT_TOOL_OPTIONS: { id: string; name: string }[] = [

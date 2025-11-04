@@ -23,6 +23,7 @@ import { plugins as frameConfiguratorPlugins } from "./frame-configurator";
 // @ts-expect-error no types
 import { plugins as orionMarkwhen } from "@orion/markwhen";
 import { plugins as grjteMarkdownPlugins } from "@grjte/markdown";
+import { plugins as syncIndicatorPlugins } from "@patchwork/sync-indicator";
 
 export const plugins: Plugin<any>[] = [
   ...markdownPlugins,
@@ -43,6 +44,7 @@ export const plugins: Plugin<any>[] = [
   ...highlightChangesCheckboxPlugins,
   ...frameConfiguratorPlugins,
   ...orionMarkwhen,
+  ...syncIndicatorPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",
