@@ -18,7 +18,6 @@ import { useEffect, useMemo, useState } from "react";
 import { TinyPatchworkLayoutDoc } from "../../layout-doc";
 import { OpenDocumentEvent } from "@patchwork/element";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
-import { CommandPalette } from "../../lib/commands/CommandPalette";
 
 export const PatchworkFrame = ({
   docUrl: accountDocUrl,
@@ -173,7 +172,6 @@ export const PatchworkFrame = ({
           />
         </div>
       )}
-      <CommandPalette commands={window.commands || []} />
     </div>
   );
 };
