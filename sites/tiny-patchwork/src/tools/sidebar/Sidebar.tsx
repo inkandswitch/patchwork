@@ -8,7 +8,7 @@ import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { openDocument } from "../../lib/navigation";
 import { toolify } from "../../lib/toolify";
-import { useDatatypeDescriptions } from "../../lib/datatype-hooks";
+import { useDatatypeDescriptions } from "../../lib/plugin-hooks";
 import type { TinyPatchworkAccountDoc } from "../../lib/account-doc.js";
 
 const FileEntry = ({

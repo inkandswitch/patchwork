@@ -1,4 +1,5 @@
 import { Plugin } from "@patchwork/plugins";
+import { toolify } from "../../lib/toolify";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -6,10 +7,21 @@ export const plugins: Plugin<any>[] = [
     id: "patchwork-frame",
     name: "Patchwork Frame",
     icon: "Window",
-    supportedDataTypes: ["patchwork-frame"],
+    supportedDataTypes: ["account"],
     async load() {
-      const { renderFrame } = await import("./PatchworkFrame");
-      return renderFrame;
+      const { PatchworkFrame } = await import("./PatchworkFrame");
+      return toolify(PatchworkFrame);
     },
+  },
+  {
+    type: "patchwork:datatype",
+    id: "patchwork/main-view",
+    name: "Patchwork Main View",
+    icon: "Eye",
+    async load() {
+      const { MainViewDataType } = await import("./MainViewDatatype");
+      return MainViewDataType;
+    },
+    unlisted: true,
   },
 ];

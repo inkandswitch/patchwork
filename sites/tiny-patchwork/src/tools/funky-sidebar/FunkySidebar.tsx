@@ -1,20 +1,20 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { toolify } from "../../lib/toolify";
-import { FolderDoc, DocLink } from "@patchwork/filesystem";
-import { useState } from "react";
-import { createDocOfDataType2, DataType } from "@patchwork/plugins";
-import { useDatatypeDescriptions } from "../../lib/datatype-hooks";
-import {
-  PlusIcon,
-  FolderIcon,
-  FileIcon,
-  SparklesIcon,
-  RocketIcon,
-} from "lucide-react";
-import { openDocument } from "../../lib/navigation";
 import { useDocRef } from "@patchwork/context/react";
+import { DocLink, FolderDoc } from "@patchwork/filesystem";
+import { createDocOfDataType2, DataType } from "@patchwork/plugins";
+import {
+  FileIcon,
+  FolderIcon,
+  PlusIcon,
+  RocketIcon,
+  SparklesIcon,
+} from "lucide-react";
+import { useState } from "react";
 import type { TinyPatchworkAccountDoc } from "../../lib/account-doc.js";
+import { openDocument } from "../../lib/navigation";
+import { useDatatypeDescriptions } from "../../lib/plugin-hooks";
+import { toolify } from "../../lib/toolify";
 
 const FileEntry = ({ docLink }: { docLink: DocLink }) => {
   const [root, setRoot] = useState<HTMLElement | null>(null);

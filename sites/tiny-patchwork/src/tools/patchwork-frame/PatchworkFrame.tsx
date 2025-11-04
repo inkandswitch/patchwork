@@ -1,101 +1,180 @@
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { AutomergeUrl } from "@automerge/vanillajs";
-import { useEffect, useState } from "react";
+import {
+  AutomergeUrl,
+  DocHandle,
+  encodeHeads,
+  parseAutomergeUrl,
+  stringifyAutomergeUrl,
+} from "@automerge/vanillajs";
+import { DocWithComments, getStoredThreads } from "@patchwork/context/comments";
+import { getViewHeads } from "@patchwork/context/diff";
+import {
+  useDocRef,
+  useReactive,
+  useSubcontext,
+} from "@patchwork/context/react";
+import { IsSelected } from "@patchwork/context/selection";
+import { useEffect, useMemo, useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
-import { CommandPalette } from "../../lib/commands/CommandPalette";
-import { openDocument } from "../../lib/navigation";
-import { toolify } from "../../lib/toolify";
-import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
+import { OpenDocumentEvent } from "../../lib/navigation";
+import {
+  useAddUnknownDocumentsToSidebarEffect,
+  useUpdateDocLinksOfActiveDocumentsEffect,
+} from "./effects";
 
-export const renderFrame = toolify(
-  ({
-    docUrl,
-    element,
-  }: {
-    docUrl: AutomergeUrl;
-    element: HTMLElement | ShadowRoot;
-  }) => {
-    const [accountDoc, changeAccountDoc] = useDocument<TinyPatchworkAccountDoc>(
-      docUrl,
-      {
-        suspense: true,
-      }
+export const PatchworkFrame = ({
+  docUrl: accountDocUrl,
+  element,
+}: {
+  docUrl: AutomergeUrl;
+  element: HTMLElement | ShadowRoot;
+}) => {
+  const [accountDoc, changeAccountDoc] = useDocument<TinyPatchworkAccountDoc>(
+    accountDocUrl,
+    {
+      suspense: true,
+    }
+  );
+
+  const { rootFolderUrl, accountSidebarToolId, contextSidebarToolId } =
+    accountDoc;
+
+  const [selectedView, setSelectedView] = useState<
+    { url: AutomergeUrl; toolId?: string } | undefined
+  >(undefined);
+
+  const [selectedDoc] = useDocument<DocWithComments>(selectedView?.url);
+  const selectedDocRef = useDocRef(selectedView?.url);
+
+  const viewHeads = useReactive(
+    useMemo(
+      () => (selectedDocRef ? getViewHeads(selectedDocRef) : undefined),
+      [selectedDocRef]
+    )
+  );
+
+  const selectedDocUrl = useMemo(() => {
+    if (!selectedView?.url) {
+      return undefined;
+    }
+
+    if (!viewHeads) {
+      return selectedView.url;
+    }
+
+    const currentDocumentId = parseAutomergeUrl(selectedView.url).documentId;
+    return stringifyAutomergeUrl({
+      documentId: currentDocumentId,
+      heads: encodeHeads(viewHeads.afterHeads),
+    });
+  }, [selectedView?.url, viewHeads]);
+
+  // add selected doc to context
+  const selectionContext = useSubcontext("SINGLE_VIEW_SELECTION");
+  useEffect(() => {
+    selectionContext.replace(
+      selectedDocRef ? [selectedDocRef.with(IsSelected(true))] : []
+    );
+  }, [selectedDocRef, selectionContext]);
+
+  const repo = useRepo();
+
+  // Effects
+  // this should be probably a plugin type that allows to run code without rendering something
+
+  useUpdateDocLinksOfActiveDocumentsEffect(rootFolderUrl);
+  //todo disabling this until it supports folders
+  // useAddUnknownDocumentsToSidebarEffect(rootFolderUrl);
+
+  // listen to open document events
+  useEffect(() => {
+    const onOpenDocument = (event: OpenDocumentEvent) => {
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      setSelectedView({ url: event.detail.url, toolId: event.detail.toolId });
+    };
+
+    element.addEventListener(
+      "patchwork:open-document",
+      onOpenDocument as EventListener
     );
 
-    const { rootFolderUrl, contextSidebar, sidebarToolId, mainView } =
-      accountDoc;
+    return () => {
+      (element as HTMLElement).removeEventListener(
+        "patchwork:open-document",
+        onOpenDocument
+      );
+    };
+  }, [changeAccountDoc, element, repo]);
 
-    const [mainViewElement, setMainViewElement] = useState<HTMLElement | null>(
-      null
+  // Add current handle to window
+  useEffect(() => {
+    (window as any).handle = selectedDocRef?.docHandle;
+  }, [selectedDocRef]);
+
+  // Add comments to context
+  const commentsContext = useSubcontext("SINGLE_VIEW_COMMENTS");
+  useEffect(() => {
+    void selectedDoc;
+
+    if (!selectedView || !selectedDocRef || !selectedDocRef.docHandle) {
+      return;
+    }
+
+    const storedThreads = getStoredThreads(
+      selectedDocRef.docHandle as DocHandle<DocWithComments>
     );
 
-    const repo = useRepo();
+    commentsContext.replace(storedThreads);
+  }, [commentsContext, selectedView, selectedDocRef, selectedDoc]);
 
-    // Effects
-    // this should be probably a plugin type that allows to run code without rendering something
+  return (
+    <div className="w-screen h-screen flex">
+      <div className="w-[400px] flex flex-col">
+        {accountSidebarToolId && (
+          <patchwork-view
+            class="h-full"
+            doc-url={accountDocUrl}
+            tool-id={accountSidebarToolId}
+          />
+        )}
+      </div>
 
-    useUpdateDocLinksOfActiveDocumentsEffect(rootFolderUrl);
-    //todo disabling this until it supports folders
-    //useAddUnknownDocumentsToSidebarEffect(rootFolderUrl);
-
-    // listen to open document events
-    useEffect(() => {
-      if (element) {
-        (element as HTMLElement).addEventListener(
-          "patchwork:open-document",
-          function (event) {
-            if (!mainViewElement) {
-              return;
-            }
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-
-            if (event.target === this) {
-              openDocument(
-                mainViewElement,
-                event.detail.url,
-                event.detail.toolId
-              );
-            }
-          }
-        );
-      }
-    }, [changeAccountDoc, element, repo, mainViewElement]);
-
-    return (
-      <>
-        <div className="w-screen h-screen flex">
-          <div className="w-[300px] flex flex-col">
-            {sidebarToolId && (
+      <div className="flex flex-col flex-1 h-full">
+        {selectedDocUrl && (
+          <div className="p-2 bg-base-200 border-b border-base-300 flex items-center gap-2">
+            {accountDoc.documentToolbarToolIds?.map((toolId, index) => (
               <patchwork-view
-                class="h-full"
-                doc-url={docUrl}
-                tool-id={sidebarToolId}
+                doc-url={selectedDocUrl}
+                tool-id={toolId}
+                key={index}
               />
-            )}
+            ))}
           </div>
-
-          <div className="w-full h-full">
-            {mainView && (
-              <patchwork-view
-                ref={setMainViewElement}
-                doc-url={mainView.documentUrl}
-                tool-id={mainView.toolId}
-                key={mainView.documentUrl}
-              />
-            )}
-          </div>
-          {contextSidebar && (
-            <div className="w-[400px] bg-base-100">
-              <patchwork-view
-                doc-url={contextSidebar.documentUrl}
-                tool-id={contextSidebar.toolId}
-              />
+        )}
+        <div className="w-full h-full">
+          {selectedDocUrl && (
+            <patchwork-view
+              doc-url={selectedDocUrl}
+              tool-id={selectedView?.toolId}
+            />
+          )}
+          {!selectedDocUrl && (
+            <div className="flex items-center justify-center h-full text-base-content">
+              Select a document in the sidebar
             </div>
           )}
         </div>
-        <CommandPalette commands={window.commands || []} />
-      </>
-    );
-  }
-);
+      </div>
+      {contextSidebarToolId && (
+        <div className="w-[400px] bg-base-100">
+          <patchwork-view
+            doc-url={accountDocUrl}
+            tool-id={contextSidebarToolId}
+          />
+        </div>
+      )}
+    </div>
+  );
+};

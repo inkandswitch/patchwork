@@ -6,23 +6,84 @@ import {
 
 import { AutomergeUrl, Repo } from "@automerge/vanillajs";
 import type { AutomergeRepoKeyhive } from "virtual:patchwork/setup";
-import { SingleViewDoc } from "../tools/single-view/datatype";
-import { TabbedViewDoc } from "../tools/tabbed-view/datatype";
 
 export type TinyPatchworkAccountDoc = {
   rootFolderUrl: AutomergeUrl;
   moduleSettingsUrl: AutomergeUrl;
+
   frameToolId: string;
-  sidebarToolId?: string;
-  mainView: {
-    documentUrl: AutomergeUrl;
-    toolId: string;
-  };
-  contextSidebar: {
-    documentUrl: AutomergeUrl;
-    toolId: string;
-  };
+  accountSidebarToolId: string;
+  contextSidebarToolId: string;
+  contextToolIds: string[];
+  documentToolbarToolIds: string[];
 };
+
+function isValidAccountDoc(
+  doc: any
+): doc is TinyPatchworkAccountDoc & HasPatchworkMetadata {
+  return (
+    doc &&
+    typeof doc.frameToolId === "string" &&
+    typeof doc.accountSidebarToolId === "string" &&
+    typeof doc.contextSidebarToolId === "string" &&
+    Array.isArray(doc.contextToolIds) &&
+    Array.isArray(doc.documentToolbarToolIds) &&
+    typeof doc.rootFolderUrl === "string" &&
+    typeof doc.moduleSettingsUrl === "string"
+  );
+}
+
+async function createAccountDoc(
+  repo: Repo,
+  options?: {
+    rootFolderUrl?: AutomergeUrl;
+    moduleSettingsUrl?: AutomergeUrl;
+  }
+) {
+  let rootFolderUrl = options?.rootFolderUrl;
+  let moduleSettingsUrl = options?.moduleSettingsUrl;
+
+  if (!rootFolderUrl) {
+    const rootFolderHandle = await repo.create2<
+      FolderDoc & HasPatchworkMetadata
+    >({
+      ["@patchwork"]: { type: "folder" },
+      title: "root",
+      docs: [],
+    });
+    rootFolderUrl = rootFolderHandle.url;
+  }
+
+  if (!moduleSettingsUrl) {
+    const moduleSettingsHandle = await repo.create2<
+      ModuleSettingsDoc & HasPatchworkMetadata
+    >({
+      ["@patchwork"]: { type: "patchwork:module-settings" },
+      modules: [],
+    });
+    moduleSettingsUrl = moduleSettingsHandle.url;
+  }
+
+  const account = await repo.create2<
+    TinyPatchworkAccountDoc & HasPatchworkMetadata
+  >({
+    ["@patchwork"]: { type: "account" },
+    rootFolderUrl,
+    moduleSettingsUrl,
+    frameToolId: "patchwork-frame",
+    accountSidebarToolId: "chee/sideboard",
+    contextSidebarToolId: "context-sidebar",
+    contextToolIds: ["comments-view", "history-view", "context-view"],
+    documentToolbarToolIds: [
+      "document-title",
+      "back-link-button",
+      "spacer",
+      "highlight-changes-checkbox",
+    ],
+  });
+
+  return account;
+}
 
 export async function getOrCreateAccountDocHandle(
   repo: Repo,
@@ -34,77 +95,29 @@ export async function getOrCreateAccountDocHandle(
     | undefined;
 
   if (existing) {
-    return await repo.find<TinyPatchworkAccountDoc & HasPatchworkMetadata>(
-      existing
+    const accountDocHandle = await repo.find<
+      TinyPatchworkAccountDoc & HasPatchworkMetadata
+    >(existing);
+
+    const accountDoc = accountDocHandle.doc();
+
+    if (isValidAccountDoc(accountDoc)) {
+      return accountDocHandle;
+    }
+
+    // Invalid account doc, create a new one but preserve existing folder and settings
+    console.warn(
+      "Old account document detected, creating new account doc with preserved data"
     );
+    const account = await createAccountDoc(repo, {
+      rootFolderUrl: accountDoc?.rootFolderUrl,
+      moduleSettingsUrl: accountDoc?.moduleSettingsUrl,
+    });
+    localStorage.setItem(accountDocKey, account.url);
+    return account;
   }
 
-  const rootFolderHandle = await repo.create2<FolderDoc & HasPatchworkMetadata>(
-    {
-      ["@patchwork"]: { type: "folder" },
-      title: "root",
-      docs: [],
-    }
-  );
-
-  const moduleSettingsHandle = await repo.create2<
-    ModuleSettingsDoc & HasPatchworkMetadata
-  >({
-    ["@patchwork"]: { type: "patchwork:module-settings" },
-    modules: [],
-  });
-
-  // Create a tab-view document for the main view
-  const singleViewHandle = await repo.create2<
-    SingleViewDoc & HasPatchworkMetadata
-  >({
-    ["@patchwork"]: { type: "single-view" },
-    highlightChanges: false,
-  });
-
-  const historyViewHandle = await repo.create2<HasPatchworkMetadata>({
-    ["@patchwork"]: { type: "history-view" },
-  });
-
-  const commentsViewHandle = await repo.create2<HasPatchworkMetadata>({
-    ["@patchwork"]: { type: "comments-view" },
-  });
-
-  const contextViewHandle = await repo.create2<HasPatchworkMetadata>({
-    ["@patchwork"]: { type: "context-view" },
-  });
-
-  const contextSidebarDocHandle = await repo.create2<
-    TabbedViewDoc & HasPatchworkMetadata
-  >({
-    ["@patchwork"]: { type: "tab-view" },
-    activeTabIndex: 0,
-    tabs: [
-      {
-        url: commentsViewHandle.url,
-        toolId: "comments-view",
-        name: "Comments",
-      },
-      { url: historyViewHandle.url, toolId: "history-view", name: "History" },
-      { url: contextViewHandle.url, toolId: "context-view", name: "Context" },
-    ],
-    showCloseButton: false,
-  });
-
-  const account = await repo.create2<
-    TinyPatchworkAccountDoc & HasPatchworkMetadata
-  >({
-    ["@patchwork"]: { type: "account" },
-    rootFolderUrl: rootFolderHandle.url,
-    frameToolId: "patchwork-frame",
-    sidebarToolId: "chee/sideboard",
-    moduleSettingsUrl: moduleSettingsHandle.url,
-    contextSidebar: {
-      documentUrl: contextSidebarDocHandle.url,
-      toolId: "tabbed-view",
-    },
-    mainView: { documentUrl: singleViewHandle.url, toolId: "single-view" },
-  });
+  const account = await createAccountDoc(repo);
   localStorage.setItem(accountDocKey, account.url);
   return account;
 }

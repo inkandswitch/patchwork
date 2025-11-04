@@ -3,19 +3,23 @@ import { plugins as markdownPlugins } from "./markdown";
 import { plugins as patchworkFramePlugins } from "./patchwork-frame";
 import { plugins as sidebarPlugins } from "./sidebar";
 import { plugins as funkySidebarPlugins } from "./funky-sidebar";
-import { plugins as tabViewerPlugins } from "./tabbed-view";
-import { plugins as singleViewPlugins } from "./single-view";
+import { plugins as tabViewerPlugins } from "./context-sidebar";
 import { plugins as branchViewPlugins } from "./history-view";
 import { plugins as todoPlugins } from "./todo";
 import { plugins as historyViewPlugins } from "./history-view";
 import { plugins as commentsViewPlugins } from "./comments-view";
 import { plugins as contextViewPlugins } from "./context-view";
+import { plugins as backLinkButtonPlugins } from "./back-link-button";
+import { plugins as documentTitlePlugins } from "./doc-title";
 // @ts-expect-error no types
 import { plugins as tldrawPlugins } from "@patchwork/tldraw";
 import "tldraw/tldraw.css";
 // @ts-expect-error no types
 import { plugins as sideboardPlugins } from "@chee/patchwork-sideboard";
 import "@chee/patchwork-sideboard/styles.css";
+import { plugins as spacerPlugins } from "./spacer";
+import { plugins as highlightChangesCheckboxPlugins } from "./highlight-changes-checkbox";
+import { plugins as frameConfiguratorPlugins } from "./frame-configurator";
 // @ts-expect-error no types
 import { plugins as orionMarkwhen } from "@orion/markwhen";
 import { plugins as grjteMarkdownPlugins } from "@grjte/markdown";
@@ -26,7 +30,6 @@ export const plugins: Plugin<any>[] = [
   ...sidebarPlugins,
   ...funkySidebarPlugins,
   ...tabViewerPlugins,
-  ...singleViewPlugins,
   ...branchViewPlugins,
   ...todoPlugins,
   ...historyViewPlugins,
@@ -34,6 +37,11 @@ export const plugins: Plugin<any>[] = [
   ...sideboardPlugins,
   ...tldrawPlugins,
   ...contextViewPlugins,
+  ...backLinkButtonPlugins,
+  ...documentTitlePlugins,
+  ...spacerPlugins,
+  ...highlightChangesCheckboxPlugins,
+  ...frameConfiguratorPlugins,
   ...orionMarkwhen,
   {
     id: "folder",

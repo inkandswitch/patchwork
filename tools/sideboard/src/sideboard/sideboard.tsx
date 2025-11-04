@@ -25,6 +25,7 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
   );
 
   const moduleSettingsUrl = () => doc.moduleSettingsUrl;
+  const accountDocUrl = () => props.handle.url;
 
   return (
     <aside class="sideboard">
@@ -56,6 +57,16 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
           class="sideboard-footer__button"
         >
           My tools
+        </button>
+
+        <button
+          onClick={createOpenEventHandler(
+            accountDocUrl(),
+            "frame-configurator"
+          )}
+          class="sideboard-footer__button"
+        >
+          Settings
         </button>
       </footer>
     </aside>

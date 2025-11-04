@@ -161,7 +161,9 @@ export function registerPatchworkViewElement(
 
       #init = async () => {
         const toolRegistry = getPluginRegistry("patchwork:tool");
-        if (this.#state != State.none) return;
+        if (this.#state != State.none) {
+          return;
+        }
 
         if (!this.docUrl) {
           return;

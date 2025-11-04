@@ -3,7 +3,7 @@ import "./styles/global.css";
 import { CONTEXT, Context } from "@patchwork/context";
 import { registerPatchworkViewElement } from "@patchwork/elements";
 import { ModuleWatcher } from "@patchwork/filesystem";
-import { registerPlugins } from "@patchwork/plugins";
+import { getPluginRegistry, registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
 import { initCommands } from "./commands";
 import {
@@ -24,11 +24,13 @@ import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 
 import { plugins } from "./tools";
+import { PluginRegistry } from "@patchwork/plugins/dist/registry/registry";
 
 declare global {
   interface Window {
     accountDocHandle: DocHandle<TinyPatchworkAccountDoc>;
     CONTEXT: Context;
+    getPluginRegistry: (pluginType: string) => PluginRegistry<any>;
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
   }
@@ -40,6 +42,8 @@ window.AutomergeRepo = AutomergeRepo;
 const { repo, hive } = await bootstrap();
 
 window.CONTEXT = CONTEXT;
+
+window.getPluginRegistry = getPluginRegistry;
 
 const loadedPlugins = Object.groupBy(
   await Promise.allSettled(

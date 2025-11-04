@@ -14,9 +14,6 @@ import {
 } from "@patchwork/filesystem";
 import type { CommandItem } from "./lib/commands/CommandPalette";
 import { TinyPatchworkAccountDoc } from "./lib/account-doc";
-import { BranchViewDoc } from "./tools/branch-view/datatype";
-import { SingleViewDoc } from "./tools/single-view/datatype";
-import { TabbedViewDoc } from "./tools/tabbed-view/datatype";
 
 // Convert kebab-case to camelCase
 const toCamelCase = (str: string) => {
@@ -34,7 +31,7 @@ export const commands = (
     category: "Layout",
     action: () => {
       accountDocHandle.change((doc) => {
-        doc.sidebarToolId = "funky-sidebar";
+        doc.accountSidebarToolId = "funky-sidebar";
       });
       console.log("Switched to funky sidebar");
     },
@@ -46,54 +43,12 @@ export const commands = (
     category: "Layout",
     action: () => {
       accountDocHandle.change((doc) => {
-        doc.sidebarToolId = "chee/sideboard";
+        doc.accountSidebarToolId = "chee/sideboard";
       });
       console.log("Switched to normal sidebar");
     },
   },
-  {
-    id: "single-view",
-    label: "Switch to Single View",
-    description: "Create and switch to a single-view layout",
-    category: "Layout",
-    action: async () => {
-      const singleViewHandle = (await repo.create2({
-        ["@patchwork"]: {
-          type: "single-view",
-        },
-        highlightChanges: false,
-      })) as DocHandle<SingleViewDoc>;
 
-      accountDocHandle.change((doc) => {
-        doc.mainView = {
-          documentUrl: singleViewHandle.url,
-          toolId: "single-view",
-        };
-      });
-      console.log("Switched to single view");
-    },
-  },
-  {
-    id: "branch-view",
-    label: "Switch to Branch View",
-    description: "Create and switch to a branch-view layout",
-    category: "Layout",
-    action: async () => {
-      const branchViewHandle = (await repo.create2({
-        ["@patchwork"]: {
-          type: "branch-view",
-        },
-      })) as DocHandle<BranchViewDoc>;
-
-      accountDocHandle.change((doc) => {
-        doc.mainView = {
-          documentUrl: branchViewHandle.url,
-          toolId: "branch-view",
-        };
-      });
-      console.log("Switched to branch view");
-    },
-  },
   {
     id: "set-sidebar-tool-id",
     label: "Set Sidebar Tool ID",
@@ -101,7 +56,7 @@ export const commands = (
     category: "Layout",
     action: (sidebarToolId: string) => {
       accountDocHandle.change((doc) => {
-        doc.sidebarToolId = sidebarToolId;
+        doc.accountSidebarToolId = sidebarToolId;
       });
     },
     args: [
@@ -118,93 +73,10 @@ export const commands = (
     description: "Add a context inspector to the sidebar",
     category: "Tools",
     action: async () => {
-      const contextInspectorHandle = await repo.create2<HasPatchworkMetadata>({
-        ["@patchwork"]: { type: "patchwork/context-inspector" },
-      });
-
       accountDocHandle.change((doc) => {
-        doc.contextSidebar = {
-          documentUrl: contextInspectorHandle.url,
-          toolId: "context-inspector",
-        };
-      });
-
-      console.log("Added context inspector");
-    },
-  },
-  {
-    id: "add-tabbed-sidebar",
-    label: "Add Tabbed Sidebar",
-    description: "Add a tabbed sidebar with comments and history",
-    category: "Tools",
-    action: async () => {
-      const historyViewHandle = await repo.create2<HasPatchworkMetadata>({
-        ["@patchwork"]: { type: "history-view" },
-      });
-
-      const commentsViewHandle = await repo.create2<HasPatchworkMetadata>({
-        ["@patchwork"]: { type: "comments-view" },
-      });
-
-      const tabbedSidebarHandle = await repo.create2<
-        TabbedViewDoc & HasPatchworkMetadata
-      >({
-        ["@patchwork"]: { type: "tab-view" },
-        activeTabIndex: 0,
-        tabs: [
-          {
-            url: commentsViewHandle.url,
-            toolId: "comments-view",
-            name: "Comments",
-          },
-          {
-            url: historyViewHandle.url,
-            toolId: "history-view",
-            name: "History",
-          },
-        ],
-        showCloseButton: false,
-      });
-
-      accountDocHandle.change((doc) => {
-        doc.contextSidebar = {
-          documentUrl: tabbedSidebarHandle.url,
-          toolId: "tabbed-view",
-        };
-      });
-
-      console.log("Added tabbed sidebar");
-    },
-  },
-  {
-    id: "add-context-tab",
-    label: "Add Context Tab",
-    description: "Add a new tab to the context sidebar",
-    category: "Tools",
-    action: async (docUrl: AutomergeUrl, toolId: string) => {
-      const tabbedViewDocHandle = await repo.find<TabbedViewDoc>(
-        accountDocHandle.doc().contextSidebar.documentUrl
-      );
-
-      tabbedViewDocHandle.change((doc) => {
-        doc.tabs.push({
-          url: docUrl,
-          toolId,
-        });
+        doc.contextToolIds.push("context-inspector");
       });
     },
-    args: [
-      {
-        name: "Document URL",
-        placeholder: "automerge:...",
-        description: "The Automerge URL of the document to add",
-      },
-      {
-        name: "Tool ID",
-        placeholder: "e.g. history-view, comments-view",
-        description: "The ID of the tool to use for this tab",
-      },
-    ],
   },
   {
     id: "install-module",

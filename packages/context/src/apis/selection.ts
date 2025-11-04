@@ -15,6 +15,10 @@ export const $selectedRefs = contextComputation(() =>
   CONTEXT.refsWith(IsSelected).filter((ref) => ref.get(IsSelected) === true)
 );
 
+export const $selectedDocRefs = contextComputation((context) => {
+  return context.refsWith(IsSelected) as Ref<HasPatchworkMetadata>[];
+});
+
 export const $selectedDocUrls = contextComputation((context) => {
   const selectedRefs = context.refsWith(IsSelected);
   const selectedDocUrls = new Set<AutomergeUrl>();
