@@ -5,7 +5,6 @@ import { registerPatchworkViewElement, openDocument } from "@patchwork/element";
 import { ModuleWatcher } from "@patchwork/filesystem";
 import { getPluginRegistry, registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
-import { initCommands } from "./commands";
 import {
   getOrCreateLayoutDocHandle,
   TinyPatchworkLayoutDoc,

@@ -9,9 +9,5 @@
     "isolatedModules": true,
     "jsx": "react-jsx"
   },
-  "include": [
-    "src",
-    "../../packages/util/src/relative-time.ts",
-    "../../packages/util/src/class-names.ts"
-  ]
+  "include": ["src"]
 }

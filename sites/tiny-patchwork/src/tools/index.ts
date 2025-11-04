@@ -23,9 +23,13 @@ import { plugins as frameConfiguratorPlugins } from "./frame-configurator";
 import { plugins as orionMarkwhen } from "@orion/markwhen";
 // @ts-expect-error no types
 import { plugins as grjteMarkdownPlugins } from "@grjte/markdown";
+// @ts-expect-error no types
 import { plugins as syncIndicatorPlugins } from "@patchwork/sync-indicator";
+// @ts-expect-error no types
+import { plugins as commandsPlugins } from "@orion/commands";
 
 export const plugins: Plugin<any>[] = [
+  ...commandsPlugins,
   ...patchworkFramePlugins,
   ...sidebarPlugins,
   ...funkySidebarPlugins,
