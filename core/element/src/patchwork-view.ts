@@ -268,7 +268,7 @@ export function registerPatchworkViewElement(
         }
 
         if (!this.#tool.module) {
-          (this.#tool as LoadablePlugin<Tool>)?.load();
+          getPluginRegistry("patchwork:tool").loadById(this.#tool.id);
           this.#state = "unable";
           console.warn("Tool not loaded", toolId);
           return;

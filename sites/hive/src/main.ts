@@ -22,6 +22,7 @@ const params = new URLSearchParams(document.location.search);
 registerPatchworkViewElement({
   moduleWatcher,
   repo,
+  hive,
 });
 
 const docUrl = params.get("docUrl");
