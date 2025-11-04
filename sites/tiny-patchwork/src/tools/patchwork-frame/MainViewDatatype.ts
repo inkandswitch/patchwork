@@ -12,6 +12,4 @@ export const MainViewDataType: DataTypeImplementation<MainViewDoc> = {
   getTitle() {
     return "Main View";
   },
-
-  markCopy: () => {},
 };

@@ -1,7 +1,5 @@
 import { Plugin } from "@patchwork/plugins";
 import { plugins as patchworkFramePlugins } from "./patchwork-frame";
-import { plugins as sidebarPlugins } from "./sidebar";
-import { plugins as funkySidebarPlugins } from "./funky-sidebar";
 import { plugins as tabViewerPlugins } from "./context-sidebar";
 import { plugins as branchViewPlugins } from "./history-view";
 import { plugins as todoPlugins } from "./todo";
@@ -31,8 +29,6 @@ import { plugins as commandsPlugins } from "@orion/commands";
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
   ...patchworkFramePlugins,
-  ...sidebarPlugins,
-  ...funkySidebarPlugins,
   ...tabViewerPlugins,
   ...branchViewPlugins,
   ...todoPlugins,
