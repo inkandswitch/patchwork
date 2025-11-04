@@ -1,12 +1,7 @@
 import EventEmitter from "eventemitter3";
-import {
-  LoadablePlugin,
-  LoadedPlugin,
-  PluginDescription,
-  PluginTypeMap,
-  Plugin,
-} from "./types";
+import { LoadedPlugin, PluginDescription, Plugin } from "./types";
 import debug from "debug";
+import { isLoadablePlugin, isPluginDescription } from ".";
 
 const log = debug("patchwork:plugins");
 
@@ -228,136 +223,13 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     callback: PluginRegistryEvents<D, I>["plugins:changed"]
   ): () => void {
     if (!callback || typeof callback !== "function") {
-      console.warn("Invalid callback provided to PluginRegistry.onChange");
-      return () => {}; // Return a no-op function
+      throw new Error("Invalid callback provided to PluginRegistry.onChange");
     }
 
-    try {
-      this.events.on("plugins:changed", callback);
+    this.events.on("plugins:changed", callback);
 
-      // Create a simple cleanup function with no additional properties
-      return () => {
-        this.events.off("plugins:changed", callback);
-      };
-    } catch (error) {
-      console.warn("Error setting up plugin change listener:", error);
-      return () => {}; // Return a no-op function
-    }
+    return () => {
+      this.events.off("plugins:changed", callback);
+    };
   }
 }
-
-export function matchPlugins<T extends PluginDescription>(
-  matchField: keyof T,
-  matchValue: string | undefined
-): (plugin: T) => boolean {
-  return (plugin: T) => {
-    if (!matchValue) return false;
-    const value = plugin[matchField];
-
-    // Handle array values
-    if (Array.isArray(value)) {
-      return value.includes("*") || value.includes(matchValue);
-    }
-
-    // Handle string values
-    return value === "*" || value === matchValue;
-  };
-}
-
-/**
- * Check if a value is a plugin, optionally of a specific type
- * If a type is provided, it will be used to infer the correct plugin type
- */
-export function isPlugin<
-  T extends PluginDescription = PluginDescription,
-  I = any,
->(
-  value: unknown,
-  pluginType?: keyof PluginTypeMap
-): value is LoadedPlugin<T, I> {
-  if (!value || typeof value !== "object") return false;
-  const plugin = value as LoadedPlugin<T, I>;
-  if (!plugin.type || !plugin.name || !plugin.id) return false;
-  if (pluginType && plugin.type !== pluginType) return false;
-  return true;
-}
-
-/**
- * Type predicate to ensure a value is of type D
- */
-export function isPluginDescription<D extends PluginDescription>(
-  value: unknown
-): value is D {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "id" in value &&
-    "type" in value &&
-    "name" in value
-  );
-}
-
-/**
- * Check if a value is a loadable plugin
- */
-export function isLoadablePlugin<
-  D extends PluginDescription = PluginDescription,
-  I = any,
->(value: unknown): value is LoadablePlugin<D, I> {
-  return (
-    isPluginDescription<D>(value) &&
-    "load" in value &&
-    typeof value.load === "function"
-  );
-}
-
-/**
- * Sort plugins based on a field value
- */
-export const sortPlugins = <
-  T extends LoadedPlugin<D, I>,
-  D extends PluginDescription,
-  I,
->(
-  plugins: T[],
-  matchField: keyof D,
-  matchValue: string,
-  sortField?: keyof D
-): T[] => {
-  return [...plugins].sort((a, b) => {
-    const aValue = a[matchField];
-    const bValue = b[matchField];
-
-    // Convert string values to arrays for consistent comparison
-    const aArray = Array.isArray(aValue)
-      ? (aValue as string[])
-      : [aValue as string];
-    const bArray = Array.isArray(bValue)
-      ? (bValue as string[])
-      : [bValue as string];
-
-    const aHasWildcard = aArray.includes("*");
-    const bHasWildcard = bArray.includes("*");
-    const aHasMatch = aArray.includes(matchValue);
-    const bHasMatch = bArray.includes(matchValue);
-
-    // Specific matches come first
-    if (aHasMatch && !bHasMatch) return -1;
-    if (!aHasMatch && bHasMatch) return 1;
-
-    // Then wildcard matches come last
-    if (aHasWildcard && !bHasWildcard) return 1;
-    if (!aHasWildcard && bHasWildcard) return -1;
-
-    // If both are wildcards or both are specific matches, sort by the optional sort field
-    if (sortField) {
-      const aSort = a[sortField];
-      const bSort = b[sortField];
-      if (typeof aSort === "string" && typeof bSort === "string") {
-        return aSort.localeCompare(bSort);
-      }
-    }
-
-    return 0;
-  });
-};

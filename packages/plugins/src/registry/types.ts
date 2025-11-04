@@ -1,5 +1,5 @@
-import { DataTypeDescription } from "../datatypes/index.js";
-import { ToolDescription } from "../tools";
+import { DataTypeDescription } from "../datatypes.js";
+import { ToolDescription } from "../tools.js";
 
 /**
  * Map of plugin type strings to their corresponding description types
