@@ -223,6 +223,18 @@ importers:
         specifier: ^8.41.0
         version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
 
+  packages/react:
+    dependencies:
+      '@patchwork/plugins':
+        specifier: workspace:^
+        version: link:../../core/plugins
+      react:
+        specifier: ^18.0.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.0.0
+        version: 18.3.1(react@18.3.1)
+
   packages/util:
     dependencies:
       '@automerge/automerge':
@@ -383,6 +395,9 @@ importers:
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../../core/plugins
+      '@patchwork/react':
+        specifier: workspace:^
+        version: link:../../packages/react
       '@patchwork/sync-indicator':
         specifier: workspace:^
         version: link:../../tools/sync-indicator

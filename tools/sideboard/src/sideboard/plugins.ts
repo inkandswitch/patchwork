@@ -10,6 +10,8 @@ import {
 import { createEffect, on, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 
+// TODO: maybe these shouold go alongside the @patchwork/react package?
+
 const toolRegistry = getPluginRegistry<ToolDescription>("patchwork:tool");
 const datatypeRegistry =
   getPluginRegistry<DataTypeDescription>("patchwork:datatype");

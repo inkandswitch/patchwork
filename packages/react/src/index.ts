@@ -1,14 +1,12 @@
-import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
-import {
+import type {
   DataTypeDescription,
   DataTypeImplementation,
-  getPluginRegistry,
   LoadedPlugin,
   PluginDescription,
   ToolDescription,
   ToolImplementation,
 } from "@patchwork/plugins";
-import { PluginRegistry } from "@patchwork/plugins/dist/registry/registry";
+import { PluginRegistry, getPluginRegistry } from "@patchwork/plugins";
 import { useEffect, useState } from "react";
 
 export const usePluginDescriptions = <

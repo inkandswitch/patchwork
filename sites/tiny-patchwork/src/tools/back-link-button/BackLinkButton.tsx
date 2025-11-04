@@ -3,7 +3,7 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
 import { ToolElement } from "@patchwork/plugins";
 import { openDocument } from "../../lib/navigation";
-import { useDatatype } from "../../lib/plugin-hooks";
+import { useDatatype } from "@patchwork/react";
 
 export const BackLinkButton = ({
   docUrl,

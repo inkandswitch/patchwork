@@ -1,6 +1,13 @@
 import { DataTypeDescription } from "../datatypes.js";
 import { ToolDescription } from "../tools.js";
 
+export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
+  "plugins:changed": (
+    plugins: LoadedPlugin<D, I>[],
+    target: Plugin<D, I>
+  ) => void;
+}
+
 /**
  * Map of plugin type strings to their corresponding description types
  */

@@ -1,16 +1,14 @@
 import EventEmitter from "eventemitter3";
-import { LoadedPlugin, PluginDescription, Plugin } from "./types";
+import type {
+  LoadedPlugin,
+  PluginDescription,
+  Plugin,
+  PluginRegistryEvents,
+} from "./types";
 import debug from "debug";
 import { isLoadablePlugin, isPluginDescription } from ".";
 
 const log = debug("patchwork:plugins");
-
-export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
-  "plugins:changed": (
-    plugins: LoadedPlugin<D, I>[],
-    target: Plugin<D, I>
-  ) => void;
-}
 
 /**
  * Registry for managing plugins of a specific type

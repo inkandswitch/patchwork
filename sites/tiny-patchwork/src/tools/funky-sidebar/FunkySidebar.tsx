@@ -13,7 +13,7 @@ import {
 import { useState } from "react";
 import type { TinyPatchworkAccountDoc } from "../../lib/account-doc.js";
 import { openDocument } from "../../lib/navigation";
-import { useDatatypeDescriptions } from "../../lib/plugin-hooks";
+import { useDatatypeDescriptions } from "@patchwork/react";
 import { toolify } from "../../lib/toolify";
 
 const FileEntry = ({ docLink }: { docLink: DocLink }) => {

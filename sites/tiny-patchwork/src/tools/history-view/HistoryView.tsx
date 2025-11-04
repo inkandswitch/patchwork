@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { relativeTime } from "../../lib/relative-time";
 import { toolify } from "../../lib/toolify";
 import { $selectedDocUrls } from "@patchwork/context/selection";
-import { useDatatype } from "../../lib/plugin-hooks";
+import { useDatatype } from "@patchwork/react";
 
 const HistoryView = () => {
   const selectedDocUrls = useReactive($selectedDocUrls);
