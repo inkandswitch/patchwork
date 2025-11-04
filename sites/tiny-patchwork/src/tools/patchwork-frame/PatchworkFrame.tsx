@@ -83,7 +83,8 @@ export const PatchworkFrame = ({
   // this should be probably a plugin type that allows to run code without rendering something
 
   useUpdateDocLinksOfActiveDocumentsEffect(rootFolderUrl);
-  useAddUnknownDocumentsToSidebarEffect(rootFolderUrl);
+  //todo disabling this until it supports folders
+  // useAddUnknownDocumentsToSidebarEffect(rootFolderUrl);
 
   // listen to open document events
   useEffect(() => {
@@ -94,7 +95,10 @@ export const PatchworkFrame = ({
       setSelectedView({ url: event.detail.url, toolId: event.detail.toolId });
     };
 
-    element.addEventListener("patchwork:open-document", onOpenDocument);
+    element.addEventListener(
+      "patchwork:open-document",
+      onOpenDocument as EventListener
+    );
 
     return () => {
       (element as HTMLElement).removeEventListener(
