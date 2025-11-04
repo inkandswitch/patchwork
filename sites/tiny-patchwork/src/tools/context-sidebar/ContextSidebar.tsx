@@ -3,7 +3,7 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { useState } from "react";
 import { TinyPatchworkAccountDoc } from "../../lib/account-doc";
 import { useTool } from "@patchwork/react";
-import { toolify } from "../../lib/toolify";
+import { toolify } from "@patchwork/react";
 
 const ContextSidebar = ({
   docUrl: accountDocUrl,

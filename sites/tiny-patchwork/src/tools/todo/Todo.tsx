@@ -6,8 +6,8 @@ import { useState } from "react";
 import { PathRef, Ref } from "@patchwork/context";
 import { getDiff } from "@patchwork/context/diff";
 import { useReactive } from "@patchwork/context/react";
-import { ReactToolProps, toolify } from "../../lib/toolify";
-import { classNames } from "../../lib/class-names";
+import { ReactToolProps, toolify } from "@patchwork/react";
+import { classNames } from "@patchwork/util";
 
 type Todo = {
   id: string;

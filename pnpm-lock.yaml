@@ -225,6 +225,12 @@ importers:
 
   packages/react:
     dependencies:
+      '@automerge/automerge-repo-react-hooks':
+        specifier: 'catalog:'
+        version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@automerge/vanillajs':
+        specifier: 'catalog:'
+        version: 2.5.0-alpha.2
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../../core/plugins
@@ -404,6 +410,9 @@ importers:
       '@patchwork/tldraw':
         specifier: workspace:^
         version: link:../../tools/tldraw
+      '@patchwork/util':
+        specifier: workspace:^
+        version: link:../../packages/util
       add:
         specifier: ^2.0.6
         version: 2.0.6

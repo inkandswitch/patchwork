@@ -10,8 +10,8 @@ import { useEffect, useMemo, useState } from "react";
 import Avatar from "boring-avatars";
 
 import { IsSelected } from "@patchwork/context/selection";
-import { relativeTime } from "../../lib/relative-time";
-import { toolify } from "../../lib/toolify";
+import { relativeTime } from "@patchwork/util/src/relative-time";
+import { toolify } from "@patchwork/react";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 
 const CommentsView = () => {

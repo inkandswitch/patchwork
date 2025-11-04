@@ -5,9 +5,13 @@ import type {
   PluginDescription,
   ToolDescription,
   ToolImplementation,
+  ToolElement,
 } from "@patchwork/plugins";
 import { PluginRegistry, getPluginRegistry } from "@patchwork/plugins";
-import { useEffect, useState } from "react";
+import { useEffect, useState, createElement } from "react";
+import { createRoot } from "react-dom/client";
+import { RepoContext } from "@automerge/automerge-repo-react-hooks";
+import type { AutomergeUrl } from "@automerge/vanillajs";
 
 export const usePluginDescriptions = <
   Description extends PluginDescription,
@@ -101,3 +105,35 @@ export const useToolDescriptions = () => {
 export const useTool = (id?: string) => {
   return usePlugin<ToolDescription, ToolImplementation>("patchwork:tool", id);
 };
+
+export type ReactToolProps = {
+  docUrl: AutomergeUrl;
+  element: ToolElement;
+};
+
+/**
+ * @import {LegacyEditorProps, ToolImplementation} from "@patchwork/plugins"
+ */
+
+export function toolify(
+  editorComponent: React.FC<ReactToolProps>
+): ToolImplementation {
+  return (handle, element) => {
+    const root = createRoot(element);
+
+    root.render(
+      createElement(
+        RepoContext.Provider,
+        { value: element.repo },
+        createElement(editorComponent, {
+          docUrl: handle.url,
+          element,
+        })
+      )
+    );
+
+    return () => {
+      root.unmount();
+    };
+  };
+}

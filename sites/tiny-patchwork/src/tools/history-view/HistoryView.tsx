@@ -9,8 +9,8 @@ import {
 } from "@patchwork/context/react";
 import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
 import { useEffect, useState } from "react";
-import { relativeTime } from "../../lib/relative-time";
-import { toolify } from "../../lib/toolify";
+import { relativeTime } from "@patchwork/util/src/relative-time";
+import { toolify } from "@patchwork/react";
 import { $selectedDocUrls } from "@patchwork/context/selection";
 import { useDatatype } from "@patchwork/react";
 

@@ -13,6 +13,8 @@
   "author": "Ink & Switch",
   "license": "ISC",
   "dependencies": {
+    "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@automerge/vanillajs": "catalog:",
     "@patchwork/plugins": "workspace:^",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"

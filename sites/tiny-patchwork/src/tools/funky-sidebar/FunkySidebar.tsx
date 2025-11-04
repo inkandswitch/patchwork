@@ -14,7 +14,7 @@ import { useState } from "react";
 import type { TinyPatchworkAccountDoc } from "../../lib/account-doc.js";
 import { openDocument } from "../../lib/navigation";
 import { useDatatypeDescriptions } from "@patchwork/react";
-import { toolify } from "../../lib/toolify";
+import { toolify } from "@patchwork/react";
 
 const FileEntry = ({ docLink }: { docLink: DocLink }) => {
   const [root, setRoot] = useState<HTMLElement | null>(null);
