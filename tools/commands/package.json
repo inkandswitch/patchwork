@@ -23,6 +23,7 @@
     "cmdk": "^1.1.1"
   },
   "devDependencies": {
+    "@automerge/automerge-repo": "catalog:",
     "@eslint/js": "^9.36.0",
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.16",

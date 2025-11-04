@@ -19,7 +19,9 @@ export default {
   jsx: "automatic",
   jsxImportSource: "react",
   plugins: [
-    dynamicExternal(/^((@automerge\/automerge(-repo)?)|@patchwork\/.*)$/),
+    dynamicExternal(
+      /^((@automerge\/automerge(-repo)?(\/.*)?)|@patchwork\/.*)$/
+    ),
   ].concat(pushworking ? pushworkSync() : []),
   loader: { ".ttf": "dataurl", ".css": "text" },
 } satisfies BuildOptions;
