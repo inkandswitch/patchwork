@@ -13,15 +13,4 @@ export const plugins: Plugin<any>[] = [
       return toolify(FrameConfigurator);
     },
   },
-  {
-    type: "codemirror:extension",
-    id: "frame-configurator",
-    name: "Frame Configurator",
-    icon: "Settings",
-    supportedDataTypes: ["account"],
-    async load() {
-      const { FrameConfigurator } = await import("./FrameConfigurator");
-      return toolify(FrameConfigurator);
-    },
-  },
 ];

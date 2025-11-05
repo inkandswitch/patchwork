@@ -1,7 +1,6 @@
 import type { BuildOptions } from "esbuild";
 import dynamicExternal from "./plugin-dynamic-external.ts";
 import process from "node:process";
-import { solid } from "./plugin-solid.ts";
 import pushworkSync from "./plugin-pushwork-sync.ts";
 import pkgJSON from "../package.json" with { type: "json" };
 
@@ -18,7 +17,6 @@ export default {
   sourcemap: false,
   plugins: [
     dynamicExternal(/^((@automerge\/automerge(-repo)?)|@patchwork\/.*|@codemirror\/.*|@lezer\/.*|solid-js(\/.*)?)$/),
-    solid(),
   ].concat(pushworking ? pushworkSync() : []),
   loader: { ".ttf": "dataurl" },
 } satisfies BuildOptions;

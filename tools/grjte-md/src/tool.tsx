@@ -12,7 +12,7 @@ import { markdown } from "@codemirror/lang-markdown";
 import { foldKeymap, indentOnInput, indentUnit } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
 import { searchKeymap } from "@codemirror/search";
-import { RangeSet } from "@codemirror/state";
+import { RangeSet, type Extension } from "@codemirror/state";
 import {
   Decoration,
   EditorView,
@@ -20,7 +20,6 @@ import {
   WidgetType,
 } from "@codemirror/view";
 import { commentButtonGutter } from "./lib/comments/commentButtonGutter";
-import { markdownLinks } from "./lib/extensions/markdownLinks";
 
 /** Automerge */
 import type { PatchworkToolProps } from "./types.ts";
@@ -37,9 +36,11 @@ import {
   DiffAnnotation,
   getElementsWithDiff
 } from "@patchwork/context/diff";
+import { getLoadedPlugins } from "@patchwork/plugins";
 
 /** Styles */
 import { theme } from "./theme.ts";
+import { createSignal, onMount } from "solid-js";
 
 export type MarkdownDoc = {
   content: string;
@@ -141,7 +142,7 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
   }
 
   // CodeMirror extensions for the Markdown editor
-  const cmExtensions = [
+  const [extensions, setExtensions] = createSignal<Extension[]>([
     ...theme("sans"),
     history(),
     indentOnInput(),
@@ -157,9 +158,27 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
     markdown({ codeLanguages: languages }),
     indentUnit.of("    "),
     // Add the selection listener and comment button gutter
-    commentButtonGutter(onComment),
-    markdownLinks()
-  ];
+    commentButtonGutter(onComment)
+  ]);
+
+  // Load CodeMirror extensions dynamically on mount
+  onMount(async () => {
+    // Load all CodeMirror extensions
+    const loadedExtensions = await getLoadedPlugins(
+        "codemirror:extension"
+      );
+
+    // Flatten and add to existing extensions
+    const flattenedExts =  loadedExtensions.flatMap((ext) => {
+      const impl = ext.module;
+      return Array.isArray(impl) ? impl : [impl];
+    })
+
+    setExtensions((exts) => [
+      ...exts,
+      ...flattenedExts,
+    ]);
+  })
 
   return (
     <div class="w-full h-full overflow-auto bg-base">
@@ -170,7 +189,7 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
               handle={props.handle as DocHandle<MarkdownDoc>}
               path={PATH}
               decorations={decorations}
-              extensions={cmExtensions}
+              extensions={extensions()}
               onChangeSelection={onChangeSelection}
               readOnly={isReadOnly()}
             />
