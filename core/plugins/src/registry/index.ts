@@ -11,7 +11,7 @@ export type {
 } from "./types.js";
 
 // Map of plugin types to their registries
-const pluginRegistries: Record<string, PluginRegistry<any>> = {};
+const registries: Record<string, PluginRegistry<any>> = {};
 
 /**
  * Get a registry for a specific plugin type, creating it if it doesn't exist
@@ -19,23 +19,23 @@ const pluginRegistries: Record<string, PluginRegistry<any>> = {};
  * Only used internally to this file; instead of exposing the object we use
  * the utility functions below.
  */
-export function getPluginRegistry<T extends PluginDescription>(
-  pluginType: string
+export function getRegistry<T extends PluginDescription>(
+  type: string
 ): PluginRegistry<T> {
   // If the registry doesn't exist yet, create it
-  if (!pluginRegistries[pluginType]) {
-    pluginRegistries[pluginType] = new PluginRegistry<T>();
+  if (!registries[type]) {
+    registries[type] = new PluginRegistry<T>();
   }
 
-  return pluginRegistries[pluginType] as PluginRegistry<T>;
+  return registries[type] as PluginRegistry<T>;
 }
 
 /**
- * Register plugins for a specific plugin type
+ * Register plugins
  */
 export function registerPlugins<D extends PluginDescription, I>(
   plugins: Plugin<D, I>[],
-  sourceModule: string
+  importUrl: string
 ) {
   // Register each group with its appropriate registry
   plugins.forEach((plugin) => {
@@ -43,7 +43,7 @@ export function registerPlugins<D extends PluginDescription, I>(
       console.warn("Plugin has no type", plugin);
       return;
     }
-    const registry = getPluginRegistry(plugin.type);
-    registry.register(plugin, sourceModule);
+    const registry = getRegistry(plugin.type);
+    registry.register(plugin, importUrl);
   });
 }

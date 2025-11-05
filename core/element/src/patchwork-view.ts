@@ -12,7 +12,7 @@ import {
 } from "@patchwork/filesystem";
 import {
   getFallbackTool,
-  getPluginRegistry,
+  getRegistry,
   isLoadablePlugin,
   type Tool,
 } from "@patchwork/plugins";
@@ -159,7 +159,7 @@ export function registerPatchworkViewElement(
       };
 
       #init = async () => {
-        const toolRegistry = getPluginRegistry("patchwork:tool");
+        const toolRegistry = getRegistry("patchwork:tool");
         if (this.#state != State.none) {
           return;
         }
@@ -180,7 +180,7 @@ export function registerPatchworkViewElement(
         }); */
 
         this.#teardowns.add(
-          getPluginRegistry<Tool>("patchwork:tool").onChange(
+          getRegistry<Tool>("patchwork:tool").onChange(
             async (tools, newTool) => {
               const newToolId = newTool.id;
               const isChosenTool = newToolId == this.toolId;
@@ -260,8 +260,7 @@ export function registerPatchworkViewElement(
           console.warn(`no tool for ${this.#docUrl}`);
         }
 
-        this.#tool =
-          getPluginRegistry<Tool>("patchwork:tool").get(toolId) ?? null;
+        this.#tool = getRegistry<Tool>("patchwork:tool").get(toolId) ?? null;
 
         if (!this.#tool) {
           console.warn("Tool not found", toolId);
@@ -270,7 +269,7 @@ export function registerPatchworkViewElement(
         }
 
         if (!this.#tool.module) {
-          getPluginRegistry("patchwork:tool").load(this.#tool.id);
+          getRegistry("patchwork:tool").load(this.#tool.id);
           this.#state = "unable";
           console.warn("Tool not loaded", toolId);
           return;

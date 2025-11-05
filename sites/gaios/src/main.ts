@@ -6,7 +6,7 @@ import "./styles/global.css";
 
 import bootstrap from "virtual:patchwork/setup";
 import {
-  getPluginRegistry,
+  getRegistry,
   registerPlugins,
   type Tool,
   type ToolDescription,
@@ -50,15 +50,15 @@ if (!toolId) {
 
   const type = doc.doc()["@patchwork"].type;
 
-  const [plugin] = await getPluginRegistry<ToolDescription>(
-    "patchwork:tool"
-  ).loadAll((desc) => {
-    if (desc.id == "raw") return false;
-    return (
-      desc.supportedDataTypes.includes(type) ||
-      desc.supportedDataTypes.includes("*")
-    );
-  });
+  const [plugin] = await getRegistry<ToolDescription>("patchwork:tool").loadAll(
+    (desc) => {
+      if (desc.id == "raw") return false;
+      return (
+        desc.supportedDataTypes.includes(type) ||
+        desc.supportedDataTypes.includes("*")
+      );
+    }
+  );
   if (plugin && "EditorComponent" in (plugin as Tool).module) {
     plugin.module = patchworkReactShim(plugin.module.EditorComponent);
   }

@@ -3,7 +3,7 @@ import "./global.css";
 import { CONTEXT, Context } from "@patchwork/context";
 import { registerPatchworkViewElement, openDocument } from "@patchwork/element";
 import { ModuleWatcher } from "@patchwork/filesystem";
-import { getPluginRegistry, registerPlugins } from "@patchwork/plugins";
+import { getRegistry, registerPlugins } from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
 import {
   getOrCreateLayoutDocHandle,
@@ -41,7 +41,7 @@ const { repo, hive } = await bootstrap();
 
 window.CONTEXT = CONTEXT;
 
-window.getPluginRegistry = getPluginRegistry;
+window.getPluginRegistry = getRegistry;
 
 const loadedPlugins = Object.groupBy(
   await Promise.allSettled(

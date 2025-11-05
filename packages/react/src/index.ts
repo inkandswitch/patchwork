@@ -7,7 +7,7 @@ import type {
   ToolImplementation,
   ToolElement,
 } from "@patchwork/plugins";
-import { PluginRegistry, getPluginRegistry } from "@patchwork/plugins";
+import { PluginRegistry, getRegistry } from "@patchwork/plugins";
 import { useEffect, useState, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
@@ -24,10 +24,7 @@ export const usePluginDescriptions = <
   >([]);
 
   useEffect(() => {
-    const registry = getPluginRegistry(type) as PluginRegistry<
-      Description,
-      Implementation
-    >;
+    const registry = getRegistry<Description>(type);
 
     const onPluginsChange = () => {
       setPlugins(registry.all());
@@ -54,10 +51,7 @@ export const usePlugin = <
 
   useEffect(() => {
     let canceled = false;
-    const registry = getPluginRegistry(type) as PluginRegistry<
-      Description,
-      Implementation
-    >;
+    const registry = getRegistry<Description>(type);
 
     const loadDatatype = () => {
       if (!id) {

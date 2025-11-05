@@ -1,7 +1,7 @@
 import type { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import type { LoadedPlugin, PluginDescription } from "./registry/index.js";
 import { getType, type HasPatchworkMetadata } from "@patchwork/filesystem";
-import { getPluginRegistry } from "./registry/index.js";
+import { getRegistry } from "./registry/index.js";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 type AutomergeRepoKeyhive = Awaited<
@@ -37,14 +37,12 @@ export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;
 export type LegacyEditorProps = { docUrl: AutomergeUrl };
 
 export function getSupportedToolsForType(type: string): Tool[] {
-  const plugins = getPluginRegistry<ToolDescription>("patchwork:tool").all(
-    (desc) => {
-      return (
-        desc.supportedDataTypes.includes(type) ||
-        desc.supportedDataTypes.includes("*")
-      );
-    }
-  );
+  const plugins = getRegistry<ToolDescription>("patchwork:tool").all((desc) => {
+    return (
+      desc.supportedDataTypes.includes(type) ||
+      desc.supportedDataTypes.includes("*")
+    );
+  });
 
   return plugins as Tool[];
 }
