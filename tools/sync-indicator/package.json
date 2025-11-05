@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/sync-indicator",
+  "name": "@tiny-patchwork/sync-indicator",
   "private": true,
   "version": "0.0.0",
   "type": "module",
