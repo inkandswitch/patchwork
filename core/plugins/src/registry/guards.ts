@@ -2,7 +2,7 @@ import type {
   LoadablePlugin,
   LoadedPlugin,
   PluginDescription,
-  PluginTypeMap,
+  RegistryTypeMap,
 } from "./types";
 
 /**
@@ -14,7 +14,7 @@ export function isPlugin<
   I = any,
 >(
   value: unknown,
-  pluginType?: keyof PluginTypeMap
+  pluginType?: keyof RegistryTypeMap
 ): value is LoadedPlugin<T, I> {
   if (!value || typeof value !== "object") return false;
   const plugin = value as LoadedPlugin<T, I>;
