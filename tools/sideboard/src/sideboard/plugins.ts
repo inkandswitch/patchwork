@@ -20,7 +20,7 @@ const datatypeRegistry = getRegistry<DataTypeDescription>("patchwork:datatype");
 
 export function useTools(): Tool[] {
   const [plugins, setPlugins] = createStore(toolRegistry.all());
-  const dispose = toolRegistry.onChange(() =>
+  const dispose = toolRegistry.on("changed", () =>
     setPlugins(reconcile(toolRegistry.all()))
   );
   onCleanup(dispose);
@@ -31,7 +31,7 @@ export function useDatatypes(filter: (item: DataType) => boolean): DataType[] {
   const [plugins, setPlugins] = createStore(
     datatypeRegistry.all().filter(filter)
   );
-  const dispose = datatypeRegistry.onChange(() =>
+  const dispose = datatypeRegistry.on("changed", () =>
     setPlugins(reconcile(datatypeRegistry.all().filter(filter)))
   );
   onCleanup(dispose);
@@ -51,7 +51,7 @@ export function useSupportedToolsForType(type: MaybeAccessor<string>) {
     on(
       () => access(type),
       (type) => {
-        const dispose = toolRegistry.onChange(() =>
+        const dispose = toolRegistry.on("changed", () =>
           setPlugins(reconcile(getSupportedToolsForType(type)))
         );
         onCleanup(dispose);

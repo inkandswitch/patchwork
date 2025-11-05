@@ -15,6 +15,10 @@ import {
   getRegistry,
   isLoadablePlugin,
   type Tool,
+  type LoadablePlugin,
+  type LoadedPlugin,
+  type ToolDescription,
+  type ToolImplementation,
 } from "@patchwork/plugins";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
@@ -172,44 +176,68 @@ export function registerPatchworkViewElement(
 
         this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
 
-        /*        moduleWatcher.loadSuggestedImportUrl(this.docUrl).catch(() => {
-          console.warn(
-            `couldn't load suggested import url for ${this.docUrl}`,
-            new Error().stack
-          );
-        }); */
+        // TODO: these are inlined and not separate functions
+        // because we need to do some work getting types working well here.
+        // @chee would be good to chat about this at some point.
+        const removeAddedListener = toolRegistry.on(
+          "added",
+          async (addedTool) => {
+            const toolId = addedTool.id;
+            const isChosenTool = toolId == this.toolId;
+            const isFallbackTool = toolId == this.#fallbackId;
 
-        this.#teardowns.add(
-          getRegistry<Tool>("patchwork:tool").onChange(
-            async (tools, newTool) => {
-              const newToolId = newTool.id;
-              const isChosenTool = newToolId == this.toolId;
-              const isFallbackTool = newToolId == this.#fallbackId;
-              if (isChosenTool || isFallbackTool) {
-                if (isLoadablePlugin(newTool) && !newTool.module) {
-                  // if it's not loaded, load it now
-                  await toolRegistry.load(newTool.id);
+            if (isChosenTool || isFallbackTool) {
+              if (isLoadablePlugin(addedTool)) {
+                // if it's not loaded, load it now
+                await toolRegistry.load(addedTool.id);
 
-                  // probably a hot reload
-                  if (!newTool.module) {
-                    await newTool.load();
-                  }
+                // probably a hot reload
+                const reloadedTool = toolRegistry.get(addedTool.id);
+                if (reloadedTool && isLoadablePlugin(reloadedTool)) {
+                  await reloadedTool.load();
                 }
+              }
 
-                if (this.#state == "unable") {
-                  this.#queueRender();
-                }
+              if (this.#state == "unable") {
+                this.#queueRender();
+              }
 
-                if (this.#state == "error" || this.#state == "rendered") {
-                  if (newTool.importUrl !== this.#tool?.importUrl) {
-                    await this.#teardown();
-                    this.#init();
-                  }
+              if (this.#state == "error" || this.#state == "rendered") {
+                if (addedTool.importUrl !== this.#tool?.importUrl) {
+                  await this.#teardown();
+                  this.#init();
                 }
               }
             }
-          )
+          }
         );
+
+        const removeLoadedListener = toolRegistry.on(
+          "loaded",
+          async (loadedTool) => {
+            const toolId = loadedTool.id;
+            const isChosenTool = toolId == this.toolId;
+            const isFallbackTool = toolId == this.#fallbackId;
+
+            if (isChosenTool || isFallbackTool) {
+              if (this.#state == "unable") {
+                this.#queueRender();
+              }
+
+              if (this.#state == "error" || this.#state == "rendered") {
+                if (loadedTool.importUrl !== this.#tool?.importUrl) {
+                  await this.#teardown();
+                  this.#init();
+                }
+              }
+            }
+          }
+        );
+
+        this.#teardowns.add(() => {
+          removeAddedListener();
+          removeLoadedListener();
+        });
 
         this.#handle.on("change", this.#onDocChange);
         this.#teardowns.add(() =>

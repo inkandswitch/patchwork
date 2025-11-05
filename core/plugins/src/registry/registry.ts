@@ -4,6 +4,7 @@ import type {
   PluginDescription,
   Plugin,
   PluginRegistryEvents,
+  LoadablePlugin,
 } from "./types";
 import debug from "debug";
 import { isLoadablePlugin, isPluginDescription } from "./guards.js";
@@ -29,10 +30,15 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
       plugin.importUrl = importUrl;
     }
 
+    const alreadyRegistered = this.#plugins.has(plugin.id);
+
     // Store the plugin
     this.#plugins.set(plugin.id, plugin);
 
-    this.#events.emit("plugins:changed", this.all(), plugin);
+    if (!alreadyRegistered) {
+      this.#events.emit("added", plugin);
+      this.#events.emit("changed");
+    }
   }
 
   /**
@@ -91,7 +97,8 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
           this.#loadPromises.delete(id);
 
           // Notify listeners that an plugin has been loaded
-          this.#events.emit("plugins:changed", this.all(), description);
+          this.#events.emit("loaded", Plugin);
+          this.#events.emit("changed");
 
           return Plugin;
         })
@@ -125,8 +132,6 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   /**
    * Load all registered plugins
    * @param filter Optional filter function to determine which plugins to load
-   * @param shouldWait Whether to wait for plugins to be registered if they aren't already
-   * @param timeout Timeout in milliseconds for waiting operations
    * @returns A promise resolving to an array of loaded plugins
    */
   async loadAll(
@@ -165,19 +170,44 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   }
 
   /**
-   * Subscribe to plugin changes
+   * Subscribe to plugin events
    */
-  onChange(
-    callback: PluginRegistryEvents<D, I>["plugins:changed"]
+  on(
+    event: "added",
+    callback: (
+      plugin: LoadablePlugin<D, I> | LoadedPlugin<D, I>
+    ) => void | Promise<void>
+  ): () => void;
+  on(
+    event: "loaded",
+    callback: (plugin: LoadedPlugin<D, I>) => void | Promise<void>
+  ): () => void;
+  on(
+    event: "removed",
+    callback: (id: string) => void | Promise<void>
+  ): () => void;
+  on(event: "changed", callback: () => void | Promise<void>): () => void;
+  // Implementation signature (no semicolon, has method body)
+  on(
+    event: keyof PluginRegistryEvents<D, I>,
+    callback: (...args: any[]) => void | Promise<void>
   ): () => void {
     if (!callback || typeof callback !== "function") {
-      throw new Error("Invalid callback provided to PluginRegistry.onChange");
+      throw new Error(`Invalid callback provided for event: ${event}`);
     }
-
-    this.#events.on("plugins:changed", callback);
-
+    this.#events.on(event, callback);
     return () => {
-      this.#events.off("plugins:changed", callback);
+      this.#events.off(event, callback);
     };
+  }
+
+  /**
+   * Unsubscribe from plugin events
+   */
+  off(
+    event: keyof PluginRegistryEvents<D, I>,
+    callback: (...args: any[]) => void
+  ): void {
+    this.#events.off(event, callback);
   }
 }
