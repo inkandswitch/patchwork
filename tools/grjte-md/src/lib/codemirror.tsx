@@ -1,8 +1,8 @@
-import { onCleanup } from "solid-js";
+import { onCleanup, createEffect } from "solid-js";
 
 /** CodeMirror */
 import { EditorView, type DecorationSet } from "@codemirror/view";
-import { EditorState, type Extension } from "@codemirror/state";
+import { EditorState, type Extension, Compartment } from "@codemirror/state";
 
 /** Automerge */
 import type { Prop as AutomergeProp } from "@automerge/automerge";
@@ -39,6 +39,9 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
   const [readOnlyExtension, createEffectReconfigureReadOnly] = createReadOnlyExtension(!!props.readOnly)
   const [decorationsExtension, createEffectReconfigureDecorations] = createDecorationsExtension(props.decorations);
 
+  // Create a compartment for user-provided extensions so they can be reconfigured
+  const userExtensionsCompartment = new Compartment();
+
   const selectionExtension = EditorView.updateListener.of((update) => {
     // Bubble all updates to consumers (doc changes, viewport, scroll, etc.)
     if (update.selectionSet) {
@@ -50,7 +53,7 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
   const extensions = [
     selectionExtension,
     decorationsExtension,
-    ...(props.extensions || []),
+    userExtensionsCompartment.of(props.extensions || []),
     syncExtension,
     readOnlyExtension
   ] as Extension[];
@@ -69,7 +72,14 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
   createEffectReconfigureSync(view);
   createEffectReconfigureReadOnly(view);
   createEffectReconfigureDecorations(view);
-  
+
+  // Reconfigure user extensions when props.extensions changes
+  createEffect(() => {
+    view.dispatch({
+      effects: userExtensionsCompartment.reconfigure(props.extensions || [])
+    });
+  });
+
   onCleanup(() => {
     view.destroy();
   });

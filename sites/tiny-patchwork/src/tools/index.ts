@@ -22,6 +22,8 @@ import { plugins as orionMarkwhen } from "@orion/markwhen";
 // @ts-expect-error no types
 import { plugins as grjteMarkdownPlugins } from "@grjte/markdown";
 // @ts-expect-error no types
+import { plugins as markdownLinksPlugins } from "@grjte/codemirror-md-links";
+// @ts-expect-error no types
 import { plugins as syncIndicatorPlugins } from "@patchwork/sync-indicator";
 // @ts-expect-error no types
 import { plugins as commandsPlugins } from "@orion/commands";
@@ -43,6 +45,7 @@ export const plugins: Plugin<any>[] = [
   ...highlightChangesCheckboxPlugins,
   ...frameConfiguratorPlugins,
   ...grjteMarkdownPlugins,
+  ...markdownLinksPlugins,
   ...orionMarkwhen,
   ...syncIndicatorPlugins,
   {
