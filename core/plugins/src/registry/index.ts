@@ -16,8 +16,6 @@ const registries: Record<string, PluginRegistry<any>> = {};
 /**
  * Get a registry for a specific plugin type, creating it if it doesn't exist
  * This implicitly registers the plugin type if it hasn't been registered yet
- * Only used internally to this file; instead of exposing the object we use
- * the utility functions below.
  */
 export function getRegistry<T extends PluginDescription>(
   type: string
