@@ -5,7 +5,7 @@ export const plugins = [
     type: "codemirror:extension",
     id: "codemirror-markdown",
     name: "Markdown",
-    supportedDataTypes: ["markdown"],
+    supportedDataTypes: ["essay", "markdown"],
     async load(): Promise<Extension> {
       const { markdownExtensions } = await import("./extension.js");
       return markdownExtensions();
