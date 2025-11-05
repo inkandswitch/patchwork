@@ -30,10 +30,10 @@ export const usePluginDescriptions = <
     >;
 
     const onPluginsChange = () => {
-      setPlugins(registry.getPlugins());
+      setPlugins(registry.all());
     };
 
-    setPlugins(registry.getPlugins());
+    setPlugins(registry.all());
 
     return registry.onChange(onPluginsChange);
   }, [type]);
@@ -63,7 +63,7 @@ export const usePlugin = <
       if (!id) {
         return;
       }
-      registry.loadById(id).then((datatype) => {
+      registry.load(id).then((datatype) => {
         if (canceled) return;
         setPlugin(datatype as LoadedPlugin<Description, Implementation>);
       });

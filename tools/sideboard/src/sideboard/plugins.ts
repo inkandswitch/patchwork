@@ -20,9 +20,9 @@ const datatypeRegistry =
 (window as any).datatypeRegistry = datatypeRegistry;
 
 export function useTools(): Tool[] {
-  const [plugins, setPlugins] = createStore(toolRegistry.getPlugins());
+  const [plugins, setPlugins] = createStore(toolRegistry.all());
   const dispose = toolRegistry.onChange(() =>
-    setPlugins(reconcile(toolRegistry.getPlugins()))
+    setPlugins(reconcile(toolRegistry.all()))
   );
   onCleanup(dispose);
   return plugins;
@@ -30,10 +30,10 @@ export function useTools(): Tool[] {
 
 export function useDatatypes(filter: (item: DataType) => boolean): DataType[] {
   const [plugins, setPlugins] = createStore(
-    datatypeRegistry.getPlugins().filter(filter)
+    datatypeRegistry.all().filter(filter)
   );
   const dispose = datatypeRegistry.onChange(() =>
-    setPlugins(reconcile(datatypeRegistry.getPlugins().filter(filter)))
+    setPlugins(reconcile(datatypeRegistry.all().filter(filter)))
   );
   onCleanup(dispose);
   return plugins;

@@ -63,7 +63,7 @@ export function getPlugin<T extends Plugin>(
   id: string
 ): T | undefined {
   const registry = getPluginRegistry(pluginType);
-  return registry.getById(id) as T | undefined;
+  return registry.get(id) as T | undefined;
 }
 
 /**
@@ -76,11 +76,7 @@ export async function getLoadedPlugin<T extends LoadedPlugin>(
   shouldWait = false,
   timeout = 10000
 ): Promise<T | undefined> {
-  return await getPluginRegistry<T>(pluginType).loadById(
-    id,
-    shouldWait,
-    timeout
-  );
+  return await getPluginRegistry<T>(pluginType).load(id);
 }
 
 /**
@@ -93,7 +89,7 @@ export function getPlugins<T extends Plugin>(
   filter?: (plugin: PluginDescription) => boolean
 ): T[] {
   const registry = getPluginRegistry<any>(pluginType);
-  return registry.getPlugins(filter) as T[];
+  return registry.all(filter) as T[];
 }
 
 /**
@@ -109,7 +105,7 @@ export async function getLoadedPlugins<T extends LoadedPlugin>(
   shouldWait = false
 ): Promise<T[]> {
   const registry = getPluginRegistry(pluginType);
-  return registry.loadAll(filter, shouldWait) as Promise<T[]>;
+  return registry.loadAll(filter) as Promise<T[]>;
 }
 
 /**
@@ -117,7 +113,7 @@ export async function getLoadedPlugins<T extends LoadedPlugin>(
  */
 export function hasPlugin(pluginType: string, id: string): boolean {
   const registry = getPluginRegistry(pluginType);
-  return registry.hasPlugin(id);
+  return registry.has(id);
 }
 
 /**
@@ -149,7 +145,7 @@ export function getMatchingPlugins<T extends Plugin>({
 }): { plugins: T[]; error: Error | undefined } {
   try {
     const registry = getPluginRegistry<T>(pluginType);
-    const plugins = registry.getPlugins(matchPlugins(matchField, matchValue));
+    const plugins = registry.all(matchPlugins(matchField, matchValue));
     const sortedPlugins = sortPlugins(
       plugins,
       matchField,
@@ -196,8 +192,7 @@ export async function getMatchingLoadedPlugins<T extends LoadedPlugin>({
   try {
     const registry = getPluginRegistry<T>(pluginType);
     const plugins = await registry.loadAll(
-      matchPlugins(matchField, matchValue),
-      wait
+      matchPlugins(matchField, matchValue)
     );
     const sortedPlugins = sortPlugins(
       plugins,

@@ -52,7 +52,7 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
         continue;
       }
 
-      registry.loadById(type).then((datatype) => {
+      registry.load(type).then((datatype) => {
         if (canceled || !datatype) {
           return;
         }
@@ -101,7 +101,7 @@ export const useAddUnknownDocumentsToSidebarEffect = (
         continue;
       }
 
-      registry.loadById(type).then((datatype) => {
+      registry.load(type).then((datatype) => {
         if (canceled || !datatype) {
           return;
         }
