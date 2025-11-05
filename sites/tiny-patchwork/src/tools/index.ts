@@ -20,13 +20,11 @@ import { plugins as frameConfiguratorPlugins } from "./frame-configurator";
 // @ts-expect-error no types
 import { plugins as orionMarkwhen } from "@orion/markwhen";
 // @ts-expect-error no types
-import { plugins as grjteMarkdownPlugins } from "@grjte/markdown";
-// @ts-expect-error no types
-import { plugins as markdownLinksPlugins } from "@grjte/codemirror-md-links";
-// @ts-expect-error no types
 import { plugins as codemirrorBasePlugins } from "@grjte/codemirror-base";
 // @ts-expect-error no types
 import { plugins as codemirrorMarkdownPlugins } from "@grjte/codemirror-markdown";
+// @ts-expect-error no types
+import { plugins as markdownLinksPlugins } from "@grjte/codemirror-md-links";
 // @ts-expect-error no types
 import { plugins as syncIndicatorPlugins } from "@patchwork/sync-indicator";
 // @ts-expect-error no types
@@ -48,12 +46,11 @@ export const plugins: Plugin<any>[] = [
   ...spacerPlugins,
   ...highlightChangesCheckboxPlugins,
   ...frameConfiguratorPlugins,
-  ...grjteMarkdownPlugins,
-  ...markdownLinksPlugins,
   ...orionMarkwhen,
   ...syncIndicatorPlugins,
   ...codemirrorBasePlugins,
   ...codemirrorMarkdownPlugins,
+  ...markdownLinksPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",
