@@ -12,11 +12,8 @@ import {
 } from "@patchwork/filesystem";
 import {
   getFallbackTool,
-  getPlugin,
   getPluginRegistry,
   isLoadablePlugin,
-  onPluginsChange,
-  type LoadablePlugin,
   type Tool,
 } from "@patchwork/plugins";
 
@@ -183,33 +180,35 @@ export function registerPatchworkViewElement(
         }); */
 
         this.#teardowns.add(
-          onPluginsChange<Tool>("patchwork:tool", async (_tools, newTool) => {
-            const newToolId = newTool.id;
-            const isChosenTool = newToolId == this.toolId;
-            const isFallbackTool = newToolId == this.#fallbackId;
-            if (isChosenTool || isFallbackTool) {
-              if (isLoadablePlugin(newTool) && !newTool.module) {
-                // if it's not loaded, load it now
-                await toolRegistry.load(newTool.id);
+          getPluginRegistry<Tool>("patchwork:tool").onChange(
+            async (tools, newTool) => {
+              const newToolId = newTool.id;
+              const isChosenTool = newToolId == this.toolId;
+              const isFallbackTool = newToolId == this.#fallbackId;
+              if (isChosenTool || isFallbackTool) {
+                if (isLoadablePlugin(newTool) && !newTool.module) {
+                  // if it's not loaded, load it now
+                  await toolRegistry.load(newTool.id);
 
-                // probably a hot reload
-                if (!newTool.module) {
-                  await newTool.load();
+                  // probably a hot reload
+                  if (!newTool.module) {
+                    await newTool.load();
+                  }
                 }
-              }
 
-              if (this.#state == "unable") {
-                this.#queueRender();
-              }
+                if (this.#state == "unable") {
+                  this.#queueRender();
+                }
 
-              if (this.#state == "error" || this.#state == "rendered") {
-                if (newTool.importUrl !== this.#tool?.importUrl) {
-                  await this.#teardown();
-                  this.#init();
+                if (this.#state == "error" || this.#state == "rendered") {
+                  if (newTool.importUrl !== this.#tool?.importUrl) {
+                    await this.#teardown();
+                    this.#init();
+                  }
                 }
               }
             }
-          })
+          )
         );
 
         this.#handle.on("change", this.#onDocChange);
@@ -261,7 +260,8 @@ export function registerPatchworkViewElement(
           console.warn(`no tool for ${this.#docUrl}`);
         }
 
-        this.#tool = getPlugin<Tool>("patchwork:tool", toolId) ?? null;
+        this.#tool =
+          getPluginRegistry<Tool>("patchwork:tool").get(toolId) ?? null;
 
         if (!this.#tool) {
           console.warn("Tool not found", toolId);

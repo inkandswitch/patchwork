@@ -2,10 +2,7 @@ import { CodeMirror } from "./lib/codemirror.tsx";
 
 /** CodeMirror Extensions */
 import { RangeSet, type Extension } from "@codemirror/state";
-import {
-  Decoration,
-  WidgetType,
-} from "@codemirror/view";
+import { Decoration, WidgetType } from "@codemirror/view";
 import { commentButtonGutter } from "./lib/comments/commentButtonGutter";
 
 /** Automerge */
@@ -21,9 +18,9 @@ import { createComment, getThreadsAt } from "@patchwork/context/comments";
 import {
   type Diff,
   DiffAnnotation,
-  getElementsWithDiff
+  getElementsWithDiff,
 } from "@patchwork/context/diff";
-import { getLoadedPlugins } from "@patchwork/plugins";
+import { getPluginRegistry } from "@patchwork/plugins";
 
 /** Styles */
 import { createSignal, onMount } from "solid-js";
@@ -38,8 +35,9 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
   if (!props.handle) {
     return;
   }
-  const contentRef = () => new PathRef(props.handle as DocHandle<TextDoc>, PATH);
-  const isReadOnly = () => !!parseAutomergeUrl(props.handle.url).heads
+  const contentRef = () =>
+    new PathRef(props.handle as DocHandle<TextDoc>, PATH);
+  const isReadOnly = () => !!parseAutomergeUrl(props.handle.url).heads;
 
   // TODO: what if contentRef() is undefined?
   // diff references
@@ -57,79 +55,104 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
   };
 
   // compute decorations
-  const decorations = () => RangeSet.of<Decoration>([
-      // decorations for diffs
-      ...refsWithDiff().flatMap((ref) => {
-        if (!(ref instanceof TextSpanRef)) return [];
-        if (ref.from === ref.to) return [];
-        const diff = ref.get(DiffAnnotation) as Diff<string>;
-
-        if (diff.type === "deleted") {
-          return Decoration.widget({
-            widget: new DeletionMarker(diff.before, isSelected(ref)),
-            side: 1,
-          }).range(ref.from, ref.from);
-        }
-
-        if (diff.type === "added") {
-          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const selected = isSelected(ref);
-          return Decoration.mark({
-            attributes: {
-              style: `
-                border-bottom: 2px solid ${isDarkMode ? '#4ade80' : '#22c55e'};
-                background-color: ${selected
-                  ? (isDarkMode ? '#16a34a' : '#86efac')
-                  : (isDarkMode ? '#14532d' : '#dcfce7')};
-              `
-            }
-          }).range(ref.from, ref.to);
-        }
-
-        return [];
-      }),
-      // decorations for comments
-      ...(refsWithComments()
-        ? refsWithComments().flatMap((ref) => {
+  const decorations = () =>
+    RangeSet.of<Decoration>(
+      [
+        // decorations for diffs
+        ...refsWithDiff().flatMap((ref) => {
           if (!(ref instanceof TextSpanRef)) return [];
           if (ref.from === ref.to) return [];
-          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const selected = isSelected(ref);
-          return Decoration.mark({
+          const diff = ref.get(DiffAnnotation) as Diff<string>;
+
+          if (diff.type === "deleted") {
+            return Decoration.widget({
+              widget: new DeletionMarker(diff.before, isSelected(ref)),
+              side: 1,
+            }).range(ref.from, ref.from);
+          }
+
+          if (diff.type === "added") {
+            const isDarkMode = window.matchMedia(
+              "(prefers-color-scheme: dark)"
+            ).matches;
+            const selected = isSelected(ref);
+            return Decoration.mark({
               attributes: {
                 style: `
-                  border-bottom: 2px solid ${isDarkMode ? '#facc15' : '#eab308'};
-                  background-color: ${selected
-                    ? (isDarkMode ? '#ca8a04' : '#fde047')
-                    : (isDarkMode ? '#713f12' : '#fef9c3')};
-                `
-              }
-            }).range(ref.from, ref.to)
-          })
-        : []),
-    ],
-    true // sort ranges
-  )
+                border-bottom: 2px solid ${isDarkMode ? "#4ade80" : "#22c55e"};
+                background-color: ${
+                  selected
+                    ? isDarkMode
+                      ? "#16a34a"
+                      : "#86efac"
+                    : isDarkMode
+                      ? "#14532d"
+                      : "#dcfce7"
+                };
+              `,
+              },
+            }).range(ref.from, ref.to);
+          }
+
+          return [];
+        }),
+        // decorations for comments
+        ...(refsWithComments()
+          ? refsWithComments().flatMap((ref) => {
+              if (!(ref instanceof TextSpanRef)) return [];
+              if (ref.from === ref.to) return [];
+              const isDarkMode = window.matchMedia(
+                "(prefers-color-scheme: dark)"
+              ).matches;
+              const selected = isSelected(ref);
+              return Decoration.mark({
+                attributes: {
+                  style: `
+                  border-bottom: 2px solid ${isDarkMode ? "#facc15" : "#eab308"};
+                  background-color: ${
+                    selected
+                      ? isDarkMode
+                        ? "#ca8a04"
+                        : "#fde047"
+                      : isDarkMode
+                        ? "#713f12"
+                        : "#fef9c3"
+                  };
+                `,
+                },
+              }).range(ref.from, ref.to);
+            })
+          : []),
+      ],
+      true // sort ranges
+    );
 
   // handle selection changes
   const selectionContext = createSubcontext();
   const onChangeSelection = (from: number, to: number) => {
-    const selectedText = new TextSpanRef(props.handle as DocHandle<TextDoc>, PATH, from, to);
+    const selectedText = new TextSpanRef(
+      props.handle as DocHandle<TextDoc>,
+      PATH,
+      from,
+      to
+    );
     selectionContext.replace([selectedText.with(IsSelected(true))]);
   };
 
   // handle comment creation
   const onComment = async (from: number, to: number) => {
     createComment({
-      refs: [new TextSpanRef(props.handle as DocHandle<TextDoc>, PATH, from, to)],
+      refs: [
+        new TextSpanRef(props.handle as DocHandle<TextDoc>, PATH, from, to),
+      ],
       content: "",
       authorId: (await props.repo.storageId())!,
     });
-  }
+  };
 
   // Base CodeMirror extensions (context-specific, not language-specific)
   const [extensions, setExtensions] = createSignal<Extension[]>([
-    commentButtonGutter(onComment)
+    commentButtonGutter(onComment),
   ]);
 
   // Load CodeMirror extensions dynamically on mount
@@ -138,15 +161,15 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
     const docType = (props.handle.doc() as any)?.["@patchwork"]?.type;
 
     // Load extensions that support this document type
-    const loadedExtensions = await getLoadedPlugins(
-      "codemirror:extension",
-      (ext: any) => {
-        return (
-          ext.supportedDataTypes === "*" ||
-          (Array.isArray(ext.supportedDataTypes) && ext.supportedDataTypes.includes(docType))
-        );
-      }
-    );
+    const loadedExtensions = await getPluginRegistry<any>(
+      "codemirror:extension"
+    ).loadAll((ext) => {
+      return (
+        ext.supportedDataTypes === "*" ||
+        (Array.isArray(ext.supportedDataTypes) &&
+          ext.supportedDataTypes.includes(docType))
+      );
+    });
 
     // Flatten and add to existing extensions
     const flattenedExts = loadedExtensions.flatMap((ext) => {
@@ -154,11 +177,8 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
       return Array.isArray(impl) ? impl : [impl];
     });
 
-    setExtensions((exts) => [
-      ...exts,
-      ...flattenedExts,
-    ]);
-  })
+    setExtensions((exts) => [...exts, ...flattenedExts]);
+  });
 
   return (
     <div class="w-full h-full overflow-auto bg-base">
@@ -178,7 +198,7 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
       </div>
     </div>
   );
-};
+}
 
 class DeletionMarker extends WidgetType {
   deletedText: string;
