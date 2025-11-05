@@ -9,15 +9,13 @@ export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
 }
 
 /**
- * Map of plugin type strings to their corresponding description types
+ * Map of registry types and their corresponding plugin description types
+ * can be extended with `declare module "@patchwork/plugins" { ... }`
+ * to add new registry types in userland while maintaining type safety.
  */
-
-export type PluginTypeMap = {
+export type RegistryTypeMap = {
   "patchwork:tool": ToolDescription;
   "patchwork:datatype": DataTypeDescription;
-} & {
-  // Allow for user-defined plugin types
-  [key: string]: PluginDescription;
 };
 /**
  * Base interface for all plugin descriptions
