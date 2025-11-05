@@ -32,6 +32,8 @@
     "@automerge/vanillajs": "catalog:",
     "@chee/patchwork-sideboard": "workspace:^",
     "@grjte/markdown": "workspace:^",
+    "@grjte/codemirror-base": "workspace:^",
+    "@grjte/codemirror-markdown": "workspace:^",
     "@grjte/codemirror-md-links": "workspace:^",
     "@orion/commands": "workspace:^",
     "@orion/markwhen": "workspace:^",
