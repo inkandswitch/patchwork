@@ -161,15 +161,17 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
     const docType = (props.handle.doc() as any)?.["@patchwork"]?.type;
 
     // Load extensions that support this document type
-    const loadedExtensions = await getRegistry<any>(
-      "codemirror:extension"
-    ).loadAll((ext) => {
-      return (
-        ext.supportedDataTypes === "*" ||
-        (Array.isArray(ext.supportedDataTypes) &&
-          ext.supportedDataTypes.includes(docType))
-      );
-    });
+    const extensionsRegistry = getRegistry<any>("codemirror:extension");
+
+    const loadedExtensions = await extensionsRegistry.loadAll(
+      extensionsRegistry.filter((ext) => {
+        return (
+          ext.supportedDataTypes === "*" ||
+          (Array.isArray(ext.supportedDataTypes) &&
+            ext.supportedDataTypes.includes(docType))
+        );
+      })
+    );
 
     // Flatten and add to existing extensions
     const flattenedExts = loadedExtensions.flatMap((ext) => {
