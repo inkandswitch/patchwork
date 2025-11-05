@@ -5,16 +5,15 @@ import {
   type Tool,
   type DataType,
   getSupportedToolsForType,
-  getPluginRegistry,
+  getRegistry,
 } from "@patchwork/plugins";
 import { createEffect, on, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 
 // TODO: maybe these shouold go alongside the @patchwork/react package?
 
-const toolRegistry = getPluginRegistry<ToolDescription>("patchwork:tool");
-const datatypeRegistry =
-  getPluginRegistry<DataTypeDescription>("patchwork:datatype");
+const toolRegistry = getRegistry<ToolDescription>("patchwork:tool");
+const datatypeRegistry = getRegistry<DataTypeDescription>("patchwork:datatype");
 
 (window as any).toolRegistry = toolRegistry;
 (window as any).datatypeRegistry = datatypeRegistry;

@@ -20,7 +20,7 @@ import {
   DiffAnnotation,
   getElementsWithDiff,
 } from "@patchwork/context/diff";
-import { getPluginRegistry } from "@patchwork/plugins";
+import { getRegistry } from "@patchwork/plugins";
 
 /** Styles */
 import { createSignal, onMount } from "solid-js";
@@ -161,7 +161,7 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
     const docType = (props.handle.doc() as any)?.["@patchwork"]?.type;
 
     // Load extensions that support this document type
-    const loadedExtensions = await getPluginRegistry<any>(
+    const loadedExtensions = await getRegistry<any>(
       "codemirror:extension"
     ).loadAll((ext) => {
       return (

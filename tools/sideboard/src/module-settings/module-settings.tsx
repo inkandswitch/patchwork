@@ -9,7 +9,6 @@ import {
 import html from "solid-js/html";
 import { createStore, unwrap, reconcile } from "solid-js/store";
 import { makeDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
-import { getPluginRegistry } from "@patchwork/plugins";
 import {
   isValidAutomergeUrl,
   type AutomergeUrl,
@@ -18,8 +17,6 @@ import type { ModuleSettingsDoc } from "@patchwork/filesystem";
 import type { PatchworkToolProps } from "../types.ts";
 import { useTools } from "../sideboard/plugins.ts";
 import { ViewSource } from "./view-source.tsx";
-
-const registry = getPluginRegistry("patchwork:tool");
 
 function swapWithEnd(list: any[], idx: number) {
   const end = list.length - 1;
