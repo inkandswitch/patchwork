@@ -6,7 +6,7 @@ import type {
   PluginRegistryEvents,
 } from "./types";
 import debug from "debug";
-import { isLoadablePlugin, isPluginDescription } from ".";
+import { isLoadablePlugin, isPluginDescription } from "./guards.js";
 
 const log = debug("patchwork:plugins");
 

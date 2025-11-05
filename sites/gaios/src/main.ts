@@ -6,7 +6,7 @@ import "./styles/global.css";
 
 import bootstrap from "virtual:patchwork/setup";
 import {
-  getLoadedPlugins,
+  getPluginRegistry,
   registerPlugins,
   type Tool,
   type ToolDescription,
@@ -50,11 +50,13 @@ if (!toolId) {
 
   const type = doc.doc()["@patchwork"].type;
 
-  const [plugin] = await getLoadedPlugins("patchwork:tool", (desc) => {
+  const [plugin] = await getPluginRegistry<ToolDescription>(
+    "patchwork:tool"
+  ).loadAll((desc) => {
     if (desc.id == "raw") return false;
     return (
-      (desc as ToolDescription).supportedDataTypes.includes(type) ||
-      (desc as ToolDescription).supportedDataTypes.includes("*")
+      desc.supportedDataTypes.includes(type) ||
+      desc.supportedDataTypes.includes("*")
     );
   });
   if (plugin && "EditorComponent" in (plugin as Tool).module) {
