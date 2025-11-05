@@ -16,8 +16,6 @@ export type ToolElement = HTMLElement & {
   hive?: AutomergeRepoKeyhive;
 };
 
-// todo this shape should be (handle, element) and the extras should come
-// from elsewhere
 export type ToolRender<T = unknown> = (
   handle: DocHandle<T>,
   element: ToolElement
@@ -37,12 +35,14 @@ export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;
 export type LegacyEditorProps = { docUrl: AutomergeUrl };
 
 export function getSupportedToolsForType(type: string): Tool[] {
-  const plugins = getRegistry<ToolDescription>("patchwork:tool").all((desc) => {
-    return (
-      desc.supportedDataTypes.includes(type) ||
-      desc.supportedDataTypes.includes("*")
-    );
-  });
+  const plugins = getRegistry<ToolDescription>("patchwork:tool").filter(
+    (desc) => {
+      return (
+        desc.supportedDataTypes.includes(type) ||
+        desc.supportedDataTypes.includes("*")
+      );
+    }
+  );
 
   return plugins as Tool[];
 }

@@ -180,7 +180,7 @@ export function registerPatchworkViewElement(
         // because we need to do some work getting types working well here.
         // @chee would be good to chat about this at some point.
         const removeAddedListener = toolRegistry.on(
-          "added",
+          "registered",
           async (addedTool) => {
             const toolId = addedTool.id;
             const isChosenTool = toolId == this.toolId;
@@ -189,24 +189,7 @@ export function registerPatchworkViewElement(
             if (isChosenTool || isFallbackTool) {
               if (isLoadablePlugin(addedTool)) {
                 // if it's not loaded, load it now
-                await toolRegistry.load(addedTool.id);
-
-                // probably a hot reload
-                const reloadedTool = toolRegistry.get(addedTool.id);
-                if (reloadedTool && isLoadablePlugin(reloadedTool)) {
-                  await reloadedTool.load();
-                }
-              }
-
-              if (this.#state == "unable") {
-                this.#queueRender();
-              }
-
-              if (this.#state == "error" || this.#state == "rendered") {
-                if (addedTool.importUrl !== this.#tool?.importUrl) {
-                  await this.#teardown();
-                  this.#init();
-                }
+                toolRegistry.load(addedTool.id);
               }
             }
           }
