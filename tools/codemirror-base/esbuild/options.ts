@@ -17,7 +17,7 @@ export default {
   logLevel: "debug",
   sourcemap: false,
   plugins: [
-    dynamicExternal(/^((@automerge\/automerge(-repo)?)|@patchwork\/.*|@codemirror\/.*|@lezer\/.*|solid-js(\/.*)?)$/),
+    dynamicExternal(/^((@automerge\/automerge(-repo)?)|@patchwork\/.*|@codemirror\/.*|solid-js(\/.*)?)$/),
     solid(),
   ].concat(pushworking ? pushworkSync() : []),
   loader: { ".ttf": "dataurl" },

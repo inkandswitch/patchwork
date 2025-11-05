@@ -24,11 +24,6 @@
     "pushwatch": "pnpm dev pushwork"
   },
   "dependencies": {
-    "@patchwork/plugins": "workspace:^"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.28.4",
-    "@babel/parser": "^7.28.4",
     "@codemirror/autocomplete": "^6.19.0",
     "@codemirror/commands": "^6.9.0",
     "@codemirror/lang-markdown": "^6.4.0",
@@ -38,6 +33,11 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.4",
     "@lezer/highlight": "^1.2.1",
+    "@patchwork/plugins": "workspace:^"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/parser": "^7.28.4",
     "@eslint/js": "^9.36.0",
     "@node-types/node": "npm:@types/node@^24.9.1",
     "@types/babel__core": "^7.20.5",

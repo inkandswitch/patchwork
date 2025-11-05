@@ -341,9 +341,6 @@ importers:
       '@automerge/automerge':
         specifier: 3.2.0
         version: 3.2.0
-      '@automerge/automerge-codemirror':
-        specifier: ^0.2.0
-        version: 0.2.0
       '@automerge/automerge-repo':
         specifier: 2.5.0-alpha.2
         version: 2.5.0-alpha.2
@@ -483,33 +480,12 @@ importers:
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.4.0
         version: 2.4.0(@automerge/automerge@3.2.0)(solid-js@1.9.10)
-      '@codemirror/autocomplete':
-        specifier: ^6.19.0
-        version: 6.19.1
-      '@codemirror/commands':
-        specifier: ^6.9.0
-        version: 6.10.0
-      '@codemirror/lang-markdown':
-        specifier: ^6.4.0
-        version: 6.5.0
-      '@codemirror/language':
-        specifier: ^6.11.3
-        version: 6.11.3
-      '@codemirror/language-data':
-        specifier: ^6.5.1
-        version: 6.5.2
-      '@codemirror/search':
-        specifier: ^6.5.11
-        version: 6.5.11
       '@codemirror/state':
         specifier: ^6.5.2
         version: 6.5.2
       '@codemirror/view':
         specifier: ^6.38.4
         version: 6.38.6
-      '@lezer/highlight':
-        specifier: ^1.2.1
-        version: 1.2.3
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context
@@ -568,16 +544,6 @@ importers:
 
   tools/codemirror-markdown:
     dependencies:
-      '@patchwork/plugins':
-        specifier: workspace:^
-        version: link:../../core/plugins
-    devDependencies:
-      '@babel/core':
-        specifier: ^7.28.4
-        version: 7.28.4
-      '@babel/parser':
-        specifier: ^7.28.4
-        version: 7.28.4
       '@codemirror/autocomplete':
         specifier: ^6.19.0
         version: 6.19.1
@@ -600,14 +566,24 @@ importers:
         specifier: ^6.5.2
         version: 6.5.2
       '@codemirror/view':
-        specifier: ^6.38.4
+        specifier: ^6.5.2
         version: 6.38.6
-      '@eslint/js':
-        specifier: ^9.36.0
-        version: 9.39.1
       '@lezer/highlight':
         specifier: ^1.2.1
         version: 1.2.3
+      '@patchwork/plugins':
+        specifier: workspace:^
+        version: link:../../core/plugins
+    devDependencies:
+      '@babel/core':
+        specifier: ^7.28.4
+        version: 7.28.4
+      '@babel/parser':
+        specifier: ^7.28.4
+        version: 7.28.4
+      '@eslint/js':
+        specifier: ^9.36.0
+        version: 9.39.1
       '@node-types/node':
         specifier: npm:@types/node@^24.9.1
         version: '@types/node@24.10.0'
@@ -631,13 +607,7 @@ importers:
         version: 8.46.3(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
 
   tools/codemirror-md-links:
-    devDependencies:
-      '@babel/core':
-        specifier: ^7.28.4
-        version: 7.28.4
-      '@babel/parser':
-        specifier: ^7.28.4
-        version: 7.28.4
+    dependencies:
       '@codemirror/language':
         specifier: ^6.11.3
         version: 6.11.3
@@ -647,12 +617,16 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.4
         version: 6.38.6
+    devDependencies:
+      '@babel/core':
+        specifier: ^7.28.4
+        version: 7.28.4
+      '@babel/parser':
+        specifier: ^7.28.4
+        version: 7.28.4
       '@eslint/js':
         specifier: ^9.36.0
         version: 9.39.1
-      '@lezer/highlight':
-        specifier: ^1.2.1
-        version: 1.2.3
       '@node-types/node':
         specifier: npm:@types/node@^24.9.1
         version: '@types/node@24.10.0'
