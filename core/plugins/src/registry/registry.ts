@@ -16,13 +16,14 @@ const log = debug("patchwork:plugins");
  * I = Implementation type that will be loaded and combined with the description
  */
 export class PluginRegistry<D extends PluginDescription, I = any> {
-  private plugins = new Map<string, Plugin<D, I>>();
-  private loadPromises = new Map<string, Promise<LoadedPlugin<D, I>>>();
-  private events = new EventEmitter<PluginRegistryEvents<D, I>>();
+  #plugins = new Map<string, Plugin<D, I>>();
+  #loadPromises = new Map<string, Promise<LoadedPlugin<D, I>>>();
+  #events = new EventEmitter<PluginRegistryEvents<D, I>>();
 
   /**
    * Register an plugin with this registry
    */
+  // TODO: does this need to be async?
   async register(plugin: Plugin<D, I>, importUrl?: string): Promise<void> {
     // If an import URL was provided, attach it to the plugin
     if (importUrl && !plugin.importUrl) {
@@ -30,47 +31,27 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     }
 
     // Store the plugin
-    this.plugins.set(plugin.id, plugin);
+    this.#plugins.set(plugin.id, plugin);
 
-    this.events.emit("plugins:changed", this.getPlugins(), plugin);
-  }
-
-  /**
-   * Get an plugin description by ID without loading it (synchronous)
-   * Returns the description part of an plugin, whether loaded or not
-   */
-  getDescriptionById(id: string): D | undefined {
-    const plugin = this.plugins.get(id);
-    if (!plugin) return undefined;
-
-    // Extract just the description part by omitting any implementation-specific fields
-    const { load, ...description } = plugin as any;
-    return description as D;
+    this.#events.emit("plugins:changed", this.all(), plugin);
   }
 
   /**
    * Get an plugin by ID, returning either its description or loaded state
    */
-  getById(id: string): D | LoadedPlugin<D, I> | undefined {
-    return this.plugins.get(id);
+  get(id: string): D | LoadedPlugin<D, I> | undefined {
+    return this.#plugins.get(id);
   }
 
   /**
    * Load an plugin by ID, loading it on demand if necessary (asynchronous)
    * If shouldWait is true, will wait for the plugin to be registered if it isn't already
    */
-  async loadById(
-    id: string,
-    shouldWait = false,
-    timeout = 10000
-  ): Promise<LoadedPlugin<D, I> | undefined> {
-    log(`loadById called for: ${id}`, {
-      shouldWait,
-      timeout,
-    });
+  async load(id: string): Promise<LoadedPlugin<D, I> | undefined> {
+    log(`load called for: ${id}`, {});
 
     // Check if we already have a loaded plugin
-    const plugin = this.plugins.get(id);
+    const plugin = this.#plugins.get(id);
     log(`Found existing plugin: ${id}`, {
       hasPlugin: !!plugin,
       isLoadable: plugin ? isLoadablePlugin<D, I>(plugin) : "N/A",
@@ -82,36 +63,10 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     }
 
     // Get the plugin description
-    const description = this.plugins.get(id);
+    const description = this.#plugins.get(id);
     if (!description) {
-      log(`Plugin not registered: ${id}, shouldWait: ${shouldWait}`);
-      // If the plugin isn't registered and we shouldn't wait, return undefined
-      if (!shouldWait) {
-        return undefined;
-      }
-
-      // If shouldWait is true, set up a promise that will listen for plugin registration events
-      return new Promise<LoadedPlugin<D, I> | undefined>((resolve, reject) => {
-        const timeoutId = setTimeout(() => {
-          this.events.off("plugins:changed", checkForPlugin);
-          reject(new Error(`Timeout waiting for plugin ${id}`));
-        }, timeout);
-
-        const checkForPlugin = async () => {
-          if (this.plugins.has(id)) {
-            clearTimeout(timeoutId);
-            this.events.off("plugins:changed", checkForPlugin);
-            const plugin = await this.loadById(id);
-            resolve(plugin);
-          }
-        };
-
-        // Listen for plugin registration events
-        this.events.on("plugins:changed", checkForPlugin);
-
-        // Check once immediately in case it was registered between our initial check and setting up the listener
-        checkForPlugin();
-      });
+      log(`Plugin not registered: ${id}`);
+      return undefined;
     }
 
     // If the plugin is loadable, load it
@@ -133,22 +88,22 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
           } as LoadedPlugin<D, I>;
 
           // Store the loaded version
-          this.plugins.set(description.id, Plugin);
-          this.loadPromises.delete(id);
+          this.#plugins.set(description.id, Plugin);
+          this.#loadPromises.delete(id);
 
           // Notify listeners that an plugin has been loaded
-          this.events.emit("plugins:changed", this.getPlugins(), description);
+          this.#events.emit("plugins:changed", this.all(), description);
 
           return Plugin;
         })
         .catch((error) => {
           console.error(`Failed to load plugin implementation: ${id}`, error);
-          this.loadPromises.delete(id);
+          this.#loadPromises.delete(id);
           throw error;
         });
 
       // Store the promise so we don't load twice
-      this.loadPromises.set(id, loadPromise);
+      this.#loadPromises.set(id, loadPromise);
       return loadPromise;
     }
 
@@ -159,10 +114,8 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
    * Get all plugins, both descriptions and loaded
    * @param filter Optional filter function to determine which plugins to return
    */
-  getPlugins(
-    filter?: (plugin: LoadedPlugin<D, I>) => boolean
-  ): LoadedPlugin<D, I>[] {
-    const entries = Array.from(this.plugins.values());
+  all(filter?: (plugin: LoadedPlugin<D, I>) => boolean): LoadedPlugin<D, I>[] {
+    const entries = Array.from(this.#plugins.values());
     return filter
       ? entries.filter((plugin): plugin is LoadedPlugin<D, I> =>
           filter(plugin as LoadedPlugin<D, I>)
@@ -178,21 +131,19 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
    * @returns A promise resolving to an array of loaded plugins
    */
   async loadAll(
-    filter?: (plugin: D) => boolean,
-    shouldWait = false,
-    timeout = 10000
+    filter?: (plugin: D) => boolean
   ): Promise<LoadedPlugin<D, I>[]> {
     // Get all plugins or filter them if a filter function is provided
     const pluginsToLoad = filter
-      ? Array.from(this.plugins.entries()).filter(([_, plugin]) =>
+      ? Array.from(this.#plugins.entries()).filter(([_, plugin]) =>
           filter(plugin)
         )
-      : Array.from(this.plugins.entries());
+      : Array.from(this.#plugins.entries());
 
     // Create an array of promises for loading each plugin
     const loadPromises = pluginsToLoad.map(async ([id, _]) => {
       try {
-        const Plugin = await this.loadById(id, shouldWait, timeout);
+        const Plugin = await this.load(id);
         return Plugin;
       } catch (error) {
         console.warn(`Failed to load plugin ${id}:`, error);
@@ -210,8 +161,8 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   /**
    * Check if an plugin ID is registered
    */
-  hasPlugin(id: string): boolean {
-    return this.plugins.has(id);
+  has(id: string): boolean {
+    return this.#plugins.has(id);
   }
 
   /**
@@ -224,10 +175,10 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
       throw new Error("Invalid callback provided to PluginRegistry.onChange");
     }
 
-    this.events.on("plugins:changed", callback);
+    this.#events.on("plugins:changed", callback);
 
     return () => {
-      this.events.off("plugins:changed", callback);
+      this.#events.off("plugins:changed", callback);
     };
   }
 }

@@ -190,7 +190,7 @@ export function registerPatchworkViewElement(
             if (isChosenTool || isFallbackTool) {
               if (isLoadablePlugin(newTool) && !newTool.module) {
                 // if it's not loaded, load it now
-                await toolRegistry.loadById(newTool.id);
+                await toolRegistry.load(newTool.id);
 
                 // probably a hot reload
                 if (!newTool.module) {
@@ -270,7 +270,7 @@ export function registerPatchworkViewElement(
         }
 
         if (!this.#tool.module) {
-          getPluginRegistry("patchwork:tool").loadById(this.#tool.id);
+          getPluginRegistry("patchwork:tool").load(this.#tool.id);
           this.#state = "unable";
           console.warn("Tool not loaded", toolId);
           return;
