@@ -31,7 +31,6 @@
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@automerge/vanillajs": "catalog:",
     "@chee/patchwork-sideboard": "workspace:^",
-    "@grjte/markdown": "workspace:^",
     "@grjte/codemirror-base": "workspace:^",
     "@grjte/codemirror-markdown": "workspace:^",
     "@grjte/codemirror-md-links": "workspace:^",
