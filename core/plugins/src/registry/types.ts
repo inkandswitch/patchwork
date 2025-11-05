@@ -2,7 +2,7 @@ import { DataTypeDescription } from "../datatypes.js";
 import { ToolDescription } from "../tools.js";
 
 export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
-  added: (plugin: LoadablePlugin<D, I> | LoadedPlugin<D, I>) => void;
+  registered: (plugin: Plugin<D, I>) => void;
   loaded: (plugin: LoadedPlugin<D, I>) => void;
   removed: (id: string) => void;
   changed: () => void;
@@ -17,10 +17,10 @@ export type RegistryTypeMap = {
   "patchwork:tool": ToolDescription;
   "patchwork:datatype": DataTypeDescription;
 };
+
 /**
  * Base interface for all plugin descriptions
  */
-
 export interface PluginDescription {
   id: string;
   type: string;
@@ -28,23 +28,23 @@ export interface PluginDescription {
   icon?: string; // an icon name from the icon font
   importUrl?: string;
 }
+
 /**
  * Generic loadable plugin
  * D = Description type that extends PluginDescription
  * I = Implementation type that will be loaded
  */
-
 export type LoadablePlugin<
   D extends PluginDescription = PluginDescription,
   I = any,
 > = D & {
   load: () => Promise<I>;
 };
+
 /**
  * A fully loaded plugin combining description and implementation
  * D = Description type, I = Implementation type
  */
-
 export type LoadedPlugin<
   D extends PluginDescription = PluginDescription,
   I = any,
@@ -52,6 +52,10 @@ export type LoadedPlugin<
   module: I;
 };
 
+// NOTE: I know i know... this is here so that Plugin<any, any> is PluginDescription and doesn't collapse to 'any'
+type IsAny<T> = 0 extends 1 & T ? true : false;
+
 export type Plugin<D extends PluginDescription = PluginDescription, I = any> =
-  | LoadedPlugin<D, I>
-  | LoadablePlugin<D, I>;
+  IsAny<D> extends true
+    ? PluginDescription & { [key: string]: any }
+    : LoadedPlugin<D, I> | D;

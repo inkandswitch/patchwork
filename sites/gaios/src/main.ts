@@ -50,16 +50,17 @@ if (!toolId) {
 
   const type = doc.doc()["@patchwork"].type;
 
-  const [plugin] = await getRegistry<ToolDescription>("patchwork:tool").loadAll(
-    (desc) => {
+  const toolRegistry = getRegistry<ToolDescription>("patchwork:tool");
+  const [plugin] = await toolRegistry.loadAll(
+    toolRegistry.filter((desc) => {
       if (desc.id == "raw") return false;
       return (
         desc.supportedDataTypes.includes(type) ||
         desc.supportedDataTypes.includes("*")
       );
-    }
+    })
   );
-  if (plugin && "EditorComponent" in (plugin as Tool).module) {
+  if (plugin && "EditorComponent" in plugin.module) {
     plugin.module = patchworkReactShim(plugin.module.EditorComponent);
   }
 

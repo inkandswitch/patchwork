@@ -1,5 +1,5 @@
 import { PluginRegistry } from "./registry.js";
-import { PluginDescription, Plugin } from "./types.js";
+import { PluginDescription, LoadablePlugin } from "./types.js";
 
 export { PluginRegistry };
 export type {
@@ -34,7 +34,7 @@ export function getRegistry<T extends PluginDescription>(
  * Register plugins
  */
 export function registerPlugins<D extends PluginDescription, I>(
-  plugins: Plugin<D, I>[],
+  plugins: LoadablePlugin<D, I>[],
   importUrl: string
 ) {
   // Register each group with its appropriate registry

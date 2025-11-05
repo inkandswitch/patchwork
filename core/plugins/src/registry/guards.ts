@@ -3,25 +3,8 @@ import type {
   LoadedPlugin,
   PluginDescription,
   RegistryTypeMap,
+  Plugin,
 } from "./types";
-
-/**
- * Check if a value is a plugin, optionally of a specific type
- * If a type is provided, it will be used to infer the correct plugin type
- */
-export function isPlugin<
-  T extends PluginDescription = PluginDescription,
-  I = any,
->(
-  value: unknown,
-  pluginType?: keyof RegistryTypeMap
-): value is LoadedPlugin<T, I> {
-  if (!value || typeof value !== "object") return false;
-  const plugin = value as LoadedPlugin<T, I>;
-  if (!plugin.type || !plugin.name || !plugin.id) return false;
-  if (pluginType && plugin.type !== pluginType) return false;
-  return true;
-}
 
 /**
  * Type predicate to ensure a value is of type D
@@ -51,4 +34,32 @@ export function isLoadablePlugin<
     "load" in value &&
     typeof value.load === "function"
   );
+}
+
+/**
+ * Check if a value is a loaded plugin
+ */
+
+export function isLoadedPlugin<
+  D extends PluginDescription = PluginDescription,
+  I = any,
+>(value: unknown): value is LoadedPlugin<D, I> {
+  return isPluginDescription<D>(value) && "module" in value;
+}
+
+/**
+ * Check if a value is a plugin, optionally of a specific type
+ * If a type is provided, it will be used to infer the correct plugin type
+ */
+export function isPlugin<
+  T extends PluginDescription = PluginDescription,
+  I = any,
+>(value: unknown): value is Plugin<T, I> {
+  if (isPluginDescription<T>(value)) {
+    return true;
+  }
+  if (isLoadablePlugin<T, I>(value)) {
+    return true;
+  }
+  return false;
 }
