@@ -32,7 +32,7 @@ export const usePluginDescriptions = <
 
     setPlugins(registry.all());
 
-    return registry.onChange(onPluginsChange);
+    return registry.on("changed", onPluginsChange);
   }, [type]);
 
   return plugins;
@@ -63,7 +63,7 @@ export const usePlugin = <
       });
     };
 
-    const unsubscribe = registry.onChange(loadDatatype);
+    const unsubscribe = registry.on("changed", loadDatatype);
 
     loadDatatype();
 
