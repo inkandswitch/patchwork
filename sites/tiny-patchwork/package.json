@@ -42,6 +42,7 @@
     "@patchwork/tldraw": "workspace:^",
     "@patchwork/react": "workspace:^",
     "@patchwork/util": "workspace:^",
+    "@tiny-patchwork/back-link-button": "workspace:^",
     "add": "^2.0.6",
     "boring-avatars": "^2.0.4",
     "cmdk": "^1.1.1",

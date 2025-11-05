@@ -6,7 +6,8 @@ import { plugins as todoPlugins } from "./todo";
 import { plugins as historyViewPlugins } from "./history-view";
 import { plugins as commentsViewPlugins } from "./comments-view";
 import { plugins as contextViewPlugins } from "./context-view";
-import { plugins as backLinkButtonPlugins } from "./back-link-button";
+// @ts-expect-error no types
+import { plugins as backLinkButtonPlugins } from "@tiny-patchwork/back-link-button";
 import { plugins as documentTitlePlugins } from "./doc-title";
 // @ts-expect-error no types
 import { plugins as tldrawPlugins } from "@patchwork/tldraw";

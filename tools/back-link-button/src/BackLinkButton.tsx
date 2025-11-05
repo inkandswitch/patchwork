@@ -1,3 +1,5 @@
+import "./style.css";
+import React from "react";
 import { AutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
@@ -12,6 +14,8 @@ export const BackLinkButton = ({
   docUrl: AutomergeUrl;
   element: ToolElement;
 }) => {
+  console.log("render", docUrl);
+
   const [doc] = useDocument<HasPatchworkMetadata>(docUrl);
   const originalDocUrl = doc?.["@patchwork"]?.copyOf as
     | AutomergeUrl
@@ -23,7 +27,7 @@ export const BackLinkButton = ({
   )?.module.getTitle(originalDoc);
 
   if (!originalDocUrl) {
-    return null;
+    return "original flavour";
   }
 
   // strip the heads because we want to link to the current version of the document
