@@ -40,18 +40,18 @@ export function getPluginRegistry<T extends PluginDescription>(
 /**
  * Register plugins for a specific plugin type
  */
-export async function registerPlugins<D extends PluginDescription, I>(
+export function registerPlugins<D extends PluginDescription, I>(
   plugins: Plugin<D, I>[],
   sourceModule: string
-): Promise<void> {
+) {
   // Register each group with its appropriate registry
-  plugins.forEach(async (plugin) => {
+  plugins.forEach((plugin) => {
     if (!plugin.type) {
       console.warn("Plugin has no type", plugin);
       return;
     }
     const registry = getPluginRegistry(plugin.type);
-    await registry.register(plugin, sourceModule);
+    registry.register(plugin, sourceModule);
   });
 }
 

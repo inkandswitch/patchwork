@@ -23,8 +23,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   /**
    * Register an plugin with this registry
    */
-  // TODO: does this need to be async?
-  async register(plugin: Plugin<D, I>, importUrl?: string): Promise<void> {
+  register(plugin: Plugin<D, I>, importUrl?: string) {
     // If an import URL was provided, attach it to the plugin
     if (importUrl && !plugin.importUrl) {
       plugin.importUrl = importUrl;
