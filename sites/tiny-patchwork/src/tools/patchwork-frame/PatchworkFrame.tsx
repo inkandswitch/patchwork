@@ -145,9 +145,7 @@ export const PatchworkFrame = ({
         <button
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           className={`absolute top-1/2 -translate-y-1/2 z-10 bg-base-200 border border-base-300 p-2 hover:bg-base-300 transition-all duration-300 ${
-            isSidebarCollapsed
-              ? "left-0 rounded-r-md"
-              : "left-[380px] rounded-md"
+            isSidebarCollapsed ? "left-0 rounded-r-md" : "right-0 rounded-md"
           }`}
           title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
