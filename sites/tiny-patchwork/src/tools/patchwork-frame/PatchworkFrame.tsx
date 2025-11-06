@@ -131,7 +131,7 @@ export const PatchworkFrame = ({
   return (
     <div className="w-screen h-screen flex">
       <div
-        className={`flex flex-col relative transition-all duration-300 ${
+        className={`flex relative transition-all duration-300 ${
           isSidebarCollapsed ? "w-0" : "w-[400px]"
         }`}
       >
@@ -144,28 +144,12 @@ export const PatchworkFrame = ({
         )}
         <button
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className={`absolute top-1/2 -translate-y-1/2 z-10 bg-base-200 border border-base-300 p-2 hover:bg-base-300 transition-all duration-300 ${
-            isSidebarCollapsed ? "left-0 rounded-r-md" : "right-0 rounded-md"
-          }`}
+          className="sidebar-toggle"
+          aria-label={
+            isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+          }
           title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={`transition-transform duration-300 ${
-              isSidebarCollapsed ? "" : "rotate-180"
-            }`}
-          >
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
+        />
       </div>
 
       <div className="flex flex-col flex-1 h-full">
