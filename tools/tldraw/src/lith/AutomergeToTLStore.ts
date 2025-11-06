@@ -1,5 +1,6 @@
 import type { TLRecord, RecordId, TLStore } from "tldraw";
 import * as Automerge from "@automerge/automerge";
+import { isImmutableString } from "@automerge/automerge";
 
 export function applyAutomergePatchesToTLStore(
   patches: Automerge.Patch[],
@@ -8,7 +9,14 @@ export function applyAutomergePatchesToTLStore(
   const toRemove: TLRecord["id"][] = [];
   const updatedObjects: { [id: string]: TLRecord } = {};
 
-  patches.forEach((patch) => {
+  patches.forEach((rawPatch) => {
+    let patch = rawPatch;
+    if (rawPatch.action === "put" && isImmutableString(rawPatch.value)) {
+      patch = {
+        ...rawPatch,
+        value: rawPatch.value.toString(),
+      };
+    }
     if (!isStorePatch(patch)) return;
 
     const id = pathToId(patch.path.map((p) => `${p}`));
