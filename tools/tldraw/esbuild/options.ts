@@ -8,7 +8,9 @@ import pkgJSON from "../package.json" with { type: "json" };
 const pushworking = process.argv.includes("pushwork") || process.env.PUSHWORK;
 
 export default {
-  entryPoints: Object.values(pkgJSON.exports).map((dsc) => dsc.source),
+  entryPoints: Object.values(pkgJSON.exports)
+    .filter((dsc) => typeof dsc == "object" && "source" in dsc)
+    .map((dsc) => dsc.source),
   outdir: "dist",
   bundle: true,
   platform: "browser",
