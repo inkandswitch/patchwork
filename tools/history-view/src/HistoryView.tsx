@@ -2,17 +2,17 @@ import "./styles.css";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { ViewHeads, ViewHeadsAnnotation } from "@patchwork/context/diff";
+import { ViewHeads, ViewHeadsAnnotation } from "@patchwork/context-diff";
 import {
   useDocRef,
   useReactive,
   useSubcontext,
-} from "@patchwork/context/react";
+} from "@patchwork/context-react";
 import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
 import { useEffect, useState } from "react";
 import { relativeTime } from "@patchwork/util/src/relative-time";
 import { toolify } from "@patchwork/react";
-import { $selectedDocUrls } from "@patchwork/context/selection";
+import { $selectedDocUrls } from "@patchwork/context-selection";
 import { useDatatype } from "@patchwork/react";
 
 const HistoryView = () => {
@@ -129,5 +129,3 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
 };
 
 export const renderHistoryView = toolify(HistoryView);
-
-

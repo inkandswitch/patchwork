@@ -176,15 +176,72 @@ importers:
       '@automerge/automerge-repo':
         specifier: 2.5.0-alpha.2
         version: 2.5.0-alpha.2
-      '@automerge/automerge-repo-react-hooks':
-        specifier: 'catalog:'
-        version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patchwork/filesystem':
-        specifier: workspace:*
-        version: link:../../core/filesystem
       eventemitter3:
         specifier: ^5.0.1
         version: 5.0.1
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.37.0
+        version: 9.38.0
+      '@typescript-eslint/parser':
+        specifier: ^8.40.0
+        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
+      eslint:
+        specifier: ^9.34.0
+        version: 9.38.0(jiti@2.6.1)
+      globals:
+        specifier: ^16.3.0
+        version: 16.4.0
+      jsdom:
+        specifier: ^26.1.0
+        version: 26.1.0
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.41.0
+        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
+
+  packages/context-comments:
+    dependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
+      '@patchwork/context':
+        specifier: workspace:*
+        version: link:../context
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/context-diff:
+    dependencies:
+      '@automerge/automerge':
+        specifier: 3.2.0
+        version: 3.2.0
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
+      '@patchwork/context':
+        specifier: workspace:*
+        version: link:../context
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/context-react:
+    dependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
+      '@automerge/automerge-repo-react-hooks':
+        specifier: 'catalog:'
+        version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patchwork/context':
+        specifier: workspace:*
+        version: link:../context
       react:
         specifier: ^18.3.0
         version: 18.3.1
@@ -192,36 +249,41 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
     devDependencies:
-      '@eslint/js':
-        specifier: ^9.37.0
-        version: 9.38.0
       '@types/react':
         specifier: 'catalog:'
         version: 18.3.26
-      '@typescript-eslint/parser':
-        specifier: ^8.40.0
-        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
-      eslint:
-        specifier: ^9.34.0
-        version: 9.38.0(jiti@2.6.1)
-      eslint-plugin-react-hooks:
-        specifier: ^5.2.0
-        version: 5.2.0(eslint@9.38.0(jiti@2.6.1))
-      globals:
-        specifier: ^16.3.0
-        version: 16.4.0
-      jsdom:
-        specifier: ^26.1.0
-        version: 26.1.0
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/context-selection:
+    dependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
+      '@patchwork/context':
+        specifier: workspace:*
+        version: link:../context
+      '@patchwork/filesystem':
+        specifier: workspace:*
+        version: link:../../core/filesystem
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/context-solid:
+    dependencies:
+      '@patchwork/context':
+        specifier: workspace:*
+        version: link:../context
+    devDependencies:
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
-      typescript-eslint:
-        specifier: ^8.41.0
-        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
 
   packages/react:
     dependencies:
@@ -368,6 +430,21 @@ importers:
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context
+      '@patchwork/context-comments':
+        specifier: workspace:^
+        version: link:../../packages/context-comments
+      '@patchwork/context-diff':
+        specifier: workspace:^
+        version: link:../../packages/context-diff
+      '@patchwork/context-react':
+        specifier: workspace:^
+        version: link:../../packages/context-react
+      '@patchwork/context-selection':
+        specifier: workspace:^
+        version: link:../../packages/context-selection
+      '@patchwork/context-solid':
+        specifier: workspace:^
+        version: link:../../packages/context-solid
       '@patchwork/element':
         specifier: workspace:^
         version: link:../../core/element
@@ -653,6 +730,15 @@ importers:
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context
+      '@patchwork/context-comments':
+        specifier: workspace:^
+        version: link:../../packages/context-comments
+      '@patchwork/context-react':
+        specifier: workspace:^
+        version: link:../../packages/context-react
+      '@patchwork/context-selection':
+        specifier: workspace:^
+        version: link:../../packages/context-selection
       '@patchwork/element':
         specifier: workspace:^
         version: link:../../core/element
@@ -820,6 +906,9 @@ importers:
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context
+      '@patchwork/context-react':
+        specifier: workspace:^
+        version: link:../../packages/context-react
       '@patchwork/element':
         specifier: workspace:^
         version: link:../../core/element
@@ -1151,6 +1240,15 @@ importers:
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context
+      '@patchwork/context-diff':
+        specifier: workspace:^
+        version: link:../../packages/context-diff
+      '@patchwork/context-react':
+        specifier: workspace:^
+        version: link:../../packages/context-react
+      '@patchwork/context-selection':
+        specifier: workspace:^
+        version: link:../../packages/context-selection
       '@patchwork/element':
         specifier: workspace:^
         version: link:../../core/element
@@ -1233,6 +1331,15 @@ importers:
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context
+      '@patchwork/context-diff':
+        specifier: workspace:^
+        version: link:../../packages/context-diff
+      '@patchwork/context-react':
+        specifier: workspace:^
+        version: link:../../packages/context-react
+      '@patchwork/context-selection':
+        specifier: workspace:^
+        version: link:../../packages/context-selection
       '@patchwork/element':
         specifier: workspace:^
         version: link:../../core/element
@@ -1415,6 +1522,18 @@ importers:
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context
+      '@patchwork/context-comments':
+        specifier: workspace:^
+        version: link:../../packages/context-comments
+      '@patchwork/context-diff':
+        specifier: workspace:^
+        version: link:../../packages/context-diff
+      '@patchwork/context-react':
+        specifier: workspace:^
+        version: link:../../packages/context-react
+      '@patchwork/context-selection':
+        specifier: workspace:^
+        version: link:../../packages/context-selection
       '@patchwork/element':
         specifier: workspace:^
         version: link:../../core/element
@@ -1717,6 +1836,12 @@ importers:
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context
+      '@patchwork/context-diff':
+        specifier: workspace:^
+        version: link:../../packages/context-diff
+      '@patchwork/context-react':
+        specifier: workspace:^
+        version: link:../../packages/context-react
       '@patchwork/element':
         specifier: workspace:^
         version: link:../../core/element

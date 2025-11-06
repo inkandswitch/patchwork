@@ -2,9 +2,9 @@ import "./styles.css";
 import { useDocuments } from "@automerge/automerge-repo-react-hooks";
 import { decodeHeads, parseAutomergeUrl } from "@automerge/automerge-repo/slim";
 import { Ref } from "@patchwork/context";
-import { computeDiffOfDoc, ViewHeadsAnnotation } from "@patchwork/context/diff";
-import { useReactive, useSubcontext } from "@patchwork/context/react";
-import { $selectedDocRefs } from "@patchwork/context/selection";
+import { computeDiffOfDoc, ViewHeadsAnnotation } from "@patchwork/context-diff";
+import { useReactive, useSubcontext } from "@patchwork/context-react";
+import { $selectedDocRefs } from "@patchwork/context-selection";
 import { useEffect, useMemo, useState } from "react";
 
 export const HighlightChangesOption = () => {
@@ -59,5 +59,3 @@ export const HighlightChangesOption = () => {
     </label>
   );
 };
-
-

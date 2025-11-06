@@ -10,7 +10,3 @@ export type TinyPatchworkLayoutDoc = {
   contextToolIds: string[];
   documentToolbarToolIds: string[];
 };
-
-
-
-

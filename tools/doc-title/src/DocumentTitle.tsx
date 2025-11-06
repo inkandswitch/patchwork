@@ -17,5 +17,3 @@ export const DocumentTitle = ({
 
   return <span className="font-semibold">{title ?? "Untitled"}</span>;
 };
-
-

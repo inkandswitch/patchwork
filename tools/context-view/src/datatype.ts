@@ -8,7 +8,3 @@ export const ContextViewDataType: DataTypeImplementation<ContextViewDoc> = {
     return "Context View";
   },
 };
-
-
-
-

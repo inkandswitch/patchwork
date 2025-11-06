@@ -1,16 +1,16 @@
 import "./styles.css";
 import { IdRef, loadRef, Ref } from "@patchwork/context";
-import type { Comment, Thread } from "@patchwork/context/comments";
-import { $allActiveThreadRefs, createReply } from "@patchwork/context/comments";
+import type { Comment, Thread } from "@patchwork/context-comments";
+import { $allActiveThreadRefs, createReply } from "@patchwork/context-comments";
 import {
   useReactive,
   useRefValue,
   useSubcontext,
-} from "@patchwork/context/react";
+} from "@patchwork/context-react";
 import { useEffect, useMemo, useState } from "react";
 import Avatar from "boring-avatars";
 
-import { IsSelected } from "@patchwork/context/selection";
+import { IsSelected } from "@patchwork/context-selection";
 import { relativeTime } from "@patchwork/util/src/relative-time";
 import { toolify } from "@patchwork/react";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
@@ -246,5 +246,3 @@ const CommentView = ({ commentRef, onDeleteComment }: CommentViewProps) => {
     </div>
   );
 };
-
-

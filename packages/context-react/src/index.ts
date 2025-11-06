@@ -4,9 +4,9 @@ import {
   useDocument,
 } from "@automerge/automerge-repo-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CONTEXT, PathRef, Ref } from "../core";
-import { Context } from "../core/context";
-import { Reactive } from "../reactive";
+import { CONTEXT, PathRef, Ref } from "@patchwork/context";
+import { Context } from "@patchwork/context";
+import { Reactive } from "@patchwork/context";
 
 export function useReactive<T>(reactive: Reactive<T>): T;
 export function useReactive<T>(reactive: undefined): undefined;

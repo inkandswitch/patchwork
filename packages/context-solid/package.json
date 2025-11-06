@@ -1,0 +1,28 @@
+{
+  "name": "@patchwork/context-solid",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "push": "pnpm build && pushwork sync"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "dependencies": {
+    "@patchwork/context": "workspace:*"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.9"
+  },
+  "devDependencies": {
+    "solid-js": "^1.9.9",
+    "typescript": "^5.9.2"
+  }
+}

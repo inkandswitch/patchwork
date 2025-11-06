@@ -17,12 +17,13 @@ export default defineConfig({
       extraBuiltins: {
         "@patchwork/plugins": "/packages/@patchwork/plugins/index.js",
         "@patchwork/context": "/packages/@patchwork/context/index.js",
-        "@patchwork/context/selection":
-          "/packages/@patchwork/context/selection.js",
-        "@patchwork/context/react": "/packages/@patchwork/context/react.js",
-        "@patchwork/context/diff": "/packages/@patchwork/context/diff.js",
-        "@patchwork/context/comments":
-          "/packages/@patchwork/context/comments.js",
+        "@patchwork/context-selection":
+          "/packages/@patchwork/context-selection/index.js",
+        "@patchwork/context-react":
+          "/packages/@patchwork/context-react/index.js",
+        "@patchwork/context-diff": "/packages/context-diff/index.js",
+        "@patchwork/context-comments": "/packages/context-comments/index.js",
+        "@patchwork/context-solid": "/packages/context-solid/index.js",
         "@patchwork/filesystem": "/packages/@patchwork/filesystem/index.js",
         "@automerge/automerge-repo-react-hooks":
           "/packages/@automerge/automerge-repo-react-hooks/index.js",
@@ -37,7 +38,7 @@ export default defineConfig({
         "solid-js/store": "/packages/solid-js/store.js",
         "solid-js/html": "/packages/solid-js/html.js",
         "solid-js/h": "/packages/solid-js/h.js",
-        "solid-js/web": "/packages/solid-js/web.js"
+        "solid-js/web": "/packages/solid-js/web.js",
       },
       importmap: {
         imports: {

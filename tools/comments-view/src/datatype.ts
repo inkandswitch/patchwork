@@ -8,7 +8,3 @@ export const CommentsViewDataType: DataTypeImplementation<CommentsViewDoc> = {
     return "Comments View";
   },
 };
-
-
-
-

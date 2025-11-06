@@ -1,11 +1,15 @@
 import * as Automerge from "@automerge/automerge";
 import { DocHandle } from "@automerge/automerge-repo";
-import { last } from "../utils/last";
-import { lookup } from "../utils/lookup";
-import { CONTEXT } from "../core";
-import { contextComputation } from "../core/computation";
-import { defineAnnotation } from "../core/annotations";
-import { PathRef, Ref, TextSpanRef } from "../core/refs";
+import { last } from "./utils/last";
+import { lookup } from "./utils/lookup";
+import {
+  PathRef,
+  Ref,
+  TextSpanRef,
+  defineAnnotation,
+  contextComputation,
+  CONTEXT,
+} from "@patchwork/context";
 
 type AddedDiff = {
   type: "added";

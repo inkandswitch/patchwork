@@ -3,11 +3,11 @@ import {
   useDocument,
   useDocuments,
 } from "@automerge/automerge-repo-react-hooks";
-import { useReactive } from "@patchwork/context/react";
+import { useReactive } from "@patchwork/context-react";
 import {
   $selectedDocHandles,
   $selectedDocUrls,
-} from "@patchwork/context/selection";
+} from "@patchwork/context-selection";
 import { FolderDoc, HasPatchworkMetadata } from "@patchwork/filesystem";
 import {
   DataTypeDescription,
@@ -126,7 +126,3 @@ export const useAddUnknownDocumentsToSidebarEffect = (
     };
   }, [changeRootFolderDoc, rootFolderDoc, selectedDocHandles]);
 };
-
-
-
-

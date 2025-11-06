@@ -13,12 +13,7 @@ import { foldKeymap, indentOnInput, indentUnit } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
 import { searchKeymap } from "@codemirror/search";
 import { RangeSet } from "@codemirror/state";
-import {
-  Decoration,
-  EditorView,
-  keymap,
-  WidgetType,
-} from "@codemirror/view";
+import { Decoration, EditorView, keymap, WidgetType } from "@codemirror/view";
 import { commentButtonGutter } from "./lib/comments/commentButtonGutter";
 import { markdownLinks } from "./lib/extensions/markdownLinks";
 
@@ -28,15 +23,15 @@ import { parseAutomergeUrl } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
 
 /** Patchwork */
-import { createReactive, createSubcontext } from "@patchwork/context/solid";
+import { createReactive, createSubcontext } from "@patchwork/context-solid";
 import { PathRef, Ref, TextSpanRef } from "@patchwork/context";
-import { $selectedRefs, IsSelected } from "@patchwork/context/selection";
-import { createComment, getThreadsAt } from "@patchwork/context/comments";
+import { $selectedRefs, IsSelected } from "@patchwork/context-selection";
+import { createComment, getThreadsAt } from "@patchwork/context-comments";
 import {
   type Diff,
   DiffAnnotation,
-  getElementsWithDiff
-} from "@patchwork/context/diff";
+  getElementsWithDiff,
+} from "@patchwork/context-diff";
 
 /** Styles */
 import { theme } from "./theme.ts";
@@ -51,8 +46,9 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
   if (!props.handle) {
     return;
   }
-  const contentRef = () => new PathRef(props.handle as DocHandle<MarkdownDoc>, PATH);
-  const isReadOnly = () => !!parseAutomergeUrl(props.handle.url).heads
+  const contentRef = () =>
+    new PathRef(props.handle as DocHandle<MarkdownDoc>, PATH);
+  const isReadOnly = () => !!parseAutomergeUrl(props.handle.url).heads;
 
   // TODO: what if contentRef() is undefined?
   // diff references
@@ -70,75 +66,100 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
   };
 
   // compute decorations
-  const decorations = () => RangeSet.of<Decoration>([
-      // decorations for diffs
-      ...refsWithDiff().flatMap((ref) => {
-        if (!(ref instanceof TextSpanRef)) return [];
-        if (ref.from === ref.to) return [];
-        const diff = ref.get(DiffAnnotation) as Diff<string>;
-
-        if (diff.type === "deleted") {
-          return Decoration.widget({
-            widget: new DeletionMarker(diff.before, isSelected(ref)),
-            side: 1,
-          }).range(ref.from, ref.from);
-        }
-
-        if (diff.type === "added") {
-          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const selected = isSelected(ref);
-          return Decoration.mark({
-            attributes: {
-              style: `
-                border-bottom: 2px solid ${isDarkMode ? '#4ade80' : '#22c55e'};
-                background-color: ${selected
-                  ? (isDarkMode ? '#16a34a' : '#86efac')
-                  : (isDarkMode ? '#14532d' : '#dcfce7')};
-              `
-            }
-          }).range(ref.from, ref.to);
-        }
-
-        return [];
-      }),
-      // decorations for comments
-      ...(refsWithComments()
-        ? refsWithComments().flatMap((ref) => {
+  const decorations = () =>
+    RangeSet.of<Decoration>(
+      [
+        // decorations for diffs
+        ...refsWithDiff().flatMap((ref) => {
           if (!(ref instanceof TextSpanRef)) return [];
           if (ref.from === ref.to) return [];
-          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const selected = isSelected(ref);
-          return Decoration.mark({
+          const diff = ref.get(DiffAnnotation) as Diff<string>;
+
+          if (diff.type === "deleted") {
+            return Decoration.widget({
+              widget: new DeletionMarker(diff.before, isSelected(ref)),
+              side: 1,
+            }).range(ref.from, ref.from);
+          }
+
+          if (diff.type === "added") {
+            const isDarkMode = window.matchMedia(
+              "(prefers-color-scheme: dark)"
+            ).matches;
+            const selected = isSelected(ref);
+            return Decoration.mark({
               attributes: {
                 style: `
-                  border-bottom: 2px solid ${isDarkMode ? '#facc15' : '#eab308'};
-                  background-color: ${selected
-                    ? (isDarkMode ? '#ca8a04' : '#fde047')
-                    : (isDarkMode ? '#713f12' : '#fef9c3')};
-                `
-              }
-            }).range(ref.from, ref.to)
-          })
-        : []),
-    ],
-    true // sort ranges
-  )
+                border-bottom: 2px solid ${isDarkMode ? "#4ade80" : "#22c55e"};
+                background-color: ${
+                  selected
+                    ? isDarkMode
+                      ? "#16a34a"
+                      : "#86efac"
+                    : isDarkMode
+                      ? "#14532d"
+                      : "#dcfce7"
+                };
+              `,
+              },
+            }).range(ref.from, ref.to);
+          }
+
+          return [];
+        }),
+        // decorations for comments
+        ...(refsWithComments()
+          ? refsWithComments().flatMap((ref) => {
+              if (!(ref instanceof TextSpanRef)) return [];
+              if (ref.from === ref.to) return [];
+              const isDarkMode = window.matchMedia(
+                "(prefers-color-scheme: dark)"
+              ).matches;
+              const selected = isSelected(ref);
+              return Decoration.mark({
+                attributes: {
+                  style: `
+                  border-bottom: 2px solid ${isDarkMode ? "#facc15" : "#eab308"};
+                  background-color: ${
+                    selected
+                      ? isDarkMode
+                        ? "#ca8a04"
+                        : "#fde047"
+                      : isDarkMode
+                        ? "#713f12"
+                        : "#fef9c3"
+                  };
+                `,
+                },
+              }).range(ref.from, ref.to);
+            })
+          : []),
+      ],
+      true // sort ranges
+    );
 
   // handle selection changes
   const selectionContext = createSubcontext();
   const onChangeSelection = (from: number, to: number) => {
-    const selectedText = new TextSpanRef(props.handle as DocHandle<MarkdownDoc>, PATH, from, to);
+    const selectedText = new TextSpanRef(
+      props.handle as DocHandle<MarkdownDoc>,
+      PATH,
+      from,
+      to
+    );
     selectionContext.replace([selectedText.with(IsSelected(true))]);
   };
 
   // handle comment creation
   const onComment = async (from: number, to: number) => {
     createComment({
-      refs: [new TextSpanRef(props.handle as DocHandle<MarkdownDoc>, PATH, from, to)],
+      refs: [
+        new TextSpanRef(props.handle as DocHandle<MarkdownDoc>, PATH, from, to),
+      ],
       content: "",
       authorId: (await props.repo.storageId())!,
     });
-  }
+  };
 
   // CodeMirror extensions for the Markdown editor
   const cmExtensions = [
@@ -158,7 +179,7 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
     indentUnit.of("    "),
     // Add the selection listener and comment button gutter
     commentButtonGutter(onComment),
-    markdownLinks()
+    markdownLinks(),
   ];
 
   return (
@@ -179,7 +200,7 @@ export function MarkdownEditor(props: PatchworkToolProps<MarkdownDoc>) {
       </div>
     </div>
   );
-};
+}
 
 class DeletionMarker extends WidgetType {
   deletedText: string;

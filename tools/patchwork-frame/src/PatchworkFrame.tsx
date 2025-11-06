@@ -7,28 +7,28 @@ import {
   parseAutomergeUrl,
   stringifyAutomergeUrl,
 } from "@automerge/vanillajs";
-import { DocWithComments, getStoredThreads } from "@patchwork/context/comments";
-import { getViewHeads } from "@patchwork/context/diff";
+import { DocWithComments, getStoredThreads } from "@patchwork/context-comments";
+import { getViewHeads } from "@patchwork/context-diff";
 import {
   useDocRef,
   useReactive,
   useSubcontext,
-} from "@patchwork/context/react";
-import { IsSelected } from "@patchwork/context/selection";
+} from "@patchwork/context-react";
+import { IsSelected } from "@patchwork/context-selection";
 import { useEffect, useMemo, useState } from "react";
-import { TinyPatchworkLayoutDoc } from "./types";
+import { TinyPatchworkConfigDoc } from "./types";
 import { OpenDocumentEvent } from "@patchwork/element";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
 
 export const PatchworkFrame = ({
-  docUrl: accountDocUrl,
+  docUrl: tinyPatchworkConfigDocUrl,
   element,
 }: {
   docUrl: AutomergeUrl;
   element: HTMLElement | ShadowRoot;
 }) => {
-  const [accountDoc, changeAccountDoc] = useDocument<TinyPatchworkLayoutDoc>(
-    accountDocUrl,
+  const [accountDoc, changeAccountDoc] = useDocument<TinyPatchworkConfigDoc>(
+    tinyPatchworkConfigDocUrl,
     {
       suspense: true,
     }
@@ -108,7 +108,7 @@ export const PatchworkFrame = ({
 
   // Add current handle to window
   useEffect(() => {
-    (window as any).handle = selectedDocRef?.docHandle;
+    (window as any).currentDocHandle = selectedDocRef?.docHandle;
   }, [selectedDocRef]);
 
   // Add comments to context
@@ -133,7 +133,7 @@ export const PatchworkFrame = ({
         {accountSidebarToolId && (
           <patchwork-view
             class="h-full"
-            doc-url={accountDocUrl}
+            doc-url={tinyPatchworkConfigDocUrl}
             tool-id={accountSidebarToolId}
           />
         )}
@@ -167,15 +167,7 @@ export const PatchworkFrame = ({
       {contextSidebarToolId && (
         <div className="w-[400px] bg-base-100">
           <patchwork-view
-            doc-url={accountDocUrl}
-            tool-id={contextSidebarToolId}
-          />
-        </div>
-      )}{" "}
-      {contextSidebarToolId && (
-        <div className="w-[400px] bg-base-100">
-          <patchwork-view
-            doc-url={accountDocUrl}
+            doc-url={tinyPatchworkConfigDocUrl}
             tool-id={contextSidebarToolId}
           />
         </div>

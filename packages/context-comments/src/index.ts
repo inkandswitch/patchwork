@@ -1,8 +1,13 @@
 import { DocHandle } from "@automerge/automerge-repo";
-import { CONTEXT } from "../core";
-import { contextComputation } from "../core/computation";
-import { IdRef, loadRef, Ref, SerializedRef } from "../core/refs";
-import { defineAnnotation } from "../core/annotations";
+import {
+  CONTEXT,
+  contextComputation,
+  IdRef,
+  loadRef,
+  Ref,
+  SerializedRef,
+  defineAnnotation,
+} from "@patchwork/context";
 
 export type Thread = {
   id: string;

@@ -10,7 +10,3 @@ export const TodoDataType: DataTypeImplementation<TodoDoc> = {
     return doc.title || "Todo List";
   },
 };
-
-
-
-

@@ -29,4 +29,3 @@ export const getRelativeTimeString = (timestamp: number): string => {
     return `${years} year${years === 1 ? "" : "s"} ago`;
   }
 };
-

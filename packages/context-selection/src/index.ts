@@ -1,8 +1,8 @@
-import { CONTEXT } from "../core";
-import { defineAnnotation } from "../core/annotations";
-import { Ref } from "../core/refs";
-import { contextComputation } from "../core/computation";
-import { Reactive } from "../reactive";
+import { CONTEXT } from "@patchwork/context";
+import { defineAnnotation } from "@patchwork/context";
+import { Ref } from "@patchwork/context";
+import { contextComputation } from "@patchwork/context";
+import { Reactive } from "@patchwork/context";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 

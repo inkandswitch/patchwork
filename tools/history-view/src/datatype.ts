@@ -8,7 +8,3 @@ export const HistoryViewDataType: DataTypeImplementation<HistoryViewDoc> = {
     return "History View";
   },
 };
-
-
-
-

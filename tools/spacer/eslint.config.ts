@@ -22,7 +22,3 @@ export default defineConfig([
     },
   },
 ]);
-
-
-
-

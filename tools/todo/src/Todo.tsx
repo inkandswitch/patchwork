@@ -5,8 +5,8 @@ import {
 } from "@automerge/automerge-repo-react-hooks";
 import { useState } from "react";
 import { PathRef, Ref } from "@patchwork/context";
-import { getDiff } from "@patchwork/context/diff";
-import { useReactive } from "@patchwork/context/react";
+import { getDiff } from "@patchwork/context-diff";
+import { useReactive } from "@patchwork/context-react";
 import { ReactToolProps, toolify } from "@patchwork/react";
 import { classNames } from "@patchwork/util";
 
@@ -135,5 +135,3 @@ const TodoItem = ({ todoRef }: TodoItemProps) => {
 };
 
 export const renderTodoEditor = toolify(TodoEditor);
-
-

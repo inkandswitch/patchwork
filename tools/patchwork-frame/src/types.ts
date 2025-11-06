@@ -1,6 +1,6 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 
-export type TinyPatchworkLayoutDoc = {
+export type TinyPatchworkConfigDoc = {
   rootFolderUrl: AutomergeUrl;
   moduleSettingsUrl: AutomergeUrl;
 
@@ -10,7 +10,3 @@ export type TinyPatchworkLayoutDoc = {
   contextToolIds: string[];
   documentToolbarToolIds: string[];
 };
-
-
-
-
