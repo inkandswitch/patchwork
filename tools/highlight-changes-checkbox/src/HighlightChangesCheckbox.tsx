@@ -1,3 +1,4 @@
+import "./styles.css";
 import { useDocuments } from "@automerge/automerge-repo-react-hooks";
 import { decodeHeads, parseAutomergeUrl } from "@automerge/automerge-repo/slim";
 import { Ref } from "@patchwork/context";

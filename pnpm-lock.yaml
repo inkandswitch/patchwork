@@ -419,9 +419,6 @@ importers:
       '@tiny-patchwork/sync-indicator':
         specifier: workspace:^
         version: link:../../tools/sync-indicator
-      '@tiny-patchwork/tabbed-view':
-        specifier: workspace:^
-        version: link:../../tools/tabbed-view
       '@tiny-patchwork/todo':
         specifier: workspace:^
         version: link:../../tools/todo
@@ -785,8 +782,8 @@ importers:
         specifier: ^5.0.4
         version: 5.0.4(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
       daisyui:
-        specifier: ^5.1.29
-        version: 5.3.7
+        specifier: ^5.4.4
+        version: 5.4.4
       eslint:
         specifier: ^9.34.0
         version: 9.38.0(jiti@2.6.1)
@@ -1623,40 +1620,6 @@ importers:
       vite-plugin-top-level-await:
         specifier: ^1.6.0
         version: 1.6.0(@swc/helpers@0.5.17)(rollup@4.52.5)(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
-
-  tools/tabbed-view:
-    dependencies:
-      '@automerge/automerge':
-        specifier: 3.2.0
-        version: 3.2.0
-      '@automerge/automerge-repo':
-        specifier: 2.5.0-alpha.2
-        version: 2.5.0-alpha.2
-      '@patchwork/plugins':
-        specifier: workspace:^
-        version: link:../../core/plugins
-    devDependencies:
-      '@eslint/js':
-        specifier: ^9.37.0
-        version: 9.38.0
-      '@patchwork/bootloader':
-        specifier: workspace:^
-        version: link:../../core/bootloader
-      '@typescript-eslint/parser':
-        specifier: ^8.40.0
-        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
-      eslint:
-        specifier: ^9.34.0
-        version: 9.38.0(jiti@2.6.1)
-      globals:
-        specifier: ^16.4.0
-        version: 16.4.0
-      typescript-eslint:
-        specifier: ^8.41.0
-        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
-      vite:
-        specifier: ^7.1.9
-        version: 7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
 
   tools/tldraw:
     dependencies:
@@ -4189,6 +4152,9 @@ packages:
 
   daisyui@5.3.7:
     resolution: {integrity: sha512-0+8PaSGift0HlIQABCeZzWOBV5Nx/vsI2TihB9hbaEyZENPlZZz+se2JnAH5rz9gBYTyDLB7NJup8hkREr6WBw==}
+
+  daisyui@5.4.4:
+    resolution: {integrity: sha512-FEfdwmGdb3ZbtYN3OqaZn/RMarlZTPOv6mWpGUo7KX42RkcBanEZk5tgYp2ZgirKl7QvH8pCiwpuy55wi2dHyQ==}
 
   data-urls@5.0.0:
     resolution: {integrity: sha512-ZYP5VBHshaDAiVZxjbRVcFJpc+4xGgT0bK3vzy1HLN8jTO975HEbuYzZJcHoQEY5K1a0z8YayJkyVETa08eNTg==}
@@ -9030,6 +8996,8 @@ snapshots:
   csstype@3.1.3: {}
 
   daisyui@5.3.7: {}
+
+  daisyui@5.4.4: {}
 
   data-urls@5.0.0:
     dependencies:

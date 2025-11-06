@@ -1,4 +1,4 @@
-import { DocHandle } from "@automerge/automerge-repo";
+import { type DocHandle } from "@automerge/automerge-repo";
 
 export const renderSpacer = (
   handle: DocHandle<unknown>,
@@ -8,5 +8,3 @@ export const renderSpacer = (
 
   return () => {};
 };
-
-

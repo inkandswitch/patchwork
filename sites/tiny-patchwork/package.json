@@ -49,7 +49,6 @@
     "@tiny-patchwork/doc-title": "workspace:^",
     "@tiny-patchwork/spacer": "workspace:^",
     "@tiny-patchwork/highlight-changes-checkbox": "workspace:^",
-    "@tiny-patchwork/tabbed-view": "workspace:^",
     "@tiny-patchwork/frame-configurator": "workspace:^",
     "@tiny-patchwork/history-view": "workspace:^",
     "@tiny-patchwork/todo": "workspace:^",

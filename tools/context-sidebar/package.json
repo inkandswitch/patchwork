@@ -28,7 +28,7 @@
     "@types/react-dom": "catalog:",
     "@typescript-eslint/parser": "^8.40.0",
     "@vitejs/plugin-react": "^5.0.4",
-    "daisyui": "^5.1.29",
+    "daisyui": "^5.4.4",
     "eslint": "^9.34.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^16.4.0",

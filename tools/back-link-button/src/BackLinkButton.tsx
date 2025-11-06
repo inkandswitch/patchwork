@@ -27,7 +27,7 @@ export const BackLinkButton = ({
   )?.module.getTitle(originalDoc);
 
   if (!originalDocUrl) {
-    return "original flavour";
+    return null;
   }
 
   // strip the heads because we want to link to the current version of the document

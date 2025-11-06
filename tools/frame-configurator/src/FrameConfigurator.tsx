@@ -1,5 +1,6 @@
+import "./styles.css";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import type { AutomergeUrl } from "@automerge/vanillajs";
+import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { useCallback, useMemo, useState } from "react";
 import type { TinyPatchworkLayoutDoc } from "./types";
 import type { ToolElement } from "@patchwork/plugins";
@@ -258,5 +259,3 @@ export function FrameConfigurator({
     </div>
   );
 }
-
-

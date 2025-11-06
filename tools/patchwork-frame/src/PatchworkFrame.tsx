@@ -1,3 +1,4 @@
+import "./styles.css";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import {
   AutomergeUrl,
@@ -137,7 +138,6 @@ export const PatchworkFrame = ({
           />
         )}
       </div>
-
       <div className="flex flex-col flex-1 h-full">
         {selectedDocUrl && (
           <div className="p-2 bg-base-200 border-b border-base-300 flex items-center gap-2">
@@ -164,6 +164,14 @@ export const PatchworkFrame = ({
           )}
         </div>
       </div>
+      {contextSidebarToolId && (
+        <div className="w-[400px] bg-base-100">
+          <patchwork-view
+            doc-url={accountDocUrl}
+            tool-id={contextSidebarToolId}
+          />
+        </div>
+      )}{" "}
       {contextSidebarToolId && (
         <div className="w-[400px] bg-base-100">
           <patchwork-view

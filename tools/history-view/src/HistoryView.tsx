@@ -1,3 +1,4 @@
+import "./styles.css";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";

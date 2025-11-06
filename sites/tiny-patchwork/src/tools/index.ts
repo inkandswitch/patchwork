@@ -37,8 +37,6 @@ import { plugins as grjteMarkdownPlugins } from "@grjte/markdown";
 import { plugins as syncIndicatorPlugins } from "@tiny-patchwork/sync-indicator";
 // @ts-expect-error no types
 import { plugins as commandsPlugins } from "@orion/commands";
-// @ts-expect-error no types
-import { plugins as tabbedViewPlugins } from "@tiny-patchwork/tabbed-view";
 
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
@@ -56,10 +54,10 @@ export const plugins: Plugin<any>[] = [
   ...spacerPlugins,
   ...highlightChangesCheckboxPlugins,
   ...frameConfiguratorPlugins,
+  ...syncIndicatorPlugins,
+
   ...grjteMarkdownPlugins,
   ...orionMarkwhen,
-  ...syncIndicatorPlugins,
-  ...tabbedViewPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",

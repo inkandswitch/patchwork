@@ -1,3 +1,4 @@
+import "./styles.css";
 import { IdRef, loadRef, Ref } from "@patchwork/context";
 import type { Comment, Thread } from "@patchwork/context/comments";
 import { $allActiveThreadRefs, createReply } from "@patchwork/context/comments";

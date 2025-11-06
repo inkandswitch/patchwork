@@ -1,3 +1,4 @@
+import "./styles.css";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
