@@ -954,10 +954,10 @@ importers:
         specifier: ^24.6.0
         version: 24.10.0
       '@types/react':
-        specifier: ^18.3.26
+        specifier: 'catalog:'
         version: 18.3.26
       '@types/react-dom':
-        specifier: ^18.3.7
+        specifier: 'catalog:'
         version: 18.3.7(@types/react@18.3.26)
       '@vitejs/plugin-react':
         specifier: ^5.0.4
