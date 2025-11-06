@@ -35,13 +35,13 @@
     "@grjte/codemirror-md-links": "workspace:^",
     "@orion/commands": "workspace:^",
     "@orion/markwhen": "workspace:^",
-    "@patchwork/sync-indicator": "workspace:^",
     "@patchwork/context": "workspace:^",
     "@patchwork/element": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/plugins": "workspace:^",
-    "@patchwork/tldraw": "workspace:^",
     "@patchwork/react": "workspace:^",
+    "@patchwork/sync-indicator": "workspace:^",
+    "@patchwork/tldraw": "workspace:^",
     "@patchwork/util": "workspace:^",
     "add": "^2.0.6",
     "boring-avatars": "^2.0.4",
@@ -53,7 +53,6 @@
     "scheduler": "^0.27.0",
     "signia": "^0.1.5",
     "solid-js": "^1.9.9",
-    "tailwindcss": "^4.1.14",
-    "tldraw": "^4.1.1"
+    "tailwindcss": "^4.1.14"
   }
 }

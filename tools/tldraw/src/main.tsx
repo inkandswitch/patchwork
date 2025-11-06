@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import type { ToolImplementation } from "@patchwork/plugins";
 import { dataType as datatype } from "./datatype.ts";
 import { RepoContext } from "@automerge/react";
-import "tldraw/tldraw.css";
+import "@tldraw/tldraw/tldraw.css";
 
 function addStyles(element: HTMLElement, textContent: string) {
   const sheet = new CSSStyleSheet();
