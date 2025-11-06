@@ -1,13 +1,5 @@
-import {
-  createSignal,
-  For,
-  Suspense,
-  createEffect,
-  type Signal,
-  Show,
-} from "solid-js";
+import { createSignal, For, Suspense, createEffect, Show } from "solid-js";
 import html from "solid-js/html";
-import { createStore, unwrap, reconcile } from "solid-js/store";
 import { makeDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
 import {
   isValidAutomergeUrl,
@@ -21,26 +13,6 @@ import { ViewSource } from "./view-source.tsx";
 function swapWithEnd(list: any[], idx: number) {
   const end = list.length - 1;
   [list[idx], list[end]] = [list[end], list[idx]];
-}
-
-// https://docs.solidjs.com/reference/basic-reactivity/create-resource#version-140-and-later
-// https://github.com/solidjs-community/solid-primitives/blob/main/packages/resource/src/index.ts
-function createDeepSignal<T>(): Signal<T | undefined>;
-function createDeepSignal<T>(value: T): Signal<T>;
-function createDeepSignal<T>(v?: T): Signal<T> {
-  const [store, setStore] = createStore([v]);
-  return [
-    () => store[0],
-    (update: T) => (
-      setStore(
-        0,
-        reconcile(
-          typeof update === "function" ? update(unwrap(store[0])) : update
-        )
-      ),
-      store[0]
-    ),
-  ] as Signal<T>;
 }
 
 const add = (item: AutomergeUrl) => (doc: ModuleSettingsDoc) => {

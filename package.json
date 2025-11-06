@@ -8,7 +8,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "clean": "rm -rf **/node_modules **/dist",
-    "dev": "pnpm -r --filter ...{sites/${SITE:-gaios}}... --parallel dev",
+    "dev": "pnpm -r --filter ...{sites/${SITE:-tiny-patchwork}}... --parallel dev",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md,html,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md,html,yaml,yml}\"",
     "make-tool": "node scripts/make-tool.mjs",
