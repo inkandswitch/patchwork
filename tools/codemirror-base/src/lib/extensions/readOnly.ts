@@ -11,19 +11,24 @@ import { Compartment, EditorState } from "@codemirror/state";
  the extension when the readOnly prop changes.
  */
 export function createReadOnlyExtension(readOnly: boolean) {
-  const readOnlyCompartment = new Compartment()
+  const readOnlyCompartment = new Compartment();
 
   // Function to get the desired state of the read-only extensions based on the readOnly parameter
-  const readOnlyExtensions = () => readOnly ? [
-    EditorState.readOnly.of(true), EditorView.editable.of(false)
-  ] : []
+  const readOnlyExtensions = () =>
+    readOnly
+      ? [EditorState.readOnly.of(true), EditorView.editable.of(false)]
+      : [];
 
   // Function to create an effect that reconfigures the read-only compartment
-  const createReconfigureEffect = (view: EditorView) => createEffect(() => {
-    view.dispatch({
-      effects: readOnlyCompartment.reconfigure(readOnlyExtensions())
-    })
-  })
+  const createReconfigureEffect = (view: EditorView) =>
+    createEffect(() => {
+      view.dispatch({
+        effects: readOnlyCompartment.reconfigure(readOnlyExtensions()),
+      });
+    });
 
-  return [readOnlyCompartment.of(readOnlyExtensions()), createReconfigureEffect] as const;
+  return [
+    readOnlyCompartment.of(readOnlyExtensions()),
+    createReconfigureEffect,
+  ] as const;
 }
