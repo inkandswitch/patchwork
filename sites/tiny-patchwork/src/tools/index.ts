@@ -10,7 +10,8 @@ import { plugins as backLinkButtonPlugins } from "./back-link-button";
 import { plugins as documentTitlePlugins } from "./doc-title";
 // @ts-expect-error no types
 import { plugins as tldrawPlugins } from "@patchwork/tldraw";
-import "tldraw/tldraw.css";
+import "@patchwork/tldraw/style";
+
 // @ts-expect-error no types
 import { plugins as sideboardPlugins } from "@chee/patchwork-sideboard";
 import "@chee/patchwork-sideboard/styles.css";

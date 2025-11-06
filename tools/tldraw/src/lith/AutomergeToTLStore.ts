@@ -1,4 +1,4 @@
-import type { TLRecord, RecordId, TLStore } from "tldraw";
+import type { TLRecord, RecordId, TLStore } from "@tldraw/tldraw";
 import * as Automerge from "@automerge/automerge";
 import { isImmutableString } from "@automerge/automerge";
 

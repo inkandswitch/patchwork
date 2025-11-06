@@ -14,7 +14,7 @@ import {
   react,
   type TLStoreSnapshot,
   sortById,
-} from "tldraw";
+} from "@tldraw/tldraw";
 import { useEffect, useState } from "react";
 import {
   type DocHandle,
@@ -93,7 +93,7 @@ export function useAutomergeStore({
       if (!doc.store) throw new Error("Document store not initialized");
 
       store.mergeRemoteChanges(() => {
-        store.loadStoreSnapshot({
+        store.loadSnapshot({
           store: JSON.parse(JSON.stringify(doc.store)),
           schema: JSON.parse(JSON.stringify(doc.schema)),
         });
@@ -140,7 +140,7 @@ export function useAutomergePresence({
   });
 
   /* ----------- Presence stuff ----------- */
-  useEffect(() => {
+  /*   useEffect(() => {
     if (!innerStore) return;
 
     const toPut: TLRecord[] = Object.values(peerStates).filter(
@@ -158,7 +158,7 @@ export function useAutomergePresence({
     if (toRemove.length) innerStore.remove(toRemove);
     if (toPut.length) innerStore.put(toPut);
   }, [innerStore, peerStates]);
-
+ */
   useEffect(() => {
     if (!innerStore) return;
     /* ----------- Presence stuff ----------- */

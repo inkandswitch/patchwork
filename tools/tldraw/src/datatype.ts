@@ -8,7 +8,9 @@ import {
   type TLPageId,
   type TLRecord,
   type TLShapeId,
-} from "tldraw";
+} from "@tldraw/tldraw";
+import { DEFAULT_STORE } from "./lith/default_store.ts";
+import { tldrawValueToAutomergeValue } from "./lith/TLStoreToAutomerge.ts";
 
 // SCHEMA
 export type TLDrawDoc = {
@@ -31,8 +33,7 @@ export const setTitle = (doc: TLDrawDoc, title: string) => {
 };
 
 export const init = (doc: TLDrawDoc) => {
-  doc.schema = createTLSchema().serialize();
-  doc.store = createTLStore().serialize();
+  Object.assign(doc, tldrawValueToAutomergeValue(DEFAULT_STORE));
   doc.store[pageKey] = {
     meta: {},
     id: "page:page" as TLPageId,

@@ -16,7 +16,8 @@
     "./datatype": {
       "import": "./dist/datatype.js",
       "source": "./src/datatype.ts"
-    }
+    },
+    "./style": "./dist/main.css"
   },
   "scripts": {
     "build": "node esbuild/build.ts",
@@ -28,6 +29,7 @@
     "@automerge/react": "catalog:",
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/plugins": "workspace:^",
+    "@tldraw/tldraw": "2.0.0-alpha.17",
     "@types/lodash": "^4.17.20",
     "lodash": "^4.17.21",
     "react": "^19.1.1",
