@@ -303,13 +303,13 @@
   overflow-y: auto;
   padding: 1rem;
   box-sizing: border-box;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='15' y='65' font-size='22' font-weight='700' fill='rgba(0,0,0,0.03)' transform='rotate(-30 60 60)'%3ENOT REAL%3C/text%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='15' y='65' font-size='22' font-weight='700' fill='rgba(0,0,0,0.03)' transform='rotate(-30 60 60)'%3EDRAFT%3C/text%3E%3C/svg%3E");
   background-repeat: repeat;
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='15' y='65' font-size='22' font-weight='700' fill='rgba(255,255,255,0.03)' transform='rotate(-30 60 60)'%3ENOT REAL%3C/text%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='15' y='65' font-size='22' font-weight='700' fill='rgba(255,255,255,0.03)' transform='rotate(-30 60 60)'%3EDRAFT%3C/text%3E%3C/svg%3E");
   }
 }
 
@@ -626,7 +626,7 @@
   border: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 20%);
   border-radius: 8px;
   background: var(--sideboard-widget-fill);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ctext x='50' y='100' font-size='24' font-weight='700' fill='rgba(0,0,0,0.04)' transform='rotate(30 100 100)'%3ENOT REAL%3C/text%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Ctext x='15' y='45' font-size='22' font-weight='700' fill='rgba(0,0,0,0.1)' transform='rotate(-30 60 40)'%3EDRAFT%3C/text%3E%3C/svg%3E");
   background-repeat: repeat;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   display: flex;
@@ -637,7 +637,7 @@
 @media (prefers-color-scheme: dark) {
   .tool-card {
     border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 20%);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ctext x='50' y='100' font-size='24' font-weight='700' fill='rgba(255,255,255,0.04)' transform='rotate(30 100 100)'%3ENOT REAL%3C/text%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Ctext x='15' y='45' font-size='22' font-weight='700' fill='rgba(255,255,255,0.1)' transform='rotate(-30 60 40)'%3EDRAFT%3C/text%3E%3C/svg%3E");
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 }
