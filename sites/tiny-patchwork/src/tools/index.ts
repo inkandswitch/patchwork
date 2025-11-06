@@ -49,6 +49,10 @@ import "@inkandswitch/tenfold/style.css";
 import { plugins as tenfoldPlugins } from "@inkandswitch/tenfold";
 // @ts-expect-error no types
 import { plugins as addDocToSidebarButtonPlugins } from "@tiny-patchwork/add-doc-to-sidebar-button";
+// @ts-expect-error no types
+import { plugins as contactPlugins } from "@patchwork/contact";
+// @ts-expect-error no types
+import { plugins as accountPickerPlugins } from "@patchwork/account-picker";
 
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
@@ -74,6 +78,8 @@ export const plugins: Plugin<any>[] = [
   ...codemirrorEmbedPlugins,
   ...tenfoldPlugins,
   ...addDocToSidebarButtonPlugins,
+  ...contactPlugins,
+  ...accountPickerPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",

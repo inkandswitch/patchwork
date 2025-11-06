@@ -42,6 +42,8 @@
     "@inkandswitch/tenfold": "workspace:^",
     "@orion/commands": "workspace:^",
     "@orion/markwhen": "workspace:^",
+    "@patchwork/account-picker": "workspace:^",
+    "@patchwork/contact": "workspace:^",
     "@patchwork/context": "workspace:^",
     "@patchwork/context-comments": "workspace:^",
     "@patchwork/context-diff": "workspace:^",

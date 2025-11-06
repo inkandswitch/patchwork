@@ -1,0 +1,45 @@
+{
+  "name": "@patchwork/account-picker",
+  "type": "module",
+  "main": "./dist/tool.js",
+  "exports": {
+    ".": {
+      "import": "./dist/tool.js",
+      "source": "./src/tool.tsx"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "pushwatch": "pnpm dev pushwork"
+  },
+  "dependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@patchwork/contact": "workspace:^",
+    "@patchwork/filesystem": "workspace:^",
+    "@patchwork/plugins": "workspace:^",
+    "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.12",
+    "@radix-ui/react-tooltip": "^1.2.7",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.456.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "tailwindcss": "^4.1.15",
+    "tailwind-merge": "^1.14.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.17",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "^5.0.4",
+    "typescript": "^5.8.3",
+    "vite": "^7.1.9",
+    "vite-plugin-css-injected-by-js": "^3.5.2"
+  }
+}
