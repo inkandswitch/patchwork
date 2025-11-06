@@ -3,10 +3,11 @@ import {
   ModuleSettingsDoc,
   type HasPatchworkMetadata,
 } from "@patchwork/filesystem";
-import { AutomergeUrl, Repo } from "@automerge/vanillajs";
+import { AutomergeUrl, isValidAutomergeUrl, Repo } from "@automerge/vanillajs";
 import type { AutomergeRepoKeyhive } from "virtual:patchwork/setup";
 
 export type TinyPatchworkLayoutDoc = {
+  contactUrl: AutomergeUrl;
   rootFolderUrl: AutomergeUrl;
   moduleSettingsUrl: AutomergeUrl;
 
@@ -16,6 +17,20 @@ export type TinyPatchworkLayoutDoc = {
   contextToolIds: string[];
   documentToolbarToolIds: string[];
 };
+
+export interface AnonymousContactDoc {
+  type: "anonymous";
+  color?: string; // HSL color string for user presence indicators
+}
+
+export interface RegisteredContactDoc {
+  type: "registered";
+  name: string;
+  avatarUrl?: AutomergeUrl;
+  color?: string; // HSL color string for user presence indicators
+}
+
+export type ContactDoc = AnonymousContactDoc | RegisteredContactDoc;
 
 function isValidLayoutDoc(
   doc: any
@@ -28,6 +43,8 @@ function isValidLayoutDoc(
     Array.isArray(doc.contextToolIds) &&
     Array.isArray(doc.documentToolbarToolIds) &&
     typeof doc.rootFolderUrl === "string" &&
+    typeof doc.contactUrl === "string" &&
+    isValidAutomergeUrl(doc.contactUrl) &&
     typeof doc.moduleSettingsUrl === "string"
   );
 }
@@ -35,12 +52,24 @@ function isValidLayoutDoc(
 async function createLayoutDoc(
   repo: Repo,
   options?: {
+    contactUrl?: AutomergeUrl;
     rootFolderUrl?: AutomergeUrl;
     moduleSettingsUrl?: AutomergeUrl;
   }
 ) {
+  let contactUrl = options?.contactUrl;
   let rootFolderUrl = options?.rootFolderUrl;
   let moduleSettingsUrl = options?.moduleSettingsUrl;
+
+  if (!contactUrl) {
+    const contactHandle = await repo.create2<ContactDoc & HasPatchworkMetadata>(
+      {
+        ["@patchwork"]: { type: "patchwork:contact" },
+        type: "anonymous",
+      }
+    );
+    contactUrl = contactHandle.url;
+  }
 
   if (!rootFolderUrl) {
     const rootFolderHandle = await repo.create2<
@@ -67,6 +96,7 @@ async function createLayoutDoc(
     TinyPatchworkLayoutDoc & HasPatchworkMetadata
   >({
     ["@patchwork"]: { type: "account" },
+    contactUrl,
     rootFolderUrl,
     moduleSettingsUrl,
     frameToolId: "patchwork-frame",
@@ -78,6 +108,7 @@ async function createLayoutDoc(
       "back-link-button",
       "spacer",
       "highlight-changes-checkbox",
+      "account-picker",
     ],
   });
 
@@ -109,6 +140,7 @@ export async function getOrCreateLayoutDocHandle(
       "Old account document detected, creating new account doc with preserved data"
     );
     const account = await createLayoutDoc(repo, {
+      contactUrl: accountDoc?.contactUrl,
       rootFolderUrl: accountDoc?.rootFolderUrl,
       moduleSettingsUrl: accountDoc?.moduleSettingsUrl,
     });

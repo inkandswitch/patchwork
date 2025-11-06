@@ -1,0 +1,48 @@
+{
+  "name": "@patchwork/contact",
+  "version": "0.0.0",
+  "description": "contact datatype and viewer",
+  "type": "module",
+  "main": "./dist/tool.js",
+  "exports": {
+    ".": {
+      "import": "./dist/tool.js",
+      "source": "./src/tool.tsx"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "pushwatch": "pnpm dev pushwork"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@patchwork/plugins": "workspace:^",
+    "@radix-ui/react-avatar": "^1.1.10",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.469.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "tailwindcss": "^4.1.15",
+    "tailwind-merge": "^1.14.0"
+  },
+  "devDependencies": {
+    "@node-types/node": "npm:@types/node@^24.9.1",
+    "@tailwindcss/vite": "^4.1.15",
+    "@types/react": "^18.3.23",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vitejs/plugin-react": "^4.5.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vite-plugin-dts": "^4.5.4",
+    "vite-plugin-top-level-await": "^1.5.0",
+    "vite-plugin-wasm": "^3.4.1"
+  }
+}

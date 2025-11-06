@@ -4,6 +4,7 @@ packages:
   - packages/context/**/*
   - meta/*
   - sites/*
+  - tools/*
   - tools/*/*
 
 catalog:

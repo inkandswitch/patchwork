@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+/* Ensure avatar fallback is visible in all contexts */
+[data-radix-avatar-fallback] {
+  background-color: #e5e7eb; /* gray-200 for light mode */
+  color: #374151; /* gray-700 for light mode */
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-radix-avatar-fallback] {
+    background-color: #374151; /* gray-700 for dark mode */
+    color: #e5e7eb; /* gray-200 for dark mode */
+  }
+}
