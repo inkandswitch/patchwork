@@ -16,24 +16,30 @@ import type { DocHandle } from "@automerge/automerge-repo";
  * @param path The path to the specific document property to synchronize.
  * @returns A tuple containing the extension and a function to create an effect for reconfiguring the extension when the handle or path change.
  */
-export function createSyncExtension<T,>(handle: DocHandle<T>, path: AutomergeProp[], initialDoc: () => string) {
-  const sync = new Compartment()
+export function createSyncExtension<T>(
+  handle: DocHandle<T>,
+  path: AutomergeProp[],
+  initialDoc: () => string
+) {
+  const sync = new Compartment();
 
-  const syncExtension = () => automergeSyncPlugin({
-    handle: handle as any, // typescript is confused by different version of doc handle
-    path: path,
-  })
+  const syncExtension = () =>
+    automergeSyncPlugin({
+      handle: handle as any, // typescript is confused by different version of doc handle
+      path: path,
+    });
 
-  const createReconfigureEffect = (view: EditorView) =>  createEffect(() => {
-		view.dispatch({
-			effects: sync.reconfigure(syncExtension()),
-			changes: {
-				from: 0,
-				to: view.state.doc.length,
-				insert: initialDoc(),
-			},
-		})
-  });
+  const createReconfigureEffect = (view: EditorView) =>
+    createEffect(() => {
+      view.dispatch({
+        effects: sync.reconfigure(syncExtension()),
+        changes: {
+          from: 0,
+          to: view.state.doc.length,
+          insert: initialDoc(),
+        },
+      });
+    });
 
   return [sync.of(syncExtension()), createReconfigureEffect] as const;
 }

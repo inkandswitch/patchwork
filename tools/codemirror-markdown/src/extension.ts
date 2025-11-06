@@ -1,4 +1,3 @@
-
 /** CodeMirror Extensions */
 import { completionKeymap } from "@codemirror/autocomplete";
 import {
@@ -11,10 +10,7 @@ import { markdown } from "@codemirror/lang-markdown";
 import { foldKeymap, indentOnInput, indentUnit } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
 import { searchKeymap } from "@codemirror/search";
-import {
-  EditorView,
-  keymap,
-} from "@codemirror/view";
+import { EditorView, keymap } from "@codemirror/view";
 
 /** Styles */
 import { theme } from "./theme.ts";
@@ -35,5 +31,5 @@ export function markdownExtensions() {
     EditorView.lineWrapping,
     markdown({ codeLanguages: languages }),
     indentUnit.of("    "),
-  ]
+  ];
 }
