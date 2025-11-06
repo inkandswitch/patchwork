@@ -23,10 +23,10 @@ function TldrawInner(props: { docUrl: AutomergeUrl }) {
   const editor = useEditor();
   const onChange = useCallback(() => {
     if (!editor) return;
-    const camstate = editor.getCameraState();
+    const camstate = editor.cameraState;
     if (camstate == "moving") {
       // todo debounce?
-      localStorage.setItem(key, JSON.stringify(editor.getCamera()));
+      localStorage.setItem(key, JSON.stringify(editor.camera));
     }
   }, []);
 
