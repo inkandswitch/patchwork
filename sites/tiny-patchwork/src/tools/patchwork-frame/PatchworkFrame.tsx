@@ -150,7 +150,7 @@ export const PatchworkFrame = ({
             ))}
           </div>
         )}
-        <div className="w-full h-full">
+        <div className="w-full flex-1 min-h-0">
           {selectedDocUrl && (
             <patchwork-view
               doc-url={selectedDocUrl}

@@ -1,4 +1,4 @@
-import { createSignal, createResource, Show, For } from "solid-js";
+import { createSignal, Show, For } from "solid-js";
 import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import type { FolderDoc } from "@patchwork/filesystem";
 
@@ -97,17 +97,26 @@ export function ViewSource(props: ViewSourceProps) {
   const [selectedFile, setSelectedFile] = createSignal<FileContent | null>(
     null
   );
+  const [files, setFiles] = createSignal<FileContent[]>([]);
+  const [loading, setLoading] = createSignal(false);
+  const [error, setError] = createSignal<Error | null>(null);
 
-  const [files] = createResource(
-    () => ({ url: props.moduleUrl, repo: props.repo, open: isOpen() }),
-    async ({ url, repo, open }) => {
-      if (!open) return [];
-      return fetchFolderFiles(url, repo);
-    }
-  );
-
-  const handleOpen = () => {
+  const handleOpen = async (e: MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     setIsOpen(true);
+
+    // Start fetching files
+    setLoading(true);
+    setError(null);
+    try {
+      const fetchedFiles = await fetchFolderFiles(props.moduleUrl, props.repo);
+      setFiles(fetchedFiles);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -134,17 +143,17 @@ export function ViewSource(props: ViewSourceProps) {
               </button>
             </div>
 
-            <Show when={files.loading}>
+            <Show when={loading()}>
               <p class="view-source__loading">Loading files...</p>
             </Show>
 
-            <Show when={files.error}>
+            <Show when={error()}>
               <p class="view-source__error">
-                Error loading files: {files.error?.message}
+                Error loading files: {error()?.message}
               </p>
             </Show>
 
-            <Show when={files() && files()!.length > 0}>
+            <Show when={files().length > 0}>
               <div class="view-source__layout">
                 <div class="view-source__file-list">
                   <h4>Files</h4>
@@ -190,7 +199,7 @@ export function ViewSource(props: ViewSourceProps) {
               </div>
             </Show>
 
-            <Show when={files() && files()!.length === 0 && !files.loading}>
+            <Show when={files().length === 0 && !loading()}>
               <p class="view-source__empty">No files found in this module.</p>
             </Show>
           </div>
