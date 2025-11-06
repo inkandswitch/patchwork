@@ -3,10 +3,8 @@ import {
   useDocHandle,
   useDocument,
 } from "@automerge/automerge-repo-react-hooks";
+import { PathRef, Reactive, Ref, Context, CONTEXT } from "@patchwork/context";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CONTEXT, PathRef, Ref } from "@patchwork/context";
-import { Context } from "@patchwork/context";
-import { Reactive } from "@patchwork/context";
 
 export function useReactive<T>(reactive: Reactive<T>): T;
 export function useReactive<T>(reactive: undefined): undefined;

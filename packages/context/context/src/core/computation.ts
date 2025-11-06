@@ -14,7 +14,6 @@ export const contextComputation = <T>(
   CONTEXT.subscribe(onChange);
 
   reactive.on("destroy", () => {
-    console.log("unsubscribe contextComputation", computation);
     CONTEXT.unsubscribe(onChange);
   });
 

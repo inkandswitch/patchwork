@@ -191,8 +191,6 @@ const CommentView = ({ commentRef, onDeleteComment }: CommentViewProps) => {
   };
 
   const onChangeDraft = (commentRef: Ref<Comment>, draftContent: string) => {
-    console.log("!! onChangeDraft", draftContent, commentRef.value);
-
     commentRef.change((comment) => {
       comment.draftContent = draftContent;
     });

@@ -14,8 +14,6 @@ export const BackLinkButton = ({
   docUrl: AutomergeUrl;
   element: ToolElement;
 }) => {
-  console.log("render", docUrl);
-
   const [doc] = useDocument<HasPatchworkMetadata>(docUrl);
   const originalDocUrl = doc?.["@patchwork"]?.copyOf as
     | AutomergeUrl

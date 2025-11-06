@@ -1,7 +1,6 @@
 // Note: solid-js is expected as a peer dependency
+import { CONTEXT, Reactive } from "@patchwork/context";
 import { createSignal, createEffect, onCleanup, createMemo } from "solid-js";
-import { Reactive } from "@patchwork/context";
-import { CONTEXT } from "@patchwork/context";
 
 export const createReactive = <T>(
   reactiveOrFn: Reactive<T> | (() => Reactive<T>),

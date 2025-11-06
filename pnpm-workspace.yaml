@@ -1,6 +1,7 @@
 packages:
   - core/*
   - packages/*
+  - packages/context/**/*
   - meta/*
   - sites/*
   - tools/*
