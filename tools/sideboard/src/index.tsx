@@ -1,7 +1,7 @@
+import "./index.css";
 import { render } from "solid-js/web";
 import type { ModuleSettingsDoc } from "@patchwork/filesystem";
 import type { ToolImplementation } from "@patchwork/plugins";
-import "./index.css";
 import type { TinyPatchworkAccountDoc } from "./types.ts";
 
 function addStyles(element: HTMLElement, textContent: string) {
@@ -29,7 +29,9 @@ export const plugins = [
       return (handle, element) => {
         addStyles(element, css);
         return render(
-          () => <Sideboard handle={handle} repo={element.repo} />,
+          () => (
+            <Sideboard handle={handle} repo={element.repo} element={element} />
+          ),
           element
         );
       };
@@ -49,7 +51,13 @@ export const plugins = [
       return function (handle, element) {
         addStyles(element, styles);
         return render(
-          () => <ModuleSettings handle={handle} repo={element.repo} />,
+          () => (
+            <ModuleSettings
+              handle={handle}
+              repo={element.repo}
+              element={element}
+            />
+          ),
           element
         );
       };
