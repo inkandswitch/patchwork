@@ -97,11 +97,15 @@ rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
 
 rootElement.addEventListener("patchwork:open-document", (event) => {
   const params = new URLSearchParams();
-  const { url, toolId } = event.detail;
+  const { url, toolId, type, title } = event.detail;
   const { documentId, heads } = parseAutomergeUrl(url);
   params.set("doc", documentId);
   if (heads) params.set("heads", heads?.join("|"));
   if (toolId) params.set("tool", toolId);
+  if (title) params.set("title", title);
+  if (type) {
+    params.set("type", type);
+  }
   window.location.hash = params.toString();
 });
 
@@ -122,11 +126,18 @@ const handleHashChange = async (hash: string) => {
   const documentId = params.get("doc");
   const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
   const toolId = params.get("tool");
+  const title = params.get("title");
+  const type = params.get("type");
   if (isValidDocumentId(documentId)) {
-    openDocument(
-      rootElement,
-      stringifyAutomergeUrl({ documentId, heads }),
-      toolId ?? undefined
+    rootElement.dispatchEvent(
+      new CustomEvent("patchwork:open-document", {
+        detail: {
+          url: stringifyAutomergeUrl({ documentId, heads }),
+          toolId,
+          title,
+          type,
+        },
+      })
     );
   }
 };
@@ -138,9 +149,9 @@ window.addEventListener("hashchange", () => {
 });
 
 if (window.location.hash) {
-  const initialAutomergeUrl = window.location.hash.slice(1);
+  const hash = window.location.hash.slice(1);
   // todo: actually wait for root to be mounted
   setTimeout(() => {
-    handleHashChange(initialAutomergeUrl);
+    handleHashChange(hash);
   }, 100);
 }
