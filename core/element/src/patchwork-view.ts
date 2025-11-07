@@ -15,10 +15,6 @@ import {
   getRegistry,
   isLoadablePlugin,
   type Tool,
-  type LoadablePlugin,
-  type LoadedPlugin,
-  type ToolDescription,
-  type ToolImplementation,
 } from "@patchwork/plugins";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
