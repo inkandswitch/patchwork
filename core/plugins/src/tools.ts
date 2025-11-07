@@ -28,6 +28,7 @@ export type ToolDescription = PluginDescription & {
   supportedDataTypes: "*" | string[];
   name: string;
   icon?: string;
+  unlisted?: boolean;
 };
 
 export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;
