@@ -174,7 +174,7 @@
   padding-left: calc(0.5rem * attr(data-depth));
 }
 
-.sideboard-folder-item {
+.document-list-item {
   display: flex;
   gap: 0.5ch;
   padding-inline: var(--doclist-padding-x);
@@ -216,15 +216,19 @@
   }
 }
 
-.sideboard-folder-item__name {
+.document-list-item__name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
-  max-width: 100%;
+  width: 100%;
+  &:is(input) {
+    padding: 4px;
+    margin: -4px;
+  }
 }
 
-.sideboard-folder__toggle {
+.document-list-folder__toggle {
   margin-left: -0.5ch;
   padding-inline: 0.5ch;
   &:hover {
@@ -232,7 +236,7 @@
   }
 }
 
-.sideboard-folder__contents--hidden {
+.document-list-folder__contents--hidden {
   display: none;
 }
 
@@ -245,7 +249,7 @@
   display: block;
 }
 
-.sideboard-folder__contents .sideboard-folder-item {
+.document-list-folder__contents .document-list-item {
   padding-left: calc(2.2rem * var(--depth));
 }
 
@@ -297,7 +301,6 @@
   background: var(--sideboard-widget-fill);
   color: var(--sideboard-widget-line);
 }
-
 
 .module-settings {
   height: 100%;
@@ -394,7 +397,7 @@
     background: color-mix(in oklab, #3b82f6, black 20%);
     border-color: color-mix(in oklab, #3b82f6, black 10%);
   }
-  
+
   .module-input__add-button:hover:not(:disabled) {
     background: color-mix(in oklab, #3b82f6, black 10%);
   }
@@ -452,12 +455,17 @@
   flex-direction: column;
   gap: 0.75rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 10%);
+  border-bottom: 1px solid
+    color-mix(in oklab, var(--sideboard-widget-fill), black 10%);
 }
 
 @media (prefers-color-scheme: dark) {
   .module-input__package-info {
-    border-bottom-color: color-mix(in oklab, var(--sideboard-widget-fill), white 10%);
+    border-bottom-color: color-mix(
+      in oklab,
+      var(--sideboard-widget-fill),
+      white 10%
+    );
   }
 }
 
@@ -530,7 +538,6 @@
 .module-input__source {
   margin-top: 0.75rem;
 }
-
 
 .popmenu__trigger,
 .popmenu__sub-trigger {
@@ -735,13 +742,13 @@
     background: color-mix(in oklab, var(--sideboard-widget-fill), white 8%);
     border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 20%);
   }
-  
+
   .tool-card__datatype-pill--any {
     background: color-mix(in oklab, #3b82f6, black 30%);
     border-color: color-mix(in oklab, #3b82f6, black 20%);
     color: #93c5fd;
   }
-  
+
   .tool-card__datatype-pill--none {
     background: color-mix(in oklab, #eab308, black 40%);
     border-color: color-mix(in oklab, #eab308, black 30%);
