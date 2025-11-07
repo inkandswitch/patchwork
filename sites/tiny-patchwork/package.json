@@ -18,7 +18,7 @@
     "vite-plugin-wasm": "^3.4.1"
   },
   "scripts": {
-    "dev": "vite dev",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "sync": "vite build && pushwork sync"
