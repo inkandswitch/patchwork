@@ -2,23 +2,21 @@ import type { MaybeAccessor } from "@automerge/automerge-repo-solid-primitives/d
 import {
   type ToolDescription,
   type DataTypeDescription,
-  type Tool,
-  type DataType,
   getSupportedToolsForType,
   getRegistry,
+  type Plugin,
 } from "@patchwork/plugins";
 import { createEffect, on, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 
-// TODO: maybe these shouold go alongside the @patchwork/react package?
-
+// TODO: maybe these should go alongside the @patchwork/react package?
 const toolRegistry = getRegistry<ToolDescription>("patchwork:tool");
 const datatypeRegistry = getRegistry<DataTypeDescription>("patchwork:datatype");
 
 (window as any).toolRegistry = toolRegistry;
 (window as any).datatypeRegistry = datatypeRegistry;
 
-export function useTools(): Tool[] {
+export function useTools(): Plugin<ToolDescription>[] {
   const [plugins, setPlugins] = createStore(toolRegistry.all());
   const dispose = toolRegistry.on("changed", () =>
     setPlugins(reconcile(toolRegistry.all()))
@@ -27,12 +25,12 @@ export function useTools(): Tool[] {
   return plugins;
 }
 
-export function useDatatypes(filter: (item: DataType) => boolean): DataType[] {
-  const [plugins, setPlugins] = createStore(
-    datatypeRegistry.all().filter(filter)
-  );
+export function useDatatypes(
+  filter: (item: DataTypeDescription) => boolean
+): Plugin<DataTypeDescription>[] {
+  const [plugins, setPlugins] = createStore(datatypeRegistry.filter(filter));
   const dispose = datatypeRegistry.on("changed", () =>
-    setPlugins(reconcile(datatypeRegistry.all().filter(filter)))
+    setPlugins(reconcile(datatypeRegistry.filter(filter)))
   );
   onCleanup(dispose);
   return plugins;
@@ -44,7 +42,7 @@ function access(thing: MaybeAccessor<string>) {
 
 export function useSupportedToolsForType(type: MaybeAccessor<string>) {
   const [plugins, setPlugins] = createStore(
-    getSupportedToolsForType(access(type))
+    getSupportedToolsForType(access(type)).filter((tool) => !tool.unlisted)
   );
 
   createEffect(
@@ -52,7 +50,11 @@ export function useSupportedToolsForType(type: MaybeAccessor<string>) {
       () => access(type),
       (type) => {
         const dispose = toolRegistry.on("changed", () =>
-          setPlugins(reconcile(getSupportedToolsForType(type)))
+          setPlugins(
+            reconcile(
+              getSupportedToolsForType(type).filter((tool) => !tool.unlisted)
+            )
+          )
         );
         onCleanup(dispose);
       }

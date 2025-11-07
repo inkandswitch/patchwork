@@ -184,6 +184,9 @@ export function registerPatchworkViewElement(
           async (addedTool) => {
             const toolId = addedTool.id;
             const isChosenTool = toolId == this.toolId;
+            if (this.#handle) {
+              this.#fallbackId = getFallbackTool(this.#handle.doc())?.id;
+            }
             const isFallbackTool = toolId == this.#fallbackId;
 
             if (isChosenTool || isFallbackTool) {

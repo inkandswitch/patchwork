@@ -10,6 +10,7 @@ export const plugins = [
     name: "Sync Indicator",
     icon: "Wifi",
     supportedDataTypes: "*" as const,
+    unlisted: true,
     async load(): Promise<ToolImplementation> {
       return (handle, element) => {
         element.style.width = "fit-content";
