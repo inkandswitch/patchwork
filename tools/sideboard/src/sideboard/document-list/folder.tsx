@@ -90,6 +90,7 @@ export default function Folder(props: {
           <CreateNew
             repo={props.repo}
             changeFolder={(fn) => handle()?.change(fn)}
+            open={props.open}
           />
         </Item>
 

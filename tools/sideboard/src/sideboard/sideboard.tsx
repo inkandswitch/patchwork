@@ -39,6 +39,7 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
         <CreateNew
           changeFolder={(fn) => folderHandle()?.change(fn)}
           repo={props.repo}
+          open={open}
         />
       </header>
       <div class="sideboard__filter-container sideboard-widget">
