@@ -38,13 +38,9 @@ const ContextSidebar = ({
         ))}
       </div>
       {/* Active Tab Content */}
-      <div className="flex-1 bg-base-300">
+      <div className="flex-1 bg-base-300 min-h-0 overflow-auto">
         {selectedToolIndex !== undefined && (
-          <patchwork-view
-            doc-url={accountDocUrl}
-            tool-id={selectedToolId}
-            class="overflow-auto"
-          />
+          <patchwork-view doc-url={accountDocUrl} tool-id={selectedToolId} />
         )}
       </div>
     </div>

@@ -19,7 +19,7 @@ const HistoryView = () => {
   const selectedDocUrls = useReactive($selectedDocUrls);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex flex-col h-full">
       {selectedDocUrls.map((url) => (
         <DocHistoryView docUrl={url} key={url} />
       ))}
@@ -97,7 +97,7 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
           Reset to now
         </button>
       </div>
-      <div className="space-y-1 flex-1 overflow-y-auto p-2">
+      <div className="space-y-1 flex-1 overflow-auto p-2 min-h-0">
         {history.map(({ change }, index) => {
           const isSelected = change.hash === viewHeads?.afterHeads[0];
           return (
