@@ -26,31 +26,6 @@ export const commands = (
   repo: Repo
 ): CommandItem[] => [
   {
-    id: "funky-sidebar",
-    label: "Switch to Funky Sidebar",
-    description: "Use the funky sidebar view",
-    category: "Layout",
-    action: () => {
-      accountDocHandle.change((doc) => {
-        doc.accountSidebarToolId = "funky-sidebar";
-      });
-      console.log("Switched to funky sidebar");
-    },
-  },
-  {
-    id: "normal-sidebar",
-    label: "Switch to Normal Sidebar",
-    description: "Use the simple sidebar view",
-    category: "Layout",
-    action: () => {
-      accountDocHandle.change((doc) => {
-        doc.accountSidebarToolId = "chee/sideboard";
-      });
-      console.log("Switched to normal sidebar");
-    },
-  },
-
-  {
     id: "set-sidebar-tool-id",
     label: "Set Sidebar Tool ID",
     description: "Change the sidebar to a specific tool by ID",
