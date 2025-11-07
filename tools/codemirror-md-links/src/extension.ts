@@ -8,20 +8,7 @@ import {
 } from "@codemirror/view";
 import { Range } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
-
-// TODO: fix for dark/light mode
-const linkTheme = EditorView.baseTheme({
-  ".cm-link": {
-    color: "#0066cc",
-    textDecoration: "none",
-    cursor: "pointer",
-    borderBottom: "1px solid #0066cc",
-    "&:hover": {
-      borderBottom: "1px solid #f0f0f0",
-      color: "#f0f0f0",
-    },
-  },
-});
+import { linkTheme } from "./theme.ts";
 
 /**
  * Widget to render a clickable link in the editor
