@@ -1,6 +1,6 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocHandle } from "@automerge/react";
-import { Tldraw, useEditor } from "tldraw";
+import { Tldraw, useEditor } from "@tldraw/tldraw";
 import { useAutomergeStore } from "./lith/useAutomergeStore.ts";
 import type { TLDrawDoc } from "./datatype.ts";
 import { useCallback, useEffect, useMemo } from "react";
@@ -23,10 +23,10 @@ function TldrawInner(props: { docUrl: AutomergeUrl }) {
   const editor = useEditor();
   const onChange = useCallback(() => {
     if (!editor) return;
-    const camstate = editor.getCameraState();
+    const camstate = editor.cameraState;
     if (camstate == "moving") {
       // todo debounce?
-      localStorage.setItem(key, JSON.stringify(editor.getCamera()));
+      localStorage.setItem(key, JSON.stringify(editor.camera));
     }
   }, []);
 

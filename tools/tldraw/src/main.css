@@ -1,4 +1,4 @@
-@import url("tldraw/tldraw.css");
+@import url("@tldraw/tldraw/tldraw.css");
 * {
   background: pink !important;
 }

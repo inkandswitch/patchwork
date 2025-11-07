@@ -21,14 +21,14 @@ import { OpenDocumentEvent } from "@patchwork/element";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
 
 export const PatchworkFrame = ({
-  docUrl: tinyPatchworkConfigDocUrl,
+  docUrl: accountDocUrl,
   element,
 }: {
   docUrl: AutomergeUrl;
   element: HTMLElement | ShadowRoot;
 }) => {
   const [accountDoc, changeAccountDoc] = useDocument<TinyPatchworkConfigDoc>(
-    tinyPatchworkConfigDocUrl,
+    accountDocUrl,
     {
       suspense: true,
     }
@@ -40,6 +40,9 @@ export const PatchworkFrame = ({
   const [selectedView, setSelectedView] = useState<
     { url: AutomergeUrl; toolId?: string } | undefined
   >(undefined);
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
 
   const [selectedDoc] = useDocument<DocWithComments>(selectedView?.url);
   const selectedDocRef = useDocRef(selectedView?.url);
@@ -129,14 +132,26 @@ export const PatchworkFrame = ({
 
   return (
     <div className="w-screen h-screen flex">
-      <div className="w-[400px] flex flex-col">
-        {accountSidebarToolId && (
+      <div
+        className={`flex relative transition-all duration-300 ${
+          isSidebarCollapsed ? "w-0" : "w-[400px]"
+        }`}
+      >
+        {accountSidebarToolId && !isSidebarCollapsed && (
           <patchwork-view
             class="h-full"
-            doc-url={tinyPatchworkConfigDocUrl}
+            doc-url={accountDocUrl}
             tool-id={accountSidebarToolId}
           />
         )}
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="sidebar-toggle"
+          aria-label={
+            isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+          }
+          title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        />
       </div>
       <div className="flex flex-col flex-1 h-full">
         {selectedDocUrl && (
@@ -150,7 +165,7 @@ export const PatchworkFrame = ({
             ))}
           </div>
         )}
-        <div className="w-full h-full">
+        <div className="w-full flex-1 min-h-0">
           {selectedDocUrl && (
             <patchwork-view
               doc-url={selectedDocUrl}
@@ -165,11 +180,27 @@ export const PatchworkFrame = ({
         </div>
       </div>
       {contextSidebarToolId && (
-        <div className="w-[400px] bg-base-100">
-          <patchwork-view
-            doc-url={tinyPatchworkConfigDocUrl}
-            tool-id={contextSidebarToolId}
+        <div
+          className={`flex relative transition-all duration-300 bg-base-100 ${
+            isRightSidebarCollapsed ? "w-[2px]" : "w-[400px]"
+          }`}
+        >
+          <button
+            onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+            className="sidebar-toggle"
+            aria-label={
+              isRightSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
+            title={
+              isRightSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
           />
+          {!isRightSidebarCollapsed && (
+            <patchwork-view
+              doc-url={accountDocUrl}
+              tool-id={contextSidebarToolId}
+            />
+          )}
         </div>
       )}
     </div>

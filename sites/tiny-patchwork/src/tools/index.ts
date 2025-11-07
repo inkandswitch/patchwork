@@ -19,7 +19,8 @@ import { plugins as backLinkButtonPlugins } from "@tiny-patchwork/back-link-butt
 import { plugins as documentTitlePlugins } from "@tiny-patchwork/doc-title";
 // @ts-expect-error no types
 import { plugins as tldrawPlugins } from "@patchwork/tldraw";
-import "tldraw/tldraw.css";
+import "@patchwork/tldraw/style";
+
 // @ts-expect-error no types
 import { plugins as sideboardPlugins } from "@chee/patchwork-sideboard";
 import "@chee/patchwork-sideboard/styles.css";

@@ -1,4 +1,4 @@
-import type { RecordsDiff, TLRecord } from "tldraw";
+import type { RecordsDiff, TLRecord } from "@tldraw/tldraw";
 import type { TLDrawDoc } from "../datatype.ts";
 import { isObject, forIn, isArray, mapValues } from "lodash";
 import { ImmutableString } from "@automerge/automerge";

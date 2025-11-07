@@ -56,7 +56,7 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
           )}
           class="sideboard-footer__button"
         >
-          My tools
+          Modules
         </button>
 
         <button

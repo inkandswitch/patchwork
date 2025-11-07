@@ -44,8 +44,8 @@
     "@patchwork/element": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/plugins": "workspace:^",
-    "@patchwork/tldraw": "workspace:^",
     "@patchwork/react": "workspace:^",
+    "@patchwork/tldraw": "workspace:^",
     "@patchwork/util": "workspace:^",
     "@tiny-patchwork/patchwork-frame": "workspace:^",
     "@tiny-patchwork/back-link-button": "workspace:^",
@@ -60,7 +60,6 @@
     "@tiny-patchwork/todo": "workspace:^",
     "@tiny-patchwork/sync-indicator": "workspace:^",
     "add": "^2.0.6",
-    "boring-avatars": "^2.0.4",
     "cmdk": "^1.1.1",
     "lucide-react": "^0.545.0",
     "pnpm": "^10.18.1",
@@ -69,7 +68,6 @@
     "scheduler": "^0.27.0",
     "signia": "^0.1.5",
     "solid-js": "^1.9.9",
-    "tailwindcss": "^4.1.14",
-    "tldraw": "^4.1.1"
+    "tailwindcss": "^4.1.14"
   }
 }
