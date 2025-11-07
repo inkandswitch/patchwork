@@ -20,11 +20,7 @@ import type { OpenDocumentEventDetail } from "@patchwork/element";
 import Folder from "./folder.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import {
-  getRegistry,
-  type DataType,
-  type DataTypeDescription,
-} from "@patchwork/plugins";
+import { getRegistry, type DataType } from "@patchwork/plugins";
 
 export interface DocumentListProps {
   handle: DocHandle<FolderDoc>;
@@ -95,6 +91,8 @@ export function DocumentList(props: DocumentListProps) {
                       props.open({
                         url: doc.url,
                         toolId,
+                        title: doc.name,
+                        type: doc.type,
                       })
                     }
                   >

@@ -1,5 +1,9 @@
 import type { ChangeFn, Repo } from "@automerge/automerge-repo";
-import { type DataType, createDocOfDataType2 } from "@patchwork/plugins";
+import {
+  type DataType,
+  createDocOfDataType2,
+  getRegistry,
+} from "@patchwork/plugins";
 import { For } from "solid-js";
 import { PlusIcon } from "./icons.tsx";
 import type { FolderDoc } from "@patchwork/filesystem";
@@ -8,8 +12,8 @@ import { DropdownMenu } from "@kobalte/core/dropdown-menu";
 
 async function createNew(repo: Repo, dataType: DataType<unknown>) {
   if (!dataType.module) {
-    const registry = getPluginRegistry("patchwork:datatype");
-    await registry.loadById(dataType.id);
+    const registry = getRegistry("patchwork:datatype");
+    await registry.load(dataType.id);
   }
   const docHandle = await createDocOfDataType2(dataType, repo);
   const doc = docHandle.doc();

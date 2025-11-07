@@ -75,6 +75,8 @@ export default function Folder(props: {
             props.open({
               url: props.url,
               toolId,
+              title: folder()?.title,
+              type: "folder",
             });
           }}
         >
