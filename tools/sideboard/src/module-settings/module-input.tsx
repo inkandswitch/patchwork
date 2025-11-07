@@ -145,42 +145,36 @@ export function ModuleInput(props: ModuleInputProps) {
     }
   };
 
+  const hasValidation = () =>
+    input().trim() &&
+    (isValid() === false || isLoading() || preview() !== null);
+
   return (
     <div class="module-input">
-      <div class="module-input__input-row">
-        <input
-          class="module-input__field"
-          type="text"
-          value={input()}
-          onInput={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Enter module URL (automerge:...)"
-        />
-        <Show when={isValid() && input().trim()}>
-          <button
-            class="module-input__add-button"
-            onClick={handleAdd}
-            disabled={
-              isLoading() ||
-              preview()?.error !== undefined ||
-              !preview()?.isFolder
-            }
-          >
-            Add
-          </button>
-        </Show>
-      </div>
+      <input
+        class="module-input__field"
+        classList={{
+          "module-input__field--has-validation": hasValidation(),
+        }}
+        type="text"
+        value={input()}
+        onInput={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="Enter module URL (automerge:...)"
+      />
 
-      <Show when={input().trim() && isValid() === false}>
-        <div class="module-input__error">Invalid Automerge URL</div>
-      </Show>
+      <Show when={hasValidation()}>
+        <div class="module-input__validation">
+          <Show when={input().trim() && isValid() === false}>
+            <div class="module-input__error">Invalid Automerge URL</div>
+          </Show>
 
-      <Show when={isLoading()}>
-        <div class="module-input__loading">Loading module details...</div>
-      </Show>
+          <Show when={isLoading()}>
+            <div class="module-input__loading">Loading module details...</div>
+          </Show>
 
-      <Show when={preview() && !isLoading()}>
-        <div class="module-input__preview">
+          <Show when={preview() && !isLoading()}>
+            <div class="module-input__preview">
           <Show when={preview()?.error}>
             <div class="module-input__preview-error">⚠️ {preview()?.error}</div>
           </Show>
@@ -225,10 +219,23 @@ export function ModuleInput(props: ModuleInputProps) {
               </div>
             </Show>
             <Show when={previewUrl()}>
-              <div class="module-input__source">
+              <div class="module-input__actions">
                 <ViewSource moduleUrl={previewUrl()!} repo={props.repo} />
+                <button
+                  class="module-input__add-button"
+                  onClick={handleAdd}
+                  disabled={
+                    isLoading() ||
+                    preview()?.error !== undefined ||
+                    !preview()?.isFolder
+                  }
+                >
+                  Add
+                </button>
               </div>
             </Show>
+          </Show>
+            </div>
           </Show>
         </div>
       </Show>

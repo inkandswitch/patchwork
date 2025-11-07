@@ -326,35 +326,10 @@
   font-size: 1.2rem;
 }
 
-.module-settings__content {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-}
-
-.module-input {
-  padding: 1rem;
-  border: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 20%);
-  border-radius: 8px;
-  background: var(--sideboard-widget-fill);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-@media (prefers-color-scheme: dark) {
-  .module-input {
-    border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 20%);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
-}
-
-.module-input__input-row {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.module-input__field {
-  flex: 1;
+.module-settings__search {
+  width: 100%;
   padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
   border: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
   border-radius: 4px;
   background: var(--sideboard-widget-fill);
@@ -363,8 +338,75 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  .module-settings__search {
+    border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 15%);
+  }
+}
+
+.module-settings__search::placeholder {
+  opacity: 0.5;
+}
+
+.module-settings__search:focus {
+  outline: 2px solid var(--sideboard-primary);
+  outline-offset: 1px;
+}
+
+.module-settings__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.module-settings__type-header {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .module-settings__type-header {
+    border-bottom-color: color-mix(in oklab, var(--sideboard-widget-fill), white 15%);
+  }
+}
+
+.module-settings__type-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.module-input {
+  display: flex;
+  flex-direction: column;
+}
+
+.module-input__field {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
+  border-radius: 4px;
+  background: var(--sideboard-widget-fill);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.module-input__field--has-validation {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
   .module-input__field {
     border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 15%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -372,19 +414,47 @@
   opacity: 0.5;
 }
 
+.module-input__validation {
+  padding: 1rem;
+  border: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
+  border-top: none;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+  background: var(--sideboard-widget-fill);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  .module-input__validation {
+    border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 15%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.module-input__actions {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
 .module-input__add-button {
-  padding: 0.5rem 1.25rem;
-  background: color-mix(in oklab, #3b82f6, white 10%);
-  border: 1px solid color-mix(in oklab, #3b82f6, black 10%);
-  border-radius: 4px;
-  color: white;
-  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  background: color-mix(in oklab, #3b82f6, white 10%);
+  border: 1px solid color-mix(in oklab, #3b82f6, black 5%);
+  color: white;
 }
 
 .module-input__add-button:hover:not(:disabled) {
   background: #3b82f6;
+  border-color: color-mix(in oklab, #3b82f6, black 10%);
 }
 
 .module-input__add-button:disabled {
@@ -395,16 +465,16 @@
 @media (prefers-color-scheme: dark) {
   .module-input__add-button {
     background: color-mix(in oklab, #3b82f6, black 20%);
-    border-color: color-mix(in oklab, #3b82f6, black 10%);
+    border-color: color-mix(in oklab, #3b82f6, white 5%);
   }
 
   .module-input__add-button:hover:not(:disabled) {
     background: color-mix(in oklab, #3b82f6, black 10%);
+    border-color: color-mix(in oklab, #3b82f6, white 10%);
   }
 }
 
 .module-input__error {
-  margin-top: 0.5rem;
   padding: 0.5rem 0.75rem;
   background: color-mix(in oklab, #ef4444, white 80%);
   border: 1px solid color-mix(in oklab, #ef4444, white 60%);
@@ -422,15 +492,10 @@
 }
 
 .module-input__loading {
-  margin-top: 0.5rem;
   padding: 0.75rem;
   text-align: center;
   font-size: 0.875rem;
   opacity: 0.7;
-}
-
-.module-input__preview {
-  margin-top: 0.75rem;
 }
 
 .module-input__preview-error {
@@ -535,9 +600,6 @@
   }
 }
 
-.module-input__source {
-  margin-top: 0.75rem;
-}
 
 .popmenu__trigger,
 .popmenu__sub-trigger {
@@ -660,11 +722,23 @@
 
 .tool-card__url {
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .tool-card__url:hover {
   opacity: 0.8;
+}
+
+.tool-card__url--copied {
+  background: color-mix(in oklab, #22c55e, white 80%) !important;
+  border-color: color-mix(in oklab, #22c55e, white 60%) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .tool-card__url--copied {
+    background: color-mix(in oklab, #22c55e, black 60%) !important;
+    border-color: color-mix(in oklab, #22c55e, black 40%) !important;
+  }
 }
 
 .tool-card__url code {
@@ -685,19 +759,41 @@
   }
 }
 
-.tool-card__checkbox {
+.tool-card__footer-actions {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0.5rem;
-  cursor: pointer;
-  font-size: 0.9375rem;
-  user-select: none;
+  flex-wrap: wrap;
 }
 
-.tool-card__checkbox input[type="checkbox"] {
-  width: 1.125rem;
-  height: 1.125rem;
+.tool-card__uninstall {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  background: color-mix(in oklab, #ef4444, white 20%);
+  border: 1px solid color-mix(in oklab, #ef4444, black 5%);
+  color: white;
+}
+
+.tool-card__uninstall:hover {
+  background: #ef4444;
+  border-color: color-mix(in oklab, #ef4444, black 10%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .tool-card__uninstall {
+    background: color-mix(in oklab, #ef4444, black 20%);
+    border-color: color-mix(in oklab, #ef4444, white 5%);
+  }
+
+  .tool-card__uninstall:hover {
+    background: color-mix(in oklab, #ef4444, black 10%);
+    border-color: color-mix(in oklab, #ef4444, white 10%);
+  }
 }
 
 .tool-card__datatypes h3 {
@@ -758,21 +854,33 @@
 }
 
 .view-source__button {
-  background: white;
-  border: 1px solid #e0e0e0;
+  padding: 0.5rem 1rem;
   border-radius: 6px;
-  padding: 0.5em 1em;
-  cursor: pointer;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #333;
+  cursor: pointer;
   transition: all 0.15s ease;
-  margin-top: 1em;
-  font-size: 0.9em;
+  white-space: nowrap;
+  background: color-mix(in oklab, var(--sideboard-widget-fill), black 5%);
+  border: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 8%);
+  color: var(--sideboard-widget-line);
 }
 
 .view-source__button:hover {
-  background: #f5f5f5;
-  border-color: #999;
+  background: color-mix(in oklab, var(--sideboard-widget-fill), black 8%);
+  border-color: color-mix(in oklab, var(--sideboard-widget-fill), black 12%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .view-source__button {
+    background: color-mix(in oklab, var(--sideboard-widget-fill), white 8%);
+    border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 12%);
+  }
+
+  .view-source__button:hover {
+    background: color-mix(in oklab, var(--sideboard-widget-fill), white 12%);
+    border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 16%);
+  }
 }
 
 .view-source__modal {
@@ -967,17 +1075,6 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .view-source__button {
-    background: #2a2a2a;
-    border-color: #404040;
-    color: #e0e0e0;
-  }
-
-  .view-source__button:hover {
-    background: #333;
-    border-color: #555;
-  }
-
   .view-source__modal-content {
     background: #1e1e1e;
   }

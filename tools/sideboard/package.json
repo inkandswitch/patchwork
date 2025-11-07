@@ -35,6 +35,7 @@
     "@patchwork/element": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/context-selection": "workspace:^",
+    "@patchwork/solidjs": "workspace:^",
     "solid-js": "^1.9.9"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-import { Show, For } from "solid-js";
+import { Show, For, createSignal } from "solid-js";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { Repo } from "@automerge/automerge-repo";
 import { ViewSource } from "./view-source.tsx";
@@ -10,16 +10,20 @@ interface ToolCardProps {
     supportedDataTypes?: string[] | string;
   };
   installed: boolean;
-  onToggleInstall: () => void;
+  onUninstall?: () => void;
   isValidUrl: boolean;
   repo: Repo;
 }
 
 export function ToolCard(props: ToolCardProps) {
+  const [copied, setCopied] = createSignal(false);
+
   const handleCopyUrl = async () => {
     if (props.tool.importUrl) {
       try {
         await navigator.clipboard.writeText(props.tool.importUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
       } catch (err) {
         console.error("Failed to copy URL:", err);
       }
@@ -33,63 +37,62 @@ export function ToolCard(props: ToolCardProps) {
       <Show when={props.tool.importUrl}>
         <div
           class="tool-card__url"
+          classList={{ "tool-card__url--copied": copied() }}
           onClick={handleCopyUrl}
           title={props.tool.importUrl}
         >
-          <code>{props.tool.importUrl}</code>
+          <code>{copied() ? "Copied!" : props.tool.importUrl}</code>
+        </div>
+      </Show>
+
+      <Show when={props.tool.supportedDataTypes !== undefined}>
+        <div class="tool-card__datatypes">
+          <h3>Supported data types</h3>
+          <div class="tool-card__datatypes-pills">
+            <Show
+              when={
+                Array.isArray(props.tool.supportedDataTypes) &&
+                props.tool.supportedDataTypes.length > 0 &&
+                !props.tool.supportedDataTypes.includes("*")
+              }
+              fallback={
+                <Show
+                  when={
+                    !Array.isArray(props.tool.supportedDataTypes) ||
+                    props.tool.supportedDataTypes.includes("*")
+                  }
+                  fallback={
+                    <span class="tool-card__datatype-pill tool-card__datatype-pill--none">
+                      None
+                    </span>
+                  }
+                >
+                  <span class="tool-card__datatype-pill tool-card__datatype-pill--any">
+                    Any
+                  </span>
+                </Show>
+              }
+            >
+              <For each={props.tool.supportedDataTypes as string[]}>
+                {(dt) => <span class="tool-card__datatype-pill">{dt}</span>}
+              </For>
+            </Show>
+          </div>
         </div>
       </Show>
 
       <Show when={props.isValidUrl}>
-        <label class="tool-card__checkbox">
-          <input
-            type="checkbox"
-            checked={props.installed}
-            onInput={props.onToggleInstall}
+        <div class="tool-card__footer-actions">
+          <ViewSource
+            moduleUrl={props.tool.importUrl as AutomergeUrl}
+            repo={props.repo}
           />
-          <span>Load at startup</span>
-        </label>
-      </Show>
-
-      <div class="tool-card__datatypes">
-        <h3>Supported data types</h3>
-        <div class="tool-card__datatypes-pills">
-          <Show
-            when={
-              Array.isArray(props.tool.supportedDataTypes) &&
-              props.tool.supportedDataTypes.length > 0 &&
-              !props.tool.supportedDataTypes.includes("*")
-            }
-            fallback={
-              <Show
-                when={
-                  !Array.isArray(props.tool.supportedDataTypes) ||
-                  props.tool.supportedDataTypes.includes("*")
-                }
-                fallback={
-                  <span class="tool-card__datatype-pill tool-card__datatype-pill--none">
-                    None
-                  </span>
-                }
-              >
-                <span class="tool-card__datatype-pill tool-card__datatype-pill--any">
-                  Any
-                </span>
-              </Show>
-            }
-          >
-            <For each={props.tool.supportedDataTypes as string[]}>
-              {(dt) => <span class="tool-card__datatype-pill">{dt}</span>}
-            </For>
+          <Show when={props.onUninstall}>
+            <button class="tool-card__uninstall" onClick={props.onUninstall}>
+              Uninstall
+            </button>
           </Show>
         </div>
-      </div>
-
-      <Show when={props.isValidUrl}>
-        <ViewSource
-          moduleUrl={props.tool.importUrl as AutomergeUrl}
-          repo={props.repo}
-        />
       </Show>
     </article>
   );

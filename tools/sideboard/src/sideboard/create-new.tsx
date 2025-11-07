@@ -11,7 +11,7 @@ import {
 import { For } from "solid-js";
 import { PlusIcon } from "./icons.tsx";
 import type { FolderDoc } from "@patchwork/filesystem";
-import { useDatatypes } from "./plugins.ts";
+import { useFilteredDatatypes } from "@patchwork/solidjs";
 import { DropdownMenu } from "@kobalte/core/dropdown-menu";
 import type { OpenDocumentEventDetail } from "@patchwork/element";
 
@@ -41,7 +41,7 @@ export interface CreateNewProps {
 }
 
 export default function CreateNew(props: CreateNewProps) {
-  const datatypes = useDatatypes((item) => !item.unlisted);
+  const datatypes = useFilteredDatatypes((item) => !item.unlisted);
 
   return (
     <DropdownMenu>

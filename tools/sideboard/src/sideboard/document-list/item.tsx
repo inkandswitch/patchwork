@@ -7,7 +7,7 @@ import {
   untrack,
   type JSX,
 } from "solid-js";
-import { useSupportedToolsForType } from "../plugins.ts";
+import { useSupportedToolsForType } from "@patchwork/solidjs";
 
 export default function Item(props: {
   id: string;
