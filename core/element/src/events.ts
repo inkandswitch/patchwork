@@ -1,6 +1,6 @@
 import { AutomergeUrl } from "@automerge/automerge-repo";
 
-interface OpenDocumentEventDetail {
+export interface OpenDocumentEventDetail {
   url: AutomergeUrl;
   toolId?: string;
 }
