@@ -103,6 +103,7 @@
     text-align: left;
     gap: 1ex;
     position: relative;
+    flex-shrink: 0;
   }
 }
 
