@@ -415,6 +415,15 @@ importers:
       '@chee/patchwork-sideboard':
         specifier: workspace:^
         version: link:../../tools/sideboard
+      '@codemirror/language':
+        specifier: ^6.11.3
+        version: 6.11.3
+      '@codemirror/state':
+        specifier: ^6.5.2
+        version: 6.5.2
+      '@codemirror/view':
+        specifier: ^6.38.4
+        version: 6.38.6
       '@grjte/codemirror-base':
         specifier: workspace:^
         version: link:../../tools/codemirror-base
