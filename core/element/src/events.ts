@@ -3,6 +3,8 @@ import { AutomergeUrl } from "@automerge/automerge-repo";
 export interface OpenDocumentEventDetail {
   url: AutomergeUrl;
   toolId?: string;
+  title?: string;
+  type?: string;
 }
 
 export class OpenDocumentEvent extends CustomEvent<OpenDocumentEventDetail> {
