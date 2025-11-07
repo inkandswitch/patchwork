@@ -583,6 +583,7 @@
   position: relative;
   user-select: none;
   outline: none;
+  cursor: default;
 }
 .popmenu__sub-trigger[data-expanded] {
   background-color: var(--sideboard-fill-offset);
