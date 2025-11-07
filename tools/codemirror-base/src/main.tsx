@@ -7,8 +7,7 @@ export const plugins = [
   {
     type: "patchwork:tool",
     id: "codemirror-base",
-    // TODO: this name is a placeholder for now, since there isn't a way to specify codemirror extension sets by name
-    name: "Markdown Editor",
+    name: "Text Editor",
     supportedDataTypes: ["essay", "markdown"],
     async load(): Promise<ToolImplementation<TextDoc>> {
       const { CodeMirrorEditor } = await import("./tool.tsx");
