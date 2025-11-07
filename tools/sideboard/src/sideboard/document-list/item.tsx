@@ -1,5 +1,12 @@
 import { ContextMenu } from "@kobalte/core/context-menu";
-import { createSignal, For, Show, type JSX } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  For,
+  Show,
+  untrack,
+  type JSX,
+} from "solid-js";
 import { useSupportedToolsForType } from "../plugins.ts";
 
 export default function Item(props: {
@@ -13,6 +20,18 @@ export default function Item(props: {
 }) {
   const tools = useSupportedToolsForType(props.type);
   const [trigger, setTrigger] = createSignal<HTMLButtonElement>();
+
+  createEffect((prev) => {
+    if (props.pressed && !prev) {
+      const el = untrack(trigger);
+      if (el) {
+        // @ts-expect-error this is non-critical, we can add a
+        // ponyfill if we so desire
+        el?.scrollIntoViewIfNeeded?.();
+      }
+    }
+    return props.pressed;
+  });
 
   return (
     <ContextMenu>
