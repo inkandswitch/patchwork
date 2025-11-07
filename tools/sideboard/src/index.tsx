@@ -42,7 +42,7 @@ export const plugins = [
     type: "patchwork:tool",
     name: "Module Settings",
     icon: "Settings",
-    supportedDataTypes: ["patchwork:module-settings"],
+    supportedDataTypes: ["patchwork:module-settings", "my-tools"],
     async load(): Promise<ToolImplementation<ModuleSettingsDoc>> {
       const { ModuleSettings } = await import(
         "./module-settings/module-settings.tsx"
