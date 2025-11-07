@@ -1,27 +1,35 @@
 import type { ChangeFn, Repo } from "@automerge/automerge-repo";
 import {
   type DataType,
+  type DataTypeDescription,
+  type Plugin,
   createDocOfDataType2,
   getRegistry,
+  isLoadablePlugin,
+  isLoadedPlugin,
 } from "@patchwork/plugins";
 import { For } from "solid-js";
 import { PlusIcon } from "./icons.tsx";
 import type { FolderDoc } from "@patchwork/filesystem";
 import { useDatatypes } from "./plugins.ts";
 import { DropdownMenu } from "@kobalte/core/dropdown-menu";
+import type { OpenDocumentEventDetail } from "@patchwork/element";
 
-async function createNew(repo: Repo, dataType: DataType<unknown>) {
-  if (!dataType.module) {
+async function createNew(repo: Repo, datatype: Plugin<DataTypeDescription>) {
+  if (isLoadablePlugin(datatype)) {
     const registry = getRegistry("patchwork:datatype");
-    await registry.load(dataType.id);
+    await registry.load(datatype.id);
   }
-  const docHandle = await createDocOfDataType2(dataType, repo);
+  if (!isLoadedPlugin(datatype)) {
+    throw new Error("plugin not loaded after loading");
+  }
+  const docHandle = await createDocOfDataType2(datatype, repo);
   const doc = docHandle.doc();
-  const name = dataType.module.getTitle(doc);
+  const name = datatype.module.getTitle(doc);
 
   return {
     name,
-    type: dataType.id,
+    type: datatype.id,
     url: docHandle.url,
   };
 }
@@ -29,6 +37,7 @@ async function createNew(repo: Repo, dataType: DataType<unknown>) {
 export interface CreateNewProps {
   repo: Repo;
   changeFolder(fn: ChangeFn<FolderDoc>): void;
+  open(detail: OpenDocumentEventDetail): void;
 }
 
 export default function CreateNew(props: CreateNewProps) {
@@ -58,6 +67,7 @@ export default function CreateNew(props: CreateNewProps) {
                   props.changeFolder(async (doc) => {
                     doc.docs.push(freshy);
                   });
+                  props.open(freshy);
                 }}
               >
                 {datatype.name}
