@@ -7,7 +7,7 @@ export function ItemName(props: {
   rename: (name: string) => void;
 }) {
   // i'm only doing the rename on blur
-  // to introduce a codemirror dependency
+  //  to avoid introducing codemirror
   // to the sidebar just for this
   // though codemirror will 101% already
   // be loaded in the system
