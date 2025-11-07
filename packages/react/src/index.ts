@@ -6,8 +6,9 @@ import type {
   ToolDescription,
   ToolImplementation,
   ToolElement,
+  Plugin,
 } from "@patchwork/plugins";
-import { PluginRegistry, getPluginRegistry } from "@patchwork/plugins";
+import { getRegistry } from "@patchwork/plugins";
 import { useEffect, useState, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
@@ -19,23 +20,20 @@ export const usePluginDescriptions = <
 >(
   type: string
 ) => {
-  const [plugins, setPlugins] = useState<
-    LoadedPlugin<Description, Implementation>[]
-  >([]);
+  const [plugins, setPlugins] = useState<Plugin<Description, Implementation>[]>(
+    []
+  );
 
   useEffect(() => {
-    const registry = getPluginRegistry(type) as PluginRegistry<
-      Description,
-      Implementation
-    >;
+    const registry = getRegistry<Description>(type);
 
     const onPluginsChange = () => {
-      setPlugins(registry.getPlugins());
+      setPlugins(registry.all());
     };
 
-    setPlugins(registry.getPlugins());
+    setPlugins(registry.all());
 
-    return registry.onChange(onPluginsChange);
+    return registry.on("changed", onPluginsChange);
   }, [type]);
 
   return plugins;
@@ -54,22 +52,19 @@ export const usePlugin = <
 
   useEffect(() => {
     let canceled = false;
-    const registry = getPluginRegistry(type) as PluginRegistry<
-      Description,
-      Implementation
-    >;
+    const registry = getRegistry<Description>(type);
 
     const loadDatatype = () => {
       if (!id) {
         return;
       }
-      registry.loadById(id).then((datatype) => {
+      registry.load(id).then((datatype) => {
         if (canceled) return;
         setPlugin(datatype as LoadedPlugin<Description, Implementation>);
       });
     };
 
-    const unsubscribe = registry.onChange(loadDatatype);
+    const unsubscribe = registry.on("changed", loadDatatype);
 
     loadDatatype();
 

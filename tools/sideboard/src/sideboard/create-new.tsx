@@ -7,6 +7,10 @@ import { useDatatypes } from "./plugins.ts";
 import { DropdownMenu } from "@kobalte/core/dropdown-menu";
 
 async function createNew(repo: Repo, dataType: DataType<unknown>) {
+  if (!dataType.module) {
+    const registry = getPluginRegistry("patchwork:datatype");
+    await registry.loadById(dataType.id);
+  }
   const docHandle = await createDocOfDataType2(dataType, repo);
   const doc = docHandle.doc();
   const name = dataType.module.getTitle(doc);

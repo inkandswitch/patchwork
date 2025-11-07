@@ -12,17 +12,20 @@ import {
 } from "@patchwork/filesystem";
 import {
   getFallbackTool,
-  getPlugin,
-  getPluginRegistry,
+  getRegistry,
   isLoadablePlugin,
-  onPluginsChange,
-  type LoadablePlugin,
   type Tool,
+  type LoadablePlugin,
+  type LoadedPlugin,
+  type ToolDescription,
+  type ToolImplementation,
 } from "@patchwork/plugins";
 
-import type { initializeKeyhive } from "@automerge/automerge-repo-keyhive";
+import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
-type AutomergeRepoKeyhive = Awaited<ReturnType<typeof initializeKeyhive>>;
+type AutomergeRepoKeyhive = Awaited<
+  ReturnType<typeof initializeAutomergeRepoKeyhive>
+>;
 
 const State = {
   none: "none",
@@ -160,7 +163,7 @@ export function registerPatchworkViewElement(
       };
 
       #init = async () => {
-        const toolRegistry = getPluginRegistry("patchwork:tool");
+        const toolRegistry = getRegistry("patchwork:tool");
         if (this.#state != State.none) {
           return;
         }
@@ -173,42 +176,51 @@ export function registerPatchworkViewElement(
 
         this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
 
-        /*        moduleWatcher.loadSuggestedImportUrl(this.docUrl).catch(() => {
-          console.warn(
-            `couldn't load suggested import url for ${this.docUrl}`,
-            new Error().stack
-          );
-        }); */
+        // TODO: these are inlined and not separate functions
+        // because we need to do some work getting types working well here.
+        // @chee would be good to chat about this at some point.
+        const removeAddedListener = toolRegistry.on(
+          "registered",
+          async (addedTool) => {
+            const toolId = addedTool.id;
+            const isChosenTool = toolId == this.toolId;
+            const isFallbackTool = toolId == this.#fallbackId;
 
-        this.#teardowns.add(
-          onPluginsChange<Tool>("patchwork:tool", async (_tools, newTool) => {
-            const newToolId = newTool.id;
-            const isChosenTool = newToolId == this.toolId;
-            const isFallbackTool = newToolId == this.#fallbackId;
             if (isChosenTool || isFallbackTool) {
-              if (isLoadablePlugin(newTool) && !newTool.module) {
+              if (isLoadablePlugin(addedTool)) {
                 // if it's not loaded, load it now
-                await toolRegistry.loadById(newTool.id);
-
-                // probably a hot reload
-                if (!newTool.module) {
-                  await newTool.load();
-                }
+                toolRegistry.load(addedTool.id);
               }
+            }
+          }
+        );
 
+        const removeLoadedListener = toolRegistry.on(
+          "loaded",
+          async (loadedTool) => {
+            const toolId = loadedTool.id;
+            const isChosenTool = toolId == this.toolId;
+            const isFallbackTool = toolId == this.#fallbackId;
+
+            if (isChosenTool || isFallbackTool) {
               if (this.#state == "unable") {
                 this.#queueRender();
               }
 
               if (this.#state == "error" || this.#state == "rendered") {
-                if (newTool.importUrl !== this.#tool?.importUrl) {
+                if (loadedTool.importUrl !== this.#tool?.importUrl) {
                   await this.#teardown();
                   this.#init();
                 }
               }
             }
-          })
+          }
         );
+
+        this.#teardowns.add(() => {
+          removeAddedListener();
+          removeLoadedListener();
+        });
 
         this.#handle.on("change", this.#onDocChange);
         this.#teardowns.add(() =>
@@ -259,7 +271,7 @@ export function registerPatchworkViewElement(
           console.warn(`no tool for ${this.#docUrl}`);
         }
 
-        this.#tool = getPlugin<Tool>("patchwork:tool", toolId) ?? null;
+        this.#tool = getRegistry<Tool>("patchwork:tool").get(toolId) ?? null;
 
         if (!this.#tool) {
           console.warn("Tool not found", toolId);
@@ -268,7 +280,7 @@ export function registerPatchworkViewElement(
         }
 
         if (!this.#tool.module) {
-          getPluginRegistry("patchwork:tool").loadById(this.#tool.id);
+          getRegistry("patchwork:tool").load(this.#tool.id);
           this.#state = "unable";
           console.warn("Tool not loaded", toolId);
           return;

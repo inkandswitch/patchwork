@@ -113,14 +113,14 @@ const keyhivePromise = importKeyhive();
   const storage = new IndexedDBStorageAdapter();
 
   const ws = new WebSocketClientAdapter(__SYNC_SERVER_URL__);
-  const [identity] = await Promise.all([
+  const [hive] = await Promise.all([
     (async function () {
       if (!__KEYHIVE_ENABLED__) return;
-      const [_keyhive, adapter] = await Promise.all([
+      const [_keyhive, { initializeAutomergeRepoKeyhive }] = await Promise.all([
         keyhivePromise,
         import("@automerge/automerge-repo-keyhive"),
       ]);
-      return await adapter.initializeKeyhive({
+      return await initializeAutomergeRepoKeyhive({
         storage,
         peerIdSuffix,
         networkAdapter: ws,
@@ -131,14 +131,14 @@ const keyhivePromise = importKeyhive();
   ]);
   debugLog("Automerge WASM initialized");
 
-  const network = identity ? [identity.networkAdapter] : [ws];
+  const network = hive ? [hive.networkAdapter] : [ws];
 
-  const serviceWorkerPeerId = identity
-    ? identity.peerId
+  const serviceWorkerPeerId = hive
+    ? hive.peerId
     : (`patchwork-service-worker-${peerIdSuffix}` as PeerId);
 
-  const sharePolicy: SharePolicy = identity
-    ? async (peerId) => peerId === identity.syncServer.peerId
+  const sharePolicy: SharePolicy = hive
+    ? async (peerId) => peerId === hive.syncServer.peerId
     : async (peerId) => peerId.includes("storage-server");
 
   const newRepo = new Repo({
@@ -147,7 +147,7 @@ const keyhivePromise = importKeyhive();
     peerId: serviceWorkerPeerId,
     sharePolicy,
     enableRemoteHeadsGossiping: true,
-    idFactory: identity?.idFactory,
+    idFactory: hive?.idFactory,
   });
 
   repo = newRepo;

@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@automerge/automerge-repo-keyhive':
-      specifier: 0.0.0-alpha.68
-      version: 0.0.0-alpha.68
+      specifier: 0.0.0-alpha.71
+      version: 0.0.0-alpha.71
     '@automerge/automerge-repo-react-hooks':
       specifier: 2.5.0-alpha.2
       version: 2.5.0-alpha.2
@@ -83,7 +83,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.0.0-alpha.68
+        version: 0.0.0-alpha.71
       '@keyhive/keyhive':
         specifier: 0.0.0-alpha.40
         version: 0.0.0-alpha.40
@@ -105,7 +105,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.0.0-alpha.68
+        version: 0.0.0-alpha.71
       '@types/node':
         specifier: ^20.19.9
         version: 20.19.22
@@ -160,7 +160,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.0.0-alpha.68
+        version: 0.0.0-alpha.71
       '@patchwork/bootloader':
         specifier: workspace:^
         version: link:../bootloader
@@ -368,7 +368,7 @@ importers:
         version: 2.5.0-alpha.2
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.0.0-alpha.68
+        version: 0.0.0-alpha.71
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.0-alpha.2
@@ -403,9 +403,6 @@ importers:
       '@automerge/automerge':
         specifier: 3.2.0
         version: 3.2.0
-      '@automerge/automerge-codemirror':
-        specifier: ^0.2.0
-        version: 0.2.0
       '@automerge/automerge-repo':
         specifier: 2.5.0-alpha.2
         version: 2.5.0-alpha.2
@@ -418,9 +415,15 @@ importers:
       '@chee/patchwork-sideboard':
         specifier: workspace:^
         version: link:../../tools/sideboard
-      '@grjte/markdown':
+      '@grjte/codemirror-base':
         specifier: workspace:^
-        version: link:../../tools/grjte-md
+        version: link:../../tools/codemirror-base
+      '@grjte/codemirror-markdown':
+        specifier: workspace:^
+        version: link:../../tools/codemirror-markdown
+      '@grjte/codemirror-md-links':
+        specifier: workspace:^
+        version: link:../../tools/codemirror-md-links
       '@orion/commands':
         specifier: workspace:^
         version: link:../../tools/commands
@@ -657,6 +660,195 @@ importers:
       vite-plugin-css-injected-by-js:
         specifier: ^3.5.2
         version: 3.5.2(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+
+  tools/codemirror-base:
+    dependencies:
+      '@automerge/automerge-codemirror':
+        specifier: ^0.2.0
+        version: 0.2.0
+      '@automerge/automerge-repo-solid-primitives':
+        specifier: ^2.4.0
+        version: 2.4.0(@automerge/automerge@3.2.0)(solid-js@1.9.9)
+      '@codemirror/state':
+        specifier: ^6.5.2
+        version: 6.5.2
+      '@codemirror/view':
+        specifier: ^6.38.4
+        version: 6.38.6
+      '@patchwork/context':
+        specifier: workspace:^
+        version: link:../../packages/context/context
+      '@patchwork/context-comments':
+        specifier: workspace:^
+        version: link:../../packages/context/annotations/context-comments
+      '@patchwork/context-diff':
+        specifier: workspace:^
+        version: link:../../packages/context/annotations/context-diff
+      '@patchwork/context-selection':
+        specifier: workspace:^
+        version: link:../../packages/context/annotations/context-selection
+      '@patchwork/context-solid':
+        specifier: workspace:^
+        version: link:../../packages/context/frameworks/context-solid
+      '@patchwork/filesystem':
+        specifier: workspace:^
+        version: link:../../core/filesystem
+      '@patchwork/plugins':
+        specifier: workspace:^
+        version: link:../../core/plugins
+      solid-js:
+        specifier: ^1.9.9
+        version: 1.9.9
+      vite-plugin-wasm:
+        specifier: ^3.5.0
+        version: 3.5.0(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+    devDependencies:
+      '@automerge/automerge':
+        specifier: 3.2.0
+        version: 3.2.0
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
+      '@babel/core':
+        specifier: ^7.28.4
+        version: 7.28.4
+      '@babel/parser':
+        specifier: ^7.28.4
+        version: 7.28.4
+      '@eslint/js':
+        specifier: ^9.36.0
+        version: 9.38.0
+      '@node-types/node':
+        specifier: npm:@types/node@^24.9.1
+        version: '@types/node@24.9.1'
+      '@types/babel__core':
+        specifier: ^7.20.5
+        version: 7.20.5
+      babel-preset-solid:
+        specifier: ^1.9.9
+        version: 1.9.9(@babel/core@7.28.4)(solid-js@1.9.9)
+      esbuild:
+        specifier: ^0.23.1
+        version: 0.23.1
+      eslint:
+        specifier: ^9.36.0
+        version: 9.38.0(jiti@2.6.1)
+      globals:
+        specifier: ^16.4.0
+        version: 16.4.0
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.45.0
+        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
+
+  tools/codemirror-markdown:
+    dependencies:
+      '@codemirror/autocomplete':
+        specifier: ^6.19.0
+        version: 6.19.0
+      '@codemirror/commands':
+        specifier: ^6.9.0
+        version: 6.9.0
+      '@codemirror/lang-markdown':
+        specifier: ^6.4.0
+        version: 6.4.0
+      '@codemirror/language':
+        specifier: ^6.11.3
+        version: 6.11.3
+      '@codemirror/language-data':
+        specifier: ^6.5.1
+        version: 6.5.1
+      '@codemirror/search':
+        specifier: ^6.5.11
+        version: 6.5.11
+      '@codemirror/state':
+        specifier: ^6.5.2
+        version: 6.5.2
+      '@codemirror/view':
+        specifier: ^6.38.4
+        version: 6.38.6
+      '@lezer/highlight':
+        specifier: ^1.2.1
+        version: 1.2.2
+      '@patchwork/plugins':
+        specifier: workspace:^
+        version: link:../../core/plugins
+    devDependencies:
+      '@babel/core':
+        specifier: ^7.28.4
+        version: 7.28.4
+      '@babel/parser':
+        specifier: ^7.28.4
+        version: 7.28.4
+      '@eslint/js':
+        specifier: ^9.36.0
+        version: 9.38.0
+      '@node-types/node':
+        specifier: npm:@types/node@^24.9.1
+        version: '@types/node@24.9.1'
+      '@types/babel__core':
+        specifier: ^7.20.5
+        version: 7.20.5
+      esbuild:
+        specifier: ^0.23.1
+        version: 0.23.1
+      eslint:
+        specifier: ^9.36.0
+        version: 9.38.0(jiti@2.6.1)
+      globals:
+        specifier: ^16.4.0
+        version: 16.4.0
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.45.0
+        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
+
+  tools/codemirror-md-links:
+    dependencies:
+      '@codemirror/language':
+        specifier: ^6.11.3
+        version: 6.11.3
+      '@codemirror/state':
+        specifier: ^6.5.2
+        version: 6.5.2
+      '@codemirror/view':
+        specifier: ^6.38.4
+        version: 6.38.6
+    devDependencies:
+      '@babel/core':
+        specifier: ^7.28.4
+        version: 7.28.4
+      '@babel/parser':
+        specifier: ^7.28.4
+        version: 7.28.4
+      '@eslint/js':
+        specifier: ^9.36.0
+        version: 9.38.0
+      '@node-types/node':
+        specifier: npm:@types/node@^24.9.1
+        version: '@types/node@24.9.1'
+      '@types/babel__core':
+        specifier: ^7.20.5
+        version: 7.20.5
+      esbuild:
+        specifier: ^0.23.1
+        version: 0.23.1
+      eslint:
+        specifier: ^9.36.0
+        version: 9.38.0(jiti@2.6.1)
+      globals:
+        specifier: ^16.4.0
+        version: 16.4.0
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.45.0
+        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
 
   tools/commands:
     dependencies:
@@ -1131,109 +1323,6 @@ importers:
       vite-plugin-css-injected-by-js:
         specifier: ^3.5.2
         version: 3.5.2(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
-
-  tools/grjte-md:
-    dependencies:
-      '@automerge/automerge-codemirror':
-        specifier: ^0.2.0
-        version: 0.2.0
-      '@automerge/automerge-repo-solid-primitives':
-        specifier: ^2.4.0
-        version: 2.4.0(@automerge/automerge@3.2.0)(solid-js@1.9.9)
-      '@codemirror/autocomplete':
-        specifier: ^6.19.0
-        version: 6.19.0
-      '@codemirror/commands':
-        specifier: ^6.9.0
-        version: 6.9.0
-      '@codemirror/lang-markdown':
-        specifier: ^6.4.0
-        version: 6.4.0
-      '@codemirror/language':
-        specifier: ^6.11.3
-        version: 6.11.3
-      '@codemirror/language-data':
-        specifier: ^6.5.1
-        version: 6.5.1
-      '@codemirror/search':
-        specifier: ^6.5.11
-        version: 6.5.11
-      '@codemirror/state':
-        specifier: ^6.5.2
-        version: 6.5.2
-      '@codemirror/view':
-        specifier: ^6.38.4
-        version: 6.38.6
-      '@lezer/highlight':
-        specifier: ^1.2.1
-        version: 1.2.2
-      '@patchwork/context':
-        specifier: workspace:^
-        version: link:../../packages/context/context
-      '@patchwork/context-comments':
-        specifier: workspace:^
-        version: link:../../packages/context/annotations/context-comments
-      '@patchwork/context-diff':
-        specifier: workspace:^
-        version: link:../../packages/context/annotations/context-diff
-      '@patchwork/context-selection':
-        specifier: workspace:^
-        version: link:../../packages/context/annotations/context-selection
-      '@patchwork/context-solid':
-        specifier: workspace:^
-        version: link:../../packages/context/frameworks/context-solid
-      '@patchwork/filesystem':
-        specifier: workspace:^
-        version: link:../../core/filesystem
-      '@patchwork/plugins':
-        specifier: workspace:^
-        version: link:../../core/plugins
-      solid-js:
-        specifier: ^1.9.9
-        version: 1.9.9
-      vite-plugin-wasm:
-        specifier: ^3.5.0
-        version: 3.5.0(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
-    devDependencies:
-      '@automerge/automerge':
-        specifier: 3.2.0
-        version: 3.2.0
-      '@automerge/automerge-repo':
-        specifier: 2.5.0-alpha.2
-        version: 2.5.0-alpha.2
-      '@babel/core':
-        specifier: ^7.28.4
-        version: 7.28.4
-      '@babel/parser':
-        specifier: ^7.28.4
-        version: 7.28.4
-      '@eslint/js':
-        specifier: ^9.36.0
-        version: 9.38.0
-      '@node-types/node':
-        specifier: npm:@types/node@^24.9.1
-        version: '@types/node@24.9.1'
-      '@types/babel__core':
-        specifier: ^7.20.5
-        version: 7.20.5
-      babel-preset-solid:
-        specifier: ^1.9.9
-        version: 1.9.9(@babel/core@7.28.4)(solid-js@1.9.9)
-      esbuild:
-        specifier: ^0.23.1
-        version: 0.23.1
-      eslint:
-        specifier: ^9.36.0
-        version: 9.38.0(jiti@2.6.1)
-      globals:
-        specifier: ^16.4.0
-        version: 16.4.0
-      typescript:
-        specifier: ~5.9.3
-        version: 5.9.3
-      typescript-eslint:
-        specifier: ^8.45.0
-        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
 
   tools/highlight-changes-checkbox:
     dependencies:
@@ -1933,17 +2022,14 @@ packages:
   '@automerge/automerge-codemirror@0.2.0':
     resolution: {integrity: sha512-GBNh4ESZHFNHZKLznf/2G2KdmBD+unEdk64+l621LsjIsJs6HBmQmO8RCY1v7vIq31kFyoVHNcBMGQOnLgy4GA==}
 
-  '@automerge/automerge-repo-keyhive@0.0.0-alpha.68':
-    resolution: {integrity: sha512-KmN2ENNRkrfl6dVSEJE3uwrOJfCxajSSCptLh+SRnhpmdOClrveOUJxG0r1MJtd2PF1rJRxPaqiUs1W1+rlA7g==}
+  '@automerge/automerge-repo-keyhive@0.0.0-alpha.71':
+    resolution: {integrity: sha512-bDP6QPNTG9eCYVnLW/PuODLFmGrOe4rwaOSAWLgW9VrHg/5aBlP0PmrzeJ58loYvGlqYeN6PWrV+GFDqCPUcug==}
 
   '@automerge/automerge-repo-network-broadcastchannel@2.5.0-alpha.2':
     resolution: {integrity: sha512-8KuVhWDozLj6wi8Pnls6fSESdEcNBJSPoSvLTPbP3gddssvihErrB4nu2EF4l0lSAapLE2k1JVUDiDNKmUiwOQ==}
 
   '@automerge/automerge-repo-network-messagechannel@2.5.0-alpha.2':
     resolution: {integrity: sha512-5eNkpLGpoZFZgXdODYdy9iwFJCMHYj0tz6VZoTT9gacCj4Fl9D39W73NnKGxrc0OlIssT2fv1Ytyl7Ts3wZNIg==}
-
-  '@automerge/automerge-repo-network-websocket@2.4.0-alpha.2':
-    resolution: {integrity: sha512-HrC99iKdrp3ooA1xSs2nkSVbqvORrsmMSuYwkgibaHOsA6S6fUmJDVdDnsz+DX0wOrUcAfQu+IFmAfb13Ja7qQ==}
 
   '@automerge/automerge-repo-network-websocket@2.5.0-alpha.2':
     resolution: {integrity: sha512-EtdsSA9PhuiWWbvT36DGylBeGCL7Aop8nSe4FrBYchBCWpqqZOBLdbxD0crwbCUwTBTJy76pXhSHjObQi0y4zQ==}
@@ -5545,10 +5631,10 @@ snapshots:
       '@codemirror/view': 6.38.6
       codemirror: 6.0.2
 
-  '@automerge/automerge-repo-keyhive@0.0.0-alpha.68':
+  '@automerge/automerge-repo-keyhive@0.0.0-alpha.71':
     dependencies:
       '@automerge/automerge-repo': 2.5.0-alpha.2
-      '@automerge/automerge-repo-network-websocket': 2.4.0-alpha.2
+      '@automerge/automerge-repo-network-websocket': 2.5.0-alpha.2
       '@keyhive/keyhive': 0.0.0-alpha.40
       eventemitter3: 5.0.1
     transitivePeerDependencies:
@@ -5569,19 +5655,6 @@ snapshots:
       eventemitter3: 5.0.1
     transitivePeerDependencies:
       - supports-color
-
-  '@automerge/automerge-repo-network-websocket@2.4.0-alpha.2':
-    dependencies:
-      '@automerge/automerge-repo': 2.5.0-alpha.2
-      cbor-x: 1.6.0
-      debug: 4.4.3
-      eventemitter3: 5.0.1
-      isomorphic-ws: 5.0.0(ws@8.18.3)
-      ws: 8.18.3
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
 
   '@automerge/automerge-repo-network-websocket@2.5.0-alpha.2':
     dependencies:

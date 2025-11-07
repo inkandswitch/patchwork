@@ -3,7 +3,12 @@ import "./global.css";
 import { CONTEXT, Context } from "@patchwork/context";
 import { registerPatchworkViewElement, openDocument } from "@patchwork/element";
 import { ModuleWatcher } from "@patchwork/filesystem";
-import { getPluginRegistry, registerPlugins } from "@patchwork/plugins";
+import {
+  getRegistry,
+  LoadedPlugin,
+  PluginDescription,
+  registerPlugins,
+} from "@patchwork/plugins";
 import bootstrap from "virtual:patchwork/setup";
 import {
   getOrCreateLayoutDocHandle,
@@ -41,10 +46,11 @@ const { repo, hive } = await bootstrap();
 
 window.CONTEXT = CONTEXT;
 
-window.getPluginRegistry = getPluginRegistry;
+window.getPluginRegistry = getRegistry;
 
+// TODO: delete once we have moved all of tools to their own thing
 const loadedPlugins = Object.groupBy(
-  await Promise.allSettled(
+  await Promise.allSettled<LoadedPlugin<PluginDescription, any>>(
     plugins.map(async (plugin) => ({
       ...plugin,
       module: plugin.module || (await plugin.load()),
@@ -55,6 +61,7 @@ const loadedPlugins = Object.groupBy(
 
 if (loadedPlugins.fulfilled) {
   registerPlugins(
+    // @ts-expect-error TODO: we are violating the registry here, but its okay til we get the tools out of here
     loadedPlugins.fulfilled
       .filter((x) => x.status == "fulfilled")
       .map((x) => x.value),
@@ -76,6 +83,7 @@ const moduleWatcher = new ModuleWatcher(
   repo,
   (name, mod) => {
     if (Array.isArray(mod.plugins)) {
+      // TODO: maybe get rid of this check?
       if (isValidAutomergeUrl(name)) {
         registerPlugins(mod.plugins, name);
       }

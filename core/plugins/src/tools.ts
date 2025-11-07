@@ -1,10 +1,12 @@
 import type { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import type { LoadedPlugin, PluginDescription } from "./registry/index.js";
 import { getType, type HasPatchworkMetadata } from "@patchwork/filesystem";
-import { getPlugins, sortPlugins } from "./registry/index.js";
+import { getRegistry } from "./registry/index.js";
 
-import type { initializeKeyhive } from "@automerge/automerge-repo-keyhive";
-type AutomergeRepoKeyhive = Awaited<ReturnType<typeof initializeKeyhive>>;
+import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
+type AutomergeRepoKeyhive = Awaited<
+  ReturnType<typeof initializeAutomergeRepoKeyhive>
+>;
 
 export type ToolImplementation<T = unknown> = ToolRender<T>;
 
@@ -14,8 +16,6 @@ export type ToolElement = HTMLElement & {
   hive?: AutomergeRepoKeyhive;
 };
 
-// todo this shape should be (handle, element) and the extras should come
-// from elsewhere
 export type ToolRender<T = unknown> = (
   handle: DocHandle<T>,
   element: ToolElement
@@ -35,12 +35,14 @@ export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;
 export type LegacyEditorProps = { docUrl: AutomergeUrl };
 
 export function getSupportedToolsForType(type: string): Tool[] {
-  const plugins = getPlugins("patchwork:tool", (desc) => {
-    return (
-      (desc as ToolDescription).supportedDataTypes.includes(type) ||
-      (desc as ToolDescription).supportedDataTypes.includes("*")
-    );
-  });
+  const plugins = getRegistry<ToolDescription>("patchwork:tool").filter(
+    (desc) => {
+      return (
+        desc.supportedDataTypes.includes(type) ||
+        desc.supportedDataTypes.includes("*")
+      );
+    }
+  );
 
   return plugins as Tool[];
 }
@@ -60,3 +62,51 @@ export function getFallbackTool(doc: HasPatchworkMetadata) {
     type
   )?.[0];
 }
+
+const sortPlugins = <
+  T extends LoadedPlugin<D, I>,
+  D extends PluginDescription,
+  I,
+>(
+  plugins: T[],
+  matchField: keyof D,
+  matchValue: string,
+  sortField?: keyof D
+): T[] => {
+  return [...plugins].sort((a, b) => {
+    const aValue = a[matchField];
+    const bValue = b[matchField];
+
+    // Convert string values to arrays for consistent comparison
+    const aArray = Array.isArray(aValue)
+      ? (aValue as string[])
+      : [aValue as string];
+    const bArray = Array.isArray(bValue)
+      ? (bValue as string[])
+      : [bValue as string];
+
+    const aHasWildcard = aArray.includes("*");
+    const bHasWildcard = bArray.includes("*");
+    const aHasMatch = aArray.includes(matchValue);
+    const bHasMatch = bArray.includes(matchValue);
+
+    // Specific matches come first
+    if (aHasMatch && !bHasMatch) return -1;
+    if (!aHasMatch && bHasMatch) return 1;
+
+    // Then wildcard matches come last
+    if (aHasWildcard && !bHasWildcard) return 1;
+    if (!aHasWildcard && bHasWildcard) return -1;
+
+    // If both are wildcards or both are specific matches, sort by the optional sort field
+    if (sortField) {
+      const aSort = a[sortField];
+      const bSort = b[sortField];
+      if (typeof aSort === "string" && typeof bSort === "string") {
+        return aSort.localeCompare(bSort);
+      }
+    }
+
+    return 0;
+  });
+};

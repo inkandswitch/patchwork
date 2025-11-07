@@ -12,7 +12,7 @@ import { FolderDoc, HasPatchworkMetadata } from "@patchwork/filesystem";
 import {
   DataTypeDescription,
   DataTypeImplementation,
-  getPluginRegistry,
+  getRegistry,
 } from "@patchwork/plugins";
 import { PluginRegistry } from "@patchwork/plugins/dist/registry/registry";
 import { useEffect } from "react";
@@ -34,7 +34,7 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
   useEffect(() => {
     let canceled = false;
 
-    const registry = getPluginRegistry("patchwork:datatype") as PluginRegistry<
+    const registry = getRegistry("patchwork:datatype") as PluginRegistry<
       DataTypeDescription,
       DataTypeImplementation
     >;
@@ -52,7 +52,7 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
         continue;
       }
 
-      registry.loadById(type).then((datatype) => {
+      registry.load(type).then((datatype) => {
         if (canceled || !datatype) {
           return;
         }
@@ -89,10 +89,7 @@ export const useAddUnknownDocumentsToSidebarEffect = (
 
     let canceled = false;
 
-    const registry = getPluginRegistry("patchwork:datatype") as PluginRegistry<
-      DataTypeDescription,
-      DataTypeImplementation
-    >;
+    const registry = getRegistry<DataTypeDescription>("patchwork:datatype");
 
     for (const docHandle of selectedDocHandles) {
       const type = docHandle.doc()["@patchwork"]?.type;
@@ -101,7 +98,7 @@ export const useAddUnknownDocumentsToSidebarEffect = (
         continue;
       }
 
-      registry.loadById(type).then((datatype) => {
+      registry.load(type).then((datatype) => {
         if (canceled || !datatype) {
           return;
         }

@@ -5,24 +5,23 @@ import {
   type Tool,
   type DataType,
   getSupportedToolsForType,
-  getPluginRegistry,
+  getRegistry,
 } from "@patchwork/plugins";
 import { createEffect, on, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 
 // TODO: maybe these shouold go alongside the @patchwork/react package?
 
-const toolRegistry = getPluginRegistry<ToolDescription>("patchwork:tool");
-const datatypeRegistry =
-  getPluginRegistry<DataTypeDescription>("patchwork:datatype");
+const toolRegistry = getRegistry<ToolDescription>("patchwork:tool");
+const datatypeRegistry = getRegistry<DataTypeDescription>("patchwork:datatype");
 
 (window as any).toolRegistry = toolRegistry;
 (window as any).datatypeRegistry = datatypeRegistry;
 
 export function useTools(): Tool[] {
-  const [plugins, setPlugins] = createStore(toolRegistry.getPlugins());
-  const dispose = toolRegistry.onChange(() =>
-    setPlugins(reconcile(toolRegistry.getPlugins()))
+  const [plugins, setPlugins] = createStore(toolRegistry.all());
+  const dispose = toolRegistry.on("changed", () =>
+    setPlugins(reconcile(toolRegistry.all()))
   );
   onCleanup(dispose);
   return plugins;
@@ -30,10 +29,10 @@ export function useTools(): Tool[] {
 
 export function useDatatypes(filter: (item: DataType) => boolean): DataType[] {
   const [plugins, setPlugins] = createStore(
-    datatypeRegistry.getPlugins().filter(filter)
+    datatypeRegistry.all().filter(filter)
   );
-  const dispose = datatypeRegistry.onChange(() =>
-    setPlugins(reconcile(datatypeRegistry.getPlugins().filter(filter)))
+  const dispose = datatypeRegistry.on("changed", () =>
+    setPlugins(reconcile(datatypeRegistry.all().filter(filter)))
   );
   onCleanup(dispose);
   return plugins;
@@ -52,7 +51,7 @@ export function useSupportedToolsForType(type: MaybeAccessor<string>) {
     on(
       () => access(type),
       (type) => {
-        const dispose = toolRegistry.onChange(() =>
+        const dispose = toolRegistry.on("changed", () =>
           setPlugins(reconcile(getSupportedToolsForType(type)))
         );
         onCleanup(dispose);
