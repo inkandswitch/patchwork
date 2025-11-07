@@ -12,10 +12,12 @@ import type { PatchworkToolProps } from "../types.ts";
 import { filter, setFilter } from "./state.ts";
 import CreateNew from "./create-new.tsx";
 import type { FolderDoc } from "@patchwork/filesystem";
-import { createOpenEventHandler } from "./events.ts";
+import { createOpenEvent } from "./events.ts";
 import { SearchIcon } from "./icons.tsx";
-import { DocumentList } from "./document-list.tsx";
+import { DocumentList } from "./document-list/document-list.tsx";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
+import type { OpenDocumentEventDetail } from "@patchwork/element";
+import { Suspense } from "solid-js";
 
 export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
   const doc = makeDocumentProjection(props.handle);
@@ -26,6 +28,10 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
 
   const moduleSettingsUrl = () => doc.moduleSettingsUrl;
   const accountDocUrl = () => props.handle.url;
+
+  function open(detail: OpenDocumentEventDetail) {
+    props.element.dispatchEvent(createOpenEvent(detail));
+  }
 
   return (
     <aside class="sideboard">
@@ -46,24 +52,31 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
         />
       </div>
       <nav class="sideboard__doclist sideboard-widget" role="tree">
-        <DocumentList depth={0} repo={props.repo} docs={folder()?.docs} />
+        <Suspense>
+          <DocumentList
+            depth={0}
+            repo={props.repo}
+            docs={folder()?.docs}
+            handle={folderHandle.latest!}
+            open={open}
+          />
+        </Suspense>
       </nav>
       <footer class="sideboard-footer">
         <button
-          onClick={createOpenEventHandler(
-            moduleSettingsUrl(),
-            "chee/module-settings"
-          )}
+          onClick={() => open({ url: moduleSettingsUrl() })}
           class="sideboard-footer__button"
         >
           Modules
         </button>
 
         <button
-          onClick={createOpenEventHandler(
-            accountDocUrl(),
-            "frame-configurator"
-          )}
+          onClick={() =>
+            open({
+              url: accountDocUrl(),
+              toolId: "frame-configurator",
+            })
+          }
           class="sideboard-footer__button"
         >
           Settings
