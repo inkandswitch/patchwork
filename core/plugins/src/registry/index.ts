@@ -45,3 +45,10 @@ export function registerPlugins<D extends PluginDescription, I>(
     registry.register(plugin, importUrl);
   });
 }
+
+/**
+ * Get all registries
+ */
+export function getAllRegistries(): Map<string, PluginRegistry<any>> {
+  return new Map(Object.entries(registries));
+}

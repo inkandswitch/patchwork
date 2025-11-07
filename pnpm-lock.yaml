@@ -12,6 +12,9 @@ catalogs:
     '@automerge/automerge-repo-react-hooks':
       specifier: 2.5.0-alpha.2
       version: 2.5.0-alpha.2
+    '@automerge/automerge-repo-solid-primitives':
+      specifier: 2.4.0
+      version: 2.4.0
     '@automerge/react':
       specifier: 2.5.0-alpha.2
       version: 2.5.0-alpha.2
@@ -302,6 +305,18 @@ importers:
       react-dom:
         specifier: ^18.0.0
         version: 18.3.1(react@18.3.1)
+
+  packages/solidjs:
+    dependencies:
+      '@automerge/automerge-repo-solid-primitives':
+        specifier: 'catalog:'
+        version: 2.4.0(@automerge/automerge@3.2.0)(solid-js@1.9.9)
+      '@patchwork/plugins':
+        specifier: workspace:^
+        version: link:../../core/plugins
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.9
 
   packages/util:
     dependencies:
@@ -1775,6 +1790,9 @@ importers:
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
+      '@patchwork/solidjs':
+        specifier: workspace:^
+        version: link:../../packages/solidjs
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9

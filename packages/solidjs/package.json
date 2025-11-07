@@ -1,0 +1,21 @@
+{
+  "name": "@patchwork/solidjs",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "license": "ISC",
+  "dependencies": {
+    "@automerge/automerge-repo-solid-primitives": "catalog:",
+    "@patchwork/plugins": "workspace:^",
+    "solid-js": "^1.9.0"
+  }
+}
+

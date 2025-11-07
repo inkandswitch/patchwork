@@ -1,4 +1,4 @@
-import { For, Suspense } from "solid-js";
+import { For, Suspense, createMemo, createSignal } from "solid-js";
 import { makeDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
 import {
   isValidAutomergeUrl,
@@ -6,78 +6,102 @@ import {
 } from "@automerge/automerge-repo";
 import type { ModuleSettingsDoc } from "@patchwork/filesystem";
 import type { PatchworkToolProps } from "../types.ts";
-import { useTools } from "../sideboard/plugins.ts";
+import { useModules } from "@patchwork/solidjs";
 import { ToolCard } from "./tool-card.tsx";
 import { ModuleInput } from "./module-input.tsx";
 
-function swapWithEnd(list: any[], idx: number) {
-  const end = list.length - 1;
-  [list[idx], list[end]] = [list[end], list[idx]];
-}
-
-const add = (item: AutomergeUrl) => (doc: ModuleSettingsDoc) => {
-  const idx = doc.modules.findIndex((mod) => item == mod);
-  if (idx == -1) {
-    doc.modules.push(item);
-  } else {
-    swapWithEnd(doc.modules, idx);
-  }
-};
-
-const rm = (item: AutomergeUrl) => (doc: ModuleSettingsDoc) => {
-  const idx = doc.modules.findIndex((mod) => item == mod);
-  if (idx != -1) {
-    swapWithEnd(doc.modules, idx);
-
-    doc.modules.pop();
-  }
-};
-
 export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
-  const tools = useTools();
+  const pluginsByTypeArray = useModules();
+  const [searchQuery, setSearchQuery] = createSignal("");
 
   const doc = makeDocumentProjection(props.handle);
 
+  // Filter plugins based on search query
+  const filteredPluginsByType = createMemo(() => {
+    const query = searchQuery().toLowerCase();
+    if (!query) return pluginsByTypeArray;
+
+    return pluginsByTypeArray
+      .map(
+        ([type, plugins]) =>
+          [
+            type,
+            plugins.filter(
+              (plugin) =>
+                plugin.name.toLowerCase().includes(query) ||
+                type.toLowerCase().includes(query) ||
+                plugin.importUrl?.toLowerCase().includes(query)
+            ),
+          ] as const
+      )
+      .filter(([, plugins]) => plugins.length > 0);
+  });
+
   const handleAddModule = (url: AutomergeUrl) => {
-    props.handle.change(add(url));
+    props.handle.change((doc) => {
+      if (!doc.modules.includes(url)) {
+        doc.modules.push(url);
+      }
+    });
+  };
+
+  const handleRemoveModule = (url: AutomergeUrl) => {
+    props.handle.change((doc) => {
+      const idx = doc.modules.indexOf(url);
+      if (idx !== -1) {
+        doc.modules.splice(idx, 1);
+      }
+    });
   };
 
   return (
     <div class="module-settings">
       <div class="module-settings__header">
         <h1 class="module-settings__title">Modules</h1>
+        <input
+          type="text"
+          class="module-settings__search"
+          placeholder="Search modules..."
+          value={searchQuery()}
+          onInput={(e) => setSearchQuery(e.currentTarget.value)}
+        />
         <ModuleInput onAdd={handleAddModule} repo={props.repo} />
       </div>
       <div class="module-settings__content">
-        <For each={tools}>
-          {(tool) => {
-            const installed = () =>
-              isValidAutomergeUrl(tool.importUrl) &&
-              doc.modules.includes(tool.importUrl as AutomergeUrl);
+        <For each={filteredPluginsByType()}>
+          {([type, plugins]) => (
+            <div>
+              <h2 class="module-settings__type-header">{type}</h2>
+              <div class="module-settings__type-section">
+                <For each={plugins}>
+                  {(plugin) => {
+                    const installed = () =>
+                      isValidAutomergeUrl(plugin.importUrl) &&
+                      doc.modules.includes(plugin.importUrl as AutomergeUrl);
 
-            const handleToggle = () => {
-              const url = tool.importUrl as AutomergeUrl;
-              props.handle.change((doc) => {
-                if (installed()) {
-                  add(url)(doc);
-                } else {
-                  rm(url)(doc);
-                }
-              });
-            };
-
-            return (
-              <Suspense>
-                <ToolCard
-                  tool={tool}
-                  installed={installed()}
-                  onToggleInstall={handleToggle}
-                  isValidUrl={isValidAutomergeUrl(tool.importUrl)}
-                  repo={props.repo}
-                />
-              </Suspense>
-            );
-          }}
+                    return (
+                      <Suspense>
+                        <ToolCard
+                          tool={plugin}
+                          installed={installed()}
+                          onUninstall={
+                            installed()
+                              ? () =>
+                                  handleRemoveModule(
+                                    plugin.importUrl as AutomergeUrl
+                                  )
+                              : undefined
+                          }
+                          isValidUrl={isValidAutomergeUrl(plugin.importUrl)}
+                          repo={props.repo}
+                        />
+                      </Suspense>
+                    );
+                  }}
+                </For>
+              </div>
+            </div>
+          )}
         </For>
       </div>
     </div>
