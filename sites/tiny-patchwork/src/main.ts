@@ -27,13 +27,12 @@ import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 
 import { plugins } from "./tools";
-import { PluginRegistry } from "@patchwork/plugins/dist/registry/registry";
 
 declare global {
   interface Window {
     accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
     CONTEXT: Context;
-    getPluginRegistry: (pluginType: string) => PluginRegistry<any>;
+
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
   }
@@ -45,8 +44,6 @@ window.AutomergeRepo = AutomergeRepo;
 const { repo, hive } = await bootstrap();
 
 window.CONTEXT = CONTEXT;
-
-window.getPluginRegistry = getRegistry;
 
 // TODO: delete once we have moved all of tools to their own thing
 const loadedPlugins = Object.groupBy(
