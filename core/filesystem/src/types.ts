@@ -12,6 +12,7 @@ export type DocLink = {
   name: string;
   type: string;
   url: AutomergeUrl;
+  icon?: string;
   copyOf?: AutomergeUrl;
 };
 
