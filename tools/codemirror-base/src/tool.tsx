@@ -11,15 +11,15 @@ import { parseAutomergeUrl } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
 
 /** Patchwork */
-import { createReactive, createSubcontext } from "@patchwork/context/solid";
+import { createReactive, createSubcontext } from "@patchwork/context-solid";
 import { PathRef, Ref, TextSpanRef } from "@patchwork/context";
-import { $selectedRefs, IsSelected } from "@patchwork/context/selection";
-import { createComment, getThreadsAt } from "@patchwork/context/comments";
+import { $selectedRefs, IsSelected } from "@patchwork/context-selection";
+import { createComment, getThreadsAt } from "@patchwork/context-comments";
 import {
   type Diff,
   DiffAnnotation,
   getElementsWithDiff,
-} from "@patchwork/context/diff";
+} from "@patchwork/context-diff";
 import { getRegistry } from "@patchwork/plugins";
 
 /** Styles */

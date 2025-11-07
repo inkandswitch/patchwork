@@ -34,6 +34,7 @@
     "@kobalte/core": "^0.13.11",
     "@patchwork/element": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
+    "@patchwork/context-selection": "workspace:^",
     "solid-js": "^1.9.9"
   },
   "devDependencies": {

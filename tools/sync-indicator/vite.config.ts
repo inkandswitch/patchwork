@@ -10,6 +10,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       external(id) {
+        // Don't externalize libraries that depend on react
+        // these need to share the same instance of react as the tool
+        if (id === "@patchwork/react" || id === "@patchwork/context-react")
+          return false;
+
+        // ... otherwise externalize all automerge-repo and @patchwork packages
         return !!id.match(/^((@automerge\/automerge(-repo)?)|@patchwork\/.*)$/);
       },
       input: "./src/tool.tsx",

@@ -1,5 +1,5 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import { $selectedDocHandles } from "@patchwork/context/selection";
+import { $selectedDocHandles } from "@patchwork/context-selection";
 import { createSignal } from "solid-js";
 
 export const [filter, setFilter] = createSignal("");

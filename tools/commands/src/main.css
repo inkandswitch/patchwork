@@ -56,7 +56,7 @@
     color: white;
     border-bottom-color: #333;
   }
-  
+
   .command-palette-input::placeholder {
     color: #666;
   }
@@ -181,7 +181,7 @@
   .command-palette-back-button {
     color: #999;
   }
-  
+
   .command-palette-back-button:hover {
     background: #2a2a2a;
   }
@@ -257,7 +257,7 @@
     border-color: #333;
     color: #fff;
   }
-  
+
   .command-palette-arg-input:focus {
     border-color: #0088ff;
   }
@@ -303,17 +303,16 @@
     background: #2a2a2a;
     color: #fff;
   }
-  
+
   .command-palette-arg-button-cancel:hover {
     background: #333;
   }
-  
+
   .command-palette-arg-button-submit {
     background: #0088ff;
   }
-  
+
   .command-palette-arg-button-submit:hover {
     background: #0066cc;
   }
 }
-
