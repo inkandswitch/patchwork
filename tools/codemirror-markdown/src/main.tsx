@@ -21,4 +21,15 @@ export const plugins = [
       return MarkdownDataType;
     },
   },
+  {
+    type: "patchwork:datatype",
+    id: "essay",
+    name: "Markdown",
+    icon: "FileText",
+    unlisted: true,
+    async load() {
+      const { MarkdownDataType } = await import("./datatype.js");
+      return MarkdownDataType;
+    },
+  },
 ];
