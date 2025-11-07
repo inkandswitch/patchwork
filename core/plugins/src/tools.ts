@@ -60,7 +60,8 @@ export function getFallbackTool(doc: HasPatchworkMetadata) {
   return sortPlugins<Tool, ToolDescription, ToolImplementation>(
     plugins,
     "supportedDataTypes",
-    type
+    type,
+    "id"
   )?.filter((tool) => !tool.unlisted)?.[0];
 }
 
