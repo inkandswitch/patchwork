@@ -8,7 +8,7 @@
     "vite-plugin-wasm": "^3.4.1"
   },
   "scripts": {
-    "dev": "vite build --watch",
+    "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview"
   },
