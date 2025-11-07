@@ -1,16 +1,19 @@
 import { type DataTypeImplementation } from "@patchwork/plugins";
+import { updateText } from "@automerge/automerge";
 
 export type MarkdownDoc = {
   content: string;
 };
 
+const frontmatterRegex = /---\n([\s\S]+?)\n---/;
+
 export const MarkdownDataType: DataTypeImplementation<MarkdownDoc> = {
-  init: (doc: MarkdownDoc) => {
+  init(doc: MarkdownDoc) {
     doc.content = "# Untitled";
   },
   getTitle(doc: MarkdownDoc) {
     const content = doc.content;
-    const frontmatterRegex = /---\n([\s\S]+?)\n---/;
+
     const frontmatterMatch = content.match(frontmatterRegex);
     const frontmatter = frontmatterMatch ? frontmatterMatch[1] : "";
 
@@ -31,5 +34,25 @@ export const MarkdownDataType: DataTypeImplementation<MarkdownDoc> = {
     }
 
     return `${title}${subtitle && `: ${subtitle}`}`;
+  },
+  setTitle(doc: MarkdownDoc, title: string) {
+    const hasTitle = doc.content.match(/^#\s/gm);
+    const hasFrontmatter = frontmatterRegex.exec(doc.content);
+
+    if (hasTitle) {
+      updateText(
+        doc,
+        ["content"],
+        doc.content.replace(/^#\s+(.*)/gm, () => `# ${title}`)
+      );
+    } else {
+      // todo
+      if (hasFrontmatter) return;
+      updateText(
+        doc,
+        ["content"],
+        (doc.content = `# ${title}\n` + doc.content)
+      );
+    }
   },
 };
