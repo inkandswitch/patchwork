@@ -12,5 +12,6 @@ export const plugins: Plugin<any>[] = [
       const { BackLinkButton } = await import("./BackLinkButton");
       return toolify(BackLinkButton);
     },
+    unlisted: true,
   },
 ];
