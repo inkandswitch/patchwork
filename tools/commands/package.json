@@ -18,6 +18,7 @@
   "dependencies": {
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@patchwork/plugins": "workspace:^",
+    "@patchwork/filesystem": "workspace:^",
     "react": "^18.3.0",
     "react-dom": "^18.3.1",
     "cmdk": "^1.1.1"

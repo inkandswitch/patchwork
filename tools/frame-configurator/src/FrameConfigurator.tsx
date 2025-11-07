@@ -5,21 +5,24 @@ import { useCallback, useMemo, useState } from "react";
 import type { TinyPatchworkLayoutDoc } from "./types";
 import type { ToolElement } from "@patchwork/plugins";
 
-const FRAME_TOOL_OPTIONS: { id: string; name: string }[] = [
+type ModuleOption = {
+  id: string;
+  name: string;
+};
+
+const FRAME_TOOL_OPTIONS: ModuleOption[] = [
   { id: "patchwork-frame", name: "Patchwork Frame" },
 ];
 
-const ACCOUNT_SIDEBAR_OPTIONS: { id: string; name: string }[] = [
+const ACCOUNT_SIDEBAR_OPTIONS: ModuleOption[] = [
   { id: "chee/sideboard", name: "Sideboard" },
-  { id: "simple-sidebar", name: "Simple Sidebar" },
-  { id: "funky-sidebar", name: "Funky Sidebar" },
 ];
 
-const CONTEXT_SIDEBAR_OPTIONS: { id: string; name: string }[] = [
+const CONTEXT_SIDEBAR_OPTIONS: ModuleOption[] = [
   { id: "context-sidebar", name: "Context Sidebar" },
 ];
 
-const DOCUMENT_TOOLBAR_OPTIONS: { id: string; name: string }[] = [
+const DOCUMENT_TOOLBAR_OPTIONS: ModuleOption[] = [
   { id: "document-title", name: "Document Title" },
   { id: "back-link-button", name: "Back Link Button" },
   { id: "spacer", name: "Spacer" },
@@ -27,7 +30,7 @@ const DOCUMENT_TOOLBAR_OPTIONS: { id: string; name: string }[] = [
   { id: "sync-indicator", name: "Sync Indicator" },
 ];
 
-const CONTEXT_TOOL_OPTIONS: { id: string; name: string }[] = [
+const CONTEXT_TOOL_OPTIONS: ModuleOption[] = [
   { id: "comments-view", name: "Comments" },
   { id: "history-view", name: "History" },
   { id: "context-view", name: "Context" },
@@ -42,7 +45,7 @@ function LabeledSelect({
   label: string;
   value: string | undefined;
   onChange: (v: string) => void;
-  options: { id: string; name: string }[];
+  options: ModuleOption[];
 }) {
   return (
     <label className="form-control w-full max-w-xl gap-1">
@@ -72,7 +75,7 @@ function ArrayEditor({
   label: string;
   values: string[] | undefined;
   setValues: (next: string[]) => void;
-  addOptions: { id: string; name: string }[];
+  addOptions: ModuleOption[];
 }) {
   const [pendingAdd, setPendingAdd] = useState(addOptions[0]?.id ?? "");
 
