@@ -28,6 +28,7 @@ export type ToolDescription = PluginDescription & {
   supportedDataTypes: "*" | string[];
   name: string;
   icon?: string;
+  unlisted?: boolean;
 };
 
 export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;
@@ -60,7 +61,7 @@ export function getFallbackTool(doc: HasPatchworkMetadata) {
     plugins,
     "supportedDataTypes",
     type
-  )?.[0];
+  )?.filter((tool) => !tool.unlisted)?.[0];
 }
 
 const sortPlugins = <
