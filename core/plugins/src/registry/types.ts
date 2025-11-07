@@ -27,6 +27,7 @@ export interface PluginDescription {
   name: string;
   icon?: string; // an icon name from the icon font
   importUrl?: string;
+  unlisted?: boolean;
 }
 
 /**
