@@ -1,19 +1,19 @@
-import type { AutomergeUrl } from "@automerge/automerge-repo";
+import type { OpenDocumentEventDetail } from "@patchwork/element";
 
-export function createOpenEvent(url: AutomergeUrl, toolId?: string) {
+export function createOpenEvent(detail: OpenDocumentEventDetail) {
   const openEvent = new CustomEvent("patchwork:open-document", {
-    detail: { url, toolId },
+    detail,
     bubbles: true,
     composed: true,
   });
   return openEvent;
 }
 
-export function createOpenEventHandler(url: AutomergeUrl, toolId?: string) {
+export function createOpenEventHandler(detail: OpenDocumentEventDetail) {
   return function (this: HTMLElement, event: Event) {
     event.stopPropagation();
     event.preventDefault();
-    const openEvent = createOpenEvent(url, toolId);
+    const openEvent = createOpenEvent(detail);
     this.dispatchEvent(openEvent);
   };
 }
