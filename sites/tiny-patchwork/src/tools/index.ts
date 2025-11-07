@@ -60,7 +60,6 @@ export const plugins: Plugin<any>[] = [
   ...highlightChangesCheckboxPlugins,
   ...frameConfiguratorPlugins,
   ...orionMarkwhen,
-  ...orionMarkwhen,
   ...syncIndicatorPlugins,
   ...codemirrorBasePlugins,
   ...codemirrorMarkdownPlugins,
