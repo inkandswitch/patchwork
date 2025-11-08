@@ -8,9 +8,32 @@ import {
   type JSX,
 } from "solid-js";
 import { useSupportedToolsForType } from "@patchwork/solid";
+import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements";
+import {
+  type SideboardDragAndDropItem,
+  dragstack,
+  setDragging,
+  dropTarget,
+  throttledSetDropTarget,
+  isAbove,
+  clearDropTarget,
+  copyMode,
+  setCopyMode,
+} from "../dnd/dnd.ts";
+import {
+  parseAutomergeUrl,
+  type AutomergeUrl,
+  type DocHandle,
+  type Repo,
+} from "@automerge/automerge-repo";
+import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
+import { executeDrop } from "../dnd/operations.ts";
 
 export default function Item(props: {
+  "aria-label": string;
   id: string;
+  url: AutomergeUrl;
+  name: string;
   type: string;
   pressed: boolean;
   children: JSX.Element;
@@ -20,6 +43,11 @@ export default function Item(props: {
   share?(): void;
   shareDisabled?: boolean;
   makeSecureCopy?(): void;
+  element: PatchworkViewElement;
+  repo: Repo;
+  rootFolderHandle: DocHandle<FolderDoc>;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }) {
   const tools = useSupportedToolsForType(props.type);
   const [trigger, setTrigger] = createSignal<HTMLButtonElement>();
@@ -36,16 +64,297 @@ export default function Item(props: {
     return props.pressed;
   });
 
+  const dnd = (): SideboardDragAndDropItem => ({
+    id: props.id,
+    type: props.type,
+    url: props.url,
+    name: props.name,
+    source: props.element.toolId!,
+  });
+
+  const dropState = () => {
+    const target = dropTarget();
+    if (!target || target.id !== props.id) return undefined;
+    return target.position;
+  };
+
+  function handleDrop(
+    event: DragEvent,
+    targetId: string,
+    position: "above" | "below"
+  ) {
+    console.log("[DnD] Item drop handler called for:", targetId, position);
+    const dndData = event.dataTransfer?.getData("text/x-patchwork-dnd");
+    if (!dndData) {
+      console.warn("[DnD] No dnd data in drop event");
+      return;
+    }
+
+    const { source, items } = JSON.parse(dndData);
+    console.log("[DnD] Drop data:", { source, items, targetId, position });
+
+    executeDrop(
+      {
+        draggedIds: items.map((i: any) => i.id),
+        draggedUrls: items.map((i: any) => i.url),
+        targetId,
+        position,
+        sourceToolId: source,
+        copyMode: copyMode(),
+      },
+      props.repo,
+      props.rootFolderHandle,
+      props.element.toolId!
+    );
+  }
+
   return (
     <ContextMenu>
       <ContextMenu.Trigger
         ref={setTrigger}
+        ondragstart={(event: DragEvent) => {
+          if (!dragstack.has(props.id)) {
+            dragstack.clear();
+            dragstack.set(props.id, dnd());
+          }
+
+          const items = dragstack.values();
+
+          const urls = [];
+          const ids = [];
+
+          // Check for Alt key for copy mode
+          setCopyMode(event.altKey);
+          // Set effectAllowed to copyMove to prevent Chrome split view (no "link")
+          event.dataTransfer!.effectAllowed = "copyMove";
+
+          for (const item of items) {
+            urls.push(item.url);
+            ids.push(item.id);
+          }
+
+          const urlList =
+            urls
+              .map(
+                (url) =>
+                  location.protocol +
+                  "//" +
+                  location.host +
+                  `/#doc=${parseAutomergeUrl(url).documentId}`
+              )
+              .join("\r\n") + "\r\n";
+
+          // Don't add text/uri-list to prevent Chrome split view on drag
+          // Keep custom types for our internal DnD system
+          event.dataTransfer?.items.add(
+            JSON.stringify(ids),
+            "text/x-sideboard-ids"
+          );
+          event.dataTransfer?.items.add(
+            JSON.stringify(urls),
+            "text/x-patchwork-urls"
+          );
+
+          // Add structured data with source tracking
+          event.dataTransfer?.items.add(
+            JSON.stringify({
+              source: props.element.toolId,
+              items: [...dragstack.values()],
+            }),
+            "text/x-patchwork-dnd"
+          );
+
+          // Create drag preview
+          const preview = document.createElement("div");
+          preview.style.cssText = `
+            position: absolute;
+            top: -1000px;
+            background: var(--sideboard-primary);
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--sideboard-radius);
+            font-family: inherit;
+            font-size: 0.9rem;
+            pointer-events: none;
+            color: var(--sideboard-line);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          `;
+          const count = dragstack.size;
+          const modeText = event.altKey ? " (copy)" : "";
+          preview.textContent =
+            count === 1 ? props.name + modeText : `${count} items${modeText}`;
+          document.body.appendChild(preview);
+          event.dataTransfer!.setDragImage(preview, 10, 10);
+
+          // Clean up after drag
+          setTimeout(() => preview.remove(), 0);
+
+          console.log(event.dataTransfer);
+          setDragging(true);
+        }}
+        ondrag={(event: DragEvent) => {
+          // Update copy mode if Alt key state changes during drag
+          if (event.altKey !== copyMode()) {
+            setCopyMode(event.altKey);
+          }
+        }}
+        ondragend={(event: DragEvent) => {
+          dragstack.clear();
+          setCopyMode(false);
+          setDragging(false);
+        }}
+        ondragover={(event: DragEvent) => {
+          event.preventDefault();
+
+          // Update drop effect based on copy mode
+          event.dataTransfer!.dropEffect = copyMode() ? "copy" : "move";
+
+          // Determine drop position
+          let position: "above" | "below" | "inside";
+
+          if (props.type === "folder") {
+            // For folders, use three zones: top 25% = above, bottom 25% = below, middle = inside
+            const rect = (
+              event.currentTarget as Element
+            ).getBoundingClientRect();
+            const offset = event.clientY - rect.top;
+            const relativePosition = offset / rect.height;
+
+            if (relativePosition < 0.25) {
+              position = "above";
+            } else if (relativePosition > 0.75) {
+              position = "below";
+            } else {
+              position = "inside";
+            }
+
+            console.log(
+              "[DnD] Folder position calculated:",
+              position,
+              "relative:",
+              relativePosition
+            );
+
+            // Only bubble to container for "inside" drops
+            if (position !== "inside") {
+              event.stopPropagation();
+            }
+          } else {
+            // For non-folders, just above or below
+            position = isAbove(event.clientY, event.currentTarget as Element)
+              ? "above"
+              : "below";
+            event.stopPropagation();
+          }
+
+          throttledSetDropTarget({ id: props.id, position });
+        }}
+        ondragleave={(event: DragEvent) => {
+          // Only clear if we're actually leaving (not entering a child)
+          const related = event.relatedTarget as Element;
+          if (!related || !(event.currentTarget as Element).contains(related)) {
+            clearDropTarget();
+          }
+        }}
+        ondrop={(event: DragEvent) => {
+          const target = dropTarget();
+          console.log(
+            "[DnD] Item ondrop event fired",
+            props.id,
+            "type:",
+            props.type,
+            "target:",
+            target
+          );
+
+          // For folders with "inside" position, let the container handle it
+          if (props.type === "folder" && target?.position === "inside") {
+            console.log(
+              "[DnD] Folder inside position, letting container handle"
+            );
+            return;
+          }
+
+          console.log("[DnD] Item handling drop itself");
+          event.preventDefault();
+          event.stopPropagation();
+
+          if (!target) {
+            console.warn("[DnD] No drop target set");
+            return;
+          }
+
+          handleDrop(event, target.id, target.position as "above" | "below");
+          clearDropTarget();
+        }}
+        draggable
+        data-dnd-item={props.id}
+        data-dnd-droplist-state={dropState()}
+        aria-label={props["aria-label"]}
+        aria-haspopup="menu"
         as="button"
         class="popmenu__trigger document-list-item"
         role="treeitem"
-        aria-pressed={props.pressed}
-        onClick={() => props.openWith()}
+        aria-selected={props.pressed ? "true" : undefined}
+        aria-checked={!!dragstack.has(props.id)}
+        onMouseDown={(event: MouseEvent) => {
+          if (event.ctrlKey || event.metaKey) {
+            if (dragstack.size == 0) {
+              // Empty comment preserved from original
+            }
+            if (dragstack.has(props.id)) {
+              dragstack.delete(props.id);
+            } else {
+              dragstack.set(props.id, dnd());
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+          } else if (!dragstack.has(props.id)) {
+            dragstack.clear();
+          }
+        }}
+        onClick={(event: MouseEvent) => {
+          if (event.ctrlKey || event.metaKey) {
+            return;
+          }
+          dragstack.clear();
+          props.openWith();
+        }}
         onkeydown={(event: KeyboardEvent) => {
+          // Arrow key navigation
+          if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            const current = event.currentTarget as HTMLElement;
+            const allItems = Array.from(
+              document.querySelectorAll("[data-dnd-item]")
+            ) as HTMLElement[];
+            const currentIndex = allItems.indexOf(current);
+
+            if (
+              event.key === "ArrowDown" &&
+              currentIndex < allItems.length - 1
+            ) {
+              allItems[currentIndex + 1]?.focus();
+            } else if (event.key === "ArrowUp" && currentIndex > 0) {
+              allItems[currentIndex - 1]?.focus();
+            }
+            return;
+          }
+
+          // Left/Right for folder expand/collapse
+          if (props.type === "folder" && props.onToggleExpand) {
+            if (event.key === "ArrowRight" && !props.isExpanded) {
+              event.preventDefault();
+              props.onToggleExpand();
+              return;
+            } else if (event.key === "ArrowLeft" && props.isExpanded) {
+              event.preventDefault();
+              props.onToggleExpand();
+              return;
+            }
+          }
+
+          // Context menu shortcut
           if (
             event.key == "Enter" &&
             event.ctrlKey &&
@@ -101,6 +410,12 @@ export default function Item(props: {
           >
             Rename
           </ContextMenu.Item>
+          <ContextMenu.Item
+            class="popmenu__item"
+            onSelect={() => props.remove()}
+          >
+            Remove
+          </ContextMenu.Item>
           <Show when={props.share}>
             <ContextMenu.Item
               class="popmenu__item"
@@ -115,15 +430,9 @@ export default function Item(props: {
               class="popmenu__item"
               onSelect={() => props.makeSecureCopy?.()}
             >
-              Make secure copy
+              Duplicate (unshared)
             </ContextMenu.Item>
           </Show>
-          <ContextMenu.Item
-            class="popmenu__item"
-            onSelect={() => props.remove()}
-          >
-            Remove
-          </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>
     </ContextMenu>

@@ -11,7 +11,7 @@ import {
   ContactCard,
   type AutomergeRepoKeyhive,
 } from "@automerge/automerge-repo-keyhive";
-import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
+import type { OpenDocumentEventDetail, PatchworkViewElement } from "@inkandswitch/patchwork-elements";
 import type {
   DocLink,
   FolderDoc,
@@ -46,6 +46,8 @@ export interface DocumentListProps {
   hive?: AutomergeRepoKeyhive;
   selectedDocUrls: AutomergeUrl[];
   visitedFolders?: Set<AutomergeUrl>;
+  element: PatchworkViewElement;
+  rootFolderHandle: DocHandle<FolderDoc>;
 }
 
 export function DocumentList(props: DocumentListProps) {
@@ -157,7 +159,7 @@ export function DocumentList(props: DocumentListProps) {
                         class="document-list-folder__circular-ref"
                         style={{ "padding-left": `calc(var(--depth) * 1rem)` }}
                       >
-                        <span>⚠️ {doc.name} (circular reference)</span>
+                        <span>{doc.name} (i contain myself eventually)</span>
                       </div>
                     }
                   >
@@ -171,16 +173,24 @@ export function DocumentList(props: DocumentListProps) {
                       hive={props.hive}
                       selectedDocUrls={props.selectedDocUrls}
                       visitedFolders={visitedFolders}
+                      element={props.element}
+                      rootFolderHandle={props.rootFolderHandle}
                     />
                   </Show>
                 </Match>
                 <Match when={doc.type != "folder"}>
                   <Item
+                    aria-label={doc.name}
+                    url={doc.url}
+                    name={doc.name}
                     id={relid()}
                     startRenaming={() => setRenaming(relid())}
                     remove={remove}
                     pressed={props.selectedDocUrls.includes(doc.url)}
                     type={doc.type}
+                    element={props.element}
+                    repo={props.repo}
+                    rootFolderHandle={props.rootFolderHandle}
                     openWith={(toolId) =>
                       props.open({
                         url: doc.url,

@@ -74,6 +74,7 @@
   gap: 0.75rem;
   font-family: Jost, system-ui, sans-serif;
   padding-inline: var(--sideboard-padding-x);
+  --depth: 0;
 }
 
 .sideboard-header {
@@ -150,7 +151,7 @@
   }
 
   &:focus-visible {
-    outline-color: #000;
+    outline-color: var(--sidebar-widget-line);
     outline-offset: 1px;
     box-shadow: 0 0 0 4px #fff;
     border-radius: var(--sideboard-radius);
@@ -170,12 +171,13 @@
 
 .document-list-item {
   display: flex;
-  gap: 0.5ch;
+  gap: 0.25ch;
   padding-inline: var(--doclist-padding-x);
   padding-block: 0.5rem;
   font-weight: 400;
   color: var(--sidebar-widget-line);
   cursor: default;
+  position: relative;
 
   .create-new-button {
     margin-left: auto;
@@ -187,7 +189,7 @@
 
   &:focus-visible {
     outline-color: #000;
-    outline-offset: 1px;
+    outline-offset: -2px;
     box-shadow: 0 0 0 4px #fff;
     border-radius: var(--sideboard-radius);
   }
@@ -197,7 +199,7 @@
     box-shadow: 0;
   }
 
-  &[aria-pressed="true"] {
+  &[aria-selected="true"] {
     background: var(--sideboard-primary);
     .sideboard__doclist > &:first-child {
       border-top-left-radius: var(--sideboard-radius);
@@ -207,6 +209,45 @@
       border-bottom-left-radius: var(--sideboard-radius);
       border-bottom-right-radius: var(--sideboard-radius);
     }
+  }
+  &[aria-checked="true"] {
+    outline: 2px dashed
+      color-mix(in oklch, var(--sideboard-line), transparent 50%);
+    outline-offset: -4px;
+  }
+  &[data-dnd-droplist-state]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    margin-left: calc(var(--depth) * 1.75rem);
+    right: 0;
+    height: 2px;
+    background: var(--sideboard-line);
+  }
+  &[data-dnd-droplist-state="above"]::before {
+    top: -1px;
+  }
+  &[data-dnd-droplist-state="below"]::before {
+    bottom: -1px;
+  }
+}
+
+.document-list-folder[data-drop-state="inside"] {
+  outline: 2px solid var(--sideboard-primary);
+  outline-offset: -2px;
+  border-radius: var(--sideboard-radius);
+  background: color-mix(in oklch, var(--sideboard-primary), transparent 50%);
+  > .document-list-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--sideboard-line);
+    bottom: 0;
+  }
+  [data-dnd-droplist-state]::before {
+    display: none;
   }
 }
 
@@ -231,10 +272,10 @@
 }
 
 .document-list-folder__toggle {
-  margin-left: -0.5ch;
-  padding-inline: 0.5ch;
+  margin-left: -0.75ch;
+  padding-inline: 0.25ch;
   &:hover {
-    background: #55555533;
+    background: #00000011;
   }
 }
 
@@ -260,7 +301,7 @@
 }
 
 .document-list-folder__contents .document-list-item {
-  padding-left: calc(2.2rem * var(--depth));
+  padding-left: calc(1.8rem * var(--depth));
 }
 
 .sideboard-footer {

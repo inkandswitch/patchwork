@@ -1,6 +1,5 @@
 import type { ChangeFn, Repo } from "@automerge/automerge-repo";
 import {
-  type Datatype,
   type DatatypeDescription,
   type Plugin,
   createDocOfDatatype2,
@@ -29,7 +28,7 @@ async function createNew(
     throw new Error("plugin not loaded after loading");
   }
 
-  const docHandle = await createDocOfDatatype2(datatype, repo, undefined, hive);
+  const docHandle = await createDocOfDatatype2(datatype, repo);
   const doc = docHandle.doc();
   const name = datatype.module.getTitle(doc);
 
@@ -45,6 +44,7 @@ export interface CreateNewProps {
   hive?: AutomergeRepoKeyhive;
   changeFolder(fn: ChangeFn<FolderDoc>): void;
   open(detail: OpenDocumentEventDetail): void;
+  context?: string;
 }
 
 export default function CreateNew(props: CreateNewProps) {

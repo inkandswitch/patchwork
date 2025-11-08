@@ -57,7 +57,11 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
           onInput={(event) => setFilter(event.target.value.toLowerCase())}
         />
       </div>
-      <nav class="sideboard__doclist sideboard-widget" role="tree">
+      <nav
+        class="sideboard__doclist sideboard-widget"
+        role="tree"
+        aria-multiselectable="true"
+      >
         <DocumentList
           depth={0}
           repo={props.repo}
@@ -66,6 +70,8 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
           open={open}
           hive={props.element.hive}
           selectedDocUrls={selectedDocUrls() ?? []}
+          element={props.element}
+          rootFolderHandle={folderHandle.latest!}
         />
       </nav>
       <footer class="sideboard-footer">

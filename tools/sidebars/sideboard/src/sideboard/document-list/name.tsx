@@ -8,12 +8,13 @@ export function ItemName(props: {
 }) {
   const isBeingRenamed = createSelector(renaming);
 
-  // i'm only doing the rename on blur
-  //  to avoid introducing codemirror
+  // we only rename on blur
+  // to avoid introducing codemirror
   // to the sidebar just for this
   // though codemirror will 101% already
   // be loaded in the system
   // so maybe chill?
+
   const [next, setNext] = createSignal(props.name);
   function blur() {
     props.rename(next() ?? "");
