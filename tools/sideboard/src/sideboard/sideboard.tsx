@@ -53,15 +53,13 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
         />
       </div>
       <nav class="sideboard__doclist sideboard-widget" role="tree">
-        <Suspense>
-          <DocumentList
-            depth={0}
-            repo={props.repo}
-            docs={folder()?.docs}
-            handle={folderHandle.latest!}
-            open={open}
-          />
-        </Suspense>
+        <DocumentList
+          depth={0}
+          repo={props.repo}
+          docs={folder()?.docs}
+          handle={folderHandle.latest!}
+          open={open}
+        />
       </nav>
       <footer class="sideboard-footer">
         <button

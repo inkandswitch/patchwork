@@ -80,25 +80,23 @@ export function DocumentList(props: DocumentListProps) {
                 />
               </Match>
               <Match when={doc.type != "folder"}>
-                <Suspense>
-                  <Item
-                    id={relid()}
-                    startRenaming={() => setRenaming(relid())}
-                    remove={remove}
-                    pressed={selectedDocUrls()?.includes(doc.url)}
-                    type={doc.type}
-                    openWith={(toolId) =>
-                      props.open({
-                        url: doc.url,
-                        toolId,
-                        title: doc.name,
-                        type: doc.type,
-                      })
-                    }
-                  >
-                    <ItemName name={doc.name} id={relid()} rename={rename} />
-                  </Item>
-                </Suspense>
+                <Item
+                  id={relid()}
+                  startRenaming={() => setRenaming(relid())}
+                  remove={remove}
+                  pressed={selectedDocUrls()?.includes(doc.url)}
+                  type={doc.type}
+                  openWith={(toolId) =>
+                    props.open({
+                      url: doc.url,
+                      toolId,
+                      title: doc.name,
+                      type: doc.type,
+                    })
+                  }
+                >
+                  <ItemName name={doc.name} id={relid()} rename={rename} />
+                </Item>
               </Match>
             </Switch>
           </div>

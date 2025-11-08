@@ -56,62 +56,58 @@ export default function Folder(props: {
   }
 
   return (
-    <Suspense fallback="...">
-      <div
-        class="document-list-folder"
-        role="group"
-        data-depth={depth()}
-        style={folderDepthStyle()}
+    <div
+      class="document-list-folder"
+      role="group"
+      data-depth={depth()}
+      style={folderDepthStyle()}
+    >
+      <Item
+        startRenaming={() => {
+          setRenaming(props.url);
+        }}
+        remove={props.removeFromParent}
+        id={props.url}
+        pressed={selectedDocUrls()?.includes(props.url)}
+        type="folder"
+        openWith={(toolId) => {
+          props.open({
+            url: props.url,
+            toolId,
+            title: folder()?.title,
+            type: "folder",
+          });
+        }}
       >
-        <Item
-          startRenaming={() => {
-            setRenaming(props.url);
-          }}
-          remove={props.removeFromParent}
-          id={props.url}
-          pressed={selectedDocUrls()?.includes(props.url)}
-          type="folder"
-          openWith={(toolId) => {
-            props.open({
-              url: props.url,
-              toolId,
-              title: folder()?.title,
-              type: "folder",
-            });
-          }}
+        <button
+          class="document-list-folder__toggle"
+          onClick={() => setOpen((yn) => !yn)}
         >
-          <button
-            class="document-list-folder__toggle"
-            onClick={() => setOpen((yn) => !yn)}
-          >
-            {open() ? "▼" : "▶︎"}
-          </button>
-          <ItemName name={folder()?.title} id={props.url} rename={rename} />
-          <CreateNew
-            repo={props.repo}
-            changeFolder={(fn) => handle()?.change(fn)}
-            open={props.open}
-          />
-        </Item>
+          {open() ? "▼" : "▶︎"}
+        </button>
+        <ItemName name={folder()?.title} id={props.url} rename={rename} />
+        <CreateNew
+          repo={props.repo}
+          changeFolder={(fn) => handle()?.change(fn)}
+          open={props.open}
+        />
+      </Item>
 
-        <div
-          ref={(el) => setRef(el)}
-          class="document-list-folder__contents"
-          classList={{ "document-list-folder__contents--hidden": !open() }}
-          data-depth={depth()}
-          style={depthStyle()}
-        >
-          <Suspense>
-            <DocumentList
-              docs={folder()?.docs}
-              repo={props.repo}
-              depth={depth() + 1}
-              handle={handle.latest!}
-              open={props.open}
-            />
-          </Suspense>
-        </div>
+      <div
+        ref={(el) => setRef(el)}
+        class="document-list-folder__contents"
+        classList={{ "document-list-folder__contents--hidden": !open() }}
+        data-depth={depth()}
+        style={depthStyle()}
+      >
+        <DocumentList
+          docs={folder()?.docs}
+          repo={props.repo}
+          depth={depth() + 1}
+          handle={handle.latest!}
+          open={props.open}
+        />
       </div>
-    </Suspense>
+    </div>
   );
 }

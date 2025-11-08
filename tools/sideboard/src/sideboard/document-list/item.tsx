@@ -91,19 +91,19 @@ export default function Item(props: {
                 </ContextMenu.SubContent>
               </ContextMenu.Portal>
             </ContextMenu.Sub>
-            <ContextMenu.Item
-              class="popmenu__item"
-              onSelect={() => props.startRenaming()}
-            >
-              Rename
-            </ContextMenu.Item>
-            <ContextMenu.Item
-              class="popmenu__item"
-              onSelect={() => props.remove()}
-            >
-              Remove
-            </ContextMenu.Item>
           </Show>
+          <ContextMenu.Item
+            class="popmenu__item"
+            onSelect={() => props.startRenaming()}
+          >
+            Rename
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            class="popmenu__item"
+            onSelect={() => props.remove()}
+          >
+            Remove
+          </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>
     </ContextMenu>
