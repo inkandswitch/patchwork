@@ -6,7 +6,7 @@ import {
 } from "@automerge/automerge-repo";
 import type { ModuleSettingsDoc } from "@patchwork/filesystem";
 import type { PatchworkToolProps } from "../types.ts";
-import { useModules } from "@patchwork/solidjs";
+import { useModules } from "@patchwork/solid";
 import { ToolCard } from "./tool-card.tsx";
 import { ModuleInput } from "./module-input.tsx";
 import { AccountUrlInput } from "./account-url-input.tsx";

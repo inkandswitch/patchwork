@@ -1790,7 +1790,7 @@ importers:
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
-      '@patchwork/solidjs':
+      '@patchwork/solid':
         specifier: workspace:^
         version: link:../../packages/solidjs
       solid-js:

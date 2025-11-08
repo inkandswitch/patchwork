@@ -11,7 +11,7 @@ import {
 import { For } from "solid-js";
 import { PlusIcon } from "./icons.tsx";
 import type { FolderDoc } from "@patchwork/filesystem";
-import { useFilteredDatatypes } from "@patchwork/solidjs";
+import { useFilteredDatatypes } from "@patchwork/solid";
 import { DropdownMenu } from "@kobalte/core/dropdown-menu";
 import type { OpenDocumentEventDetail } from "@patchwork/element";
 
