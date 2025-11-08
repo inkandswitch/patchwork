@@ -326,6 +326,191 @@
   font-size: 1.2rem;
 }
 
+.account-url {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
+  border-radius: 6px;
+  background: var(--sideboard-widget-fill);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  .account-url {
+    border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 15%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.account-url__header {
+  margin-bottom: 0.75rem;
+}
+
+.account-url__label {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.account-url__input-container,
+.account-url__display-container {
+  position: relative;
+}
+
+.account-url__overlay-buttons {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 0.25rem;
+}
+
+.account-url__overlay-button {
+  padding: 0.375rem 0.5rem;
+  border: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 20%);
+  border-radius: 4px;
+  background: var(--sideboard-widget-fill);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.account-url__overlay-button:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--sideboard-widget-fill), black 8%);
+  border-color: color-mix(in oklab, var(--sideboard-widget-fill), black 30%);
+}
+
+.account-url__overlay-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.account-url__edit-button {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .account-url__overlay-button {
+    border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 20%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+
+  .account-url__overlay-button:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--sideboard-widget-fill), white 12%);
+    border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 30%);
+  }
+}
+
+.account-url__input {
+  width: 100%;
+  padding: 0.5rem 5rem 0.5rem 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
+  border-radius: 4px;
+  background: var(--sideboard-widget-fill);
+  font-family: "SF Mono", "Monaco", "Menlo", "Consolas", monospace;
+  font-size: 0.8125rem;
+}
+
+.account-url__input--invalid {
+  border-color: color-mix(in oklab, #ef4444, white 40%);
+}
+
+.account-url__input--valid {
+  border-color: color-mix(in oklab, #22c55e, white 40%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .account-url__input {
+    border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 15%);
+  }
+
+  .account-url__input--invalid {
+    border-color: color-mix(in oklab, #ef4444, black 30%);
+  }
+
+  .account-url__input--valid {
+    border-color: color-mix(in oklab, #22c55e, black 30%);
+  }
+}
+
+.account-url__input:focus {
+  outline: 2px solid var(--sideboard-primary);
+  outline-offset: 1px;
+}
+
+.account-url__input::placeholder {
+  opacity: 0.5;
+}
+
+.account-url__error {
+  padding: 0.5rem 0.75rem;
+  background: color-mix(in oklab, #ef4444, white 80%);
+  border: 1px solid color-mix(in oklab, #ef4444, white 60%);
+  border-radius: 4px;
+  color: #991b1b;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .account-url__error {
+    background: color-mix(in oklab, #ef4444, black 70%);
+    border-color: color-mix(in oklab, #ef4444, black 50%);
+    color: #fca5a5;
+  }
+}
+
+.account-url__display {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.account-url__display:hover {
+  opacity: 0.8;
+}
+
+.account-url__display code {
+  display: block;
+  padding: 0.5rem 3rem 0.5rem 0.75rem;
+  background: color-mix(in oklab, var(--sideboard-widget-fill), black 5%);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  font-family: "SF Mono", "Monaco", "Menlo", "Consolas", monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.account-url__display--copied code {
+  border-color: color-mix(in oklab, #22c55e, white 40%);
+  background: color-mix(in oklab, #22c55e, white 85%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .account-url__display code {
+    background: color-mix(in oklab, var(--sideboard-widget-fill), white 8%);
+  }
+
+  .account-url__display--copied code {
+    border-color: color-mix(in oklab, #22c55e, black 20%);
+    background: color-mix(in oklab, #22c55e, black 70%);
+  }
+}
+
 .module-settings__search {
   width: 100%;
   padding: 0.5rem 0.75rem;

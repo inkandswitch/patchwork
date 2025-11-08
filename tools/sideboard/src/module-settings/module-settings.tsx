@@ -9,6 +9,7 @@ import type { PatchworkToolProps } from "../types.ts";
 import { useModules } from "@patchwork/solidjs";
 import { ToolCard } from "./tool-card.tsx";
 import { ModuleInput } from "./module-input.tsx";
+import { AccountUrlInput } from "./account-url-input.tsx";
 
 export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   const pluginsByTypeArray = useModules();
@@ -58,6 +59,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
     <div class="module-settings">
       <div class="module-settings__header">
         <h1 class="module-settings__title">Modules</h1>
+        <AccountUrlInput />
         <input
           type="text"
           class="module-settings__search"
