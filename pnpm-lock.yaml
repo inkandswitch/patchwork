@@ -306,7 +306,7 @@ importers:
         specifier: ^18.0.0
         version: 18.3.1(react@18.3.1)
 
-  packages/solidjs:
+  packages/solid:
     dependencies:
       '@automerge/automerge-repo-solid-primitives':
         specifier: 'catalog:'
@@ -442,6 +442,9 @@ importers:
       '@grjte/codemirror-base':
         specifier: workspace:^
         version: link:../../tools/codemirror-base
+      '@grjte/codemirror-embed':
+        specifier: workspace:^
+        version: link:../../tools/codemirror-embed
       '@grjte/codemirror-markdown':
         specifier: workspace:^
         version: link:../../tools/codemirror-markdown
@@ -1792,7 +1795,7 @@ importers:
         version: link:../../core/filesystem
       '@patchwork/solid':
         specifier: workspace:^
-        version: link:../../packages/solidjs
+        version: link:../../packages/solid
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9

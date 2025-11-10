@@ -35,6 +35,8 @@ import { plugins as orionMarkwhen } from "@orion/markwhen";
 // @ts-expect-error no types
 import { plugins as codemirrorBasePlugins } from "@grjte/codemirror-base";
 // @ts-expect-error no types
+import { plugins as codemirrorEmbedPlugins } from "@grjte/codemirror-embed";
+// @ts-expect-error no types
 import { plugins as codemirrorMarkdownPlugins } from "@grjte/codemirror-markdown";
 // @ts-expect-error no types
 import { plugins as markdownLinksPlugins } from "@grjte/codemirror-md-links";
@@ -64,6 +66,7 @@ export const plugins: Plugin<any>[] = [
   ...codemirrorBasePlugins,
   ...codemirrorMarkdownPlugins,
   ...markdownLinksPlugins,
+  ...codemirrorEmbedPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",
