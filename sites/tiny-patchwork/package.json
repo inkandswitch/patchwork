@@ -34,6 +34,7 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.4",
     "@grjte/codemirror-base": "workspace:^",
+    "@grjte/codemirror-embed": "workspace:^",
     "@grjte/codemirror-markdown": "workspace:^",
     "@grjte/codemirror-md-links": "workspace:^",
     "@orion/commands": "workspace:^",
