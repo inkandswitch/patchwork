@@ -1,63 +1,47 @@
 import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 import patchwork from "@patchwork/bootloader/vite";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     wasm(),
     patchwork({
       syncServerStorageId: "3760df37-a4c6-4f66-9ecd-732039a9385d",
       syncServerUrl: "wss://sync3.automerge.org",
+      extraBuiltins: {
+        "@codemirror/language": "/packages/@codemirror/language/index.js",
+        "@codemirror/view": "/packages/@codemirror/view/index.js",
+        "@codemirror/state": "/packages/@codemirror/state/index.js",
+        "@patchwork/plugins": "/packages/@patchwork/plugins/index.js",
+        "@patchwork/context": "/packages/@patchwork/context/index.js",
+        "@patchwork/context-selection":
+          "/packages/@patchwork/context-selection/index.js",
+        "@patchwork/context-react":
+          "/packages/@patchwork/context-react/index.js",
+        "@patchwork/context-diff": "/packages/context-diff/index.js",
+        "@patchwork/context-comments": "/packages/context-comments/index.js",
+        "@patchwork/context-solid": "/packages/context-solid/index.js",
+        "@patchwork/filesystem": "/packages/@patchwork/filesystem/index.js",
+        "@automerge/automerge-repo-react-hooks":
+          "/packages/@automerge/automerge-repo-react-hooks/index.js",
+        react: "/packages/react/index.js",
+        "react/jsx-runtime": "/packages/react/jsx-runtime.js",
+        "react-dom": "/packages/react-dom/index.js",
+        "react-dom/client": "/packages/react-dom/client.js",
+        "react-dom/server": "/packages/react-dom/server.js",
+        signia: "/packages/signia/index.js",
+        scheduler: "/packages/scheduler/index.js",
+        "solid-js": "/packages/solid-js/index.js",
+        "solid-js/store": "/packages/solid-js/store.js",
+        "solid-js/html": "/packages/solid-js/html.js",
+        "solid-js/h": "/packages/solid-js/h.js",
+        "solid-js/web": "/packages/solid-js/web.js",
+      },
       importmap: {
-        // patchwork tool compat
         imports: {
-          react: "https://ga.jspm.io/npm:react@18.3.1/index.js",
-          "react-dom": "https://ga.jspm.io/npm:react-dom@18.3.1/index.js",
-          "react-dom/client":
-            "https://ga.jspm.io/npm:react-dom@18.3.1/client.js",
-          "react-dom/server":
-            "https://ga.jspm.io/npm:react-dom@18.3.1/server.browser.js",
-          "react/jsx-runtime":
-            "https://ga.jspm.io/npm:react@18.3.1/jsx-runtime.js",
-          signia: "https://ga.jspm.io/npm:signia@0.1.5/dist/esm/index.mjs",
-          "@automerge/automerge-repo-react-hooks":
-            "https://ga.jspm.io/npm:@automerge/automerge-repo-react-hooks@2.2.0/dist/index.js",
-          "@patchwork/sdk":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/index.js",
-          "@patchwork/sdk/async-signals":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/async-signals.js",
-          "@patchwork/sdk/components":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/components.js",
-          "@patchwork/sdk/embed":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/embed.js",
-          "@patchwork/sdk/files":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/files.js",
-          "@patchwork/sdk/hooks":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/hooks.js",
-          "@patchwork/sdk/llm":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/llm.js",
-          "@patchwork/sdk/markdown":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/markdown.js",
-          "@patchwork/sdk/modules":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/modules.js",
-          "@patchwork/sdk/om":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/om.js",
-          "@patchwork/sdk/plugins":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/plugins.js",
-          "@patchwork/sdk/router":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/router.js",
-          "@patchwork/sdk/shared-dependencies":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/shared-dependencies.js",
-          "@patchwork/sdk/textAnchors":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/textAnchors.js",
-          "@patchwork/sdk/ui":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/ui.js",
-          "@patchwork/sdk/utils":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/utils.js",
-          "@patchwork/sdk/versionControl":
-            "/automerge/automerge:1PQPjuHQYtFoeVvhEfq3n59Cf46/dist/versionControl.js",
-
-          scheduler: "https://ga.jspm.io/npm:scheduler@0.23.2/index.js",
+          DEV: "data:text/javascript,export%20const%20DEV%20=%20true;",
         },
       },
     }),
@@ -66,12 +50,27 @@ export default defineConfig({
     format: "es",
     plugins: () => [wasm()],
   },
+  server: {
+    port: process.env.PORT ? +process.env.PORT : 5173,
+  },
   build: {
     target: "firefox137",
     minify: false,
     sourcemap: true,
-  },
-  server: {
-    port: process.env.PORT ? +process.env.PORT : undefined,
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        tools: "src/tools/index.ts",
+      },
+      output: {
+        entryFileNames: (chunkInfo) => {
+          if (chunkInfo.name === "tools") {
+            return "tools.js";
+          }
+          return "[name].js";
+        },
+      },
+      preserveEntrySignatures: "strict",
+    },
   },
 });

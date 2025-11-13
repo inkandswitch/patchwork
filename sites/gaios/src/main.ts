@@ -1,73 +1,157 @@
-import {
-  ModuleWatcher,
-  type HasPatchworkMetadata,
-} from "@patchwork/filesystem";
-import "./styles/global.css";
+import "./global.css";
 
-import bootstrap from "virtual:patchwork/setup";
+import { CONTEXT, Context } from "@patchwork/context";
+import { registerPatchworkViewElement, openDocument } from "@patchwork/element";
+import { ModuleWatcher } from "@patchwork/filesystem";
 import {
   getRegistry,
+  LoadedPlugin,
+  PluginDescription,
   registerPlugins,
-  type Tool,
-  type ToolDescription,
 } from "@patchwork/plugins";
-import { type AutomergeUrl } from "@automerge/vanillajs";
-import { registerPatchworkViewElement } from "@patchwork/element";
-import patchworkReactShim from "./shim";
-const { repo } = await bootstrap();
+import bootstrap from "virtual:patchwork/setup";
+import {
+  getOrCreateLayoutDocHandle,
+  TinyPatchworkLayoutDoc,
+} from "./layout-doc";
+import {
+  DocHandle,
+  isValidAutomergeUrl,
+  isValidDocumentId,
+  parseAutomergeUrl,
+  stringifyAutomergeUrl,
+  type UrlHeads,
+} from "@automerge/vanillajs";
+
+import * as Automerge from "@automerge/automerge";
+import * as AutomergeRepo from "@automerge/automerge-repo";
+
+import { plugins } from "./tools";
+
+declare global {
+  interface Window {
+    accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
+    CONTEXT: Context;
+
+    Automerge: typeof import("@automerge/automerge");
+    AutomergeRepo: typeof import("@automerge/automerge-repo");
+  }
+}
+
+window.Automerge = Automerge;
+window.AutomergeRepo = AutomergeRepo;
+
+const { repo, hive } = await bootstrap();
+
+window.CONTEXT = CONTEXT;
+
+// TODO: delete once we have moved all of tools to their own thing
+const loadedPlugins = Object.groupBy(
+  await Promise.allSettled<LoadedPlugin<PluginDescription, any>>(
+    plugins.map(async (plugin) => ({
+      ...plugin,
+      module: plugin.module || (await plugin.load()),
+    }))
+  ),
+  (result) => result.status
+);
+
+if (loadedPlugins.fulfilled) {
+  registerPlugins(
+    // @ts-expect-error TODO: we are violating the registry here, but its okay til we get the tools out of here
+    loadedPlugins.fulfilled
+      .filter((x) => x.status == "fulfilled")
+      .map((x) => x.value),
+    "DEV"
+  );
+}
+
+if (loadedPlugins.rejected) {
+  console.warn("failed to load some plugins:", loadedPlugins.rejected);
+}
+
+const accountDocHandle = await getOrCreateLayoutDocHandle(repo, hive);
+
+window.accountDocHandle = accountDocHandle;
 
 const moduleWatcher = new ModuleWatcher(
-  "automerge:3n51DZbA1FRwHAV8K2sW1g2aA3P2" as AutomergeUrl,
+  accountDocHandle.doc().moduleSettingsUrl,
   [],
   repo,
   (name, mod) => {
-    Array.isArray(mod.plugins) && registerPlugins(mod.plugins, name);
+    if (Array.isArray(mod.plugins)) {
+      // TODO: maybe get rid of this check?
+      if (isValidAutomergeUrl(name)) {
+        registerPlugins(mod.plugins, name);
+      }
+    }
   }
 );
 
-const params = new URLSearchParams(document.location.search);
-
-registerPatchworkViewElement({
-  moduleWatcher,
-  repo,
-});
-
-const docUrl = params.get("docUrl");
-let toolId = params.get("toolId");
-const modules = params.getAll("loadModules");
-await moduleWatcher.loadModules(modules);
-
-if (!docUrl) {
-  throw new Error("need docUrl query params");
-}
-
-if (!toolId) {
-  const doc = await repo.find<HasPatchworkMetadata>(docUrl as AutomergeUrl);
-  const suggestedImportUrl = doc.doc()["@patchwork"].suggestedImportUrl;
-  if (suggestedImportUrl) {
-    await moduleWatcher.loadModules([suggestedImportUrl]);
-  }
-
-  const type = doc.doc()["@patchwork"].type;
-
-  const toolRegistry = getRegistry<ToolDescription>("patchwork:tool");
-  const [plugin] = await toolRegistry.loadAll(
-    toolRegistry.filter((desc) => {
-      if (desc.id == "raw") return false;
-      return (
-        desc.supportedDataTypes.includes(type) ||
-        desc.supportedDataTypes.includes("*")
-      );
-    })
-  );
-  if (plugin && "EditorComponent" in plugin.module) {
-    plugin.module = patchworkReactShim(plugin.module.EditorComponent);
-  }
-
-  toolId = plugin?.id;
-}
+registerPatchworkViewElement({ moduleWatcher, repo, hive });
 
 const rootElement = document.getElementById("root")!;
 
-rootElement.setAttribute("doc-url", docUrl);
-toolId && rootElement.setAttribute("tool-id", toolId);
+rootElement.setAttribute("doc-url", accountDocHandle.url);
+rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
+
+rootElement.addEventListener("patchwork:open-document", (event) => {
+  const params = new URLSearchParams();
+  const { url, toolId, type, title } = event.detail;
+  const { documentId, heads } = parseAutomergeUrl(url);
+  params.set("doc", documentId);
+  if (heads) params.set("heads", heads?.join("|"));
+  if (toolId) params.set("tool", toolId);
+  if (title) params.set("title", title);
+  if (type) {
+    params.set("type", type);
+  }
+  window.location.hash = params.toString();
+});
+
+const bigPatchworkHashRegex =
+  /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;
+
+const handleHashChange = async (hash: string) => {
+  const legacy = bigPatchworkHashRegex.exec(hash);
+
+  if (legacy) {
+    const documentId = legacy.groups?.docId;
+    if (isValidDocumentId(documentId)) {
+      openDocument(rootElement, stringifyAutomergeUrl({ documentId }));
+    }
+    return;
+  }
+  const params = new URLSearchParams(hash);
+  const documentId = params.get("doc");
+  const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
+  const toolId = params.get("tool");
+  const title = params.get("title");
+  const type = params.get("type");
+  if (isValidDocumentId(documentId)) {
+    rootElement.dispatchEvent(
+      new CustomEvent("patchwork:open-document", {
+        detail: {
+          url: stringifyAutomergeUrl({ documentId, heads }),
+          toolId,
+          title,
+          type,
+        },
+      })
+    );
+  }
+};
+
+// Listen for hash changes and interpret them as Automerge URLs
+window.addEventListener("hashchange", () => {
+  const hash = window.location.hash;
+  handleHashChange(hash.slice(1));
+});
+
+if (window.location.hash) {
+  const hash = window.location.hash.slice(1);
+  // todo: actually wait for root to be mounted
+  setTimeout(() => {
+    handleHashChange(hash);
+  }, 100);
+}
