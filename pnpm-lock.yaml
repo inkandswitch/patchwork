@@ -346,10 +346,58 @@ importers:
         version: 2.5.0-alpha.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.0-alpha.2
+      '@chee/patchwork-sideboard':
+        specifier: workspace:^
+        version: link:../../tools/sideboard
+      '@codemirror/language':
+        specifier: ^6.11.3
+        version: 6.11.3
+      '@codemirror/state':
+        specifier: ^6.5.2
+        version: 6.5.2
+      '@codemirror/view':
+        specifier: ^6.38.4
+        version: 6.38.6
+      '@grjte/codemirror-base':
+        specifier: workspace:^
+        version: link:../../tools/codemirror-base
+      '@grjte/codemirror-embed':
+        specifier: workspace:^
+        version: link:../../tools/codemirror-embed
+      '@grjte/codemirror-markdown':
+        specifier: workspace:^
+        version: link:../../tools/codemirror-markdown
+      '@grjte/codemirror-md-links':
+        specifier: workspace:^
+        version: link:../../tools/codemirror-md-links
+      '@orion/commands':
+        specifier: workspace:^
+        version: link:../../tools/commands
+      '@orion/markwhen':
+        specifier: workspace:^
+        version: link:../../tools/orionmark
+      '@patchwork/context':
+        specifier: workspace:^
+        version: link:../../packages/context/context
+      '@patchwork/context-comments':
+        specifier: workspace:^
+        version: link:../../packages/context/annotations/context-comments
+      '@patchwork/context-diff':
+        specifier: workspace:^
+        version: link:../../packages/context/annotations/context-diff
+      '@patchwork/context-react':
+        specifier: workspace:^
+        version: link:../../packages/context/frameworks/context-react
+      '@patchwork/context-selection':
+        specifier: workspace:^
+        version: link:../../packages/context/annotations/context-selection
+      '@patchwork/context-solid':
+        specifier: workspace:^
+        version: link:../../packages/context/frameworks/context-solid
       '@patchwork/element':
         specifier: workspace:^
         version: link:../../core/element
@@ -359,10 +407,115 @@ importers:
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../../core/plugins
+      '@patchwork/react':
+        specifier: workspace:^
+        version: link:../../packages/react
+      '@patchwork/tldraw':
+        specifier: workspace:^
+        version: link:../../tools/tldraw
+      '@patchwork/util':
+        specifier: workspace:^
+        version: link:../../packages/util
+      '@tiny-patchwork/back-link-button':
+        specifier: workspace:^
+        version: link:../../tools/back-link-button
+      '@tiny-patchwork/comments-view':
+        specifier: workspace:^
+        version: link:../../tools/comments-view
+      '@tiny-patchwork/context-sidebar':
+        specifier: workspace:^
+        version: link:../../tools/context-sidebar
+      '@tiny-patchwork/context-view':
+        specifier: workspace:^
+        version: link:../../tools/context-view
+      '@tiny-patchwork/doc-title':
+        specifier: workspace:^
+        version: link:../../tools/doc-title
+      '@tiny-patchwork/frame-configurator':
+        specifier: workspace:^
+        version: link:../../tools/frame-configurator
+      '@tiny-patchwork/highlight-changes-checkbox':
+        specifier: workspace:^
+        version: link:../../tools/highlight-changes-checkbox
+      '@tiny-patchwork/history-view':
+        specifier: workspace:^
+        version: link:../../tools/history-view
+      '@tiny-patchwork/patchwork-frame':
+        specifier: workspace:^
+        version: link:../../tools/patchwork-frame
+      '@tiny-patchwork/spacer':
+        specifier: workspace:^
+        version: link:../../tools/spacer
+      '@tiny-patchwork/sync-indicator':
+        specifier: workspace:^
+        version: link:../../tools/sync-indicator
+      '@tiny-patchwork/todo':
+        specifier: workspace:^
+        version: link:../../tools/todo
+      add:
+        specifier: ^2.0.6
+        version: 2.0.6
+      cmdk:
+        specifier: ^1.1.1
+        version: 1.1.1(@types/react-dom@18.3.7(@types/react@18.3.26))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      lucide-react:
+        specifier: ^0.545.0
+        version: 0.545.0(react@18.3.1)
+      pnpm:
+        specifier: ^10.18.1
+        version: 10.18.3
+      react:
+        specifier: ^18.0.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.0.0
+        version: 18.3.1(react@18.3.1)
+      scheduler:
+        specifier: ^0.27.0
+        version: 0.27.0
+      signia:
+        specifier: ^0.1.5
+        version: 0.1.5
+      solid-js:
+        specifier: ^1.9.9
+        version: 1.9.9
+      tailwindcss:
+        specifier: ^4.1.14
+        version: 4.1.15
     devDependencies:
+      '@eslint/js':
+        specifier: ^9.37.0
+        version: 9.38.0
       '@patchwork/bootloader':
         specifier: workspace:^
         version: link:../../core/bootloader
+      '@tailwindcss/vite':
+        specifier: ^4.1.14
+        version: 4.1.15(vite@7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+      '@types/react':
+        specifier: 'catalog:'
+        version: 18.3.26
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 18.3.7(@types/react@18.3.26)
+      '@typescript-eslint/parser':
+        specifier: ^8.40.0
+        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
+      daisyui:
+        specifier: ^5.1.29
+        version: 5.4.4
+      eslint:
+        specifier: ^9.34.0
+        version: 9.38.0(jiti@2.6.1)
+      eslint-plugin-react-hooks:
+        specifier: ^5.2.0
+        version: 5.2.0(eslint@9.38.0(jiti@2.6.1))
+      globals:
+        specifier: ^16.4.0
+        version: 16.4.0
+      typescript-eslint:
+        specifier: ^8.41.0
+        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
       vite:
         specifier: ^7.1.9
         version: 7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
@@ -5556,11 +5709,6 @@ packages:
     peerDependencies:
       react: ^18.3.1
 
-  react-dom@19.2.0:
-    resolution: {integrity: sha512-UlbRu4cAiGaIewkPyiRGJk0imDN2T3JjieT6spoL2UeSf5od4n5LB/mQ4ejmxhCFT1tYe8IvaFulzynWovsEFQ==}
-    peerDependencies:
-      react: ^19.2.0
-
   react-refresh@0.17.0:
     resolution: {integrity: sha512-z6F7K9bV85EfseRCp2bzrpyQ0Gkw1uLoCel9XBVWPg/TjRj94SkJzUTGfOa4bs7iJvBWtQG0Wq7wnI0syw3EBQ==}
     engines: {node: '>=0.10.0'}
@@ -5612,10 +5760,6 @@ packages:
 
   react@18.3.1:
     resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
-    engines: {node: '>=0.10.0'}
-
-  react@19.2.0:
-    resolution: {integrity: sha512-tmbWg6W31tQLeB5cdIBOicJDJRR2KzXsV7uSK9iNfLWQ5bIZfxuPEHp7M8wiHyHnn0DD1i7w3Zmin0FtkrwoCQ==}
     engines: {node: '>=0.10.0'}
 
   resolve-from@4.0.0:
@@ -6183,17 +6327,6 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-usestateref: 1.0.9(react@18.3.1)
-    transitivePeerDependencies:
-      - supports-color
-
-  '@automerge/automerge-repo-react-hooks@2.5.0-alpha.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
-    dependencies:
-      '@automerge/automerge': 3.2.0
-      '@automerge/automerge-repo': 2.5.0-alpha.2
-      eventemitter3: 5.0.1
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
-      react-usestateref: 1.0.9(react@19.2.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -10117,11 +10250,6 @@ snapshots:
       react: 18.3.1
       scheduler: 0.23.2
 
-  react-dom@19.2.0(react@19.2.0):
-    dependencies:
-      react: 19.2.0
-      scheduler: 0.27.0
-
   react-refresh@0.17.0: {}
 
   react-remove-scroll-bar@2.3.8(@types/react@18.3.26)(react@18.3.1):
@@ -10193,15 +10321,9 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  react-usestateref@1.0.9(react@19.2.0):
-    dependencies:
-      react: 19.2.0
-
   react@18.3.1:
     dependencies:
       loose-envify: 1.4.0
-
-  react@19.2.0: {}
 
   resolve-from@4.0.0: {}
 
