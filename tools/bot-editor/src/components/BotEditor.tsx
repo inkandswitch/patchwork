@@ -460,9 +460,7 @@ Example format:
             currentPrompt={currentPrompt}
             onChange={handlePromptChangeWithPersistence}
           />
-          {modelId && (
-            <ModelPicker modelId={modelId} onChange={handleModelChange} />
-          )}
+          <ModelPicker modelId={modelId} onChange={handleModelChange} />
         </div>
       </div>
     </div>
