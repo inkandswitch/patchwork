@@ -245,7 +245,18 @@ ${step}`,
       await prompt.edit(handle, newContent, repo);
     } catch (e) {
       console.error("Failed to process edit:", e);
-      throw e;
+
+      // Add error to chat history instead of throwing
+      const errorMsg = e instanceof Error ? e.message : "Unknown error";
+      const errorMessage: ChatMessage = {
+        role: "assistant",
+        content: `⚠️ Failed to apply edit: ${errorMsg}\n\nThe AI response may have contained invalid formatting. Continuing with remaining steps...`,
+      };
+      handle.change((d) => {
+        if (!d.botChatHistory) d.botChatHistory = [];
+        d.botChatHistory.push(errorMessage);
+      });
+      // Don't throw - allow execution to continue with next steps
     }
   };
 
@@ -288,18 +299,8 @@ Example format:
 
   // Execute a single step
   const executeStep = async (step: string) => {
-    const stepMessage: ChatMessage = {
-      role: "user",
-      content: step,
-    };
-
-    // Add to chat history
-    handle.change((d) => {
-      if (!d.botChatHistory) d.botChatHistory = [];
-      d.botChatHistory.push(stepMessage);
-    });
-
-    // Apply edit directly
+    // Apply edit directly without adding step to visible chat history
+    // The step is already shown in the plan message
     await applyEditDirectly(step);
   };
 
