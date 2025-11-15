@@ -1,0 +1,4 @@
+dist
+.pushwork
+.env
+.env.local

@@ -1,0 +1,46 @@
+{
+  "name": "@tiny-patchwork/bot-editor",
+  "version": "0.0.1",
+  "description": "AI-powered document editor with chat interface",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "vite build",
+    "push": "pushwork sync",
+    "watch": "nodemon --watch src -e js,tsx,ts,tsx,css,json --exec 'pnpm build && pnpm push'"
+  },
+  "keywords": [],
+  "author": "Ink & Switch",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.69.0",
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@patchwork/context": "workspace:^",
+    "@patchwork/context-react": "workspace:^",
+    "@patchwork/context-selection": "workspace:^",
+    "@patchwork/element": "workspace:^",
+    "@patchwork/filesystem": "workspace:^",
+    "@patchwork/plugins": "workspace:^",
+    "@patchwork/react": "workspace:^",
+    "lucide-react": "^0.469.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1",
+    "tailwindcss": "^4.0.9",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.9",
+    "@types/react": "^18.3.3",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "daisyui": "^5.1.29",
+    "nodemon": "^3.1.9",
+    "vite": "^5.3.4",
+    "vite-plugin-css-injected-by-js": "^3.5.2"
+  }
+}

@@ -55,6 +55,19 @@ export const commands = (
     },
   },
   {
+    id: "add-bot-editor",
+    label: "Add Bot Editor",
+    description: "Add the AI bot editor to the sidebar",
+    category: "Tools",
+    action: async () => {
+      accountDocHandle.change((doc) => {
+        if (!doc.contextToolIds.includes("bot-editor")) {
+          doc.contextToolIds.push("bot-editor");
+        }
+      });
+    },
+  },
+  {
     id: "install-module",
     label: "Install Module",
     description: "Install a module from an Automerge URL",

@@ -63,6 +63,7 @@
     "@tiny-patchwork/history-view": "workspace:^",
     "@tiny-patchwork/todo": "workspace:^",
     "@tiny-patchwork/sync-indicator": "workspace:^",
+    "@tiny-patchwork/bot-editor": "workspace:^",
     "add": "^2.0.6",
     "cmdk": "^1.1.1",
     "lucide-react": "^0.545.0",
