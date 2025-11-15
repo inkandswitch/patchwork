@@ -10,7 +10,7 @@ export const plugins: Plugin<any>[] = [
     icon: "Bot",
     supportedDataTypes: ["account"],
     async load() {
-      const { renderBotEditor } = await import("./BotEditor");
+      const { renderBotEditor } = await import("./components/BotEditor");
       return renderBotEditor;
     },
   },

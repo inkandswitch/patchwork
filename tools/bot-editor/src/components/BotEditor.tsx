@@ -5,17 +5,15 @@ import { $selectedDocUrls } from "@patchwork/context-selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import { toolify } from "@patchwork/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import type { ModelId } from "./providers/types";
-import "./styles.css";
-import { useLLMProvider, useSelectedPrompt, type AIEditPrompt } from "./hooks";
-import {
-  ChatHistory,
-  ExecutionStatus,
-  ChatInput,
-  BotEditorHeader,
-  ModelPicker,
-  PromptPicker,
-} from "./components";
+import type { ModelId } from "../providers/types";
+import "../styles.css";
+import { useLLMProvider, useSelectedPrompt, type AIEditPrompt } from "../hooks";
+import { BotEditorHeader } from "./BotEditorHeader";
+import { ChatHistory } from "./ChatHistory";
+import { ExecutionStatus } from "./ExecutionStatus";
+import { ChatInput } from "./ChatInput";
+import { PromptPicker } from "./PromptPicker";
+import { ModelPicker } from "./ModelPicker";
 
 // Chat message types
 type ChatMessage = {
@@ -429,52 +427,43 @@ Example format:
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Top section: Bot chat interface */}
-      <div className="flex flex-col flex-1 border-b min-h-0">
-        <BotEditorHeader
-          onClearHistory={() =>
-            handle.change((d) => {
-              d.botChatHistory = [];
-            })
-          }
+    <div className="h-full w-full flex flex-col">
+      <BotEditorHeader
+        onClearHistory={() =>
+          handle.change((d) => {
+            d.botChatHistory = [];
+          })
+        }
+      />
+      {/* Conversation history - fills available space */}
+      <div className="flex-1 overflow-y-auto flex flex-col p-2 min-h-0">
+        <ChatHistory messages={doc.botChatHistory} />
+        <ExecutionStatus
+          executionState={executionState}
+          currentStepIndex={currentStepIndex}
+          executionPlan={executionPlan}
+          loading={loading}
+          onStop={stopExecution}
         />
-        {/* Conversation history - fills available space */}
-        <div className="flex-1 overflow-y-auto flex flex-col p-2 min-h-0">
-          <ChatHistory messages={doc.botChatHistory} />
-          <ExecutionStatus
-            executionState={executionState}
-            currentStepIndex={currentStepIndex}
-            executionPlan={executionPlan}
-            loading={loading}
-            onStop={stopExecution}
-          />
-          <div ref={chatEndRef} />
-        </div>
-        <div className="flex flex-col gap-2 border-t pt-2 p-2">
-          <ChatInput
-            value={pendingMessage}
-            onChange={setPendingMessage}
-            onSend={handleUserMessage}
-            disabled={loading}
-          />
-          <div className="flex gap-3 justify-start">
-            <PromptPicker
-              prompts={prompts}
-              currentPrompt={currentPrompt}
-              onChange={handlePromptChangeWithPersistence}
-            />
-            {modelId && (
-              <ModelPicker modelId={modelId} onChange={handleModelChange} />
-            )}
-          </div>
-        </div>
+        <div ref={chatEndRef} />
       </div>
-
-      {/* Bottom half: Original document tool via patchwork-embed */}
-      <div className="flex-1 overflow-auto">
-        {/* @ts-ignore - custom element */}
-        <patchwork-embed doc-url={mainDocUrl} />
+      <div className="flex flex-col gap-2 p-2">
+        <ChatInput
+          value={pendingMessage}
+          onChange={setPendingMessage}
+          onSend={handleUserMessage}
+          disabled={loading}
+        />
+        <div className="flex gap-3 justify-start">
+          <PromptPicker
+            prompts={prompts}
+            currentPrompt={currentPrompt}
+            onChange={handlePromptChangeWithPersistence}
+          />
+          {modelId && (
+            <ModelPicker modelId={modelId} onChange={handleModelChange} />
+          )}
+        </div>
       </div>
     </div>
   );
