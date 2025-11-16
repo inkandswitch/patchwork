@@ -1,4 +1,13 @@
 import { Plugin } from "@patchwork/plugins";
+import {
+  addTodoAction,
+  toggleTodoAction,
+  deleteTodoAction,
+  updateTodoDescriptionAction,
+  clearCompletedTodosAction,
+  markAllCompleteAction,
+  markAllIncompleteAction,
+} from "./actions";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -22,4 +31,12 @@ export const plugins: Plugin<any>[] = [
       return TodoDataType;
     },
   },
+  // Todo actions
+  addTodoAction,
+  toggleTodoAction,
+  deleteTodoAction,
+  updateTodoDescriptionAction,
+  clearCompletedTodosAction,
+  markAllCompleteAction,
+  markAllIncompleteAction,
 ];
