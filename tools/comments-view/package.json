@@ -16,6 +16,7 @@
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/plugins": "workspace:^",
     "@patchwork/react": "workspace:^",
+    "@patchwork/awareness": "workspace:^",
     "@patchwork/context": "workspace:^",
     "@patchwork/context-react": "workspace:^",
     "@patchwork/context-comments": "workspace:^",

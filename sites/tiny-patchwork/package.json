@@ -49,6 +49,7 @@
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/plugins": "workspace:^",
     "@patchwork/react": "workspace:^",
+    "@patchwork/awareness": "workspace:^",
     "@patchwork/tldraw": "workspace:^",
     "@patchwork/util": "workspace:^",
     "@tiny-patchwork/patchwork-frame": "workspace:^",

@@ -171,6 +171,15 @@ importers:
         specifier: 'catalog:'
         version: 18.3.26
 
+  packages/awareness:
+    dependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
+      eventemitter3:
+        specifier: ^5.0.1
+        version: 5.0.1
+
   packages/context/annotations/context-comments:
     dependencies:
       '@automerge/automerge-repo':
@@ -610,6 +619,9 @@ importers:
       '@orion/markwhen':
         specifier: workspace:^
         version: link:../../tools/orionmark
+      '@patchwork/awareness':
+        specifier: workspace:^
+        version: link:../../packages/awareness
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context/context
@@ -1145,6 +1157,9 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patchwork/awareness':
+        specifier: workspace:^
+        version: link:../../packages/awareness
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context/context

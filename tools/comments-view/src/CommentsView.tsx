@@ -7,7 +7,7 @@ import {
   useRefValue,
   useSubcontext,
 } from "@patchwork/context-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Avatar from "boring-avatars";
 
 import { IsSelected } from "@patchwork/context-selection";
@@ -15,6 +15,7 @@ import { relativeTime } from "@patchwork/util/src/relative-time";
 import { toolify } from "@patchwork/react";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import type { DocHandle } from "@automerge/automerge-repo";
+import { useWebRTCMesh } from "./useWebRTCMesh";
 
 const CommentsView = () => {
   const allThreadRefs = useReactive($allActiveThreadRefs) as Ref<Thread>[];
@@ -61,229 +62,64 @@ const CommentsView = () => {
 
 export const renderCommentsView = toolify(CommentsView);
 
-// WebRTC Video Call Component
-type SignalMessage = {
-  type: "offer" | "answer" | "ice-candidate" | "ready";
-  payload?: any;
-  from: string;
-};
-
-type CallDoc = {
-  callUrl?: string;
-};
-
+// WebRTC Video Call Component with N-N mesh support
 const VideoCall = () => {
   const repo = useRepo();
-  const [callDocHandle, setCallDocHandle] = useState<DocHandle<CallDoc> | null>(
+  const [callDocHandle, setCallDocHandle] = useState<DocHandle<unknown> | null>(
     null
   );
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const [isInCall, setIsInCall] = useState(false);
-  const [peerId, setPeerId] = useState<string>("");
-
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-
-  // Display local video
-  useEffect(() => {
-    if (!isInCall || !localStream) return;
-
-    const videoEl = localVideoRef.current;
-    if (!videoEl) return;
-
-    videoEl.srcObject = localStream;
-    videoEl.play().catch((err) => {
-      console.error("Local video play error:", err);
-    });
-  }, [isInCall, localStream]);
-
-  // Display remote video
-  useEffect(() => {
-    if (!isInCall || !remoteStream) return;
-
-    const videoEl = remoteVideoRef.current;
-    if (!videoEl) return;
-
-    videoEl.srcObject = remoteStream;
-    videoEl.play().catch((err) => {
-      console.error("Remote video play error:", err);
-    });
-  }, [isInCall, remoteStream]);
-
-  // Listen for signaling messages
-  useEffect(() => {
-    if (!callDocHandle) return undefined;
-
-    const handleMessage = async (event: any) => {
-      // Automerge wraps ephemeral messages: { handle, senderId, message }
-      const message = event.message as SignalMessage;
-
-      if (!message?.type || message.from === peerId) return;
-
-      try {
-        if (message.type === "ready") {
-          // Joiner is ready, send offer
-          const pc = peerConnectionRef.current;
-          if (pc && !pc.localDescription) {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            callDocHandle.broadcast({
-              type: "offer",
-              payload: offer,
-              from: peerId,
-            });
-          }
-          return;
-        }
-
-        const pc = peerConnectionRef.current;
-        if (!pc) return;
-
-        if (message.type === "offer") {
-          await pc.setRemoteDescription(
-            new RTCSessionDescription(message.payload)
-          );
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          callDocHandle.broadcast({
-            type: "answer",
-            payload: answer,
-            from: peerId,
-          });
-        } else if (message.type === "answer") {
-          await pc.setRemoteDescription(
-            new RTCSessionDescription(message.payload)
-          );
-        } else if (message.type === "ice-candidate") {
-          await pc.addIceCandidate(new RTCIceCandidate(message.payload));
-        }
-      } catch (err) {
-        console.error("Error handling signaling message:", err);
-      }
-    };
-
-    callDocHandle.on("ephemeral-message", handleMessage);
-    return () => {
-      callDocHandle.off("ephemeral-message", handleMessage);
-    };
-  }, [callDocHandle, peerId]);
-
-  const createPeerConnection = (
-    stream: MediaStream,
-    handle: DocHandle<CallDoc>,
-    id: string
-  ) => {
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-    });
-
-    // Add local tracks
-    stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-
-    // Handle incoming tracks
-    pc.ontrack = (event) => setRemoteStream(event.streams[0]);
-
-    // Handle ICE candidates
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        handle.broadcast({
-          type: "ice-candidate",
-          payload: event.candidate.toJSON(),
-          from: id,
-        });
-      }
-    };
-
-    peerConnectionRef.current = pc;
-    return pc;
-  };
-
-  const startCall = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
-        audio: true,
-      });
-      setLocalStream(stream);
-
-      const handle = repo.create<CallDoc>();
-      await handle.whenReady();
-
-      const id = (await repo.storageId()) || Math.random().toString(36);
-
-      setCallDocHandle(handle);
-      setPeerId(id);
-
-      // Create peer connection (will send offer when joiner signals ready)
-      createPeerConnection(stream, handle, id);
-
-      // Store call URL in document
-      handle.change((doc: CallDoc) => {
-        doc.callUrl = handle.url;
-      });
-
-      setIsInCall(true);
-    } catch (err) {
-      console.error("Error starting call:", err);
-    }
-  };
-
-  const joinCall = async (url: string) => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
-        audio: true,
-      });
-      setLocalStream(stream);
-
-      const handle = await repo.find<CallDoc>(url as any);
-      await handle.whenReady();
-
-      const id = (await repo.storageId()) || Math.random().toString(36);
-
-      setCallDocHandle(handle);
-      setPeerId(id);
-
-      createPeerConnection(stream, handle, id);
-
-      // Signal ready to trigger offer from initiator
-      handle.broadcast({
-        type: "ready",
-        from: id,
-      });
-
-      setIsInCall(true);
-    } catch (err) {
-      console.error("Error joining call:", err);
-    }
-  };
-
-  const hangUp = () => {
-    if (localStream) {
-      localStream.getTracks().forEach((track) => track.stop());
-      setLocalStream(null);
-    }
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-      peerConnectionRef.current = null;
-    }
-    setRemoteStream(null);
-    setCallDocHandle(null);
-    setIsInCall(false);
-  };
-
   const [joinUrl, setJoinUrl] = useState("");
+
+  const {
+    localStream,
+    remoteStreams,
+    isInCall,
+    error,
+    startCall,
+    joinCall,
+    hangUp,
+  } = useWebRTCMesh();
+
+  const handleStartCall = async () => {
+    const handle = repo.create();
+    await handle.whenReady();
+    setCallDocHandle(handle);
+
+    const peerId = repo.peerId;
+    await startCall(handle, peerId);
+  };
+
+  const handleJoinCall = async (url: string) => {
+    const handle = await repo.find(url as any);
+    await handle.whenReady();
+    setCallDocHandle(handle);
+
+    const peerId = repo.peerId;
+    await joinCall(handle, peerId);
+  };
+
+  const handleHangUp = () => {
+    hangUp();
+    setCallDocHandle(null);
+  };
 
   return (
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body">
-        <h2 className="card-title">Video Call</h2>
+        <h2 className="card-title">Video Call (N-N Mesh 4)</h2>
+
+        {error && (
+          <div className="alert alert-error">
+            <span className="text-xs">{error.message}</span>
+          </div>
+        )}
 
         {!isInCall ? (
           <div className="space-y-4">
-            <button className="btn btn-primary w-full" onClick={startCall}>
+            <button
+              className="btn btn-primary w-full"
+              onClick={handleStartCall}
+            >
               Start New Call
             </button>
 
@@ -303,7 +139,7 @@ const VideoCall = () => {
                 />
                 <button
                   className="btn btn-primary join-item"
-                  onClick={() => joinCall(joinUrl)}
+                  onClick={() => handleJoinCall(joinUrl)}
                   disabled={!joinUrl}
                 >
                   Join
@@ -339,33 +175,57 @@ const VideoCall = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-semibold mb-2">You</p>
-                <div className="relative w-full aspect-video rounded-lg bg-gray-800 overflow-hidden border-2 border-gray-600">
-                  <video
-                    ref={localVideoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-semibold mb-2">Remote</p>
-                <div className="relative w-full aspect-video rounded-lg bg-gray-800 overflow-hidden border-2 border-gray-600">
-                  <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                </div>
+            {/* Local video */}
+            <div>
+              <p className="text-sm font-semibold mb-2">You</p>
+              <div className="relative w-full aspect-video rounded-lg bg-gray-800 overflow-hidden border-2 border-gray-600">
+                <video
+                  ref={(el) => {
+                    if (el && localStream) {
+                      el.srcObject = localStream;
+                    }
+                  }}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
               </div>
             </div>
 
-            <button className="btn btn-error w-full" onClick={hangUp}>
+            {/* Remote videos - one per peer */}
+            {remoteStreams.size > 0 && (
+              <div>
+                <p className="text-sm font-semibold mb-2">
+                  Remote Peers ({remoteStreams.size})
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  {Array.from(remoteStreams.entries()).map(
+                    ([peerId, stream]) => (
+                      <div key={peerId}>
+                        <p className="text-xs text-gray-500 mb-1 truncate">
+                          {peerId}
+                        </p>
+                        <div className="relative w-full aspect-video rounded-lg bg-gray-800 overflow-hidden border-2 border-gray-600">
+                          <video
+                            ref={(el) => {
+                              if (el) {
+                                el.srcObject = stream;
+                              }
+                            }}
+                            autoPlay
+                            playsInline
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+
+            <button className="btn btn-error w-full" onClick={handleHangUp}>
               Hang Up
             </button>
           </div>
