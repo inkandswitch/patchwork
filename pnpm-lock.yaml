@@ -1556,6 +1556,100 @@ importers:
         specifier: ^3.5.2
         version: 3.5.2(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
 
+  tools/counter:
+    dependencies:
+      '@automerge/automerge':
+        specifier: 3.2.0
+        version: 3.2.0
+      '@automerge/automerge-codemirror':
+        specifier: ^0.2.0
+        version: 0.2.0
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
+      '@automerge/automerge-repo-react-hooks':
+        specifier: 'catalog:'
+        version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patchwork/context':
+        specifier: workspace:^
+        version: link:../../packages/context/context
+      '@patchwork/context-diff':
+        specifier: workspace:^
+        version: link:../../packages/context/annotations/context-diff
+      '@patchwork/context-react':
+        specifier: workspace:^
+        version: link:../../packages/context/frameworks/context-react
+      '@patchwork/element':
+        specifier: workspace:^
+        version: link:../../core/element
+      '@patchwork/filesystem':
+        specifier: workspace:^
+        version: link:../../core/filesystem
+      '@patchwork/plugins':
+        specifier: workspace:^
+        version: link:../../core/plugins
+      '@patchwork/react':
+        specifier: workspace:^
+        version: link:../../packages/react
+      '@patchwork/util':
+        specifier: workspace:^
+        version: link:../../packages/util
+      react:
+        specifier: ^18.0.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.0.0
+        version: 18.3.1(react@18.3.1)
+      tailwindcss:
+        specifier: ^4.1.14
+        version: 4.1.15
+      zod:
+        specifier: ^4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.37.0
+        version: 9.38.0
+      '@patchwork/bootloader':
+        specifier: workspace:^
+        version: link:../../core/bootloader
+      '@tailwindcss/vite':
+        specifier: ^4.1.14
+        version: 4.1.15(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+      '@types/react':
+        specifier: 'catalog:'
+        version: 18.3.26
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 18.3.7(@types/react@18.3.26)
+      '@typescript-eslint/parser':
+        specifier: ^8.40.0
+        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
+      '@vitejs/plugin-react':
+        specifier: ^5.0.4
+        version: 5.0.4(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+      daisyui:
+        specifier: ^5.1.29
+        version: 5.4.4
+      eslint:
+        specifier: ^9.34.0
+        version: 9.38.0(jiti@2.6.1)
+      eslint-plugin-react-hooks:
+        specifier: ^5.2.0
+        version: 5.2.0(eslint@9.38.0(jiti@2.6.1))
+      globals:
+        specifier: ^16.4.0
+        version: 16.4.0
+      typescript-eslint:
+        specifier: ^8.41.0
+        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
+      vite:
+        specifier: ^7.1.9
+        version: 7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)
+      vite-plugin-css-injected-by-js:
+        specifier: ^3.5.2
+        version: 3.5.2(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+
   tools/doc-title:
     dependencies:
       '@automerge/automerge':

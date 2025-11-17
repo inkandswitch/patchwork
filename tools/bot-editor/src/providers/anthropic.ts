@@ -52,6 +52,37 @@ export const anthropicProvider: LLMProviderPlugin = {
         );
         return textContent?.text || "";
       },
+      async *chatCompletionStream(messages, options) {
+        // Convert messages to Anthropic format
+        const systemMessage = messages.find((m) => m.role === "system");
+        const anthropicMessages = messages
+          .filter((m) => m.role !== "system")
+          .map((msg) => ({
+            role: msg.role === "system" ? "user" : msg.role,
+            content: msg.content,
+          })) as { role: "user" | "assistant"; content: string }[];
+
+        // Anthropic requires at least one message
+        if (anthropicMessages.length === 0) {
+          throw new Error("At least one non-system message is required");
+        }
+
+        const stream = await client.messages.stream({
+          model: options?.model || "claude-sonnet-4-0",
+          messages: anthropicMessages,
+          max_tokens: 20000,
+          ...(systemMessage && { system: systemMessage.content }),
+        });
+
+        for await (const event of stream) {
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            yield event.delta.text;
+          }
+        }
+      },
     };
   },
 };

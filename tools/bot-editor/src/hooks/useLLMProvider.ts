@@ -16,6 +16,13 @@ export const useLLMProvider = (modelId: ModelId | undefined) => {
       ) => Promise<string>)
     | null
   >(null);
+  const [chatCompletionStream, setChatCompletionStream] = useState<
+    | ((
+        messages: ChatMessage[],
+        options?: { model?: ModelId }
+      ) => AsyncGenerator<string, void, unknown>)
+    | null
+  >(null);
 
   useEffect(() => {
     const loadProviderForModel = async () => {
@@ -48,6 +55,7 @@ export const useLLMProvider = (modelId: ModelId | undefined) => {
 
                 const module = loadedProvider.module;
                 setChatCompletion(() => module.chatCompletion);
+                setChatCompletionStream(() => module.chatCompletionStream);
                 setLlmActive(true);
                 return;
               }
@@ -78,6 +86,7 @@ export const useLLMProvider = (modelId: ModelId | undefined) => {
 
               const module = loadedProvider.module;
               setChatCompletion(() => module.chatCompletion);
+              setChatCompletionStream(() => module.chatCompletionStream);
               setLlmActive(true);
               return;
             }
@@ -97,6 +106,6 @@ export const useLLMProvider = (modelId: ModelId | undefined) => {
     loadProviderForModel();
   }, [modelId]);
 
-  return { llmActive, chatCompletion };
+  return { llmActive, chatCompletion, chatCompletionStream };
 };
 

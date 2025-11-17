@@ -18,6 +18,10 @@ export interface LLMProviderImplementation {
     messages: Array<{ role: string; content: string }>,
     options?: { model?: ModelId }
   ): Promise<string>;
+  chatCompletionStream(
+    messages: Array<{ role: string; content: string }>,
+    options?: { model?: ModelId }
+  ): AsyncGenerator<string, void, unknown>;
 }
 
 export type LLMProviderPlugin = Plugin<LLMProviderDescription>;
