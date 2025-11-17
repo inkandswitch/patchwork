@@ -5,11 +5,10 @@ import { $selectedDocUrls } from "@patchwork/context-selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import { toolify } from "@patchwork/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { BotIcon, SendIcon } from "lucide-react";
+import { BotIcon, CheckIcon, SendIcon, XIcon } from "lucide-react";
 import Markdown from "react-markdown";
 import type { ModelId } from "../providers/types";
-import "../styles.css";
-import { useLLMProvider } from "../hooks";
+import "./styles.css";
 import { ModelPicker } from "./ModelPicker";
 import { Agent, type ChatDocument, type ChatMessage } from "../Agent";
 
@@ -70,7 +69,6 @@ const BotEditorImpl = ({
   const [chatDocUrl, setChatDocUrl] = useState<AutomergeUrl | null>(
     (targetDoc.botChatDocUrl as AutomergeUrl) || null
   );
-  const [chatDoc, setChatDoc] = useState<ChatDocument | null>(null);
   const [chatHandle, setChatHandle] = useState<DocHandle<ChatDocument> | null>(
     null
   );
@@ -82,18 +80,18 @@ const BotEditorImpl = ({
     targetDoc.botModelId
   );
 
-  // Load LLM provider
-  const { llmActive, chatCompletionStream } = useLLMProvider(modelId);
+  // Use useDocument to load chat document directly
+  const [chatDoc] = useDocument<ChatDocument>(
+    chatDocUrl || ("" as AutomergeUrl)
+  );
 
-  // Create or load chat document
+  // Create or load chat document handle
   useEffect(() => {
     const initChatDoc = async () => {
       if (chatDocUrl) {
-        // Load existing chat document
+        // Load existing chat document handle
         const handle = await repo.find<ChatDocument>(chatDocUrl);
-        const doc = handle.docSync();
         setChatHandle(handle);
-        setChatDoc(doc || null);
       } else {
         // Create new chat document
         const handle = repo.create<ChatDocument>();
@@ -108,7 +106,6 @@ const BotEditorImpl = ({
         const newChatDocUrl = handle.url;
         setChatDocUrl(newChatDocUrl);
         setChatHandle(handle);
-        setChatDoc(handle.docSync() || null);
 
         // Store reference in target document
         targetHandle.change((d) => {
@@ -120,33 +117,13 @@ const BotEditorImpl = ({
     initChatDoc();
   }, [chatDocUrl, repo, targetDocUrl, targetHandle, modelId]);
 
-  // Subscribe to chat document changes
-  useEffect(() => {
-    if (!chatHandle) return;
-
-    const handleChange = () => {
-      setChatDoc(chatHandle.docSync() || null);
-    };
-
-    chatHandle.on("change", handleChange);
-    return () => {
-      chatHandle.off("change", handleChange);
-    };
-  }, [chatHandle]);
-
   // Create and start agent
   useEffect(() => {
-    if (!chatHandle || !targetHandle || !chatCompletionStream) {
+    if (!chatHandle) {
       return;
     }
 
-    const newAgent = new Agent(
-      chatHandle,
-      targetHandle,
-      repo,
-      chatCompletionStream,
-      modelId
-    );
+    const newAgent = new Agent(chatHandle, repo, modelId);
 
     newAgent.start();
     setAgent(newAgent);
@@ -154,7 +131,7 @@ const BotEditorImpl = ({
     return () => {
       newAgent.stop();
     };
-  }, [chatHandle, targetHandle, repo, chatCompletionStream, modelId]);
+  }, [chatHandle, repo, modelId]);
 
   // Persist model ID changes to target document
   const handleModelChange = useCallback(
@@ -176,7 +153,7 @@ const BotEditorImpl = ({
     [targetHandle, chatHandle]
   );
 
-  // Auto-scroll to bottom
+  // Auto-scroll chat to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatDoc?.messages]);
@@ -190,6 +167,7 @@ const BotEditorImpl = ({
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}-${Math.random()}`,
       role: "user",
+      type: "text",
       content: pendingMessage,
       timestamp: Date.now(),
     };
@@ -217,7 +195,6 @@ const BotEditorImpl = ({
     const newChatDocUrl = handle.url;
     setChatDocUrl(newChatDocUrl);
     setChatHandle(handle);
-    setChatDoc(handle.docSync() || null);
 
     // Update reference in target document
     targetHandle.change((d) => {
@@ -225,17 +202,7 @@ const BotEditorImpl = ({
     });
   };
 
-  if (llmActive === false) {
-    return (
-      <div className="flex justify-center items-center h-full p-4">
-        <div className="alert alert-warning">
-          <span>No LLM provider available.</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (llmActive === undefined || !chatDoc) {
+  if (!chatDoc) {
     return (
       <div className="flex justify-center items-center h-full p-4">
         <div className="alert">
@@ -245,11 +212,10 @@ const BotEditorImpl = ({
     );
   }
 
-  const isProcessing =
+  // Check if we're waiting for a response (last message is user message)
+  const isWaiting =
     chatDoc.messages.length > 0 &&
-    chatDoc.messages[chatDoc.messages.length - 1].role === "assistant" &&
-    (!chatDoc.messages[chatDoc.messages.length - 1].content ||
-      chatDoc.messages[chatDoc.messages.length - 1].content === "");
+    chatDoc.messages[chatDoc.messages.length - 1].role === "user";
 
   return (
     <div className="h-full w-full flex flex-col">
@@ -266,83 +232,100 @@ const BotEditorImpl = ({
       </div>
 
       {/* Chat History */}
-      <div className="flex-1 overflow-y-auto flex flex-col p-2 min-h-0">
-        {chatDoc.messages.map((message, index) => (
-          <div
-            key={message.id || index}
-            className={`chat ${
-              message.role === "user" ? "chat-end" : "chat-start"
-            }`}
-          >
-            <div
-              className={`chat-bubble text-sm ${
-                message.role === "user"
-                  ? "chat-bubble-neutral"
-                  : "bg-base-200 text-base-content"
-              }`}
-            >
-              {message.role === "assistant" ? (
-                <div className="space-y-2">
-                  {/* Thinking blocks - collapsed by default */}
-                  {message.thinking && message.thinking.length > 0 && (
-                    <details className="bg-base-300 rounded p-2">
-                      <summary className="cursor-pointer text-xs opacity-70">
-                        💭 Thinking...
-                      </summary>
-                      <div className="mt-2 text-xs space-y-2">
-                        {message.thinking.map((thinking, i) => (
-                          <div key={i} className="italic opacity-80">
-                            <Markdown>{thinking}</Markdown>
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  )}
+      <div className="flex-1 overflow-y-auto flex flex-col p-4 gap-2 min-h-0">
+        {chatDoc.messages.map((message, index) => {
+          if (message.role === "user") {
+            return (
+              <div key={message.id || index} className="chat chat-end">
+                <div className="chat-bubble chat-bubble-neutral bg-base-100 text-base-content text-sm ml-[50px]">
+                  <Markdown>{message.content}</Markdown>
+                </div>
+              </div>
+            );
+          }
 
-                  {/* Action status indicators */}
-                  {message.actions && message.actions.length > 0 && (
-                    <div className="space-y-1">
-                      {message.actions.map((action, i) => (
-                        <div
-                          key={i}
-                          className={`text-xs px-2 py-1 rounded ${
-                            action.status === "success"
-                              ? "bg-success bg-opacity-20 text-success"
-                              : "bg-error bg-opacity-20 text-error"
-                          }`}
-                        >
-                          {action.status === "success" ? "✓" : "✗"}{" "}
-                          {action.actionId}
-                          {action.error && (
-                            <div className="text-xs opacity-70 mt-1">
-                              {action.error}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+          if (message.type === "thinking") {
+            // Don't render if in progress and no content yet
+            if (message.inProgress && !message.content) {
+              return null;
+            }
 
-                  {/* Main display content */}
-                  {message.displayContent && (
-                    <Markdown>{message.displayContent}</Markdown>
-                  )}
-
-                  {/* Loading indicator for empty assistant messages */}
-                  {(!message.displayContent ||
-                    message.displayContent === "") && (
-                    <div className="flex items-center gap-2">
-                      <span className="loading loading-dots loading-xs"></span>
-                      <span className="text-xs opacity-70">Thinking...</span>
-                    </div>
+            return (
+              <div key={message.id || index} className="px-2 py-1 text-sm">
+                <div className="flex items-center gap-2 text-base-content opacity-70">
+                  <span className="font-medium">{message.description}</span>
+                  {message.inProgress && (
+                    <span className="loading loading-dots loading-xs"></span>
                   )}
                 </div>
+              </div>
+            );
+          }
+
+          if (message.type === "action") {
+            // Don't render if no actionId yet (incomplete)
+            if (!message.actionId) {
+              return null;
+            }
+
+            const icon =
+              message.status === "success" ? (
+                "✓"
+              ) : message.status === "error" ? (
+                "✗"
               ) : (
+                <span className="loading loading-dots loading-xs"></span>
+              );
+
+            const textColor =
+              message.status === "success"
+                ? "text-success"
+                : message.status === "error"
+                  ? "text-error"
+                  : "text-warning";
+
+            return (
+              <div key={message.id || index} className="px-2 py-1 text-sm">
+                <div className={`flex items-center gap-2 ${textColor}`}>
+                  <span>{message.description}</span>
+                  {icon}
+                </div>
+                {message.error && (
+                  <div className="ml-6 text-xs text-error mt-1">
+                    {message.error}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Assistant text - plain text, no bubble
+          if (message.type === "text") {
+            // Don't render empty text messages
+            if (!message.content || !message.content.trim()) {
+              return null;
+            }
+
+            return (
+              <div
+                key={message.id || index}
+                className="chat-bubble chat-bubble-neutral bg-base-100 text-base-content text-sm"
+              >
                 <Markdown>{message.content}</Markdown>
-              )}
+              </div>
+            );
+          }
+
+          return null;
+        })}
+        {isWaiting && (
+          <div className="px-2 py-1 text-sm">
+            <div className="flex items-center gap-2 text-base-content opacity-70">
+              <span className="text-xs">Thinking</span>
+              <span className="loading loading-dots loading-xs"></span>
             </div>
           </div>
-        ))}
+        )}
         <div ref={chatEndRef} />
       </div>
 
@@ -362,12 +345,12 @@ const BotEditorImpl = ({
               }
             }}
             placeholder="Ask the bot to edit the document..."
-            disabled={isProcessing}
+            disabled={isWaiting}
           />
           <button
             onClick={handleUserMessage}
             className="btn btn-ghost btn-sm absolute bottom-2 right-2 h-8 w-8 min-h-0 p-0"
-            disabled={!pendingMessage.trim() || isProcessing}
+            disabled={!pendingMessage.trim() || isWaiting}
           >
             <SendIcon size={16} />
           </button>
