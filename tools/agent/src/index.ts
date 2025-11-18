@@ -1,7 +1,7 @@
 import { type Plugin } from "@patchwork/plugins";
 import { openAIProvider } from "./providers/openai";
 import { anthropicProvider } from "./providers/anthropic";
-import { stepAction } from "./actions";
+import { stepAction, addDocumentToAgentAction } from "./actions";
 
 export const plugins: Plugin<any>[] = [
   openAIProvider,
@@ -28,4 +28,5 @@ export const plugins: Plugin<any>[] = [
     },
   },
   stepAction,
+  addDocumentToAgentAction,
 ];
