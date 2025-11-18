@@ -51,22 +51,18 @@ export async function step(
     return;
   }
 
-  // Load plugins for these documents
-  const actionsByDatatype = await loadActionsByDatatype(activeDocUrls, repo);
-
   // Build message history for LLM
   const systemPrompt = getSystemPrompt();
-  const documentContext = await getDocumentContext(
-    activeDocUrls,
-    repo,
-    actionsByDatatype
-  );
+  const documentContext = await getDocumentContext(activeDocUrls, repo);
 
   // Build message history from our message types
   const llmMessages: { role: string; content: string }[] = [
     { role: "system", content: systemPrompt },
+    { role: "system", content: documentContext },
     ...buildLLMHistory(chatDoc.messages),
   ];
+
+  console.log(llmMessages);
 
   // Stream response with incremental parsing
   let buffer = "";
@@ -215,7 +211,9 @@ export async function step(
                   ? Automerge.getHeads(targetDocBefore)[0]
                   : undefined;
 
-                const actionPlugin = actionsByDatatype[action.actionId];
+                // Load action plugin from registry
+                const registry = getRegistry("patchwork:action");
+                const actionPlugin = await registry.load(action.actionId);
 
                 await executeAction(
                   targetDocUrl,
@@ -401,64 +399,44 @@ async function loadLLMProvider(
   }
 }
 
-async function loadActionsByDatatype(
-  docUrls: AutomergeUrl[],
-  repo: Repo
-): Promise<Record<string, any[]>> {
-  const allDataTypeIds = new Set<string>();
-  const actionsByDatatype: Record<string, any[]> = {};
+async function getActionsOfDatatype(doc: any): Promise<any[]> {
+  const dataTypeId = doc?.["@patchwork"]?.type || "*";
+  const registry = getRegistry("patchwork:action");
+  const allActions = registry.all();
 
-  // Collect all data types from all documents
-  for (const docUrl of docUrls) {
-    try {
-      const targetDocHandle = await repo.find(docUrl as any);
-      const targetDoc = targetDocHandle.doc();
-      if (!targetDoc) continue;
+  // Filter actions that match this datatype
+  const matchingActions = allActions.filter((action: any) => {
+    const supportedDataTypes = action.supportedDataTypes;
+    if (!supportedDataTypes) return false;
+    if (supportedDataTypes === "*") return true;
 
-      const dataTypeId = targetDoc?.["@patchwork"]?.type || "*";
-      allDataTypeIds.add(dataTypeId);
-    } catch (e) {
-      console.error(`Failed to load document ${docUrl}:`, e);
+    if (Array.isArray(supportedDataTypes)) {
+      return (
+        supportedDataTypes.includes("*") ||
+        supportedDataTypes.includes(dataTypeId)
+      );
     }
-  }
 
-  try {
-    const registry = getRegistry("patchwork:action");
-    const allActions = registry.all();
+    return supportedDataTypes === dataTypeId;
+  });
 
-    // Filter actions that match any of the datatypes
-    const matchingActions = allActions.filter((action: any) => {
-      const supportedDataTypes = action.supportedDataTypes;
-      if (!supportedDataTypes) return false;
-      if (supportedDataTypes === "*") return true;
-
-      if (Array.isArray(supportedDataTypes)) {
-        return (
-          supportedDataTypes.includes("*") ||
-          Array.from(allDataTypeIds).some((typeId) =>
-            supportedDataTypes.includes(typeId)
-          )
-        );
-      }
-
-      return Array.from(allDataTypeIds).includes(supportedDataTypes);
-    });
-
-    // Load all plugins
-    await Promise.all(
-      matchingActions.map(async (action: any) => {
-        try {
-          const plugin = await registry.load(action.id);
-        } catch (e) {
-          console.error(`Failed to load plugin ${action.id}:`, e);
+  // Load all matching actions
+  const loadedActions = await Promise.all(
+    matchingActions.map(async (action: any) => {
+      try {
+        const plugin = await registry.load(action.id);
+        if (plugin && isLoadedPlugin(plugin)) {
+          return plugin;
         }
-      })
-    );
-  } catch (e) {
-    console.error("Failed to load plugins:", e);
-  }
+        return null;
+      } catch (e) {
+        console.error(`Failed to load plugin ${action.id}:`, e);
+        return null;
+      }
+    })
+  );
 
-  return actionsByDatatype;
+  return loadedActions.filter((action) => action !== null);
 }
 
 function formatSchemaDescription(schema: any): string {
@@ -509,13 +487,11 @@ function formatSchemaDescription(schema: any): string {
   return "Arguments: (empty schema)";
 }
 
-function getAvailableActionsForDocument<T>(
-  targetDoc: T,
-  actionsByDatatype: Record<string, any[]>
-): string {
+async function getAvailableActionsForDocument<T>(
+  targetDoc: T
+): Promise<string> {
   const descriptions: string[] = [];
-  const dataTypeId = targetDoc?.["@patchwork"]?.type || "*";
-  const actions = actionsByDatatype[dataTypeId] || [];
+  const actions = await getActionsOfDatatype(targetDoc);
 
   for (const action of actions) {
     let argsDescription = "No arguments";
@@ -539,8 +515,7 @@ function getAvailableActionsForDocument<T>(
 
 async function getDocumentContext(
   docUrls: AutomergeUrl[],
-  repo: Repo,
-  actionsByDatatype: Record<string, any[]>
+  repo: Repo
 ): Promise<string> {
   const documentDescriptions: string[] = [];
 
@@ -554,10 +529,7 @@ async function getDocumentContext(
       const title = doc?.["@patchwork"]?.title || docUrl;
 
       // Get actions for this document
-      const actionsText = getAvailableActionsForDocument(
-        doc,
-        actionsByDatatype
-      );
+      const actionsText = await getAvailableActionsForDocument(doc);
 
       documentDescriptions.push(`### Document: ${title}
 URL: ${docUrl}
