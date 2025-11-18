@@ -182,7 +182,7 @@ export const PatchworkFrame = ({
       {contextSidebarToolId && (
         <div
           className={`flex relative transition-all duration-300 bg-base-100 ${
-            isRightSidebarCollapsed ? "w-[2px]" : "w-[800px]"
+            isRightSidebarCollapsed ? "w-[2px]" : "w-[400px]"
           }`}
         >
           <button
@@ -201,10 +201,6 @@ export const PatchworkFrame = ({
               tool-id={contextSidebarToolId}
             />
           )}
-          <patchwork-view
-            doc-url={accountDocUrl}
-            tool-id={contextSidebarToolId}
-          />
         </div>
       )}
     </div>

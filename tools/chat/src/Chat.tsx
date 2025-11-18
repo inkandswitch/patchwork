@@ -1,0 +1,185 @@
+import { AutomergeUrl } from "@automerge/automerge-repo";
+import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import { toolify } from "@patchwork/react";
+import { MessageSquareIcon, SendIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import Markdown from "react-markdown";
+import "./styles.css";
+import type { ChatDocument, UserMessage } from "./types";
+
+const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
+  const [chatDoc, changeChatDoc] = useDocument<ChatDocument>(docUrl, {
+    suspense: true,
+  });
+  const [pendingMessage, setPendingMessage] = useState("");
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatDoc?.messages]);
+
+  // Handle sending message
+  const handleUserMessage = () => {
+    if (!pendingMessage.trim()) {
+      return;
+    }
+
+    const userMessage: UserMessage = {
+      id: `msg-${Date.now()}-${Math.random()}`,
+      role: "user",
+      type: "text",
+      content: pendingMessage,
+      timestamp: Date.now(),
+    };
+
+    changeChatDoc((doc: ChatDocument) => {
+      if (!doc.messages) doc.messages = [];
+      doc.messages.push(userMessage);
+    });
+
+    setPendingMessage("");
+  };
+
+  if (!chatDoc) {
+    return (
+      <div className="flex justify-center items-center h-full p-4">
+        <div className="alert">
+          <span>Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full w-full flex flex-col">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b">
+        <MessageSquareIcon size={16} />
+        <span className="font-semibold">Chat</span>
+      </div>
+
+      {/* Chat History */}
+      <div className="flex-1 overflow-y-auto flex flex-col p-4 gap-2 min-h-0">
+        {chatDoc.messages.map((message, index) => {
+          if (message.role === "user") {
+            return (
+              <div key={message.id || index} className="chat chat-end">
+                <div className="chat-bubble chat-bubble-neutral bg-base-100 text-base-content text-sm ml-[50px]">
+                  <Markdown>{message.content}</Markdown>
+                </div>
+              </div>
+            );
+          }
+
+          if (message.type === "thinking") {
+            // Don't render if in progress and no content yet
+            if (message.inProgress && !message.content) {
+              return null;
+            }
+
+            return (
+              <div key={message.id || index} className="px-2 py-1 text-sm">
+                <div className="flex items-center gap-2 text-base-content opacity-70">
+                  <span className="font-medium">{message.description}</span>
+                  {message.inProgress && (
+                    <span className="loading loading-dots loading-xs"></span>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          if (message.type === "action") {
+            // Don't render if no actionId yet (incomplete)
+            if (!message.actionId) {
+              return null;
+            }
+
+            const icon =
+              message.status === "success" ? (
+                "✓"
+              ) : message.status === "error" ? (
+                "✗"
+              ) : (
+                <span className="loading loading-dots loading-xs"></span>
+              );
+
+            const textColor =
+              message.status === "success"
+                ? "text-success"
+                : message.status === "error"
+                  ? "text-error"
+                  : "text-warning";
+
+            return (
+              <div
+                key={message.id || index}
+                className="px-2 py-1 text-sm cursor-pointer hover:bg-base-200 rounded transition-colors"
+              >
+                <div className={`flex items-center gap-2 ${textColor}`}>
+                  <span>{message.description}</span>
+                  {icon}
+                </div>
+                {message.error && (
+                  <div className="ml-6 text-xs text-error mt-1">
+                    {message.error}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Assistant text - plain text, no bubble
+          if (message.type === "text") {
+            // Don't render empty text messages
+            if (!message.content || !message.content.trim()) {
+              return null;
+            }
+
+            return (
+              <div
+                key={message.id || index}
+                className="chat-bubble chat-bubble-neutral bg-base-100 text-base-content text-sm"
+              >
+                <Markdown>{message.content}</Markdown>
+              </div>
+            );
+          }
+
+          return null;
+        })}
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Input Area */}
+      <div className="flex flex-col gap-2 p-2">
+        <div className="relative">
+          <textarea
+            value={pendingMessage}
+            className="textarea textarea-bordered w-full h-20 resize-none"
+            onChange={(e) => setPendingMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (pendingMessage.trim()) {
+                  handleUserMessage();
+                }
+              }
+            }}
+            placeholder="Type your message..."
+          />
+          <button
+            onClick={handleUserMessage}
+            className="btn btn-ghost btn-sm absolute bottom-2 right-2 h-8 w-8 min-h-0 p-0"
+            disabled={!pendingMessage.trim()}
+          >
+            <SendIcon size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const renderChat = toolify(Chat);

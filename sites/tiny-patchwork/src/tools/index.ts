@@ -45,9 +45,11 @@ import { plugins as syncIndicatorPlugins } from "@tiny-patchwork/sync-indicator"
 // @ts-expect-error no types
 import { plugins as commandsPlugins } from "@orion/commands";
 // @ts-expect-error no types
-import { plugins as botEditorPlugins } from "@tiny-patchwork/bot-editor";
+import { plugins as agentPlugins } from "@tiny-patchwork/agent";
 // @ts-expect-error no types
 import { plugins as actionsPlugins } from "@tiny-patchwork/actions";
+// @ts-expect-error no types
+import { plugins as chatPlugins } from "@tiny-patchwork/chat";
 
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
@@ -71,8 +73,9 @@ export const plugins: Plugin<any>[] = [
   ...codemirrorMarkdownPlugins,
   ...markdownLinksPlugins,
   ...codemirrorEmbedPlugins,
-  ...botEditorPlugins,
+  ...agentPlugins,
   ...actionsPlugins,
+  ...chatPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",

@@ -1,5 +1,5 @@
 {
-  "name": "@tiny-patchwork/bot-editor",
+  "name": "@tiny-patchwork/agent",
   "version": "0.0.1",
   "description": "AI-powered document editor with chat interface",
   "type": "module",
@@ -28,6 +28,7 @@
     "@patchwork/plugins": "workspace:^",
     "@patchwork/react": "workspace:^",
     "lucide-react": "^0.469.0",
+    "@tiny-patchwork/chat": "workspace:^",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^9.0.1",
