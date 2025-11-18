@@ -1,3 +1,5 @@
+import { AutomergeUrl } from "@automerge/automerge-repo";
+
 // Base message properties
 export type BaseMessage = {
   id: string;
@@ -47,7 +49,5 @@ export type ChatMessage = UserMessage | AgentMessage;
 
 export type ChatDocument = {
   messages: ChatMessage[];
-  activeDocUrls?: string[];
-  accountDocUrl?: string;
-  modelId?: string;
+  agentDocUrls: AutomergeUrl[];
 };

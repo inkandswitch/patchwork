@@ -1,7 +1,7 @@
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import { AutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { toolify } from "@patchwork/react";
-import { MessageSquareIcon, SendIcon } from "lucide-react";
+import { MessageSquareIcon, SendIcon, BotIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import "./styles.css";
@@ -58,6 +58,32 @@ const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
         <MessageSquareIcon size={16} />
         <span className="font-semibold">Chat</span>
       </div>
+
+      {/* Attached Agents Section */}
+      {chatDoc.agentDocUrls && chatDoc.agentDocUrls.length > 0 && (
+        <div className="px-4 py-2 border-b bg-base-200">
+          <div className="flex items-center gap-2 text-sm">
+            <BotIcon size={14} />
+            <span className="font-medium">Attached agents:</span>
+            <div className="flex gap-2 flex-wrap">
+              {chatDoc.agentDocUrls.map((agentUrl, idx) => {
+                const { documentId } = parseAutomergeUrl(agentUrl);
+
+                return (
+                  <a
+                    key={agentUrl}
+                    className="badge badge-sm badge-primary cursor-pointer"
+                    title={agentUrl}
+                    href={`#doc=${documentId}&tool=bot`}
+                  >
+                    Agent {idx + 1}
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Chat History */}
       <div className="flex-1 overflow-y-auto flex flex-col p-4 gap-2 min-h-0">

@@ -1,0 +1,23 @@
+import { type DataTypeImplementation } from "@patchwork/plugins";
+import { type AgentDocument } from "./Agent";
+import { Repo } from "@automerge/automerge-repo";
+import { ChatDocument } from "../../chat/src/types";
+
+export const AgentDataType: DataTypeImplementation<AgentDocument> = {
+  init(doc, repo: Repo) {
+    const chatDocHandle = repo.create<ChatDocument>({
+      messages: [],
+      agentDocUrls: [],
+    });
+
+    doc.chatDocUrl = chatDocHandle.url;
+    doc.activeDocUrls = [];
+  },
+  getTitle(doc: AgentDocument) {
+    return "Agent";
+  },
+  setTitle(_doc: AgentDocument, _title: string) {
+    // Agents don't have a user-settable title
+    // Title is determined by context
+  },
+};

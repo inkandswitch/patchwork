@@ -660,14 +660,6 @@ async function executeAction(
   } else {
     await action.module.default(targetDocHandle, repo);
   }
-
-  // Track this document as active since we performed an action on it
-  chatDocHandle.change((doc) => {
-    if (!doc.activeDocUrls) doc.activeDocUrls = [];
-    if (!doc.activeDocUrls.includes(targetDocUrl)) {
-      doc.activeDocUrls.push(targetDocUrl);
-    }
-  });
 }
 
 function buildLLMHistory(messages: ChatMessage[]): LLMMessage[] {
