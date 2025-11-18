@@ -3,16 +3,42 @@ import {
   useDocument,
   useRepo,
 } from "@automerge/automerge-repo-react-hooks";
-import { usePluginDescriptions } from "@patchwork/react";
+import { usePluginDescriptions, useDatatype } from "@patchwork/react";
 import { getRegistry, type Plugin } from "@patchwork/plugins";
-import { toolify, type ReactToolProps } from "@patchwork/react";
+import { toolify } from "@patchwork/react";
 import React, { useState } from "react";
 import { z } from "zod";
+import { $selectedDocUrls } from "@patchwork/context-selection";
+import { useReactive } from "@patchwork/context-react";
+import { AutomergeUrl } from "@automerge/automerge-repo";
+import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
 
-const Tool: React.FC<ReactToolProps> = ({ docUrl }) => {
+const Tool: React.FC = () => {
+  const selectedDocUrls = useReactive($selectedDocUrls);
+
+  return (
+    <div className="flex flex-col h-full">
+      {selectedDocUrls.length === 0 ? (
+        <div className="p-4 text-gray-500 text-sm">
+          Select a document to view available actions
+        </div>
+      ) : (
+        selectedDocUrls.map((url: AutomergeUrl) => (
+          <DocActionsView docUrl={url} key={url} />
+        ))
+      )}
+    </div>
+  );
+};
+
+const DocActionsView: React.FC<{ docUrl: AutomergeUrl }> = ({ docUrl }) => {
   const handle = useDocHandle<any>(docUrl, { suspense: true });
-  const [doc] = useDocument<any>(docUrl, { suspense: true });
-  const dataTypeId: string = handle.doc()["@patchwork"]?.type || "*";
+  const [doc] = useDocument<HasPatchworkMetadata>(docUrl, { suspense: true });
+  const dataTypeId: string = getType(doc) || "*";
+  const datatype = useDatatype(dataTypeId);
+  const title = datatype?.module.getTitle
+    ? datatype.module.getTitle(doc)
+    : "Untitled";
   const repo = useRepo();
 
   // Get all action plugins
@@ -142,40 +168,55 @@ const Tool: React.FC<ReactToolProps> = ({ docUrl }) => {
   }, [actions, doc, handle]);
 
   return (
-    <div className="p-4 flex flex-col gap-4 h-full">
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+    <div className="flex flex-col border-b border-base-200 last:border-b-0">
+      {/* Document header */}
+      <div className="p-3 bg-base-100 border-b border-base-200">
+        <div className="font-medium text-sm truncate" title={title}>
+          {title}
         </div>
-      )}
-
-      <div className="flex-1 overflow-auto space-y-2 max-h-96">
-        {actions.map((action) =>
-          applicableActions.has(action.id) ? (
-            <ActionButton
-              key={action.id}
-              pluginId={action.id}
-              name={action.name}
-              doc={doc}
-              args={actionArgs[action.id] ?? {}}
-              isExpanded={expandedAction === action.id}
-              onToggleExpand={() =>
-                setExpandedAction(
-                  expandedAction === action.id ? null : action.id
-                )
-              }
-              onArgsChange={(args) =>
-                setActionArgs({ ...actionArgs, [action.id]: args })
-              }
-              onSubmit={(args) => handleAction(action.id, args)}
-            />
-          ) : null
-        )}
+        <div
+          className="text-xs text-base-content opacity-60 truncate"
+          title={dataTypeId}
+        >
+          {dataTypeId}
+        </div>
       </div>
 
-      <div className="border-t pt-4 flex-1 overflow-auto">
-        {/* @ts-ignore - custom element */}
-        <patchwork-embed doc-url={docUrl} />
+      {/* Actions section */}
+      <div className="p-3">
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-3 text-sm">
+            {error}
+          </div>
+        )}
+
+        {actions.length === 0 ? (
+          <div className="text-gray-500 text-sm">No actions available</div>
+        ) : (
+          <div className="space-y-2">
+            {actions.map((action) =>
+              applicableActions.has(action.id) ? (
+                <ActionButton
+                  key={action.id}
+                  pluginId={action.id}
+                  name={action.name}
+                  doc={doc}
+                  args={actionArgs[action.id] ?? {}}
+                  isExpanded={expandedAction === action.id}
+                  onToggleExpand={() =>
+                    setExpandedAction(
+                      expandedAction === action.id ? null : action.id
+                    )
+                  }
+                  onArgsChange={(args) =>
+                    setActionArgs({ ...actionArgs, [action.id]: args })
+                  }
+                  onSubmit={(args) => handleAction(action.id, args)}
+                />
+              ) : null
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -506,12 +547,12 @@ const ActionButton: React.FC<{
   );
 };
 
-// Export as a Patchwork tool plugin
+// Export as a Patchwork tool plugin for the context sidebar
 export const actionRunnerTool: Plugin<any> = {
   type: "patchwork:tool",
   id: "action-runner",
   name: "Actions",
   icon: "Zap",
-  supportedDataTypes: ["*"],
+  supportedDataTypes: [], // Context sidebar tool - doesn't require specific data types
   module: toolify(Tool),
 };

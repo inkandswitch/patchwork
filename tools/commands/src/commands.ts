@@ -68,6 +68,19 @@ export const commands = (
     },
   },
   {
+    id: "add-action-runner",
+    label: "Add Actions Sidebar",
+    description: "Add the actions runner to the context sidebar",
+    category: "Tools",
+    action: async () => {
+      accountDocHandle.change((doc) => {
+        if (!doc.contextToolIds.includes("action-runner")) {
+          doc.contextToolIds.push("action-runner");
+        }
+      });
+    },
+  },
+  {
     id: "install-module",
     label: "Install Module",
     description: "Install a module from an Automerge URL",

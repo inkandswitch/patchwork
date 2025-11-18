@@ -776,6 +776,15 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patchwork/context':
+        specifier: workspace:^
+        version: link:../../packages/context/context
+      '@patchwork/context-react':
+        specifier: workspace:^
+        version: link:../../packages/context/frameworks/context-react
+      '@patchwork/context-selection':
+        specifier: workspace:^
+        version: link:../../packages/context/annotations/context-selection
       '@patchwork/element':
         specifier: workspace:^
         version: link:../../core/element

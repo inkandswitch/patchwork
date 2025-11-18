@@ -16,11 +16,12 @@ export const createAgentAction: Plugin<any> = {
       const agentHandle = repo.create<any>();
 
       // Initialize the agent document with the agent datatype
-      agentHandle.change((doc: any) => {
+      agentHandle.change((doc) => {
         doc["@patchwork"] = {
           type: "agent",
           title: "Agent",
         };
+        doc.modelId = "claude-sonnet-4-0";
         doc.chatDocUrl = handle.url;
         doc.activeDocUrls = [];
       });

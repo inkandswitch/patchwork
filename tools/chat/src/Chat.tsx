@@ -86,12 +86,12 @@ const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
       )}
 
       {/* Chat History */}
-      <div className="flex-1 overflow-y-auto flex flex-col p-4 gap-2 min-h-0">
+      <div className="flex-1 overflow-y-auto flex flex-col p-4 gap-1 min-h-0">
         {chatDoc.messages.map((message, index) => {
           if (message.role === "user") {
             return (
               <div key={message.id || index} className="chat chat-end">
-                <div className="chat-bubble chat-bubble-neutral bg-base-100 text-base-content text-sm ml-[50px]">
+                <div className="chat-bubble chat-bubble-primary">
                   <Markdown>{message.content}</Markdown>
                 </div>
               </div>
@@ -105,12 +105,14 @@ const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
             }
 
             return (
-              <div key={message.id || index} className="px-2 py-1 text-sm">
-                <div className="flex items-center gap-2 text-base-content opacity-70">
-                  <span className="font-medium">{message.description}</span>
-                  {message.inProgress && (
-                    <span className="loading loading-dots loading-xs"></span>
-                  )}
+              <div key={message.id || index} className="chat chat-start">
+                <div className="chat-bubble chat-bubble-info text-info-content">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{message.description}</span>
+                    {message.inProgress && (
+                      <span className="loading loading-dots loading-xs"></span>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -131,27 +133,26 @@ const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
                 <span className="loading loading-dots loading-xs"></span>
               );
 
-            const textColor =
+            const bubbleColor =
               message.status === "success"
-                ? "text-success"
+                ? "chat-bubble-success"
                 : message.status === "error"
-                  ? "text-error"
-                  : "text-warning";
+                  ? "chat-bubble-error"
+                  : "chat-bubble-warning";
 
             return (
-              <div
-                key={message.id || index}
-                className="px-2 py-1 text-sm cursor-pointer hover:bg-base-200 rounded transition-colors"
-              >
-                <div className={`flex items-center gap-2 ${textColor}`}>
-                  <span>{message.description}</span>
-                  {icon}
-                </div>
-                {message.error && (
-                  <div className="ml-6 text-xs text-error mt-1">
-                    {message.error}
+              <div key={message.id || index} className="chat chat-start">
+                <div className={`chat-bubble ${bubbleColor}`}>
+                  <div className="flex items-center gap-2">
+                    <span>{message.description}</span>
+                    <span>{icon}</span>
                   </div>
-                )}
+                  {message.error && (
+                    <div className="text-xs opacity-80 mt-1">
+                      {message.error}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           }
@@ -164,11 +165,10 @@ const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
             }
 
             return (
-              <div
-                key={message.id || index}
-                className="chat-bubble chat-bubble-neutral bg-base-100 text-base-content text-sm"
-              >
-                <Markdown>{message.content}</Markdown>
+              <div key={message.id || index} className="chat chat-start">
+                <div className="chat-bubble">
+                  <Markdown>{message.content}</Markdown>
+                </div>
               </div>
             );
           }
