@@ -1,4 +1,5 @@
 import { DocHandle, Repo } from "@automerge/automerge-repo";
+import * as Automerge from "@automerge/automerge";
 import {
   getRegistry,
   isLoadablePlugin,
@@ -47,6 +48,8 @@ export type AssistantActionMessage = BaseMessage & {
   args: any;
   status: "pending" | "success" | "error";
   error?: string;
+  beforeHead?: string;
+  afterHead?: string;
 };
 
 export type AssistantMessage =
@@ -631,19 +634,36 @@ Remember: Only use actions from the "Available Actions" list. Make sure to provi
                 try {
                   const currentChatDoc = this.chatDocHandle.doc();
                   if (currentChatDoc) {
+                    // Get target document and capture head before action
+                    const targetDocHandle = await this.repo.find(
+                      currentChatDoc.targetDocUrl as any
+                    );
+                    const targetDocBefore = targetDocHandle.doc();
+                    const beforeHead = targetDocBefore
+                      ? Automerge.getHeads(targetDocBefore)[0]
+                      : undefined;
+
                     await this.executeAction(
                       action.actionId,
                       cleanArgs,
                       currentChatDoc
                     );
 
-                    // Update to success
+                    // Capture head after action
+                    const targetDocAfter = targetDocHandle.doc();
+                    const afterHead = targetDocAfter
+                      ? Automerge.getHeads(targetDocAfter)[0]
+                      : undefined;
+
+                    // Update to success with heads
                     this.chatDocHandle.change((doc) => {
                       const msg = doc.messages?.find(
                         (m) => m.id === actionMessageId
                       ) as AssistantActionMessage;
                       if (msg && msg.type === "action") {
                         msg.status = "success";
+                        if (beforeHead) msg.beforeHead = beforeHead;
+                        if (afterHead) msg.afterHead = afterHead;
                       }
                     });
                   }
@@ -685,19 +705,36 @@ Remember: Only use actions from the "Available Actions" list. Make sure to provi
                 try {
                   const currentChatDoc = this.chatDocHandle.doc();
                   if (currentChatDoc) {
+                    // Get target document and capture head before action
+                    const targetDocHandle = await this.repo.find(
+                      currentChatDoc.targetDocUrl as any
+                    );
+                    const targetDocBefore = targetDocHandle.doc();
+                    const beforeHead = targetDocBefore
+                      ? Automerge.getHeads(targetDocBefore)[0]
+                      : undefined;
+
                     await this.executeAction(
                       action.actionId,
                       cleanArgs,
                       currentChatDoc
                     );
 
-                    // Update to success
+                    // Capture head after action
+                    const targetDocAfter = targetDocHandle.doc();
+                    const afterHead = targetDocAfter
+                      ? Automerge.getHeads(targetDocAfter)[0]
+                      : undefined;
+
+                    // Update to success with heads
                     this.chatDocHandle.change((doc) => {
                       const msg = doc.messages?.find(
                         (m) => m.id === actionMessageId
                       ) as AssistantActionMessage;
                       if (msg && msg.type === "action") {
                         msg.status = "success";
+                        if (beforeHead) msg.beforeHead = beforeHead;
+                        if (afterHead) msg.afterHead = afterHead;
                       }
                     });
                   }

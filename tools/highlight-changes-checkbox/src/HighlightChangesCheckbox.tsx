@@ -12,7 +12,7 @@ export const HighlightChangesOption = () => {
   const selectedDocs = useDocuments(
     useMemo(() => selectedDocRefs.map((ref) => ref.docUrl), [selectedDocRefs])
   );
-  const [highlightChanges, setHighlightChanges] = useState(false);
+  const [highlightChanges, setHighlightChanges] = useState(true);
 
   // Compute diffs when on a branch with highlight changes enabled
   const diffsOfSelectedDocs = useMemo<Ref[]>(() => {

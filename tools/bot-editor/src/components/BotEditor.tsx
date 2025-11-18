@@ -1,6 +1,10 @@
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { useReactive } from "@patchwork/context-react";
+import {
+  useReactive,
+  useDocRef,
+  useSubcontext,
+} from "@patchwork/context-react";
 import { $selectedDocUrls } from "@patchwork/context-selection";
 import { HasPatchworkMetadata } from "@patchwork/filesystem";
 import { toolify } from "@patchwork/react";
@@ -8,6 +12,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { BotIcon, CheckIcon, SendIcon, XIcon } from "lucide-react";
 import Markdown from "react-markdown";
 import type { ModelId } from "../providers/types";
+import { ViewHeads, ViewHeadsAnnotation } from "@patchwork/context-diff";
 import "./styles.css";
 import { ModelPicker } from "./ModelPicker";
 import { Agent, type ChatDocument, type ChatMessage } from "../Agent";
@@ -79,6 +84,25 @@ const BotEditorImpl = ({
   const [modelId, setModelId] = useState<ModelId | undefined>(
     targetDoc.botModelId
   );
+
+  // Set up context for viewing document state at specific heads (for diff on hover)
+  const targetDocRef = useDocRef(targetDocUrl);
+  const headsSelectionContext = useSubcontext("BOT_ACTION_HEADS_SELECTION");
+  const [hoveredActionHeads, setHoveredActionHeads] =
+    useState<ViewHeads | null>(null);
+
+  useEffect(() => {
+    if (!targetDocRef || !hoveredActionHeads) {
+      headsSelectionContext.replace([]);
+      return;
+    }
+
+    console.log("hoveredActionHeads", hoveredActionHeads);
+
+    headsSelectionContext.replace(
+      targetDocRef.with(ViewHeadsAnnotation(hoveredActionHeads))
+    );
+  }, [hoveredActionHeads, headsSelectionContext, targetDocRef]);
 
   // Use useDocument to load chat document directly
   const [chatDoc] = useDocument<ChatDocument>(
@@ -284,8 +308,28 @@ const BotEditorImpl = ({
                   ? "text-error"
                   : "text-warning";
 
+            const handleMouseEnter = () => {
+              if (message.beforeHead && message.afterHead) {
+                setHoveredActionHeads({
+                  beforeHeads: [message.beforeHead],
+                  afterHeads: [message.afterHead],
+                });
+              } else {
+                console.log("no beforeHead or afterHead", message);
+              }
+            };
+
+            const handleMouseLeave = () => {
+              setHoveredActionHeads(null);
+            };
+
             return (
-              <div key={message.id || index} className="px-2 py-1 text-sm">
+              <div
+                key={message.id || index}
+                className="px-2 py-1 text-sm cursor-pointer hover:bg-base-200 rounded transition-colors"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              >
                 <div className={`flex items-center gap-2 ${textColor}`}>
                   <span>{message.description}</span>
                   {icon}

@@ -937,6 +937,9 @@ importers:
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context/context
+      '@patchwork/context-diff':
+        specifier: workspace:^
+        version: link:../../packages/context/annotations/context-diff
       '@patchwork/context-react':
         specifier: workspace:^
         version: link:../../packages/context/frameworks/context-react
