@@ -12,7 +12,7 @@
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@automerge/vanillajs": "catalog:",
-    "@patchwork/element": "workspace:^",
+    "@patchwork/elements": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/plugins": "workspace:^",
     "@patchwork/react": "workspace:^",
