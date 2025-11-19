@@ -94,7 +94,7 @@ importers:
         specifier: ^0.23.1
         version: 0.23.1
 
-  core/element:
+  core/elements:
     dependencies:
       '@automerge/automerge-repo':
         specifier: 2.5.0-alpha.2
@@ -398,9 +398,9 @@ importers:
       '@patchwork/context-solid':
         specifier: workspace:^
         version: link:../../packages/context/frameworks/context-solid
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -543,9 +543,9 @@ importers:
       '@keyhive/keyhive':
         specifier: 0.0.0-alpha.40
         version: 0.0.0-alpha.40
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -628,9 +628,9 @@ importers:
       '@patchwork/context-solid':
         specifier: workspace:^
         version: link:../../packages/context/frameworks/context-solid
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -770,9 +770,9 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -1157,9 +1157,9 @@ importers:
       '@patchwork/context-selection':
         specifier: workspace:^
         version: link:../../packages/context/annotations/context-selection
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -1242,9 +1242,9 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -1327,9 +1327,9 @@ importers:
       '@patchwork/context-react':
         specifier: workspace:^
         version: link:../../packages/context/frameworks/context-react
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -1406,9 +1406,9 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -1485,9 +1485,9 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.0-alpha.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -1576,9 +1576,9 @@ importers:
       '@patchwork/context-selection':
         specifier: workspace:^
         version: link:../../packages/context/annotations/context-selection
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -1667,9 +1667,9 @@ importers:
       '@patchwork/context-selection':
         specifier: workspace:^
         version: link:../../packages/context/annotations/context-selection
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -1861,9 +1861,9 @@ importers:
       '@patchwork/context-selection':
         specifier: workspace:^
         version: link:../../packages/context/annotations/context-selection
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -1940,9 +1940,9 @@ importers:
       '@patchwork/context-selection':
         specifier: workspace:^
         version: link:../../packages/context/annotations/context-selection
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -2196,9 +2196,9 @@ importers:
       '@patchwork/context-react':
         specifier: workspace:^
         version: link:../../packages/context/frameworks/context-react
-      '@patchwork/element':
+      '@patchwork/elements':
         specifier: workspace:^
-        version: link:../../core/element
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem

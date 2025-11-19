@@ -16,7 +16,7 @@ import {
   type DocHandle,
   type Repo,
 } from "@automerge/automerge-repo";
-import type { OpenDocumentEventDetail } from "@patchwork/element";
+import type { OpenDocumentEventDetail } from "@patchwork/elements";
 import Folder from "./folder.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";

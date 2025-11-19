@@ -45,7 +45,7 @@
     "@patchwork/context-diff": "workspace:^",
     "@patchwork/context-comments": "workspace:^",
     "@patchwork/context-solid": "workspace:^",
-    "@patchwork/element": "workspace:^",
+    "@patchwork/elements": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/plugins": "workspace:^",
     "@patchwork/react": "workspace:^",

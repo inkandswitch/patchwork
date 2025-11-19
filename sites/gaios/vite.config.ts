@@ -23,6 +23,7 @@ export default defineConfig({
         "@patchwork/context-diff": "/packages/context-diff/index.js",
         "@patchwork/context-comments": "/packages/context-comments/index.js",
         "@patchwork/context-solid": "/packages/context-solid/index.js",
+        "@patchwork/elements": "/packages/@patchwork/elements/index.js",
         "@patchwork/filesystem": "/packages/@patchwork/filesystem/index.js",
         "@automerge/automerge-repo-react-hooks":
           "/packages/@automerge/automerge-repo-react-hooks/index.js",

@@ -16,7 +16,7 @@ import {
 import CreateNew from "../create-new.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import type { OpenDocumentEventDetail } from "@patchwork/element";
+import type { OpenDocumentEventDetail } from "@patchwork/elements";
 
 export default function Folder(props: {
   url: AutomergeUrl;

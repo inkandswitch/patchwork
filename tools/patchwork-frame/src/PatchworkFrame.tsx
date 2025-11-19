@@ -17,7 +17,7 @@ import {
 import { IsSelected } from "@patchwork/context-selection";
 import { useEffect, useMemo, useState } from "react";
 import { TinyPatchworkConfigDoc } from "./types";
-import { OpenDocumentEvent } from "@patchwork/element";
+import { OpenDocumentEvent } from "@patchwork/elements";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
 
 export const PatchworkFrame = ({
