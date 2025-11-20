@@ -20,7 +20,9 @@ export default {
   logLevel: "debug",
   sourcemap: !pushworking,
   plugins: [
-    dynamicExternal(/^((@automerge\/automerge(-repo)?)|@patchwork\/.*)$/),
+    dynamicExternal(
+      /^((@automerge\/automerge(-repo)?)|@patchwork\/.*|solid-js|solid-js\/(h|html|web|store))$/
+    ),
     solid(),
     {
       name: "empty outdir",
