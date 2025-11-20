@@ -1,11 +1,13 @@
-import { createSignal, Match, Switch } from "solid-js";
-import { isBeingRenamed, renaming, setRenaming } from "../state.ts";
+import { createSelector, createSignal, Match, Switch } from "solid-js";
+import { renaming, setRenaming } from "../state.ts";
 
 export function ItemName(props: {
   name: string | undefined;
   id: string;
   rename: (name: string) => void;
 }) {
+  const isBeingRenamed = createSelector(renaming);
+
   // i'm only doing the rename on blur
   //  to avoid introducing codemirror
   // to the sidebar just for this

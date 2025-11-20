@@ -1,6 +1,6 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { $selectedDocHandles } from "@patchwork/context-selection";
-import { createSelector, createSignal } from "solid-js";
+import { createSignal } from "solid-js";
 
 export const [filter, setFilter] = createSignal("");
 const [selectedDocUrls, setSelectedDocUrls] = createSignal<AutomergeUrl[]>([]);
@@ -19,4 +19,3 @@ export const documentIsOpen = (url: AutomergeUrl) =>
   selectedDocUrls()?.includes(url);
 
 export const [renaming, setRenaming] = createSignal("");
-export const isBeingRenamed = createSelector(renaming);
