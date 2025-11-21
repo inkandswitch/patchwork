@@ -32,6 +32,7 @@ export type AgentActionMessage = BaseMessage & {
   role: "assistant";
   type: "action";
   actionId: string;
+  target: string | AutomergeUrl;
   description: string;
   args: any;
   status: "pending" | "success" | "error";

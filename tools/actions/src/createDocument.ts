@@ -14,7 +14,9 @@ export const createDocumentAction: Plugin<any> = {
       return z.object({
         dataType: z
           .string()
-          .describe("The type of document to create (e.g., 'counter', 'essay', 'map')"),
+          .describe(
+            "The type of document to create (e.g., 'counter', 'essay', 'map')"
+          ),
         title: z
           .string()
           .optional()
@@ -79,4 +81,3 @@ export const createDocumentAction: Plugin<any> = {
     },
   },
 };
-

@@ -20,6 +20,8 @@ import type {
   ChatMessage,
 } from "../../chat/src/types";
 
+import outdent from "outdent";
+
 // Agent document schema
 export type AgentDocument = {
   chatDocUrl: AutomergeUrl;
@@ -53,16 +55,17 @@ export async function step(
 
   // Build message history for LLM
   const systemPrompt = getSystemPrompt();
-  const documentContext = await getDocumentContext(activeDocUrls, repo);
+  const { docUrlAliases, prompt: documentContextPrompt } =
+    await getDocumentsContext(activeDocUrls, repo);
 
   // Build message history from our message types
   const llmMessages: { role: string; content: string }[] = [
     { role: "system", content: systemPrompt },
-    { role: "system", content: documentContext },
-    ...buildLLMHistory(chatDoc.messages),
+    { role: "system", content: documentContextPrompt },
+    ...buildLLMHistory(chatDoc.messages, docUrlAliases),
   ];
 
-  console.log(llmMessages);
+  console.log(llmMessages, documentContextPrompt);
 
   // Stream response with incremental parsing
   let buffer = "";
@@ -202,10 +205,16 @@ export async function step(
             try {
               const currentChatDoc = chatDocHandle.doc();
               if (currentChatDoc) {
-                const targetDocUrl = action.targetDocUrl as AutomergeUrl;
+                const targetUrl = getUrlForAlias(docUrlAliases, action.target);
+
+                if (!targetUrl) {
+                  throw new Error(
+                    `Target document not found: ${action.target}`
+                  );
+                }
 
                 // Get target document and capture head before action
-                const targetDocHandle = await repo.find(targetDocUrl as any);
+                const targetDocHandle = await repo.find(targetUrl as any);
                 const targetDocBefore = targetDocHandle.doc();
                 const beforeHead = targetDocBefore
                   ? Automerge.getHeads(targetDocBefore)[0]
@@ -215,13 +224,7 @@ export async function step(
                 const registry = getRegistry("patchwork:action");
                 const actionPlugin = await registry.load(action.actionId);
 
-                await executeAction(
-                  targetDocUrl,
-                  actionPlugin,
-                  cleanArgs,
-                  chatDocHandle,
-                  repo
-                );
+                await executeAction(targetUrl, actionPlugin, cleanArgs, repo);
 
                 // Capture head after action
                 const targetDocAfter = targetDocHandle.doc();
@@ -443,7 +446,7 @@ function formatSchemaDescription(schema: any): string {
   const shape = schema.shape || schema.def?.shape || schema._def?.shape;
 
   if (!shape || typeof shape !== "object") {
-    return "Arguments: (no schema)";
+    return "(no schema)";
   }
 
   const fields = Object.entries(shape).map(([key, value]: [string, any]) => {
@@ -475,22 +478,23 @@ function formatSchemaDescription(schema: any): string {
     const description = value.description || innerType.description || "";
     const optionalMarker = isOptional ? " (optional)" : "";
 
-    return `    - ${key}: ${typeName}${optionalMarker}${
+    return `  - ${key}: ${typeName}${optionalMarker}${
       description ? ` - ${description}` : ""
     }`;
   });
 
   if (fields.length > 0) {
-    return `Arguments:\n${fields.join("\n")}`;
+    return `\n${fields.join("\n")}`;
   }
 
-  return "Arguments: (empty schema)";
+  return "(empty schema)";
 }
 
 async function getAvailableActionsForDocument<T>(
-  targetDoc: T
+  targetDoc: T,
+  alias: string
 ): Promise<string> {
-  const descriptions: string[] = [];
+  const actionDescriptions: string[] = [];
   const actions = await getActionsOfDatatype(targetDoc);
 
   for (const action of actions) {
@@ -505,19 +509,53 @@ async function getAvailableActionsForDocument<T>(
       }
     }
 
-    descriptions.push(`  - ${action.id}: ${action.name}\n${argsDescription}`);
+    actionDescriptions.push(
+      outdent` 
+        **${action.name}**  
+
+        target: ${alias}
+        id: ${action.id}
+        args:
+        ${argsDescription}
+      `
+    );
   }
 
-  return descriptions.length > 0
-    ? `Available actions:\n${descriptions.join("\n\n")}`
+  return actionDescriptions.length > 0
+    ? actionDescriptions.join("\n\n")
     : "No actions available for this document";
 }
 
-async function getDocumentContext(
+type UrlAlias = {
+  alias: string;
+  url: AutomergeUrl;
+};
+
+function getAliasForUrl(
+  docUrlAliases: UrlAlias[],
+  url: AutomergeUrl
+): string | undefined {
+  return docUrlAliases.find((docUrlAlias) => docUrlAlias.url === url)?.alias;
+}
+
+function getUrlForAlias(
+  docUrlAliases: UrlAlias[],
+  alias: string
+): AutomergeUrl | undefined {
+  return docUrlAliases.find((docUrlAlias) => docUrlAlias.alias === alias)?.url;
+}
+
+type DocumentsContext = {
+  docUrlAliases: UrlAlias[];
+  prompt: string;
+};
+
+async function getDocumentsContext(
   docUrls: AutomergeUrl[],
   repo: Repo
-): Promise<string> {
-  const documentDescriptions: string[] = [];
+): Promise<DocumentsContext> {
+  const documentActionDescriptions: string[] = [];
+  const documentUrlByName: Record<string, AutomergeUrl> = {};
 
   for (const docUrl of docUrls) {
     try {
@@ -526,102 +564,138 @@ async function getDocumentContext(
       if (!doc) continue;
 
       const type = doc?.["@patchwork"]?.type || "unknown";
-      const title = doc?.["@patchwork"]?.title || docUrl;
+      const datatype = await getRegistry("patchwork:datatype").load(type);
+      const title = datatype?.module.getTitle(doc) ?? "untitled";
+
+      // generate a unique name for the document based on the title
+      let name = title
+        .replaceAll(" ", "-")
+        .replace(/[^a-zA-Z0-9\-]/g, "")
+        .toLowerCase();
+      let count = 0;
+      while (documentUrlByName[name] !== undefined) {
+        name = `${title}-${count}`;
+        count++;
+      }
+      documentUrlByName[name] = docUrl;
 
       // Get actions for this document
-      const actionsText = await getAvailableActionsForDocument(doc);
+      const actionsText = await getAvailableActionsForDocument(doc, name);
 
-      documentDescriptions.push(`### Document: ${title}
-URL: ${docUrl}
-Type: ${type}
+      documentActionDescriptions.push(
+        outdent`
+          ### ${title}
+          id: "${name}"
+          type: "${type}"
 
-${actionsText}`);
+          ${actionsText}
+        `
+      );
     } catch (e) {
       console.error(`Error loading document ${docUrl}:`, e);
     }
   }
 
-  return `## Active Documents
+  return {
+    docUrlAliases: Object.entries(documentUrlByName).map(([alias, url]) => ({
+      alias,
+      url,
+    })),
+    prompt: outdent`
+      ## Active Documents
 
-${documentDescriptions.join("\n\n")}
-
-You can view a document's full content using the "view-document" action.`;
+      ${documentActionDescriptions.join("\n\n")}
+    `,
+  };
 }
 
 function getSystemPrompt(): string {
-  return `You are an AI assistant helping to edit multiple documents by invoking actions on them.
+  return outdent`
+    You are an AI assistant helping to edit multiple documents by invoking actions on them.
 
-You have access to multiple documents simultaneously. Each document has its own set of available actions based on its type.
+    You have access to multiple documents simultaneously. Each document has its own set of available actions based on its type.
 
-When the user asks for changes, follow these steps:
-1. Identify which document(s) the request applies to
-2. Review the available actions for those documents and their arguments
-3. Determine which action(s) would accomplish the user's goal
-4. You can use <thinking> tags to reason about your approach (these will be shown to the user)
-5. Use <action> tags to execute actions
+    When the user asks for changes, follow these steps:
+    1. Identify which document(s) the request applies to
+    2. Review the available actions for those documents and their arguments
+    3. Determine which action(s) would accomplish the user's goal
+    4. You can use <thinking> tags to reason about your approach (these will be shown to the user)
+    5. Use <action> tags to execute actions
 
-Response format:
+    Response format:
 
-<thinking description="short summary">
-Your reasoning about what actions to take and why
-</thinking>
+    <thinking description="short summary">
+    Your reasoning about what actions to take and why
+    </thinking>
 
-<action description="short description">
-{
-  "actionId": "action-id-here",
-  "targetDocUrl": "automerge:doc-url-here",
-  "args": {
-    "argName": "value"
-  }
-}
-</action>
+    <action description="short description">
+    {
+      "actionId": "action-id",
+      "target": "document-id",
+      "args": {
+        "argName": "value"
+      }
+    }
+    </action>
 
-You can also include normal text to explain what you're doing.
+    You can also include normal text to explain what you're doing.
 
-IMPORTANT:
-- Use <thinking> tags for your reasoning process (optional, shown to user with description)
-- Both <thinking> and <action> tags should have a "description" attribute (short, a few words)
-- You MUST wrap your action commands in <action> tags for them to be executed!
-- Inside the <action> tags, put a JSON object with "actionId", "targetDocUrl", and "args"
-- The "targetDocUrl" field specifies which document the action should be performed on
-- The JSON should be valid JSON
-- Only use actions that are listed as available for the target document
-- Make sure argument values match the expected types (number, string, boolean, enum)
-- You can invoke multiple actions by using multiple <action> tags
-- Actions will be executed immediately as they're detected
-- Use the "view-document" action if you need to see a document's full content
+    CRITICAL RULES:
+    - Use <thinking> tags for your reasoning process (optional, shown to user with description)
+    - Both <thinking> and <action> tags MUST have a "description" attribute (short, a few words)
+    - You MUST wrap your action commands in <action> tags for them to be executed!
+    - Inside the <action> tags, put a JSON object with "actionId", "target", and "args"
+    - The "target" field MUST be one of the document IDs listed in the "Active Documents" section below
+    - The "actionId" field MUST be one of the action IDs listed for that specific document below
+    - DO NOT invent your own action IDs - only use the exact IDs listed for each document
+    - DO NOT invent your own document IDs - only use the exact IDs shown in the "Active Documents" section
+    - The JSON must be valid JSON with proper escaping
+    - Make sure argument names and values match EXACTLY what's specified in the action's args list
+    - You can invoke multiple actions by using multiple <action> tags
+    - Actions will be executed immediately as they're detected
+    - If an action or document ID you use is not in the list below, your action WILL FAIL
 
-Example:
-<thinking description="Planning approach">
-The user wants to increment the counter. I should use the counter-increment action on the counter document.
-</thinking>
+    Example:
 
-<action description="Increment counter by 8">
-{
-  "actionId": "counter-increment",
-  "targetDocUrl": "automerge:abc123...",
-  "args": {
-    "step": 8
-  }
-}
-</action>
+    ## Active Documents
 
-The active documents and their available actions are included in the document context below.
+    ### Counter
+    id: "my-counter"
+    type: "counter"
 
-Remember: 
-- Always specify "targetDocUrl" to indicate which document the action applies to
-- Only use actions from the "Available Actions" list for the target document
-- Make sure to provide the correct argument types as specified`;
+    **Increment Counter**  
+    target: my-counter
+    id: counter-increment
+    args:
+      - amount: number (optional, default: 1)
+
+    User: "Increment the counter by 8"
+
+    <thinking description="Planning approach">
+    The user wants to increment the counter. I'll use the counter-increment action on the "my-counter" document with amount: 8.
+    </thinking>
+
+    Great, I will increment the counter by 8.
+
+    <action description="Increment counter by 8">
+    {
+      "actionId": "counter-increment",
+      "target": "my-counter",
+      "args": {
+        "amount": 8
+      }
+    }
+    </action>
+  `;
 }
 
 async function executeAction(
   targetDocUrl: AutomergeUrl,
   action: any,
   args: any,
-  chatDocHandle: DocHandle<ChatDocument>,
   repo: Repo
 ): Promise<void> {
-  const targetDocHandle = await repo.find(targetDocUrl as any);
+  const targetDocHandle = await repo.find(targetDocUrl);
   const targetDoc = targetDocHandle.doc();
 
   if (action.module.argsSchema) {
@@ -634,7 +708,10 @@ async function executeAction(
   }
 }
 
-function buildLLMHistory(messages: ChatMessage[]): LLMMessage[] {
+function buildLLMHistory(
+  messages: ChatMessage[],
+  docUrlAliases: UrlAlias[]
+): LLMMessage[] {
   return messages.map((msg) => {
     if (msg.role === "user" && msg.type === "text") {
       return { role: "user", content: msg.content };
@@ -652,6 +729,7 @@ function buildLLMHistory(messages: ChatMessage[]): LLMMessage[] {
           role: "assistant",
           content: `<action description="${msg.description}">${JSON.stringify({
             actionId: msg.actionId,
+            target: getAliasForUrl(docUrlAliases, msg.target as AutomergeUrl),
             args: msg.args,
           })}</action>`,
         };

@@ -42,6 +42,7 @@ export const anthropicProvider: LLMProviderPlugin = {
         const response = await client.messages.create({
           model: options?.model || "claude-sonnet-4-0",
           messages: anthropicMessages,
+          temperature: 0,
           max_tokens: 20000,
           ...(systemMessage && { system: systemMessage.content }),
         });
@@ -54,7 +55,10 @@ export const anthropicProvider: LLMProviderPlugin = {
       },
       async *chatCompletionStream(messages, options) {
         // Convert messages to Anthropic format
-        const systemMessage = messages.find((m) => m.role === "system");
+        const systemMessage = messages
+          .filter((m) => m.role === "system")
+          .map((m) => m.content)
+          .join("\n");
         const anthropicMessages = messages
           .filter((m) => m.role !== "system")
           .map((msg) => ({
@@ -67,11 +71,13 @@ export const anthropicProvider: LLMProviderPlugin = {
           throw new Error("At least one non-system message is required");
         }
 
+        console.log(systemMessage, anthropicMessages);
+
         const stream = await client.messages.stream({
           model: options?.model || "claude-sonnet-4-0",
           messages: anthropicMessages,
           max_tokens: 20000,
-          ...(systemMessage && { system: systemMessage.content }),
+          ...(systemMessage && { system: systemMessage }),
         });
 
         for await (const event of stream) {
