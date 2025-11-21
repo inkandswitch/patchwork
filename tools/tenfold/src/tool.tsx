@@ -1,6 +1,6 @@
 import type { DocHandle } from "@automerge/automerge-repo";
 import type { Tenfold, TenfoldLettersDoc } from "./index.tsx";
-import type { PatchworkViewElement } from "../../../core/element/dist/patchwork-view";
+import type { PatchworkViewElement } from "@patchwork/elements";
 import {
   makeDocumentProjection,
   useDocument,
@@ -17,6 +17,8 @@ import {
   Suspense,
 } from "solid-js";
 import font from "./font.txt";
+import { javascript } from "@codemirror/lang-javascript";
+import { noirTheme } from "./codemirror/theme.ts";
 
 export default function TenfoldExperience(props: {
   handle: DocHandle<Tenfold>;
@@ -128,8 +130,12 @@ export default function TenfoldExperience(props: {
             <Show
               when={lettersDocHandle() && editing() != null && path().length}
             >
-              <button onClick={() => fork()}>fork</button>
-              <CodeMirror handle={lettersDocHandle()} path={path()} />
+              <button onClick={() => fork()}>F</button>
+              <CodeMirror
+                handle={lettersDocHandle()}
+                path={path()}
+                extensions={[javascript(), noirTheme]}
+              />
             </Show>
           </div>
         </aside>
