@@ -1,3 +1,5 @@
+// https://github.com/ivanreese/tenfold
+
 export interface CreateTenfoldOptions {
   font: string;
   letters: ((
