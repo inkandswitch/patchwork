@@ -50,7 +50,7 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
     createReadOnlyExtension(() => !!props.readOnly);
 
   const [decorationsExtension, createEffectReconfigureDecorations] =
-    createDecorationsExtension(props.decorations);
+    createDecorationsExtension(() => props.decorations?.());
 
   // Create a compartment for user-provided extensions so they can be reconfigured
   const userExtensionsCompartment = new Compartment();

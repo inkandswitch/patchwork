@@ -28,9 +28,10 @@ export function createDecorationsExtension(decorations: () => DecorationSet) {
 
   const createDecorationsEffect = (view: EditorView) =>
     createEffect(() => {
-      view.dispatch({
-        effects: setDecorations.of(decorations()),
-      });
+      decorations() &&
+        view.dispatch({
+          effects: setDecorations.of(decorations!()),
+        });
     });
 
   return [decorationsField, createDecorationsEffect] as const;
