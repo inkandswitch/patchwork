@@ -88,11 +88,6 @@ export default function TenfoldExperience(props: {
   const path = () =>
     editing() == null ? [] : ["letters", editing(), doc.states[editing()!].i];
 
-  createEffect(() => {
-    console.log(editing());
-    console.log(path());
-  });
-
   return (
     <Suspense>
       <article class="tenfold">
