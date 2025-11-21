@@ -1,5 +1,6 @@
 import * as Automerge from "@automerge/automerge";
 
+// @OrionReed todo: chat with Alex about this
 export const lookup = <T = any>(
   doc: any,
   path: Automerge.Prop[]
