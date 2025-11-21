@@ -511,7 +511,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         fn(api, s.q, s.r, t, s.x, s.y);
       } catch (error) {
         console.error(
-          `error in ${"INKSWITCH"[i]}${(s.i + "").padStart(2, "0")}\n\n`,
+          `error in ${"INKSWiTCH"[i]}${(s.i + "").padStart(2, "0")}\n\n`,
           error
         );
       }
