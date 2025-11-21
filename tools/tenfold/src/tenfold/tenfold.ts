@@ -507,7 +507,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       newPath = true;
       ctx.beginPath();
 
-      fn(api, s.q, s.r, t, s.x, s.y);
+      try {
+        fn(api, s.q, s.r, t, s.x, s.y);
+      } catch (error) {
+        console.error(`error in ${"INKSWITCH"[i]}[${s.i}]\n\n`, error);
+      }
 
       ctx.stroke();
       let cost = timers[i].add(performance.now() - start);
