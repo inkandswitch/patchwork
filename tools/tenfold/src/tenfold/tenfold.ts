@@ -593,7 +593,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
         // edit & fork
         ctx.beginPath();
-        api.circle(cssW - 6 * scaleFix, y, 6 * scaleFix);
+        api.circle(cssW - 6 * scaleFix, y, clamp(6 * scaleFix));
         if (opts.currentlyEditingIndex == i) ctx.fill();
         else ctx.stroke();
       }
