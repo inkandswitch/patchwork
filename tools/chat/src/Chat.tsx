@@ -1,13 +1,19 @@
-import { AutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
+import {
+  AutomergeUrl,
+  isValidAutomergeUrl,
+  parseAutomergeUrl,
+} from "@automerge/automerge-repo";
+import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
 import { toolify } from "@patchwork/react";
 import { MessageSquareIcon, SendIcon, BotIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import "./styles.css";
 import type { ChatDocument, UserMessage } from "./types";
+import { AgentDocument, step } from "../../agent/src/Agent";
 
 const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
+  const repo = useRepo();
   const [chatDoc, changeChatDoc] = useDocument<ChatDocument>(docUrl, {
     suspense: true,
   });
@@ -20,7 +26,7 @@ const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   }, [chatDoc?.messages]);
 
   // Handle sending message
-  const handleUserMessage = () => {
+  const handleUserMessage = async () => {
     if (!pendingMessage.trim()) {
       return;
     }
@@ -39,6 +45,30 @@ const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
     });
 
     setPendingMessage("");
+
+    // for now just use first agent
+    if (chatDoc.agentDocUrls.length === 0) {
+      return;
+    }
+
+    const agentDocUrl = chatDoc.agentDocUrls[0];
+    const agentDocHandle = await repo.find<AgentDocument>(agentDocUrl);
+
+    const docUrls = extractAutomergeUrls(pendingMessage);
+
+    console.log("add these to agent: ", docUrls);
+
+    if (docUrls.length > 0) {
+      agentDocHandle.change((doc) => {
+        for (const docUrl of docUrls) {
+          if (!doc.activeDocUrls.includes(docUrl)) {
+            doc.activeDocUrls.push(docUrl);
+          }
+        }
+      });
+    }
+
+    step(agentDocUrl, repo);
   };
 
   if (!chatDoc) {
@@ -50,6 +80,11 @@ const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
       </div>
     );
   }
+
+  const lastMessage = chatDoc.messages[chatDoc.messages.length - 1];
+  const isLastMessagePending =
+    (lastMessage?.type === "thinking" && lastMessage.inProgress) ||
+    (lastMessage?.type === "action" && lastMessage.status === "pending");
 
   return (
     <div className="h-full w-full flex flex-col">
@@ -198,7 +233,7 @@ const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
           <button
             onClick={handleUserMessage}
             className="btn btn-ghost btn-sm absolute bottom-2 right-2 h-8 w-8 min-h-0 p-0"
-            disabled={!pendingMessage.trim()}
+            disabled={!pendingMessage.trim() || isLastMessagePending}
           >
             <SendIcon size={16} />
           </button>
@@ -209,3 +244,33 @@ const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
 };
 
 export const renderChat = toolify(Chat);
+
+function extractAutomergeUrls(text: string): AutomergeUrl[] {
+  const docUrls: AutomergeUrl[] = [];
+
+  // First, match automerge:... URLs as before
+  const automergePattern = /automerge:[a-zA-Z0-9]{28}/g;
+  const automergeMatches = text.match(automergePattern) || [];
+  for (const match of automergeMatches) {
+    if (isValidAutomergeUrl(match)) {
+      docUrls.push(match);
+    }
+  }
+
+  // Second, match any URL containing /#doc=<id>
+  // Example: http://localhost:5173/#doc=45oVmqdzjpcYMD5WJUFoNYcgnzEw&title=...
+  // We'll extract the "doc" parameter value (should be 28 chars, likely automerge id)
+  // Accepts http(s) or plain domain as well
+  const docParamPattern =
+    /(?:https?:\/\/[^\s]*|[^\s]+)?\/#doc=([a-zA-Z0-9]{28})\b/g;
+  let match: RegExpExecArray | null;
+  while ((match = docParamPattern.exec(text))) {
+    const foundId = match[1];
+    const possibleUrl = `automerge:${foundId}`;
+    if (isValidAutomergeUrl(possibleUrl) && !docUrls.includes(possibleUrl)) {
+      docUrls.push(possibleUrl);
+    }
+  }
+
+  return docUrls;
+}

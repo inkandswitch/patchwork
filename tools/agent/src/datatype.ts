@@ -2,6 +2,7 @@ import { type DataTypeImplementation } from "@patchwork/plugins";
 import { type AgentDocument } from "./Agent";
 import { Repo } from "@automerge/automerge-repo";
 import { ChatDocument } from "../../chat/src/types";
+import { TodoDoc } from "../../todo/src/Todo";
 
 export const AgentDataType: DataTypeImplementation<AgentDocument> = {
   init(doc, repo: Repo) {
@@ -12,6 +13,12 @@ export const AgentDataType: DataTypeImplementation<AgentDocument> = {
 
     doc.chatDocUrl = chatDocHandle.url;
     doc.activeDocUrls = [];
+
+    const todoDocHandle = repo.create<TodoDoc>({
+      title: "Agent Tasks",
+      todos: [],
+    });
+    doc.todoListUrl = todoDocHandle.url;
   },
   getTitle(doc: AgentDocument) {
     return "Agent";

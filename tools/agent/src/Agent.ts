@@ -20,6 +20,8 @@ import type {
   ChatMessage,
 } from "../../chat/src/types";
 
+import type { TodoDoc } from "../../todo/src/Todo";
+
 import outdent from "outdent";
 
 // Agent document schema
@@ -27,6 +29,7 @@ export type AgentDocument = {
   chatDocUrl: AutomergeUrl;
   modelId?: string;
   activeDocUrls: AutomergeUrl[]; // Track documents that have been interacted with
+  todoListUrl: AutomergeUrl;
 };
 
 type LLMMessage = {
@@ -40,7 +43,9 @@ export async function step(
   repo: Repo
 ): Promise<void> {
   const agentDocHandle = await repo.find<AgentDocument>(agentDocUrl);
-  const { chatDocUrl, modelId, activeDocUrls } = agentDocHandle.doc();
+  const { chatDocUrl, modelId, activeDocUrls, todoListUrl } =
+    agentDocHandle.doc();
+  const todoDocHandle = await repo.find<TodoDoc>(todoListUrl);
 
   // Load chat document
   const chatDocHandle = await repo.find<ChatDocument>(chatDocUrl);
@@ -54,18 +59,22 @@ export async function step(
   }
 
   // Build message history for LLM
-  const systemPrompt = getSystemPrompt();
+
+  const allDocUrls = [...activeDocUrls, todoListUrl];
+
   const { docUrlAliases, prompt: documentContextPrompt } =
-    await getDocumentsContext(activeDocUrls, repo);
+    await getDocumentsContext(allDocUrls, repo);
+
+  const todoDocAlias = getAliasForUrl(docUrlAliases, todoListUrl)!;
+  const systemPrompt = getSystemPrompt(todoDocHandle.doc(), todoDocAlias);
 
   // Build message history from our message types
   const llmMessages: { role: string; content: string }[] = [
     { role: "system", content: systemPrompt },
     { role: "system", content: documentContextPrompt },
+
     ...buildLLMHistory(chatDoc.messages, docUrlAliases),
   ];
-
-  console.log(llmMessages, documentContextPrompt);
 
   // Stream response with incremental parsing
   let buffer = "";
@@ -325,6 +334,12 @@ export async function step(
       });
     }
   }
+
+  const todoDoc = todoDocHandle.doc();
+
+  // if (todoDoc.todos.some((todo) => !todo.done)) {
+  //   step(agentDocUrl, repo);
+  // }
 }
 
 // Helper functions
@@ -609,7 +624,7 @@ async function getDocumentsContext(
   };
 }
 
-function getSystemPrompt(): string {
+function getSystemPrompt(todoDoc: TodoDoc, todoDocAlias: string): string {
   return outdent`
     You are an AI assistant helping to edit multiple documents by invoking actions on them.
 
@@ -621,6 +636,23 @@ function getSystemPrompt(): string {
     3. Determine which action(s) would accomplish the user's goal
     4. You can use <thinking> tags to reason about your approach (these will be shown to the user)
     5. Use <action> tags to execute actions
+
+    You have a todo list (id: "${todoDocAlias}") that you can use to track your tasks. If the user asks for something
+    more complicated break it down into smaller tasks and add them to the todo list. Only work on tasks that are not already completed.
+
+    ${
+      todoDoc.todos.length === 0
+        ? "You have no tasks in your todo list yet."
+        : todoDoc.todos
+            .map(
+              (todo) => outdent`
+      These are the tasks in your todo list, only work on tasks that are not already completed:
+      - [${todo.done ? "x" : " "}] ${todo.description} (id: ${todo.id})`
+            )
+            .join("\n")
+    }
+
+    Once you are done with a task, mark it as complete by using the "todo-complete" action.
 
     Response format:
 

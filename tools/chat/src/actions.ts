@@ -1,6 +1,9 @@
 import { type DocHandle, type Repo } from "@automerge/automerge-repo";
 import { type Plugin } from "@patchwork/plugins";
 import { type ChatDocument } from "./types";
+import { type AgentDocument } from "../../agent/src/Agent";
+import { type HasPatchworkMetadata } from "@patchwork/filesystem";
+import { type TodoDoc } from "../../todo/src/Todo";
 
 // Action to create and attach a new agent
 export const createAgentAction: Plugin<any> = {
@@ -13,17 +16,22 @@ export const createAgentAction: Plugin<any> = {
     isApplicable: () => true,
     default: async (handle: DocHandle<ChatDocument>, repo: Repo) => {
       // Create a new agent document
-      const agentHandle = repo.create<any>();
 
-      // Initialize the agent document with the agent datatype
-      agentHandle.change((doc) => {
-        doc["@patchwork"] = {
+      const todoDocHandle = repo.create<TodoDoc & HasPatchworkMetadata>({
+        "@patchwork": {
+          type: "todo",
+        },
+        title: "Agent Tasks",
+        todos: [],
+      });
+      const agentHandle = repo.create<AgentDocument & HasPatchworkMetadata>({
+        "@patchwork": {
           type: "agent",
-          title: "Agent",
-        };
-        doc.modelId = "claude-sonnet-4-0";
-        doc.chatDocUrl = handle.url;
-        doc.activeDocUrls = [];
+        },
+        modelId: "claude-sonnet-4-0",
+        chatDocUrl: handle.url,
+        activeDocUrls: [],
+        todoListUrl: todoDocHandle.url,
       });
 
       // Attach the agent to the chat

@@ -1,10 +1,15 @@
 import React from "react";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { toolify } from "@patchwork/react";
-import { BotIcon, FileIcon } from "lucide-react";
+import {
+  useDocHandle,
+  useDocument,
+  useRepo,
+} from "@automerge/automerge-repo-react-hooks";
+import { toolify, useDatatype } from "@patchwork/react";
 import { useEffect, useState } from "react";
 import type { AgentDocument } from "./Agent";
+import { BotIcon, FileIcon } from "lucide-react";
+import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
 
 const AgentView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [agentDoc] = useDocument<AgentDocument>(docUrl, {
@@ -64,20 +69,26 @@ const AgentView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
         {agentDoc.activeDocUrls && agentDoc.activeDocUrls.length > 0 ? (
           <div className="flex flex-col gap-1">
             {agentDoc.activeDocUrls.map((docUrl) => (
-              <div
-                key={docUrl}
-                className="flex items-center gap-2 text-sm bg-base-100 px-2 py-1 rounded"
-              >
-                <FileIcon size={14} />
-                <span className="truncate" title={docUrl}>
-                  {docTitles[docUrl] || docUrl}
-                </span>
-              </div>
+              <DocumentLink key={docUrl} docUrl={docUrl} />
             ))}
           </div>
         ) : (
           <div className="text-sm text-base-content opacity-60">
             No files attached
+          </div>
+        )}
+      </div>
+
+      {/* Todo List View */}
+      <div className="flex-1 overflow-hidden min-h-0">
+        {agentDoc.todoListUrl ? (
+          // @ts-ignore - custom element
+          <patchwork-view doc-url={agentDoc.todoListUrl} />
+        ) : (
+          <div className="flex justify-center items-center h-full p-4">
+            <div className="text-base-content opacity-60">
+              No todo list attached to this agent
+            </div>
           </div>
         )}
       </div>
@@ -99,4 +110,18 @@ const AgentView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   );
 };
 
-export const renderBot = toolify(AgentView);
+export const renderAgent = toolify(AgentView);
+
+const DocumentLink = ({ docUrl }: { docUrl: AutomergeUrl }) => {
+  const [doc] = useDocument<HasPatchworkMetadata>(docUrl);
+  const datatype = useDatatype(doc ? getType(doc) : undefined);
+  const handle = useDocHandle(docUrl);
+
+  const title = datatype?.module.getTitle(doc);
+
+  return (
+    <a className="link" href={`#doc=${handle?.documentId}`}>
+      {title}
+    </a>
+  );
+};

@@ -23,8 +23,8 @@ export const plugins: Plugin<any>[] = [
     icon: "Bot",
     supportedDataTypes: ["agent"],
     async load() {
-      const { renderBot } = await import("./AgentView");
-      return renderBot;
+      const { renderAgent } = await import("./AgentView");
+      return renderAgent;
     },
   },
   stepAction,

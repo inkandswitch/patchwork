@@ -216,3 +216,33 @@ export const markAllIncompleteAction: Plugin<any> = {
   },
 };
 
+export const completeTodoAction: Plugin<any> = {
+  type: "patchwork:action",
+  id: "todo-complete",
+  name: "Complete Todo",
+  icon: "Check",
+  supportedDataTypes: ["todo"],
+  module: {
+    argsSchema: () => ({
+      todoId: {
+        type: "string",
+        description: "The id of the todo to mark as complete",
+      },
+    }),
+    isApplicable: (doc: TodoDoc) => {
+      return doc.todos && doc.todos.some((todo) => !todo.done);
+    },
+    default: (
+      handle: DocHandle<TodoDoc>,
+      _repo: any,
+      args: { todoId: string }
+    ) => {
+      handle.change((doc) => {
+        const todo = doc.todos.find((t) => t.id === args.todoId);
+        if (todo) {
+          todo.done = true;
+        }
+      });
+    },
+  },
+};
