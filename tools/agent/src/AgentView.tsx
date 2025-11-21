@@ -6,7 +6,7 @@ import { BotIcon, FileIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { AgentDocument } from "./Agent";
 
-const Bot = ({ docUrl }: { docUrl: AutomergeUrl }) => {
+const AgentView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [agentDoc] = useDocument<AgentDocument>(docUrl, {
     suspense: true,
   });
@@ -86,7 +86,7 @@ const Bot = ({ docUrl }: { docUrl: AutomergeUrl }) => {
       <div className="flex-1 overflow-hidden min-h-0">
         {agentDoc.chatDocUrl ? (
           // @ts-ignore - custom element
-          <patchwork-embed doc-url={agentDoc.chatDocUrl} />
+          <patchwork-view doc-url={agentDoc.chatDocUrl} />
         ) : (
           <div className="flex justify-center items-center h-full p-4">
             <div className="text-base-content opacity-60">
@@ -99,4 +99,4 @@ const Bot = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   );
 };
 
-export const renderBot = toolify(Bot);
+export const renderBot = toolify(AgentView);

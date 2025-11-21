@@ -74,7 +74,7 @@ const Chat = ({ docUrl }: { docUrl: AutomergeUrl }) => {
                     key={agentUrl}
                     className="badge badge-sm badge-primary cursor-pointer"
                     title={agentUrl}
-                    href={`#doc=${documentId}&tool=bot`}
+                    href={`#doc=${documentId}&tool=agent`}
                   >
                     Agent {idx + 1}
                   </a>

@@ -18,12 +18,12 @@ export const plugins: Plugin<any>[] = [
   },
   {
     type: "patchwork:tool",
-    id: "bot",
-    name: "Bot",
+    id: "agent",
+    name: "Agent",
     icon: "Bot",
     supportedDataTypes: ["agent"],
     async load() {
-      const { renderBot } = await import("./Bot");
+      const { renderBot } = await import("./AgentView");
       return renderBot;
     },
   },
