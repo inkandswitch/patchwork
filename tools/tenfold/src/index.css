@@ -29,8 +29,12 @@
     }
   }
 
+  .cm-editor {
+    height: 100%;
+  }
+
   .cm-editor *,
   .cm-editor * * {
-    caret-color: teal !important;
+    caret-color: cyan !important;
   }
 }
