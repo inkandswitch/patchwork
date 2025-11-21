@@ -1,0 +1,36 @@
+.tenfold {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  color: #fff;
+  background: black;
+  overflow: hidden;
+  height: 100%;
+  width: 100;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  canvas {
+    display: block;
+    /* outline: 4px solid white; */
+  }
+
+  aside {
+    flex: 1 1 0;
+    padding: 32px;
+    padding-left: 0;
+    height: 100%;
+    > div {
+      height: 100%;
+      border: 2px solid red;
+    }
+  }
+
+  .cm-editor *,
+  .cm-editor * * {
+    caret-color: teal !important;
+  }
+}

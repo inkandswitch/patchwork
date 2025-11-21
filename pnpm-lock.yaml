@@ -374,6 +374,9 @@ importers:
       '@grjte/codemirror-md-links':
         specifier: workspace:^
         version: link:../../tools/codemirror-md-links
+      '@inkandswitch/tenfold':
+        specifier: workspace:^
+        version: link:../../tools/tenfold
       '@orion/commands':
         specifier: workspace:^
         version: link:../../tools/commands
@@ -604,6 +607,9 @@ importers:
       '@grjte/codemirror-md-links':
         specifier: workspace:^
         version: link:../../tools/codemirror-md-links
+      '@inkandswitch/tenfold':
+        specifier: workspace:^
+        version: link:../../tools/tenfold
       '@orion/commands':
         specifier: workspace:^
         version: link:../../tools/commands
@@ -1928,31 +1934,22 @@ importers:
 
   tools/sideboard:
     dependencies:
-      '@automerge/automerge-repo':
-        specifier: 2.5.0-alpha.2
-        version: 2.5.0-alpha.2
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.4.0
         version: 2.4.0(@automerge/automerge@3.2.0)(solid-js@1.9.9)
       '@kobalte/core':
         specifier: ^0.13.11
         version: 0.13.11(solid-js@1.9.9)
-      '@patchwork/context-selection':
-        specifier: workspace:^
-        version: link:../../packages/context/annotations/context-selection
       '@patchwork/elements':
         specifier: workspace:^
         version: link:../../core/elements
-      '@patchwork/filesystem':
-        specifier: workspace:^
-        version: link:../../core/filesystem
-      '@patchwork/solid':
-        specifier: workspace:^
-        version: link:../../packages/solid
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9
     devDependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
       '@babel/core':
         specifier: 7.28.4
         version: 7.28.4
@@ -1965,9 +1962,18 @@ importers:
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../packages/context/context
+      '@patchwork/context-selection':
+        specifier: workspace:^
+        version: link:../../packages/context/annotations/context-selection
+      '@patchwork/filesystem':
+        specifier: workspace:^
+        version: link:../../core/filesystem
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../../core/plugins
+      '@patchwork/solid':
+        specifier: workspace:^
+        version: link:../../packages/solid
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
@@ -2090,6 +2096,67 @@ importers:
       vite-plugin-top-level-await:
         specifier: ^1.6.0
         version: 1.6.0(@swc/helpers@0.5.17)(rollup@4.52.5)(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+
+  tools/tenfold:
+    dependencies:
+      '@automerge/automerge':
+        specifier: 3.2.0
+        version: 3.2.0
+      '@automerge/automerge-repo':
+        specifier: 2.5.0-alpha.2
+        version: 2.5.0-alpha.2
+      '@automerge/automerge-repo-solid-primitives':
+        specifier: ^2.4.0
+        version: 2.4.0(@automerge/automerge@3.2.0)(solid-js@1.9.9)
+      '@grjte/codemirror-base':
+        specifier: workspace:^
+        version: link:../codemirror-base
+      '@kobalte/core':
+        specifier: ^0.13.11
+        version: 0.13.11(solid-js@1.9.9)
+      '@patchwork/context-selection':
+        specifier: workspace:^
+        version: link:../../packages/context/annotations/context-selection
+      '@patchwork/elements':
+        specifier: workspace:^
+        version: link:../../core/elements
+      '@patchwork/solid':
+        specifier: workspace:^
+        version: link:../../packages/solid
+      solid-js:
+        specifier: ^1.9.9
+        version: 1.9.9
+    devDependencies:
+      '@babel/core':
+        specifier: 7.28.4
+        version: 7.28.4
+      '@babel/parser':
+        specifier: 7.28.4
+        version: 7.28.4
+      '@node-types/node':
+        specifier: npm:@types/node@^24.9.1
+        version: '@types/node@24.9.1'
+      '@patchwork/context':
+        specifier: workspace:^
+        version: link:../../packages/context/context
+      '@patchwork/filesystem':
+        specifier: workspace:^
+        version: link:../../core/filesystem
+      '@patchwork/plugins':
+        specifier: workspace:^
+        version: link:../../core/plugins
+      '@types/babel__core':
+        specifier: ^7.20.5
+        version: 7.20.5
+      babel-preset-solid:
+        specifier: ^1.9.9
+        version: 1.9.9(@babel/core@7.28.4)(solid-js@1.9.9)
+      esbuild:
+        specifier: ^0.23.1
+        version: 0.23.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   tools/tldraw:
     dependencies:

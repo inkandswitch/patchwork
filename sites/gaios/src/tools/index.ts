@@ -44,6 +44,8 @@ import { plugins as markdownLinksPlugins } from "@grjte/codemirror-md-links";
 import { plugins as syncIndicatorPlugins } from "@tiny-patchwork/sync-indicator";
 // @ts-expect-error no types
 import { plugins as commandsPlugins } from "@orion/commands";
+// @ts-expect-error no types
+import { plugins as tenfoldPlugins } from "@inkandswitch/tenfold";
 
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
@@ -67,6 +69,7 @@ export const plugins: Plugin<any>[] = [
   ...codemirrorMarkdownPlugins,
   ...markdownLinksPlugins,
   ...codemirrorEmbedPlugins,
+  ...tenfoldPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",
