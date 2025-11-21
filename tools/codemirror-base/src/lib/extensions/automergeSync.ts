@@ -10,24 +10,26 @@ import { automergeSyncPlugin } from "@automerge/automerge-codemirror";
 import type { DocHandle } from "@automerge/automerge-repo";
 
 /**
- * Create a CodeMirror extension for synchronizing with an Automerge document using a CodeMirror 
+ * Create a CodeMirror extension for synchronizing with an Automerge document using a CodeMirror
  Compartment.
  * @param handle The Automerge document handle.
  * @param path The path to the specific document property to synchronize.
  * @returns A tuple containing the extension and a function to create an effect for reconfiguring the extension when the handle or path change.
  */
 export function createSyncExtension<T>(
-  handle: DocHandle<T>,
-  path: AutomergeProp[],
+  handle: () => DocHandle<T>,
+  path: () => AutomergeProp[],
   initialDoc: () => string
 ) {
   const sync = new Compartment();
 
   const syncExtension = () =>
-    automergeSyncPlugin({
-      handle: handle as any, // typescript is confused by different version of doc handle
-      path: path,
-    });
+    handle() && path()
+      ? automergeSyncPlugin({
+          handle: handle() as any, // typescript is confused by different version of doc handle
+          path: path(),
+        })
+      : [];
 
   const createReconfigureEffect = (view: EditorView) =>
     createEffect(() => {

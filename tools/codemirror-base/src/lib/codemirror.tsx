@@ -36,19 +36,21 @@ type CodeMirrorProps<T> = {
 
 export function CodeMirror<T>(props: CodeMirrorProps<T>) {
   const parent = (<div class="w-full h-full" />) as HTMLDivElement;
-  const initialDoc = () => lookup(props.handle.doc(), props.path) || "";
+  const initialDoc = () =>
+    (lookup(props.handle.doc(), props.path) as string) || "";
 
+  // todo this loses reactivity
   const [syncExtension, createEffectReconfigureSync] = createSyncExtension(
-    props.handle,
-    props.path,
+    () => props.handle,
+    () => props.path,
     initialDoc
   );
-  // todo this loses reactivity
+
   const [readOnlyExtension, createEffectReconfigureReadOnly] =
-    createReadOnlyExtension(!!props.readOnly);
-  // todo this loses reactivity
+    createReadOnlyExtension(() => !!props.readOnly);
+
   const [decorationsExtension, createEffectReconfigureDecorations] =
-    props.decorations ? createDecorationsExtension(props.decorations) : [];
+    createDecorationsExtension(props.decorations);
 
   // Create a compartment for user-provided extensions so they can be reconfigured
   const userExtensionsCompartment = new Compartment();
@@ -92,9 +94,7 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
     });
   });
 
-  onCleanup(() => {
-    view.destroy();
-  });
+  onCleanup(() => view.destroy());
 
   return parent;
 }
