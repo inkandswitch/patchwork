@@ -8,7 +8,14 @@ import {
 import { CodeMirror } from "@grjte/codemirror-base/component";
 import createTenfold, { type CreateTenfoldOptions } from "./tenfold/tenfold.ts";
 import { createStore, produce } from "solid-js/store";
-import { createEffect, createSignal, onMount, Show, Suspense } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  onCleanup,
+  onMount,
+  Show,
+  Suspense,
+} from "solid-js";
 import font from "./font.txt";
 
 export default function TenfoldExperience(props: {
@@ -23,7 +30,7 @@ export default function TenfoldExperience(props: {
 
   const [editing, setEditing] = createSignal<number>();
   const [canvas, setCanvas] = createSignal<HTMLCanvasElement>();
-  const [api, setAPI] = createSignal<ReturnType<typeof createTenfold>>();
+  const [api, setAPI] = createSignal<ReturnType<typeof createTenfold>[0]>();
 
   const [letters, updateLetters] = createStore<CreateTenfoldOptions["letters"]>(
     Array.from(Array(9), () => [])
@@ -46,7 +53,7 @@ export default function TenfoldExperience(props: {
               "t",
               "x",
               "y",
-              `with (ctx) {${letterer}}`
+              `with (Math) {with (ctx) {${letterer}}}`
             ) as unknown as CreateTenfoldOptions["letters"][number];
 
             updateLetters(
@@ -73,13 +80,20 @@ export default function TenfoldExperience(props: {
       // todo tenfold doesn't handle an empty states array yet
       return doc.states ?? [];
     },
-    get canvas() {
+    get container() {
       return canvas()!;
     },
-  };
+    edit: setEditing,
+    set(i, field, value) {
+      props.handle.change((doc) => (doc.states[i][field] = value));
+    },
+  } satisfies CreateTenfoldOptions;
 
   onMount(() => {
-    setAPI(createTenfold(tenfoldOptions));
+    const [api, cleanup] = createTenfold(tenfoldOptions);
+    setAPI(api);
+    onCleanup(cleanup);
+
     canvas()!.addEventListener("tenfold:edit", (event) => {
       setEditing((event as CustomEvent<number>).detail);
     });
@@ -88,15 +102,33 @@ export default function TenfoldExperience(props: {
   const path = () =>
     editing() == null ? [] : ["letters", editing(), doc.states[editing()!].i];
 
+  function fork() {
+    const letter = editing();
+    const ldoc = lettersDoc();
+    if (letter == null || ldoc == null) return;
+    const source = doc.states[letter].i;
+    const code = ldoc.letters[letter][source];
+    let idx: number;
+
+    lettersDocHandle()?.change((lettersDoc) => {
+      idx = lettersDoc.letters[letter].push(code);
+    });
+
+    props.handle.change((doc) => {
+      doc.states[letter].i = idx - 1;
+    });
+  }
+
   return (
     <Suspense>
-      <article class="tenfold">
-        <canvas ref={setCanvas}></canvas>
+      <article class="tenfold" ref={setCanvas}>
+        <canvas></canvas>
         <aside>
           <div>
             <Show
               when={lettersDocHandle() && editing() != null && path().length}
             >
+              <button onClick={() => fork()}>fork</button>
               <CodeMirror handle={lettersDocHandle()} path={path()} />
             </Show>
           </div>

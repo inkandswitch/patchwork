@@ -8,7 +8,6 @@ import {
   type ToolImplementation,
 } from "@patchwork/plugins";
 import { render } from "solid-js/web";
-import TenfoldExperience from "./tool.tsx";
 
 export type TenfoldLetterer = (
   q: number,
@@ -104,10 +103,11 @@ export const plugins = [
     async load() {
       const styles = await loadStyles();
       addStyles(styles);
+      const tool = await import("./tool.tsx");
       return (handle, element) => {
         return render(
           () => (
-            <TenfoldExperience
+            <tool.default
               handle={handle as DocHandle<Tenfold>}
               element={element}
             />

@@ -1,7 +1,7 @@
 export interface CreateTenfoldOptions {
   font: string;
   letters: ((
-    ctx: ReturnType<typeof createTenfold>,
+    ctx: ReturnType<typeof createTenfold>[0],
     q: number,
     r: number,
     t: number,
@@ -10,7 +10,9 @@ export interface CreateTenfoldOptions {
   ) => void)[][];
   states: import("../index.tsx").TenfoldState[];
   currentlyEditingIndex: number | undefined | null;
-  canvas: HTMLCanvasElement;
+  container: HTMLElement;
+  edit(i: number): void;
+  set(i: number, field: "q" | "r" | "x" | "y" | "i", val: number): void;
 }
 /**
  *
@@ -27,6 +29,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const padding = 30;
   const gap = 30;
   const clockWaveHeight = 20;
+  const cleanups = new Set<() => void>();
 
   // ANIMATION STATE
   let t = 0;
@@ -103,8 +106,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   }
 
   // CANVAS /////////////////////////////////////////////////////////////////////////////////////////
-
-  const ctx = opts.canvas.getContext("2d", {
+  const canvas = opts.container.querySelector("canvas")!;
+  const ctx = canvas.getContext("2d", {
     alpha: true,
   })!;
   /** @type number */
@@ -118,8 +121,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
   function resize() {
     // If we need to nest the canvas within a smaller area, specify that area here
-    let parentWidth = window.innerWidth;
-    let parentHeight = window.innerHeight;
+    const box = opts.container.getBoundingClientRect();
+    let parentWidth = box.width;
+    let parentHeight = box.height;
 
     // calculate the "dead" width/height, eaten up by gaps and padding
     let dw = padding * 2 + gap * 2;
@@ -136,18 +140,23 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     cssW = Math.floor(cssW / 2) * 2;
 
     // Now, scale the canvas to cover all grid cells plus gaps and padding
-    opts.canvas.style.width = cssW * 3 + dw + "px";
-    opts.canvas.style.height = cssW * 4 + dh + "px";
+    canvas.style.width = cssW * 3 + dw + "px";
+    canvas.style.height = cssW * 4 + dh + "px";
 
     // Now calculate the internal pixel dimensions of the canvas
     dpr = clamp(Math.round(window.devicePixelRatio || 1), 1, MAX_DPR);
     pixW = cssW * dpr; // width
     pixHW = pixW / 2; // half-width — we ensured that this is an integer
-    opts.canvas.width = pixW * 3 + dw * dpr;
-    opts.canvas.height = pixW * 4 + dh * dpr;
+    canvas.width = pixW * 3 + dw * dpr;
+    canvas.height = pixW * 4 + dh * dpr;
   }
+
+  const resizeObserver = new ResizeObserver(resize);
+  resizeObserver.observe(opts.container);
+  cleanups.add(() => resizeObserver.disconnect());
   resize();
   window.addEventListener("resize", resize);
+  cleanups.add(() => window.removeEventListener("resize", resize));
 
   // INPUT HANDLING /////////////////////////////////////////////////////////////////////////////////
 
@@ -160,7 +169,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   /** @type {Record<string, number>} */
   let mouseDragged: Record<string, number>; // state captured as the mouse is dragged
 
-  opts.canvas.addEventListener("pointerdown", (e) => {
+  function pointerdown(e: PointerEvent) {
     // We assume this mouse press will result in a drag, and will cancel it if not
     window.addEventListener("pointermove", drag);
 
@@ -222,13 +231,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     if (lxInside && ly > 1 && R != 1) {
       if (R > 0) i -= 3;
       let s = opts.states[i];
-      if (lx < 0.33)
-        s.i = mod(s.i + (lx < 0.17 ? -1 : 1), opts.letters[i].length);
-
-      if (lx > 0.95) {
-        opts.canvas.dispatchEvent(
-          new CustomEvent("tenfold:edit", { detail: i })
-        );
+      if (lx < 0.33) {
+        const n = mod(s.i + (lx < 0.17 ? -1 : 1), opts.letters[i].length);
+        opts.set(i, "i", n);
+      } else if (lx > 0.95) {
+        opts.edit(i);
       }
 
       return;
@@ -268,7 +275,10 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
     // nothing happened, I guess — abort the drag
     pointerup();
-  });
+  }
+
+  canvas.addEventListener("pointerdown", pointerdown);
+  cleanups.add(() => canvas.removeEventListener("pointerdown", pointerdown));
 
   /** @param {PointerEvent} e */
   const drag = (e: PointerEvent) => {
@@ -299,13 +309,13 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     mouseDragged = { ...mouseDragged, lx, ly, kx, ky };
 
     if (dragType == "cell") {
-      let s = opts.states[mouseStart.i];
-      s.x = clamp(denorm(lx));
-      s.y = clamp(denorm(ly));
+      let i = mouseStart.i;
+      opts.set(i, "x", clamp(denorm(lx)));
+      opts.set(i, "y", clamp(denorm(ly)));
     } else if (dragType == "param" && dragParam != null) {
-      let s = opts.states[dragParam];
-      s.q = clamp(denorm(kx));
-      s.r = clamp(denorm(ky));
+      let i = dragParam;
+      opts.set(i, "q", clamp(denorm(kx)));
+      opts.set(i, "r", clamp(denorm(ky)));
     }
   };
 
@@ -315,7 +325,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   };
 
   window.addEventListener("pointerup", pointerup);
+  cleanups.add(() => window.removeEventListener("pointerup", pointerup));
   window.addEventListener("pointercancel", pointerup);
+  cleanups.add(() => window.removeEventListener("pointercancel", pointerup));
 
   // FONT ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -433,6 +445,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     denorm,
     declip,
     renorm,
+    TAU,
+    PI,
   };
 
   // ENGINE /////////////////////////////////////////////////////////////////////////////////////////
@@ -445,8 +459,10 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   let mappers = Array.from("INKSWITCH");
   let lastT;
 
+  let stop = false;
   /** @param {number} ms */
   function update(ms: number) {
+    if (stop) return;
     requestAnimationFrame(update);
     // the states doc isn't ready
     if (!opts.states.length) return;
@@ -460,7 +476,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     lastT = newT;
 
     ctx.resetTransform();
-    ctx.clearRect(0, 0, opts.canvas.width, opts.canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
     ctx.lineJoin = ctx.lineCap = "round";
@@ -634,5 +650,12 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   // INIT
   requestAnimationFrame(update);
 
-  return api;
+  function cleanup() {
+    stop = true;
+    for (const fn of cleanups) {
+      fn();
+    }
+  }
+
+  return [api, cleanup] as const;
 }
