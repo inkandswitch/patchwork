@@ -12,6 +12,10 @@
     "./tool": {
       "import": "./dist/tool.js",
       "source": "./src/tool.tsx"
+    },
+    "./component": {
+      "import": "./dist/lib/codemirror.js",
+      "source": "./src/lib/codemirror.tsx"
     }
   },
   "scripts": {

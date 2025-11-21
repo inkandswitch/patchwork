@@ -1,5 +1,5 @@
 {
-  "name": "@chee/patchwork-sideboard",
+  "name": "@inkandswitch/tenfold",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,21 +7,14 @@
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "patchwork": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "source": "./src/index.tsx"
     },
-    "./tools/sideboard": {
-      "import": "./dist/sideboard/sideboard.js",
-      "patchwork": "./dist/sideboard/sideboard.js",
-      "source": "./src/sideboard/sideboard.tsx"
+    "./tools/tenfold": {
+      "import": "./dist/tool.js",
+      "source": "./src/tool.tsx"
     },
-    "./tools/module-settings": {
-      "import": "./dist/module-settings/module-settings.js",
-      "patchwork": "./dist/module-settings/module-settings.js",
-      "source": "./src/module-settings/module-settings.tsx"
-    },
-    "./styles.css": "./dist/index.css"
+    "./style": "./dist/index.css"
   },
   "scripts": {
     "build": "node esbuild/build.ts",
@@ -29,21 +22,23 @@
     "pushwatch": "pnpm dev pushwork"
   },
   "dependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-solid-primitives": "^2.4.0",
+    "@grjte/codemirror-base": "workspace:^",
     "@kobalte/core": "^0.13.11",
+    "@patchwork/context-selection": "workspace:^",
     "@patchwork/elements": "workspace:^",
+    "@patchwork/solid": "workspace:^",
     "solid-js": "^1.9.9"
   },
   "devDependencies": {
-    "@automerge/automerge-repo": "catalog:",
     "@babel/core": "7.28.4",
     "@babel/parser": "7.28.4",
     "@node-types/node": "npm:@types/node@^24.9.1",
     "@patchwork/context": "workspace:^",
-    "@patchwork/context-selection": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/plugins": "workspace:^",
-    "@patchwork/solid": "workspace:^",
     "@types/babel__core": "^7.20.5",
     "babel-preset-solid": "^1.9.9",
     "esbuild": "^0.23.1",
