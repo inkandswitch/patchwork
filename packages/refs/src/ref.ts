@@ -32,15 +32,7 @@ export class Ref<T = any> {
 
     // Auto-stabilize segments on construction
     const doc = docHandle.doc();
-    if (doc) {
-      this.path = this.#buildStablePath(doc, segments);
-    } else {
-      // Document not loaded - create basic path without stabilization
-      this.path = segments.map((seg) => {
-        if (isDynamic(seg)) return seg.value;
-        return seg as PathSegment;
-      });
-    }
+    this.path = this.#buildStablePath(doc, segments);
   }
 
   // ---- Public API ----

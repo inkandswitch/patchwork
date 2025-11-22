@@ -375,7 +375,7 @@ describe("Ref", () => {
 
       // Using at() keeps range as numeric
       const dynamicRef = new Ref(handle, ["text", at([0, 5])]);
-      expect(dynamicRef.path[1]).toEqual(at([0, 5]));
+      expect(dynamicRef.path[1]).toEqual([0, 5]);
       expect(dynamicRef.value()).toBe("Hello");
 
       // Insert at beginning
