@@ -360,7 +360,6 @@ describe("Ref", () => {
 
       // Path should contain cursor-based range
       const range = ref.path[1] as [Cursor, Cursor];
-      console.log(range);
       expect(Array.isArray(range)).toBe(true);
       expect(typeof range[0]).toBe("string"); // Cursor
       expect(typeof range[1]).toBe("string"); // Cursor
@@ -711,7 +710,7 @@ describe("Ref", () => {
       expect(callCount).toBe(1);
     });
 
-    it.skip("should fire for text range changes", async () => {
+    it("should fire for text range changes", async () => {
       handle.change((d) => {
         d.note = "Hello World";
       });
@@ -759,22 +758,341 @@ describe("Ref", () => {
       await changePromise;
     });
   });
-});
 
-// Example of automerge CRDT string (default) vs immutable string. can also use isImmutableString() to check if a string is immutable.
-type OurDoc = {
-  note: string;
-  immutable: ImmutableString;
-};
-const _repo = new Repo();
-const _handle = _repo.create<OurDoc>();
-const str = _handle.doc().immutable;
+  describe("on('change') event filtering - subtree changes", () => {
+    it("should fire when direct child changes", async () => {
+      handle.change((d) => {
+        d.user = { name: "Alice", age: 30, address: { city: "NYC" } };
+      });
 
-_handle.change((doc) => {
-  doc.note = "Hello World";
-  doc.immutable = new ImmutableString("Hello World");
-});
+      const userRef = new Ref(handle, ["user"]);
+      let callCount = 0;
 
-_handle.change((doc) => {
-  splice(doc, ["note"], 0, 0, "Hello");
+      userRef.on("change", () => {
+        callCount++;
+      });
+
+      // Change direct child property
+      handle.change((d) => {
+        d.user.name = "Bob";
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1);
+    });
+
+    it("should fire when deeply nested descendant changes", async () => {
+      handle.change((d) => {
+        d.user = {
+          profile: {
+            personal: {
+              contact: {
+                email: "alice@example.com",
+              },
+            },
+          },
+        };
+      });
+
+      const userRef = new Ref(handle, ["user"]);
+      let callCount = 0;
+
+      userRef.on("change", () => {
+        callCount++;
+      });
+
+      // Change deeply nested property
+      handle.change((d) => {
+        d.user.profile.personal.contact.email = "bob@example.com";
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1);
+    });
+
+    it("should NOT fire when sibling property changes", async () => {
+      handle.change((d) => {
+        d.data = {
+          settings: { theme: "light" },
+          preferences: { lang: "en" },
+        };
+      });
+
+      const settingsRef = new Ref(handle, ["data", "settings"]);
+      let callCount = 0;
+
+      settingsRef.on("change", () => {
+        callCount++;
+      });
+
+      // Change sibling property
+      handle.change((d) => {
+        d.data.preferences.lang = "fr";
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(0);
+    });
+
+    it("should fire when parent changes (replaces subtree)", async () => {
+      handle.change((d) => {
+        d.user = { profile: { name: "Alice" } };
+      });
+
+      const nameRef = new Ref(handle, ["user", "profile", "name"]);
+      let callCount = 0;
+
+      nameRef.on("change", () => {
+        callCount++;
+      });
+
+      // Replace parent object
+      handle.change((d) => {
+        d.user.profile = { name: "Bob" };
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1);
+    });
+
+    it("should fire for multiple changes in subtree", async () => {
+      handle.change((d) => {
+        d.user = { name: "Alice", age: 30, email: "alice@example.com" };
+      });
+
+      const userRef = new Ref(handle, ["user"]);
+      let callCount = 0;
+
+      userRef.on("change", () => {
+        callCount++;
+      });
+
+      // Change multiple properties in subtree
+      handle.change((d) => {
+        d.user.name = "Bob";
+        d.user.age = 31;
+        d.user.email = "bob@example.com";
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      // Should fire once per change batch
+      expect(callCount).toBe(1);
+    });
+
+    it("should maintain filtering after document changes", async () => {
+      handle.change((d) => {
+        d.config = { theme: "light", lang: "en" };
+        d.other = "value";
+      });
+
+      const themeRef = new Ref(handle, ["config", "theme"]);
+      let callCount = 0;
+
+      themeRef.on("change", () => {
+        callCount++;
+      });
+
+      // Make several changes, only some affect the ref
+      handle.change((d) => {
+        d.config.theme = "dark"; // Should fire
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1);
+
+      handle.change((d) => {
+        d.other = "changed"; // Should NOT fire
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1); // Still 1
+
+      handle.change((d) => {
+        d.config.lang = "fr"; // Should NOT fire (sibling)
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1); // Still 1
+
+      handle.change((d) => {
+        d.config.theme = "blue"; // Should fire
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(2); // Now 2
+    });
+
+    it("should fire for array element in subtree", async () => {
+      handle.change((d) => {
+        d.data = {
+          items: [
+            { id: 1, name: "A" },
+            { id: 2, name: "B" },
+          ],
+          meta: { count: 2 },
+        };
+      });
+
+      const dataRef = new Ref(handle, ["data"]);
+      let callCount = 0;
+
+      dataRef.on("change", () => {
+        callCount++;
+      });
+
+      // Change array element (part of subtree)
+      handle.change((d) => {
+        d.data.items[0].name = "AA";
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1);
+    });
+
+    it("should NOT fire when unrelated array changes", async () => {
+      handle.change((d) => {
+        d.todos = [{ title: "A" }, { title: "B" }];
+        d.notes = [{ content: "X" }, { content: "Y" }];
+      });
+
+      const todosRef = new Ref(handle, ["todos"]);
+      let callCount = 0;
+
+      todosRef.on("change", () => {
+        callCount++;
+      });
+
+      // Change unrelated array
+      handle.change((d) => {
+        d.notes[0].content = "XX";
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(0);
+    });
+
+    it("should fire when adding property to object in subtree", async () => {
+      handle.change((d) => {
+        d.config = { theme: "light" };
+      });
+
+      const configRef = new Ref(handle, ["config"]);
+      let callCount = 0;
+
+      configRef.on("change", () => {
+        callCount++;
+      });
+
+      // Add new property
+      handle.change((d) => {
+        d.config.fontSize = 14;
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1);
+    });
+
+    it("should fire when deleting property in subtree", async () => {
+      handle.change((d) => {
+        d.user = { name: "Alice", age: 30, temp: "data" };
+      });
+
+      const userRef = new Ref(handle, ["user"]);
+      let callCount = 0;
+
+      userRef.on("change", () => {
+        callCount++;
+      });
+
+      // Delete property
+      handle.change((d) => {
+        delete d.user.temp;
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1);
+    });
+
+    it("should work with stabilized ObjectId refs", async () => {
+      handle.change((d) => {
+        d.items = [
+          { id: "a", value: 1, meta: { tag: "x" } },
+          { id: "b", value: 2, meta: { tag: "y" } },
+        ];
+      });
+
+      // Create ref with stabilized ObjectId (will auto-stabilize)
+      const itemRef = new Ref(handle, ["items", 0]);
+      let callCount = 0;
+
+      itemRef.on("change", () => {
+        callCount++;
+      });
+
+      // Change property in the referenced item
+      handle.change((d) => {
+        d.items[0].value = 100;
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1);
+
+      // Change different item (should NOT fire)
+      handle.change((d) => {
+        d.items[1].value = 200;
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1); // Still 1
+    });
+
+    it("should work with deep paths and ObjectIds", async () => {
+      handle.change((d) => {
+        d.boards = [
+          {
+            id: "board1",
+            columns: [
+              { name: "Todo", count: 5 },
+              { name: "Done", count: 3 },
+            ],
+          },
+        ];
+      });
+
+      // Deep ref with auto-stabilized ObjectId
+      const columnRef = new Ref(handle, ["boards", 0, "columns", 1]);
+      let callCount = 0;
+
+      columnRef.on("change", () => {
+        callCount++;
+      });
+
+      // Change the referenced column
+      handle.change((d) => {
+        d.boards[0].columns[1].count = 4;
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1);
+
+      // Change different column (should NOT fire)
+      handle.change((d) => {
+        d.boards[0].columns[0].count = 6;
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1); // Still 1
+
+      // Replace the entire columns array (parent, should fire)
+      handle.change((d) => {
+        d.boards[0].columns = [
+          { name: "Todo", count: 6 },
+          { name: "Done", count: 4 },
+        ];
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(2); // Now 2
+    });
+  });
 });

@@ -494,11 +494,59 @@ export class Ref<T = any> {
 
   /**
    * Check if any patch affects this ref's target.
+   * A patch affects the ref if its path matches or is a prefix of the ref's path.
    */
   #patchAffectsRef(patches: Automerge.Patch[]): boolean {
-    // TODO: Implement proper patch path matching
-    // For now, return true for all patches (conservative)
-    return patches.length > 0;
+    // Convert ref path to prop path for comparison
+    const doc = this.doc();
+    if (!doc) return false;
+
+    try {
+      // Get the path to the target (excluding ranges which are not part of the path hierarchy)
+      const refPathSegments = this.path.filter(
+        (seg) =>
+          !Array.isArray(seg) || !seg.length || typeof seg[0] !== "number"
+      );
+      const refPropPath = this.#pathToPropPath(doc, refPathSegments);
+
+      // Check each patch
+      for (const patch of patches) {
+        if (this.#pathMatchesRef(patch.path, refPropPath)) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      // If we can't resolve the path, conservatively return true
+      return patches.length > 0;
+    }
+  }
+
+  /**
+   * Check if a patch path matches or is a prefix of the ref's path.
+   * For example:
+   * - patch ["counter"] matches ref ["counter"]
+   * - patch ["user", "profile", "name"] matches ref ["user", "profile", "name"]
+   * - patch ["user", "profile", "name"] does NOT match ref ["counter"]
+   * - patch ["user", "profile", "age"] does NOT match ref ["user", "profile", "name"]
+   */
+  #pathMatchesRef(
+    patchPath: Automerge.Prop[],
+    refPropPath: Automerge.Prop[]
+  ): boolean {
+    // The patch path must be a prefix of or equal to the ref path
+    // OR the ref path must be a prefix of the patch path (parent changed)
+    const minLength = Math.min(patchPath.length, refPropPath.length);
+
+    for (let i = 0; i < minLength; i++) {
+      if (patchPath[i] !== refPropPath[i]) {
+        return false;
+      }
+    }
+
+    // If we got here, one path is a prefix of the other
+    return true;
   }
 
   /**
