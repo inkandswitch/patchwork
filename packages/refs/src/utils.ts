@@ -41,18 +41,6 @@ export function at<T>(segment: T): DynamicSegment<T> {
   return { __dynamic: true, value: segment };
 }
 
-/**
- * Type guard to check if a segment is dynamic.
- */
-export function isDynamic(segment: any): segment is DynamicSegment<any> {
-  return (
-    segment !== null &&
-    segment !== undefined &&
-    typeof segment === "object" &&
-    segment.__dynamic === true
-  );
-}
-
 // Context for splice/updateText helpers
 // This will be set by Ref.change() before calling the user's callback
 let currentDoc: Automerge.Doc<any> | null = null;

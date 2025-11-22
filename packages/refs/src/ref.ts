@@ -5,8 +5,9 @@ import type {
   RefOptions,
   ChangeCallback,
   PathBuilder,
+  DynamicSegment,
 } from "./types";
-import { isDynamic, isCursor } from "./utils";
+import { isCursor } from "./utils";
 
 // TODO: consider a value getter
 
@@ -150,7 +151,7 @@ export class Ref<T = any> {
 
     for (const segment of segments) {
       // Check if wrapped in at() (dynamic marker)
-      if (isDynamic(segment)) {
+      if (Ref.#isDynamic(segment)) {
         // Dynamic segment - use as-is without stabilization
         path.push(segment.value);
         currentPath.push(segment.value);
@@ -574,6 +575,19 @@ export class Ref<T = any> {
 
     // Where clause - serialize as JSON for now
     return JSON.stringify(segment);
+  }
+
+  /**
+   * Type guard to check if a segment is dynamic (wrapped in at()).
+   * @private
+   */
+  static #isDynamic(segment: any): segment is DynamicSegment<any> {
+    return (
+      segment !== null &&
+      segment !== undefined &&
+      typeof segment === "object" &&
+      segment.__dynamic === true
+    );
   }
 }
 

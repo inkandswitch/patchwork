@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Repo } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
-import { isCursor, at, isDynamic } from "../utils";
+import { isCursor, at } from "../utils";
 import { ref } from "../ref";
 
 describe("utils", () => {
@@ -60,36 +60,6 @@ describe("utils", () => {
       const dynamic = at(range);
       expect(dynamic.__dynamic).toBe(true);
       expect(dynamic.value).toEqual(range);
-    });
-  });
-
-  describe("isDynamic", () => {
-    it("should return true for dynamic segments", () => {
-      const dynamic = at(0);
-      expect(isDynamic(dynamic)).toBe(true);
-    });
-
-    it("should return false for regular values", () => {
-      expect(isDynamic(0)).toBe(false);
-      expect(isDynamic("string")).toBe(false);
-      expect(isDynamic({ id: "abc" })).toBe(false);
-      expect(isDynamic([0, 10])).toBe(false);
-    });
-
-    it("should return false for objects without __dynamic", () => {
-      expect(isDynamic({ value: 0 })).toBe(false);
-      expect(isDynamic({ __dynamic: false, value: 0 })).toBe(false);
-    });
-
-    it("should return false for null and undefined", () => {
-      expect(isDynamic(null)).toBe(false);
-      expect(isDynamic(undefined)).toBe(false);
-    });
-
-    it("should return false for primitives", () => {
-      expect(isDynamic(true)).toBe(false);
-      expect(isDynamic(false)).toBe(false);
-      expect(isDynamic(123)).toBe(false);
     });
   });
 
@@ -157,4 +127,3 @@ describe("utils", () => {
     });
   });
 });
-

@@ -9,4 +9,4 @@ export type {
 
 export { Ref, ref } from "./ref";
 
-export { splice, updateText, isCursor, at, isDynamic } from "./utils";
+export { splice, updateText, isCursor, at } from "./utils";
