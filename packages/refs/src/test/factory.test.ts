@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import * as Automerge from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
-import { ref } from "./factory";
-import { at } from "./at";
+import { ref } from "../factory";
+import { at } from "../at";
 
 describe("ref() factory", () => {
   let repo: Repo;
@@ -53,7 +53,7 @@ describe("ref() factory", () => {
       });
 
       const firstRef = ref(handle, "todos", 0);
-      const doc = handle.docSync()!;
+      const doc = handle.doc()!;
       const firstTodo = doc.todos[0];
       const objectId = Automerge.getObjectId(firstTodo);
 
@@ -107,7 +107,7 @@ describe("ref() factory", () => {
       });
 
       const todoRef = ref(handle, "todos", { id: "b" });
-      const doc = handle.docSync()!;
+      const doc = handle.doc()!;
       const secondTodo = doc.todos[1];
       const objectId = Automerge.getObjectId(secondTodo);
 
@@ -266,7 +266,7 @@ describe("ref() factory", () => {
         d.todos = [{ title: "First" }, { title: "Second" }];
       });
 
-      const doc = handle.docSync()!;
+      const doc = handle.doc()!;
       const secondTodo = doc.todos[1];
 
       const todoRef = ref(handle, "todos", secondTodo, "title");
@@ -322,7 +322,7 @@ describe("ref() factory", () => {
     it("should handle when document is not yet ready", () => {
       // Create a handle but don't initialize the document
       const uninitializedHandle = repo.create();
-      
+
       // The ref factory should work, but value() might return undefined
       const testRef = ref(uninitializedHandle, "test");
       expect(testRef).toBeDefined();

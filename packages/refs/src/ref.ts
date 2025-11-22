@@ -46,7 +46,7 @@ export class Ref<T = any> {
    * Get the document (or a view at specific heads).
    */
   doc(): Automerge.Doc<any> {
-    const doc = this.docHandle.docSync();
+    const doc = this.docHandle.doc();
     if (!doc) throw new Error("Document not loaded");
     return this.options.heads ? Automerge.view(doc, this.options.heads) : doc;
   }
@@ -163,7 +163,10 @@ export class Ref<T = any> {
 
     // Range
     if (Array.isArray(segment) && segment.length === 2) {
-      return this.#resolveRange(container, segment as [Automerge.Cursor, Automerge.Cursor] | [number, number]);
+      return this.#resolveRange(
+        container,
+        segment as [Automerge.Cursor, Automerge.Cursor] | [number, number]
+      );
     }
 
     // Where clause (Record<string, any>)

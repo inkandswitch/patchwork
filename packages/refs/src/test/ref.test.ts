@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Repo } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
-import { Ref } from "./ref";
+import { Ref } from "../ref";
 
 describe("Ref", () => {
   let repo: Repo;
   let handle: DocHandle<any>;
 
   beforeEach(() => {
-    repo = new Repo({ network: [] });
+    repo = new Repo();
     handle = repo.create();
   });
 
@@ -115,7 +115,7 @@ describe("Ref", () => {
       themeRef.change((theme) => "dark");
 
       expect(themeRef.value()).toBe("dark");
-      expect(handle.docSync()?.user.settings.theme).toBe("dark");
+      expect(handle.doc().user.settings.theme).toBe("dark");
     });
   });
 

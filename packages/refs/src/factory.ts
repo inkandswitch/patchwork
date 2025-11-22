@@ -31,7 +31,7 @@ export function ref<T = any>(
   docHandle: DocHandle<any>,
   ...segments: PathBuilder[]
 ): Ref<T> {
-  const doc = docHandle.docSync();
+  const doc = docHandle.doc();
   if (!doc) {
     // Document not yet loaded - create ref with basic path
     // Resolution will fail until doc is loaded

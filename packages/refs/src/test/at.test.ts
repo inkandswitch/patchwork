@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { at, isDynamic } from "./at";
+import { at, isDynamic } from "../at";
 
 describe("at()", () => {
   it("should mark a numeric segment as dynamic", () => {
