@@ -566,8 +566,8 @@ export class Ref<T = any> {
     // Range
     if (Array.isArray(segment)) {
       const [start, end] = segment;
-      // Check if cursors (objects) or numbers
-      if (typeof start === "object") {
+      // Check if cursors (strings) or numbers
+      if (isCursor(start) && isCursor(end)) {
         return `[$${start},$${end}]`;
       }
       return `[${start},${end}]`;

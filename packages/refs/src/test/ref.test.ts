@@ -142,6 +142,206 @@ describe("Ref", () => {
       expect(url).toContain("user");
       expect(url).toContain("name");
     });
+
+    it("should format simple property path", () => {
+      const ref = new Ref(handle, ["counter"]);
+      const url = ref.url;
+
+      expect(url).toBe(`automerge:${handle.documentId}/counter`);
+    });
+
+    it("should format nested property paths with slashes", () => {
+      const ref = new Ref(handle, ["user", "profile", "name"]);
+      const url = ref.url;
+
+      expect(url).toBe(`automerge:${handle.documentId}/user/profile/name`);
+    });
+
+    it("should format numeric indices", () => {
+      handle.change((d) => {
+        d.items = ["a", "b", "c"];
+      });
+
+      const ref = new Ref(handle, ["items", 1]);
+      const url = ref.url;
+
+      // Numeric index should appear as number in URL
+      expect(url).toBe(`automerge:${handle.documentId}/items/1`);
+    });
+
+    it("should format ObjectId segments with $ prefix", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "First" }, { title: "Second" }];
+      });
+
+      const ref = new Ref(handle, ["todos", 0]);
+      const url = ref.url;
+
+      // Should have ObjectId with $ prefix (ObjectIds contain @ symbols)
+      expect(url).toMatch(/^automerge:[^/]+\/todos\/\$[\d]+@[a-f0-9]+$/);
+      expect(url).toContain("$"); // ObjectId marker
+    });
+
+    it("should format deep paths with mixed segments", () => {
+      handle.change((d) => {
+        d.boards = [
+          {
+            columns: [{ name: "Todo" }, { name: "Done" }],
+          },
+        ];
+      });
+
+      const ref = new Ref(handle, ["boards", 0, "columns", 1, "name"]);
+      const url = ref.url;
+
+      // Should have board ObjectId, columns, column ObjectId, name
+      // ObjectIds have format: number@hash
+      expect(url).toMatch(
+        /^automerge:[^/]+\/boards\/\$\d+@[a-f0-9]+\/columns\/\$\d+@[a-f0-9]+\/name$/
+      );
+    });
+
+    it("should format numeric ranges", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const ref = new Ref(handle, ["text", at([0, 5])]);
+      const url = ref.url;
+
+      // Dynamic range should use numeric format
+      expect(url).toBe(`automerge:${handle.documentId}/text/[0,5]`);
+    });
+
+    it("should format cursor ranges with $ prefix", () => {
+      handle.change((d) => {
+        d.note = "Hello World";
+      });
+
+      const ref = new Ref(handle, ["note", [0, 5]]);
+      const url = ref.url;
+
+      // Stable range should use cursor format with $ prefix
+      // Cursors have format: number@hash
+      expect(url).toMatch(
+        /^automerge:[^/]+\/note\/\[\$\d+@[a-f0-9]+,\$\d+@[a-f0-9]+\]$/
+      );
+      expect(url).toContain("$"); // Cursor markers
+    });
+
+    it("should format where clauses as JSON", () => {
+      handle.change((d) => {
+        d.items = [{ id: "a" }, { id: "b" }];
+      });
+
+      const ref = new Ref(handle, ["items", at({ id: "b" })]);
+      const url = ref.url;
+
+      // Dynamic where clause should be JSON
+      expect(url).toBe(`automerge:${handle.documentId}/items/{"id":"b"}`);
+    });
+
+    it("should format stabilized where clauses as ObjectIds", () => {
+      handle.change((d) => {
+        d.items = [{ id: "a" }, { id: "b" }];
+      });
+
+      const ref = new Ref(handle, ["items", { id: "b" }]);
+      const url = ref.url;
+
+      // Stabilized where clause should become ObjectId with $ prefix
+      expect(url).toMatch(/^automerge:[^/]+\/items\/\$\d+@[a-f0-9]+$/);
+      expect(url).toContain("$");
+    });
+
+    it("should handle complex nested structures", () => {
+      handle.change((d) => {
+        d.app = {
+          users: [
+            {
+              id: "user1",
+              posts: [{ title: "Post 1" }, { title: "Post 2" }],
+            },
+          ],
+        };
+      });
+
+      const ref = new Ref(handle, ["app", "users", 0, "posts", 1, "title"]);
+      const url = ref.url;
+
+      // Should have proper ObjectId formatting
+      expect(url).toContain("automerge:");
+      expect(url).toContain("/app/users/");
+      expect(url).toContain("/posts/");
+      expect(url).toContain("/title");
+      expect(url).toMatch(/\$[a-zA-Z0-9]+/); // Should have ObjectIds
+    });
+
+    it("should generate consistent URLs for same path", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "Task" }];
+      });
+
+      const ref1 = new Ref(handle, ["todos", 0]);
+      const ref2 = new Ref(handle, ["todos", 0]);
+
+      expect(ref1.url).toBe(ref2.url);
+    });
+
+    it("should generate different URLs for different paths", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "A" }, { title: "B" }];
+      });
+
+      const ref1 = new Ref(handle, ["todos", 0]);
+      const ref2 = new Ref(handle, ["todos", 1]);
+
+      expect(ref1.url).not.toBe(ref2.url);
+    });
+
+    it("should handle text range in nested path", () => {
+      handle.change((d) => {
+        d.docs = [{ content: "Hello World" }];
+      });
+
+      const ref = new Ref(handle, ["docs", 0, "content", [0, 5]]);
+      const url = ref.url;
+
+      // Should have ObjectId for docs[0] and cursor range for text
+      // Format: number@hash for both ObjectIds and cursors
+      expect(url).toMatch(
+        /^automerge:[^/]+\/docs\/\$\d+@[a-f0-9]+\/content\/\[\$\d+@[a-f0-9]+,\$\d+@[a-f0-9]+\]$/
+      );
+    });
+
+    it("should differentiate between dynamic and stable refs in URL", () => {
+      handle.change((d) => {
+        d.items = [{ name: "A" }, { name: "B" }];
+      });
+
+      const stableRef = new Ref(handle, ["items", 0]);
+      const dynamicRef = new Ref(handle, ["items", at(0)]);
+
+      // Stable should have ObjectId ($...)
+      expect(stableRef.url).toContain("$");
+
+      // Dynamic should just have number
+      expect(dynamicRef.url).toBe(`automerge:${handle.documentId}/items/0`);
+      expect(dynamicRef.url).not.toMatch(/\$[a-zA-Z0-9]+/);
+    });
+
+    it("should handle primitives in arrays (no ObjectId)", () => {
+      handle.change((d) => {
+        d.numbers = [1, 2, 3];
+      });
+
+      const ref = new Ref(handle, ["numbers", 1]);
+      const url = ref.url;
+
+      // Primitives don't have ObjectIds, should just be numeric
+      expect(url).toBe(`automerge:${handle.documentId}/numbers/1`);
+      expect(url).not.toContain("$");
+    });
   });
 
   describe("equality", () => {
@@ -297,6 +497,33 @@ describe("Ref", () => {
       // Where clause should be stabilized to ObjectId
       const ref = new Ref(handle, ["items", { id: "b" }, "value"]);
 
+      expect(ref.value()).toBe(2);
+
+      // Path should contain ObjectId, not the where clause
+      expect(ref.path[1]).toHaveProperty("$id");
+      expect(typeof ref.path[1]).toBe("object");
+    });
+
+    it("should keep where clause refs stable after reordering", () => {
+      handle.change((d) => {
+        d.items = [
+          { id: "a", value: 1 },
+          { id: "b", value: 2 },
+          { id: "c", value: 3 },
+        ];
+      });
+
+      // Where clause should be stabilized to ObjectId
+      const ref = new Ref(handle, ["items", { id: "b" }, "value"]);
+      expect(ref.value()).toBe(2);
+
+      // Move "b" to a different position by deleting first item
+      // This changes indices but ObjectIds remain the same
+      handle.change((d) => {
+        d.items.deleteAt(0); // Remove "a", now "b" is at index 0
+      });
+
+      // Should still resolve to item with id "b" (now at index 0)
       expect(ref.value()).toBe(2);
     });
 
