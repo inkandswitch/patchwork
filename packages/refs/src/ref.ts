@@ -8,6 +8,8 @@ import type {
 } from "./types";
 import { isDynamic } from "./at";
 
+// TODO: consider a value getter
+
 /**
  * A reference to a location in an Automerge document.
  *
