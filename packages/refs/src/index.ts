@@ -5,8 +5,9 @@ export type {
   ChangeEvent,
   ChangeCallback,
   PathBuilder,
+  RefContext,
 } from "./types";
 
 export { Ref, ref } from "./ref";
 
-export { splice, updateText, isCursor, at } from "./utils";
+export { at } from "./utils";

@@ -37,3 +37,41 @@ export interface ChangeEvent {
 }
 
 export type ChangeCallback = (event: ChangeEvent) => void;
+
+/**
+ * Context object provided to Ref.change() callbacks.
+ * Provides helper methods for working with Automerge text objects.
+ */
+export interface RefContext {
+  /**
+   * Splice text at the given position.
+   * Only works when the ref points to an Automerge text object.
+   *
+   * @param index - Position to splice at
+   * @param deleteCount - Number of characters to delete
+   * @param insert - Optional string to insert
+   *
+   * @example
+   * ```ts
+   * textRef.change((text, ctx) => {
+   *   ctx.splice(0, 5, "new"); // Replace first 5 chars with "new"
+   * });
+   * ```
+   */
+  splice(index: number, deleteCount: number, insert?: string): void;
+
+  /**
+   * Update the entire text value.
+   * Only works when the ref points to an Automerge text object.
+   *
+   * @param newValue - The new text value
+   *
+   * @example
+   * ```ts
+   * textRef.change((text, ctx) => {
+   *   ctx.updateText("completely new text");
+   * });
+   * ```
+   */
+  updateText(newValue: string): void;
+}

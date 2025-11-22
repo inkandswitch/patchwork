@@ -6,8 +6,8 @@ import type {
   ChangeCallback,
   PathBuilder,
   DynamicSegment,
+  RefContext,
 } from "./types";
-import { isCursor } from "./utils";
 
 // TODO: consider a value getter
 
@@ -22,6 +22,7 @@ export class Ref<T = any> {
   readonly docHandle: DocHandle<any>;
   readonly path: PathSegment[];
   readonly options: RefOptions;
+  readonly ctx: RefContext;
 
   constructor(
     docHandle: DocHandle<any>,
@@ -34,6 +35,9 @@ export class Ref<T = any> {
     // Auto-stabilize segments on construction
     const doc = docHandle.doc();
     this.path = this.#buildStablePath(doc, segments);
+
+    // Create context for text mutation helpers
+    this.ctx = this.#createContext();
   }
 
   // ---- Public API ----
@@ -63,14 +67,14 @@ export class Ref<T = any> {
    * For objects/arrays: mutate in place (return void)
    * For primitives: return the new value
    */
-  change(fn: (val: T) => void | T): void {
+  change(fn: (val: T, ctx: RefContext) => void | T): void {
     if (this.options.heads) {
       throw new Error("Cannot change a Ref pinned to specific heads");
     }
 
     this.docHandle.change((doc) => {
       const currentValue = this.#resolve(doc);
-      const newValue = fn(currentValue as T);
+      const newValue = fn(currentValue as T, this.ctx);
 
       // If a value is returned, replace at path
       if (newValue !== undefined) {
@@ -368,6 +372,91 @@ export class Ref<T = any> {
   }
 
   /**
+   * Create the context object for text mutation helpers.
+   * Builds the actual Automerge.Prop[] path by resolving PathSegments.
+   */
+  #createContext(): RefContext {
+    const self = this;
+    return {
+      splice(index: number, deleteCount: number, insert?: string): void {
+        self.docHandle.change((doc) => {
+          const resolvedPath = self.#buildResolvedPath(doc);
+          Automerge.splice(doc, resolvedPath, index, deleteCount, insert);
+        });
+      },
+      updateText(newValue: string): void {
+        self.docHandle.change((doc) => {
+          const resolvedPath = self.#buildResolvedPath(doc);
+          Automerge.updateText(doc, resolvedPath, newValue);
+        });
+      },
+    };
+  }
+
+  /**
+   * Build the resolved Automerge.Prop[] path for the current document state.
+   * Converts PathSegments (like { $id: "..." }) into actual property keys/indices.
+   */
+  #buildResolvedPath(doc: Automerge.Doc<any>): Automerge.Prop[] {
+    const resolvedPath: Automerge.Prop[] = [];
+    let current: any = doc;
+
+    for (const segment of this.path) {
+      if (current === undefined || current === null) {
+        throw new Error("Cannot resolve path: traversal failed");
+      }
+
+      // String or number: direct property
+      if (typeof segment === "string" || typeof segment === "number") {
+        resolvedPath.push(segment);
+        current = current[segment];
+        continue;
+      }
+
+      // ObjectId lookup - need to find the index in the array
+      if (typeof segment === "object" && "$id" in segment) {
+        if (!Array.isArray(current)) {
+          throw new Error("ObjectId segment requires array container");
+        }
+        const index = current.findIndex(
+          (item) => Automerge.getObjectId(item) === segment.$id
+        );
+        if (index === -1) {
+          throw new Error(`ObjectId not found: ${segment.$id}`);
+        }
+        resolvedPath.push(index);
+        current = current[index];
+        continue;
+      }
+
+      // Range - not supported for mutation path (ranges return values, not containers)
+      if (Array.isArray(segment)) {
+        throw new Error("Cannot mutate through a range segment");
+      }
+
+      // Where clause - find the index
+      if (!Array.isArray(current)) {
+        throw new Error("Where clause requires array container");
+      }
+      const index = current.findIndex((item) => {
+        for (const [key, value] of Object.entries(segment)) {
+          if (item[key] !== value) return false;
+        }
+        return true;
+      });
+      if (index === -1) {
+        throw new Error(
+          `No item matches where clause: ${JSON.stringify(segment)}`
+        );
+      }
+      resolvedPath.push(index);
+      current = current[index];
+    }
+
+    return resolvedPath;
+  }
+
+  /**
    * Resolve the full path to get the target value.
    */
   #resolve(doc: Automerge.Doc<any>): T | undefined {
@@ -447,12 +536,12 @@ export class Ref<T = any> {
     range: [Automerge.Cursor, Automerge.Cursor] | [number, number]
   ): string {
     // Numeric range - simple slice
-    if (isNumberPair(range)) {
+    if (isNumbericRange(range)) {
       return text.slice(range[0], range[1]);
     }
 
     // Cursor-based range - resolve cursor positions
-    if (isCursorPair(range)) {
+    if (isCursorRange(range)) {
       try {
         const doc = this.doc();
         // Get the path to the text (excluding the range segment itself)
@@ -564,12 +653,12 @@ export class Ref<T = any> {
     }
 
     // Range
-    if (isCursorPair(segment)) {
+    if (isCursorRange(segment)) {
       return `[$${segment[0]},$${segment[1]}]`;
     }
 
     // Range
-    if (isNumberPair(segment)) {
+    if (isNumbericRange(segment)) {
       return `[${segment[0]},${segment[1]}]`;
     }
 
@@ -594,7 +683,7 @@ export class Ref<T = any> {
 /**
  * Type guard to check if a value is a pair of numbers.
  */
-function isNumberPair(range: any): range is [number, number] {
+function isNumbericRange(range: unknown): range is [number, number] {
   return (
     Array.isArray(range) &&
     range.length === 2 &&
@@ -606,8 +695,8 @@ function isNumberPair(range: any): range is [number, number] {
 /**
  * Type guard to check if a value is a pair of Automerge Cursors.
  */
-function isCursorPair(
-  range: any
+function isCursorRange(
+  range: unknown
 ): range is [Automerge.Cursor, Automerge.Cursor] {
   return (
     Array.isArray(range) &&
@@ -615,6 +704,17 @@ function isCursorPair(
     isCursor(range[0]) &&
     isCursor(range[1])
   );
+}
+
+/**
+ * Type guard to check if a value is an Automerge Cursor.
+ * Cursors are strings in the format: "number@alphanumeric"
+ * Example: "2@fe74e7d3d9d2f00bf7096f6a1eb64afb"
+ */
+function isCursor(value: any): value is Automerge.Cursor {
+  if (typeof value !== "string") return false;
+  // Check format: starts with number, followed by @, followed by alphanumeric
+  return /^\d+@[a-zA-Z0-9]+$/.test(value);
 }
 
 /**

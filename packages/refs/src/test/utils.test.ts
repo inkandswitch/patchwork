@@ -1,11 +1,17 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Repo } from "@automerge/automerge-repo";
-import type { DocHandle } from "@automerge/automerge-repo";
-import { isCursor, at } from "../utils";
+import type { DocHandle, Cursor } from "@automerge/automerge-repo";
+import { at } from "../utils";
 import { ref } from "../ref";
 
 describe("utils", () => {
   describe("isCursor", () => {
+    function isCursor(value: any): value is Cursor {
+      if (typeof value !== "string") return false;
+      // Check format: starts with number, followed by @, followed by alphanumeric
+      return /^\d+@[a-zA-Z0-9]+$/.test(value);
+    }
+
     it("should return true for valid cursor strings", () => {
       expect(isCursor("2@fe74e7d3d9d2f00bf7096f6a1eb64afb")).toBe(true);
       expect(isCursor("0@abc123def456")).toBe(true);
