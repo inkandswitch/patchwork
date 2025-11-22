@@ -25,9 +25,6 @@ export type PathBuilder =
 
 export interface RefOptions {
   heads?: Heads;
-  // TODO: this is a hack and will be factored out
-  /** @internal - Skip path stabilization, path is already PathSegments */
-  _skipStabilization?: boolean;
 }
 
 export type DynamicSegment<T> = { __dynamic: true; value: T };

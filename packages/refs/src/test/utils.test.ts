@@ -1,48 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Repo } from "@automerge/automerge-repo";
-import type { DocHandle, Cursor } from "@automerge/automerge-repo";
+import type { DocHandle } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
 import { at } from "../utils";
 import { ref, findRef, Ref } from "../index";
 
 describe("utils", () => {
-  describe("isCursor", () => {
-    function isCursor(value: any): value is Cursor {
-      if (typeof value !== "string") return false;
-      // Check format: starts with number, followed by @, followed by alphanumeric
-      return /^\d+@[a-zA-Z0-9]+$/.test(value);
-    }
-
-    it("should return true for valid cursor strings", () => {
-      expect(isCursor("2@fe74e7d3d9d2f00bf7096f6a1eb64afb")).toBe(true);
-      expect(isCursor("0@abc123def456")).toBe(true);
-      expect(isCursor("123@deadbeef00112233")).toBe(true);
-    });
-
-    it("should return false for invalid formats", () => {
-      expect(isCursor("not-a-cursor")).toBe(false);
-      expect(isCursor("@abc123")).toBe(false); // missing number
-      expect(isCursor("123@")).toBe(false); // missing hash
-      expect(isCursor("abc@123")).toBe(false); // starts with letters
-      expect(isCursor("123")).toBe(false); // no @ symbol
-      expect(isCursor("")).toBe(false);
-    });
-
-    it("should return false for non-strings", () => {
-      expect(isCursor(123)).toBe(false);
-      expect(isCursor(null)).toBe(false);
-      expect(isCursor(undefined)).toBe(false);
-      expect(isCursor({})).toBe(false);
-      expect(isCursor([])).toBe(false);
-    });
-
-    it("should reject cursors with special characters", () => {
-      expect(isCursor("2@abc-def")).toBe(false); // hyphen not allowed
-      expect(isCursor("2@abc def")).toBe(false); // space not allowed
-      expect(isCursor("2@abc_def")).toBe(false); // underscore not allowed
-    });
-  });
-
   describe("at", () => {
     it("should wrap a value in a dynamic segment", () => {
       const dynamic = at(0);

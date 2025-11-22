@@ -5,9 +5,9 @@ import type {
   RefOptions,
   ChangeCallback,
   PathBuilder,
-  DynamicSegment,
   RefContext,
 } from "./types";
+import { isNumericRange, isCursorRange, isDynamic } from "./guards";
 
 // TODO: consider a value getter
 
@@ -22,30 +22,38 @@ export class Ref<T = any> {
   readonly docHandle: DocHandle<any>;
   readonly path: PathSegment[];
   readonly options: RefOptions;
-  readonly ctx: RefContext;
+
+  // Private properties
+  #ctx?: RefContext;
 
   constructor(
     docHandle: DocHandle<any>,
+    segments: PathBuilder[],
+    options?: RefOptions
+  );
+  constructor(
+    docHandle: DocHandle<any>,
+    segments: PathSegment[],
+    options: RefOptions,
+    skipStabilization: true
+  );
+  constructor(
+    docHandle: DocHandle<any>,
     segments: PathBuilder[] | PathSegment[],
-    options: RefOptions = {}
+    options: RefOptions = {},
+    skipStabilization = false
   ) {
     this.docHandle = docHandle;
+    this.options = options;
 
-    // Extract and remove internal flag before storing options
-    const { _skipStabilization, ...publicOptions } = options;
-    this.options = publicOptions;
-
-    // If segments are already stabilized (from URL parsing), use them directly
-    if (_skipStabilization) {
+    if (skipStabilization) {
+      // Path segments are already stable (from URL parsing)
       this.path = segments as PathSegment[];
     } else {
       // Auto-stabilize segments on construction
       const doc = docHandle.doc();
       this.path = this.#buildStablePath(doc, segments as PathBuilder[]);
     }
-
-    // Create context for text mutation helpers
-    this.ctx = this.#createContext();
   }
 
   /**
@@ -68,19 +76,17 @@ export class Ref<T = any> {
     pathStr: string,
     headsStr?: string
   ): Ref<T> {
-    // Parse path segments
+    // Parse path segments (already stable from URL)
     const path = pathStr ? Ref.#parsePathSegments(pathStr) : [];
 
     // Parse heads if present
-    const options: RefOptions = {
-      _skipStabilization: true,
-    };
+    const options: RefOptions = {};
     if (headsStr) {
       options.heads = headsStr.split(",") as Automerge.Heads;
     }
 
-    // Create ref with pre-parsed path segments
-    return new Ref<T>(handle, path, options);
+    // Create ref with pre-parsed stable path segments using private overload
+    return new Ref<T>(handle, path, options, true);
   }
 
   /**
@@ -151,6 +157,17 @@ export class Ref<T = any> {
   }
 
   // ---- Public API ----
+
+  /**
+   * Get the context object for text mutation helpers.
+   * Created lazily on first access.
+   */
+  get ctx(): RefContext {
+    if (!this.#ctx) {
+      this.#ctx = this.#createContext();
+    }
+    return this.#ctx;
+  }
 
   /**
    * Get the current value at this ref's location.
@@ -253,6 +270,32 @@ export class Ref<T = any> {
   // ---- Private Methods ----
 
   /**
+   * Check if an item matches a where clause.
+   */
+  #matchesWhereClause(item: any, clause: Record<string, any>): boolean {
+    for (const [key, value] of Object.entries(clause)) {
+      if (item[key] !== value) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Find the index of an item in an array by its ObjectId.
+   * Returns -1 if not found.
+   */
+  #findIndexByObjectId(array: any[], objectId: string): number {
+    return array.findIndex((item) => Automerge.getObjectId(item) === objectId);
+  }
+
+  /**
+   * Find the index of an item in an array matching a where clause.
+   * Returns -1 if not found.
+   */
+  #findIndexByWhereClause(array: any[], clause: Record<string, any>): number {
+    return array.findIndex((item) => this.#matchesWhereClause(item, clause));
+  }
+
+  /**
    * Build a stable path from PathBuilder segments.
    * Stabilizes numeric indices and where clauses to ObjectIds.
    */
@@ -265,7 +308,7 @@ export class Ref<T = any> {
 
     for (const segment of segments) {
       // Check if wrapped in at() (dynamic marker)
-      if (Ref.#isDynamic(segment)) {
+      if (isDynamic(segment)) {
         // Dynamic segment - use as-is without stabilization
         path.push(segment.value);
         currentPath.push(segment.value);
@@ -373,13 +416,8 @@ export class Ref<T = any> {
       return clause;
     }
 
-    // Find matching item
-    const item = container.find((obj) => {
-      for (const [key, value] of Object.entries(clause)) {
-        if (obj[key] !== value) return false;
-      }
-      return true;
-    });
+    // Find matching item using helper
+    const item = container.find((obj) => this.#matchesWhereClause(obj, clause));
 
     if (!item) {
       // No match - return clause as-is (will fail at resolution time)
@@ -431,51 +469,72 @@ export class Ref<T = any> {
     }
   }
 
-  // TODO: should this throw?
   /**
-   * Convert a PathSegment[] to Automerge.Prop[] by resolving ObjectIds to indices.
+   * Convert a PathSegment[] to Automerge.Prop[] by resolving ObjectIds and where clauses to indices.
+   *
+   * @param doc - The Automerge document
+   * @param path - The path segments to convert
+   * @param allowRanges - Whether to allow range segments (default: false)
+   * @returns The resolved property path
    */
   #pathToPropPath(
     doc: Automerge.Doc<any>,
-    path: PathSegment[]
+    path: PathSegment[],
+    allowRanges = false
   ): Automerge.Prop[] {
     const propPath: Automerge.Prop[] = [];
     let current = doc;
 
     for (const segment of path) {
+      // Check for null/undefined during traversal
+      if (current === undefined || current === null) {
+        throw new Error(
+          "Cannot resolve path: traversal reached null/undefined"
+        );
+      }
+
+      // String or number: direct property
       if (typeof segment === "string" || typeof segment === "number") {
         propPath.push(segment);
         current = current[segment];
-      } else if (typeof segment === "object" && "$id" in segment) {
-        // ObjectId - find its current index in the array
-        if (!Array.isArray(current)) {
-          throw new Error("Cannot resolve ObjectId in non-array");
-        }
-        const index = current.findIndex(
-          (item: any) => Automerge.getObjectId(item) === segment.$id
-        );
-        if (index === -1) {
-          throw new Error("ObjectId not found in array");
-        }
-        propPath.push(index);
-        current = current[index];
-      } else {
-        // Where clause or other - find index
-        if (!Array.isArray(current)) {
-          throw new Error("Cannot resolve where clause in non-array");
-        }
-        const index = current.findIndex((item: any) => {
-          for (const [key, value] of Object.entries(segment)) {
-            if (item[key] !== value) return false;
-          }
-          return true;
-        });
-        if (index === -1) {
-          throw new Error("Where clause match not found");
-        }
-        propPath.push(index);
-        current = current[index];
+        continue;
       }
+
+      // ObjectId lookup - find its current index in the array using helper
+      if (typeof segment === "object" && "$id" in segment) {
+        if (!Array.isArray(current)) {
+          throw new Error("ObjectId segment requires array container");
+        }
+        const index = this.#findIndexByObjectId(current, segment.$id);
+        if (index === -1) {
+          throw new Error(`ObjectId not found: ${segment.$id}`);
+        }
+        propPath.push(index);
+        current = current[index];
+        continue;
+      }
+
+      // Range - only allowed in some contexts (e.g., cursor operations)
+      if (Array.isArray(segment)) {
+        if (!allowRanges) {
+          throw new Error("Cannot resolve through a range segment");
+        }
+        // For ranges, we can't continue traversal - they return values not containers
+        throw new Error("Range segments cannot be part of a property path");
+      }
+
+      // Where clause - find index using helper
+      if (!Array.isArray(current)) {
+        throw new Error("Where clause requires array container");
+      }
+      const index = this.#findIndexByWhereClause(current, segment);
+      if (index === -1) {
+        throw new Error(
+          `No item matches where clause: ${JSON.stringify(segment)}`
+        );
+      }
+      propPath.push(index);
+      current = current[index];
     }
 
     return propPath;
@@ -490,80 +549,17 @@ export class Ref<T = any> {
     return {
       splice(index: number, deleteCount: number, insert?: string): void {
         self.docHandle.change((doc) => {
-          const resolvedPath = self.#buildResolvedPath(doc);
+          const resolvedPath = self.#pathToPropPath(doc, self.path);
           Automerge.splice(doc, resolvedPath, index, deleteCount, insert);
         });
       },
       updateText(newValue: string): void {
         self.docHandle.change((doc) => {
-          const resolvedPath = self.#buildResolvedPath(doc);
+          const resolvedPath = self.#pathToPropPath(doc, self.path);
           Automerge.updateText(doc, resolvedPath, newValue);
         });
       },
     };
-  }
-
-  /**
-   * Build the resolved Automerge.Prop[] path for the current document state.
-   * Converts PathSegments (like { $id: "..." }) into actual property keys/indices.
-   */
-  #buildResolvedPath(doc: Automerge.Doc<any>): Automerge.Prop[] {
-    const resolvedPath: Automerge.Prop[] = [];
-    let current: any = doc;
-
-    for (const segment of this.path) {
-      if (current === undefined || current === null) {
-        throw new Error("Cannot resolve path: traversal failed");
-      }
-
-      // String or number: direct property
-      if (typeof segment === "string" || typeof segment === "number") {
-        resolvedPath.push(segment);
-        current = current[segment];
-        continue;
-      }
-
-      // ObjectId lookup - need to find the index in the array
-      if (typeof segment === "object" && "$id" in segment) {
-        if (!Array.isArray(current)) {
-          throw new Error("ObjectId segment requires array container");
-        }
-        const index = current.findIndex(
-          (item) => Automerge.getObjectId(item) === segment.$id
-        );
-        if (index === -1) {
-          throw new Error(`ObjectId not found: ${segment.$id}`);
-        }
-        resolvedPath.push(index);
-        current = current[index];
-        continue;
-      }
-
-      // Range - not supported for mutation path (ranges return values, not containers)
-      if (Array.isArray(segment)) {
-        throw new Error("Cannot mutate through a range segment");
-      }
-
-      // Where clause - find the index
-      if (!Array.isArray(current)) {
-        throw new Error("Where clause requires array container");
-      }
-      const index = current.findIndex((item) => {
-        for (const [key, value] of Object.entries(segment)) {
-          if (item[key] !== value) return false;
-        }
-        return true;
-      });
-      if (index === -1) {
-        throw new Error(
-          `No item matches where clause: ${JSON.stringify(segment)}`
-        );
-      }
-      resolvedPath.push(index);
-      current = current[index];
-    }
-
-    return resolvedPath;
   }
 
   /**
@@ -629,13 +625,7 @@ export class Ref<T = any> {
    */
   #resolveWhereClause(container: any[], clause: Record<string, any>): any {
     if (!Array.isArray(container)) return undefined;
-
-    return container.find((item) => {
-      for (const [key, value] of Object.entries(clause)) {
-        if (item[key] !== value) return false;
-      }
-      return true;
-    });
+    return container.find((item) => this.#matchesWhereClause(item, clause));
   }
 
   /**
@@ -646,7 +636,7 @@ export class Ref<T = any> {
     range: [Automerge.Cursor, Automerge.Cursor] | [number, number]
   ): string {
     // Numeric range - simple slice
-    if (isNumbericRange(range)) {
+    if (isNumericRange(range)) {
       return text.slice(range[0], range[1]);
     }
 
@@ -768,63 +758,13 @@ export class Ref<T = any> {
     }
 
     // Range
-    if (isNumbericRange(segment)) {
+    if (isNumericRange(segment)) {
       return `[${segment[0]},${segment[1]}]`;
     }
 
     // Where clause - serialize as JSON for now
     return JSON.stringify(segment);
   }
-
-  /**
-   * Type guard to check if a segment is dynamic (wrapped in at()).
-   * @private
-   */
-  static #isDynamic(segment: any): segment is DynamicSegment<any> {
-    return (
-      segment !== null &&
-      segment !== undefined &&
-      typeof segment === "object" &&
-      segment.__dynamic === true
-    );
-  }
-}
-
-/**
- * Type guard to check if a value is a pair of numbers.
- */
-function isNumbericRange(range: unknown): range is [number, number] {
-  return (
-    Array.isArray(range) &&
-    range.length === 2 &&
-    typeof range[0] === "number" &&
-    typeof range[1] === "number"
-  );
-}
-
-/**
- * Type guard to check if a value is a pair of Automerge Cursors.
- */
-function isCursorRange(
-  range: unknown
-): range is [Automerge.Cursor, Automerge.Cursor] {
-  return (
-    Array.isArray(range) &&
-    range.length === 2 &&
-    isCursor(range[0]) &&
-    isCursor(range[1])
-  );
-}
-
-/**
- * Type guard to check if a value is an Automerge Cursor.
- * Cursors are strings in the format: "number@alphanumeric"
- * Example: "2@fe74e7d3d9d2f00bf7096f6a1eb64afb"
- */
-function isCursor(value: any): value is Automerge.Cursor {
-  if (typeof value !== "string") return false;
-  // Check format: starts with number, followed by @, followed by alphanumeric
-  return /^\d+@[a-zA-Z0-9]+$/.test(value);
 }
 
 /**
