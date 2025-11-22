@@ -1,6 +1,7 @@
 import * as Automerge from "@automerge/automerge";
 
 // TODO: think about this...
+// TODO: add tests, and move at() into here
 
 // Context for splice/updateText helpers
 // This will be set by Ref.change() before calling the user's callback
