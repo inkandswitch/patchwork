@@ -17,5 +17,5 @@ export { splice, updateText } from "./utils";
 // Re-export at() function
 export { at, isDynamic } from "./at";
 
-// TODO: Implement and export ref() factory function
-// export { ref } from "./factory";
+// Re-export ref() factory
+export { ref } from "./factory";

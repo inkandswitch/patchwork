@@ -163,10 +163,7 @@ export class Ref<T = any> {
 
     // Range
     if (Array.isArray(segment) && segment.length === 2) {
-      return this.#resolveRange(
-        container,
-        segment as [Automerge.Cursor, Automerge.Cursor] | [number, number]
-      );
+      return this.#resolveRange(container, segment as [Automerge.Cursor, Automerge.Cursor] | [number, number]);
     }
 
     // Where clause (Record<string, any>)
@@ -202,33 +199,17 @@ export class Ref<T = any> {
     text: string,
     range: [Automerge.Cursor, Automerge.Cursor] | [number, number]
   ): string {
-    // Ensure it's a 2-element tuple
     if (!Array.isArray(range) || range.length !== 2) return "";
 
-    // Check if it's a cursor-based range
-    if (typeof range[0] === "object") {
-      const [startCursor, endCursor] = range as [
-        Automerge.Cursor,
-        Automerge.Cursor,
-      ];
-      const doc = this.doc();
-      // Convert PathSegment[] to Prop[] by filtering to only string/number segments
-      const parentPath = this.path
-        .slice(0, -1)
-        .filter(
-          (seg): seg is string | number =>
-            typeof seg === "string" || typeof seg === "number"
-        );
-      const start = Automerge.getCursorPosition(doc, parentPath, startCursor);
-      const end = Automerge.getCursorPosition(doc, parentPath, endCursor);
-
-      if (start === undefined || end === undefined) return "";
+    // Numeric range - simple slice
+    if (typeof range[0] === "number") {
+      const [start, end] = range as [number, number];
       return text.slice(start, end);
     }
 
-    // Numeric range
-    const [start, end] = range as [number, number];
-    return text.slice(start, end);
+    // Cursor-based range - TODO: implement cursor resolution
+    // For now, return empty string
+    return "";
   }
 
   /**

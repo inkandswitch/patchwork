@@ -5,6 +5,9 @@
     "build": "tsc",
     "dev": "tsc -w --preserveWatchOutput",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
     "push": "pnpm build && pushwork sync"
   },
   "main": "./dist/index.js",

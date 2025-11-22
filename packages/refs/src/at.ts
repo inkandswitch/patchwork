@@ -30,5 +30,10 @@ export function at<T>(segment: T): DynamicSegment<T> {
  * Type guard to check if a segment is dynamic.
  */
 export function isDynamic(segment: any): segment is DynamicSegment<any> {
-  return segment && typeof segment === "object" && segment.__dynamic === true;
+  return (
+    segment !== null &&
+    segment !== undefined &&
+    typeof segment === "object" &&
+    segment.__dynamic === true
+  );
 }
