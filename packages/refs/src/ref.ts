@@ -5,14 +5,14 @@ import type {
   RefOptions,
   ChangeCallback,
   PathBuilder,
-  DynamicSegment,
 } from "./types";
+import { isDynamic } from "./at";
 
 /**
  * A reference to a location in an Automerge document.
  *
  * Refs are stable by default - numeric indices and where clauses
- * resolve to Automerge ObjectIds. Use `at()` for dynamic/unstable refs.
+ * automatically resolve to Automerge ObjectIds. Use `at()` for dynamic/unstable refs.
  */
 export class Ref<T = any> {
   // Public properties
@@ -22,12 +22,23 @@ export class Ref<T = any> {
 
   constructor(
     docHandle: DocHandle<any>,
-    path: PathSegment[],
+    segments: PathBuilder[],
     options: RefOptions = {}
   ) {
     this.docHandle = docHandle;
-    this.path = path;
     this.options = options;
+
+    // Auto-stabilize segments on construction
+    const doc = docHandle.doc();
+    if (doc) {
+      this.path = this.#buildStablePath(doc, segments);
+    } else {
+      // Document not loaded - create basic path without stabilization
+      this.path = segments.map((seg) => {
+        if (isDynamic(seg)) return seg.value;
+        return seg as PathSegment;
+      });
+    }
   }
 
   // ---- Public API ----
@@ -75,15 +86,24 @@ export class Ref<T = any> {
 
   /**
    * Subscribe to changes that affect this ref's target.
+   * Returns an unsubscribe function.
    */
-  on(event: "change", callback: ChangeCallback): void {
-    if (event !== "change") return;
+  on(event: "change", callback: ChangeCallback): () => void {
+    if (event !== "change") return () => {};
 
-    this.docHandle.on("change", ({ doc, patches, patchInfo }) => {
+    const wrappedCallback = ({ doc, patches, patchInfo }: any) => {
       if (this.#patchAffectsRef(patches)) {
         callback({ doc, patches, patchInfo });
       }
-    });
+    };
+
+    // Subscribe to docHandle changes
+    this.docHandle.on("change", wrappedCallback);
+
+    // Return unsubscribe function
+    return () => {
+      this.docHandle.off("change", wrappedCallback);
+    };
   }
 
   /**
@@ -122,6 +142,234 @@ export class Ref<T = any> {
   }
 
   // ---- Private Methods ----
+
+  /**
+   * Build a stable path from PathBuilder segments.
+   * Stabilizes numeric indices and where clauses to ObjectIds.
+   */
+  #buildStablePath(
+    doc: Automerge.Doc<any>,
+    segments: PathBuilder[]
+  ): PathSegment[] {
+    const path: PathSegment[] = [];
+    let currentPath: PathSegment[] = [];
+
+    for (const segment of segments) {
+      // Check if wrapped in at() (dynamic marker)
+      if (isDynamic(segment)) {
+        // Dynamic segment - use as-is without stabilization
+        path.push(segment.value);
+        currentPath.push(segment.value);
+        continue;
+      }
+
+      // Stabilize the segment
+      const stabilized = this.#stabilizeSegment(doc, currentPath, segment);
+      path.push(stabilized);
+      currentPath.push(stabilized);
+    }
+
+    return path;
+  }
+
+  /**
+   * Stabilize a single segment by resolving to ObjectIds or cursors.
+   */
+  #stabilizeSegment(
+    doc: Automerge.Doc<any>,
+    currentPath: PathSegment[],
+    segment: PathBuilder
+  ): PathSegment {
+    // String property - always stable as-is
+    if (typeof segment === "string") {
+      return segment;
+    }
+
+    // Numeric index - resolve to ObjectId
+    if (typeof segment === "number") {
+      return this.#stabilizeNumericIndex(doc, currentPath, segment);
+    }
+
+    // Range [start, end] - convert to cursors
+    if (Array.isArray(segment) && segment.length === 2) {
+      return this.#stabilizeRange(
+        doc,
+        currentPath,
+        segment as [number, number]
+      );
+    }
+
+    // Plain object - could be where clause or Automerge object reference
+    if (typeof segment === "object" && segment !== null) {
+      // Check if it's a plain object (where clause) vs Automerge proxy
+      if (segment.constructor === Object) {
+        // Plain object - treat as where clause, resolve to ObjectId
+        return this.#stabilizeWhereClause(doc, currentPath, segment);
+      }
+
+      // It's an Automerge object reference - extract its ObjectId
+      const objectId = Automerge.getObjectId(segment);
+      if (objectId) {
+        return { $id: objectId };
+      }
+    }
+
+    // Fallback - return as-is
+    return segment as PathSegment;
+  }
+
+  /**
+   * Stabilize a numeric index by finding the object and extracting its ObjectId.
+   */
+  #stabilizeNumericIndex(
+    doc: Automerge.Doc<any>,
+    currentPath: PathSegment[],
+    index: number
+  ): PathSegment {
+    const container = this.#resolvePath(doc, currentPath);
+
+    if (!Array.isArray(container)) {
+      // Not an array - return the index as-is
+      return index;
+    }
+
+    const item = container[index];
+    if (item === undefined) {
+      // Out of bounds - return index as-is
+      return index;
+    }
+
+    // Try to get ObjectId
+    const objectId = Automerge.getObjectId(item);
+    if (objectId) {
+      return { $id: objectId };
+    }
+
+    // Item is a primitive or doesn't have an ObjectId - return index
+    return index;
+  }
+
+  /**
+   * Stabilize a where clause by finding the matching object and extracting its ObjectId.
+   */
+  #stabilizeWhereClause(
+    doc: Automerge.Doc<any>,
+    currentPath: PathSegment[],
+    clause: Record<string, any>
+  ): PathSegment {
+    const container = this.#resolvePath(doc, currentPath);
+
+    if (!Array.isArray(container)) {
+      // Not an array - return clause as-is
+      return clause;
+    }
+
+    // Find matching item
+    const item = container.find((obj) => {
+      for (const [key, value] of Object.entries(clause)) {
+        if (obj[key] !== value) return false;
+      }
+      return true;
+    });
+
+    if (!item) {
+      // No match - return clause as-is (will fail at resolution time)
+      return clause;
+    }
+
+    // Try to get ObjectId
+    const objectId = Automerge.getObjectId(item);
+    if (objectId) {
+      return { $id: objectId };
+    }
+
+    // Item doesn't have ObjectId - return clause as-is
+    return clause;
+  }
+
+  /**
+   * Stabilize a range by converting numeric indices to Automerge cursors.
+   * This makes ranges stable across text edits (insertions/deletions).
+   */
+  #stabilizeRange(
+    doc: Automerge.Doc<any>,
+    currentPath: PathSegment[],
+    range: [number, number]
+  ): PathSegment {
+    const [start, end] = range;
+
+    // Resolve to the text container
+    const container = this.#resolvePath(doc, currentPath);
+
+    // Check if it's a text object (string)
+    if (typeof container !== "string") {
+      // Not text - return numeric range as-is
+      return range;
+    }
+
+    try {
+      // Convert currentPath to Automerge.Prop[] (only string/number segments)
+      const propPath = this.#pathToPropPath(doc, currentPath);
+
+      // Create cursors at the positions
+      const startCursor = Automerge.getCursor(doc, propPath, start);
+      const endCursor = Automerge.getCursor(doc, propPath, end);
+
+      return [startCursor, endCursor];
+    } catch (e) {
+      // Failed to get cursors - return numeric range as fallback
+      return range;
+    }
+  }
+
+  /**
+   * Convert a PathSegment[] to Automerge.Prop[] by resolving ObjectIds to indices.
+   */
+  #pathToPropPath(
+    doc: Automerge.Doc<any>,
+    path: PathSegment[]
+  ): Automerge.Prop[] {
+    const propPath: Automerge.Prop[] = [];
+    let current = doc;
+
+    for (const segment of path) {
+      if (typeof segment === "string" || typeof segment === "number") {
+        propPath.push(segment);
+        current = current[segment];
+      } else if (typeof segment === "object" && "$id" in segment) {
+        // ObjectId - find its current index in the array
+        if (!Array.isArray(current)) {
+          throw new Error("Cannot resolve ObjectId in non-array");
+        }
+        const index = current.findIndex(
+          (item: any) => Automerge.getObjectId(item) === segment.$id
+        );
+        if (index === -1) {
+          throw new Error("ObjectId not found in array");
+        }
+        propPath.push(index);
+        current = current[index];
+      } else {
+        // Where clause or other - find index
+        if (!Array.isArray(current)) {
+          throw new Error("Cannot resolve where clause in non-array");
+        }
+        const index = current.findIndex((item: any) => {
+          for (const [key, value] of Object.entries(segment)) {
+            if (item[key] !== value) return false;
+          }
+          return true;
+        });
+        if (index === -1) {
+          throw new Error("Where clause match not found");
+        }
+        propPath.push(index);
+        current = current[index];
+      }
+    }
+
+    return propPath;
+  }
 
   /**
    * Resolve the full path to get the target value.
@@ -210,8 +458,29 @@ export class Ref<T = any> {
       return text.slice(start, end);
     }
 
-    // Cursor-based range - TODO: implement cursor resolution
-    // For now, return empty string
+    // Cursor-based range - resolve cursor positions
+    if (typeof range[0] === "object") {
+      const [startCursor, endCursor] = range as [
+        Automerge.Cursor,
+        Automerge.Cursor,
+      ];
+
+      try {
+        const doc = this.doc();
+        // Get the path to the text (excluding the range segment itself)
+        const textPath = this.path.slice(0, -1);
+        const propPath = this.#pathToPropPath(doc, textPath);
+
+        const start = Automerge.getCursorPosition(doc, propPath, startCursor);
+        const end = Automerge.getCursorPosition(doc, propPath, endCursor);
+
+        if (start === undefined || end === undefined) return "";
+        return text.slice(start, end);
+      } catch (e) {
+        return "";
+      }
+    }
+
     return "";
   }
 

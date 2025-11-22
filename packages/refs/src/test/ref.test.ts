@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import * as Automerge from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
 import { Ref } from "../ref";
+import { at } from "../at";
 
 describe("Ref", () => {
   let repo: Repo;
@@ -214,6 +216,577 @@ describe("Ref", () => {
 
       const ref = new Ref(handle, ["items", { type: "task", status: "done" }]);
       expect(ref.value()).toEqual({ type: "task", status: "done", title: "A" });
+    });
+  });
+
+  describe("ObjectId stability", () => {
+    it("should resolve refs with ObjectId segments", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "First" }, { title: "Second" }];
+      });
+
+      const doc = handle.doc();
+      const firstTodo = doc.todos[0];
+      const objectId = Automerge.getObjectId(firstTodo);
+
+      // Create ref with explicit ObjectId
+      const ref = new Ref(handle, ["todos", { $id: objectId }, "title"]);
+      expect(ref.value()).toBe("First");
+    });
+
+    it("should still resolve after reordering when using ObjectId", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "First" }, { title: "Second" }];
+      });
+
+      const doc = handle.doc();
+      const firstTodo = doc.todos[0];
+      const objectId = Automerge.getObjectId(firstTodo);
+
+      const ref = new Ref(handle, ["todos", { $id: objectId }, "title"]);
+      expect(ref.value()).toBe("First");
+
+      // Move items around
+      handle.change((d) => {
+        const first = { title: d.todos[0].title };
+        d.todos.deleteAt(0);
+        d.todos.push(first);
+      });
+
+      // Should still resolve to "First" even though it moved to end
+      expect(ref.value()).toBe("First");
+    });
+  });
+
+  describe("dynamic vs stable refs", () => {
+    it("should auto-stabilize numeric indices to ObjectIds by default", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "A" }, { title: "B" }, { title: "C" }];
+      });
+
+      // Numeric index should be stabilized to ObjectId
+      const ref = new Ref(handle, ["todos", 1]);
+
+      const doc = handle.doc();
+      const expectedId = Automerge.getObjectId(doc.todos[1]);
+
+      expect(ref.path).toEqual(["todos", { $id: expectedId }]);
+      expect(ref.value()?.title).toBe("B");
+    });
+
+    it("should keep refs stable after reordering (auto-stabilized)", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "A" }, { title: "B" }, { title: "C" }];
+      });
+
+      // Create ref to middle item (auto-stabilizes to ObjectId)
+      const ref = new Ref(handle, ["todos", 1, "title"]);
+      expect(ref.value()).toBe("B");
+
+      // Move B to the end
+      handle.change((d) => {
+        const item = { title: d.todos[1].title };
+        d.todos.deleteAt(1);
+        d.todos.push(item);
+      });
+
+      // Ref should still point to "B" even though it moved
+      expect(ref.value()).toBe("B");
+    });
+
+    it("should keep dynamic refs with at() pointing to position", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "A" }, { title: "B" }, { title: "C" }];
+      });
+
+      // Using at() keeps it dynamic (positional)
+      const dynamicRef = new Ref(handle, ["todos", at(1), "title"]);
+      expect(dynamicRef.path[1]).toEqual(at(1));
+      expect(dynamicRef.value()).toBe("B");
+
+      // Remove first item - position 1 now has "C"
+      handle.change((d) => {
+        d.todos.deleteAt(0);
+      });
+
+      // Dynamic ref now points to position 1 (which is "C")
+      expect(dynamicRef.value()).toBe("C");
+    });
+
+    it("should auto-stabilize where clauses to ObjectIds", () => {
+      handle.change((d) => {
+        d.items = [
+          { id: "a", value: 1 },
+          { id: "b", value: 2 },
+        ];
+      });
+
+      // Where clause should be stabilized to ObjectId
+      const ref = new Ref(handle, ["items", { id: "b" }, "value"]);
+
+      const doc = handle.doc();
+      const expectedId = Automerge.getObjectId(doc.items[1]);
+
+      expect(ref.path[1]).toEqual({ $id: expectedId });
+      expect(ref.value()).toBe(2);
+    });
+
+    it("should demonstrate stable vs dynamic behavior side-by-side", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "A" }, { title: "B" }, { title: "C" }];
+      });
+
+      // Stable ref (auto-stabilized to ObjectId)
+      const stableRef = new Ref(handle, ["todos", 1, "title"]);
+      // Dynamic ref (explicitly marked with at())
+      const dynamicRef = new Ref(handle, ["todos", at(1), "title"]);
+
+      // Both point to "B" initially
+      expect(stableRef.value()).toBe("B");
+      expect(dynamicRef.value()).toBe("B");
+
+      // Remove first item
+      handle.change((d) => {
+        d.todos.deleteAt(0);
+      });
+
+      // Stable ref still points to "B" (tracked by ObjectId)
+      expect(stableRef.value()).toBe("B");
+      // Dynamic ref now points to position 1, which is "C"
+      expect(dynamicRef.value()).toBe("C");
+    });
+
+    it("should not stabilize primitives (no ObjectId)", () => {
+      handle.change((d) => {
+        d.numbers = [1, 2, 3];
+      });
+
+      // Primitives don't have ObjectIds, so stays numeric
+      const ref = new Ref(handle, ["numbers", 1]);
+      expect(ref.path).toEqual(["numbers", 1]);
+      expect(ref.value()).toBe(2);
+    });
+
+    it("should keep where clauses dynamic with at()", () => {
+      handle.change((d) => {
+        d.items = [
+          { id: "a", value: 1 },
+          { id: "b", value: 2 },
+        ];
+      });
+
+      // Using at() with where clause keeps it dynamic
+      const dynamicRef = new Ref(handle, ["items", at({ id: "b" })]);
+      expect(dynamicRef.path[1]).toEqual(at({ id: "b" }));
+      expect(dynamicRef.value()).toEqual({ id: "b", value: 2 });
+    });
+
+    it("should auto-stabilize ranges to cursors", () => {
+      handle.change((d) => {
+        d.note = "Hello World";
+      });
+
+      // Numeric range should be stabilized to cursors
+      const ref = new Ref(handle, ["note", [0, 5]]);
+
+      // Path should contain cursor-based range
+      const range = ref.path[1] as [any, any];
+      expect(Array.isArray(range)).toBe(true);
+      expect(typeof range[0]).toBe("object"); // Cursor
+      expect(typeof range[1]).toBe("object"); // Cursor
+
+      expect(ref.value()).toBe("Hello");
+    });
+
+    it("should keep ranges dynamic with at()", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      // Using at() keeps range as numeric
+      const dynamicRef = new Ref(handle, ["text", at([0, 5])]);
+      expect(dynamicRef.path[1]).toEqual(at([0, 5]));
+      expect(dynamicRef.value()).toBe("Hello");
+
+      // Insert at beginning
+      handle.change((d) => {
+        Automerge.splice(d, ["text"], 0, 0, ">> ");
+      });
+
+      // Dynamic range still at positions 0-5 (now "> Hel")
+      expect(dynamicRef.value()).toBe(">> He");
+    });
+  });
+
+  describe("change callback behavior", () => {
+    it("should pass current value to callback", () => {
+      handle.change((d) => {
+        d.counter = 5;
+      });
+
+      const ref = new Ref<number>(handle, ["counter"]);
+
+      let receivedValue: number | undefined;
+      ref.change((val) => {
+        receivedValue = val;
+      });
+
+      expect(receivedValue).toBe(5);
+    });
+
+    it("should not update if callback returns void", () => {
+      handle.change((d) => {
+        d.data = { value: 10 };
+      });
+
+      const ref = new Ref(handle, ["data", "value"]);
+
+      ref.change((val) => {
+        // Return void - no update
+      });
+
+      expect(ref.value()).toBe(10);
+    });
+
+    it("should update when callback returns a value", () => {
+      handle.change((d) => {
+        d.counter = 0;
+      });
+
+      const ref = new Ref<number>(handle, ["counter"]);
+
+      ref.change((val) => val + 10);
+      expect(ref.value()).toBe(10);
+
+      ref.change((val) => val * 2);
+      expect(ref.value()).toBe(20);
+    });
+
+    it("should allow mutations on objects", () => {
+      handle.change((d) => {
+        d.config = { enabled: false, count: 0 };
+      });
+
+      const ref = new Ref(handle, ["config"]);
+
+      ref.change((config) => {
+        config.enabled = true;
+        config.count = 5;
+        // Return void - mutations applied
+      });
+
+      expect(ref.value()).toEqual({ enabled: true, count: 5 });
+    });
+
+    it("should allow replacing entire objects", () => {
+      handle.change((d) => {
+        d.settings = { theme: "light" };
+      });
+
+      const ref = new Ref(handle, ["settings"]);
+
+      ref.change(() => {
+        return { theme: "dark", fontSize: 14 };
+      });
+
+      expect(ref.value()).toEqual({ theme: "dark", fontSize: 14 });
+    });
+
+    it("should work with nested paths", () => {
+      handle.change((d) => {
+        d.user = {
+          profile: {
+            name: "Alice",
+            age: 25,
+          },
+        };
+      });
+
+      const ageRef = new Ref<number>(handle, ["user", "profile", "age"]);
+
+      ageRef.change((age) => age + 1);
+      expect(ageRef.value()).toBe(26);
+      expect(handle.doc().user.profile.age).toBe(26);
+    });
+
+    it("should handle undefined values gracefully", () => {
+      handle.change((d) => {
+        d.data = {};
+      });
+
+      const ref = new Ref(handle, ["data", "missing"]);
+
+      let receivedValue: any;
+      ref.change((val) => {
+        receivedValue = val;
+        return "now exists";
+      });
+
+      expect(receivedValue).toBeUndefined();
+      expect(ref.value()).toBe("now exists");
+    });
+
+    it("should allow conditional updates", () => {
+      handle.change((d) => {
+        d.counter = 5;
+      });
+
+      const ref = new Ref<number>(handle, ["counter"]);
+
+      // Only update if > 10
+      ref.change((val) => {
+        if (val > 10) return 0;
+        // Return undefined = no change
+      });
+
+      expect(ref.value()).toBe(5);
+
+      // Update to trigger condition
+      ref.change(() => 15);
+      ref.change((val) => {
+        if (val > 10) return 0;
+      });
+
+      expect(ref.value()).toBe(0);
+    });
+  });
+
+  describe("on('change') event listening", () => {
+    it("should fire when the referenced value changes", async () => {
+      handle.change((d) => {
+        d.counter = 0;
+      });
+
+      const ref = new Ref<number>(handle, ["counter"]);
+
+      const changePromise = new Promise<void>((resolve) => {
+        ref.on("change", () => {
+          expect(ref.value()).toBe(1);
+          resolve();
+        });
+      });
+
+      handle.change((d) => {
+        d.counter = 1;
+      });
+
+      await changePromise;
+    });
+
+    it("should NOT fire when unrelated values change", async () => {
+      handle.change((d) => {
+        d.counter = 0;
+        d.other = "initial";
+      });
+
+      const ref = new Ref<number>(handle, ["counter"]);
+      let callCount = 0;
+
+      ref.on("change", () => {
+        callCount++;
+      });
+
+      // Change unrelated value
+      handle.change((d) => {
+        d.other = "changed";
+      });
+
+      // Wait a bit and verify callback wasn't called
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(0);
+    });
+
+    it("should fire when nested value changes", async () => {
+      handle.change((d) => {
+        d.user = { profile: { name: "Alice" } };
+      });
+
+      const nameRef = new Ref<string>(handle, ["user", "profile", "name"]);
+
+      const changePromise = new Promise<void>((resolve) => {
+        nameRef.on("change", () => {
+          expect(nameRef.value()).toBe("Bob");
+          resolve();
+        });
+      });
+
+      handle.change((d) => {
+        d.user.profile.name = "Bob";
+      });
+
+      await changePromise;
+    });
+
+    it("should NOT fire when parent's sibling changes", async () => {
+      handle.change((d) => {
+        d.user = { profile: { name: "Alice", age: 30 } };
+      });
+
+      const nameRef = new Ref<string>(handle, ["user", "profile", "name"]);
+      let callCount = 0;
+
+      nameRef.on("change", () => {
+        callCount++;
+      });
+
+      // Change sibling property
+      handle.change((d) => {
+        d.user.profile.age = 31;
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(0);
+    });
+
+    it("should fire for array element changes with ObjectId refs", async () => {
+      handle.change((d) => {
+        d.todos = [
+          { title: "First", done: false },
+          { title: "Second", done: false },
+        ];
+      });
+
+      // This ref will be stabilized to ObjectId
+      const todoRef = new Ref(handle, ["todos", 0]);
+
+      const changePromise = new Promise<void>((resolve) => {
+        todoRef.on("change", () => {
+          expect(todoRef.value()?.done).toBe(true);
+          resolve();
+        });
+      });
+
+      handle.change((d) => {
+        d.todos[0].done = true;
+      });
+
+      await changePromise;
+    });
+
+    it("should fire for dynamic refs at the correct position", async () => {
+      handle.change((d) => {
+        d.items = ["a", "b", "c"];
+      });
+
+      const dynamicRef = new Ref(handle, ["items", at(1)]);
+
+      const changePromise = new Promise<void>((resolve) => {
+        dynamicRef.on("change", () => {
+          expect(dynamicRef.value()).toBe("modified");
+          resolve();
+        });
+      });
+
+      // Change position 1
+      handle.change((d) => {
+        d.items[1] = "modified";
+      });
+
+      await changePromise;
+    });
+
+    it("should provide patches in callback", async () => {
+      handle.change((d) => {
+        d.data = { value: 10 };
+      });
+
+      const ref = new Ref(handle, ["data", "value"]);
+
+      const changePromise = new Promise<void>((resolve) => {
+        ref.on("change", ({ patches }) => {
+          expect(patches).toBeDefined();
+          expect(Array.isArray(patches)).toBe(true);
+          expect(patches.length).toBeGreaterThan(0);
+          resolve();
+        });
+      });
+
+      handle.change((d) => {
+        d.data.value = 20;
+      });
+
+      await changePromise;
+    });
+
+    it("should allow unsubscribing from changes", async () => {
+      handle.change((d) => {
+        d.counter = 0;
+      });
+
+      const ref = new Ref<number>(handle, ["counter"]);
+      let callCount = 0;
+
+      const unsubscribe = ref.on("change", () => {
+        callCount++;
+      });
+
+      // Make one change
+      handle.change((d) => {
+        d.counter = 1;
+      });
+
+      // Wait for the change to propagate
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Unsubscribe
+      unsubscribe();
+
+      // Make another change
+      handle.change((d) => {
+        d.counter = 2;
+      });
+
+      // Verify only the first change was detected
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callCount).toBe(1);
+    });
+
+    it("should fire for text range changes", async () => {
+      handle.change((d) => {
+        d.note = "Hello World";
+      });
+
+      const rangeRef = new Ref(handle, ["note", [0, 5]]);
+
+      const changePromise = new Promise<void>((resolve) => {
+        rangeRef.on("change", () => {
+          // Range should have shifted due to cursor stabilization
+          expect(rangeRef.value()).toBe("Hello");
+          resolve();
+        });
+      });
+
+      // Insert text before the range
+      handle.change((d) => {
+        Automerge.splice(d, ["note"], 0, 0, ">>> ");
+      });
+
+      await changePromise;
+    });
+
+    it("should fire for where clause refs when matched item changes", async () => {
+      handle.change((d) => {
+        d.items = [
+          { id: "a", value: 1 },
+          { id: "b", value: 2 },
+        ];
+      });
+
+      // Where clause will be stabilized to ObjectId
+      const ref = new Ref(handle, ["items", { id: "b" }, "value"]);
+
+      const changePromise = new Promise<void>((resolve) => {
+        ref.on("change", () => {
+          expect(ref.value()).toBe(20);
+          resolve();
+        });
+      });
+
+      handle.change((d) => {
+        d.items[1].value = 20;
+      });
+
+      await changePromise;
     });
   });
 });

@@ -26,6 +26,7 @@ export function at<T>(segment: T): DynamicSegment<T> {
   return { __dynamic: true, value: segment };
 }
 
+// TODO: narrow the type of the segment to the type of the DynamicSegment
 /**
  * Type guard to check if a segment is dynamic.
  */

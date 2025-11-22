@@ -1,36 +1,20 @@
-import type * as Automerge from "@automerge/automerge";
-import type { DocHandle } from "@automerge/automerge-repo";
-
-// ---- Core Types ----
+import type {
+  Cursor,
+  Heads,
+  Doc,
+  Patch,
+  PatchInfo,
+} from "@automerge/automerge";
 
 export type PathSegment =
   | string // Property name
-  | number // Array index (or ObjectId lookup)
+  | number // Array index
   | { $id: string } // Explicit ObjectId
-  | Record<string, any> // Where clause (exact match in array)
+  | Record<string, any> // Where clause (exact match in array) (TODO: could be a predicate?)
   | [number, number] // Dynamic range (numeric indices)
-  | [Automerge.Cursor, Automerge.Cursor]; // Stable range (cursors)
+  | [Cursor, Cursor]; // Stable range (cursors)
 
-export interface RefOptions {
-  heads?: Automerge.Heads;
-}
-
-// ---- Dynamic Segment Marker ----
-
-export type DynamicSegment<T> = { __dynamic: true; value: T };
-
-// ---- Event Types ----
-
-export interface ChangeEvent {
-  doc: Automerge.Doc<any>;
-  patches: Automerge.Patch[];
-  patchInfo: Automerge.PatchInfo<any>;
-}
-
-export type ChangeCallback = (event: ChangeEvent) => void;
-
-// ---- Path Builder Types (used in ref() factory) ----
-
+// TODO: think about how this relates to PathSegment
 export type PathBuilder =
   | string
   | number
@@ -38,3 +22,18 @@ export type PathBuilder =
   | [number, number]
   | object // Direct object reference
   | DynamicSegment<any>;
+
+export interface RefOptions {
+  heads?: Heads;
+}
+
+export type DynamicSegment<T> = { __dynamic: true; value: T };
+
+// TODO: maybe reuse a type from automerge?
+export interface ChangeEvent {
+  doc: Doc<any>;
+  patches: Patch[];
+  patchInfo: PatchInfo<any>;
+}
+
+export type ChangeCallback = (event: ChangeEvent) => void;

@@ -1,5 +1,7 @@
 import * as Automerge from "@automerge/automerge";
 
+// TODO: think about this...
+
 // Context for splice/updateText helpers
 // This will be set by Ref.change() before calling the user's callback
 let currentDoc: Automerge.Doc<any> | null = null;
