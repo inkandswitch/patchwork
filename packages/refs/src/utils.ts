@@ -1,7 +1,8 @@
 import * as Automerge from "@automerge/automerge";
+import type { DynamicSegment } from "./types";
 
 // TODO: think about this...
-// TODO: add tests, and move at() into here
+// TODO: add tests
 
 /**
  * Type guard to check if a value is an Automerge Cursor.
@@ -12,6 +13,44 @@ export function isCursor(value: any): value is Automerge.Cursor {
   if (typeof value !== "string") return false;
   // Check format: starts with number, followed by @, followed by alphanumeric
   return /^\d+@[a-zA-Z0-9]+$/.test(value);
+}
+
+/**
+ * Mark a path segment as dynamic/unstable.
+ *
+ * By default, refs are stable:
+ * - Numeric indices resolve to ObjectIds
+ * - Where clauses resolve to ObjectIds
+ * - Ranges convert to cursors
+ *
+ * Wrapping a segment in at() makes it dynamic:
+ * - at(0) - Positional index (not ObjectId)
+ * - at({ title: "x" }) - Re-query on each access
+ * - at([10, 20]) - Numeric indices (not cursors)
+ *
+ * @example
+ * ```ts
+ * // Stable (resolves to ObjectId)
+ * ref(handle, 'todos', 0)
+ *
+ * // Dynamic (positional index)
+ * ref(handle, 'todos', at(0))
+ * ```
+ */
+export function at<T>(segment: T): DynamicSegment<T> {
+  return { __dynamic: true, value: segment };
+}
+
+/**
+ * Type guard to check if a segment is dynamic.
+ */
+export function isDynamic(segment: any): segment is DynamicSegment<any> {
+  return (
+    segment !== null &&
+    segment !== undefined &&
+    typeof segment === "object" &&
+    segment.__dynamic === true
+  );
 }
 
 // Context for splice/updateText helpers
@@ -67,6 +106,7 @@ export function splice(
 /**
  * Update the entire text value.
  * Must be called within a ref.change() callback.
+ * EXPERIMENTAL
  *
  * @param text - The text object (not used, for API ergonomics)
  * @param newValue - The new text value

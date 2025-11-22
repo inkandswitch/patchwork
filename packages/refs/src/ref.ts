@@ -6,8 +6,7 @@ import type {
   ChangeCallback,
   PathBuilder,
 } from "./types";
-import { isDynamic } from "./at";
-import { isCursor } from "./utils";
+import { isDynamic, isCursor } from "./utils";
 
 // TODO: consider a value getter
 
@@ -564,13 +563,13 @@ export class Ref<T = any> {
     }
 
     // Range
-    if (Array.isArray(segment)) {
-      const [start, end] = segment;
-      // Check if cursors (strings) or numbers
-      if (isCursor(start) && isCursor(end)) {
-        return `[$${start},$${end}]`;
-      }
-      return `[${start},${end}]`;
+    if (isCursorPair(segment)) {
+      return `[$${segment[0]},$${segment[1]}]`;
+    }
+
+    // Range
+    if (isNumberPair(segment)) {
+      return `[${segment[0]},${segment[1]}]`;
     }
 
     // Where clause - serialize as JSON for now
@@ -602,4 +601,34 @@ function isCursorPair(
     isCursor(range[0]) &&
     isCursor(range[1])
   );
+}
+
+/**
+ * Create a ref to a location in an Automerge document.
+ *
+ * This is a convenience wrapper around `new Ref()` that accepts
+ * variadic arguments instead of an array.
+ *
+ * Refs are stable by default:
+ * - Numeric indices resolve to ObjectIds
+ * - Where clauses resolve to ObjectIds
+ * - Ranges convert to cursors
+ *
+ * Use `at()` to create dynamic/unstable refs.
+ *
+ * @example
+ * ```ts
+ * // Stable refs (survive reordering)
+ * ref(handle, 'todos', 0, 'title')
+ * ref(handle, 'todos', { id: 'abc' }, 'done')
+ *
+ * // Dynamic refs (positional)
+ * ref(handle, 'todos', at(0), 'title')
+ * ```
+ */
+export function ref<T = any>(
+  docHandle: DocHandle<any>,
+  ...segments: PathBuilder[]
+): Ref<T> {
+  return new Ref<T>(docHandle, segments);
 }

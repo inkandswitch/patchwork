@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { Cursor, splice } from "@automerge/automerge";
-import { Repo, ImmutableString } from "@automerge/automerge-repo";
-import type { DocHandle } from "@automerge/automerge-repo";
+import {
+  Repo,
+  splice,
+  type Cursor,
+  type DocHandle,
+} from "@automerge/automerge-repo";
 import { Ref } from "../ref";
-import { at } from "../at";
+import { at } from "../utils";
 
 describe("Ref", () => {
   let repo: Repo;

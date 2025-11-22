@@ -7,8 +7,6 @@ export type {
   PathBuilder,
 } from "./types";
 
-export { Ref } from "./ref";
+export { Ref, ref } from "./ref";
 
-export { splice, updateText, isCursor } from "./utils";
-export { at, isDynamic } from "./at";
-export { ref } from "./factory";
+export { splice, updateText, isCursor, at, isDynamic } from "./utils";
