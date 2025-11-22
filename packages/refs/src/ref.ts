@@ -26,18 +26,128 @@ export class Ref<T = any> {
 
   constructor(
     docHandle: DocHandle<any>,
-    segments: PathBuilder[],
+    segments: PathBuilder[] | PathSegment[],
     options: RefOptions = {}
   ) {
     this.docHandle = docHandle;
-    this.options = options;
 
-    // Auto-stabilize segments on construction
-    const doc = docHandle.doc();
-    this.path = this.#buildStablePath(doc, segments);
+    // Extract and remove internal flag before storing options
+    const { _skipStabilization, ...publicOptions } = options;
+    this.options = publicOptions;
+
+    // If segments are already stabilized (from URL parsing), use them directly
+    if (_skipStabilization) {
+      this.path = segments as PathSegment[];
+    } else {
+      // Auto-stabilize segments on construction
+      const doc = docHandle.doc();
+      this.path = this.#buildStablePath(doc, segments as PathBuilder[]);
+    }
 
     // Create context for text mutation helpers
     this.ctx = this.#createContext();
+  }
+
+  /**
+   * Create a Ref from a URL path and optional heads string.
+   *
+   * This is used internally by findRef() to parse URL components.
+   *
+   * @param handle - The document handle
+   * @param pathStr - The path string from the URL (e.g., "todos/$abc/title")
+   * @param headsStr - Optional comma-separated heads string
+   * @returns A new Ref instance
+   *
+   * @example
+   * ```ts
+   * const ref = Ref.fromUrl(handle, "todos/$abc/title", "head1,head2");
+   * ```
+   */
+  static fromUrl<T = any>(
+    handle: DocHandle<any>,
+    pathStr: string,
+    headsStr?: string
+  ): Ref<T> {
+    // Parse path segments
+    const path = pathStr ? Ref.#parsePathSegments(pathStr) : [];
+
+    // Parse heads if present
+    const options: RefOptions = {
+      _skipStabilization: true,
+    };
+    if (headsStr) {
+      options.heads = headsStr.split(",") as Automerge.Heads;
+    }
+
+    // Create ref with pre-parsed path segments
+    return new Ref<T>(handle, path, options);
+  }
+
+  /**
+   * Parse a serialized path string back into PathSegments.
+   * @internal
+   */
+  static #parsePathSegments(pathStr: string): PathSegment[] {
+    if (!pathStr || pathStr === "/") return [];
+
+    return pathStr.split("/").map((segment): PathSegment => {
+      // Empty segment
+      if (!segment) {
+        throw new Error("Invalid path: empty segment");
+      }
+
+      // ObjectId or Cursor: $abc123
+      // NOTE: Both ObjectIds and Cursors have the same format (e.g., "2@abc...")
+      // Cursors are ONLY used in ranges [cursor1,cursor2]
+      // So a standalone $... is always an ObjectId
+      if (segment.startsWith("$")) {
+        const id = segment.slice(1);
+        return { $id: id };
+      }
+
+      // Range: [start,end] or [$cursor1,$cursor2]
+      if (segment.startsWith("[") && segment.endsWith("]")) {
+        const rangeContent = segment.slice(1, -1);
+        const parts = rangeContent.split(",");
+
+        if (parts.length !== 2) {
+          throw new Error(`Invalid range: ${segment}`);
+        }
+
+        // Cursor range: [$cursor1,$cursor2]
+        if (parts[0].startsWith("$") && parts[1].startsWith("$")) {
+          return [
+            parts[0].slice(1) as Automerge.Cursor,
+            parts[1].slice(1) as Automerge.Cursor,
+          ];
+        }
+
+        // Numeric range: [0,10]
+        const start = parseInt(parts[0], 10);
+        const end = parseInt(parts[1], 10);
+        if (isNaN(start) || isNaN(end)) {
+          throw new Error(`Invalid numeric range: ${segment}`);
+        }
+        return [start, end];
+      }
+
+      // Where clause or object: {...}
+      if (segment.startsWith("{") && segment.endsWith("}")) {
+        try {
+          return JSON.parse(segment);
+        } catch (e) {
+          throw new Error(`Invalid JSON segment: ${segment}`);
+        }
+      }
+
+      // Number: just digits
+      if (/^\d+$/.test(segment)) {
+        return parseInt(segment, 10);
+      }
+
+      // String property: everything else
+      return segment;
+    });
   }
 
   // ---- Public API ----

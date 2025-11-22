@@ -10,4 +10,4 @@ export type {
 
 export { Ref, ref } from "./ref";
 
-export { at } from "./utils";
+export { at, findRef } from "./utils";
