@@ -7,6 +7,7 @@ import type {
   PathBuilder,
 } from "./types";
 import { isDynamic } from "./at";
+import { isCursor } from "./utils";
 
 // TODO: consider a value getter
 
@@ -316,6 +317,7 @@ export class Ref<T = any> {
     }
   }
 
+  // TODO: should this throw?
   /**
    * Convert a PathSegment[] to Automerge.Prop[] by resolving ObjectIds to indices.
    */
@@ -444,29 +446,21 @@ export class Ref<T = any> {
     text: string,
     range: [Automerge.Cursor, Automerge.Cursor] | [number, number]
   ): string {
-    if (!Array.isArray(range) || range.length !== 2) return "";
-
     // Numeric range - simple slice
-    if (typeof range[0] === "number") {
-      const [start, end] = range as [number, number];
-      return text.slice(start, end);
+    if (isNumberPair(range)) {
+      return text.slice(range[0], range[1]);
     }
 
     // Cursor-based range - resolve cursor positions
-    if (typeof range[0] === "object") {
-      const [startCursor, endCursor] = range as [
-        Automerge.Cursor,
-        Automerge.Cursor,
-      ];
-
+    if (isCursorPair(range)) {
       try {
         const doc = this.doc();
         // Get the path to the text (excluding the range segment itself)
         const textPath = this.path.slice(0, -1);
         const propPath = this.#pathToPropPath(doc, textPath);
 
-        const start = Automerge.getCursorPosition(doc, propPath, startCursor);
-        const end = Automerge.getCursorPosition(doc, propPath, endCursor);
+        const start = Automerge.getCursorPosition(doc, propPath, range[0]);
+        const end = Automerge.getCursorPosition(doc, propPath, range[1]);
 
         if (start === undefined || end === undefined) return "";
         return text.slice(start, end);
@@ -534,4 +528,30 @@ export class Ref<T = any> {
     // Where clause - serialize as JSON for now
     return JSON.stringify(segment);
   }
+}
+
+/**
+ * Type guard to check if a value is a pair of numbers.
+ */
+function isNumberPair(range: any): range is [number, number] {
+  return (
+    Array.isArray(range) &&
+    range.length === 2 &&
+    typeof range[0] === "number" &&
+    typeof range[1] === "number"
+  );
+}
+
+/**
+ * Type guard to check if a value is a pair of Automerge Cursors.
+ */
+function isCursorPair(
+  range: any
+): range is [Automerge.Cursor, Automerge.Cursor] {
+  return (
+    Array.isArray(range) &&
+    range.length === 2 &&
+    isCursor(range[0]) &&
+    isCursor(range[1])
+  );
 }

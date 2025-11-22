@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Cursor, splice } from "@automerge/automerge";
-import { Repo } from "@automerge/automerge-repo";
+import { Repo, ImmutableString } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
 import { Ref } from "../ref";
 import { at } from "../at";
@@ -759,4 +759,22 @@ describe("Ref", () => {
       await changePromise;
     });
   });
+});
+
+// Example of automerge CRDT string (default) vs immutable string. can also use isImmutableString() to check if a string is immutable.
+type OurDoc = {
+  note: string;
+  immutable: ImmutableString;
+};
+const _repo = new Repo();
+const _handle = _repo.create<OurDoc>();
+const str = _handle.doc().immutable;
+
+_handle.change((doc) => {
+  doc.note = "Hello World";
+  doc.immutable = new ImmutableString("Hello World");
+});
+
+_handle.change((doc) => {
+  splice(doc, ["note"], 0, 0, "Hello");
 });

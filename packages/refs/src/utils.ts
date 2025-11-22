@@ -3,6 +3,17 @@ import * as Automerge from "@automerge/automerge";
 // TODO: think about this...
 // TODO: add tests, and move at() into here
 
+/**
+ * Type guard to check if a value is an Automerge Cursor.
+ * Cursors are strings in the format: "number@alphanumeric"
+ * Example: "2@fe74e7d3d9d2f00bf7096f6a1eb64afb"
+ */
+export function isCursor(value: any): value is Automerge.Cursor {
+  if (typeof value !== "string") return false;
+  // Check format: starts with number, followed by @, followed by alphanumeric
+  return /^\d+@[a-zA-Z0-9]+$/.test(value);
+}
+
 // Context for splice/updateText helpers
 // This will be set by Ref.change() before calling the user's callback
 let currentDoc: Automerge.Doc<any> | null = null;
