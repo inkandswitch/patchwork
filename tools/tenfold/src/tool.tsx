@@ -16,11 +16,30 @@ import {
   Show,
   Suspense,
 } from "solid-js";
-import font from "./font.txt";
-import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
+import font from "./font.txt?raw";
+import { javascript } from "@codemirror/lang-javascript";
 import { noirTheme } from "./codemirror/theme.ts";
-import { indentWithTab } from "@codemirror/commands";
+import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 import { keymap } from "@codemirror/view";
+import { type WorkerShape } from "@valtown/codemirror-ts/worker";
+import * as Comlink from "comlink";
+import {
+  tsFacet,
+  tsAutocomplete,
+  tsGoto,
+  tsHover,
+  tsLinterWorker,
+  tsSync,
+  tsTwoslash,
+} from "@valtown/codemirror-ts";
+import { autocompletion } from "@codemirror/autocomplete";
+
+const innerWorker = new Worker(
+  new URL("./codemirror/worker.ts", import.meta.url),
+  { type: "module" }
+);
+const worker = Comlink.wrap<WorkerShape>(innerWorker);
+await worker.initialize();
 
 export default function TenfoldExperience(props: {
   handle: DocHandle<Tenfold>;
@@ -32,7 +51,7 @@ export default function TenfoldExperience(props: {
     props.element
   );
 
-  const [editing, setEditing] = createSignal<number>();
+  const [editing, setEditing] = createSignal<number>(0);
   const [canvas, setCanvas] = createSignal<HTMLCanvasElement>();
   const [api, setAPI] = createSignal<ReturnType<typeof createTenfold>[0]>();
 
@@ -133,9 +152,27 @@ export default function TenfoldExperience(props: {
                 handle={lettersDocHandle()}
                 path={path()}
                 extensions={[
-                  keymap.of([indentWithTab]),
+                  keymap.of([indentWithTab, ...defaultKeymap]),
                   javascript(),
-                  noirTheme
+                  noirTheme,
+                  tsFacet.of({
+                    worker,
+                    path: path().join("/") + ".js",
+                  }),
+                  autocompletion({ override: [tsAutocomplete()] }),
+                  tsSync(),
+                  tsGoto({
+                    gotoHandler(path, hover, view) {
+                      const fileName = hover.typeDef?.[0]?.fileName;
+                      if (fileName?.startsWith("/automerge:")) {
+                        location.hash = fileName.slice(1);
+                      }
+                      return undefined;
+                    },
+                  }),
+                  tsHover(),
+                  tsTwoslash(),
+                  tsLinterWorker(),
                 ]}
               />
             </Show>
