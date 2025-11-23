@@ -3,7 +3,13 @@ import type {
   DocHandle,
   DocHandleChangePayload,
 } from "@automerge/automerge-repo";
-import type { PathSegment, PathInput, RefOptions, RefContext } from "./types";
+import type {
+  PathSegment,
+  PathInput,
+  RefOptions,
+  RefContext,
+  InferRefType,
+} from "./types";
 import { QUERY, ID } from "./types";
 import {
   isNumericRange,
@@ -23,13 +29,16 @@ import {
  * Refs are stable by default - they track document objects by ID rather than position,
  * so they remain valid even when the document structure changes.
  *
+ * @typeParam T - The type of value at this ref's location
+ *
  * @example
  * ```ts
- * const titleRef = ref(handle, 'todos', 0, 'title');
- * console.log(titleRef.value()); // "Buy milk"
+ * type Doc = { todos: Array<{ title: string; done: boolean }> };
+ * const handle: DocHandle<Doc> = ...;
  *
- * titleRef.change(title => title.toUpperCase());
- * console.log(titleRef.value()); // "BUY MILK"
+ * const titleRef = ref(handle, 'todos', 0, 'title');
+ * // titleRef is Ref<string> - automatically inferred!
+ * console.log(titleRef.value()); // string | undefined
  * ```
  */
 export class Ref<T = any> {
@@ -688,23 +697,24 @@ export class Ref<T = any> {
 }
 
 /**
- * Create a ref to a location in an Automerge document.
- *
- * Refs are stable by default - they track by ID, not position.
- *
- * @example
- * ```ts
- * // Stable refs (survive document changes)
- * ref(handle, 'todos', 0, 'title')
- * ref(handle, 'todos', { id: 'abc' }, 'done')
- *
- * // Dynamic refs (track by position)
- * ref(handle, 'todos', at(0), 'title')
- * ```
+ * Create a ref with automatic type inference from document and path.
  */
-export function ref<T = any>(
+export function ref<TDoc, TPath extends readonly PathInput[]>(
+  docHandle: DocHandle<TDoc>,
+  ...segments: [...TPath]
+): Ref<InferRefType<TDoc, TPath>>;
+
+/**
+ * Create a ref with manual type override.
+ */
+export function ref<T>(
   docHandle: DocHandle<any>,
   ...segments: PathInput[]
-): Ref<T> {
-  return new Ref<T>(docHandle, segments);
+): Ref<T>;
+
+export function ref<
+  TDoc = any,
+  TPath extends readonly PathInput[] = PathInput[],
+>(docHandle: DocHandle<TDoc>, ...segments: PathInput[]): Ref<any> {
+  return new Ref<any>(docHandle, segments);
 }

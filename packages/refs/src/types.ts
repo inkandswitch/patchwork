@@ -37,32 +37,58 @@ export interface RefContext {
   /**
    * Splice text at the given position.
    * Only works when the ref points to an Automerge text object.
-   *
-   * @param index - Position to splice at
-   * @param deleteCount - Number of characters to delete
-   * @param insert - Optional string to insert
-   *
-   * @example
-   * ```ts
-   * textRef.change((text, ctx) => {
-   *   ctx.splice(0, 5, "new"); // Replace first 5 chars with "new"
-   * });
-   * ```
    */
   splice(index: number, deleteCount: number, insert?: string): void;
 
   /**
    * Update the entire text value.
    * Only works when the ref points to an Automerge text object.
-   *
-   * @param newValue - The new text value
-   *
-   * @example
-   * ```ts
-   * textRef.change((text, ctx) => {
-   *   ctx.updateText("completely new text");
-   * });
-   * ```
    */
   updateText(newValue: string): void;
 }
+
+/**
+ * Get the value type at a specific path segment.
+ * Handles string keys, numeric indices, where clauses, and ranges.
+ */
+type GetSegmentValue<TObj, TSegment> =
+  // String property access
+  TSegment extends string
+    ? TSegment extends keyof TObj
+      ? TObj[TSegment]
+      : unknown
+    : // Numeric index (array access) OR where clause (object filter) → array element
+      TSegment extends number | Record<string, any>
+      ? TObj extends readonly (infer E)[]
+        ? E
+        : unknown
+      : // Ranges return unknown (can't determine the slice type precisely)
+        TSegment extends [number, number]
+        ? unknown
+        : // PathSegment with symbols returns unknown
+          TSegment extends PathSegment
+          ? unknown
+          : // Default: unknown
+            unknown;
+
+/**
+ * Recursively traverse a path through a document type.
+ * Returns the type at the end of the path, or unknown if the path is invalid.
+ */
+export type PathValue<TDoc, TPath extends readonly any[]> = TPath extends []
+  ? TDoc
+  : TPath extends readonly [infer First, ...infer Rest]
+    ? GetSegmentValue<TDoc, First> extends infer Next
+      ? Next extends never
+        ? unknown
+        : PathValue<Next, Rest>
+      : unknown
+    : unknown;
+
+/**
+ * Helper to infer the type of a ref based on document and path.
+ */
+export type InferRefType<TDoc, TPath extends readonly any[]> = PathValue<
+  TDoc,
+  TPath
+>;
