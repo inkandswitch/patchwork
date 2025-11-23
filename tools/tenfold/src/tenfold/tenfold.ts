@@ -45,8 +45,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const rand = (lo = -1, hi = 1) => denorm(Math.random(), lo, hi);
   const clamp = (v: number, lo = -1, hi = 1) => Math.max(lo, Math.min(hi, v));
   const norm = (n: number, lo = -1, hi = 1) => (n - lo) / (hi - lo);
+  const clip = (n, lo = 0, hi = 1) => ((n - lo) / (hi - lo)) * 2 - 1;
   const denorm = (n: number, lo = -1, hi = 1) => n * (hi - lo) + lo;
-  const declip = (n: number, lo = 0, hi = 1) => denorm(norm(n), lo, hi);
+  const declip = (n: number, lo = 0, hi = 1) => ((n + 1) / 2) * (hi - lo) + lo;
   const renorm = (
     v: number,
     lo = -1,
@@ -56,12 +57,24 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     doClamp = false
   ) => {
     let n = norm(v, lo, hi);
-    if (doClamp) n = clamp(n, lo, hi);
+    if (doClamp) n = clamp(n, 0);
     return denorm(n, LO, HI);
   };
 
-  const cosn = (n: number) => Math.cos(n * TAU)
-  const sinn = (n: number) => Math.sin(n * TAU)
+  const cosn = (n: number) => Math.cos(n * TAU);
+  const sinn = (n: number) => Math.sin(n * TAU);
+
+  // rotate point x,y around pivot px,py by turns (normalized)
+  const rotate = (x, y, px, py, turns) => {
+    const dx = x - px;
+    const dy = y - py;
+    const cos = cosn(turns);
+    const sin = sinn(turns);
+    return {
+      x: px + dx * cos - dy * sin,
+      y: py + dx * sin + dy * cos,
+    };
+  }
   
   // UNHELPFUL HELPERS
 
@@ -359,13 +372,19 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     },
     circle(x: number, y: number, r: number) {
       ctx.moveTo(x + r, y);
-      api.arc(x, y, r);
+      api.arc(x, y, Math.abs(r));
       newPath = true;
     },
     arc(x: number, y: number, r: number, start = 0, end = 1, ccw = false) {
-      ctx.arc(x, y, r, start * TAU, end * TAU, ccw);
+      ctx.arc(x, y, Math.abs(r), start * TAU, end * TAU, ccw);
     },
-    text(str: string, x: number, y: number, size = 16, k = size * 0.75) {
+    quadratic(cx, cy, x, y) {
+      ctx.quadraticCurveTo(cx, cy, x, y);
+    },
+    cubic(cx1, cy1, cx2, cy2, x, y) {
+      ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x, y);
+    },
+    text(str = "you found the easter egg", x = -0.725, y = -0.8, size = 2, tracking = size * 0.75) {
       let _x = x;
       for (let c of str) {
         // perform a newline
@@ -387,8 +406,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
           }
         }
         // advance
-        x += k;
+        x += tracking;
       }
+      newPath = true
     },
     mod,
     rand,
@@ -398,6 +418,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     renorm,
     cosn,
     sinn,
+    rotate,
     TAU,
     PI,
   };
