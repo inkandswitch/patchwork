@@ -80,11 +80,11 @@ const { promise: repoReady, resolve: resolveRepoReady } =
   Promise.withResolvers<Repo>();
 
 function sendMessageToClients(message: any) {
-  self.clients.matchAll().then((clients) => {
-    clients.forEach((client) => {
-      client.postMessage(message);
-    });
-  });
+  self.clients
+    .matchAll()
+    .then((clients) =>
+      clients.forEach((client) => client.postMessage(message))
+    );
 }
 
 const automergeResponse = fetch("/automerge.wasm");

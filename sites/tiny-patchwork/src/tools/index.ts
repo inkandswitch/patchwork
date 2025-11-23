@@ -44,9 +44,11 @@ import { plugins as markdownLinksPlugins } from "@grjte/codemirror-md-links";
 import { plugins as syncIndicatorPlugins } from "@tiny-patchwork/sync-indicator";
 // @ts-expect-error no types
 import { plugins as commandsPlugins } from "@orion/commands";
-import "@inkandswitch/tenfold/style";
+import "@inkandswitch/tenfold/style.css";
 // @ts-expect-error no types
 import { plugins as tenfoldPlugins } from "@inkandswitch/tenfold";
+
+console.log(tenfoldPlugins);
 
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
