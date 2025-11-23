@@ -20,84 +20,72 @@ import {
 /**
  * A reference to a location in an Automerge document.
  *
- * Refs are stable by default - numeric indices and where clauses
- * automatically resolve to Automerge ObjectIds. Use `at()` for dynamic/unstable refs.
+ * Refs are stable by default - they track document objects by ID rather than position,
+ * so they remain valid even when the document structure changes.
+ *
+ * @example
+ * ```ts
+ * const titleRef = ref(handle, 'todos', 0, 'title');
+ * console.log(titleRef.value()); // "Buy milk"
+ *
+ * titleRef.change(title => title.toUpperCase());
+ * console.log(titleRef.value()); // "BUY MILK"
+ * ```
  */
 export class Ref<T = any> {
-  // Public properties
   readonly docHandle: DocHandle<any>;
   readonly path: PathSegment[];
   readonly options: RefOptions;
 
-  // Private properties
   #ctx?: RefContext;
+  #heads?: string[];
 
   constructor(
     docHandle: DocHandle<any>,
     segments: PathInput[],
-    options?: RefOptions
-  );
-  constructor(
-    docHandle: DocHandle<any>,
-    segments: PathSegment[],
-    options: RefOptions,
-    skipStabilization: true
-  );
-  constructor(
-    docHandle: DocHandle<any>,
-    segments: PathInput[] | PathSegment[],
-    options: RefOptions = {},
-    skipStabilization = false
+    options: RefOptions = {}
   ) {
     this.docHandle = docHandle;
+    this.#heads = options.heads;
     this.options = options;
 
-    if (skipStabilization) {
-      // Path segments are already parsed (from URL parsing)
-      this.path = segments as PathSegment[];
-    } else {
-      // Normalize and stabilize segments on construction
-      const doc = docHandle.doc();
-      this.path = this.#normalizePath(doc, segments as PathInput[]);
-    }
+    const doc = docHandle.doc();
+    this.path = this.#normalizePath(doc, segments);
   }
 
   /**
-   * Create a Ref from a URL path and optional heads string.
-   *
-   * This is used internally by findRef() to parse URL components.
-   *
-   * @param handle - The document handle
-   * @param path - The path string from the URL (e.g., "todos/$abc/title")
-   * @param heads - Optional comma-separated heads string
-   * @returns A new Ref instance
-   *
-   * @example
-   * ```ts
-   * const ref = Ref.fromUrl(handle, "todos/$abc/title", "head1,head2");
-   * ```
+   * The Automerge document heads this ref is pinned to (if any).
+   * Setting this creates a view of the document at specific heads.
+   */
+  set heads(heads: string[] | undefined) {
+    this.#heads = heads;
+    this.options.heads = heads;
+  }
+
+  get heads(): string[] | undefined {
+    return this.#heads;
+  }
+
+  /**
+   * Parse a ref from a URL string.
    */
   static fromUrl<T = any>(
     handle: DocHandle<any>,
     path: string,
     heads?: string
   ): Ref<T> {
-    // Parse path segments (already stable from URL)
     const segments = path ? Ref.#parsePath(path) : [];
 
-    // Parse heads if present
     const options: RefOptions = {};
     if (heads) {
       options.heads = heads.split(",");
     }
 
-    // Create ref with pre-parsed stable path segments using private overload
-    return new Ref<T>(handle, segments, options, true);
+    return new Ref<T>(handle, segments, options);
   }
 
   /**
    * Parse a serialized path string back into PathSegments.
-   * @internal
    */
   static #parsePath(path: string): PathSegment[] {
     if (!path || path === "/") return [];
@@ -112,36 +100,29 @@ export class Ref<T = any> {
 
   /**
    * Parse a single path segment from URL format.
-   * @internal
    */
   static #parse(segment: string): PathSegment {
-    // ObjectId: $abc123
     if (segment.startsWith("$")) {
       return { [ID]: segment.slice(1) };
     }
 
-    // Range: [start,end] or [$cursor1,$cursor2]
     if (segment.startsWith("[")) {
       return this.#parseRange(segment);
     }
 
-    // JSON/where clause: {"key":"value"}
     if (segment.startsWith("{")) {
       return this.#parseJson(segment);
     }
 
-    // Numeric index: 0, 1, 42
     if (/^\d+$/.test(segment)) {
-      return { [QUERY]: parseInt(segment, 10) };
+      return { [QUERY]: parseInt(segment, 10), [ID]: undefined };
     }
 
-    // String property: name, title, etc
-    return { [QUERY]: segment };
+    return { [QUERY]: segment, [ID]: undefined };
   }
 
   /**
-   * Parse a range segment: [start,end] or [$cursor1,$cursor2].
-   * @internal
+   * Parse a range segment.
    */
   static #parseRange(segment: string): PathSegment {
     const content = segment.slice(1, -1);
@@ -153,7 +134,6 @@ export class Ref<T = any> {
 
     const [first, second] = parts;
 
-    // Cursor range: [$cursor1,$cursor2]
     if (first.startsWith("$") && second.startsWith("$")) {
       return {
         [ID]: [
@@ -163,7 +143,6 @@ export class Ref<T = any> {
       };
     }
 
-    // Numeric range: [0,10]
     const start = parseInt(first, 10);
     const end = parseInt(second, 10);
 
@@ -176,7 +155,6 @@ export class Ref<T = any> {
 
   /**
    * Parse a JSON segment (where clause).
-   * @internal
    */
   static #parseJson(segment: string): PathSegment {
     try {
@@ -186,8 +164,6 @@ export class Ref<T = any> {
       throw new Error(`Invalid JSON segment: ${segment}`);
     }
   }
-
-  // ---- Public API ----
 
   /**
    * Get the context object for text mutation helpers.
@@ -215,7 +191,8 @@ export class Ref<T = any> {
 
   /**
    * Get the current value at this ref's location.
-   * Returns undefined if the path cannot be resolved.
+   *
+   * @returns The value, or undefined if the path can't be resolved
    */
   value(): T | undefined {
     const doc = this.doc();
@@ -224,7 +201,7 @@ export class Ref<T = any> {
   }
 
   /**
-   * Get the document (or a view at specific heads).
+   * Get the Automerge document, or a view at specific heads if set.
    */
   doc(): Automerge.Doc<any> {
     const doc = this.docHandle.doc();
@@ -233,10 +210,19 @@ export class Ref<T = any> {
   }
 
   /**
-   * Mutate the value at this ref's location.
+   * Update the value at this ref's location.
    *
-   * For objects/arrays: mutate in place (return void)
-   * For primitives: return the new value
+   * @example
+   * ```ts
+   * // Primitives: return new value
+   * counterRef.change(n => n + 1);
+   *
+   * // Objects: mutate in place
+   * todoRef.change(todo => { todo.done = true; });
+   *
+   * // Text: use ctx helpers
+   * textRef.change((text, ctx) => ctx.splice(0, 5, "Hello"));
+   * ```
    */
   change(fn: (val: T, ctx: RefContext) => void | T): void {
     if (this.options.heads) {
@@ -245,9 +231,8 @@ export class Ref<T = any> {
 
     this.docHandle.change((doc) => {
       const currentValue = this.#traverse(doc, this.path);
-      const newValue = fn(currentValue as T, this.ctx);
+      const newValue = fn(currentValue as T, this.#getContext());
 
-      // If a value is returned, replace at path
       if (newValue !== undefined) {
         this.#setValue(doc, this.path, newValue);
       }
@@ -255,8 +240,9 @@ export class Ref<T = any> {
   }
 
   /**
-   * Subscribe to changes that affect this ref's target.
-   * Returns an unsubscribe function.
+   * Subscribe to changes that affect this ref's value.
+   *
+   * @returns Unsubscribe function
    */
   on(
     event: "change",
@@ -268,17 +254,15 @@ export class Ref<T = any> {
       }
     };
 
-    // Subscribe to docHandle changes
     this.docHandle.on(event, wrappedCallback);
 
-    // Return unsubscribe function
     return () => {
       this.docHandle.off(event, wrappedCallback);
     };
   }
 
   /**
-   * Get the canonical URI for this ref.
+   * Get the canonical URL for this ref.
    */
   get url(): string {
     const docId = this.docHandle.documentId;
@@ -290,30 +274,52 @@ export class Ref<T = any> {
   }
 
   /**
-   * Check equality with another ref.
+   * Check if this ref equals another ref (same URL).
    */
   equals(other: Ref<any>): boolean {
     return this.url === other.url;
   }
 
   /**
-   * Value object equality (enables ref == other).
+   * Get URL string (enables `ref == other` comparisons).
    */
   valueOf(): string {
     return this.url;
   }
 
   /**
-   * String representation.
+   * Get URL string representation.
    */
   toString(): string {
     return this.url;
   }
 
-  // ---- Private Methods ----
+  /**
+   * Get context object with text mutation helpers.
+   */
+  #getContext(): RefContext {
+    if (!this.#ctx) {
+      this.#ctx = {
+        splice: (index: number, deleteCount: number, insert?: string) => {
+          this.docHandle.change((doc) => {
+            const propPath = this.#toAutomergePath(doc, this.path);
+            Automerge.splice(doc, propPath, index, deleteCount, insert);
+          });
+        },
+        updateText: (newValue: string) => {
+          this.docHandle.change((doc) => {
+            const propPath = this.#toAutomergePath(doc, this.path);
+            Automerge.updateText(doc, propPath, newValue);
+          });
+        },
+      };
+    }
+    return this.#ctx;
+  }
 
   /**
    * Normalize path inputs and extract stable IDs where possible.
+   * Idempotent - already-complete PathSegments are kept as-is.
    */
   #normalizePath(doc: Automerge.Doc<any>, inputs: PathInput[]): PathSegment[] {
     const result: PathSegment[] = [];
@@ -322,12 +328,9 @@ export class Ref<T = any> {
     for (const input of inputs) {
       let segment: PathSegment;
 
-      // Check if already a PathSegment (from at())
       if (isPathSegment(input)) {
-        // Already wrapped - keep as-is (no stabilization)
         segment = input;
       } else {
-        // Raw input - try to extract stable ID
         const id = this.#getStableId(
           doc,
           currentPath,
@@ -346,26 +349,20 @@ export class Ref<T = any> {
     return result;
   }
 
-  /**
-   * Try to extract a stable ID from a path input.
-   * Returns ObjectId string, cursor pair, or undefined if can't get stable ID.
-   */
+  /** Try to extract a stable ID from a path input. */
   #getStableId(
     doc: Automerge.Doc<any>,
     currentPath: PathSegment[],
     input: Exclude<PathInput, PathSegment>
   ): string | [Automerge.Cursor, Automerge.Cursor] | undefined {
-    // String property - no stabilization mechanism (yet)
     if (typeof input === "string") {
       return undefined;
     }
 
-    // Numeric index - resolve to ObjectId
     if (typeof input === "number") {
       return this.#getObjectIdAt(doc, currentPath, input);
     }
 
-    // Range [start, end] - convert to cursors
     if (Array.isArray(input) && input.length === 2) {
       return this.#getCursorsForRange(
         doc,
@@ -374,7 +371,6 @@ export class Ref<T = any> {
       );
     }
 
-    // Plain object - where clause
     if (isPlainObject(input)) {
       return this.#getObjectIdForWhereClause(doc, currentPath, input);
     }
@@ -385,10 +381,7 @@ export class Ref<T = any> {
     );
   }
 
-  /**
-   * Get ObjectId for an array item at a numeric index.
-   * Returns undefined if item is a primitive (auto-fallback to unstable).
-   */
+  /** Get ObjectId for an array item at a numeric index. */
   #getObjectIdAt(
     doc: Automerge.Doc<any>,
     currentPath: PathSegment[],
@@ -397,10 +390,7 @@ export class Ref<T = any> {
     return this.#getObjectIdForItem(doc, currentPath, (arr) => arr[index]);
   }
 
-  /**
-   * Get ObjectId for an array item matching a where clause.
-   * Returns undefined if item is a primitive (auto-fallback to unstable).
-   */
+  /** Get ObjectId for an array item matching a where clause. */
   #getObjectIdForWhereClause(
     doc: Automerge.Doc<any>,
     currentPath: PathSegment[],
@@ -411,9 +401,7 @@ export class Ref<T = any> {
     );
   }
 
-  /**
-   * Common logic for extracting ObjectIds from array items.
-   */
+  /** Common logic for extracting ObjectIds from array items. */
   #getObjectIdForItem(
     doc: Automerge.Doc<any>,
     currentPath: PathSegment[],
@@ -425,47 +413,33 @@ export class Ref<T = any> {
     const item = findItem(container);
     if (!item) return undefined;
 
-    // Try to get ObjectId - if it's a primitive, stay unstable
-    // TODO: Investigate stable identifiers for primitive arrays (e.g., array cursors)
     return Automerge.getObjectId(item) || undefined;
   }
 
-  /**
-   * Convert a numeric range to Automerge cursors.
-   * This makes ranges stable across text edits (insertions/deletions).
-   */
+  /** Convert a numeric range to Automerge cursors for stability. */
   #getCursorsForRange(
     doc: Automerge.Doc<any>,
     currentPath: PathSegment[],
     range: [number, number]
   ): [Automerge.Cursor, Automerge.Cursor] | undefined {
     const [start, end] = range;
-
-    // Resolve to the text container
     const container = this.#traverse(doc, currentPath);
 
-    // Check if it's a text object (string)
     if (typeof container !== "string") {
       return undefined;
     }
 
     try {
-      // Convert currentPath to Automerge.Prop[]
       const propPath = this.#toAutomergePath(doc, currentPath);
-
-      // Create cursors at the positions
       const startCursor = Automerge.getCursor(doc, propPath, start);
       const endCursor = Automerge.getCursor(doc, propPath, end);
-
       return [startCursor, endCursor];
     } catch (e) {
       return undefined;
     }
   }
 
-  /**
-   * Convert PathSegment[] to Automerge.Prop[] by resolving ObjectIds and where clauses to indices.
-   */
+  /** Convert PathSegment[] to Automerge.Prop[] by resolving IDs to indices. */
   #toAutomergePath(
     doc: Automerge.Doc<any>,
     path: PathSegment[],
@@ -489,9 +463,7 @@ export class Ref<T = any> {
     return propPath;
   }
 
-  /**
-   * Convert a single PathSegment to an Automerge.Prop (string or number).
-   */
+  /** Convert a single PathSegment to an Automerge.Prop. */
   #toAutomergeProp(
     current: any,
     segment: PathSegment,
@@ -500,10 +472,8 @@ export class Ref<T = any> {
     const id = segment[ID];
     const query = segment[QUERY];
 
-    // Try stable reference first
     if (id !== undefined) {
       if (typeof id === "string") {
-        // ObjectId - find current index
         if (!Array.isArray(current)) {
           throw new Error("ObjectId segment requires array container");
         }
@@ -514,24 +484,20 @@ export class Ref<T = any> {
         return index;
       }
 
-      // Cursor range - can't be in prop path
       if (!allowRanges) {
         throw new Error("Cannot resolve through a range segment");
       }
       throw new Error("Range segments cannot be part of a property path");
     }
 
-    // No stable reference, must use query
     if (query === undefined) {
       throw new Error("PathSegment has neither ID nor QUERY");
     }
 
-    // Direct property
     if (typeof query === "string" || typeof query === "number") {
       return query;
     }
 
-    // Numeric range
     if (Array.isArray(query)) {
       if (!allowRanges) {
         throw new Error("Cannot resolve through a range segment");
@@ -539,7 +505,6 @@ export class Ref<T = any> {
       throw new Error("Range segments cannot be part of a property path");
     }
 
-    // Where clause - find index
     if (!Array.isArray(current)) {
       throw new Error("Where clause requires array container");
     }
@@ -550,9 +515,7 @@ export class Ref<T = any> {
     return index;
   }
 
-  /**
-   * Traverse a path to get a value.
-   */
+  /** Traverse a path to get a value. */
   #traverse(container: any, path: PathSegment[]): any {
     let current = container;
 
@@ -567,67 +530,52 @@ export class Ref<T = any> {
     return current;
   }
 
-  /**
-   * Get value at a single path segment.
-   */
+  /** Get value at a single path segment. */
   #getValueAt(container: any, segment: PathSegment): any {
     const id = segment[ID];
     const query = segment[QUERY];
 
-    // Try stable reference first
     if (id !== undefined) {
       return typeof id === "string"
         ? this.#findByObjectId(container, id)
         : this.#getRange(container, id);
     }
 
-    // No stable reference, must use query
     if (query === undefined) return undefined;
 
-    // Direct property access
     if (typeof query === "string" || typeof query === "number") {
       return container[query];
     }
 
-    // Range or where clause
     return Array.isArray(query)
       ? this.#getRange(container, query as [number, number])
       : this.#findByWhereClause(container, query);
   }
 
-  /**
-   * Find an object in an array by its Automerge ObjectId.
-   */
+  /** Find an object in an array by its Automerge ObjectId. */
   #findByObjectId(container: any[], objectId: string): any {
     if (!Array.isArray(container)) return undefined;
     return container.find((item) => Automerge.getObjectId(item) === objectId);
   }
 
-  /**
-   * Find an object in an array matching a where clause.
-   */
+  /** Find an object in an array matching a where clause. */
   #findByWhereClause(container: any[], clause: Record<string, any>): any {
     if (!Array.isArray(container)) return undefined;
     return container.find((item) => matchesWhereClause(item, clause));
   }
 
-  /**
-   * Get a substring or subarray using a range.
-   */
+  /** Get a substring or subarray using a range. */
   #getRange(
     text: string,
     range: [Automerge.Cursor, Automerge.Cursor] | [number, number]
   ): string {
-    // Numeric range - simple slice
     if (isNumericRange(range)) {
       return text.slice(range[0], range[1]);
     }
 
-    // Cursor-based range - resolve cursor positions
     if (isCursorRange(range)) {
       try {
         const doc = this.doc();
-        // Get the path to the text (excluding the range segment itself)
         const textPath = this.path.slice(0, -1);
         const propPath = this.#toAutomergePath(doc, textPath);
 
@@ -644,9 +592,7 @@ export class Ref<T = any> {
     return "";
   }
 
-  /**
-   * Set a value at a path.
-   */
+  /** Set a value at a path. */
   #setValue(doc: any, path: PathSegment[], value: any): void {
     if (path.length === 0) {
       throw new Error("Cannot replace root document");
@@ -660,7 +606,6 @@ export class Ref<T = any> {
       throw new Error("Cannot set value: parent is undefined");
     }
 
-    // Extract the property key from the segment
     const query = lastSegment[QUERY];
     if (typeof query === "string" || typeof query === "number") {
       parent[query] = value;
@@ -671,26 +616,20 @@ export class Ref<T = any> {
     }
   }
 
-  /**
-   * Check if any patch affects this ref's target.
-   * A patch affects the ref if its path matches or is a prefix of the ref's path.
-   */
+  /** Check if any patch affects this ref's target. */
   #patchAffectsRef(patches: Automerge.Patch[]): boolean {
     const doc = this.doc();
     if (!doc) return false;
 
     try {
-      // Filter out range segments - they're not part of the property hierarchy
       const nonRangeSegments = this.path.filter((seg) => {
         const id = seg[ID];
         const query = seg[QUERY];
-        // Exclude cursor ranges and numeric ranges
         return !(Array.isArray(id) || Array.isArray(query));
       });
 
       const refPropPath = this.#toAutomergePath(doc, nonRangeSegments);
 
-      // Check each patch
       for (const patch of patches) {
         if (this.#pathsOverlap(patch.path, refPropPath)) {
           return true;
@@ -699,15 +638,11 @@ export class Ref<T = any> {
 
       return false;
     } catch (e) {
-      // If we can't resolve the path, conservatively return true
       return patches.length > 0;
     }
   }
 
-  /**
-   * Check if a patch path overlaps with the ref's path.
-   * They overlap if one is a prefix of the other.
-   */
+  /** Check if a patch path overlaps with the ref's path. */
   #pathsOverlap(
     patchPath: Automerge.Prop[],
     refPropPath: Automerge.Prop[]
@@ -720,43 +655,34 @@ export class Ref<T = any> {
       }
     }
 
-    // If we got here, one path is a prefix of the other
     return true;
   }
 
-  /**
-   * Serialize a path segment to a URI component.
-   */
+  /** Serialize a path segment to a URI component. */
   #serialize(segment: PathSegment): string {
     const id = segment[ID];
     const query = segment[QUERY];
 
-    // Prefer stable reference if available
     if (id !== undefined) {
       if (typeof id === "string") {
         return `$${id}`;
       }
-      // Cursor range
       const [start, end] = id;
       return `[$${start},$${end}]`;
     }
 
-    // No stable reference, use query
     if (query === undefined) {
       throw new Error("PathSegment has neither ID nor QUERY to serialize");
     }
 
-    // Direct property
     if (typeof query === "string" || typeof query === "number") {
       return String(query);
     }
 
-    // Numeric range
     if (isNumericRange(query)) {
       return `[${query[0]},${query[1]}]`;
     }
 
-    // Where clause - serialize as JSON
     return JSON.stringify(query);
   }
 }
@@ -764,23 +690,15 @@ export class Ref<T = any> {
 /**
  * Create a ref to a location in an Automerge document.
  *
- * This is a convenience wrapper around `new Ref()` that accepts
- * variadic arguments instead of an array.
- *
- * Refs are stable by default:
- * - Numeric indices resolve to ObjectIds
- * - Where clauses resolve to ObjectIds
- * - Ranges convert to cursors
- *
- * Use `at()` to create dynamic/unstable refs.
+ * Refs are stable by default - they track by ID, not position.
  *
  * @example
  * ```ts
- * // Stable refs (survive reordering)
+ * // Stable refs (survive document changes)
  * ref(handle, 'todos', 0, 'title')
  * ref(handle, 'todos', { id: 'abc' }, 'done')
  *
- * // Dynamic refs (positional)
+ * // Dynamic refs (track by position)
  * ref(handle, 'todos', at(0), 'title')
  * ```
  */

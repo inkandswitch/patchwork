@@ -348,6 +348,123 @@ describe("Ref", () => {
     });
   });
 
+  describe("idempotency", () => {
+    it("should produce identical paths when parsing URL twice", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "First" }, { title: "Second" }];
+      });
+
+      // Create ref and serialize to URL
+      const ref1 = new Ref(handle, ["todos", 0, "title"]);
+      const url = ref1.url;
+
+      // Parse URL and create new ref
+      const ref2 = Ref.fromUrl(
+        handle,
+        url.split("/").slice(1).join("/").split("#")[0]
+      );
+
+      // Both refs should have identical URLs (stable reference)
+      expect(ref2.url).toBe(ref1.url);
+      expect(ref2.value()).toBe(ref1.value());
+
+      // Note: Internal path structures may differ (URL parsing loses QUERY for ObjectIds),
+      // but URLs are identical which is what matters for equality
+      expect(ref2.equals(ref1)).toBe(true);
+    });
+
+    it("should not re-stabilize already-stable segments from fromUrl", () => {
+      handle.change((d) => {
+        d.items = [{ name: "A" }, { name: "B" }, { name: "C" }];
+      });
+
+      // Create a stable ref with ObjectId
+      const originalRef = new Ref(handle, ["items", 1, "name"]);
+      const url = originalRef.url;
+
+      // Extract just the path part (without automerge: and docId)
+      const pathPart = url.split("/").slice(1).join("/");
+
+      // Parse from URL
+      const parsedRef = Ref.fromUrl(handle, pathPart);
+
+      // Delete the item at index 1
+      // The refs should no longer resolve since the object is gone
+      handle.change((d) => {
+        d.items.splice(1, 1);
+      });
+
+      // Both refs should return undefined (object with that ObjectId was deleted)
+      expect(originalRef.value()).toBeUndefined();
+      expect(parsedRef.value()).toBeUndefined();
+
+      // URLs should still be identical (same ObjectId reference)
+      expect(parsedRef.url).toBe(originalRef.url);
+    });
+
+    it("should preserve cursor ranges through URL round-trip", () => {
+      handle.change((d) => {
+        d.note = "Hello World";
+      });
+
+      // Create ref with cursor range
+      const ref1 = new Ref(handle, ["note", [0, 5]]);
+      const url = ref1.url;
+
+      // Parse from URL
+      const pathPart = url.split("/").slice(1).join("/");
+      const ref2 = Ref.fromUrl(handle, pathPart);
+
+      // Should have same cursor range
+      expect(ref2.url).toBe(ref1.url);
+      expect(ref2.value()).toBe("Hello");
+
+      // Insert text before the range
+      handle.change((d) => {
+        splice(d, ["note"], 0, 0, "XXX");
+      });
+
+      // Both refs should still resolve correctly (cursors are stable)
+      expect(ref1.value()).toBe("Hello");
+      expect(ref2.value()).toBe("Hello");
+    });
+
+    it("should handle multiple fromUrl round-trips without drift", () => {
+      handle.change((d) => {
+        d.data = [{ value: 42 }];
+      });
+
+      const ref1 = new Ref(handle, ["data", 0, "value"]);
+
+      // Round-trip 1
+      const url1 = ref1.url;
+      const ref2 = Ref.fromUrl(handle, url1.split("/").slice(1).join("/"));
+
+      // Round-trip 2
+      const url2 = ref2.url;
+      const ref3 = Ref.fromUrl(handle, url2.split("/").slice(1).join("/"));
+
+      // Round-trip 3
+      const url3 = ref3.url;
+      const ref4 = Ref.fromUrl(handle, url3.split("/").slice(1).join("/"));
+
+      // All URLs should be identical (this is the key invariant)
+      expect(url1).toBe(url2);
+      expect(url2).toBe(url3);
+
+      // All refs should resolve to the same value
+      expect(ref1.value()).toBe(42);
+      expect(ref2.value()).toBe(42);
+      expect(ref3.value()).toBe(42);
+      expect(ref4.value()).toBe(42);
+
+      // All refs should be equal (same URL)
+      expect(ref2.equals(ref1)).toBe(true);
+      expect(ref3.equals(ref1)).toBe(true);
+      expect(ref4.equals(ref1)).toBe(true);
+    });
+  });
+
   describe("equality", () => {
     it("should consider refs equal if they have the same URL", () => {
       handle.change((d) => {
