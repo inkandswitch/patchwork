@@ -1,3 +1,4 @@
+import * as Automerge from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
 import type { DynamicSegment } from "./types";
 import { Ref } from "./ref";
@@ -68,4 +69,45 @@ export async function findRef<T = any>(
 
   // Use Ref.fromUrl to parse path and construct the ref
   return Ref.fromUrl<T>(handle, pathStr || "", headsStr);
+}
+
+/**
+ * Check if an item matches a where clause (all properties match).
+ */
+export function matchesWhereClause(
+  item: any,
+  clause: Record<string, any>
+): boolean {
+  return Object.entries(clause).every(([key, value]) => item[key] === value);
+}
+
+/**
+ * Find the index of an item in an array by its ObjectId.
+ * Returns -1 if not found.
+ */
+export function findIndexByObjectId(array: any[], objectId: string): number {
+  return array.findIndex((item) => Automerge.getObjectId(item) === objectId);
+}
+
+/**
+ * Find the index of an item in an array matching a where clause.
+ * Returns -1 if not found.
+ */
+export function findIndexByWhereClause(
+  array: any[],
+  clause: Record<string, any>
+): number {
+  return array.findIndex((item) => matchesWhereClause(item, clause));
+}
+
+/**
+ * Check if a value is a plain object (not an Automerge proxy or other special object).
+ * This is more reliable than checking constructor across realms.
+ */
+export function isPlainObject(obj: any): obj is Record<string, any> {
+  if (obj === null || typeof obj !== "object" || Array.isArray(obj)) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(obj);
+  return proto === null || proto === Object.prototype;
 }

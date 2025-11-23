@@ -8,8 +8,12 @@ import type {
   RefContext,
 } from "./types";
 import { isNumericRange, isCursorRange, isDynamic } from "./guards";
-
-// TODO: consider a value getter
+import {
+  matchesWhereClause,
+  findIndexByObjectId,
+  findIndexByWhereClause,
+  isPlainObject,
+} from "./utils";
 
 /**
  * A reference to a location in an Automerge document.
@@ -82,7 +86,7 @@ export class Ref<T = any> {
     // Parse heads if present
     const options: RefOptions = {};
     if (headsStr) {
-      options.heads = headsStr.split(",") as Automerge.Heads;
+      options.heads = headsStr.split(",");
     }
 
     // Create ref with pre-parsed stable path segments using private overload
@@ -97,63 +101,70 @@ export class Ref<T = any> {
     if (!pathStr || pathStr === "/") return [];
 
     return pathStr.split("/").map((segment): PathSegment => {
-      // Empty segment
       if (!segment) {
         throw new Error("Invalid path: empty segment");
       }
-
-      // ObjectId or Cursor: $abc123
-      // NOTE: Both ObjectIds and Cursors have the same format (e.g., "2@abc...")
-      // Cursors are ONLY used in ranges [cursor1,cursor2]
-      // So a standalone $... is always an ObjectId
-      if (segment.startsWith("$")) {
-        const id = segment.slice(1);
-        return { $id: id };
-      }
-
-      // Range: [start,end] or [$cursor1,$cursor2]
-      if (segment.startsWith("[") && segment.endsWith("]")) {
-        const rangeContent = segment.slice(1, -1);
-        const parts = rangeContent.split(",");
-
-        if (parts.length !== 2) {
-          throw new Error(`Invalid range: ${segment}`);
-        }
-
-        // Cursor range: [$cursor1,$cursor2]
-        if (parts[0].startsWith("$") && parts[1].startsWith("$")) {
-          return [
-            parts[0].slice(1) as Automerge.Cursor,
-            parts[1].slice(1) as Automerge.Cursor,
-          ];
-        }
-
-        // Numeric range: [0,10]
-        const start = parseInt(parts[0], 10);
-        const end = parseInt(parts[1], 10);
-        if (isNaN(start) || isNaN(end)) {
-          throw new Error(`Invalid numeric range: ${segment}`);
-        }
-        return [start, end];
-      }
-
-      // Where clause or object: {...}
-      if (segment.startsWith("{") && segment.endsWith("}")) {
-        try {
-          return JSON.parse(segment);
-        } catch (e) {
-          throw new Error(`Invalid JSON segment: ${segment}`);
-        }
-      }
-
-      // Number: just digits
-      if (/^\d+$/.test(segment)) {
-        return parseInt(segment, 10);
-      }
-
-      // String property: everything else
-      return segment;
+      return this.#parseSegment(segment);
     });
+  }
+
+  /**
+   * Parse a single path segment from URL format.
+   * @internal
+   */
+  static #parseSegment(segment: string): PathSegment {
+    if (segment.startsWith("$")) return { $id: segment.slice(1) };
+    if (segment.startsWith("[")) return this.#parseRange(segment);
+    if (segment.startsWith("{")) return this.#parseJsonSegment(segment);
+
+    // Number: just digits
+    if (/^\d+$/.test(segment)) {
+      return parseInt(segment, 10);
+    }
+
+    // String property: everything else
+    return segment;
+  }
+
+  /**
+   * Parse a range segment: [start,end] or [$cursor1,$cursor2].
+   * @internal
+   */
+  static #parseRange(segment: string): PathSegment {
+    const rangeContent = segment.slice(1, -1);
+    const parts = rangeContent.split(",");
+
+    if (parts.length !== 2) {
+      throw new Error(`Invalid range: ${segment}`);
+    }
+
+    // Cursor range: [$cursor1,$cursor2]
+    if (parts[0].startsWith("$") && parts[1].startsWith("$")) {
+      return [
+        parts[0].slice(1) as Automerge.Cursor,
+        parts[1].slice(1) as Automerge.Cursor,
+      ];
+    }
+
+    // Numeric range: [0,10]
+    const start = parseInt(parts[0], 10);
+    const end = parseInt(parts[1], 10);
+    if (isNaN(start) || isNaN(end)) {
+      throw new Error(`Invalid numeric range: ${segment}`);
+    }
+    return [start, end];
+  }
+
+  /**
+   * Parse a JSON segment (where clause or object).
+   * @internal
+   */
+  static #parseJsonSegment(segment: string): PathSegment {
+    try {
+      return JSON.parse(segment);
+    } catch (e) {
+      throw new Error(`Invalid JSON segment: ${segment}`);
+    }
   }
 
   // ---- Public API ----
@@ -215,8 +226,6 @@ export class Ref<T = any> {
    * Returns an unsubscribe function.
    */
   on(event: "change", callback: ChangeCallback): () => void {
-    if (event !== "change") return () => {};
-
     const wrappedCallback = ({ doc, patches, patchInfo }: any) => {
       if (this.#patchAffectsRef(patches)) {
         callback({ doc, patches, patchInfo });
@@ -224,11 +233,11 @@ export class Ref<T = any> {
     };
 
     // Subscribe to docHandle changes
-    this.docHandle.on("change", wrappedCallback);
+    this.docHandle.on(event, wrappedCallback);
 
     // Return unsubscribe function
     return () => {
-      this.docHandle.off("change", wrappedCallback);
+      this.docHandle.off(event, wrappedCallback);
     };
   }
 
@@ -268,32 +277,6 @@ export class Ref<T = any> {
   }
 
   // ---- Private Methods ----
-
-  /**
-   * Check if an item matches a where clause.
-   */
-  #matchesWhereClause(item: any, clause: Record<string, any>): boolean {
-    for (const [key, value] of Object.entries(clause)) {
-      if (item[key] !== value) return false;
-    }
-    return true;
-  }
-
-  /**
-   * Find the index of an item in an array by its ObjectId.
-   * Returns -1 if not found.
-   */
-  #findIndexByObjectId(array: any[], objectId: string): number {
-    return array.findIndex((item) => Automerge.getObjectId(item) === objectId);
-  }
-
-  /**
-   * Find the index of an item in an array matching a where clause.
-   * Returns -1 if not found.
-   */
-  #findIndexByWhereClause(array: any[], clause: Record<string, any>): number {
-    return array.findIndex((item) => this.#matchesWhereClause(item, clause));
-  }
 
   /**
    * Build a stable path from PathBuilder segments.
@@ -353,20 +336,34 @@ export class Ref<T = any> {
 
     // Plain object - could be where clause or Automerge object reference
     if (typeof segment === "object" && segment !== null) {
-      // Check if it's a plain object (where clause) vs Automerge proxy
-      if (segment.constructor === Object) {
-        // Plain object - treat as where clause, resolve to ObjectId
-        return this.#stabilizeWhereClause(doc, currentPath, segment);
-      }
-
-      // It's an Automerge object reference - extract its ObjectId
-      const objectId = Automerge.getObjectId(segment);
-      if (objectId) {
-        return { $id: objectId };
-      }
+      return this.#stabilizePlainObject(doc, currentPath, segment);
     }
 
     // Fallback - return as-is
+    return segment as PathSegment;
+  }
+
+  /**
+   * Stabilize a plain object segment (where clause or Automerge object reference).
+   */
+  #stabilizePlainObject(
+    doc: Automerge.Doc<any>,
+    currentPath: PathSegment[],
+    segment: object
+  ): PathSegment {
+    // Check if it's a plain object (where clause) vs Automerge proxy
+    if (isPlainObject(segment)) {
+      // Plain object - treat as where clause, resolve to ObjectId
+      return this.#stabilizeWhereClause(doc, currentPath, segment);
+    }
+
+    // It's an Automerge object reference - extract its ObjectId
+    const objectId = Automerge.getObjectId(segment);
+    if (objectId) {
+      return { $id: objectId };
+    }
+
+    // Fallback
     return segment as PathSegment;
   }
 
@@ -417,7 +414,7 @@ export class Ref<T = any> {
     }
 
     // Find matching item using helper
-    const item = container.find((obj) => this.#matchesWhereClause(obj, clause));
+    const item = container.find((obj) => matchesWhereClause(obj, clause));
 
     if (!item) {
       // No match - return clause as-is (will fail at resolution time)
@@ -505,7 +502,7 @@ export class Ref<T = any> {
         if (!Array.isArray(current)) {
           throw new Error("ObjectId segment requires array container");
         }
-        const index = this.#findIndexByObjectId(current, segment.$id);
+        const index = findIndexByObjectId(current, segment.$id);
         if (index === -1) {
           throw new Error(`ObjectId not found: ${segment.$id}`);
         }
@@ -527,7 +524,7 @@ export class Ref<T = any> {
       if (!Array.isArray(current)) {
         throw new Error("Where clause requires array container");
       }
-      const index = this.#findIndexByWhereClause(current, segment);
+      const index = findIndexByWhereClause(current, segment);
       if (index === -1) {
         throw new Error(
           `No item matches where clause: ${JSON.stringify(segment)}`
@@ -566,7 +563,7 @@ export class Ref<T = any> {
    * Resolve the full path to get the target value.
    */
   #resolve(doc: Automerge.Doc<any>): T | undefined {
-    return this.#resolvePath(doc, this.path) as T | undefined;
+    return this.#resolvePath(doc, this.path);
   }
 
   /**
@@ -625,7 +622,7 @@ export class Ref<T = any> {
    */
   #resolveWhereClause(container: any[], clause: Record<string, any>): any {
     if (!Array.isArray(container)) return undefined;
-    return container.find((item) => this.#matchesWhereClause(item, clause));
+    return container.find((item) => matchesWhereClause(item, clause));
   }
 
   /**
