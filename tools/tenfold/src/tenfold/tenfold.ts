@@ -412,8 +412,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     },
     text(str = "you found the easter egg", x = 0, y = 0, size = 2, tracking = size * 0.75) {
       // compensate for font weirdness, so that passing 0,0 centers the first char
-      x += 0.3625 * size
-      y += 0.4 * size
+      x -= 0.3625 * size
+      y -= 0.4 * size
       drawText(str, x, y, size, tracking)
       newPath = true
     },
