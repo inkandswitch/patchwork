@@ -1,5 +1,5 @@
 import type { DocHandle } from "@automerge/automerge-repo";
-import { ref, Ref } from "./ref";
+import { ref, Ref } from "../ref";
 
 // =============================================================================
 // Test Document Types
@@ -133,17 +133,14 @@ const title: string | undefined = titleRef.value();
 
 // change() accepts correct type
 titleRef.change((t) => {
-  const _check: string = t;
   return t.toUpperCase();
 });
 
 countRef.change((n) => {
-  const _check: number = n;
   return n + 1;
 });
 
 todoDoneRef.change((done) => {
-  const _check: boolean = done;
   return !done;
 });
 
@@ -161,6 +158,15 @@ const badRef = ref(handle, "nonexistent" as any);
 // Where clauses filter arrays, so they return the array element type
 const whereRef = ref(handle, "todos", { id: "abc" });
 whereRef.value();
+
+whereRef.change((todo) => {
+  todo.done = true;
+});
+
+// this should error, but doesnt:
+whereRef.change((todo) => {
+  return { ...todo, done: true };
+});
 
 // Where clause with nested access
 const whereTitleRef = ref(handle, "todos", { done: true }, "title");
