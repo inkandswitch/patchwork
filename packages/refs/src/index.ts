@@ -1,12 +1,6 @@
-export type {
-  PathSegment,
-  RefOptions,
-  DynamicSegment,
-  ChangeEvent,
-  ChangeCallback,
-  PathBuilder,
-  RefContext,
-} from "./types";
+export type { PathSegment, PathInput, RefOptions, RefContext } from "./types";
+
+export { QUERY, ID } from "./types";
 
 export { Ref, ref } from "./ref";
 

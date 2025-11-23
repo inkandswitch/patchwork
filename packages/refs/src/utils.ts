@@ -1,17 +1,18 @@
 import * as Automerge from "@automerge/automerge";
 import { Repo } from "@automerge/automerge-repo";
-import type { DynamicSegment } from "./types";
+import type { PathSegment, PathInput } from "./types";
+import { QUERY } from "./types";
 import { Ref } from "./ref";
 
 /**
- * Mark a path segment as dynamic/unstable.
+ * Mark a path segment as unstable (prevents stabilization).
  *
- * By default, refs are stable:
+ * By default, refs try to stabilize segments:
  * - Numeric indices resolve to ObjectIds
  * - Where clauses resolve to ObjectIds
  * - Ranges convert to cursors
  *
- * Wrapping a segment in at() makes it dynamic:
+ * Wrapping a segment in at() prevents stabilization:
  * - at(0) - Positional index (not ObjectId)
  * - at({ title: "x" }) - Re-query on each access
  * - at([10, 20]) - Numeric indices (not cursors)
@@ -21,12 +22,14 @@ import { Ref } from "./ref";
  * // Stable (resolves to ObjectId)
  * ref(handle, 'todos', 0)
  *
- * // Dynamic (positional index)
+ * // Unstable (positional index)
  * ref(handle, 'todos', at(0))
  * ```
  */
-export function at<T>(segment: T): DynamicSegment<T> {
-  return { __dynamic: true, value: segment };
+export function at(
+  segment: string | number | Record<string, any> | [number, number]
+): PathSegment {
+  return { [QUERY]: segment };
 }
 
 /**
@@ -98,16 +101,4 @@ export function findIndexByWhereClause(
   clause: Record<string, any>
 ): number {
   return array.findIndex((item) => matchesWhereClause(item, clause));
-}
-
-/**
- * Check if a value is a plain object (not an Automerge proxy or other special object).
- * This is more reliable than checking constructor across realms.
- */
-export function isPlainObject(obj: any): obj is Record<string, any> {
-  if (obj === null || typeof obj !== "object" || Array.isArray(obj)) {
-    return false;
-  }
-  const proto = Object.getPrototypeOf(obj);
-  return proto === null || proto === Object.prototype;
 }

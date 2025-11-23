@@ -1,18 +1,20 @@
 import * as Automerge from "@automerge/automerge";
-import type { DocHandle } from "@automerge/automerge-repo";
 import type {
-  PathSegment,
-  RefOptions,
-  ChangeCallback,
-  PathBuilder,
-  RefContext,
-} from "./types";
-import { isNumericRange, isCursorRange, isDynamic } from "./guards";
+  DocHandle,
+  DocHandleChangePayload,
+} from "@automerge/automerge-repo";
+import type { PathSegment, PathInput, RefOptions, RefContext } from "./types";
+import { QUERY, ID } from "./types";
+import {
+  isNumericRange,
+  isCursorRange,
+  isPathSegment,
+  isPlainObject,
+} from "./guards";
 import {
   matchesWhereClause,
   findIndexByObjectId,
   findIndexByWhereClause,
-  isPlainObject,
 } from "./utils";
 
 /**
@@ -32,7 +34,7 @@ export class Ref<T = any> {
 
   constructor(
     docHandle: DocHandle<any>,
-    segments: PathBuilder[],
+    segments: PathInput[],
     options?: RefOptions
   );
   constructor(
@@ -43,7 +45,7 @@ export class Ref<T = any> {
   );
   constructor(
     docHandle: DocHandle<any>,
-    segments: PathBuilder[] | PathSegment[],
+    segments: PathInput[] | PathSegment[],
     options: RefOptions = {},
     skipStabilization = false
   ) {
@@ -51,12 +53,12 @@ export class Ref<T = any> {
     this.options = options;
 
     if (skipStabilization) {
-      // Path segments are already stable (from URL parsing)
+      // Path segments are already parsed (from URL parsing)
       this.path = segments as PathSegment[];
     } else {
-      // Auto-stabilize segments on construction
+      // Normalize and stabilize segments on construction
       const doc = docHandle.doc();
-      this.path = this.#buildStablePath(doc, segments as PathBuilder[]);
+      this.path = this.#buildStablePath(doc, segments as PathInput[]);
     }
   }
 
@@ -113,17 +115,28 @@ export class Ref<T = any> {
    * @internal
    */
   static #parseSegment(segment: string): PathSegment {
-    if (segment.startsWith("$")) return { $id: segment.slice(1) };
-    if (segment.startsWith("[")) return this.#parseRange(segment);
-    if (segment.startsWith("{")) return this.#parseJsonSegment(segment);
-
-    // Number: just digits
-    if (/^\d+$/.test(segment)) {
-      return parseInt(segment, 10);
+    // ObjectId: $abc123
+    if (segment.startsWith("$")) {
+      return { [ID]: segment.slice(1) };
     }
 
-    // String property: everything else
-    return segment;
+    // Range: [start,end] or [$cursor1,$cursor2]
+    if (segment.startsWith("[")) {
+      return this.#parseRange(segment);
+    }
+
+    // JSON/where clause: {"key":"value"}
+    if (segment.startsWith("{")) {
+      return this.#parseJsonSegment(segment);
+    }
+
+    // Numeric index: 0, 1, 42
+    if (/^\d+$/.test(segment)) {
+      return { [QUERY]: parseInt(segment, 10) };
+    }
+
+    // String property: name, title, etc
+    return { [QUERY]: segment };
   }
 
   /**
@@ -131,37 +144,44 @@ export class Ref<T = any> {
    * @internal
    */
   static #parseRange(segment: string): PathSegment {
-    const rangeContent = segment.slice(1, -1);
-    const parts = rangeContent.split(",");
+    const content = segment.slice(1, -1);
+    const parts = content.split(",");
 
     if (parts.length !== 2) {
       throw new Error(`Invalid range: ${segment}`);
     }
 
+    const [first, second] = parts;
+
     // Cursor range: [$cursor1,$cursor2]
-    if (parts[0].startsWith("$") && parts[1].startsWith("$")) {
-      return [
-        parts[0].slice(1) as Automerge.Cursor,
-        parts[1].slice(1) as Automerge.Cursor,
-      ];
+    if (first.startsWith("$") && second.startsWith("$")) {
+      return {
+        [ID]: [
+          first.slice(1) as Automerge.Cursor,
+          second.slice(1) as Automerge.Cursor,
+        ],
+      };
     }
 
     // Numeric range: [0,10]
-    const start = parseInt(parts[0], 10);
-    const end = parseInt(parts[1], 10);
+    const start = parseInt(first, 10);
+    const end = parseInt(second, 10);
+
     if (isNaN(start) || isNaN(end)) {
       throw new Error(`Invalid numeric range: ${segment}`);
     }
-    return [start, end];
+
+    return { [QUERY]: [start, end] };
   }
 
   /**
-   * Parse a JSON segment (where clause or object).
+   * Parse a JSON segment (where clause).
    * @internal
    */
   static #parseJsonSegment(segment: string): PathSegment {
     try {
-      return JSON.parse(segment);
+      const parsed = JSON.parse(segment);
+      return { [QUERY]: parsed };
     } catch (e) {
       throw new Error(`Invalid JSON segment: ${segment}`);
     }
@@ -225,10 +245,13 @@ export class Ref<T = any> {
    * Subscribe to changes that affect this ref's target.
    * Returns an unsubscribe function.
    */
-  on(event: "change", callback: ChangeCallback): () => void {
-    const wrappedCallback = ({ doc, patches, patchInfo }: any) => {
-      if (this.#patchAffectsRef(patches)) {
-        callback({ doc, patches, patchInfo });
+  on(
+    event: "change",
+    callback: (payload: DocHandleChangePayload<any>) => void
+  ): () => void {
+    const wrappedCallback = (payload: DocHandleChangePayload<any>) => {
+      if (this.#patchAffectsRef(payload.patches)) {
+        callback(payload);
       }
     };
 
@@ -279,167 +302,138 @@ export class Ref<T = any> {
   // ---- Private Methods ----
 
   /**
-   * Build a stable path from PathBuilder segments.
-   * Stabilizes numeric indices and where clauses to ObjectIds.
+   * Build a stable path from PathInput segments.
+   * Normalizes inputs and stabilizes what can be stabilized.
    */
   #buildStablePath(
     doc: Automerge.Doc<any>,
-    segments: PathBuilder[]
+    inputs: PathInput[]
   ): PathSegment[] {
     const path: PathSegment[] = [];
     let currentPath: PathSegment[] = [];
 
-    for (const segment of segments) {
-      // Check if wrapped in at() (dynamic marker)
-      if (isDynamic(segment)) {
-        // Dynamic segment - use as-is without stabilization
-        path.push(segment.value);
-        currentPath.push(segment.value);
-        continue;
+    for (const input of inputs) {
+      let segment: PathSegment;
+
+      // Check if already a PathSegment (from at())
+      if (isPathSegment(input)) {
+        // Already wrapped - keep as-is (no stabilization)
+        segment = input;
+      } else {
+        // Raw input - try to stabilize
+        const id = this.#tryStabilize(
+          doc,
+          currentPath,
+          input as Exclude<PathInput, PathSegment>
+        );
+        segment = {
+          [QUERY]: input as Exclude<PathInput, PathSegment>,
+          [ID]: id,
+        };
       }
 
-      // Stabilize the segment
-      const stabilized = this.#stabilizeSegment(doc, currentPath, segment);
-      path.push(stabilized);
-      currentPath.push(stabilized);
+      path.push(segment);
+      currentPath.push(segment);
     }
 
     return path;
   }
 
   /**
-   * Stabilize a single segment by resolving to ObjectIds or cursors.
+   * Try to stabilize a path input to a stable reference.
+   * Returns ObjectId string, cursor pair, or undefined if can't stabilize.
+   * Throws if stabilization is expected but fails.
    */
-  #stabilizeSegment(
+  #tryStabilize(
     doc: Automerge.Doc<any>,
     currentPath: PathSegment[],
-    segment: PathBuilder
-  ): PathSegment {
-    // String property - always stable as-is
-    if (typeof segment === "string") {
-      return segment;
+    input: Exclude<PathInput, PathSegment>
+  ): string | [Automerge.Cursor, Automerge.Cursor] | undefined {
+    // String property - no stabilization mechanism (yet)
+    // Just leave unstable for now
+    if (typeof input === "string") {
+      return undefined;
     }
 
     // Numeric index - resolve to ObjectId
-    if (typeof segment === "number") {
-      return this.#stabilizeNumericIndex(doc, currentPath, segment);
+    if (typeof input === "number") {
+      return this.#stabilizeNumericIndex(doc, currentPath, input);
     }
 
     // Range [start, end] - convert to cursors
-    if (Array.isArray(segment) && segment.length === 2) {
-      return this.#stabilizeRange(
-        doc,
-        currentPath,
-        segment as [number, number]
-      );
+    if (Array.isArray(input) && input.length === 2) {
+      return this.#stabilizeRange(doc, currentPath, input as [number, number]);
     }
 
-    // Plain object - could be where clause or Automerge object reference
-    if (typeof segment === "object" && segment !== null) {
-      return this.#stabilizePlainObject(doc, currentPath, segment);
+    // Plain object - where clause
+    if (isPlainObject(input)) {
+      return this.#stabilizeWhereClause(doc, currentPath, input);
     }
 
-    // Fallback - return as-is
-    return segment as PathSegment;
-  }
-
-  /**
-   * Stabilize a plain object segment (where clause or Automerge object reference).
-   */
-  #stabilizePlainObject(
-    doc: Automerge.Doc<any>,
-    currentPath: PathSegment[],
-    segment: object
-  ): PathSegment {
-    // Check if it's a plain object (where clause) vs Automerge proxy
-    if (isPlainObject(segment)) {
-      // Plain object - treat as where clause, resolve to ObjectId
-      return this.#stabilizeWhereClause(doc, currentPath, segment);
-    }
-
-    // It's an Automerge object reference - extract its ObjectId
-    const objectId = Automerge.getObjectId(segment);
-    if (objectId) {
-      return { $id: objectId };
-    }
-
-    // Fallback
-    return segment as PathSegment;
+    throw new Error(
+      `Unsupported path input type: ${typeof input}. ` +
+        `Expected string, number, plain object, or array.`
+    );
   }
 
   /**
    * Stabilize a numeric index by finding the object and extracting its ObjectId.
+   * Returns undefined if item is a primitive (auto-fallback to unstable).
+   * Never throws - returns undefined if stabilization isn't possible.
    */
   #stabilizeNumericIndex(
     doc: Automerge.Doc<any>,
     currentPath: PathSegment[],
     index: number
-  ): PathSegment {
-    const container = this.#resolvePath(doc, currentPath);
-
-    if (!Array.isArray(container)) {
-      // Not an array - return the index as-is
-      return index;
-    }
-
-    const item = container[index];
-    if (item === undefined) {
-      // Out of bounds - return index as-is
-      return index;
-    }
-
-    // Try to get ObjectId
-    const objectId = Automerge.getObjectId(item);
-    if (objectId) {
-      return { $id: objectId };
-    }
-
-    // Item is a primitive or doesn't have an ObjectId - return index
-    return index;
+  ): string | undefined {
+    return this.#stabilizeArrayItem(doc, currentPath, (arr) => arr[index]);
   }
 
   /**
    * Stabilize a where clause by finding the matching object and extracting its ObjectId.
+   * Returns undefined if item is a primitive (auto-fallback to unstable).
+   * Never throws - returns undefined if stabilization isn't possible.
    */
   #stabilizeWhereClause(
     doc: Automerge.Doc<any>,
     currentPath: PathSegment[],
     clause: Record<string, any>
-  ): PathSegment {
+  ): string | undefined {
+    return this.#stabilizeArrayItem(doc, currentPath, (arr) =>
+      arr.find((obj) => matchesWhereClause(obj, clause))
+    );
+  }
+
+  /**
+   * Common logic for stabilizing array items to ObjectIds.
+   * Extracts the pattern shared by numeric index and where clause stabilization.
+   */
+  #stabilizeArrayItem(
+    doc: Automerge.Doc<any>,
+    currentPath: PathSegment[],
+    findItem: (arr: any[]) => any
+  ): string | undefined {
     const container = this.#resolvePath(doc, currentPath);
+    if (!Array.isArray(container)) return undefined;
 
-    if (!Array.isArray(container)) {
-      // Not an array - return clause as-is
-      return clause;
-    }
+    const item = findItem(container);
+    if (!item) return undefined;
 
-    // Find matching item using helper
-    const item = container.find((obj) => matchesWhereClause(obj, clause));
-
-    if (!item) {
-      // No match - return clause as-is (will fail at resolution time)
-      return clause;
-    }
-
-    // Try to get ObjectId
-    const objectId = Automerge.getObjectId(item);
-    if (objectId) {
-      return { $id: objectId };
-    }
-
-    // Item doesn't have ObjectId - return clause as-is
-    return clause;
+    // Try to get ObjectId - if it's a primitive, stay unstable
+    // TODO: Investigate stable identifiers for primitive arrays (e.g., array cursors)
+    return Automerge.getObjectId(item) || undefined;
   }
 
   /**
    * Stabilize a range by converting numeric indices to Automerge cursors.
    * This makes ranges stable across text edits (insertions/deletions).
+   * Never throws - returns undefined if stabilization isn't possible.
    */
   #stabilizeRange(
     doc: Automerge.Doc<any>,
     currentPath: PathSegment[],
     range: [number, number]
-  ): PathSegment {
+  ): [Automerge.Cursor, Automerge.Cursor] | undefined {
     const [start, end] = range;
 
     // Resolve to the text container
@@ -447,8 +441,8 @@ export class Ref<T = any> {
 
     // Check if it's a text object (string)
     if (typeof container !== "string") {
-      // Not text - return numeric range as-is
-      return range;
+      // Not text - stay unstable
+      return undefined;
     }
 
     try {
@@ -461,8 +455,8 @@ export class Ref<T = any> {
 
       return [startCursor, endCursor];
     } catch (e) {
-      // Failed to get cursors - return numeric range as fallback
-      return range;
+      // Failed to get cursors - stay unstable
+      return undefined;
     }
   }
 
@@ -483,58 +477,80 @@ export class Ref<T = any> {
     let current = doc;
 
     for (const segment of path) {
-      // Check for null/undefined during traversal
       if (current === undefined || current === null) {
         throw new Error(
           "Cannot resolve path: traversal reached null/undefined"
         );
       }
 
-      // String or number: direct property
-      if (typeof segment === "string" || typeof segment === "number") {
-        propPath.push(segment);
-        current = current[segment];
-        continue;
-      }
-
-      // ObjectId lookup - find its current index in the array using helper
-      if (typeof segment === "object" && "$id" in segment) {
-        if (!Array.isArray(current)) {
-          throw new Error("ObjectId segment requires array container");
-        }
-        const index = findIndexByObjectId(current, segment.$id);
-        if (index === -1) {
-          throw new Error(`ObjectId not found: ${segment.$id}`);
-        }
-        propPath.push(index);
-        current = current[index];
-        continue;
-      }
-
-      // Range - only allowed in some contexts (e.g., cursor operations)
-      if (Array.isArray(segment)) {
-        if (!allowRanges) {
-          throw new Error("Cannot resolve through a range segment");
-        }
-        // For ranges, we can't continue traversal - they return values not containers
-        throw new Error("Range segments cannot be part of a property path");
-      }
-
-      // Where clause - find index using helper
-      if (!Array.isArray(current)) {
-        throw new Error("Where clause requires array container");
-      }
-      const index = findIndexByWhereClause(current, segment);
-      if (index === -1) {
-        throw new Error(
-          `No item matches where clause: ${JSON.stringify(segment)}`
-        );
-      }
-      propPath.push(index);
-      current = current[index];
+      const prop = this.#segmentToProp(current, segment, allowRanges);
+      propPath.push(prop);
+      current = current[prop];
     }
 
     return propPath;
+  }
+
+  /**
+   * Convert a single PathSegment to an Automerge.Prop (string or number).
+   * Helper for #pathToPropPath.
+   */
+  #segmentToProp(
+    current: any,
+    segment: PathSegment,
+    allowRanges: boolean
+  ): Automerge.Prop {
+    const id = segment[ID];
+    const query = segment[QUERY];
+
+    // Try stable reference first
+    if (id !== undefined) {
+      if (typeof id === "string") {
+        // ObjectId - find current index
+        if (!Array.isArray(current)) {
+          throw new Error("ObjectId segment requires array container");
+        }
+        const index = findIndexByObjectId(current, id);
+        if (index === -1) {
+          throw new Error(`ObjectId not found: ${id}`);
+        }
+        return index;
+      }
+
+      // Cursor range - can't be in prop path
+      if (!allowRanges) {
+        throw new Error("Cannot resolve through a range segment");
+      }
+      throw new Error("Range segments cannot be part of a property path");
+    }
+
+    // No stable reference, must use query
+    if (query === undefined) {
+      throw new Error("PathSegment has neither ID nor QUERY");
+    }
+
+    // Direct property
+    if (typeof query === "string" || typeof query === "number") {
+      return query;
+    }
+
+    // Numeric range
+    if (Array.isArray(query)) {
+      if (!allowRanges) {
+        throw new Error("Cannot resolve through a range segment");
+      }
+      throw new Error("Range segments cannot be part of a property path");
+    }
+
+    // Where clause - find index
+    if (!Array.isArray(current)) {
+      throw new Error("Where clause requires array container");
+    }
+    const index = findIndexByWhereClause(current, query);
+    if (index === -1) {
+      throw new Error(`No item matches where clause: ${JSON.stringify(query)}`);
+    }
+    return index;
   }
 
   /**
@@ -587,26 +603,28 @@ export class Ref<T = any> {
    * Resolve a single path segment.
    */
   #resolveSegment(container: any, segment: PathSegment): any {
-    // String or number: direct property access
-    if (typeof segment === "string" || typeof segment === "number") {
-      return container[segment];
+    const id = segment[ID];
+    const query = segment[QUERY];
+
+    // Try stable reference first
+    if (id !== undefined) {
+      return typeof id === "string"
+        ? this.#resolveObjectId(container, id)
+        : this.#resolveRange(container, id);
     }
 
-    // ObjectId lookup
-    if (typeof segment === "object" && "$id" in segment) {
-      return this.#resolveObjectId(container, segment.$id);
+    // No stable reference, must use query
+    if (query === undefined) return undefined;
+
+    // Direct property access
+    if (typeof query === "string" || typeof query === "number") {
+      return container[query];
     }
 
-    // Range
-    if (Array.isArray(segment) && segment.length === 2) {
-      return this.#resolveRange(
-        container,
-        segment as [Automerge.Cursor, Automerge.Cursor] | [number, number]
-      );
-    }
-
-    // Where clause (Record<string, any>)
-    return this.#resolveWhereClause(container, segment);
+    // Range or where clause
+    return Array.isArray(query)
+      ? this.#resolveRange(container, query as [number, number])
+      : this.#resolveWhereClause(container, query);
   }
 
   /**
@@ -670,11 +688,18 @@ export class Ref<T = any> {
     const lastSegment = path[path.length - 1];
     const parent = this.#resolvePath(doc, parentPath);
 
-    if (
-      parent &&
-      (typeof lastSegment === "string" || typeof lastSegment === "number")
-    ) {
-      parent[lastSegment] = value;
+    if (!parent) {
+      throw new Error("Cannot set value: parent is undefined");
+    }
+
+    // Extract the property key from the segment
+    const query = lastSegment[QUERY];
+    if (typeof query === "string" || typeof query === "number") {
+      parent[query] = value;
+    } else {
+      throw new Error(
+        "Cannot set value: last segment must be a property name or index"
+      );
     }
   }
 
@@ -739,28 +764,36 @@ export class Ref<T = any> {
    * Serialize a path segment to a URI component.
    */
   #serializeSegment(segment: PathSegment): string {
-    // String or number
-    if (typeof segment === "string" || typeof segment === "number") {
-      return String(segment);
+    const id = segment[ID];
+    const query = segment[QUERY];
+
+    // Prefer stable reference if available
+    if (id !== undefined) {
+      if (typeof id === "string") {
+        return `$${id}`;
+      }
+      // Cursor range
+      const [start, end] = id;
+      return `[$${start},$${end}]`;
     }
 
-    // ObjectId
-    if (typeof segment === "object" && "$id" in segment) {
-      return `$${segment.$id}`;
+    // No stable reference, use query
+    if (query === undefined) {
+      throw new Error("PathSegment has neither ID nor QUERY to serialize");
     }
 
-    // Range
-    if (isCursorRange(segment)) {
-      return `[$${segment[0]},$${segment[1]}]`;
+    // Direct property
+    if (typeof query === "string" || typeof query === "number") {
+      return String(query);
     }
 
-    // Range
-    if (isNumericRange(segment)) {
-      return `[${segment[0]},${segment[1]}]`;
+    // Numeric range
+    if (isNumericRange(query)) {
+      return `[${query[0]},${query[1]}]`;
     }
 
-    // Where clause - serialize as JSON for now
-    return JSON.stringify(segment);
+    // Where clause - serialize as JSON
+    return JSON.stringify(query);
   }
 }
 
@@ -789,7 +822,7 @@ export class Ref<T = any> {
  */
 export function ref<T = any>(
   docHandle: DocHandle<any>,
-  ...segments: PathBuilder[]
+  ...segments: PathInput[]
 ): Ref<T> {
   return new Ref<T>(docHandle, segments);
 }

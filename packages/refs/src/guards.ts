@@ -4,7 +4,32 @@
  */
 
 import type * as Automerge from "@automerge/automerge";
-import type { DynamicSegment } from "./types";
+import type { PathSegment } from "./types";
+import { QUERY, ID } from "./types";
+
+/**
+ * Check if a value is a PathSegment (has QUERY or ID symbol).
+ */
+export function isPathSegment(val: unknown): val is PathSegment {
+  return (
+    val !== null &&
+    val !== undefined &&
+    typeof val === "object" &&
+    (QUERY in val || ID in val)
+  );
+}
+
+/**
+ * Check if a value is a plain object (not a PathSegment, array, or other special object).
+ * Used to distinguish where clauses from PathSegments.
+ */
+export function isPlainObject(obj: unknown): obj is Record<string, any> {
+  if (obj === null || typeof obj !== "object" || Array.isArray(obj)) {
+    return false;
+  }
+  // Not a PathSegment - doesn't have our symbols
+  return !(QUERY in obj || ID in obj);
+}
 
 /**
  * Type guard to check if a value is a pair of numbers (numeric range).
@@ -33,17 +58,5 @@ export function isCursorRange(
     typeof range[1] === "string" &&
     /^\d+@[a-zA-Z0-9]+$/.test(range[0]) &&
     /^\d+@[a-zA-Z0-9]+$/.test(range[1])
-  );
-}
-
-/**
- * Type guard to check if a segment is dynamic (wrapped in at()).
- */
-export function isDynamic(segment: any): segment is DynamicSegment<any> {
-  return (
-    segment !== null &&
-    segment !== undefined &&
-    typeof segment === "object" &&
-    segment.__dynamic === true
   );
 }

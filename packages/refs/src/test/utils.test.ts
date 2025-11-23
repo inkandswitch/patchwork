@@ -3,33 +3,30 @@ import { Repo } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
 import { at } from "../utils";
-import { ref, findRef, Ref } from "../index";
+import { ref, findRef, Ref, QUERY } from "../index";
 
 describe("utils", () => {
   describe("at", () => {
-    it("should wrap a value in a dynamic segment", () => {
-      const dynamic = at(0);
-      expect(dynamic).toEqual({ __dynamic: true, value: 0 });
+    it("should wrap a value in a PathSegment with query", () => {
+      const segment = at(0);
+      expect(segment[QUERY]).toBe(0);
     });
 
     it("should work with numbers", () => {
-      const dynamic = at(5);
-      expect(dynamic.__dynamic).toBe(true);
-      expect(dynamic.value).toBe(5);
+      const segment = at(5);
+      expect(segment[QUERY]).toBe(5);
     });
 
     it("should work with objects", () => {
       const whereClause = { id: "abc" };
-      const dynamic = at(whereClause);
-      expect(dynamic.__dynamic).toBe(true);
-      expect(dynamic.value).toEqual(whereClause);
+      const segment = at(whereClause);
+      expect(segment[QUERY]).toEqual(whereClause);
     });
 
     it("should work with arrays", () => {
-      const range = [0, 10];
-      const dynamic = at(range);
-      expect(dynamic.__dynamic).toBe(true);
-      expect(dynamic.value).toEqual(range);
+      const range: [number, number] = [0, 10];
+      const segment = at(range);
+      expect(segment[QUERY]).toEqual(range);
     });
   });
 

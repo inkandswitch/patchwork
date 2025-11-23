@@ -1,42 +1,33 @@
-import type {
-  Cursor,
-  Heads,
-  Doc,
-  Patch,
-  PatchInfo,
-} from "@automerge/automerge";
+import type { Cursor, Heads } from "@automerge/automerge-repo";
 
-export type PathSegment =
-  | string // Property name
-  | number // Array index
-  | { $id: string } // Explicit ObjectId
-  | Record<string, any> // Where clause (exact match in array) (TODO: could be a predicate?)
-  | [number, number] // Dynamic range (numeric indices)
-  | [Cursor, Cursor]; // Stable range (cursors)
+/**
+ * Symbols for PathSegment fields to avoid collisions with user data
+ */
+export const QUERY = Symbol("query");
+export const ID = Symbol("id");
 
-// TODO: think about how this relates to PathSegment
-export type PathBuilder =
-  | string
-  | number
-  | Record<string, any>
-  | [number, number]
-  | object // Direct object reference
-  | DynamicSegment<any>;
+/**
+ * A segment in a path through an Automerge document.
+ *
+ * - query: How to find this location (property name, index, where clause, range)
+ * - id: Optional stable reference (ObjectId or cursors) for array items/ranges
+ *
+ * If id is present, it's used for resolution; query is a fallback or hint.
+ */
+export type PathSegment = {
+  [QUERY]?: string | number | Record<string, any> | [number, number];
+  [ID]?: string | [Cursor, Cursor];
+};
+
+/**
+ * Input types accepted when constructing a ref.
+ * These are the "query" values - how users specify what they want.
+ */
+export type PathInput = NonNullable<PathSegment[typeof QUERY]> | PathSegment;
 
 export interface RefOptions {
   heads?: Heads;
 }
-
-export type DynamicSegment<T> = { __dynamic: true; value: T };
-
-// TODO: maybe reuse a type from automerge?
-export interface ChangeEvent {
-  doc: Doc<any>;
-  patches: Patch[];
-  patchInfo: PatchInfo<any>;
-}
-
-export type ChangeCallback = (event: ChangeEvent) => void;
 
 /**
  * Context object provided to Ref.change() callbacks.
