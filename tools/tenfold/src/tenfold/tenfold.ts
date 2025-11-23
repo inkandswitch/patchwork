@@ -386,7 +386,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     },
     text(str = "you found the easter egg", x = -0.725, y = -0.8, size = 2, tracking = size * 0.75) {
       let _x = x;
-      for (let c of str) {
+      for (let c of Array.from(str)) {
         // perform a newline
         if (c == "\n") {
           y += size;
