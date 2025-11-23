@@ -19,7 +19,6 @@ import {
 import font from "./font.txt";
 import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
 import { noirTheme } from "./codemirror/theme.ts";
-import { myCompletions } from "./codemirror/complete.ts";
 import { indentWithTab } from "@codemirror/commands";
 import { keymap } from "@codemirror/view";
 
@@ -136,10 +135,7 @@ export default function TenfoldExperience(props: {
                 extensions={[
                   keymap.of([indentWithTab]),
                   javascript(),
-                  noirTheme,
-                  javascriptLanguage.data.of({
-                    autocomplete: myCompletions,
-                  }),
+                  noirTheme
                 ]}
               />
             </Show>
