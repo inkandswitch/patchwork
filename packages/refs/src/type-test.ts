@@ -96,6 +96,18 @@ type ComplexDoc = {
   }>;
 };
 
+type StringyDoc = {
+  text: string;
+};
+
+declare const stringyHandle: DocHandle<StringyDoc>;
+
+const textRef = ref(stringyHandle, "text", [10, 20]);
+textRef.value();
+textRef.change((text) => text.toUpperCase());
+
+const textRefDirect = new Ref(stringyHandle, ["text"]);
+
 declare const complexHandle: DocHandle<ComplexDoc>;
 
 const themeRef = ref(complexHandle, "users", 0, "profile", "settings", "theme");
@@ -148,6 +160,7 @@ const badRef = ref(handle, "nonexistent" as any);
 
 // Where clauses filter arrays, so they return the array element type
 const whereRef = ref(handle, "todos", { id: "abc" });
+whereRef.value();
 
 // Where clause with nested access
 const whereTitleRef = ref(handle, "todos", { done: true }, "title");
@@ -165,3 +178,16 @@ const anyRef = ref(untypedHandle, "foo", "bar");
 // =============================================================================
 
 const rootRef = ref(handle);
+
+// =============================================================================
+// Direct constructor usage requires manual type
+// =============================================================================
+
+// With 'as const', types are inferred automatically!
+const titleRefDirect = new Ref(handle, ["todos", 0, "title"]);
+// titleRefDirect is Ref<string> - same as ref(handle, 'todos', 0, 'title')
+
+// You can also explicitly provide the type
+const titleRefManual = new Ref(handle, ["todos", 0, "title"]);
+
+titleRefManual.value();

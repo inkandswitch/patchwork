@@ -94,7 +94,7 @@ describe("Ref", () => {
         d.counter = 0;
       });
 
-      const counterRef = new Ref<number>(handle, ["counter"]);
+      const counterRef = new Ref(handle, ["counter"]);
       counterRef.change((n) => n + 1);
       expect(counterRef.value()).toBe(1);
 
@@ -107,7 +107,7 @@ describe("Ref", () => {
         d.greeting = "hello";
       });
 
-      const ref = new Ref<string>(handle, ["greeting"]);
+      const ref = new Ref(handle, ["greeting"]);
       ref.change((str) => str.toUpperCase());
       expect(ref.value()).toBe("HELLO");
     });
@@ -574,9 +574,14 @@ describe("Ref", () => {
       });
 
       // Numeric index should be stabilized to ObjectId
-      const ref = new Ref(handle, ["todos", 1]);
+      const ref = new Ref(handle as DocHandle<Todo>, ["todos", 1]);
+      type Todo = {
+        todos: Array<{
+          title: string;
+        }>;
+      };
 
-      expect(ref.value().title).toBe("B");
+      expect(ref.value()?.title).toBe("B");
     });
 
     it("should keep refs stable after reordering (auto-stabilized)", () => {
@@ -752,7 +757,7 @@ describe("Ref", () => {
         d.counter = 5;
       });
 
-      const ref = new Ref<number>(handle, ["counter"]);
+      const ref = new Ref(handle, ["counter"]);
 
       let receivedValue: number | undefined;
       ref.change((val) => {
@@ -781,7 +786,7 @@ describe("Ref", () => {
         d.counter = 0;
       });
 
-      const ref = new Ref<number>(handle, ["counter"]);
+      const ref = new Ref(handle, ["counter"]);
 
       ref.change((val) => val + 10);
       expect(ref.value()).toBe(10);
@@ -830,7 +835,7 @@ describe("Ref", () => {
         };
       });
 
-      const ageRef = new Ref<number>(handle, ["user", "profile", "age"]);
+      const ageRef = new Ref(handle, ["user", "profile", "age"]);
 
       ageRef.change((age) => age + 1);
       expect(ageRef.value()).toBe(26);
@@ -855,11 +860,14 @@ describe("Ref", () => {
     });
 
     it("should allow conditional updates", () => {
+      type Counter = {
+        counter: number;
+      };
       handle.change((d) => {
         d.counter = 5;
       });
 
-      const ref = new Ref<number>(handle, ["counter"]);
+      const ref = new Ref(handle as DocHandle<Counter>, ["counter"]);
 
       // Only update if > 10
       ref.change((val) => {
@@ -975,7 +983,13 @@ describe("Ref", () => {
       });
 
       // This ref will be stabilized to ObjectId
-      const todoRef = new Ref(handle, ["todos", 0]);
+      const todoRef = new Ref(handle as DocHandle<Todo>, ["todos", 0]);
+      type Todo = {
+        todos: Array<{
+          title: string;
+          done: boolean;
+        }>;
+      };
 
       const changePromise = new Promise<void>((resolve) => {
         todoRef.on("change", () => {

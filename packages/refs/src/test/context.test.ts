@@ -156,9 +156,9 @@ describe("RefContext", () => {
         d.count = 5;
       });
 
-      const countRef = ref<number>(handle, "count");
+      const countRef = ref(handle, "count");
 
-      countRef.change((count, ctx) => {
+      countRef.change((count) => {
         return count + 1;
       });
 
