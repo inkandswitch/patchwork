@@ -1,7 +1,7 @@
 import * as Automerge from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import type { PathSegment } from "./types";
-import { QUERY } from "./types";
+import type { Segment } from "./types";
+import { KIND } from "./types";
 import { Ref } from "./ref";
 
 /**
@@ -18,8 +18,17 @@ import { Ref } from "./ref";
  */
 export function at(
   segment: string | number | Record<string, any> | [number, number]
-): PathSegment {
-  return { [QUERY]: segment };
+): Segment {
+  if (typeof segment === "string") {
+    return { [KIND]: "key", key: segment };
+  }
+  if (typeof segment === "number") {
+    return { [KIND]: "index", index: segment };
+  }
+  if (Array.isArray(segment)) {
+    return { [KIND]: "range", start: segment[0], end: segment[1] };
+  }
+  return { [KIND]: "query", clause: segment };
 }
 
 /**

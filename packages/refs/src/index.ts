@@ -1,6 +1,4 @@
-export type { PathSegment, PathInput, RefOptions, RefContext } from "./types";
-
-export { QUERY, ID } from "./types";
+export type { Segment, PathInput, RefOptions, RefContext } from "./types";
 
 export { Ref, ref } from "./ref";
 

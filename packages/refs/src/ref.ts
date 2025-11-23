@@ -5,20 +5,15 @@ import type {
   DocHandleChangePayload,
 } from "@automerge/automerge-repo";
 import type {
-  PathSegment,
+  Segment,
   PathInput,
   RefOptions,
   RefContext,
   InferRefType,
   ChangeFn,
 } from "./types";
-import { QUERY, ID } from "./types";
-import {
-  isNumericRange,
-  isCursorRange,
-  isPathSegment,
-  isPlainObject,
-} from "./guards";
+import { KIND } from "./types";
+import { isSegment, isPlainObject } from "./guards";
 import {
   matchesWhereClause,
   findIndexByObjectId,
@@ -40,7 +35,7 @@ import {
  */
 export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   readonly docHandle: DocHandle<TDoc>;
-  readonly path: PathSegment[];
+  readonly path: Segment[];
   readonly options: RefOptions;
 
   #ctx?: RefContext;
@@ -84,10 +79,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return new Ref<TDoc, PathInput[]>(handle, segments, options);
   }
 
-  static #parsePath(path: string): PathSegment[] {
+  static #parsePath(path: string): Segment[] {
     if (!path || path === "/") return [];
 
-    return path.split("/").map((segment): PathSegment => {
+    return path.split("/").map((segment): Segment => {
       if (!segment) {
         throw new Error("Invalid path: empty segment");
       }
@@ -95,9 +90,9 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     });
   }
 
-  static #parse(segment: string): PathSegment {
+  static #parse(segment: string): Segment {
     if (segment.startsWith("$")) {
-      return { [ID]: segment.slice(1) };
+      return { [KIND]: "stable_index", id: segment.slice(1) };
     }
 
     if (segment.startsWith("[")) {
@@ -109,13 +104,13 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
 
     if (/^\d+$/.test(segment)) {
-      return { [QUERY]: parseInt(segment, 10), [ID]: undefined };
+      return { [KIND]: "index", index: parseInt(segment, 10) };
     }
 
-    return { [QUERY]: segment, [ID]: undefined };
+    return { [KIND]: "key", key: segment };
   }
 
-  static #parseRange(segment: string): PathSegment {
+  static #parseRange(segment: string): Segment {
     const content = segment.slice(1, -1);
     const parts = content.split(",");
 
@@ -127,10 +122,9 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     if (first.startsWith("$") && second.startsWith("$")) {
       return {
-        [ID]: [
-          first.slice(1) as Automerge.Cursor,
-          second.slice(1) as Automerge.Cursor,
-        ],
+        [KIND]: "stable_range",
+        start: first.slice(1) as Automerge.Cursor,
+        end: second.slice(1) as Automerge.Cursor,
       };
     }
 
@@ -141,13 +135,13 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       throw new Error(`Invalid numeric range: ${segment}`);
     }
 
-    return { [QUERY]: [start, end] };
+    return { [KIND]: "range", start, end };
   }
 
-  static #parseJson(segment: string): PathSegment {
+  static #parseJson(segment: string): Segment {
     try {
       const parsed = JSON.parse(segment);
-      return { [QUERY]: parsed };
+      return { [KIND]: "query", clause: parsed };
     } catch (e) {
       throw new Error(`Invalid JSON segment: ${segment}`);
     }
@@ -156,13 +150,11 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   /** Get the current value, or undefined if path can't be resolved */
   value(): InferRefType<TDoc, TPath> | undefined {
     const doc = this.doc();
-    if (!doc) return undefined;
     return this.#traverse(doc, this.path);
   }
 
   doc(): Doc<TDoc> {
     const doc = this.docHandle.doc();
-    if (!doc) throw new Error("Document not loaded");
     return this.options.heads ? Automerge.view(doc, this.options.heads) : doc;
   }
 
@@ -250,25 +242,21 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   }
 
   /** Normalize path inputs and extract stable IDs where possible */
-  #normalizePath(doc: Doc<TDoc>, inputs: PathInput[]): PathSegment[] {
-    const result: PathSegment[] = [];
-    let currentPath: PathSegment[] = [];
+  #normalizePath(doc: Doc<TDoc>, inputs: PathInput[]): Segment[] {
+    const result: Segment[] = [];
+    let currentPath: Segment[] = [];
 
     for (const input of inputs) {
-      let segment: PathSegment;
+      let segment: Segment;
 
-      if (isPathSegment(input)) {
+      if (isSegment(input)) {
         segment = input;
       } else {
-        const id = this.#getStableId(
+        segment = this.#normalizeInput(
           doc,
           currentPath,
-          input as Exclude<PathInput, PathSegment>
+          input as Exclude<PathInput, Segment>
         );
-        segment = {
-          [QUERY]: input as Exclude<PathInput, PathSegment>,
-          [ID]: id,
-        };
       }
 
       result.push(segment);
@@ -278,29 +266,55 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return result;
   }
 
-  #getStableId(
+  #normalizeInput(
     doc: Doc<TDoc>,
-    currentPath: PathSegment[],
-    input: Exclude<PathInput, PathSegment>
-  ): string | [Cursor, Cursor] | undefined {
+    currentPath: Segment[],
+    input: Exclude<PathInput, Segment>
+  ): Segment {
     if (typeof input === "string") {
-      return undefined;
+      return { [KIND]: "key", key: input };
     }
 
     if (typeof input === "number") {
-      return this.#getObjectIdAt(doc, currentPath, input);
+      // Try to stabilize: find the ObjectId for this array item
+      const container = this.#traverse(doc, currentPath);
+      if (Array.isArray(container)) {
+        const item = container[input];
+        const id = item ? Automerge.getObjectId(item) : undefined;
+        if (id) {
+          return { [KIND]: "stable_index", id };
+        }
+      }
+      return { [KIND]: "index", index: input };
     }
 
     if (Array.isArray(input) && input.length === 2) {
-      return this.#getCursorsForRange(
-        doc,
-        currentPath,
-        input as [number, number]
-      );
+      // Try to stabilize: convert numeric range to cursor range
+      const container = this.#traverse(doc, currentPath);
+      if (typeof container === "string") {
+        try {
+          const propPath = this.#toAutomergePath(doc, currentPath);
+          const start = Automerge.getCursor(doc, propPath, input[0]);
+          const end = Automerge.getCursor(doc, propPath, input[1]);
+          return { [KIND]: "stable_range", start, end };
+        } catch {
+          // Fall through to unstable range
+        }
+      }
+      return { [KIND]: "range", start: input[0], end: input[1] };
     }
 
     if (isPlainObject(input)) {
-      return this.#getObjectIdForWhereClause(doc, currentPath, input);
+      // Try to stabilize: find the ObjectId for item matching where clause
+      const container = this.#traverse(doc, currentPath);
+      if (Array.isArray(container)) {
+        const item = container.find((obj) => matchesWhereClause(obj, input));
+        const id = item ? Automerge.getObjectId(item) : undefined;
+        if (id) {
+          return { [KIND]: "stable_index", id };
+        }
+      }
+      return { [KIND]: "query", clause: input };
     }
 
     throw new Error(
@@ -309,65 +323,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     );
   }
 
-  #getObjectIdAt(
-    doc: Doc<TDoc>,
-    currentPath: PathSegment[],
-    index: number
-  ): string | undefined {
-    return this.#getObjectIdForItem(doc, currentPath, (arr) => arr[index]);
-  }
-
-  #getObjectIdForWhereClause(
-    doc: Doc<TDoc>,
-    currentPath: PathSegment[],
-    clause: Record<string, any>
-  ): string | undefined {
-    return this.#getObjectIdForItem(doc, currentPath, (arr) =>
-      arr.find((obj) => matchesWhereClause(obj, clause))
-    );
-  }
-
-  #getObjectIdForItem(
-    doc: Doc<TDoc>,
-    currentPath: PathSegment[],
-    findItem: (arr: any[]) => any
-  ): string | undefined {
-    const container = this.#traverse(doc, currentPath);
-    if (!Array.isArray(container)) return undefined;
-
-    const item = findItem(container);
-    if (!item) return undefined;
-
-    return Automerge.getObjectId(item) || undefined;
-  }
-
-  #getCursorsForRange(
-    doc: Doc<TDoc>,
-    currentPath: PathSegment[],
-    range: [number, number]
-  ): [Cursor, Cursor] | undefined {
-    const [start, end] = range;
-    const container = this.#traverse(doc, currentPath);
-
-    if (typeof container !== "string") {
-      return undefined;
-    }
-
-    try {
-      const propPath = this.#toAutomergePath(doc, currentPath);
-      const startCursor = Automerge.getCursor(doc, propPath, start);
-      const endCursor = Automerge.getCursor(doc, propPath, end);
-      return [startCursor, endCursor];
-    } catch (e) {
-      return undefined;
-    }
-  }
-
-  #toAutomergePath(
-    doc: Doc<TDoc>,
-    path: PathSegment[],
-    allowRanges = false
-  ): Prop[] {
+  #toAutomergePath(doc: Doc<TDoc>, path: Segment[]): Prop[] {
     const propPath: Prop[] = [];
     let current: any = doc;
 
@@ -378,7 +334,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         );
       }
 
-      const prop = this.#toAutomergeProp(current, segment, allowRanges);
+      const prop = this.#toAutomergeProp(current, segment);
       propPath.push(prop);
       current = current[prop];
     }
@@ -386,76 +342,57 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return propPath;
   }
 
-  #toAutomergeProp(
-    current: any,
-    segment: PathSegment,
-    allowRanges: boolean
-  ): Prop {
-    const id = segment[ID];
-    const query = segment[QUERY];
+  #toAutomergeProp(current: any, segment: Segment): Prop {
+    switch (segment[KIND]) {
+      case "key":
+        return segment.key;
 
-    if (id !== undefined) {
-      if (typeof id === "string") {
+      case "index":
+        return segment.index;
+
+      case "stable_index":
         if (!Array.isArray(current)) {
           throw new Error(
-            `ObjectId segment requires array container.\n` +
-              `ObjectId: ${id}\n` +
-              `Container type: ${typeof current}\n` +
-              `Ref URL: ${this.url}`
+            `ObjectId segment requires array container. ` +
+              `ObjectId: ${segment.id}, Container type: ${typeof current}`
           );
         }
-        const index = findIndexByObjectId(current, id);
+        const index = findIndexByObjectId(current, segment.id);
         if (index === -1) {
           throw new Error(
-            `ObjectId not found: ${id}\n` +
-              `This object may have been deleted.\n` +
-              `Ref URL: ${this.url}`
+            `ObjectId not found: ${segment.id}. ` +
+              `This object may have been deleted.`
           );
         }
         return index;
-      }
 
-      if (!allowRanges) {
-        throw new Error("Cannot resolve through a range segment");
-      }
-      throw new Error("Range segments cannot be part of a property path");
-    }
+      case "query":
+        if (!Array.isArray(current)) {
+          throw new Error(
+            `Where clause requires array container. ` +
+              `Where clause: ${JSON.stringify(segment.clause)}, Container type: ${typeof current}`
+          );
+        }
+        const queryIndex = findIndexByWhereClause(current, segment.clause);
+        if (queryIndex === -1) {
+          throw new Error(
+            `No item matches where clause: ${JSON.stringify(segment.clause)}. ` +
+              `Array length: ${current.length}`
+          );
+        }
+        return queryIndex;
 
-    if (query === undefined) {
-      throw new Error("PathSegment has neither ID nor QUERY");
-    }
+      case "range":
+      case "stable_range":
+        throw new Error("Range segments cannot be part of a property path");
 
-    if (typeof query === "string" || typeof query === "number") {
-      return query;
+      default:
+        const exhaustive: never = segment;
+        throw new Error(`Unknown segment kind: ${(exhaustive as any)[KIND]}`);
     }
-
-    if (Array.isArray(query)) {
-      if (!allowRanges) {
-        throw new Error("Cannot resolve through a range segment");
-      }
-      throw new Error("Range segments cannot be part of a property path");
-    }
-
-    if (!Array.isArray(current)) {
-      throw new Error(
-        `Where clause requires array container.\n` +
-          `Where clause: ${JSON.stringify(query)}\n` +
-          `Container type: ${typeof current}\n` +
-          `Ref URL: ${this.url}`
-      );
-    }
-    const index = findIndexByWhereClause(current, query);
-    if (index === -1) {
-      throw new Error(
-        `No item matches where clause: ${JSON.stringify(query)}\n` +
-          `Array length: ${current.length}\n` +
-          `Ref URL: ${this.url}`
-      );
-    }
-    return index;
   }
 
-  #traverse(container: any, path: PathSegment[]): any {
+  #traverse(container: any, path: Segment[]): any {
     let current = container;
 
     for (const segment of path) {
@@ -469,25 +406,31 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return current;
   }
 
-  #getValueAt(container: any, segment: PathSegment): any {
-    const id = segment[ID];
-    const query = segment[QUERY];
+  #getValueAt(container: any, segment: Segment): any {
+    switch (segment[KIND]) {
+      case "key":
+        return container[segment.key];
 
-    if (id !== undefined) {
-      return typeof id === "string"
-        ? this.#findByObjectId(container, id)
-        : this.#getRange(container, id);
+      case "index":
+        return container[segment.index];
+
+      case "stable_index":
+        return this.#findByObjectId(container, segment.id);
+
+      case "query":
+        return this.#findByWhereClause(container, segment.clause);
+
+      case "range":
+        return this.#getRange(container, [segment.start, segment.end]);
+
+      case "stable_range":
+        return this.#getRange(container, [segment.start, segment.end]);
+
+      default: {
+        const exhaustive: never = segment;
+        throw new Error(`Unknown segment kind: ${(exhaustive as any)[KIND]}`);
+      }
     }
-
-    if (query === undefined) return undefined;
-
-    if (typeof query === "string" || typeof query === "number") {
-      return container[query];
-    }
-
-    return Array.isArray(query)
-      ? this.#getRange(container, query as [number, number])
-      : this.#findByWhereClause(container, query);
   }
 
   #findByObjectId(container: any[], objectId: string): any {
@@ -504,30 +447,36 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     text: string,
     range: [Automerge.Cursor, Automerge.Cursor] | [number, number]
   ): string {
-    if (isNumericRange(range)) {
+    // Check if it's a numeric range (both elements are numbers)
+    if (typeof range[0] === "number" && typeof range[1] === "number") {
       return text.slice(range[0], range[1]);
     }
 
-    if (isCursorRange(range)) {
-      try {
-        const doc = this.doc();
-        const textPath = this.path.slice(0, -1);
-        const propPath = this.#toAutomergePath(doc, textPath);
+    // Otherwise it's a cursor range
+    try {
+      const doc = this.doc();
+      const textPath = this.path.slice(0, -1);
+      const propPath = this.#toAutomergePath(doc, textPath);
 
-        const start = Automerge.getCursorPosition(doc, propPath, range[0]);
-        const end = Automerge.getCursorPosition(doc, propPath, range[1]);
+      const start = Automerge.getCursorPosition(
+        doc,
+        propPath,
+        range[0] as Automerge.Cursor
+      );
+      const end = Automerge.getCursorPosition(
+        doc,
+        propPath,
+        range[1] as Automerge.Cursor
+      );
 
-        if (start === undefined || end === undefined) return "";
-        return text.slice(start, end);
-      } catch (e) {
-        return "";
-      }
+      if (start === undefined || end === undefined) return "";
+      return text.slice(start, end);
+    } catch (e) {
+      return "";
     }
-
-    return "";
   }
 
-  #setValue(doc: any, path: PathSegment[], value: any): void {
+  #setValue(doc: any, path: Segment[], value: any): void {
     if (path.length === 0) {
       throw new Error("Cannot replace root document");
     }
@@ -540,24 +489,25 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       throw new Error("Cannot set value: parent is undefined");
     }
 
-    const query = lastSegment[QUERY];
-    if (typeof query === "string" || typeof query === "number") {
-      parent[query] = value;
-    } else {
-      throw new Error(
-        "Cannot set value: last segment must be a property name or index"
-      );
+    switch (lastSegment[KIND]) {
+      case "key":
+        parent[lastSegment.key] = value;
+        break;
+      case "index":
+        parent[lastSegment.index] = value;
+        break;
+      default:
+        throw new Error(
+          "Cannot set value: last segment must be a key or index"
+        );
     }
   }
 
   #patchAffectsRef(patches: Automerge.Patch[]): boolean {
-    const doc = this.doc();
-    if (!doc) return false;
+    const doc = this.docHandle.doc();
 
     const nonRangeSegments = this.path.filter((seg) => {
-      const id = seg[ID];
-      const query = seg[QUERY];
-      return !(Array.isArray(id) || Array.isArray(query));
+      return seg[KIND] !== "range" && seg[KIND] !== "stable_range";
     });
 
     // Try to resolve path; if it fails partway, check patches against partial path
@@ -570,7 +520,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       for (const segment of nonRangeSegments) {
         if (current === undefined || current === null) break;
         try {
-          const prop = this.#toAutomergeProp(current, segment, false);
+          const prop = this.#toAutomergeProp(current, segment);
           refPropPath.push(prop);
           current = current[prop];
         } catch {
@@ -605,31 +555,31 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return true;
   }
 
-  #serialize(segment: PathSegment): string {
-    const id = segment[ID];
-    const query = segment[QUERY];
+  #serialize(segment: Segment): string {
+    switch (segment[KIND]) {
+      case "key":
+        return segment.key;
 
-    if (id !== undefined) {
-      if (typeof id === "string") {
-        return `$${id}`;
+      case "index":
+        return String(segment.index);
+
+      case "stable_index":
+        return `$${segment.id}`;
+
+      case "query":
+        return JSON.stringify(segment.clause);
+
+      case "range":
+        return `[${segment.start},${segment.end}]`;
+
+      case "stable_range":
+        return `[$${segment.start},$${segment.end}]`;
+
+      default: {
+        const exhaustive: never = segment;
+        throw new Error(`Unknown segment kind: ${(exhaustive as any)[KIND]}`);
       }
-      const [start, end] = id;
-      return `[$${start},$${end}]`;
     }
-
-    if (query === undefined) {
-      throw new Error("PathSegment has neither ID nor QUERY to serialize");
-    }
-
-    if (typeof query === "string" || typeof query === "number") {
-      return String(query);
-    }
-
-    if (isNumericRange(query)) {
-      return `[${query[0]},${query[1]}]`;
-    }
-
-    return JSON.stringify(query);
   }
 }
 

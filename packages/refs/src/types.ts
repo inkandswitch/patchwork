@@ -1,20 +1,26 @@
 import type { Cursor, Heads } from "@automerge/automerge-repo";
 
-// Symbols for PathSegment fields to avoid collisions with user data
-export const QUERY = Symbol("query");
-export const ID = Symbol("id");
-
 /**
- * A path segment with optional stable ID.
- * - QUERY: Property name, index, where clause, or range
- * - ID: Stable reference (ObjectId or cursors) - used for resolution if present
+ * Symbol used as discriminator for segments to avoid collision with user data.
+ * Users might have objects with a 'kind' property in where clauses.
  */
-export type PathSegment = {
-  [QUERY]?: string | number | Record<string, any> | [number, number];
-  [ID]?: string | [Cursor, Cursor];
-};
+export const KIND = Symbol("kind");
 
-export type PathInput = NonNullable<PathSegment[typeof QUERY]> | PathSegment;
+export type Segment =
+  | { [KIND]: "key"; key: string } // Object property access by key name
+  | { [KIND]: "index"; index: number } // Array/list access by numeric index (unstable - position-based)
+  | { [KIND]: "stable_index"; id: string } // Array/list access by stable Automerge ObjectId
+  | { [KIND]: "query"; clause: Record<string, any> } // Array/list search by where clause (e.g. {id: "abc"})
+  | { [KIND]: "range"; start: number; end: number } // Text/array range by numeric positions (unstable)
+  | { [KIND]: "stable_range"; start: Cursor; end: Cursor }; // Text range by stable Automerge cursors
+
+/** Input types that users can provide to create segments */
+export type PathInput =
+  | string
+  | number
+  | Record<string, any>
+  | [number, number]
+  | Segment;
 
 export interface RefOptions {
   heads?: Heads;
@@ -26,25 +32,11 @@ export interface RefContext {
   updateText(newValue: string): void;
 }
 
-/** Check if a type is a primitive (not an object or array) */
-type IsPrimitive<T> = T extends object
-  ? T extends any[]
-    ? false
-    : false
-  : true;
-
 /**
- * Change function signature that enforces:
- * - Primitives: return T to update, void to skip
- * - Objects/arrays: mutate in place, return void
- *
- * TODO: Consider allowing returns for objects too (e.g. return {...obj, field: value})
- * This would require changes to the implementation to replace rather than assume mutation.
+ * Change function signature.
+ * Return a new value to update primitive values, or void to skip the update.
  */
-export type ChangeFn<T> =
-  IsPrimitive<T> extends true
-    ? (val: T, ctx: RefContext) => T | void
-    : (val: T, ctx: RefContext) => void;
+export type ChangeFn<T> = (val: T, ctx: RefContext) => T | void;
 
 type GetSegmentValue<TObj, TSegment> = TSegment extends string
   ? TSegment extends keyof TObj
@@ -61,7 +53,7 @@ type GetSegmentValue<TObj, TSegment> = TSegment extends string
       ? TObj extends readonly (infer E)[]
         ? E
         : unknown
-      : TSegment extends PathSegment
+      : TSegment extends Segment
         ? unknown
         : unknown;
 

@@ -3,30 +3,36 @@ import { Repo } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
 import { at } from "../utils";
-import { ref, findRef, Ref, QUERY } from "../index";
+import { ref, findRef, Ref } from "../index";
+import { KIND } from "../types";
 
 describe("utils", () => {
   describe("at", () => {
-    it("should wrap a value in a PathSegment with query", () => {
+    it("should create an index segment", () => {
       const segment = at(0);
-      expect(segment[QUERY]).toBe(0);
+      expect(segment[KIND]).toBe("index");
+      expect((segment as any).index).toBe(0);
     });
 
     it("should work with numbers", () => {
       const segment = at(5);
-      expect(segment[QUERY]).toBe(5);
+      expect(segment[KIND]).toBe("index");
+      expect((segment as any).index).toBe(5);
     });
 
     it("should work with objects", () => {
       const whereClause = { id: "abc" };
       const segment = at(whereClause);
-      expect(segment[QUERY]).toEqual(whereClause);
+      expect(segment[KIND]).toBe("query");
+      expect((segment as any).clause).toEqual(whereClause);
     });
 
     it("should work with arrays", () => {
       const range: [number, number] = [0, 10];
       const segment = at(range);
-      expect(segment[QUERY]).toEqual(range);
+      expect(segment[KIND]).toBe("range");
+      expect((segment as any).start).toBe(0);
+      expect((segment as any).end).toBe(10);
     });
   });
 

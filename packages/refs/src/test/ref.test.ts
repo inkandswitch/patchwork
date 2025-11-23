@@ -7,7 +7,7 @@ import {
 } from "@automerge/automerge-repo";
 import { Ref } from "../ref";
 import { at } from "../utils";
-import { QUERY, ID } from "../types";
+import { KIND } from "../types";
 
 describe("Ref", () => {
   let repo: Repo;
@@ -607,7 +607,8 @@ describe("Ref", () => {
 
       // Using at() keeps it dynamic (positional)
       const dynamicRef = new Ref(handle, ["todos", at(1), "title"]);
-      expect(dynamicRef.path[1][QUERY]).toEqual(1);
+      expect(dynamicRef.path[1][KIND]).toBe("index");
+      expect((dynamicRef.path[1] as any).index).toEqual(1);
       expect(dynamicRef.value()).toBe("B");
 
       // Remove first item - position 1 now has "C"
@@ -633,8 +634,8 @@ describe("Ref", () => {
       expect(ref.value()).toBe(2);
 
       // Path should contain ObjectId, not the where clause
-      expect(ref.path[1][ID]).toBeDefined();
-      expect(typeof ref.path[1][ID]).toBe("string");
+      expect(ref.path[1][KIND]).toBe("stable_index");
+      expect(typeof (ref.path[1] as any).id).toBe("string");
     });
 
     it("should keep where clause refs stable after reordering", () => {
@@ -692,10 +693,10 @@ describe("Ref", () => {
 
       // Primitives don't have ObjectIds, so stays unstable
       const ref = new Ref(handle, ["numbers", 1]);
-      expect(ref.path[0][QUERY]).toBe("numbers");
-      expect(ref.path[0][ID]).toBeUndefined();
-      expect(ref.path[1][QUERY]).toBe(1);
-      expect(ref.path[1][ID]).toBeUndefined();
+      expect(ref.path[0][KIND]).toBe("key");
+      expect((ref.path[0] as any).key).toBe("numbers");
+      expect(ref.path[1][KIND]).toBe("index");
+      expect((ref.path[1] as any).index).toBe(1);
       expect(ref.value()).toBe(2);
     });
 
@@ -709,7 +710,8 @@ describe("Ref", () => {
 
       // Using at() with where clause keeps it dynamic
       const dynamicRef = new Ref(handle, ["items", at({ id: "b" })]);
-      expect(dynamicRef.path[1][QUERY]).toEqual({ id: "b" });
+      expect(dynamicRef.path[1][KIND]).toBe("query");
+      expect((dynamicRef.path[1] as any).clause).toEqual({ id: "b" });
       expect(dynamicRef.value()).toEqual({ id: "b", value: 2 });
     });
 
@@ -722,10 +724,10 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["note", [0, 5]]);
 
       // Path should contain cursor-based range
-      const range = ref.path[1][ID] as [Cursor, Cursor];
-      expect(Array.isArray(range)).toBe(true);
-      expect(typeof range[0]).toBe("string"); // Cursor
-      expect(typeof range[1]).toBe("string"); // Cursor
+      expect(ref.path[1][KIND]).toBe("stable_range");
+      const segment = ref.path[1] as any;
+      expect(typeof segment.start).toBe("string"); // Cursor
+      expect(typeof segment.end).toBe("string"); // Cursor
 
       expect(ref.value()).toBe("Hello");
     });
@@ -737,7 +739,9 @@ describe("Ref", () => {
 
       // Using at() keeps range as numeric
       const dynamicRef = new Ref(handle, ["text", at([0, 5])]);
-      expect(dynamicRef.path[1][QUERY]).toEqual([0, 5]);
+      expect(dynamicRef.path[1][KIND]).toBe("range");
+      expect((dynamicRef.path[1] as any).start).toBe(0);
+      expect((dynamicRef.path[1] as any).end).toBe(5);
       expect(dynamicRef.value()).toBe("Hello");
 
       // Insert at beginning
