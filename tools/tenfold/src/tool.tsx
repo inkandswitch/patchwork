@@ -17,8 +17,11 @@ import {
   Suspense,
 } from "solid-js";
 import font from "./font.txt";
-import { javascript } from "@codemirror/lang-javascript";
+import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
 import { noirTheme } from "./codemirror/theme.ts";
+import { myCompletions } from "./codemirror/complete.ts";
+import { indentWithTab } from "@codemirror/commands";
+import { keymap } from "@codemirror/view";
 
 export default function TenfoldExperience(props: {
   handle: DocHandle<Tenfold>;
@@ -50,11 +53,7 @@ export default function TenfoldExperience(props: {
           try {
             const fn = new Function(
               "ctx",
-              "q",
-              "r",
-              "t",
-              "x",
-              "y",
+              "params",
               `with (Math) {with (ctx) {${letterer}}}`
             ) as unknown as CreateTenfoldOptions["letters"][number];
 
@@ -134,7 +133,14 @@ export default function TenfoldExperience(props: {
               <CodeMirror
                 handle={lettersDocHandle()}
                 path={path()}
-                extensions={[javascript(), noirTheme]}
+                extensions={[
+                  keymap.of([indentWithTab]),
+                  javascript(),
+                  noirTheme,
+                  javascriptLanguage.data.of({
+                    autocomplete: myCompletions,
+                  }),
+                ]}
               />
             </Show>
           </div>

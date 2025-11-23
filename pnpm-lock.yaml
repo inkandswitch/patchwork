@@ -2111,6 +2111,9 @@ importers:
       '@codemirror/autocomplete':
         specifier: ^6.19.0
         version: 6.19.0
+      '@codemirror/commands':
+        specifier: ^6.9.0
+        version: 6.9.0
       '@codemirror/lang-javascript':
         specifier: ^6.2.4
         version: 6.2.4

@@ -4,11 +4,13 @@ export interface CreateTenfoldOptions {
   font: string;
   letters: ((
     ctx: ReturnType<typeof createTenfold>[0],
-    q: number,
-    r: number,
-    t: number,
-    x: number,
-    y: number
+    params: {
+      q: number;
+      r: number;
+      t: number;
+      x: number;
+      y: number;
+    }
   ) => void)[][];
   states: import("../index.tsx").TenfoldState[];
   currentlyEditingIndex: number | undefined | null;
@@ -510,7 +512,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       ctx.beginPath();
 
       try {
-        fn(api, s.q, s.r, t, s.x, s.y);
+        fn(api, { ...s, t });
       } catch (error) {
         console.error(
           `error in ${"INKSWiTCH"[i]}${(s.i + "").padStart(2, "0")}\n\n`,
