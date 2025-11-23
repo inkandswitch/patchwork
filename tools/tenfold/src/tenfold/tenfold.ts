@@ -18,10 +18,7 @@ export interface CreateTenfoldOptions {
   edit(i: number): void;
   set(i: number, field: "q" | "r" | "x" | "y" | "i", val: number): void;
 }
-/**
- *
- * @param {CreateTenfoldOptions} opts
- */
+
 export default function createTenfold(opts: CreateTenfoldOptions) {
   // CONFIG
   const thick = 2; // css pixels
@@ -37,9 +34,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
   // ANIMATION STATE
   let t = 0;
-  /**
-   * @type {Averager[]}
-   */
   const timers: Averager[] = [];
 
   // HELPFUL HELPERS
@@ -47,30 +41,12 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const PI = Math.PI;
   const TAU = PI * 2;
 
-  /**
-   * @param {number} v
-   */
   const mod = (v: number, m = 1) => ((v % m) + m) % m;
   const rand = (lo = -1, hi = 1) => denorm(Math.random(), lo, hi);
-  /**
-   * @param {number} v
-   */
   const clamp = (v: number, lo = -1, hi = 1) => Math.max(lo, Math.min(hi, v));
-  /**
-   * @param {number} n
-   */
   const norm = (n: number, lo = -1, hi = 1) => (n - lo) / (hi - lo);
-  /**
-   * @param {number} n
-   */
   const denorm = (n: number, lo = -1, hi = 1) => n * (hi - lo) + lo;
-  /**
-   * @param {number} n
-   */
   const declip = (n: number, lo = 0, hi = 1) => denorm(norm(n), lo, hi);
-  /**
-   * @param {number} v
-   */
   const renorm = (
     v: number,
     lo = -1,
@@ -84,21 +60,21 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     return denorm(n, LO, HI);
   };
 
+  const cosn = (n: number) => Math.cos(n * TAU)
+  const sinn = (n: number) => Math.sin(n * TAU)
+  
   // UNHELPFUL HELPERS
 
   class Averager {
     result = 0;
     tally = 0;
-    /** @type {number[]} */
     values: number[] = [];
     limit = 0;
 
-    /** @param {number} limit */
     constructor(limit: number) {
       this.limit = limit;
     }
 
-    /** @param {number} value */
     add(value: number) {
       this.tally += value;
       this.values.push(value);
@@ -114,13 +90,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const ctx = canvas.getContext("2d", {
     alpha: true,
   })!;
-  /** @type number */
   let dpr: number; // device pixel ratio, sigh
-  /** @type number */
   let cssW: number; // width of a grid cell in css units
-  /** @type number */
   let pixW: number; // width of a grid cell in canvas pixels
-  /** @type number */
   let pixHW: number; // half the width of a grid cell in canvas pixels
 
   function resize() {
@@ -164,13 +136,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
   // INPUT HANDLING /////////////////////////////////////////////////////////////////////////////////
 
-  /** @type {null | "cell" | "param" | "timeline"} */
   let dragType: null | "cell" | "param" | "timeline" = null; // null, cell, param, or timeline
-  /** @type {number|null} */
   let dragParam: number | null = null; // the cell idx for the currently dragged param
-  /** @type {Record<string, number>} */
   let mouseStart: Record<string, number>; // state captured when the mouse is first pressed
-  /** @type {Record<string, number>} */
   let mouseDragged: Record<string, number>; // state captured as the mouse is dragged
 
   function pointerdown(e: PointerEvent) {
@@ -284,7 +252,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   canvas.addEventListener("pointerdown", pointerdown);
   cleanups.add(() => canvas.removeEventListener("pointerdown", pointerdown));
 
-  /** @param {PointerEvent} e */
   const drag = (e: PointerEvent) => {
     e.preventDefault(); // Prevent unwanted text selection
 
@@ -335,7 +302,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
   // FONT ///////////////////////////////////////////////////////////////////////////////////////////
 
-  /** @type {Record<string, {x: number, y: number}[][]>} */
   const chars: Record<string, { x: number; y: number }[][]> = {};
 
   {
@@ -372,20 +338,13 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   // While we don't do this yet, the plan is to add instrumentation that'll feed the sound engine.
   let newPath = true;
   const api = {
-    /** start a path */
     begin() {
       newPath = true;
     },
-    /**
-     * move the pen
-     */
     move(x: number, y: number) {
       ctx.moveTo(x, y);
       newPath = false;
     },
-    /**
-     * draw a line
-     */
     line(x: number, y: number) {
       if (newPath) {
         api.move(x, y);
@@ -393,31 +352,19 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         ctx.lineTo(x, y);
       }
     },
-    /**
-     * draw a rectangle
-     */
     rect(x: number, y: number, w: number, h: number) {
       ctx.moveTo(x, y);
       ctx.rect(x, y, w, h);
       newPath = true;
     },
-    /**
-     * draw a circle
-     */
     circle(x: number, y: number, r: number) {
       ctx.moveTo(x + r, y);
       api.arc(x, y, r);
       newPath = true;
     },
-    /**
-     * draw a arc
-     */
     arc(x: number, y: number, r: number, start = 0, end = 1, ccw = false) {
       ctx.arc(x, y, r, start * TAU, end * TAU, ccw);
     },
-    /**
-     * draw a text
-     */
     text(str: string, x: number, y: number, size = 16, k = size * 0.75) {
       let _x = x;
       for (let c of str) {
@@ -449,6 +396,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     denorm,
     declip,
     renorm,
+    cosn,
+    sinn,
     TAU,
     PI,
   };
@@ -464,7 +413,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   let lastT;
 
   let stop = false;
-  /** @param {number} ms */
   function update(ms: number) {
     if (stop) return;
     requestAnimationFrame(update);
@@ -522,11 +470,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
       ctx.stroke();
       let cost = timers[i].add(performance.now() - start);
-
-      // TEMP: Draw the per-letter control handles
-      // ctx.beginPath()
-      // proxy.circle(s.x, s.y, 0.05)
-      // ctx.fill()
 
       // If the draw function took too long, apply shame
       if (cost > 3) {
