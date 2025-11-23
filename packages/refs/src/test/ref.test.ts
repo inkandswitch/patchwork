@@ -81,8 +81,7 @@ describe("Ref", () => {
       });
 
       const doneRef = new Ref(handle, ["todo", "done"]);
-      doneRef.change((done) => {
-        // This won't work for primitives, so we need to return
+      doneRef.change(() => {
         return true;
       });
 
@@ -872,6 +871,7 @@ describe("Ref", () => {
       // Only update if > 10
       ref.change((val) => {
         if (val > 10) return 0;
+        // return 0
         // Return undefined = no change
       });
 
@@ -896,7 +896,7 @@ describe("Ref", () => {
       const ref = new Ref<number>(handle, ["counter"]);
 
       const changePromise = new Promise<void>((resolve) => {
-        ref.on("change", () => {
+        ref.onChange(() => {
           expect(ref.value()).toBe(1);
           resolve();
         });
@@ -918,7 +918,7 @@ describe("Ref", () => {
       const ref = new Ref<number>(handle, ["counter"]);
       let callCount = 0;
 
-      ref.on("change", () => {
+      ref.onChange(() => {
         callCount++;
       });
 
@@ -940,7 +940,7 @@ describe("Ref", () => {
       const nameRef = new Ref<string>(handle, ["user", "profile", "name"]);
 
       const changePromise = new Promise<void>((resolve) => {
-        nameRef.on("change", () => {
+        nameRef.onChange(() => {
           expect(nameRef.value()).toBe("Bob");
           resolve();
         });
@@ -961,7 +961,7 @@ describe("Ref", () => {
       const nameRef = new Ref<string>(handle, ["user", "profile", "name"]);
       let callCount = 0;
 
-      nameRef.on("change", () => {
+      nameRef.onChange(() => {
         callCount++;
       });
 
@@ -992,7 +992,7 @@ describe("Ref", () => {
       };
 
       const changePromise = new Promise<void>((resolve) => {
-        todoRef.on("change", () => {
+        todoRef.onChange(() => {
           expect(todoRef.value()?.done).toBe(true);
           resolve();
         });
@@ -1013,7 +1013,7 @@ describe("Ref", () => {
       const dynamicRef = new Ref(handle, ["items", at(1)]);
 
       const changePromise = new Promise<void>((resolve) => {
-        dynamicRef.on("change", () => {
+        dynamicRef.onChange(() => {
           expect(dynamicRef.value()).toBe("modified");
           resolve();
         });
@@ -1035,7 +1035,7 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["data", "value"]);
 
       const changePromise = new Promise<void>((resolve) => {
-        ref.on("change", ({ patches }) => {
+        ref.onChange(({ patches }) => {
           expect(patches).toBeDefined();
           expect(Array.isArray(patches)).toBe(true);
           expect(patches.length).toBeGreaterThan(0);
@@ -1058,7 +1058,7 @@ describe("Ref", () => {
       const ref = new Ref<number>(handle, ["counter"]);
       let callCount = 0;
 
-      const unsubscribe = ref.on("change", () => {
+      const unsubscribe = ref.onChange(() => {
         callCount++;
       });
 
@@ -1091,7 +1091,7 @@ describe("Ref", () => {
       const rangeRef = new Ref(handle, ["note", [0, 5]]);
 
       const changePromise = new Promise<void>((resolve) => {
-        rangeRef.on("change", () => {
+        rangeRef.onChange(() => {
           // Range should have shifted due to cursor stabilization
           expect(rangeRef.value()).toBe("Hello");
           resolve();
@@ -1118,7 +1118,7 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["items", { id: "b" }, "value"]);
 
       const changePromise = new Promise<void>((resolve) => {
-        ref.on("change", () => {
+        ref.onChange(() => {
           expect(ref.value()).toBe(20);
           resolve();
         });
@@ -1141,7 +1141,7 @@ describe("Ref", () => {
       const userRef = new Ref(handle, ["user"]);
       let callCount = 0;
 
-      userRef.on("change", () => {
+      userRef.onChange(() => {
         callCount++;
       });
 
@@ -1170,7 +1170,7 @@ describe("Ref", () => {
       const userRef = new Ref(handle, ["user"]);
       let callCount = 0;
 
-      userRef.on("change", () => {
+      userRef.onChange(() => {
         callCount++;
       });
 
@@ -1194,7 +1194,7 @@ describe("Ref", () => {
       const settingsRef = new Ref(handle, ["data", "settings"]);
       let callCount = 0;
 
-      settingsRef.on("change", () => {
+      settingsRef.onChange(() => {
         callCount++;
       });
 
@@ -1215,7 +1215,7 @@ describe("Ref", () => {
       const nameRef = new Ref(handle, ["user", "profile", "name"]);
       let callCount = 0;
 
-      nameRef.on("change", () => {
+      nameRef.onChange(() => {
         callCount++;
       });
 
@@ -1236,7 +1236,7 @@ describe("Ref", () => {
       const userRef = new Ref(handle, ["user"]);
       let callCount = 0;
 
-      userRef.on("change", () => {
+      userRef.onChange(() => {
         callCount++;
       });
 
@@ -1261,7 +1261,7 @@ describe("Ref", () => {
       const themeRef = new Ref(handle, ["config", "theme"]);
       let callCount = 0;
 
-      themeRef.on("change", () => {
+      themeRef.onChange(() => {
         callCount++;
       });
 
@@ -1309,7 +1309,7 @@ describe("Ref", () => {
       const dataRef = new Ref(handle, ["data"]);
       let callCount = 0;
 
-      dataRef.on("change", () => {
+      dataRef.onChange(() => {
         callCount++;
       });
 
@@ -1331,7 +1331,7 @@ describe("Ref", () => {
       const todosRef = new Ref(handle, ["todos"]);
       let callCount = 0;
 
-      todosRef.on("change", () => {
+      todosRef.onChange(() => {
         callCount++;
       });
 
@@ -1352,7 +1352,7 @@ describe("Ref", () => {
       const configRef = new Ref(handle, ["config"]);
       let callCount = 0;
 
-      configRef.on("change", () => {
+      configRef.onChange(() => {
         callCount++;
       });
 
@@ -1373,7 +1373,7 @@ describe("Ref", () => {
       const userRef = new Ref(handle, ["user"]);
       let callCount = 0;
 
-      userRef.on("change", () => {
+      userRef.onChange(() => {
         callCount++;
       });
 
@@ -1398,7 +1398,7 @@ describe("Ref", () => {
       const itemRef = new Ref(handle, ["items", 0]);
       let callCount = 0;
 
-      itemRef.on("change", () => {
+      itemRef.onChange(() => {
         callCount++;
       });
 
@@ -1436,7 +1436,7 @@ describe("Ref", () => {
       const columnRef = new Ref(handle, ["boards", 0, "columns", 1]);
       let callCount = 0;
 
-      columnRef.on("change", () => {
+      columnRef.onChange(() => {
         callCount++;
       });
 

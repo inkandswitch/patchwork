@@ -18,7 +18,7 @@ describe("RefContext", () => {
         d.content = "hello world";
       });
 
-      const textRef = ref<string>(handle, "content");
+      const textRef = ref(handle, "content");
 
       textRef.change((text, ctx) => {
         ctx.splice(0, 5, "goodbye");
@@ -32,7 +32,7 @@ describe("RefContext", () => {
         d.doc = { title: "hello" };
       });
 
-      const titleRef = ref<string>(handle, "doc", "title");
+      const titleRef = ref(handle, "doc", "title");
 
       titleRef.change((text, ctx) => {
         ctx.splice(0, 0, "say ");
@@ -46,7 +46,7 @@ describe("RefContext", () => {
         d.items = [{ text: "first" }];
       });
 
-      const itemRef = ref<string>(handle, "items", 0, "text");
+      const itemRef = ref(handle, "items", 0, "text");
 
       itemRef.change((text, ctx) => {
         ctx.splice(5, 0, " item");
@@ -62,7 +62,7 @@ describe("RefContext", () => {
         d.content = "hello";
       });
 
-      const textRef = ref<string>(handle, "content");
+      const textRef = ref(handle, "content");
 
       textRef.change((text, ctx) => {
         ctx.updateText("goodbye");
@@ -76,7 +76,7 @@ describe("RefContext", () => {
         d.doc = { title: "old title" };
       });
 
-      const titleRef = ref<string>(handle, "doc", "title");
+      const titleRef = ref(handle, "doc", "title");
 
       titleRef.change((text, ctx) => {
         ctx.updateText("new title");
@@ -96,7 +96,7 @@ describe("RefContext", () => {
       });
 
       // Get stable ref to first todo's title
-      const titleRef = ref<string>(handle, "todos", 0, "title");
+      const titleRef = ref(handle, "todos", 0, "title");
 
       // Swap first two elements by inserting second at index 0 and deleting old second
       handle.change((d) => {
@@ -122,7 +122,7 @@ describe("RefContext", () => {
         ];
       });
 
-      const aliceRef = ref<string>(handle, "users", { id: "user1" }, "name");
+      const aliceRef = ref(handle, "users", { id: "user1" }, "name");
 
       aliceRef.change((name, ctx) => {
         ctx.updateText("Alice Smith");

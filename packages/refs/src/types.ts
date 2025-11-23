@@ -26,6 +26,26 @@ export interface RefContext {
   updateText(newValue: string): void;
 }
 
+/** Check if a type is a primitive (not an object or array) */
+type IsPrimitive<T> = T extends object
+  ? T extends any[]
+    ? false
+    : false
+  : true;
+
+/**
+ * Change function signature that enforces:
+ * - Primitives: return T to update, void to skip
+ * - Objects/arrays: mutate in place, return void
+ *
+ * TODO: Consider allowing returns for objects too (e.g. return {...obj, field: value})
+ * This would require changes to the implementation to replace rather than assume mutation.
+ */
+export type ChangeFn<T> =
+  IsPrimitive<T> extends true
+    ? (val: T, ctx: RefContext) => T | void
+    : (val: T, ctx: RefContext) => void;
+
 type GetSegmentValue<TObj, TSegment> = TSegment extends string
   ? TSegment extends keyof TObj
     ? TObj[TSegment]

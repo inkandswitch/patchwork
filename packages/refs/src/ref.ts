@@ -10,6 +10,7 @@ import type {
   RefOptions,
   RefContext,
   InferRefType,
+  ChangeFn,
 } from "./types";
 import { QUERY, ID } from "./types";
 import {
@@ -168,14 +169,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   /**
    * Update the value.
    *
-   * Return a new value for primitives, or mutate objects in place.
+   * Primitives: return new value to update, void to skip.
+   * Objects/arrays: mutate in place, return void.
    */
-  change(
-    fn: (
-      val: InferRefType<TDoc, TPath>,
-      ctx: RefContext
-    ) => void | InferRefType<TDoc, TPath>
-  ): void {
+  change(fn: ChangeFn<InferRefType<TDoc, TPath>>): void {
     if (this.options.heads) {
       throw new Error("Cannot change a Ref pinned to specific heads");
     }
@@ -187,6 +184,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         this.#getContext()
       );
 
+      // Only set if a value was returned (not void/undefined)
       if (newValue !== undefined) {
         this.#setValue(doc, this.path, newValue);
       }
@@ -194,8 +192,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   }
 
   /** Subscribe to changes that affect this ref's value */
-  on(
-    event: "change",
+  onChange(
     callback: (payload: DocHandleChangePayload<any>) => void
   ): () => void {
     const wrappedCallback = (payload: DocHandleChangePayload<any>) => {
@@ -204,10 +201,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       }
     };
 
-    this.docHandle.on(event, wrappedCallback);
+    this.docHandle.on("change", wrappedCallback);
 
     return () => {
-      this.docHandle.off(event, wrappedCallback);
+      this.docHandle.off("change", wrappedCallback);
     };
   }
 
