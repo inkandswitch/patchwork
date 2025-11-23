@@ -345,6 +345,32 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     }
   }
 
+  function drawText(str:string, x = 0, y = 0, size = 2, tracking = size * 0.75) {
+    let _x = x;
+    for (let c of Array.from(str)) {
+      // perform a newline
+      if (c == "\n") {
+        y += size;
+        x = _x;
+        continue;
+      }
+      // render non-whitespace chars
+      if (c != " ") {
+        let char = chars[c] ?? chars["?"];
+        for (let path of char) {
+          newPath = true;
+          for (let p of path) {
+            let X = x + (p.x * size) / 800;
+            let Y = y + size - (p.y * size) / 800; // y is flipped
+            api.line(X, Y);
+          }
+        }
+      }
+      // advance
+      x += tracking;
+    }
+  }
+
   // DRAWING API ////////////////////////////////////////////////////////////////////////////////////
 
   // This is the simplified canvas API exposed to letter-drawing functions.
@@ -384,30 +410,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     cubic(cx1, cy1, cx2, cy2, x, y) {
       ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x, y);
     },
-    text(str = "you found the easter egg", x = -0.725, y = -0.8, size = 2, tracking = size * 0.75) {
-      let _x = x;
-      for (let c of Array.from(str)) {
-        // perform a newline
-        if (c == "\n") {
-          y += size;
-          x = _x;
-          continue;
-        }
-        // render non-whitespace chars
-        if (c != " ") {
-          let char = chars[c] ?? chars["?"];
-          for (let path of char) {
-            newPath = true;
-            for (let p of path) {
-              let X = x + (p.x * size) / 800;
-              let Y = y + size - (p.y * size) / 800; // y is flipped
-              api.line(X, Y);
-            }
-          }
-        }
-        // advance
-        x += tracking;
-      }
+    text(str = "you found the easter egg", x = 0, y = 0, size = 2, tracking = size * 0.75) {
+      // compensate for font weirdness, so that passing 0,0 centers the first char
+      x += 0.3625 * size
+      y += 0.4 * size
+      drawText(str, x, y, size, tracking)
       newPath = true
     },
     mod,
@@ -497,7 +504,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         ctx.beginPath();
         ctx.lineWidth *= 3;
         ctx.strokeStyle = errColor;
-        api.text("COST : " + cost.toFixed(1) + " > 3", -1, -1, 0.15);
+        drawText("COST : " + cost.toFixed(1) + " > 3", -1, -1, 0.15);
         ctx.stroke();
         // clean up after yoself
         ctx.strokeStyle = color;
@@ -544,7 +551,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         let x = 17 * scaleFix + labelWidth / 2;
         let y = cssW + gap / 2;
         ctx.beginPath();
-        api.text(
+        drawText(
           labelText,
           x - labelWidth / 2,
           y - scaleFix - charHeight / 2,
