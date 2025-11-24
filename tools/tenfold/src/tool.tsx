@@ -77,7 +77,8 @@ export default function TenfoldExperience(props: {
             const fn = new Function(
               "ctx",
               "params",
-              `with (Math) {with (ctx) {${letterer}}}`
+              `with (Math) {with (ctx) {${letterer}
+}}`
             ) as unknown as CreateTenfoldOptions["letters"][number];
 
             updateLetters(
