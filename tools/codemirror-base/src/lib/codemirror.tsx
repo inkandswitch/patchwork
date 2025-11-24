@@ -39,7 +39,6 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
   const initialDoc = () =>
     (props.handle && (lookup(props.handle.doc(), props.path) as string)) || "";
 
-  // todo this loses reactivity
   const [syncExtension, createEffectReconfigureSync] = createSyncExtension(
     () => props.handle,
     () => props.path,

@@ -8,14 +8,7 @@ import {
 import { CodeMirror } from "@grjte/codemirror-base/component";
 import createTenfold, { type CreateTenfoldOptions } from "./tenfold/tenfold.ts";
 import { createStore, produce } from "solid-js/store";
-import {
-  createEffect,
-  createSignal,
-  onCleanup,
-  onMount,
-  Show,
-  Suspense,
-} from "solid-js";
+import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import font from "./font.txt?raw";
 import { javascript } from "@codemirror/lang-javascript";
 import { noirTheme } from "./codemirror/theme.ts";
