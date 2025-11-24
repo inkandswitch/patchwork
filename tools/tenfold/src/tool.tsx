@@ -37,8 +37,9 @@ import {
   tsSync,
   tsTwoslash,
 } from "@valtown/codemirror-ts";
-import { autocompletion } from "@codemirror/autocomplete";
+import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
 import { vim } from "@replit/codemirror-vim";
+import { indentOnInput } from "@codemirror/language";
 
 const innerWorker = new Worker(
   new URL("./codemirror/worker.ts", import.meta.url),
@@ -177,6 +178,7 @@ export default function TenfoldExperience(props: {
                 },
                 ...defaultKeymap,
                 ...historyKeymap,
+                ...completionKeymap,
               ]),
               history(),
               javascript(),
@@ -194,6 +196,7 @@ export default function TenfoldExperience(props: {
               tsHover(),
               tsTwoslash(),
               tsLinterWorker(),
+              indentOnInput(),
             ]}
           />
         </div>
