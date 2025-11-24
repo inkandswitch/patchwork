@@ -39,7 +39,6 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   readonly options: RefOptions;
 
   #ctx?: RefContext;
-  #heads?: string[];
 
   constructor(
     docHandle: DocHandle<TDoc>,
@@ -47,7 +46,6 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     options: RefOptions = {}
   ) {
     this.docHandle = docHandle;
-    this.#heads = options.heads;
     this.options = options;
 
     const doc = docHandle.doc();
@@ -55,12 +53,11 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   }
 
   set heads(heads: string[] | undefined) {
-    this.#heads = heads;
     this.options.heads = heads;
   }
 
   get heads(): string[] | undefined {
-    return this.#heads;
+    return this.options.heads;
   }
 
   /** Parse a ref from a URL string */
@@ -421,10 +418,16 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         return container[segment.index];
 
       case "stable_index":
-        return this.#findByObjectId(container, segment.id);
+        if (!Array.isArray(container)) return undefined;
+        return container.find(
+          (item) => Automerge.getObjectId(item) === segment.id
+        );
 
       case "query":
-        return this.#findByWhereClause(container, segment.clause);
+        if (!Array.isArray(container)) return undefined;
+        return container.find((item) =>
+          matchesWhereClause(item, segment.clause)
+        );
 
       case "range":
         return this.#getRange(container, [segment.start, segment.end]);
@@ -432,21 +435,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       case "stable_range":
         return this.#getRange(container, [segment.start, segment.end]);
 
-      default: {
+      default:
         segment satisfies never;
         throw new Error(`Unknown segment kind: ${segment[KIND]}`);
-      }
     }
-  }
-
-  #findByObjectId(container: any[], objectId: string): any {
-    if (!Array.isArray(container)) return undefined;
-    return container.find((item) => Automerge.getObjectId(item) === objectId);
-  }
-
-  #findByWhereClause(container: any[], clause: Record<string, any>): any {
-    if (!Array.isArray(container)) return undefined;
-    return container.find((item) => matchesWhereClause(item, clause));
   }
 
   #getRange(
@@ -511,7 +503,6 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
           );
         }
 
-        const currentText = parent;
         let start: number;
         let end: number;
 
@@ -540,27 +531,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
           end = endPos;
         }
 
-        // Try to use Automerge text operations if available
+        // Replace the text range using Automerge splice
         const propPath = this.#toAutomergePath(doc, parentPath);
         const deleteCount = end - start;
-
-        try {
-          // Use Automerge splice for CRDT text
-          Automerge.splice(doc, propPath, start, deleteCount, value);
-        } catch {
-          // Fallback for regular strings - replace the whole string
-          const newText =
-            currentText.slice(0, start) + value + currentText.slice(end);
-          const grandparentPath = parentPath.slice(0, -1);
-          const parentSegment = parentPath[parentPath.length - 1];
-          const grandparent = this.#traverse(doc, grandparentPath);
-
-          if (parentSegment[KIND] === "key") {
-            grandparent[parentSegment.key] = newText;
-          } else if (parentSegment[KIND] === "index") {
-            grandparent[parentSegment.index] = newText;
-          }
-        }
+        Automerge.splice(doc, propPath, start, deleteCount, value);
         break;
       }
       default:
@@ -646,26 +620,9 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       case "stable_range":
         return `[$${segment.start},$${segment.end}]`;
 
-      default: {
-        const exhaustive: never = segment;
-        throw new Error(`Unknown segment kind: ${(exhaustive as any)[KIND]}`);
-      }
+      default:
+        segment satisfies never;
+        throw new Error(`Unknown segment kind: ${segment[KIND]}`);
     }
   }
-}
-
-/**
- * Create a ref with automatic type inference.
- *
- * @example
- * ```ts
- * const titleRef = ref(handle, 'todos', 0, 'title');
- * titleRef.value(); // string | undefined
- * ```
- */
-export function ref<TDoc, TPath extends readonly PathInput[]>(
-  docHandle: DocHandle<TDoc>,
-  ...segments: [...TPath]
-): Ref<TDoc, TPath> {
-  return new Ref<TDoc, TPath>(docHandle, segments as [...TPath]);
 }

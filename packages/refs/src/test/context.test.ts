@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Repo } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
-import { ref } from "../ref";
+import { ref } from "../factory";
 
 describe("RefContext", () => {
   let repo: Repo;

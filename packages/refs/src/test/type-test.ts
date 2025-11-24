@@ -1,5 +1,6 @@
 import type { DocHandle } from "@automerge/automerge-repo";
-import { ref, Ref } from "../ref";
+import { Ref } from "../ref";
+import { ref } from "../factory";
 
 // =============================================================================
 // Test Document Types
