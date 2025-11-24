@@ -33,7 +33,6 @@ export function createSyncExtension<T>(
 
   const createReconfigureEffect = (view: EditorView) =>
     createEffect(() => {
-      console.log("reconfigure");
       view.dispatch({
         effects: sync.reconfigure(syncExtension()),
         changes: {

@@ -30,9 +30,14 @@ import {
   tsSync,
   tsTwoslash,
 } from "@valtown/codemirror-ts";
-import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
+import {
+  autocompletion,
+  completionKeymap,
+  completionStatus,
+} from "@codemirror/autocomplete";
 import { vim } from "@replit/codemirror-vim";
 import { indentOnInput } from "@codemirror/language";
+import { EditorState } from "@codemirror/state";
 
 const innerWorker = new Worker(
   new URL("./codemirror/worker.ts", import.meta.url),
@@ -190,6 +195,22 @@ export default function TenfoldExperience(props: {
               tsTwoslash(),
               tsLinterWorker(),
               indentOnInput(),
+              EditorState.transactionFilter.of((tr) => {
+                const start = completionStatus(tr.startState);
+                const after = completionStatus(tr.state);
+
+                if (
+                  !tr.reconfigured &&
+                  tr.changes.empty &&
+                  !tr.effects.length &&
+                  start == "active" &&
+                  !after
+                ) {
+                  return [];
+                }
+
+                return tr;
+              }),
             ]}
           />
         </div>
