@@ -5,6 +5,8 @@ export default defineConfig({
   base: "./",
   plugins: [solid()],
   build: {
+    minify: false,
+    sourcemap: true,
     lib: {
       entry: {
         index: "src/index.tsx",
