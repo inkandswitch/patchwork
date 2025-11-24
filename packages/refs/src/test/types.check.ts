@@ -130,3 +130,52 @@ const titleRef2 = ref(handle, "title");
 titleRef2.change((title) => {
   return title.toUpperCase(); // ✅ Works fine (MutableText is treated as primitive-like)
 });
+
+// === Type Inference Tests ===
+// Test where type inference should work vs fail
+
+// ✅ SHOULD WORK: Direct string key access
+const directKeyRef = ref(handle, "user", "name");
+const directKeyValue = directKeyRef.value();
+// Hover over directKeyValue - should be: string | undefined
+
+// ✅ SHOULD WORK: Numeric index on array
+const numericIndexRef = ref(handle, "todos", 0, "title");
+const numericIndexValue = numericIndexRef.value();
+// Hover over numericIndexValue - should be: string | undefined
+
+// ❓ TEST: ID pattern lookup - does this infer correctly?
+const idPatternRef = ref(handle, "todos", { done: true }, "title");
+const idPatternValue = idPatternRef.value();
+// Hover over idPatternValue - is this string | undefined or unknown?
+
+// ❓ TEST: Nested ID pattern - does this infer correctly?
+type NestedDoc = {
+  users: Array<{
+    id: string;
+    profile: {
+      name: string;
+    };
+  }>;
+};
+declare const nestedHandle: DocHandle<NestedDoc>;
+
+const nestedIdPatternRef = ref(
+  nestedHandle,
+  "users",
+  { id: "123" },
+  "profile",
+  "name"
+);
+const nestedIdPatternValue = nestedIdPatternRef.value();
+// Hover over nestedIdPatternValue - is this string | undefined or unknown?
+
+// ✅ TEST: Deep nesting with literal keys (should work)
+type DeepDoc = {
+  a: { b: { c: { d: { e: string } } } };
+};
+declare const deepHandle: DocHandle<DeepDoc>;
+
+const deepRef = ref(deepHandle, "a", "b", "c", "d", "e");
+const deepValue = deepRef.value();
+// Hover over deepValue - should be: string | undefined

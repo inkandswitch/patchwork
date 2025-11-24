@@ -1,5 +1,5 @@
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import type { Segment } from "./types";
+import type { Segment, IdPattern } from "./types";
 import { KIND } from "./types";
 import { Ref } from "./ref";
 import { parseAutomergeRefUrl, type AutomergeRefUrl } from "./parser";
@@ -17,7 +17,7 @@ import { parseAutomergeRefUrl, type AutomergeRefUrl } from "./parser";
  * ```
  */
 export function at(
-  segment: string | number | Record<string, any> | [number, number]
+  segment: string | number | IdPattern | [number, number]
 ): Segment {
   if (typeof segment === "string") {
     return { [KIND]: "key", key: segment };
@@ -58,10 +58,7 @@ export async function findRef<T = any>(
  *
  * @internal
  */
-export function shallowEqual(
-  a: Record<string, any>,
-  b: Record<string, any>
-): boolean {
+export function shallowEqual(a: IdPattern, b: IdPattern): boolean {
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
 
@@ -78,9 +75,6 @@ export function shallowEqual(
  *
  * @internal
  */
-export function matchesIdPattern(
-  item: any,
-  idPattern: Record<string, any>
-): boolean {
+export function matchesIdPattern(item: any, idPattern: IdPattern): boolean {
   return Object.entries(idPattern).every(([key, value]) => item[key] === value);
 }

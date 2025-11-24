@@ -14,7 +14,7 @@ import type {
   ChangeFn,
 } from "./types";
 import { KIND } from "./types";
-import { isSegment, isPlainObject } from "./guards";
+import { isSegment, isIdPattern } from "./guards";
 import { matchesIdPattern, shallowEqual } from "./utils";
 import {
   parseAutomergeRefUrl,
@@ -58,7 +58,9 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   readonly options: RefOptions;
 
   #unsubscribe: () => void;
-  #onChangeSubscriptions = new Set<() => void>();
+  #onChangeCallbacks = new Set<
+    (payload: DocHandleChangePayload<any>) => void
+  >();
   #disposed = false;
 
   constructor(
@@ -230,13 +232,13 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     this.docHandle.on("change", wrappedCallback);
 
+    // Track this callback so it can be cleaned up in dispose()
+    this.#onChangeCallbacks.add(wrappedCallback);
+
     const unsubscribe = () => {
       this.docHandle.off("change", wrappedCallback);
-      this.#onChangeSubscriptions.delete(unsubscribe);
+      this.#onChangeCallbacks.delete(wrappedCallback);
     };
-
-    // Track this subscription so it can be cleaned up in dispose()
-    this.#onChangeSubscriptions.add(unsubscribe);
 
     return unsubscribe;
   }
@@ -394,10 +396,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     this.#unsubscribe();
 
     // Clean up all onChange subscriptions
-    for (const unsubscribe of this.#onChangeSubscriptions) {
-      unsubscribe();
+    for (const callback of this.#onChangeCallbacks) {
+      this.docHandle.off("change", callback);
     }
-    this.#onChangeSubscriptions.clear();
+    this.#onChangeCallbacks.clear();
   }
 
   /**
@@ -559,7 +561,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         : { [KIND]: "index", index: input, resolvedProp: input };
     }
 
-    if (isPlainObject(input)) {
+    if (isIdPattern(input)) {
       if (!Array.isArray(container)) {
         return { [KIND]: "query", idPattern: input, resolvedProp: undefined };
       }

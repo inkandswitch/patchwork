@@ -22,16 +22,21 @@ export type AutomergeRefUrl = string & { readonly __brand: "AutomergeRefUrl" };
  */
 export function parsePath(path: string): Segment[] {
   if (!path) return [];
-  if (path === "/") {
-    throw new Error("Invalid path: '/' is not allowed");
+
+  // Remove leading/trailing slashes
+  const trimmed = path.replace(/^\/+|\/+$/g, "");
+  if (!trimmed) {
+    throw new Error(
+      "Invalid path: path cannot be empty or consist only of slashes"
+    );
   }
 
-  return path.split("/").map((segment): Segment => {
-    if (!segment) {
-      throw new Error("Invalid path: empty segment");
-    }
-    return parseSegment(segment);
-  });
+  // Check for double slashes (empty segments)
+  if (trimmed.includes("//")) {
+    throw new Error("Invalid path: contains empty segment (double slash)");
+  }
+
+  return trimmed.split("/").map(parseSegment);
 }
 
 /**
@@ -104,6 +109,12 @@ export function parseJson(segment: string): Segment {
 
 /**
  * Serialize a segment back to its string representation.
+ *
+ * @example
+ * serializeSegment({ [KIND]: "key", key: "todos" }) → "todos"
+ * serializeSegment({ [KIND]: "index", index: 0 }) → "0"
+ * serializeSegment({ [KIND]: "stable_index", id: "abc" }) → ":abc"
+ * serializeSegment({ [KIND]: "range", start: 0, end: 10 }) → "0..10"
  */
 export function serializeSegment(segment: Segment): string {
   switch (segment[KIND]) {
@@ -133,6 +144,9 @@ export function serializeSegment(segment: Segment): string {
 
 /**
  * Serialize an array of segments to a path string.
+ *
+ * @example
+ * serializePath([{ [KIND]: "key", key: "todos" }, { [KIND]: "index", index: 0 }]) → "todos/0"
  */
 export function serializePath(segments: Segment[]): string {
   return segments.map(serializeSegment).join("/");
@@ -153,6 +167,10 @@ export function parseHeads(headsStr: string | undefined): string[] | undefined {
 /**
  * Serialize heads to URL string format.
  * Uses pipe "|" separator to match automerge-repo convention.
+ *
+ * @example
+ * serializeHeads(["abc", "def"]) → "#abc|def"
+ * serializeHeads(undefined) → ""
  */
 export function serializeHeads(heads: string[] | undefined): string {
   return heads ? `#${heads.join("|")}` : "";
@@ -207,7 +225,10 @@ export function parseAutomergeRefUrl(
   // Parse the base URL
   const match = baseUrl.match(/^automerge:([^/]+)(?:\/(.*))?$/);
   if (!match) {
-    throw new Error(`Invalid Automerge ref URL: ${url}`);
+    throw new Error(
+      `Invalid Automerge ref URL: ${url}\n` +
+        `Expected format: automerge:documentId/path/to/value#head1|head2`
+    );
   }
 
   const [, documentId, pathStr] = match;

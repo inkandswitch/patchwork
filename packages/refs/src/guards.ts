@@ -1,4 +1,4 @@
-import type { Segment } from "./types";
+import type { Segment, IdPattern } from "./types";
 import { KIND } from "./types";
 
 export function isSegment(val: unknown): val is Segment {
@@ -8,7 +8,7 @@ export function isSegment(val: unknown): val is Segment {
 }
 
 /** Plain object used for id patterns (not a Segment or array) */
-export function isPlainObject(obj: unknown): obj is Record<string, any> {
+export function isIdPattern(obj: unknown): obj is IdPattern {
   if (obj === null || typeof obj !== "object" || Array.isArray(obj)) {
     return false;
   }

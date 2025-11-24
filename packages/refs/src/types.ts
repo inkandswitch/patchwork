@@ -6,6 +6,12 @@ import type { Cursor, Heads } from "@automerge/automerge-repo";
  */
 export const KIND = Symbol("kind");
 
+/**
+ * Pattern used to match objects in arrays by their properties.
+ * Only primitive values are allowed for reliable serialization and comparison.
+ */
+export type IdPattern = Record<string, string | number | boolean | null>;
+
 /** Path segments that have resolvedProp (non-terminal) */
 export type PathSegment =
   | { [KIND]: "key"; key: string; resolvedProp?: string } // Object property access by key name
@@ -13,7 +19,7 @@ export type PathSegment =
   | { [KIND]: "stable_index"; id: string; resolvedProp?: number } // Array/list access by stable Automerge ObjectId (undefined if not found)
   | {
       [KIND]: "query";
-      idPattern: Record<string, any>;
+      idPattern: IdPattern;
       resolvedProp?: number;
     }; // Array/list search by id pattern (undefined if no match)
 
@@ -29,7 +35,7 @@ export type Segment = PathSegment | RangeSegment;
 export type PathInput =
   | string
   | number
-  | Record<string, any>
+  | IdPattern
   | [number, number]
   | Segment;
 
@@ -67,7 +73,7 @@ type GetSegmentValue<TObj, TSegment> = TSegment extends string
       : TObj extends readonly (infer E)[]
         ? readonly E[]
         : unknown
-    : TSegment extends number | Record<string, any>
+    : TSegment extends number | IdPattern
       ? TObj extends readonly (infer E)[]
         ? E
         : unknown
