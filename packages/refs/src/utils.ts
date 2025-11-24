@@ -28,7 +28,7 @@ export function at(
   if (Array.isArray(segment)) {
     return { [KIND]: "range", start: segment[0], end: segment[1] };
   }
-  return { [KIND]: "query", clause: segment };
+  return { [KIND]: "query", idPattern: segment };
 }
 
 /**
@@ -52,9 +52,9 @@ export async function findRef<T = any>(
   return Ref.fromUrl(handle as DocHandle<T>, url);
 }
 
-export function matchesWhereClause(
+export function matchesIdPattern(
   item: any,
-  clause: Record<string, any>
+  idPattern: Record<string, any>
 ): boolean {
-  return Object.entries(clause).every(([key, value]) => item[key] === value);
+  return Object.entries(idPattern).every(([key, value]) => item[key] === value);
 }

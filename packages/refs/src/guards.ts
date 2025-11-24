@@ -7,7 +7,7 @@ export function isSegment(val: unknown): val is Segment {
   );
 }
 
-/** Plain object used for where clauses (not a Segment or array) */
+/** Plain object used for id patterns (not a Segment or array) */
 export function isPlainObject(obj: unknown): obj is Record<string, any> {
   if (obj === null || typeof obj !== "object" || Array.isArray(obj)) {
     return false;

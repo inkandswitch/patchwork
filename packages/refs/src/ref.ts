@@ -15,7 +15,7 @@ import type {
 } from "./types";
 import { KIND } from "./types";
 import { isSegment, isPlainObject } from "./guards";
-import { matchesWhereClause } from "./utils";
+import { matchesIdPattern } from "./utils";
 import {
   parseAutomergeRefUrl,
   stringifyAutomergeRefUrl,
@@ -68,12 +68,19 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     this.#unsubscribe = () => this.docHandle.off("change", updateHandler);
   }
 
-  set heads(heads: string[] | undefined) {
-    this.options.heads = heads;
-  }
-
   get heads(): string[] | undefined {
     return this.options.heads;
+  }
+
+  /**
+   * Create a new ref viewing the document at specific heads (time-travel).
+   * Returns a new Ref instance with the same path but different heads.
+   */
+  viewAt(heads: string[] | undefined): Ref<TDoc, TPath> {
+    return new Ref(this.docHandle, this.path as any, {
+      ...this.options,
+      heads,
+    });
   }
 
   /**
@@ -153,6 +160,22 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       const newValue = fn(valueToPass as any);
       if (newValue === undefined) return;
 
+      // Warn if non-primitive value is returned (should mutate instead)
+      const isPrimitive =
+        newValue === null ||
+        typeof newValue === "string" ||
+        typeof newValue === "number" ||
+        typeof newValue === "boolean" ||
+        typeof newValue === "bigint";
+
+      if (!isPrimitive) {
+        console.warn(
+          "Ref.change() returned a non-primitive value. For objects and arrays, " +
+            "you should mutate them in place rather than returning a new instance. " +
+            "Returning new instances loses granular change tracking."
+        );
+      }
+
       if (this.range) {
         this.#spliceRange(doc, propPath, this.range, newValue as string);
       } else {
@@ -163,11 +186,15 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
   /** Subscribe to changes that affect this ref's value */
   onChange(
-    callback: (payload: DocHandleChangePayload<any>) => void
+    callback: (
+      value: InferRefType<TDoc, TPath> | undefined,
+      payload: DocHandleChangePayload<any>
+    ) => void
   ): () => void {
     const wrappedCallback = (payload: DocHandleChangePayload<any>) => {
       if (this.#patchAffectsRef(payload.patches)) {
-        callback(payload);
+        const value = this.value();
+        callback(value, payload);
       }
     };
 
@@ -190,8 +217,160 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     );
   }
 
+  /**
+   * Check if this ref is equal to another ref (same document, path, and heads).
+   */
   equals(other: Ref<any>): boolean {
     return this.url === other.url;
+  }
+
+  /**
+   * Check if this ref contains another ref (other is a descendant of this).
+   *
+   * @example
+   * ```ts
+   * const todoRef = ref(handle, 'todos', 0);
+   * const titleRef = ref(handle, 'todos', 0, 'title');
+   * todoRef.contains(titleRef); // true
+   * titleRef.contains(todoRef); // false
+   * ```
+   */
+  contains(other: Ref<any>): boolean {
+    // Must be same document
+    if (this.docHandle.documentId !== other.docHandle.documentId) {
+      return false;
+    }
+
+    // Must have same or undefined heads
+    const thisHeads = this.heads?.join(",");
+    const otherHeads = other.heads?.join(",");
+    if (thisHeads !== otherHeads) {
+      return false;
+    }
+
+    // This path must be a prefix of other's path
+    if (this.path.length >= other.path.length) {
+      return false;
+    }
+
+    // Check if all segments match
+    for (let i = 0; i < this.path.length; i++) {
+      const thisSeg = this.path[i];
+      const otherSeg = other.path[i];
+
+      if (thisSeg[KIND] !== otherSeg[KIND]) {
+        return false;
+      }
+
+      switch (thisSeg[KIND]) {
+        case "key":
+          if (thisSeg.key !== (otherSeg as typeof thisSeg).key) return false;
+          break;
+        case "index":
+          if (thisSeg.index !== (otherSeg as typeof thisSeg).index)
+            return false;
+          break;
+        case "stable_index":
+          if (thisSeg.id !== (otherSeg as typeof thisSeg).id) return false;
+          break;
+        case "query":
+          if (
+            JSON.stringify(thisSeg.idPattern) !==
+            JSON.stringify((otherSeg as typeof thisSeg).idPattern)
+          )
+            return false;
+          break;
+        default:
+          thisSeg satisfies never;
+          return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if this ref overlaps with another ref (for text/range refs).
+   * Two refs overlap if they refer to the same parent location and their ranges overlap.
+   *
+   * @example
+   * ```ts
+   * const range1 = ref(handle, 'content', [0, 10]);
+   * const range2 = ref(handle, 'content', [5, 15]);
+   * range1.overlaps(range2); // true
+   * ```
+   */
+  overlaps(other: Ref<any>): boolean {
+    // Must be same document
+    if (this.docHandle.documentId !== other.docHandle.documentId) {
+      return false;
+    }
+
+    // Must have same heads
+    const thisHeads = this.heads?.join(",");
+    const otherHeads = other.heads?.join(",");
+    if (thisHeads !== otherHeads) {
+      return false;
+    }
+
+    // Both must have ranges
+    if (!this.range || !other.range) {
+      return false;
+    }
+
+    // Paths must be identical (same parent location)
+    if (this.path.length !== other.path.length) {
+      return false;
+    }
+
+    for (let i = 0; i < this.path.length; i++) {
+      const thisSeg = this.path[i];
+      const otherSeg = other.path[i];
+
+      if (thisSeg[KIND] !== otherSeg[KIND]) {
+        return false;
+      }
+
+      switch (thisSeg[KIND]) {
+        case "key":
+          if (thisSeg.key !== (otherSeg as typeof thisSeg).key) return false;
+          break;
+        case "index":
+          if (thisSeg.index !== (otherSeg as typeof thisSeg).index)
+            return false;
+          break;
+        case "stable_index":
+          if (thisSeg.id !== (otherSeg as typeof thisSeg).id) return false;
+          break;
+        case "query":
+          if (
+            JSON.stringify(thisSeg.idPattern) !==
+            JSON.stringify((otherSeg as typeof thisSeg).idPattern)
+          )
+            return false;
+          break;
+        default:
+          thisSeg satisfies never;
+          return false;
+      }
+    }
+
+    // Check if ranges overlap
+    // Get the numeric positions for both ranges
+    const doc = this.doc();
+    const propPath = this.#getPropPath();
+    if (!propPath) return false;
+
+    const thisPositions = this.#getRangePositions(doc, propPath, this.range);
+    const otherPositions = this.#getRangePositions(doc, propPath, other.range);
+
+    if (!thisPositions || !otherPositions) return false;
+
+    const [thisStart, thisEnd] = thisPositions;
+    const [otherStart, otherEnd] = otherPositions;
+
+    // Ranges overlap if: thisStart < otherEnd && otherStart < thisEnd
+    return thisStart < otherEnd && otherStart < thisEnd;
   }
 
   valueOf(): string {
@@ -288,7 +467,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       case "query":
         if (!Array.isArray(container)) return undefined;
         const queryIndex = container.findIndex((item) =>
-          matchesWhereClause(item, segment.clause)
+          matchesIdPattern(item, segment.idPattern)
         );
         return queryIndex !== -1 ? queryIndex : undefined;
 
@@ -342,12 +521,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     if (isPlainObject(input)) {
       if (!Array.isArray(container)) {
-        return { [KIND]: "query", clause: input, resolvedProp: undefined };
+        return { [KIND]: "query", idPattern: input, resolvedProp: undefined };
       }
 
-      const index = container.findIndex((obj) =>
-        matchesWhereClause(obj, input)
-      );
+      const index = container.findIndex((obj) => matchesIdPattern(obj, input));
       const item = index !== -1 ? container[index] : undefined;
       const id = item ? Automerge.getObjectId(item) : undefined;
 
@@ -355,7 +532,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         ? { [KIND]: "stable_index", id, resolvedProp: index }
         : {
             [KIND]: "query",
-            clause: input,
+            idPattern: input,
             resolvedProp: index !== -1 ? index : undefined,
           };
     }

@@ -18,7 +18,10 @@ export type AutomergeRefUrl = string & { readonly __brand: "AutomergeRefUrl" };
  * parsePath("todos/$abc123") → [{ kind: "key", key: "todos" }, { kind: "stable_index", id: "abc123" }]
  */
 export function parsePath(path: string): Segment[] {
-  if (!path || path === "/") return [];
+  if (!path) return [];
+  if (path === "/") {
+    throw new Error("Invalid path: '/' is not allowed");
+  }
 
   return path.split("/").map((segment): Segment => {
     if (!segment) {
@@ -55,14 +58,13 @@ export function parseSegment(segment: string): Segment {
  * Parse a range segment like "[0,10]" or "[$cursor1,$cursor2]".
  */
 export function parseRange(segment: string): Segment {
-  const content = segment.slice(1, -1);
-  const parts = content.split(",");
+  const match = segment.match(/^\[(\$?[^,]+),(\$?[^,]+)\]$/);
 
-  if (parts.length !== 2) {
+  if (!match) {
     throw new Error(`Invalid range: ${segment}`);
   }
 
-  const [first, second] = parts;
+  const [, first, second] = match;
 
   if (first.startsWith("$") && second.startsWith("$")) {
     return {
@@ -88,7 +90,7 @@ export function parseRange(segment: string): Segment {
 export function parseJson(segment: string): Segment {
   try {
     const parsed = JSON.parse(segment);
-    return { [KIND]: "query", clause: parsed };
+    return { [KIND]: "query", idPattern: parsed };
   } catch (e) {
     throw new Error(`Invalid JSON segment: ${segment}`);
   }
@@ -109,7 +111,7 @@ export function serializeSegment(segment: Segment): string {
       return `$${segment.id}`;
 
     case "query":
-      return JSON.stringify(segment.clause);
+      return JSON.stringify(segment.idPattern);
 
     case "range":
       return `[${segment.start},${segment.end}]`;

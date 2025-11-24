@@ -2,7 +2,7 @@ import type { Cursor, Heads } from "@automerge/automerge-repo";
 
 /**
  * Symbol used as discriminator for segments to avoid collision with user data.
- * Users might have objects with a 'kind' property in where clauses.
+ * Users might have objects with a 'kind' property in id patterns.
  */
 export const KIND = Symbol("kind");
 
@@ -13,9 +13,9 @@ export type PathSegment =
   | { [KIND]: "stable_index"; id: string; resolvedProp?: number } // Array/list access by stable Automerge ObjectId (undefined if not found)
   | {
       [KIND]: "query";
-      clause: Record<string, any>;
+      idPattern: Record<string, any>;
       resolvedProp?: number;
-    }; // Array/list search by where clause (undefined if no match)
+    }; // Array/list search by id pattern (undefined if no match)
 
 /** Range segments (always terminal) */
 export type RangeSegment =
@@ -49,9 +49,11 @@ export interface MutableText extends String {
 }
 
 /**
- * Change function signature.
  * Return a new value to update primitive values, or void to skip the update.
  * For strings, receives a MutableText object with splice/updateText methods.
+ *
+ * Note: Objects and arrays should be mutated in place (not returned).
+ * Returning non-primitives will trigger a runtime warning.
  */
 export type ChangeFn<T> = (val: T extends string ? MutableText : T) => T | void;
 

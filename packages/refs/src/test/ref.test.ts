@@ -5,7 +5,9 @@ import {
   type Cursor,
   type DocHandle,
 } from "@automerge/automerge-repo";
+import * as Automerge from "@automerge/automerge";
 import { Ref } from "../ref";
+import { ref } from "../factory";
 import { at } from "../utils";
 import { KIND } from "../types";
 
@@ -805,10 +807,10 @@ describe("Ref", () => {
         ];
       });
 
-      // Using at() with where clause keeps it dynamic
+      // Using at() with id pattern keeps it dynamic
       const dynamicRef = new Ref(handle, ["items", at({ id: "b" })]);
       expect(dynamicRef.path[1][KIND]).toBe("query");
-      expect((dynamicRef.path[1] as any).clause).toEqual({ id: "b" });
+      expect((dynamicRef.path[1] as any).idPattern).toEqual({ id: "b" });
       expect(dynamicRef.value()).toEqual({ id: "b", value: 2 });
     });
 
@@ -1135,7 +1137,7 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["data", "value"]);
 
       const changePromise = new Promise<void>((resolve) => {
-        ref.onChange(({ patches }) => {
+        ref.onChange((value, { patches }) => {
           expect(patches).toBeDefined();
           expect(Array.isArray(patches)).toBe(true);
           expect(patches.length).toBeGreaterThan(0);
@@ -1566,6 +1568,300 @@ describe("Ref", () => {
 
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect(callCount).toBe(2); // Now 2
+    });
+  });
+
+  describe("viewAt", () => {
+    it("should create a new ref with different heads", () => {
+      handle.change((d) => {
+        d.value = 1;
+      });
+      const heads1 = Automerge.getHeads(handle.doc());
+
+      handle.change((d) => {
+        d.value = 2;
+      });
+
+      const currentRef = ref(handle, "value");
+      expect(currentRef.value()).toBe(2);
+
+      const pastRef = currentRef.viewAt(heads1);
+      expect(pastRef.value()).toBe(1);
+
+      // Original ref should be unchanged
+      expect(currentRef.value()).toBe(2);
+    });
+
+    it("should work with nested paths", () => {
+      handle.change((d) => {
+        d.user = { name: "Alice" };
+      });
+      const heads1 = Automerge.getHeads(handle.doc());
+
+      handle.change((d) => {
+        d.user.name = "Bob";
+      });
+
+      const currentRef = ref(handle, "user", "name");
+      expect(currentRef.value()).toBe("Bob");
+
+      const pastRef = currentRef.viewAt(heads1);
+      expect(pastRef.value()).toBe("Alice");
+    });
+
+    it("should return new Ref instance", () => {
+      const currentRef = ref(handle, "value");
+      const pastRef = currentRef.viewAt(["head1"]);
+
+      expect(pastRef).not.toBe(currentRef);
+      expect(pastRef.docHandle).toBe(currentRef.docHandle);
+    });
+
+    it("should preserve path", () => {
+      handle.change((d) => {
+        d.nested = { deep: { value: 42 } };
+      });
+
+      const originalRef = ref(handle, "nested", "deep", "value");
+      const viewRef = originalRef.viewAt(["head1"]);
+
+      expect(viewRef.path).toEqual(originalRef.path);
+    });
+
+    it("should not allow changes on time-travel refs", () => {
+      handle.change((d) => {
+        d.value = 1;
+      });
+      const heads1 = handle.heads();
+
+      const pastRef = ref(handle, "value").viewAt(heads1);
+
+      expect(() => {
+        pastRef.change(() => 2);
+      }).toThrow("Cannot change a Ref pinned to specific heads");
+    });
+  });
+
+  describe("contains", () => {
+    it("should return true when ref contains another ref", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "Task", done: false }];
+      });
+
+      const todoRef = ref(handle, "todos", 0);
+      const titleRef = ref(handle, "todos", 0, "title");
+
+      expect(todoRef.contains(titleRef)).toBe(true);
+    });
+
+    it("should return false when ref does not contain another", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "Task", done: false }];
+      });
+
+      const titleRef = ref(handle, "todos", 0, "title");
+      const todoRef = ref(handle, "todos", 0);
+
+      expect(titleRef.contains(todoRef)).toBe(false);
+    });
+
+    it("should return false for refs with same length path", () => {
+      handle.change((d) => {
+        d.user = { name: "Alice", email: "alice@example.com" };
+      });
+
+      const nameRef = ref(handle, "user", "name");
+      const emailRef = ref(handle, "user", "email");
+
+      expect(nameRef.contains(emailRef)).toBe(false);
+      expect(emailRef.contains(nameRef)).toBe(false);
+    });
+
+    it("should return false for different documents", () => {
+      const handle2 = repo.create();
+      handle.change((d) => {
+        d.value = 1;
+      });
+      handle2.change((d: any) => {
+        d.value = 1;
+      });
+
+      const ref1 = ref(handle, "value");
+      const ref2 = ref(handle2, "value");
+
+      expect(ref1.contains(ref2)).toBe(false);
+    });
+
+    it("should return false for different heads", () => {
+      handle.change((d) => {
+        d.value = 1;
+      });
+      const heads1 = handle.heads();
+
+      handle.change((d) => {
+        d.value = 2;
+      });
+      const heads2 = handle.heads();
+
+      const ref1 = ref(handle, "value").viewAt(heads1);
+      const ref2 = ref(handle, "value").viewAt(heads2);
+
+      expect(ref1.contains(ref2)).toBe(false);
+    });
+
+    it("should work with stable refs (ObjectIds)", () => {
+      handle.change((d) => {
+        d.items = [{ value: 1 }, { value: 2 }];
+      });
+
+      const itemRef = ref(handle, "items", 0); // Will stabilize
+      const valueRef = ref(handle, "items", 0, "value");
+
+      expect(itemRef.contains(valueRef)).toBe(true);
+    });
+
+    it("should work with id patterns", () => {
+      handle.change((d) => {
+        d.users = [{ id: "alice", name: "Alice" }];
+      });
+
+      const userRef = ref(handle, "users", { id: "alice" });
+      const nameRef = ref(handle, "users", { id: "alice" }, "name");
+
+      expect(userRef.contains(nameRef)).toBe(true);
+    });
+
+    it("should return true for root containing any path", () => {
+      handle.change((d) => {
+        d.nested = { deep: { value: 42 } };
+      });
+
+      const rootRef = ref(handle);
+      const deepRef = ref(handle, "nested", "deep", "value");
+
+      expect(rootRef.contains(deepRef)).toBe(true);
+    });
+  });
+
+  describe("overlaps", () => {
+    it("should return true for overlapping ranges", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const range1 = ref(handle, "text", [0, 5]);
+      const range2 = ref(handle, "text", [3, 8]);
+
+      expect(range1.overlaps(range2)).toBe(true);
+      expect(range2.overlaps(range1)).toBe(true);
+    });
+
+    it("should return false for non-overlapping ranges", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const range1 = ref(handle, "text", [0, 5]);
+      const range2 = ref(handle, "text", [6, 11]);
+
+      expect(range1.overlaps(range2)).toBe(false);
+      expect(range2.overlaps(range1)).toBe(false);
+    });
+
+    it("should return true for adjacent ranges that touch", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const range1 = ref(handle, "text", [0, 5]);
+      const range2 = ref(handle, "text", [5, 10]);
+
+      expect(range1.overlaps(range2)).toBe(false);
+    });
+
+    it("should return true when one range contains another", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const range1 = ref(handle, "text", [0, 10]);
+      const range2 = ref(handle, "text", [3, 7]);
+
+      expect(range1.overlaps(range2)).toBe(true);
+      expect(range2.overlaps(range1)).toBe(true);
+    });
+
+    it("should return false for refs without ranges", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const ref1 = ref(handle, "text");
+      const ref2 = ref(handle, "text");
+
+      expect(ref1.overlaps(ref2)).toBe(false);
+    });
+
+    it("should return false when only one ref has a range", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const textRef = ref(handle, "text");
+      const rangeRef = ref(handle, "text", [0, 5]);
+
+      expect(textRef.overlaps(rangeRef)).toBe(false);
+      expect(rangeRef.overlaps(textRef)).toBe(false);
+    });
+
+    it("should return false for ranges on different paths", () => {
+      handle.change((d) => {
+        d.text1 = "Hello";
+        d.text2 = "World";
+      });
+
+      const range1 = ref(handle, "text1", [0, 5]);
+      const range2 = ref(handle, "text2", [0, 5]);
+
+      expect(range1.overlaps(range2)).toBe(false);
+    });
+
+    it("should return false for different documents", () => {
+      const handle2 = repo.create();
+      handle.change((d) => {
+        d.text = "Hello";
+      });
+      handle2.change((d: any) => {
+        d.text = "World";
+      });
+
+      const range1 = ref(handle, "text", [0, 5]);
+      const range2 = ref(handle2, "text", [0, 5]);
+
+      expect(range1.overlaps(range2)).toBe(false);
+    });
+
+    it("should work with stable ranges (cursors)", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      // These will auto-stabilize to cursors
+      const range1 = ref(handle, "text", [0, 5]);
+      const range2 = ref(handle, "text", [3, 8]);
+
+      expect(range1.overlaps(range2)).toBe(true);
+    });
+
+    it("should handle ranges at start and end of text", () => {
+      handle.change((d) => {
+        d.text = "Hello";
+      });
+
+      const range1 = ref(handle, "text", [0, 2]);
+      const range2 = ref(handle, "text", [3, 5]);
+
+      expect(range1.overlaps(range2)).toBe(false);
     });
   });
 

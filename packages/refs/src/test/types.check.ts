@@ -94,3 +94,39 @@ rootRef.change((doc) => {
   doc.count = 42;
   const _d: typeof doc = {} as TestDoc; // Should pass
 });
+
+// Runtime warning: returning objects/arrays (no type error, just warning)
+const objectRef = ref(handle, "user");
+
+// ✅ Correct: mutate in place
+objectRef.change((user) => {
+  user.name = "Alice";
+});
+
+// ⚠️ This compiles but triggers a runtime warning
+objectRef.change((user) => {
+  return { name: "Bob", email: "bob@example.com" }; // Warning logged
+});
+
+const todosRef = ref(handle, "todos");
+
+// ✅ Correct: mutate in place
+todosRef.change((todos) => {
+  todos[0].done = true;
+});
+
+// ⚠️ This compiles but triggers a runtime warning
+todosRef.change((todos) => {
+  return [{ title: "New", done: false }]; // Warning logged
+});
+
+// ✅ Can return primitives
+const countRef2 = ref(handle, "count");
+countRef2.change((count) => {
+  return count + 1; // ✅ Works fine
+});
+
+const titleRef2 = ref(handle, "title");
+titleRef2.change((title) => {
+  return title.toUpperCase(); // ✅ Works fine (MutableText is treated as primitive-like)
+});

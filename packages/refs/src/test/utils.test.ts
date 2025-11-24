@@ -21,10 +21,10 @@ describe("utils", () => {
     });
 
     it("should work with objects", () => {
-      const whereClause = { id: "abc" };
-      const segment = at(whereClause);
+      const idPattern = { id: "abc" };
+      const segment = at(idPattern);
       expect(segment[KIND]).toBe("query");
-      expect((segment as any).clause).toEqual(whereClause);
+      expect((segment as any).idPattern).toEqual(idPattern);
     });
 
     it("should work with arrays", () => {
