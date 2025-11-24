@@ -71,9 +71,9 @@ export const plugins = [
             let s = (states[i] = {} as TenfoldState);
             s.i = 0;
             s.q = i / 4 - 1;
-            s.r = 0;
-            s.x = 0;
-            s.y = 0;
+            s.r = (Math.random() - 0.5) / 5;
+            s.x = (Math.random() - 0.5) / 5;
+            s.y = (Math.random() - 0.5) / 5;
           }
 
           Object.assign(doc, {
