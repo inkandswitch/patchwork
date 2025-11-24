@@ -486,7 +486,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     for (let i = 0; i < 9; i++) {
       let s = opts.states[i];
       let fn = opts.letters[i][s.i];
-      if (!fn) continue;
       let C = Math.floor(i % 3);
       let _R = Math.floor(i / 3);
       let R = _R > 0 ? _R + 1 : _R;
@@ -546,7 +545,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       ctx.beginPath();
 
       try {
-        fn(api, { ...s, t: mod(t) });
+        fn?.(api, { ...s, t: mod(t) });
         ctx.stroke();
       } catch (error) {
         console.error(
