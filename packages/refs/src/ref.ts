@@ -14,11 +14,7 @@ import type {
 } from "./types";
 import { KIND } from "./types";
 import { isSegment, isPlainObject } from "./guards";
-import {
-  matchesWhereClause,
-  findIndexByObjectId,
-  findIndexByWhereClause,
-} from "./utils";
+import { matchesWhereClause } from "./utils";
 
 /**
  * A reference to a location in an Automerge document.
@@ -67,12 +63,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     heads?: string
   ): Ref<TDoc, PathInput[]> {
     const segments = path ? Ref.#parsePath(path) : [];
-
-    const options: RefOptions = {};
-    if (heads) {
-      options.heads = heads.split(",");
-    }
-
+    const options: RefOptions = heads ? { heads: heads.split(",") } : {};
     return new Ref<TDoc, PathInput[]>(handle, segments, options);
   }
 
@@ -225,23 +216,20 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   }
 
   #getContext(): RefContext {
-    if (!this.#ctx) {
-      this.#ctx = {
-        splice: (index: number, deleteCount: number, insert?: string) => {
-          this.docHandle.change((doc: Doc<TDoc>) => {
-            const propPath = this.#toAutomergePath(doc, this.path);
-            Automerge.splice(doc, propPath, index, deleteCount, insert);
-          });
-        },
-        updateText: (newValue: string) => {
-          this.docHandle.change((doc: Doc<TDoc>) => {
-            const propPath = this.#toAutomergePath(doc, this.path);
-            Automerge.updateText(doc, propPath, newValue);
-          });
-        },
-      };
-    }
-    return this.#ctx;
+    return (this.#ctx ??= {
+      splice: (index: number, deleteCount: number, insert?: string) => {
+        this.docHandle.change((doc: Doc<TDoc>) => {
+          const propPath = this.#toAutomergePath(doc, this.path);
+          Automerge.splice(doc, propPath, index, deleteCount, insert);
+        });
+      },
+      updateText: (newValue: string) => {
+        this.docHandle.change((doc: Doc<TDoc>) => {
+          const propPath = this.#toAutomergePath(doc, this.path);
+          Automerge.updateText(doc, propPath, newValue);
+        });
+      },
+    });
   }
 
   /** Normalize path inputs and extract stable IDs where possible */
@@ -353,7 +341,9 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
               `ObjectId: ${segment.id}, Container type: ${typeof current}`
           );
         }
-        const index = findIndexByObjectId(current, segment.id);
+        const index = current.findIndex(
+          (item) => Automerge.getObjectId(item) === segment.id
+        );
         if (index === -1) {
           throw new Error(
             `ObjectId not found: ${segment.id}. ` +
@@ -369,7 +359,9 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
               `Where clause: ${JSON.stringify(segment.clause)}, Container type: ${typeof current}`
           );
         }
-        const queryIndex = findIndexByWhereClause(current, segment.clause);
+        const queryIndex = current.findIndex((item) =>
+          matchesWhereClause(item, segment.clause)
+        );
         if (queryIndex === -1) {
           throw new Error(
             `No item matches where clause: ${JSON.stringify(segment.clause)}. ` +
@@ -544,9 +536,9 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   #patchAffectsRef(patches: Automerge.Patch[]): boolean {
     const doc = this.docHandle.doc();
 
-    const nonRangeSegments = this.path.filter((seg) => {
-      return seg[KIND] !== "range" && seg[KIND] !== "stable_range";
-    });
+    const nonRangeSegments = this.path.filter(
+      (seg) => seg[KIND] !== "range" && seg[KIND] !== "stable_range"
+    );
 
     // Resolve as much of the path as possible
     // This fires onChange when ref becomes invalid (parent changed) but not while it stays invalid

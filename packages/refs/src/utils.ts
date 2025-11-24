@@ -1,4 +1,3 @@
-import * as Automerge from "@automerge/automerge";
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import type { Segment } from "./types";
 import { KIND } from "./types";
@@ -62,15 +61,4 @@ export function matchesWhereClause(
   clause: Record<string, any>
 ): boolean {
   return Object.entries(clause).every(([key, value]) => item[key] === value);
-}
-
-export function findIndexByObjectId(array: any[], objectId: string): number {
-  return array.findIndex((item) => Automerge.getObjectId(item) === objectId);
-}
-
-export function findIndexByWhereClause(
-  array: any[],
-  clause: Record<string, any>
-): number {
-  return array.findIndex((item) => matchesWhereClause(item, clause));
 }
