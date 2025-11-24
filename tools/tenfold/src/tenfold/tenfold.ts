@@ -514,8 +514,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
           `error in ${"INKSWiTCH"[i]}${(s.i + "").padStart(2, "0")}\n\n`,
           error
         );
-      } finally {
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
       }
 
       ctx.stroke();
