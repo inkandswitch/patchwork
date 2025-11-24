@@ -43,6 +43,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   // Perhaps we can make the Automerge.splice and Automerge.updateText methods
   // "just work" with refs. That seems like a better approach...
   #ctx?: RefContext;
+  #unsubscribe: () => void;
 
   constructor(
     docHandle: DocHandle<TDoc>,
@@ -54,6 +55,14 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     const doc = docHandle.doc();
     this.path = this.#normalizePath(doc, segments as unknown as PathInput[]);
+
+    // Subscribe to document changes to keep resolved props fresh
+    const updateHandler = () => {
+      const currentDoc = this.docHandle.doc();
+      this.#updateResolvedProps(currentDoc);
+    };
+    this.docHandle.on("change", updateHandler);
+    this.#unsubscribe = () => this.docHandle.off("change", updateHandler);
   }
 
   set heads(heads: string[] | undefined) {
@@ -161,17 +170,22 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return this.url;
   }
 
+  /** Clean up and unsubscribe from document changes */
+  dispose(): void {
+    this.#unsubscribe();
+  }
+
   #getContext(): RefContext {
     return (this.#ctx ??= {
       splice: (index: number, deleteCount: number, insert?: string) => {
         this.docHandle.change((doc: Doc<TDoc>) => {
-          const propPath = this.#toAutomergePath(doc, this.path);
+          const propPath = this.#getPropPathOrThrow(this.path);
           Automerge.splice(doc, propPath, index, deleteCount, insert);
         });
       },
       updateText: (newValue: string) => {
         this.docHandle.change((doc: Doc<TDoc>) => {
-          const propPath = this.#toAutomergePath(doc, this.path);
+          const propPath = this.#getPropPathOrThrow(this.path);
           Automerge.updateText(doc, propPath, newValue);
         });
       },
@@ -184,7 +198,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     return inputs.map((input) => {
       const segment = isSegment(input)
-        ? input
+        ? this.#ensureSegmentResolved(doc, currentPath, input)
         : this.#normalizeInput(
             doc,
             currentPath,
@@ -196,24 +210,147 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     });
   }
 
+  /** Ensure a segment has its resolvedProp set */
+  #ensureSegmentResolved(
+    doc: Doc<TDoc>,
+    currentPath: Segment[],
+    segment: Segment
+  ): Segment {
+    const container = this.#traverse(doc, currentPath);
+    const resolvedProp = this.#resolveSegmentProp(container, segment);
+    return { ...segment, resolvedProp } as Segment;
+  }
+
+  /**
+   * Resolve a segment to its Automerge prop.
+   * Returns undefined if the segment cannot be resolved.
+   */
+  #resolveSegmentProp(
+    container: any,
+    segment: Segment
+  ): string | number | undefined {
+    if (container === undefined || container === null) return undefined;
+
+    switch (segment[KIND]) {
+      case "key":
+        return segment.key;
+
+      case "index":
+        return segment.index;
+
+      case "stable_index":
+        if (!Array.isArray(container)) return undefined;
+        const index = container.findIndex(
+          (item) => Automerge.getObjectId(item) === segment.id
+        );
+        return index !== -1 ? index : undefined;
+
+      case "query":
+        if (!Array.isArray(container)) return undefined;
+        const queryIndex = container.findIndex((item) =>
+          matchesWhereClause(item, segment.clause)
+        );
+        return queryIndex !== -1 ? queryIndex : undefined;
+
+      case "range":
+      case "stable_range":
+        // Ranges don't have resolvedProp
+        return undefined;
+
+      default:
+        segment satisfies never;
+        return undefined;
+    }
+  }
+
+  /**
+   * Update resolved props for all segments based on current document state.
+   * Called on document changes to keep segments fresh.
+   */
+  #updateResolvedProps(doc: Doc<TDoc>): void {
+    let current = doc;
+
+    for (const segment of this.path) {
+      // Skip ranges (they don't have resolvedProp)
+      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
+        continue;
+      }
+
+      // Resolve and update this segment's prop
+      const resolvedProp = this.#resolveSegmentProp(current, segment);
+      (segment as any).resolvedProp = resolvedProp;
+
+      // Move to next container
+      if (
+        resolvedProp !== undefined &&
+        current !== undefined &&
+        current !== null
+      ) {
+        current = (current as any)[resolvedProp];
+      } else {
+        // Can't resolve further - mark remaining segments as unresolved
+        break;
+      }
+    }
+  }
+
+  /**
+   * Get Automerge prop path from segments.
+   * Returns undefined if any segment cannot be resolved.
+   */
+  #getPropPath(segments: Segment[]): Prop[] | undefined {
+    const props: Prop[] = [];
+
+    for (const segment of segments) {
+      // Skip ranges
+      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
+        continue;
+      }
+
+      if (segment.resolvedProp === undefined) {
+        return undefined;
+      }
+
+      props.push(segment.resolvedProp);
+    }
+
+    return props;
+  }
+
+  /**
+   * Get Automerge prop path from segments, throwing if any cannot be resolved.
+   */
+  #getPropPathOrThrow(segments: Segment[]): Prop[] {
+    const props = this.#getPropPath(segments);
+    if (!props) {
+      throw new Error(
+        "Cannot resolve path: one or more segments are unresolved"
+      );
+    }
+    return props;
+  }
+
   #normalizeInput(
     doc: Doc<TDoc>,
     currentPath: Segment[],
     input: Exclude<PathInput, Segment>
   ): Segment {
     if (typeof input === "string") {
-      return { [KIND]: "key", key: input };
+      return { [KIND]: "key", key: input, resolvedProp: input };
     }
 
     if (typeof input === "number") {
-      const id = this.#tryStabilizeToObjectId(
-        doc,
-        currentPath,
-        (c) => c[input]
-      );
+      const container = this.#traverse(doc, currentPath);
+      if (!Array.isArray(container)) {
+        return { [KIND]: "index", index: input, resolvedProp: input };
+      }
+
+      const item = container[input];
+      const id = item ? Automerge.getObjectId(item) : undefined;
+
       return id
-        ? { [KIND]: "stable_index", id }
-        : { [KIND]: "index", index: input };
+        ? { [KIND]: "stable_index", id, resolvedProp: input }
+        : { [KIND]: "index", index: input, resolvedProp: input };
     }
 
     if (Array.isArray(input) && input.length === 2) {
@@ -221,34 +358,30 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
 
     if (isPlainObject(input)) {
-      const id = this.#tryStabilizeToObjectId(doc, currentPath, (c) =>
-        c.find((obj) => matchesWhereClause(obj, input))
+      const container = this.#traverse(doc, currentPath);
+      if (!Array.isArray(container)) {
+        return { [KIND]: "query", clause: input, resolvedProp: undefined };
+      }
+
+      const index = container.findIndex((obj) =>
+        matchesWhereClause(obj, input)
       );
+      const item = index !== -1 ? container[index] : undefined;
+      const id = item ? Automerge.getObjectId(item) : undefined;
+
       return id
-        ? { [KIND]: "stable_index", id }
-        : { [KIND]: "query", clause: input };
+        ? { [KIND]: "stable_index", id, resolvedProp: index }
+        : {
+            [KIND]: "query",
+            clause: input,
+            resolvedProp: index !== -1 ? index : undefined,
+          };
     }
 
     throw new Error(
       `Unsupported path input type: ${typeof input}. ` +
         `Expected string, number, plain object, or array.`
     );
-  }
-
-  /**
-   * Try to stabilize an array access to an ObjectId-based segment.
-   * Returns the ObjectId if stabilization succeeds, undefined otherwise.
-   */
-  #tryStabilizeToObjectId(
-    doc: Doc<TDoc>,
-    currentPath: Segment[],
-    getItem: (container: any[]) => any
-  ): string | undefined {
-    const container = this.#traverse(doc, currentPath);
-    if (!Array.isArray(container)) return undefined;
-
-    const item = getItem(container);
-    return item ? (Automerge.getObjectId(item) ?? undefined) : undefined;
   }
 
   /**
@@ -266,7 +399,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       return { [KIND]: "range", start, end };
     }
 
-    const propPath = this.#tryToAutomergePath(doc, currentPath);
+    const propPath = this.#getPropPath(currentPath);
     if (!propPath) {
       return { [KIND]: "range", start, end };
     }
@@ -279,95 +412,6 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       : { [KIND]: "range", start, end };
   }
 
-  #toAutomergePath(doc: Doc<TDoc>, path: Segment[]): Prop[] {
-    const propPath: Prop[] = [];
-    let current: any = doc;
-
-    for (const segment of path) {
-      if (current === undefined || current === null) {
-        throw new Error(
-          "Cannot resolve path: traversal reached null/undefined"
-        );
-      }
-
-      const prop = this.#toAutomergeProp(current, segment);
-      propPath.push(prop);
-      current = current[prop];
-    }
-
-    return propPath;
-  }
-
-  #tryToAutomergePath(doc: Doc<TDoc>, path: Segment[]): Prop[] | undefined {
-    try {
-      return this.#toAutomergePath(doc, path);
-    } catch {
-      return undefined;
-    }
-  }
-
-  #toAutomergeProp(current: any, segment: Segment): Prop {
-    switch (segment[KIND]) {
-      case "key":
-        return segment.key;
-
-      case "index":
-        return segment.index;
-
-      case "stable_index":
-        if (!Array.isArray(current)) {
-          throw new Error(
-            `ObjectId segment requires array container. ` +
-              `ObjectId: ${segment.id}, Container type: ${typeof current}`
-          );
-        }
-        const index = current.findIndex(
-          (item) => Automerge.getObjectId(item) === segment.id
-        );
-        if (index === -1) {
-          throw new Error(
-            `ObjectId not found: ${segment.id}. ` +
-              `This object may have been deleted.`
-          );
-        }
-        return index;
-
-      case "query":
-        if (!Array.isArray(current)) {
-          throw new Error(
-            `Where clause requires array container. ` +
-              `Where clause: ${JSON.stringify(segment.clause)}, Container type: ${typeof current}`
-          );
-        }
-        const queryIndex = current.findIndex((item) =>
-          matchesWhereClause(item, segment.clause)
-        );
-        if (queryIndex === -1) {
-          throw new Error(
-            `No item matches where clause: ${JSON.stringify(segment.clause)}. ` +
-              `Array length: ${current.length}`
-          );
-        }
-        return queryIndex;
-
-      case "range":
-      case "stable_range":
-        throw new Error("Range segments cannot be part of a property path");
-
-      default:
-        segment satisfies never;
-        throw new Error(`Unknown segment kind: ${segment[KIND]}`);
-    }
-  }
-
-  #tryToAutomergeProp(current: any, segment: Segment): Prop | undefined {
-    try {
-      return this.#toAutomergeProp(current, segment);
-    } catch {
-      return undefined;
-    }
-  }
-
   #traverse(container: any, path: Segment[]): any {
     let current = container;
 
@@ -376,42 +420,22 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         return undefined;
       }
 
-      current = this.#getValueAt(current, segment);
+      // Handle ranges specially (they need the text/array value)
+      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
+        return this.#getRange(current, [segment.start, segment.end] as
+          | [Cursor, Cursor]
+          | [number, number]);
+      }
+
+      // All other segments use resolvedProp
+      if (segment.resolvedProp === undefined) {
+        return undefined;
+      }
+
+      current = current[segment.resolvedProp];
     }
 
     return current;
-  }
-
-  #getValueAt(container: any, segment: Segment): any {
-    switch (segment[KIND]) {
-      case "key":
-        return container[segment.key];
-
-      case "index":
-        return container[segment.index];
-
-      case "stable_index":
-        if (!Array.isArray(container)) return undefined;
-        return container.find(
-          (item) => Automerge.getObjectId(item) === segment.id
-        );
-
-      case "query":
-        if (!Array.isArray(container)) return undefined;
-        return container.find((item) =>
-          matchesWhereClause(item, segment.clause)
-        );
-
-      case "range":
-      case "stable_range":
-        return this.#getRange(container, [segment.start, segment.end] as
-          | [Cursor, Cursor]
-          | [number, number]);
-
-      default:
-        segment satisfies never;
-        throw new Error(`Unknown segment kind: ${segment[KIND]}`);
-    }
   }
 
   #getRange(
@@ -447,7 +471,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     startCursor: Cursor,
     endCursor: Cursor
   ): [number, number] | undefined {
-    const propPath = this.#tryToAutomergePath(doc, path);
+    const propPath = this.#getPropPath(path);
     if (!propPath) return undefined;
 
     const start = Automerge.getCursorPosition(doc, propPath, startCursor);
@@ -472,11 +496,16 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     switch (lastSegment[KIND]) {
       case "key":
-        parent[lastSegment.key] = value;
-        break;
       case "index":
-        parent[lastSegment.index] = value;
+      case "stable_index":
+      case "query":
+        // All these use resolvedProp
+        if (lastSegment.resolvedProp === undefined) {
+          throw new Error("Cannot set value: segment is unresolved");
+        }
+        parent[lastSegment.resolvedProp] = value;
         break;
+
       case "range":
       case "stable_range": {
         // Replace substring in text
@@ -507,28 +536,22 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         }
 
         // Replace the text range using Automerge splice
-        const propPath = this.#toAutomergePath(doc, parentPath);
+        const propPath = this.#getPropPathOrThrow(parentPath);
         const deleteCount = end - start;
         Automerge.splice(doc, propPath, start, deleteCount, value);
         break;
       }
+
       default:
-        throw new Error(
-          "Cannot set value: last segment must be a key, index, or range"
-        );
+        lastSegment satisfies never;
+        throw new Error(`Unknown segment kind: ${lastSegment[KIND]}`);
     }
   }
 
   #patchAffectsRef(patches: Automerge.Patch[]): boolean {
-    const doc = this.docHandle.doc();
-
-    const nonRangeSegments = this.path.filter(
-      (seg) => seg[KIND] !== "range" && seg[KIND] !== "stable_range"
-    );
-
-    // Resolve as much of the path as possible
-    // This fires onChange when ref becomes invalid (parent changed) but not while it stays invalid
-    const refPropPath = this.#resolvePathBestEffort(doc, nonRangeSegments);
+    // Get the best-effort prop path (stops at first unresolved segment)
+    // Props are already up-to-date from the internal change listener
+    const refPropPath = this.#getBestEffortPropPath();
 
     // If we couldn't resolve any part, ref was never valid - don't fire
     if (refPropPath.length === 0) return false;
@@ -537,21 +560,24 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   }
 
   /**
-   * Resolve as much of the path as possible, stopping at the first unresolvable segment.
+   * Get prop path for as many segments as possible, stopping at first unresolved segment.
    * Used for onChange to detect when a ref becomes invalid (fires once) vs stays invalid (silent).
    */
-  #resolvePathBestEffort(doc: any, segments: Segment[]): Prop[] {
+  #getBestEffortPropPath(): Prop[] {
     const propPath: Prop[] = [];
-    let current: any = doc;
 
-    for (const segment of segments) {
-      if (current === undefined || current === null) break;
+    for (const segment of this.path) {
+      // Skip ranges
+      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
+        continue;
+      }
 
-      const prop = this.#tryToAutomergeProp(current, segment);
-      if (prop === undefined) break;
+      // Stop at first unresolved segment
+      if (segment.resolvedProp === undefined) {
+        break;
+      }
 
-      propPath.push(prop);
-      current = current[prop];
+      propPath.push(segment.resolvedProp);
     }
 
     return propPath;

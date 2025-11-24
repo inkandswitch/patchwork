@@ -7,10 +7,14 @@ import type { Cursor, Heads } from "@automerge/automerge-repo";
 export const KIND = Symbol("kind");
 
 export type Segment =
-  | { [KIND]: "key"; key: string } // Object property access by key name
-  | { [KIND]: "index"; index: number } // Array/list access by numeric index (unstable - position-based)
-  | { [KIND]: "stable_index"; id: string } // Array/list access by stable Automerge ObjectId
-  | { [KIND]: "query"; clause: Record<string, any> } // Array/list search by where clause (e.g. {id: "abc"})
+  | { [KIND]: "key"; key: string; resolvedProp?: string } // Object property access by key name
+  | { [KIND]: "index"; index: number; resolvedProp?: number } // Array/list access by numeric index (unstable - position-based)
+  | { [KIND]: "stable_index"; id: string; resolvedProp?: number } // Array/list access by stable Automerge ObjectId (undefined if not found)
+  | {
+      [KIND]: "query";
+      clause: Record<string, any>;
+      resolvedProp?: number;
+    } // Array/list search by where clause (undefined if no match)
   | { [KIND]: "range"; start: number; end: number } // Text/array range by numeric positions (unstable)
   | { [KIND]: "stable_range"; start: Cursor; end: Cursor }; // Text range by stable Automerge cursors
 
