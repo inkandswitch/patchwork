@@ -294,42 +294,6 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
   }
 
-  /**
-   * Get Automerge prop path from segments.
-   * Returns undefined if any segment cannot be resolved.
-   */
-  #getPropPath(segments: Segment[]): Prop[] | undefined {
-    const props: Prop[] = [];
-
-    for (const segment of segments) {
-      // Skip ranges
-      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
-        continue;
-      }
-
-      if (segment.resolvedProp === undefined) {
-        return undefined;
-      }
-
-      props.push(segment.resolvedProp);
-    }
-
-    return props;
-  }
-
-  /**
-   * Get Automerge prop path from segments, throwing if any cannot be resolved.
-   */
-  #getPropPathOrThrow(segments: Segment[]): Prop[] {
-    const props = this.#getPropPath(segments);
-    if (!props) {
-      throw new Error(
-        "Cannot resolve path: one or more segments are unresolved"
-      );
-    }
-    return props;
-  }
-
   #normalizeInput(
     doc: Doc<TDoc>,
     currentPath: Segment[],
@@ -581,6 +545,42 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
 
     return propPath;
+  }
+
+  /**
+   * Get Automerge prop path from segments.
+   * Returns undefined if any segment cannot be resolved.
+   */
+  #getPropPath(segments: Segment[]): Prop[] | undefined {
+    const props: Prop[] = [];
+
+    for (const segment of segments) {
+      // Skip ranges
+      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
+        continue;
+      }
+
+      if (segment.resolvedProp === undefined) {
+        return undefined;
+      }
+
+      props.push(segment.resolvedProp);
+    }
+
+    return props;
+  }
+
+  /**
+   * Get Automerge prop path from segments, throwing if any cannot be resolved.
+   */
+  #getPropPathOrThrow(segments: Segment[]): Prop[] {
+    const props = this.#getPropPath(segments);
+    if (!props) {
+      throw new Error(
+        "Cannot resolve path: one or more segments are unresolved"
+      );
+    }
+    return props;
   }
 
   #pathsOverlap(
