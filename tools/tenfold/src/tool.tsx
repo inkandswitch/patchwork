@@ -206,7 +206,9 @@ export default function TenfoldExperience(props: {
                   !tr.effects.length &&
                   start == "active" &&
                   !after &&
-                  !tr.scrollIntoView
+                  !tr.scrollIntoView &&
+                  tr.startState.selection == tr.newSelection &&
+                  tr.selection == tr.startState.selection
                 ) {
                   return [];
                 }
