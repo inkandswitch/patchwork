@@ -6,6 +6,8 @@ import type {
 } from "@automerge/automerge-repo";
 import type {
   Segment,
+  PathSegment,
+  RangeSegment,
   PathInput,
   RefOptions,
   RefContext,
@@ -36,7 +38,8 @@ import {
  */
 export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   readonly docHandle: DocHandle<TDoc>;
-  readonly path: Segment[];
+  readonly path: PathSegment[];
+  readonly range?: RangeSegment;
   readonly options: RefOptions;
 
   // NOTE: this is a bit hacky. Would like some better options for this.
@@ -54,7 +57,12 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     this.options = options;
 
     const doc = docHandle.doc();
-    this.path = this.#normalizePath(doc, segments as unknown as PathInput[]);
+    const { path, range } = this.#normalizePath(
+      doc,
+      segments as unknown as PathInput[]
+    );
+    this.path = path;
+    this.range = range;
 
     // Subscribe to document changes to keep resolved props fresh
     const updateHandler = () => {
@@ -94,7 +102,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   /** Get the current value, or undefined if path can't be resolved */
   value(): InferRefType<TDoc, TPath> | undefined {
     const doc = this.doc();
-    return this.#traverse(doc, this.path);
+    return this.#traverse(doc, this.path, this.range);
   }
 
   doc(): Doc<TDoc> {
@@ -115,11 +123,57 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     this.docHandle.change((doc: Doc<TDoc>) => {
       // Root document change - behave like docHandle.change()
-      if (this.path.length === 0) {
+      if (this.path.length === 0 && !this.range) {
         fn(doc as InferRefType<TDoc, TPath>, this.#getContext());
         return;
       }
 
+      // Range change - replace substring
+      if (this.range) {
+        const parent = this.#traverse(doc, this.path);
+        if (typeof parent !== "string") {
+          throw new Error("Range refs can only be used on string values");
+        }
+
+        const currentValue = this.#getRange(parent, [
+          this.range.start,
+          this.range.end,
+        ] as [Cursor, Cursor] | [number, number]);
+        const newValue = fn(
+          currentValue as InferRefType<TDoc, TPath>,
+          this.#getContext()
+        ) as string | undefined;
+
+        if (newValue !== undefined) {
+          // Replace the range
+          let start: number;
+          let end: number;
+
+          if (this.range[KIND] === "range") {
+            start = this.range.start;
+            end = this.range.end;
+          } else {
+            // stable_range - resolve cursors
+            const positions = this.#resolveCursorRange(
+              doc,
+              this.path,
+              this.range.start,
+              this.range.end
+            );
+            if (!positions) {
+              throw new Error("Cannot resolve cursor positions");
+            }
+            [start, end] = positions;
+          }
+
+          const propPath = this.#getPropPath(this.path, "throw")!;
+          const deleteCount = end - start;
+          Automerge.splice(doc, propPath, start, deleteCount, newValue);
+        }
+        return;
+      }
+
+      // Normal path change
       const currentValue = this.#traverse(doc, this.path);
       const newValue = fn(
         currentValue as InferRefType<TDoc, TPath>,
@@ -151,9 +205,14 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   }
 
   get url(): AutomergeRefUrl {
+    // Combine path and range for serialization
+    const allSegments: Segment[] = this.range
+      ? [...this.path, this.range]
+      : this.path;
+
     return stringifyAutomergeRefUrl(
       this.docHandle.documentId,
-      this.path,
+      allSegments,
       this.options.heads
     );
   }
@@ -179,13 +238,13 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return (this.#ctx ??= {
       splice: (index: number, deleteCount: number, insert?: string) => {
         this.docHandle.change((doc: Doc<TDoc>) => {
-          const propPath = this.#getPropPathOrThrow(this.path);
+          const propPath = this.#getPropPath(this.path, "throw")!;
           Automerge.splice(doc, propPath, index, deleteCount, insert);
         });
       },
       updateText: (newValue: string) => {
         this.docHandle.change((doc: Doc<TDoc>) => {
-          const propPath = this.#getPropPathOrThrow(this.path);
+          const propPath = this.#getPropPath(this.path, "throw")!;
           Automerge.updateText(doc, propPath, newValue);
         });
       },
@@ -195,23 +254,27 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   /**
    * Normalize path inputs and extract stable IDs where possible.
    * Single O(D) pass - maintains current container and propPath as we traverse.
+   * Returns path segments and optional range segment separately.
    */
-  #normalizePath(doc: Doc<TDoc>, inputs: PathInput[]): Segment[] {
-    const segments: Segment[] = [];
+  #normalizePath(
+    doc: Doc<TDoc>,
+    inputs: PathInput[]
+  ): { path: PathSegment[]; range?: RangeSegment } {
+    const pathSegments: PathSegment[] = [];
     const propPath: Automerge.Prop[] = []; // Build incrementally for range stabilization
     let current: any = doc;
+    let rangeSegment: RangeSegment | undefined;
 
     for (const input of inputs) {
       // Handle ranges specially - they need the propPath for cursor stabilization
       if (Array.isArray(input) && input.length === 2) {
-        const segment = this.#tryStabilizeRange(
+        rangeSegment = this.#tryStabilizeRange(
           doc,
           propPath,
           current,
           input[0],
           input[1]
         );
-        segments.push(segment);
         break; // Ranges are terminal
       }
 
@@ -219,12 +282,13 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         ? this.#ensureSegmentResolved(current, input)
         : this.#normalizeInput(current, input as Exclude<PathInput, Segment>);
 
-      segments.push(segment);
-
-      // Ranges are terminal - stop processing
+      // If input was a range segment, extract it
       if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
+        rangeSegment = segment;
         break;
       }
+
+      pathSegments.push(segment as PathSegment);
 
       // Move to next container and extend propPath for next iteration
       if (
@@ -239,7 +303,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       // to let them attempt resolution (they'll get resolvedProp = undefined)
     }
 
-    return segments;
+    return { path: pathSegments, range: rangeSegment };
   }
 
   /** Ensure a segment has its resolvedProp set */
@@ -249,7 +313,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   }
 
   /**
-   * Resolve a segment to its Automerge prop.
+   * Resolve a path segment to its Automerge prop.
    * Returns undefined if the segment cannot be resolved.
    */
   #resolveSegmentProp(
@@ -281,7 +345,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
       case "range":
       case "stable_range":
-        // Ranges don't have resolvedProp
+        // Ranges don't have resolvedProp (should not be called for ranges)
         return undefined;
 
       default:
@@ -294,15 +358,15 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
    * Update resolved props for all segments based on current document state.
    * Called on document changes to keep segments fresh.
    */
+  /**
+   * Update resolved props for all path segments based on current document state.
+   * Called on document changes to keep segments fresh. Single O(D) pass.
+   */
   #updateResolvedProps(doc: Doc<TDoc>): void {
     let current = doc;
 
+    // No need to check for ranges - path only contains PathSegments!
     for (const segment of this.path) {
-      // Skip ranges (they don't have resolvedProp)
-      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
-        continue;
-      }
-
       // Resolve and update this segment's prop
       const resolvedProp = this.#resolveSegmentProp(current, segment);
       (segment as any).resolvedProp = resolvedProp;
@@ -375,7 +439,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     container: any,
     start: number,
     end: number
-  ): Segment {
+  ): RangeSegment {
     // Can only stabilize ranges on strings
     if (typeof container !== "string") {
       return { [KIND]: "range", start, end };
@@ -390,27 +454,28 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       : { [KIND]: "range", start, end };
   }
 
-  #traverse(container: any, path: Segment[]): any {
+  #traverse(container: any, path: PathSegment[], range?: RangeSegment): any {
     let current = container;
 
+    // Traverse path segments
     for (const segment of path) {
       if (current === undefined || current === null) {
         return undefined;
       }
 
-      // Handle ranges specially (they need the text/array value)
-      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
-        return this.#getRange(current, [segment.start, segment.end] as
-          | [Cursor, Cursor]
-          | [number, number]);
-      }
-
-      // All other segments use resolvedProp
+      // All path segments use resolvedProp
       if (segment.resolvedProp === undefined) {
         return undefined;
       }
 
       current = current[segment.resolvedProp];
+    }
+
+    // If there's a range, extract substring
+    if (range) {
+      return this.#getRange(current, [range.start, range.end] as
+        | [Cursor, Cursor]
+        | [number, number]);
     }
 
     return current;
@@ -427,10 +492,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     // Otherwise it's a cursor range - resolve to positions
     const doc = this.doc();
-    const textPath = this.path.slice(0, -1);
+    // this.path now doesn't include the range, so use it directly
     const positions = this.#resolveCursorRange(
       doc,
-      textPath,
+      this.path,
       range[0] as Cursor,
       range[1] as Cursor
     );
@@ -445,11 +510,11 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
    */
   #resolveCursorRange(
     doc: Doc<TDoc>,
-    path: Segment[],
+    path: PathSegment[],
     startCursor: Cursor,
     endCursor: Cursor
   ): [number, number] | undefined {
-    const propPath = this.#getPropPath(path);
+    const propPath = this.#getPropPath(path, "full");
     if (!propPath) return undefined;
 
     const start = Automerge.getCursorPosition(doc, propPath, startCursor);
@@ -459,7 +524,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return [start, end];
   }
 
-  #setValue(doc: any, path: Segment[], value: any): void {
+  #setValue(doc: any, path: PathSegment[], value: any): void {
     if (path.length === 0) {
       throw new Error("Cannot replace root document");
     }
@@ -472,64 +537,18 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       throw new Error("Cannot set value: parent is undefined");
     }
 
-    switch (lastSegment[KIND]) {
-      case "key":
-      case "index":
-      case "stable_index":
-      case "query":
-        // All these use resolvedProp
-        if (lastSegment.resolvedProp === undefined) {
-          throw new Error("Cannot set value: segment is unresolved");
-        }
-        parent[lastSegment.resolvedProp] = value;
-        break;
-
-      case "range":
-      case "stable_range": {
-        // Replace substring in text
-        if (typeof parent !== "string") {
-          throw new Error(
-            "Range segments can only be used on text/string values"
-          );
-        }
-
-        let start: number;
-        let end: number;
-
-        if (lastSegment[KIND] === "range") {
-          start = lastSegment.start;
-          end = lastSegment.end;
-        } else {
-          // stable_range - resolve cursors to positions
-          const positions = this.#resolveCursorRange(
-            doc,
-            parentPath,
-            lastSegment.start,
-            lastSegment.end
-          );
-          if (!positions) {
-            throw new Error("Cannot resolve cursor positions for range update");
-          }
-          [start, end] = positions;
-        }
-
-        // Replace the text range using Automerge splice
-        const propPath = this.#getPropPathOrThrow(parentPath);
-        const deleteCount = end - start;
-        Automerge.splice(doc, propPath, start, deleteCount, value);
-        break;
-      }
-
-      default:
-        lastSegment satisfies never;
-        throw new Error(`Unknown segment kind: ${lastSegment[KIND]}`);
+    // PathSegments always have resolvedProp (key/index/stable_index/query)
+    if (lastSegment.resolvedProp === undefined) {
+      throw new Error("Cannot set value: segment is unresolved");
     }
+
+    parent[lastSegment.resolvedProp] = value;
   }
 
   #patchAffectsRef(patches: Automerge.Patch[]): boolean {
     // Get the best-effort prop path (stops at first unresolved segment)
     // Props are already up-to-date from the internal change listener
-    const refPropPath = this.#getBestEffortPropPath();
+    const refPropPath = this.#getPropPath(this.path, "best-effort")!;
 
     // If we couldn't resolve any part, ref was never valid - don't fire
     if (refPropPath.length === 0) return false;
@@ -538,62 +557,35 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   }
 
   /**
-   * Get prop path for as many segments as possible, stopping at first unresolved segment.
-   * Used for onChange to detect when a ref becomes invalid (fires once) vs stays invalid (silent).
+   * Get Automerge prop path from path segments.
+   *
+   * Modes:
+   * - "throw": Throws if any segment is unresolved (for mutations)
+   * - "full": Returns undefined if any segment is unresolved (for queries)
+   * - "best-effort": Returns partial path, stopping at first unresolved (for onChange)
    */
-  #getBestEffortPropPath(): Prop[] {
-    const propPath: Prop[] = [];
-
-    for (const segment of this.path) {
-      // Skip ranges
-      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
-        continue;
-      }
-
-      // Stop at first unresolved segment
-      if (segment.resolvedProp === undefined) {
-        break;
-      }
-
-      propPath.push(segment.resolvedProp);
-    }
-
-    return propPath;
-  }
-
-  /**
-   * Get Automerge prop path from segments.
-   * Returns undefined if any segment cannot be resolved.
-   */
-  #getPropPath(segments: Segment[]): Prop[] | undefined {
+  #getPropPath(
+    segments: PathSegment[] = this.path,
+    mode: "throw" | "full" | "best-effort" = "full"
+  ): Prop[] | undefined {
     const props: Prop[] = [];
 
     for (const segment of segments) {
-      // Skip ranges
-      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
-        continue;
-      }
-
       if (segment.resolvedProp === undefined) {
-        return undefined;
+        if (mode === "throw") {
+          throw new Error(
+            "Cannot resolve path: one or more segments are unresolved"
+          );
+        }
+        if (mode === "best-effort") {
+          break; // Return partial path
+        }
+        return undefined; // mode === "full"
       }
 
       props.push(segment.resolvedProp);
     }
 
-    return props;
-  }
-
-  /**
-   * Get Automerge prop path from segments, throwing if any cannot be resolved.
-   */
-  #getPropPathOrThrow(segments: Segment[]): Prop[] {
-    const props = this.#getPropPath(segments);
-    if (!props) {
-      throw new Error(
-        "Cannot resolve path: one or more segments are unresolved"
-      );
-    }
     return props;
   }
 

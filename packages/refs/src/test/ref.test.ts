@@ -146,7 +146,7 @@ describe("Ref", () => {
 
       // This will auto-stabilize to cursor range
       const rangeRef = new Ref(handle, ["text", [0, 5]]);
-      expect(rangeRef.path[1][KIND]).toBe("stable_range");
+      expect(rangeRef.range?.[KIND]).toBe("stable_range");
       expect(rangeRef.value()).toBe("Hello");
 
       rangeRef.change(() => "Goodbye");
@@ -208,7 +208,7 @@ describe("Ref", () => {
 
       expect(() => {
         rangeRef.change(() => "replacement");
-      }).toThrow("Range segments can only be used on text/string values");
+      }).toThrow("Range refs can only be used on string values");
     });
 
     it("should change root document directly", () => {
@@ -820,11 +820,10 @@ describe("Ref", () => {
       // Numeric range should be stabilized to cursors
       const ref = new Ref(handle, ["note", [0, 5]]);
 
-      // Path should contain cursor-based range
-      expect(ref.path[1][KIND]).toBe("stable_range");
-      const segment = ref.path[1] as any;
-      expect(typeof segment.start).toBe("string"); // Cursor
-      expect(typeof segment.end).toBe("string"); // Cursor
+      // Range should be cursor-based
+      expect(ref.range?.[KIND]).toBe("stable_range");
+      expect(typeof ref.range?.start).toBe("string"); // Cursor
+      expect(typeof ref.range?.end).toBe("string"); // Cursor
 
       expect(ref.value()).toBe("Hello");
     });
@@ -836,9 +835,9 @@ describe("Ref", () => {
 
       // Using at() keeps range as numeric
       const dynamicRef = new Ref(handle, ["text", at([0, 5])]);
-      expect(dynamicRef.path[1][KIND]).toBe("range");
-      expect((dynamicRef.path[1] as any).start).toBe(0);
-      expect((dynamicRef.path[1] as any).end).toBe(5);
+      expect(dynamicRef.range?.[KIND]).toBe("range");
+      expect(dynamicRef.range?.start).toBe(0);
+      expect(dynamicRef.range?.end).toBe(5);
       expect(dynamicRef.value()).toBe("Hello");
 
       // Insert at beginning
@@ -1616,11 +1615,8 @@ describe("Ref", () => {
 
       // Query segment should have undefined resolvedProp (no match)
       expect(ref.path.length).toBe(3);
-      // @ts-expect-error - resolvedProp is not always a property of Segment
       expect(ref.path[0].resolvedProp).toBe("items");
-      // @ts-expect-error - resolvedProp is not always a property of Segment
       expect(ref.path[1].resolvedProp).toBeUndefined(); // Query found no match
-      // @ts-expect-error - resolvedProp is not always a property of Segment
       expect(ref.path[2].resolvedProp).toBe("value"); // Key props are always resolved
     });
 
@@ -1635,7 +1631,6 @@ describe("Ref", () => {
 
       const ref = new Ref(handle, ["items", 1, "value"]);
       expect(ref.value()).toBe(2);
-      // @ts-expect-error - resolvedProp is not always a property of Segment
       expect(ref.path[1].resolvedProp).toBe(1); // index 1
 
       // Remove first item - second item moves to index 0
@@ -1644,7 +1639,6 @@ describe("Ref", () => {
       });
 
       expect(ref.value()).toBe(2); // Still resolves to same object
-      // @ts-expect-error - resolvedProp is not always a property of Segment
       expect(ref.path[1].resolvedProp).toBe(0); // Now at index 0
     });
 
@@ -1675,7 +1669,6 @@ describe("Ref", () => {
       });
 
       expect(ref.value()).toBeUndefined();
-      // @ts-expect-error - resolvedProp is not a property of Segment
       expect(ref.path[1].resolvedProp).toBeUndefined(); // ObjectId no longer found
     });
 

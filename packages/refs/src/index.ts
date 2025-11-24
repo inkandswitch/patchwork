@@ -1,4 +1,11 @@
-export type { Segment, PathInput, RefOptions, RefContext } from "./types";
+export type {
+  Segment,
+  PathSegment,
+  RangeSegment,
+  PathInput,
+  RefOptions,
+  RefContext,
+} from "./types";
 
 export { Ref } from "./ref";
 
