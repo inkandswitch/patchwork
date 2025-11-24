@@ -159,3 +159,19 @@ declare function rand(lo?: number, hi?: number): number;
 // This difference makes `mod()` useful for creating cycling patterns
 // because it doesn't 'mirror' the pattern across 0.
 declare function mod(v, d?: number): number;
+
+interface point {
+  x: number;
+  y: number;
+}
+
+// Rotate point x,y around pivot point px,py by a given number of turns.
+// 1 turn is equivalent to 360º or π radians.
+// Returns an object with the x,y of the rotated point.
+declare function rotate(
+  x: number,
+  y: number,
+  turns: number,
+  px = 0,
+  py = 0
+): point;

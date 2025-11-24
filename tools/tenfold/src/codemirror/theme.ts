@@ -18,6 +18,9 @@ const noirBaseTheme = EditorView.theme(
     "&.cm-focused .cm-selectionBackground, ::selection": {
       backgroundColor: "#00ffff66",
     },
+    ".cm-tooltip": {
+      fontFamily: "monospace",
+    },
     ".cm-tooltip-autocomplete ul li[aria-selected]": {
       background: "white",
       color: "black",
