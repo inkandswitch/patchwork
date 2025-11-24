@@ -2,6 +2,14 @@ import * as Automerge from "@automerge/automerge";
 import type { Segment } from "./types";
 import { KIND } from "./types";
 
+const URL_PREFIX = "automerge:";
+
+/**
+ * Branded type for Automerge ref URLs.
+ * A string in the format: `automerge:documentId/path#heads`
+ */
+export type AutomergeRefUrl = string & { readonly __brand: "AutomergeRefUrl" };
+
 /**
  * Parse a URL path string into segments.
  *
@@ -125,7 +133,7 @@ export function serializePath(segments: Segment[]): string {
 /**
  * Parse heads parameter from URL string.
  * Uses pipe "|" separator to match automerge-repo convention.
- * 
+ *
  * @example
  * parseHeads("abc|def") → ["abc", "def"]
  * parseHeads(undefined) → undefined
@@ -143,51 +151,79 @@ export function serializeHeads(heads: string[] | undefined): string {
 }
 
 /**
- * Construct a full automerge URL from components.
+ * Construct a full Automerge ref URL from components.
  * Uses pipe "|" separator for heads to match automerge-repo convention.
- * 
+ *
  * @example
- * serializeUrl("abc123", [{ kind: "key", key: "todos" }], ["head1", "head2"])
+ * stringifyAutomergeRefUrl("abc123", [{ kind: "key", key: "todos" }], ["head1", "head2"])
  * → "automerge:abc123/todos#head1|head2"
  */
-export function serializeUrl(
-  docId: string,
+export function stringifyAutomergeRefUrl(
+  documentId: string,
   segments: Segment[],
   heads?: string[]
-): string {
+): AutomergeRefUrl {
   const pathStr = serializePath(segments);
   const headsStr = serializeHeads(heads);
-  return `automerge:${docId}/${pathStr}${headsStr}`;
+  return `${URL_PREFIX}${documentId}/${pathStr}${headsStr}` as AutomergeRefUrl;
 }
 
 /**
- * Parsed components of an Automerge URL.
+ * Parsed components of an Automerge ref URL.
  */
-export interface ParsedUrl {
-  docId: string;
+export interface ParsedAutomergeRefUrl {
+  documentId: string;
   segments: Segment[];
   heads?: string[];
 }
 
 /**
- * Parse a full Automerge URL into its components.
+ * Parse a full Automerge ref URL into its components.
  * Uses pipe "|" separator for heads to match automerge-repo convention.
- * 
+ *
  * @example
- * parseUrl("automerge:abc123/todos/0/title#head1|head2")
- * → { docId: "abc123", segments: [...], heads: ["head1", "head2"] }
+ * parseAutomergeRefUrl("automerge:abc123/todos/0/title#head1|head2")
+ * → { documentId: "abc123", segments: [...], heads: ["head1", "head2"] }
  */
-export function parseUrl(url: string): ParsedUrl {
-  const match = url.match(/^automerge:([^/#]+)(?:\/([^#]*))?(?:#(.+))?$/);
-  if (!match) {
-    throw new Error(`Invalid Automerge URL: ${url}`);
+export function parseAutomergeRefUrl(
+  url: AutomergeRefUrl
+): ParsedAutomergeRefUrl {
+  // Check for multiple heads sections
+  const [baseUrl, headsSection, ...rest] = url.split("#");
+  if (rest.length > 0) {
+    throw new Error(
+      "Invalid Automerge ref URL: contains multiple heads sections"
+    );
   }
 
-  const [, docId, pathStr, headsStr] = match;
+  // Parse the base URL
+  const match = baseUrl.match(/^automerge:([^/]+)(?:\/(.*))?$/);
+  if (!match) {
+    throw new Error(`Invalid Automerge ref URL: ${url}`);
+  }
+
+  const [, documentId, pathStr] = match;
 
   return {
-    docId,
+    documentId,
     segments: pathStr ? parsePath(pathStr) : [],
-    heads: parseHeads(headsStr),
+    heads: parseHeads(headsSection),
   };
+}
+
+/**
+ * Check if a string is a valid Automerge ref URL.
+ * Acts as a type guard in TypeScript.
+ */
+export function isValidAutomergeRefUrl(str: unknown): str is AutomergeRefUrl {
+  if (typeof str !== "string" || !str || !str.startsWith(URL_PREFIX)) {
+    return false;
+  }
+
+  try {
+    parseAutomergeRefUrl(str as AutomergeRefUrl);
+    return true;
+  } catch {
+    return false;
+  }
 }

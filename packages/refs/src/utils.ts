@@ -2,7 +2,7 @@ import { DocHandle, Repo } from "@automerge/automerge-repo";
 import type { Segment } from "./types";
 import { KIND } from "./types";
 import { Ref } from "./ref";
-import { parseUrl } from "./parser";
+import { parseAutomergeRefUrl, type AutomergeRefUrl } from "./parser";
 
 /**
  * Prevent stabilization for a path segment.
@@ -34,19 +34,19 @@ export function at(
 /**
  * Find a ref by its Automerge URL.
  *
- * URL format: `automerge:{docId}/{path}#{heads}`
+ * URL format: `automerge:{documentId}/{path}#{heads}`
  *
  * @example
  * ```ts
- * const ref = await findRef(repo, "automerge:abc123/todos/$xyz/title");
+ * const ref = await findRef(repo, "automerge:abc123/todos/$xyz/title" as AutomergeRefUrl);
  * ```
  */
 export async function findRef<T = any>(
   repo: Repo,
-  url: string
+  url: AutomergeRefUrl
 ): Promise<Ref<T>> {
-  const { docId } = parseUrl(url);
-  const handle = await repo.find(docId as any);
+  const { documentId } = parseAutomergeRefUrl(url);
+  const handle = await repo.find(documentId as any);
   await handle.whenReady();
 
   return Ref.fromUrl(handle as DocHandle<T>, url);

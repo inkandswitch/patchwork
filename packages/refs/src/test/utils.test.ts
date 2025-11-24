@@ -3,7 +3,7 @@ import { Repo } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
 import { at } from "../utils";
-import { ref, findRef, Ref } from "../index";
+import { ref, findRef, Ref, AutomergeRefUrl } from "../index";
 import { KIND } from "../types";
 
 describe("utils", () => {
@@ -212,12 +212,12 @@ describe("utils", () => {
     });
 
     it("should throw on invalid URL format", async () => {
-      await expect(findRef(repo, "not-a-valid-url")).rejects.toThrow(
-        "Invalid Automerge URL"
-      );
-      await expect(findRef(repo, "wrong:abc/path")).rejects.toThrow(
-        "Invalid Automerge URL"
-      );
+      await expect(
+        findRef(repo, "not-a-valid-url" as AutomergeRefUrl)
+      ).rejects.toThrow("Invalid Automerge ref URL");
+      await expect(
+        findRef(repo, "wrong:abc/path" as AutomergeRefUrl)
+      ).rejects.toThrow("Invalid Automerge ref URL");
     });
 
     it("should handle root path (document ref)", async () => {

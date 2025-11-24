@@ -15,7 +15,11 @@ import type {
 import { KIND } from "./types";
 import { isSegment, isPlainObject } from "./guards";
 import { matchesWhereClause } from "./utils";
-import { parseUrl, serializeUrl } from "./parser";
+import {
+  parseAutomergeRefUrl,
+  stringifyAutomergeRefUrl,
+  type AutomergeRefUrl,
+} from "./parser";
 
 /**
  * A reference to a location in an Automerge document.
@@ -61,16 +65,16 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
    * Parse a ref from an Automerge URL string.
    *
    * @param handle - The document handle to use
-   * @param url - Full automerge URL like "automerge:docId/path#heads"
+   * @param url - Full automerge URL like "automerge:documentId/path#heads"
    *
    * @example
-   * Ref.fromUrl(handle, "automerge:abc/todos/0#head1,head2")
+   * Ref.fromUrl(handle, "automerge:abc/todos/0#head1|head2" as AutomergeRefUrl)
    */
   static fromUrl<TDoc = any>(
     handle: DocHandle<TDoc>,
-    url: string
+    url: AutomergeRefUrl
   ): Ref<TDoc, PathInput[]> {
-    const { segments, heads } = parseUrl(url);
+    const { segments, heads } = parseAutomergeRefUrl(url);
     const options: RefOptions = heads ? { heads } : {};
     return new Ref<TDoc, PathInput[]>(handle, segments, options);
   }
@@ -134,8 +138,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     };
   }
 
-  get url(): string {
-    return serializeUrl(
+  get url(): AutomergeRefUrl {
+    return stringifyAutomergeRefUrl(
       this.docHandle.documentId,
       this.path,
       this.options.heads
