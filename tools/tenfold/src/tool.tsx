@@ -158,7 +158,7 @@ export default function TenfoldExperience(props: {
                 handle={lettersDocHandle.latest}
                 path={path()}
                 extensions={[
-                  withVim() ? vim() : [],
+                  withVim() ? vim({ status: true }) : [],
                   keymap.of([
                     indentWithTab,
                     {
