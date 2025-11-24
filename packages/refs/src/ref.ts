@@ -192,31 +192,58 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     });
   }
 
-  /** Normalize path inputs and extract stable IDs where possible */
+  /**
+   * Normalize path inputs and extract stable IDs where possible.
+   * Single O(D) pass - maintains current container and propPath as we traverse.
+   */
   #normalizePath(doc: Doc<TDoc>, inputs: PathInput[]): Segment[] {
-    let currentPath: Segment[] = [];
+    const segments: Segment[] = [];
+    const propPath: Automerge.Prop[] = []; // Build incrementally for range stabilization
+    let current: any = doc;
 
-    return inputs.map((input) => {
+    for (const input of inputs) {
+      // Handle ranges specially - they need the propPath for cursor stabilization
+      if (Array.isArray(input) && input.length === 2) {
+        const segment = this.#tryStabilizeRange(
+          doc,
+          propPath,
+          current,
+          input[0],
+          input[1]
+        );
+        segments.push(segment);
+        break; // Ranges are terminal
+      }
+
       const segment = isSegment(input)
-        ? this.#ensureSegmentResolved(doc, currentPath, input)
-        : this.#normalizeInput(
-            doc,
-            currentPath,
-            input as Exclude<PathInput, Segment>
-          );
+        ? this.#ensureSegmentResolved(current, input)
+        : this.#normalizeInput(current, input as Exclude<PathInput, Segment>);
 
-      currentPath.push(segment);
-      return segment;
-    });
+      segments.push(segment);
+
+      // Ranges are terminal - stop processing
+      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
+        break;
+      }
+
+      // Move to next container and extend propPath for next iteration
+      if (
+        segment.resolvedProp !== undefined &&
+        current !== undefined &&
+        current !== null
+      ) {
+        propPath.push(segment.resolvedProp);
+        current = (current as any)[segment.resolvedProp];
+      }
+      // If we can't resolve, subsequent segments will also fail, but we continue
+      // to let them attempt resolution (they'll get resolvedProp = undefined)
+    }
+
+    return segments;
   }
 
   /** Ensure a segment has its resolvedProp set */
-  #ensureSegmentResolved(
-    doc: Doc<TDoc>,
-    currentPath: Segment[],
-    segment: Segment
-  ): Segment {
-    const container = this.#traverse(doc, currentPath);
+  #ensureSegmentResolved(container: any, segment: Segment): Segment {
     const resolvedProp = this.#resolveSegmentProp(container, segment);
     return { ...segment, resolvedProp } as Segment;
   }
@@ -294,17 +321,12 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
   }
 
-  #normalizeInput(
-    doc: Doc<TDoc>,
-    currentPath: Segment[],
-    input: Exclude<PathInput, Segment>
-  ): Segment {
+  #normalizeInput(container: any, input: Exclude<PathInput, Segment>): Segment {
     if (typeof input === "string") {
       return { [KIND]: "key", key: input, resolvedProp: input };
     }
 
     if (typeof input === "number") {
-      const container = this.#traverse(doc, currentPath);
       if (!Array.isArray(container)) {
         return { [KIND]: "index", index: input, resolvedProp: input };
       }
@@ -317,12 +339,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         : { [KIND]: "index", index: input, resolvedProp: input };
     }
 
-    if (Array.isArray(input) && input.length === 2) {
-      return this.#tryStabilizeRange(doc, currentPath, input[0], input[1]);
-    }
-
     if (isPlainObject(input)) {
-      const container = this.#traverse(doc, currentPath);
       if (!Array.isArray(container)) {
         return { [KIND]: "query", clause: input, resolvedProp: undefined };
       }
@@ -344,7 +361,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     throw new Error(
       `Unsupported path input type: ${typeof input}. ` +
-        `Expected string, number, plain object, or array.`
+        `Expected string, number, or plain object.`
     );
   }
 
@@ -354,20 +371,17 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
    */
   #tryStabilizeRange(
     doc: Doc<TDoc>,
-    currentPath: Segment[],
+    propPath: Automerge.Prop[],
+    container: any,
     start: number,
     end: number
   ): Segment {
-    const container = this.#traverse(doc, currentPath);
+    // Can only stabilize ranges on strings
     if (typeof container !== "string") {
       return { [KIND]: "range", start, end };
     }
 
-    const propPath = this.#getPropPath(currentPath);
-    if (!propPath) {
-      return { [KIND]: "range", start, end };
-    }
-
+    // Try to get cursors
     const startCursor = Automerge.getCursor(doc, propPath, start);
     const endCursor = Automerge.getCursor(doc, propPath, end);
 
