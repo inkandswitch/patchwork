@@ -260,51 +260,77 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
 
     if (typeof input === "number") {
-      // Try to stabilize: find the ObjectId for this array item
-      const container = this.#traverse(doc, currentPath);
-      if (Array.isArray(container)) {
-        const item = container[input];
-        const id = item ? Automerge.getObjectId(item) : undefined;
-        if (id) {
-          return { [KIND]: "stable_index", id };
-        }
-      }
-      return { [KIND]: "index", index: input };
+      const id = this.#tryStabilizeToObjectId(
+        doc,
+        currentPath,
+        (c) => c[input]
+      );
+      return id
+        ? { [KIND]: "stable_index", id }
+        : { [KIND]: "index", index: input };
     }
 
     if (Array.isArray(input) && input.length === 2) {
-      // Try to stabilize: convert numeric range to cursor range
-      const container = this.#traverse(doc, currentPath);
-      if (typeof container === "string") {
-        try {
-          const propPath = this.#toAutomergePath(doc, currentPath);
-          const start = Automerge.getCursor(doc, propPath, input[0]);
-          const end = Automerge.getCursor(doc, propPath, input[1]);
-          return { [KIND]: "stable_range", start, end };
-        } catch {
-          // Fall through to unstable range
-        }
-      }
-      return { [KIND]: "range", start: input[0], end: input[1] };
+      return this.#tryStabilizeRange(doc, currentPath, input[0], input[1]);
     }
 
     if (isPlainObject(input)) {
-      // Try to stabilize: find the ObjectId for item matching where clause
-      const container = this.#traverse(doc, currentPath);
-      if (Array.isArray(container)) {
-        const item = container.find((obj) => matchesWhereClause(obj, input));
-        const id = item ? Automerge.getObjectId(item) : undefined;
-        if (id) {
-          return { [KIND]: "stable_index", id };
-        }
-      }
-      return { [KIND]: "query", clause: input };
+      const id = this.#tryStabilizeToObjectId(doc, currentPath, (c) =>
+        c.find((obj) => matchesWhereClause(obj, input))
+      );
+      return id
+        ? { [KIND]: "stable_index", id }
+        : { [KIND]: "query", clause: input };
     }
 
     throw new Error(
       `Unsupported path input type: ${typeof input}. ` +
         `Expected string, number, plain object, or array.`
     );
+  }
+
+  /**
+   * Try to stabilize an array access to an ObjectId-based segment.
+   * Returns the ObjectId if stabilization succeeds, undefined otherwise.
+   */
+  #tryStabilizeToObjectId(
+    doc: Doc<TDoc>,
+    currentPath: Segment[],
+    getItem: (container: any[]) => any
+  ): string | undefined {
+    const container = this.#traverse(doc, currentPath);
+    if (!Array.isArray(container)) return undefined;
+
+    const item = getItem(container);
+    return item ? (Automerge.getObjectId(item) ?? undefined) : undefined;
+  }
+
+  /**
+   * Try to stabilize a numeric range to a cursor-based range.
+   * Returns stable_range if cursors can be obtained, unstable range otherwise.
+   */
+  #tryStabilizeRange(
+    doc: Doc<TDoc>,
+    currentPath: Segment[],
+    start: number,
+    end: number
+  ): Segment {
+    const container = this.#traverse(doc, currentPath);
+    if (typeof container !== "string") {
+      return { [KIND]: "range", start, end };
+    }
+
+    try {
+      const propPath = this.#toAutomergePath(doc, currentPath);
+      const startCursor = Automerge.getCursor(doc, propPath, start);
+      const endCursor = Automerge.getCursor(doc, propPath, end);
+
+      return startCursor && endCursor
+        ? { [KIND]: "stable_range", start: startCursor, end: endCursor }
+        : { [KIND]: "range", start, end };
+    } catch {
+      return { [KIND]: "range", start, end };
+    }
   }
 
   #toAutomergePath(doc: Doc<TDoc>, path: Segment[]): Prop[] {
