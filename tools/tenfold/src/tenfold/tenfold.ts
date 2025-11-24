@@ -65,7 +65,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const sinn = (n: number) => Math.sin(n * TAU);
 
   // rotate point x,y around pivot px,py by turns (normalized)
-  const rotate = (x, y, px, py, turns) => {
+  const rotate = (x:number, y:number, turns:number, px = 0, py = 0) => {
     const dx = x - px;
     const dy = y - py;
     const cos = cosn(turns);
