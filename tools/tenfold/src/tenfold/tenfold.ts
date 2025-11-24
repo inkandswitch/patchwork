@@ -81,6 +81,16 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     ctx.rotate(n * TAU);
   }
 
+  let __loopBudget = 1000
+  function loop(body) {
+    let idx = 0
+    while (__loopBudget-- > 0) {
+      if (!body(idx++)) {
+        break;
+      }
+    }
+  }
+
   // UNHELPFUL HELPERS
 
   class Averager {
@@ -446,6 +456,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     sinn,
     rotate,
     rotaten,
+    loop,
     TAU,
     PI,
   };
@@ -542,6 +553,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       // Draw the letter!
       let start = performance.now();
       newPath = true;
+      __loopBudget = 1000;
       ctx.beginPath();
 
       try {
