@@ -76,6 +76,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     };
   };
 
+  const rotaten = (n: number) => {
+    // rootin' tootin' rotatn'
+    ctx.rotate(n * TAU);
+  }
+
   // UNHELPFUL HELPERS
 
   class Averager {
@@ -440,6 +445,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     cosn,
     sinn,
     rotate,
+    rotaten,
     TAU,
     PI,
   };
