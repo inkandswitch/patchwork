@@ -16,6 +16,7 @@ export type AutomergeRefUrl = string & { readonly __brand: "AutomergeRefUrl" };
  * @example
  * parsePath("todos/0/title") → [{ kind: "key", key: "todos" }, ...]
  * parsePath("todos/$abc123") → [{ kind: "key", key: "todos" }, { kind: "stable_index", id: "abc123" }]
+ * parsePath("note/0-10") → [..., { kind: "range", start: 0, end: 10 }]
  */
 export function parsePath(path: string): Segment[] {
   if (!path) return [];
@@ -35,12 +36,13 @@ export function parsePath(path: string): Segment[] {
  * Parse a single path segment string into a Segment object.
  */
 export function parseSegment(segment: string): Segment {
-  if (segment.startsWith("$")) {
-    return { [KIND]: "stable_index", id: segment.slice(1) };
+  // Check for range (contains dash): "0-10" or "$cursor1-$cursor2"
+  if (segment.includes("-")) {
+    return parseRange(segment);
   }
 
-  if (segment.startsWith("[")) {
-    return parseRange(segment);
+  if (segment.startsWith("$")) {
+    return { [KIND]: "stable_index", id: segment.slice(1) };
   }
 
   if (segment.startsWith("{")) {
@@ -55,16 +57,16 @@ export function parseSegment(segment: string): Segment {
 }
 
 /**
- * Parse a range segment like "[0,10]" or "[$cursor1,$cursor2]".
+ * Parse a range segment like "0-10" or "$cursor1-$cursor2".
  */
 export function parseRange(segment: string): Segment {
-  const match = segment.match(/^\[(\$?[^,]+),(\$?[^,]+)\]$/);
+  const parts = segment.split("-");
 
-  if (!match) {
-    throw new Error(`Invalid range: ${segment}`);
+  if (parts.length !== 2) {
+    throw new Error(`Invalid range: ${segment}. Expected format: "start-end"`);
   }
 
-  const [, first, second] = match;
+  const [first, second] = parts;
 
   if (first.startsWith("$") && second.startsWith("$")) {
     return {
@@ -114,10 +116,10 @@ export function serializeSegment(segment: Segment): string {
       return JSON.stringify(segment.idPattern);
 
     case "range":
-      return `[${segment.start},${segment.end}]`;
+      return `${segment.start}-${segment.end}`;
 
     case "stable_range":
-      return `[$${segment.start},$${segment.end}]`;
+      return `$${segment.start}-$${segment.end}`;
 
     default:
       segment satisfies never;

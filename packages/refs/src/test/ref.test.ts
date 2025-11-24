@@ -319,7 +319,7 @@ describe("Ref", () => {
       const url = ref.url;
 
       // Dynamic range should use numeric format
-      expect(url).toBe(`automerge:${handle.documentId}/text/[0,5]`);
+      expect(url).toBe(`automerge:${handle.documentId}/text/0-5`);
     });
 
     it("should format cursor ranges with $ prefix", () => {
@@ -333,7 +333,7 @@ describe("Ref", () => {
       // Stable range should use cursor format with $ prefix
       // Cursors have format: number@hash
       expect(url).toMatch(
-        /^automerge:[^/]+\/note\/\[\$\d+@[a-f0-9]+,\$\d+@[a-f0-9]+\]$/
+        /^automerge:[^/]+\/note\/\$\d+@[a-f0-9]+-\$\d+@[a-f0-9]+$/
       );
       expect(url).toContain("$"); // Cursor markers
     });
@@ -419,7 +419,7 @@ describe("Ref", () => {
       // Should have ObjectId for docs[0] and cursor range for text
       // Format: number@hash for both ObjectIds and cursors
       expect(url).toMatch(
-        /^automerge:[^/]+\/docs\/\$\d+@[a-f0-9]+\/content\/\[\$\d+@[a-f0-9]+,\$\d+@[a-f0-9]+\]$/
+        /^automerge:[^/]+\/docs\/\$\d+@[a-f0-9]+\/content\/\$\d+@[a-f0-9]+-\$\d+@[a-f0-9]+$/
       );
     });
 
