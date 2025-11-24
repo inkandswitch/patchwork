@@ -306,6 +306,28 @@ importers:
         specifier: ^18.0.0
         version: 18.3.1(react@18.3.1)
 
+  packages/refs:
+    dependencies:
+      '@automerge/automerge':
+        specifier: 3.2.0
+        version: 3.2.0
+      '@automerge/automerge-repo':
+        specifier: 2.5.0
+        version: 2.5.0
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.37.0
+        version: 9.38.0
+      eslint:
+        specifier: ^9.34.0
+        version: 9.38.0(jiti@2.6.1)
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.41.0
+        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
+
   packages/solid:
     dependencies:
       '@automerge/automerge-repo-solid-primitives':
@@ -413,6 +435,9 @@ importers:
       '@patchwork/react':
         specifier: workspace:^
         version: link:../../packages/react
+      '@patchwork/refs':
+        specifier: workspace:^
+        version: link:../../packages/refs
       '@patchwork/tldraw':
         specifier: workspace:^
         version: link:../../tools/tldraw
@@ -646,6 +671,9 @@ importers:
       '@patchwork/react':
         specifier: workspace:^
         version: link:../../packages/react
+      '@patchwork/refs':
+        specifier: workspace:^
+        version: link:../../packages/refs
       '@patchwork/tldraw':
         specifier: workspace:^
         version: link:../../tools/tldraw
