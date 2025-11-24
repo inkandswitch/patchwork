@@ -38,6 +38,7 @@ import {
 import { vim } from "@replit/codemirror-vim";
 import { indentOnInput } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
+import { search, searchKeymap } from "@codemirror/search";
 
 const innerWorker = new Worker(
   new URL("./codemirror/worker.ts", import.meta.url),
@@ -178,6 +179,7 @@ export default function TenfoldExperience(props: {
                 ...defaultKeymap,
                 ...historyKeymap,
                 ...completionKeymap,
+                ...searchKeymap,
               ]),
               history(),
               javascript(),
@@ -196,6 +198,10 @@ export default function TenfoldExperience(props: {
               tsTwoslash(),
               tsLinterWorker(),
               indentOnInput(),
+              search({
+                caseSensitive: false,
+                regexp: true,
+              }),
               EditorState.transactionFilter.of((tr) => {
                 const start = completionStatus(tr.startState);
                 const after = completionStatus(tr.state);
