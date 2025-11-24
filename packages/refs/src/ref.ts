@@ -24,16 +24,31 @@ import {
 import { MutableText } from "./mutable-text";
 
 /**
+ * FinalizationRegistry for automatic cleanup of Ref instances.
+ * This ensures subscriptions are cleaned up when Refs are garbage collected,
+ * even if dispose() is never called.
+ */
+const refCleanupRegistry = new FinalizationRegistry<() => void>((cleanup) =>
+  cleanup()
+);
+
+/**
  * A reference to a location in an Automerge document.
  *
  * Refs are stable by default - they track objects by ID, not position.
+ *
+ * Cleanup: Refs automatically clean up their subscriptions when garbage collected.
+ * For immediate cleanup, call dispose() explicitly (recommended for long-lived apps).
  *
  * @example
  * ```ts
  * const titleRef = ref(handle, 'todos', 0, 'title');
  * titleRef.value();           // string | undefined
  * titleRef.change(s => s.toUpperCase());
- * titleRef.on('change', () => console.log('changed!'));
+ * titleRef.onChange(() => console.log('changed!'));
+ *
+ * // Optional but recommended for immediate cleanup:
+ * titleRef.dispose();
  * ```
  */
 export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
@@ -43,6 +58,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   readonly options: RefOptions;
 
   #unsubscribe: () => void;
+  #onChangeSubscriptions = new Set<() => void>();
+  #disposed = false;
 
   constructor(
     docHandle: DocHandle<TDoc>,
@@ -66,6 +83,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     };
     this.docHandle.on("change", updateHandler);
     this.#unsubscribe = () => this.docHandle.off("change", updateHandler);
+
+    // Register for automatic cleanup when this Ref is garbage collected
+    // This ensures subscriptions are cleaned up even if dispose() is never called
+    refCleanupRegistry.register(this, () => this.#cleanup(), this);
   }
 
   get heads(): string[] | undefined {
@@ -184,13 +205,22 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     });
   }
 
-  /** Subscribe to changes that affect this ref's value */
+  /**
+   * Subscribe to changes that affect this ref's value.
+   *
+   * The returned unsubscribe function will automatically be called when the Ref
+   * is disposed or garbage collected. You can also call it manually for immediate cleanup.
+   */
   onChange(
     callback: (
       value: InferRefType<TDoc, TPath> | undefined,
       payload: DocHandleChangePayload<any>
     ) => void
   ): () => void {
+    if (this.#disposed) {
+      throw new Error("Cannot add onChange listener to a disposed Ref");
+    }
+
     const wrappedCallback = (payload: DocHandleChangePayload<any>) => {
       if (this.#patchAffectsRef(payload.patches)) {
         const value = this.value();
@@ -200,9 +230,15 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     this.docHandle.on("change", wrappedCallback);
 
-    return () => {
+    const unsubscribe = () => {
       this.docHandle.off("change", wrappedCallback);
+      this.#onChangeSubscriptions.delete(unsubscribe);
     };
+
+    // Track this subscription so it can be cleaned up in dispose()
+    this.#onChangeSubscriptions.add(unsubscribe);
+
+    return unsubscribe;
   }
 
   get url(): AutomergeRefUrl {
@@ -329,9 +365,39 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return this.url;
   }
 
-  /** Clean up and unsubscribe from document changes */
+  /**
+   * Clean up and unsubscribe from all document changes.
+   *
+   * While cleanup happens automatically when the Ref is garbage collected,
+   * calling dispose() explicitly provides immediate cleanup which is recommended
+   * for long-lived applications or when you know you're done with a Ref.
+   *
+   * After calling dispose(), the Ref cannot be used anymore and onChange() will throw.
+   */
   dispose(): void {
+    if (this.#disposed) return;
+
+    // Unregister from automatic cleanup since we're cleaning up now
+    refCleanupRegistry.unregister(this);
+
+    this.#cleanup();
+  }
+
+  /**
+   * Internal cleanup method called by both dispose() and the finalization registry.
+   */
+  #cleanup(): void {
+    if (this.#disposed) return;
+    this.#disposed = true;
+
+    // Clean up the main subscription from constructor
     this.#unsubscribe();
+
+    // Clean up all onChange subscriptions
+    for (const unsubscribe of this.#onChangeSubscriptions) {
+      unsubscribe();
+    }
+    this.#onChangeSubscriptions.clear();
   }
 
   /**
