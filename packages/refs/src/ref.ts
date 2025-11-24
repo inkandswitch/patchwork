@@ -320,17 +320,17 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       return { [KIND]: "range", start, end };
     }
 
-    try {
-      const propPath = this.#toAutomergePath(doc, currentPath);
-      const startCursor = Automerge.getCursor(doc, propPath, start);
-      const endCursor = Automerge.getCursor(doc, propPath, end);
-
-      return startCursor && endCursor
-        ? { [KIND]: "stable_range", start: startCursor, end: endCursor }
-        : { [KIND]: "range", start, end };
-    } catch {
+    const propPath = this.#tryToAutomergePath(doc, currentPath);
+    if (!propPath) {
       return { [KIND]: "range", start, end };
     }
+
+    const startCursor = Automerge.getCursor(doc, propPath, start);
+    const endCursor = Automerge.getCursor(doc, propPath, end);
+
+    return startCursor && endCursor
+      ? { [KIND]: "stable_range", start: startCursor, end: endCursor }
+      : { [KIND]: "range", start, end };
   }
 
   #toAutomergePath(doc: Doc<TDoc>, path: Segment[]): Prop[] {
@@ -350,6 +350,14 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
 
     return propPath;
+  }
+
+  #tryToAutomergePath(doc: Doc<TDoc>, path: Segment[]): Prop[] | undefined {
+    try {
+      return this.#toAutomergePath(doc, path);
+    } catch {
+      return undefined;
+    }
   }
 
   #toAutomergeProp(current: any, segment: Segment): Prop {
@@ -403,6 +411,14 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       default:
         segment satisfies never;
         throw new Error(`Unknown segment kind: ${segment[KIND]}`);
+    }
+  }
+
+  #tryToAutomergeProp(current: any, segment: Segment): Prop | undefined {
+    try {
+      return this.#toAutomergeProp(current, segment);
+    } catch {
+      return undefined;
     }
   }
 
@@ -485,16 +501,14 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     startCursor: Cursor,
     endCursor: Cursor
   ): [number, number] | undefined {
-    try {
-      const propPath = this.#toAutomergePath(doc, path);
-      const start = Automerge.getCursorPosition(doc, propPath, startCursor);
-      const end = Automerge.getCursorPosition(doc, propPath, endCursor);
+    const propPath = this.#tryToAutomergePath(doc, path);
+    if (!propPath) return undefined;
 
-      if (start === undefined || end === undefined) return undefined;
-      return [start, end];
-    } catch {
-      return undefined;
-    }
+    const start = Automerge.getCursorPosition(doc, propPath, startCursor);
+    const end = Automerge.getCursorPosition(doc, propPath, endCursor);
+
+    if (start === undefined || end === undefined) return undefined;
+    return [start, end];
   }
 
   #setValue(doc: any, path: Segment[], value: any): void {
@@ -587,14 +601,11 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     for (const segment of segments) {
       if (current === undefined || current === null) break;
 
-      try {
-        const prop = this.#toAutomergeProp(current, segment);
-        propPath.push(prop);
-        current = current[prop];
-      } catch {
-        // Can't resolve this segment (e.g., ObjectId not found) - stop here
-        break;
-      }
+      const prop = this.#tryToAutomergeProp(current, segment);
+      if (prop === undefined) break;
+
+      propPath.push(prop);
+      current = current[prop];
     }
 
     return propPath;
