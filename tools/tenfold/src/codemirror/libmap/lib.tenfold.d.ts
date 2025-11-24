@@ -40,28 +40,23 @@ declare function sinn(v: number): number;
  * Each following call will draw a line from the previous point
  * to the newly given point.
  */
-declare function line(x: number, y: number): void;
+declare function line(x = 0, y = 0): void;
 
 // Call this function when you'd like to begin drawing another line.
 declare function begin(): void;
 
 // You can also begin a new line at a point.
 // This is equivalent to calling begin() then line(x, y) once.
-declare function move(x: number, y: number): void;
+declare function move(x = 0, y = 0): void;
 
 // SHAPES
 
 // A rectangle with the top left corner at x,y.
 // Width and height can be negative.
-declare function rect(
-  x: number,
-  y: number,
-  width: number,
-  height: number
-): void;
+declare function rect(x = -1, y = -1, width = 2, height = 2): void;
 
 // A special ring within which you summon your resolve and dispel dissonance
-declare function circle(x: number, y: number, radius: number): void;
+declare function circle(x = 0, y = 0, radius = 1): void;
 
 // Draw the given string using our special pen-plotter font.
 // Use "\n" for newlines.
@@ -175,3 +170,15 @@ declare function rotate(
   px = 0,
   py = 0
 ): point;
+
+declare function rotaten(turns: number): void;
+
+declare function quadratic(cx: number, cy: number, x: number, y: number): void;
+declare function cubic(
+  cx1: number,
+  cy1: number,
+  cx2: number,
+  cy2: number,
+  x: number,
+  y: number
+): void;
