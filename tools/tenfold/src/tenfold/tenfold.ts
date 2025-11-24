@@ -491,70 +491,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       let _R = Math.floor(i / 3);
       let R = _R > 0 ? _R + 1 : _R;
 
-      // Transform to letter space
-      ctx.resetTransform();
-      ctx.translate(C * pixW, R * pixW); // center on the current grid cell
-      ctx.translate(dpr * padding, dpr * padding); // padding
-      ctx.translate(dpr * gap * C, dpr * gap * R); // gaps
-      ctx.scale(pixHW, pixHW); // 0 to 2
-      ctx.translate(1, 1); // -1 to 1
-      // line width is calculated when .stroke() is called, and is affected by scale,
-      // so we need to undo the effect of grid scaling (but not dpr).
-      ctx.lineWidth = 2 * thick * (dpr / pixW);
-
-      // Draw the letter!
-      let start = performance.now();
-      newPath = true;
-      ctx.beginPath();
-
-      try {
-        fn(api, { ...s, t: mod(t) });
-      } catch (error) {
-        console.error(
-          `error in ${"INKSWiTCH"[i]}${(s.i + "").padStart(2, "0")}\n\n`,
-          error
-        );
-      }
-
-      ctx.stroke();
-      let cost = timers[i].add(performance.now() - start);
-
-      // If the draw function took too long, apply shame
-      if (cost > 3) {
-        ctx.beginPath();
-        ctx.lineWidth *= 3;
-        ctx.strokeStyle = errColor;
-        drawText("COST : " + cost.toFixed(1) + " > 3", -1, -1, 0.15);
-        ctx.stroke();
-        // clean up after yoself
-        ctx.strokeStyle = color;
-        ctx.lineWidth /= 3;
-      }
-
-      // Draw the kaoss pad draggable
-      ctx.resetTransform();
-      ctx.translate(pixW, pixW); // origin at the TL corner of the kaoss pad
-      ctx.translate(dpr * padding, dpr * padding); // padding
-      ctx.translate(dpr * gap, dpr * gap); // gaps
-      ctx.scale(pixW, pixW); // 0 to 1 for one grid cell
-      ctx.lineWidth /= 2; // we just doubled the scale, so halve the line width
-
-      // kaoss pad is x: 0-2, y: 0-1
-      ctx.beginPath();
-      let gs = 0.025; // size of the grid
-      // m rows by n cols
-      for (let m = 0; m < 3; m++) {
-        for (let n = 0; n < 3; n++) {
-          let W = 2 + gap / cssW - gs * 3;
-          let H = 1 - (clockWaveHeight * scaleFix + gap) / cssW - gs * 3;
-          let X = gs * n + declip(s.q, 0, W);
-          let Y = gs * m + declip(s.r, 0, H);
-          if (m * 3 + n == i) ctx.fillRect(X, Y, gs, gs);
-          api.rect(X, Y, gs, gs);
-        }
-      }
-      ctx.stroke();
-
       // Draw the letter selector
       ctx.resetTransform();
       ctx.scale(dpr, dpr);
@@ -592,6 +528,70 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         if (opts.currentlyEditingIndex == i) ctx.fill();
         else ctx.stroke();
       }
+
+      // Transform to letter space
+      ctx.resetTransform();
+      ctx.translate(C * pixW, R * pixW); // center on the current grid cell
+      ctx.translate(dpr * padding, dpr * padding); // padding
+      ctx.translate(dpr * gap * C, dpr * gap * R); // gaps
+      ctx.scale(pixHW, pixHW); // 0 to 2
+      ctx.translate(1, 1); // -1 to 1
+      // line width is calculated when .stroke() is called, and is affected by scale,
+      // so we need to undo the effect of grid scaling (but not dpr).
+      ctx.lineWidth = 2 * thick * (dpr / pixW);
+
+      // Draw the letter!
+      let start = performance.now();
+      newPath = true;
+      ctx.beginPath();
+
+      try {
+        fn(api, { ...s, t: mod(t) });
+        ctx.stroke();
+      } catch (error) {
+        console.error(
+          `error in ${"INKSWiTCH"[i]}${(s.i + "").padStart(2, "0")}\n\n`,
+          error
+        );
+      }
+
+      let cost = timers[i].add(performance.now() - start);
+
+      // If the draw function took too long, apply shame
+      if (cost > 3) {
+        ctx.beginPath();
+        ctx.lineWidth *= 3;
+        ctx.strokeStyle = errColor;
+        drawText("COST : " + cost.toFixed(1) + " > 3", -1, -1, 0.15);
+        ctx.stroke();
+        // clean up after yoself
+        ctx.strokeStyle = color;
+        ctx.lineWidth /= 3;
+      }
+
+      // Draw the kaoss pad draggable
+      ctx.resetTransform();
+      ctx.translate(pixW, pixW); // origin at the TL corner of the kaoss pad
+      ctx.translate(dpr * padding, dpr * padding); // padding
+      ctx.translate(dpr * gap, dpr * gap); // gaps
+      ctx.scale(pixW, pixW); // 0 to 1 for one grid cell
+      ctx.lineWidth /= 2; // we just doubled the scale, so halve the line width
+
+      // kaoss pad is x: 0-2, y: 0-1
+      ctx.beginPath();
+      let gs = 0.025; // size of the grid
+      // m rows by n cols
+      for (let m = 0; m < 3; m++) {
+        for (let n = 0; n < 3; n++) {
+          let W = 2 + gap / cssW - gs * 3;
+          let H = 1 - (clockWaveHeight * scaleFix + gap) / cssW - gs * 3;
+          let X = gs * n + declip(s.q, 0, W);
+          let Y = gs * m + declip(s.r, 0, H);
+          if (m * 3 + n == i) ctx.fillRect(X, Y, gs, gs);
+          api.rect(X, Y, gs, gs);
+        }
+      }
+      ctx.stroke();
     }
 
     // DAWN OF THE SECOND ROW
