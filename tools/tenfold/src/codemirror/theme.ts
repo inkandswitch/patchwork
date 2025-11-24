@@ -36,7 +36,6 @@ const noirHighlightStyle = HighlightStyle.define([
   {
     tag: [t.keyword, t.operatorKeyword, t.modifier, t.definitionKeyword],
     color: "#ffffff",
-    fontWeight: "bold",
   },
   {
     tag: [t.controlKeyword, t.moduleKeyword, t.logicOperator],
@@ -45,12 +44,12 @@ const noirHighlightStyle = HighlightStyle.define([
   },
   {
     tag: [t.function(t.definition(t.variableName)), t.className, t.tagName],
-    color: "#ffffff",
+    color: "#eee",
     fontWeight: "bold",
   },
   {
     tag: [t.variableName, t.attributeName, t.propertyName],
-    color: "#eee",
+    color: "#fff",
   },
   {
     tag: [t.number, t.bool, t.null, t.atom],
@@ -64,7 +63,7 @@ const noirHighlightStyle = HighlightStyle.define([
   },
   {
     tag: [t.comment, t.lineComment, t.blockComment],
-    color: "#999999",
+    color: "#bbbbbe",
     fontStyle: "italic",
   },
   {
