@@ -1569,4 +1569,193 @@ describe("Ref", () => {
       expect(callCount).toBe(2); // Now 2
     });
   });
+
+  describe("O(D) traversal architecture", () => {
+    it("should resolve deeply nested paths efficiently", () => {
+      handle.change((d) => {
+        d.a = { b: { c: { d: { e: { f: { g: { h: "deep" } } } } } } };
+      });
+
+      const ref = new Ref(handle, ["a", "b", "c", "d", "e", "f", "g", "h"]);
+      expect(ref.value()).toBe("deep");
+
+      // Update deep value
+      ref.change(() => "updated");
+      expect(ref.value()).toBe("updated");
+    });
+
+    it("should handle mixed stable and dynamic segments", () => {
+      handle.change((d) => {
+        d.items = [
+          { id: "a", data: { name: "First" } },
+          { id: "b", data: { name: "Second" } },
+        ];
+      });
+
+      // Mix of: key -> stable_index -> key -> key
+      const ref = new Ref(handle, ["items", 1, "data", "name"]);
+      expect(ref.value()).toBe("Second");
+
+      // Remove first item - second item moves to index 0
+      handle.change((d) => {
+        d.items.shift();
+      });
+
+      // Should still resolve to "Second" (tracked by ObjectId, now at index 0)
+      expect(ref.value()).toBe("Second");
+    });
+
+    it("should handle unresolvable segments gracefully", () => {
+      handle.change((d) => {
+        d.items = [{ name: "First" }, { name: "Second" }];
+      });
+
+      // Path with an ObjectId that doesn't exist
+      const ref = new Ref(handle, ["items", { name: "Third" }, "value"]);
+      expect(ref.value()).toBeUndefined();
+
+      // Query segment should have undefined resolvedProp (no match)
+      expect(ref.path.length).toBe(3);
+      // @ts-expect-error - resolvedProp is not always a property of Segment
+      expect(ref.path[0].resolvedProp).toBe("items");
+      // @ts-expect-error - resolvedProp is not always a property of Segment
+      expect(ref.path[1].resolvedProp).toBeUndefined(); // Query found no match
+      // @ts-expect-error - resolvedProp is not always a property of Segment
+      expect(ref.path[2].resolvedProp).toBe("value"); // Key props are always resolved
+    });
+
+    it("should update resolvedProps when document changes externally", () => {
+      handle.change((d) => {
+        d.items = [
+          { id: "a", value: 1 },
+          { id: "b", value: 2 },
+          { id: "c", value: 3 },
+        ];
+      });
+
+      const ref = new Ref(handle, ["items", 1, "value"]);
+      expect(ref.value()).toBe(2);
+      // @ts-expect-error - resolvedProp is not always a property of Segment
+      expect(ref.path[1].resolvedProp).toBe(1); // index 1
+
+      // Remove first item - second item moves to index 0
+      handle.change((d) => {
+        d.items.shift();
+      });
+
+      expect(ref.value()).toBe(2); // Still resolves to same object
+      // @ts-expect-error - resolvedProp is not always a property of Segment
+      expect(ref.path[1].resolvedProp).toBe(0); // Now at index 0
+    });
+
+    it("should stabilize query clauses to ObjectIds", () => {
+      handle.change((d) => {
+        d.users = [
+          { name: "Alice", active: true },
+          { name: "Bob", active: true },
+        ];
+      });
+
+      const ref = new Ref(handle, ["users", { active: true }, "name"]);
+      expect(ref.value()).toBe("Alice"); // First match
+
+      // The query was stabilized to an ObjectId (stable_index)
+      expect(ref.path[1][KIND]).toBe("stable_index");
+
+      // Even if we change the property, the ref still tracks the same object
+      handle.change((d) => {
+        d.users[0].active = false;
+      });
+
+      expect(ref.value()).toBe("Alice"); // Still resolves (tracked by ObjectId)
+
+      // But if we delete the object, it becomes unresolved
+      handle.change((d) => {
+        d.users.shift();
+      });
+
+      expect(ref.value()).toBeUndefined();
+      // @ts-expect-error - resolvedProp is not a property of Segment
+      expect(ref.path[1].resolvedProp).toBeUndefined(); // ObjectId no longer found
+    });
+
+    it("should handle empty arrays and objects", () => {
+      handle.change((d) => {
+        d.empty = [];
+        d.emptyObj = {};
+      });
+
+      const arrayRef = new Ref(handle, ["empty", 0]);
+      expect(arrayRef.value()).toBeUndefined();
+
+      const objRef = new Ref(handle, ["emptyObj", "key"]);
+      expect(objRef.value()).toBeUndefined();
+    });
+
+    it("should handle null values in path", () => {
+      handle.change((d) => {
+        d.nullValue = null;
+        d.nested = { exists: "value" };
+      });
+
+      const nullRef = new Ref(handle, ["nullValue", "anything"]);
+      expect(nullRef.value()).toBeUndefined();
+
+      // Accessing missing key should also return undefined
+      const missingRef = new Ref(handle, ["nested", "missing", "more"]);
+      expect(missingRef.value()).toBeUndefined();
+    });
+
+    it("should handle ranges at various depths", () => {
+      handle.change((d) => {
+        d.texts = {
+          first: "Hello World",
+          second: "Goodbye Moon",
+        };
+      });
+
+      const ref1 = new Ref(handle, ["texts", "first", [0, 5]]);
+      expect(ref1.value()).toBe("Hello");
+
+      const ref2 = new Ref(handle, ["texts", "second", [8, 12]]);
+      expect(ref2.value()).toBe("Moon");
+    });
+
+    it("should handle all segment types in one path", () => {
+      handle.change((d) => {
+        d.root = {
+          items: [
+            { type: "text", content: "Hello World" },
+            { type: "text", content: "Foo Bar" },
+          ],
+        };
+      });
+
+      // key -> key -> query -> key -> range
+      const ref = new Ref(handle, [
+        "root",
+        "items",
+        { type: "text" },
+        "content",
+        [0, 5],
+      ]);
+
+      expect(ref.value()).toBe("Hello");
+    });
+
+    it("should have a dispose method for cleanup", async () => {
+      handle.change((d) => {
+        d.items = [{ id: "a" }, { id: "b" }];
+      });
+
+      const ref = new Ref(handle, ["items", 0]);
+      expect(ref.value()).toEqual({ id: "a" });
+
+      // Dispose is available (doesn't throw)
+      expect(() => ref.dispose()).not.toThrow();
+
+      // After disposal, internal listener is removed
+      // (the ref still works, but props won't auto-update)
+    });
+  });
 });
