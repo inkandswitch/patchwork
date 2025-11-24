@@ -204,7 +204,8 @@ export default function TenfoldExperience(props: {
                   tr.changes.empty &&
                   !tr.effects.length &&
                   start == "active" &&
-                  !after
+                  !after &&
+                  !tr.scrollIntoView
                 ) {
                   return [];
                 }
