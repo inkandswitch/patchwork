@@ -170,6 +170,12 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
 
     this.docHandle.change((doc: Doc<TDoc>) => {
+      // Root document change - behave like docHandle.change()
+      if (this.path.length === 0) {
+        fn(doc as InferRefType<TDoc, TPath>, this.#getContext());
+        return;
+      }
+
       const currentValue = this.#traverse(doc, this.path);
       const newValue = fn(
         currentValue as InferRefType<TDoc, TPath>,
@@ -387,8 +393,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         throw new Error("Range segments cannot be part of a property path");
 
       default:
-        const exhaustive: never = segment;
-        throw new Error(`Unknown segment kind: ${(exhaustive as any)[KIND]}`);
+        segment satisfies never;
+        throw new Error(`Unknown segment kind: ${segment[KIND]}`);
     }
   }
 
@@ -427,8 +433,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         return this.#getRange(container, [segment.start, segment.end]);
 
       default: {
-        const exhaustive: never = segment;
-        throw new Error(`Unknown segment kind: ${(exhaustive as any)[KIND]}`);
+        segment satisfies never;
+        throw new Error(`Unknown segment kind: ${segment[KIND]}`);
       }
     }
   }
@@ -446,7 +452,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   #getRange(
     text: string,
     range: [Automerge.Cursor, Automerge.Cursor] | [number, number]
-  ): string {
+  ): string | undefined {
     // Check if it's a numeric range (both elements are numbers)
     if (typeof range[0] === "number" && typeof range[1] === "number") {
       return text.slice(range[0], range[1]);
@@ -469,10 +475,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         range[1] as Automerge.Cursor
       );
 
-      if (start === undefined || end === undefined) return "";
+      if (start === undefined || end === undefined) return undefined;
       return text.slice(start, end);
     } catch (e) {
-      return "";
+      return undefined;
     }
   }
 
@@ -496,9 +502,70 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       case "index":
         parent[lastSegment.index] = value;
         break;
+      case "range":
+      case "stable_range": {
+        // Replace substring in text
+        if (typeof parent !== "string") {
+          throw new Error(
+            "Range segments can only be used on text/string values"
+          );
+        }
+
+        const currentText = parent;
+        let start: number;
+        let end: number;
+
+        if (lastSegment[KIND] === "range") {
+          start = lastSegment.start;
+          end = lastSegment.end;
+        } else {
+          // stable_range - resolve cursors to positions
+          const propPath = this.#toAutomergePath(doc, parentPath);
+          const startPos = Automerge.getCursorPosition(
+            doc,
+            propPath,
+            lastSegment.start
+          );
+          const endPos = Automerge.getCursorPosition(
+            doc,
+            propPath,
+            lastSegment.end
+          );
+
+          if (startPos === undefined || endPos === undefined) {
+            throw new Error("Cannot resolve cursor positions for range update");
+          }
+
+          start = startPos;
+          end = endPos;
+        }
+
+        // Try to use Automerge text operations if available
+        const propPath = this.#toAutomergePath(doc, parentPath);
+        const deleteCount = end - start;
+
+        try {
+          // Use Automerge splice for CRDT text
+          Automerge.splice(doc, propPath, start, deleteCount, value);
+        } catch {
+          // Fallback for regular strings - replace the whole string
+          const newText =
+            currentText.slice(0, start) + value + currentText.slice(end);
+          const grandparentPath = parentPath.slice(0, -1);
+          const parentSegment = parentPath[parentPath.length - 1];
+          const grandparent = this.#traverse(doc, grandparentPath);
+
+          if (parentSegment[KIND] === "key") {
+            grandparent[parentSegment.key] = newText;
+          } else if (parentSegment[KIND] === "index") {
+            grandparent[parentSegment.index] = newText;
+          }
+        }
+        break;
+      }
       default:
         throw new Error(
-          "Cannot set value: last segment must be a key or index"
+          "Cannot set value: last segment must be a key, index, or range"
         );
     }
   }
@@ -510,34 +577,38 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       return seg[KIND] !== "range" && seg[KIND] !== "stable_range";
     });
 
-    // Try to resolve path; if it fails partway, check patches against partial path
-    let refPropPath: Prop[] = [];
-    try {
-      refPropPath = this.#toAutomergePath(doc, nonRangeSegments);
-    } catch (e) {
-      // Resolution failed - try segment by segment to get partial path
-      let current: any = doc;
-      for (const segment of nonRangeSegments) {
-        if (current === undefined || current === null) break;
-        try {
-          const prop = this.#toAutomergeProp(current, segment);
-          refPropPath.push(prop);
-          current = current[prop];
-        } catch {
-          break; // Can't resolve further (e.g., ObjectId not found)
-        }
-      }
+    // Resolve as much of the path as possible
+    // This fires onChange when ref becomes invalid (parent changed) but not while it stays invalid
+    const refPropPath = this.#resolvePathBestEffort(doc, nonRangeSegments);
 
-      if (refPropPath.length === 0) return false;
+    // If we couldn't resolve any part, ref was never valid - don't fire
+    if (refPropPath.length === 0) return false;
+
+    return patches.some((patch) => this.#pathsOverlap(patch.path, refPropPath));
+  }
+
+  /**
+   * Resolve as much of the path as possible, stopping at the first unresolvable segment.
+   * Used for onChange to detect when a ref becomes invalid (fires once) vs stays invalid (silent).
+   */
+  #resolvePathBestEffort(doc: any, segments: Segment[]): Prop[] {
+    const propPath: Prop[] = [];
+    let current: any = doc;
+
+    for (const segment of segments) {
+      if (current === undefined || current === null) break;
+
+      try {
+        const prop = this.#toAutomergeProp(current, segment);
+        propPath.push(prop);
+        current = current[prop];
+      } catch {
+        // Can't resolve this segment (e.g., ObjectId not found) - stop here
+        break;
+      }
     }
 
-    for (const patch of patches) {
-      if (this.#pathsOverlap(patch.path, refPropPath)) {
-        return true;
-      }
-    }
-
-    return false;
+    return propPath;
   }
 
   #pathsOverlap(

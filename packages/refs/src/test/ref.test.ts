@@ -122,6 +122,110 @@ describe("Ref", () => {
       expect(themeRef.value()).toBe("dark");
       expect(handle.doc().user.settings.theme).toBe("dark");
     });
+
+    it("should change a substring using dynamic numeric range", () => {
+      handle.change((d) => {
+        d.message = "Hello world";
+      });
+
+      const rangeRef = new Ref(handle, ["message", at([0, 5])]);
+      expect(rangeRef.value()).toBe("Hello");
+
+      rangeRef.change(() => "Hi");
+
+      // The text is replaced at the range [0, 5]
+      expect(handle.doc().message).toBe("Hi world");
+      // The unstable range [0, 5] now points to "Hi wo" since we only have "Hi" at start
+      expect(rangeRef.value()).toBe("Hi wo");
+    });
+
+    it("should change a substring using auto-stabilized cursor range", () => {
+      handle.change((d) => {
+        d.text = "Hello world";
+      });
+
+      // This will auto-stabilize to cursor range
+      const rangeRef = new Ref(handle, ["text", [0, 5]]);
+      expect(rangeRef.path[1][KIND]).toBe("stable_range");
+      expect(rangeRef.value()).toBe("Hello");
+
+      rangeRef.change(() => "Goodbye");
+
+      const doc = handle.doc();
+      expect(doc.text).toBe("Goodbye world");
+    });
+
+    it("should handle range change in CRDT text", () => {
+      handle.change((d) => {
+        d.note = "Original text";
+      });
+
+      // Insert text before the range to test cursor stability
+      handle.change((d) => {
+        splice(d, ["note"], 0, 0, "Prefix: ");
+      });
+
+      expect(handle.doc().note).toBe("Prefix: Original text");
+
+      const rangeRef = new Ref(handle, ["note", [8, 16]]);
+      expect(rangeRef.value()).toBe("Original");
+
+      rangeRef.change(() => "Modified");
+
+      expect(handle.doc().note).toBe("Prefix: Modified text");
+    });
+
+    it("should replace range with empty string", () => {
+      handle.change((d) => {
+        d.text = "Hello world";
+      });
+
+      const rangeRef = new Ref(handle, ["text", at([6, 11])]);
+      expect(rangeRef.value()).toBe("world");
+
+      rangeRef.change(() => "");
+
+      expect(handle.doc().text).toBe("Hello ");
+    });
+
+    it("should replace range with longer text", () => {
+      handle.change((d) => {
+        d.text = "Hello world";
+      });
+
+      const rangeRef = new Ref(handle, ["text", at([6, 11])]);
+      rangeRef.change(() => "beautiful universe");
+
+      expect(handle.doc().text).toBe("Hello beautiful universe");
+    });
+
+    it("should throw when trying to change range on non-string value", () => {
+      handle.change((d) => {
+        d.items = [1, 2, 3];
+      });
+
+      const rangeRef = new Ref(handle, ["items", at([0, 2])]);
+
+      expect(() => {
+        rangeRef.change(() => "replacement");
+      }).toThrow("Range segments can only be used on text/string values");
+    });
+
+    it("should change root document directly", () => {
+      handle.change((d) => {
+        d.counter = 5;
+      });
+
+      const rootRef = new Ref(handle, []);
+      rootRef.change((doc: any) => {
+        doc.counter = 10;
+        doc.newField = "added";
+      });
+
+      const doc = handle.doc();
+      expect(doc.counter).toBe(10);
+      expect(doc.newField).toBe("added");
+    });
   });
 
   describe("url generation", () => {
