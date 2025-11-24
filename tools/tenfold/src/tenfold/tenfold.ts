@@ -294,6 +294,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
     if (dragType == "cell") {
       let i = mouseStart.i;
+      if (mouseStart.R > 0) i -= 3;
       opts.set(i, "x", clamp(denorm(lx)));
       opts.set(i, "y", clamp(denorm(ly)));
     } else if (dragType == "param" && dragParam != null) {
