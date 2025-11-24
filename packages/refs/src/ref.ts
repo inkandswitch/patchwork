@@ -42,11 +42,6 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   readonly range?: RangeSegment;
   readonly options: RefOptions;
 
-  // NOTE: this is a bit hacky. Would like some better options for this.
-  // Perhaps we can make the Automerge.splice and Automerge.updateText methods
-  // "just work" with refs. That seems like a better approach...
-  // TODO: also we should add tests that use handle.doc() as source of truth, not just the ref...
-  #ctx?: RefContext;
   #unsubscribe: () => void;
 
   constructor(
@@ -108,9 +103,9 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     const value = this.#getValueAt(doc, propPath);
 
-    return (this.range ? this.#extractRange(value, this.range) : value) as
-      | InferRefType<TDoc, TPath>
-      | undefined;
+    return (
+      this.range ? this.#extractRange(doc, propPath, value, this.range) : value
+    ) as InferRefType<TDoc, TPath> | undefined;
   }
 
   doc(): Doc<TDoc> {
@@ -132,38 +127,38 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     this.docHandle.change((doc: Doc<TDoc>) => {
       // Root document change - behave like docHandle.change()
       if (this.path.length === 0 && !this.range) {
-        fn(doc as InferRefType<TDoc, TPath>, this.#getContext());
+        fn(doc as InferRefType<TDoc, TPath>, this.#getContext(doc, []));
         return;
       }
 
-      const propPath = this.#getPropPath(true)!; // throws if unresolved, never undefined
+      // Resolve path (throws if unresolved)
+      const propPath = this.#getPropPath();
+      if (!propPath) throw new Error("Cannot resolve path");
 
+      // Get current value (unified)
+      let current: any;
       if (this.range) {
-        // Range mutation
         const parent = this.#getValueAt(doc, propPath);
         if (typeof parent !== "string") {
           throw new Error("Range refs can only be used on string values");
         }
-        const current = this.#extractRange(parent, this.range);
-        const newValue = fn(
-          current as InferRefType<TDoc, TPath>,
-          this.#getContext()
-        ) as string | undefined;
-
-        if (newValue !== undefined) {
-          this.#spliceRange(doc, propPath, this.range, newValue);
-        }
+        current = this.#extractRange(doc, propPath, parent, this.range);
       } else {
-        // Normal mutation
-        const current = this.#getValueAt(doc, propPath);
-        const newValue = fn(
-          current as InferRefType<TDoc, TPath>,
-          this.#getContext()
-        );
+        current = this.#getValueAt(doc, propPath);
+      }
 
-        if (newValue !== undefined) {
-          this.#setValueAt(doc, propPath, newValue);
-        }
+      // Call user function
+      const newValue = fn(
+        current as InferRefType<TDoc, TPath>,
+        this.#getContext(doc, propPath)
+      );
+      if (newValue === undefined) return;
+
+      // Apply change (dispatch by type)
+      if (this.range) {
+        this.#spliceRange(doc, propPath, this.range, newValue as string);
+      } else {
+        this.#setValueAt(doc, propPath, newValue);
       }
     });
   }
@@ -215,21 +210,19 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     this.#unsubscribe();
   }
 
-  #getContext(): RefContext {
-    return (this.#ctx ??= {
+  /**
+   * Create context helpers for the change callback.
+   * Operates on the current doc proxy within an active change transaction.
+   */
+  #getContext(doc: Doc<TDoc>, propPath: Prop[]): RefContext {
+    return {
       splice: (index: number, deleteCount: number, insert?: string) => {
-        this.docHandle.change((doc: Doc<TDoc>) => {
-          const propPath = this.#getPropPath(true)!;
-          Automerge.splice(doc, propPath, index, deleteCount, insert);
-        });
+        Automerge.splice(doc, propPath, index, deleteCount, insert);
       },
       updateText: (newValue: string) => {
-        this.docHandle.change((doc: Doc<TDoc>) => {
-          const propPath = this.#getPropPath(true)!;
-          Automerge.updateText(doc, propPath, newValue);
-        });
+        Automerge.updateText(doc, propPath, newValue);
       },
-    });
+    };
   }
 
   /**
@@ -437,19 +430,12 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
   /**
    * PRIMITIVE: Extract cached navigation path from segments.
-   * @param throwOnError - If true, throws when a segment can't be resolved. Otherwise returns undefined.
+   * Returns undefined if any segment can't be resolved.
    */
-  #getPropPath(throwOnError = false): Prop[] | undefined {
+  #getPropPath(): Prop[] | undefined {
     const props: Prop[] = [];
     for (const segment of this.path) {
-      if (segment.resolvedProp === undefined) {
-        if (throwOnError) {
-          throw new Error(
-            "Cannot resolve path: one or more segments are unresolved"
-          );
-        }
-        return undefined;
-      }
+      if (segment.resolvedProp === undefined) return undefined;
       props.push(segment.resolvedProp);
     }
     return props;
@@ -489,8 +475,13 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
    * PRIMITIVE: Extract substring from a text value using a range.
    * Returns undefined if the range can't be resolved.
    */
-  #extractRange(text: string, range: RangeSegment): string | undefined {
-    const positions = this.#getRangePositions(range);
+  #extractRange(
+    doc: Doc<TDoc>,
+    propPath: Prop[],
+    text: string,
+    range: RangeSegment
+  ): string | undefined {
+    const positions = this.#getRangePositions(doc, propPath, range);
     if (!positions) return undefined;
     return text.slice(positions[0], positions[1]);
   }
@@ -505,7 +496,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     range: RangeSegment,
     newValue: string
   ): void {
-    const positions = this.#getRangePositions(range);
+    const positions = this.#getRangePositions(doc, propPath, range);
     if (!positions) {
       throw new Error("Cannot resolve range positions");
     }
@@ -517,17 +508,17 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
    * PRIMITIVE: Convert a range segment to numeric [start, end] positions.
    * Handles both numeric ranges and cursor-based ranges.
    */
-  #getRangePositions(range: RangeSegment): [number, number] | undefined {
+  #getRangePositions(
+    doc: Doc<TDoc>,
+    propPath: Prop[],
+    range: RangeSegment
+  ): [number, number] | undefined {
     if (range[KIND] === "range") {
       // Already numeric
       return [range.start, range.end];
     }
 
     // stable_range - resolve cursors to positions
-    const doc = this.doc();
-    const propPath = this.#getPropPath();
-    if (!propPath) return undefined;
-
     const start = Automerge.getCursorPosition(doc, propPath, range.start);
     const end = Automerge.getCursorPosition(doc, propPath, range.end);
 
