@@ -10,7 +10,6 @@ import type {
   RangeSegment,
   PathInput,
   RefOptions,
-  RefContext,
   InferRefType,
   ChangeFn,
 } from "./types";
@@ -22,6 +21,7 @@ import {
   stringifyAutomergeRefUrl,
   type AutomergeRefUrl,
 } from "./parser";
+import { MutableText } from "./mutable-text";
 
 /**
  * A reference to a location in an Automerge document.
@@ -117,6 +117,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
    *
    * Primitives: return new value to update, void to skip.
    * Objects/arrays: mutate in place, return void.
+   * Strings: receive MutableText with splice/updateText methods.
    */
   change(fn: ChangeFn<InferRefType<TDoc, TPath>>): void {
     if (this.options.heads) {
@@ -125,7 +126,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     this.docHandle.change((doc: Doc<TDoc>) => {
       if (this.path.length === 0 && !this.range) {
-        fn(doc as InferRefType<TDoc, TPath>, this.#getContext(doc, []));
+        fn(doc as any);
         return;
       }
 
@@ -143,10 +144,13 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         current = this.#getValueAt(doc, propPath);
       }
 
-      const newValue = fn(
-        current as InferRefType<TDoc, TPath>,
-        this.#getContext(doc, propPath)
-      );
+      // If current is a string, wrap it in MutableText
+      const valueToPass =
+        typeof current === "string"
+          ? MutableText(doc, propPath, current)
+          : current;
+
+      const newValue = fn(valueToPass as any);
       if (newValue === undefined) return;
 
       if (this.range) {
@@ -201,18 +205,6 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   /** Clean up and unsubscribe from document changes */
   dispose(): void {
     this.#unsubscribe();
-  }
-
-  /** Create context helpers (change-only: operates on the doc proxy) */
-  #getContext(doc: Doc<TDoc>, propPath: Prop[]): RefContext {
-    return {
-      splice: (index: number, deleteCount: number, insert?: string) => {
-        Automerge.splice(doc, propPath, index, deleteCount, insert);
-      },
-      updateText: (newValue: string) => {
-        Automerge.updateText(doc, propPath, newValue);
-      },
-    };
   }
 
   /**

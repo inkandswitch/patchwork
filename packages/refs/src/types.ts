@@ -37,8 +37,13 @@ export interface RefOptions {
   heads?: Heads;
 }
 
-/** Context object with helpers for Automerge text operations */
-export interface RefContext {
+/**
+ * Mutable text wrapper that provides Automerge text operations.
+ * Passed to change callbacks when the ref points to a string value.
+ *
+ * Behaves like a string with two additional mutation methods.
+ */
+export interface MutableText extends String {
   splice(index: number, deleteCount: number, insert?: string): void;
   updateText(newValue: string): void;
 }
@@ -46,15 +51,15 @@ export interface RefContext {
 /**
  * Change function signature.
  * Return a new value to update primitive values, or void to skip the update.
+ * For strings, receives a MutableText object with splice/updateText methods.
  */
-export type ChangeFn<T> = (val: T, ctx: RefContext) => T | void;
+export type ChangeFn<T> = (val: T extends string ? MutableText : T) => T | void;
 
 type GetSegmentValue<TObj, TSegment> = TSegment extends string
   ? TSegment extends keyof TObj
     ? TObj[TSegment]
     : unknown
-  : // Check ranges before Record<string, any> (tuples extend objects)
-    TSegment extends readonly [number, number]
+  : TSegment extends readonly [number, number]
     ? TObj extends string
       ? string
       : TObj extends readonly (infer E)[]
@@ -64,9 +69,7 @@ type GetSegmentValue<TObj, TSegment> = TSegment extends string
       ? TObj extends readonly (infer E)[]
         ? E
         : unknown
-      : TSegment extends Segment
-        ? unknown
-        : unknown;
+      : unknown;
 
 /** Recursively infer type by traversing path through document */
 export type PathValue<TDoc, TPath extends readonly any[]> = TPath extends []

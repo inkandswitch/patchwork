@@ -4,7 +4,9 @@ export type {
   RangeSegment,
   PathInput,
   RefOptions,
-  RefContext,
+  MutableText,
+  ChangeFn,
+  InferRefType,
 } from "./types";
 
 export { Ref } from "./ref";
