@@ -387,34 +387,34 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     begin() {
       newPath = true;
     },
-    move(x: number, y: number) {
+    move(x = 0, y = 0) {
       ctx.moveTo(x, y);
       newPath = false;
     },
-    line(x: number, y: number) {
+    line(x = 0, y = 0) {
       if (newPath) {
         api.move(x, y);
       } else {
         ctx.lineTo(x, y);
       }
     },
-    rect(x: number, y: number, w: number, h: number) {
+    rect(x = -1, y = -1, w = 2, h = 2) {
       ctx.moveTo(x, y);
       ctx.rect(x, y, w, h);
       newPath = true;
     },
-    circle(x: number, y: number, r: number) {
+    circle(x = 0, y = 0, r = 1) {
       ctx.moveTo(x + r, y);
       api.arc(x, y, Math.abs(r));
       newPath = true;
     },
-    arc(x: number, y: number, r: number, start = 0, end = 1, ccw = false) {
+    arc(x = 0, y = 0, r = 1, start = 0, end = 1, ccw = false) {
       ctx.arc(x, y, Math.abs(r), start * TAU, end * TAU, ccw);
     },
-    quadratic(cx, cy, x, y) {
+    quadratic(cx:number, cy:number, x:number, y:number) {
       ctx.quadraticCurveTo(cx, cy, x, y);
     },
-    cubic(cx1, cy1, cx2, cy2, x, y) {
+    cubic(cx1:number, cy1:number, cx2:number, cy2:number, x:number, y:number) {
       ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x, y);
     },
     text(
@@ -452,7 +452,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   }
 
   let mappers = Array.from("INKSWITCH");
-  let lastT;
+  let lastT: number;
 
   let stop = false;
   function update(ms: number) {
