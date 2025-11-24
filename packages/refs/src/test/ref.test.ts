@@ -286,9 +286,9 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["todos", 0]);
       const url = ref.url;
 
-      // Should have ObjectId with $ prefix (ObjectIds contain @ symbols)
-      expect(url).toMatch(/^automerge:[^/]+\/todos\/\$[\d]+@[a-f0-9]+$/);
-      expect(url).toContain("$"); // ObjectId marker
+      // Should have ObjectId with : prefix (ObjectIds contain @ symbols)
+      expect(url).toMatch(/^automerge:[^/]+\/todos\/:[\d]+@[a-f0-9]+$/);
+      expect(url).toContain(":"); // ObjectId marker
     });
 
     it("should format deep paths with mixed segments", () => {
@@ -306,7 +306,7 @@ describe("Ref", () => {
       // Should have board ObjectId, columns, column ObjectId, name
       // ObjectIds have format: number@hash
       expect(url).toMatch(
-        /^automerge:[^/]+\/boards\/\$\d+@[a-f0-9]+\/columns\/\$\d+@[a-f0-9]+\/name$/
+        /^automerge:[^/]+\/boards\/:\d+@[a-f0-9]+\/columns\/:\d+@[a-f0-9]+\/name$/
       );
     });
 
@@ -319,10 +319,10 @@ describe("Ref", () => {
       const url = ref.url;
 
       // Dynamic range should use numeric format
-      expect(url).toBe(`automerge:${handle.documentId}/text/0-5`);
+      expect(url).toBe(`automerge:${handle.documentId}/text/0..5`);
     });
 
-    it("should format cursor ranges with $ prefix", () => {
+    it("should format cursor ranges with : prefix", () => {
       handle.change((d) => {
         d.note = "Hello World";
       });
@@ -330,12 +330,12 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["note", [0, 5]]);
       const url = ref.url;
 
-      // Stable range should use cursor format with $ prefix
+      // Stable range should use cursor format with : prefix
       // Cursors have format: number@hash
       expect(url).toMatch(
-        /^automerge:[^/]+\/note\/\$\d+@[a-f0-9]+-\$\d+@[a-f0-9]+$/
+        /^automerge:[^/]+\/note\/:\d+@[a-f0-9]+\.\.:\d+@[a-f0-9]+$/
       );
-      expect(url).toContain("$"); // Cursor markers
+      expect(url).toContain(":"); // Cursor markers
     });
 
     it("should format where clauses as JSON", () => {
@@ -358,9 +358,9 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["items", { id: "b" }]);
       const url = ref.url;
 
-      // Stabilized where clause should become ObjectId with $ prefix
-      expect(url).toMatch(/^automerge:[^/]+\/items\/\$\d+@[a-f0-9]+$/);
-      expect(url).toContain("$");
+      // Stabilized where clause should become ObjectId with : prefix
+      expect(url).toMatch(/^automerge:[^/]+\/items\/:\d+@[a-f0-9]+$/);
+      expect(url).toContain(":");
     });
 
     it("should handle complex nested structures", () => {
@@ -383,7 +383,7 @@ describe("Ref", () => {
       expect(url).toContain("/app/users/");
       expect(url).toContain("/posts/");
       expect(url).toContain("/title");
-      expect(url).toMatch(/\$[a-zA-Z0-9]+/); // Should have ObjectIds
+      expect(url).toMatch(/:[a-zA-Z0-9]+/); // Should have ObjectIds
     });
 
     it("should generate consistent URLs for same path", () => {
@@ -419,7 +419,7 @@ describe("Ref", () => {
       // Should have ObjectId for docs[0] and cursor range for text
       // Format: number@hash for both ObjectIds and cursors
       expect(url).toMatch(
-        /^automerge:[^/]+\/docs\/\$\d+@[a-f0-9]+\/content\/\$\d+@[a-f0-9]+-\$\d+@[a-f0-9]+$/
+        /^automerge:[^/]+\/docs\/:\d+@[a-f0-9]+\/content\/:\d+@[a-f0-9]+\.\.:\d+@[a-f0-9]+$/
       );
     });
 
@@ -431,12 +431,12 @@ describe("Ref", () => {
       const stableRef = new Ref(handle, ["items", 0]);
       const dynamicRef = new Ref(handle, ["items", at(0)]);
 
-      // Stable should have ObjectId ($...)
-      expect(stableRef.url).toContain("$");
+      // Stable should have ObjectId (:...)
+      expect(stableRef.url).toMatch(/\/:\d+@[a-f0-9]+$/); // Path ends with ObjectId
 
       // Dynamic should just have number
       expect(dynamicRef.url).toBe(`automerge:${handle.documentId}/items/0`);
-      expect(dynamicRef.url).not.toMatch(/\$[a-zA-Z0-9]+/);
+      expect(dynamicRef.url).not.toMatch(/\/:[a-zA-Z0-9]+/); // No ObjectId in path
     });
 
     it("should handle primitives in arrays (no ObjectId)", () => {
@@ -847,7 +847,7 @@ describe("Ref", () => {
         splice(d, ["text"], 0, 0, ">> ");
       });
 
-      // Dynamic range still at positions 0-5 (now "> Hel")
+      // Dynamic range still at positions 0..5 (now "> Hel")
       expect(dynamicRef.value()).toBe(">> He");
     });
   });

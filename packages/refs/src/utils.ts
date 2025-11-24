@@ -52,6 +52,32 @@ export async function findRef<T = any>(
   return Ref.fromUrl(handle as DocHandle<T>, url);
 }
 
+/**
+ * Shallow equality check for plain objects.
+ * Compares only own enumerable properties.
+ *
+ * @internal
+ */
+export function shallowEqual(
+  a: Record<string, any>,
+  b: Record<string, any>
+): boolean {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+
+  if (aKeys.length !== bKeys.length) return false;
+
+  return aKeys.every((key) => a[key] === b[key]);
+}
+
+/**
+ * Check if an item matches an ID pattern.
+ *
+ * Note: This performs shallow equality checks only. Nested objects
+ * are compared by reference, not by deep value equality.
+ *
+ * @internal
+ */
 export function matchesIdPattern(
   item: any,
   idPattern: Record<string, any>

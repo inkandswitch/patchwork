@@ -3,6 +3,8 @@ import type { Segment } from "./types";
 import { KIND } from "./types";
 
 const URL_PREFIX = "automerge:";
+const ID_PREFIX = ":";
+const RANGE_SEPARATOR = "..";
 
 /**
  * Branded type for Automerge ref URLs.
@@ -15,8 +17,8 @@ export type AutomergeRefUrl = string & { readonly __brand: "AutomergeRefUrl" };
  *
  * @example
  * parsePath("todos/0/title") → [{ kind: "key", key: "todos" }, ...]
- * parsePath("todos/$abc123") → [{ kind: "key", key: "todos" }, { kind: "stable_index", id: "abc123" }]
- * parsePath("note/0-10") → [..., { kind: "range", start: 0, end: 10 }]
+ * parsePath("todos/:abc123") → [{ kind: "key", key: "todos" }, { kind: "stable_index", id: "abc123" }]
+ * parsePath("note/0..10") → [..., { kind: "range", start: 0, end: 10 }]
  */
 export function parsePath(path: string): Segment[] {
   if (!path) return [];
@@ -36,13 +38,13 @@ export function parsePath(path: string): Segment[] {
  * Parse a single path segment string into a Segment object.
  */
 export function parseSegment(segment: string): Segment {
-  // Check for range (contains dash): "0-10" or "$cursor1-$cursor2"
-  if (segment.includes("-")) {
+  // Check for range (contains double-dot): "0..10" or ":cursor1..:cursor2"
+  if (segment.includes(RANGE_SEPARATOR)) {
     return parseRange(segment);
   }
 
-  if (segment.startsWith("$")) {
-    return { [KIND]: "stable_index", id: segment.slice(1) };
+  if (segment.startsWith(ID_PREFIX)) {
+    return { [KIND]: "stable_index", id: segment.slice(ID_PREFIX.length) };
   }
 
   if (segment.startsWith("{")) {
@@ -57,22 +59,24 @@ export function parseSegment(segment: string): Segment {
 }
 
 /**
- * Parse a range segment like "0-10" or "$cursor1-$cursor2".
+ * Parse a range segment like "0..10" or ":cursor1..:cursor2".
  */
 export function parseRange(segment: string): Segment {
-  const parts = segment.split("-");
+  const parts = segment.split(RANGE_SEPARATOR);
 
   if (parts.length !== 2) {
-    throw new Error(`Invalid range: ${segment}. Expected format: "start-end"`);
+    throw new Error(
+      `Invalid range: ${segment}. Expected format: "start${RANGE_SEPARATOR}end"`
+    );
   }
 
   const [first, second] = parts;
 
-  if (first.startsWith("$") && second.startsWith("$")) {
+  if (first.startsWith(ID_PREFIX) && second.startsWith(ID_PREFIX)) {
     return {
       [KIND]: "stable_range",
-      start: first.slice(1) as Automerge.Cursor,
-      end: second.slice(1) as Automerge.Cursor,
+      start: first.slice(ID_PREFIX.length) as Automerge.Cursor,
+      end: second.slice(ID_PREFIX.length) as Automerge.Cursor,
     };
   }
 
@@ -110,16 +114,16 @@ export function serializeSegment(segment: Segment): string {
       return String(segment.index);
 
     case "stable_index":
-      return `$${segment.id}`;
+      return `${ID_PREFIX}${segment.id}`;
 
     case "query":
       return JSON.stringify(segment.idPattern);
 
     case "range":
-      return `${segment.start}-${segment.end}`;
+      return `${segment.start}${RANGE_SEPARATOR}${segment.end}`;
 
     case "stable_range":
-      return `$${segment.start}-$${segment.end}`;
+      return `${ID_PREFIX}${segment.start}${RANGE_SEPARATOR}${ID_PREFIX}${segment.end}`;
 
     default:
       segment satisfies never;

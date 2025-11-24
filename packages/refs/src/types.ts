@@ -88,10 +88,3 @@ export type InferRefType<TDoc, TPath extends readonly any[]> = PathValue<
   TDoc,
   TPath
 >;
-
-/** Use explicit T if provided, otherwise infer from TDoc and TPath */
-export type ResolveRefType<
-  T,
-  TDoc,
-  TPath extends readonly any[],
-> = 0 extends 1 & T ? InferRefType<TDoc, TPath> : T;

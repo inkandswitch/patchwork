@@ -15,7 +15,7 @@ import type {
 } from "./types";
 import { KIND } from "./types";
 import { isSegment, isPlainObject } from "./guards";
-import { matchesIdPattern } from "./utils";
+import { matchesIdPattern, shallowEqual } from "./utils";
 import {
   parseAutomergeRefUrl,
   stringifyAutomergeRefUrl,
@@ -255,34 +255,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     // Check if all segments match
     for (let i = 0; i < this.path.length; i++) {
-      const thisSeg = this.path[i];
-      const otherSeg = other.path[i];
-
-      if (thisSeg[KIND] !== otherSeg[KIND]) {
+      if (!this.#segmentsEqual(this.path[i], other.path[i])) {
         return false;
-      }
-
-      switch (thisSeg[KIND]) {
-        case "key":
-          if (thisSeg.key !== (otherSeg as typeof thisSeg).key) return false;
-          break;
-        case "index":
-          if (thisSeg.index !== (otherSeg as typeof thisSeg).index)
-            return false;
-          break;
-        case "stable_index":
-          if (thisSeg.id !== (otherSeg as typeof thisSeg).id) return false;
-          break;
-        case "query":
-          if (
-            JSON.stringify(thisSeg.idPattern) !==
-            JSON.stringify((otherSeg as typeof thisSeg).idPattern)
-          )
-            return false;
-          break;
-        default:
-          thisSeg satisfies never;
-          return false;
       }
     }
 
@@ -324,34 +298,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
 
     for (let i = 0; i < this.path.length; i++) {
-      const thisSeg = this.path[i];
-      const otherSeg = other.path[i];
-
-      if (thisSeg[KIND] !== otherSeg[KIND]) {
+      if (!this.#segmentsEqual(this.path[i], other.path[i])) {
         return false;
-      }
-
-      switch (thisSeg[KIND]) {
-        case "key":
-          if (thisSeg.key !== (otherSeg as typeof thisSeg).key) return false;
-          break;
-        case "index":
-          if (thisSeg.index !== (otherSeg as typeof thisSeg).index)
-            return false;
-          break;
-        case "stable_index":
-          if (thisSeg.id !== (otherSeg as typeof thisSeg).id) return false;
-          break;
-        case "query":
-          if (
-            JSON.stringify(thisSeg.idPattern) !==
-            JSON.stringify((otherSeg as typeof thisSeg).idPattern)
-          )
-            return false;
-          break;
-        default:
-          thisSeg satisfies never;
-          return false;
       }
     }
 
@@ -487,6 +435,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     for (const segment of this.path) {
       const resolvedProp = this.#resolveSegmentProp(current, segment);
+      // Internal mutation: Update cached resolvedProp for efficient path resolution.
+      // Safe because segments are owned by this Ref instance.
       (segment as any).resolvedProp = resolvedProp;
 
       if (
@@ -498,6 +448,30 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       } else {
         break;
       }
+    }
+  }
+
+  /**
+   * Check if two PathSegments are equal.
+   * Used by `contains` and `overlaps` methods.
+   */
+  #segmentsEqual(a: PathSegment, b: PathSegment): boolean {
+    if (a[KIND] !== b[KIND]) {
+      return false;
+    }
+
+    switch (a[KIND]) {
+      case "key":
+        return a.key === (b as typeof a).key;
+      case "index":
+        return a.index === (b as typeof a).index;
+      case "stable_index":
+        return a.id === (b as typeof a).id;
+      case "query":
+        return shallowEqual(a.idPattern, (b as typeof a).idPattern);
+      default:
+        a satisfies never;
+        return false;
     }
   }
 
@@ -598,7 +572,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   #setValueAt(container: any, propPath: Prop[], value: any): void {
     if (propPath.length === 0) {
       throw new Error(
-        "Cannot replace root via setValueAt - use docHandle.change() directly"
+        "Internal error: #setValueAt called with empty path. " +
+          "Root document changes should be handled by the caller."
       );
     }
     const parent = this.#getValueAt(container, propPath.slice(0, -1));
@@ -619,6 +594,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     if (!positions) {
       throw new Error("Cannot resolve range positions");
     }
+
     const [start, end] = positions;
     Automerge.splice(doc, propPath, start, end - start, newValue);
   }
