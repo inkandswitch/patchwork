@@ -2150,6 +2150,9 @@ importers:
       '@replit/codemirror-vim':
         specifier: ^6.3.0
         version: 6.3.0(@codemirror/commands@6.9.0)(@codemirror/language@6.11.3)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.6)
+      '@solid-primitives/keyboard':
+        specifier: ^1.3.3
+        version: 1.3.3(solid-js@1.9.9)
       '@typescript/ata':
         specifier: ^0.9.8
         version: 0.9.8(typescript@5.9.3)
@@ -4450,6 +4453,11 @@ packages:
 
   '@solid-primitives/event-listener@2.4.3':
     resolution: {integrity: sha512-h4VqkYFv6Gf+L7SQj+Y6puigL/5DIi7x5q07VZET7AWcS+9/G3WfIE9WheniHWJs51OEkRB43w6lDys5YeFceg==}
+    peerDependencies:
+      solid-js: ^1.6.12
+
+  '@solid-primitives/keyboard@1.3.3':
+    resolution: {integrity: sha512-9dQHTTgLBqyAI7aavtO+HnpTVJgWQA1ghBSrmLtMu1SMxLPDuLfuNr+Tk5udb4AL4Ojg7h9JrKOGEEDqsJXWJA==}
     peerDependencies:
       solid-js: ^1.6.12
 
@@ -8965,6 +8973,13 @@ snapshots:
 
   '@solid-primitives/event-listener@2.4.3(solid-js@1.9.9)':
     dependencies:
+      '@solid-primitives/utils': 6.3.2(solid-js@1.9.9)
+      solid-js: 1.9.9
+
+  '@solid-primitives/keyboard@1.3.3(solid-js@1.9.9)':
+    dependencies:
+      '@solid-primitives/event-listener': 2.4.3(solid-js@1.9.9)
+      '@solid-primitives/rootless': 1.5.2(solid-js@1.9.9)
       '@solid-primitives/utils': 6.3.2(solid-js@1.9.9)
       solid-js: 1.9.9
 

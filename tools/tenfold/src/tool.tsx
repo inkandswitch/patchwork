@@ -19,7 +19,12 @@ import {
 import font from "./font.txt?raw";
 import { javascript } from "@codemirror/lang-javascript";
 import { noirTheme } from "./codemirror/theme.ts";
-import { defaultKeymap, indentWithTab } from "@codemirror/commands";
+import {
+  defaultKeymap,
+  indentWithTab,
+  history,
+  historyKeymap,
+} from "@codemirror/commands";
 import { keymap } from "@codemirror/view";
 import { type WorkerShape } from "@valtown/codemirror-ts/worker";
 import * as Comlink from "comlink";
@@ -33,6 +38,7 @@ import {
   tsTwoslash,
 } from "@valtown/codemirror-ts";
 import { autocompletion } from "@codemirror/autocomplete";
+import { vim } from "@replit/codemirror-vim";
 
 const innerWorker = new Worker(
   new URL("./codemirror/worker.ts", import.meta.url),
@@ -138,21 +144,43 @@ export default function TenfoldExperience(props: {
     });
   }
 
+  const [withVim, setWithVim] = createSignal(false);
+
   return (
     <Suspense>
       <article class="tenfold" ref={setCanvas}>
         <canvas></canvas>
         <aside>
           <div>
-            <Show
-              when={lettersDocHandle() && editing() != null && path().length}
-            >
+            <Show when={lettersDocHandle.latest && path().length}>
               <button onClick={() => fork()}>F</button>
               <CodeMirror
-                handle={lettersDocHandle()}
+                handle={lettersDocHandle.latest}
                 path={path()}
                 extensions={[
-                  keymap.of([indentWithTab, ...defaultKeymap]),
+                  withVim() ? vim() : [],
+                  keymap.of([
+                    indentWithTab,
+                    {
+                      preventDefault: true,
+                      mac: "m-s",
+                      key: "c-s",
+                      run() {
+                        return true;
+                      },
+                    },
+                    {
+                      preventDefault: true,
+                      key: "m-c-v",
+                      run() {
+                        setWithVim((prev) => !prev);
+                        return true;
+                      },
+                    },
+                    ...defaultKeymap,
+                    ...historyKeymap,
+                  ]),
+                  history(),
                   javascript(),
                   noirTheme,
                   tsFacet.of({
@@ -161,15 +189,7 @@ export default function TenfoldExperience(props: {
                   }),
                   autocompletion({ override: [tsAutocomplete()] }),
                   tsSync(),
-                  tsGoto({
-                    gotoHandler(path, hover, view) {
-                      const fileName = hover.typeDef?.[0]?.fileName;
-                      if (fileName?.startsWith("/automerge:")) {
-                        location.hash = fileName.slice(1);
-                      }
-                      return undefined;
-                    },
-                  }),
+                  tsGoto(),
                   tsHover(),
                   tsTwoslash(),
                   tsLinterWorker(),

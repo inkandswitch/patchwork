@@ -10,6 +10,7 @@ import fsMap from "./libmap/_map.ts";
 const compilerOptions = {
   target: ts.ScriptTarget.ESNext,
   moduleResolution: ts.ModuleResolutionKind.Bundler,
+  moduleDetection: ts.ModuleDetectionKind.Force,
   allowImportingTsExtensions: true,
   lib: ["esnext", "tenfold"],
   module: ts.ModuleKind.ESNext,
@@ -17,7 +18,9 @@ const compilerOptions = {
   checkJs: true,
   noEmit: true,
   composite: true,
-  strict: true,
+  strict: false,
+  noImplicitAny: false,
+  isolatedModules: true,
 } as ts.CompilerOptions;
 
 const vfs = (async function () {
