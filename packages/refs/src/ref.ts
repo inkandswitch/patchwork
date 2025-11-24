@@ -246,27 +246,20 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
   /** Normalize path inputs and extract stable IDs where possible */
   #normalizePath(doc: Doc<TDoc>, inputs: PathInput[]): Segment[] {
-    const result: Segment[] = [];
     let currentPath: Segment[] = [];
 
-    for (const input of inputs) {
-      let segment: Segment;
+    return inputs.map((input) => {
+      const segment = isSegment(input)
+        ? input
+        : this.#normalizeInput(
+            doc,
+            currentPath,
+            input as Exclude<PathInput, Segment>
+          );
 
-      if (isSegment(input)) {
-        segment = input;
-      } else {
-        segment = this.#normalizeInput(
-          doc,
-          currentPath,
-          input as Exclude<PathInput, Segment>
-        );
-      }
-
-      result.push(segment);
       currentPath.push(segment);
-    }
-
-    return result;
+      return segment;
+    });
   }
 
   #normalizeInput(
@@ -430,10 +423,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         );
 
       case "range":
-        return this.#getRange(container, [segment.start, segment.end]);
-
       case "stable_range":
-        return this.#getRange(container, [segment.start, segment.end]);
+        return this.#getRange(container, [segment.start, segment.end] as
+          | [Cursor, Cursor]
+          | [number, number]);
 
       default:
         segment satisfies never;
@@ -450,26 +443,38 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       return text.slice(range[0], range[1]);
     }
 
-    // Otherwise it's a cursor range
-    try {
-      const doc = this.doc();
-      const textPath = this.path.slice(0, -1);
-      const propPath = this.#toAutomergePath(doc, textPath);
+    // Otherwise it's a cursor range - resolve to positions
+    const doc = this.doc();
+    const textPath = this.path.slice(0, -1);
+    const positions = this.#resolveCursorRange(
+      doc,
+      textPath,
+      range[0] as Cursor,
+      range[1] as Cursor
+    );
 
-      const start = Automerge.getCursorPosition(
-        doc,
-        propPath,
-        range[0] as Automerge.Cursor
-      );
-      const end = Automerge.getCursorPosition(
-        doc,
-        propPath,
-        range[1] as Automerge.Cursor
-      );
+    if (!positions) return undefined;
+    return text.slice(positions[0], positions[1]);
+  }
+
+  /**
+   * Resolve cursor range to numeric positions.
+   * Returns undefined if cursors are invalid or path cannot be resolved.
+   */
+  #resolveCursorRange(
+    doc: Doc<TDoc>,
+    path: Segment[],
+    startCursor: Cursor,
+    endCursor: Cursor
+  ): [number, number] | undefined {
+    try {
+      const propPath = this.#toAutomergePath(doc, path);
+      const start = Automerge.getCursorPosition(doc, propPath, startCursor);
+      const end = Automerge.getCursorPosition(doc, propPath, endCursor);
 
       if (start === undefined || end === undefined) return undefined;
-      return text.slice(start, end);
-    } catch (e) {
+      return [start, end];
+    } catch {
       return undefined;
     }
   }
@@ -511,24 +516,16 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
           end = lastSegment.end;
         } else {
           // stable_range - resolve cursors to positions
-          const propPath = this.#toAutomergePath(doc, parentPath);
-          const startPos = Automerge.getCursorPosition(
+          const positions = this.#resolveCursorRange(
             doc,
-            propPath,
-            lastSegment.start
-          );
-          const endPos = Automerge.getCursorPosition(
-            doc,
-            propPath,
+            parentPath,
+            lastSegment.start,
             lastSegment.end
           );
-
-          if (startPos === undefined || endPos === undefined) {
+          if (!positions) {
             throw new Error("Cannot resolve cursor positions for range update");
           }
-
-          start = startPos;
-          end = endPos;
+          [start, end] = positions;
         }
 
         // Replace the text range using Automerge splice
@@ -590,14 +587,9 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     refPropPath: Automerge.Prop[]
   ): boolean {
     const minLength = Math.min(patchPath.length, refPropPath.length);
-
-    for (let i = 0; i < minLength; i++) {
-      if (patchPath[i] !== refPropPath[i]) {
-        return false;
-      }
-    }
-
-    return true;
+    return patchPath
+      .slice(0, minLength)
+      .every((prop, i) => prop === refPropPath[i]);
   }
 
   #serialize(segment: Segment): string {
