@@ -462,10 +462,7 @@ describe("Ref", () => {
       const url = ref1.url;
 
       // Parse URL and create new ref
-      const ref2 = Ref.fromUrl(
-        handle,
-        url.split("/").slice(1).join("/").split("#")[0]
-      );
+      const ref2 = Ref.fromUrl(handle, url);
 
       // Both refs should have identical URLs (stable reference)
       expect(ref2.url).toBe(ref1.url);
@@ -485,11 +482,8 @@ describe("Ref", () => {
       const originalRef = new Ref(handle, ["items", 1, "name"]);
       const url = originalRef.url;
 
-      // Extract just the path part (without automerge: and docId)
-      const pathPart = url.split("/").slice(1).join("/");
-
       // Parse from URL
-      const parsedRef = Ref.fromUrl(handle, pathPart);
+      const parsedRef = Ref.fromUrl(handle, url);
 
       // Delete the item at index 1
       // The refs should no longer resolve since the object is gone
@@ -515,8 +509,7 @@ describe("Ref", () => {
       const url = ref1.url;
 
       // Parse from URL
-      const pathPart = url.split("/").slice(1).join("/");
-      const ref2 = Ref.fromUrl(handle, pathPart);
+      const ref2 = Ref.fromUrl(handle, url);
 
       // Should have same cursor range
       expect(ref2.url).toBe(ref1.url);
@@ -541,15 +534,15 @@ describe("Ref", () => {
 
       // Round-trip 1
       const url1 = ref1.url;
-      const ref2 = Ref.fromUrl(handle, url1.split("/").slice(1).join("/"));
+      const ref2 = Ref.fromUrl(handle, url1);
 
       // Round-trip 2
       const url2 = ref2.url;
-      const ref3 = Ref.fromUrl(handle, url2.split("/").slice(1).join("/"));
+      const ref3 = Ref.fromUrl(handle, url2);
 
       // Round-trip 3
       const url3 = ref3.url;
-      const ref4 = Ref.fromUrl(handle, url3.split("/").slice(1).join("/"));
+      const ref4 = Ref.fromUrl(handle, url3);
 
       // All URLs should be identical (this is the key invariant)
       expect(url1).toBe(url2);

@@ -2,6 +2,7 @@ import { DocHandle, Repo } from "@automerge/automerge-repo";
 import type { Segment } from "./types";
 import { KIND } from "./types";
 import { Ref } from "./ref";
+import { parseUrl } from "./parser";
 
 /**
  * Prevent stabilization for a path segment.
@@ -44,16 +45,11 @@ export async function findRef<T = any>(
   repo: Repo,
   url: string
 ): Promise<Ref<T>> {
-  const urlMatch = url.match(/^automerge:([^/#]+)(?:\/([^#]*))?(?:#(.+))?$/);
-  if (!urlMatch) {
-    throw new Error(`Invalid Automerge URL: ${url}`);
-  }
-
-  const [, docId, pathStr, headsStr] = urlMatch;
+  const { docId } = parseUrl(url);
   const handle = await repo.find(docId as any);
   await handle.whenReady();
 
-  return Ref.fromUrl(handle as DocHandle<T>, pathStr || "", headsStr);
+  return Ref.fromUrl(handle as DocHandle<T>, url);
 }
 
 export function matchesWhereClause(

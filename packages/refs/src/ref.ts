@@ -15,6 +15,7 @@ import type {
 import { KIND } from "./types";
 import { isSegment, isPlainObject } from "./guards";
 import { matchesWhereClause } from "./utils";
+import { parseUrl, serializeUrl } from "./parser";
 
 /**
  * A reference to a location in an Automerge document.
@@ -56,83 +57,22 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return this.options.heads;
   }
 
-  /** Parse a ref from a URL string */
+  /**
+   * Parse a ref from an Automerge URL string.
+   *
+   * @param handle - The document handle to use
+   * @param url - Full automerge URL like "automerge:docId/path#heads"
+   *
+   * @example
+   * Ref.fromUrl(handle, "automerge:abc/todos/0#head1,head2")
+   */
   static fromUrl<TDoc = any>(
     handle: DocHandle<TDoc>,
-    path: string,
-    heads?: string
+    url: string
   ): Ref<TDoc, PathInput[]> {
-    const segments = path ? Ref.#parsePath(path) : [];
-    const options: RefOptions = heads ? { heads: heads.split(",") } : {};
+    const { segments, heads } = parseUrl(url);
+    const options: RefOptions = heads ? { heads } : {};
     return new Ref<TDoc, PathInput[]>(handle, segments, options);
-  }
-
-  static #parsePath(path: string): Segment[] {
-    if (!path || path === "/") return [];
-
-    return path.split("/").map((segment): Segment => {
-      if (!segment) {
-        throw new Error("Invalid path: empty segment");
-      }
-      return this.#parse(segment);
-    });
-  }
-
-  static #parse(segment: string): Segment {
-    if (segment.startsWith("$")) {
-      return { [KIND]: "stable_index", id: segment.slice(1) };
-    }
-
-    if (segment.startsWith("[")) {
-      return this.#parseRange(segment);
-    }
-
-    if (segment.startsWith("{")) {
-      return this.#parseJson(segment);
-    }
-
-    if (/^\d+$/.test(segment)) {
-      return { [KIND]: "index", index: parseInt(segment, 10) };
-    }
-
-    return { [KIND]: "key", key: segment };
-  }
-
-  static #parseRange(segment: string): Segment {
-    const content = segment.slice(1, -1);
-    const parts = content.split(",");
-
-    if (parts.length !== 2) {
-      throw new Error(`Invalid range: ${segment}`);
-    }
-
-    const [first, second] = parts;
-
-    if (first.startsWith("$") && second.startsWith("$")) {
-      return {
-        [KIND]: "stable_range",
-        start: first.slice(1) as Automerge.Cursor,
-        end: second.slice(1) as Automerge.Cursor,
-      };
-    }
-
-    const start = parseInt(first, 10);
-    const end = parseInt(second, 10);
-
-    if (isNaN(start) || isNaN(end)) {
-      throw new Error(`Invalid numeric range: ${segment}`);
-    }
-
-    return { [KIND]: "range", start, end };
-  }
-
-  static #parseJson(segment: string): Segment {
-    try {
-      const parsed = JSON.parse(segment);
-      return { [KIND]: "query", clause: parsed };
-    } catch (e) {
-      throw new Error(`Invalid JSON segment: ${segment}`);
-    }
   }
 
   /** Get the current value, or undefined if path can't be resolved */
@@ -195,12 +135,11 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   }
 
   get url(): string {
-    const docId = this.docHandle.documentId;
-    const pathStr = this.path.map((seg) => this.#serialize(seg)).join("/");
-    const headsStr = this.options.heads
-      ? `#${this.options.heads.join(",")}`
-      : "";
-    return `automerge:${docId}/${pathStr}${headsStr}`;
+    return serializeUrl(
+      this.docHandle.documentId,
+      this.path,
+      this.options.heads
+    );
   }
 
   equals(other: Ref<any>): boolean {
@@ -619,31 +558,5 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return patchPath
       .slice(0, minLength)
       .every((prop, i) => prop === refPropPath[i]);
-  }
-
-  #serialize(segment: Segment): string {
-    switch (segment[KIND]) {
-      case "key":
-        return segment.key;
-
-      case "index":
-        return String(segment.index);
-
-      case "stable_index":
-        return `$${segment.id}`;
-
-      case "query":
-        return JSON.stringify(segment.clause);
-
-      case "range":
-        return `[${segment.start},${segment.end}]`;
-
-      case "stable_range":
-        return `[$${segment.start},$${segment.end}]`;
-
-      default:
-        segment satisfies never;
-        throw new Error(`Unknown segment kind: ${segment[KIND]}`);
-    }
   }
 }
