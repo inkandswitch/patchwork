@@ -124,28 +124,31 @@ export function serializePath(segments: Segment[]): string {
 
 /**
  * Parse heads parameter from URL string.
- *
+ * Uses pipe "|" separator to match automerge-repo convention.
+ * 
  * @example
- * parseHeads("abc,def") → ["abc", "def"]
+ * parseHeads("abc|def") → ["abc", "def"]
  * parseHeads(undefined) → undefined
  */
 export function parseHeads(headsStr: string | undefined): string[] | undefined {
-  return headsStr ? headsStr.split(",") : undefined;
+  return headsStr ? headsStr.split("|") : undefined;
 }
 
 /**
  * Serialize heads to URL string format.
+ * Uses pipe "|" separator to match automerge-repo convention.
  */
 export function serializeHeads(heads: string[] | undefined): string {
-  return heads ? `#${heads.join(",")}` : "";
+  return heads ? `#${heads.join("|")}` : "";
 }
 
 /**
  * Construct a full automerge URL from components.
- *
+ * Uses pipe "|" separator for heads to match automerge-repo convention.
+ * 
  * @example
- * serializeUrl("abc123", [{ kind: "key", key: "todos" }], ["head1"])
- * → "automerge:abc123/todos#head1"
+ * serializeUrl("abc123", [{ kind: "key", key: "todos" }], ["head1", "head2"])
+ * → "automerge:abc123/todos#head1|head2"
  */
 export function serializeUrl(
   docId: string,
@@ -168,9 +171,10 @@ export interface ParsedUrl {
 
 /**
  * Parse a full Automerge URL into its components.
- *
+ * Uses pipe "|" separator for heads to match automerge-repo convention.
+ * 
  * @example
- * parseUrl("automerge:abc123/todos/0/title#head1,head2")
+ * parseUrl("automerge:abc123/todos/0/title#head1|head2")
  * → { docId: "abc123", segments: [...], heads: ["head1", "head2"] }
  */
 export function parseUrl(url: string): ParsedUrl {
