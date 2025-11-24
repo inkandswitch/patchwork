@@ -147,58 +147,57 @@ export default function TenfoldExperience(props: {
   const [withVim, setWithVim] = createSignal(false);
 
   return (
-    <Suspense>
-      <article class="tenfold" ref={setCanvas}>
-        <canvas></canvas>
-        <aside>
-          <div>
-            <Show when={lettersDocHandle.latest && path().length}>
-              <button onClick={() => fork()}>F</button>
-              <CodeMirror
-                handle={lettersDocHandle.latest}
-                path={path()}
-                extensions={[
-                  withVim() ? vim({ status: true }) : [],
-                  keymap.of([
-                    indentWithTab,
-                    {
-                      preventDefault: true,
-                      mac: "m-s",
-                      key: "c-s",
-                      run() {
-                        return true;
-                      },
-                    },
-                    {
-                      preventDefault: true,
-                      key: "m-c-v",
-                      run() {
-                        setWithVim((prev) => !prev);
-                        return true;
-                      },
-                    },
-                    ...defaultKeymap,
-                    ...historyKeymap,
-                  ]),
-                  history(),
-                  javascript(),
-                  noirTheme,
-                  tsFacet.of({
-                    worker,
-                    path: path().join("/") + ".js",
-                  }),
-                  autocompletion({ override: [tsAutocomplete()] }),
-                  tsSync(),
-                  tsGoto(),
-                  tsHover(),
-                  tsTwoslash(),
-                  tsLinterWorker(),
-                ]}
-              />
-            </Show>
-          </div>
-        </aside>
-      </article>
-    </Suspense>
+    <article class="tenfold" ref={setCanvas}>
+      <canvas></canvas>
+      <aside>
+        <div>
+          <button onClick={() => fork()}>F</button>
+          <CodeMirror
+            handle={lettersDocHandle.latest}
+            path={path()}
+            extensions={[
+              withVim() ? vim({ status: true }) : [],
+              keymap.of([
+                indentWithTab,
+                {
+                  preventDefault: true,
+                  mac: "m-s",
+                  key: "c-s",
+                  run() {
+                    return true;
+                  },
+                },
+                {
+                  preventDefault: true,
+                  key: "m-c-v",
+                  run() {
+                    setWithVim((prev) => !prev);
+                    return true;
+                  },
+                },
+                ...defaultKeymap,
+                ...historyKeymap,
+              ]),
+              history(),
+              javascript(),
+              noirTheme,
+              tsFacet.of({
+                worker,
+                path: path().join("/") + ".js",
+              }),
+              autocompletion({
+                override: [tsAutocomplete()],
+                closeOnBlur: false,
+              }),
+              tsSync(),
+              tsGoto(),
+              tsHover(),
+              tsTwoslash(),
+              tsLinterWorker(),
+            ]}
+          />
+        </div>
+      </aside>
+    </article>
   );
 }

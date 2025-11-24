@@ -37,7 +37,7 @@ type CodeMirrorProps<T> = {
 export function CodeMirror<T>(props: CodeMirrorProps<T>) {
   const parent = (<div class="w-full h-full" />) as HTMLDivElement;
   const initialDoc = () =>
-    (lookup(props.handle.doc(), props.path) as string) || "";
+    (props.handle && (lookup(props.handle.doc(), props.path) as string)) || "";
 
   // todo this loses reactivity
   const [syncExtension, createEffectReconfigureSync] = createSyncExtension(
