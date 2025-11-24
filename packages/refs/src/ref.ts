@@ -39,6 +39,9 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   readonly path: Segment[];
   readonly options: RefOptions;
 
+  // NOTE: this is a bit hacky. Would like some better options for this.
+  // Perhaps we can make the Automerge.splice and Automerge.updateText methods
+  // "just work" with refs. That seems like a better approach...
   #ctx?: RefContext;
 
   constructor(
