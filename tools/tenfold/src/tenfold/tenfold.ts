@@ -74,8 +74,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       x: px + dx * cos - dy * sin,
       y: py + dx * sin + dy * cos,
     };
-  }
-  
+  };
+
   // UNHELPFUL HELPERS
 
   class Averager {
@@ -345,7 +345,13 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     }
   }
 
-  function drawText(str:string, x = 0, y = 0, size = 2, tracking = size * 0.75) {
+  function drawText(
+    str: string,
+    x = 0,
+    y = 0,
+    size = 2,
+    tracking = size * 0.75
+  ) {
     let _x = x;
     for (let c of Array.from(str)) {
       // perform a newline
@@ -410,19 +416,26 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     cubic(cx1, cy1, cx2, cy2, x, y) {
       ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x, y);
     },
-    text(str = "you found the easter egg", x = 0, y = 0, size = 2, tracking = size * 0.75) {
+    text(
+      str = "you found the easter egg",
+      x = 0,
+      y = 0,
+      size = 2,
+      tracking = size * 0.75
+    ) {
       // compensate for font weirdness, so that passing 0,0 centers the first char
-      x -= 0.3625 * size
-      y -= 0.4 * size
-      drawText(str, x, y, size, tracking)
-      newPath = true
+      x -= 0.3625 * size;
+      y -= 0.4 * size;
+      drawText(str, x, y, size, tracking);
+      newPath = true;
     },
     mod,
     rand,
     norm,
     denorm,
-    declip,
     renorm,
+    clip,
+    declip,
     cosn,
     sinn,
     rotate,
@@ -488,7 +501,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       ctx.beginPath();
 
       try {
-        fn(api, { ...s, t });
+        fn(api, { ...s, t: mod(t) });
       } catch (error) {
         console.error(
           `error in ${"INKSWiTCH"[i]}${(s.i + "").padStart(2, "0")}\n\n`,
