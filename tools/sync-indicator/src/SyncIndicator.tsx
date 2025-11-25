@@ -393,12 +393,12 @@ function useSyncIndicatorState(
       timestamp: number;
     }) => {
       if (storageId === remoteStorageId) {
-        console.log("RECEIVED_SYNC_MESSAGE", {
+        /*        console.log("RECEIVED_SYNC_MESSAGE", {
           timestamp: timestamp ? getRelativeTimeString(timestamp) : "unknown",
           heads,
           storageId,
           remoteStorageId,
-        });
+        }); */
         send({ type: "RECEIVED_SYNC_MESSAGE" });
         setSyncInfo({
           lastHeads: heads,
