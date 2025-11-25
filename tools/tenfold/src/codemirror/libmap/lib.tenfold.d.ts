@@ -61,7 +61,7 @@ declare function circle(x = 0, y = 0, radius = 1): void;
 // Draw the given string using our special pen-plotter font.
 // Use "\n" for newlines.
 declare function text(
-  string: string,
+  string: number | string,
   x?: number,
   y?: number,
   size?: number,
@@ -153,7 +153,7 @@ declare function rand(lo?: number, hi?: number): number;
 // with different handling of negatives than the common `%` operator.
 // This difference makes `mod()` useful for creating cycling patterns
 // because it doesn't 'mirror' the pattern across 0.
-declare function mod(v, d?: number): number;
+declare function mod(v: number, d?: number): number;
 
 interface point {
   x: number;
