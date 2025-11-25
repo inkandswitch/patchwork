@@ -102,7 +102,7 @@ export function parseJson(segment: string): Segment {
   try {
     const parsed = JSON.parse(segment);
     return { [KIND]: "query", idPattern: parsed };
-  } catch (e) {
+  } catch {
     throw new Error(`Invalid JSON segment: ${segment}`);
   }
 }

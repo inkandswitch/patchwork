@@ -63,20 +63,27 @@ export interface MutableText extends String {
  */
 export type ChangeFn<T> = (val: T extends string ? MutableText : T) => T | void;
 
+// Helper to extract non-undefined part of a type
+type NonUndefined<T> = T extends undefined ? never : T;
+
 type GetSegmentValue<TObj, TSegment> = TSegment extends string
-  ? TSegment extends keyof TObj
-    ? TObj[TSegment]
+  ? TSegment extends keyof NonUndefined<TObj>
+    ?
+        | NonUndefined<TObj>[TSegment]
+        | (undefined extends TObj ? undefined : never)
     : unknown
   : TSegment extends readonly [number, number]
-    ? TObj extends string
-      ? string
-      : TObj extends readonly (infer E)[]
-        ? readonly E[]
+    ? NonUndefined<TObj> extends string
+      ? string | (undefined extends TObj ? undefined : never)
+      : NonUndefined<TObj> extends readonly (infer E)[]
+        ? readonly E[] | (undefined extends TObj ? undefined : never)
         : unknown
     : TSegment extends number | IdPattern
-      ? TObj extends readonly (infer E)[]
-        ? E
-        : unknown
+      ? TObj extends undefined
+        ? undefined
+        : NonUndefined<TObj> extends readonly (infer E)[]
+          ? E | undefined | (undefined extends TObj ? undefined : never)
+          : unknown
       : unknown;
 
 /** Recursively infer type by traversing path through document */

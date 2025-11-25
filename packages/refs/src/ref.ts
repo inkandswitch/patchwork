@@ -473,20 +473,20 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       case "index":
         return segment.index;
 
-      case "stable_index":
+      case "stable_index": {
         if (!Array.isArray(container)) return undefined;
         const index = container.findIndex(
           (item) => Automerge.getObjectId(item) === segment.id
         );
         return index !== -1 ? index : undefined;
-
-      case "query":
+      }
+      case "query": {
         if (!Array.isArray(container)) return undefined;
         const queryIndex = container.findIndex((item) =>
           matchesIdPattern(item, segment.idPattern)
         );
         return queryIndex !== -1 ? queryIndex : undefined;
-
+      }
       case "range":
       case "stable_range":
         return undefined;
