@@ -81,15 +81,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     ctx.rotate(n * TAU);
   }
 
-  let __loopBudget = 10000
-  function loop(body) {
-    let idx = 0
-    while (__loopBudget-- > 0) {
-      let result = body(idx++)
-      if (result === false) break;
-    }
-  }
-
   // UNHELPFUL HELPERS
 
   class Averager {
@@ -556,12 +547,10 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       // Draw the letter!
       let start = performance.now();
       newPath = true;
-      __loopBudget = 1000;
       ctx.beginPath();
 
       try {
         fn?.(api, { ...s, t: mod(t) });
-        ctx.stroke();
       } catch (error) {
         console.error(
           `error in ${"INKSWiTCH"[i]}${(s.i + "").padStart(2, "0")}\n\n`,
@@ -569,6 +558,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         );
       }
 
+      ctx.stroke();
       let cost = timers[i].add(performance.now() - start);
 
       // If the draw function took too long, apply shame
