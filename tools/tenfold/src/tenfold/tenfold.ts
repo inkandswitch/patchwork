@@ -450,7 +450,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     sinn,
     rotate,
     rotaten,
-    loop,
     TAU,
     PI,
   };
