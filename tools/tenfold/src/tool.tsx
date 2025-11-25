@@ -18,7 +18,7 @@ import {
   history,
   historyKeymap,
 } from "@codemirror/commands";
-import { keymap } from "@codemirror/view";
+import { EditorView, keymap } from "@codemirror/view";
 import { type WorkerShape } from "@valtown/codemirror-ts/worker";
 import * as Comlink from "comlink";
 import {
@@ -202,6 +202,7 @@ export default function TenfoldExperience(props: {
                 caseSensitive: false,
                 regexp: true,
               }),
+              EditorView.lineWrapping,
               EditorState.transactionFilter.of((tr) => {
                 const start = completionStatus(tr.startState);
                 const after = completionStatus(tr.state);
