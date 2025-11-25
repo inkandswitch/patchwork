@@ -39,6 +39,7 @@ import { vim } from "@replit/codemirror-vim";
 import { indentOnInput } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
 import { search, searchKeymap } from "@codemirror/search";
+import { addLoopBudgetInstrumentation } from "./instrumenter.ts";
 
 const innerWorker = new Worker(
   new URL("./codemirror/worker.ts", import.meta.url),
@@ -75,10 +76,11 @@ export default function TenfoldExperience(props: {
         const ex = prev?.[+letterIndex]?.[+lettererIndex];
         if (!ex || ex != letterer) {
           try {
+            const instrumentedCode = addLoopBudgetInstrumentation(letterer);
             const fn = new Function(
               "ctx",
               "params",
-              `with (Math) {with (ctx) {${letterer}
+              `with (Math) {with (ctx) {${instrumentedCode}
 }}`
             ) as unknown as CreateTenfoldOptions["letters"][number];
 
