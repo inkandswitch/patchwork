@@ -2169,6 +2169,9 @@ importers:
       '@lezer/highlight':
         specifier: ^1.2.2
         version: 1.2.2
+      '@lezer/javascript':
+        specifier: ^1.5.4
+        version: 1.5.4
       '@patchwork/context-selection':
         specifier: workspace:^
         version: link:../../packages/context/annotations/context-selection
