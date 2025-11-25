@@ -444,7 +444,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       // compensate for font weirdness, so that passing 0,0 centers the first char
       x -= 0.3625 * size;
       y -= 0.4 * size;
-      drawText(str, x, y, size, tracking);
+      drawText(str.toString(), x, y, size, tracking);
       newPath = true;
     },
     mod,
