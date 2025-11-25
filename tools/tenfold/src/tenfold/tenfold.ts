@@ -502,7 +502,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       ctx.translate(C * pixW, R * pixW); // center on the current grid cell
       ctx.translate(dpr * padding, dpr * padding); // padding
       ctx.translate(dpr * gap * C, dpr * gap * R); // gaps
-      ctx.scale(pixHW, pixHW); // 0 to 2
+      ctx.scale(pixHW, pixHW); // CLIP LETTER SPACE
       ctx.translate(1, 1); // -1 to 1
       // line width is calculated when .stroke() is called, and is affected by scale,
       // so we need to undo the effect of grid scaling (but not dpr).
@@ -538,7 +538,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
       // Draw the letter selector
       ctx.resetTransform();
-      ctx.scale(dpr, dpr);
+      ctx.scale(dpr, dpr); // SCREEN SPACE
       ctx.translate(C * cssW, R * cssW); // center on the current grid cell
       ctx.translate(padding, padding); // padding
       ctx.translate(gap * C, gap * R); // gaps
@@ -578,8 +578,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       ctx.translate(pixW, pixW); // origin at the TL corner of the kaoss pad
       ctx.translate(dpr * padding, dpr * padding); // padding
       ctx.translate(dpr * gap, dpr * gap); // gaps
-      ctx.scale(pixW, pixW); // 0 to 1 for one grid cell
-      ctx.lineWidth /= 2; // we just doubled the scale, so halve the line width
+      ctx.scale(pixW, pixW); // NORM LETTER SPACE
+      ctx.lineWidth = thick * (dpr / pixW);
 
       // kaoss pad is x: 0-2, y: 0-1
       ctx.beginPath();
@@ -605,7 +605,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     ctx.translate(0, pixW); // center on the current grid cell
     ctx.translate(dpr * padding, dpr * padding); // padding
     ctx.translate(0, dpr * gap); // gaps
-    ctx.scale(pixHW, pixHW); // 0 to 2
+    ctx.scale(pixHW, pixHW); // CLIP LETTER SPACE
     ctx.translate(1, 1); // -1 to 1
     ctx.lineWidth = 2 * thick * (dpr / pixW);
     ctx.strokeStyle = color;
@@ -633,7 +633,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
     // Clock wave
     ctx.resetTransform();
-    ctx.scale(dpr, dpr);
+    ctx.scale(dpr, dpr); // SCREEN SPACE
     ctx.translate(padding, padding); // padding
     ctx.translate(gap + cssW, cssW + gap + cssW); // 0,0 at the BL corner of the kaoss pad
     ctx.lineWidth = thick;
