@@ -1,10 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import {
-  Repo,
-  splice,
-  type Cursor,
-  type DocHandle,
-} from "@automerge/automerge-repo";
+import { Repo, splice, type DocHandle } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
 import { Ref } from "../ref";
 import { ref } from "../factory";
@@ -119,7 +114,7 @@ describe("Ref", () => {
       });
 
       const themeRef = new Ref(handle, ["user", "settings", "theme"]);
-      themeRef.change((theme) => "dark");
+      themeRef.change((_theme) => "dark");
 
       expect(themeRef.value()).toBe("dark");
       expect(handle.doc().user.settings.theme).toBe("dark");
@@ -875,7 +870,7 @@ describe("Ref", () => {
 
       const ref = new Ref(handle, ["data", "value"]);
 
-      ref.change((val) => {
+      ref.change((_val) => {
         // Return void - no update
       });
 

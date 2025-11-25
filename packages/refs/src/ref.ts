@@ -280,8 +280,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
 
     // Must have same or undefined heads
-    const thisHeads = this.heads?.join(",");
-    const otherHeads = other.heads?.join(",");
+    const thisHeads = this.heads?.join();
+    const otherHeads = other.heads?.join();
     if (thisHeads !== otherHeads) {
       return false;
     }
@@ -319,8 +319,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
 
     // Must have same heads
-    const thisHeads = this.heads?.join(",");
-    const otherHeads = other.heads?.join(",");
+    const thisHeads = this.heads?.join();
+    const otherHeads = other.heads?.join();
     if (thisHeads !== otherHeads) {
       return false;
     }
@@ -357,6 +357,11 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
 
     // Ranges overlap if: thisStart < otherEnd && otherStart < thisEnd
     return thisStart < otherEnd && otherStart < thisEnd;
+  }
+
+  /** Returns true if ref currently resolves to a non-undefined value */
+  exists(): boolean {
+    return this.path.every((p) => p.resolvedProp !== undefined);
   }
 
   valueOf(): string {

@@ -68,21 +68,19 @@ type NonUndefined<T> = T extends undefined ? never : T;
 
 type GetSegmentValue<TObj, TSegment> = TSegment extends string
   ? TSegment extends keyof NonUndefined<TObj>
-    ?
-        | NonUndefined<TObj>[TSegment]
-        | (undefined extends TObj ? undefined : never)
+    ? NonUndefined<TObj>[TSegment]
     : unknown
   : TSegment extends readonly [number, number]
     ? NonUndefined<TObj> extends string
-      ? string | (undefined extends TObj ? undefined : never)
+      ? string
       : NonUndefined<TObj> extends readonly (infer E)[]
-        ? readonly E[] | (undefined extends TObj ? undefined : never)
+        ? readonly E[]
         : unknown
     : TSegment extends number | IdPattern
       ? TObj extends undefined
         ? undefined
         : NonUndefined<TObj> extends readonly (infer E)[]
-          ? E | undefined | (undefined extends TObj ? undefined : never)
+          ? E | undefined
           : unknown
       : unknown;
 
