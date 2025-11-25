@@ -233,6 +233,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       if (lx < 0.33) {
         const n = mod(s.i + (lx < 0.17 ? -1 : 1), opts.letters[i].length);
         opts.set(i, "i", n);
+        // reset the canvas drag position when switching letters
+        opts.set(i, "x", 0);
+        opts.set(i, "y", 0);
       } else if (lx > 0.95) {
         opts.edit(i);
       }
