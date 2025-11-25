@@ -81,13 +81,12 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     ctx.rotate(n * TAU);
   }
 
-  let __loopBudget = 1000
+  let __loopBudget = 10000
   function loop(body) {
     let idx = 0
     while (__loopBudget-- > 0) {
-      if (!body(idx++)) {
-        break;
-      }
+      let result = body(idx++)
+      if (result === false) break;
     }
   }
 
