@@ -60,6 +60,7 @@ describe("RefContext", () => {
       const itemRef = ref(handle, "items", 0, "text");
 
       itemRef.change((text) => {
+        if (!text) return;
         text.splice(5, 0, " item");
       });
 
@@ -117,6 +118,7 @@ describe("RefContext", () => {
 
       // Mutation should still work on the original first item (now at index 1)
       titleRef.change((text) => {
+        if (!text) return;
         text.updateText("updated first");
       });
 
@@ -136,6 +138,7 @@ describe("RefContext", () => {
       const aliceRef = ref(handle, "users", { id: "user1" }, "name");
 
       aliceRef.change((name) => {
+        if (!name) return;
         name.updateText("Alice Smith");
       });
 
