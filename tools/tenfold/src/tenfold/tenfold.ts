@@ -568,10 +568,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         ctx.strokeStyle = errColor;
         drawText("COST : " + cost.toFixed(1) + " > 3", -1, -1, 0.15);
         ctx.stroke();
-        // clean up after yoself
-        ctx.strokeStyle = color;
         ctx.lineWidth /= 3;
       }
+
+      // clean up after yoself
+      ctx.strokeStyle = color;
 
       // Draw the kaoss pad draggable
       ctx.resetTransform();
