@@ -494,43 +494,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       let _R = Math.floor(i / 3);
       let R = _R > 0 ? _R + 1 : _R;
 
-      // Draw the letter selector
-      ctx.resetTransform();
-      ctx.scale(dpr, dpr);
-      ctx.translate(C * cssW, R * cssW); // center on the current grid cell
-      ctx.translate(padding, padding); // padding
-      ctx.translate(gap * C, gap * R); // gaps
-      ctx.lineWidth = thick;
-      {
-        let charWidth = 10 * scaleFix;
-        let charHeight = 11 * scaleFix; // this font is weird
-        let labelText =
-          mappers[i] + opts.states[i].i.toString().padStart(2, "0");
-        let labelWidth = charWidth * labelText.length;
-        let x = 17 * scaleFix + labelWidth / 2;
-        let y = cssW + gap / 2;
-        ctx.beginPath();
-        drawText(
-          labelText,
-          x - labelWidth / 2,
-          y - scaleFix - charHeight / 2,
-          16 * scaleFix,
-          charWidth
-        );
-        api.move(x - 26 * scaleFix, y - charHeight / 2);
-        api.line(x - 32 * scaleFix, y + 0);
-        api.line(x - 26 * scaleFix, y + charHeight / 2);
-        api.move(x + 26 * scaleFix, y - charHeight / 2);
-        api.line(x + 32 * scaleFix, y + 0);
-        api.line(x + 26 * scaleFix, y + charHeight / 2);
-        ctx.stroke();
-
-        // edit & fork
-        ctx.beginPath();
-        api.circle(cssW - 6 * scaleFix, y, 6 * scaleFix);
-        if (opts.currentlyEditingIndex == i) ctx.fill();
-        else ctx.stroke();
-      }
+      // the previous letter may have turned red
+      ctx.strokeStyle = color;
 
       // Transform to letter space
       ctx.resetTransform();
@@ -571,9 +536,43 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         ctx.lineWidth /= 3;
       }
 
-      // clean up after yoself
-      ctx.strokeStyle = color;
+      // Draw the letter selector
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+      ctx.translate(C * cssW, R * cssW); // center on the current grid cell
+      ctx.translate(padding, padding); // padding
+      ctx.translate(gap * C, gap * R); // gaps
+      ctx.lineWidth = thick;
+      {
+        let charWidth = 10 * scaleFix;
+        let charHeight = 11 * scaleFix; // this font is weird
+        let labelText = mappers[i] + opts.states[i].i.toString().padStart(2, "0");
+        let labelWidth = charWidth * labelText.length;
+        let x = 17 * scaleFix + labelWidth / 2;
+        let y = cssW + gap / 2;
+        ctx.beginPath();
+        drawText(
+          labelText,
+          x - labelWidth / 2,
+          y - scaleFix - charHeight / 2,
+          16 * scaleFix,
+          charWidth
+        );
+        api.move(x - 26 * scaleFix, y - charHeight / 2);
+        api.line(x - 32 * scaleFix, y + 0);
+        api.line(x - 26 * scaleFix, y + charHeight / 2);
+        api.move(x + 26 * scaleFix, y - charHeight / 2);
+        api.line(x + 32 * scaleFix, y + 0);
+        api.line(x + 26 * scaleFix, y + charHeight / 2);
+        ctx.stroke();
 
+        // edit & fork
+        ctx.beginPath();
+        api.circle(cssW - 6 * scaleFix, y, 6 * scaleFix);
+        if (opts.currentlyEditingIndex == i) ctx.fill();
+        else ctx.stroke();
+      }
+      
       // Draw the kaoss pad draggable
       ctx.resetTransform();
       ctx.translate(pixW, pixW); // origin at the TL corner of the kaoss pad
@@ -609,6 +608,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     ctx.scale(pixHW, pixHW); // 0 to 2
     ctx.translate(1, 1); // -1 to 1
     ctx.lineWidth = 2 * thick * (dpr / pixW);
+    ctx.strokeStyle = color;
 
     {
       let r = 0.3;
