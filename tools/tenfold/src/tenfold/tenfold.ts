@@ -552,6 +552,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       try {
         fn?.(api, { ...s, t: mod(t) });
       } catch (error) {
+        ctx.strokeStyle = errColor;
         console.error(
           `error in ${"INKSWiTCH"[i]}${(s.i + "").padStart(2, "0")}\n\n`,
           error
