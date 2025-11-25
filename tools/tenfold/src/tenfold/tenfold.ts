@@ -446,6 +446,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     },
     mod,
     rand,
+    clamp,
     norm,
     denorm,
     renorm,
