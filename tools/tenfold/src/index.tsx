@@ -54,7 +54,9 @@ export interface Tenfold {
   name: string;
   states: TenfoldState[];
   editing: number | null;
-  letters: AutomergeUrl;
+  // deprecated
+  letters?: AutomergeUrl;
+  tenfolder: AutomergeUrl;
 }
 
 export const plugins = [
@@ -81,8 +83,8 @@ export const plugins = [
               .sort(() => Math.random() - 0.5)
               .join(""),
             states,
-            letters: "automerge:3ChURbS7DwKPfM6g8dMM3RszrPA5" as AutomergeUrl,
             editing: null,
+            tenfolder: "automerge:2c4E6m5u6rPWkeDxA6i1YWrAjTzD" as AutomergeUrl,
           } satisfies Tenfold);
         },
         getTitle(doc) {
@@ -111,6 +113,21 @@ export const plugins = [
               element={element}
             />
           ),
+          element
+        );
+      };
+    },
+  } satisfies LoadablePlugin<ToolDescription, ToolImplementation>,
+  {
+    type: "patchwork:tool",
+    id: "chee/temporary-file-viewer",
+    name: "File Viewer (don't @ me)",
+    supportedDataTypes: ["file"],
+    async load() {
+      const tool = await import("./file-viewer.tsx");
+      return (handle, element) => {
+        return render(
+          () => <tool.default handle={handle as any} element={element} />,
           element
         );
       };

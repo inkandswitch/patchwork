@@ -17,7 +17,7 @@ export default defineConfig({
     rollupOptions: {
       external(id) {
         return !!id.match(
-          /^((@automerge\/automerge(-repo)?(\/.*)?)|@patchwork\/.*|@codemirror\/state)$/
+          /^((@automerge\/automerge(-repo)?(\/.*)?)|solid-js(\/.*)?|@patchwork\/.*|@codemirror\/state)$/
         );
       },
     },

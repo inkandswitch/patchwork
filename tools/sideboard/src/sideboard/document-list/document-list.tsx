@@ -77,6 +77,7 @@ export function DocumentList(props: DocumentListProps) {
                   repo={props.repo}
                   removeFromParent={remove}
                   open={props.open}
+                  name={doc.name}
                 />
               </Match>
               <Match when={doc.type != "folder"}>

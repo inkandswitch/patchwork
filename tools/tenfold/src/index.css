@@ -32,6 +32,7 @@
 
   .cm-editor {
     height: 100%;
+    overflow: auto;
   }
 
   .cm-editor *,
@@ -47,4 +48,8 @@
     text-decoration-skip-ink: none;
     text-decoration-color: #f00;
   }
+}
+
+.cm-editor {
+  height: 100%;
 }

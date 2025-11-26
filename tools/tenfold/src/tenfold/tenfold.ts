@@ -2,6 +2,7 @@
 
 export interface CreateTenfoldOptions {
   font: string;
+  letterCounts: number[];
   letters: ((
     ctx: ReturnType<typeof createTenfold>[0],
     params: {
@@ -11,7 +12,7 @@ export interface CreateTenfoldOptions {
       x: number;
       y: number;
     }
-  ) => void)[][];
+  ) => void)[];
   states: import("../index.tsx").TenfoldState[];
   currentlyEditingIndex: number | undefined | null;
   container: HTMLElement;
@@ -45,7 +46,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const rand = (lo = -1, hi = 1) => denorm(Math.random(), lo, hi);
   const clamp = (v: number, lo = -1, hi = 1) => Math.max(lo, Math.min(hi, v));
   const norm = (n: number, lo = -1, hi = 1) => (n - lo) / (hi - lo);
-  const clip = (n, lo = 0, hi = 1) => ((n - lo) / (hi - lo)) * 2 - 1;
+  const clip = (n: number, lo = 0, hi = 1) => ((n - lo) / (hi - lo)) * 2 - 1;
   const denorm = (n: number, lo = -1, hi = 1) => n * (hi - lo) + lo;
   const declip = (n: number, lo = 0, hi = 1) => ((n + 1) / 2) * (hi - lo) + lo;
   const renorm = (
@@ -65,7 +66,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const sinn = (n: number) => Math.sin(n * TAU);
 
   // rotate point x,y around pivot px,py by turns (normalized)
-  const rotate = (x:number, y:number, turns:number, px = 0, py = 0) => {
+  const rotate = (x: number, y: number, turns: number, px = 0, py = 0) => {
     const dx = x - px;
     const dy = y - py;
     const cos = cosn(turns);
@@ -79,7 +80,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const rotaten = (n: number) => {
     // rootin' tootin' rotatn'
     ctx.rotate(n * TAU);
-  }
+  };
 
   // UNHELPFUL HELPERS
 
@@ -222,7 +223,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       if (R > 0) i -= 3;
       let s = opts.states[i];
       if (lx < 0.33) {
-        const n = mod(s.i + (lx < 0.17 ? -1 : 1), opts.letters[i].length);
+        const n = mod(s.i + (lx < 0.17 ? -1 : 1), opts.letterCounts[i] || 0);
         opts.set(i, "i", n);
         // reset the canvas drag position when switching letters
         opts.set(i, "x", 0);
@@ -419,10 +420,17 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     arc(x = 0, y = 0, r = 1, start = 0, end = 1, ccw = false) {
       ctx.arc(x, y, Math.abs(r), start * TAU, end * TAU, ccw);
     },
-    quadratic(cx:number, cy:number, x:number, y:number) {
+    quadratic(cx: number, cy: number, x: number, y: number) {
       ctx.quadraticCurveTo(cx, cy, x, y);
     },
-    cubic(cx1:number, cy1:number, cx2:number, cy2:number, x:number, y:number) {
+    cubic(
+      cx1: number,
+      cy1: number,
+      cx2: number,
+      cy2: number,
+      x: number,
+      y: number
+    ) {
       ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x, y);
     },
     text(
@@ -489,7 +497,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
     for (let i = 0; i < 9; i++) {
       let s = opts.states[i];
-      let fn = opts.letters[i][s.i];
+      let fn = opts.letters[i];
       let C = Math.floor(i % 3);
       let _R = Math.floor(i / 3);
       let R = _R > 0 ? _R + 1 : _R;
@@ -546,7 +554,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       {
         let charWidth = 10 * scaleFix;
         let charHeight = 11 * scaleFix; // this font is weird
-        let labelText = mappers[i] + opts.states[i].i.toString().padStart(2, "0");
+        let labelText =
+          mappers[i] + opts.states[i].i.toString().padStart(2, "0");
         let labelWidth = charWidth * labelText.length;
         let x = 17 * scaleFix + labelWidth / 2;
         let y = cssW + gap / 2;
@@ -572,7 +581,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         if (opts.currentlyEditingIndex == i) ctx.fill();
         else ctx.stroke();
       }
-      
+
       // Draw the kaoss pad draggable
       ctx.resetTransform();
       ctx.translate(pixW, pixW); // origin at the TL corner of the kaoss pad
@@ -657,12 +666,10 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   // INIT
   requestAnimationFrame(update);
 
-  function cleanup() {
+  return function cleanup() {
     stop = true;
     for (const fn of cleanups) {
       fn();
     }
-  }
-
-  return [api, cleanup] as const;
+  };
 }

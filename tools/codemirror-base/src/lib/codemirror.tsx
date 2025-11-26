@@ -32,10 +32,10 @@ type CodeMirrorProps<T> = {
   extensions?: Extension[];
   onChangeSelection: (from: number, to: number) => void;
   readOnly?: boolean;
+  withView?(view: EditorView): void;
 };
 
 export function CodeMirror<T>(props: CodeMirrorProps<T>) {
-  const parent = (<div class="w-full h-full" />) as HTMLDivElement;
   const initialDoc = () =>
     (props.handle && (lookup(props.handle.doc(), props.path) as string)) || "";
 
@@ -78,8 +78,9 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
 
   const view = new EditorView({
     state,
-    parent,
   });
+
+  props.withView?.(view);
 
   // Create effects to reconfigure the extensions when their props change
   createEffectReconfigureSync(view);
@@ -95,5 +96,5 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
 
   onCleanup(() => view.destroy());
 
-  return parent;
+  return view.dom;
 }
