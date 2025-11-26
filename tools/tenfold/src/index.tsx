@@ -74,8 +74,8 @@ export const plugins = [
             s.i = 0;
             s.q = i / 4 - 1;
             s.r = (Math.random() - 0.5) / 5;
-            s.x = (Math.random() - 0.5) / 5;
-            s.y = (Math.random() - 0.5) / 5;
+            s.x = 0;
+            s.y = 0;
           }
 
           Object.assign(doc, {
