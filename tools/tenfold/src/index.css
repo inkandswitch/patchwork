@@ -26,6 +26,7 @@
     > div {
       height: 100%;
       width: 80ex;
+      font-size: 18px;
     }
   }
 
@@ -36,5 +37,14 @@
   .cm-editor *,
   .cm-editor * * {
     caret-color: cyan !important;
+  }
+
+  .cm-lintRange-error {
+    background: none !important;
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-decoration-thickness: 2px;
+    text-decoration-skip-ink: none;
+    text-decoration-color: #f00;
   }
 }
