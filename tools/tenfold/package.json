@@ -46,9 +46,11 @@
     "@uiw/codemirror-theme-github": "^4.25.3",
     "@valtown/codemirror-ts": "3.0.0-10",
     "comlink": "^4.4.2",
+    "ohm-js": "^17.2.1",
     "solid-js": "^1.9.9",
     "vite": "npm:rolldown-vite@^7.2.7",
     "vite-plugin-solid": "^2.11.10",
+    "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.5.0"
   },
   "devDependencies": {
@@ -58,6 +60,7 @@
     "@patchwork/context": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/plugins": "workspace:^",
+    "@types/audioworklet": "^0.0.90",
     "@types/babel__core": "^7.20.5",
     "babel-preset-solid": "^1.9.9",
     "typescript": "^5.9.3"

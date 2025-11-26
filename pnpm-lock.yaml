@@ -2205,6 +2205,9 @@ importers:
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
+      ohm-js:
+        specifier: ^17.2.1
+        version: 17.2.1
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9
@@ -2214,6 +2217,9 @@ importers:
       vite-plugin-solid:
         specifier: ^2.11.10
         version: 2.11.10(rolldown-vite@7.2.7(@types/node@24.9.1)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.0))(solid-js@1.9.9)
+      vite-plugin-top-level-await:
+        specifier: ^1.6.0
+        version: 1.6.0(@swc/helpers@0.5.17)(rolldown-vite@7.2.7(@types/node@24.9.1)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.0))(rollup@4.53.3)
       vite-plugin-wasm:
         specifier: ^3.5.0
         version: 3.5.0(rolldown-vite@7.2.7(@types/node@24.9.1)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.0))
@@ -2236,6 +2242,9 @@ importers:
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../../core/plugins
+      '@types/audioworklet':
+        specifier: ^0.0.90
+        version: 0.0.90
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
@@ -5197,6 +5206,9 @@ packages:
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
+  '@types/audioworklet@0.0.90':
+    resolution: {integrity: sha512-fG1NU0kxzr/vha7zavWL/qR/kzUTtvmOqQ6vGo0/iKf0ZvezDLPgT+bP6x6VwDqeDeBc8HQpzkKDyFGAc8EJeg==}
+
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
 
@@ -6148,6 +6160,10 @@ packages:
 
   nwsapi@2.2.22:
     resolution: {integrity: sha512-ujSMe1OWVn55euT1ihwCI1ZcAaAU3nxUiDwfDQldc51ZXaB9m2AyOn6/jh1BLe2t/G8xd6uKG1UBF2aZJeg2SQ==}
+
+  ohm-js@17.2.1:
+    resolution: {integrity: sha512-4cXF0G09fAYU9z61kTfkNbKK1Kz/sGEZ5NbVWHoe9Qi7VB7y+Spwk051CpUTfUENdlIr+vt8tMV4/LosTE2cDQ==}
+    engines: {node: '>=0.12.1'}
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -10005,6 +10021,8 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
+  '@types/audioworklet@0.0.90': {}
+
   '@types/babel__core@7.20.5':
     dependencies:
       '@babel/parser': 7.28.4
@@ -11066,6 +11084,8 @@ snapshots:
 
   nwsapi@2.2.22: {}
 
+  ohm-js@17.2.1: {}
+
   optionator@0.9.4:
     dependencies:
       deep-is: 0.1.4
@@ -11783,6 +11803,17 @@ snapshots:
       vitefu: 1.1.1(rolldown-vite@7.2.7(@types/node@24.9.1)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.0))
     transitivePeerDependencies:
       - supports-color
+
+  vite-plugin-top-level-await@1.6.0(@swc/helpers@0.5.17)(rolldown-vite@7.2.7(@types/node@24.9.1)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.0))(rollup@4.53.3):
+    dependencies:
+      '@rollup/plugin-virtual': 3.0.2(rollup@4.53.3)
+      '@swc/core': 1.15.0(@swc/helpers@0.5.17)
+      '@swc/wasm': 1.15.0
+      uuid: 10.0.0
+      vite: rolldown-vite@7.2.7(@types/node@24.9.1)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.0)
+    transitivePeerDependencies:
+      - '@swc/helpers'
+      - rollup
 
   vite-plugin-top-level-await@1.6.0(@swc/helpers@0.5.17)(rollup@4.53.3)(vite@7.2.4(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)):
     dependencies:
