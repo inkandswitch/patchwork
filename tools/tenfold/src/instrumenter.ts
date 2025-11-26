@@ -84,7 +84,6 @@ export function addLoopBudgetInstrumentation(code: string) {
   function findBody(node: SyntaxNode) {
     let child = node.firstChild;
     while (child) {
-      console.log(child.name);
       if (['Block', 'Statement', 'ExpressionStatement', ';'].includes(child.name)) {
         return child;
       }
