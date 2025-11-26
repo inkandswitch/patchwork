@@ -159,6 +159,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   let dragParam: number | null = null; // the cell idx for the currently dragged param
   let mouseStart: Record<string, number>; // state captured when the mouse is first pressed
   let mouseDragged: Record<string, number>; // state captured as the mouse is dragged
+  let lastWaffled = performance.now();
 
   function pointerdown(e: PointerEvent) {
     // We assume this mouse press will result in a drag, and will cancel it if not
@@ -247,7 +248,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         dragType = "timeline";
         return;
       } else {
-        // grab the closest draggable param grid thingy
+        // grab the closest waffle
         dragParam = null;
         let closestDist = 0.3; // need to be within this dist for the drag to count
         for (let p = 0; p < opts.states.length; p++) {
@@ -262,6 +263,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         }
         if (dragParam != null) {
           dragType = "param";
+          if (performance.now() - lastWaffled < 300) {
+            opts.set(dragParam, "q", dragParam / 4 - 1);
+            opts.set(dragParam, "r", (Math.random() - 0.5) / 5);
+          }
+          lastWaffled = performance.now()
           return;
         }
       }
