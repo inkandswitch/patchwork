@@ -4,7 +4,7 @@ export interface CreateTenfoldOptions {
   font: string;
   letterCounts: number[];
   letters: ((
-    ctx: ReturnType<typeof createTenfold>[0],
+    ctx: any,
     params: {
       q: number;
       r: number;
@@ -267,7 +267,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
             opts.set(dragParam, "q", dragParam / 4 - 1);
             opts.set(dragParam, "r", (Math.random() - 0.5) / 5);
           }
-          lastWaffled = performance.now()
+          lastWaffled = performance.now();
           return;
         }
       }
@@ -403,9 +403,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     begin(shouldFill = false) {
       newPath = true;
       if (willFill != shouldFill) {
-        willFill ? ctx.fill() : ctx.stroke()
+        willFill ? ctx.fill() : ctx.stroke();
         willFill = shouldFill;
-        ctx.beginPath()
+        ctx.beginPath();
       }
     },
     move(x = 0, y = 0) {
@@ -546,7 +546,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         );
       }
 
-      willFill ? ctx.fill() : ctx.stroke()
+      willFill ? ctx.fill() : ctx.stroke();
       let cost = timers[i].add(performance.now() - start);
 
       // If the draw function took too long, apply shame
