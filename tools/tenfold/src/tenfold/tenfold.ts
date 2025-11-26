@@ -392,9 +392,15 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   // This is the simplified canvas API exposed to letter-drawing functions.
   // While we don't do this yet, the plan is to add instrumentation that'll feed the sound engine.
   let newPath = true;
+  let willFill = false;
   const api = {
-    begin() {
+    begin(shouldFill = false) {
       newPath = true;
+      if (willFill != shouldFill) {
+        willFill ? ctx.fill() : ctx.stroke()
+        willFill = shouldFill;
+        ctx.beginPath()
+      }
     },
     move(x = 0, y = 0) {
       ctx.moveTo(x, y);
@@ -531,7 +537,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         );
       }
 
-      ctx.stroke();
+      willFill ? ctx.fill() : ctx.stroke()
       let cost = timers[i].add(performance.now() - start);
 
       // If the draw function took too long, apply shame
