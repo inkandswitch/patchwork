@@ -70,6 +70,8 @@ export function addLoopBudgetInstrumentation(code: string) {
             bodyEnd: bodyNode.to,
             isBlockStatement: bodyNode.name === 'Block',
           });
+        } else {
+          console.log("uh-oh, didn't find body for loop at", cursor.from);
         }
       }
       if (cursor.firstChild()) {
@@ -82,12 +84,13 @@ export function addLoopBudgetInstrumentation(code: string) {
   function findBody(node: SyntaxNode) {
     let child = node.firstChild;
     while (child) {
-      if (['Block', 'Statement', 'ExpressionStatement'].includes(child.name)) {
+      console.log(child.name);
+      if (['Block', 'Statement', 'ExpressionStatement', ';'].includes(child.name)) {
         return child;
       }
       child = child.nextSibling;
     }
-    console.log('sad');
     return null;
   }
 }
+
