@@ -3,7 +3,6 @@ import type { Tenfold } from "./index.tsx";
 import type { PatchworkViewElement } from "@patchwork/elements";
 import {
   makeDocumentProjection,
-  useDocHandle,
   useDocument,
 } from "@automerge/automerge-repo-solid-primitives";
 import { CodeMirror } from "@grjte/codemirror-base/component";
@@ -12,7 +11,6 @@ import { createStore, produce } from "solid-js/store";
 import {
   createEffect,
   createSignal,
-  mapArray,
   on,
   onCleanup,
   onMount,
@@ -70,9 +68,7 @@ function createCode(code: string) {
     return fn;
   } catch (error) {
     console.error(error);
-    return new Function(
-      `console.error(${error})`
-    ) as unknown as CreateTenfoldOptions["letters"][number];
+    return new Function("ctx", "params", "");
   }
 }
 
@@ -81,6 +77,8 @@ function makeName(idx: number) {
 }
 
 type TextFile = { content: string };
+
+const folders = ["0i", "1n", "2k", "3s", "4w", "5i", "6t", "7c", "8h"];
 
 export default function TenfoldExperience(props: {
   handle: DocHandle<Tenfold>;
@@ -283,13 +281,14 @@ export default function TenfoldExperience(props: {
   onMount(() => {
     onCleanup(createTenfold(tenfoldOptions));
     canvas()!.addEventListener("tenfold:edit", (event) => {
-      setEditing((event as CustomEvent<number>).detail);
+      setEditing((event as CustomEvent<number>).detail || 0);
     });
   });
 
   const editingHandle = () => codes[editing()][1]();
 
-  const typescriptPath = () => editingHandle()?.url + ".js";
+  const typescriptPath = () =>
+    `/letters/${folders[editing()]}/${tenfold.states[editing()].i}.js`;
 
   async function fork() {
     const idx = editing();
@@ -301,9 +300,7 @@ export default function TenfoldExperience(props: {
       "@patchwork": { type: "file" },
       mimeType: "application/javascript",
       extension: "js",
-      metadata: {
-        permissions: 420,
-      },
+      metadata: { permissions: 420 },
       content: codes[idx][0]()?.content ?? "",
       name,
     });
@@ -346,17 +343,16 @@ export default function TenfoldExperience(props: {
               path={["content"]}
               withView={(view: EditorView) => {
                 createEffect(
-                  on(
-                    () => typescriptPath(),
-                    () => {
-                      view.dispatch({
-                        effects: historyCompartment.reconfigure([]),
-                      });
+                  on(typescriptPath, () => {
+                    view.dispatch({
+                      effects: historyCompartment.reconfigure([]),
+                    });
+                    setTimeout(() => {
                       view.dispatch({
                         effects: historyCompartment.reconfigure(history()),
                       });
-                    }
-                  )
+                    }, 1000);
+                  })
                 );
               }}
               extensions={[
@@ -384,14 +380,11 @@ export default function TenfoldExperience(props: {
                   ...completionKeymap,
                   ...searchKeymap,
                 ]),
-                historyCompartment.of(history()),
+                historyCompartment.of([history()]),
                 javascript(),
                 noirTheme,
                 tsFacetCompartment.of(
-                  tsFacet.of({
-                    worker,
-                    path: typescriptPath(),
-                  })
+                  tsFacet.of({ worker, path: typescriptPath() })
                 ),
                 autocompletion({
                   override: [tsAutocomplete()],
@@ -403,10 +396,7 @@ export default function TenfoldExperience(props: {
                 tsTwoslash(),
                 tsLinterWorker(),
                 indentOnInput(),
-                search({
-                  caseSensitive: false,
-                  regexp: true,
-                }),
+                search({ caseSensitive: false, regexp: true }),
                 EditorView.lineWrapping,
                 EditorState.transactionFilter.of((tr) => {
                   const start = completionStatus(tr.startState);
