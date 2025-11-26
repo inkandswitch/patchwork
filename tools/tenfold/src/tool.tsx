@@ -330,6 +330,7 @@ export default function TenfoldExperience(props: {
       })
     );
   });
+
   createEffect(() => {
     if (isNaN(tenfold.states[editing()].i)) {
       props.handle.change((t) => {
