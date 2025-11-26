@@ -247,7 +247,7 @@ export default function TenfoldExperience(props: {
   for (const [idx, [code]] of Object.entries(codes)) {
     createEffect((prev: string | undefined) => {
       const content = code()?.content;
-      if (!content) return;
+      if (content == undefined) return;
       if (!prev || prev != content) {
         updateLetterFns(
           produce((letters) => {
@@ -255,7 +255,7 @@ export default function TenfoldExperience(props: {
           })
         );
       }
-      return code()?.content;
+      return content;
     });
   }
 
@@ -288,9 +288,7 @@ export default function TenfoldExperience(props: {
   });
 
   const editingHandle = () => codes[editing()][1]();
-  createEffect(() => {
-    console.log(editingHandle());
-  });
+
   const typescriptPath = () => editingHandle()?.url + ".js";
 
   async function fork() {
