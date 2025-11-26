@@ -48,6 +48,7 @@ import { Compartment, EditorState } from "@codemirror/state";
 import { search, searchKeymap } from "@codemirror/search";
 import { addLoopBudgetInstrumentation } from "./instrumenter.ts";
 import type { FolderDoc } from "@patchwork/filesystem";
+import { makePersisted } from "@solid-primitives/storage";
 
 const innerWorker = new Worker(
   new URL("./codemirror/worker.ts", import.meta.url),
@@ -57,19 +58,14 @@ const worker = Comlink.wrap<WorkerShape>(innerWorker);
 await worker.initialize();
 
 function createCode(code: string) {
-  try {
-    const instrumented = addLoopBudgetInstrumentation(code);
-    const fn = new Function(
-      "ctx",
-      "params",
-      `with (Math) {with (ctx) {${instrumented}
+  const instrumented = addLoopBudgetInstrumentation(code);
+  const fn = new Function(
+    "ctx",
+    "params",
+    `with (Math) {with (ctx) {${instrumented}
 }}`
-    ) as unknown as CreateTenfoldOptions["letters"][number];
-    return fn;
-  } catch (error) {
-    console.error(error);
-    return new Function("ctx", "params", "");
-  }
+  ) as unknown as CreateTenfoldOptions["letters"][number];
+  return fn;
 }
 
 function makeName(idx: number) {
@@ -223,7 +219,9 @@ export default function TenfoldExperience(props: {
     props.element
   );
 
-  const [editing, setEditing] = createSignal<number>(0);
+  const [editing, setEditing] = makePersisted(createSignal<number>(0), {
+    name: `${props.handle.url}#editing`,
+  });
   const [canvas, setCanvas] = createSignal<HTMLCanvasElement>();
 
   const [letterFns, updateLetterFns] = createStore<
@@ -247,11 +245,15 @@ export default function TenfoldExperience(props: {
       const content = code()?.content;
       if (content == undefined) return;
       if (!prev || prev != content) {
-        updateLetterFns(
-          produce((letters) => {
-            letters[+idx] = createCode(content);
-          })
-        );
+        try {
+          const c = createCode(content);
+          updateLetterFns(produce((letters) => (letters[+idx] = c)));
+        } catch (error) {
+          console.error(
+            `error in ${folders[+idx].slice(1)?.toUpperCase()}${(tenfold.states[+idx].i + "").padStart(2, "0")}`,
+            error
+          );
+        }
       }
       return content;
     });

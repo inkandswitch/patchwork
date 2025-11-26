@@ -20,6 +20,8 @@ const noirBaseTheme = EditorView.theme(
     },
     ".cm-tooltip": {
       fontFamily: "monospace",
+      whiteSpace: "pre-wrap",
+      width: "500px",
     },
     ".cm-tooltip-autocomplete ul li[aria-selected]": {
       background: "white",

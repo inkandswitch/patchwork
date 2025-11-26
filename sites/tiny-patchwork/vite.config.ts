@@ -57,6 +57,10 @@ export default defineConfig({
   },
   server: {
     port: process.env.PORT ? +process.env.PORT : 5173,
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
   },
   build: {
     target: "firefox137",
