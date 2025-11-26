@@ -330,6 +330,13 @@ export default function TenfoldExperience(props: {
       })
     );
   });
+  createEffect(() => {
+    if (isNaN(tenfold.states[editing()].i)) {
+      props.handle.change((t) => {
+        t.states[editing()].i = 0;
+      });
+    }
+  });
 
   return (
     <Suspense>
