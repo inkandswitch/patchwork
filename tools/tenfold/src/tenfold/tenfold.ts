@@ -510,6 +510,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
       // the previous letter may have turned red
       ctx.strokeStyle = color;
+      ctx.fillStyle = color;
 
       // Transform to letter space
       ctx.resetTransform();
@@ -532,6 +533,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         fn?.(api, { ...s, t: mod(t) });
       } catch (error) {
         ctx.strokeStyle = errColor;
+        ctx.fillStyle = errColor;
         console.error(
           `error in ${"INKSWiTCH"[i]}${(s.i + "").padStart(2, "0")}\n\n`,
           error
