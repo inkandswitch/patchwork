@@ -30,6 +30,10 @@ const noirBaseTheme = EditorView.theme(
     ".cm-completionIcon:after": {
       filter: "saturate(0)",
     },
+    "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground":
+      {
+        background: "#FA505399",
+      },
   },
   { dark: true }
 );

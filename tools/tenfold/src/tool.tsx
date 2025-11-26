@@ -25,7 +25,7 @@ import {
   history,
   historyKeymap,
 } from "@codemirror/commands";
-import { EditorView, keymap } from "@codemirror/view";
+import { drawSelection, EditorView, keymap } from "@codemirror/view";
 import { type WorkerShape } from "@valtown/codemirror-ts/worker";
 import * as Comlink from "comlink";
 import {
@@ -366,7 +366,10 @@ export default function TenfoldExperience(props: {
                 );
               }}
               extensions={[
+                drawSelection(),
                 withVim() ? vim({ status: true }) : [],
+                EditorState.allowMultipleSelections.of(true),
+                EditorView.clickAddsSelectionRange.of((event) => event.altKey),
                 keymap.of([
                   indentWithTab,
                   {
