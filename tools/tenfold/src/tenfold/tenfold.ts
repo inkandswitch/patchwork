@@ -525,6 +525,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       // Draw the letter!
       let start = performance.now();
       newPath = true;
+      willFill = false;
       ctx.beginPath();
 
       try {
