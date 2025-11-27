@@ -1,9 +1,9 @@
-import { Signal, scalar } from './signal';
-import * as env from './env';
-import * as glide from './glide';
-import * as effects from './effects';
-import { ladder } from './ladder';
-import { SAMPLE_RATE_RECIP, TAU } from './constants';
+import { Signal, scalar } from "./signal";
+import * as env from "./env";
+import * as glide from "./glide";
+import * as effects from "./effects";
+import { ladder } from "./ladder";
+import { SAMPLE_RATE_RECIP, TAU } from "./constants";
 
 // TODO: functions here should do arity checking
 // i.e., they should throw an error if they received too few or too many args
@@ -32,9 +32,23 @@ export const msynthLib: Record<string, Function> = {
     });
   },
 
-  pwm: (f = scalar(440), m = scalar(0.5)) => {
+  pwm: (f = scalar(440), m = scalar(0.5), sync: Signal | null = null) => {
     let phase = 0;
+    let prevSyncValue = 0;
     return Signal.new(() => {
+      const currSyncValue = sync?.value ?? 0;
+      if (prevSyncValue < 0 && currSyncValue >= 0) {
+        const currSyncValue = sync?.value ?? 0;
+        if (prevSyncValue < 0 && currSyncValue >= 0) {
+          // estimate zero crossing between previous and current value
+          // prev + (curr - prev) * r = 0  =>  r = -prev / (curr - prev)
+          const r = -prevSyncValue / (currSyncValue - prevSyncValue);
+          // time since crossing to current sample = (1 - r) * dt
+          phase = Math.floor((1 - r) * f.value * SAMPLE_RATE_RECIP);
+        }
+      }
+      prevSyncValue = currSyncValue;
+
       const sample = phase < m.value ? -1 : 1;
       phase += f.value * SAMPLE_RATE_RECIP;
       phase -= Math.floor(phase);
@@ -57,15 +71,15 @@ export const msynthLib: Record<string, Function> = {
   adsr: env.adsr,
 
   // ----- filters -----
-  lpf: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder('lp24', s, cf, q),
-  lpf12: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder('lp12', s, cf, q),
-  lpf24: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder('lp24', s, cf, q),
-  hpf: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder('hp24', s, cf, q),
-  hpf12: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder('hp12', s, cf, q),
-  hpf24: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder('hp24', s, cf, q),
-  bpf: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder('bp24', s, cf, q),
-  bpf12: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder('bp12', s, cf, q),
-  bpf24: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder('bp24', s, cf, q),
+  lpf: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder("lp24", s, cf, q),
+  lpf12: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder("lp12", s, cf, q),
+  lpf24: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder("lp24", s, cf, q),
+  hpf: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder("hp24", s, cf, q),
+  hpf12: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder("hp12", s, cf, q),
+  hpf24: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder("hp24", s, cf, q),
+  bpf: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder("bp24", s, cf, q),
+  bpf12: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder("bp12", s, cf, q),
+  bpf24: (s: Signal, cf: Signal, q = scalar(0.2)) => ladder("bp24", s, cf, q),
 
   // ----- effects -----
   delay: effects.delay,

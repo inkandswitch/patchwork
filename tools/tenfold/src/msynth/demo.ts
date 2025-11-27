@@ -1,14 +1,14 @@
 // @ts-ignore -- not a real error, see https://v3.vitejs.dev/guide/assets.html
-import workletUrl from './msynth-worklet.ts?worker&url';
+import workletUrl from "./msynth-worklet.ts?worker&url";
 
-import * as midi from './midi-message-constructors.ts';
-import { SAMPLE_RATE } from './constants';
-import { MessageToWorklet } from './types.ts';
+import * as midi from "./midi-message-constructors.ts";
+import { SAMPLE_RATE } from "./constants";
+import type { MessageToWorklet } from "./types";
 
-const uiDiv = document.getElementById('ui') as HTMLDivElement;
+const uiDiv = document.getElementById("ui") as HTMLDivElement;
 
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d')!;
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d")!;
 uiDiv.appendChild(canvas);
 
 function updateCanvasSize() {
@@ -21,13 +21,13 @@ function updateCanvasSize() {
     const oldH = canvas.height;
     canvas.width = oldW * devicePixelRatio;
     canvas.height = oldH * devicePixelRatio;
-    canvas.style.width = oldW + 'px';
-    canvas.style.height = oldH + 'px';
+    canvas.style.width = oldW + "px";
+    canvas.style.height = oldH + "px";
     ctx.scale(devicePixelRatio, devicePixelRatio);
   }
 }
 
-window.addEventListener('resize', updateCanvasSize);
+window.addEventListener("resize", updateCanvasSize);
 updateCanvasSize();
 
 // ---- stand-in for the UI ----
@@ -48,7 +48,7 @@ class Letter {
     readonly row: number,
     public x = 0,
     public y = 0,
-    public isActive = false,
+    public isActive = false
   ) {
     this.posX = MARGIN + col * LETTER_WIDTH;
     this.posY = MARGIN + row * LETTER_HEIGHT;
@@ -76,12 +76,12 @@ class Letter {
 
   render() {
     ctx.lineWidth = 4;
-    ctx.strokeStyle = '#aaa';
+    ctx.strokeStyle = "#aaa";
     ctx.strokeRect(this.posX, this.posY, LETTER_WIDTH, LETTER_HEIGHT);
-    ctx.fillStyle = this.isActive ? '#aaa' : '#ccc';
+    ctx.fillStyle = this.isActive ? "#aaa" : "#ccc";
     ctx.fillRect(this.posX, this.posY, LETTER_WIDTH, LETTER_HEIGHT);
 
-    ctx.fillStyle = '#888';
+    ctx.fillStyle = "#888";
     const cx = this.posX + LETTER_WIDTH / 2;
     const cy = this.posY + LETTER_HEIGHT / 2;
     const px = cx + (this.x * LETTER_WIDTH) / 2;
@@ -93,14 +93,14 @@ class Letter {
 
   noteOn(note: number, velocity: number) {
     sendToSynth(this.synth!, {
-      command: 'process midi message',
+      command: "process midi message",
       data: midi.noteOn(0, note, velocity),
     });
   }
 
   noteOff(note: number, velocity: number) {
     sendToSynth(this.synth!, {
-      command: 'process midi message',
+      command: "process midi message",
       data: midi.noteOff(0, note, velocity),
     });
   }
@@ -115,7 +115,7 @@ for (let row = 0; row < 3; row++) {
 
 let draggingLetter: Letter | null = null;
 
-window.addEventListener('pointerdown', (e) => {
+window.addEventListener("pointerdown", (e) => {
   for (const letter of letters) {
     if (letter.contains(e.clientX, e.clientY)) {
       draggingLetter = letter;
@@ -124,11 +124,11 @@ window.addEventListener('pointerdown', (e) => {
   }
 });
 
-window.addEventListener('pointermove', (e) => {
+window.addEventListener("pointermove", (e) => {
   draggingLetter?.moveJoystick(e.clientX, e.clientY);
 });
 
-window.addEventListener('pointerup', (e) => {
+window.addEventListener("pointerup", (e) => {
   draggingLetter = null;
 });
 
@@ -147,6 +147,12 @@ render();
 // ---- web audio -----
 
 const patchLibrary = {
+  helloAgain: `
+    sync = 0.6
+    osc1 = (noteFreq / 4) pwm
+    osc2 = sync * 500 * ad(0.2, 0.5) >> pwm(0.5, osc1)
+    out = osc2 * adsr(0.05, 0, 1, 0.2)
+  `,
   duranDuran: `
     decay = 0.102
     delayAmt = 0.547
@@ -197,7 +203,7 @@ const patchLibrary = {
 
 async function start() {
   const context = new AudioContext({
-    latencyHint: 'balanced',
+    latencyHint: "balanced",
     sampleRate: SAMPLE_RATE,
   });
 
@@ -216,7 +222,17 @@ async function start() {
   // Demo #3: cacophony
   tempo = 40;
   let patches = [...Object.values(patchLibrary)];
-  let steps: number[][] = [[60, 63], [62], [63], [65], [67], [68], [71], [72], [67]];
+  let steps: number[][] = [
+    [60, 63],
+    [62],
+    [63],
+    [65],
+    [67],
+    [68],
+    [71],
+    [72],
+    [67],
+  ];
 
   // Demo #4: save a prayer
   // tempo = 113;
@@ -224,15 +240,15 @@ async function start() {
   // let steps = [[62], [64], [65], [69], [72], [69], [72], [69]];
 
   letters.forEach((letter, idx) => {
-    const synth = new AudioWorkletNode(context, 'msynth');
+    const synth = new AudioWorkletNode(context, "msynth");
 
     // Important!!!!!
-    synth.channelInterpretation = 'discrete';
+    synth.channelInterpretation = "discrete";
     synth.channelCount = 2;
-    synth.channelCountMode = 'explicit';
+    synth.channelCountMode = "explicit";
 
     synth.connect(context.destination);
-    synth.port.onmessage = (msg) => console.log('worklet:', msg.data);
+    synth.port.onmessage = (msg) => console.log("worklet:", msg.data);
 
     letter.synth = synth;
     letter.params = new Float32Array(new SharedArrayBuffer(128));
@@ -242,17 +258,22 @@ async function start() {
     const distToWall = 10; // feet
     const headWidth = 0.6; // feet
     const speedOfSound = 1125; // feet per second
-    const letterX = wallWidth * (letter.col === 0 ? -2 / 3 : letter.col === 1 ? 0 : 2 / 3);
+    const letterX =
+      wallWidth * (letter.col === 0 ? -2 / 3 : letter.col === 1 ? 0 : 2 / 3);
     const leftEarX = -headWidth / 2;
     const rightEarX = headWidth / 2;
-    const distToLeftEar = Math.sqrt(distToWall ** 2 + (letterX - leftEarX) ** 2);
-    const distToRightEar = Math.sqrt(distToWall ** 2 + (letterX - rightEarX) ** 2);
+    const distToLeftEar = Math.sqrt(
+      distToWall ** 2 + (letterX - leftEarX) ** 2
+    );
+    const distToRightEar = Math.sqrt(
+      distToWall ** 2 + (letterX - rightEarX) ** 2
+    );
     const delayLeft = distToLeftEar / speedOfSound;
     const delayRight = distToRightEar / speedOfSound;
     const pan = letter.col === 0 ? 1 / 6 : letter.col === 1 ? 0.5 : 5 / 6;
 
     sendToSynth(synth, {
-      command: 'load patch',
+      command: "load patch",
       code: `
         ${patches[idx % patches.length]}
         pan = ${pan}
@@ -267,7 +288,7 @@ async function start() {
   sequence(steps);
 }
 
-window.addEventListener('pointerdown', start, { once: true });
+window.addEventListener("pointerdown", start, { once: true });
 
 function sendToSynth(synth: AudioWorkletNode, message: MessageToWorklet) {
   synth.port.postMessage(message);
