@@ -74,6 +74,7 @@ interface params {
   t: number;
   x: number;
   y: number;
+  s: any;
 }
 
 declare const params: params;

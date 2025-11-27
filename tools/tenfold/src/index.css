@@ -50,10 +50,7 @@
   }
 
   .cm-matchingBracket {
-    background-color: #ffffff99 !important;
-    > * {
-      color: black !important;
-    }
+    background-color: #ffffff66 !important;
   }
 }
 

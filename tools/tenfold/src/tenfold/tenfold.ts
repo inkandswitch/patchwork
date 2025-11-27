@@ -11,6 +11,7 @@ export interface CreateTenfoldOptions {
       t: number;
       x: number;
       y: number;
+      s: any;
     }
   ) => void)[];
   states: import("../index.tsx").TenfoldState[];
@@ -32,6 +33,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const gap = 30;
   const clockWaveHeight = 20;
   const cleanups = new Set<() => void>();
+  const states = {} as Record<number, Record<number, any>>;
 
   // ANIMATION STATE
   let t = 0;
@@ -513,6 +515,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       let C = Math.floor(i % 3);
       let _R = Math.floor(i / 3);
       let R = _R > 0 ? _R + 1 : _R;
+      if (!states[i]) states[i] = {};
+      if (!states[i]?.[s.i]) states[i][s.i] = {};
+      const state = states[i][s.i];
 
       // the previous letter may have turned red
       ctx.strokeStyle = color;
@@ -536,7 +541,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       ctx.beginPath();
 
       try {
-        fn?.(api, { ...s, t: mod(t) });
+        fn?.(api, { ...s, t: mod(t), s: state });
       } catch (error) {
         ctx.strokeStyle = errColor;
         ctx.fillStyle = errColor;
