@@ -248,10 +248,21 @@ export default function TenfoldExperience(props: {
         try {
           const c = createCode(content);
           updateLetterFns(produce((letters) => (letters[+idx] = c)));
-        } catch (error) {
+        } catch (cause) {
           console.error(
             `error in ${folders[+idx].slice(1)?.toUpperCase()}${(tenfold.states[+idx].i + "").padStart(2, "0")}`,
-            error
+            cause
+          );
+          updateLetterFns(
+            produce(
+              (letters) =>
+                (letters[+idx] = () => {
+                  throw new SyntaxError(
+                    cause instanceof Error ? cause.message : `${cause}`,
+                    { cause }
+                  );
+                })
+            )
           );
         }
       }
