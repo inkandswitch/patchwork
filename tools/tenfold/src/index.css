@@ -48,6 +48,13 @@
     text-decoration-skip-ink: none;
     text-decoration-color: #f00;
   }
+
+  .cm-matchingBracket {
+    background-color: white !important;
+    > * {
+      color: black !important;
+    }
+  }
 }
 
 .cm-editor {
