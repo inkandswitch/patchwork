@@ -432,9 +432,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       newPath = true;
     },
     arc(x = 0, y = 0, r = 1, start = 0, end = 1, ccw = false) {
+      if (newPath) api.move(x + r * cosn(start), y + r * sinn(start))
       ctx.arc(x, y, Math.abs(r), start * TAU, end * TAU, ccw);
     },
     quadratic(cx: number, cy: number, x: number, y: number) {
+      if (newPath) api.move(cx, cy) // this is a CHOICE, but not including it also feels like a CHOICE, ugh
       ctx.quadraticCurveTo(cx, cy, x, y);
     },
     cubic(
@@ -445,10 +447,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       x: number,
       y: number
     ) {
+      if (newPath) api.move(cx1, cy1) // this is a CHOICE, but not including it also feels like a CHOICE, ugh
       ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x, y);
     },
     text(
-      str = "you found the easter egg",
+      str = "you found the rabbit egg",
       x = 0,
       y = 0,
       size = 2,
