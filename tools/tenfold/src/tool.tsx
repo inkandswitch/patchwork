@@ -43,7 +43,11 @@ import {
   completionStatus,
 } from "@codemirror/autocomplete";
 import { vim } from "@replit/codemirror-vim";
-import { indentOnInput } from "@codemirror/language";
+import {
+  bracketMatching,
+  indentOnInput,
+  matchBrackets,
+} from "@codemirror/language";
 import { Compartment, EditorState } from "@codemirror/state";
 import { search, searchKeymap } from "@codemirror/search";
 import { addLoopBudgetInstrumentation } from "./instrumenter.ts";
@@ -404,6 +408,7 @@ export default function TenfoldExperience(props: {
                   ...completionKeymap,
                   ...searchKeymap,
                 ]),
+                bracketMatching({}),
                 historyCompartment.of([history()]),
                 javascript(),
                 noirTheme,
