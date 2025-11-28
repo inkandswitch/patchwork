@@ -244,30 +244,30 @@ export default function TenfoldExperience(props: {
     [h8CodeDoc, h8CodeDocHandle, h8Handle],
   ] as const;
 
+  function setLetter(idx: number, code: ReturnType<typeof createCode>) {
+    updateLetterFns(produce((letters) => (letters[idx] = code)));
+  }
+
   for (const [idx, [code]] of Object.entries(codes)) {
     createEffect((prev: string | undefined) => {
       const content = code()?.content;
       if (content == undefined) return;
+      setLetter(+idx, () => {});
       if (!prev || prev != content) {
         try {
           const c = createCode(content);
-          updateLetterFns(produce((letters) => (letters[+idx] = c)));
+          setLetter(+idx, c);
         } catch (cause) {
           console.error(
             `error in ${folders[+idx].slice(1)?.toUpperCase()}${(tenfold.states[+idx].i + "").padStart(2, "0")}`,
             cause
           );
-          updateLetterFns(
-            produce(
-              (letters) =>
-                (letters[+idx] = () => {
-                  throw new SyntaxError(
-                    cause instanceof Error ? cause.message : `${cause}`,
-                    { cause }
-                  );
-                })
-            )
-          );
+          setLetter(+idx, () => {
+            throw new SyntaxError(
+              cause instanceof Error ? cause.message : `${cause}`,
+              { cause }
+            );
+          });
         }
       }
       return content;
