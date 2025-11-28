@@ -7,13 +7,15 @@ import {
 } from "@automerge/automerge-repo-solid-primitives";
 import { CodeMirror } from "@grjte/codemirror-base/component";
 import createTenfold, { type CreateTenfoldOptions } from "./tenfold/tenfold.ts";
-import { createStore, produce } from "solid-js/store";
+import { createMutable, createStore, produce } from "solid-js/store";
 import {
   createEffect,
   createSignal,
+  mapArray,
   on,
   onCleanup,
   onMount,
+  Show,
   Suspense,
 } from "solid-js";
 import font from "./font.txt?raw";
@@ -43,11 +45,7 @@ import {
   completionStatus,
 } from "@codemirror/autocomplete";
 import { vim } from "@replit/codemirror-vim";
-import {
-  bracketMatching,
-  indentOnInput,
-  matchBrackets,
-} from "@codemirror/language";
+import { bracketMatching, indentOnInput } from "@codemirror/language";
 import { Compartment, EditorState } from "@codemirror/state";
 import { search, searchKeymap } from "@codemirror/search";
 import { addLoopBudgetInstrumentation } from "./instrumenter.ts";
@@ -78,7 +76,7 @@ function makeName(idx: number) {
 
 type TextFile = { content: string };
 
-const folders = ["0i", "1n", "2k", "3s", "4w", "5i", "6t", "7c", "8h"];
+const DEFAULT_WORD = Array.from("inkswitch");
 
 export default function TenfoldExperience(props: {
   handle: DocHandle<Tenfold>;
@@ -95,6 +93,11 @@ export default function TenfoldExperience(props: {
     }
   });
 
+  const word = () =>
+    Array.from("word" in tenfold ? (tenfold.word as string) : DEFAULT_WORD);
+
+  const folders = mapArray(word, (l, i) => `${i()}${l}`);
+
   const [tenfolder] = useDocument<FolderDoc>(
     () => tenfold.tenfolder,
     props.element
@@ -105,123 +108,65 @@ export default function TenfoldExperience(props: {
     props.element
   );
 
-  const i0url = () =>
-    lettersFolder()?.docs.find((doc) => doc.name == "0i")?.url;
-  const n1url = () =>
-    lettersFolder()?.docs.find((doc) => doc.name == "1n")?.url;
-  const k2url = () =>
-    lettersFolder()?.docs.find((doc) => doc.name == "2k")?.url;
-  const s3url = () =>
-    lettersFolder()?.docs.find((doc) => doc.name == "3s")?.url;
-  const w4url = () =>
-    lettersFolder()?.docs.find((doc) => doc.name == "4w")?.url;
-  const i5url = () =>
-    lettersFolder()?.docs.find((doc) => doc.name == "5i")?.url;
-  const t6url = () =>
-    lettersFolder()?.docs.find((doc) => doc.name == "6t")?.url;
-  const c7url = () =>
-    lettersFolder()?.docs.find((doc) => doc.name == "7c")?.url;
-  const h8url = () =>
-    lettersFolder()?.docs.find((doc) => doc.name == "8h")?.url;
+  const counts = createMutable<number[]>([]);
+  const letterFolderHandles = createMutable<DocHandle<FolderDoc>[]>([]);
+  const codeHandles = createMutable<DocHandle<TextFile>[]>([]);
 
-  const [i0, i0Handle] = useDocument<FolderDoc>(i0url, props.element);
-  const [n1, n1Handle] = useDocument<FolderDoc>(n1url, props.element);
-  const [k2, k2Handle] = useDocument<FolderDoc>(k2url, props.element);
-  const [s3, s3Handle] = useDocument<FolderDoc>(s3url, props.element);
-  const [w4, w4Handle] = useDocument<FolderDoc>(w4url, props.element);
-  const [i5, i5Handle] = useDocument<FolderDoc>(i5url, props.element);
-  const [t6, t6Handle] = useDocument<FolderDoc>(t6url, props.element);
-  const [c7, c7Handle] = useDocument<FolderDoc>(c7url, props.element);
-  const [h8, h8Handle] = useDocument<FolderDoc>(h8url, props.element);
-
-  const letterCounts = {
-    get 0() {
-      return i0()?.docs.length ?? 0;
-    },
-    get 1() {
-      return n1()?.docs.length ?? 0;
-    },
-    get 2() {
-      return k2()?.docs.length ?? 0;
-    },
-    get 3() {
-      return s3()?.docs.length ?? 0;
-    },
-    get 4() {
-      return w4()?.docs.length ?? 0;
-    },
-    get 5() {
-      return i5()?.docs.length ?? 0;
-    },
-    get 6() {
-      return t6()?.docs.length ?? 0;
-    },
-    get 7() {
-      return c7()?.docs.length ?? 0;
-    },
-    get 8() {
-      return h8()?.docs.length ?? 0;
-    },
-    get length() {
-      return 9;
-    },
-  };
-
-  const i0CodeUrl = () =>
-    i0()?.docs.find((doc) => doc.name == makeName(tenfold.states[0].i))?.url;
-  const n1CodeUrl = () =>
-    n1()?.docs.find((doc) => doc.name == makeName(tenfold.states[1].i))?.url;
-  const k2CodeUrl = () =>
-    k2()?.docs.find((doc) => doc.name == makeName(tenfold.states[2].i))?.url;
-  const s3CodeUrl = () =>
-    s3()?.docs.find((doc) => doc.name == makeName(tenfold.states[3].i))?.url;
-  const w4CodeUrl = () =>
-    w4()?.docs.find((doc) => doc.name == makeName(tenfold.states[4].i))?.url;
-  const i5CodeUrl = () =>
-    i5()?.docs.find((doc) => doc.name == makeName(tenfold.states[5].i))?.url;
-  const t6CodeUrl = () =>
-    t6()?.docs.find((doc) => doc.name == makeName(tenfold.states[6].i))?.url;
-  const c7CodeUrl = () =>
-    c7()?.docs.find((doc) => doc.name == makeName(tenfold.states[7].i))?.url;
-  const h8CodeUrl = () =>
-    h8()?.docs.find((doc) => doc.name == makeName(tenfold.states[8].i))?.url;
-
-  const [i0CodeDoc, i0CodeDocHandle] = useDocument<TextFile>(
-    i0CodeUrl,
-    props.element
-  );
-  const [n1CodeDoc, n1CodeDocHandle] = useDocument<TextFile>(
-    n1CodeUrl,
-    props.element
-  );
-  const [k2CodeDoc, k2CodeDocHandle] = useDocument<TextFile>(
-    k2CodeUrl,
-    props.element
-  );
-  const [s3CodeDoc, s3CodeDocHandle] = useDocument<TextFile>(
-    s3CodeUrl,
-    props.element
-  );
-  const [w4CodeDoc, w4CodeDocHandle] = useDocument<TextFile>(
-    w4CodeUrl,
-    props.element
-  );
-  const [i5CodeDoc, i5CodeDocHandle] = useDocument<TextFile>(
-    i5CodeUrl,
-    props.element
-  );
-  const [t6CodeDoc, t6CodeDocHandle] = useDocument<TextFile>(
-    t6CodeUrl,
-    props.element
-  );
-  const [c7CodeDoc, c7CodeDocHandle] = useDocument<TextFile>(
-    c7CodeUrl,
-    props.element
-  );
-  const [h8CodeDoc, h8CodeDocHandle] = useDocument<TextFile>(
-    h8CodeUrl,
-    props.element
-  );
+  createEffect(() => {
+    for (const [i, folderName] of Object.entries(folders())) {
+      const letterIndex = +i;
+      createEffect(() => {
+        delete codeHandles[letterIndex];
+        const letterUrl = lettersFolder()?.docs.find(
+          (doc) => doc.name == folderName
+        )?.url;
+        const [letterFolder, letterFolderHandle] = useDocument<FolderDoc>(
+          letterUrl,
+          props.element
+        );
+        counts[letterIndex] = letterFolder()?.docs.length ?? -1;
+        letterFolderHandles[letterIndex] = letterFolderHandle()!;
+        const codeUrl = () =>
+          letterFolder()?.docs.find(
+            (doc) => doc.name == makeName(tenfold.states[letterIndex].i)
+          )?.url;
+        const [codeDoc, codeDocHandle] = useDocument<TextFile>(
+          codeUrl,
+          props.element
+        );
+        codeHandles[letterIndex] = codeDocHandle()!;
+        createEffect((prev: string | undefined) => {
+          const content = codeDoc()?.content;
+          if (content == undefined) {
+            setLetter(letterIndex, () => {});
+            return;
+          }
+          if (!prev || prev != content) {
+            try {
+              setLetter(+letterIndex, createCode(content));
+            } catch (cause) {
+              console.error(
+                `error in ${folders()[+letterIndex].slice(1)?.toUpperCase()}${(tenfold.states[+letterIndex].i + "").padStart(2, "0")}`,
+                cause
+              );
+              updateLetterFns(
+                produce(
+                  (letters) =>
+                    (letters[+letterIndex] = () => {
+                      throw new SyntaxError(
+                        cause instanceof Error ? cause.message : `${cause}`,
+                        { cause }
+                      );
+                    })
+                )
+              );
+            }
+          }
+          return content;
+        });
+      });
+    }
+  });
 
   const [editing, setEditing] = makePersisted(createSignal<number>(0), {
     name: `${props.handle.url}#editing`,
@@ -232,52 +177,14 @@ export default function TenfoldExperience(props: {
     CreateTenfoldOptions["letters"]
   >(Array.from(Array(9)));
 
-  const codes = [
-    [i0CodeDoc, i0CodeDocHandle, i0Handle],
-    [n1CodeDoc, n1CodeDocHandle, n1Handle],
-    [k2CodeDoc, k2CodeDocHandle, k2Handle],
-    [s3CodeDoc, s3CodeDocHandle, s3Handle],
-    [w4CodeDoc, w4CodeDocHandle, w4Handle],
-    [i5CodeDoc, i5CodeDocHandle, i5Handle],
-    [t6CodeDoc, t6CodeDocHandle, t6Handle],
-    [c7CodeDoc, c7CodeDocHandle, c7Handle],
-    [h8CodeDoc, h8CodeDocHandle, h8Handle],
-  ] as const;
-
   function setLetter(idx: number, code: ReturnType<typeof createCode>) {
     updateLetterFns(produce((letters) => (letters[idx] = code)));
-  }
-
-  for (const [idx, [code]] of Object.entries(codes)) {
-    createEffect((prev: string | undefined) => {
-      const content = code()?.content;
-      if (content == undefined) return;
-      setLetter(+idx, () => {});
-      if (!prev || prev != content) {
-        try {
-          const c = createCode(content);
-          setLetter(+idx, c);
-        } catch (cause) {
-          console.error(
-            `error in ${folders[+idx].slice(1)?.toUpperCase()}${(tenfold.states[+idx].i + "").padStart(2, "0")}`,
-            cause
-          );
-          setLetter(+idx, () => {
-            throw new SyntaxError(
-              cause instanceof Error ? cause.message : `${cause}`,
-              { cause }
-            );
-          });
-        }
-      }
-      return content;
-    });
   }
 
   const tenfoldOptions = {
     letters: letterFns,
     get letterCounts() {
-      return Array.from(letterCounts);
+      return counts;
     },
     get currentlyEditingIndex() {
       return editing();
@@ -293,6 +200,9 @@ export default function TenfoldExperience(props: {
     set(i, field, value) {
       props.handle.change((doc) => (doc.states[i][field] = value));
     },
+    get word() {
+      return word();
+    },
   } satisfies CreateTenfoldOptions;
 
   onMount(() => {
@@ -302,15 +212,15 @@ export default function TenfoldExperience(props: {
     });
   });
 
-  const editingHandle = () => codes[editing()][1]();
+  const editingHandle = () => codeHandles[editing()];
 
   const typescriptPath = () =>
-    `/letters/${folders[editing()]}/${tenfold.states[editing()].i}.js`;
+    `/letters/${folders()[editing()]}/${tenfold.states[editing()].i}.js`;
 
   async function fork() {
     const idx = editing();
-    const hdl = codes[idx][2];
-    const len = Array.from(letterCounts)[idx];
+    const hdl = letterFolderHandles[idx];
+    const len = counts[idx];
     const name = (len + "").padStart(2, "0") + ".js";
 
     const newDoc = await props.element.repo.create2({
@@ -318,11 +228,11 @@ export default function TenfoldExperience(props: {
       mimeType: "application/javascript",
       extension: "js",
       metadata: { permissions: 420 },
-      content: codes[idx][0]()?.content ?? "",
+      content: codeHandles[idx].doc().content ?? "",
       name,
     });
 
-    hdl()?.change((folder) => {
+    hdl.change((folder) => {
       folder.docs.push({
         type: "file",
         url: newDoc.url,
@@ -363,91 +273,95 @@ export default function TenfoldExperience(props: {
         <aside>
           <div>
             <button onClick={() => fork()}>F</button>
-            <CodeMirror
-              handle={editingHandle()}
-              path={["content"]}
-              withView={(view: EditorView) => {
-                createEffect(
-                  on(typescriptPath, () => {
-                    view.dispatch({
-                      effects: historyCompartment.reconfigure([]),
-                    });
-                    setTimeout(() => {
+            <Show when={editingHandle()}>
+              <CodeMirror
+                handle={editingHandle()}
+                path={["content"]}
+                withView={(view: EditorView) => {
+                  createEffect(
+                    on(typescriptPath, () => {
                       view.dispatch({
-                        effects: historyCompartment.reconfigure(history()),
+                        effects: historyCompartment.reconfigure([]),
                       });
-                    }, 1000);
-                  })
-                );
-              }}
-              extensions={[
-                drawSelection(),
-                withVim() ? vim({ status: true }) : [],
-                EditorState.allowMultipleSelections.of(true),
-                EditorView.clickAddsSelectionRange.of((event) => event.altKey),
-                keymap.of([
-                  indentWithTab,
-                  {
-                    preventDefault: true,
-                    mac: "m-s",
-                    key: "c-s",
-                    run() {
-                      return true;
+                      setTimeout(() => {
+                        view.dispatch({
+                          effects: historyCompartment.reconfigure(history()),
+                        });
+                      }, 1000);
+                    })
+                  );
+                }}
+                extensions={[
+                  drawSelection(),
+                  withVim() ? vim({ status: true }) : [],
+                  EditorState.allowMultipleSelections.of(true),
+                  EditorView.clickAddsSelectionRange.of(
+                    (event) => event.altKey
+                  ),
+                  keymap.of([
+                    indentWithTab,
+                    {
+                      preventDefault: true,
+                      mac: "m-s",
+                      key: "c-s",
+                      run() {
+                        return true;
+                      },
                     },
-                  },
-                  {
-                    preventDefault: true,
-                    key: "m-c-v",
-                    run() {
-                      setWithVim((prev) => !prev);
-                      return true;
+                    {
+                      preventDefault: true,
+                      key: "m-c-v",
+                      run() {
+                        setWithVim((prev) => !prev);
+                        return true;
+                      },
                     },
-                  },
-                  ...defaultKeymap,
-                  ...historyKeymap,
-                  ...completionKeymap,
-                  ...searchKeymap,
-                ]),
-                bracketMatching({}),
-                historyCompartment.of([history()]),
-                javascript(),
-                noirTheme,
-                tsFacetCompartment.of(
-                  tsFacet.of({ worker, path: typescriptPath() })
-                ),
-                autocompletion({
-                  override: [tsAutocomplete()],
-                  closeOnBlur: false,
-                }),
-                tsSync(),
-                tsGoto(),
-                tsHover(),
-                tsTwoslash(),
-                tsLinterWorker(),
-                indentOnInput(),
-                search({ caseSensitive: false, regexp: true }),
-                EditorView.lineWrapping,
-                EditorState.transactionFilter.of((tr) => {
-                  const start = completionStatus(tr.startState);
-                  const after = completionStatus(tr.state);
+                    ...defaultKeymap,
+                    ...historyKeymap,
+                    ...completionKeymap,
+                    ...searchKeymap,
+                  ]),
+                  bracketMatching({}),
+                  historyCompartment.of([history()]),
+                  javascript(),
+                  noirTheme,
+                  tsFacetCompartment.of(
+                    tsFacet.of({ worker, path: typescriptPath() })
+                  ),
+                  autocompletion({
+                    override: [tsAutocomplete()],
+                    closeOnBlur: false,
+                  }),
+                  tsSync(),
+                  tsGoto(),
+                  tsHover(),
+                  tsTwoslash(),
+                  tsLinterWorker(),
+                  indentOnInput(),
+                  search({ caseSensitive: false, regexp: true }),
+                  EditorView.lineWrapping,
+                  EditorState.transactionFilter.of((tr) => {
+                    const start = completionStatus(tr.startState);
+                    const after = completionStatus(tr.state);
 
-                  if (
-                    !tr.reconfigured &&
-                    tr.changes.empty &&
-                    !tr.effects.length &&
-                    start == "active" &&
-                    !after &&
-                    !tr.scrollIntoView &&
-                    tr.startState.selection == tr.newSelection &&
-                    tr.selection == tr.startState.selection
-                  ) {
-                    return [];
-                  }
+                    if (
+                      !tr.reconfigured &&
+                      tr.changes.empty &&
+                      !tr.effects.length &&
+                      start == "active" &&
+                      !after &&
+                      !tr.scrollIntoView &&
+                      tr.startState.selection == tr.newSelection &&
+                      tr.selection == tr.startState.selection
+                    ) {
+                      return [];
+                    }
 
-                  return tr;
-                }),
-              ]}
-            />
+                    return tr;
+                  }),
+                ]}
+              />
+            </Show>
           </div>
         </aside>
       </article>

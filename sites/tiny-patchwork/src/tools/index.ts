@@ -48,8 +48,6 @@ import "@inkandswitch/tenfold/style.css";
 // @ts-expect-error no types
 import { plugins as tenfoldPlugins } from "@inkandswitch/tenfold";
 
-console.log(tenfoldPlugins);
-
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
   ...patchworkFramePlugins,

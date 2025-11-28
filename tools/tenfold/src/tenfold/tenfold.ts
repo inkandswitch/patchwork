@@ -477,6 +477,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     rotaten,
     TAU,
     PI,
+    mouse() {
+      return !!dragType;
+    },
   };
 
   // ENGINE /////////////////////////////////////////////////////////////////////////////////////////
