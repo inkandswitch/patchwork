@@ -128,7 +128,9 @@ export default function TenfoldExperience(props: {
           letterUrl,
           props.element
         );
-        counts[letterIndex] = letterFolder()?.docs.length ?? -1;
+        counts[letterIndex] =
+          letterFolder()?.docs.filter((doc) => doc.name.endsWith(".js"))
+            .length ?? -1;
         letterFolderHandles[letterIndex] = letterFolderHandle()!;
         const codeUrl = () =>
           letterFolder()?.docs.find(
