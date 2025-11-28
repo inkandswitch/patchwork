@@ -15,6 +15,7 @@ export const inlinedFunctions: Record<string, Function> = {
   max: (x: string, y: string) => `Math.max(${x}, ${y})`,
   round: (x: string) => `Math.round(${x})`,
   abs: (x: string) => `Math.abs(${x})`,
+  sqrt: (x: string) => `Math.sqrt(${x})`,
 
   // ----- scaling -----
 
