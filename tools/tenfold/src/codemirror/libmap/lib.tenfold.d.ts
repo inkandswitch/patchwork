@@ -43,7 +43,7 @@ declare function sinn(v: number): number;
 declare function line(x = 0, y = 0): void;
 
 // Call this function when you'd like to begin drawing another line.
-declare function begin(bool?: true): void;
+declare function begin(bool?: boolean): void;
 
 // You can also begin a new line at a point.
 // This is equivalent to calling begin() then line(x, y) once.
