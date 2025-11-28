@@ -211,8 +211,15 @@ export default function TenfoldExperience(props: {
     },
   } satisfies CreateTenfoldOptions;
 
+  createEffect(
+    on(word, (word) => {
+      if (word && word.length) {
+        onCleanup(createTenfold(tenfoldOptions));
+      }
+    })
+  );
+
   onMount(() => {
-    onCleanup(createTenfold(tenfoldOptions));
     canvas()!.addEventListener("tenfold:edit", (event) => {
       setEditing((event as CustomEvent<number>).detail || 0);
     });

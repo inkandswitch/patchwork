@@ -24,7 +24,9 @@ export interface CreateTenfoldOptions {
 
 export default function createTenfold(opts: CreateTenfoldOptions) {
   if (typeof opts.word == "string" && opts.word.length != 9) {
-    throw new Error("words are 9 letters long");
+    throw new TypeError(
+      `words are 9 letters long. received: ${opts.word?.toString()}`
+    );
   }
   // CONFIG
   const thick = 2; // css pixels
