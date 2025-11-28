@@ -1,14 +1,14 @@
 // @ts-ignore -- not a real error, see https://v3.vitejs.dev/guide/assets.html
-import workletUrl from "./msynth-worklet.ts?worker&url";
+import workletUrl from './msynth-worklet.ts?worker&url';
 
-import * as midi from "./midi-message-constructors.ts";
-import { SAMPLE_RATE } from "./constants";
-import type { MessageToWorklet } from "./types";
+import * as midi from './midi-message-constructors.ts';
+import { SAMPLE_RATE } from './constants';
+import { MessageToWorklet } from './types.ts';
 
-const uiDiv = document.getElementById("ui") as HTMLDivElement;
+const uiDiv = document.getElementById('ui') as HTMLDivElement;
 
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d")!;
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d')!;
 uiDiv.appendChild(canvas);
 
 function updateCanvasSize() {
@@ -21,37 +21,81 @@ function updateCanvasSize() {
     const oldH = canvas.height;
     canvas.width = oldW * devicePixelRatio;
     canvas.height = oldH * devicePixelRatio;
-    canvas.style.width = oldW + "px";
-    canvas.style.height = oldH + "px";
+    canvas.style.width = oldW + 'px';
+    canvas.style.height = oldH + 'px';
     ctx.scale(devicePixelRatio, devicePixelRatio);
   }
 }
 
-window.addEventListener("resize", updateCanvasSize);
+window.addEventListener('resize', updateCanvasSize);
 updateCanvasSize();
 
 // ---- stand-in for the UI ----
 
-const MARGIN = 100;
-const LETTER_WIDTH = 200;
-const LETTER_HEIGHT = 200;
+const MARGIN = 25;
+const LETTER_WIDTH = 150;
+const LETTER_HEIGHT = 150;
 
 class Letter {
   public synth: AudioWorkletNode | null = null;
   public params: Float32Array<any> | null = null;
 
-  readonly posX: number;
-  readonly posY: number;
-
   constructor(
-    readonly col: number,
-    readonly row: number,
+    public col: number,
+    public row: number,
     public x = 0,
     public y = 0,
-    public isActive = false
-  ) {
-    this.posX = MARGIN + col * LETTER_WIDTH;
-    this.posY = MARGIN + row * LETTER_HEIGHT;
+    public isActive = false,
+  ) {}
+
+  get posX() {
+    return MARGIN + this.col * LETTER_WIDTH;
+  }
+
+  get posY() {
+    return MARGIN + this.row * LETTER_HEIGHT;
+  }
+
+  initWorklet(context: AudioContext, patch: string) {
+    const synth = new AudioWorkletNode(context, 'msynth');
+
+    // Important!!!!!
+    synth.channelInterpretation = 'discrete';
+    synth.channelCount = 2;
+    synth.channelCountMode = 'explicit';
+
+    synth.connect(context.destination);
+    synth.port.onmessage = (msg) => console.log('worklet:', msg.data);
+
+    this.synth = synth;
+    this.params = new Float32Array(new SharedArrayBuffer(128 * 4));
+    this.params[100] = this.col;
+
+    sendToSynth(synth, {
+      command: 'load patch',
+      code: `
+        ${patch}
+
+        wallWidth = 10 // all distances are in feet
+        distToWall = 10
+        distToWall2 = distToWall * distToWall
+        headWidth = 0.6
+        speedOfSound = 1125
+        thisCol = param100
+        thisX = wallWidth * thisCol normalize(0, 2) lscale(-2/3, 2/3)
+        leftEarX = -headWidth / 2
+        rightEarX = headWidth / 2
+        distToLeftEar = sqrt(distToWall2 + (thisX - leftEarX) * (thisX - leftEarX))
+        distToRightEar = sqrt(distToWall2 + (thisX - rightEarX) * (thisX - rightEarX))
+        delayLeft = distToLeftEar / speedOfSound
+        delayRight = distToRightEar / speedOfSound
+
+        pan = thisCol normalize(0, 2) lscale(1/6, 5/6)
+        left = out * (1 - pan) >> delay(delayLeft)
+        right = out * pan >> delay(delayRight)
+      `,
+      params: this.params.buffer,
+    });
   }
 
   contains(px: number, py: number) {
@@ -76,12 +120,12 @@ class Letter {
 
   render() {
     ctx.lineWidth = 4;
-    ctx.strokeStyle = "#aaa";
+    ctx.strokeStyle = '#aaa';
     ctx.strokeRect(this.posX, this.posY, LETTER_WIDTH, LETTER_HEIGHT);
-    ctx.fillStyle = this.isActive ? "#aaa" : "#ccc";
+    ctx.fillStyle = this.isActive ? '#aaa' : '#ccc';
     ctx.fillRect(this.posX, this.posY, LETTER_WIDTH, LETTER_HEIGHT);
 
-    ctx.fillStyle = "#888";
+    ctx.fillStyle = '#888';
     const cx = this.posX + LETTER_WIDTH / 2;
     const cy = this.posY + LETTER_HEIGHT / 2;
     const px = cx + (this.x * LETTER_WIDTH) / 2;
@@ -93,29 +137,31 @@ class Letter {
 
   noteOn(note: number, velocity: number) {
     sendToSynth(this.synth!, {
-      command: "process midi message",
+      command: 'process midi message',
       data: midi.noteOn(0, note, velocity),
     });
   }
 
   noteOff(note: number, velocity: number) {
     sendToSynth(this.synth!, {
-      command: "process midi message",
+      command: 'process midi message',
       data: midi.noteOff(0, note, velocity),
     });
   }
 }
 
-const letters: Letter[] = [];
+const drone = new Letter(1, 3 + MARGIN / LETTER_HEIGHT);
+const inkAndSwitchLetters: Letter[] = [];
 for (let row = 0; row < 3; row++) {
   for (let col = 0; col < 3; col++) {
-    letters.push(new Letter(col, row));
+    inkAndSwitchLetters.push(new Letter(col, row));
   }
 }
+const letters = [drone, ...inkAndSwitchLetters];
 
 let draggingLetter: Letter | null = null;
 
-window.addEventListener("pointerdown", (e) => {
+window.addEventListener('pointerdown', (e) => {
   for (const letter of letters) {
     if (letter.contains(e.clientX, e.clientY)) {
       draggingLetter = letter;
@@ -124,11 +170,11 @@ window.addEventListener("pointerdown", (e) => {
   }
 });
 
-window.addEventListener("pointermove", (e) => {
+window.addEventListener('pointermove', (e) => {
   draggingLetter?.moveJoystick(e.clientX, e.clientY);
 });
 
-window.addEventListener("pointerup", (e) => {
+window.addEventListener('pointerup', (e) => {
   draggingLetter = null;
 });
 
@@ -137,6 +183,11 @@ function render() {
 
   for (const letter of letters) {
     letter.render();
+  }
+
+  if (drone.params) {
+    drone.col = 1 + Math.sin(Date.now() / 2000);
+    drone.params[100] = drone.col;
   }
 
   requestAnimationFrame(render);
@@ -189,6 +240,9 @@ const patchLibrary = {
     ring = (sound1 + sound1 delay(2) + sound2) * 5.5 pwm normalize * 0.5
     out = ring * adsr(0.01, 0, 1, 2)
   `,
+  square: `
+    out = noteFreq pwm * adsr(0.01, 0, 1, 0.3)
+  `,
   saw: `
     out = noteFreq saw * adsr(0.01, 0, 1, 0.3)
   `,
@@ -203,92 +257,66 @@ const patchLibrary = {
 
 async function start() {
   const context = new AudioContext({
-    latencyHint: "balanced",
+    latencyHint: 'balanced',
     sampleRate: SAMPLE_RATE,
   });
 
   await context.audioWorklet.addModule(workletUrl);
 
+  let melody = { steps: [] as number[][], patches: [] as string[] };
+  let bass = { steps: [] as number[][], patch: patchLibrary.square };
+
   // Demo #1
   // tempo = 100;
-  // let patches = [patchLibrary.slowSaw];
-  // let steps: number[][] = [[52, 60], [62], [64], [65], [64, 67], [69], [71], [72]];
+  // melody = {
+  //   steps: [[52, 60], [62], [64], [65], [64, 67], [69], [71], [72]],
+  //   patches: [patchLibrary.slowSaw],
+  // };
 
   // Demo #2
   // tempo = 100;
-  // let patches = [patchLibrary.pwm];
-  // let steps: number[][] = [[60, 63], [62], [63], [65], [67], [68], [71], [72]];
+  // melody = {
+  //   steps: [[60, 63], [62], [63], [65], [67], [68], [71], [72]],
+  //   patches: [patchLibrary.pwm],
+  // };
 
   // Demo #3: cacophony
-  tempo = 40;
-  let patches = [...Object.values(patchLibrary)];
-  let steps: number[][] = [
-    [60, 63],
-    [62],
-    [63],
-    [65],
-    [67],
-    [68],
-    [71],
-    [72],
-    [67],
-  ];
+  // tempo = 40;
+  // melody = {
+  //   steps: [[60, 63], [62], [63], [65], [67], [68], [71], [72], [67]],
+  //   patches: [...Object.values(patchLibrary)],
+  // };
 
   // Demo #4: save a prayer
-  // tempo = 113;
-  // let patches = [patchLibrary.duranDuran];
-  // let steps = [[62], [64], [65], [69], [72], [69], [72], [69]];
+  // melody = {
+  //   steps: [[62], [64], [65], [69], [72], [69], [72], [69]],
+  //   patches: [patchLibrary.duranDuran],
+  // };
+  // bass = {
+  //   steps: [
+  //     ...repeat(() => [38], 8),
+  //     ...repeat(() => [41], 8),
+  //     ...repeat(() => [34], 8),
+  //     ...repeat(() => [43], 3),
+  //     ...repeat(() => [41], 5),
+  //   ],
+  //   patch: patchLibrary.square,
+  // };
 
-  letters.forEach((letter, idx) => {
-    const synth = new AudioWorkletNode(context, "msynth");
-
-    // Important!!!!!
-    synth.channelInterpretation = "discrete";
-    synth.channelCount = 2;
-    synth.channelCountMode = "explicit";
-
-    synth.connect(context.destination);
-    synth.port.onmessage = (msg) => console.log("worklet:", msg.data);
-
-    letter.synth = synth;
-    letter.params = new Float32Array(new SharedArrayBuffer(128));
-
-    // spatial sound: calculate delays for left and right ear
-    const wallWidth = 10; // feet
-    const distToWall = 10; // feet
-    const headWidth = 0.6; // feet
-    const speedOfSound = 1125; // feet per second
-    const letterX =
-      wallWidth * (letter.col === 0 ? -2 / 3 : letter.col === 1 ? 0 : 2 / 3);
-    const leftEarX = -headWidth / 2;
-    const rightEarX = headWidth / 2;
-    const distToLeftEar = Math.sqrt(
-      distToWall ** 2 + (letterX - leftEarX) ** 2
-    );
-    const distToRightEar = Math.sqrt(
-      distToWall ** 2 + (letterX - rightEarX) ** 2
-    );
-    const delayLeft = distToLeftEar / speedOfSound;
-    const delayRight = distToRightEar / speedOfSound;
-    const pan = letter.col === 0 ? 1 / 6 : letter.col === 1 ? 0.5 : 5 / 6;
-
-    sendToSynth(synth, {
-      command: "load patch",
-      code: `
-        ${patches[idx % patches.length]}
-        pan = ${pan}
-        left = out * (1 - pan) >> delay(${delayLeft})
-        right = out * pan >> delay(${delayRight})
-      `,
-      params: letter.params.buffer,
-    });
+  drone.initWorklet(context, bass.patch);
+  inkAndSwitchLetters.forEach((letter, idx) => {
+    letter.initWorklet(context, melody.patches[idx % melody.patches.length]);
   });
 
   await seconds(0.5); // wait for patches to load
-  sequence(steps);
+  sequence(
+    melody.steps,
+    [0, 1, 2, 5, 4, 3, 6, 7, 8, 5, 4, 3].map((idx) => inkAndSwitchLetters[idx]),
+  );
+  sequence(bass.steps, [drone]);
 }
 
-window.addEventListener("pointerdown", start, { once: true });
+window.addEventListener('pointerdown', start, { once: true });
 
 function sendToSynth(synth: AudioWorkletNode, message: MessageToWorklet) {
   synth.port.postMessage(message);
@@ -296,27 +324,25 @@ function sendToSynth(synth: AudioWorkletNode, message: MessageToWorklet) {
 
 // ---- sequencer -----
 
-const order = [0, 1, 2, 5, 4, 3, 6, 7, 8, 5, 4, 3].map((idx) => letters[idx]);
-let nextLetterIdx = 0;
-
 let tempo = 120;
 let triggerPeriod = 1 / 8;
 let noteDuration = 1 / 16;
-async function sequence(steps: number[][]) {
+async function sequence(steps: number[][], letters: Letter[]) {
+  if (steps.length === 0) {
+    return;
+  }
+
+  let nextLetterIdx = 0;
   while (true) {
     for (const step of steps) {
       const lettersForThisStep: Letter[] = [];
-      if (draggingLetter) {
+      if (letters.includes(draggingLetter!)) {
         step.forEach(() => lettersForThisStep.push(draggingLetter!));
-        // while (order[nextLetterIdx] !== draggingLetter) {
-        //   nextLetterIdx = (nextLetterIdx + 1) % order.length;
-        // }
-        // nextLetterIdx = (nextLetterIdx + 1) % order.length;
       } else {
         step.forEach(() => {
-          const letter = order[nextLetterIdx];
+          const letter = letters[nextLetterIdx];
           lettersForThisStep.push(letter);
-          nextLetterIdx = (nextLetterIdx + 1) % order.length;
+          nextLetterIdx = (nextLetterIdx + 1) % letters.length;
         });
       }
 
@@ -343,4 +369,12 @@ function seconds(s: number) {
   return new Promise((resolve) => {
     setTimeout(resolve, s * 1000);
   });
+}
+
+function repeat<T>(makeValue: (idx: number) => T, n: number) {
+  const values: T[] = [];
+  for (let idx = 0; idx < n; idx++) {
+    values.push(makeValue(idx));
+  }
+  return values;
 }
