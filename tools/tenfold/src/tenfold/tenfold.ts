@@ -19,9 +19,13 @@ export interface CreateTenfoldOptions {
   container: HTMLElement;
   edit(i: number): void;
   set(i: number, field: "q" | "r" | "x" | "y" | "i", val: number): void;
+  word?: string;
 }
 
 export default function createTenfold(opts: CreateTenfoldOptions) {
+  if (typeof opts.word == "string" && opts.word.length != 9) {
+    throw new Error("words are 9 letters long");
+  }
   // CONFIG
   const thick = 2; // css pixels
   const cycleTime = 8; // how many seconds per anim loop
@@ -432,11 +436,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       newPath = true;
     },
     arc(x = 0, y = 0, r = 1, start = 0, end = 1, ccw = false) {
-      if (newPath) api.move(x + r * cosn(start), y + r * sinn(start))
+      if (newPath) api.move(x + r * cosn(start), y + r * sinn(start));
       ctx.arc(x, y, Math.abs(r), start * TAU, end * TAU, ccw);
     },
     quadratic(cx: number, cy: number, x: number, y: number) {
-      if (newPath) api.move(cx, cy) // this is a CHOICE, but not including it also feels like a CHOICE, ugh
+      if (newPath) api.move(cx, cy); // this is a CHOICE, but not including it also feels like a CHOICE, ugh
       ctx.quadraticCurveTo(cx, cy, x, y);
     },
     cubic(
@@ -447,7 +451,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       x: number,
       y: number
     ) {
-      if (newPath) api.move(cx1, cy1) // this is a CHOICE, but not including it also feels like a CHOICE, ugh
+      if (newPath) api.move(cx1, cy1); // this is a CHOICE, but not including it also feels like a CHOICE, ugh
       ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x, y);
     },
     text(
@@ -489,7 +493,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     timers[i] = new Averager(10);
   }
 
-  let mappers = Array.from("INKSWITCH");
+  let mappers = Array.from(opts.word ?? "INKSWITCH");
   let lastT: number;
 
   let stop = false;

@@ -76,8 +76,6 @@ function makeName(idx: number) {
 
 type TextFile = { content: string };
 
-const DEFAULT_WORD = Array.from("inkswitch");
-
 export default function TenfoldExperience(props: {
   handle: DocHandle<Tenfold>;
   element: PatchworkViewElement;
@@ -93,11 +91,6 @@ export default function TenfoldExperience(props: {
     }
   });
 
-  const word = () =>
-    Array.from("word" in tenfold ? (tenfold.word as string) : DEFAULT_WORD);
-
-  const folders = mapArray(word, (l, i) => `${i()}${l}`);
-
   const [tenfolder] = useDocument<FolderDoc>(
     () => tenfold.tenfolder,
     props.element
@@ -107,6 +100,17 @@ export default function TenfoldExperience(props: {
     () => tenfolder()?.docs.find((doc) => doc.name == "letters")?.url,
     props.element
   );
+
+  const folders = mapArray(
+    () =>
+      lettersFolder()?.docs.toSorted((a, b) =>
+        // compare in canadian
+        a.name.localeCompare(b.name, "en-CA")
+      ),
+    (l) => l.name
+  );
+
+  const word = mapArray(folders, (name) => name[1]);
 
   const counts = createMutable<number[]>([]);
   const letterFolderHandles = createMutable<DocHandle<FolderDoc>[]>([]);
@@ -201,7 +205,7 @@ export default function TenfoldExperience(props: {
       props.handle.change((doc) => (doc.states[i][field] = value));
     },
     get word() {
-      return word();
+      return word().join("").toUpperCase();
     },
   } satisfies CreateTenfoldOptions;
 
