@@ -45,6 +45,10 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   let t = 0;
   const timers: Averager[] = [];
 
+  
+  let PRINT = false // This will be enabled when we click the "Test Print" button
+  // TODO: also need to bump the line thickness to 4x (because we're printing at roughly 4x scale)
+
   // HELPFUL HELPERS
   // Ideally, all this stuff (or better equivalents) would be available to people writing letter functions
   const PI = Math.PI;
@@ -125,8 +129,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   function resize() {
     // If we need to nest the canvas within a smaller area, specify that area here
     const box = opts.container.getBoundingClientRect();
-    let parentWidth = box.width;
-    let parentHeight = box.height;
+    let parentWidth = PRINT ? 3600 : box.width;
+    let parentHeight = PRINT ? 4800 : box.height;
 
     // calculate the "dead" width/height, eaten up by gaps and padding
     let dw = padding * 2 + gap * 2;
@@ -576,42 +580,44 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         ctx.lineWidth /= 3;
       }
 
-      // Draw the letter selector
-      ctx.resetTransform();
-      ctx.scale(dpr, dpr); // SCREEN SPACE
-      ctx.translate(C * cssW, R * cssW); // center on the current grid cell
-      ctx.translate(padding, padding); // padding
-      ctx.translate(gap * C, gap * R); // gaps
-      ctx.lineWidth = thick;
-      {
-        let charWidth = 10 * scaleFix;
-        let charHeight = 11 * scaleFix; // this font is weird
-        let labelText =
-          mappers[i] + opts.states[i].i.toString().padStart(2, "0");
-        let labelWidth = charWidth * labelText.length;
-        let x = 17 * scaleFix + labelWidth / 2;
-        let y = cssW + gap / 2;
-        ctx.beginPath();
-        drawText(
-          labelText,
-          x - labelWidth / 2,
-          y - scaleFix - charHeight / 2,
-          16 * scaleFix,
-          charWidth
-        );
-        api.move(x - 26 * scaleFix, y - charHeight / 2);
-        api.line(x - 32 * scaleFix, y + 0);
-        api.line(x - 26 * scaleFix, y + charHeight / 2);
-        api.move(x + 26 * scaleFix, y - charHeight / 2);
-        api.line(x + 32 * scaleFix, y + 0);
-        api.line(x + 26 * scaleFix, y + charHeight / 2);
-        ctx.stroke();
-
-        // edit & fork
-        ctx.beginPath();
-        api.circle(cssW - 6 * scaleFix, y, 6 * scaleFix);
-        if (opts.currentlyEditingIndex == i) ctx.fill();
-        else ctx.stroke();
+      if (!PRINT) {
+        // Draw the letter selector
+        ctx.resetTransform();
+        ctx.scale(dpr, dpr); // SCREEN SPACE
+        ctx.translate(C * cssW, R * cssW); // center on the current grid cell
+        ctx.translate(padding, padding); // padding
+        ctx.translate(gap * C, gap * R); // gaps
+        ctx.lineWidth = thick;
+        {
+          let charWidth = 10 * scaleFix;
+          let charHeight = 11 * scaleFix; // this font is weird
+          let labelText =
+            mappers[i] + opts.states[i].i.toString().padStart(2, "0");
+          let labelWidth = charWidth * labelText.length;
+          let x = 17 * scaleFix + labelWidth / 2;
+          let y = cssW + gap / 2;
+          ctx.beginPath();
+          drawText(
+            labelText,
+            x - labelWidth / 2,
+            y - scaleFix - charHeight / 2,
+            16 * scaleFix,
+            charWidth
+          );
+          api.move(x - 26 * scaleFix, y - charHeight / 2);
+          api.line(x - 32 * scaleFix, y + 0);
+          api.line(x - 26 * scaleFix, y + charHeight / 2);
+          api.move(x + 26 * scaleFix, y - charHeight / 2);
+          api.line(x + 32 * scaleFix, y + 0);
+          api.line(x + 26 * scaleFix, y + charHeight / 2);
+          ctx.stroke();
+  
+          // edit & fork
+          ctx.beginPath();
+          api.circle(cssW - 6 * scaleFix, y, 6 * scaleFix);
+          if (opts.currentlyEditingIndex == i) ctx.fill();
+          else ctx.stroke();
+        }
       }
 
       // Draw the kaoss pad draggable
