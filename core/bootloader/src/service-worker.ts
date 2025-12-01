@@ -79,6 +79,7 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
 
       try {
         if (importURL) {
+          // cache-first strategy for handoff requests
           if (match) return match;
           const client = await self.clients.get(fetchEvent.clientId);
 
@@ -130,6 +131,7 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
             status: 418,
           });
         } else {
+          // network first strategy for external requests
           const response = await fetch(request);
           if (response) {
             if (response.ok) {
