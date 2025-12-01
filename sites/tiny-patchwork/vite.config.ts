@@ -8,12 +8,6 @@ export default defineConfig({
     tailwindcss(),
     wasm(),
     patchwork({
-      // keyhive settings
-      // syncServerStorageId: "a565270c-bf7c-4df9-a531-f6be1d3152f0",
-      // syncServerUrl: "wss://keyhive.sync.automerge.org",
-      // keyhiveEnabled: true,
-      syncServerStorageId: "3760df37-a4c6-4f66-9ecd-732039a9385d",
-      syncServerUrl: "wss://sync3.automerge.org",
       extraBuiltins: {
         "@codemirror/language": "/packages/@codemirror/language/index.js",
         "@codemirror/view": "/packages/@codemirror/view/index.js",
