@@ -33,7 +33,7 @@ describe("AnnotationSetView", () => {
       expect(result[0][1]).toBe("A comment");
     });
 
-    it("should chain ofType and onElementsOf", () => {
+    it("should chain ofType and onChildrenOf", () => {
       handle.change((d) => {
         d.todos = [{ title: "Task 1" }, { title: "Task 2" }];
       });
@@ -49,7 +49,7 @@ describe("AnnotationSetView", () => {
       annotations.add(todo0Ref, Comment("Comment on task 1"));
       annotations.add(todo1Ref, Diff({ type: "added" }));
 
-      const comments = [...annotations.ofType(Comment).onElementsOf(todosRef)];
+      const comments = [...annotations.ofType(Comment).onChildrenOf(todosRef)];
 
       expect(comments).toHaveLength(1);
       expect(comments[0][1]).toBe("Comment on task 1");
@@ -103,7 +103,7 @@ describe("AnnotationSetView", () => {
 
       // Get only tags on direct section elements
       const sectionTags = [
-        ...annotations.ofType(Tag).onElementsOf(sectionsRef),
+        ...annotations.ofType(Tag).onChildrenOf(sectionsRef),
       ];
       expect(sectionTags).toHaveLength(1);
       expect(sectionTags[0][1]).toBe("section-tag");
@@ -182,7 +182,7 @@ describe("AnnotationSetView", () => {
 
       const comments = annotations
         .ofType(Comment)
-        .onElementsOf(todosRef)
+        .onChildrenOf(todosRef)
         .toArray();
 
       expect(comments).toHaveLength(2);
@@ -254,7 +254,7 @@ describe("AnnotationSetView", () => {
       const sectionComments: string[] = [];
       for (const [, value] of annotations
         .ofType(Comment)
-        .onElementsOf(sectionsRef)) {
+        .onChildrenOf(sectionsRef)) {
         sectionComments.push(value);
       }
 

@@ -30,13 +30,13 @@ export class AnnotationSetView<T> {
   }
 
   /**
-   * Further filter on elements of a ref
+   * Further filter on children of a ref
    */
-  onElementsOf(ref: Ref<any>): AnnotationSetView<T> {
+  onChildrenOf(ref: Ref<any>): AnnotationSetView<T> {
     const filtered = this.entries.filter(([refId]) => {
       const annotatedRef = this.refs.get(refId);
       if (!annotatedRef) return false;
-      return this.isDirectChild(annotatedRef, ref);
+      return annotatedRef.isChildOf(ref);
     });
     return new AnnotationSetView(filtered, this.refs);
   }
@@ -76,33 +76,5 @@ export class AnnotationSetView<T> {
         yield [ref, value];
       }
     }
-  }
-
-  private isDirectChild(annotatedRef: Ref<any>, parentRef: Ref<any>): boolean {
-    if (annotatedRef.docHandle.documentId !== parentRef.docHandle.documentId) {
-      return false;
-    }
-
-    const entryHeads = annotatedRef.heads?.join(",");
-    const refHeads = parentRef.heads?.join(",");
-    if (entryHeads !== refHeads) {
-      return false;
-    }
-
-    if (annotatedRef.path.length !== parentRef.path.length + 1) {
-      return false;
-    }
-
-    for (let i = 0; i < parentRef.path.length; i++) {
-      if (!this.segmentsEqual(parentRef.path[i], annotatedRef.path[i])) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  private segmentsEqual(a: any, b: any): boolean {
-    return JSON.stringify(a) === JSON.stringify(b);
   }
 }

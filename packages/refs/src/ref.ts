@@ -302,6 +302,68 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   }
 
   /**
+   * Check if this ref is a child of another ref.
+   *
+   * For arrays: only direct array elements are considered children
+   * (path must be exactly one segment longer).
+   *
+   * For text: sub-ranges within the text are considered children
+   * (same path with a range, or one segment deeper).
+   *
+   * @example
+   * ```ts
+   * // Array children
+   * const arrayRef = ref(handle, 'items');
+   * const itemRef = ref(handle, 'items', 0);
+   * itemRef.isChildOf(arrayRef); // true
+   *
+   * // Text range children
+   * const textRef = ref(handle, 'content');
+   * const rangeRef = ref(handle, 'content', [0, 10]);
+   * rangeRef.isChildOf(textRef); // true
+   * ```
+   */
+  isChildOf(parent: Ref<any>): boolean {
+    // Must be same document
+    if (this.docHandle.documentId !== parent.docHandle.documentId) {
+      return false;
+    }
+
+    // Must have same heads
+    const thisHeads = this.heads?.join(",");
+    const parentHeads = parent.heads?.join(",");
+    if (thisHeads !== parentHeads) {
+      return false;
+    }
+
+    // Check if paths match up to parent's length
+    if (this.path.length < parent.path.length) {
+      return false;
+    }
+
+    // All of parent's path segments must match
+    for (let i = 0; i < parent.path.length; i++) {
+      if (!this.#segmentsEqual(this.path[i], parent.path[i])) {
+        return false;
+      }
+    }
+
+    // Case 1: Same path length - only valid if this has a range and parent doesn't
+    // (this is a range child of text)
+    if (this.path.length === parent.path.length) {
+      return this.range !== undefined && parent.range === undefined;
+    }
+
+    // Case 2: Path is exactly one segment longer (direct child)
+    if (this.path.length === parent.path.length + 1) {
+      return true;
+    }
+
+    // Case 3: Path is more than one segment longer (not a direct child)
+    return false;
+  }
+
+  /**
    * Check if this ref overlaps with another ref (for text/range refs).
    * Two refs overlap if they refer to the same parent location and their ranges overlap.
    *

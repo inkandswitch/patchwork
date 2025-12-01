@@ -136,14 +136,14 @@ export class AnnotationSet {
   }
 
   /**
-   * Filter annotations on elements of a ref (if ref is an array or text)
+   * Filter annotations on children of a ref (if ref is an array or text)
    */
-  onElementsOf(ref: Ref<string | Array<unknown>>): AnnotationSetView<unknown> {
+  onChildrenOf(ref: Ref<string | Array<unknown>>): AnnotationSetView<unknown> {
     const entries: Array<[string, unknown]> = [];
 
     // Check each ref to see if it's a direct child
     for (const [refId, annotatedRef] of this.refs) {
-      if (this.isDirectChild(annotatedRef, ref)) {
+      if (annotatedRef.isChildOf(ref)) {
         // Collect all annotations for this ref
         for (const typeMap of this.annotations.values()) {
           const value = typeMap.get(refId);
@@ -191,42 +191,5 @@ export class AnnotationSet {
         }
       }
     }
-  }
-
-  /**
-   * Check if annotatedRef is a direct child of parentRef
-   */
-  private isDirectChild(annotatedRef: Ref<any>, parentRef: Ref<any>): boolean {
-    // Check if entry.ref is a direct child of ref
-    if (annotatedRef.docHandle.documentId !== parentRef.docHandle.documentId) {
-      return false;
-    }
-
-    // Check if the heads match
-    const entryHeads = annotatedRef.heads?.join(",");
-    const refHeads = parentRef.heads?.join(",");
-    if (entryHeads !== refHeads) {
-      return false;
-    }
-
-    // Check if annotatedRef's path is exactly one segment longer than parentRef's path
-    if (annotatedRef.path.length !== parentRef.path.length + 1) {
-      return false;
-    }
-
-    // Check if all of parentRef's path segments match the beginning of annotatedRef's path
-    for (let i = 0; i < parentRef.path.length; i++) {
-      if (!this.segmentsEqual(parentRef.path[i], annotatedRef.path[i])) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  private segmentsEqual(a: any, b: any): boolean {
-    // This is a simplified comparison - in production you'd want to use
-    // the same logic as Ref#segmentsEqual
-    return JSON.stringify(a) === JSON.stringify(b);
   }
 }

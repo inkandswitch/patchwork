@@ -354,7 +354,7 @@ describe("AnnotationSet", () => {
     });
   });
 
-  describe("onElementsOf", () => {
+  describe("onChildrenOf", () => {
     it("should find annotations on direct children of an array", () => {
       handle.change((d) => {
         d.todos = [
@@ -374,7 +374,7 @@ describe("AnnotationSet", () => {
       annotations.add(todo0Ref, Comment("Comment on task 1"));
       annotations.add(todo1Ref, Comment("Comment on task 2"));
 
-      const elements = [...annotations.onElementsOf(todosRef)];
+      const elements = [...annotations.onChildrenOf(todosRef)];
 
       expect(elements).toHaveLength(2);
     });
@@ -394,7 +394,7 @@ describe("AnnotationSet", () => {
       annotations.add(todoRef, Comment("On todo"));
       annotations.add(subtaskRef, Comment("On subtask"));
 
-      const elements = [...annotations.onElementsOf(todosRef)];
+      const elements = [...annotations.onChildrenOf(todosRef)];
 
       // Should only include direct child (todoRef)
       expect(elements).toHaveLength(1);
@@ -409,7 +409,7 @@ describe("AnnotationSet", () => {
       const annotations = new AnnotationSet();
       const todosRef = new Ref(handle, ["todos"]);
 
-      const elements = [...annotations.onElementsOf(todosRef)];
+      const elements = [...annotations.onChildrenOf(todosRef)];
       expect(elements).toHaveLength(0);
     });
   });
@@ -695,7 +695,7 @@ describe("AnnotationSet", () => {
       annotations.add(todo2Ref, Diff({ type: "modified", field: "done" }));
 
       const todosRef = new Ref(handle, ["todos"]);
-      const diffs = [...annotations.ofType(Diff).onElementsOf(todosRef)];
+      const diffs = [...annotations.ofType(Diff).onChildrenOf(todosRef)];
 
       expect(diffs).toHaveLength(2);
     });

@@ -67,7 +67,7 @@ const CommentThread = defineAnnotationType<Ref<any>>();
 
 // allAnnotations.ofType(Diff);              // only diff annotations
 // allAnnotations.on(ref);                    // only annotations on ref
-// allAnnotations.onElementsOf(ref);          // only annotations on elements of ref if ref is an array or text
+// allAnnotations.onChildrenOf(ref);          // only annotations on children of ref if ref is an array or text
 // allAnnotations.onPartOf(ref);              // only annotations anywhere on the sub tree that ref points to
 
 // =======================================================================
@@ -81,7 +81,7 @@ const CommentThread = defineAnnotationType<Ref<any>>();
 
 // iterate over diff annotations on content
 // const content = ref(markdownDoc.content);
-// for (const [ref, diff] of allAnnotations.ofType(Diff).onElementsOf(content)) {
+// for (const [ref, diff] of allAnnotations.ofType(Diff).onChildrenOf(content)) {
 //   // ...
 // }
 

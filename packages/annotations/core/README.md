@@ -88,7 +88,7 @@ The `AnnotationType` function itself is used as the map key, ensuring fast looku
 
   Filter annotations on a specific ref (exact match).
 
-- `onElementsOf(ref: Ref<any>): AnnotationSetView<any>`
+- `onChildrenOf(ref: Ref<any>): AnnotationSetView<any>`
 
   Filter annotations on direct children of ref (for arrays/text).
 
@@ -158,7 +158,7 @@ for (const [ref, value] of annotations.on(todoRef)) {
 
 // Get annotations on elements of an array
 const todosRef = ref(doc, "todos");
-for (const [ref, diff] of annotations.ofType(Diff).onElementsOf(todosRef)) {
+for (const [ref, diff] of annotations.ofType(Diff).onChildrenOf(todosRef)) {
   console.log("Todo item", ref, "has diff:", diff);
 }
 
@@ -190,7 +190,7 @@ const diff = getDiff(someRef);
 ```typescript
 // Combine multiple filters
 const content = ref(doc, "content");
-const diffs = annotations.ofType(Diff).onElementsOf(content).toArray();
+const diffs = annotations.ofType(Diff).onChildrenOf(content).toArray();
 ```
 
 ## Type Safety
