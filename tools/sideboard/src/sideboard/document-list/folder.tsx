@@ -16,7 +16,7 @@ import {
 import CreateNew from "../create-new.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import type { OpenDocumentEventDetail } from "@patchwork/element";
+import type { OpenDocumentEventDetail } from "@patchwork/elements";
 
 export default function Folder(props: {
   url: AutomergeUrl;
@@ -24,6 +24,7 @@ export default function Folder(props: {
   depth?: number;
   removeFromParent(): void;
   open(detail: OpenDocumentEventDetail): void;
+  name?: string;
 }) {
   const [ref, setRef] = createSignal<HTMLElement>();
   const [open, setOpen] = createSignal(false);
@@ -35,7 +36,7 @@ export default function Folder(props: {
   const folderDepthStyle = () => ({ "--depth": depth() });
 
   createEffect((last) => {
-    if (!last && filter() && filterMatches(folder()!?.title)) {
+    if (!last && filter() && filterMatches(folder()!?.title ?? props.name)) {
       setOpen(true);
     }
     return filter();
@@ -74,7 +75,7 @@ export default function Folder(props: {
           props.open({
             url: props.url,
             toolId,
-            title: folder()?.title,
+            title: folder()?.title ?? props.name,
             type: "folder",
           });
         }}
@@ -85,7 +86,11 @@ export default function Folder(props: {
         >
           {open() ? "▼" : "▶︎"}
         </button>
-        <ItemName name={folder()?.title} id={props.url} rename={rename} />
+        <ItemName
+          name={folder()?.title ?? props.name}
+          id={props.url}
+          rename={rename}
+        />
         <CreateNew
           repo={props.repo}
           changeFolder={(fn) => handle()?.change(fn)}

@@ -77,6 +77,7 @@
 }
 
 .sideboard-header {
+  flex-shrink: 0;
   margin-top: 1rem;
   container-type: inline-size;
   height: 4rem;
@@ -551,12 +552,17 @@
   letter-spacing: 0.05em;
   opacity: 0.6;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
+  border-bottom: 1px solid
+    color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings__type-header {
-    border-bottom-color: color-mix(in oklab, var(--sideboard-widget-fill), white 15%);
+    border-bottom-color: color-mix(
+      in oklab,
+      var(--sideboard-widget-fill),
+      white 15%
+    );
   }
 }
 
@@ -784,7 +790,6 @@
     background: color-mix(in oklab, var(--sideboard-widget-fill), white 8%);
   }
 }
-
 
 .popmenu__trigger,
 .popmenu__sub-trigger {

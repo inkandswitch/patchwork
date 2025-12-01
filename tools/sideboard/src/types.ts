@@ -1,5 +1,5 @@
 import type { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import type { PatchworkViewElement } from "@patchwork/element";
+import type { PatchworkViewElement } from "@patchwork/elements";
 
 export interface PatchworkToolProps<T> {
   handle: DocHandle<T>;

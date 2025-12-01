@@ -13,7 +13,7 @@ import { PlusIcon } from "./icons.tsx";
 import type { FolderDoc } from "@patchwork/filesystem";
 import { useFilteredDatatypes } from "@patchwork/solid";
 import { DropdownMenu } from "@kobalte/core/dropdown-menu";
-import type { OpenDocumentEventDetail } from "@patchwork/element";
+import type { OpenDocumentEventDetail } from "@patchwork/elements";
 
 async function createNew(repo: Repo, datatype: Plugin<DataTypeDescription>) {
   if (isLoadablePlugin(datatype)) {

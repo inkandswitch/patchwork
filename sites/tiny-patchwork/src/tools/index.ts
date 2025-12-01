@@ -50,6 +50,11 @@ import { plugins as agentPlugins } from "@tiny-patchwork/agent";
 import { plugins as actionsPlugins } from "@tiny-patchwork/actions";
 // @ts-expect-error no types
 import { plugins as chatPlugins } from "@tiny-patchwork/chat";
+import "@inkandswitch/tenfold/style.css";
+// @ts-expect-error no types
+import { plugins as tenfoldPlugins } from "@inkandswitch/tenfold";
+// @ts-expect-error no types
+import { plugins as addDocToSidebarButtonPlugins } from "@tiny-patchwork/add-doc-to-sidebar-button";
 
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
@@ -76,6 +81,8 @@ export const plugins: Plugin<any>[] = [
   ...agentPlugins,
   ...actionsPlugins,
   ...chatPlugins,
+  ...tenfoldPlugins,
+  ...addDocToSidebarButtonPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",

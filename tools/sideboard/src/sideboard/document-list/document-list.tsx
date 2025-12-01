@@ -16,7 +16,7 @@ import {
   type DocHandle,
   type Repo,
 } from "@automerge/automerge-repo";
-import type { OpenDocumentEventDetail } from "@patchwork/element";
+import type { OpenDocumentEventDetail } from "@patchwork/elements";
 import Folder from "./folder.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
@@ -77,6 +77,7 @@ export function DocumentList(props: DocumentListProps) {
                   repo={props.repo}
                   removeFromParent={remove}
                   open={props.open}
+                  name={doc.name}
                 />
               </Match>
               <Match when={doc.type != "folder"}>

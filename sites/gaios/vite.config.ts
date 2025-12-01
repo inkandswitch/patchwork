@@ -16,6 +16,7 @@ export default defineConfig({
         "@codemirror/state": "/packages/@codemirror/state/index.js",
         "@patchwork/plugins": "/packages/@patchwork/plugins/index.js",
         "@patchwork/context": "/packages/@patchwork/context/index.js",
+        "@patchwork/refs": "/packages/@patchwork/refs/index.js",
         "@patchwork/context-selection":
           "/packages/@patchwork/context-selection/index.js",
         "@patchwork/context-react":
@@ -23,6 +24,7 @@ export default defineConfig({
         "@patchwork/context-diff": "/packages/context-diff/index.js",
         "@patchwork/context-comments": "/packages/context-comments/index.js",
         "@patchwork/context-solid": "/packages/context-solid/index.js",
+        "@patchwork/elements": "/packages/@patchwork/elements/index.js",
         "@patchwork/filesystem": "/packages/@patchwork/filesystem/index.js",
         "@automerge/automerge-repo-react-hooks":
           "/packages/@automerge/automerge-repo-react-hooks/index.js",

@@ -1,4 +1,5 @@
 @import url("@tldraw/tldraw/tldraw.css");
-* {
-  background: pink !important;
+
+.tlui-layout {
+  padding: 0px;
 }

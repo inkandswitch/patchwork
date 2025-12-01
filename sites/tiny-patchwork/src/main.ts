@@ -1,10 +1,12 @@
 import "./global.css";
 
 import { CONTEXT, Context } from "@patchwork/context";
-import { registerPatchworkViewElement, openDocument } from "@patchwork/element";
+import {
+  registerPatchworkViewElement,
+  openDocument,
+} from "@patchwork/elements";
 import { ModuleWatcher } from "@patchwork/filesystem";
 import {
-  getRegistry,
   LoadedPlugin,
   PluginDescription,
   registerPlugins,

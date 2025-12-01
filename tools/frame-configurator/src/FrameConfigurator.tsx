@@ -28,12 +28,14 @@ const DOCUMENT_TOOLBAR_OPTIONS: ModuleOption[] = [
   { id: "spacer", name: "Spacer" },
   { id: "highlight-changes-checkbox", name: "Highlight Changes" },
   { id: "sync-indicator", name: "Sync Indicator" },
+  { id: "add-doc-to-sidebar-button", name: "Add doc to sidebar button" },
 ];
 
 const CONTEXT_TOOL_OPTIONS: ModuleOption[] = [
   { id: "comments-view", name: "Comments" },
   { id: "history-view", name: "History" },
   { id: "context-view", name: "Context" },
+  { id: "action-runner", name: "Actions" },
 ];
 
 function LabeledSelect({

@@ -16,8 +16,7 @@ import { createOpenEvent } from "./events.ts";
 import { SearchIcon } from "./icons.tsx";
 import { DocumentList } from "./document-list/document-list.tsx";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import type { OpenDocumentEventDetail } from "@patchwork/element";
-import { Suspense } from "solid-js";
+import type { OpenDocumentEventDetail } from "@patchwork/elements";
 
 export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
   const doc = makeDocumentProjection(props.handle);

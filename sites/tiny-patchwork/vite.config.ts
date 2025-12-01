@@ -20,6 +20,7 @@ export default defineConfig({
         "@codemirror/state": "/packages/@codemirror/state/index.js",
         "@patchwork/plugins": "/packages/@patchwork/plugins/index.js",
         "@patchwork/context": "/packages/@patchwork/context/index.js",
+        "@patchwork/refs": "/packages/@patchwork/refs/index.js",
         "@patchwork/context-selection":
           "/packages/@patchwork/context-selection/index.js",
         "@patchwork/context-react":
@@ -56,6 +57,10 @@ export default defineConfig({
   },
   server: {
     port: process.env.PORT ? +process.env.PORT : 5173,
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
   },
   build: {
     target: "firefox137",
