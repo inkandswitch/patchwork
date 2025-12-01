@@ -45,8 +45,8 @@ export const AddDocToSidebarButton = ({
   }
 
   return (
-    <div className="h-full flex items-center">
-      <button className="btn" onClick={onAddDocToSidebar}>
+    <div className="h-full flex items-center min-w-0 w-fit">
+      <button className="btn btn-ghost" onClick={onAddDocToSidebar}>
         Add to sidebar
       </button>
     </div>
