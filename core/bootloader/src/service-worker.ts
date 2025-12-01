@@ -119,7 +119,7 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
               headers: handoffResponse.headers,
             });
             if (handoffResponse.cache !== false) {
-              cache.put(request, response);
+              cache.put(request, response.clone());
             }
             return response;
           }
