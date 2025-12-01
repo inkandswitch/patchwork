@@ -2,6 +2,7 @@ packages:
   - core/*
   - packages/*
   - packages/context/**/*
+  - packages/annotations/**/*
   - meta/*
   - sites/*
   - tools/*
