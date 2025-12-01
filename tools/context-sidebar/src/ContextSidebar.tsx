@@ -5,6 +5,7 @@ import { useState } from "react";
 import { TinyPatchworkLayoutDoc } from "./types";
 import { useTool } from "@patchwork/react";
 import { toolify } from "@patchwork/react";
+import "@patchwork/elements";
 
 const ContextSidebar = ({
   docUrl: accountDocUrl,
@@ -74,21 +75,5 @@ const TabLabel = ({ toolId, index, isActive, onSelect }: TabViewProps) => {
     </a>
   );
 };
-
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    interface IntrinsicElements {
-      "patchwork-view": React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement>,
-        HTMLElement
-      > & {
-        "doc-url": string;
-        "tool-id"?: string | null;
-        class?: string;
-      };
-    }
-  }
-}
 
 export const renderTabbedView = toolify(ContextSidebar);

@@ -1,20 +1,24 @@
+import "react";
+import "solid-js";
+
 declare module "react" {
-  export namespace JSX {
-    export interface IntrinsicElements {
+  namespace JSX {
+    interface IntrinsicElements {
       "patchwork-view": React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & {
-          "doc-url": string;
-          "tool-id": string;
-        },
+        React.HTMLAttributes<HTMLElement>,
         HTMLElement
-      >;
+      > & {
+        "doc-url": string;
+        "tool-id"?: string | null;
+        class?: string;
+      };
     }
   }
 }
 
 declare module "solid-js" {
-  export namespace JSX {
-    export interface IntrinsicElements {
+  namespace JSX {
+    interface IntrinsicElements {
       "patchwork-view": {
         "doc-url": string;
         "tool-id": string;
