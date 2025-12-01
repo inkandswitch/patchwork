@@ -47,6 +47,8 @@ import { plugins as commandsPlugins } from "@orion/commands";
 import "@inkandswitch/tenfold/style.css";
 // @ts-expect-error no types
 import { plugins as tenfoldPlugins } from "@inkandswitch/tenfold";
+// @ts-expect-error no types
+import { plugins as addDocToSidebarButtonPlugins } from "@tiny-patchwork/add-doc-to-sidebar-button";
 
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
@@ -71,6 +73,7 @@ export const plugins: Plugin<any>[] = [
   ...markdownLinksPlugins,
   ...codemirrorEmbedPlugins,
   ...tenfoldPlugins,
+  ...addDocToSidebarButtonPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",
