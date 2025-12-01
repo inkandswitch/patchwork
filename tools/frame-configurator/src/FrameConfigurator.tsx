@@ -28,6 +28,7 @@ const DOCUMENT_TOOLBAR_OPTIONS: ModuleOption[] = [
   { id: "spacer", name: "Spacer" },
   { id: "highlight-changes-checkbox", name: "Highlight Changes" },
   { id: "sync-indicator", name: "Sync Indicator" },
+  { id: "add-doc-to-sidebar-button", name: "Add doc to sidebar button" },
 ];
 
 const CONTEXT_TOOL_OPTIONS: ModuleOption[] = [

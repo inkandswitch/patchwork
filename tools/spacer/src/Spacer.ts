@@ -5,6 +5,7 @@ export const renderSpacer = (
   element: HTMLElement
 ) => {
   element.style.flex = "1";
+  element.style.minWidth = "0";
 
   return () => {};
 };

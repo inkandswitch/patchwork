@@ -46,7 +46,7 @@ export const HighlightChangesOption = () => {
   }, [diffsOfSelectedDocs, diffSubcontext]);
 
   return (
-    <label className="label text-sm flex items-center h-full">
+    <label className="label text-sm flex items-center h-full min-w-0 w-fit">
       <input
         type="checkbox"
         className="checkbox checkbox-sm"

@@ -53,6 +53,7 @@
     "@patchwork/react": "workspace:^",
     "@patchwork/tldraw": "workspace:^",
     "@patchwork/util": "workspace:^",
+    "@tiny-patchwork/add-doc-to-sidebar-button": "workspace:^",
     "@tiny-patchwork/back-link-button": "workspace:^",
     "@tiny-patchwork/comments-view": "workspace:^",
     "@tiny-patchwork/context-sidebar": "workspace:^",

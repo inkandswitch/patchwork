@@ -155,9 +155,10 @@ export const PatchworkFrame = ({
       </div>
       <div className="flex flex-col flex-1 h-full">
         {selectedDocUrl && (
-          <div className="p-2 bg-base-200 border-b border-base-300 flex items-center gap-2">
+          <div className="p-2 bg-base-200 border-b border-base-300 flex items-center gap-2 flex-start">
             {accountDoc.documentToolbarToolIds?.map((toolId, index) => (
               <patchwork-view
+                class="!w-fit"
                 doc-url={selectedDocUrl}
                 tool-id={toolId}
                 key={index}

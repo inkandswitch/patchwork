@@ -15,5 +15,9 @@ export const DocumentTitle = ({
   const docDatatypeId = doc ? getType(doc) : undefined;
   const title = useDatatype(docDatatypeId)?.module.getTitle(doc);
 
-  return <span className="font-semibold">{title ?? "Untitled"}</span>;
+  return (
+    <span className="font-semibold whitespace-nowrap h-full flex items-center">
+      {title ?? "Untitled"}
+    </span>
+  );
 };
