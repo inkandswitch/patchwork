@@ -17,3 +17,10 @@ export type DocLink = {
 };
 
 export type DocPath = DocLink[];
+
+export type UnixFileEntry = {
+  content: string;
+  extension: string;
+  mimeType: string;
+  name: string;
+};

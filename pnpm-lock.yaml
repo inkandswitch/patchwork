@@ -133,6 +133,10 @@ importers:
       resolve.exports:
         specifier: ^2.0.3
         version: 2.0.3
+    devDependencies:
+      '@patchwork/bootloader':
+        specifier: workspace:^
+        version: link:../bootloader
 
   core/plugins:
     dependencies:

@@ -7,8 +7,19 @@
     "esbuild": "^0.23.1"
   },
   "exports": {
-    "./vite": "./dist/patchwork-vite-plugin.js",
-    ".": "./index.d.ts"
+    ".": "./dist/types.d.ts",
+    "./vite": {
+      "import": "./dist/vite/patchwork-plugin.js",
+      "types": "./dist/vite/patchwork-plugin.d.ts"
+    },
+    "./setup": {
+      "import": "./dist/setup.js",
+      "types": "./dist/setup.d.ts"
+    },
+    "./service-worker": {
+      "import": "./dist/service-worker.js",
+      "types": "./dist/service-worker.d.ts"
+    }
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
