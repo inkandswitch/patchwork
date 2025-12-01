@@ -7,8 +7,8 @@ import "./main.css";
 export const plugins = [
   {
     type: "patchwork:datatype",
-    id: "tldraw",
-    name: "Drawing",
+    id: "tldraw2",
+    name: "Drawing2",
     icon: "PenLine",
     async load() {
       return datatype;
@@ -16,9 +16,9 @@ export const plugins = [
   },
   {
     type: "patchwork:tool",
-    id: "tldraw",
-    name: "Drawing",
-    supportedDataTypes: ["tldraw"],
+    id: "tldraw2",
+    name: "Drawing2",
+    supportedDataTypes: ["tldraw2"],
     async load(): Promise<ToolImplementation> {
       const { TldrawTool } = await import("./tool.tsx");
       return (handle, element) => {
