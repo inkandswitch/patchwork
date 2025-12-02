@@ -53,16 +53,81 @@ export class AnnotationSet {
   }
 
   /**
+   * Remove all annotations for a ref
+   */
+  remove(ref: Ref<any>): void;
+
+  /**
+   * Remove all annotations of a specific type for a ref
+   */
+  remove<T>(ref: Ref<any>, annotationType: AnnotationType<T>): void;
+
+  /**
+   * Remove a specific annotation value from a ref
+   */
+  remove<T>(ref: Ref<any>, annotationValue: AnnotationValue<T>): void;
+
+  remove<T>(
+    ref: Ref<any>,
+    annotationTypeOrValue?: AnnotationType<T> | AnnotationValue<T>
+  ): void {
+    const refId = ref.toString();
+    const storedRef = this.refsById.get(refId);
+
+    if (!storedRef) {
+      // Ref not found, nothing to remove
+      return;
+    }
+
+    // Case 1: remove(ref) - Remove all annotations for this ref
+    if (annotationTypeOrValue === undefined) {
+      for (const [type, typeMap] of this.annotationsByType) {
+        typeMap.delete(storedRef);
+      }
+      this.refsById.delete(refId);
+      return;
+    }
+
+    if ("type" in annotationTypeOrValue) {
+      // Case 2: remove(ref, annotationValue) - Remove specific annotation value
+      const annotationValue = annotationTypeOrValue as AnnotationValue<T>;
+      const type = annotationValue.type;
+      const typeMap = this.annotationsByType.get(type);
+
+      if (typeMap) {
+        const valueSet = typeMap.get(storedRef);
+        if (valueSet) {
+          valueSet.delete(annotationValue);
+
+          // Clean up empty sets and maps
+          if (valueSet.size === 0) {
+            typeMap.delete(storedRef);
+          }
+        }
+      }
+    } else {
+      // Case 3: remove(ref, annotationType) - Remove all annotations of a specific type
+      const annotationType = annotationTypeOrValue as AnnotationType<T>;
+      const typeMap = this.annotationsByType.get(annotationType);
+
+      if (typeMap) {
+        typeMap.delete(storedRef);
+      }
+    }
+  }
+
+  /**
    * Filter annotations by type
    */
   ofType<T>(type: AnnotationType<T>): AnnotationsOfType<T> {
     const annoationsByRef = this.annotationsByType.get(type);
 
     if (!annoationsByRef) {
-      return new AnnotationsOfType<T>(new Map(), new Map());
+      return new AnnotationsOfType<T>(this, new Map(), new Map());
     }
 
     return new AnnotationsOfType<T>(
+      this,
       annoationsByRef as Map<Ref, Set<T>>,
       this.refsById
     );
@@ -76,7 +141,7 @@ export class AnnotationSet {
     const storedRef = this.refsById.get(ref.toString());
 
     if (!storedRef) {
-      return new AnnotationsOnRef<T>(ref, new Map());
+      return new AnnotationsOnRef<T>(this, ref, new Map());
     }
 
     const annotationsOnRef = new Map<
@@ -91,7 +156,7 @@ export class AnnotationSet {
       }
     }
 
-    return new AnnotationsOnRef<T>(ref, annotationsOnRef);
+    return new AnnotationsOnRef<T>(this, ref, annotationsOnRef);
   }
 
   /**

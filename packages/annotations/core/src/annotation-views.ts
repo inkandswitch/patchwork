@@ -1,5 +1,6 @@
 import { type Ref } from "@patchwork/refs";
 import type { AnnotationType, AnnotationValue } from "./annotation-type";
+import { AnnotationSet } from "./annotation-set";
 
 /**
  * Annotations filtered by type
@@ -7,6 +8,7 @@ import type { AnnotationType, AnnotationValue } from "./annotation-type";
  */
 export class AnnotationsOfType<T> {
   constructor(
+    private annotationSet: AnnotationSet,
     private annotationsByRef: Map<Ref, Set<T>>,
     private refsById: Map<string, Ref<any>>
   ) {}
@@ -55,6 +57,7 @@ export class AnnotationsOfType<T> {
  */
 export class AnnotationsOnRef<T> {
   constructor(
+    private annotationSet: AnnotationSet,
     private ref: Ref<T>,
     private annotationsByType: Map<
       AnnotationType<any>,
