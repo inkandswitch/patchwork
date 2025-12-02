@@ -134,7 +134,7 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
           // network first strategy for external requests
           const response = await fetch(request);
           if (response) {
-            if (response.ok) {
+            if (response.ok && response.url.match(/^https?\:/)) {
               cache.put(request, response.clone());
             }
             return response;

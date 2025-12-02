@@ -67,7 +67,6 @@ export default async function setupServiceWorker(
         response: HandoffResponse,
         transfer?: Transferable[]
       ) {
-        //await cache.put(request, response);
         source!.postMessage(
           {
             id: requestMessage.id,
