@@ -19,7 +19,6 @@ import { parseAutomergeRefUrl } from "./parser";
  * titleRef.value(); // string | undefined
  * ```
  */
-
 export function ref<TDoc, TPath extends readonly PathInput[]>(
   docHandle: DocHandle<TDoc>,
   ...segments: [...TPath]
@@ -82,21 +81,6 @@ export async function findRef<T = any>(
 }
 
 /**
- * Shallow equality check for plain objects.
- * Compares only own enumerable properties.
- *
- * @internal
- */
-export function shallowEqual(a: MatchPattern, b: MatchPattern): boolean {
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-
-  if (aKeys.length !== bKeys.length) return false;
-
-  return aKeys.every((key) => a[key] === b[key]);
-}
-
-/**
  * Check if an item matches an ID pattern.
  *
  * Note: This performs shallow equality checks only. Nested objects
@@ -104,6 +88,6 @@ export function shallowEqual(a: MatchPattern, b: MatchPattern): boolean {
  *
  * @internal
  */
-export function matchesIdPattern(item: any, idPattern: MatchPattern): boolean {
-  return Object.entries(idPattern).every(([key, value]) => item[key] === value);
+export function matchesPattern(item: any, pattern: MatchPattern): boolean {
+  return Object.entries(pattern).every(([key, value]) => item[key] === value);
 }

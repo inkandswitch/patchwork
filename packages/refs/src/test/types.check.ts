@@ -5,7 +5,7 @@
  */
 
 import type { DocHandle } from "@automerge/automerge-repo";
-import { ref } from "../factory";
+import { ref } from "../utils";
 import type { MutableText } from "../types";
 
 type TestDoc = {

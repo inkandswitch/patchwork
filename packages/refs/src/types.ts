@@ -79,15 +79,13 @@ type GetSegmentValue<TObj, TSegment> = TSegment extends string
   ? TSegment extends keyof TObj
     ? TObj[TSegment]
     : unknown
-  : TSegment extends readonly [number, number]
-    ? TObj extends string
-      ? string
-      : TObj extends readonly (infer E)[]
-        ? readonly E[]
-        : unknown
-    : TSegment extends number | MatchPattern
-      ? TObj extends readonly (infer E)[]
-        ? E
+  : TSegment extends number | MatchPattern
+    ? TObj extends readonly (infer E)[]
+      ? E
+      : unknown
+    : TSegment extends CursorMarker
+      ? TObj extends string
+        ? string
         : unknown
       : unknown;
 

@@ -17,7 +17,7 @@ import type {
 } from "./types";
 import { KIND } from "./types";
 import { isSegment, isMatchPattern } from "./guards";
-import { matchesIdPattern, shallowEqual } from "./utils";
+import { matchesPattern } from "./utils";
 import { isCursorMarker } from "./guards";
 import type { CursorMarker } from "./types";
 import { stringifyAutomergeRefUrl } from "./parser";
@@ -169,14 +169,15 @@ export class Ref<
       if (newValue === undefined) return;
 
       // Warn if non-primitive value is returned (should mutate instead)
-      const isPrimitive =
-        newValue === null ||
-        typeof newValue === "string" ||
-        typeof newValue === "number" ||
-        typeof newValue === "boolean" ||
-        typeof newValue === "bigint";
-
-      if (!isPrimitive) {
+      if (
+        !(
+          newValue === null ||
+          typeof newValue === "string" ||
+          typeof newValue === "number" ||
+          typeof newValue === "boolean" ||
+          typeof newValue === "bigint"
+        )
+      ) {
         console.warn(
           "Ref.change() returned a non-primitive value. For objects and arrays, " +
             "you should mutate them in place rather than returning a new instance. " +
@@ -459,7 +460,7 @@ export class Ref<
       case "match": {
         if (!Array.isArray(container)) return undefined;
         const matchIndex = container.findIndex((item) =>
-          matchesIdPattern(item, segment.match)
+          matchesPattern(item, segment.match)
         );
         return matchIndex !== -1 ? matchIndex : undefined;
       }
@@ -509,8 +510,14 @@ export class Ref<
         return a.key === (b as typeof a).key;
       case "index":
         return a.index === (b as typeof a).index;
-      case "match":
-        return shallowEqual(a.match, (b as typeof a).match);
+      case "match": {
+        const aKeys = Object.keys(a.match);
+        const bKeys = Object.keys((b as typeof a).match);
+        if (aKeys.length !== bKeys.length) return false;
+        return aKeys.every(
+          (key) => a.match[key] === (b as typeof a).match[key]
+        );
+      }
       default:
         a satisfies never;
         return false;
@@ -534,7 +541,7 @@ export class Ref<
         return { [KIND]: "match", match: input, resolvedProp: undefined };
       }
 
-      const index = container.findIndex((obj) => matchesIdPattern(obj, input));
+      const index = container.findIndex((obj) => matchesPattern(obj, input));
       return {
         [KIND]: "match",
         match: input,
