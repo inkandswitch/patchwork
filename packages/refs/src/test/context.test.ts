@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Repo } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
-import { ref } from "../utils";
+import { ref } from "../factory";
 
 type TestDoc = {
   content: string;

@@ -3,28 +3,12 @@ import type {
   MatchPattern,
   CursorMarker,
   AutomergeRefUrl,
-  PathInput,
   AnyPathInput,
+  SegmentsFromString,
 } from "./types";
 import { CURSOR_MARKER } from "./types";
 import { Ref } from "./ref";
 import { parseAutomergeRefUrl } from "./parser";
-
-/**
- * Create a ref with automatic type inference.
- *
- * @example
- * ```ts
- * const titleRef = ref(handle, 'todos', 0, 'title');
- * titleRef.value(); // string | undefined
- * ```
- */
-export function ref<TDoc, TPath extends readonly PathInput[]>(
-  docHandle: DocHandle<TDoc>,
-  ...segments: [...TPath]
-): Ref<TDoc, TPath> {
-  return new Ref<TDoc, TPath>(docHandle, segments as [...TPath]);
-}
 
 /**
  * Create a cursor-based range segment for stable text selection.
@@ -59,6 +43,29 @@ export function fromUrl<TDoc = any>(
   return new Ref<TDoc, AnyPathInput[]>(handle, segments, options);
 }
 
+/**
+ * Create a ref from a path string
+ *
+ * @example
+ * ```ts
+ * type Doc = { todos: Array<{ title: string }> };
+ * const titleRef = fromString<Doc>(handle, "todos/0/title");
+ * // titleRef.value() is inferred as string | undefined
+ * ```
+ */
+export function fromString<TDoc, TPath extends string>(
+  docHandle: DocHandle<TDoc>,
+  path: TPath
+): Ref<TDoc, SegmentsFromString<TPath>> {
+  const url = docHandle.url;
+  const { segments } = parseAutomergeRefUrl(
+    `${url}/${path}` as AutomergeRefUrl
+  );
+  return new Ref<TDoc, SegmentsFromString<TPath>>(
+    docHandle,
+    segments as unknown as [...SegmentsFromString<TPath>]
+  );
+}
 /**
  * Find a ref by its Automerge URL.
  *

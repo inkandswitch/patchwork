@@ -84,7 +84,7 @@ export class Ref<
 
     const updateHandler = () => {
       const currentDoc = this.docHandle.doc();
-      this.#updateResolvedProps(currentDoc);
+      this.#updateProps(currentDoc);
     };
     this.docHandle.on("change", updateHandler);
     this.#unsubscribe = () => this.docHandle.off("change", updateHandler);
@@ -266,8 +266,8 @@ export class Ref<
     }
 
     // Must have same or undefined heads
-    const thisHeads = this.heads?.join(",");
-    const otherHeads = other.heads?.join(",");
+    const thisHeads = this.heads?.join();
+    const otherHeads = other.heads?.join();
     if (thisHeads !== otherHeads) {
       return false;
     }
@@ -305,8 +305,8 @@ export class Ref<
     }
 
     // Must have same heads
-    const thisHeads = this.heads?.join(",");
-    const otherHeads = other.heads?.join(",");
+    const thisHeads = this.heads?.join();
+    const otherHeads = other.heads?.join();
     if (thisHeads !== otherHeads) {
       return false;
     }
@@ -422,22 +422,22 @@ export class Ref<
       pathSegments.push(segment as PathSegment);
 
       if (
-        segment.resolvedProp !== undefined &&
+        segment.prop !== undefined &&
         current !== undefined &&
         current !== null
       ) {
-        propPath.push(segment.resolvedProp);
-        current = (current as any)[segment.resolvedProp];
+        propPath.push(segment.prop);
+        current = (current as any)[segment.prop];
       }
     }
 
     return { path: pathSegments, range: rangeSegment };
   }
 
-  /** Ensure a segment has its resolvedProp set */
+  /** Ensure a segment has its prop set */
   #ensureSegmentResolved(container: any, segment: Segment): Segment {
-    const resolvedProp = this.#resolveSegmentProp(container, segment);
-    return { ...segment, resolvedProp } as Segment;
+    const prop = this.#resolveSegmentProp(container, segment);
+    return { ...segment, prop } as Segment;
   }
 
   /**
@@ -475,21 +475,17 @@ export class Ref<
   }
 
   /** Update resolved props for all path segments based on current document state */
-  #updateResolvedProps(doc: Doc<TDoc>): void {
+  #updateProps(doc: Doc<TDoc>): void {
     let current = doc;
 
     for (const segment of this.path) {
-      const resolvedProp = this.#resolveSegmentProp(current, segment);
-      // Internal mutation: Update cached resolvedProp for efficient path resolution.
+      const prop = this.#resolveSegmentProp(current, segment);
+      // Internal mutation: Update cached prop for efficient path resolution.
       // Safe because segments are owned by this Ref instance.
-      (segment as any).resolvedProp = resolvedProp;
+      segment.prop = prop;
 
-      if (
-        resolvedProp !== undefined &&
-        current !== undefined &&
-        current !== null
-      ) {
-        current = (current as any)[resolvedProp];
+      if (prop !== undefined && current !== undefined && current !== null) {
+        current = (current as any)[prop];
       } else {
         break;
       }
@@ -529,23 +525,23 @@ export class Ref<
     input: string | number | MatchPattern
   ): Segment {
     if (typeof input === "string") {
-      return { [KIND]: "key", key: input, resolvedProp: input };
+      return { [KIND]: "key", key: input, prop: input };
     }
 
     if (typeof input === "number") {
-      return { [KIND]: "index", index: input, resolvedProp: input };
+      return { [KIND]: "index", index: input, prop: input };
     }
 
     if (isMatchPattern(input)) {
       if (!Array.isArray(container)) {
-        return { [KIND]: "match", match: input, resolvedProp: undefined };
+        return { [KIND]: "match", match: input, prop: undefined };
       }
 
       const index = container.findIndex((obj) => matchesPattern(obj, input));
       return {
         [KIND]: "match",
         match: input,
-        resolvedProp: index !== -1 ? index : undefined,
+        prop: index !== -1 ? index : undefined,
       };
     }
 
@@ -581,8 +577,8 @@ export class Ref<
   #getPropPath(): Prop[] | undefined {
     const props: Prop[] = [];
     for (const segment of this.path) {
-      if (segment.resolvedProp === undefined) return undefined;
-      props.push(segment.resolvedProp);
+      if (segment.prop === undefined) return undefined;
+      props.push(segment.prop);
     }
     return props;
   }
@@ -659,8 +655,8 @@ export class Ref<
   #patchAffectsRef(patches: Automerge.Patch[]): boolean {
     const refPropPath: Prop[] = [];
     for (const segment of this.path) {
-      if (segment.resolvedProp === undefined) break;
-      refPropPath.push(segment.resolvedProp);
+      if (segment.prop === undefined) break;
+      refPropPath.push(segment.prop);
     }
 
     // If we couldn't resolve any part, ref was never valid - don't fire

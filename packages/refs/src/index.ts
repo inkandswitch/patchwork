@@ -7,4 +7,5 @@ export type {
   AutomergeRefUrl,
 } from "./types";
 
-export { ref, cursor, findRef, fromUrl } from "./utils";
+export { ref } from "./factory";
+export { cursor, findRef, fromUrl, fromString } from "./utils";

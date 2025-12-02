@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { Repo, splice, type DocHandle } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
 import { Ref } from "../ref";
-import { ref, fromUrl } from "../utils";
+import { fromUrl } from "../utils";
+import { ref } from "../factory";
 import { cursor } from "../utils";
 import { KIND } from "../types";
 
@@ -1761,14 +1762,14 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["items", { name: "Third" }, "value"]);
       expect(ref.value()).toBeUndefined();
 
-      // Match segment should have undefined resolvedProp (no match)
+      // Match segment should have undefined prop (no match)
       expect(ref.path.length).toBe(3);
-      expect(ref.path[0].resolvedProp).toBe("items");
-      expect(ref.path[1].resolvedProp).toBeUndefined(); // Match found no match
-      expect(ref.path[2].resolvedProp).toBe("value"); // Key props are always resolved
+      expect(ref.path[0].prop).toBe("items");
+      expect(ref.path[1].prop).toBeUndefined(); // Match found no match
+      expect(ref.path[2].prop).toBe("value"); // Key props are always resolved
     });
 
-    it("should update resolvedProps when document changes externally", () => {
+    it("should update props when document changes externally", () => {
       handle.change((d) => {
         d.items = [
           { id: "a", value: 1 },
@@ -1780,7 +1781,7 @@ describe("Ref", () => {
       // Use match pattern to track by id
       const ref = new Ref(handle, ["items", { id: "b" }, "value"]);
       expect(ref.value()).toBe(2);
-      expect(ref.path[1].resolvedProp).toBe(1); // index 1
+      expect(ref.path[1].prop).toBe(1); // index 1
 
       // Remove first item - second item moves to index 0
       handle.change((d) => {
@@ -1788,7 +1789,7 @@ describe("Ref", () => {
       });
 
       expect(ref.value()).toBe(2); // Still resolves to same object
-      expect(ref.path[1].resolvedProp).toBe(0); // Now at index 0
+      expect(ref.path[1].prop).toBe(0); // Now at index 0
     });
 
     it("should use match patterns to find items dynamically", () => {

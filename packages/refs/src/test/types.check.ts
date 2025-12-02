@@ -5,7 +5,7 @@
  */
 
 import type { DocHandle } from "@automerge/automerge-repo";
-import { ref } from "../utils";
+import { ref } from "../factory";
 import type { MutableText } from "../types";
 
 type TestDoc = {
@@ -179,3 +179,49 @@ declare const deepHandle: DocHandle<DeepDoc>;
 const deepRef = ref(deepHandle, "a", "b", "c", "d", "e");
 const deepValue = deepRef.value();
 // Hover over deepValue - should be: string | undefined
+
+// === String Path Type Inference Tests ===
+import { fromString } from "../utils";
+import type { SegmentsFromString, InferRefTypeFromString } from "../types";
+
+// Test PathFromString parsing
+type TestSplit1 = SegmentsFromString<"todos/0/title">;
+// Should be: ["todos", number, "title"]
+
+type TestSplit2 = SegmentsFromString<"text/0..5">;
+// Should be: ["text", StringRange] (where StringRange is the internal marker)
+
+type TestSplit3 = SegmentsFromString<"users">;
+// Should be: ["users"]
+
+// Test InferRefTypeFromString
+type DocForStringTest = {
+  title: string;
+  count: number;
+  todos: Array<{ title: string; done: boolean }>;
+  content: string;
+};
+
+type Test1 = InferRefTypeFromString<DocForStringTest, "title">;
+// Should be: string
+
+type Test2 = InferRefTypeFromString<DocForStringTest, "todos/0/title">;
+// Should be: string
+
+type Test3 = InferRefTypeFromString<DocForStringTest, "count">;
+// Should be: number
+
+// Test fromString function with type inference
+declare const stringTestHandle: DocHandle<DocForStringTest>;
+
+const stringTitleRef = fromString(stringTestHandle, "title");
+const stringTitleValue = stringTitleRef.value();
+// Hover over stringTitleValue - should be: string | undefined
+
+const stringTodoTitleRef = fromString(stringTestHandle, "todos/0/title");
+const stringTodoTitleValue = stringTodoTitleRef.value();
+// Hover over stringTodoTitleValue - should be: string | undefined
+
+const stringCountRef = fromString(stringTestHandle, "count");
+const stringCountValue = stringCountRef.value();
+// Hover over stringCountValue - should be: number | undefined
