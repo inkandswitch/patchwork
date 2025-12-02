@@ -203,11 +203,10 @@ describe("Ref", () => {
         d.items = [1, 2, 3];
       });
 
-      const rangeRef = new Ref(handle, ["items", cursor(0, 2)]);
-
+      // Error is thrown during ref creation, not during change()
       expect(() => {
-        rangeRef.change(() => "replacement");
-      }).toThrow("Range refs can only be used on string values");
+        new Ref(handle, ["items", cursor(0, 2)]);
+      }).toThrow("cursor() can only be used on string values");
     });
 
     it("should change root document directly", () => {
@@ -313,10 +312,10 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["note", cursor(0, 5)]);
       const url = ref.url;
 
-      // Cursor range should use cursor format with : prefix
+      // Cursor range should use cursor format with : prefix and - separator
       // Cursors have format: number@hash
       expect(url).toMatch(
-        /^automerge:[^/]+\/note\/:\d+@[a-f0-9]+\.\.:\d+@[a-f0-9]+$/
+        /^automerge:[^/]+\/note\/:\d+@[a-f0-9]+-:\d+@[a-f0-9]+$/
       );
       expect(url).toContain(":"); // Cursor markers
     });
@@ -388,7 +387,7 @@ describe("Ref", () => {
 
       // Should have numeric index for docs[0] and cursor range for text
       expect(url).toMatch(
-        /^automerge:[^/]+\/docs\/0\/content\/:\d+@[a-f0-9]+\.\.:\d+@[a-f0-9]+$/
+        /^automerge:[^/]+\/docs\/0\/content\/:\d+@[a-f0-9]+-:\d+@[a-f0-9]+$/
       );
     });
 
