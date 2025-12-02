@@ -2,6 +2,8 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { Ref } from "./ref";
 import type { PathInput } from "./types";
 
+// TODO: for the same path we should return the same ref instance
+
 /**
  * Create a ref with automatic type inference.
  *

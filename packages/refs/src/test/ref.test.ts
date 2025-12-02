@@ -262,7 +262,7 @@ describe("Ref", () => {
       expect(url).toBe(`automerge:${handle.documentId}/user/profile/name`);
     });
 
-    it("should format numeric indices", () => {
+    it("should format numeric indices with @ prefix", () => {
       handle.change((d) => {
         d.items = ["a", "b", "c"];
       });
@@ -270,8 +270,8 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["items", 1]);
       const url = ref.url;
 
-      // Numeric index should appear as number in URL
-      expect(url).toBe(`automerge:${handle.documentId}/items/1`);
+      // Numeric index should use @n format
+      expect(url).toBe(`automerge:${handle.documentId}/items/@1`);
     });
 
     it("should format numeric indices in URL", () => {
@@ -282,8 +282,8 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["todos", 0]);
       const url = ref.url;
 
-      // Should have numeric index
-      expect(url).toBe(`automerge:${handle.documentId}/todos/0`);
+      // Should have @n format for index
+      expect(url).toBe(`automerge:${handle.documentId}/todos/@0`);
     });
 
     it("should format deep paths with numeric indices", () => {
@@ -298,13 +298,13 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["boards", 0, "columns", 1, "name"]);
       const url = ref.url;
 
-      // Should have numeric indices for arrays
+      // Should have @n format for array indices
       expect(url).toBe(
-        `automerge:${handle.documentId}/boards/0/columns/1/name`
+        `automerge:${handle.documentId}/boards/@0/columns/@1/name`
       );
     });
 
-    it("should format cursor ranges with : prefix", () => {
+    it("should format cursor ranges with bracket notation", () => {
       handle.change((d) => {
         d.note = "Hello World";
       });
@@ -312,12 +312,12 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["note", cursor(0, 5)]);
       const url = ref.url;
 
-      // Cursor range should use cursor format with : prefix and - separator
+      // Cursor range should use [start-end] bracket format
       // Cursors have format: number@hash
       expect(url).toMatch(
-        /^automerge:[^/]+\/note\/:\d+@[a-f0-9]+-:\d+@[a-f0-9]+$/
+        /^automerge:[^/]+\/note\/\[\d+@[a-f0-9]+-\d+@[a-f0-9]+\]$/
       );
-      expect(url).toContain(":"); // Cursor markers
+      expect(url).toContain("["); // Bracket notation
     });
 
     it("should format match clauses as JSON", () => {
@@ -385,24 +385,24 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["docs", 0, "content", cursor(0, 5)]);
       const url = ref.url;
 
-      // Should have numeric index for docs[0] and cursor range for text
+      // Should have @n for index and [cursor-cursor] for range
       expect(url).toMatch(
-        /^automerge:[^/]+\/docs\/0\/content\/:\d+@[a-f0-9]+-:\d+@[a-f0-9]+$/
+        /^automerge:[^/]+\/docs\/@0\/content\/\[\d+@[a-f0-9]+-\d+@[a-f0-9]+\]$/
       );
     });
 
-    it("should use numeric indices in URL", () => {
+    it("should use @n format for indices in URL", () => {
       handle.change((d) => {
         d.items = [{ name: "A" }, { name: "B" }];
       });
 
       const ref = new Ref(handle, ["items", 0]);
 
-      // Should just have number (no auto-stabilization to ObjectId)
-      expect(ref.url).toBe(`automerge:${handle.documentId}/items/0`);
+      // Should use @n format for index
+      expect(ref.url).toBe(`automerge:${handle.documentId}/items/@0`);
     });
 
-    it("should handle primitives in arrays (no ObjectId)", () => {
+    it("should handle primitives in arrays", () => {
       handle.change((d) => {
         d.numbers = [1, 2, 3];
       });
@@ -410,9 +410,8 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["numbers", 1]);
       const url = ref.url;
 
-      // Primitives don't have ObjectIds, should just be numeric
-      expect(url).toBe(`automerge:${handle.documentId}/numbers/1`);
-      expect(url).not.toContain("$");
+      // Should use @n format for index
+      expect(url).toBe(`automerge:${handle.documentId}/numbers/@1`);
     });
   });
 

@@ -1,0 +1,683 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import { Repo, splice, type DocHandle } from "@automerge/automerge-repo";
+import { Ref } from "../ref";
+import { cursor } from "../utils";
+import {
+  parsePath,
+  parseSegment,
+  serializeSegment,
+  parseAutomergeRefUrl,
+} from "../parser";
+import { isValidAutomergeRefUrl } from "../guards";
+import { KIND } from "../types";
+
+describe("Edge Cases", () => {
+  let repo: Repo;
+  let handle: DocHandle<any>;
+
+  beforeEach(() => {
+    repo = new Repo();
+    handle = repo.create();
+  });
+
+  describe("cursor() edge cases", () => {
+    /**
+     * Automerge cursor behavior:
+     * - Negative positions are clamped to 0
+     * - Positions beyond string length are clamped to string length
+     * - Empty strings allow cursor at position 0
+     * - Inverted ranges (start > end) result in empty string from slice()
+     * - Zero-width ranges (start === end) return empty string
+     */
+    it("should follow Automerge cursor clamping behavior", () => {
+      handle.change((d) => {
+        d.text = "Hello";
+        d.empty = "";
+      });
+
+      // Zero-width cursor range
+      expect(new Ref(handle, ["text", cursor(2, 2)]).value()).toBe("");
+
+      // Empty string allows cursor at 0
+      expect(new Ref(handle, ["empty", cursor(0, 0)]).value()).toBe("");
+
+      // Negative positions clamped to 0
+      expect(new Ref(handle, ["text", cursor(-5, 3)]).value()).toBe("Hel");
+
+      // Out-of-bounds positions clamped to string length
+      expect(new Ref(handle, ["text", cursor(0, 100)]).value()).toBe("Hello");
+
+      // Inverted range (start > end) returns empty string
+      expect(new Ref(handle, ["text", cursor(4, 2)]).value()).toBe("");
+    });
+
+    it("should track cursors when text around them changes", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const ref = new Ref(handle, ["text", cursor(6, 11)]); // "World"
+      expect(ref.value()).toBe("World");
+
+      // Delete "Hello " - cursors track the content
+      handle.change((d) => {
+        splice(d, ["text"], 0, 6, "");
+      });
+      expect(ref.value()).toBe("World");
+
+      // Delete "World" entirely - cursors collapse
+      handle.change((d) => {
+        splice(d, ["text"], 0, 5, "");
+      });
+      expect(ref.value()).toBe("");
+    });
+
+    it("should ignore segments after cursor() (terminates path)", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      // cursor() terminates path normalization, "invalid" is ignored
+      expect(() => {
+        new Ref(handle, ["text", cursor(0, 5), "invalid"]);
+      }).not.toThrow();
+    });
+  });
+
+  describe("parser edge cases - keys", () => {
+    /**
+     * New encoding scheme - keys are default, special prefixes for other types:
+     * - `@n` for indices
+     * - `{...}` for match patterns
+     * - `[...]` for cursor ranges
+     * - `~` escapes keys that start with @, {, [, or ~
+     *
+     * This means:
+     * - Numeric keys like "123" round-trip correctly (they're just keys!)
+     * - Keys starting with special chars get escaped with ~
+     * - Slashes are URL-encoded as %2F
+     */
+
+    it("should round-trip numeric-looking keys correctly", () => {
+      handle.change((d) => {
+        d["123"] = "value at string key '123'";
+      });
+
+      // Ref creation works - stores as key segment
+      const ref = new Ref(handle, ["123"]);
+      expect(ref.path[0][KIND]).toBe("key");
+      expect((ref.path[0] as any).key).toBe("123");
+      expect(ref.value()).toBe("value at string key '123'");
+
+      // URL serialization - "123" is just a key (no @ prefix)
+      const url = ref.url;
+      expect(url).toContain("/123");
+
+      // Round-trips correctly as key!
+      const parsed = parseAutomergeRefUrl(url);
+      expect(parsed.segments[0][KIND]).toBe("key");
+      expect((parsed.segments[0] as any).key).toBe("123");
+    });
+
+    it("should handle key containing dash (round-trips correctly)", () => {
+      handle.change((d) => {
+        d["my-key"] = "value";
+      });
+
+      const ref = new Ref(handle, ["my-key"]);
+      const url = ref.url;
+
+      // Dash is fine in keys (only [cursor-cursor] is special)
+      const parsed = parseAutomergeRefUrl(url);
+      expect(parsed.segments[0][KIND]).toBe("key");
+      expect((parsed.segments[0] as any).key).toBe("my-key");
+    });
+
+    it("should handle key starting with colon (round-trips correctly)", () => {
+      handle.change((d) => {
+        d[":special"] = "value";
+      });
+
+      const ref = new Ref(handle, [":special"]);
+      const url = ref.url;
+
+      // Colons are fine in keys now
+      const parsed = parseAutomergeRefUrl(url);
+      expect(parsed.segments[0][KIND]).toBe("key");
+      expect((parsed.segments[0] as any).key).toBe(":special");
+    });
+
+    it("should escape and round-trip key starting with opening brace", () => {
+      handle.change((d) => {
+        d["{notjson"] = "value";
+      });
+
+      // Ref creation works
+      const ref = new Ref(handle, ["{notjson"]);
+      expect(ref.value()).toBe("value");
+
+      // URL should have ~ escape prefix
+      const url = ref.url;
+      expect(url).toContain("~%7Bnotjson"); // ~{notjson URL-encoded
+
+      // Round-trips correctly
+      const parsed = parseAutomergeRefUrl(url);
+      expect(parsed.segments[0][KIND]).toBe("key");
+      expect((parsed.segments[0] as any).key).toBe("{notjson");
+    });
+
+    it("should round-trip key containing slash via URL encoding", () => {
+      handle.change((d) => {
+        d["path/with/slashes"] = "value";
+      });
+
+      // Ref creation works
+      const ref = new Ref(handle, ["path/with/slashes"]);
+      expect(ref.value()).toBe("value");
+
+      // Slashes are URL-encoded, not split
+      const url = ref.url;
+      expect(url).toContain("path%2Fwith%2Fslashes");
+
+      // Round-trips correctly as single key
+      const parsed = parseAutomergeRefUrl(url);
+      expect(parsed.segments.length).toBe(1);
+      expect((parsed.segments[0] as any).key).toBe("path/with/slashes");
+    });
+
+    it("should handle empty string key", () => {
+      handle.change((d) => {
+        d[""] = "empty key value";
+      });
+
+      // Ref creation works
+      const ref = new Ref(handle, [""]);
+      expect(ref.value()).toBe("empty key value");
+    });
+
+    it("should escape key starting with @", () => {
+      handle.change((d) => {
+        d["@mention"] = "value";
+      });
+
+      const ref = new Ref(handle, ["@mention"]);
+      const url = ref.url;
+
+      // Should be escaped with ~
+      expect(url).toContain("~%40mention"); // ~@mention URL-encoded
+
+      // Round-trips correctly
+      const parsed = parseAutomergeRefUrl(url);
+      expect(parsed.segments[0][KIND]).toBe("key");
+      expect((parsed.segments[0] as any).key).toBe("@mention");
+    });
+
+    it("should escape key starting with [", () => {
+      handle.change((d) => {
+        d["[array]"] = "value";
+      });
+
+      const ref = new Ref(handle, ["[array]"]);
+      const url = ref.url;
+
+      // Should be escaped with ~
+      expect(url).toContain("~%5Barray%5D"); // ~[array] URL-encoded
+
+      // Round-trips correctly
+      const parsed = parseAutomergeRefUrl(url);
+      expect(parsed.segments[0][KIND]).toBe("key");
+      expect((parsed.segments[0] as any).key).toBe("[array]");
+    });
+
+    it("should escape key starting with ~", () => {
+      handle.change((d) => {
+        d["~tilde"] = "value";
+      });
+
+      const ref = new Ref(handle, ["~tilde"]);
+      const url = ref.url;
+
+      // Should be double-escaped ~~
+      expect(url).toContain("~~tilde");
+
+      // Round-trips correctly
+      const parsed = parseAutomergeRefUrl(url);
+      expect(parsed.segments[0][KIND]).toBe("key");
+      expect((parsed.segments[0] as any).key).toBe("~tilde");
+    });
+  });
+
+  describe("parser edge cases - parsing", () => {
+    it("should parse empty path as empty array", () => {
+      const segments = parsePath("");
+      expect(segments).toEqual([]);
+    });
+
+    it("should throw on path with only slashes", () => {
+      expect(() => parsePath("/")).toThrow();
+      expect(() => parsePath("//")).toThrow();
+      expect(() => parsePath("///")).toThrow();
+    });
+
+    it("should throw on path with empty segment (double slash)", () => {
+      expect(() => parsePath("foo//bar")).toThrow("empty segment");
+    });
+
+    it("should handle leading/trailing slashes", () => {
+      const segments = parsePath("/foo/bar/");
+      expect(segments.length).toBe(2);
+      expect((segments[0] as any).key).toBe("foo");
+      expect((segments[1] as any).key).toBe("bar");
+    });
+
+    it("should parse segment that looks like invalid JSON", () => {
+      // Starts with { but isn't valid JSON
+      expect(() => parseSegment("{notjson}")).toThrow("Invalid match pattern");
+    });
+
+    it("should parse cursor range with bracket format", () => {
+      const segment = parseSegment("[abc123-def456]");
+      expect(segment[KIND]).toBe("cursors");
+      expect((segment as any).start).toBe("abc123");
+      expect((segment as any).end).toBe("def456");
+    });
+
+    it("should parse collapsed cursor (single cursor)", () => {
+      const segment = parseSegment("[abc123]");
+      expect(segment[KIND]).toBe("cursors");
+      expect((segment as any).start).toBe("abc123");
+      expect((segment as any).end).toBe("abc123"); // Same as start
+    });
+
+    it("should throw on empty cursor brackets", () => {
+      expect(() => parseSegment("[]")).toThrow("empty brackets");
+    });
+
+    it("should parse index with @ prefix", () => {
+      const segment = parseSegment("@42");
+      expect(segment[KIND]).toBe("index");
+      expect((segment as any).index).toBe(42);
+    });
+
+    it("should throw for invalid @ usage (not followed by digits)", () => {
+      // @prefix is reserved for indices - invalid use throws
+      // To use "@notanumber" as a key, escape it: ~@notanumber
+      expect(() => parseSegment("@notanumber")).toThrow(
+        'Invalid segment: "@notanumber"'
+      );
+    });
+  });
+
+  describe("parser edge cases - match patterns", () => {
+    it("should handle empty match pattern", () => {
+      handle.change((d) => {
+        d.items = [{ a: 1 }, { b: 2 }];
+      });
+
+      // Empty pattern {} should match any object
+      const ref = new Ref(handle, ["items", {}]);
+      expect(ref.value()).toEqual({ a: 1 }); // First item
+    });
+
+    it("should handle match pattern with null value", () => {
+      handle.change((d) => {
+        d.items = [{ status: null }, { status: "active" }];
+      });
+
+      const ref = new Ref(handle, ["items", { status: null }]);
+      expect(ref.value()).toEqual({ status: null });
+    });
+
+    it("should handle match pattern with boolean values", () => {
+      handle.change((d) => {
+        d.items = [{ done: false }, { done: true }];
+      });
+
+      const trueRef = new Ref(handle, ["items", { done: true }]);
+      expect(trueRef.value()).toEqual({ done: true });
+
+      const falseRef = new Ref(handle, ["items", { done: false }]);
+      expect(falseRef.value()).toEqual({ done: false });
+    });
+
+    it("should serialize and deserialize match patterns correctly", () => {
+      const segment = {
+        [KIND]: "match" as const,
+        match: { id: "test", count: 42, active: true },
+      };
+      const serialized = serializeSegment(segment);
+      expect(serialized).toBe('{"id":"test","count":42,"active":true}');
+
+      const parsed = parseSegment(serialized);
+      expect(parsed[KIND]).toBe("match");
+      expect((parsed as any).match).toEqual({
+        id: "test",
+        count: 42,
+        active: true,
+      });
+    });
+  });
+
+  describe("path construction edge cases", () => {
+    it("should handle negative array index", () => {
+      handle.change((d) => {
+        d.items = ["a", "b", "c"];
+      });
+
+      // Negative indices don't make sense in Automerge
+      const ref = new Ref(handle, ["items", -1]);
+      expect(ref.value()).toBeUndefined();
+    });
+
+    it("should handle float array index", () => {
+      handle.change((d) => {
+        d.items = ["a", "b", "c"];
+      });
+
+      // 1.5 will be used as-is, which JS will truncate to 1 when indexing
+      const ref = new Ref(handle, ["items", 1.5]);
+      // JavaScript arrays coerce 1.5 to "1.5" as a key, not index 1
+      expect(ref.value()).toBeUndefined();
+    });
+
+    it("should handle NaN as index", () => {
+      handle.change((d) => {
+        d.items = ["a", "b", "c"];
+      });
+
+      const ref = new Ref(handle, ["items", NaN]);
+      expect(ref.value()).toBeUndefined();
+    });
+
+    it("should handle Infinity as index", () => {
+      handle.change((d) => {
+        d.items = ["a", "b", "c"];
+      });
+
+      const ref = new Ref(handle, ["items", Infinity]);
+      expect(ref.value()).toBeUndefined();
+    });
+
+    it("should handle very large index", () => {
+      handle.change((d) => {
+        d.items = ["a"];
+      });
+
+      const ref = new Ref(handle, ["items", Number.MAX_SAFE_INTEGER]);
+      expect(ref.value()).toBeUndefined();
+    });
+
+    it("should handle root ref (empty path)", () => {
+      handle.change((d) => {
+        d.title = "Test";
+        d.count = 42;
+      });
+
+      const rootRef = new Ref(handle, []);
+      const value = rootRef.value();
+      expect(value).toHaveProperty("title", "Test");
+      expect(value).toHaveProperty("count", 42);
+    });
+  });
+
+  describe("URL edge cases", () => {
+    it("should reject invalid URL prefix", () => {
+      expect(isValidAutomergeRefUrl("http://example.com")).toBe(false);
+      expect(isValidAutomergeRefUrl("automerge-repo:abc")).toBe(false);
+    });
+
+    it("should reject URL with multiple # (heads sections)", () => {
+      expect(() => {
+        parseAutomergeRefUrl("automerge:abc/path#head1#head2" as any);
+      }).toThrow("multiple heads sections");
+    });
+
+    it("should handle URL with no path", () => {
+      const parsed = parseAutomergeRefUrl("automerge:docid123" as any);
+      expect(parsed.documentId).toBe("docid123");
+      expect(parsed.segments).toEqual([]);
+    });
+
+    it("should handle URL with only heads", () => {
+      const parsed = parseAutomergeRefUrl(
+        "automerge:docid123#head1|head2" as any
+      );
+      expect(parsed.documentId).toBe("docid123");
+      expect(parsed.segments).toEqual([]);
+      expect(parsed.heads).toEqual(["head1", "head2"]);
+    });
+
+    // TODO: this makes me think we should prefix indexes with a colon or possibly another character
+    it("should preserve key vs index distinction through URL round-trip", () => {
+      handle.change((d) => {
+        d["0"] = "string key";
+        d.items = ["index"];
+      });
+
+      // The URL format uses numbers for indices, so "0" as a key
+      // will be indistinguishable from index 0 after parsing
+      const stringKeyRef = new Ref(handle, ["0"]);
+      const url = stringKeyRef.url;
+
+      // This is a known limitation: URL parsing treats "0" as index, not key
+      // The URL will contain "/0" which parses as index segment
+      expect(url).toContain("/0");
+    });
+  });
+
+  describe("disposed ref edge cases", () => {
+    it("should still return value() after dispose", () => {
+      handle.change((d) => {
+        d.value = 42;
+      });
+
+      const ref = new Ref(handle, ["value"]);
+      ref.dispose();
+
+      // value() should still work (reads are stateless)
+      expect(ref.value()).toBe(42);
+    });
+
+    it("should still allow change() after dispose", () => {
+      handle.change((d) => {
+        d.value = 42;
+      });
+
+      const ref = new Ref(handle, ["value"]);
+      ref.dispose();
+
+      // TODO: i think this should throw an error?
+      // because the ref is disposed
+      ref.change(() => 100);
+      expect(handle.doc().value).toBe(100);
+    });
+
+    it("should throw on onChange after dispose", () => {
+      const ref = new Ref(handle, ["value"]);
+      ref.dispose();
+
+      expect(() => {
+        ref.onChange(() => {});
+      }).toThrow("disposed");
+    });
+
+    it("should allow double dispose without error", () => {
+      const ref = new Ref(handle, ["value"]);
+      ref.dispose();
+      expect(() => ref.dispose()).not.toThrow();
+    });
+  });
+
+  describe("MutableText edge cases", () => {
+    it("should handle splice at start of string", () => {
+      handle.change((d) => {
+        d.text = "World";
+      });
+
+      const ref = new Ref(handle, ["text"]);
+      ref.change((text) => {
+        text.splice(0, 0, "Hello ");
+      });
+
+      expect(handle.doc().text).toBe("Hello World");
+    });
+
+    it("should handle splice at end of string", () => {
+      handle.change((d) => {
+        d.text = "Hello";
+      });
+
+      const ref = new Ref(handle, ["text"]);
+      ref.change((text) => {
+        text.splice(5, 0, " World");
+      });
+
+      expect(handle.doc().text).toBe("Hello World");
+    });
+
+    it("should handle splice deleting entire string", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const ref = new Ref(handle, ["text"]);
+      ref.change((text) => {
+        text.splice(0, 11, "");
+      });
+
+      expect(handle.doc().text).toBe("");
+    });
+
+    it("should handle updateText to empty string", () => {
+      handle.change((d) => {
+        d.text = "Hello";
+      });
+
+      const ref = new Ref(handle, ["text"]);
+      ref.change((text) => {
+        text.updateText("");
+      });
+
+      expect(handle.doc().text).toBe("");
+    });
+
+    it("should handle updateText on empty string", () => {
+      handle.change((d) => {
+        d.text = "";
+      });
+
+      const ref = new Ref(handle, ["text"]);
+      ref.change((text) => {
+        text.updateText("New content");
+      });
+
+      expect(handle.doc().text).toBe("New content");
+    });
+  });
+
+  describe("concurrent/state edge cases", () => {
+    it("should handle ref to value that gets deleted", () => {
+      handle.change((d) => {
+        d.nested = { deep: { value: 42 } };
+      });
+
+      const ref = new Ref(handle, ["nested", "deep", "value"]);
+      expect(ref.value()).toBe(42);
+
+      // Delete the intermediate object
+      handle.change((d) => {
+        delete d.nested.deep;
+      });
+
+      expect(ref.value()).toBeUndefined();
+    });
+
+    it("should handle ref to array element when array is replaced", () => {
+      handle.change((d) => {
+        d.items = ["a", "b", "c"];
+      });
+
+      const ref = new Ref(handle, ["items", 1]);
+      expect(ref.value()).toBe("b");
+
+      // Replace entire array
+      handle.change((d) => {
+        d.items = ["x", "y"];
+      });
+
+      // Numeric index still works on new array
+      expect(ref.value()).toBe("y");
+    });
+
+    it("should handle match ref when matched item is deleted", () => {
+      handle.change((d) => {
+        d.items = [
+          { id: "a", value: 1 },
+          { id: "b", value: 2 },
+        ];
+      });
+
+      const ref = new Ref(handle, ["items", { id: "b" }, "value"]);
+      expect(ref.value()).toBe(2);
+
+      // Delete the matched item using Automerge's deleteAt
+      // (can't use .filter() in Automerge change callbacks - creates references)
+      handle.change((d) => {
+        d.items.deleteAt(1); // Delete item at index 1 (the one with id: "b")
+      });
+
+      expect(ref.value()).toBeUndefined();
+    });
+
+    it("should handle multiple refs to same location", () => {
+      handle.change((d) => {
+        d.counter = 0;
+      });
+
+      const ref1 = new Ref(handle, ["counter"]);
+      const ref2 = new Ref(handle, ["counter"]);
+
+      // Both refs see the same value
+      expect(ref1.value()).toBe(0);
+      expect(ref2.value()).toBe(0);
+
+      // Change via ref1
+      ref1.change(() => 10);
+
+      // Both refs should see the change
+      expect(ref1.value()).toBe(10);
+      expect(ref2.value()).toBe(10);
+    });
+  });
+
+  describe("serialization round-trip edge cases", () => {
+    it("should round-trip match pattern with multiple fields", () => {
+      handle.change((d) => {
+        d.items = [{ type: "task", status: "done", priority: 1 }];
+      });
+
+      const ref = new Ref(handle, ["items", { type: "task", status: "done" }]);
+      const url = ref.url;
+
+      const parsed = parseAutomergeRefUrl(url);
+      const matchSegment = parsed.segments[1];
+      expect(matchSegment[KIND]).toBe("match");
+      expect((matchSegment as any).match).toEqual({
+        type: "task",
+        status: "done",
+      });
+    });
+
+    it("should round-trip cursor range", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const ref = new Ref(handle, ["text", cursor(0, 5)]);
+      const url = ref.url;
+
+      // Parse and verify new bracket format: [cursor-cursor]
+      expect(url).toMatch(/\[\d+@[a-f0-9]+-\d+@[a-f0-9]+\]$/);
+    });
+  });
+});

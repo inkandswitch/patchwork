@@ -43,6 +43,16 @@ export type CursorRange = { [KIND]: "cursors"; start: Cursor; end: Cursor };
 /** All segment types */
 export type Segment = PathSegment | CursorRange;
 
+/** A codec handles parsing and serialization for one segment type. */
+export interface SegmentCodec<K extends Segment[typeof KIND]> {
+  kind: K;
+  /** Does this string match this codec's format? */
+  match(s: string): boolean;
+  /** Parse string to segment (assumes match() returned true) */
+  parse(s: string): Extract<Segment, { [KIND]: K }>;
+  serialize(seg: Extract<Segment, { [KIND]: K }>): string;
+}
+
 /** Input types that users can provide to create refs */
 export type PathInput = string | number | MatchPattern | CursorMarker;
 
@@ -119,27 +129,29 @@ type Split<
     ? []
     : [S];
 
-/** Check if a string represents a numeric value */
-type IsNumeric<S extends string> = S extends `${number}` ? true : false;
-
-/** Check if a string represents a cursor range (:cursor1-:cursor2) */
-type IsCursorRange<S extends string> = S extends `:${string}-:${string}`
-  ? true
+/** Check if a string represents an index (@0, @42) */
+type IsIndex<S extends string> = S extends `@${infer N}`
+  ? N extends `${number}`
+    ? true
+    : false
   : false;
+
+/** Check if a string represents a cursor range ([cursor] or [start-end]) */
+type IsCursorRange<S extends string> = S extends `[${string}]` ? true : false;
 
 /** Marker type for cursor range segments parsed from strings */
 type CursorRangeMarker = { __cursorRange: true };
 
 /**
  * Parse a string segment into its semantic type for inference:
- * - "0", "123" → number (array index)
- * - ":cursor1-:cursor2" → CursorRangeMarker (text range → string value)
- * - "key" → literal string (object key)
+ * - "@0", "@123" → number (array index)
+ * - "[cursor]", "[start-end]" → CursorRangeMarker (text range → string value)
+ * - "key", "123" → literal string (object key - numbers are keys now!)
  */
 type ParseSegment<S extends string> =
   IsCursorRange<S> extends true
     ? CursorRangeMarker
-    : IsNumeric<S> extends true
+    : IsIndex<S> extends true
       ? number
       : S;
 
