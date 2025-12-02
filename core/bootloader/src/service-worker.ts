@@ -124,8 +124,8 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
             return response;
           }
           // maybe the main thread set something in the cache for us?
-          const cached = await cache.match(fetchEvent.request);
-          if (cached) return cached;
+          // const cached = await cache.match(fetchEvent.request);
+          // if (cached) return cached;
           // no idea what's going on now
           return new Response("handler completed without setting cache", {
             status: 418,
