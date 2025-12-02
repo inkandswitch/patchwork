@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/annotations-core",
+  "name": "@patchwork/annotations",
   "type": "module",
   "scripts": {
     "build": "tsc",

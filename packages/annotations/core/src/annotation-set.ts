@@ -53,46 +53,6 @@ export class AnnotationSet {
   }
 
   /**
-   * Get an annotation for a ref and type (deprecated - returns first value)
-   * @deprecated Use lookup() or lookupAll() instead
-   */
-  get<T>(type: AnnotationType<T>, ref: Ref<unknown>): T | undefined {
-    return this.lookup(ref, type);
-  }
-
-  /**
-   * Lookup the first annotation value for a ref and type
-   */
-  lookup<T>(ref: Ref<unknown>, type: AnnotationType<T>): T | undefined {
-    // use stored ref to make sure refs with the same Id always resolve to the same instance
-    const storedRef = this.refsById.get(ref.toString());
-
-    if (!storedRef) return undefined;
-
-    const annotationsByEntity = this.annotationsByType.get(type);
-    if (!annotationsByEntity) return undefined;
-
-    const annotations = annotationsByEntity.get(storedRef);
-    return annotations?.values().next().value as T;
-  }
-
-  /**
-   * Lookup all annotation values for a ref and type
-   */
-  lookupAll<T>(ref: Ref<unknown>, type: AnnotationType<T>): T[] {
-    // use stored ref to make sure refs with the same Id always resolve to the same instance
-    const storedRef = this.refsById.get(ref.toString());
-
-    if (!storedRef) return [];
-
-    const annotationsByEntity = this.annotationsByType.get(type);
-    if (!annotationsByEntity) return [];
-
-    const annotations = annotationsByEntity.get(storedRef);
-    return annotations ? (Array.from(annotations) as T[]) : [];
-  }
-
-  /**
    * Filter annotations by type
    */
   ofType<T>(type: AnnotationType<T>): AnnotationsOfType<T> {
