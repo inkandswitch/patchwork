@@ -1342,3 +1342,46 @@
     color: #666;
   }
 }
+
+/* Debug Toggle */
+.debug-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+  border: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
+  border-radius: 6px;
+  background: var(--sideboard-widget-fill);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.debug-toggle:hover {
+  background: color-mix(in oklab, var(--sideboard-widget-fill), black 5%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .debug-toggle {
+    border-color: color-mix(in oklab, var(--sideboard-widget-fill), white 15%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .debug-toggle:hover {
+    background: color-mix(in oklab, var(--sideboard-widget-fill), white 8%);
+  }
+}
+
+.debug-toggle input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--sideboard-primary);
+  cursor: pointer;
+}
+
+.debug-toggle__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  user-select: none;
+}

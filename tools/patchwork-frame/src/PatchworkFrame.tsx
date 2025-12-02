@@ -19,6 +19,10 @@ import { useEffect, useMemo, useState } from "react";
 import { TinyPatchworkConfigDoc } from "./types";
 import { OpenDocumentEvent } from "@patchwork/elements";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
+import {
+  useDebugRegistryToast,
+  DebugRegistryToast,
+} from "./useDebugRegistryToast";
 
 export const PatchworkFrame = ({
   docUrl: accountDocUrl,
@@ -43,6 +47,13 @@ export const PatchworkFrame = ({
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
+
+  // Debug registry toast
+  const {
+    events: debugEvents,
+    dismissEvent,
+    clearAll,
+  } = useDebugRegistryToast();
 
   const [selectedDoc] = useDocument<DocWithComments>(selectedView?.url);
   const selectedDocRef = useDocRef(selectedView?.url);
@@ -132,6 +143,11 @@ export const PatchworkFrame = ({
 
   return (
     <div className="w-screen h-screen flex">
+      <DebugRegistryToast
+        events={debugEvents}
+        onDismiss={dismissEvent}
+        onClearAll={clearAll}
+      />
       <div
         className={`flex relative transition-all duration-300 ${
           isSidebarCollapsed ? "w-0" : "w-[400px]"
