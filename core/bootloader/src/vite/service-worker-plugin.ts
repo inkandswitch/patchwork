@@ -25,7 +25,7 @@ export function serviceworker(): Plugin {
     name: "@patchwork/vite",
     async buildStart() {
       if (this.environment.mode == "build") {
-        const trans = await transform(this.resolve, this.fs);
+        const trans = await transform(this.resolve.bind(this), this.fs);
         this.emitFile({
           type: "prebuilt-chunk",
           fileName: path.slice(1),
@@ -41,7 +41,7 @@ export function serviceworker(): Plugin {
     },
     async load(id) {
       if (ids.includes(id)) {
-        return transform(this.resolve, this.fs);
+        return transform(this.resolve.bind(this), this.fs);
       }
     },
   };
