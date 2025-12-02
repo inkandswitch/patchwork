@@ -7,6 +7,8 @@ import {
   clearCompletedTodosAction,
   markAllCompleteAction,
   markAllIncompleteAction,
+  markTodoDoneAction,
+  listTodoItemsAction,
 } from "./actions";
 
 export const plugins: Plugin<any>[] = [
@@ -39,4 +41,6 @@ export const plugins: Plugin<any>[] = [
   clearCompletedTodosAction,
   markAllCompleteAction,
   markAllIncompleteAction,
+  markTodoDoneAction,
+  listTodoItemsAction,
 ];

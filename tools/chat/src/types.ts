@@ -36,6 +36,7 @@ export type AgentActionMessage = BaseMessage & {
   description: string;
   args: any;
   status: "pending" | "success" | "error";
+  result?: string;
   error?: string;
   beforeHead?: string;
   afterHead?: string;

@@ -47,6 +47,66 @@ export const addTodoAction: Plugin<any> = {
   },
 };
 
+// Mark a todo item as completed (done)
+export const markTodoDoneAction: Plugin<any> = {
+  type: "patchwork:action",
+  id: "todo-complete",
+  name: "Mark Todo Done",
+  icon: "CheckSquare2",
+  supportedDataTypes: ["todo"],
+  module: {
+    argsSchema: (doc: TodoDoc) => {
+      const todoOptions = (doc.todos || [])
+        .filter((todo) => !todo.done)
+        .map((todo) => todo.id);
+
+      // Must have at least one uncompleted todo to allow enum
+      if (todoOptions.length === 0) {
+        // fallback to a generic string - will validate at runtime, but should not be shown in UI
+        return z.object({
+          todoId: z.string().describe("ID of the todo item to mark done"),
+        });
+      }
+
+      return z.object({
+        todoId: z
+          .enum(todoOptions as [string, ...string[]])
+          .describe("ID of the todo item to mark done"),
+      });
+    },
+    isApplicable: (doc: TodoDoc) => {
+      return (doc.todos || []).some((todo) => !todo.done);
+    },
+    default: (
+      handle: DocHandle<TodoDoc>,
+      _repo: any,
+      args: { todoId: string }
+    ) => {
+      handle.change((doc) => {
+        const todo = doc.todos.find((t) => t.id === args.todoId);
+        if (todo) {
+          todo.done = true;
+        }
+      });
+    },
+  },
+};
+
+// Mark a todo item as completed (done)
+export const listTodoItemsAction: Plugin<any> = {
+  type: "patchwork:action",
+  id: "todo-complete",
+  name: "List Todo Items",
+  icon: "CheckSquare2",
+  supportedDataTypes: ["todo"],
+  module: {
+    isApplicable: () => true,
+    default: (handle: DocHandle<TodoDoc>, _repo: any) => {
+      return handle.doc().todos;
+    },
+  },
+};
+
 // Toggle a todo item's completion status
 export const toggleTodoAction: Plugin<any> = {
   type: "patchwork:action",

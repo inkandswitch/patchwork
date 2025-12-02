@@ -47,6 +47,8 @@ export async function step(
     agentDocHandle.doc();
   const todoDocHandle = await repo.find<TodoDoc>(todoListUrl);
 
+  let hasMessagesWithResult = false;
+
   // Load chat document
   const chatDocHandle = await repo.find<ChatDocument>(chatDocUrl);
   const chatDoc = chatDocHandle.doc();
@@ -207,66 +209,74 @@ export async function step(
             } as AgentActionMessage);
           });
 
-          // Execute action asynchronously and update status
-          (async () => {
-            try {
-              const currentChatDoc = chatDocHandle.doc();
-              if (currentChatDoc) {
-                const targetUrl = action.target as AutomergeUrl;
+          try {
+            const currentChatDoc = chatDocHandle.doc();
+            if (currentChatDoc) {
+              const targetUrl = action.target as AutomergeUrl;
 
-                if (!targetUrl) {
-                  throw new Error(
-                    `Target document not found: ${action.target}`
-                  );
-                }
-
-                // Get target document and capture head before action
-                const targetDocHandle = await repo.find(targetUrl as any);
-                const targetDocBefore = targetDocHandle.doc();
-                const beforeHead = targetDocBefore
-                  ? Automerge.getHeads(targetDocBefore)[0]
-                  : undefined;
-
-                // Load action plugin from registry
-                const registry = getRegistry("patchwork:action");
-                const actionPlugin = await registry.load(action.actionId);
-
-                await executeAction(targetUrl, actionPlugin, cleanArgs, repo);
-
-                // Capture head after action
-                const targetDocAfter = targetDocHandle.doc();
-                const afterHead = targetDocAfter
-                  ? Automerge.getHeads(targetDocAfter)[0]
-                  : undefined;
-
-                // Update to success with heads
-                chatDocHandle.change((doc) => {
-                  const msg = doc.messages?.find(
-                    (m) => m.id === actionMessageId
-                  ) as AgentActionMessage;
-                  if (msg && msg.type === "action") {
-                    msg.status = "success";
-                    if (beforeHead) msg.beforeHead = beforeHead;
-                    if (afterHead) msg.afterHead = afterHead;
-                  }
-                });
+              if (!targetUrl) {
+                throw new Error(`Target document not found: ${action.target}`);
               }
-            } catch (error) {
-              const errorMsg =
-                error instanceof Error ? error.message : String(error);
 
-              // Update to error
+              // Get target document and capture head before action
+              const targetDocHandle = await repo.find(targetUrl as any);
+              const targetDocBefore = targetDocHandle.doc();
+              const beforeHead = targetDocBefore
+                ? Automerge.getHeads(targetDocBefore)[0]
+                : undefined;
+
+              // Load action plugin from registry
+              const registry = getRegistry("patchwork:action");
+              const actionPlugin = await registry.load(action.actionId);
+
+              const result = await executeAction(
+                targetUrl,
+                actionPlugin,
+                cleanArgs,
+                repo
+              );
+
+              if (result) {
+                hasMessagesWithResult = true;
+              }
+
+              // Capture head after action
+              const targetDocAfter = targetDocHandle.doc();
+              const afterHead = targetDocAfter
+                ? Automerge.getHeads(targetDocAfter)[0]
+                : undefined;
+
+              // Update to success with heads
               chatDocHandle.change((doc) => {
                 const msg = doc.messages?.find(
                   (m) => m.id === actionMessageId
                 ) as AgentActionMessage;
                 if (msg && msg.type === "action") {
-                  msg.status = "error";
-                  msg.error = errorMsg;
+                  msg.status = "success";
+                  if (result) {
+                    msg.result = JSON.stringify(result);
+                  }
+
+                  if (beforeHead) msg.beforeHead = beforeHead;
+                  if (afterHead) msg.afterHead = afterHead;
                 }
               });
             }
-          })();
+          } catch (error) {
+            const errorMsg =
+              error instanceof Error ? error.message : String(error);
+
+            // Update to error
+            chatDocHandle.change((doc) => {
+              const msg = doc.messages?.find(
+                (m) => m.id === actionMessageId
+              ) as AgentActionMessage;
+              if (msg && msg.type === "action") {
+                msg.status = "error";
+                msg.error = errorMsg;
+              }
+            });
+          }
         }
       } catch (error) {
         console.error("Failed to parse action block:", error);
@@ -335,13 +345,12 @@ export async function step(
 
   const todoDoc = todoDocHandle.doc();
 
-  const isDone = todoDoc.todos.every((todo) => todo.done);
+  const isDone =
+    todoDoc.todos.every((todo) => todo.done) && !hasMessagesWithResult;
 
-  console.log("isDone", isDone);
-
-  // if (todoDoc.todos.some((todo) => !todo.done)) {
-  //   step(agentDocUrl, repo);
-  // }
+  if (!isDone) {
+    step(agentDocUrl, repo);
+  }
 }
 
 // Helper functions
@@ -645,6 +654,7 @@ function getSystemPrompt(todoDoc: TodoDoc, todoDocUrl: AutomergeUrl): string {
     - You can invoke multiple actions by using multiple <action> tags
     - Actions will be executed immediately as they're detected
     - If an action or document URL you use is not in the list below, your action WILL FAIL
+    - If you need information from a previous action (such as the result of a query), just issue that action and do not attempt to do follow-up actions that depend on its results yet. Wait to be called again after the action is complete—do not rush ahead with actions that require information you do not yet have.
 
     Example:
 
@@ -685,7 +695,7 @@ async function executeAction(
   action: any,
   args: any,
   repo: Repo
-): Promise<void> {
+): Promise<any> {
   const targetDocHandle = await repo.find(targetDocUrl);
   const targetDoc = targetDocHandle.doc();
 
@@ -693,9 +703,9 @@ async function executeAction(
     // Validate args with schema
     const schema = action.module.argsSchema(targetDoc);
     const validatedArgs = schema.parse(args || {});
-    await action.module.default(targetDocHandle, repo, validatedArgs);
+    return await action.module.default(targetDocHandle, repo, validatedArgs);
   } else {
-    await action.module.default(targetDocHandle, repo);
+    return await action.module.default(targetDocHandle, repo);
   }
 }
 
@@ -719,6 +729,7 @@ function buildLLMHistory(messages: ChatMessage[]): LLMMessage[] {
             actionId: msg.actionId,
             target: msg.target,
             args: msg.args,
+            result: msg.result,
           })}</action>`,
         };
       }
