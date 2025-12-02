@@ -48,7 +48,7 @@ export function docHandleToServiceWorkerUrl(handle: DocHandle<any>): string {
 }
 
 export function createFilesystemHandoffHandler(repo: Repo) {
-  const handle: HandoffHandler = async (href) => {
+  const handle: HandoffHandler = async (href, _request) => {
     try {
       const [maybeAutomergeUrl, ...path] = href.split("/");
 

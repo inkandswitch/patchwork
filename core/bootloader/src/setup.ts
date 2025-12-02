@@ -4,11 +4,14 @@ import type {
   HandoffResponse,
   SetupServiceWorkerOptions,
 } from "./types.js";
+import debug from "debug";
+
+const debugging = debug.enabled("patchwork:serviceworker");
 
 const key = "patchworkServiceWorkerCacheVersion";
 
 function bumpServiceWorkerCacheVersion() {
-  const version = new Date() + "@main";
+  const version = new Date().valueOf().toString(36);
   localStorage.setItem(key, version);
   return getServiceWorkerCacheVersion();
 }
@@ -40,7 +43,6 @@ export function bumpServiceWorkerCache(
   setServiceWorkerCacheName(sw);
 }
 
-const encoder = new TextEncoder();
 export default async function setupServiceWorker(
   handler: HandoffHandler,
   options?: SetupServiceWorkerOptions
@@ -87,8 +89,7 @@ export default async function setupServiceWorker(
       }
 
       if (typeof handoffResponse == "string") {
-        const bytes = encoder.encode(handoffResponse);
-        return send({ body: bytes }, [bytes.buffer]);
+        return send({ body: handoffResponse }, [handoffResponse]);
       }
 
       if (handoffResponse instanceof Uint8Array) {
@@ -97,10 +98,7 @@ export default async function setupServiceWorker(
 
       const { body: handoffBody, headers, status, cache } = handoffResponse;
 
-      const body =
-        typeof handoffBody == "string"
-          ? encoder.encode(handoffBody)
-          : handoffBody;
+      const body = handoffBody;
 
       send(
         { body, headers, status, cache },
@@ -114,12 +112,17 @@ export default async function setupServiceWorker(
   return navigator.serviceWorker
     .register(options?.path ?? "/service-worker.js")
     .then(async (sw) => {
+      sw.active?.postMessage({
+        type: "debug",
+        debug: debugging,
+      });
+
       if (!existingSw?.active) {
         bumpServiceWorkerCache(sw.installing);
         queueMicrotask(() => location.reload());
         return sw.active!;
       }
-      sw.active && setServiceWorkerCacheName(sw.active);
+
       console.log(
         "service worker alive, loading %c patchwork system ",
         "background: #fff8f0; border: 1px solid; border-radius: 4px"

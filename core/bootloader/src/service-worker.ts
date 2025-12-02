@@ -3,6 +3,18 @@
 import type { HandoffResponse, HandoffResponseMessage } from "./types.js";
 
 let cachename = "default";
+let debugging = false;
+
+function log(...args: any[]) {
+  if (!debugging) return;
+  console.log.call(
+    console,
+    `%cpatchwork:serviceworker%c\n`,
+    `color: #00ffcc; font-weight: bold`,
+    "color: inherit",
+    ...args
+  );
+}
 
 self.addEventListener("install", () => self.skipWaiting());
 
@@ -37,8 +49,7 @@ self.addEventListener("message", async (messageEvent) => {
       return console.warn(`No read response found for id ${message.id}`);
     }
     return responseItem.resolve(message.response);
-  }
-  if (messageEvent.data.type == "cachename") {
+  } else if (messageEvent.data.type == "cachename") {
     const nextCachename = messageEvent.data.cachename;
     if (cachename == nextCachename) {
       return;
@@ -48,6 +59,9 @@ self.addEventListener("message", async (messageEvent) => {
     );
     caches.delete(cachename);
     cachename = nextCachename;
+  } else if (messageEvent.data.type == "debug") {
+    debugging = messageEvent.data.debug;
+    log("serviceworker debugging enabled");
   }
 });
 
@@ -58,7 +72,7 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
   if (request.method !== "GET") return fetchEvent.respondWith(fetch(request));
   const url = new URL(fetchEvent.request.url);
 
-  let importURL: URL | undefined;
+  let handoffURL: URL | undefined;
 
   if (
     url.hostname == self.location.hostname &&
@@ -68,7 +82,8 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
     try {
       // trap any request like /url e.g. /automerge%3Awhatever or /http%3A%2F%2Fsomething.com
       // URI encoded so we can include hashes etc
-      importURL = new URL(decodeURIComponent(url.pathname.slice(1)));
+      handoffURL = new URL(decodeURIComponent(url.pathname.slice(1)));
+      log(`received handoff request ${handoffURL}`);
     } catch {}
   }
 
@@ -78,7 +93,7 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
       const match = await cache.match(request);
 
       try {
-        if (importURL) {
+        if (handoffURL) {
           // cache-first strategy for handoff requests
           if (match) return match;
           const client = await self.clients.get(fetchEvent.clientId);
@@ -95,38 +110,40 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
               `the client has gone missing!!! ${fetchEvent.clientId}. i have NO IDEA what to do`
             );
           }
-
-          // send request event to main thread to ask them how to handle it
-          client.postMessage({
+          const message = {
             id: reqid,
             type: "request",
             cache: cachename,
             request: {
-              url: importURL.href,
+              url: handoffURL.href,
               headers: Object.fromEntries(request.headers.entries()),
               method: request.method,
               destination: request.destination,
               referrer: request.referrer,
             },
-          });
-
+          };
+          log("sending handoff request", message);
+          // send request event to main thread to ask them how to handle it
+          client.postMessage(message);
           // this'll finish when the main thread gets back to us
           fetchEvent.waitUntil(resolvers.promise);
           const handoffResponse = await resolvers.promise;
+          log("received handoff response", handoffResponse);
           if (handoffResponse) {
             const response = new Response(handoffResponse.body, {
               status: handoffResponse.status,
               headers: handoffResponse.headers,
             });
             if (handoffResponse.cache !== false) {
-              cache.put(request, response.clone());
+              log(`caching ${handoffURL}`);
+              await cache.put(request, response.clone());
+            } else {
+              log(`caching disabled on ${handoffURL}`);
             }
             return response;
           }
-          // maybe the main thread set something in the cache for us?
-          // const cached = await cache.match(fetchEvent.request);
-          // if (cached) return cached;
-          // no idea what's going on now
+
+          // no idea what's going on now i'm a teapot i'm a teapot
           return new Response("handler completed without setting cache", {
             status: 418,
           });
@@ -135,7 +152,7 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
           const response = await fetch(request);
           if (response) {
             if (response.ok && response.url.match(/^https?\:/)) {
-              cache.put(request, response.clone());
+              await cache.put(request, response.clone());
             }
             return response;
           }
