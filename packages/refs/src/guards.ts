@@ -13,6 +13,6 @@ export function isMatchPattern(val: unknown): val is MatchPattern {
   return isObject(val) && !isSegment(val);
 }
 
-export function isCursorMarker(value: unknown): value is CursorMarker {
-  return isObject(value) && CURSOR_MARKER in value;
+export function isCursorMarker(val: unknown): val is CursorMarker {
+  return isObject(val) && CURSOR_MARKER in val;
 }

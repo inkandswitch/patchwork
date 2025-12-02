@@ -20,7 +20,7 @@ import { isSegment, isMatchPattern } from "./guards";
 import { matchesIdPattern, shallowEqual } from "./utils";
 import { isCursorMarker } from "./guards";
 import type { CursorMarker } from "./types";
-import { parseAutomergeRefUrl, stringifyAutomergeRefUrl } from "./parser";
+import { stringifyAutomergeRefUrl } from "./parser";
 import { MutableText } from "./mutable-text";
 
 /**
@@ -107,24 +107,6 @@ export class Ref<
       ...this.options,
       heads,
     });
-  }
-
-  /**
-   * Parse a ref from an Automerge URL string.
-   *
-   * @param handle - The document handle to use
-   * @param url - Full automerge URL like "automerge:documentId/path#heads"
-   *
-   * @example
-   * Ref.fromUrl(handle, "automerge:abc/todos/0#head1|head2" as AutomergeRefUrl)
-   */
-  static fromUrl<TDoc = any>(
-    handle: DocHandle<TDoc>,
-    url: AutomergeRefUrl
-  ): Ref<TDoc, AnyPathInput[]> {
-    const { segments, heads } = parseAutomergeRefUrl(url);
-    const options: RefOptions = heads ? { heads } : {};
-    return new Ref<TDoc, AnyPathInput[]>(handle, segments, options);
   }
 
   /** Get the current value, or undefined if path can't be resolved */

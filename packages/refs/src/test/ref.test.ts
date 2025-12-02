@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { Repo, splice, type DocHandle } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
 import { Ref } from "../ref";
-import { ref } from "../factory";
+import { ref, fromUrl } from "../utils";
 import { cursor } from "../utils";
 import { KIND } from "../types";
 
@@ -427,7 +427,7 @@ describe("Ref", () => {
       const url = ref1.url;
 
       // Parse URL and create new ref
-      const ref2 = Ref.fromUrl(handle, url);
+      const ref2 = fromUrl(handle, url);
 
       // Both refs should have identical URLs
       expect(ref2.url).toBe(ref1.url);
@@ -446,7 +446,7 @@ describe("Ref", () => {
       const url = ref1.url;
 
       // Parse from URL
-      const ref2 = Ref.fromUrl(handle, url);
+      const ref2 = fromUrl(handle, url);
 
       // Should have same cursor range
       expect(ref2.url).toBe(ref1.url);
@@ -471,15 +471,15 @@ describe("Ref", () => {
 
       // Round-trip 1
       const url1 = ref1.url;
-      const ref2 = Ref.fromUrl(handle, url1);
+      const ref2 = fromUrl(handle, url1);
 
       // Round-trip 2
       const url2 = ref2.url;
-      const ref3 = Ref.fromUrl(handle, url2);
+      const ref3 = fromUrl(handle, url2);
 
       // Round-trip 3
       const url3 = ref3.url;
-      const ref4 = Ref.fromUrl(handle, url3);
+      const ref4 = fromUrl(handle, url3);
 
       // All URLs should be identical (this is the key invariant)
       expect(url1).toBe(url2);

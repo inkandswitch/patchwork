@@ -3,9 +3,9 @@ import { Repo } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
 import { cursor } from "../utils";
-import { ref, findRef, AutomergeRefUrl, CURSOR_MARKER } from "../index";
+import { ref, findRef, AutomergeRefUrl } from "../index";
 import { Ref } from "../ref";
-import { KIND } from "../types";
+import { CURSOR_MARKER } from "../types";
 
 describe("utils", () => {
   describe("cursor", () => {
