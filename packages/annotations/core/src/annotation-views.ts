@@ -9,20 +9,14 @@ import { AnnotationSet } from "./annotation-set";
 export class AnnotationsOfType<T> {
   constructor(
     private annotationSet: AnnotationSet,
-    private annotationsByRef: Map<Ref, Set<T>>,
-    private refsById: Map<string, Ref<any>>
+    private annotationsByRef: Map<Ref, Set<T>>
   ) {}
 
   /**
    * Lookup the first annotation value for a ref
    */
   lookup(ref: Ref<unknown>): T | undefined {
-    // use stored ref to make sure refs with the same id always resolve to the same instance
-    const storedRef = this.refsById.get(ref.toString());
-
-    if (!storedRef) return undefined;
-
-    const annotations = this.annotationsByRef.get(storedRef);
+    const annotations = this.annotationsByRef.get(ref);
     return annotations ? annotations.values().next().value : undefined;
   }
 
@@ -30,12 +24,7 @@ export class AnnotationsOfType<T> {
    * Lookup all annotation values for a ref
    */
   lookupAll(ref: Ref<unknown>): T[] {
-    // use stored ref to make sure refs with the same id always resolve to the same instance
-    const storedRef = this.refsById.get(ref.toString());
-
-    if (!storedRef) return [];
-
-    const annotations = this.annotationsByRef.get(storedRef);
+    const annotations = this.annotationsByRef.get(ref);
     return annotations ? Array.from(annotations) : [];
   }
 

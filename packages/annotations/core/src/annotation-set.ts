@@ -1,4 +1,4 @@
-import { type Ref } from "@patchwork/refs";
+import { Ref } from "@patchwork/refs";
 import type { AnnotationType, AnnotationValue } from "./annotation-type";
 import { AnnotationsOfType, AnnotationsOnRef } from "./annotation-views";
 
@@ -6,51 +6,56 @@ import { AnnotationsOfType, AnnotationsOnRef } from "./annotation-views";
  * A set of annotations that can be queried and filtered
  *
  * Internal storage:
- * - Set of ref IDs (using ref.toString())
- * - Map: AnnotationType -> Map<refId, Set<value>>
+ * - Map: AnnotationType -> Map<Ref, Set<value>>
+ * - Map: Ref -> Set<AnnotationType> (for tracking which types each ref has)
  *
  * Each ref can have multiple annotations of the same type.
  */
 export class AnnotationSet {
-  // Map: AnnotationType -> Map<refId, Set<value>>
+  // Map: AnnotationType -> Map<Ref, Set<value>>
   private annotationsByType: Map<
     AnnotationType<any>,
     Map<Ref, Set<AnnotationValue<any>>>
   > = new Map();
 
-  // Map: refId -> Ref instance (for reconstruction)
-  private refsById: Map<string, Ref<any>> = new Map();
+  // Map: Ref -> Set<AnnotationType> (tracks which annotation types each ref has)
+  private annotationTypesByRef: Map<Ref, Set<AnnotationType<any>>> = new Map();
 
   /**
    * Add an annotation to a ref.
    * Multiple annotations of the same type can be added to the same ref.
    */
   add<T>(ref: Ref<any>, annotation: AnnotationValue<T>): void {
-    const refId = ref.toString();
-
-    // use stored ref to make sure refs with the same Id always resolve to the same instance
-    let storedRef = this.refsById.get(refId);
-    if (!storedRef) {
-      storedRef = ref;
-      this.refsById.set(refId, storedRef);
-    }
-
     const type = annotation.type;
 
+    // Add to annotationsByType
     let typeMap = this.annotationsByType.get(type);
     if (!typeMap) {
       typeMap = new Map();
       this.annotationsByType.set(type, typeMap);
     }
 
-    let valueSet = typeMap.get(storedRef);
+    let valueSet = typeMap.get(ref);
     if (!valueSet) {
       valueSet = new Set();
-      typeMap.set(storedRef, valueSet);
+      typeMap.set(ref, valueSet);
     }
 
     valueSet.add(annotation);
+
+    // Track that this ref has this annotation type
+    let typesForRef = this.annotationTypesByRef.get(ref);
+    if (!typesForRef) {
+      typesForRef = new Set();
+      this.annotationTypesByRef.set(ref, typesForRef);
+    }
+    typesForRef.add(type);
   }
+
+  /**
+   * Remove all annotations of a specific type across all refs
+   */
+  remove<T>(annotationType: AnnotationType<T>): void;
 
   /**
    * Remove all annotations for a ref
@@ -62,85 +67,92 @@ export class AnnotationSet {
    */
   remove<T>(ref: Ref<any>, annotationType: AnnotationType<T>): void;
 
-  /**
-   * Remove a specific annotation value from a ref
-   */
-  remove<T>(ref: Ref<any>, annotationValue: AnnotationValue<T>): void;
-
   remove<T>(
-    ref: Ref<any>,
-    annotationTypeOrValue?: AnnotationType<T> | AnnotationValue<T>
+    refOrAnnotationType: Ref<any> | AnnotationType<T>,
+    annotationType?: AnnotationType<T>
   ): void {
-    const refId = ref.toString();
-    const storedRef = this.refsById.get(refId);
+    // Remove Ref
+    if (refOrAnnotationType instanceof Ref) {
+      const annotationTypes =
+        this.annotationTypesByRef.get(refOrAnnotationType);
 
-    if (!storedRef) {
-      // Ref not found, nothing to remove
-      return;
-    }
-
-    // Case 1: remove(ref) - Remove all annotations for this ref
-    if (annotationTypeOrValue === undefined) {
-      for (const [type, typeMap] of this.annotationsByType) {
-        typeMap.delete(storedRef);
+      // case 0: ref is not in the annotation set => do nothing
+      if (!annotationTypes) {
+        return;
       }
-      this.refsById.delete(refId);
-      return;
-    }
 
-    if ("type" in annotationTypeOrValue) {
-      // Case 2: remove(ref, annotationValue) - Remove specific annotation value
-      const annotationValue = annotationTypeOrValue as AnnotationValue<T>;
-      const type = annotationValue.type;
-      const typeMap = this.annotationsByType.get(type);
+      // case 1: delete all annotations for a ref
 
-      if (typeMap) {
-        const valueSet = typeMap.get(storedRef);
-        if (valueSet) {
-          valueSet.delete(annotationValue);
-
-          // Clean up empty sets and maps
-          if (valueSet.size === 0) {
-            typeMap.delete(storedRef);
+      if (!annotationType) {
+        // delete all annotations for a ref
+        for (const annotationType of annotationTypes) {
+          const annotations = this.annotationsByType.get(annotationType);
+          if (annotations) {
+            annotations.delete(refOrAnnotationType);
           }
         }
-      }
-    } else {
-      // Case 3: remove(ref, annotationType) - Remove all annotations of a specific type
-      const annotationType = annotationTypeOrValue as AnnotationType<T>;
-      const typeMap = this.annotationsByType.get(annotationType);
 
-      if (typeMap) {
-        typeMap.delete(storedRef);
+        // delete ref
+        this.annotationTypesByRef.delete(refOrAnnotationType);
+        return;
       }
+
+      // case 2: delete a specific annotation type for a ref
+
+      // delete the annotation values of that type on the ref
+      const annotations = this.annotationsByType.get(annotationType);
+      if (annotations) {
+        annotations.delete(refOrAnnotationType);
+      }
+
+      // delete the fact that the ref has this annotation type
+      this.annotationTypesByRef
+        .get(refOrAnnotationType)
+        ?.delete(annotationType);
+      return;
     }
+
+    // Remove Annotation Type
+    const annotationsByRef = this.annotationsByType.get(refOrAnnotationType);
+
+    if (!annotationsByRef) {
+      return;
+    }
+
+    // delete the annoation types from refs
+    for (const refWithAnnotation of annotationsByRef.keys()) {
+      this.annotationTypesByRef
+        .get(refWithAnnotation)
+        ?.delete(refOrAnnotationType);
+    }
+
+    // delete the annotation values
+    this.annotationsByType.delete(refOrAnnotationType);
   }
 
   /**
    * Filter annotations by type
    */
   ofType<T>(type: AnnotationType<T>): AnnotationsOfType<T> {
-    const annoationsByRef = this.annotationsByType.get(type);
+    const annotationsByRef = this.annotationsByType.get(type) as Map<
+      Ref,
+      Set<T>
+    >;
 
-    if (!annoationsByRef) {
-      return new AnnotationsOfType<T>(this, new Map(), new Map());
+    if (!annotationsByRef) {
+      return new AnnotationsOfType<T>(this, new Map());
     }
 
-    return new AnnotationsOfType<T>(
-      this,
-      annoationsByRef as Map<Ref, Set<T>>,
-      this.refsById
-    );
+    return new AnnotationsOfType<T>(this, annotationsByRef);
   }
 
   /**
    * Filter annotations on a specific ref (exact match)
    */
   on<T>(ref: Ref<T>): AnnotationsOnRef<T> {
-    // use stored ref to make sure refs with the same id always resolve to the same instance
-    const storedRef = this.refsById.get(ref.toString());
+    const typesForRef = this.annotationTypesByRef.get(ref);
 
-    if (!storedRef) {
+    if (!typesForRef) {
       return new AnnotationsOnRef<T>(this, ref, new Map());
     }
 
@@ -149,10 +161,13 @@ export class AnnotationSet {
       Set<AnnotationValue<any>>
     >();
 
-    for (const [type, typeMap] of this.annotationsByType) {
-      const annotations = typeMap.get(storedRef);
-      if (annotations) {
-        annotationsOnRef.set(type, annotations);
+    for (const type of typesForRef) {
+      const typeMap = this.annotationsByType.get(type);
+      if (typeMap) {
+        const annotations = typeMap.get(ref);
+        if (annotations) {
+          annotationsOnRef.set(type, annotations);
+        }
       }
     }
 
@@ -164,27 +179,35 @@ export class AnnotationSet {
    * Returns a new AnnotationSet containing only the matching annotations
    */
   onChildrenOf(ref: Ref<string | Array<unknown>>): AnnotationSet {
-    const newAnnotatonsByType = new Map<
+    const newAnnotationsByType = new Map<
       AnnotationType<any>,
       Map<Ref, Set<AnnotationValue<any>>>
     >();
-    const newRefsById = new Map<string, Ref<any>>();
+    const newAnnotationTypesByRef = new Map<Ref, Set<AnnotationType<any>>>();
 
-    for (const [type, annoationsByRef] of this.annotationsByType) {
-      let newAnnoationsByRef = new Map<Ref, Set<AnnotationValue<any>>>();
-      newAnnotatonsByType.set(type, newAnnoationsByRef);
+    for (const [type, annotationsByRef] of this.annotationsByType) {
+      let newAnnotationsByRef = new Map<Ref, Set<AnnotationValue<any>>>();
+      newAnnotationsByType.set(type, newAnnotationsByRef);
 
-      for (const [otherRef, annotations] of annoationsByRef) {
+      for (const [otherRef, annotations] of annotationsByRef) {
         if (otherRef.isChildOf(ref)) {
-          newRefsById.set(otherRef.toString(), otherRef);
-          newAnnoationsByRef.set(otherRef, annotations);
+          // add annotation to ref
+          newAnnotationsByRef.set(otherRef, annotations);
+
+          // track that annotation has this type
+          let typesForRef = newAnnotationTypesByRef.get(otherRef);
+          if (!typesForRef) {
+            typesForRef = new Set();
+            newAnnotationTypesByRef.set(otherRef, typesForRef);
+          }
+          typesForRef.add(type);
         }
       }
     }
 
     const newAnnotationSet = new AnnotationSet();
-    newAnnotationSet.annotationsByType = newAnnotatonsByType;
-    newAnnotationSet.refsById = newRefsById;
+    newAnnotationSet.annotationsByType = newAnnotationsByType;
+    newAnnotationSet.annotationTypesByRef = newAnnotationTypesByRef;
 
     return newAnnotationSet;
   }
@@ -194,27 +217,35 @@ export class AnnotationSet {
    * Returns a new AnnotationSet containing only the matching annotations
    */
   onPartOf(ref: Ref<unknown>): AnnotationSet {
-    const newAnnotatonsByType = new Map<
+    const newAnnotationsByType = new Map<
       AnnotationType<any>,
       Map<Ref, Set<AnnotationValue<any>>>
     >();
-    const newRefsById = new Map<string, Ref<any>>();
+    const newAnnotationTypesByRef = new Map<Ref, Set<AnnotationType<any>>>();
 
-    for (const [type, annoationsByRef] of this.annotationsByType) {
-      let newAnnoationsByRef = new Map<Ref, Set<AnnotationValue<any>>>();
-      newAnnotatonsByType.set(type, newAnnoationsByRef);
+    for (const [type, annotationsByRef] of this.annotationsByType) {
+      let newAnnotationsByRef = new Map<Ref, Set<AnnotationValue<any>>>();
+      newAnnotationsByType.set(type, newAnnotationsByRef);
 
-      for (const [otherRef, annotations] of annoationsByRef) {
+      for (const [otherRef, annotations] of annotationsByRef) {
         if (otherRef.isChildOf(ref)) {
-          newRefsById.set(otherRef.toString(), otherRef);
-          newAnnoationsByRef.set(otherRef, annotations);
+          // add annotation to ref
+          newAnnotationsByRef.set(otherRef, annotations);
+
+          // track that annotation has this type
+          let typesForRef = newAnnotationTypesByRef.get(otherRef);
+          if (!typesForRef) {
+            typesForRef = new Set();
+            newAnnotationTypesByRef.set(otherRef, typesForRef);
+          }
+          typesForRef.add(type);
         }
       }
     }
 
     const newAnnotationSet = new AnnotationSet();
-    newAnnotationSet.annotationsByType = newAnnotatonsByType;
-    newAnnotationSet.refsById = newRefsById;
+    newAnnotationSet.annotationsByType = newAnnotationsByType;
+    newAnnotationSet.annotationTypesByRef = newAnnotationTypesByRef;
 
     return newAnnotationSet;
   }
