@@ -4,7 +4,8 @@
   "devDependencies": {
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@keyhive/keyhive": "catalog:",
-    "esbuild": "^0.23.1"
+    "esbuild": "^0.23.1",
+    "rollup": "^4.53.3"
   },
   "exports": {
     ".": "./dist/types.d.ts",
