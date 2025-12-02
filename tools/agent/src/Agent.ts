@@ -1,4 +1,4 @@
-import { DocHandle, Repo, AutomergeUrl } from "@automerge/automerge-repo";
+import { Repo, AutomergeUrl } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
 import {
   getRegistry,
@@ -62,18 +62,16 @@ export async function step(
 
   const allDocUrls = [...activeDocUrls, todoListUrl];
 
-  const { docUrlAliases, prompt: documentContextPrompt } =
-    await getDocumentsContext(allDocUrls, repo);
+  const documentContextPrompt = await getDocumentsContext(allDocUrls, repo);
 
-  const todoDocAlias = getAliasForUrl(docUrlAliases, todoListUrl)!;
-  const systemPrompt = getSystemPrompt(todoDocHandle.doc(), todoDocAlias);
+  const systemPrompt = getSystemPrompt(todoDocHandle.doc(), todoListUrl);
 
   // Build message history from our message types
   const llmMessages: { role: string; content: string }[] = [
     { role: "system", content: systemPrompt },
     { role: "system", content: documentContextPrompt },
 
-    ...buildLLMHistory(chatDoc.messages, docUrlAliases),
+    ...buildLLMHistory(chatDoc.messages),
   ];
 
   // Stream response with incremental parsing
@@ -214,7 +212,7 @@ export async function step(
             try {
               const currentChatDoc = chatDocHandle.doc();
               if (currentChatDoc) {
-                const targetUrl = getUrlForAlias(docUrlAliases, action.target);
+                const targetUrl = action.target as AutomergeUrl;
 
                 if (!targetUrl) {
                   throw new Error(
@@ -336,6 +334,10 @@ export async function step(
   }
 
   const todoDoc = todoDocHandle.doc();
+
+  const isDone = todoDoc.todos.every((todo) => todo.done);
+
+  console.log("isDone", isDone);
 
   // if (todoDoc.todos.some((todo) => !todo.done)) {
   //   step(agentDocUrl, repo);
@@ -507,7 +509,7 @@ function formatSchemaDescription(schema: any): string {
 
 async function getAvailableActionsForDocument<T>(
   targetDoc: T,
-  alias: string
+  docUrl: AutomergeUrl
 ): Promise<string> {
   const actionDescriptions: string[] = [];
   const actions = await getActionsOfDatatype(targetDoc);
@@ -528,7 +530,7 @@ async function getAvailableActionsForDocument<T>(
       outdent` 
         **${action.name}**  
 
-        target: ${alias}
+        target: ${docUrl}
         id: ${action.id}
         args:
         ${argsDescription}
@@ -541,36 +543,11 @@ async function getAvailableActionsForDocument<T>(
     : "No actions available for this document";
 }
 
-type UrlAlias = {
-  alias: string;
-  url: AutomergeUrl;
-};
-
-function getAliasForUrl(
-  docUrlAliases: UrlAlias[],
-  url: AutomergeUrl
-): string | undefined {
-  return docUrlAliases.find((docUrlAlias) => docUrlAlias.url === url)?.alias;
-}
-
-function getUrlForAlias(
-  docUrlAliases: UrlAlias[],
-  alias: string
-): AutomergeUrl | undefined {
-  return docUrlAliases.find((docUrlAlias) => docUrlAlias.alias === alias)?.url;
-}
-
-type DocumentsContext = {
-  docUrlAliases: UrlAlias[];
-  prompt: string;
-};
-
 async function getDocumentsContext(
   docUrls: AutomergeUrl[],
   repo: Repo
-): Promise<DocumentsContext> {
+): Promise<string> {
   const documentActionDescriptions: string[] = [];
-  const documentUrlByName: Record<string, AutomergeUrl> = {};
 
   for (const docUrl of docUrls) {
     try {
@@ -578,29 +555,17 @@ async function getDocumentsContext(
       const doc = handle.doc();
       if (!doc) continue;
 
-      const type = doc?.["@patchwork"]?.type || "unknown";
+      const type = (doc as any)?.["@patchwork"]?.type || "unknown";
       const datatype = await getRegistry("patchwork:datatype").load(type);
       const title = datatype?.module.getTitle(doc) ?? "untitled";
 
-      // generate a unique name for the document based on the title
-      let name = title
-        .replaceAll(" ", "-")
-        .replace(/[^a-zA-Z0-9\-]/g, "")
-        .toLowerCase();
-      let count = 0;
-      while (documentUrlByName[name] !== undefined) {
-        name = `${title}-${count}`;
-        count++;
-      }
-      documentUrlByName[name] = docUrl;
-
       // Get actions for this document
-      const actionsText = await getAvailableActionsForDocument(doc, name);
+      const actionsText = await getAvailableActionsForDocument(doc, docUrl);
 
       documentActionDescriptions.push(
         outdent`
           ### ${title}
-          id: "${name}"
+          url: "${docUrl}"
           type: "${type}"
 
           ${actionsText}
@@ -611,20 +576,14 @@ async function getDocumentsContext(
     }
   }
 
-  return {
-    docUrlAliases: Object.entries(documentUrlByName).map(([alias, url]) => ({
-      alias,
-      url,
-    })),
-    prompt: outdent`
-      ## Active Documents
+  return outdent`
+    ## Active Documents
 
-      ${documentActionDescriptions.join("\n\n")}
-    `,
-  };
+    ${documentActionDescriptions.join("\n\n")}
+  `;
 }
 
-function getSystemPrompt(todoDoc: TodoDoc, todoDocAlias: string): string {
+function getSystemPrompt(todoDoc: TodoDoc, todoDocUrl: AutomergeUrl): string {
   return outdent`
     You are an AI assistant helping to edit multiple documents by invoking actions on them.
 
@@ -637,7 +596,7 @@ function getSystemPrompt(todoDoc: TodoDoc, todoDocAlias: string): string {
     4. You can use <thinking> tags to reason about your approach (these will be shown to the user)
     5. Use <action> tags to execute actions
 
-    You have a todo list (id: "${todoDocAlias}") that you can use to track your tasks. If the user asks for something
+    You have a todo list (url: "${todoDocUrl}") that you can use to track your tasks. If the user asks for something
     more complicated break it down into smaller tasks and add them to the todo list. Only work on tasks that are not already completed.
 
     ${
@@ -663,7 +622,7 @@ function getSystemPrompt(todoDoc: TodoDoc, todoDocAlias: string): string {
     <action description="short description">
     {
       "actionId": "action-id",
-      "target": "document-id",
+      "target": "automerge:url",
       "args": {
         "argName": "value"
       }
@@ -677,26 +636,26 @@ function getSystemPrompt(todoDoc: TodoDoc, todoDocAlias: string): string {
     - Both <thinking> and <action> tags MUST have a "description" attribute (short, a few words)
     - You MUST wrap your action commands in <action> tags for them to be executed!
     - Inside the <action> tags, put a JSON object with "actionId", "target", and "args"
-    - The "target" field MUST be one of the document IDs listed in the "Active Documents" section below
+    - The "target" field MUST be one of the document URLs listed in the "Active Documents" section below
     - The "actionId" field MUST be one of the action IDs listed for that specific document below
     - DO NOT invent your own action IDs - only use the exact IDs listed for each document
-    - DO NOT invent your own document IDs - only use the exact IDs shown in the "Active Documents" section
+    - DO NOT invent your own document URLs - only use the exact URLs shown in the "Active Documents" section
     - The JSON must be valid JSON with proper escaping
     - Make sure argument names and values match EXACTLY what's specified in the action's args list
     - You can invoke multiple actions by using multiple <action> tags
     - Actions will be executed immediately as they're detected
-    - If an action or document ID you use is not in the list below, your action WILL FAIL
+    - If an action or document URL you use is not in the list below, your action WILL FAIL
 
     Example:
 
     ## Active Documents
 
     ### Counter
-    id: "my-counter"
+    url: "automerge:2abc3def..."
     type: "counter"
 
     **Increment Counter**  
-    target: my-counter
+    target: automerge:2abc3def...
     id: counter-increment
     args:
       - amount: number (optional, default: 1)
@@ -704,7 +663,7 @@ function getSystemPrompt(todoDoc: TodoDoc, todoDocAlias: string): string {
     User: "Increment the counter by 8"
 
     <thinking description="Planning approach">
-    The user wants to increment the counter. I'll use the counter-increment action on the "my-counter" document with amount: 8.
+    The user wants to increment the counter. I'll use the counter-increment action on the counter document with amount: 8.
     </thinking>
 
     Great, I will increment the counter by 8.
@@ -712,7 +671,7 @@ function getSystemPrompt(todoDoc: TodoDoc, todoDocAlias: string): string {
     <action description="Increment counter by 8">
     {
       "actionId": "counter-increment",
-      "target": "my-counter",
+      "target": "automerge:2abc3def...",
       "args": {
         "amount": 8
       }
@@ -740,10 +699,7 @@ async function executeAction(
   }
 }
 
-function buildLLMHistory(
-  messages: ChatMessage[],
-  docUrlAliases: UrlAlias[]
-): LLMMessage[] {
+function buildLLMHistory(messages: ChatMessage[]): LLMMessage[] {
   return messages.map((msg) => {
     if (msg.role === "user" && msg.type === "text") {
       return { role: "user", content: msg.content };
@@ -761,7 +717,7 @@ function buildLLMHistory(
           role: "assistant",
           content: `<action description="${msg.description}">${JSON.stringify({
             actionId: msg.actionId,
-            target: getAliasForUrl(docUrlAliases, msg.target as AutomergeUrl),
+            target: msg.target,
             args: msg.args,
           })}</action>`,
         };
@@ -791,14 +747,12 @@ function parseIncrementalBlocks(buffer: string): {
   const thinkingRegex =
     /<thinking\s+description="([^"]+)">([\s\S]*?)<\/thinking>/g;
   let thinkingMatch;
-  let lastThinkingEnd = 0;
 
   while ((thinkingMatch = thinkingRegex.exec(workingBuffer)) !== null) {
     completeThinking.push({
       description: thinkingMatch[1].trim(),
       content: thinkingMatch[2].trim(),
     });
-    lastThinkingEnd = thinkingMatch.index + thinkingMatch[0].length;
   }
 
   // Check for incomplete thinking block
@@ -817,7 +771,6 @@ function parseIncrementalBlocks(buffer: string): {
   // Extract complete action blocks with description attribute
   const actionRegex = /<action\s+description="([^"]+)">([\s\S]*?)<\/action>/g;
   let actionMatch;
-  let lastActionEnd = 0;
 
   while ((actionMatch = actionRegex.exec(workingBuffer)) !== null) {
     const description = actionMatch[1].trim();
@@ -826,7 +779,6 @@ function parseIncrementalBlocks(buffer: string): {
       description,
       json: JSON.stringify({ description, action: JSON.parse(json) }),
     });
-    lastActionEnd = actionMatch.index + actionMatch[0].length;
   }
 
   // Check for incomplete action blocks

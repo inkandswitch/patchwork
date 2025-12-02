@@ -5,11 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   base: "./",
-  plugins: [
-    react(),
-    tailwindcss(),
-    cssInjectedByJsPlugin(),
-  ],
+  plugins: [react(), tailwindcss(), cssInjectedByJsPlugin()],
 
   build: {
     minify: false,

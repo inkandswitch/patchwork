@@ -6,6 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [react(), cssInjectedByJsPlugin(), tailwindcss()],
   build: {
+    minify: false,
     lib: {
       entry: "src/index.ts",
       formats: ["es"],
