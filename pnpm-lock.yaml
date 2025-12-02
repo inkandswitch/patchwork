@@ -74,6 +74,12 @@ importers:
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.0
+      '@types/debug':
+        specifier: ^4.1.12
+        version: 4.1.12
+      debug:
+        specifier: ^4.4.3
+        version: 4.4.3
       resolve.exports:
         specifier: ^2.0.3
         version: 2.0.3
