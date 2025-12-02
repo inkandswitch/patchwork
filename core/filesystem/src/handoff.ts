@@ -21,7 +21,7 @@ export async function findFileHandleInFolderHandle(
   const partsLength = parts.length;
   for (const [index, part] of parts.entries()) {
     const f = folder.doc();
-    console.log({ f });
+
     const target = f.docs.find((link) => link.name == part);
     if (!isValidAutomergeUrl(target?.url)) {
       throw new Error(
