@@ -1,16 +1,18 @@
-import type { Segment, IdPattern } from "./types";
-import { KIND } from "./types";
+import type { Segment, MatchPattern, CursorMarker } from "./types";
+import { CURSOR_MARKER, KIND } from "./types";
 
-export function isSegment(val: unknown): val is Segment {
-  return (
-    val !== null && val !== undefined && typeof val === "object" && KIND in val
-  );
+function isObject(val: unknown): val is object {
+  return val !== null && typeof val === "object" && !Array.isArray(val);
 }
 
-/** Plain object used for id patterns (not a Segment or array) */
-export function isIdPattern(obj: unknown): obj is IdPattern {
-  if (obj === null || typeof obj !== "object" || Array.isArray(obj)) {
-    return false;
-  }
-  return !isSegment(obj);
+export function isSegment(val: unknown): val is Segment {
+  return isObject(val) && KIND in val;
+}
+
+export function isMatchPattern(val: unknown): val is MatchPattern {
+  return isObject(val) && !isSegment(val);
+}
+
+export function isCursorMarker(value: unknown): value is CursorMarker {
+  return isObject(value) && CURSOR_MARKER in value;
 }

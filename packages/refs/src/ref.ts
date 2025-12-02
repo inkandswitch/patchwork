@@ -7,20 +7,20 @@ import type {
 import type {
   Segment,
   PathSegment,
-  RangeSegment,
-  PathInput,
+  TextRange,
+  AnyPathInput,
+  MatchPattern,
   RefOptions,
   InferRefType,
   ChangeFn,
+  AutomergeRefUrl,
 } from "./types";
 import { KIND } from "./types";
-import { isSegment, isIdPattern } from "./guards";
+import { isSegment, isMatchPattern } from "./guards";
 import { matchesIdPattern, shallowEqual } from "./utils";
-import {
-  parseAutomergeRefUrl,
-  stringifyAutomergeRefUrl,
-  type AutomergeRefUrl,
-} from "./parser";
+import { isCursorMarker } from "./guards";
+import type { CursorMarker } from "./types";
+import { parseAutomergeRefUrl, stringifyAutomergeRefUrl } from "./parser";
 import { MutableText } from "./mutable-text";
 
 /**
@@ -51,10 +51,13 @@ const refCleanupRegistry = new FinalizationRegistry<() => void>((cleanup) =>
  * titleRef.dispose();
  * ```
  */
-export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
+export class Ref<
+  TDoc = any,
+  TPath extends readonly AnyPathInput[] = AnyPathInput[],
+> {
   readonly docHandle: DocHandle<TDoc>;
   readonly path: PathSegment[];
-  readonly range?: RangeSegment;
+  readonly range?: TextRange;
   readonly options: RefOptions;
 
   #unsubscribe: () => void;
@@ -74,7 +77,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     const doc = docHandle.doc();
     const { path, range } = this.#normalizePath(
       doc,
-      segments as unknown as PathInput[]
+      segments as unknown as AnyPathInput[]
     );
     this.path = path;
     this.range = range;
@@ -118,10 +121,10 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   static fromUrl<TDoc = any>(
     handle: DocHandle<TDoc>,
     url: AutomergeRefUrl
-  ): Ref<TDoc, PathInput[]> {
+  ): Ref<TDoc, AnyPathInput[]> {
     const { segments, heads } = parseAutomergeRefUrl(url);
     const options: RefOptions = heads ? { heads } : {};
-    return new Ref<TDoc, PathInput[]>(handle, segments, options);
+    return new Ref<TDoc, AnyPathInput[]>(handle, segments, options);
   }
 
   /** Get the current value, or undefined if path can't be resolved */
@@ -407,30 +410,28 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
    */
   #normalizePath(
     doc: Doc<TDoc>,
-    inputs: PathInput[]
-  ): { path: PathSegment[]; range?: RangeSegment } {
+    inputs: AnyPathInput[]
+  ): { path: PathSegment[]; range?: TextRange } {
     const pathSegments: PathSegment[] = [];
     const propPath: Automerge.Prop[] = [];
     let current: any = doc;
-    let rangeSegment: RangeSegment | undefined;
+    let rangeSegment: TextRange | undefined;
 
     for (const input of inputs) {
-      if (Array.isArray(input) && input.length === 2) {
-        rangeSegment = this.#tryStabilizeRange(
-          doc,
-          propPath,
-          current,
-          input[0],
-          input[1]
-        );
+      // Handle cursor() marker - creates cursor-based range
+      if (isCursorMarker(input)) {
+        rangeSegment = this.#createCursorRange(doc, propPath, current, input);
         break;
       }
 
       const segment = isSegment(input)
         ? this.#ensureSegmentResolved(current, input)
-        : this.#normalizeInput(current, input as Exclude<PathInput, Segment>);
+        : this.#normalizeInput(
+            current,
+            input as Exclude<AnyPathInput, Segment | CursorMarker>
+          );
 
-      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
+      if (segment[KIND] === "range" || segment[KIND] === "cursors") {
         rangeSegment = segment;
         break;
       }
@@ -473,22 +474,15 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       case "index":
         return segment.index;
 
-      case "stable_index":
+      case "match": {
         if (!Array.isArray(container)) return undefined;
-        const index = container.findIndex(
-          (item) => Automerge.getObjectId(item) === segment.id
+        const matchIndex = container.findIndex((item) =>
+          matchesIdPattern(item, segment.match)
         );
-        return index !== -1 ? index : undefined;
-
-      case "query":
-        if (!Array.isArray(container)) return undefined;
-        const queryIndex = container.findIndex((item) =>
-          matchesIdPattern(item, segment.idPattern)
-        );
-        return queryIndex !== -1 ? queryIndex : undefined;
-
+        return matchIndex !== -1 ? matchIndex : undefined;
+      }
       case "range":
-      case "stable_range":
+      case "cursors":
         return undefined;
 
       default:
@@ -533,50 +527,37 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         return a.key === (b as typeof a).key;
       case "index":
         return a.index === (b as typeof a).index;
-      case "stable_index":
-        return a.id === (b as typeof a).id;
-      case "query":
-        return shallowEqual(a.idPattern, (b as typeof a).idPattern);
+      case "match":
+        return shallowEqual(a.match, (b as typeof a).match);
       default:
         a satisfies never;
         return false;
     }
   }
 
-  #normalizeInput(container: any, input: Exclude<PathInput, Segment>): Segment {
+  #normalizeInput(
+    container: any,
+    input: string | number | MatchPattern
+  ): Segment {
     if (typeof input === "string") {
       return { [KIND]: "key", key: input, resolvedProp: input };
     }
 
     if (typeof input === "number") {
-      if (!Array.isArray(container)) {
-        return { [KIND]: "index", index: input, resolvedProp: input };
-      }
-
-      const item = container[input];
-      const id = item ? Automerge.getObjectId(item) : undefined;
-
-      return id
-        ? { [KIND]: "stable_index", id, resolvedProp: input }
-        : { [KIND]: "index", index: input, resolvedProp: input };
+      return { [KIND]: "index", index: input, resolvedProp: input };
     }
 
-    if (isIdPattern(input)) {
+    if (isMatchPattern(input)) {
       if (!Array.isArray(container)) {
-        return { [KIND]: "query", idPattern: input, resolvedProp: undefined };
+        return { [KIND]: "match", match: input, resolvedProp: undefined };
       }
 
       const index = container.findIndex((obj) => matchesIdPattern(obj, input));
-      const item = index !== -1 ? container[index] : undefined;
-      const id = item ? Automerge.getObjectId(item) : undefined;
-
-      return id
-        ? { [KIND]: "stable_index", id, resolvedProp: index }
-        : {
-            [KIND]: "query",
-            idPattern: input,
-            resolvedProp: index !== -1 ? index : undefined,
-          };
+      return {
+        [KIND]: "match",
+        match: input,
+        resolvedProp: index !== -1 ? index : undefined,
+      };
     }
 
     throw new Error(
@@ -585,15 +566,17 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     );
   }
 
-  /** Try to stabilize a numeric range to a cursor-based range */
-  #tryStabilizeRange(
+  /** Create a cursor-based range from a CursorMarker */
+  #createCursorRange(
     doc: Doc<TDoc>,
     propPath: Automerge.Prop[],
     container: any,
-    start: number,
-    end: number
-  ): RangeSegment {
+    marker: CursorMarker
+  ): TextRange {
+    const { start, end } = marker;
+
     if (typeof container !== "string") {
+      // Fallback to numeric range for non-string values
       return { [KIND]: "range", start, end };
     }
 
@@ -601,7 +584,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     const endCursor = Automerge.getCursor(doc, propPath, end);
 
     return startCursor && endCursor
-      ? { [KIND]: "stable_range", start: startCursor, end: endCursor }
+      ? { [KIND]: "cursors", start: startCursor, end: endCursor }
       : { [KIND]: "range", start, end };
   }
 
@@ -630,7 +613,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     doc: Doc<TDoc>,
     propPath: Prop[],
     text: string,
-    range: RangeSegment
+    range: TextRange
   ): string | undefined {
     const positions = this.#getRangePositions(doc, propPath, range);
     if (!positions) return undefined;
@@ -655,7 +638,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   #spliceRange(
     doc: Doc<TDoc>,
     propPath: Prop[],
-    range: RangeSegment,
+    range: TextRange,
     newValue: string
   ): void {
     const positions = this.#getRangePositions(doc, propPath, range);
@@ -671,12 +654,13 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   #getRangePositions(
     doc: Doc<TDoc>,
     propPath: Prop[],
-    range: RangeSegment
+    range: TextRange
   ): [number, number] | undefined {
     if (range[KIND] === "range") {
       return [range.start, range.end];
     }
 
+    // KIND === "cursors"
     const start = Automerge.getCursorPosition(doc, propPath, range.start);
     const end = Automerge.getCursorPosition(doc, propPath, range.end);
 

@@ -1,5 +1,5 @@
 import * as Automerge from "@automerge/automerge";
-import type { Segment } from "./types";
+import type { AutomergeRefUrl, Segment } from "./types";
 import { KIND } from "./types";
 
 const URL_PREFIX = "automerge:";
@@ -7,17 +7,11 @@ const ID_PREFIX = ":";
 const RANGE_SEPARATOR = "..";
 
 /**
- * Branded type for Automerge ref URLs.
- * A string in the format: `automerge:documentId/path#heads`
- */
-export type AutomergeRefUrl = string & { readonly __brand: "AutomergeRefUrl" };
-
-/**
  * Parse a URL path string into segments.
  *
  * @example
  * parsePath("todos/0/title") → [{ kind: "key", key: "todos" }, ...]
- * parsePath("todos/:abc123") → [{ kind: "key", key: "todos" }, { kind: "stable_index", id: "abc123" }]
+ * parsePath("todos/{"id":"abc"}") → [{ kind: "key", key: "todos" }, { kind: "match", match: { id: "abc" } }]
  * parsePath("note/0..10") → [..., { kind: "range", start: 0, end: 10 }]
  */
 export function parsePath(path: string): Segment[] {
@@ -48,10 +42,6 @@ export function parseSegment(segment: string): Segment {
     return parseRange(segment);
   }
 
-  if (segment.startsWith(ID_PREFIX)) {
-    return { [KIND]: "stable_index", id: segment.slice(ID_PREFIX.length) };
-  }
-
   if (segment.startsWith("{")) {
     return parseJson(segment);
   }
@@ -79,7 +69,7 @@ export function parseRange(segment: string): Segment {
 
   if (first.startsWith(ID_PREFIX) && second.startsWith(ID_PREFIX)) {
     return {
-      [KIND]: "stable_range",
+      [KIND]: "cursors",
       start: first.slice(ID_PREFIX.length) as Automerge.Cursor,
       end: second.slice(ID_PREFIX.length) as Automerge.Cursor,
     };
@@ -101,8 +91,8 @@ export function parseRange(segment: string): Segment {
 export function parseJson(segment: string): Segment {
   try {
     const parsed = JSON.parse(segment);
-    return { [KIND]: "query", idPattern: parsed };
-  } catch (e) {
+    return { [KIND]: "match", match: parsed };
+  } catch {
     throw new Error(`Invalid JSON segment: ${segment}`);
   }
 }
@@ -113,7 +103,7 @@ export function parseJson(segment: string): Segment {
  * @example
  * serializeSegment({ [KIND]: "key", key: "todos" }) → "todos"
  * serializeSegment({ [KIND]: "index", index: 0 }) → "0"
- * serializeSegment({ [KIND]: "stable_index", id: "abc" }) → ":abc"
+ * serializeSegment({ [KIND]: "match", match: { id: "abc" } }) → '{"id":"abc"}'
  * serializeSegment({ [KIND]: "range", start: 0, end: 10 }) → "0..10"
  */
 export function serializeSegment(segment: Segment): string {
@@ -124,16 +114,13 @@ export function serializeSegment(segment: Segment): string {
     case "index":
       return String(segment.index);
 
-    case "stable_index":
-      return `${ID_PREFIX}${segment.id}`;
-
-    case "query":
-      return JSON.stringify(segment.idPattern);
+    case "match":
+      return JSON.stringify(segment.match);
 
     case "range":
       return `${segment.start}${RANGE_SEPARATOR}${segment.end}`;
 
-    case "stable_range":
+    case "cursors":
       return `${ID_PREFIX}${segment.start}${RANGE_SEPARATOR}${ID_PREFIX}${segment.end}`;
 
     default:

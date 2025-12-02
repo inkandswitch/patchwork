@@ -7,37 +7,49 @@ import type { Cursor, Heads } from "@automerge/automerge-repo";
 export const KIND = Symbol("kind");
 
 /**
+ * Symbol to mark a cursor request for stabilization during ref creation.
+ */
+export const CURSOR_MARKER = Symbol("cursor");
+
+/**
  * Pattern used to match objects in arrays by their properties.
  * Only primitive values are allowed for reliable serialization and comparison.
  */
-export type IdPattern = Record<string, string | number | boolean | null>;
+export type MatchPattern = Record<string, string | number | boolean | null>;
+
+/**
+ * Marker type for cursor-based range that will be stabilized.
+ * Created via cursor() function and only valid as the last path argument.
+ */
+export interface CursorMarker {
+  [CURSOR_MARKER]: true;
+  start: number;
+  end: number;
+}
 
 /** Path segments that have resolvedProp (non-terminal) */
 export type PathSegment =
   | { [KIND]: "key"; key: string; resolvedProp?: string } // Object property access by key name
-  | { [KIND]: "index"; index: number; resolvedProp?: number } // Array/list access by numeric index (unstable - position-based)
-  | { [KIND]: "stable_index"; id: string; resolvedProp?: number } // Array/list access by stable Automerge ObjectId (undefined if not found)
+  | { [KIND]: "index"; index: number; resolvedProp?: number } // Array/list access by numeric index (position-based)
   | {
-      [KIND]: "query";
-      idPattern: IdPattern;
+      [KIND]: "match";
+      match: MatchPattern;
       resolvedProp?: number;
-    }; // Array/list search by id pattern (undefined if no match)
+    };
 
 /** Range segments (always terminal) */
-export type RangeSegment =
-  | { [KIND]: "range"; start: number; end: number } // Text/array range by numeric positions (unstable)
-  | { [KIND]: "stable_range"; start: Cursor; end: Cursor }; // Text range by stable Automerge cursors
+export type TextRange =
+  | { [KIND]: "range"; start: number; end: number } // Text/array range by numeric positions
+  | { [KIND]: "cursors"; start: Cursor; end: Cursor }; // Text range by stable Automerge cursors
 
-/** All segment types (for input compatibility) */
-export type Segment = PathSegment | RangeSegment;
+/** All segment types */
+export type Segment = PathSegment | TextRange;
 
-/** Input types that users can provide to create segments */
-export type PathInput =
-  | string
-  | number
-  | IdPattern
-  | [number, number]
-  | Segment;
+/** Input types that users can provide to create refs */
+export type PathInput = string | number | MatchPattern | CursorMarker;
+
+/** Internal: PathInput extended with Segment for URL parsing and internal use */
+export type AnyPathInput = PathInput | Segment;
 
 export interface RefOptions {
   heads?: Heads;
@@ -73,7 +85,7 @@ type GetSegmentValue<TObj, TSegment> = TSegment extends string
       : TObj extends readonly (infer E)[]
         ? readonly E[]
         : unknown
-    : TSegment extends number | IdPattern
+    : TSegment extends number | MatchPattern
       ? TObj extends readonly (infer E)[]
         ? E
         : unknown
@@ -94,3 +106,9 @@ export type InferRefType<TDoc, TPath extends readonly any[]> = PathValue<
   TDoc,
   TPath
 >;
+
+/**
+ * Branded type for Automerge ref URLs.
+ * A string in the format: `automerge:documentId/path#heads`
+ */
+export type AutomergeRefUrl = string & { readonly __brand: "AutomergeRefUrl" };

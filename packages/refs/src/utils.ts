@@ -1,34 +1,22 @@
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import type { Segment, IdPattern } from "./types";
-import { KIND } from "./types";
+import type { MatchPattern, CursorMarker, AutomergeRefUrl } from "./types";
+import { CURSOR_MARKER } from "./types";
 import { Ref } from "./ref";
-import { parseAutomergeRefUrl, type AutomergeRefUrl } from "./parser";
+import { parseAutomergeRefUrl } from "./parser";
 
 /**
- * Prevent stabilization for a path segment.
+ * Create a cursor-based range segment for stable text selection.
  *
- * By default, refs are stable: numeric indices → ObjectIds, ranges → cursors.
- * Use `at()` to keep segments dynamic and positional.
+ * Must be used as the last argument in a ref path.
+ * Creates stable cursors that track text positions through edits.
  *
  * @example
  * ```ts
- * ref(handle, 'todos', 0)      // Stable: tracks by ObjectId
- * ref(handle, 'todos', at(0))  // Dynamic: always index 0
+ * ref(handle, 'note', cursor(0, 5))  // Cursor-based range on text
  * ```
  */
-export function at(
-  segment: string | number | IdPattern | [number, number]
-): Segment {
-  if (typeof segment === "string") {
-    return { [KIND]: "key", key: segment };
-  }
-  if (typeof segment === "number") {
-    return { [KIND]: "index", index: segment };
-  }
-  if (Array.isArray(segment)) {
-    return { [KIND]: "range", start: segment[0], end: segment[1] };
-  }
-  return { [KIND]: "query", idPattern: segment };
+export function cursor(start: number, end: number): CursorMarker {
+  return { [CURSOR_MARKER]: true, start, end };
 }
 
 /**
@@ -58,7 +46,7 @@ export async function findRef<T = any>(
  *
  * @internal
  */
-export function shallowEqual(a: IdPattern, b: IdPattern): boolean {
+export function shallowEqual(a: MatchPattern, b: MatchPattern): boolean {
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
 
@@ -75,6 +63,6 @@ export function shallowEqual(a: IdPattern, b: IdPattern): boolean {
  *
  * @internal
  */
-export function matchesIdPattern(item: any, idPattern: IdPattern): boolean {
+export function matchesIdPattern(item: any, idPattern: MatchPattern): boolean {
   return Object.entries(idPattern).every(([key, value]) => item[key] === value);
 }

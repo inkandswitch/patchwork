@@ -1,16 +1,11 @@
 export type {
   PathInput,
-  RefOptions,
   MutableText,
   ChangeFn,
   InferRefType,
-  IdPattern,
+  MatchPattern,
+  AutomergeRefUrl,
 } from "./types";
 
-export { Ref } from "./ref";
-
-export { at, findRef } from "./utils";
-
+export { cursor, findRef } from "./utils";
 export { ref } from "./factory";
-
-export type { AutomergeRefUrl } from "./parser";
