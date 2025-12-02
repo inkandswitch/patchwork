@@ -1,5 +1,5 @@
 export { AnnotationSet } from "./annotation-set";
-export { AnnotationSetView } from "./annotation-set-view";
+export { AnnotationsOfType, AnnotationsOnRef } from "./annotation-views";
 export {
   defineAnnotationType,
   type AnnotationType,
