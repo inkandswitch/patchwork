@@ -21,8 +21,8 @@ import { parseAutomergeRefUrl } from "./parser";
  * ref(handle, 'note', cursor(0, 5))  // Cursor-based range on text
  * ```
  */
-export function cursor(start: number, end: number): CursorMarker {
-  return { [CURSOR_MARKER]: true, start, end };
+export function cursor(start: number, end?: number): CursorMarker {
+  return { [CURSOR_MARKER]: true, start, end: end ?? start };
 }
 
 /**

@@ -60,9 +60,13 @@ export interface RefOptions {
  * Passed to change callbacks when the ref points to a string value.
  *
  * Behaves like a string with two additional mutation methods.
+ * Uses String (object type) because we proxy all string methods at runtime.
  */
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
 export interface MutableText extends String {
+  /** Splice text at a position - uses Automerge.splice for CRDT-safe mutation */
   splice(index: number, deleteCount: number, insert?: string): void;
+  /** Replace entire text content - uses Automerge.updateText for CRDT-safe mutation */
   updateText(newValue: string): void;
 }
 
