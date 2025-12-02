@@ -10,6 +10,7 @@ import { useModules } from "@patchwork/solid";
 import { ToolCard } from "./tool-card.tsx";
 import { ModuleInput } from "./module-input.tsx";
 import { AccountUrlInput } from "./account-url-input.tsx";
+import { DebugToggle } from "./debug-toggle.tsx";
 
 export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   const pluginsByTypeArray = useModules();
@@ -68,6 +69,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
           onInput={(e) => setSearchQuery(e.currentTarget.value)}
         />
         <ModuleInput onAdd={handleAddModule} repo={props.repo} />
+        <DebugToggle />
       </div>
       <div class="module-settings__content">
         <For each={filteredPluginsByType()}>
