@@ -7,7 +7,7 @@ import type {
 import type {
   Segment,
   PathSegment,
-  TextRange,
+  CursorRange,
   AnyPathInput,
   MatchPattern,
   RefOptions,
@@ -57,7 +57,7 @@ export class Ref<
 > {
   readonly docHandle: DocHandle<TDoc>;
   readonly path: PathSegment[];
-  readonly range?: TextRange;
+  readonly range?: CursorRange;
   readonly options: RefOptions;
 
   #unsubscribe: () => void;
@@ -165,7 +165,7 @@ export class Ref<
           ? MutableText(doc, propPath, current)
           : current;
 
-      const newValue = fn(valueToPass as any);
+      const newValue = fn(valueToPass);
       if (newValue === undefined) return;
 
       // Warn if non-primitive value is returned (should mutate instead)
@@ -394,11 +394,11 @@ export class Ref<
   #normalizePath(
     doc: Doc<TDoc>,
     inputs: AnyPathInput[]
-  ): { path: PathSegment[]; range?: TextRange } {
+  ): { path: PathSegment[]; range?: CursorRange } {
     const pathSegments: PathSegment[] = [];
     const propPath: Automerge.Prop[] = [];
     let current: any = doc;
-    let rangeSegment: TextRange | undefined;
+    let rangeSegment: CursorRange | undefined;
 
     for (const input of inputs) {
       // Handle cursor() marker - creates cursor-based range
@@ -409,17 +409,14 @@ export class Ref<
 
       const segment = isSegment(input)
         ? this.#ensureSegmentResolved(current, input)
-        : this.#normalizeInput(
-            current,
-            input as Exclude<AnyPathInput, Segment | CursorMarker>
-          );
+        : this.#normalizeInput(current, input);
 
-      if (segment[KIND] === "range" || segment[KIND] === "cursors") {
+      if (segment[KIND] === "cursors") {
         rangeSegment = segment;
         break;
       }
 
-      pathSegments.push(segment as PathSegment);
+      pathSegments.push(segment);
 
       if (
         segment.prop !== undefined &&
@@ -427,7 +424,7 @@ export class Ref<
         current !== null
       ) {
         propPath.push(segment.prop);
-        current = (current as any)[segment.prop];
+        current = current[segment.prop];
       }
     }
 
@@ -464,7 +461,6 @@ export class Ref<
         );
         return matchIndex !== -1 ? matchIndex : undefined;
       }
-      case "range":
       case "cursors":
         return undefined;
 
@@ -557,20 +553,23 @@ export class Ref<
     propPath: Automerge.Prop[],
     container: any,
     marker: CursorMarker
-  ): TextRange {
+  ): CursorRange {
     const { start, end } = marker;
 
     if (typeof container !== "string") {
-      // Fallback to numeric range for non-string values
-      return { [KIND]: "range", start, end };
+      throw new Error(
+        `cursor() can only be used on string values, got ${typeof container}`
+      );
     }
 
     const startCursor = Automerge.getCursor(doc, propPath, start);
     const endCursor = Automerge.getCursor(doc, propPath, end);
 
-    return startCursor && endCursor
-      ? { [KIND]: "cursors", start: startCursor, end: endCursor }
-      : { [KIND]: "range", start, end };
+    if (!startCursor || !endCursor) {
+      throw new Error(`Failed to create cursors at positions ${start}-${end}.`);
+    }
+
+    return { [KIND]: "cursors", start: startCursor, end: endCursor };
   }
 
   /** Extract cached navigation path from segments */
@@ -598,7 +597,7 @@ export class Ref<
     doc: Doc<TDoc>,
     propPath: Prop[],
     text: string,
-    range: TextRange
+    range: CursorRange
   ): string | undefined {
     const positions = this.#getRangePositions(doc, propPath, range);
     if (!positions) return undefined;
@@ -623,7 +622,7 @@ export class Ref<
   #spliceRange(
     doc: Doc<TDoc>,
     propPath: Prop[],
-    range: TextRange,
+    range: CursorRange,
     newValue: string
   ): void {
     const positions = this.#getRangePositions(doc, propPath, range);
@@ -635,17 +634,12 @@ export class Ref<
     Automerge.splice(doc, propPath, start, end - start, newValue);
   }
 
-  /** Convert a range segment to numeric [start, end] positions */
+  /** Convert cursor positions to numeric [start, end] positions */
   #getRangePositions(
     doc: Doc<TDoc>,
     propPath: Prop[],
-    range: TextRange
+    range: CursorRange
   ): [number, number] | undefined {
-    if (range[KIND] === "range") {
-      return [range.start, range.end];
-    }
-
-    // KIND === "cursors"
     const start = Automerge.getCursorPosition(doc, propPath, range.start);
     const end = Automerge.getCursorPosition(doc, propPath, range.end);
 

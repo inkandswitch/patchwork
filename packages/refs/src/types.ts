@@ -37,13 +37,11 @@ export type PathSegment =
       prop?: number;
     };
 
-/** Range segments (always terminal) */
-export type TextRange =
-  | { [KIND]: "range"; start: number; end: number } // Text/array range by numeric positions
-  | { [KIND]: "cursors"; start: Cursor; end: Cursor }; // Text range by stable Automerge cursors
+/** Cursor range segment (always terminal) */
+export type CursorRange = { [KIND]: "cursors"; start: Cursor; end: Cursor };
 
 /** All segment types */
-export type Segment = PathSegment | TextRange;
+export type Segment = PathSegment | CursorRange;
 
 /** Input types that users can provide to create refs */
 export type PathInput = string | number | MatchPattern | CursorMarker;
@@ -124,23 +122,23 @@ type Split<
 /** Check if a string represents a numeric value */
 type IsNumeric<S extends string> = S extends `${number}` ? true : false;
 
-/** Check if a string represents a range (contains ..) */
-type IsRange<S extends string> = S extends `${string}..${string}`
+/** Check if a string represents a cursor range (:cursor1-:cursor2) */
+type IsCursorRange<S extends string> = S extends `:${string}-:${string}`
   ? true
   : false;
 
-/** Marker type for range segments parsed from strings */
-type StringRange = { __stringRange: true };
+/** Marker type for cursor range segments parsed from strings */
+type CursorRangeMarker = { __cursorRange: true };
 
 /**
  * Parse a string segment into its semantic type for inference:
  * - "0", "123" → number (array index)
- * - "foo..bar", "0..5" → StringRange (text range → string value)
+ * - ":cursor1-:cursor2" → CursorRangeMarker (text range → string value)
  * - "key" → literal string (object key)
  */
 type ParseSegment<S extends string> =
-  IsRange<S> extends true
-    ? StringRange
+  IsCursorRange<S> extends true
+    ? CursorRangeMarker
     : IsNumeric<S> extends true
       ? number
       : S;
@@ -154,7 +152,7 @@ export type SegmentsFromString<P extends string> =
     : never;
 
 /** Get value type for a parsed string segment */
-type GetParsedSegmentValue<TObj, TSegment> = TSegment extends StringRange
+type GetParsedSegmentValue<TObj, TSegment> = TSegment extends CursorRangeMarker
   ? TObj extends string
     ? string
     : unknown

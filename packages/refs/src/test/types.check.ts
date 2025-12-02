@@ -188,8 +188,8 @@ import type { SegmentsFromString, InferRefTypeFromString } from "../types";
 type TestSplit1 = SegmentsFromString<"todos/0/title">;
 // Should be: ["todos", number, "title"]
 
-type TestSplit2 = SegmentsFromString<"text/0..5">;
-// Should be: ["text", StringRange] (where StringRange is the internal marker)
+type TestSplit2 = SegmentsFromString<"text/:cursor1-:cursor2">;
+// Should be: ["text", CursorRangeMarker] (where CursorRangeMarker is the internal marker)
 
 type TestSplit3 = SegmentsFromString<"users">;
 // Should be: ["users"]

@@ -4,7 +4,7 @@ import { KIND } from "./types";
 
 const URL_PREFIX = "automerge:";
 const ID_PREFIX = ":";
-const RANGE_SEPARATOR = "..";
+const RANGE_SEPARATOR = "-";
 
 /**
  * Parse a URL path string into segments.
@@ -12,7 +12,7 @@ const RANGE_SEPARATOR = "..";
  * @example
  * parsePath("todos/0/title") → [{ kind: "key", key: "todos" }, ...]
  * parsePath("todos/{"id":"abc"}") → [{ kind: "key", key: "todos" }, { kind: "match", match: { id: "abc" } }]
- * parsePath("note/0..10") → [..., { kind: "range", start: 0, end: 10 }]
+ * parsePath("note/:cursor1-:cursor2") → [..., { kind: "cursors", start: cursor1, end: cursor2 }]
  */
 export function parsePath(path: string): Segment[] {
   if (!path) return [];
@@ -37,9 +37,9 @@ export function parsePath(path: string): Segment[] {
  * Parse a single path segment string into a Segment object.
  */
 export function parseSegment(segment: string): Segment {
-  // Check for range (contains double-dot): "0..10" or ":cursor1..:cursor2"
+  // Check for cursor range: ":cursor1-:cursor2"
   if (segment.includes(RANGE_SEPARATOR)) {
-    return parseRange(segment);
+    return parseCursorRange(segment);
   }
 
   if (segment.startsWith("{")) {
@@ -54,35 +54,30 @@ export function parseSegment(segment: string): Segment {
 }
 
 /**
- * Parse a range segment like "0..10" or ":cursor1..:cursor2".
+ * Parse a cursor range segment like ":cursor1-:cursor2".
  */
-export function parseRange(segment: string): Segment {
+export function parseCursorRange(segment: string): Segment {
   const parts = segment.split(RANGE_SEPARATOR);
 
   if (parts.length !== 2) {
     throw new Error(
-      `Invalid range: ${segment}. Expected format: "start${RANGE_SEPARATOR}end"`
+      `Invalid cursor range: ${segment}. Expected format: ":cursor1-:cursor2"`
     );
   }
 
   const [first, second] = parts;
 
-  if (first.startsWith(ID_PREFIX) && second.startsWith(ID_PREFIX)) {
-    return {
-      [KIND]: "cursors",
-      start: first.slice(ID_PREFIX.length) as Automerge.Cursor,
-      end: second.slice(ID_PREFIX.length) as Automerge.Cursor,
-    };
+  if (!first.startsWith(ID_PREFIX) || !second.startsWith(ID_PREFIX)) {
+    throw new Error(
+      `Invalid cursor range: ${segment}. Cursors must be prefixed with "${ID_PREFIX}"`
+    );
   }
 
-  const start = parseInt(first, 10);
-  const end = parseInt(second, 10);
-
-  if (isNaN(start) || isNaN(end)) {
-    throw new Error(`Invalid numeric range: ${segment}`);
-  }
-
-  return { [KIND]: "range", start, end };
+  return {
+    [KIND]: "cursors",
+    start: first.slice(ID_PREFIX.length) as Automerge.Cursor,
+    end: second.slice(ID_PREFIX.length) as Automerge.Cursor,
+  };
 }
 
 /**
@@ -104,7 +99,7 @@ export function parseJson(segment: string): Segment {
  * serializeSegment({ [KIND]: "key", key: "todos" }) → "todos"
  * serializeSegment({ [KIND]: "index", index: 0 }) → "0"
  * serializeSegment({ [KIND]: "match", match: { id: "abc" } }) → '{"id":"abc"}'
- * serializeSegment({ [KIND]: "range", start: 0, end: 10 }) → "0..10"
+ * serializeSegment({ [KIND]: "cursors", start, end }) → ":cursor1-:cursor2"
  */
 export function serializeSegment(segment: Segment): string {
   switch (segment[KIND]) {
@@ -116,9 +111,6 @@ export function serializeSegment(segment: Segment): string {
 
     case "match":
       return JSON.stringify(segment.match);
-
-    case "range":
-      return `${segment.start}${RANGE_SEPARATOR}${segment.end}`;
 
     case "cursors":
       return `${ID_PREFIX}${segment.start}${RANGE_SEPARATOR}${ID_PREFIX}${segment.end}`;

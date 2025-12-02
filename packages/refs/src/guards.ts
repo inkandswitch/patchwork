@@ -9,10 +9,10 @@ export function isSegment(val: unknown): val is Segment {
   return isObject(val) && KIND in val;
 }
 
-export function isMatchPattern(val: unknown): val is MatchPattern {
-  return isObject(val) && !isSegment(val);
-}
-
 export function isCursorMarker(val: unknown): val is CursorMarker {
   return isObject(val) && CURSOR_MARKER in val;
+}
+
+export function isMatchPattern(val: unknown): val is MatchPattern {
+  return !isSegment(val) && !isCursorMarker(val);
 }
