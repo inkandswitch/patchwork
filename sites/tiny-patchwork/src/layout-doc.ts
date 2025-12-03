@@ -108,7 +108,6 @@ async function createLayoutDoc(
       "back-link-button",
       "spacer",
       "highlight-changes-checkbox",
-      "account-picker",
     ],
   });
 

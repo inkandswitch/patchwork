@@ -844,6 +844,9 @@ importers:
       '@patchwork/contact':
         specifier: workspace:^
         version: link:../contact
+      '@patchwork/elements':
+        specifier: workspace:^
+        version: link:../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -1170,6 +1173,9 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patchwork/filesystem':
+        specifier: workspace:^
+        version: link:../../core/filesystem
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../../core/plugins

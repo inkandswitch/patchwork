@@ -21,6 +21,7 @@
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@patchwork/filesystem": "workspace:^",
     "@patchwork/plugins": "workspace:^",
     "@radix-ui/react-avatar": "^1.1.10",
     "class-variance-authority": "^0.7.1",

@@ -8,17 +8,13 @@ export const plugins = [
     type: "patchwork:tool",
     id: "account-picker",
     name: "Account Picker",
-    icon: "User",
-    supportedDataTypes: "*",
-    unlisted: true,
+    supportedDataTypes: ["account"],
     async load(): Promise<ToolImplementation> {
       return (handle, element) => {
-        element.style.width = "fit-content";
-
         const root = createRoot(element);
         root.render(
           <RepoContext.Provider value={element.repo}>
-            <AccountPicker />
+            <AccountPicker handle={handle} element={element} />
           </RepoContext.Provider>
         );
         return () => root.unmount();

@@ -10,9 +10,9 @@ import {
 import { type ContactDoc } from "../datatype";
 import { Avatar, AvatarFallback, AvatarImage } from "./Avatar";
 import { User as UserIcon } from "lucide-react";
-import { fileHandleToServiceWorkerUrl } from "../utils/serviceWorkerFileUrls";
-import { generateColorFromString } from "../utils/userColors";
+import { generateColorFromString } from "../ui";
 import { useMemo } from "react";
+import { automergeUrlToServiceWorkerUrl } from "@patchwork/filesystem";
 
 export const ContactAvatar = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [contact] = useDocument<ContactDoc>(docUrl);
@@ -23,7 +23,7 @@ export const ContactAvatar = ({ docUrl }: { docUrl: AutomergeUrl }) => {
     contact?.type === "registered" ? contact.avatarUrl : undefined
   );
   const avatarImgUrl =
-    avatarHandle && fileHandleToServiceWorkerUrl(avatarHandle);
+    avatarHandle && automergeUrlToServiceWorkerUrl(avatarHandle.url);
 
   // Listen for presence on this contact's awareness
   const [_, heartbeats] = useRemoteAwareness({
