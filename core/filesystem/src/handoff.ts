@@ -78,8 +78,13 @@ export function createFilesystemHandoffHandler(repo: Repo) {
           path.map(decodeURIComponent)
         )) as DocHandle<UnixFileEntry>;
 
+        const content = file?.doc().content;
+
         return {
-          body: file?.doc().content,
+          body:
+            content instanceof Uint8Array
+              ? (content as Uint8Array<ArrayBuffer>)
+              : content.toString(),
           headers: {
             "content-type": file.doc().mimeType ?? "text/plain",
           } as Record<string, string>,
