@@ -34,7 +34,7 @@
     "@chee/patchwork-sideboard": "workspace:^",
     "@codemirror/language": "^6.11.3",
     "@codemirror/state": "^6.5.2",
-    "@codemirror/view": "^6.38.4",
+    "@codemirror/view": "^6.38.6",
     "@grjte/codemirror-base": "workspace:^",
     "@grjte/codemirror-embed": "workspace:^",
     "@grjte/codemirror-markdown": "workspace:^",
