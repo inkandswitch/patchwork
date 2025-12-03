@@ -4,8 +4,10 @@ import { ref } from "@patchwork/refs";
 import { AnnotationSet } from "../src/annotation-set";
 import { defineAnnotationType } from "../src/annotation-type";
 
-const Comment = defineAnnotationType<string>();
-const Highlight = defineAnnotationType<{ color: string }>();
+const Comment = defineAnnotationType<string>("patchwork/comment");
+const Highlight = defineAnnotationType<{ color: string }>(
+  "patchwork/highlight"
+);
 
 // Document type for proper type inference
 type TestDoc = {

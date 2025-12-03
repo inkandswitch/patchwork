@@ -3,7 +3,7 @@ import { defineAnnotationType } from "../src/annotation-type";
 
 describe("defineAnnotationType", () => {
   it("should create annotation values when called", () => {
-    const Comment = defineAnnotationType<string>();
+    const Comment = defineAnnotationType<string>("patchwork/comment");
     const annotation = Comment("This is a comment");
 
     expect(annotation.type).toBe(Comment);
@@ -16,7 +16,9 @@ describe("defineAnnotationType", () => {
       author: string;
     }
 
-    const Highlight = defineAnnotationType<HighlightData>();
+    const Highlight = defineAnnotationType<HighlightData>(
+      "patchwork/highlight"
+    );
     const annotation = Highlight({ color: "yellow", author: "Alice" });
 
     expect(annotation.type).toBe(Highlight);
@@ -24,14 +26,14 @@ describe("defineAnnotationType", () => {
   });
 
   it("should create distinct types for different calls", () => {
-    const Comment = defineAnnotationType<string>();
-    const Note = defineAnnotationType<string>();
+    const Comment = defineAnnotationType<string>("patchwork/comment");
+    const Note = defineAnnotationType<string>("Note");
 
     expect(Comment).not.toBe(Note);
   });
 
   it("should preserve type identity across multiple calls", () => {
-    const Comment = defineAnnotationType<string>();
+    const Comment = defineAnnotationType<string>("patchwork/comment");
 
     const annotation1 = Comment("First");
     const annotation2 = Comment("Second");

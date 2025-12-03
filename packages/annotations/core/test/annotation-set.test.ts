@@ -5,9 +5,11 @@ import { AnnotationSet } from "../src/annotation-set";
 import { defineAnnotationType } from "../src/annotation-type";
 
 // Define test annotation types
-const Comment = defineAnnotationType<string>();
-const Highlight = defineAnnotationType<{ color: string }>();
-const Tag = defineAnnotationType<string>();
+const Comment = defineAnnotationType<string>("patchwork/comment");
+const Highlight = defineAnnotationType<{ color: string }>(
+  "patchwork/highlight"
+);
+const Tag = defineAnnotationType<string>("patchwork/tag");
 
 // Document type for proper type inference
 type TestDoc = {
