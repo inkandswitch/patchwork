@@ -6,6 +6,7 @@ import {
 type TinyPatchworkAccountDoc = {
   rootFolderUrl: AutomergeUrl;
   moduleSettingsUrl: AutomergeUrl;
+  contactUrl: AutomergeUrl;
 };
 
 import type { PatchworkToolProps } from "../types.ts";
@@ -27,6 +28,7 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
 
   const moduleSettingsUrl = () => doc.moduleSettingsUrl;
   const accountDocUrl = () => props.handle.url;
+  const contactUrl = () => doc.contactUrl
 
   function open(detail: OpenDocumentEventDetail) {
     props.element.dispatchEvent(createOpenEvent(detail));
@@ -72,7 +74,23 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
           onClick={() =>
             open({
               url: accountDocUrl(),
-              toolId: "frame-configurator",
+              toolId: "account-picker"
+            })
+          }
+          class="sideboard-footer__button"
+        >
+          {/* TODO: declare patchwork-view element for TypeScript */}
+            <patchwork-view
+              doc-url={contactUrl()}
+              tool-id="contact-avatar"
+            />
+        </button>
+        
+        <button
+          onClick={() =>
+            open({
+              url: accountDocUrl(),
+              toolId: "frame-configurator"
             })
           }
           class="sideboard-footer__button"

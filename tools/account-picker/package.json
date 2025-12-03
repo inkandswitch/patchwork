@@ -18,6 +18,7 @@
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@patchwork/contact": "workspace:^",
+    "@patchwork/elements": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
     "@patchwork/plugins": "workspace:^",
     "@radix-ui/react-dialog": "^1.1.14",

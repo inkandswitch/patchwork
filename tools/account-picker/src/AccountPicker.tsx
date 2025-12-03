@@ -1,25 +1,20 @@
 import { ChangeEvent, useState } from "react";
-import { createPortal } from "react-dom";
-import { useRepo } from "@automerge/automerge-repo-react-hooks";
-import { useSelf, useCurrentAccount } from "./hooks";
-import { signUp, logIn, logOut } from "./operations";
+import { useRepo, useDocument } from "@automerge/automerge-repo-react-hooks";
+import type { DocHandle } from "@automerge/automerge-repo";
+import type { PatchworkViewElement } from "@patchwork/elements";
+import { HasPatchworkMetadata } from "@patchwork/filesystem/dist/metadata";
+import {
+  ContactDoc,
+  RegisteredContactDoc,
+  TinyPatchworkLayoutDoc,
+} from "./types";
 import {
   automergeUrlToAccountToken,
   accountTokenToAutomergeUrl,
 } from "./tokens";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { ContactDoc, RegisteredContactDoc, TinyPatchworkLayoutDoc } from "./types";
-import "./styles.css";
 import {
   Button,
   ColorPicker,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
   Input,
   Label,
   Tabs,
@@ -32,8 +27,8 @@ import {
   TooltipTrigger,
 } from "./ui/index";
 import { Copy, Eye, EyeOff } from "lucide-react";
+import "./styles.css";
 
-// TODO: is this already declared for us elsewhere?
 // Declare the patchwork-view custom element for TypeScript
 // eslint-disable-next-line @typescript-eslint/no-namespace
 declare global {
@@ -51,6 +46,8 @@ declare global {
 
 // 1MB in bytes
 const MAX_AVATAR_SIZE = 1024 * 1024;
+// TODO: this is bad and flimsy because the localStorage key is defined in the tiny-patchwork layoutDoc
+const ACCOUNT_URL_STORAGE_KEY = "tinyPatchworkAccountUrl";
 
 enum AccountPickerTab {
   LogIn = "logIn",
@@ -59,14 +56,18 @@ enum AccountPickerTab {
 
 type AccountTokenToLoginStatus = null | "valid" | "malformed" | "not-found";
 
-export const AccountPicker = ({
-  showName,
-}: {
-  showName?: boolean;
-}) => {
-  const [currentAccount] = useCurrentAccount();
+export interface PatchworkToolProps<T> {
+  handle: DocHandle<T>;
+  element: PatchworkViewElement;
+}
+
+export const AccountPicker = (props: PatchworkToolProps<any>) => {
   const repo = useRepo();
-  const [self, changeSelf] = useSelf();
+  const [currentAccount, changeCurrentAccount] =
+    useDocument<TinyPatchworkLayoutDoc>(props.handle.url);
+  const [self, changeSelf] = useDocument<ContactDoc>(
+    currentAccount?.contactUrl
+  );
 
   const [signupName, setSignupName] = useState<string>("");
   const [activeTab, setActiveTab] = useState<AccountPickerTab>(
@@ -74,16 +75,16 @@ export const AccountPicker = ({
   );
   const [showAccountUrl, setShowAccountUrl] = useState(false);
   const [isCopyTooltipOpen, setIsCopyTooltipOpen] = useState(false);
-  
+
   const [accountTokenToLogin, setAccountTokenToLogin] = useState<string>("");
   const accountAutomergeUrlToLogin =
-  accountTokenToAutomergeUrl(accountTokenToLogin);
-  
+    accountTokenToAutomergeUrl(accountTokenToLogin);
+
   const [accountToLogin] = useDocument<TinyPatchworkLayoutDoc>(
     accountAutomergeUrlToLogin
   );
   const [contactToLogin] = useDocument<ContactDoc>(accountToLogin?.contactUrl);
-  
+
   const accountTokenToLoginStatus: AccountTokenToLoginStatus = (() => {
     if (!accountTokenToLogin || accountTokenToLogin === "") return null;
     if (!accountAutomergeUrlToLogin) return "malformed";
@@ -91,12 +92,12 @@ export const AccountPicker = ({
     if (!contactToLogin) return "not-found";
     return "valid";
   })();
-  
+
   const name = self?.type === "registered" ? self.name : "";
   const currentAccountToken = currentAccount
-  ? automergeUrlToAccountToken(window.accountDocHandle.url, name)
-  : null;
-  
+    ? automergeUrlToAccountToken(props.handle.url, name)
+    : null;
+
   // Direct edit handlers for registered users
   const onNameChange = (newName: string) => {
     if (!currentAccount || !self || self.type !== "registered") return;
@@ -106,14 +107,14 @@ export const AccountPicker = ({
       }
     });
   };
-  
+
   const onColorChange = (newColor: string) => {
     if (!currentAccount || !self) return;
     changeSelf((contact: ContactDoc) => {
       (contact as any).color = newColor;
     });
   };
-  
+
   const onAvatarChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!currentAccount || !self || self.type !== "registered") return;
 
@@ -126,17 +127,17 @@ export const AccountPicker = ({
       return;
     }
 
-    // TODO: replace this properly; this is the big patchwork code
-    // const avatarHandle = await createDocFromFile(avatarFile, repo);
-
-    // TODO: replace this properly; this is the LLM code
     // Create an image document from the file
-    const imageHandle = await repo.create2<{ data: Uint8Array; mimeType: string }>();
+    const imageHandle = await repo.create2<{
+      content: Uint8Array;
+      mimeType: string;
+    }>();
     const arrayBuffer = await avatarFile.arrayBuffer();
     imageHandle.change((doc) => {
-      (doc as any).data = new Uint8Array(arrayBuffer);
-      (doc as any).mimeType = avatarFile.type;
-      (doc as any)["@patchwork"] = { type: "image" };
+      doc.content = new Uint8Array(arrayBuffer);
+      doc.mimeType = avatarFile.type;
+      (doc as any).name = avatarFile.name;
+      (doc as any).extension = avatarFile.name.split(".").pop() || "";
     });
 
     changeSelf((contact: ContactDoc) => {
@@ -148,9 +149,20 @@ export const AccountPicker = ({
 
   const onSignUp = async () => {
     if (!currentAccount || !signupName) return;
-    // TODO: clean up LLM code
-    // await signUp(repo, signupName);
-    // setIsDialogOpen(false);
+
+    // if there's no contactUrl, create one
+    if (!currentAccount.contactUrl) {
+      const contactHandle = await repo.create2<
+        ContactDoc & HasPatchworkMetadata
+      >({
+        ["@patchwork"]: { type: "patchwork:contact" },
+        type: "anonymous",
+      });
+      changeCurrentAccount((account: TinyPatchworkLayoutDoc) => {
+        account.contactUrl = contactHandle.url;
+      });
+    }
+
     changeSelf((contact: ContactDoc) => {
       contact.type = "registered";
       (contact as RegisteredContactDoc).name = signupName;
@@ -159,13 +171,14 @@ export const AccountPicker = ({
 
   const onLogIn = async () => {
     if (!currentAccount || !accountAutomergeUrlToLogin) return;
-    // TODO: check LLM replacement
-    await logIn(accountAutomergeUrlToLogin);
+
+    localStorage.setItem(ACCOUNT_URL_STORAGE_KEY, accountAutomergeUrlToLogin);
+    window.location.reload();
   };
 
   const onLogout = async () => {
-    // TODO: check LLM replacement
-    await logOut(repo);
+    localStorage.removeItem(ACCOUNT_URL_STORAGE_KEY);
+    window.location.replace("/");
   };
 
   const onToggleShowAccountUrl = () => {
@@ -182,7 +195,8 @@ export const AccountPicker = ({
   };
 
   const isLoggedIn = self?.type === "registered";
-  const canSignUp = !isLoggedIn && activeTab === AccountPickerTab.SignUp && signupName;
+  const canSignUp =
+    !isLoggedIn && activeTab === AccountPickerTab.SignUp && signupName;
   const canLogIn =
     !isLoggedIn &&
     activeTab === AccountPickerTab.LogIn &&
@@ -191,37 +205,27 @@ export const AccountPicker = ({
     contactToLogin?.type === "registered";
 
   return (
-    <Dialog>
-      <DialogTrigger>
-        <div className="flex flex-row  text-sm text-gray-600 hover:text-gray-800 ">
-          {currentAccount?.contactUrl ? (
-            <patchwork-view
-              doc-url={currentAccount.contactUrl}
-              tool-id="contact-avatar"
-              // TODO: fix sizing styles
-              // className="h-8 w-8"
-            />
-          ) : (
-            <div className="h-8 w-8" />
-          )}
-          {showName && isLoggedIn && <div className="ml-2 py-2">{name}</div>}
-          {showName && !isLoggedIn && <div className="ml-2 py-2">Sign in</div>}
+    <div className="w-full h-full flex flex-col items-center overflow-auto">
+      {/* HEADER */}
+      <div className="flex flex-col space-y-1.5 text-center sm:text-left items-center">
+        {/* TITLE */}
+        <div className="text-lg font-semibold leading-none tracking-tight sr-only">
+          Account
         </div>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader className="items-center">
-          <DialogTitle className="sr-only">Account</DialogTitle>
-          <DialogDescription className="sr-only">
-            Manage your account settings
-          </DialogDescription>
-          {currentAccount?.contactUrl && (
-            <patchwork-view
+        {/* DESCRIPTION */}
+        <div className="text-sm text-muted-foreground sr-only">
+          Manage your account settings
+        </div>
+        {currentAccount?.contactUrl && (
+          <patchwork-view
             doc-url={currentAccount.contactUrl}
             tool-id="contact"
-            />
-          )}
-        </DialogHeader>
+          />
+        )}
+      </div>
 
+      {/* CONTENT */}
+      <div className="sm:max-w-[425px]">
         {!isLoggedIn && (
           <Tabs
             defaultValue={AccountPickerTab.SignUp}
@@ -321,7 +325,7 @@ export const AccountPicker = ({
               />
             </div>
 
-            <form className="grid w-full max-w-sm items-center gap-1.5">
+            <form className="grid w-full max-w-sm items-center gap-1.5 py-4">
               <Label htmlFor="picture">Account token</Label>
 
               <div className="flex gap-1.5">
@@ -369,32 +373,30 @@ export const AccountPicker = ({
             </form>
           </>
         )}
-        <DialogFooter className="gap-1.5">
-          {isLoggedIn ? (
-            <DialogTrigger asChild>
-              <Button onClick={onLogout} variant="secondary">
-                Sign out
-              </Button>
-            </DialogTrigger>
-          ) : (
-            <DialogTrigger asChild>
-              <Button
-                type="submit"
-                onClick={activeTab === "signUp" ? onSignUp : onLogIn}
-                disabled={!(canSignUp || canLogIn)}
-              >
-                {activeTab === "signUp"
-                  ? "Sign up"
-                  : `Log in${
-                      contactToLogin && contactToLogin.type === "registered"
-                        ? ` as ${contactToLogin.name}`
-                        : ""
-                    }`}
-              </Button>
-            </DialogTrigger>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+
+      {/* FOOTER */}
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-1.5 pb-4">
+        {isLoggedIn ? (
+          <Button onClick={onLogout} variant="secondary">
+            Sign out
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            onClick={activeTab === "signUp" ? onSignUp : onLogIn}
+            disabled={!(canSignUp || canLogIn)}
+          >
+            {activeTab === "signUp"
+              ? "Sign up"
+              : `Log in${
+                  contactToLogin && contactToLogin.type === "registered"
+                    ? ` as ${contactToLogin.name}`
+                    : ""
+                }`}
+          </Button>
+        )}
+      </div>
+    </div>
   );
 };

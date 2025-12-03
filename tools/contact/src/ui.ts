@@ -1,4 +1,14 @@
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
 /**
+ * TODO: establish a system for referencing styles that are shared across multiple tools.
+ * This palette is also defined in the account-picker.
+ *
  * User color palette for presence indicators (cursors, avatars, etc.)
  *
  * Colors are selected to:
@@ -7,7 +17,6 @@
  * - Be accessible and readable
  * - Look professional and modern
  */
-
 export const USER_COLOR_PALETTE = [
   { name: "Sky Blue", value: "hsl(200, 70%, 50%)" },
   { name: "Coral", value: "hsl(10, 75%, 58%)" },
@@ -33,40 +42,4 @@ export function generateColorFromString(str: string): string {
   );
   const colorIndex = hash % USER_COLOR_PALETTE.length;
   return USER_COLOR_PALETTE[colorIndex].value;
-}
-
-/**
- * Get a default color for a user (picks from palette based on index)
- */
-export function getDefaultUserColor(index: number): string {
-  return USER_COLOR_PALETTE[index % USER_COLOR_PALETTE.length].value;
-}
-
-/**
- * Validate if a string is a valid HSL color
- */
-export function isValidHslColor(color: string): boolean {
-  return /^hsl\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*\)$/.test(color);
-}
-
-/**
- * Parse HSL values from a color string
- */
-export function parseHslColor(
-  color: string
-): { h: number; s: number; l: number } | null {
-  const match = color.match(/^hsl\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*\)$/);
-  if (!match) return null;
-  return {
-    h: parseInt(match[1], 10),
-    s: parseInt(match[2], 10),
-    l: parseInt(match[3], 10),
-  };
-}
-
-/**
- * Create an HSL color string from values
- */
-export function createHslColor(h: number, s: number, l: number): string {
-  return `hsl(${h}, ${s}%, ${l}%)`;
 }

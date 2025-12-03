@@ -6,7 +6,7 @@ import {
 import { type ContactDoc } from "../datatype";
 import { Avatar, AvatarFallback, AvatarImage } from "./Avatar";
 import { User as UserIcon } from "lucide-react";
-import { fileHandleToServiceWorkerUrl } from "../utils/serviceWorkerFileUrls";
+import { automergeUrlToServiceWorkerUrl } from "@patchwork/filesystem";
 
 export const InlineContactAvatar = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [contact] = useDocument<ContactDoc>(docUrl);
@@ -15,7 +15,7 @@ export const InlineContactAvatar = ({ docUrl }: { docUrl: AutomergeUrl }) => {
     contact?.type === "registered" ? contact.avatarUrl : undefined
   );
   const avatarImgUrl =
-    avatarHandle && fileHandleToServiceWorkerUrl(avatarHandle);
+    avatarHandle && automergeUrlToServiceWorkerUrl(avatarHandle.url);
 
   if (!contact) {
     return null;
