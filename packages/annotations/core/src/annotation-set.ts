@@ -184,26 +184,30 @@ export class AnnotationSet
    */
   #removeAllFromRef(ref: Ref<any>): Array<[Ref, AnnotationValue<any>]> {
     const annotationTypes = this.#annotationTypesByRef.get(ref);
-    if (!annotationTypes) {
-      return [];
-    }
-
     const removed: Array<[Ref, AnnotationValue<any>]> = [];
 
-    for (const type of annotationTypes) {
-      const annotations = this.#annotationsByType.get(type);
-      if (annotations) {
-        const annotationsForRef = annotations.get(ref);
-        if (annotationsForRef) {
-          for (const annotation of annotationsForRef) {
-            removed.push([ref, annotation]);
+    if (annotationTypes) {
+      for (const type of annotationTypes) {
+        const annotations = this.#annotationsByType.get(type);
+        if (annotations) {
+          const annotationsForRef = annotations.get(ref);
+          if (annotationsForRef) {
+            for (const annotation of annotationsForRef) {
+              removed.push([ref, annotation]);
+            }
           }
+          annotations.delete(ref);
         }
-        annotations.delete(ref);
       }
     }
 
     this.#annotationTypesByRef.delete(ref);
+
+    // Cascade to subsets
+    for (const subSet of this.#subSets) {
+      subSet.remove(ref);
+    }
+
     return removed;
   }
 
@@ -214,21 +218,25 @@ export class AnnotationSet
     ref: Ref<any>,
     type: AnnotationType<T>
   ): Array<[Ref, AnnotationValue<any>]> {
-    const annotations = this.#annotationsByType.get(type);
-    if (!annotations) {
-      return [];
-    }
-
     const removed: Array<[Ref, AnnotationValue<any>]> = [];
-    const annotationsForRef = annotations.get(ref);
-    if (annotationsForRef) {
-      for (const annotation of annotationsForRef) {
-        removed.push([ref, annotation]);
+
+    const annotations = this.#annotationsByType.get(type);
+    if (annotations) {
+      const annotationsForRef = annotations.get(ref);
+      if (annotationsForRef) {
+        for (const annotation of annotationsForRef) {
+          removed.push([ref, annotation]);
+        }
       }
+
+      annotations.delete(ref);
+      this.#annotationTypesByRef.get(ref)?.delete(type);
     }
 
-    annotations.delete(ref);
-    this.#annotationTypesByRef.get(ref)?.delete(type);
+    // Cascade to subsets
+    for (const subSet of this.#subSets) {
+      subSet.remove(ref, type);
+    }
 
     return removed;
   }
@@ -237,20 +245,25 @@ export class AnnotationSet
    * Remove all annotations of a specific type across all refs
    */
   #removeType<T>(type: AnnotationType<T>): Array<[Ref, AnnotationValue<any>]> {
-    const annotationsByRef = this.#annotationsByType.get(type);
-    if (!annotationsByRef) {
-      return [];
-    }
-
     const removed: Array<[Ref, AnnotationValue<any>]> = [];
-    for (const [ref, annotations] of annotationsByRef) {
-      for (const annotation of annotations) {
-        removed.push([ref, annotation]);
+
+    const annotationsByRef = this.#annotationsByType.get(type);
+    if (annotationsByRef) {
+      for (const [ref, annotations] of annotationsByRef) {
+        for (const annotation of annotations) {
+          removed.push([ref, annotation]);
+        }
+        this.#annotationTypesByRef.get(ref)?.delete(type);
       }
-      this.#annotationTypesByRef.get(ref)?.delete(type);
+
+      this.#annotationsByType.delete(type);
     }
 
-    this.#annotationsByType.delete(type);
+    // Cascade to subsets
+    for (const subSet of this.#subSets) {
+      subSet.remove(type);
+    }
+
     return removed;
   }
 
