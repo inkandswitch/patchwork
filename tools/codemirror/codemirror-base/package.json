@@ -1,0 +1,57 @@
+{
+  "name": "@grjte/codemirror-base",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/main.js",
+  "exports": {
+    ".": {
+      "import": "./dist/main.js",
+      "source": "./src/main.tsx"
+    },
+    "./tool": {
+      "import": "./dist/tool.js",
+      "source": "./src/tool.tsx"
+    },
+    "./component": {
+      "import": "./dist/lib/codemirror.js",
+      "source": "./src/lib/codemirror.tsx"
+    }
+  },
+  "scripts": {
+    "build": "node esbuild/build.ts",
+    "dev": "node esbuild/watch.ts",
+    "pushwatch": "pnpm dev pushwork"
+  },
+  "dependencies": {
+    "@automerge/automerge-codemirror": "^0.2.0",
+    "@automerge/automerge-repo-solid-primitives": "^2.4.0",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.38.4",
+    "@patchwork/bootloader": "workspace:^",
+    "@patchwork/context": "workspace:^",
+    "@patchwork/context-comments": "workspace:^",
+    "@patchwork/context-diff": "workspace:^",
+    "@patchwork/context-selection": "workspace:^",
+    "@patchwork/context-solid": "workspace:^",
+    "@patchwork/filesystem": "workspace:^",
+    "@patchwork/plugins": "workspace:^",
+    "solid-js": "^1.9.9",
+    "vite-plugin-wasm": "^3.5.0"
+  },
+  "devDependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@babel/core": "^7.28.4",
+    "@babel/parser": "^7.28.4",
+    "@eslint/js": "^9.36.0",
+    "@node-types/node": "npm:@types/node@^24.9.1",
+    "@types/babel__core": "^7.20.5",
+    "babel-preset-solid": "^1.9.9",
+    "esbuild": "^0.23.1",
+    "eslint": "^9.36.0",
+    "globals": "^16.4.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.45.0"
+  }
+}

@@ -14,7 +14,7 @@ import { registerPatchworkViewElement } from "@patchwork/elements";
 import { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
-import bootstrap from "@patchwork/bootloader/setup";
+import bootstrap from "@patchwork/bootloader";
 
 const storage = new IndexedDBStorageAdapter("hive");
 const network = new WebSocketClientAdapter("wss://keyhive.sync.automerge.org");

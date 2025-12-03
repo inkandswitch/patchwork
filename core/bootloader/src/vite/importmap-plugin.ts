@@ -5,25 +5,20 @@ import type {
 } from "./patchwork-plugin.js";
 
 /**
- * these dependencies will be built into the outdir, and injected into the importmap
+ * these dependencies will be built into the outdir,
+ * and injected into the importmap
  */
-export const defaultBuiltins = {
-  "@automerge/automerge": "/packages/@automerge/automerge/index.js",
-  "@automerge/automerge/slim": "/packages/@automerge/automerge/slim.js",
-  "@automerge/automerge-repo": "/packages/@automerge/automerge-repo/index.js",
-  "@automerge/automerge-repo/slim":
-    "/packages/@automerge/automerge-repo/slim.js",
-};
+import externals from "../externals.js";
+
+export const builtins = externals.reduce(
+  (builtins, name) => ((builtins[name] = `/packages/${name}.js`), builtins),
+  {} as Record<string, string>
+);
 
 /**
  * merge the importmap option with our builtins
  */
 function createImportMap(options?: PatchworkVitePluginOptions) {
-  const builtins = Object.assign(
-    {},
-    defaultBuiltins,
-    options?.extraBuiltins ?? {}
-  );
   const importmap: ImportMap = structuredClone(
     options?.importmap ?? { imports: {}, scopes: {} }
   );
