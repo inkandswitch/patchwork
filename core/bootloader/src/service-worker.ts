@@ -40,17 +40,34 @@ const responseResolvers = new Map<
   PromiseWithResolvers<HandoffResponse>
 >();
 
+function accept(message: HandoffResponseMessage) {
+  const responseItem = responseResolvers.get(message.id);
+  if (!responseItem) {
+    return console.warn(`No read response found for id ${message.id}`);
+  }
+  return responseItem.resolve(message.response);
+}
+
+const bc = new BroadcastChannel("@patchwork/handoff");
+
+bc.addEventListener("message", (event) => {
+  if (event.data.type == "response") accept(event.data);
+});
+
 // when we receive a `response` req, we resolve the promise with that id
-self.addEventListener("message", async (messageEvent) => {
-  if (messageEvent.data.type == "response") {
-    const message = messageEvent.data as HandoffResponseMessage;
-    const responseItem = responseResolvers.get(message.id);
-    if (!responseItem) {
-      return console.warn(`No read response found for id ${message.id}`);
-    }
-    return responseItem.resolve(message.response);
-  } else if (messageEvent.data.type == "cachename") {
-    const nextCachename = messageEvent.data.cachename;
+self.addEventListener("message", async (event) => {
+  if (event.data.type == "response") {
+    accept(event.data);
+  } else if (event.data.type == "port") {
+    log("recieved messagechannel");
+    const [port] = event.ports;
+    port.addEventListener("message", (event) => {
+      if (event.data.type == "response") {
+        accept(event.data);
+      }
+    });
+  } else if (event.data.type == "cachename") {
+    const nextCachename = event.data.cachename;
     if (cachename == nextCachename) {
       return;
     }
@@ -59,8 +76,8 @@ self.addEventListener("message", async (messageEvent) => {
     );
     caches.delete(cachename);
     cachename = nextCachename;
-  } else if (messageEvent.data.type == "debug") {
-    debugging = messageEvent.data.debug;
+  } else if (event.data.type == "debug") {
+    debugging = event.data.debug;
     log("serviceworker debugging enabled");
   }
 });
@@ -144,7 +161,7 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
           }
 
           // no idea what's going on now i'm a teapot i'm a teapot
-          return new Response("handler completed without setting cache", {
+          return new Response("handler returned nothing", {
             status: 418,
           });
         } else {
