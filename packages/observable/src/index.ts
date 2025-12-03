@@ -1,3 +1,2 @@
-export type Observable<T = any> = {
-  subscribe: (callback: (value: T) => void) => () => void;
-};
+export type { Observable } from "./observable";
+export { ObservableEventEmitter } from "./observable-event-emitter";
