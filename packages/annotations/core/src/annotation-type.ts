@@ -1,9 +1,16 @@
 /**
+ * Branded string type for annotation type IDs
+ */
+export type AnnotationTypeId = string & {
+  readonly __brand: "AnnotationTypeId";
+};
+
+/**
  * Represents an annotation type - a function that creates annotation values
  */
 export type AnnotationType<T = unknown> = {
   (value: T): AnnotationValue<T>;
-  id: string;
+  id: AnnotationTypeId;
 };
 
 /**
@@ -25,7 +32,7 @@ export const defineAnnotationType = <T>(id: string): AnnotationType<T> => {
     };
   };
 
-  annotationType.id = id;
+  annotationType.id = id as AnnotationTypeId;
 
   return annotationType;
 };

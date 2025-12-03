@@ -5,5 +5,6 @@ export { AnnotationsOfType, AnnotationsOnRef } from "./annotation-views";
 export {
   defineAnnotationType,
   type AnnotationType,
+  type AnnotationTypeId,
   type AnnotationValue,
 } from "./annotation-type";

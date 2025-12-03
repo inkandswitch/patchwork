@@ -28,7 +28,7 @@ export class AnnotationsOfType<T>
     const handleChange = (annotations: AnnotationCollection) => {
       // Only notify if the change is relevant to our type
       for (const [, annotation] of annotations) {
-        if (annotation.type === this.type) {
+        if (annotation.type.id === this.type.id) {
           this.notifySubscribers();
           return;
         }
@@ -61,7 +61,7 @@ export class AnnotationsOfType<T>
    */
   *[Symbol.iterator](): Iterator<[Ref<any>, AnnotationValue<unknown>]> {
     for (const [ref, annotation] of this.annotationSet) {
-      if (annotation.type === this.type) {
+      if (annotation.type.id === this.type.id) {
         yield [ref, annotation];
       }
     }

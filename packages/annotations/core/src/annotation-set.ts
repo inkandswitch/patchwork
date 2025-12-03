@@ -1,5 +1,9 @@
 import { Ref } from "@patchwork/refs";
-import type { AnnotationType, AnnotationValue } from "./annotation-type";
+import type {
+  AnnotationType,
+  AnnotationTypeId,
+  AnnotationValue,
+} from "./annotation-type";
 import { AnnotationsOfType, AnnotationsOnRef } from "./annotation-views";
 import { ObservableEventEmitter } from "@patchwork/observable";
 import { AnnotationEvents } from "./annotation-events";
@@ -19,14 +23,14 @@ export class AnnotationSet
   extends ObservableEventEmitter<AnnotationEvents>
   implements AnnotationCollection
 {
-  // Map: AnnotationType -> Map<Ref, Set<value>>
-  #annotationsByType: Map<
-    AnnotationType<any>,
+  // stores for each annotation type a map of refs to the annotations
+  #annotationsByTypeId: Map<
+    AnnotationTypeId,
     Map<Ref, Set<AnnotationValue<any>>>
   > = new Map();
 
-  // Map: Ref -> Set<AnnotationType> (tracks which annotation types each ref has)
-  #annotationTypesByRef: Map<Ref, Set<AnnotationType<any>>> = new Map();
+  // tracks for each ref which annotation types it has
+  #typeIdsByRef: Map<Ref, Set<AnnotationTypeId>> = new Map();
 
   // Sub-annotation sets that are included in this set
   #subSets: AnnotationSet[] = [];
@@ -113,13 +117,13 @@ export class AnnotationSet
     ref: Ref<any>,
     annotation: AnnotationValue<T>
   ): [Ref, AnnotationValue<any>] {
-    const type = annotation.type;
+    const typeId = annotation.type.id;
 
-    // Add to annotationsByType
-    let typeMap = this.#annotationsByType.get(type);
+    // Add to annotationsByTypeId
+    let typeMap = this.#annotationsByTypeId.get(typeId);
     if (!typeMap) {
       typeMap = new Map();
-      this.#annotationsByType.set(type, typeMap);
+      this.#annotationsByTypeId.set(typeId, typeMap);
     }
 
     let valueSet = typeMap.get(ref);
@@ -130,13 +134,13 @@ export class AnnotationSet
 
     valueSet.add(annotation);
 
-    // Track that this ref has this annotation type
-    let typesForRef = this.#annotationTypesByRef.get(ref);
-    if (!typesForRef) {
-      typesForRef = new Set();
-      this.#annotationTypesByRef.set(ref, typesForRef);
+    // add that this ref has annotation type
+    let typeIdsForRef = this.#typeIdsByRef.get(ref);
+    if (!typeIdsForRef) {
+      typeIdsForRef = new Set();
+      this.#typeIdsByRef.set(ref, typeIdsForRef);
     }
-    typesForRef.add(type);
+    typeIdsForRef.add(typeId);
 
     return [ref, annotation];
   }
@@ -183,12 +187,12 @@ export class AnnotationSet
    * Remove all annotations for a ref
    */
   #removeAllFromRef(ref: Ref<any>): Array<[Ref, AnnotationValue<any>]> {
-    const annotationTypes = this.#annotationTypesByRef.get(ref);
+    const typeIds = this.#typeIdsByRef.get(ref);
     const removed: Array<[Ref, AnnotationValue<any>]> = [];
 
-    if (annotationTypes) {
-      for (const type of annotationTypes) {
-        const annotations = this.#annotationsByType.get(type);
+    if (typeIds) {
+      for (const typeId of typeIds) {
+        const annotations = this.#annotationsByTypeId.get(typeId);
         if (annotations) {
           const annotationsForRef = annotations.get(ref);
           if (annotationsForRef) {
@@ -201,7 +205,7 @@ export class AnnotationSet
       }
     }
 
-    this.#annotationTypesByRef.delete(ref);
+    this.#typeIdsByRef.delete(ref);
 
     // Cascade to subsets
     for (const subSet of this.#subSets) {
@@ -219,8 +223,9 @@ export class AnnotationSet
     type: AnnotationType<T>
   ): Array<[Ref, AnnotationValue<any>]> {
     const removed: Array<[Ref, AnnotationValue<any>]> = [];
+    const typeId = type.id;
 
-    const annotations = this.#annotationsByType.get(type);
+    const annotations = this.#annotationsByTypeId.get(typeId);
     if (annotations) {
       const annotationsForRef = annotations.get(ref);
       if (annotationsForRef) {
@@ -230,7 +235,7 @@ export class AnnotationSet
       }
 
       annotations.delete(ref);
-      this.#annotationTypesByRef.get(ref)?.delete(type);
+      this.#typeIdsByRef.get(ref)?.delete(typeId);
     }
 
     // Cascade to subsets
@@ -246,17 +251,18 @@ export class AnnotationSet
    */
   #removeType<T>(type: AnnotationType<T>): Array<[Ref, AnnotationValue<any>]> {
     const removed: Array<[Ref, AnnotationValue<any>]> = [];
+    const typeId = type.id;
 
-    const annotationsByRef = this.#annotationsByType.get(type);
+    const annotationsByRef = this.#annotationsByTypeId.get(typeId);
     if (annotationsByRef) {
       for (const [ref, annotations] of annotationsByRef) {
         for (const annotation of annotations) {
           removed.push([ref, annotation]);
         }
-        this.#annotationTypesByRef.get(ref)?.delete(type);
+        this.#typeIdsByRef.get(ref)?.delete(typeId);
       }
 
-      this.#annotationsByType.delete(type);
+      this.#annotationsByTypeId.delete(typeId);
     }
 
     // Cascade to subsets
@@ -286,15 +292,15 @@ export class AnnotationSet
    * Returns a new AnnotationSet containing only the matching annotations
    */
   onChildrenOf(ref: Ref<string | Array<unknown>>): AnnotationSet {
-    const newAnnotationsByType = new Map<
-      AnnotationType<any>,
+    const newAnnotationsByTypeId = new Map<
+      AnnotationTypeId,
       Map<Ref, Set<AnnotationValue<any>>>
     >();
-    const newAnnotationTypesByRef = new Map<Ref, Set<AnnotationType<any>>>();
+    const newTypeIdsByRef = new Map<Ref, Set<AnnotationTypeId>>();
 
-    for (const [type, annotationsByRef] of this.#annotationsByType) {
+    for (const [typeId, annotationsByRef] of this.#annotationsByTypeId) {
       let newAnnotationsByRef = new Map<Ref, Set<AnnotationValue<any>>>();
-      newAnnotationsByType.set(type, newAnnotationsByRef);
+      newAnnotationsByTypeId.set(typeId, newAnnotationsByRef);
 
       for (const [otherRef, annotations] of annotationsByRef) {
         if (otherRef.isChildOf(ref)) {
@@ -302,19 +308,19 @@ export class AnnotationSet
           newAnnotationsByRef.set(otherRef, annotations);
 
           // track that annotation has this type
-          let typesForRef = newAnnotationTypesByRef.get(otherRef);
-          if (!typesForRef) {
-            typesForRef = new Set();
-            newAnnotationTypesByRef.set(otherRef, typesForRef);
+          let typeIdsForRef = newTypeIdsByRef.get(otherRef);
+          if (!typeIdsForRef) {
+            typeIdsForRef = new Set();
+            newTypeIdsByRef.set(otherRef, typeIdsForRef);
           }
-          typesForRef.add(type);
+          typeIdsForRef.add(typeId);
         }
       }
     }
 
     const newAnnotationSet = new AnnotationSet();
-    newAnnotationSet.#annotationsByType = newAnnotationsByType;
-    newAnnotationSet.#annotationTypesByRef = newAnnotationTypesByRef;
+    newAnnotationSet.#annotationsByTypeId = newAnnotationsByTypeId;
+    newAnnotationSet.#typeIdsByRef = newTypeIdsByRef;
 
     return newAnnotationSet;
   }
@@ -324,15 +330,15 @@ export class AnnotationSet
    * Returns a new AnnotationSet containing only the matching annotations
    */
   onPartOf(ref: Ref<unknown>): AnnotationSet {
-    const newAnnotationsByType = new Map<
-      AnnotationType<any>,
+    const newAnnotationsByTypeId = new Map<
+      string,
       Map<Ref, Set<AnnotationValue<any>>>
     >();
-    const newAnnotationTypesByRef = new Map<Ref, Set<AnnotationType<any>>>();
+    const newTypeIdsByRef = new Map<Ref, Set<string>>();
 
-    for (const [type, annotationsByRef] of this.#annotationsByType) {
+    for (const [typeId, annotationsByRef] of this.#annotationsByTypeId) {
       let newAnnotationsByRef = new Map<Ref, Set<AnnotationValue<any>>>();
-      newAnnotationsByType.set(type, newAnnotationsByRef);
+      newAnnotationsByTypeId.set(typeId, newAnnotationsByRef);
 
       for (const [otherRef, annotations] of annotationsByRef) {
         if (otherRef.isChildOf(ref)) {
@@ -340,19 +346,19 @@ export class AnnotationSet
           newAnnotationsByRef.set(otherRef, annotations);
 
           // track that annotation has this type
-          let typesForRef = newAnnotationTypesByRef.get(otherRef);
-          if (!typesForRef) {
-            typesForRef = new Set();
-            newAnnotationTypesByRef.set(otherRef, typesForRef);
+          let typeIdsForRef = newTypeIdsByRef.get(otherRef);
+          if (!typeIdsForRef) {
+            typeIdsForRef = new Set();
+            newTypeIdsByRef.set(otherRef, typeIdsForRef);
           }
-          typesForRef.add(type);
+          typeIdsForRef.add(typeId);
         }
       }
     }
 
     const newAnnotationSet = new AnnotationSet();
-    newAnnotationSet.#annotationsByType = newAnnotationsByType;
-    newAnnotationSet.#annotationTypesByRef = newAnnotationTypesByRef;
+    newAnnotationSet.#annotationsByTypeId = newAnnotationsByTypeId;
+    newAnnotationSet.#typeIdsByRef = newTypeIdsByRef;
 
     return newAnnotationSet;
   }
@@ -382,7 +388,7 @@ export class AnnotationSet
    * Lookup the first annotation value for a ref and specific type
    */
   #lookupByType<T>(ref: Ref<any>, type: AnnotationType<T>): T | undefined {
-    const typeMap = this.#annotationsByType.get(type);
+    const typeMap = this.#annotationsByTypeId.get(type.id);
     if (typeMap) {
       const annotations = typeMap.get(ref);
       if (annotations) {
@@ -402,10 +408,10 @@ export class AnnotationSet
    * Lookup the first annotation for a ref (any type)
    */
   #lookupAny(ref: Ref<any>): AnnotationValue<any> | undefined {
-    const typesForRef = this.#annotationTypesByRef.get(ref);
-    if (typesForRef) {
-      for (const t of typesForRef) {
-        const typeMap = this.#annotationsByType.get(t);
+    const typeIdsForRef = this.#typeIdsByRef.get(ref);
+    if (typeIdsForRef) {
+      for (const typeId of typeIdsForRef) {
+        const typeMap = this.#annotationsByTypeId.get(typeId);
         if (typeMap) {
           const annotations = typeMap.get(ref);
           if (annotations) {
@@ -450,7 +456,7 @@ export class AnnotationSet
   #lookupAllByType<T>(ref: Ref<any>, type: AnnotationType<T>): T[] {
     const result: T[] = [];
 
-    const typeMap = this.#annotationsByType.get(type);
+    const typeMap = this.#annotationsByTypeId.get(type.id);
     if (typeMap) {
       const annotations = typeMap.get(ref);
       if (annotations) {
@@ -474,10 +480,10 @@ export class AnnotationSet
   #lookupAllAny(ref: Ref<any>): AnnotationValue<any>[] {
     const result: AnnotationValue<any>[] = [];
 
-    const typesForRef = this.#annotationTypesByRef.get(ref);
-    if (typesForRef) {
-      for (const t of typesForRef) {
-        const typeMap = this.#annotationsByType.get(t);
+    const typeIdsForRef = this.#typeIdsByRef.get(ref);
+    if (typeIdsForRef) {
+      for (const typeId of typeIdsForRef) {
+        const typeMap = this.#annotationsByTypeId.get(typeId);
         if (typeMap) {
           const annotations = typeMap.get(ref);
           if (annotations) {
@@ -503,8 +509,8 @@ export class AnnotationSet
    */
   *[Symbol.iterator](): Iterator<[Ref<unknown>, AnnotationValue<any>]> {
     // Yield own annotations
-    for (const [type, annoationsByRef] of this.#annotationsByType) {
-      for (const [ref, annotations] of annoationsByRef) {
+    for (const [, annotationsByRef] of this.#annotationsByTypeId) {
+      for (const [ref, annotations] of annotationsByRef) {
         for (const annotation of annotations) {
           yield [ref, annotation];
         }
