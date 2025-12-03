@@ -1,4 +1,4 @@
-import type { AutomergeUrl } from "@automerge/automerge-repo";
+import type { AutomergeUrl, ImmutableString } from "@automerge/automerge-repo";
 
 // needed in serviceworker only right now?
 // but implied in plugins(?)
@@ -19,7 +19,7 @@ export type DocLink = {
 export type DocPath = DocLink[];
 
 export type UnixFileEntry = {
-  content: string;
+  content: string | Uint8Array | ImmutableString;
   extension: string;
   mimeType: string;
   name: string;
