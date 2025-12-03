@@ -6,9 +6,10 @@ export default defineConfig({
   plugins: [
     wasm(),
     patchwork({
-      syncServerStorageId: "a565270c-bf7c-4df9-a531-f6be1d3152f0",
-      syncServerUrl: "wss://keyhive.sync.automerge.org",
-      keyhiveEnabled: true,
+      extraBuiltins: {
+        "@automerge/automerge-repo-keyhive":
+          "/packages/@automerge/automerge-repo-keyhive/index.js",
+      },
     }),
   ],
   worker: {
