@@ -8,37 +8,6 @@ export default defineConfig({
     tailwindcss(),
     wasm(),
     patchwork({
-      extraBuiltins: {
-        "@codemirror/language": "/packages/@codemirror/language/index.js",
-        "@codemirror/view": "/packages/@codemirror/view/index.js",
-        "@codemirror/state": "/packages/@codemirror/state/index.js",
-        "@patchwork/plugins": "/packages/@patchwork/plugins/index.js",
-        "@patchwork/context": "/packages/@patchwork/context/index.js",
-        "@patchwork/refs": "/packages/@patchwork/refs/index.js",
-        "@patchwork/context-selection":
-          "/packages/@patchwork/context-selection/index.js",
-        "@patchwork/context-react":
-          "/packages/@patchwork/context-react/index.js",
-        "@patchwork/context-diff": "/packages/context-diff/index.js",
-        "@patchwork/context-comments": "/packages/context-comments/index.js",
-        "@patchwork/context-solid": "/packages/context-solid/index.js",
-        "@patchwork/elements": "/packages/@patchwork/elements/index.js",
-        "@patchwork/filesystem": "/packages/@patchwork/filesystem/index.js",
-        "@automerge/automerge-repo-react-hooks":
-          "/packages/@automerge/automerge-repo-react-hooks/index.js",
-        react: "/packages/react/index.js",
-        "react/jsx-runtime": "/packages/react/jsx-runtime.js",
-        "react-dom": "/packages/react-dom/index.js",
-        "react-dom/client": "/packages/react-dom/client.js",
-        "react-dom/server": "/packages/react-dom/server.js",
-        signia: "/packages/signia/index.js",
-        scheduler: "/packages/scheduler/index.js",
-        "solid-js": "/packages/solid-js/index.js",
-        "solid-js/store": "/packages/solid-js/store.js",
-        "solid-js/html": "/packages/solid-js/html.js",
-        "solid-js/h": "/packages/solid-js/h.js",
-        "solid-js/web": "/packages/solid-js/web.js",
-      },
       importmap: {
         imports: {
           DEV: "data:text/javascript,export%20const%20DEV%20=%20true;",

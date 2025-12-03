@@ -9,7 +9,7 @@ import {
   ModuleWatcher,
   createFilesystemHandoffHandler,
 } from "@patchwork/filesystem";
-import setup from "@patchwork/bootloader/setup";
+import setup from "@patchwork/bootloader";
 import {
   LoadedPlugin,
   PluginDescription,

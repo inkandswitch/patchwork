@@ -4,7 +4,7 @@ packages:
   - packages/context/**/*
   - meta/*
   - sites/*
-  - tools/*
+  - tools/*/*
 
 catalog:
   '@automerge/automerge': 3.2.1

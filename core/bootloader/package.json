@@ -8,18 +8,25 @@
     "rollup": "^4.53.3"
   },
   "exports": {
-    ".": "./dist/types.d.ts",
+    ".": {
+      "import": "./dist/setup.js",
+      "types": "./dist/setup.d.ts"
+    },
+    "./externals": {
+      "import": "./dist/externals.js",
+      "types": "./dist/externals.d.ts"
+    },
     "./vite": {
       "import": "./dist/vite/patchwork-plugin.js",
       "types": "./dist/vite/patchwork-plugin.d.ts"
     },
-    "./setup": {
-      "import": "./dist/setup.js",
-      "types": "./dist/setup.d.ts"
-    },
     "./service-worker": {
       "import": "./dist/service-worker.js",
       "types": "./dist/service-worker.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
     }
   },
   "dependencies": {

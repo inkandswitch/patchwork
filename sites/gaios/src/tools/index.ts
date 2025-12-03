@@ -4,8 +4,6 @@ import { plugins as patchworkFramePlugins } from "@tiny-patchwork/patchwork-fram
 // @ts-expect-error no types
 import { plugins as tabViewerPlugins } from "@tiny-patchwork/context-sidebar";
 // @ts-expect-error no types
-import { plugins as branchViewPlugins } from "@tiny-patchwork/history-view";
-// @ts-expect-error no types
 import { plugins as todoPlugins } from "@tiny-patchwork/todo";
 // @ts-expect-error no types
 import { plugins as historyViewPlugins } from "@tiny-patchwork/history-view";
@@ -51,7 +49,6 @@ export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
   ...patchworkFramePlugins,
   ...tabViewerPlugins,
-  ...branchViewPlugins,
   ...todoPlugins,
   ...historyViewPlugins,
   ...commentsViewPlugins,

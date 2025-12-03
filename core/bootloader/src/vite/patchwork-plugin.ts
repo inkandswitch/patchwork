@@ -16,7 +16,5 @@ export type ImportMap = {
 };
 
 export interface PatchworkVitePluginOptions {
-  /** extra importmap to be merged into the index.html */
   importmap?: ImportMap;
-  extraBuiltins?: Record<string, string>;
 }

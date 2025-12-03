@@ -1,0 +1,22 @@
+import type { BuildOptions } from "esbuild";
+import externals from "@patchwork/bootloader/externals";
+import process from "node:process";
+import pushworkSync from "./plugin-pushwork-sync.ts";
+import pkgJSON from "../package.json" with { type: "json" };
+import { solid } from "./plugin-solid.ts";
+
+const pushworking = process.argv.includes("pushwork") || process.env.PUSHWORK;
+
+export default {
+  entryPoints: Object.values(pkgJSON.exports).map((dsc) => dsc.source),
+  outdir: "dist",
+  bundle: true,
+  platform: "browser",
+  format: "esm",
+  splitting: true,
+  logLevel: "debug",
+  sourcemap: false,
+  external: externals,
+  plugins: [solid()].concat(pushworking ? [pushworkSync()] : []),
+  loader: { ".ttf": "dataurl" },
+} satisfies BuildOptions;
