@@ -1,10 +1,7 @@
 /**
- * Represents an annotation type with its unique identifier
+ * Represents an annotation type - a function that creates annotation values
  */
-export type AnnotationType<T = unknown> = {
-  name: string;
-  (value: T): AnnotationValue<T>;
-};
+export type AnnotationType<T = unknown> = (value: T) => AnnotationValue<T>;
 
 /**
  * An annotation value with its type information
@@ -17,14 +14,13 @@ export type AnnotationValue<T = unknown> = {
 /**
  * Defines a new annotation type
  */
-export const defineAnnotationType = <T>(name: string) => {
-  const annotationType = (value: T): AnnotationValue<T> => {
+export const defineAnnotationType = <T>(): AnnotationType<T> => {
+  const annotationType: AnnotationType<T> = (value: T): AnnotationValue<T> => {
     return {
       type: annotationType,
       value,
     };
   };
 
-  annotationType.name = name;
   return annotationType;
 };

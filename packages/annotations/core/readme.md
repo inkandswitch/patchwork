@@ -43,3 +43,10 @@ for (const annotation of todoAnnotations) {
 
 const unsubscribe = annotation.ofType(Diff).subscribe((diffAnnotations) => {});
 ```
+
+annotations.add(diffAnnotation)
+
+annotations.change(() => {
+annotations.clear();
+annotations.add();
+})
