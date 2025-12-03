@@ -1,16 +1,44 @@
 import { type Ref } from "@patchwork/refs";
 import type { AnnotationType, AnnotationValue } from "./annotation-type";
 import { AnnotationSet } from "./annotation-set";
+import { ObservableEventEmitter } from "@patchwork/observable";
+import { AnnotationsCollection } from "./annotation-collection";
 
 /**
  * Annotations filtered by type
  * Allows lookup by ref
  */
-export class AnnotationsOfType<T> {
+export class AnnotationsOfType<T>
+  extends ObservableEventEmitter
+  implements AnnotationsCollection
+{
+  private type?: AnnotationType<T>;
+
   constructor(
     private annotationSet: AnnotationSet,
-    private annotationsByRef: Map<Ref, Set<T>>
-  ) {}
+    private annotationsByRef: Map<Ref, Set<T>>,
+    type?: AnnotationType<T>
+  ) {
+    super();
+    this.type = type;
+    this.setupSubscription();
+  }
+
+  private setupSubscription(): void {
+    // Subscribe to annotation set changes
+    const handleChange = (annotations: AnnotationsCollection) => {
+      // Only notify if the change is relevant to our type
+      for (const [, annotation] of annotations) {
+        if (this.type && annotation.type === this.type) {
+          this.notifySubscribers();
+          return;
+        }
+      }
+    };
+
+    this.annotationSet.on("added", handleChange);
+    this.annotationSet.on("removed", handleChange);
+  }
 
   /**
    * Lookup the first annotation value for a ref
@@ -31,10 +59,11 @@ export class AnnotationsOfType<T> {
   /**
    * Make the view iterable
    */
-  *[Symbol.iterator](): Iterator<[Ref<any>, T]> {
+  // todo: fix types
+  *[Symbol.iterator](): Iterator<[Ref<any>, AnnotationValue<unknown>]> {
     for (const [ref, annotations] of this.annotationsByRef) {
       for (const annotation of annotations) {
-        yield [ref, annotation];
+        yield [ref, annotation as AnnotationValue<unknown>];
       }
     }
   }
@@ -44,7 +73,12 @@ export class AnnotationsOfType<T> {
  * Annotations filtered by ref
  * Allows lookup by type
  */
-export class AnnotationsOnRef<T> {
+export class AnnotationsOnRef<T>
+  extends ObservableEventEmitter
+  implements AnnotationsCollection
+{
+  private unsubscribeFromSet?: () => void;
+
   constructor(
     private annotationSet: AnnotationSet,
     private ref: Ref<T>,
@@ -52,7 +86,32 @@ export class AnnotationsOnRef<T> {
       AnnotationType<any>,
       Set<AnnotationValue<any>>
     >
-  ) {}
+  ) {
+    super();
+    this.setupSubscription();
+  }
+
+  private setupSubscription(): void {
+    // Subscribe to annotation set changes
+    const handleChange = (annotations: AnnotationsCollection) => {
+      // Only notify if the change is relevant to our ref
+      for (const [ref] of annotations) {
+        if (ref === this.ref) {
+          this.notifySubscribers();
+          return;
+        }
+      }
+    };
+
+    this.annotationSet.on("added", handleChange);
+    this.annotationSet.on("removed", handleChange);
+
+    // Store unsubscribe function
+    this.unsubscribeFromSet = () => {
+      this.annotationSet.off("added", handleChange);
+      this.annotationSet.off("removed", handleChange);
+    };
+  }
 
   /**
    * Lookup the first annotation value for a type
@@ -73,10 +132,11 @@ export class AnnotationsOnRef<T> {
   /**
    * Make the view iterable
    */
-  *[Symbol.iterator](): Iterator<AnnotationValue<any>> {
+  // todo: fix types
+  *[Symbol.iterator](): Iterator<[Ref<any>, AnnotationValue<unknown>]> {
     for (const annotations of this.annotationsByType.values()) {
       for (const annotation of annotations) {
-        yield annotation;
+        yield [this.ref, annotation as AnnotationValue<unknown>];
       }
     }
   }

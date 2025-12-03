@@ -171,19 +171,6 @@ importers:
         specifier: 'catalog:'
         version: 18.3.26
 
-  packages/annotations/annotation-traversal:
-    dependencies:
-      '@patchwork/annotations':
-        specifier: workspace:*
-        version: link:../core
-      '@patchwork/elements':
-        specifier: workspace:*
-        version: link:../../../core/elements
-    devDependencies:
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
-
   packages/annotations/core:
     dependencies:
       '@patchwork/observable':
@@ -192,6 +179,9 @@ importers:
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../refs
+      eventemitter3:
+        specifier: ^5.0.1
+        version: 5.0.1
     devDependencies:
       '@automerge/automerge':
         specifier: 3.2.0
@@ -205,6 +195,19 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@24.9.1)(@vitest/ui@3.2.4(vitest@3.2.4))(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.0)
+
+  packages/annotations/traversal:
+    dependencies:
+      '@patchwork/annotations':
+        specifier: workspace:*
+        version: link:../core
+      '@patchwork/elements':
+        specifier: workspace:*
+        version: link:../../../core/elements
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
 
   packages/context/annotations/context-comments:
     dependencies:
@@ -324,6 +327,10 @@ importers:
         version: 5.9.3
 
   packages/observable:
+    dependencies:
+      eventemitter3:
+        specifier: ^5.0.1
+        version: 5.0.1
     devDependencies:
       typescript:
         specifier: ^5.9.2

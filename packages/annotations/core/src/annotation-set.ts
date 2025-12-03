@@ -1,6 +1,9 @@
 import { Ref } from "@patchwork/refs";
 import type { AnnotationType, AnnotationValue } from "./annotation-type";
 import { AnnotationsOfType, AnnotationsOnRef } from "./annotation-views";
+import { ObservableEventEmitter } from "@patchwork/observable";
+import { AnnotationEvents } from "./annotation-events";
+import { AnnotationsCollection } from "./annotation-collection";
 
 /**
  * A set of annotations that can be queried and filtered
@@ -11,7 +14,10 @@ import { AnnotationsOfType, AnnotationsOnRef } from "./annotation-views";
  *
  * Each ref can have multiple annotations of the same type.
  */
-export class AnnotationSet {
+export class AnnotationSet
+  extends ObservableEventEmitter<AnnotationEvents>
+  implements AnnotationsCollection
+{
   // Map: AnnotationType -> Map<Ref, Set<value>>
   private annotationsByType: Map<
     AnnotationType<any>,
@@ -50,6 +56,10 @@ export class AnnotationSet {
       this.annotationTypesByRef.set(ref, typesForRef);
     }
     typesForRef.add(type);
+
+    // Emit event and notify subscribers
+    this.emit("added", new ReadOnlyAnnotationSet([[ref, annotation]]));
+    this.notifySubscribers();
   }
 
   /**
@@ -71,63 +81,98 @@ export class AnnotationSet {
     refOrAnnotationType: Ref<any> | AnnotationType<T>,
     annotationType?: AnnotationType<T>
   ): void {
-    // Remove Ref
+    let removed: [Ref, AnnotationValue<any>][];
+
     if (refOrAnnotationType instanceof Ref) {
-      const annotationTypes =
-        this.annotationTypesByRef.get(refOrAnnotationType);
-
-      // case 0: ref is not in the annotation set => do nothing
-      if (!annotationTypes) {
-        return;
+      if (annotationType) {
+        removed = this.#removeTypeFromRef(refOrAnnotationType, annotationType);
+      } else {
+        removed = this.#removeAllFromRef(refOrAnnotationType);
       }
+    } else {
+      removed = this.#removeType(refOrAnnotationType);
+    }
 
-      // case 1: delete all annotations for a ref
+    // Emit event for all removed annotations
+    if (removed.length > 0) {
+      this.emit("removed", new ReadOnlyAnnotationSet(removed));
+      this.notifySubscribers();
+    }
+  }
 
-      if (!annotationType) {
-        // delete all annotations for a ref
-        for (const annotationType of annotationTypes) {
-          const annotations = this.annotationsByType.get(annotationType);
-          if (annotations) {
-            annotations.delete(refOrAnnotationType);
+  /**
+   * Remove all annotations for a ref
+   */
+  #removeAllFromRef(ref: Ref<any>): Array<[Ref, AnnotationValue<any>]> {
+    const annotationTypes = this.annotationTypesByRef.get(ref);
+    if (!annotationTypes) {
+      return [];
+    }
+
+    const removed: Array<[Ref, AnnotationValue<any>]> = [];
+
+    for (const type of annotationTypes) {
+      const annotations = this.annotationsByType.get(type);
+      if (annotations) {
+        const annotationsForRef = annotations.get(ref);
+        if (annotationsForRef) {
+          for (const annotation of annotationsForRef) {
+            removed.push([ref, annotation]);
           }
         }
-
-        // delete ref
-        this.annotationTypesByRef.delete(refOrAnnotationType);
-        return;
+        annotations.delete(ref);
       }
-
-      // case 2: delete a specific annotation type for a ref
-
-      // delete the annotation values of that type on the ref
-      const annotations = this.annotationsByType.get(annotationType);
-      if (annotations) {
-        annotations.delete(refOrAnnotationType);
-      }
-
-      // delete the fact that the ref has this annotation type
-      this.annotationTypesByRef
-        .get(refOrAnnotationType)
-        ?.delete(annotationType);
-      return;
     }
 
-    // Remove Annotation Type
-    const annotationsByRef = this.annotationsByType.get(refOrAnnotationType);
+    this.annotationTypesByRef.delete(ref);
+    return removed;
+  }
 
+  /**
+   * Remove all annotations of a specific type for a ref
+   */
+  #removeTypeFromRef<T>(
+    ref: Ref<any>,
+    type: AnnotationType<T>
+  ): Array<[Ref, AnnotationValue<any>]> {
+    const annotations = this.annotationsByType.get(type);
+    if (!annotations) {
+      return [];
+    }
+
+    const removed: Array<[Ref, AnnotationValue<any>]> = [];
+    const annotationsForRef = annotations.get(ref);
+    if (annotationsForRef) {
+      for (const annotation of annotationsForRef) {
+        removed.push([ref, annotation]);
+      }
+    }
+
+    annotations.delete(ref);
+    this.annotationTypesByRef.get(ref)?.delete(type);
+
+    return removed;
+  }
+
+  /**
+   * Remove all annotations of a specific type across all refs
+   */
+  #removeType<T>(type: AnnotationType<T>): Array<[Ref, AnnotationValue<any>]> {
+    const annotationsByRef = this.annotationsByType.get(type);
     if (!annotationsByRef) {
-      return;
+      return [];
     }
 
-    // delete the annoation types from refs
-    for (const refWithAnnotation of annotationsByRef.keys()) {
-      this.annotationTypesByRef
-        .get(refWithAnnotation)
-        ?.delete(refOrAnnotationType);
+    const removed: Array<[Ref, AnnotationValue<any>]> = [];
+    for (const [ref, annotations] of annotationsByRef) {
+      for (const annotation of annotations) {
+        removed.push([ref, annotation]);
+      }
+      this.annotationTypesByRef.get(ref)?.delete(type);
     }
 
-    // delete the annotation values
-    this.annotationsByType.delete(refOrAnnotationType);
+    this.annotationsByType.delete(type);
+    return removed;
   }
 
   /**
@@ -140,16 +185,16 @@ export class AnnotationSet {
     >;
 
     if (!annotationsByRef) {
-      return new AnnotationsOfType<T>(this, new Map());
+      return new AnnotationsOfType<T>(this, new Map(), type);
     }
 
-    return new AnnotationsOfType<T>(this, annotationsByRef);
+    return new AnnotationsOfType<T>(this, annotationsByRef, type);
   }
 
   /**
    * Filter annotations on a specific ref (exact match)
    */
-  on<T>(ref: Ref<T>): AnnotationsOnRef<T> {
+  onRef<T>(ref: Ref<T>): AnnotationsOnRef<T> {
     const typesForRef = this.annotationTypesByRef.get(ref);
 
     if (!typesForRef) {
@@ -260,6 +305,24 @@ export class AnnotationSet {
           yield [ref, annotation];
         }
       }
+    }
+  }
+}
+
+/**
+ * Internal class for passing annotation collections (e.g., in event payloads).
+ * Not exposed to users - only visible as AnnotationsCollection interface.
+ */
+export class ReadOnlyAnnotationSet implements AnnotationsCollection {
+  #entries: [ref: Ref, annotation: AnnotationValue<any>][] = [];
+
+  constructor(entries: [ref: Ref, annotation: AnnotationValue<any>][]) {
+    this.#entries = entries;
+  }
+
+  *[Symbol.iterator](): Iterator<[Ref<unknown>, AnnotationValue<any>]> {
+    for (const [ref, annotation] of this.#entries) {
+      yield [ref, annotation];
     }
   }
 }
