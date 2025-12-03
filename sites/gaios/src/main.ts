@@ -43,6 +43,7 @@ declare global {
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
+    __sharedworker: SharedWorker | undefined;
   }
 }
 
@@ -55,6 +56,7 @@ try {
       name: "automerge-repo-shared-worker",
     }
   );
+  __sharedworker = sharedWorker;
 
   /* Create a repo and share any documents we create with our local in-browser storage worker. */
   repo = new Repo({

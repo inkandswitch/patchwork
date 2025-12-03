@@ -56,7 +56,8 @@ try {
       name: "automerge-repo-shared-worker",
     }
   );
-  window.__sharedworker = sharedWorker
+
+  window.__sharedworker = sharedWorker;
 
   /* Create a repo and share any documents we create with our local in-browser storage worker. */
   repo = new Repo({
