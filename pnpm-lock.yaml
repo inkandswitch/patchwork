@@ -21,9 +21,6 @@ catalogs:
     '@automerge/vanillajs':
       specifier: 2.5.0
       version: 2.5.0
-    '@keyhive/keyhive':
-      specifier: 0.0.0-alpha.40
-      version: 0.0.0-alpha.40
     '@types/react':
       specifier: ^18.3.27
       version: 18.3.26
@@ -782,7 +779,7 @@ importers:
         specifier: ^9.37.0
         version: 9.38.0
       '@keyhive/keyhive':
-        specifier: 'catalog:'
+        specifier: 0.0.0-alpha.40
         version: 0.0.0-alpha.40
       '@patchwork/bootloader':
         specifier: workspace:^
