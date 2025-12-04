@@ -17,6 +17,8 @@
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@automerge/vanillajs": "catalog:",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.38.8",
     "@keyhive/keyhive": "catalog:",
     "@patchwork/elements": "workspace:^",
     "@patchwork/filesystem": "workspace:^",

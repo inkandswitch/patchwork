@@ -5,30 +5,35 @@ import {
   registerPatchworkViewElement,
   openDocument,
 } from "@patchwork/elements";
-import { ModuleWatcher } from "@patchwork/filesystem";
+import {
+  ModuleWatcher,
+  createFilesystemHandoffHandler,
+} from "@patchwork/filesystem";
+import setup from "@patchwork/bootloader";
 import {
   LoadedPlugin,
   PluginDescription,
   registerPlugins,
 } from "@patchwork/plugins";
-import bootstrap from "virtual:patchwork/setup";
 import {
   getOrCreateLayoutDocHandle,
   TinyPatchworkLayoutDoc,
 } from "./layout-doc";
 import {
   DocHandle,
+  IndexedDBStorageAdapter,
   isValidAutomergeUrl,
   isValidDocumentId,
+  MessageChannelNetworkAdapter,
   parseAutomergeUrl,
+  Repo,
   stringifyAutomergeUrl,
+  WebSocketClientAdapter,
   type UrlHeads,
 } from "@automerge/vanillajs";
-
+import { plugins } from "./tools";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
-
-import { plugins } from "./tools";
 
 declare global {
   interface Window {
@@ -37,15 +42,48 @@ declare global {
 
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
+    repo: Repo;
+    __sharedworker: SharedWorker;
   }
 }
 
+let repo: Repo;
+try {
+  const sharedWorker = new SharedWorker(
+    new URL("./automerge-worker.ts", import.meta.url),
+    {
+      type: "module",
+      name: "automerge-repo-shared-worker",
+    }
+  );
+
+  window.__sharedworker = sharedWorker;
+
+  /* Create a repo and share any documents we create with our local in-browser storage worker. */
+  repo = new Repo({
+    network: [new MessageChannelNetworkAdapter(sharedWorker.port)],
+    storage: new IndexedDBStorageAdapter(),
+  });
+} catch {
+  repo = new Repo({
+    network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
+    storage: new IndexedDBStorageAdapter(),
+  });
+}
+
+
+window.repo = repo;
 window.Automerge = Automerge;
 window.AutomergeRepo = AutomergeRepo;
-
-const { repo, hive } = await bootstrap();
-
 window.CONTEXT = CONTEXT;
+
+const handlers = {
+  "automerge:": createFilesystemHandoffHandler(repo),
+} as const;
+
+setup(async (href, request) =>
+  handlers[new URL(href).protocol as keyof typeof handlers]?.(href, request)
+);
 
 // TODO: delete once we have moved all of tools to their own thing
 const loadedPlugins = Object.groupBy(
@@ -72,7 +110,7 @@ if (loadedPlugins.rejected) {
   console.warn("failed to load some plugins:", loadedPlugins.rejected);
 }
 
-const accountDocHandle = await getOrCreateLayoutDocHandle(repo, hive);
+const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 
 window.accountDocHandle = accountDocHandle;
 
@@ -90,7 +128,7 @@ const moduleWatcher = new ModuleWatcher(
   }
 );
 
-registerPatchworkViewElement({ moduleWatcher, repo, hive });
+registerPatchworkViewElement({ moduleWatcher, repo });
 
 const rootElement = document.getElementById("root")!;
 

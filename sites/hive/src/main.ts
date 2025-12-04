@@ -1,10 +1,57 @@
-import { ModuleWatcher } from "@patchwork/filesystem";
+import {
+  createFilesystemHandoffHandler,
+  ModuleWatcher,
+} from "@patchwork/filesystem";
 
-import bootstrap from "virtual:patchwork/setup";
 import { registerPlugins } from "@patchwork/plugins";
-import { type AutomergeUrl } from "@automerge/vanillajs";
+import {
+  IndexedDBStorageAdapter,
+  Repo,
+  WebSocketClientAdapter,
+  type AutomergeUrl,
+} from "@automerge/vanillajs";
 import { registerPatchworkViewElement } from "@patchwork/elements";
-const { repo, hive } = await bootstrap();
+import { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
+import * as Automerge from "@automerge/automerge";
+import * as AutomergeRepo from "@automerge/automerge-repo";
+import bootstrap from "@patchwork/bootloader";
+
+const storage = new IndexedDBStorageAdapter("hive");
+const network = new WebSocketClientAdapter("wss://keyhive.sync.automerge.org");
+const hive = await initializeAutomergeRepoKeyhive({
+  networkAdapter: network,
+  storage,
+  peerIdSuffix: "hivework" + Math.random().toString(36).slice(2),
+  automaticArchiveIngestion: true,
+});
+
+const repo = new Repo({
+  network: [hive.networkAdapter],
+  storage: new IndexedDBStorageAdapter(),
+  idFactory: hive.idFactory,
+});
+
+declare global {
+  interface Window {
+    Automerge: typeof import("@automerge/automerge");
+    AutomergeRepo: typeof import("@automerge/automerge-repo");
+    repo: Repo;
+    hive: typeof hive;
+  }
+}
+
+window.repo = repo;
+window.Automerge = Automerge;
+window.AutomergeRepo = AutomergeRepo;
+window.hive = hive;
+
+const handlers = {
+  "automerge:": createFilesystemHandoffHandler(repo),
+} as const;
+
+bootstrap(async (href, request) =>
+  handlers[new URL(href).protocol as keyof typeof handlers]?.(href, request)
+);
 
 const moduleWatcher = new ModuleWatcher(
   "automerge:3n51DZbA1FRwHAV8K2sW1g2aA3P2" as AutomergeUrl,
@@ -16,8 +63,6 @@ const moduleWatcher = new ModuleWatcher(
 );
 
 const params = new URLSearchParams(document.location.search);
-
-(window as any).repo = repo;
 
 registerPatchworkViewElement({
   moduleWatcher,

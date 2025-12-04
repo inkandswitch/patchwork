@@ -19,5 +19,8 @@
     "@types/node": "^20.17.57",
     "debug": "^4.4.3",
     "resolve.exports": "^2.0.3"
+  },
+  "devDependencies": {
+    "@patchwork/bootloader": "workspace:^"
   }
 }
