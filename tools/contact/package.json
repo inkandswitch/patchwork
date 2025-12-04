@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@node-types/node": "npm:@types/node@^24.9.1",
+    "@patchwork/bootloader": "workspace:^",
     "@tailwindcss/vite": "^4.1.15",
     "@types/react": "^18.3.23",
     "@typescript-eslint/parser": "^6.21.0",
