@@ -331,10 +331,10 @@ export class AnnotationSet
    */
   onPartOf(ref: Ref<unknown>): AnnotationSet {
     const newAnnotationsByTypeId = new Map<
-      string,
+      AnnotationTypeId,
       Map<Ref, Set<AnnotationValue<any>>>
     >();
-    const newTypeIdsByRef = new Map<Ref, Set<string>>();
+    const newTypeIdsByRef = new Map<Ref, Set<AnnotationTypeId>>();
 
     for (const [typeId, annotationsByRef] of this.#annotationsByTypeId) {
       let newAnnotationsByRef = new Map<Ref, Set<AnnotationValue<any>>>();
