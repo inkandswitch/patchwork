@@ -54,6 +54,9 @@ export function createFilesystemHandoffHandler(repo: Repo) {
 
       if (isValidAutomergeUrl(maybeAutomergeUrl)) {
         const folder = await repo.find<FolderDoc>(maybeAutomergeUrl);
+        if (!path[path.length - 1]) {
+          path.pop();
+        }
 
         const { heads } = parseAutomergeUrl(maybeAutomergeUrl);
 
@@ -63,10 +66,15 @@ export function createFilesystemHandoffHandler(repo: Repo) {
             heads: folder.heads(),
           });
 
+          let location = `/${encodeURIComponent(url)}`;
+          if (path.length) {
+            location += `/${path.join("/")}`;
+          }
+
           return {
             status: 307,
             headers: {
-              location: `/${encodeURIComponent(url)}/${path.join("/")}`,
+              location,
             },
             cache: false,
           };
