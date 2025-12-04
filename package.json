@@ -14,7 +14,7 @@
     "make-tool": "node scripts/make-tool.mjs",
     "preinstall": "npx only-allow pnpm",
     "preview": "pnpm --filter gaios preview",
-    "publish-core": "pnpm --filter './core/*' publish",
+    "publish-core": "pnpm --filter './core/*' publish --access=public",
     "test": "pnpm --filter \"./os\" test",
     "tsc": "pnpm -r exec tsc"
   },
