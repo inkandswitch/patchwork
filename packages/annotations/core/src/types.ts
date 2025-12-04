@@ -23,8 +23,23 @@ export type Annotation<RefType = unknown, AnnotationValueType = unknown> = [
   AnnotationValue<AnnotationValueType>,
 ];
 
+export type AnnotationChange = {
+  added: Annotation[];
+  removed: Annotation[];
+};
+
 /* Event types emitted by AnnotationSets and AnnotationViews */
 export type AnnotationEvents = {
-  added: (annotations: Annotation[]) => void;
-  removed: (annotations: Annotation[]) => void;
+  change: (change: AnnotationChange) => void;
 };
+
+/**
+ * Predicate function for filtering annotations
+ */
+export type AnnotationFilter<
+  RefType = unknown,
+  AnnotationValueType = unknown,
+> = (
+  ref: Ref<RefType>,
+  annotation: AnnotationValue<AnnotationValueType>
+) => boolean;

@@ -1,7 +1,13 @@
 import { ObservableEventEmitter } from "@patchwork/observable";
 import { type Ref } from "@patchwork/refs";
-import { Annotation, AnnotationSource, AnnotationEvents } from "../types";
+import {
+  Annotation,
+  AnnotationSource,
+  AnnotationEvents,
+  AnnotationChange,
+} from "../types";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
+import { filterAnnotationChange, isChangeEmpty } from "../utils";
 
 /**
  * Annotations filtered by ref
@@ -22,19 +28,18 @@ export class AnnotationsOnRef<T>
   }
 
   #setupSubscription(): void {
-    // Subscribe to source changes
-    const handleChange = (annotations: Annotation[]) => {
-      // Only notify if the change is relevant to our ref
-      for (const [ref] of annotations) {
-        if (ref === this.#ref) {
-          this.notifySubscribers();
-          return;
-        }
+    const handleChange = (change: AnnotationChange) => {
+      const filteredChange = filterAnnotationChange(
+        change,
+        (ref) => ref === this.#ref
+      );
+      if (!isChangeEmpty(filteredChange)) {
+        this.emit("change", filteredChange);
+        this.notifySubscribers();
       }
     };
 
-    this.#source.on("added", handleChange);
-    this.#source.on("removed", handleChange);
+    this.#source.on("change", handleChange);
   }
 
   /**

@@ -1,7 +1,13 @@
 import { ObservableEventEmitter } from "@patchwork/observable";
 import { type Ref } from "@patchwork/refs";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
-import { Annotation, AnnotationSource, AnnotationEvents } from "../types";
+import {
+  AnnotationFilter,
+  AnnotationSource,
+  AnnotationEvents,
+  AnnotationChange,
+} from "../types";
+import { filterAnnotationChange, isChangeEmpty } from "../utils";
 
 /**
  * A generic filtered view of annotations based on a predicate.
@@ -13,28 +19,26 @@ export class FilteredAnnotationView
   implements AnnotationSource
 {
   #source: AnnotationSource;
-  #predicate: AnnotationPredicate;
+  #filter: AnnotationFilter;
 
-  constructor(source: AnnotationSource, predicate: AnnotationPredicate) {
+  constructor(source: AnnotationSource, filter: AnnotationFilter) {
     super();
     this.#source = source;
-    this.#predicate = predicate;
+    this.#filter = filter;
     this.#setupSubscription();
   }
 
   #setupSubscription(): void {
-    const handleChange = (annotations: Annotation[]) => {
-      // Only notify if any changed annotation matches our predicate
-      for (const [ref, annotation] of annotations) {
-        if (this.#predicate(ref, annotation)) {
-          this.notifySubscribers();
-          return;
-        }
+    const handleChange = (change: AnnotationChange) => {
+      const filteredChange = filterAnnotationChange(change, this.#filter);
+
+      if (!isChangeEmpty(filteredChange)) {
+        this.emit("change", filteredChange);
+        this.notifySubscribers();
       }
     };
 
-    this.#source.on("added", handleChange);
-    this.#source.on("removed", handleChange);
+    this.#source.on("change", handleChange);
   }
 
   /**
@@ -78,7 +82,7 @@ export class FilteredAnnotationView
    */
   lookup<T>(ref: Ref<any>, type: AnnotationType<T>): T | undefined {
     for (const [, annotation] of this.#source.entriesOnRef(ref)) {
-      if (!this.#predicate(ref, annotation)) continue;
+      if (!this.#filter(ref, annotation)) continue;
 
       if (annotation.type.id === type.id) {
         return annotation.value;
@@ -94,7 +98,7 @@ export class FilteredAnnotationView
   lookupAll<T>(ref: Ref<any>, type: AnnotationType<T>): T[] {
     const result: T[] = [];
     for (const [, annotation] of this.#source.entriesOnRef(ref)) {
-      if (!this.#predicate(ref, annotation)) continue;
+      if (!this.#filter(ref, annotation)) continue;
 
       if (annotation.type.id === type.id) {
         result.push(annotation.value);
@@ -111,7 +115,7 @@ export class FilteredAnnotationView
     type: AnnotationType<T>
   ): Iterable<[Ref<any>, AnnotationValue<T>]> {
     for (const [ref, annotation] of this.#source.entriesOfType(type)) {
-      if (this.#predicate(ref, annotation as AnnotationValue<any>)) {
+      if (this.#filter(ref, annotation as AnnotationValue<any>)) {
         yield [ref, annotation];
       }
     }
@@ -123,7 +127,7 @@ export class FilteredAnnotationView
    */
   *entriesOnRef(ref: Ref<any>): Iterable<[Ref<any>, AnnotationValue<any>]> {
     for (const [r, annotation] of this.#source.entriesOnRef(ref)) {
-      if (this.#predicate(r, annotation)) {
+      if (this.#filter(r, annotation)) {
         yield [r, annotation];
       }
     }
@@ -135,20 +139,9 @@ export class FilteredAnnotationView
    */
   *[Symbol.iterator](): Iterator<[Ref<any>, AnnotationValue<any>]> {
     for (const [ref, annotation] of this.#source) {
-      if (this.#predicate(ref, annotation)) {
+      if (this.#filter(ref, annotation)) {
         yield [ref, annotation];
       }
     }
   }
 }
-
-/**
- * Predicate function for filtering annotations
- */
-export type AnnotationPredicate<
-  RefType = unknown,
-  AnnotationValueType = unknown,
-> = (
-  ref: Ref<RefType>,
-  annotation: AnnotationValue<AnnotationValueType>
-) => boolean;

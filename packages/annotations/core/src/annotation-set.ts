@@ -1,6 +1,11 @@
 import { ObservableEventEmitter } from "@patchwork/observable";
 import { Ref } from "@patchwork/refs";
-import { Annotation, AnnotationSource, AnnotationEvents } from "./types";
+import {
+  Annotation,
+  AnnotationSource,
+  AnnotationEvents,
+  AnnotationChange,
+} from "./types";
 import type {
   AnnotationType,
   AnnotationTypeId,
@@ -52,6 +57,48 @@ export class AnnotationSet
   // Cleanup functions for event listeners on sub-sets
   subSourceCleanups: Map<AnnotationSource, () => void> = new Map();
 
+  // Current active transaction
+  currentAnnotationChanges?: AnnotationChange;
+
+  /**
+   * Batch changes to the annotation set.
+   * Events are emitted only after the callback completes.
+   */
+  change(callback: () => void): void {
+    if (this.currentAnnotationChanges) {
+      throw new Error("Nested changes are not allowed");
+    }
+
+    this.currentAnnotationChanges = { added: [], removed: [] };
+
+    try {
+      callback();
+    } finally {
+      const change = this.currentAnnotationChanges;
+      this.currentAnnotationChanges = undefined;
+
+      if (change && (change.added.length > 0 || change.removed.length > 0)) {
+        this.emit("change", change);
+        this.notifySubscribers();
+      }
+    }
+  }
+
+  /**
+   * Internal helper to dispatch changes
+   */
+  #dispatchChange(change: AnnotationChange) {
+    if (this.currentAnnotationChanges) {
+      this.currentAnnotationChanges.added.push(...change.added);
+      this.currentAnnotationChanges.removed.push(...change.removed);
+    } else {
+      if (change.added.length > 0 || change.removed.length > 0) {
+        this.emit("change", change);
+        this.notifySubscribers();
+      }
+    }
+  }
+
   /**
    * Add an annotation set as a sub-set
    */
@@ -96,9 +143,22 @@ export class AnnotationSet
 
     // Emit events in one place
     if (added.length > 0) {
-      this.emit("added", added);
-      this.notifySubscribers();
+      this.#dispatchChange({ added, removed: [] });
     }
+  }
+
+  /**
+   * Lookup the first annotation value for a ref and type
+   */
+  lookup<T>(ref: Ref<any>, type: AnnotationType<T>): T | undefined {
+    return this.onRef(ref).lookup(type);
+  }
+
+  /**
+   * Lookup all annotation values for a ref and type
+   */
+  lookupAll<T>(ref: Ref<any>, type: AnnotationType<T>): T[] {
+    return this.onRef(ref).lookupAll(type);
   }
 
   /**
@@ -109,22 +169,15 @@ export class AnnotationSet
     this.#addedSources.push(source);
 
     // Forward events from source
-    const onAdded = (annotations: Annotation[]) => {
-      this.emit("added", annotations);
-      this.notifySubscribers();
-    };
-    const onRemoved = (annotations: Annotation[]) => {
-      this.emit("removed", annotations);
-      this.notifySubscribers();
+    const onChange = (change: AnnotationChange) => {
+      this.#dispatchChange(change);
     };
 
-    source.on("added", onAdded);
-    source.on("removed", onRemoved);
+    source.on("change", onChange);
 
     // Store cleanup function
     this.subSourceCleanups.set(source, () => {
-      source.off("added", onAdded);
-      source.off("removed", onRemoved);
+      source.off("change", onChange);
     });
 
     // Collect all existing annotations in the source
@@ -217,8 +270,7 @@ export class AnnotationSet
 
     // Emit event for all removed annotations
     if (removed.length > 0) {
-      this.emit("removed", removed);
-      this.notifySubscribers();
+      this.#dispatchChange({ added: [], removed });
     }
   }
 
@@ -227,7 +279,9 @@ export class AnnotationSet
    * This removes all locally stored annotations and removes all added sub-sources.
    */
   clear(): void {
-    const removed: Annotation[] = [];
+    const annotationChanges: AnnotationChange = this
+      .currentAnnotationChanges ?? { added: [], removed: [] };
+    const { removed } = annotationChanges;
 
     // Collect local annotations
     for (const [, typeMap] of this.#annotationsByTypeId) {
@@ -257,9 +311,8 @@ export class AnnotationSet
     this.subSourceCleanups.clear();
 
     // Emit events
-    if (removed.length > 0) {
-      this.emit("removed", removed);
-      this.notifySubscribers();
+    if (removed.length > 0 && !this.currentAnnotationChanges) {
+      this.emit("change", annotationChanges);
     }
   }
 

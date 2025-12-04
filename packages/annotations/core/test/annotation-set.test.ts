@@ -86,21 +86,20 @@ describe("AnnotationSet", () => {
       expect(firstEntry[0]).toBe(secondEntry[0]);
     });
 
-    it("should emit 'added' event when annotation is added", () => {
+    it("should emit 'change' event with added annotations", () => {
       const titleRef = ref(handle, "title");
       const callback = vi.fn();
-      annotationSet.on("added", callback);
+      annotationSet.on("change", callback);
 
       annotationSet.add(titleRef, Comment("A comment"));
 
       expect(callback).toHaveBeenCalledTimes(1);
 
-      const firstCall = callback.mock.calls[0];
+      const change = callback.mock.calls[0][0];
+      expect(change.added).toHaveLength(1);
+      expect(change.removed).toHaveLength(0);
 
-      const addedAnnotations = [...firstCall[0]];
-      expect(addedAnnotations).toHaveLength(1);
-
-      const firstEntry = addedAnnotations[0];
+      const firstEntry = change.added[0];
       expect(firstEntry[0]).toBe(titleRef);
       expect(firstEntry[1].value).toBe("A comment");
     });
@@ -159,24 +158,59 @@ describe("AnnotationSet", () => {
       expect(firstEntry[1]).toEqual(Highlight({ color: "yellow" }));
     });
 
-    it("should emit 'removed' event when annotations are removed", () => {
+    it("should emit 'change' event with removed annotations", () => {
       const titleRef = ref(handle, "title");
       const callback = vi.fn();
-      annotationSet.on("removed", callback);
 
       annotationSet.add(titleRef, Comment("A comment"));
+      annotationSet.on("change", callback);
       annotationSet.remove(titleRef);
 
       expect(callback).toHaveBeenCalledTimes(1);
 
-      const firstCall = callback.mock.calls[0];
-      const removedAnnotations = [...firstCall[0]];
+      const change = callback.mock.calls[0][0];
+      expect(change.removed).toHaveLength(1);
+      expect(change.added).toHaveLength(0);
 
-      expect(removedAnnotations).toHaveLength(1);
-
-      const firstEntry = removedAnnotations[0];
+      const firstEntry = change.removed[0];
       expect(firstEntry[0]).toBe(titleRef);
       expect(firstEntry[1]).toEqual(Comment("A comment"));
+    });
+  });
+
+  describe("change", () => {
+    it("should batch changes", () => {
+      const titleRef = ref(handle, "title");
+      const callback = vi.fn();
+      annotationSet.on("change", callback);
+
+      annotationSet.change(() => {
+        annotationSet.add(titleRef, Comment("Comment 1"));
+        annotationSet.add(titleRef, Comment("Comment 2"));
+      });
+
+      expect(callback).toHaveBeenCalledTimes(1);
+      const change = callback.mock.calls[0][0];
+      expect(change.added).toHaveLength(2);
+    });
+
+    it("should throw on nested changes", () => {
+      expect(() => {
+        annotationSet.change(() => {
+          annotationSet.change(() => {});
+        });
+      }).toThrow("Nested changes are not allowed");
+    });
+
+    it("should not emit if no changes", () => {
+      const callback = vi.fn();
+      annotationSet.on("change", callback);
+
+      annotationSet.change(() => {
+        // do nothing
+      });
+
+      expect(callback).not.toHaveBeenCalled();
     });
   });
 
@@ -197,7 +231,7 @@ describe("AnnotationSet", () => {
       expect([...annotationSet]).toHaveLength(0);
     });
 
-    it("should emit removed event for all cleared annotations", () => {
+    it("should emit change event for all cleared annotations", () => {
       const titleRef = ref(handle, "title");
       const subSet = new AnnotationSet();
 
@@ -206,13 +240,14 @@ describe("AnnotationSet", () => {
       annotationSet.add(subSet);
 
       const callback = vi.fn();
-      annotationSet.on("removed", callback);
+      annotationSet.on("change", callback);
 
       annotationSet.clear();
 
       expect(callback).toHaveBeenCalledTimes(1);
-      const removed = callback.mock.calls[0][0];
-      expect(removed).toHaveLength(2);
+      const change = callback.mock.calls[0][0];
+      expect(change.removed).toHaveLength(2);
+      expect(change.added).toHaveLength(0);
     });
   });
 
@@ -413,18 +448,18 @@ describe("AnnotationSet", () => {
         expect(annotations).toHaveLength(2);
       });
 
-      it("should emit added event for existing subset annotations", () => {
+      it("should emit change event (added) for existing subset annotations", () => {
         const titleRef = ref(handle, "title");
         const handler = vi.fn();
 
         subSet.add(titleRef, Comment("Preset comment"));
-        annotationSet.on("added", handler);
+        annotationSet.on("change", handler);
         annotationSet.add(subSet);
 
         expect(handler).toHaveBeenCalledTimes(1);
-        const addedAnnotations = [...handler.mock.calls[0][0]];
-        expect(addedAnnotations).toHaveLength(1);
-        expect(addedAnnotations[0][1].value).toBe("Preset comment");
+        const change = handler.mock.calls[0][0];
+        expect(change.added).toHaveLength(1);
+        expect(change.added[0][1].value).toBe("Preset comment");
       });
 
       it("should include subset annotations in lookup", () => {
@@ -457,14 +492,14 @@ describe("AnnotationSet", () => {
         const handler = vi.fn();
 
         annotationSet.add(subSet);
-        annotationSet.on("added", handler);
+        annotationSet.on("change", handler);
 
         subSet.add(titleRef, Comment("New comment"));
 
         expect(handler).toHaveBeenCalledTimes(1);
-        const addedAnnotations = [...handler.mock.calls[0][0]];
-        expect(addedAnnotations).toHaveLength(1);
-        expect(addedAnnotations[0][1].value).toBe("New comment");
+        const change = handler.mock.calls[0][0];
+        expect(change.added).toHaveLength(1);
+        expect(change.added[0][1].value).toBe("New comment");
       });
 
       it("should forward removed events from subset", () => {
@@ -473,14 +508,14 @@ describe("AnnotationSet", () => {
 
         subSet.add(titleRef, Comment("To remove"));
         annotationSet.add(subSet);
-        annotationSet.on("removed", handler);
+        annotationSet.on("change", handler);
 
         subSet.remove(titleRef);
 
         expect(handler).toHaveBeenCalledTimes(1);
-        const removedAnnotations = [...handler.mock.calls[0][0]];
-        expect(removedAnnotations).toHaveLength(1);
-        expect(removedAnnotations[0][1].value).toBe("To remove");
+        const change = handler.mock.calls[0][0];
+        expect(change.removed).toHaveLength(1);
+        expect(change.removed[0][1].value).toBe("To remove");
       });
 
       it("should notify subscribers when subset changes", () => {
@@ -502,13 +537,13 @@ describe("AnnotationSet", () => {
 
         subSet.add(nestedSubSet);
         annotationSet.add(subSet);
-        annotationSet.on("added", handler);
+        annotationSet.on("change", handler);
 
         nestedSubSet.add(titleRef, Comment("Deeply nested"));
 
         expect(handler).toHaveBeenCalledTimes(1);
-        const addedAnnotations = [...handler.mock.calls[0][0]];
-        expect(addedAnnotations[0][1].value).toBe("Deeply nested");
+        const change = handler.mock.calls[0][0];
+        expect(change.added[0][1].value).toBe("Deeply nested");
       });
     });
 
@@ -574,8 +609,8 @@ describe("AnnotationSet", () => {
         annotationSet.add(titleRef, Comment("Main comment"));
         annotationSet.add(subSet);
 
-        annotationSet.on("removed", mainRemovedHandler);
-        subSet.on("removed", subsetRemovedHandler);
+        annotationSet.on("change", mainRemovedHandler);
+        subSet.on("change", subsetRemovedHandler);
 
         annotationSet.remove(titleRef);
 
