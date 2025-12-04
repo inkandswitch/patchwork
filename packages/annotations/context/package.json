@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/annotations-traversal",
+  "name": "@patchwork/annotations-context",
   "type": "module",
   "scripts": {
     "build": "tsc",
