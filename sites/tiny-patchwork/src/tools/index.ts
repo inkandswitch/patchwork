@@ -46,13 +46,19 @@ import { plugins as syncIndicatorPlugins } from "@tiny-patchwork/sync-indicator"
 import { plugins as commandsPlugins } from "@orion/commands";
 import "@inkandswitch/tenfold/style.css";
 // @ts-expect-error no types
-import { plugins as tenfoldPlugins } from "@inkandswitch/tenfold";
+const tenfoldPlugins = await import("@inkandswitch/tenfold").then(
+  (mod) => mod.plugins
+);
 // @ts-expect-error no types
 import { plugins as addDocToSidebarButtonPlugins } from "@tiny-patchwork/add-doc-to-sidebar-button";
-// @ts-expect-error no types
-import { plugins as contactPlugins } from "@patchwork/contact";
-// @ts-expect-error no types
-import { plugins as accountPickerPlugins } from "@patchwork/account-picker";
+/* // @ts-expect-error no types
+const contactPlugins = await import("@patchwork/contact").then(
+  (mod) => mod.plugins
+);
+// // @ts-expect-error no types
+const accountPickerPlugins = await import("@patchwork/account-picker").then(
+  (mod) => mod.plugins
+); */
 
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
@@ -78,8 +84,8 @@ export const plugins: Plugin<any>[] = [
   ...codemirrorEmbedPlugins,
   ...tenfoldPlugins,
   ...addDocToSidebarButtonPlugins,
-  ...contactPlugins,
-  ...accountPickerPlugins,
+  //...contactPlugins,
+  //...accountPickerPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",
