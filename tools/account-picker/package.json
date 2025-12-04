@@ -1,6 +1,7 @@
 {
   "name": "@patchwork/account-picker",
   "type": "module",
+  "private": true,
   "main": "./dist/tool.js",
   "exports": {
     ".": {

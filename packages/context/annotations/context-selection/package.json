@@ -1,6 +1,7 @@
 {
   "name": "@patchwork/context-selection",
   "type": "module",
+  "private": true,
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w --preserveWatchOutput",

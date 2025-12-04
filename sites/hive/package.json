@@ -1,6 +1,7 @@
 {
   "name": "hive",
   "type": "module",
+  "private": true,
   "devDependencies": {
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "vite": "^7.1.9",

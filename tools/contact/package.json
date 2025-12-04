@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "contact datatype and viewer",
   "type": "module",
+  "private": true,
   "main": "./dist/tool.js",
   "exports": {
     ".": {

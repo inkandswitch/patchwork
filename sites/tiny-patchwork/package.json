@@ -1,6 +1,7 @@
 {
   "name": "tiny-patchwork",
   "type": "module",
+  "private": true,
   "devDependencies": {
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@eslint/js": "^9.37.0",

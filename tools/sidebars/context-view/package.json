@@ -1,6 +1,7 @@
 {
   "name": "@tiny-patchwork/context-view",
   "type": "module",
+  "private": true,
   "main": "./dist/index.js",
   "scripts": {
     "dev": "vite build --watch",
