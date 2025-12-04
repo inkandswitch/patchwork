@@ -11,6 +11,7 @@ jobs:
   release:
     name: release the core
     runs-on: ubuntu-latest
+    environment: Patchwork
     steps:
       - name: check out the repository
         uses: actions/checkout@v3
