@@ -4,6 +4,7 @@ import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { useCallback, useMemo, useState } from "react";
 import type { TinyPatchworkLayoutDoc } from "./types";
 import type { ToolElement } from "@inkandswitch/patchwork-plugins";
+import { useToolDescriptions } from "@patchwork/react";
 
 type ModuleOption = {
   id: string;
@@ -28,7 +29,7 @@ const DOCUMENT_TOOLBAR_OPTIONS: ModuleOption[] = [
   { id: "spacer", name: "Spacer" },
   { id: "highlight-changes-checkbox", name: "Highlight Changes" },
   { id: "sync-indicator", name: "Sync Indicator" },
-  { id: "add-doc-to-sidebar-button", name: "Add doc to sidebar button" }
+  { id: "add-doc-to-sidebar-button", name: "Add doc to sidebar button" },
 ];
 
 const CONTEXT_TOOL_OPTIONS: ModuleOption[] = [
@@ -183,10 +184,21 @@ export function FrameConfigurator({
   const [accountDoc, changeAccountDoc] =
     useDocument<TinyPatchworkLayoutDoc>(docUrl);
 
+  // Dynamically discover tools marked for titlebar
+  const allTools = useToolDescriptions();
+  const documentToolbarOptions = useMemo(() => {
+    return allTools
+      .filter((tool) => tool.forTitleBar === true)
+      .map((tool) => ({
+        id: tool.id,
+        name: tool.name || tool.id,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [allTools]);
+
   const frameOptions = FRAME_TOOL_OPTIONS;
   const sidebarOptions = ACCOUNT_SIDEBAR_OPTIONS;
   const contextSidebarOptions = CONTEXT_SIDEBAR_OPTIONS;
-  const documentToolbarOptions = DOCUMENT_TOOLBAR_OPTIONS;
   const contextToolOptions = CONTEXT_TOOL_OPTIONS;
 
   const setField = useCallback(

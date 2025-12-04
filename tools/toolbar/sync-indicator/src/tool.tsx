@@ -11,6 +11,7 @@ export const plugins = [
     icon: "Wifi",
     supportedDataTypes: "*" as const,
     unlisted: true,
+    forTitleBar: true,
     async load(): Promise<ToolImplementation> {
       return (handle, element) => {
         element.style.width = "fit-content";

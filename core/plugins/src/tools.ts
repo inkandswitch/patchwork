@@ -29,6 +29,7 @@ export type ToolDescription = PluginDescription & {
   name: string;
   icon?: string;
   unlisted?: boolean;
+  forTitleBar?: boolean;
 };
 
 export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;

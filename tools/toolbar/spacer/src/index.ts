@@ -12,5 +12,6 @@ export const plugins: Plugin<any>[] = [
       return renderSpacer;
     },
     unlisted: true,
+    forTitleBar: true,
   },
 ];
