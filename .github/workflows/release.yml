@@ -1,0 +1,51 @@
+name: release the core packages
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: release the core
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out the repository
+        uses: actions/checkout@v3
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: install javascript
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: install dependencies
+        run: pnpm install
+
+      - name: build everything
+        run: pnpm build
+
+      - name: process changesets
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: pnpm publish-core
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: tell discord
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.PATCHWORK_FEED_WEBHOOK_URL }}
+          content: "hehe new versions of the core packages have been release"
+          username: little rabbit
+          avatar-url: https://em-content.zobj.net/source/animated-noto-color-emoji/427/rabbit_1f407.gif
