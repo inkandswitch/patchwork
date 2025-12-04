@@ -6,7 +6,7 @@
   "main": "index.js",
   "packageManager": "pnpm@10.24.0",
   "scripts": {
-    "build": "NODE_OPTIONS='--max-old-space-size=8192' pnpm -r build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 pnpm -r build",
     "clean": "rm -rf **/node_modules **/dist",
     "dev": "pnpm -r --filter ...{sites/${SITE:-tiny-patchwork}}... --parallel dev",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md,html,yaml,yml}\"",
@@ -29,6 +29,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
     "@vitest/ui": "^3.2.4",
+    "cross-env": "^10.1.0",
     "prettier": "^3.7.3",
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
