@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./Avatar";
 import { User as UserIcon } from "lucide-react";
 import { generateColorFromString } from "../ui";
 import { useMemo } from "react";
-import { automergeUrlToServiceWorkerUrl } from "@patchwork/filesystem";
+import { automergeUrlToServiceWorkerUrl } from "@inkandswitch/patchwork-filesystem";
 import type { TinyPatchworkLayoutDoc } from "../types";
 
 // Extend the Window interface to include accountDocHandle

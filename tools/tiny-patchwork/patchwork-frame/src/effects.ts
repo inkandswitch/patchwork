@@ -8,13 +8,13 @@ import {
   $selectedDocHandles,
   $selectedDocUrls,
 } from "@patchwork/context-selection";
-import { FolderDoc, HasPatchworkMetadata } from "@patchwork/filesystem";
+import { FolderDoc, HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import {
   DataTypeDescription,
   DataTypeImplementation,
   getRegistry,
-} from "@patchwork/plugins";
-import { PluginRegistry } from "@patchwork/plugins/dist/registry/registry";
+} from "@inkandswitch/patchwork-plugins";
+import { PluginRegistry } from "@inkandswitch/patchwork-plugins/dist/registry/registry";
 import { useEffect } from "react";
 
 export const useUpdateDocLinksOfActiveDocumentsEffect = (

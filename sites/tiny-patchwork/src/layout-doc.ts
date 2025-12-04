@@ -2,7 +2,7 @@ import {
   FolderDoc,
   ModuleSettingsDoc,
   type HasPatchworkMetadata,
-} from "@patchwork/filesystem";
+} from "@inkandswitch/patchwork-filesystem";
 import { AutomergeUrl, isValidAutomergeUrl, Repo } from "@automerge/vanillajs";
 import type { AutomergeRepoKeyhive } from "virtual:patchwork/setup";
 

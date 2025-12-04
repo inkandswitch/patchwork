@@ -3,12 +3,12 @@ import type {
   DataTypeDescription,
   Plugin,
   PluginDescription,
-} from "@patchwork/plugins";
+} from "@inkandswitch/patchwork-plugins";
 import {
   getRegistry,
   getAllRegistries,
   getSupportedToolsForType,
-} from "@patchwork/plugins";
+} from "@inkandswitch/patchwork-plugins";
 import { createEffect, onCleanup, createMemo } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 

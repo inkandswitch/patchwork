@@ -1,6 +1,6 @@
 import type { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
 import type { LoadedPlugin, PluginDescription } from "./registry/index.js";
-import { getType, type HasPatchworkMetadata } from "@patchwork/filesystem";
+import { getType, type HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import { getRegistry } from "./registry/index.js";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";

@@ -1,6 +1,9 @@
 {
-  "name": "@patchwork/bootloader",
+  "name": "@inkandswitch/patchwork-bootloader",
+  "version": "0.0.0",
+  "author": "chee",
   "type": "module",
+  "license": "MIT",
   "devDependencies": {
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@keyhive/keyhive": "catalog:",
@@ -46,7 +49,6 @@
     "@automerge/vanillajs": "catalog:",
     "@keyhive/keyhive": "catalog:"
   },
-  "author": "Ink & Switch",
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w --preserveWatchOutput"

@@ -14,7 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "@automerge/automerge-repo-solid-primitives": "catalog:",
-    "@patchwork/plugins": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
     "solid-js": "^1.9.0"
   }
 }

@@ -1,8 +1,8 @@
 import "./styles.css";
 import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
-import { ToolElement } from "@patchwork/plugins";
+import { getType, HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
+import { ToolElement } from "@inkandswitch/patchwork-plugins";
 import { useDatatype } from "@patchwork/react";
 
 export const DocumentTitle = ({

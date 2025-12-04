@@ -5,7 +5,7 @@ export function serviceworker(): Plugin {
   const moduleId = "service-worker.js";
   const path = `/${moduleId}`;
   const ids = [moduleId, path];
-  const serviceWorkerExport = "@patchwork/bootloader/service-worker";
+  const serviceWorkerExport = "@inkandswitch/patchwork-bootloader/service-worker";
   async function transform(
     resolve: (source: string) => Promise<ResolvedId | null>,
     fs: RollupFsModule

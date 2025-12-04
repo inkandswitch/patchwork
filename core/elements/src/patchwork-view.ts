@@ -9,13 +9,13 @@ import {
   getType,
   type HasPatchworkMetadata,
   ModuleWatcher,
-} from "@patchwork/filesystem";
+} from "@inkandswitch/patchwork-filesystem";
 import {
   getFallbackTool,
   getRegistry,
   isLoadablePlugin,
   type Tool,
-} from "@patchwork/plugins";
+} from "@inkandswitch/patchwork-plugins";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 

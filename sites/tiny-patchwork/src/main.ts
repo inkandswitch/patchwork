@@ -4,17 +4,17 @@ import { CONTEXT, Context } from "@patchwork/context";
 import {
   registerPatchworkViewElement,
   openDocument,
-} from "@patchwork/elements";
+} from "@inkandswitch/patchwork-elements";
 import {
   ModuleWatcher,
   createFilesystemHandoffHandler,
-} from "@patchwork/filesystem";
-import setup from "@patchwork/bootloader";
+} from "@inkandswitch/patchwork-filesystem";
+import setup from "@inkandswitch/patchwork-bootloader";
 import {
   LoadedPlugin,
   PluginDescription,
   registerPlugins,
-} from "@patchwork/plugins";
+} from "@inkandswitch/patchwork-plugins";
 import {
   getOrCreateLayoutDocHandle,
   TinyPatchworkLayoutDoc,

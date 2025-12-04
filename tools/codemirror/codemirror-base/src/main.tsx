@@ -1,6 +1,6 @@
 /** @jsxImportSource solid-js */
 import { render } from "solid-js/web";
-import type { ToolImplementation } from "@patchwork/plugins";
+import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
 import type { TextDoc } from "./tool.tsx";
 
 export const plugins = [

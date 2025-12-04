@@ -2,7 +2,7 @@
   "name": "hive",
   "type": "module",
   "devDependencies": {
-    "@patchwork/bootloader": "workspace:^",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
     "vite": "^7.1.9",
     "vite-plugin-module-alias": "^1.3.5",
     "vite-plugin-wasm": "^3.4.1"
@@ -20,8 +20,8 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.8",
     "@keyhive/keyhive": "catalog:",
-    "@patchwork/elements": "workspace:^",
-    "@patchwork/filesystem": "workspace:^",
-    "@patchwork/plugins": "workspace:^"
+    "@inkandswitch/patchwork-elements": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^"
   }
 }

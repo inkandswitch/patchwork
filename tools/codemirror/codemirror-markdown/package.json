@@ -34,8 +34,8 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.4",
     "@lezer/highlight": "^1.2.1",
-    "@patchwork/bootloader": "workspace:^",
-    "@patchwork/plugins": "workspace:^"
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^"
   },
   "devDependencies": {
     "@babel/core": "^7.28.4",

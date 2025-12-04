@@ -9,10 +9,10 @@ const externals = [
   "@automerge/automerge-repo-keyhive",
   "@keyhive/keyhive",
   "@keyhive/keyhive/slim",
-  "@patchwork/bootloader",
-  "@patchwork/elements",
-  "@patchwork/filesystem",
-  "@patchwork/plugins",
+  "@inkandswitch/patchwork-bootloader",
+  "@inkandswitch/patchwork-elements",
+  "@inkandswitch/patchwork-filesystem",
+  "@inkandswitch/patchwork-plugins",
 
   // sad
   "@codemirror/state",

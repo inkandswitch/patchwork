@@ -2,7 +2,7 @@ import type {
   DocLink,
   FolderDoc,
   HasPatchworkMetadata,
-} from "@patchwork/filesystem";
+} from "@inkandswitch/patchwork-filesystem";
 import { For, Match, Suspense, Switch } from "solid-js";
 import {
   filter,
@@ -16,11 +16,11 @@ import {
   type DocHandle,
   type Repo,
 } from "@automerge/automerge-repo";
-import type { OpenDocumentEventDetail } from "@patchwork/elements";
+import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 import Folder from "./folder.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import { getRegistry, type DataType } from "@patchwork/plugins";
+import { getRegistry, type DataType } from "@inkandswitch/patchwork-plugins";
 
 export interface DocumentListProps {
   handle: DocHandle<FolderDoc>;

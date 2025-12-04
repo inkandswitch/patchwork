@@ -8,7 +8,7 @@ import {
   useReactive,
   useSubcontext,
 } from "@patchwork/context-react";
-import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
+import { getType, HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import { useEffect, useState } from "react";
 import { relativeTime } from "@patchwork/util/src/relative-time";
 import { toolify } from "@patchwork/react";

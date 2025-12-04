@@ -6,7 +6,7 @@ import {
 import { type ContactDoc } from "../types";
 import { Avatar, AvatarFallback, AvatarImage } from "./Avatar";
 import { User as UserIcon } from "lucide-react";
-import { automergeUrlToServiceWorkerUrl } from "@patchwork/filesystem";
+import { automergeUrlToServiceWorkerUrl } from "@inkandswitch/patchwork-filesystem";
 
 export const InlineContactAvatar = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [contact] = useDocument<ContactDoc>(docUrl);

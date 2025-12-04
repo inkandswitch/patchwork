@@ -1,5 +1,5 @@
 import type { DocHandle } from "@automerge/automerge-repo";
-import type { PatchworkViewElement } from "@patchwork/elements";
+import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements";
 import { makeDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
 import { markdownExtensions } from "@grjte/codemirror-markdown/extension";
 import { CodeMirror } from "@grjte/codemirror-base/component";

@@ -7,7 +7,7 @@ import {
   type Repo,
 } from "@automerge/automerge-repo";
 import type { UnixFileEntry, FolderDoc } from "./types.js";
-import type { HandoffHandler } from "@patchwork/bootloader/types";
+import type { HandoffHandler } from "@inkandswitch/patchwork-bootloader/types";
 
 export async function findFileHandleInFolderHandle(
   repo: Repo,

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { TinyPatchworkLayoutDoc } from "./types";
 import { useTool } from "@patchwork/react";
 import { toolify } from "@patchwork/react";
-import "@patchwork/elements";
+import "@inkandswitch/patchwork-elements";
 
 const ContextSidebar = ({
   docUrl: accountDocUrl,

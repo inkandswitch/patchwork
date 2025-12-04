@@ -1,20 +1,20 @@
 import {
   createFilesystemHandoffHandler,
   ModuleWatcher,
-} from "@patchwork/filesystem";
+} from "@inkandswitch/patchwork-filesystem";
 
-import { registerPlugins } from "@patchwork/plugins";
+import { registerPlugins } from "@inkandswitch/patchwork-plugins";
 import {
   IndexedDBStorageAdapter,
   Repo,
   WebSocketClientAdapter,
   type AutomergeUrl,
 } from "@automerge/vanillajs";
-import { registerPatchworkViewElement } from "@patchwork/elements";
+import { registerPatchworkViewElement } from "@inkandswitch/patchwork-elements";
 import { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
-import bootstrap from "@patchwork/bootloader";
+import bootstrap from "@inkandswitch/patchwork-bootloader";
 
 const storage = new IndexedDBStorageAdapter("hive");
 const network = new WebSocketClientAdapter("wss://keyhive.sync.automerge.org");

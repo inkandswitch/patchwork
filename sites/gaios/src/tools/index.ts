@@ -1,4 +1,4 @@
-import { Plugin } from "@patchwork/plugins";
+import { Plugin } from "@inkandswitch/patchwork-plugins";
 // @ts-expect-error no types
 import { plugins as patchworkFramePlugins } from "@tiny-patchwork/patchwork-frame";
 // @ts-expect-error no types

@@ -1,4 +1,4 @@
-import { DataTypeImplementation } from "@patchwork/plugins";
+import { DataTypeImplementation } from "@inkandswitch/patchwork-plugins";
 
 export type CommentsViewDoc = Record<string, never>;
 

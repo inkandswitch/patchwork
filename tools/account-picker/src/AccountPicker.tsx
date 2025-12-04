@@ -1,8 +1,8 @@
 import { ChangeEvent, useState } from "react";
 import { useRepo, useDocument } from "@automerge/automerge-repo-react-hooks";
 import type { DocHandle } from "@automerge/automerge-repo";
-import type { PatchworkViewElement } from "@patchwork/elements";
-import { HasPatchworkMetadata } from "@patchwork/filesystem/dist/metadata";
+import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements";
+import { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem/dist/metadata";
 import {
   ContactDoc,
   RegisteredContactDoc,

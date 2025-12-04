@@ -20,7 +20,7 @@ import {
   DiffAnnotation,
   getElementsWithDiff,
 } from "@patchwork/context-diff";
-import { getRegistry } from "@patchwork/plugins";
+import { getRegistry } from "@inkandswitch/patchwork-plugins";
 
 /** Styles */
 import { createSignal, onMount } from "solid-js";

@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
-import patchwork from "@patchwork/bootloader/vite";
+import patchwork from "@inkandswitch/patchwork-bootloader/vite";
 
 export default defineConfig({
   plugins: [

@@ -4,7 +4,7 @@ import { solid } from "./plugin-solid.ts";
 import pushworkSync from "./plugin-pushwork-sync.ts";
 import pkgJSON from "../package.json" with { type: "json" };
 import { existsSync, rmSync } from "node:fs";
-import externals from "@patchwork/bootloader/externals";
+import externals from "@inkandswitch/patchwork-bootloader/externals";
 
 const pushworking = process.argv.includes("pushwork") || process.env.PUSHWORK;
 

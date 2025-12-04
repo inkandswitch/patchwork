@@ -1,4 +1,4 @@
-import type { DataTypeImplementation } from "@patchwork/plugins";
+import type { DataTypeImplementation } from "@inkandswitch/patchwork-plugins";
 
 export type MarkdownDoc = {
   content: string;

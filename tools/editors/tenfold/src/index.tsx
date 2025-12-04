@@ -6,7 +6,7 @@ import {
   type LoadablePlugin,
   type ToolDescription,
   type ToolImplementation,
-} from "@patchwork/plugins";
+} from "@inkandswitch/patchwork-plugins";
 import { render } from "solid-js/web";
 
 export type TenfoldLetterer = (

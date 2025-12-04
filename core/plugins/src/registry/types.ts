@@ -10,7 +10,7 @@ export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
 
 /**
  * Map of registry types and their corresponding plugin description types
- * can be extended with `declare module "@patchwork/plugins" { ... }`
+ * can be extended with `declare module "@inkandswitch/patchwork-plugins" { ... }`
  * to add new registry types in userland while maintaining type safety.
  */
 export type RegistryTypeMap = {

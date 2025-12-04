@@ -1,6 +1,6 @@
 import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
 import type { Tenfold } from "./index.tsx";
-import type { PatchworkViewElement } from "@patchwork/elements";
+import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements";
 import {
   makeDocumentProjection,
   useDocument,
@@ -49,7 +49,7 @@ import { bracketMatching, indentOnInput } from "@codemirror/language";
 import { Compartment, EditorState } from "@codemirror/state";
 import { search, searchKeymap } from "@codemirror/search";
 import { addLoopBudgetInstrumentation } from "./instrumenter.ts";
-import type { FolderDoc } from "@patchwork/filesystem";
+import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
 import { makePersisted } from "@solid-primitives/storage";
 
 const innerWorker = new Worker(

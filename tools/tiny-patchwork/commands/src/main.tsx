@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import type { ToolImplementation } from "@patchwork/plugins";
+import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
 import styles from "./main.css";
 import { initCommands } from "./commands.ts";
 import type { DocHandle, Repo } from "@automerge/automerge-repo";

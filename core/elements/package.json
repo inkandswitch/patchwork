@@ -1,16 +1,16 @@
 {
-  "name": "@patchwork/elements",
-  "version": "1.0.0",
+  "name": "@inkandswitch/patchwork-elements",
+  "version": "0.0.0",
+  "author": "Ink & Switch",
   "type": "module",
   "description": "",
   "main": "dist/index.js",
   "keywords": [],
-  "author": "Ink & Switch",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@automerge/automerge-repo": "catalog:",
-    "@patchwork/filesystem": "workspace:^",
-    "@patchwork/plugins": "workspace:^"
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^"
   },
   "scripts": {
     "build": "tsc",

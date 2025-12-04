@@ -7,8 +7,8 @@ import type {
   ToolImplementation,
   ToolElement,
   Plugin,
-} from "@patchwork/plugins";
-import { getRegistry } from "@patchwork/plugins";
+} from "@inkandswitch/patchwork-plugins";
+import { getRegistry } from "@inkandswitch/patchwork-plugins";
 import { useEffect, useState, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
@@ -107,7 +107,7 @@ export type ReactToolProps = {
 };
 
 /**
- * @import {LegacyEditorProps, ToolImplementation} from "@patchwork/plugins"
+ * @import {LegacyEditorProps, ToolImplementation} from "@inkandswitch/patchwork-plugins"
  */
 
 export function toolify(

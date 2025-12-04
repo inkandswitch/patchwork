@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import solid from "vite-plugin-solid";
-import externals from "@patchwork/bootloader/externals";
+import externals from "@inkandswitch/patchwork-bootloader/externals";
 
 export default defineConfig({
   base: "./",

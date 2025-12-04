@@ -10,11 +10,11 @@
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
-    "@patchwork/plugins": "workspace:^"
+    "@inkandswitch/patchwork-plugins": "workspace:^"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
-    "@patchwork/bootloader": "workspace:^",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@typescript-eslint/parser": "^8.40.0",
     "eslint": "^9.34.0",
     "globals": "^16.4.0",

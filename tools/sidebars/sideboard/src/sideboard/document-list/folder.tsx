@@ -4,7 +4,7 @@ import {
   type Repo,
 } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-solid-primitives";
-import type { FolderDoc } from "@patchwork/filesystem";
+import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
 import { createEffect, createSignal, onMount, Suspense } from "solid-js";
 import { DocumentList } from "./document-list.tsx";
 import {
@@ -16,7 +16,7 @@ import {
 import CreateNew from "../create-new.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import type { OpenDocumentEventDetail } from "@patchwork/elements";
+import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 
 export default function Folder(props: {
   url: AutomergeUrl;

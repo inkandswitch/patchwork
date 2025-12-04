@@ -27,6 +27,7 @@
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "@vitest/ui": "^3.2.4",
     "prettier": "^3.7.3",
     "typescript": "^5.9.3",

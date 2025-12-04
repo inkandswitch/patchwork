@@ -3,7 +3,7 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { useCallback, useMemo, useState } from "react";
 import type { TinyPatchworkLayoutDoc } from "./types";
-import type { ToolElement } from "@patchwork/plugins";
+import type { ToolElement } from "@inkandswitch/patchwork-plugins";
 
 type ModuleOption = {
   id: string;

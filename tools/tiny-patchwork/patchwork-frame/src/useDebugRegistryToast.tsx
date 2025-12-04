@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { getAllRegistries, PluginRegistry } from "@patchwork/plugins";
+import { getAllRegistries, PluginRegistry } from "@inkandswitch/patchwork-plugins";
 
 // NOTE: THIS IS GARBAGE CODE AND WILL BE REMOVED
 // Written by Claude

@@ -12,12 +12,12 @@ type TinyPatchworkAccountDoc = {
 import type { PatchworkToolProps } from "../types.ts";
 import { filter, setFilter } from "./state.ts";
 import CreateNew from "./create-new.tsx";
-import type { FolderDoc } from "@patchwork/filesystem";
+import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
 import { createOpenEvent } from "./events.ts";
 import { SearchIcon } from "./icons.tsx";
 import { DocumentList } from "./document-list/document-list.tsx";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import type { OpenDocumentEventDetail } from "@patchwork/elements";
+import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 
 export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
   const doc = makeDocumentProjection(props.handle);
@@ -85,7 +85,7 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
               tool-id="contact-avatar"
             />
         </button>
-        
+
         <button
           onClick={() =>
             open({

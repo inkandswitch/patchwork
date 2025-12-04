@@ -1,4 +1,4 @@
-import externals from "@patchwork/bootloader/externals";
+import externals from "@inkandswitch/patchwork-bootloader/externals";
 import { defineConfig } from "vite";
 
 export default defineConfig({

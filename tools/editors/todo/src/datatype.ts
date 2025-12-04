@@ -1,4 +1,4 @@
-import { DataTypeImplementation } from "@patchwork/plugins";
+import { DataTypeImplementation } from "@inkandswitch/patchwork-plugins";
 import { TodoDoc } from "./Todo";
 
 export const TodoDataType: DataTypeImplementation<TodoDoc> = {

@@ -31,8 +31,8 @@
   "dependencies": {
     "@automerge/automerge-repo-solid-primitives": "^2.4.0",
     "@kobalte/core": "^0.13.11",
-    "@patchwork/bootloader": "workspace:^",
-    "@patchwork/elements": "workspace:^",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-elements": "workspace:^",
     "solid-js": "^1.9.9"
   },
   "devDependencies": {
@@ -43,8 +43,8 @@
     "@node-types/node": "npm:@types/node@^24.9.1",
     "@patchwork/context": "workspace:^",
     "@patchwork/context-selection": "workspace:^",
-    "@patchwork/filesystem": "workspace:^",
-    "@patchwork/plugins": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
     "@patchwork/solid": "workspace:^",
     "@types/babel__core": "^7.20.5",
     "babel-preset-solid": "^1.9.9",

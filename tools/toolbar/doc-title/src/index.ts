@@ -1,4 +1,4 @@
-import { Plugin } from "@patchwork/plugins";
+import { Plugin } from "@inkandswitch/patchwork-plugins";
 import { toolify } from "@patchwork/react";
 
 export const plugins: Plugin<any>[] = [

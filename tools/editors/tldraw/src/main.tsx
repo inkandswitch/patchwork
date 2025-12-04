@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import type { ToolImplementation } from "@patchwork/plugins";
+import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
 import { dataType as datatype } from "./datatype.ts";
 import { RepoContext } from "@automerge/react";
 import "./main.css";
