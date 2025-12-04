@@ -48,7 +48,7 @@ export class AnnotationsOnRef<T>
   lookup<U>(type: AnnotationType<U>): U | undefined {
     for (const [, annotation] of this.#source.entriesOnRef(this.#ref)) {
       if (annotation.type.id === type.id) {
-        return annotation.value;
+        return annotation.value as U;
       }
     }
     return undefined;
@@ -61,14 +61,13 @@ export class AnnotationsOnRef<T>
     const result: U[] = [];
     for (const [, annotation] of this.#source.entriesOnRef(this.#ref)) {
       if (annotation.type.id === type.id) {
-        result.push(annotation.value);
+        result.push(annotation.value as U);
       }
     }
     return result;
   }
 
   /**
-   * @hidden
    * Iterator for all annotations of a specific type
    */
   *entriesOfType<U>(
@@ -82,7 +81,6 @@ export class AnnotationsOnRef<T>
   }
 
   /**
-   * @hidden
    * Iterator for all annotations on a specific ref
    */
   *entriesOnRef(ref: Ref<any>): Iterable<[Ref<any>, AnnotationValue<any>]> {
@@ -90,6 +88,18 @@ export class AnnotationsOnRef<T>
     if (ref === this.#ref) {
       yield* this.#source.entriesOnRef(ref);
     }
+  }
+
+  /**
+   * Iterator for all refs (only yields the single ref this view is filtered to)
+   */
+  get refs(): Iterable<Ref<T>> {
+    const ref = this.#ref;
+    return {
+      *[Symbol.iterator]() {
+        yield ref;
+      },
+    };
   }
 
   /**

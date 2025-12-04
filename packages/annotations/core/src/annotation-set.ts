@@ -16,19 +16,6 @@ import { AnnotationsOnRef } from "./views/annotations-on-ref";
 import { FilteredAnnotationView } from "./views/filtered-annotation-view";
 
 /**
- * Type guard to check if a value is an AnnotationSource
- */
-function isAnnotationSource(value: unknown): value is AnnotationSource {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    typeof (value as AnnotationSource).entriesOfType === "function" &&
-    typeof (value as AnnotationSource).entriesOnRef === "function" &&
-    Symbol.iterator in value
-  );
-}
-
-/**
  * A set of annotations that can be queried and filtered
  *
  * Internal storage:
@@ -487,6 +474,36 @@ export class AnnotationSet
     for (const subSet of this.#addedSources) {
       yield* subSet.entriesOnRef(ref);
     }
+  }
+
+  /**
+   * Iterator for all unique refs that have annotations
+   */
+  get refs(): Iterable<Ref<unknown>> {
+    const self = this;
+    return {
+      *[Symbol.iterator]() {
+        const seenRefs = new Set<Ref<unknown>>();
+
+        // Yield refs from local storage
+        for (const ref of self.#typeIdsByRef.keys()) {
+          if (!seenRefs.has(ref)) {
+            seenRefs.add(ref);
+            yield ref;
+          }
+        }
+
+        // Yield refs from sub-sources
+        for (const subSource of self.#addedSources) {
+          for (const ref of subSource.refs) {
+            if (!seenRefs.has(ref)) {
+              seenRefs.add(ref);
+              yield ref;
+            }
+          }
+        }
+      },
+    };
   }
 
   /**

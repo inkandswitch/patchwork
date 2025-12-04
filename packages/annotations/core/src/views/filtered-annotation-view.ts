@@ -134,6 +134,25 @@ export class FilteredAnnotationView
   }
 
   /**
+   * Iterator for all unique refs that have annotations matching the filter
+   */
+  get refs(): Iterable<Ref<unknown>> {
+    const self = this;
+    return {
+      *[Symbol.iterator]() {
+        const seenRefs = new Set<Ref<unknown>>();
+
+        for (const [ref, annotation] of self.#source) {
+          if (self.#filter(ref, annotation) && !seenRefs.has(ref)) {
+            seenRefs.add(ref);
+            yield ref;
+          }
+        }
+      },
+    };
+  }
+
+  /**
    * Make the view iterable
    * Filters the source's iterator by the predicate
    */

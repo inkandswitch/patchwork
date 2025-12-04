@@ -13,9 +13,13 @@ export type AnnotationSource<
 
   entriesOfType<T>(
     type: AnnotationType<T>
-  ): Iterable<[Ref<any>, AnnotationValue<T>]>;
+  ): Iterable<[Ref<RefType>, AnnotationValue<T>]>;
 
-  entriesOnRef(ref: Ref<any>): Iterable<[Ref<any>, AnnotationValue<any>]>;
+  entriesOnRef(
+    ref: Ref<RefType>
+  ): Iterable<[Ref<RefType>, AnnotationValue<AnnotationValueType>]>;
+
+  refs: Iterable<Ref<RefType>>;
 };
 
 export type Annotation<RefType = unknown, AnnotationValueType = unknown> = [

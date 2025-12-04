@@ -74,7 +74,26 @@ export class AnnotationsOfType<T>
   }
 
   /**
-   * @hidden
+   * Iterator for all unique refs that have annotations of this type
+   */
+  get refs(): Iterable<Ref<unknown>> {
+    const source = this.#source;
+    const type = this.#type;
+    return {
+      *[Symbol.iterator]() {
+        const seenRefs = new Set<Ref<unknown>>();
+
+        for (const [ref] of source.entriesOfType(type)) {
+          if (!seenRefs.has(ref)) {
+            seenRefs.add(ref);
+            yield ref;
+          }
+        }
+      },
+    };
+  }
+
+  /**
    * Iterator for all annotations of a specific type
    */
   *entriesOfType<U>(
@@ -87,7 +106,6 @@ export class AnnotationsOfType<T>
   }
 
   /**
-   * @hidden
    * Iterator for all annotations on a specific ref
    */
   *entriesOnRef(ref: Ref<any>): Iterable<[Ref<any>, AnnotationValue<any>]> {
