@@ -1,7 +1,12 @@
-export type { AnnotationEvents } from "./annotation-events";
-export type { AnnotationCollection as AnnotationsCollection } from "./annotation-collection";
+export type {
+  AnnotationSource,
+  AnnotationCollection,
+  AnnotationEvents,
+} from "./types";
 export { AnnotationSet } from "./annotation-set";
-export { AnnotationsOfType, AnnotationsOnRef } from "./annotation-views";
+export { type AnnotationsOfType } from "./views/annotations-of-type";
+export { type AnnotationsOnRef } from "./views/annotations-on-ref";
+export { type FilteredAnnotationView } from "./views/filtered-annotation-view";
 export {
   defineAnnotationType,
   type AnnotationType,
