@@ -6,17 +6,19 @@
     ".": {
       "import": "./dist/tool.js",
       "source": "./src/tool.tsx"
-    }
+    },
+    "./style.css": "./dist/tool.css"
   },
   "scripts": {
-    "build": "vite build",
-    "dev": "vite build --watch",
+    "build": "node esbuild/build.ts",
+    "dev": "node esbuild/watch.ts",
     "pushwatch": "pnpm dev pushwork"
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@patchwork/bootloader": "workspace:^",
     "@patchwork/contact": "workspace:^",
     "@patchwork/elements": "workspace:^",
     "@patchwork/filesystem": "workspace:^",
@@ -28,19 +30,19 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "esbuild-plugin-tailwindcss": "^2.1.0",
     "lucide-react": "^0.456.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "tailwindcss": "^4.1.15",
-    "tailwind-merge": "^1.14.0"
+    "tailwind-merge": "^1.14.0",
+    "tailwindcss": "^4.1.15"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.17",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "^5.0.4",
-    "typescript": "^5.8.3",
-    "vite": "^7.1.9",
-    "vite-plugin-css-injected-by-js": "^3.5.2"
+    "esbuild": "^0.23.1",
+    "typescript": "^5.8.3"
   }
 }

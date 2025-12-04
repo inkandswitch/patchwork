@@ -6,7 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * TODO: establish a system for referencing styles that are shared across multiple tools.
+ * TODO: establish a system for referencing styles that
+ * are shared across multiple tools.
  * This palette is also defined in the account-picker.
  *
  * User color palette for presence indicators (cursors, avatars, etc.)
