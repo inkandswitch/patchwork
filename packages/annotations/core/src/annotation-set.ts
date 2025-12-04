@@ -50,7 +50,7 @@ export class AnnotationSet
   #addedSources: AnnotationSource[] = [];
 
   // Cleanup functions for event listeners on sub-sets
-  #subSetCleanups: Map<AnnotationSource, () => void> = new Map();
+  subSourceCleanups: Map<AnnotationSource, () => void> = new Map();
 
   /**
    * Add an annotation set as a sub-set
@@ -122,7 +122,7 @@ export class AnnotationSet
     source.on("removed", onRemoved);
 
     // Store cleanup function
-    this.#subSetCleanups.set(source, () => {
+    this.subSourceCleanups.set(source, () => {
       source.off("added", onAdded);
       source.off("removed", onRemoved);
     });
@@ -223,6 +223,47 @@ export class AnnotationSet
   }
 
   /**
+   * Remove all annotations and sub-sources from this set.
+   * This removes all locally stored annotations and removes all added sub-sources.
+   */
+  clear(): void {
+    const removed: Annotation[] = [];
+
+    // Collect local annotations
+    for (const [, typeMap] of this.#annotationsByTypeId) {
+      for (const [ref, annotations] of typeMap) {
+        for (const annotation of annotations) {
+          removed.push([ref, annotation]);
+        }
+      }
+    }
+
+    // Collect subset annotations and cleanup
+    for (const source of this.#addedSources) {
+      for (const [ref, ann] of source) {
+        removed.push([ref, ann]);
+      }
+
+      const cleanup = this.subSourceCleanups.get(source);
+      if (cleanup) {
+        cleanup();
+      }
+    }
+
+    // Clear state
+    this.#annotationsByTypeId.clear();
+    this.#typeIdsByRef.clear();
+    this.#addedSources = [];
+    this.subSourceCleanups.clear();
+
+    // Emit events
+    if (removed.length > 0) {
+      this.emit("removed", removed);
+      this.notifySubscribers();
+    }
+  }
+
+  /**
    * Remove all annotations for a ref
    */
   #removeAllFromRef(ref: Ref<any>): Array<[Ref, AnnotationValue<any>]> {
@@ -309,10 +350,10 @@ export class AnnotationSet
     this.#addedSources.splice(index, 1);
 
     // Clean up event listeners
-    const cleanup = this.#subSetCleanups.get(source);
+    const cleanup = this.subSourceCleanups.get(source);
     if (cleanup) {
       cleanup();
-      this.#subSetCleanups.delete(source);
+      this.subSourceCleanups.delete(source);
     }
 
     // Collect all annotations that were in this source

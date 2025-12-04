@@ -180,6 +180,42 @@ describe("AnnotationSet", () => {
     });
   });
 
+  describe("clear", () => {
+    it("should remove all annotations and sub-sources", () => {
+      const titleRef = ref(handle, "title");
+      const itemRef = ref(handle, "items", 0);
+      const subSet = new AnnotationSet();
+
+      annotationSet.add(titleRef, Comment("Main comment"));
+      subSet.add(itemRef, Comment("Subset comment"));
+      annotationSet.add(subSet);
+
+      expect([...annotationSet]).toHaveLength(2);
+
+      annotationSet.clear();
+
+      expect([...annotationSet]).toHaveLength(0);
+    });
+
+    it("should emit removed event for all cleared annotations", () => {
+      const titleRef = ref(handle, "title");
+      const subSet = new AnnotationSet();
+
+      annotationSet.add(titleRef, Comment("Main"));
+      subSet.add(titleRef, Comment("Subset"));
+      annotationSet.add(subSet);
+
+      const callback = vi.fn();
+      annotationSet.on("removed", callback);
+
+      annotationSet.clear();
+
+      expect(callback).toHaveBeenCalledTimes(1);
+      const removed = callback.mock.calls[0][0];
+      expect(removed).toHaveLength(2);
+    });
+  });
+
   describe("ofType", () => {
     it("should filter annotations by type", () => {
       const titleRef = ref(handle, "title");
