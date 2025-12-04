@@ -1,7 +1,4 @@
-import { createRoot } from "react-dom/client";
 import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import { RepoContext } from "@automerge/automerge-repo-react-hooks";
-import { AccountPicker } from "./AccountPicker";
 
 export const plugins = [
   {
@@ -10,6 +7,9 @@ export const plugins = [
     name: "Account Picker",
     supportedDataTypes: ["account"],
     async load(): Promise<ToolImplementation> {
+      const {createRoot} = await import("react-dom/client");
+      const { RepoContext } = await import("@automerge/automerge-repo-react-hooks");
+      const {AccountPicker} = await import("./AccountPicker")
       return (handle, element) => {
         const root = createRoot(element);
         root.render(
