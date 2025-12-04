@@ -3,7 +3,7 @@ import {
   useDocument,
   useDocHandle,
 } from "@automerge/automerge-repo-react-hooks";
-import { type ContactDoc } from "../datatype";
+import { type ContactDoc } from "../types";
 import { Avatar, AvatarFallback, AvatarImage } from "./Avatar";
 import { User as UserIcon } from "lucide-react";
 import { automergeUrlToServiceWorkerUrl } from "@patchwork/filesystem";

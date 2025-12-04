@@ -1,23 +1,33 @@
-import {
-  useSelf,
-} from "../account.ts";
 import { type AutomergeUrl } from "@automerge/automerge-repo";
 import {
   useDocument,
   useDocHandle,
   useRemoteAwareness,
 } from "@automerge/automerge-repo-react-hooks";
-import { type ContactDoc } from "../datatype";
+import type { ContactDoc } from "../types";
 import { Avatar, AvatarFallback, AvatarImage } from "./Avatar";
 import { User as UserIcon } from "lucide-react";
 import { generateColorFromString } from "../ui";
 import { useMemo } from "react";
 import { automergeUrlToServiceWorkerUrl } from "@patchwork/filesystem";
+import type { TinyPatchworkLayoutDoc } from "../types";
+
+// Extend the Window interface to include accountDocHandle
+declare global {
+  interface Window {
+    accountDocHandle?: { url: AutomergeUrl };
+  }
+}
 
 export const ContactAvatar = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const [contact] = useDocument<ContactDoc>(docUrl);
   const handle = useDocHandle(docUrl, { suspense: true });
-  const [self] = useSelf();
+
+  const accountDocHandle = window.accountDocHandle;
+  const [currentAccount] = useDocument<TinyPatchworkLayoutDoc>(
+    accountDocHandle?.url
+  );
+  const [self] = useDocument<ContactDoc>(currentAccount?.contactUrl);
 
   const avatarHandle = useDocHandle(
     contact?.type === "registered" ? contact.avatarUrl : undefined
