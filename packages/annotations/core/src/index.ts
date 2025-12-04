@@ -1,6 +1,7 @@
 export type {
+  Annotation,
   AnnotationSource,
-  AnnotationCollection,
+  AnnotationSource as AnnotationCollection,
   AnnotationEvents,
 } from "./types";
 export { AnnotationSet } from "./annotation-set";

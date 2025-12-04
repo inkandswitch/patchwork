@@ -1,11 +1,7 @@
 import { ObservableEventEmitter } from "@patchwork/observable";
 import { type Ref } from "@patchwork/refs";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
-import {
-  AnnotationCollection,
-  AnnotationEvents,
-  AnnotationSource,
-} from "../types";
+import { Annotation, AnnotationSource, AnnotationEvents } from "../types";
 
 /**
  * A generic filtered view of annotations based on a predicate.
@@ -14,7 +10,7 @@ import {
  */
 export class FilteredAnnotationView
   extends ObservableEventEmitter<AnnotationEvents>
-  implements AnnotationCollection
+  implements AnnotationSource
 {
   #source: AnnotationSource;
   #predicate: AnnotationPredicate;
@@ -27,7 +23,7 @@ export class FilteredAnnotationView
   }
 
   #setupSubscription(): void {
-    const handleChange = (annotations: AnnotationCollection) => {
+    const handleChange = (annotations: Annotation[]) => {
       // Only notify if any changed annotation matches our predicate
       for (const [ref, annotation] of annotations) {
         if (this.#predicate(ref, annotation)) {

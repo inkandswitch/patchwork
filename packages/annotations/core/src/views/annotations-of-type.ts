@@ -1,10 +1,6 @@
 import { ObservableEventEmitter } from "@patchwork/observable";
 import { type Ref } from "@patchwork/refs";
-import {
-  AnnotationCollection,
-  AnnotationEvents,
-  AnnotationSource,
-} from "../types";
+import { Annotation, AnnotationSource, AnnotationEvents } from "../types";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
 
 /**
@@ -13,7 +9,7 @@ import { AnnotationType, AnnotationValue } from "../annotation-type";
  */
 export class AnnotationsOfType<T>
   extends ObservableEventEmitter<AnnotationEvents>
-  implements AnnotationCollection
+  implements AnnotationSource<unknown, T>
 {
   #source: AnnotationSource;
   #type: AnnotationType<T>;
@@ -27,7 +23,7 @@ export class AnnotationsOfType<T>
 
   #setupSubscription(): void {
     // Subscribe to source changes
-    const handleChange = (annotations: AnnotationCollection) => {
+    const handleChange = (annotations: Annotation[]) => {
       // Only notify if the change is relevant to our type
       for (const [, annotation] of annotations) {
         if (annotation.type.id === this.#type.id) {
@@ -45,23 +41,63 @@ export class AnnotationsOfType<T>
    * Lookup the first annotation value for a ref
    */
   lookup(ref: Ref<unknown>): T | undefined {
-    return this.#source.lookup(ref, this.#type);
+    for (const [entryRef, annotation] of this.#source.entriesOfType(
+      this.#type
+    )) {
+      if (entryRef === ref) {
+        return annotation.value;
+      }
+    }
+    return undefined;
   }
 
   /**
    * Lookup all annotation values for a ref
    */
   lookupAll(ref: Ref<unknown>): T[] {
-    return this.#source.lookupAll(ref, this.#type);
+    const result: T[] = [];
+    for (const [entryRef, annotation] of this.#source.entriesOfType(
+      this.#type
+    )) {
+      if (entryRef === ref) {
+        result.push(annotation.value);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * @hidden
+   * Iterator for all annotations of a specific type
+   */
+  *entriesOfType<U>(
+    type: AnnotationType<U>
+  ): Iterable<[Ref<any>, AnnotationValue<U>]> {
+    // Only yield if requested type matches our filtered type
+    if (type.id === this.#type.id) {
+      yield* this.#source.entriesOfType(type);
+    }
+  }
+
+  /**
+   * @hidden
+   * Iterator for all annotations on a specific ref
+   */
+  *entriesOnRef(ref: Ref<any>): Iterable<[Ref<any>, AnnotationValue<any>]> {
+    for (const [r, annotation] of this.#source.entriesOnRef(ref)) {
+      if (annotation.type.id === this.#type.id) {
+        yield [r, annotation];
+      }
+    }
   }
 
   /**
    * Make the view iterable
    * Uses source's entriesOfType for efficient iteration by type
    */
-  *[Symbol.iterator](): Iterator<[Ref<any>, AnnotationValue<unknown>]> {
+  *[Symbol.iterator](): Iterator<Annotation<unknown, T>> {
     for (const entry of this.#source.entriesOfType(this.#type)) {
-      yield entry as [Ref<any>, AnnotationValue<unknown>];
+      yield entry;
     }
   }
 }

@@ -1,6 +1,6 @@
 import { ObservableEventEmitter } from "@patchwork/observable";
 import { Ref } from "@patchwork/refs";
-import { AnnotationCollection, AnnotationEvents } from "./types";
+import { Annotation, AnnotationSource, AnnotationEvents } from "./types";
 import type {
   AnnotationType,
   AnnotationTypeId,
@@ -9,6 +9,19 @@ import type {
 import { AnnotationsOfType } from "./views/annotations-of-type";
 import { AnnotationsOnRef } from "./views/annotations-on-ref";
 import { FilteredAnnotationView } from "./views/filtered-annotation-view";
+
+/**
+ * Type guard to check if a value is an AnnotationSource
+ */
+function isAnnotationSource(value: unknown): value is AnnotationSource {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    typeof (value as AnnotationSource).entriesOfType === "function" &&
+    typeof (value as AnnotationSource).entriesOnRef === "function" &&
+    Symbol.iterator in value
+  );
+}
 
 /**
  * A set of annotations that can be queried and filtered
@@ -22,7 +35,7 @@ import { FilteredAnnotationView } from "./views/filtered-annotation-view";
  */
 export class AnnotationSet
   extends ObservableEventEmitter<AnnotationEvents>
-  implements AnnotationCollection
+  implements AnnotationSource
 {
   // stores for each annotation type a map of refs to the annotations
   #annotationsByTypeId: Map<
@@ -34,12 +47,15 @@ export class AnnotationSet
   #typeIdsByRef: Map<Ref, Set<AnnotationTypeId>> = new Map();
 
   // Sub-annotation sets that are included in this set
-  #subSets: AnnotationSet[] = [];
+  #addedSources: AnnotationSource[] = [];
+
+  // Cleanup functions for event listeners on sub-sets
+  #subSetCleanups: Map<AnnotationSource, () => void> = new Map();
 
   /**
    * Add an annotation set as a sub-set
    */
-  add(annotationSet: AnnotationSet): void;
+  add(source: AnnotationSource): void;
 
   /**
    * Add an annotation to a ref.
@@ -53,58 +69,67 @@ export class AnnotationSet
   add(ref: Ref<any>, annotations: AnnotationValue<any>[]): void;
 
   add<T>(
-    refOrSet: Ref<any> | AnnotationSet,
+    refOrSource: Ref<any> | AnnotationSource,
     annotation?: AnnotationValue<T> | AnnotationValue<any>[]
   ): void {
     let added: [Ref, AnnotationValue<any>][];
 
-    // Case: Adding an AnnotationSet as a sub-set
-    if (refOrSet instanceof AnnotationSet) {
-      added = this.#addAnnotationSet(refOrSet);
-    }
-    // Case: Adding multiple annotations
-    else if (Array.isArray(annotation)) {
-      added = [];
-      for (const ann of annotation) {
-        added.push(this.#addSingleAnnotation(refOrSet, ann));
+    // Case: adding a ref
+    if (refOrSource instanceof Ref) {
+      // Case: Adding multiple annotations
+      if (Array.isArray(annotation)) {
+        added = [];
+        for (const ann of annotation) {
+          added.push(this.#addSingleAnnotation(refOrSource, ann));
+        }
       }
-    }
-    // Case: Adding a single annotation
-    else if (annotation) {
-      added = [this.#addSingleAnnotation(refOrSet, annotation)];
+      // Case: Adding a single annotation
+      else if (annotation) {
+        added = [this.#addSingleAnnotation(refOrSource, annotation)];
+      } else {
+        return;
+      }
     } else {
-      return;
+      // Case: Adding an AnnotationSource as a sub-source
+      added = this.#addSource(refOrSource);
     }
 
     // Emit events in one place
     if (added.length > 0) {
-      this.emit("added", new ReadOnlyAnnotationSet(added));
+      this.emit("added", added);
       this.notifySubscribers();
     }
   }
 
   /**
-   * Internal helper to add an annotation set as a sub-set
-   * Returns the entries that were added (existing annotations in the sub-set)
+   * Internal helper to add an annotation source
+   * Returns the entries that were added (existing annotations in the source)
    */
-  #addAnnotationSet(
-    annotationSet: AnnotationSet
-  ): [Ref, AnnotationValue<any>][] {
-    this.#subSets.push(annotationSet);
+  #addSource(source: AnnotationSource): [Ref, AnnotationValue<any>][] {
+    this.#addedSources.push(source);
 
-    // Forward events from sub-set
-    annotationSet.on("added", (annotations) => {
+    // Forward events from source
+    const onAdded = (annotations: Annotation[]) => {
       this.emit("added", annotations);
       this.notifySubscribers();
-    });
-    annotationSet.on("removed", (annotations) => {
+    };
+    const onRemoved = (annotations: Annotation[]) => {
       this.emit("removed", annotations);
       this.notifySubscribers();
+    };
+
+    source.on("added", onAdded);
+    source.on("removed", onRemoved);
+
+    // Store cleanup function
+    this.#subSetCleanups.set(source, () => {
+      source.off("added", onAdded);
+      source.off("removed", onRemoved);
     });
 
-    // Collect all existing annotations in the sub-set
+    // Collect all existing annotations in the source
     const entries: [Ref, AnnotationValue<any>][] = [];
-    for (const [ref, ann] of annotationSet) {
+    for (const [ref, ann] of source) {
       entries.push([ref, ann]);
     }
     return entries;
@@ -147,6 +172,11 @@ export class AnnotationSet
   }
 
   /**
+   * Remove an annotation source
+   */
+  remove(source: AnnotationSource): void;
+
+  /**
    * Remove all annotations of a specific type across all refs
    */
   remove<T>(annotationType: AnnotationType<T>): void;
@@ -162,24 +192,32 @@ export class AnnotationSet
   remove<T>(ref: Ref<any>, annotationType: AnnotationType<T>): void;
 
   remove<T>(
-    refOrAnnotationType: Ref<any> | AnnotationType<T>,
+    refOrAnnotationTypeOrSource:
+      | Ref<any>
+      | AnnotationType<T>
+      | AnnotationSource,
     annotationType?: AnnotationType<T>
   ): void {
-    let removed: [Ref, AnnotationValue<any>][];
+    let removed: Annotation[];
 
-    if (refOrAnnotationType instanceof Ref) {
+    if (refOrAnnotationTypeOrSource instanceof Ref) {
       if (annotationType) {
-        removed = this.#removeTypeFromRef(refOrAnnotationType, annotationType);
+        removed = this.#removeTypeFromRef(
+          refOrAnnotationTypeOrSource,
+          annotationType
+        );
       } else {
-        removed = this.#removeAllFromRef(refOrAnnotationType);
+        removed = this.#removeAllFromRef(refOrAnnotationTypeOrSource);
       }
+    } else if (typeof refOrAnnotationTypeOrSource === "function") {
+      removed = this.#removeType(refOrAnnotationTypeOrSource);
     } else {
-      removed = this.#removeType(refOrAnnotationType);
+      removed = this.#removeSource(refOrAnnotationTypeOrSource);
     }
 
     // Emit event for all removed annotations
     if (removed.length > 0) {
-      this.emit("removed", new ReadOnlyAnnotationSet(removed));
+      this.emit("removed", removed);
       this.notifySubscribers();
     }
   }
@@ -208,11 +246,6 @@ export class AnnotationSet
 
     this.#typeIdsByRef.delete(ref);
 
-    // Cascade to subsets
-    for (const subSet of this.#subSets) {
-      subSet.remove(ref);
-    }
-
     return removed;
   }
 
@@ -239,11 +272,6 @@ export class AnnotationSet
       this.#typeIdsByRef.get(ref)?.delete(typeId);
     }
 
-    // Cascade to subsets
-    for (const subSet of this.#subSets) {
-      subSet.remove(ref, type);
-    }
-
     return removed;
   }
 
@@ -266,12 +294,33 @@ export class AnnotationSet
       this.#annotationsByTypeId.delete(typeId);
     }
 
-    // Cascade to subsets
-    for (const subSet of this.#subSets) {
-      subSet.remove(type);
+    return removed;
+  }
+
+  /**
+   * Internal helper to remove an annotation source
+   * Returns the entries that were removed
+   */
+  #removeSource(source: AnnotationSource): [Ref, AnnotationValue<any>][] {
+    const index = this.#addedSources.indexOf(source);
+    if (index === -1) return [];
+
+    // Remove from sources array
+    this.#addedSources.splice(index, 1);
+
+    // Clean up event listeners
+    const cleanup = this.#subSetCleanups.get(source);
+    if (cleanup) {
+      cleanup();
+      this.#subSetCleanups.delete(source);
     }
 
-    return removed;
+    // Collect all annotations that were in this source
+    const entries: [Ref, AnnotationValue<any>][] = [];
+    for (const [ref, ann] of source) {
+      entries.push([ref, ann]);
+    }
+    return entries;
   }
 
   /**
@@ -308,56 +357,6 @@ export class AnnotationSet
     );
   }
 
-  /**
-   * @hidden
-   * Lookup the first annotation value for a ref and type
-   */
-  lookup<T>(ref: Ref<any>, type: AnnotationType<T>): T | undefined {
-    const typeMap = this.#annotationsByTypeId.get(type.id);
-    if (typeMap) {
-      const annotations = typeMap.get(ref);
-      if (annotations) {
-        const first = annotations.values().next().value;
-        if (first) return first.value;
-      }
-    }
-    // Check sub-sets
-    for (const subSet of this.#subSets) {
-      const result = subSet.lookup(ref, type);
-      if (result !== undefined) return result;
-    }
-    return undefined;
-  }
-
-  /**
-   * @hidden
-   * Lookup all annotation values for a ref and type
-   */
-  lookupAll<T>(ref: Ref<any>, type: AnnotationType<T>): T[] {
-    const result: T[] = [];
-
-    const typeMap = this.#annotationsByTypeId.get(type.id);
-    if (typeMap) {
-      const annotations = typeMap.get(ref);
-      if (annotations) {
-        for (const ann of annotations) {
-          result.push(ann.value);
-        }
-      }
-    }
-
-    // Check sub-sets
-    for (const subSet of this.#subSets) {
-      result.push(...subSet.lookupAll(ref, type));
-    }
-
-    return result;
-  }
-
-  /**
-   * @hidden
-   * Iterator for all annotations of a specific type
-   */
   *entriesOfType<T>(
     type: AnnotationType<T>
   ): Iterable<[Ref<any>, AnnotationValue<T>]> {
@@ -370,15 +369,11 @@ export class AnnotationSet
       }
     }
     // Check sub-sets
-    for (const subSet of this.#subSets) {
+    for (const subSet of this.#addedSources) {
       yield* subSet.entriesOfType(type);
     }
   }
 
-  /**
-   * @hidden
-   * Iterator for all annotations on a specific ref
-   */
   *entriesOnRef(ref: Ref<any>): Iterable<[Ref<any>, AnnotationValue<any>]> {
     const typeIdsForRef = this.#typeIdsByRef.get(ref);
     if (typeIdsForRef) {
@@ -395,7 +390,7 @@ export class AnnotationSet
       }
     }
     // Check sub-sets
-    for (const subSet of this.#subSets) {
+    for (const subSet of this.#addedSources) {
       yield* subSet.entriesOnRef(ref);
     }
   }
@@ -414,28 +409,10 @@ export class AnnotationSet
       }
     }
     // Yield annotations from sub-sets
-    for (const subSet of this.#subSets) {
+    for (const subSet of this.#addedSources) {
       for (const entry of subSet) {
         yield entry;
       }
-    }
-  }
-}
-
-/**
- * Internal class for passing annotation collections (e.g., in event payloads).
- * Not exposed to users - only visible as AnnotationsCollection interface.
- */
-export class ReadOnlyAnnotationSet implements AnnotationCollection {
-  #entries: [ref: Ref, annotation: AnnotationValue<any>][] = [];
-
-  constructor(entries: [ref: Ref, annotation: AnnotationValue<any>][]) {
-    this.#entries = entries;
-  }
-
-  *[Symbol.iterator](): Iterator<[Ref<unknown>, AnnotationValue<any>]> {
-    for (const [ref, annotation] of this.#entries) {
-      yield [ref, annotation];
     }
   }
 }
