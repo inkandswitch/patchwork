@@ -2,7 +2,6 @@ import type {
   LoadablePlugin,
   LoadedPlugin,
   PluginDescription,
-  RegistryTypeMap,
   Plugin,
 } from "./types";
 
