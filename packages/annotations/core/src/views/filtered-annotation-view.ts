@@ -1,7 +1,12 @@
 import { ObservableEventEmitter } from "@patchwork/observable";
 import { type Ref } from "@patchwork/refs";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
-import { AnnotationChange, AnnotationFilter, AnnotationSource } from "../types";
+import {
+  AnnotationChange,
+  AnnotationEvents,
+  AnnotationFilter,
+  AnnotationSource,
+} from "../types";
 import { filterAnnotationChange, isChangeEmpty } from "../utils";
 import { AnnotationsOfType } from "./annotations-of-type";
 import { AnnotationsOnRef } from "./annotations-on-ref";
@@ -12,7 +17,7 @@ import { AnnotationsOnRef } from "./annotations-on-ref";
  * Uses lazy iteration - no intermediate data structures are created.
  */
 export class FilteredAnnotationView
-  extends ObservableEventEmitter<AnnotationSource>
+  extends ObservableEventEmitter<AnnotationEvents>
   implements AnnotationSource
 {
   #source: AnnotationSource;
