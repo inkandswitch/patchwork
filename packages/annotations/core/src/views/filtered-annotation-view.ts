@@ -1,13 +1,10 @@
 import { ObservableEventEmitter } from "@patchwork/observable";
 import { type Ref } from "@patchwork/refs";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
-import {
-  AnnotationFilter,
-  AnnotationSource,
-  AnnotationEvents,
-  AnnotationChange,
-} from "../types";
+import { AnnotationChange, AnnotationFilter, AnnotationSource } from "../types";
 import { filterAnnotationChange, isChangeEmpty } from "../utils";
+import { AnnotationsOfType } from "./annotations-of-type";
+import { AnnotationsOnRef } from "./annotations-on-ref";
 
 /**
  * A generic filtered view of annotations based on a predicate.
@@ -15,7 +12,7 @@ import { filterAnnotationChange, isChangeEmpty } from "../utils";
  * Uses lazy iteration - no intermediate data structures are created.
  */
 export class FilteredAnnotationView
-  extends ObservableEventEmitter<AnnotationEvents>
+  extends ObservableEventEmitter<AnnotationSource>
   implements AnnotationSource
 {
   #source: AnnotationSource;
@@ -44,18 +41,15 @@ export class FilteredAnnotationView
   /**
    * Filter by annotation type
    */
-  ofType<T>(type: AnnotationType<T>): FilteredAnnotationView {
-    return new FilteredAnnotationView(
-      this,
-      (_, annotation) => annotation.type.id === type.id
-    );
+  ofType<T>(type: AnnotationType<T>): AnnotationsOfType<T> {
+    return new AnnotationsOfType(this, type);
   }
 
   /**
    * Filter by exact ref match
    */
-  onRef<T>(ref: Ref<T>): FilteredAnnotationView {
-    return new FilteredAnnotationView(this, (otherRef, _) => otherRef === ref);
+  onRef<T>(ref: Ref<T>): AnnotationsOnRef<T> {
+    return new AnnotationsOnRef(this, ref);
   }
 
   /**
@@ -85,7 +79,7 @@ export class FilteredAnnotationView
       if (!this.#filter(ref, annotation)) continue;
 
       if (annotation.type.id === type.id) {
-        return annotation.value;
+        return annotation.value as T;
       }
     }
     return undefined;
@@ -101,7 +95,7 @@ export class FilteredAnnotationView
       if (!this.#filter(ref, annotation)) continue;
 
       if (annotation.type.id === type.id) {
-        result.push(annotation.value);
+        result.push(annotation.value as T);
       }
     }
     return result;
