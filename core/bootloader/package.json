@@ -4,16 +4,37 @@
   "devDependencies": {
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@keyhive/keyhive": "catalog:",
-    "esbuild": "^0.23.1"
+    "esbuild": "^0.23.1",
+    "rollup": "^4.53.3"
   },
   "exports": {
-    "./vite": "./dist/patchwork-vite-plugin.js",
-    ".": "./index.d.ts"
+    ".": {
+      "import": "./dist/setup.js",
+      "types": "./dist/setup.d.ts"
+    },
+    "./externals": {
+      "import": "./dist/externals.js",
+      "types": "./dist/externals.d.ts"
+    },
+    "./vite": {
+      "import": "./dist/vite/patchwork-plugin.js",
+      "types": "./dist/vite/patchwork-plugin.d.ts"
+    },
+    "./service-worker": {
+      "import": "./dist/service-worker.js",
+      "types": "./dist/service-worker.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    }
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
     "@automerge/vanillajs": "catalog:",
+    "@types/debug": "^4.1.12",
+    "debug": "^4.4.3",
     "resolve.exports": "^2.0.3",
     "service-worker-types": "npm:@types/serviceworker@^0.0.153",
     "tinyargs": "^0.1.4"
