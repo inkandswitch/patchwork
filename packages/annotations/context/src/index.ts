@@ -20,7 +20,7 @@ type AnnotationContext = Omit<AnnotationSet, "add" | "remove"> & {
   remove(source: AnnotationSource): void;
 };
 
-export let context: AnnotationContext;
+export let annotations: AnnotationContext;
 
 /**
  * We attach the annotation context to `window` so that multiple tools can
@@ -29,7 +29,7 @@ export let context: AnnotationContext;
  * bundle it in, and they'll all converge on the same global context.
  */
 if (window.annotationContext) {
-  context = window.annotationContext;
+  annotations = window.annotationContext;
 } else {
-  window.annotationContext = context = new AnnotationSet();
+  window.annotationContext = annotations = new AnnotationSet();
 }

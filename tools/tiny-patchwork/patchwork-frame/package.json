@@ -21,6 +21,12 @@
     "@patchwork/context-diff": "workspace:^",
     "@patchwork/context-comments": "workspace:^",
     "@patchwork/context-selection": "workspace:^",
+    "@patchwork/annotations": "workspace:^",
+    "@patchwork/annotations-context": "workspace:^",
+    "@patchwork/annotations-selection": "workspace:^",
+    "@patchwork/refs": "workspace:^",
+    "@patchwork/observable-react": "workspace:^",
+    "@patchwork/annotations-diff": "workspace:^",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "tailwindcss": "^4.1.14"

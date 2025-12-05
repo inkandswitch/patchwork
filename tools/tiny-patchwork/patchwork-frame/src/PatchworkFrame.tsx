@@ -1,5 +1,8 @@
-import "./styles.css";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocHandle,
+  useDocument,
+  useRepo,
+} from "@automerge/automerge-repo-react-hooks";
 import {
   AutomergeUrl,
   DocHandle,
@@ -8,21 +11,21 @@ import {
   stringifyAutomergeUrl,
 } from "@automerge/vanillajs";
 import { DocWithComments, getStoredThreads } from "@patchwork/context-comments";
-import { getViewHeads } from "@patchwork/context-diff";
-import {
-  useDocRef,
-  useReactive,
-  useSubcontext,
-} from "@patchwork/context-react";
-import { IsSelected } from "@patchwork/context-selection";
-import { useEffect, useMemo, useState } from "react";
-import { TinyPatchworkConfigDoc } from "./types";
+import { ViewHeads } from "@patchwork/annotations-diff";
+import { IsSelected } from "@patchwork/annotations-selection";
+import { annotations } from "@patchwork/annotations-context";
+import { useObservable } from "@patchwork/observable-react";
+import { ref } from "@patchwork/refs";
 import { OpenDocumentEvent } from "@patchwork/elements";
+import { useEffect, useMemo, useState } from "react";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
+import "./styles.css";
+import { TinyPatchworkConfigDoc } from "./types";
 import {
-  useDebugRegistryToast,
   DebugRegistryToast,
+  useDebugRegistryToast,
 } from "./useDebugRegistryToast";
+import { AnnotationSet } from "@patchwork/annotations";
 
 export const PatchworkFrame = ({
   docUrl: accountDocUrl,
@@ -56,14 +59,22 @@ export const PatchworkFrame = ({
   } = useDebugRegistryToast();
 
   const [selectedDoc] = useDocument<DocWithComments>(selectedView?.url);
-  const selectedDocRef = useDocRef(selectedView?.url);
-
-  const viewHeads = useReactive(
-    useMemo(
-      () => (selectedDocRef ? getViewHeads(selectedDocRef) : undefined),
-      [selectedDocRef]
-    )
+  const selectedDocHandle = useDocHandle(selectedView?.url);
+  const selectedDocRef = useMemo(
+    () => (selectedDocHandle ? ref(selectedDocHandle) : undefined),
+    [selectedDocHandle]
   );
+  const selectedDocAnnotations = useObservable(
+    useMemo(() => {
+      const result = selectedDocRef
+        ? annotations.onRef(selectedDocRef)
+        : undefined;
+
+      return result;
+    }, [selectedDocRef])
+  );
+
+  const viewHeads = selectedDocAnnotations?.lookup(ViewHeads);
 
   const selectedDocUrl = useMemo(() => {
     if (!selectedView?.url) {
@@ -81,13 +92,21 @@ export const PatchworkFrame = ({
     });
   }, [selectedView?.url, viewHeads]);
 
-  // add selected doc to context
-  const selectionContext = useSubcontext("SINGLE_VIEW_SELECTION");
+  // add selected doc to global annotations
   useEffect(() => {
-    selectionContext.replace(
-      selectedDocRef ? [selectedDocRef.with(IsSelected(true))] : []
-    );
-  }, [selectedDocRef, selectionContext]);
+    if (!selectedDocRef) {
+      return;
+    }
+
+    const selection = new AnnotationSet();
+    selection.add(selectedDocRef, IsSelected(true));
+
+    annotations.add(selection);
+
+    return () => {
+      annotations.remove(selection);
+    };
+  }, [selectedDocRef]);
 
   const repo = useRepo();
 
@@ -124,22 +143,6 @@ export const PatchworkFrame = ({
   useEffect(() => {
     (window as any).currentDocHandle = selectedDocRef?.docHandle;
   }, [selectedDocRef]);
-
-  // Add comments to context
-  const commentsContext = useSubcontext("SINGLE_VIEW_COMMENTS");
-  useEffect(() => {
-    void selectedDoc;
-
-    if (!selectedView || !selectedDocRef || !selectedDocRef.docHandle) {
-      return;
-    }
-
-    const storedThreads = getStoredThreads(
-      selectedDocRef.docHandle as DocHandle<DocWithComments>
-    );
-
-    commentsContext.replace(storedThreads);
-  }, [commentsContext, selectedView, selectedDocRef, selectedDoc]);
 
   return (
     <div className="w-screen h-screen flex">

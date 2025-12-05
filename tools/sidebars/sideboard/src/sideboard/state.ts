@@ -1,17 +1,26 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import { $selectedDocHandles } from "@patchwork/context-selection";
-import { createSignal } from "solid-js";
+import { annotations } from "@patchwork/annotations-context";
+import { IsSelected } from "@patchwork/annotations-selection";
+import { createSignal, from } from "solid-js";
 
 export const [filter, setFilter] = createSignal("");
-const [selectedDocUrls, setSelectedDocUrls] = createSignal<AutomergeUrl[]>([]);
 
 export function filterMatches(string: string) {
   return !!string?.toLowerCase().includes(filter());
 }
 
-$selectedDocHandles.on("change", (refs) => {
-  setSelectedDocUrls(refs.map((ref) => ref.url));
-});
+// todo: this is annoying that we need to pass annotations twice to from
+const rawSelectionAnnotations = annotations.ofType(IsSelected);
+const selectionAnnotations = from(
+  rawSelectionAnnotations,
+  rawSelectionAnnotations
+);
+
+const selectedDocUrls = () => {
+  return Array.from(selectionAnnotations() ?? []).map(
+    ([ref]) => ref.docHandle.url
+  );
+};
 
 export { selectedDocUrls };
 

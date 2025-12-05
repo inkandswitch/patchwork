@@ -2007,12 +2007,12 @@ importers:
       '@node-types/node':
         specifier: npm:@types/node@^24.9.1
         version: '@types/node@24.9.1'
-      '@patchwork/context':
+      '@patchwork/annotations-context':
         specifier: workspace:^
-        version: link:../../../packages/context/context
-      '@patchwork/context-selection':
+        version: link:../../../packages/annotations/context
+      '@patchwork/annotations-selection':
         specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-selection
+        version: link:../../../packages/annotations/annotation-types/selection
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../../core/filesystem
@@ -2189,6 +2189,18 @@ importers:
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.0
+      '@patchwork/annotations':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/core
+      '@patchwork/annotations-context':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/context
+      '@patchwork/annotations-diff':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/diff
+      '@patchwork/annotations-selection':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/selection
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../../packages/context/context
@@ -2210,12 +2222,18 @@ importers:
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../../core/filesystem
+      '@patchwork/observable-react':
+        specifier: workspace:^
+        version: link:../../../packages/observable/frameworks/react
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
       '@patchwork/react':
         specifier: workspace:^
         version: link:../../../packages/react
+      '@patchwork/refs':
+        specifier: workspace:^
+        version: link:../../../packages/refs
       react:
         specifier: ^18.0.0
         version: 18.3.1
