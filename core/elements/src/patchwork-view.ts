@@ -8,13 +8,12 @@ import {
   getSuggestedImportUrl,
   getType,
   type HasPatchworkMetadata,
-  ModuleWatcher,
 } from "@inkandswitch/patchwork-filesystem";
 import {
   getFallbackTool,
   getRegistry,
   isLoadablePlugin,
-  type Tool,
+  type LoadedTool,
 } from "@inkandswitch/patchwork-plugins";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
@@ -75,7 +74,7 @@ export function registerPatchworkViewElement(
       #docUrl: AutomergeUrl | null = null;
       #toolId: string | null = null;
       #handle: DocHandle<HasPatchworkMetadata> | null = null;
-      #tool: Tool | null = null;
+      #tool: LoadedTool | null = null;
       #state: State = State.none;
 
       get docUrl() {
@@ -268,7 +267,7 @@ export function registerPatchworkViewElement(
           console.warn(`no tool for ${this.#docUrl}`);
         }
 
-        this.#tool = getRegistry<Tool>("patchwork:tool").get(toolId) ?? null;
+        this.#tool = getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
 
         if (!this.#tool) {
           console.warn("Tool not found", toolId);
