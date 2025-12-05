@@ -1,5 +1,12 @@
 # @inkandswitch/patchwork-plugins
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [e3f41ee]
+  - @inkandswitch/patchwork-filesystem@0.0.3
+
 ## 0.0.2
 
 ### Patch Changes
