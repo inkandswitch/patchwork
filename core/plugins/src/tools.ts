@@ -1,5 +1,5 @@
 import type { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import type { LoadedPlugin, PluginDescription } from "./registry/index.js";
+import type { LoadablePlugin, LoadedPlugin, PluginDescription } from "./registry/index.js";
 import { getType, type HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import { getRegistry } from "./registry/index.js";
 
@@ -31,11 +31,12 @@ export type ToolDescription = PluginDescription & {
   unlisted?: boolean;
 };
 
-export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;
+export type LoadedTool = LoadedPlugin<ToolDescription, ToolImplementation>;
+export type Tool = LoadablePlugin<ToolDescription, ToolImplementation>
 
 export type LegacyEditorProps = { docUrl: AutomergeUrl };
 
-export function getSupportedToolsForType(type: string): Tool[] {
+export function getSupportedToolsForType(type: string): LoadedTool[] {
   const plugins = getRegistry<ToolDescription>("patchwork:tool").filter(
     (desc) => {
       return (
@@ -45,10 +46,10 @@ export function getSupportedToolsForType(type: string): Tool[] {
     }
   );
 
-  return plugins as Tool[];
+  return plugins as LoadedTool[];
 }
 
-export function getSupportedTools(doc: HasPatchworkMetadata): Tool[] {
+export function getSupportedTools(doc: HasPatchworkMetadata): LoadedTool[] {
   const type = getType(doc);
   if (!type) return [];
   return getSupportedToolsForType(type);
@@ -57,7 +58,7 @@ export function getSupportedTools(doc: HasPatchworkMetadata): Tool[] {
 export function getFallbackTool(doc: HasPatchworkMetadata) {
   const type = getType(doc)!;
   const plugins = getSupportedTools(doc);
-  return sortPlugins<Tool, ToolDescription, ToolImplementation>(
+  return sortPlugins<LoadedTool, ToolDescription, ToolImplementation>(
     plugins,
     "supportedDataTypes",
     type,

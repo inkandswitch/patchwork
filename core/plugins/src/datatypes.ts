@@ -21,20 +21,20 @@ export interface DataTypeDescription extends PluginDescription {
 }
 
 // Loadable DataType description using the generic LoadablePlugin
-export type LoadableDataType<D = unknown> = LoadablePlugin<
+export type DataType<D = unknown> = LoadablePlugin<
   DataTypeDescription,
   DataTypeImplementation<D>
 >;
 
 // The complete loaded DataType using the generic Plugin
-export type DataType<D = unknown> = LoadedPlugin<
+export type LoadedDataType<D = unknown> = LoadedPlugin<
   DataTypeDescription,
   DataTypeImplementation<D>
 >;
 
 /** Creates a new document initialized with the given datatype using create2 */
 export const createDocOfDataType2 = async <D>(
-  dataType: DataType<D>,
+  dataType: LoadedDataType<D>,
   repo: Repo,
   change?: (doc: D) => void
 ): Promise<DocHandle<D & HasPatchworkMetadata>> => {
