@@ -7,7 +7,7 @@ export const plugins: Plugin<any>[] = [
     id: "context-view",
     name: "Context",
     icon: "TextSearch",
-    supportedDataTypes: ["context-view"],
+    supportedDatatypes: ["context-view"],
     async load() {
       const { ContextView } = await import("./ContextView");
       return toolify(ContextView);

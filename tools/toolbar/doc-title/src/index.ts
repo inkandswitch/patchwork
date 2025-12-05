@@ -7,7 +7,7 @@ export const plugins: Plugin<any>[] = [
     id: "document-title",
     name: "Document Title",
     icon: "Heading",
-    supportedDataTypes: "*",
+    supportedDatatypes: "*",
     async load() {
       const { DocumentTitle } = await import("./DocumentTitle");
       return toolify(DocumentTitle);

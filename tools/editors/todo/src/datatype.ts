@@ -1,7 +1,7 @@
-import { DataTypeImplementation } from "@inkandswitch/patchwork-plugins";
+import { DatatypeImplementation } from "@inkandswitch/patchwork-plugins";
 import { TodoDoc } from "./Todo";
 
-export const TodoDataType: DataTypeImplementation<TodoDoc> = {
+export const TodoDatatype: DatatypeImplementation<TodoDoc> = {
   init: (doc: TodoDoc) => {
     doc.title = "My Todo List";
     doc.todos = [];

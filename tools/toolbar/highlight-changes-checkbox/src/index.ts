@@ -7,7 +7,7 @@ export const plugins: Plugin<any>[] = [
     id: "highlight-changes-checkbox",
     name: "Highlight Changes",
     icon: "Highlighter",
-    supportedDataTypes: "*",
+    supportedDatatypes: "*",
     async load() {
       const { HighlightChangesOption } = await import(
         "./HighlightChangesCheckbox"

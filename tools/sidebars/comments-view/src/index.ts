@@ -6,7 +6,7 @@ export const plugins: Plugin<any>[] = [
     id: "comments-view",
     name: "Comments",
     icon: "Comments",
-    supportedDataTypes: ["account"],
+    supportedDatatypes: ["account"],
     async load() {
       const { renderCommentsView } = await import("./CommentsView");
       return renderCommentsView;

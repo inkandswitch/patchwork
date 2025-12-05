@@ -25,7 +25,7 @@ export type ToolRender<T = unknown> = (
 export type ToolDescription = PluginDescription & {
   id: string;
   type: "patchwork:tool";
-  supportedDataTypes: "*" | string[];
+  supportedDatatypes: "*" | string[];
   name: string;
   icon?: string;
   unlisted?: boolean;
@@ -40,8 +40,8 @@ export function getSupportedToolsForType(type: string): LoadedTool[] {
   const plugins = getRegistry<ToolDescription>("patchwork:tool").filter(
     (desc) => {
       return (
-        desc.supportedDataTypes.includes(type) ||
-        desc.supportedDataTypes.includes("*")
+        desc.supportedDatatypes.includes(type) ||
+        desc.supportedDatatypes.includes("*")
       );
     }
   );
@@ -60,7 +60,7 @@ export function getFallbackTool(doc: HasPatchworkMetadata) {
   const plugins = getSupportedTools(doc);
   return sortPlugins<LoadedTool, ToolDescription, ToolImplementation>(
     plugins,
-    "supportedDataTypes",
+    "supportedDatatypes",
     type,
     "id"
   )?.filter((tool) => !tool.unlisted)?.[0];

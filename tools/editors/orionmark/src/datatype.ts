@@ -1,10 +1,10 @@
-import type { DataTypeImplementation } from "@inkandswitch/patchwork-plugins";
+import type { DatatypeImplementation } from "@inkandswitch/patchwork-plugins";
 
 export type MarkdownDoc = {
   content: string;
 };
 
-export const dataType: DataTypeImplementation<MarkdownDoc> = {
+export const datatype: DatatypeImplementation<MarkdownDoc> = {
   init: (doc: MarkdownDoc) => {
     doc.content = "# Untitled";
   },

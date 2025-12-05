@@ -7,7 +7,7 @@ export const plugins: Plugin<any>[] = [
     id: "frame-configurator",
     name: "Frame Configurator",
     icon: "Settings",
-    supportedDataTypes: ["account"],
+    supportedDatatypes: ["account"],
     async load() {
       const { FrameConfigurator } = await import("./FrameConfigurator");
       return toolify(FrameConfigurator);

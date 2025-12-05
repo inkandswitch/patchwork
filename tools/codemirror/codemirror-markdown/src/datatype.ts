@@ -1,4 +1,4 @@
-import { type DataTypeImplementation } from "@inkandswitch/patchwork-plugins";
+import { type DatatypeImplementation } from "@inkandswitch/patchwork-plugins";
 import { updateText } from "@automerge/automerge";
 
 export type MarkdownDoc = {
@@ -7,7 +7,7 @@ export type MarkdownDoc = {
 
 const frontmatterRegex = /---\n([\s\S]+?)\n---/;
 
-export const MarkdownDataType: DataTypeImplementation<MarkdownDoc> = {
+export const MarkdownDatatype: DatatypeImplementation<MarkdownDoc> = {
   init(doc: MarkdownDoc) {
     doc.content = "# Untitled";
   },

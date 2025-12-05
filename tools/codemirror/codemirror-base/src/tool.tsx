@@ -166,9 +166,9 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
     const loadedExtensions = await extensionsRegistry.loadAll(
       extensionsRegistry.filter((ext) => {
         return (
-          ext.supportedDataTypes === "*" ||
-          (Array.isArray(ext.supportedDataTypes) &&
-            ext.supportedDataTypes.includes(docType))
+          ext.supportedDatatypes === "*" ||
+          (Array.isArray(ext.supportedDatatypes) &&
+            ext.supportedDatatypes.includes(docType))
         );
       })
     );

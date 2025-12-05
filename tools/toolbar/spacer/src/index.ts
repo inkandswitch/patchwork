@@ -6,7 +6,7 @@ export const plugins: Plugin<any>[] = [
     id: "spacer",
     name: "Spacer",
     icon: "Spacer",
-    supportedDataTypes: "*",
+    supportedDatatypes: "*",
     async load() {
       const { renderSpacer } = await import("./Spacer.js");
       return renderSpacer;

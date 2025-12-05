@@ -21,7 +21,7 @@ export const plugins = [
     type: "patchwork:tool",
     id: "orion/markwhen",
     name: "Markwhen",
-    supportedDataTypes: ["markdown"],
+    supportedDatatypes: ["markdown"],
     async load(): Promise<ToolImplementation> {
       const { MarkdownTool } = await import("./tool.tsx");
       const styles = await loadStyles();

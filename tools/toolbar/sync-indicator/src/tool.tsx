@@ -9,7 +9,7 @@ export const plugins = [
     id: "sync-indicator",
     name: "Sync Indicator",
     icon: "Wifi",
-    supportedDataTypes: "*" as const,
+    supportedDatatypes: "*" as const,
     unlisted: true,
     async load(): Promise<ToolImplementation> {
       return (handle, element) => {

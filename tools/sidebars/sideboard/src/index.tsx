@@ -21,7 +21,7 @@ export const plugins = [
     id: "chee/sideboard",
     type: "patchwork:tool",
     name: "Sideboard",
-    supportedDataTypes: ["patchwork:account"],
+    supportedDatatypes: ["patchwork:account"],
     icon: "FolderOpen",
     async load(): Promise<ToolImplementation<TinyPatchworkAccountDoc>> {
       const { Sideboard } = await import("./sideboard/sideboard.tsx");
@@ -42,7 +42,7 @@ export const plugins = [
     type: "patchwork:tool",
     name: "Module Settings",
     icon: "Settings",
-    supportedDataTypes: ["patchwork:module-settings", "my-tools"],
+    supportedDatatypes: ["patchwork:module-settings", "my-tools"],
     async load(): Promise<ToolImplementation<ModuleSettingsDoc>> {
       const { ModuleSettings } = await import(
         "./module-settings/module-settings.tsx"

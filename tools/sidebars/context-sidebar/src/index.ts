@@ -6,7 +6,7 @@ export const plugins: Plugin<any>[] = [
     id: "context-sidebar",
     name: "Context Sidebar",
     icon: "Tabs",
-    supportedDataTypes: ["account"],
+    supportedDatatypes: ["account"],
     async load() {
       const { renderTabbedView } = await import("./ContextSidebar");
       return renderTabbedView;

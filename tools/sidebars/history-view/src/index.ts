@@ -6,7 +6,7 @@ export const plugins: Plugin<any>[] = [
     id: "history-view",
     name: "History",
     icon: "History",
-    supportedDataTypes: ["account"],
+    supportedDatatypes: ["account"],
     async load() {
       const { renderHistoryView } = await import("./HistoryView");
       return renderHistoryView;

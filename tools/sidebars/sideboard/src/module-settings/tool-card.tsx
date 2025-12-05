@@ -7,7 +7,7 @@ interface ToolCardProps {
   tool: {
     name: string;
     importUrl?: string;
-    supportedDataTypes?: string[] | string;
+    supportedDatatypes?: string[] | string;
   };
   installed: boolean;
   onUninstall?: () => void;
@@ -45,21 +45,21 @@ export function ToolCard(props: ToolCardProps) {
         </div>
       </Show>
 
-      <Show when={props.tool.supportedDataTypes !== undefined}>
+      <Show when={props.tool.supportedDatatypes !== undefined}>
         <div class="tool-card__datatypes">
           <h3>Supported data types</h3>
           <div class="tool-card__datatypes-pills">
             <Show
               when={
-                Array.isArray(props.tool.supportedDataTypes) &&
-                props.tool.supportedDataTypes.length > 0 &&
-                !props.tool.supportedDataTypes.includes("*")
+                Array.isArray(props.tool.supportedDatatypes) &&
+                props.tool.supportedDatatypes.length > 0 &&
+                !props.tool.supportedDatatypes.includes("*")
               }
               fallback={
                 <Show
                   when={
-                    !Array.isArray(props.tool.supportedDataTypes) ||
-                    props.tool.supportedDataTypes.includes("*")
+                    !Array.isArray(props.tool.supportedDatatypes) ||
+                    props.tool.supportedDatatypes.includes("*")
                   }
                   fallback={
                     <span class="tool-card__datatype-pill tool-card__datatype-pill--none">
@@ -73,7 +73,7 @@ export function ToolCard(props: ToolCardProps) {
                 </Show>
               }
             >
-              <For each={props.tool.supportedDataTypes as string[]}>
+              <For each={props.tool.supportedDatatypes as string[]}>
                 {(dt) => <span class="tool-card__datatype-pill">{dt}</span>}
               </For>
             </Show>

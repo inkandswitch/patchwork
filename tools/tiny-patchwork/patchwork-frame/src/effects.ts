@@ -10,8 +10,8 @@ import {
 } from "@patchwork/context-selection";
 import { FolderDoc, HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import {
-  DataTypeDescription,
-  DataTypeImplementation,
+  DatatypeDescription,
+  DatatypeImplementation,
   getRegistry,
 } from "@inkandswitch/patchwork-plugins";
 import { PluginRegistry } from "@inkandswitch/patchwork-plugins/dist/registry/registry";
@@ -35,8 +35,8 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
     let canceled = false;
 
     const registry = getRegistry("patchwork:datatype") as PluginRegistry<
-      DataTypeDescription,
-      DataTypeImplementation
+      DatatypeDescription,
+      DatatypeImplementation
     >;
 
     for (const docUrl of selectedDocUrls) {
@@ -89,7 +89,7 @@ export const useAddUnknownDocumentsToSidebarEffect = (
 
     let canceled = false;
 
-    const registry = getRegistry<DataTypeDescription>("patchwork:datatype");
+    const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
 
     for (const docHandle of selectedDocHandles) {
       const type = docHandle.doc()["@patchwork"]?.type;

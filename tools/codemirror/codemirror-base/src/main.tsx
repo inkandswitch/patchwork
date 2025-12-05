@@ -8,7 +8,7 @@ export const plugins = [
     type: "patchwork:tool",
     id: "codemirror-base",
     name: "Text Editor",
-    supportedDataTypes: ["essay", "markdown"],
+    supportedDatatypes: ["essay", "markdown"],
     async load(): Promise<ToolImplementation<TextDoc>> {
       const { CodeMirrorEditor } = await import("./tool.tsx");
       return function (handle, element) {

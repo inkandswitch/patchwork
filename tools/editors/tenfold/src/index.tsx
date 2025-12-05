@@ -2,7 +2,7 @@
 import "./index.css";
 import type { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
 import {
-  type LoadableDataType,
+  type LoadableDatatype,
   type LoadablePlugin,
   type ToolDescription,
   type ToolImplementation,
@@ -95,12 +95,12 @@ export const plugins = [
         },
       };
     },
-  } satisfies LoadableDataType<Tenfold>,
+  } satisfies LoadableDatatype<Tenfold>,
   {
     type: "patchwork:tool",
     id: "inkandswitch/tenfold",
     name: "Tenfold",
-    supportedDataTypes: ["inkandswitch/tenfold"],
+    supportedDatatypes: ["inkandswitch/tenfold"],
     async load() {
       //const styles = await loadStyles();
       //addStyles(styles);
@@ -122,7 +122,7 @@ export const plugins = [
     type: "patchwork:tool",
     id: "chee/temporary-file-viewer",
     name: "File Viewer (don't @ me)",
-    supportedDataTypes: ["file"],
+    supportedDatatypes: ["file"],
     async load() {
       const tool = await import("./file-viewer.tsx");
       return (handle, element) => {

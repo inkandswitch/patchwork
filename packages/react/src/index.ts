@@ -1,6 +1,6 @@
 import type {
-  DataTypeDescription,
-  DataTypeImplementation,
+  DatatypeDescription,
+  DatatypeImplementation,
   LoadedPlugin,
   PluginDescription,
   ToolDescription,
@@ -79,13 +79,13 @@ export const usePlugin = <
 };
 
 export const useDatatypeDescriptions = () => {
-  return usePluginDescriptions<DataTypeDescription, DataTypeImplementation>(
+  return usePluginDescriptions<DatatypeDescription, DatatypeImplementation>(
     "patchwork:datatype"
   );
 };
 
 export const useDatatype = (id?: string) => {
-  return usePlugin<DataTypeDescription, DataTypeImplementation>(
+  return usePlugin<DatatypeDescription, DatatypeImplementation>(
     "patchwork:datatype",
     id
   );

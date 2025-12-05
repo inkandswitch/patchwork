@@ -5,7 +5,7 @@ export const plugins = [
     type: "codemirror:extension",
     id: "codemirror-markdown",
     name: "Markdown",
-    supportedDataTypes: ["essay", "markdown"],
+    supportedDatatypes: ["essay", "markdown"],
     async load(): Promise<Extension> {
       const { markdownExtensions } = await import("./extension.js");
       return markdownExtensions();
@@ -17,8 +17,8 @@ export const plugins = [
     name: "Markdown",
     icon: "FileText",
     async load() {
-      const { MarkdownDataType } = await import("./datatype.js");
-      return MarkdownDataType;
+      const { MarkdownDatatype } = await import("./datatype.js");
+      return MarkdownDatatype;
     },
   },
   {
@@ -28,8 +28,8 @@ export const plugins = [
     icon: "FileText",
     unlisted: true,
     async load() {
-      const { MarkdownDataType } = await import("./datatype.js");
-      return MarkdownDataType;
+      const { MarkdownDatatype } = await import("./datatype.js");
+      return MarkdownDatatype;
     },
   },
 ];

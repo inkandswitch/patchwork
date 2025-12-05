@@ -1,8 +1,8 @@
-import { DataTypeImplementation } from "@inkandswitch/patchwork-plugins";
+import { DatatypeImplementation } from "@inkandswitch/patchwork-plugins";
 
 export type CommentsViewDoc = Record<string, never>;
 
-export const CommentsViewDataType: DataTypeImplementation<CommentsViewDoc> = {
+export const CommentsViewDatatype: DatatypeImplementation<CommentsViewDoc> = {
   init: () => {},
   getTitle() {
     return "Comments View";

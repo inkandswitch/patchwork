@@ -7,7 +7,7 @@ export const plugins: Plugin<any>[] = [
     id: "patchwork-frame",
     name: "Patchwork Frame",
     icon: "Window",
-    supportedDataTypes: ["account"],
+    supportedDatatypes: ["account"],
     async load() {
       const { PatchworkFrame } = await import("./PatchworkFrame");
       return toolify(PatchworkFrame);

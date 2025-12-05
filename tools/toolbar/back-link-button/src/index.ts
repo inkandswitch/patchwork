@@ -7,7 +7,7 @@ export const plugins: Plugin<any>[] = [
     id: "back-link-button",
     name: "Back Link Button",
     icon: "ArrowLeft",
-    supportedDataTypes: "*",
+    supportedDatatypes: "*",
     async load() {
       const { BackLinkButton } = await import("./BackLinkButton");
       return toolify(BackLinkButton);

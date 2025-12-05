@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import { dataType as datatype } from "./datatype.ts";
+import { datatype as datatype } from "./datatype.ts";
 import { RepoContext } from "@automerge/react";
 import "./main.css";
 
@@ -18,7 +18,7 @@ export const plugins = [
     type: "patchwork:tool",
     id: "tldraw",
     name: "Drawing",
-    supportedDataTypes: ["tldraw"],
+    supportedDatatypes: ["tldraw"],
     async load(): Promise<ToolImplementation> {
       const { TldrawTool } = await import("./tool.tsx");
       return (handle, element) => {

@@ -8,15 +8,15 @@ export const plugins = [
     name: "Contact",
     icon: "User",
     async load() {
-      const { ContactDataType } = await import("./datatype");
-      return ContactDataType;
+      const { ContactDatatype } = await import("./datatype");
+      return ContactDatatype;
     },
   },
   {
     type: "patchwork:tool",
     id: "contact",
     name: "Contact Viewer",
-    supportedDataTypes: ["contact"],
+    supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
       const { createRoot } = await import( "react-dom/client");
       const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");
@@ -36,7 +36,7 @@ export const plugins = [
     type: "patchwork:tool",
     id: "contact-avatar",
     name: "Contact Avatar",
-    supportedDataTypes: ["contact"],
+    supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
       const { createRoot } = await import( "react-dom/client");
       const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");
@@ -56,7 +56,7 @@ export const plugins = [
     type: "patchwork:tool",
     id: "contact-inline",
     name: "Inline Contact Avatar",
-    supportedDataTypes: ["contact"],
+    supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
       const { createRoot } = await import( "react-dom/client");
       const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");

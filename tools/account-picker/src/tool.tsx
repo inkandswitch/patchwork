@@ -5,7 +5,7 @@ export const plugins = [
     type: "patchwork:tool",
     id: "account-picker",
     name: "Account Picker",
-    supportedDataTypes: ["account"],
+    supportedDatatypes: ["account"],
     async load(): Promise<ToolImplementation> {
       const {createRoot} = await import("react-dom/client");
       const { RepoContext } = await import("@automerge/automerge-repo-react-hooks");

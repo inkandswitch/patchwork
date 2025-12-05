@@ -1,6 +1,6 @@
 import type {
   ToolDescription,
-  DataTypeDescription,
+  DatatypeDescription,
   Plugin,
   PluginDescription,
 } from "@inkandswitch/patchwork-plugins";
@@ -39,17 +39,17 @@ export function useTools(): Plugin<ToolDescription>[] {
 /**
  * Hook to get all datatype plugins
  */
-export function useDatatypes(): Plugin<DataTypeDescription>[] {
-  return usePlugins<DataTypeDescription>("patchwork:datatype");
+export function useDatatypes(): Plugin<DatatypeDescription>[] {
+  return usePlugins<DatatypeDescription>("patchwork:datatype");
 }
 
 /**
  * Hook to get filtered datatype plugins
  */
 export function useFilteredDatatypes(
-  filter: (item: DataTypeDescription) => boolean
-): Plugin<DataTypeDescription>[] {
-  const datatypeRegistry = getRegistry<DataTypeDescription>("patchwork:datatype");
+  filter: (item: DatatypeDescription) => boolean
+): Plugin<DatatypeDescription>[] {
+  const datatypeRegistry = getRegistry<DatatypeDescription>("patchwork:datatype");
   const [plugins, setPlugins] = createStore(datatypeRegistry.filter(filter));
   const dispose = datatypeRegistry.on("changed", () =>
     setPlugins(reconcile(datatypeRegistry.filter(filter)))

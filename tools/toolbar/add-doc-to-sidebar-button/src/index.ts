@@ -7,7 +7,7 @@ export const plugins: Plugin<any>[] = [
     id: "add-doc-to-sidebar-button",
     name: "Add doc to sidebar button",
     icon: "Plus",
-    supportedDataTypes: "*",
+    supportedDatatypes: "*",
     async load() {
       const { AddDocToSidebarButton } = await import("./AddDocToSidebarButton");
       return toolify(AddDocToSidebarButton);

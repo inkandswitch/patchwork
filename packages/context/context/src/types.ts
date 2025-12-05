@@ -1,13 +1,13 @@
 import { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 
-export type DataType<Doc = unknown> = {
+export type Datatype<Doc = unknown> = {
   id: string;
   name: string;
   getTitle: (doc: Doc) => string;
 };
 
-export type DataTypeTemplate<Doc = unknown> = {
-  dataType: string;
+export type DatatypeTemplate<Doc = unknown> = {
+  datatype: string;
   name: string;
   init: (doc: Doc, repo: Repo) => void;
 };

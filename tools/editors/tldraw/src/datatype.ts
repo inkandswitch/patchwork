@@ -1,4 +1,4 @@
-import type { DataTypeImplementation } from "@inkandswitch/patchwork-plugins";
+import type { DatatypeImplementation } from "@inkandswitch/patchwork-plugins";
 import {
   createTLSchema,
   createTLStore,
@@ -43,7 +43,7 @@ export const init = (doc: TLDrawDoc) => {
   };
 };
 
-export const dataType: DataTypeImplementation<TLDrawDoc> = {
+export const datatype: DatatypeImplementation<TLDrawDoc> = {
   init,
   getTitle,
   setTitle,

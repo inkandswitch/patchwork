@@ -1,4 +1,4 @@
-import { DataTypeDescription } from "../datatypes.js";
+import { DatatypeDescription } from "../datatypes.js";
 import { ToolDescription } from "../tools.js";
 
 export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
@@ -15,7 +15,7 @@ export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
  */
 export type RegistryTypeMap = {
   "patchwork:tool": ToolDescription;
-  "patchwork:datatype": DataTypeDescription;
+  "patchwork:datatype": DatatypeDescription;
 };
 
 /**

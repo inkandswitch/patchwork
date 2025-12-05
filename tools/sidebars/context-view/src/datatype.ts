@@ -1,8 +1,8 @@
-import { DataTypeImplementation } from "@inkandswitch/patchwork-plugins";
+import { DatatypeImplementation } from "@inkandswitch/patchwork-plugins";
 
 export type ContextViewDoc = Record<string, never>;
 
-export const ContextViewDataType: DataTypeImplementation<ContextViewDoc> = {
+export const ContextViewDatatype: DatatypeImplementation<ContextViewDoc> = {
   init: () => {},
   getTitle() {
     return "Context View";

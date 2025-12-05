@@ -1,4 +1,4 @@
-import { type DataTypeImplementation } from "@inkandswitch/patchwork-plugins";
+import { type DatatypeImplementation } from "@inkandswitch/patchwork-plugins";
 import type { ContactDoc } from "./types";
 
 export const init = (doc: ContactDoc) => {
@@ -20,7 +20,7 @@ const setTitle = (doc: ContactDoc, title: string) => {
   }
 };
 
-export const ContactDataType: DataTypeImplementation<ContactDoc> = {
+export const ContactDatatype: DatatypeImplementation<ContactDoc> = {
   init,
   getTitle,
   setTitle,

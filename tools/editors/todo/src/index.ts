@@ -6,7 +6,7 @@ export const plugins: Plugin<any>[] = [
     id: "todo",
     name: "Todo List",
     icon: "ListTodo",
-    supportedDataTypes: ["todo"],
+    supportedDatatypes: ["todo"],
     async load() {
       const { renderTodoEditor } = await import("./Todo");
       return renderTodoEditor;
@@ -18,8 +18,8 @@ export const plugins: Plugin<any>[] = [
     name: "Todo List",
     icon: "ListTodo",
     async load() {
-      const { TodoDataType } = await import("./datatype");
-      return TodoDataType;
+      const { TodoDatatype } = await import("./datatype");
+      return TodoDatatype;
     },
   },
 ];
