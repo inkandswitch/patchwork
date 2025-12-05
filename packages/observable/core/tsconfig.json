@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "rootDir": "core/src",
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "outDir": "core/dist",
+    "declaration": true,
+    "lib": ["ESNext", "DOM"],
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true
+  },
+  "include": ["core/src"],
+  "exclude": ["core/dist", "node_modules"]
+}

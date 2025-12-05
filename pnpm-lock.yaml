@@ -197,7 +197,7 @@ importers:
         version: link:../../context
       '@patchwork/observable':
         specifier: workspace:*
-        version: link:../../../observable
+        version: link:../../../observable/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../../refs
@@ -222,7 +222,7 @@ importers:
         version: link:../../context
       '@patchwork/observable':
         specifier: workspace:*
-        version: link:../../../observable
+        version: link:../../../observable/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../../refs
@@ -244,7 +244,7 @@ importers:
         version: link:../../context
       '@patchwork/observable':
         specifier: workspace:*
-        version: link:../../../observable
+        version: link:../../../observable/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../../refs
@@ -270,7 +270,7 @@ importers:
     dependencies:
       '@patchwork/observable':
         specifier: workspace:*
-        version: link:../../observable
+        version: link:../../observable/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../refs
@@ -408,7 +408,7 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
-  packages/observable:
+  packages/observable/core:
     dependencies:
       eventemitter3:
         specifier: ^5.0.1
@@ -418,11 +418,11 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
-  packages/observable-react:
+  packages/observable/frameworks/react:
     dependencies:
       '@patchwork/observable':
-        specifier: workspace:*
-        version: link:../observable
+        specifier: workspace:^
+        version: link:../../core
       react:
         specifier: ^18.0.0
         version: 18.3.1
@@ -2540,10 +2540,10 @@ importers:
         version: link:../../../core/filesystem
       '@patchwork/observable':
         specifier: workspace:^
-        version: link:../../../packages/observable
+        version: link:../../../packages/observable/core
       '@patchwork/observable-react':
         specifier: workspace:^
-        version: link:../../../packages/observable-react
+        version: link:../../../packages/observable/frameworks/react
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
