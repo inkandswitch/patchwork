@@ -173,7 +173,7 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
     if (!currentAccount || !accountAutomergeUrlToLogin) return;
 
     localStorage.setItem(ACCOUNT_URL_STORAGE_KEY, accountAutomergeUrlToLogin);
-    window.location.reload();
+    window.location.replace("/");
   };
 
   const onLogout = async () => {
