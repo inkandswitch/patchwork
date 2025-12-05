@@ -2520,39 +2520,30 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patchwork/annotations':
+      '@patchwork/context':
         specifier: workspace:^
-        version: link:../../../packages/annotations/core
-      '@patchwork/annotations-context':
+        version: link:../../../packages/context/context
+      '@patchwork/context-diff':
         specifier: workspace:^
-        version: link:../../../packages/annotations/context
-      '@patchwork/annotations-diff':
+        version: link:../../../packages/context/annotations/context-diff
+      '@patchwork/context-react':
         specifier: workspace:^
-        version: link:../../../packages/annotations/annotation-types/diff
-      '@patchwork/annotations-selection':
+        version: link:../../../packages/context/frameworks/context-react
+      '@patchwork/context-selection':
         specifier: workspace:^
-        version: link:../../../packages/annotations/annotation-types/selection
+        version: link:../../../packages/context/annotations/context-selection
       '@patchwork/elements':
         specifier: workspace:^
         version: link:../../../core/elements
       '@patchwork/filesystem':
         specifier: workspace:^
         version: link:../../../core/filesystem
-      '@patchwork/observable':
-        specifier: workspace:^
-        version: link:../../../packages/observable/core
-      '@patchwork/observable-react':
-        specifier: workspace:^
-        version: link:../../../packages/observable/frameworks/react
       '@patchwork/plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
       '@patchwork/react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@patchwork/refs':
-        specifier: workspace:^
-        version: link:../../../packages/refs
       react:
         specifier: ^18.0.0
         version: 18.3.1
