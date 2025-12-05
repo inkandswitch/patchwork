@@ -1,5 +1,6 @@
 import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
 import "./styles.css";
+import  { createRoot } from "react-dom/client"
 
 export const plugins = [
   {
@@ -18,7 +19,6 @@ export const plugins = [
     name: "Contact Viewer",
     supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
-      const { createRoot } = await import( "react-dom/client");
       const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");
       const { ContactViewer } = await import("./components/ContactViewer");
       return (handle, element) => {
@@ -38,7 +38,6 @@ export const plugins = [
     name: "Contact Avatar",
     supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
-      const { createRoot } = await import( "react-dom/client");
       const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");
       const { ContactAvatar } = await import("./components/ContactAvatar");
       return (handle, element) => {
@@ -58,7 +57,6 @@ export const plugins = [
     name: "Inline Contact Avatar",
     supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
-      const { createRoot } = await import( "react-dom/client");
       const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");
       const { InlineContactAvatar } = await import("./components/InlineContactAvatar");
       return (handle, element) => {
