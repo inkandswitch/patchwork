@@ -39,8 +39,6 @@ export interface RegisterPatchworkViewElementParams {
   name?: string;
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
-  // todo do not need the below when tools are URLs
-  moduleWatcher: ModuleWatcher;
 }
 
 export interface PatchworkViewElement extends HTMLElement {
@@ -56,7 +54,7 @@ export function registerPatchworkViewElement(
   const name = params.name ?? "patchwork-view";
 
   const repo = params.repo;
-  const moduleWatcher = params.moduleWatcher;
+
 
   if (customElements.get(name)) {
     console.error(`can't redefine a custom element. defining "${name}"`);
