@@ -13,5 +13,6 @@ export const plugins: Plugin<any>[] = [
       return toolify(BackLinkButton);
     },
     unlisted: true,
+    forTitleBar: true,
   },
 ];

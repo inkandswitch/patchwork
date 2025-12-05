@@ -15,5 +15,6 @@ export const plugins: Plugin<any>[] = [
       return toolify(HighlightChangesOption);
     },
     unlisted: true,
+    forTitleBar: true,
   },
 ];

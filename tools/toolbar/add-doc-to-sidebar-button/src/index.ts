@@ -13,5 +13,6 @@ export const plugins: Plugin<any>[] = [
       return toolify(AddDocToSidebarButton);
     },
     unlisted: true,
+    forTitleBar: true,
   },
 ];
