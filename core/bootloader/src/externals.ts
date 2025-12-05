@@ -17,5 +17,10 @@ const externals = [
   // sad
   "@codemirror/state",
   "@codemirror/view",
+  "@patchwork/context",
+  "@patchwork/context-comments",
+  "@patchwork/context-diff",
+  "@patchwork/context-selection",
+  "@patchwork/context-solid",
 ];
 export default externals;
