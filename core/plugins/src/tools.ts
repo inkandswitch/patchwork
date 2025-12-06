@@ -1,6 +1,13 @@
 import type { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import type { LoadablePlugin, LoadedPlugin, PluginDescription } from "./registry/index.js";
-import { getType, type HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
+import type {
+  LoadablePlugin,
+  LoadedPlugin,
+  PluginDescription,
+} from "./registry/index.js";
+import {
+  getType,
+  type HasPatchworkMetadata,
+} from "@inkandswitch/patchwork-filesystem";
 import { getRegistry } from "./registry/index.js";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
@@ -32,8 +39,15 @@ export type ToolDescription = PluginDescription & {
   forTitleBar?: boolean;
 };
 
-export type LoadedTool = LoadedPlugin<ToolDescription, ToolImplementation>;
-export type Tool = LoadablePlugin<ToolDescription, ToolImplementation>
+export type LoadedTool<T = unknown> = LoadedPlugin<
+  ToolDescription,
+  ToolImplementation<T>
+>;
+
+export type Tool<T = unknown> = LoadablePlugin<
+  ToolDescription,
+  ToolImplementation<T>
+>;
 
 export type LegacyEditorProps = { docUrl: AutomergeUrl };
 
