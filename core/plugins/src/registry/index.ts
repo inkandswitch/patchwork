@@ -19,7 +19,7 @@ const registries: Record<string, PluginRegistry<any>> = {};
  * This implicitly registers the plugin type if it hasn't been registered yet
  */
 export function getRegistry<T extends PluginDescription>(
-  type: string,
+  type: string
 ): PluginRegistry<T> {
   // If the registry doesn't exist yet, create it
   if (!registries[type]) {
@@ -38,7 +38,7 @@ function migrate(plugin: LoadablePlugin) {
       console.warn(
         plugin.id,
         plugin.importUrl,
-        "supportedDataTypes was renamed to supportedDatatypes (lowercase t in types). fix it to get rid of this warning",
+        "supportedDataTypes was renamed to supportedDatatypes (lowercase t in types). fix it to get rid of this warning"
       );
       tool.supportedDatatypes = tool.supportedDataTypes as string[];
     }
@@ -46,9 +46,9 @@ function migrate(plugin: LoadablePlugin) {
     console.warn(
       plugin.id,
       plugin.importUrl,
-      '"type": "patchwork:dataType" was renamed to patchwork:dataType (lowercase t in type). fix it to get rid of this warning',
+      '"type": "patchwork:dataType" was renamed to patchwork:datatype (lowercase t in type). fix it to get rid of this warning'
     );
-    plugin.type = "patchwork:datatype"
+    plugin.type = "patchwork:datatype";
   }
 }
 
@@ -57,7 +57,7 @@ function migrate(plugin: LoadablePlugin) {
  */
 export function registerPlugins<D extends PluginDescription, I>(
   plugins: LoadablePlugin<D, I>[],
-  importUrl: string,
+  importUrl: string
 ) {
   // Register each group with its appropriate registry
   plugins.forEach((plugin) => {
