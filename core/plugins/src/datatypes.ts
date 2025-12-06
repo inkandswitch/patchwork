@@ -8,9 +8,9 @@ import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 
 // Datatype implementation interface
 export type DatatypeImplementation<D = unknown> = {
-  init: (doc: D, repo: Repo) => void;
-  getTitle: (doc: D) => string;
-  setTitle?: (doc: any, title: string) => void;
+  init(doc: D, repo: Repo): void;
+  getTitle(doc: D): string;
+  setTitle?(doc: D, title: string): void;
 };
 
 // The Datatype description extends the base PluginDescription
