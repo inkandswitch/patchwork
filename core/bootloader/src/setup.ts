@@ -43,6 +43,8 @@ export function bumpServiceWorkerCache(
   setServiceWorkerCacheName(sw);
 }
 
+const encoder = new TextEncoder();
+
 export default async function setupServiceWorker(
   handler: HandoffHandler,
   options?: SetupServiceWorkerOptions
@@ -98,7 +100,10 @@ export default async function setupServiceWorker(
 
       const { body: handoffBody, headers, status, cache } = handoffResponse;
 
-      const body = handoffBody;
+      const body =
+        handoffBody instanceof Uint8Array
+          ? handoffBody
+          : handoffBody && encoder.encode(handoffBody);
 
       send(
         { body, headers, status, cache },
