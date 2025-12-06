@@ -43,6 +43,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: tell discord
+        if: steps.changesets.outputs.published == 'true'
         uses: tsickert/discord-webhook@v7.0.0
         with:
           webhook-url: ${{ secrets.PATCHWORK_FEED_WEBHOOK_URL }}
