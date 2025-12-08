@@ -2,15 +2,15 @@
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { type Plugin } from "@patchwork/plugins";
 
-export const viewDocumentAction: Plugin<any> = {
+export const viewAction: Plugin<any> = {
   type: "patchwork:action",
-  id: "chat-view-document",
-  name: "View Document",
+  id: "view",
+  name: "View",
   icon: "Eye",
-  supportedDataTypes: ["chat"],
+  supportedDataTypes: ["*"],
   module: {
     isApplicable: () => true,
-    default: async (handle: DocHandle<unknown>, repo: Repo) => {
+    default: async (handle: DocHandle<unknown>, _repo: Repo) => {
       // Get the current document state
       const doc = handle.doc();
 

@@ -4,6 +4,7 @@ import { createDocumentAction } from "./createDocument";
 import { deleteAction } from "./delete";
 import { insertAction } from "./insert";
 import { updateAction } from "./update";
+import { viewAction } from "./view";
 
 import "./index.css";
 
@@ -12,5 +13,6 @@ export const plugins: Plugin<any>[] = [
   updateAction as any,
   deleteAction as any,
   insertAction as any,
+  viewAction as any,
   actionRunnerTool as any,
 ];
