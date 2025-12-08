@@ -593,6 +593,9 @@ importers:
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.0
+      '@codemirror/language':
+        specifier: ^6.11.3
+        version: 6.11.3
       '@codemirror/state':
         specifier: ^6.5.2
         version: 6.5.2
