@@ -17,5 +17,6 @@ const externals = [
   // sad
   "@codemirror/state",
   "@codemirror/view",
+  "@codemirror/language",
 ];
 export default externals;
