@@ -39,7 +39,6 @@
     "@grjte/codemirror-base": "workspace:^",
     "@grjte/codemirror-embed": "workspace:^",
     "@grjte/codemirror-markdown": "workspace:^",
-    "@grjte/codemirror-md-links": "workspace:^",
     "@inkandswitch/tenfold": "workspace:^",
     "@orion/commands": "workspace:^",
     "@orion/markwhen": "workspace:^",

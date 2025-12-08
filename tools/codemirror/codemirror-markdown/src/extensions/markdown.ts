@@ -13,7 +13,7 @@ import { searchKeymap } from "@codemirror/search";
 import { EditorView, keymap } from "@codemirror/view";
 
 /** Styles */
-import { theme } from "./theme.ts";
+import { theme } from "../themes/markdown.ts";
 
 export function markdownExtensions() {
   return [

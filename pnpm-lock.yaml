@@ -412,9 +412,6 @@ importers:
       '@grjte/codemirror-markdown':
         specifier: workspace:^
         version: link:../../tools/codemirror/codemirror-markdown
-      '@grjte/codemirror-md-links':
-        specifier: workspace:^
-        version: link:../../tools/codemirror/codemirror-md-links
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../core/elements
@@ -663,9 +660,6 @@ importers:
       '@grjte/codemirror-markdown':
         specifier: workspace:^
         version: link:../../tools/codemirror/codemirror-markdown
-      '@grjte/codemirror-md-links':
-        specifier: workspace:^
-        version: link:../../tools/codemirror/codemirror-md-links
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../core/elements
@@ -1096,52 +1090,6 @@ importers:
       '@lezer/highlight':
         specifier: ^1.2.1
         version: 1.2.2
-    devDependencies:
-      '@babel/core':
-        specifier: ^7.28.4
-        version: 7.28.4
-      '@babel/parser':
-        specifier: ^7.28.4
-        version: 7.28.4
-      '@eslint/js':
-        specifier: ^9.36.0
-        version: 9.38.0
-      '@node-types/node':
-        specifier: npm:@types/node@^24.9.1
-        version: '@types/node@24.9.1'
-      '@types/babel__core':
-        specifier: ^7.20.5
-        version: 7.20.5
-      esbuild:
-        specifier: ^0.23.1
-        version: 0.23.1
-      eslint:
-        specifier: ^9.36.0
-        version: 9.38.0(jiti@2.6.1)
-      globals:
-        specifier: ^16.4.0
-        version: 16.4.0
-      typescript:
-        specifier: ~5.9.3
-        version: 5.9.3
-      typescript-eslint:
-        specifier: ^8.45.0
-        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
-
-  tools/codemirror/codemirror-md-links:
-    dependencies:
-      '@codemirror/language':
-        specifier: ^6.11.3
-        version: 6.11.3
-      '@codemirror/state':
-        specifier: ^6.5.2
-        version: 6.5.2
-      '@codemirror/view':
-        specifier: ^6.38.4
-        version: 6.38.8
-      '@inkandswitch/patchwork-bootloader':
-        specifier: workspace:^
-        version: link:../../../core/bootloader
     devDependencies:
       '@babel/core':
         specifier: ^7.28.4

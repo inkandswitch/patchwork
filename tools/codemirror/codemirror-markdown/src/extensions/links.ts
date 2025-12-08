@@ -8,7 +8,7 @@ import {
 } from "@codemirror/view";
 import { Range } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
-import { linkTheme } from "./theme.ts";
+import { linkTheme } from "../themes/links.ts";
 
 /**
  * Widget to render a clickable link in the editor
