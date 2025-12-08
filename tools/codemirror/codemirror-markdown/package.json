@@ -9,9 +9,13 @@
       "import": "./dist/main.js",
       "source": "./src/main.tsx"
     },
-    "./extension": {
-      "import": "./dist/extension.js",
-      "source": "./src/extension.ts"
+    "./markdown": {
+      "import": "./dist/extensions/markdown.js",
+      "source": "./src/extensions/markdown.ts"
+    },
+    "./markdown-links": {
+      "import": "./dist/extensions/links.js",
+      "source": "./src/extensions/links.ts"
     },
     "./datatype": {
       "import": "./dist/datatype.js",
