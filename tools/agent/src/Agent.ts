@@ -20,7 +20,7 @@ import type {
   ChatMessage,
 } from "../../chat/src/types";
 
-import type { TodoDoc } from "../../todo/src/Todo";
+import type { TodoDoc } from "../../editors/todo/src/Todo";
 
 import outdent from "outdent";
 
