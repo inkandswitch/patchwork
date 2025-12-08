@@ -1,0 +1,10 @@
+{
+  "name": "counter",
+  "type": "module",
+  "main": "./index.js",
+  "dependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@patchwork/plugins": "workspace:^"
+  }
+}
