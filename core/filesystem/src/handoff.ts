@@ -103,6 +103,7 @@ export function createFilesystemHandoffHandler(repo: Repo) {
       return {
         body: `${error}`,
         status: 567,
+        cache: false,
       } as const;
     }
   };
