@@ -421,6 +421,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../core/plugins
+      '@inkandswitch/patchwork-react':
+        specifier: workspace:^
+        version: link:../../packages/react
       '@inkandswitch/tenfold':
         specifier: workspace:^
         version: link:../../tools/editors/tenfold
@@ -448,9 +451,6 @@ importers:
       '@patchwork/context-solid':
         specifier: workspace:^
         version: link:../../packages/context/frameworks/context-solid
-      '@inkandswitch/patchwork-react':
-        specifier: workspace:^
-        version: link:../../packages/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../packages/refs
@@ -669,6 +669,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../core/plugins
+      '@inkandswitch/patchwork-react':
+        specifier: workspace:^
+        version: link:../../packages/react
       '@inkandswitch/tenfold':
         specifier: workspace:^
         version: link:../../tools/editors/tenfold
@@ -702,9 +705,6 @@ importers:
       '@patchwork/context-solid':
         specifier: workspace:^
         version: link:../../packages/context/frameworks/context-solid
-      '@inkandswitch/patchwork-react':
-        specifier: workspace:^
-        version: link:../../packages/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../packages/refs
@@ -750,9 +750,6 @@ importers:
       '@tiny-patchwork/sync-indicator':
         specifier: workspace:^
         version: link:../../tools/toolbar/sync-indicator
-      '@tiny-patchwork/todo':
-        specifier: workspace:^
-        version: link:../../tools/editors/todo
       add:
         specifier: ^2.0.6
         version: 2.0.6
@@ -1539,6 +1536,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
+      '@inkandswitch/patchwork-react':
+        specifier: workspace:^
+        version: link:../../../packages/react
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../../packages/context/context
@@ -1548,9 +1548,6 @@ importers:
       '@patchwork/context-react':
         specifier: workspace:^
         version: link:../../../packages/context/frameworks/context-react
-      '@inkandswitch/patchwork-react':
-        specifier: workspace:^
-        version: link:../../../packages/react
       '@patchwork/util':
         specifier: workspace:^
         version: link:../../../packages/util
@@ -1630,6 +1627,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
+      '@inkandswitch/patchwork-react':
+        specifier: workspace:^
+        version: link:../../../packages/react
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../../packages/context/context
@@ -1642,9 +1642,6 @@ importers:
       '@patchwork/context-selection':
         specifier: workspace:^
         version: link:../../../packages/context/annotations/context-selection
-      '@inkandswitch/patchwork-react':
-        specifier: workspace:^
-        version: link:../../../packages/react
       '@patchwork/util':
         specifier: workspace:^
         version: link:../../../packages/util
@@ -1806,15 +1803,15 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
+      '@inkandswitch/patchwork-react':
+        specifier: workspace:^
+        version: link:../../../packages/react
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../../packages/context/context
       '@patchwork/context-react':
         specifier: workspace:^
         version: link:../../../packages/context/frameworks/context-react
-      '@inkandswitch/patchwork-react':
-        specifier: workspace:^
-        version: link:../../../packages/react
       react:
         specifier: ^18.0.0
         version: 18.3.1
@@ -1891,6 +1888,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
+      '@inkandswitch/patchwork-react':
+        specifier: workspace:^
+        version: link:../../../packages/react
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../../packages/context/context
@@ -1903,9 +1903,6 @@ importers:
       '@patchwork/context-selection':
         specifier: workspace:^
         version: link:../../../packages/context/annotations/context-selection
-      '@inkandswitch/patchwork-react':
-        specifier: workspace:^
-        version: link:../../../packages/react
       '@patchwork/util':
         specifier: workspace:^
         version: link:../../../packages/util
@@ -2186,6 +2183,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
+      '@inkandswitch/patchwork-react':
+        specifier: workspace:^
+        version: link:../../../packages/react
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../../packages/context/context
@@ -2201,9 +2201,6 @@ importers:
       '@patchwork/context-selection':
         specifier: workspace:^
         version: link:../../../packages/context/annotations/context-selection
-      '@inkandswitch/patchwork-react':
-        specifier: workspace:^
-        version: link:../../../packages/react
       react:
         specifier: ^18.0.0
         version: 18.3.1
@@ -2517,6 +2514,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
+      '@inkandswitch/patchwork-react':
+        specifier: workspace:^
+        version: link:../../../packages/react
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../../packages/context/context
@@ -2529,9 +2529,6 @@ importers:
       '@patchwork/context-selection':
         specifier: workspace:^
         version: link:../../../packages/context/annotations/context-selection
-      '@inkandswitch/patchwork-react':
-        specifier: workspace:^
-        version: link:../../../packages/react
       react:
         specifier: ^18.0.0
         version: 18.3.1
