@@ -7,7 +7,7 @@ import {
 import { ToolElement } from "@inkandswitch/patchwork-plugins";
 import "./styles.css";
 import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { useDatatype } from "@patchwork/react";
+import { useDatatype } from "@inkandswitch/patchwork-react";
 
 export const AddDocToSidebarButton = ({
   docUrl,

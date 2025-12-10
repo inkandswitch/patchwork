@@ -3,8 +3,8 @@ import { AutomergeUrl } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { useState } from "react";
 import { TinyPatchworkLayoutDoc } from "./types";
-import { useTool } from "@patchwork/react";
-import { toolify } from "@patchwork/react";
+import { useTool } from "@inkandswitch/patchwork-react";
+import { toolify } from "@inkandswitch/patchwork-react";
 import "@inkandswitch/patchwork-elements";
 
 const ContextSidebar = ({

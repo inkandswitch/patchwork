@@ -7,7 +7,7 @@ import { useState } from "react";
 import { PathRef, Ref } from "@patchwork/context";
 import { getDiff } from "@patchwork/context-diff";
 import { useReactive } from "@patchwork/context-react";
-import { ReactToolProps, toolify } from "@patchwork/react";
+import { ReactToolProps, toolify } from "@inkandswitch/patchwork-react";
 import { classNames } from "@patchwork/util";
 
 type Todo = {

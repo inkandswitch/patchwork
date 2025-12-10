@@ -51,7 +51,7 @@
     "@inkandswitch/patchwork-elements": "workspace:^",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
-    "@patchwork/react": "workspace:^",
+    "@inkandswitch/patchwork-react": "workspace:^",
     "@patchwork/refs": "workspace:^",
     "@patchwork/tldraw": "workspace:^",
     "@patchwork/util": "workspace:^",
