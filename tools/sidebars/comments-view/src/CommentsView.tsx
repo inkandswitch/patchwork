@@ -12,7 +12,7 @@ import Avatar from "boring-avatars";
 
 import { IsSelected } from "@patchwork/context-selection";
 import { relativeTime } from "@patchwork/util/src/relative-time";
-import { toolify } from "@patchwork/react";
+import { toolify } from "@inkandswitch/patchwork-react";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 
 const CommentsView = () => {

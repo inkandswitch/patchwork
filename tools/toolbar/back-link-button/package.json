@@ -15,7 +15,7 @@
     "@inkandswitch/patchwork-elements": "workspace:^",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
-    "@patchwork/react": "workspace:^",
+    "@inkandswitch/patchwork-react": "workspace:^",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "tailwindcss": "^4.1.14"

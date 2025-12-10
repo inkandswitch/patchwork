@@ -5,7 +5,7 @@ import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import { getType, HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import { ToolElement } from "@inkandswitch/patchwork-plugins";
 import { openDocument } from "@inkandswitch/patchwork-elements";
-import { useDatatype } from "@patchwork/react";
+import { useDatatype } from "@inkandswitch/patchwork-react";
 
 export const BackLinkButton = ({
   docUrl,
