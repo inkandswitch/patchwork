@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-plugins
 
+## 0.0.5
+
+### Patch Changes
+
+- 435e9fe: add doc datatype to setTitle signature
+
 ## 0.0.4
 
 ### Patch Changes
