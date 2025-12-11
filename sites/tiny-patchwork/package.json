@@ -5,7 +5,6 @@
   "devDependencies": {
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@eslint/js": "^9.37.0",
-    "@keyhive/keyhive": "catalog:",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@tailwindcss/vite": "^4.1.14",
     "@types/react": "catalog:",
@@ -40,6 +39,7 @@
     "@grjte/codemirror-embed": "workspace:^",
     "@grjte/codemirror-markdown": "workspace:^",
     "@inkandswitch/tenfold": "workspace:^",
+    "@keyhive/keyhive": "catalog:",
     "@orion/commands": "workspace:^",
     "@orion/markwhen": "workspace:^",
     "@patchwork/account-picker": "workspace:^",

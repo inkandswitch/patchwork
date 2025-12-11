@@ -21,8 +21,7 @@
   "pnpm": {
     "overrides": {
       "@automerge/automerge": "catalog:",
-      "@automerge/automerge-repo": "catalog:",
-      "@keyhive/keyhive": "catalog:"
+      "@automerge/automerge-repo": "catalog:"
     }
   },
   "keywords": [],

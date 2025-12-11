@@ -21,9 +21,9 @@
     "@codemirror/language": "^6.11.3",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.8",
-    "@keyhive/keyhive": "catalog:",
     "@inkandswitch/patchwork-elements": "workspace:^",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
-    "@inkandswitch/patchwork-plugins": "workspace:^"
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@keyhive/keyhive": "catalog:"
   }
 }

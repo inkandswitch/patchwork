@@ -27,4 +27,7 @@ export default defineConfig({
       port: process.env.PORT ? +process.env.PORT : undefined,
     },
   },
+  optimizeDeps: {
+    exclude: ["@automerge/automerge-repo-keyhive"],
+  },
 });
