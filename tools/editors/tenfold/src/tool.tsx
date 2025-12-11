@@ -147,6 +147,7 @@ export default function TenfoldExperience(props: {
             setLetter(letterIndex, () => {});
             return;
           }
+
           if (!prev || prev != content) {
             try {
               setLetter(+letterIndex, createCode(content));

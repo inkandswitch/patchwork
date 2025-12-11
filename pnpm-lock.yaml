@@ -393,6 +393,9 @@ importers:
       '@chee/patchwork-sideboard':
         specifier: workspace:^
         version: link:../../tools/sidebars/sideboard
+      '@codemirror/commands':
+        specifier: ^6.9.0
+        version: 6.10.0
       '@codemirror/language':
         specifier: ^6.11.3
         version: 6.11.3
@@ -586,6 +589,9 @@ importers:
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.2-alpha.0
+      '@codemirror/commands':
+        specifier: ^6.9.0
+        version: 6.10.0
       '@codemirror/language':
         specifier: ^6.11.3
         version: 6.11.3
@@ -638,6 +644,9 @@ importers:
       '@chee/patchwork-sideboard':
         specifier: workspace:^
         version: link:../../tools/sidebars/sideboard
+      '@codemirror/commands':
+        specifier: ^6.9.0
+        version: 6.10.0
       '@codemirror/language':
         specifier: ^6.11.3
         version: 6.11.3
@@ -1338,9 +1347,6 @@ importers:
       '@kobalte/core':
         specifier: ^0.13.11
         version: 0.13.11(solid-js@1.9.10)
-      '@lezer/common':
-        specifier: ^1.2.3
-        version: 1.4.0
       '@lezer/highlight':
         specifier: ^1.2.2
         version: 1.2.3

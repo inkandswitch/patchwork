@@ -18,5 +18,8 @@ const externals = [
   "@codemirror/state",
   "@codemirror/view",
   "@codemirror/language",
+
+  // rip
+  "solid-js",
 ];
 export default externals;

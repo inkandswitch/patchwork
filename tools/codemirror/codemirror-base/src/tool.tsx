@@ -23,7 +23,7 @@ import {
 import { getRegistry } from "@inkandswitch/patchwork-plugins";
 
 /** Styles */
-import { createSignal, onMount } from "solid-js";
+import { createEffect, createSignal, onMount } from "solid-js";
 
 export type TextDoc = {
   content: string;
@@ -32,9 +32,6 @@ export type TextDoc = {
 const PATH = ["content"];
 
 export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
-  if (!props.handle) {
-    return;
-  }
   const contentRef = () =>
     new PathRef(props.handle as DocHandle<TextDoc>, PATH);
   const isReadOnly = () => !!parseAutomergeUrl(props.handle.url).heads;

@@ -1,5 +1,5 @@
-import type { SyntaxNode } from '@lezer/common';
-import { parser } from '@lezer/javascript';
+import type { SyntaxNode } from "@lezer/common";
+import { parser } from "@lezer/javascript";
 
 interface Loop {
   loopStart: number;
@@ -31,12 +31,12 @@ export function addLoopBudgetInstrumentation(code: string) {
 
     if (isBlockStatement) {
       // For block statements, insert right after the opening brace
-      const openBrace = body.indexOf('{');
+      const openBrace = body.indexOf("{");
       const instrumented =
         body.substring(0, openBrace + 1) +
-        ' ' +
+        " " +
         enforceBudget +
-        ' ' +
+        " " +
         body.substring(openBrace + 1);
       instrumentedCode = before + instrumented + after;
     } else {
@@ -52,11 +52,11 @@ export function addLoopBudgetInstrumentation(code: string) {
     do {
       if (
         [
-          'ForStatement',
-          'WhileStatement',
-          'DoStatement',
-          'ForInStatement',
-          'ForOfStatement',
+          "ForStatement",
+          "WhileStatement",
+          "DoStatement",
+          "ForInStatement",
+          "ForOfStatement",
         ].includes(cursor.name)
       ) {
         const loopStart = cursor.from;
@@ -68,7 +68,7 @@ export function addLoopBudgetInstrumentation(code: string) {
             loopEnd,
             bodyStart: bodyNode.from,
             bodyEnd: bodyNode.to,
-            isBlockStatement: bodyNode.name === 'Block',
+            isBlockStatement: bodyNode.name === "Block",
           });
         } else {
           console.log("uh-oh, didn't find body for loop at", cursor.from);
@@ -84,7 +84,9 @@ export function addLoopBudgetInstrumentation(code: string) {
   function findBody(node: SyntaxNode) {
     let child = node.firstChild;
     while (child) {
-      if (['Block', 'Statement', 'ExpressionStatement', ';'].includes(child.name)) {
+      if (
+        ["Block", "Statement", "ExpressionStatement", ";"].includes(child.name)
+      ) {
         return child;
       }
       child = child.nextSibling;
@@ -92,4 +94,3 @@ export function addLoopBudgetInstrumentation(code: string) {
     return null;
   }
 }
-
