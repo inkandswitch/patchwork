@@ -40,6 +40,10 @@
     "@grjte/codemirror-base": "workspace:^",
     "@grjte/codemirror-embed": "workspace:^",
     "@grjte/codemirror-markdown": "workspace:^",
+    "@inkandswitch/patchwork-elements": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@inkandswitch/patchwork-react": "workspace:^",
     "@inkandswitch/tenfold": "workspace:^",
     "@keyhive/keyhive": "catalog:",
     "@orion/commands": "workspace:^",
@@ -50,10 +54,6 @@
     "@patchwork/context-react": "workspace:^",
     "@patchwork/context-selection": "workspace:^",
     "@patchwork/context-solid": "workspace:^",
-    "@inkandswitch/patchwork-elements": "workspace:^",
-    "@inkandswitch/patchwork-filesystem": "workspace:^",
-    "@inkandswitch/patchwork-plugins": "workspace:^",
-    "@inkandswitch/patchwork-react": "workspace:^",
     "@patchwork/refs": "workspace:^",
     "@patchwork/tldraw": "workspace:^",
     "@patchwork/util": "workspace:^",
@@ -76,7 +76,7 @@
     "react-dom": "^18.0.0",
     "scheduler": "^0.27.0",
     "signia": "^0.1.5",
-    "solid-js": "^1.9.9",
+    "solid-js": "^1.9.10",
     "tailwindcss": "^4.1.14"
   }
 }

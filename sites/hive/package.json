@@ -25,6 +25,7 @@
     "@inkandswitch/patchwork-elements": "workspace:^",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
-    "@keyhive/keyhive": "catalog:"
+    "@keyhive/keyhive": "catalog:",
+    "solid-js": "^1.9.10"
   }
 }

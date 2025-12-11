@@ -523,7 +523,7 @@ importers:
         specifier: ^0.1.5
         version: 0.1.5
       solid-js:
-        specifier: ^1.9.9
+        specifier: ^1.9.10
         version: 1.9.10
       tailwindcss:
         specifier: ^4.1.14
@@ -613,6 +613,9 @@ importers:
       '@keyhive/keyhive':
         specifier: 'catalog:'
         version: 0.0.0-alpha.52b
+      solid-js:
+        specifier: ^1.9.10
+        version: 1.9.10
     devDependencies:
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
