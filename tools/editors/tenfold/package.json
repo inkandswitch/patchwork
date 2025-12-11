@@ -34,6 +34,7 @@
     "@grjte/codemirror-base": "workspace:^",
     "@grjte/codemirror-markdown": "workspace:^",
     "@kobalte/core": "^0.13.11",
+    "@lezer/common": "^1.2.3",
     "@lezer/highlight": "^1.2.2",
     "@lezer/javascript": "^1.5.4",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
