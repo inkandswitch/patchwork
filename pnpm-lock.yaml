@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@automerge/automerge-repo-keyhive':
-      specifier: 0.1.0-alpha.13
-      version: 0.1.0-alpha.13
+      specifier: 0.1.0-alpha.14
+      version: 0.1.0-alpha.14
     '@automerge/automerge-repo-react-hooks':
       specifier: 2.5.2-alpha.0
       version: 2.5.2-alpha.0
@@ -22,8 +22,8 @@ catalogs:
       specifier: 2.5.2-alpha.0
       version: 2.5.2-alpha.0
     '@keyhive/keyhive':
-      specifier: 0.0.0-alpha.53
-      version: 0.0.0-alpha.53
+      specifier: 0.0.0-alpha.54
+      version: 0.0.0-alpha.54
     '@types/react':
       specifier: ^18.3.27
       version: 18.3.27
@@ -100,7 +100,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.1.0-alpha.13
+        version: 0.1.0-alpha.14
       esbuild:
         specifier: ^0.23.1
         version: 0.23.1
@@ -122,7 +122,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.1.0-alpha.13
+        version: 0.1.0-alpha.14
       '@types/node':
         specifier: ^20.19.9
         version: 20.19.26
@@ -181,7 +181,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.1.0-alpha.13
+        version: 0.1.0-alpha.14
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../bootloader
@@ -431,7 +431,7 @@ importers:
         version: link:../../tools/editors/tenfold
       '@keyhive/keyhive':
         specifier: 'catalog:'
-        version: 0.0.0-alpha.53
+        version: 0.0.0-alpha.54
       '@orion/commands':
         specifier: workspace:^
         version: link:../../tools/tiny-patchwork/commands
@@ -531,7 +531,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.1.0-alpha.13
+        version: 0.1.0-alpha.14
       '@eslint/js':
         specifier: ^9.37.0
         version: 9.39.1
@@ -585,7 +585,7 @@ importers:
         version: 2.5.2-alpha.0
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.1.0-alpha.13
+        version: 0.1.0-alpha.14
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.2-alpha.0
@@ -612,7 +612,7 @@ importers:
         version: link:../../core/plugins
       '@keyhive/keyhive':
         specifier: 'catalog:'
-        version: 0.0.0-alpha.53
+        version: 0.0.0-alpha.54
       solid-js:
         specifier: ^1.9.10
         version: 1.9.10
@@ -685,7 +685,7 @@ importers:
         version: link:../../tools/editors/tenfold
       '@keyhive/keyhive':
         specifier: 'catalog:'
-        version: 0.0.0-alpha.53
+        version: 0.0.0-alpha.54
       '@orion/commands':
         specifier: workspace:^
         version: link:../../tools/tiny-patchwork/commands
@@ -794,7 +794,7 @@ importers:
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
-        version: 0.1.0-alpha.13
+        version: 0.1.0-alpha.14
       '@eslint/js':
         specifier: ^9.37.0
         version: 9.39.1
@@ -1394,16 +1394,16 @@ importers:
         version: 1.9.10
       vite:
         specifier: npm:rolldown-vite@^7.2.7
-        version: rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)
+        version: rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)
       vite-plugin-solid:
         specifier: ^2.11.10
-        version: 2.11.10(rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))(solid-js@1.9.10)
+        version: 2.11.10(rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))(solid-js@1.9.10)
       vite-plugin-top-level-await:
         specifier: ^1.6.0
-        version: 1.6.0(@swc/helpers@0.5.17)(rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))(rollup@4.53.3)
+        version: 1.6.0(@swc/helpers@0.5.17)(rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))(rollup@4.53.3)
       vite-plugin-wasm:
         specifier: ^3.5.0
-        version: 3.5.0(rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))
+        version: 3.5.0(rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))
     devDependencies:
       '@babel/core':
         specifier: 7.28.4
@@ -2624,8 +2624,8 @@ packages:
   '@automerge/automerge-codemirror@0.2.0':
     resolution: {integrity: sha512-GBNh4ESZHFNHZKLznf/2G2KdmBD+unEdk64+l621LsjIsJs6HBmQmO8RCY1v7vIq31kFyoVHNcBMGQOnLgy4GA==}
 
-  '@automerge/automerge-repo-keyhive@0.1.0-alpha.13':
-    resolution: {integrity: sha512-DhnUPxoOogwZmS/NKaEvY2LfFSxuTP1tFQHy26tHKIHKMOSnxLeWEwx1xHrY9k4OlTZFgCsvnkEem6L0YqIWow==}
+  '@automerge/automerge-repo-keyhive@0.1.0-alpha.14':
+    resolution: {integrity: sha512-4EFZtWJUXhI4yVgMMEEyADiq9Kop/h9c91kFNx4CSW5GrxuxkkrUGRwebEeGMUtBctgKozAoybtGXbos+qGjJw==}
 
   '@automerge/automerge-repo-network-broadcastchannel@2.5.2-alpha.0':
     resolution: {integrity: sha512-/i0N5GHFz6wKPmP93qxzgVZOe3xX5H1DRAzBcZLm94DD5884lW7U+tD678jQ1EbKSaFvT4MTW1urJPkN/PDcmw==}
@@ -3409,8 +3409,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@keyhive/keyhive@0.0.0-alpha.53':
-    resolution: {integrity: sha512-yafQthYEys26sqLSC3vg8mKw33hn7Uq6mK7jYmiRv4py6Qq+rlR3x0lsifsPWQM8905fKWwOpLr0zoU/RrU9xA==}
+  '@keyhive/keyhive@0.0.0-alpha.54':
+    resolution: {integrity: sha512-bxBCEIvm0CatHOBUJ7QVrLUZoPLhZz/uqVlpbZbASdW+7J39hvHkEO+eXMlRrlU2CMkPvqcWsxyFfJskI+LaIA==}
 
   '@kobalte/core@0.13.11':
     resolution: {integrity: sha512-hK7TYpdib/XDb/r/4XDBFaO9O+3ZHz4ZWryV4/3BfES+tSQVgg2IJupDnztKXB0BqbSRy/aWlHKw1SPtNPYCFQ==}
@@ -6736,8 +6736,8 @@ packages:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
 
-  rolldown-vite@7.2.10:
-    resolution: {integrity: sha512-v2ekZjuVLfumjp1Cr7LSQM1n2oOo3+gMruhOgT0Q4/cQ2J3nkTDLTAWLQQ86UHMbFYyVIN1wGh8BEZbvjkyctg==}
+  rolldown-vite@7.2.11:
+    resolution: {integrity: sha512-WwCantGLbztBNipg+WwcA+a1c3Mo9LPY0VZ35IFXnUsQyZzsMHtzmy+H5PqELPj3AOauI9L/HMCjoJZp3i9eFg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -7300,11 +7300,11 @@ snapshots:
       '@codemirror/view': 6.39.3
       codemirror: 6.0.2
 
-  '@automerge/automerge-repo-keyhive@0.1.0-alpha.13':
+  '@automerge/automerge-repo-keyhive@0.1.0-alpha.14':
     dependencies:
       '@automerge/automerge-repo': 2.5.2-alpha.0
       '@automerge/automerge-repo-network-websocket': 2.5.2-alpha.0
-      '@keyhive/keyhive': 0.0.0-alpha.53
+      '@keyhive/keyhive': 0.0.0-alpha.54
       cbor-x: 1.6.0
       eventemitter3: 5.0.1
     transitivePeerDependencies:
@@ -8300,7 +8300,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@keyhive/keyhive@0.0.0-alpha.53': {}
+  '@keyhive/keyhive@0.0.0-alpha.54': {}
 
   '@kobalte/core@0.13.11(solid-js@1.9.10)':
     dependencies:
@@ -12075,7 +12075,7 @@ snapshots:
 
   reusify@1.1.0: {}
 
-  rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1):
+  rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1):
     dependencies:
       '@oxc-project/runtime': 0.101.0
       fdir: 6.5.0(picomatch@4.0.3)
@@ -12443,7 +12443,7 @@ snapshots:
       strip-json-comments: 5.0.3
       vite: 7.2.7(@types/node@24.10.3)(jiti@2.6.1)(lightningcss@1.30.2)
 
-  vite-plugin-solid@2.11.10(rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))(solid-js@1.9.10):
+  vite-plugin-solid@2.11.10(rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))(solid-js@1.9.10):
     dependencies:
       '@babel/core': 7.28.4
       '@types/babel__core': 7.20.5
@@ -12451,18 +12451,18 @@ snapshots:
       merge-anything: 5.1.7
       solid-js: 1.9.10
       solid-refresh: 0.6.3(solid-js@1.9.10)
-      vite: rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)
-      vitefu: 1.1.1(rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))
+      vite: rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)
+      vitefu: 1.1.1(rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))
     transitivePeerDependencies:
       - supports-color
 
-  vite-plugin-top-level-await@1.6.0(@swc/helpers@0.5.17)(rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))(rollup@4.53.3):
+  vite-plugin-top-level-await@1.6.0(@swc/helpers@0.5.17)(rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1))(rollup@4.53.3):
     dependencies:
       '@rollup/plugin-virtual': 3.0.2(rollup@4.53.3)
       '@swc/core': 1.15.3(@swc/helpers@0.5.17)
       '@swc/wasm': 1.15.3
       uuid: 10.0.0
-      vite: rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)
+      vite: rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)
     transitivePeerDependencies:
       - '@swc/helpers'
       - rollup
@@ -12478,9 +12478,9 @@ snapshots:
       - '@swc/helpers'
       - rollup
 
-  vite-plugin-wasm@3.5.0(rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)):
+  vite-plugin-wasm@3.5.0(rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)):
     dependencies:
-      vite: rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)
+      vite: rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)
 
   vite-plugin-wasm@3.5.0(vite@7.2.7(@types/node@24.10.3)(jiti@2.6.1)(lightningcss@1.30.2)):
     dependencies:
@@ -12511,9 +12511,9 @@ snapshots:
       jiti: 2.6.1
       lightningcss: 1.30.2
 
-  vitefu@1.1.1(rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)):
+  vitefu@1.1.1(rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)):
     optionalDependencies:
-      vite: rolldown-vite@7.2.10(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)
+      vite: rolldown-vite@7.2.11(@types/node@24.10.3)(esbuild@0.25.12)(jiti@2.6.1)
 
   vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.3)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2):
     dependencies:
