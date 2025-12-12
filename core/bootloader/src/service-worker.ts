@@ -177,7 +177,12 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
           return new Response("couldnt fetch and no stale", { status: 503 });
         }
       } catch (error) {
+        console.error(
+          `handoff error. responding with ${match ? "stale" : "error"}`,
+          error
+        );
         if (match) return match;
+
         // if something fucked up happens, serve a stale thing if there is one
         // probably can do better error messaging here based on what was caught
         return new Response(`yikes: ${error}`, { status: 555 });
