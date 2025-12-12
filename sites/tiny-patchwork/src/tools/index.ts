@@ -41,6 +41,8 @@ import { plugins as codemirrorMarkdownPlugins } from "@grjte/codemirror-markdown
 // @ts-expect-error no types
 import { plugins as markdownLinksPlugins } from "@grjte/codemirror-md-links";
 // @ts-expect-error no types
+import { plugins as codemirrorPresencePlugins } from "@maciek/codemirror-presence";
+// @ts-expect-error no types
 import { plugins as syncIndicatorPlugins } from "@tiny-patchwork/sync-indicator";
 // @ts-expect-error no types
 import { plugins as commandsPlugins } from "@orion/commands";
@@ -79,6 +81,7 @@ export const plugins: Plugin<any>[] = [
   ...syncIndicatorPlugins,
   ...codemirrorBasePlugins,
   ...codemirrorMarkdownPlugins,
+  ...codemirrorPresencePlugins,
   ...markdownLinksPlugins,
   ...codemirrorEmbedPlugins,
   ...tenfoldPlugins,
