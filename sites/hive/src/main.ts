@@ -59,9 +59,8 @@ bootstrap(async (href, request) =>
 );
 
 const moduleWatcher = new ModuleWatcher(
-  "automerge:3n51DZbA1FRwHAV8K2sW1g2aA3P2" as AutomergeUrl,
-  [],
   repo,
+  "automerge:3n51DZbA1FRwHAV8K2sW1g2aA3P2" as AutomergeUrl,
   (name, mod) => {
     Array.isArray(mod.plugins) && registerPlugins(mod.plugins, name);
   }
