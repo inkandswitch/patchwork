@@ -29,12 +29,14 @@ import {
   Repo,
   stringifyAutomergeUrl,
   WebSocketClientAdapter,
+  type AutomergeUrl,
   type UrlHeads,
 } from "@automerge/vanillajs";
 import { plugins } from "./tools";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 
+// todo maybe we should have a window.patchwork namespace for this?
 declare global {
   interface Window {
     accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
@@ -42,46 +44,48 @@ declare global {
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
-    getRepoChannel: () => MessagePort
+    getRepoChannel: () => MessagePort;
   }
 }
 
-const repo = new Repo({storage: new IndexedDBStorageAdapter()})
+const repo = new Repo({ storage: new IndexedDBStorageAdapter() });
 
 function createSharedWorker() {
-   return new SharedWorker(
-    new URL("./automerge-worker.ts", import.meta.url),
-    {
-      type: "module",
-      name: "automerge-repo-shared-worker",
-    }
-  )
+  return new SharedWorker(new URL("./automerge-worker.ts", import.meta.url), {
+    type: "module",
+    name: "automerge-repo-shared-worker",
+  });
 }
 
 function getRepoChannel() {
   try {
-    const worker = createSharedWorker()
-    return worker.port
+    const worker = createSharedWorker();
+    return worker.port;
   } catch (error) {
-    console.error(error)
-    console.error("Falling back to tab-only repo strategy")
-    const {port1, port2} = new MessageChannel()
-    repo.networkSubsystem.addNetworkAdapter(new MessageChannelNetworkAdapter(port1))
-    return port2
+    console.error(error);
+    console.error("Falling back to tab-only repo strategy");
+    const { port1, port2 } = new MessageChannel();
+    repo.networkSubsystem.addNetworkAdapter(
+      new MessageChannelNetworkAdapter(port1)
+    );
+    return port2;
   }
 }
 
-window.getRepoChannel = getRepoChannel
+window.getRepoChannel = getRepoChannel;
 
 try {
-  const sharedWorker = createSharedWorker()
-  repo.networkSubsystem.addNetworkAdapter(new MessageChannelNetworkAdapter(sharedWorker.port))
+  const sharedWorker = createSharedWorker();
+  repo.networkSubsystem.addNetworkAdapter(
+    new MessageChannelNetworkAdapter(sharedWorker.port)
+  );
 } catch (error) {
-  console.error(error)
-  console.error("Falling back to tab-only repo strategy")
-  repo.networkSubsystem.addNetworkAdapter(new WebSocketClientAdapter("wss://sync3.automerge.org"))
+  console.error(error);
+  console.error("Falling back to tab-only repo strategy");
+  repo.networkSubsystem.addNetworkAdapter(
+    new WebSocketClientAdapter("wss://sync3.automerge.org")
+  );
 }
-
 
 window.repo = repo;
 window.Automerge = Automerge;
@@ -125,10 +129,12 @@ const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 
 window.accountDocHandle = accountDocHandle;
 
-const moduleWatcher = new ModuleWatcher(
-  accountDocHandle.doc().moduleSettingsUrl,
-  [],
+const _moduleWatcher = new ModuleWatcher(
   repo,
+  [
+
+    accountDocHandle.doc().moduleSettingsUrl,
+  ],
   (name, mod) => {
     if (Array.isArray(mod.plugins)) {
       // TODO: maybe get rid of this check?
@@ -139,7 +145,7 @@ const moduleWatcher = new ModuleWatcher(
   }
 );
 
-registerPatchworkViewElement({ moduleWatcher, repo });
+registerPatchworkViewElement({ repo });
 
 const rootElement = document.getElementById("root")!;
 
