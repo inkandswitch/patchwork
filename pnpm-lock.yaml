@@ -436,6 +436,19 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
+  packages/observable/frameworks/solid:
+    dependencies:
+      '@patchwork/observable':
+        specifier: workspace:^
+        version: link:../../core
+    devDependencies:
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.10
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
   packages/react:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
