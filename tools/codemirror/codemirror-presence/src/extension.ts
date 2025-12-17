@@ -5,175 +5,282 @@ import {
   ViewUpdate,
   WidgetType,
 } from "@codemirror/view";
-import type { DecorationSet } from "@codemirror/view"
-import type { Extension } from "@codemirror/state"
+import type { DecorationSet } from "@codemirror/view";
 import { StateEffect } from "@codemirror/state";
-import { DocHandle, getCursor, getCursorPosition } from "@automerge/automerge-repo";
+import type { Extension } from "@codemirror/state";
+import {
+  DocHandle,
+  Repo,
+  getCursor,
+  getCursorPosition,
+  Presence,
+  type PresenceEventUpdate,
+  type AutomergeUrl,
+} from "@automerge/automerge-repo";
 
-// State effect to trigger presence update
+// State effect to trigger presence update from external sources
 export const triggerPresenceUpdate = StateEffect.define<void>();
 
+/**
+ * Configuration for the presence plugin.
+ */
+export interface PresencePluginConfig {
+  /** The Automerge document handle */
+  handle: DocHandle<unknown>;
+  /** The path within the document to the text content (defaults to ["content"]) */
+  path?: string[];
+}
+
 // Types for presence data
-interface UserPresence {
-  channel: string;
-  userId: string;
-  name: string;
-  color: string;
+interface CursorPresence {
   selection: {
     // these strings are automerge cursors
     from: string;
     to: string;
   } | null;
-  timestamp: number;
+  // Include metadata so peers can discover our name/color
+  name?: string;
+  color?: string;
 }
 
-interface PresencePluginConfig {
-  handle: DocHandle<any>;
-  userId: string | null; // Allow null when user isn't ready
-  userMetadata: {
-    name: string;
-    color: string;
-  };
-  // Awareness functions passed from React component
-  updateLocalState?: (state: any) => void;
-  peerStates?: Record<string, any>;
+interface PresenceState {
+  "inline-presence": CursorPresence;
+}
+
+// Contact document types (matching the account-picker types)
+interface AnonymousContactDoc {
+  type: "anonymous";
+  color?: string;
+}
+
+interface RegisteredContactDoc {
+  type: "registered";
+  name: string;
+  avatarUrl?: AutomergeUrl;
+  color?: string;
+}
+
+type ContactDoc = AnonymousContactDoc | RegisteredContactDoc;
+
+// Account document type (matching tiny-patchwork layout)
+interface AccountDoc {
+  contactUrl?: AutomergeUrl;
+}
+
+
+// TODO: stop using these when there's a proper API (cc: grjte)
+// Declare the window globals that tiny-patchwork provides
+declare global {
+  interface Window {
+    repo?: Repo;
+    accountDocHandle?: DocHandle<AccountDoc>;
+  }
+}
+
+// Store for peer metadata (name, color) - discovered from presence messages
+const peerMetadata = new Map<string, { name: string; color: string }>();
+
+function generateColorFromId(id: string): string {
+  const hash = id.split("").reduce((a, b) => a + b.charCodeAt(0), 0);
+  return `hsl(${hash % 360}, 70%, 50%)`;
+}
+
+function getSelectionStyle(color: string): string {
+  return `background-color: color-mix(in srgb, ${color}, transparent 50%);`;
+}
+
+/**
+ * Get the repo from the global window object.
+ */
+function getRepo(): Repo | undefined {
+  return window.repo;
+}
+
+/**
+ * Get user info from the global account document.
+ * Falls back to storage ID and generated color if not available.
+ */
+async function getUserInfo(): Promise<{ userId: string; name: string; color: string } | null> {
+  const repo = getRepo();
+  if (!repo) {
+    console.warn("Presence plugin: No repo available on window.repo");
+    return null;
+  }
+
+  if (!window.accountDocHandle) {
+    throw new Error("Couldn't find the account doc and I don't feel like handling this case.")
+  }
+  const accountDocHandle = window.accountDocHandle;
+  const accountDoc = accountDocHandle.doc();
+
+  // TODO: why would there be no contactUrl!?
+  let userId = accountDoc.contactUrl || "what"
+  let name = "Anonymoose"
+  let color = generateColorFromId(userId)
+
+  if (accountDoc.contactUrl) {
+    const contactHandle = await repo.find<ContactDoc>(accountDoc.contactUrl);
+    const contactDoc = contactHandle.doc();
+
+    if (contactDoc) {
+      if (contactDoc.type === "registered" && contactDoc.name) {
+        name = contactDoc.name;
+      }
+      if (contactDoc.color) {
+        color = contactDoc.color;
+      }
+    }
+  }
+
+  return { userId, name, color };
 }
 
 // Create cursor decoration
-function createCursorDecorations(presence: UserPresence, view: EditorView, handle: DocHandle<any>) {
-  if (!presence.selection) return [];
+function createCursorDecorations(
+  peerId: string,
+  peerState: CursorPresence | undefined,
+  view: EditorView,
+  handle: DocHandle<any>,
+  path: string[]
+) {
+  if (!peerState?.selection) return [];
 
   const decorations: any[] = [];
-  const { from, to } = presence.selection;
+  const { from, to } = peerState.selection;
   const doc = handle.doc();
-  const fromPos = getCursorPosition(doc, ["content"], from);
-  const toPos = getCursorPosition(doc, ["content"], to);
 
-  // Ensure positions are within document bounds
-  const docLength = view.state.doc.length;
-  const safeFrom = Math.max(0, Math.min(fromPos, docLength));
-  const safeTo = Math.max(0, Math.min(toPos, docLength));
+  try {
+    const fromPos = getCursorPosition(doc, path, from);
+    const toPos = getCursorPosition(doc, path, to);
 
-  // Create cursor decoration at the 'to' position
-  const cursorWidget = Decoration.widget({
-    widget: new CursorWidget(presence, handle),
-    side: 0, // Changed from 1 to 0 to appear before the character
-    userId: presence.userId,
-  });
+    // Ensure positions are within document bounds
+    const docLength = view.state.doc.length;
+    const safeFrom = Math.max(0, Math.min(fromPos, docLength));
+    const safeTo = Math.max(0, Math.min(toPos, docLength));
 
-  decorations.push(cursorWidget.range(safeTo));
+    // Get metadata from our store (populated from presence messages)
+    const metadata = peerMetadata.get(peerId) ?? {
+      name: peerState.name ?? peerId.slice(0, 8),
+      color: peerState.color ?? generateColorFromId(peerId),
+    };
 
-  // If there's a selection range, highlight it
-  if (safeFrom !== safeTo) {
-    const selectionMark = Decoration.mark({
-      class: "cm-remote-selection",
-      attributes: {
-        style: getSelectionStyle(presence),
-      },
-      userId: presence.userId,
+    // Create cursor decoration at the 'to' position
+    const cursorWidget = Decoration.widget({
+      widget: new CursorWidget(
+        peerId,
+        metadata.name,
+        metadata.color,
+        safeTo,
+        view
+      ),
+      side: 0,
     });
-    decorations.push(
-      selectionMark.range(
-        Math.min(safeFrom, safeTo),
-        Math.max(safeFrom, safeTo)
-      )
-    );
+
+    decorations.push(cursorWidget.range(safeTo));
+
+    // If there's a selection range, highlight it
+    if (safeFrom !== safeTo) {
+      const selectionMark = Decoration.mark({
+        class: "cm-remote-selection",
+        attributes: {
+          style: getSelectionStyle(metadata.color),
+        },
+      });
+      decorations.push(
+        selectionMark.range(
+          Math.min(safeFrom, safeTo),
+          Math.max(safeFrom, safeTo)
+        )
+      );
+    }
+  } catch (error) {
+    console.warn("Error creating cursor decoration:", error);
   }
 
   return decorations;
 }
 
-function getSelectionStyle(presence: UserPresence): string {
-  // We color-mix the presence color to be more transparent to keep the text in
-  // front of a remote selection legible
-  return `background-color: color-mix(in srgb, ${presence.color}, transparent 50%);`
-}
-
-function isPresenceEqual(curr: UserPresence | undefined, prev: UserPresence | undefined) {
-  return curr && prev && curr.userId === prev.userId && curr.color === prev.color && curr.name === prev.name &&
-    curr.selection?.from === prev.selection?.from && curr.selection?.to === prev.selection?.to;
-}
-
 // Widget for rendering remote cursors
 class CursorWidget extends WidgetType {
-  private static visibleLabels = new Set<string>(); // Track which cursors are currently showing labels
-  private presence: UserPresence;
-  private handle: DocHandle<unknown>;
+  private static visibleLabels = new Set<string>();
 
-  constructor(presence: UserPresence, handle: DocHandle<unknown>) {
+  private peerId: string;
+  private name: string;
+  private color: string;
+  private cursorPos: number;
+  private editorView: EditorView;
+
+  constructor(
+    peerId: string,
+    name: string,
+    color: string,
+    cursorPos: number,
+    editorView: EditorView
+  ) {
     super();
-    this.presence = presence;
-    this.handle = handle;
+    this.peerId = peerId;
+    this.name = name;
+    this.color = color;
+    this.cursorPos = cursorPos;
+    this.editorView = editorView;
   }
 
-  toDOM(view: EditorView): HTMLElement {
+  toDOM(): HTMLElement {
     const cursor = document.createElement("div");
     cursor.className = "cm-remote-cursor";
-    cursor.style.cssText = `
-      ${getSelectionStyle(this.presence)};
-
-    `;
+    cursor.style.cssText = `background-color: ${this.color};`;
 
     // Add user name label with CSS-only smart positioning
     const label = document.createElement("div");
     label.className = "cm-remote-cursor-label";
-    // Convert name to initials (e.g., "John Doe" -> "JD")
-    const initials = this.presence.name
+
+    // Convert name to initials
+    const initials = this.name
       .split(/\s+/)
       .map((word) => word[0]?.toUpperCase() || "")
       .join("")
-      .substring(0, 2); // Max 2 characters
-    label.textContent =
-      initials || this.presence.name.substring(0, 2).toUpperCase();
-    label.style.backgroundColor = this.presence.color;
+      .substring(0, 2);
+    label.textContent = initials || this.name.substring(0, 2).toUpperCase();
+    label.style.backgroundColor = this.color;
     label.style.color = "white";
     label.style.position = "fixed";
 
-    // Check if this is a new cursor (first time appearing)
-    const isNewCursor = !CursorWidget.visibleLabels.has(this.presence.userId);
+    // Check if this is a new cursor
+    const isNewCursor = !CursorWidget.visibleLabels.has(this.peerId);
     if (isNewCursor) {
-      CursorWidget.visibleLabels.add(this.presence.userId);
-      label.style.opacity = "0"; // Start hidden, will fade in
+      CursorWidget.visibleLabels.add(this.peerId);
+      label.style.opacity = "0";
     } else {
-      // Existing cursor moving - keep label hidden unless hovered
       label.style.opacity = "0";
     }
 
     cursor.appendChild(label);
 
-    // DEFER positioning until after the DOM update completes
+    // Defer positioning until after the DOM update completes
     requestAnimationFrame(() => {
-      const cursor = this.presence.selection?.to;
-      const doc = this.handle.doc();
-      if (cursor != null) {
-        try {
-          const cursorPos = getCursorPosition(doc, ["content"], cursor);
-          const coords = view.coordsAtPos(cursorPos);
-          if (coords) {
-            // Calculate bounds-safe position (initials are much smaller)
-            const labelWidth = 40; // Smaller estimate for initials
-            const leftPos = Math.max(
-              10,
-              Math.min(
-                window.innerWidth - labelWidth - 10,
-                coords.left - labelWidth / 2
-              )
-            );
-            const topPos = Math.max(10, coords.top - 25);
+      try {
+        const coords = this.editorView.coordsAtPos(this.cursorPos);
+        if (coords) {
+          const labelWidth = 40;
+          const leftPos = Math.max(
+            10,
+            Math.min(
+              window.innerWidth - labelWidth - 10,
+              coords.left - labelWidth / 2
+            )
+          );
+          const topPos = Math.max(10, coords.top - 25);
 
-            label.style.left = `${leftPos}px`;
-            label.style.top = `${topPos}px`;
-          }
-        } catch (e) {
-          console.warn("Error positioning cursor label:", e);
+          label.style.left = `${leftPos}px`;
+          label.style.top = `${topPos}px`;
         }
+      } catch (e) {
+        console.warn("Error positioning cursor label:", e);
       }
 
-      // Only show animation for new cursors
       if (isNewCursor) {
         setTimeout(() => {
           label.style.opacity = "1";
-          // Fade out after 2 seconds
           setTimeout(() => {
             label.style.opacity = "0";
           }, 2000);
@@ -194,29 +301,102 @@ class CursorWidget extends WidgetType {
 
   eq(other: CursorWidget): boolean {
     return (
-      this.presence.userId === other.presence.userId &&
-      this.presence.selection?.from === other.presence.selection?.from &&
-      this.presence.selection?.to === other.presence.selection?.to &&
-      this.presence.name === other.presence.name &&
-      this.presence.color === other.presence.color
+      this.peerId === other.peerId &&
+      this.cursorPos === other.cursorPos &&
+      this.name === other.name &&
+      this.color === other.color
     );
   }
 }
 
-// View plugin to handle awareness and rendering
+// View plugin to handle presence
 function createPresenceViewPlugin(config: PresencePluginConfig) {
+  const { handle, path = ["content"] } = config;
+
   return ViewPlugin.fromClass(
     class {
       decorations: DecorationSet = Decoration.none;
-      prevPresences = new Map<string, UserPresence>();
       private view: EditorView;
+      private presence: Presence<PresenceState> | null = null;
+      private userInfo: { userId: string; name: string; color: string } | null = null;
+      private initialized = false;
 
       constructor(view: EditorView) {
         this.view = view;
+        this.initPresence();
+      }
+
+      private async initPresence() {
+        if (this.initialized) return;
+        this.initialized = true;
+
+        // Get user info asynchronously
+        this.userInfo = await getUserInfo();
+
+        if (!this.userInfo) {
+          console.warn("Presence plugin: Could not get user info, presence disabled");
+          return;
+        }
+
+        // Store our own metadata for others to see
+        peerMetadata.set(this.userInfo.userId, {
+          name: this.userInfo.name,
+          color: this.userInfo.color,
+        });
+
+        this.presence = new Presence({
+          handle: handle,
+          userId: this.userInfo.userId,
+        });
+
+        // Listen for presence updates from peers
+        this.presence.on("update", (event: PresenceEventUpdate) => {
+          if (event.channel === "inline-presence") {
+            // Store peer metadata if provided
+            const val = event.value as CursorPresence;
+            if (val?.name && val?.color) {
+              peerMetadata.set(event.peerId, {
+                name: val.name,
+                color: val.color,
+              });
+            }
+            // Trigger a view update to refresh decorations
+            this.view.dispatch({
+              effects: triggerPresenceUpdate.of(undefined),
+            });
+          }
+        });
+
+        this.presence.on("snapshot", () => {
+          this.view.dispatch({
+            effects: triggerPresenceUpdate.of(undefined),
+          });
+        });
+
+        this.presence.on("goodbye", () => {
+          this.view.dispatch({
+            effects: triggerPresenceUpdate.of(undefined),
+          });
+        });
+
+        // Start presence with initial state
+        this.presence.start({
+          initialState: {
+            "inline-presence": {
+              selection: null,
+              name: this.userInfo.name,
+              color: this.userInfo.color,
+            },
+          },
+        });
       }
 
       update(update: ViewUpdate) {
-        // Check if we should update (on any change or when explicitly triggered)
+        if (!this.presence || !this.userInfo) {
+          return;
+        }
+
+        // Check if we should update decorations
         const shouldUpdate =
           update.docChanged ||
           update.selectionSet ||
@@ -224,83 +404,60 @@ function createPresenceViewPlugin(config: PresencePluginConfig) {
             tr.effects.some((e) => e.is(triggerPresenceUpdate))
           );
 
-        if (!shouldUpdate) {
-          return;
-        }
+        if (shouldUpdate) {
+          // Rebuild decorations from current peer states
+          const decorations: any[] = [];
+          const peerStates = this.presence.getPeerStates();
+          const peers = peerStates.getPeers();
 
-        // Create decorations from current peer states
-        const decorations: any[] = [];
-        const activePeerUserIds = config.peerStates && Object.keys(config.peerStates);
-        const peerPresences = config.peerStates && Object.fromEntries(Object.entries(config.peerStates).filter(([_, state]) => {
-          return state?.channel === "inline-presence";
-        }));
-
-        const peerPresenceChanged = peerPresences && Object.entries(peerPresences)?.some(([userId, state]) => {
-          const presence = state as UserPresence;
-          const prevPresence = this.prevPresences.get(userId);
-
-          return !isPresenceEqual(presence, prevPresence);
-        });
-
-        if (peerPresenceChanged) {
-          const peerStates = activePeerUserIds!.map((userId: string) => {
-            return [userId, peerPresences[userId] ?? this.prevPresences.get(userId)];
-          });
-
-          peerStates.forEach(([peerId, state]) => {
-            const presence = state as UserPresence;
+          for (const peerId of peers) {
+            const peerState = peerStates.getPeerState<"inline-presence">(
+              peerId,
+              "inline-presence"
+            );
 
             try {
               decorations.push(
-                ...createCursorDecorations(presence, this.view, config.handle)
+                ...createCursorDecorations(
+                  peerId,
+                  peerState,
+                  this.view,
+                  handle,
+                  path
+                )
               );
             } catch (error) {
               console.warn("Error creating cursor decoration:", error);
             }
-          });
+          }
 
-          // Sort decorations by position (required by CodeMirror)
+          // Sort decorations by position
           decorations.sort((a, b) => {
             if (a.from !== b.from) {
               return a.from - b.from;
             }
-            // If same position, sort by startSide
             return (a.startSide || 0) - (b.startSide || 0);
           });
 
           this.decorations = Decoration.set(decorations);
         }
 
-        // Remove no-longer-active-peers
-        Array.from(this.prevPresences.keys()).forEach((userId) => {
-          if (!activePeerUserIds?.includes(userId)) {
-            this.prevPresences.delete(userId);
-          }
-        });
-
-        // Send local selection changes to awareness (only if we have a valid userId)
-        if (update.selectionSet && config.updateLocalState && config.userId) {
+        // Send local selection changes
+        if (update.selectionSet && this.presence.running && this.userInfo) {
           try {
-            // TODO: is this try/catch the right scope?
             const selection = update.state.selection.main;
-            const doc = config.handle.doc();
-            const fromCursor = getCursor(doc, ["content"], selection.from, 'after');
-            const toCursor = getCursor(doc, ["content"], selection.to, 'before');
-            const presenceData: UserPresence = {
-              channel: "inline-presence",
-              userId: config.userId,
-              name: config.userMetadata.name,
-              color: config.userMetadata.color,
+            const doc = handle.doc();
+            const fromCursor = getCursor(doc, path, selection.from, "after");
+            const toCursor = getCursor(doc, path, selection.to, "before");
+
+            this.presence.broadcast("inline-presence", {
               selection: {
                 from: fromCursor,
                 to: toCursor,
               },
-              timestamp: Date.now(),
-            };
-
-            // Send to Automerge awareness (this is safe as it doesn't trigger CodeMirror updates)
-
-            config.updateLocalState(presenceData);
+              name: this.userInfo.name,
+              color: this.userInfo.color,
+            });
           } catch (error) {
             console.warn("Error updating local presence state:", error);
           }
@@ -308,7 +465,9 @@ function createPresenceViewPlugin(config: PresencePluginConfig) {
       }
 
       destroy() {
-        // Cleanup if needed
+        if (this.presence) {
+          this.presence.stop();
+        }
       }
     },
     {
@@ -317,45 +476,52 @@ function createPresenceViewPlugin(config: PresencePluginConfig) {
   );
 }
 
-// Main plugin factory function
-export function automergePresencePlugin(
-  config: PresencePluginConfig
-): Extension {
-  return [
-    createPresenceViewPlugin(config),
-    // Add minimal CSS for remote cursors and selections
-    EditorView.theme({
-      ".cm-remote-cursor": {
-        display: "inline-block",
-        position: "absolute",
-        width: "2px",
-        height: "1.5em",
-        pointerEvents: "auto",
-        zIndex: "100",
-        cursor: "pointer",
-      },
-      ".cm-remote-cursor-label": {
-        // Position is set dynamically in JavaScript
-        // Only static styling here
-        padding: "3px 6px",
-        borderRadius: "4px",
-        fontSize: "0.7em",
-        fontWeight: "600",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        pointerEvents: "none",
-        zIndex: "10000",
-        transition: "opacity 0.2s ease",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-        minWidth: "20px",
-        maxWidth: "40px",
-        textAlign: "center",
-        letterSpacing: "0.5px",
-      },
-      ".cm-remote-selection": {
-        padding: "2px 0px",
-      },
-    }),
-  ];
+// CSS theme for remote cursors
+const presenceTheme = EditorView.theme({
+  ".cm-remote-cursor": {
+    display: "inline-block",
+    position: "absolute",
+    width: "2px",
+    height: "1.5em",
+    pointerEvents: "auto",
+    zIndex: "100",
+    cursor: "pointer",
+  },
+  ".cm-remote-cursor-label": {
+    padding: "3px 6px",
+    borderRadius: "4px",
+    fontSize: "0.7em",
+    fontWeight: "600",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    pointerEvents: "none",
+    zIndex: "10000",
+    transition: "opacity 0.2s ease",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+    minWidth: "20px",
+    maxWidth: "40px",
+    textAlign: "center",
+    letterSpacing: "0.5px",
+  },
+  ".cm-remote-selection": {
+    padding: "2px 0px",
+  },
+});
+
+/**
+ * Creates the automerge presence plugin extension.
+ *
+ * The plugin automatically retrieves user info from:
+ * - window.repo for the repository
+ * - window.accountDocHandle for user identity (falls back to generated values)
+ *
+ * @param config - Configuration including the document handle and optional path
+ * @example
+ * ```ts
+ * const extensions = [automergePresencePlugin({ handle, path: ["content"] })]
+ * ```
+ */
+export function automergePresencePlugin(config: PresencePluginConfig): Extension {
+  return [createPresenceViewPlugin(config), presenceTheme];
 }

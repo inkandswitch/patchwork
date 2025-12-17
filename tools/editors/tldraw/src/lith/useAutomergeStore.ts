@@ -87,23 +87,20 @@ export function useAutomergeStore({
 
     /* Defer rendering until the document is ready */
     // TODO: need to think through the various status possibilities here and how they map
-    handle.whenReady().then(() => {
-      const doc = handle.doc();
-      if (!doc) throw new Error("Document not found");
-      if (!doc.store) throw new Error("Document store not initialized");
+    const doc = handle.doc();
+    if (!doc.store) throw new Error("Document store not initialized");
 
-      store.mergeRemoteChanges(() => {
-        store.loadSnapshot({
-          store: JSON.parse(JSON.stringify(doc.store)),
-          schema: JSON.parse(JSON.stringify(doc.schema)),
-        });
+    store.mergeRemoteChanges(() => {
+      store.loadSnapshot({
+        store: JSON.parse(JSON.stringify(doc.store)),
+        schema: JSON.parse(JSON.stringify(doc.schema)),
       });
+    });
 
-      setStoreWithStatus({
-        store,
-        status: "synced-remote",
-        connectionStatus: "online",
-      });
+    setStoreWithStatus({
+      store,
+      status: "synced-remote",
+      connectionStatus: "online",
     });
 
     return () => {

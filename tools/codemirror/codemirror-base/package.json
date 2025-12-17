@@ -29,6 +29,7 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.4",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@maciek/codemirror-presence": "workspace:^",
     "@patchwork/context": "workspace:^",
     "@patchwork/context-comments": "workspace:^",
     "@patchwork/context-diff": "workspace:^",

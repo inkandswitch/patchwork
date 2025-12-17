@@ -13,18 +13,6 @@ import {
   createDecorationsExtension,
 } from "./extensions";
 
-/** Utility function to lookup a value along the specified pathin an Automerge document */
-const lookup = <T = any,>(doc: any, path: AutomergeProp[]): T | undefined => {
-  let current = doc;
-  for (const key of path) {
-    current = current[key];
-    if (current === undefined) {
-      return undefined;
-    }
-  }
-  return current;
-};
-
 type CodeMirrorProps<T> = {
   handle: DocHandle<T>;
   path: AutomergeProp[];
@@ -36,14 +24,11 @@ type CodeMirrorProps<T> = {
 };
 
 export function CodeMirror<T>(props: CodeMirrorProps<T>) {
-  const initialDoc = () =>
-    (props.handle && (lookup(props.handle.doc(), props.path) as string)) || "";
-
-  const [syncExtension, createEffectReconfigureSync] = createSyncExtension(
-    () => props.handle,
-    () => props.path,
-    initialDoc
-  );
+  // Sync extension takes handle/path directly
+  const syncExtension = createSyncExtension({
+    handle: props.handle as DocHandle<unknown>,
+    path: props.path,
+  });
 
   const [readOnlyExtension, createEffectReconfigureReadOnly] =
     createReadOnlyExtension(() => !!props.readOnly);
@@ -72,7 +57,8 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
   ].filter(Boolean) as Extension[];
 
   const state = EditorState.create({
-    doc: initialDoc(),
+    // Start with empty doc - sync extension will populate from handle
+    doc: "",
     extensions,
   });
 
@@ -83,7 +69,6 @@ export function CodeMirror<T>(props: CodeMirrorProps<T>) {
   props.withView?.(view);
 
   // Create effects to reconfigure the extensions when their props change
-  createEffectReconfigureSync(view);
   createEffectReconfigureReadOnly(view);
   createEffectReconfigureDecorations?.(view);
 

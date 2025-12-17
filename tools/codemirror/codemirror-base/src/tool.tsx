@@ -174,11 +174,18 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
     );
 
     // Flatten and add to existing extensions
+    // If the module is a function, call it with the editor context (handle, path)
+    const editorContext = { handle: props.handle, path: PATH };
     const flattenedExts = loadedExtensions.flatMap((ext) => {
       const impl = ext.module;
+      if (typeof impl === "function") {
+        // Extension factory - call with context
+        return impl(editorContext);
+      }
       return Array.isArray(impl) ? impl : [impl];
     });
 
+    // Add loaded extensions
     setExtensions((exts) => [...exts, ...flattenedExts]);
   });
 

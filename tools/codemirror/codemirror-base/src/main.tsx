@@ -3,6 +3,9 @@ import { render } from "solid-js/web";
 import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
 import type { TextDoc } from "./tool.tsx";
 
+// Re-export types for use by extensions
+export { type EditorContext } from "./lib/extensions/context.ts";
+
 export const plugins = [
   {
     type: "patchwork:tool",
