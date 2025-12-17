@@ -9,32 +9,35 @@ import { KIND } from "./types";
  * |---------|---------------------|----------------------------|---------------------------------|
  * | Key     | string              | `foo`, `my%2Fkey`          | Default, URL-encoded            |
  * | Index   | `@` + number        | `@0`, `@42`                | Array index                     |
- * | Match   | `{...}`             | `{"id":"alice"}`           | JSON object pattern             |
+ * | Match   | `{...}`             | `{"id":"alice"}`           | JSON object pattern (URL-encoded) |
  * | Cursors | `[start-end]`       | `[2@abc-5@def]`            | Cursor range                    |
  * | Cursors | `[cursor]`          | `[2@abc]`                  | Collapsed (start === end)       |
  *
  * ## Escape Rule
- * If a key starts with `@`, `{`, `[`, or `~`, prefix with `~`:
- * - `~@at` → key "@at"
- * - `~{brace` → key "{brace"
- * - `~~tilde` → key "~tilde"
+ * If a key starts with `@`, `{`, `[`, or `\`, prefix with `\` (URL-encoded as `%5C`):
+ * - `\@at` → key "@at" (appears as `%5C%40at` in URL)
+ * - `\{brace` → key "{brace" (appears as `%5C%7Bbrace` in URL)
+ * - `\\backslash` → key "\backslash" (appears as `%5C%5Cbackslash` in URL)
  *
  * ## Parsing Priority (first match wins)
  * 1. Index: `@` + digits
- * 2. Match: `{...}`
+ * 2. Match: `{...}` or URL-encoded `%7B...`
  * 3. Cursors: `[...]`
- * 4. Key: `~...` (escaped) or anything else
+ * 4. Key: `\...` (escaped, URL-encoded as `%5C...`) or anything else
  */
 
 const URL_PREFIX = "automerge:";
-const ESCAPE_PREFIX = "~";
+/** The escape character (backslash) */
+const ESCAPE_CHAR = "\\";
+/** URL-encoded form of the escape character for matching in URLs */
+const ESCAPE_PREFIX = "%5C";
 const INDEX_PREFIX = "@";
 const CURSOR_OPEN = "[";
 const CURSOR_CLOSE = "]";
 const CURSOR_SEPARATOR = "-";
 
-/** Prefixes that have special meaning - keys starting with these must be escaped */
-const SPECIAL_PREFIXES = [ESCAPE_PREFIX, INDEX_PREFIX, "{", CURSOR_OPEN];
+/** Characters that trigger escaping when at the start of a key */
+const ESCAPE_TRIGGERS = [ESCAPE_CHAR, INDEX_PREFIX, "{", CURSOR_OPEN];
 
 const INDEX_PATTERN = /^@(\d+)$/;
 
@@ -116,24 +119,51 @@ const cursorsCodec: SegmentCodec<"cursors"> = {
 
 const keyCodec: SegmentCodec<"key"> = {
   kind: "key",
-  match: (s) =>
-    s.startsWith(ESCAPE_PREFIX) ||
-    !SPECIAL_PREFIXES.some((p) => s.startsWith(p)),
+  match: (s) => {
+    // Escaped keys start with backslash (URL-encoded as %5C)
+    if (s.startsWith(ESCAPE_PREFIX) || s.startsWith(ESCAPE_CHAR)) {
+      return true;
+    }
+    // Regular keys don't start with special prefixes
+    // We need to check both raw and URL-decoded forms
+    const decoded = safeDecodeURIComponent(s);
+    return !ESCAPE_TRIGGERS.some(
+      (p) => s.startsWith(p) || decoded.startsWith(p)
+    );
+  },
   parse: (s) => {
+    // Check for URL-encoded escape prefix (%5C) or literal backslash
     if (s.startsWith(ESCAPE_PREFIX)) {
       return {
         [KIND]: "key",
         key: decodeURIComponent(s.slice(ESCAPE_PREFIX.length)),
       };
     }
+    if (s.startsWith(ESCAPE_CHAR)) {
+      return {
+        [KIND]: "key",
+        key: decodeURIComponent(s.slice(ESCAPE_CHAR.length)),
+      };
+    }
     return { [KIND]: "key", key: decodeURIComponent(s) };
   },
   serialize: (seg) => {
-    const needsEscape = SPECIAL_PREFIXES.some((p) => seg.key.startsWith(p));
+    // Check if key starts with any character that needs escaping
+    const needsEscape = ESCAPE_TRIGGERS.some((p) => seg.key.startsWith(p));
     const encoded = encodeURIComponent(seg.key);
+    // Prefix with URL-encoded backslash (%5C) if escape needed
     return needsEscape ? `${ESCAPE_PREFIX}${encoded}` : encoded;
   },
 };
+
+/** Safely decode URI component, returning original string on error */
+function safeDecodeURIComponent(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
 
 /**
  * Codecs in priority order. First matching codec wins for parsing.

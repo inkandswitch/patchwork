@@ -156,9 +156,9 @@ describe("Edge Cases", () => {
       const ref = new Ref(handle, ["{notjson"]);
       expect(ref.value()).toBe("value");
 
-      // URL should have ~ escape prefix
+      // URL should have backslash escape prefix (%5C is URL-encoded \)
       const url = ref.url;
-      expect(url).toContain("~%7Bnotjson"); // ~{notjson URL-encoded
+      expect(url).toContain("%5C%7Bnotjson"); // \{notjson URL-encoded
 
       // Round-trips correctly
       const parsed = parseAutomergeRefUrl(url);
@@ -203,8 +203,8 @@ describe("Edge Cases", () => {
       const ref = new Ref(handle, ["@mention"]);
       const url = ref.url;
 
-      // Should be escaped with ~
-      expect(url).toContain("~%40mention"); // ~@mention URL-encoded
+      // Should be escaped with backslash (%5C is URL-encoded \)
+      expect(url).toContain("%5C%40mention"); // \@mention URL-encoded
 
       // Round-trips correctly
       const parsed = parseAutomergeRefUrl(url);
@@ -220,8 +220,8 @@ describe("Edge Cases", () => {
       const ref = new Ref(handle, ["[array]"]);
       const url = ref.url;
 
-      // Should be escaped with ~
-      expect(url).toContain("~%5Barray%5D"); // ~[array] URL-encoded
+      // Should be escaped with backslash (%5C is URL-encoded \)
+      expect(url).toContain("%5C%5Barray%5D"); // \[array] URL-encoded
 
       // Round-trips correctly
       const parsed = parseAutomergeRefUrl(url);
@@ -229,7 +229,24 @@ describe("Edge Cases", () => {
       expect((parsed.segments[0] as any).key).toBe("[array]");
     });
 
-    it("should escape key starting with ~", () => {
+    it("should escape key starting with backslash", () => {
+      handle.change((d) => {
+        d["\\backslash"] = "value";
+      });
+
+      const ref = new Ref(handle, ["\\backslash"]);
+      const url = ref.url;
+
+      // Should be double-escaped: \\ becomes %5C%5C (two URL-encoded backslashes)
+      expect(url).toContain("%5C%5Cbackslash");
+
+      // Round-trips correctly
+      const parsed = parseAutomergeRefUrl(url);
+      expect(parsed.segments[0][KIND]).toBe("key");
+      expect((parsed.segments[0] as any).key).toBe("\\backslash");
+    });
+
+    it("should NOT escape key starting with ~ (tilde is no longer special)", () => {
       handle.change((d) => {
         d["~tilde"] = "value";
       });
@@ -237,8 +254,9 @@ describe("Edge Cases", () => {
       const ref = new Ref(handle, ["~tilde"]);
       const url = ref.url;
 
-      // Should be double-escaped ~~
-      expect(url).toContain("~~tilde");
+      // Tilde is no longer special - just URL-encoded as-is
+      expect(url).toContain("~tilde");
+      expect(url).not.toContain("%5C"); // No backslash escape
 
       // Round-trips correctly
       const parsed = parseAutomergeRefUrl(url);
@@ -755,8 +773,8 @@ describe("Edge Cases", () => {
       const ref = new Ref(handle, ["@mention"]);
       const originalUrl = ref.url;
 
-      // Should have escape prefix ~ and URL-encoded @
-      expect(originalUrl).toContain("~%40mention");
+      // Should have backslash escape prefix (%5C) and URL-encoded @
+      expect(originalUrl).toContain("%5C%40mention");
 
       // Simulate double encoding/decoding
       const recovered = decodeURIComponent(encodeURIComponent(originalUrl));
