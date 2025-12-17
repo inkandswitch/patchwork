@@ -320,7 +320,7 @@ describe("Ref", () => {
       expect(url).toContain("["); // Bracket notation
     });
 
-    it("should format match clauses as JSON", () => {
+    it("should format match clauses as URL-encoded JSON", () => {
       handle.change((d) => {
         d.items = [{ id: "a" }, { id: "b" }];
       });
@@ -328,8 +328,10 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["items", { id: "b" }]);
       const url = ref.url;
 
-      // Match clause should be JSON
-      expect(url).toBe(`automerge:${handle.documentId}/items/{"id":"b"}`);
+      // Match clause should be URL-encoded JSON to protect special characters
+      expect(url).toBe(
+        `automerge:${handle.documentId}/items/${encodeURIComponent('{"id":"b"}')}`
+      );
     });
 
     it("should handle complex nested structures", () => {

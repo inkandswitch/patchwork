@@ -51,10 +51,16 @@ const indexCodec: SegmentCodec<"index"> = {
 
 const matchCodec: SegmentCodec<"match"> = {
   kind: "match",
-  match: (s) => s.startsWith("{"),
+  // Match both raw JSON (backward compat) and URL-encoded JSON
+  match: (s) => s.startsWith("{") || s.startsWith("%7B"),
   parse: (s) => {
     try {
-      const parsed = JSON.parse(s);
+      // Decode URL encoding first, then parse JSON
+      // This handles both:
+      // - New format with URL-encoded JSON (e.g., %7B%22id%22%3A%22test%22%7D)
+      // - Old format with raw JSON (e.g., {"id":"test"})
+      const decoded = decodeURIComponent(s);
+      const parsed = JSON.parse(decoded);
       if (
         typeof parsed !== "object" ||
         parsed === null ||
@@ -69,7 +75,9 @@ const matchCodec: SegmentCodec<"match"> = {
       );
     }
   },
-  serialize: (seg) => JSON.stringify(seg.match),
+  // URL-encode the JSON to protect slashes and other special characters
+  // from being interpreted as path separators
+  serialize: (seg) => encodeURIComponent(JSON.stringify(seg.match)),
 };
 
 const cursorsCodec: SegmentCodec<"cursors"> = {

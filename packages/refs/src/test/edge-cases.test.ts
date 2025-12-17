@@ -346,7 +346,10 @@ describe("Edge Cases", () => {
         match: { id: "test", count: 42, active: true },
       };
       const serialized = serializeSegment(segment);
-      expect(serialized).toBe('{"id":"test","count":42,"active":true}');
+      // Match patterns are URL-encoded to protect slashes and special characters
+      expect(serialized).toBe(
+        encodeURIComponent('{"id":"test","count":42,"active":true}')
+      );
 
       const parsed = parseSegment(serialized);
       expect(parsed[KIND]).toBe("match");
@@ -678,6 +681,277 @@ describe("Edge Cases", () => {
 
       // Parse and verify new bracket format: [cursor-cursor]
       expect(url).toMatch(/\[\d+@[a-f0-9]+-\d+@[a-f0-9]+\]$/);
+    });
+  });
+
+  describe("URI encoding survival - double encoding", () => {
+    /**
+     * When ref URLs are placed in browser address bars or used as query params,
+     * they get URI-encoded again. This tests that our encoding scheme survives
+     * this double-encoding:
+     *
+     * 1. Create ref URL (contains internal URI encoding, e.g. %2F for /)
+     * 2. Browser/system URI-encodes the whole URL (% becomes %25)
+     * 3. Browser/system URI-decodes when navigating/extracting
+     * 4. Our parser decodes the ref URL correctly
+     *
+     * This should be a no-op since encodeURIComponent(url) + decodeURIComponent
+     * returns the original url.
+     */
+
+    it("should survive full URI encoding/decoding - simple key", () => {
+      handle.change((d) => {
+        d.title = "Hello";
+      });
+
+      const ref = new Ref(handle, ["title"]);
+      const originalUrl = ref.url;
+
+      // Simulate putting URL in browser address bar (gets encoded)
+      const browserEncoded = encodeURIComponent(originalUrl);
+      // Simulate extracting URL from address bar (gets decoded)
+      const recovered = decodeURIComponent(browserEncoded);
+
+      // URL should be unchanged
+      expect(recovered).toBe(originalUrl);
+
+      // Should still parse correctly
+      const parsed = parseAutomergeRefUrl(recovered as any);
+      expect(parsed.segments[0][KIND]).toBe("key");
+      expect((parsed.segments[0] as any).key).toBe("title");
+    });
+
+    it("should survive full URI encoding/decoding - key with slash", () => {
+      handle.change((d) => {
+        d["path/with/slashes"] = "value";
+      });
+
+      const ref = new Ref(handle, ["path/with/slashes"]);
+      const originalUrl = ref.url;
+
+      // Original URL should have %2F for slashes
+      expect(originalUrl).toContain("path%2Fwith%2Fslashes");
+
+      // Simulate browser double-encoding and decoding
+      const browserEncoded = encodeURIComponent(originalUrl);
+      // The %2F becomes %252F (% encoded as %25)
+      expect(browserEncoded).toContain("path%252Fwith%252Fslashes");
+
+      const recovered = decodeURIComponent(browserEncoded);
+
+      // Should get back original URL
+      expect(recovered).toBe(originalUrl);
+
+      // Should parse correctly to original key
+      const parsed = parseAutomergeRefUrl(recovered as any);
+      expect((parsed.segments[0] as any).key).toBe("path/with/slashes");
+    });
+
+    it("should survive full URI encoding/decoding - escaped key with @", () => {
+      handle.change((d) => {
+        d["@mention"] = "value";
+      });
+
+      const ref = new Ref(handle, ["@mention"]);
+      const originalUrl = ref.url;
+
+      // Should have escape prefix ~ and URL-encoded @
+      expect(originalUrl).toContain("~%40mention");
+
+      // Simulate double encoding/decoding
+      const recovered = decodeURIComponent(encodeURIComponent(originalUrl));
+
+      expect(recovered).toBe(originalUrl);
+
+      const parsed = parseAutomergeRefUrl(recovered as any);
+      expect((parsed.segments[0] as any).key).toBe("@mention");
+    });
+
+    it("should survive full URI encoding/decoding - match pattern", () => {
+      handle.change((d) => {
+        d.items = [{ id: "test/path", value: 1 }];
+      });
+
+      const ref = new Ref(handle, ["items", { id: "test/path" }]);
+      const originalUrl = ref.url;
+
+      // Match pattern is URL-encoded to protect slashes from being path separators
+      // The JSON {"id":"test/path"} becomes URL-encoded
+      expect(originalUrl).toContain(encodeURIComponent('{"id":"test/path"}'));
+
+      const recovered = decodeURIComponent(encodeURIComponent(originalUrl));
+
+      expect(recovered).toBe(originalUrl);
+
+      // Most importantly: the match pattern with slash round-trips correctly!
+      const parsed = parseAutomergeRefUrl(recovered as any);
+      expect(parsed.segments[1][KIND]).toBe("match");
+      expect((parsed.segments[1] as any).match).toEqual({ id: "test/path" });
+    });
+
+    it("should survive full URI encoding/decoding - cursor range", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const ref = new Ref(handle, ["text", cursor(0, 5)]);
+      const originalUrl = ref.url;
+
+      // Cursor format uses @ which might be encoded
+      expect(originalUrl).toMatch(/\[\d+@[a-f0-9]+-\d+@[a-f0-9]+\]$/);
+
+      const recovered = decodeURIComponent(encodeURIComponent(originalUrl));
+
+      expect(recovered).toBe(originalUrl);
+
+      // Value should still resolve correctly
+      const parsed = parseAutomergeRefUrl(recovered as any);
+      expect(parsed.segments[1][KIND]).toBe("cursors");
+    });
+
+    it("should survive full URI encoding/decoding - complex nested path", () => {
+      handle.change((d) => {
+        d["root/path"] = {
+          items: [{ "@id": "test~value" }],
+        };
+      });
+
+      const ref = new Ref(handle, [
+        "root/path",
+        "items",
+        { "@id": "test~value" },
+      ]);
+      const originalUrl = ref.url;
+
+      const recovered = decodeURIComponent(encodeURIComponent(originalUrl));
+
+      expect(recovered).toBe(originalUrl);
+
+      const parsed = parseAutomergeRefUrl(recovered as any);
+      expect((parsed.segments[0] as any).key).toBe("root/path");
+      expect((parsed.segments[1] as any).key).toBe("items");
+      expect((parsed.segments[2] as any).match).toEqual({
+        "@id": "test~value",
+      });
+    });
+
+    it("should survive full URI encoding/decoding - with heads", () => {
+      handle.change((d) => {
+        d.counter = 1;
+      });
+
+      // Get heads in hex format
+      const heads = ["abc123def456", "789xyz012345"];
+
+      const ref = new Ref(handle, ["counter"], { heads });
+      const originalUrl = ref.url;
+
+      // Should have heads section with pipe separator
+      expect(originalUrl).toContain("#abc123def456|789xyz012345");
+
+      const recovered = decodeURIComponent(encodeURIComponent(originalUrl));
+
+      expect(recovered).toBe(originalUrl);
+
+      const parsed = parseAutomergeRefUrl(recovered as any);
+      expect(parsed.heads).toEqual(heads);
+    });
+
+    it("should survive URL query param encoding/decoding", () => {
+      handle.change((d) => {
+        d["special&chars=here"] = "value";
+      });
+
+      const ref = new Ref(handle, ["special&chars=here"]);
+      const originalUrl = ref.url;
+
+      // Simulate being used as a query param value
+      // In query strings, & and = have special meaning
+      const asQueryParam = `?ref=${encodeURIComponent(originalUrl)}`;
+
+      // Extract and decode
+      const extracted = decodeURIComponent(asQueryParam.split("=")[1]);
+
+      expect(extracted).toBe(originalUrl);
+
+      const parsed = parseAutomergeRefUrl(extracted as any);
+      expect((parsed.segments[0] as any).key).toBe("special&chars=here");
+    });
+
+    it("should survive multiple levels of URI encoding", () => {
+      handle.change((d) => {
+        d["key%with%percent"] = "value";
+      });
+
+      const ref = new Ref(handle, ["key%with%percent"]);
+      const originalUrl = ref.url;
+
+      // The % should be encoded as %25 in the URL
+      expect(originalUrl).toContain("key%25with%25percent");
+
+      // First level of encoding (e.g., embedding in another URL)
+      const level1 = encodeURIComponent(originalUrl);
+      // Second level (e.g., that URL is then embedded again)
+      const level2 = encodeURIComponent(level1);
+
+      // Decode both levels
+      const decoded1 = decodeURIComponent(level2);
+      const decoded2 = decodeURIComponent(decoded1);
+
+      expect(decoded2).toBe(originalUrl);
+
+      const parsed = parseAutomergeRefUrl(decoded2 as any);
+      expect((parsed.segments[0] as any).key).toBe("key%with%percent");
+    });
+
+    it("should handle Unicode characters through encoding/decoding", () => {
+      handle.change((d) => {
+        d["日本語キー"] = "value";
+        d["emoji🎉key"] = "other";
+      });
+
+      const ref1 = new Ref(handle, ["日本語キー"]);
+      const originalUrl1 = ref1.url;
+
+      const ref2 = new Ref(handle, ["emoji🎉key"]);
+      const originalUrl2 = ref2.url;
+
+      // Simulate browser encoding/decoding
+      const recovered1 = decodeURIComponent(encodeURIComponent(originalUrl1));
+      const recovered2 = decodeURIComponent(encodeURIComponent(originalUrl2));
+
+      expect(recovered1).toBe(originalUrl1);
+      expect(recovered2).toBe(originalUrl2);
+
+      const parsed1 = parseAutomergeRefUrl(recovered1 as any);
+      const parsed2 = parseAutomergeRefUrl(recovered2 as any);
+
+      expect((parsed1.segments[0] as any).key).toBe("日本語キー");
+      expect((parsed2.segments[0] as any).key).toBe("emoji🎉key");
+    });
+
+    it("should handle fragment identifier in ref URL through encoding", () => {
+      handle.change((d) => {
+        d.value = 1;
+      });
+
+      // Create a ref with heads (which uses # as separator)
+      const ref = new Ref(handle, ["value"], { heads: ["abc123"] });
+      const originalUrl = ref.url;
+
+      // The # is part of the ref URL format
+      expect(originalUrl).toContain("#abc123");
+
+      // In a real browser, # has special meaning (fragment identifier)
+      // encodeURIComponent encodes # as %23
+      const encoded = encodeURIComponent(originalUrl);
+      expect(encoded).toContain("%23abc123");
+
+      const recovered = decodeURIComponent(encoded);
+      expect(recovered).toBe(originalUrl);
+
+      const parsed = parseAutomergeRefUrl(recovered as any);
+      expect(parsed.heads).toEqual(["abc123"]);
     });
   });
 });
