@@ -9,18 +9,18 @@ import type {
   PathSegment,
   CursorRange,
   AnyPathInput,
-  MatchPattern,
+  Pattern,
   RefOptions,
   InferRefType,
   ChangeFn,
-  AutomergeRefUrl,
+  RefUrl,
 } from "./types";
 import { KIND } from "./types";
-import { isSegment, isMatchPattern } from "./guards";
+import { isSegment, isPattern } from "./guards";
 import { matchesPattern } from "./utils";
 import { isCursorMarker } from "./guards";
 import type { CursorMarker } from "./types";
-import { stringifyAutomergeRefUrl } from "./parser";
+import { stringifyRefUrl } from "./parser";
 import { MutableText } from "./mutable-text";
 
 /**
@@ -130,14 +130,36 @@ export class Ref<
   /**
    * Update the value.
    *
-   * Primitives: return new value to update, void to skip.
-   * Objects/arrays: mutate in place, return void.
-   * Strings: receive MutableText with splice/updateText methods.
+   * For primitives, you can pass either:
+   * - A function that receives the current value and returns the new value
+   * - A direct value (shorthand for primitives)
+   *
+   * @example
+   * ```ts
+   * // Function form (works for all types)
+   * counterRef.change(n => n + 1);
+   * themeRef.change(t => t === 'dark' ? 'light' : 'dark');
+   *
+   * // Shorthand for primitives
+   * themeRef.change('dark');
+   * counterRef.change(42);
+   *
+   * // Objects/arrays: mutate in place (same semantics as automerge-repo)
+   * todoRef.change(todo => { todo.done = true; });
+   * ```
    */
-  change(fn: ChangeFn<InferRefType<TDoc, TPath>>): void {
+  change(
+    fnOrValue: ChangeFn<InferRefType<TDoc, TPath>> | InferRefType<TDoc, TPath>
+  ): void {
     if (this.options.heads) {
       throw new Error("Cannot change a Ref pinned to specific heads");
     }
+
+    // Convert direct value to function form
+    const fn: ChangeFn<InferRefType<TDoc, TPath>> =
+      typeof fnOrValue === "function"
+        ? (fnOrValue as ChangeFn<InferRefType<TDoc, TPath>>)
+        : () => fnOrValue as InferRefType<TDoc, TPath>;
 
     this.docHandle.change((doc: Doc<TDoc>) => {
       if (this.path.length === 0 && !this.range) {
@@ -229,12 +251,12 @@ export class Ref<
     return unsubscribe;
   }
 
-  get url(): AutomergeRefUrl {
+  get url(): RefUrl {
     const allSegments: Segment[] = this.range
       ? [...this.path, this.range]
       : this.path;
 
-    return stringifyAutomergeRefUrl(
+    return stringifyRefUrl(
       this.docHandle.documentId,
       allSegments,
       this.options.heads
@@ -400,9 +422,18 @@ export class Ref<
     let current: any = doc;
     let rangeSegment: CursorRange | undefined;
 
-    for (const input of inputs) {
+    for (let i = 0; i < inputs.length; i++) {
+      const input = inputs[i];
+
       // Handle cursor() marker - creates cursor-based range
       if (isCursorMarker(input)) {
+        // cursor() must be the last segment
+        if (i < inputs.length - 1) {
+          throw new Error(
+            "cursor() must be the last segment in a ref path. " +
+              "Segments after cursor() are not allowed."
+          );
+        }
         rangeSegment = this.#createCursorRange(doc, propPath, current, input);
         break;
       }
@@ -412,6 +443,13 @@ export class Ref<
         : this.#normalizeInput(current, input);
 
       if (segment[KIND] === "cursors") {
+        // Cursor range from URL parsing - must also be last
+        if (i < inputs.length - 1) {
+          throw new Error(
+            "Cursor range must be the last segment in a ref path. " +
+              "Segments after cursor range are not allowed."
+          );
+        }
         rangeSegment = segment;
         break;
       }
@@ -516,10 +554,7 @@ export class Ref<
     }
   }
 
-  #normalizeInput(
-    container: any,
-    input: string | number | MatchPattern
-  ): Segment {
+  #normalizeInput(container: any, input: string | number | Pattern): Segment {
     if (typeof input === "string") {
       return { [KIND]: "key", key: input, prop: input };
     }
@@ -528,7 +563,7 @@ export class Ref<
       return { [KIND]: "index", index: input, prop: input };
     }
 
-    if (isMatchPattern(input)) {
+    if (isPattern(input)) {
       if (!Array.isArray(container)) {
         return { [KIND]: "match", match: input, prop: undefined };
       }

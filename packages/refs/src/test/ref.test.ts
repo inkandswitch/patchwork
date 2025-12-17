@@ -92,10 +92,10 @@ describe("Ref", () => {
       });
 
       const counterRef = new Ref(handle, ["counter"]);
-      counterRef.change((n) => n + 1);
+      counterRef.change((n: any) => n + 1);
       expect(counterRef.value()).toBe(1);
 
-      counterRef.change((n) => n * 2);
+      counterRef.change((n: any) => n * 2);
       expect(counterRef.value()).toBe(2);
     });
 
@@ -105,7 +105,7 @@ describe("Ref", () => {
       });
 
       const ref = new Ref(handle, ["greeting"]);
-      ref.change((str) => str.toUpperCase());
+      ref.change((str: any) => str.toUpperCase());
       expect(ref.value()).toBe("HELLO");
     });
 
@@ -714,7 +714,7 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["counter"]);
 
       let receivedValue: number | undefined;
-      ref.change((val) => {
+      ref.change((val: any) => {
         receivedValue = val;
       });
 
@@ -742,10 +742,10 @@ describe("Ref", () => {
 
       const ref = new Ref(handle, ["counter"]);
 
-      ref.change((val) => val + 10);
+      ref.change((val: any) => val + 10);
       expect(ref.value()).toBe(10);
 
-      ref.change((val) => val * 2);
+      ref.change((val: any) => val * 2);
       expect(ref.value()).toBe(20);
     });
 
@@ -756,7 +756,7 @@ describe("Ref", () => {
 
       const ref = new Ref(handle, ["config"]);
 
-      ref.change((config) => {
+      ref.change((config: any) => {
         config.enabled = true;
         config.count = 5;
         // Return void - mutations applied
@@ -791,7 +791,7 @@ describe("Ref", () => {
 
       const ageRef = new Ref(handle, ["user", "profile", "age"]);
 
-      ageRef.change((age) => age + 1);
+      ageRef.change((age: any) => age + 1);
       expect(ageRef.value()).toBe(26);
       expect(handle.doc().user.profile.age).toBe(26);
     });
@@ -804,7 +804,7 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["data", "missing"]);
 
       let receivedValue: any;
-      ref.change((val) => {
+      ref.change((val: any) => {
         receivedValue = val;
         return "now exists";
       });
@@ -1905,6 +1905,121 @@ describe("Ref", () => {
 
       // After disposal, internal listener is removed
       // (the ref still works, but props won't auto-update)
+    });
+  });
+
+  describe("change shorthand", () => {
+    it("should accept direct primitive value for strings", () => {
+      handle.change((d) => {
+        d.theme = "light";
+      });
+
+      const themeRef = ref(handle, "theme");
+      themeRef.change("dark");
+      expect(themeRef.value()).toBe("dark");
+    });
+
+    it("should accept direct primitive value for numbers", () => {
+      handle.change((d) => {
+        d.counter = 0;
+      });
+
+      const counterRef = ref(handle, "counter");
+      counterRef.change(42);
+      expect(counterRef.value()).toBe(42);
+    });
+
+    it("should accept direct primitive value for booleans", () => {
+      handle.change((d) => {
+        d.enabled = false;
+      });
+
+      const enabledRef = ref(handle, "enabled");
+      enabledRef.change(true);
+      expect(enabledRef.value()).toBe(true);
+    });
+
+    it("should still accept function form", () => {
+      handle.change((d) => {
+        d.counter = 10;
+      });
+
+      const counterRef = ref(handle, "counter");
+      counterRef.change((n: any) => n * 2);
+      expect(counterRef.value()).toBe(20);
+    });
+  });
+
+  describe("ref caching", () => {
+    it("should return same ref instance for same path", () => {
+      handle.change((d) => {
+        d.value = 42;
+      });
+
+      const ref1 = ref(handle, "value");
+      const ref2 = ref(handle, "value");
+
+      expect(ref1).toBe(ref2);
+    });
+
+    it("should return different refs for different paths", () => {
+      handle.change((d) => {
+        d.a = 1;
+        d.b = 2;
+      });
+
+      const refA = ref(handle, "a");
+      const refB = ref(handle, "b");
+
+      expect(refA).not.toBe(refB);
+    });
+
+    it("should return different refs for different handles", () => {
+      const handle2 = repo.create();
+      handle.change((d) => {
+        d.value = 1;
+      });
+      handle2.change((d: any) => {
+        d.value = 2;
+      });
+
+      const ref1 = ref(handle, "value");
+      const ref2 = ref(handle2, "value");
+
+      expect(ref1).not.toBe(ref2);
+    });
+
+    it("should cache refs with nested paths", () => {
+      handle.change((d) => {
+        d.user = { profile: { name: "Alice" } };
+      });
+
+      const ref1 = ref(handle, "user", "profile", "name");
+      const ref2 = ref(handle, "user", "profile", "name");
+
+      expect(ref1).toBe(ref2);
+    });
+
+    it("should cache refs with numeric indices", () => {
+      handle.change((d) => {
+        d.items = ["a", "b", "c"];
+      });
+
+      const ref1 = ref(handle, "items", 1);
+      const ref2 = ref(handle, "items", 1);
+
+      expect(ref1).toBe(ref2);
+    });
+
+    it("should cache refs with pattern matches", () => {
+      handle.change((d) => {
+        d.users = [{ id: "alice", name: "Alice" }];
+      });
+
+      const ref1 = ref(handle, "users", { id: "alice" });
+      const ref2 = ref(handle, "users", { id: "alice" });
+
+      expect(ref1).toBe(ref2);
     });
   });
 });

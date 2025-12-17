@@ -1,5 +1,5 @@
 import * as Automerge from "@automerge/automerge";
-import type { AutomergeRefUrl, Segment, SegmentCodec } from "./types";
+import type { RefUrl, Segment, SegmentCodec } from "./types";
 import { KIND } from "./types";
 
 /**
@@ -223,22 +223,20 @@ export function serializeHeads(heads: string[]): string {
   return heads.length > 0 ? `#${heads.join("|")}` : "";
 }
 
-export function parseAutomergeRefUrl(url: AutomergeRefUrl): {
+export function parseRefUrl(url: RefUrl): {
   documentId: string;
   segments: Segment[];
   heads?: string[];
 } {
   const [baseUrl, headsSection, ...rest] = url.split("#");
   if (rest.length > 0) {
-    throw new Error(
-      "Invalid Automerge ref URL: contains multiple heads sections"
-    );
+    throw new Error("Invalid ref URL: contains multiple heads sections");
   }
 
   const match = baseUrl.match(/^automerge:([^/]+)(?:\/(.*))?$/);
   if (!match) {
     throw new Error(
-      `Invalid Automerge ref URL: ${url}\n` +
+      `Invalid ref URL: ${url}\n` +
         `Expected format: automerge:documentId/path/to/value#head1|head2`
     );
   }
@@ -251,13 +249,14 @@ export function parseAutomergeRefUrl(url: AutomergeRefUrl): {
     heads: parseHeads(headsSection),
   };
 }
+
 // ⇧ Parse --- Serialize ⇩ (named stringify to match other automerge methods)
-export function stringifyAutomergeRefUrl(
+export function stringifyRefUrl(
   documentId: string,
   segments: Segment[],
   heads?: string[]
-): AutomergeRefUrl {
+): RefUrl {
   const pathStr = serializePath(segments);
   const headsStr = heads ? serializeHeads(heads) : "";
-  return `${URL_PREFIX}${documentId}/${pathStr}${headsStr}` as AutomergeRefUrl;
+  return `${URL_PREFIX}${documentId}/${pathStr}${headsStr}` as RefUrl;
 }

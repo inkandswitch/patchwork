@@ -3,8 +3,9 @@ export type {
   MutableText,
   ChangeFn,
   InferRefType,
-  MatchPattern,
-  AutomergeRefUrl,
+  Pattern,
+  RefUrl,
+  RefOfType,
 } from "./types";
 
 export { ref } from "./factory";

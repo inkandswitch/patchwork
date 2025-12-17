@@ -15,7 +15,7 @@ export const CURSOR_MARKER = Symbol("cursor");
  * Pattern used to match objects in arrays by their properties.
  * Only primitive values are allowed for reliable serialization and comparison.
  */
-export type MatchPattern = Record<string, string | number | boolean | null>;
+export type Pattern = Record<string, string | number | boolean | null>;
 
 /**
  * Marker type for cursor-based range that will be stabilized.
@@ -33,7 +33,7 @@ export type PathSegment =
   | { [KIND]: "index"; index: number; prop?: number } // Array/list access by numeric index (position-based)
   | {
       [KIND]: "match";
-      match: MatchPattern;
+      match: Pattern;
       prop?: number;
     };
 
@@ -54,7 +54,7 @@ export interface SegmentCodec<K extends Segment[typeof KIND]> {
 }
 
 /** Input types that users can provide to create refs */
-export type PathInput = string | number | MatchPattern | CursorMarker;
+export type PathInput = string | number | Pattern | CursorMarker;
 
 /** Internal: PathInput extended with Segment for URL parsing and internal use */
 export type AnyPathInput = PathInput | Segment;
@@ -91,7 +91,7 @@ type GetSegmentValue<TObj, TSegment> = TSegment extends string
   ? TSegment extends keyof TObj
     ? TObj[TSegment]
     : unknown
-  : TSegment extends number | MatchPattern
+  : TSegment extends number | Pattern
     ? TObj extends readonly (infer E)[]
       ? E
       : unknown
@@ -201,7 +201,22 @@ export type InferRefTypeFromString<
 > = PathValueFromString<TDoc, SegmentsFromString<P>>;
 
 /**
- * Branded type for Automerge ref URLs.
+ * Branded type for ref URLs.
  * A string in the format: `automerge:documentId/path#heads`
  */
-export type AutomergeRefUrl = string & { readonly __brand: "AutomergeRefUrl" };
+export type RefUrl = string & { readonly __brand: "RefUrl" };
+
+/**
+ * Type utility to describe a Ref whose value is of type T.
+ * Useful for function signatures that accept any ref pointing to a specific type.
+ *
+ * @example
+ * ```ts
+ * function addComment(thread: RefOfType<Thread>) { ... }
+ * ```
+ */
+export type RefOfType<T> = {
+  value(): T | undefined;
+  change(fn: ChangeFn<T>): void;
+  readonly url: RefUrl;
+};

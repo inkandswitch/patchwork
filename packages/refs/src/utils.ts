@@ -1,14 +1,14 @@
 import { DocHandle, Repo } from "@automerge/automerge-repo";
 import type {
-  MatchPattern,
+  Pattern,
   CursorMarker,
-  AutomergeRefUrl,
+  RefUrl,
   AnyPathInput,
   SegmentsFromString,
 } from "./types";
 import { CURSOR_MARKER } from "./types";
 import { Ref } from "./ref";
-import { parseAutomergeRefUrl } from "./parser";
+import { parseRefUrl } from "./parser";
 
 /**
  * Create a cursor-based range segment for stable text selection.
@@ -26,19 +26,19 @@ export function cursor(start: number, end?: number): CursorMarker {
 }
 
 /**
- * Parse a ref from an Automerge URL string.
+ * Parse a ref from a URL string.
  *
  * @param handle - The document handle to use
- * @param url - Full automerge URL like "automerge:documentId/path#heads"
+ * @param url - Full ref URL like "automerge:documentId/path#heads"
  *
  * @example
- * fromUrl(handle, "automerge:abc/todos/0#head1|head2" as AutomergeRefUrl)
+ * fromUrl(handle, "automerge:abc/todos/0#head1|head2" as RefUrl)
  */
 export function fromUrl<TDoc = any>(
   handle: DocHandle<TDoc>,
-  url: AutomergeRefUrl
+  url: RefUrl
 ): Ref<TDoc, AnyPathInput[]> {
-  const { segments, heads } = parseAutomergeRefUrl(url);
+  const { segments, heads } = parseRefUrl(url);
   const options = heads ? { heads } : {};
   return new Ref<TDoc, AnyPathInput[]>(handle, segments, options);
 }
@@ -58,29 +58,28 @@ export function fromString<TDoc, TPath extends string>(
   path: TPath
 ): Ref<TDoc, SegmentsFromString<TPath>> {
   const url = docHandle.url;
-  const { segments } = parseAutomergeRefUrl(
-    `${url}/${path}` as AutomergeRefUrl
-  );
+  const { segments } = parseRefUrl(`${url}/${path}` as RefUrl);
   return new Ref<TDoc, SegmentsFromString<TPath>>(
     docHandle,
     segments as unknown as [...SegmentsFromString<TPath>]
   );
 }
+
 /**
- * Find a ref by its Automerge URL.
+ * Find a ref by its URL.
  *
  * URL format: `automerge:{documentId}/{path}#{heads}`
  *
  * @example
  * ```ts
- * const ref = await findRef(repo, "automerge:abc123/todos/$xyz/title" as AutomergeRefUrl);
+ * const ref = await findRef(repo, "automerge:abc123/todos/$xyz/title" as RefUrl);
  * ```
  */
 export async function findRef<T = any>(
   repo: Repo,
-  url: AutomergeRefUrl
+  url: RefUrl
 ): Promise<Ref<T>> {
-  const { documentId } = parseAutomergeRefUrl(url);
+  const { documentId } = parseRefUrl(url);
   const handle = await repo.find(documentId as any);
   await handle.whenReady();
 
@@ -88,13 +87,13 @@ export async function findRef<T = any>(
 }
 
 /**
- * Check if an item matches an ID pattern.
+ * Check if an item matches a pattern.
  *
  * Note: This performs shallow equality checks only. Nested objects
  * are compared by reference, not by deep value equality.
  *
  * @internal
  */
-export function matchesPattern(item: any, pattern: MatchPattern): boolean {
+export function matchesPattern(item: any, pattern: Pattern): boolean {
   return Object.entries(pattern).every(([key, value]) => item[key] === value);
 }
