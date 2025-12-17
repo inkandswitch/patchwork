@@ -4,7 +4,7 @@ import {
   isValidAutomergeUrl,
   type AutomergeUrl,
 } from "@automerge/automerge-repo";
-import type { ModuleSettingsDoc } from "@patchwork/filesystem";
+import type { ModuleSettingsDoc } from "@inkandswitch/patchwork-filesystem";
 import type { PatchworkToolProps } from "../types.ts";
 import { useModules } from "@patchwork/solid";
 import { ToolCard } from "./tool-card.tsx";

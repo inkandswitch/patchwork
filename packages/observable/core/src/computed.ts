@@ -70,7 +70,7 @@ type ObservableValues<T extends readonly Observable[]> = {
  */
 export function computed<const Sources extends readonly Observable[], Result>(
   ...args: [...Sources, (...values: ObservableValues<Sources>) => Result]
-): Computed<Result> {
+): Observable<Result> {
   const computeFn = args.pop() as (...values: any[]) => Result;
   const sources = args as unknown as Observable[];
   return new Computed(sources, computeFn);

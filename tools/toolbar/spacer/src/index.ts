@@ -1,4 +1,4 @@
-import { Plugin } from "@patchwork/plugins";
+import { Plugin } from "@inkandswitch/patchwork-plugins";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -6,11 +6,12 @@ export const plugins: Plugin<any>[] = [
     id: "spacer",
     name: "Spacer",
     icon: "Spacer",
-    supportedDataTypes: "*",
+    supportedDatatypes: "*",
     async load() {
       const { renderSpacer } = await import("./Spacer.js");
       return renderSpacer;
     },
     unlisted: true,
+    forTitleBar: true,
   },
 ];

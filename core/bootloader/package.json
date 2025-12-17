@@ -1,9 +1,11 @@
 {
-  "name": "@patchwork/bootloader",
+  "name": "@inkandswitch/patchwork-bootloader",
+  "version": "0.0.4",
+  "author": "chee",
   "type": "module",
+  "license": "MIT",
   "devDependencies": {
     "@automerge/automerge-repo-keyhive": "catalog:",
-    "@keyhive/keyhive": "catalog:",
     "esbuild": "^0.23.1",
     "rollup": "^4.53.3"
   },
@@ -43,10 +45,8 @@
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-keyhive": "catalog:",
-    "@automerge/vanillajs": "catalog:",
-    "@keyhive/keyhive": "catalog:"
+    "@automerge/vanillajs": "catalog:"
   },
-  "author": "Ink & Switch",
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w --preserveWatchOutput"

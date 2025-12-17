@@ -17,9 +17,9 @@
   },
   "dependencies": {
     "@automerge/automerge-repo-react-hooks": "catalog:",
-    "@patchwork/bootloader": "workspace:^",
-    "@patchwork/filesystem": "workspace:^",
-    "@patchwork/plugins": "workspace:^",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
     "cmdk": "^1.1.1",
     "react": "^18.3.0",
     "react-dom": "^18.3.1"

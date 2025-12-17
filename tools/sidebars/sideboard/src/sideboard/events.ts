@@ -1,4 +1,4 @@
-import type { OpenDocumentEventDetail } from "@patchwork/elements";
+import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 
 export function createOpenEvent(detail: OpenDocumentEventDetail) {
   const openEvent = new CustomEvent("patchwork:open-document", {

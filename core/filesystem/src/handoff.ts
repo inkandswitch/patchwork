@@ -7,7 +7,7 @@ import {
   type Repo,
 } from "@automerge/automerge-repo";
 import type { UnixFileEntry, FolderDoc } from "./types.js";
-import type { HandoffHandler } from "@patchwork/bootloader/types";
+import type { HandoffHandler } from "@inkandswitch/patchwork-bootloader/types";
 
 export async function findFileHandleInFolderHandle(
   repo: Repo,
@@ -54,6 +54,9 @@ export function createFilesystemHandoffHandler(repo: Repo) {
 
       if (isValidAutomergeUrl(maybeAutomergeUrl)) {
         const folder = await repo.find<FolderDoc>(maybeAutomergeUrl);
+        if (!path[path.length - 1]) {
+          path.pop();
+        }
 
         const { heads } = parseAutomergeUrl(maybeAutomergeUrl);
 
@@ -63,10 +66,15 @@ export function createFilesystemHandoffHandler(repo: Repo) {
             heads: folder.heads(),
           });
 
+          let location = `/${encodeURIComponent(url)}`;
+          if (path.length) {
+            location += `/${path.join("/")}`;
+          }
+
           return {
             status: 307,
             headers: {
-              location: `/${encodeURIComponent(url)}/${path.join("/")}`,
+              location,
             },
             cache: false,
           };
@@ -95,6 +103,7 @@ export function createFilesystemHandoffHandler(repo: Repo) {
       return {
         body: `${error}`,
         status: 567,
+        cache: false,
       } as const;
     }
   };

@@ -1,21 +1,21 @@
 import type { ChangeFn, Repo } from "@automerge/automerge-repo";
 import {
-  type DataType,
-  type DataTypeDescription,
+  type Datatype,
+  type DatatypeDescription,
   type Plugin,
-  createDocOfDataType2,
+  createDocOfDatatype2,
   getRegistry,
   isLoadablePlugin,
   isLoadedPlugin,
-} from "@patchwork/plugins";
+} from "@inkandswitch/patchwork-plugins";
 import { For } from "solid-js";
 import { PlusIcon } from "./icons.tsx";
-import type { FolderDoc } from "@patchwork/filesystem";
+import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
 import { useFilteredDatatypes } from "@patchwork/solid";
 import { DropdownMenu } from "@kobalte/core/dropdown-menu";
-import type { OpenDocumentEventDetail } from "@patchwork/elements";
+import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 
-async function createNew(repo: Repo, datatype: Plugin<DataTypeDescription>) {
+async function createNew(repo: Repo, datatype: Plugin<DatatypeDescription>) {
   if (isLoadablePlugin(datatype)) {
     const registry = getRegistry("patchwork:datatype");
     await registry.load(datatype.id);
@@ -23,7 +23,7 @@ async function createNew(repo: Repo, datatype: Plugin<DataTypeDescription>) {
   if (!isLoadedPlugin(datatype)) {
     throw new Error("plugin not loaded after loading");
   }
-  const docHandle = await createDocOfDataType2(datatype, repo);
+  const docHandle = await createDocOfDatatype2(datatype, repo);
   const doc = docHandle.doc();
   const name = datatype.module.getTitle(doc);
 

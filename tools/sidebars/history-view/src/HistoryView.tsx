@@ -8,12 +8,12 @@ import {
   useReactive,
   useSubcontext,
 } from "@patchwork/context-react";
-import { getType, HasPatchworkMetadata } from "@patchwork/filesystem";
+import { getType, HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import { useEffect, useState } from "react";
 import { relativeTime } from "@patchwork/util/src/relative-time";
-import { toolify } from "@patchwork/react";
+import { toolify } from "@inkandswitch/patchwork-react";
 import { $selectedDocUrls } from "@patchwork/context-selection";
-import { useDatatype } from "@patchwork/react";
+import { useDatatype } from "@inkandswitch/patchwork-react";
 
 const HistoryView = () => {
   const selectedDocUrls = useReactive($selectedDocUrls);

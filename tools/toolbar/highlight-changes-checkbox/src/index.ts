@@ -1,5 +1,5 @@
-import { Plugin } from "@patchwork/plugins";
-import { toolify } from "@patchwork/react";
+import { Plugin } from "@inkandswitch/patchwork-plugins";
+import { toolify } from "@inkandswitch/patchwork-react";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -7,7 +7,7 @@ export const plugins: Plugin<any>[] = [
     id: "highlight-changes-checkbox",
     name: "Highlight Changes",
     icon: "Highlighter",
-    supportedDataTypes: "*",
+    supportedDatatypes: "*",
     async load() {
       const { HighlightChangesOption } = await import(
         "./HighlightChangesCheckbox"
@@ -15,5 +15,6 @@ export const plugins: Plugin<any>[] = [
       return toolify(HighlightChangesOption);
     },
     unlisted: true,
+    forTitleBar: true,
   },
 ];

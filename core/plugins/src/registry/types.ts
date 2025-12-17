@@ -1,4 +1,4 @@
-import { DataTypeDescription } from "../datatypes.js";
+import { DatatypeDescription } from "../datatypes.js";
 import { ToolDescription } from "../tools.js";
 
 export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
@@ -10,12 +10,12 @@ export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
 
 /**
  * Map of registry types and their corresponding plugin description types
- * can be extended with `declare module "@patchwork/plugins" { ... }`
+ * can be extended with `declare module "@inkandswitch/patchwork-plugins" { ... }`
  * to add new registry types in userland while maintaining type safety.
  */
 export type RegistryTypeMap = {
   "patchwork:tool": ToolDescription;
-  "patchwork:datatype": DataTypeDescription;
+  "patchwork:datatype": DatatypeDescription;
 };
 
 /**

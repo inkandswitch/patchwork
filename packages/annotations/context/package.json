@@ -15,8 +15,7 @@
     }
   },
   "dependencies": {
-    "@patchwork/annotations": "workspace:*",
-    "@patchwork/elements": "workspace:*"
+    "@patchwork/annotations": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

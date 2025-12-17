@@ -5,8 +5,8 @@ import {
   type Repo,
 } from "@automerge/automerge-repo";
 import { ViewSource } from "./view-source.tsx";
-import type { FolderDoc } from "@patchwork/filesystem";
-import { automergeUrlToServiceWorkerUrl } from "@patchwork/filesystem";
+import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
+import { automergeUrlToServiceWorkerUrl } from "@inkandswitch/patchwork-filesystem";
 
 interface ModuleInputProps {
   onAdd: (url: AutomergeUrl) => void;

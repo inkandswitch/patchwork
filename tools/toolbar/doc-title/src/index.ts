@@ -1,5 +1,5 @@
-import { Plugin } from "@patchwork/plugins";
-import { toolify } from "@patchwork/react";
+import { Plugin } from "@inkandswitch/patchwork-plugins";
+import { toolify } from "@inkandswitch/patchwork-react";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -7,11 +7,12 @@ export const plugins: Plugin<any>[] = [
     id: "document-title",
     name: "Document Title",
     icon: "Heading",
-    supportedDataTypes: "*",
+    supportedDatatypes: "*",
     async load() {
       const { DocumentTitle } = await import("./DocumentTitle");
       return toolify(DocumentTitle);
     },
     unlisted: true,
+    forTitleBar: true,
   },
 ];

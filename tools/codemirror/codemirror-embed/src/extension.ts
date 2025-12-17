@@ -116,7 +116,7 @@ function getEmbedLinks(view: EditorView) {
             const linkText = state.doc.sliceString(linkFrom, linkTo);
 
             // Match [patchwork:docId/toolId] format
-            const match = linkText.match(/\[patchwork:\$([^/\]]+)\/([^\]]+)\]/);
+            const match = linkText.match(/\[patchwork:([^/\]]+)\/([^\]]+)\]/);
 
             if (match) {
               const [, docId, toolId] = match;

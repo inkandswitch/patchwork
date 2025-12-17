@@ -1,6 +1,13 @@
 import type { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import type { LoadedPlugin, PluginDescription } from "./registry/index.js";
-import { getType, type HasPatchworkMetadata } from "@patchwork/filesystem";
+import type {
+  LoadablePlugin,
+  LoadedPlugin,
+  PluginDescription,
+} from "./registry/index.js";
+import {
+  getType,
+  type HasPatchworkMetadata,
+} from "@inkandswitch/patchwork-filesystem";
 import { getRegistry } from "./registry/index.js";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
@@ -25,30 +32,39 @@ export type ToolRender<T = unknown> = (
 export type ToolDescription = PluginDescription & {
   id: string;
   type: "patchwork:tool";
-  supportedDataTypes: "*" | string[];
+  supportedDatatypes: "*" | string[];
   name: string;
   icon?: string;
   unlisted?: boolean;
+  forTitleBar?: boolean;
 };
 
-export type Tool = LoadedPlugin<ToolDescription, ToolImplementation>;
+export type LoadedTool<T = unknown> = LoadedPlugin<
+  ToolDescription,
+  ToolImplementation<T>
+>;
+
+export type Tool<T = unknown> = LoadablePlugin<
+  ToolDescription,
+  ToolImplementation<T>
+>;
 
 export type LegacyEditorProps = { docUrl: AutomergeUrl };
 
-export function getSupportedToolsForType(type: string): Tool[] {
+export function getSupportedToolsForType(type: string): LoadedTool[] {
   const plugins = getRegistry<ToolDescription>("patchwork:tool").filter(
     (desc) => {
       return (
-        desc.supportedDataTypes.includes(type) ||
-        desc.supportedDataTypes.includes("*")
+        desc.supportedDatatypes.includes(type) ||
+        desc.supportedDatatypes.includes("*")
       );
     }
   );
 
-  return plugins as Tool[];
+  return plugins as LoadedTool[];
 }
 
-export function getSupportedTools(doc: HasPatchworkMetadata): Tool[] {
+export function getSupportedTools(doc: HasPatchworkMetadata): LoadedTool[] {
   const type = getType(doc);
   if (!type) return [];
   return getSupportedToolsForType(type);
@@ -57,9 +73,9 @@ export function getSupportedTools(doc: HasPatchworkMetadata): Tool[] {
 export function getFallbackTool(doc: HasPatchworkMetadata) {
   const type = getType(doc)!;
   const plugins = getSupportedTools(doc);
-  return sortPlugins<Tool, ToolDescription, ToolImplementation>(
+  return sortPlugins<LoadedTool, ToolDescription, ToolImplementation>(
     plugins,
-    "supportedDataTypes",
+    "supportedDatatypes",
     type,
     "id"
   )?.filter((tool) => !tool.unlisted)?.[0];

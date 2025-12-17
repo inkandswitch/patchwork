@@ -6,7 +6,7 @@ import {
   Ref,
 } from "@patchwork/context";
 import { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
-import { HasPatchworkMetadata } from "@patchwork/filesystem";
+import { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 
 export const IsSelected = defineAnnotation<boolean>("patchwork/isSelected");
 

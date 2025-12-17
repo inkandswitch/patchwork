@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import type { ToolImplementation } from "@patchwork/plugins";
+import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
 import styles from "./main.css";
 import { initCommands } from "./commands.ts";
 import type { DocHandle, Repo } from "@automerge/automerge-repo";
@@ -18,7 +18,7 @@ export const plugins = [
     id: "orion/commands",
     name: "Commands",
     // No supported data types as this is a global tool
-    supportedDataTypes: [],
+    supportedDatatypes: [],
     async load(): Promise<ToolImplementation> {
       // HACK because we have no real solution for this kind of tool yet...
 

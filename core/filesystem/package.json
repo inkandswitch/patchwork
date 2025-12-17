@@ -1,7 +1,8 @@
 {
-  "name": "@patchwork/filesystem",
+  "name": "@inkandswitch/patchwork-filesystem",
   "type": "module",
-  "version": "1.0.0",
+  "version": "0.0.3",
+  "author": "Ink & Switch",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -10,8 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "Ink & Switch",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
@@ -21,6 +21,6 @@
     "resolve.exports": "^2.0.3"
   },
   "devDependencies": {
-    "@patchwork/bootloader": "workspace:^"
+    "@inkandswitch/patchwork-bootloader": "workspace:^"
   }
 }

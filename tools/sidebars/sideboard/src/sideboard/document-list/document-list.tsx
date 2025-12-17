@@ -2,7 +2,7 @@ import type {
   DocLink,
   FolderDoc,
   HasPatchworkMetadata,
-} from "@patchwork/filesystem";
+} from "@inkandswitch/patchwork-filesystem";
 import { For, Match, Suspense, Switch } from "solid-js";
 import {
   filter,
@@ -16,11 +16,11 @@ import {
   type DocHandle,
   type Repo,
 } from "@automerge/automerge-repo";
-import type { OpenDocumentEventDetail } from "@patchwork/elements";
+import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 import Folder from "./folder.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import { getRegistry, type DataType } from "@patchwork/plugins";
+import { getRegistry, type Datatype } from "@inkandswitch/patchwork-plugins";
 
 export interface DocumentListProps {
   handle: DocHandle<FolderDoc>;
@@ -44,14 +44,14 @@ export function DocumentList(props: DocumentListProps) {
           props.handle.change((doc) => {
             updateText(doc, ["docs", index(), "name"], name);
           });
-          const datatypes = getRegistry<DataType>("patchwork:datatype");
+          const datatypes = getRegistry<Datatype>("patchwork:datatype");
           props.repo
             .find<Partial<HasPatchworkMetadata>>(doc.url)
             .then(async (handle) => {
               const { "@patchwork": metadata } = handle.doc();
 
               if (metadata) {
-                const datatype = datatypes.get(metadata.type) as DataType;
+                const datatype = datatypes.get(metadata.type) as Datatype;
 
                 if (datatype) {
                   await datatypes.load(datatype.id);

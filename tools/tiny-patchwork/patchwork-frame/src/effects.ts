@@ -8,13 +8,13 @@ import {
   $selectedDocHandles,
   $selectedDocUrls,
 } from "@patchwork/context-selection";
-import { FolderDoc, HasPatchworkMetadata } from "@patchwork/filesystem";
+import { FolderDoc, HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import {
-  DataTypeDescription,
-  DataTypeImplementation,
+  DatatypeDescription,
+  DatatypeImplementation,
   getRegistry,
-} from "@patchwork/plugins";
-import { PluginRegistry } from "@patchwork/plugins/dist/registry/registry";
+} from "@inkandswitch/patchwork-plugins";
+import { PluginRegistry } from "@inkandswitch/patchwork-plugins/dist/registry/registry";
 import { useEffect } from "react";
 
 export const useUpdateDocLinksOfActiveDocumentsEffect = (
@@ -35,8 +35,8 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
     let canceled = false;
 
     const registry = getRegistry("patchwork:datatype") as PluginRegistry<
-      DataTypeDescription,
-      DataTypeImplementation
+      DatatypeDescription,
+      DatatypeImplementation
     >;
 
     for (const docUrl of selectedDocUrls) {
@@ -89,7 +89,7 @@ export const useAddUnknownDocumentsToSidebarEffect = (
 
     let canceled = false;
 
-    const registry = getRegistry<DataTypeDescription>("patchwork:datatype");
+    const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
 
     for (const docHandle of selectedDocHandles) {
       const type = docHandle.doc()["@patchwork"]?.type;

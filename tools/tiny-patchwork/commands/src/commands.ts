@@ -11,7 +11,7 @@ import type {
   FolderDoc,
   HasPatchworkMetadata,
   ModuleSettingsDoc,
-} from "@patchwork/filesystem";
+} from "@inkandswitch/patchwork-filesystem";
 import type { CommandItem } from "./CommandPalette";
 // TODO: this aint good...knows too much, will fix soon...
 import type { TinyPatchworkLayoutDoc } from "../../../sites/tiny-patchwork/src/layout-doc";

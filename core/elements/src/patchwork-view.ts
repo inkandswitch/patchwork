@@ -8,14 +8,13 @@ import {
   getSuggestedImportUrl,
   getType,
   type HasPatchworkMetadata,
-  ModuleWatcher,
-} from "@patchwork/filesystem";
+} from "@inkandswitch/patchwork-filesystem";
 import {
   getFallbackTool,
   getRegistry,
   isLoadablePlugin,
-  type Tool,
-} from "@patchwork/plugins";
+  type LoadedTool,
+} from "@inkandswitch/patchwork-plugins";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
@@ -39,8 +38,6 @@ export interface RegisterPatchworkViewElementParams {
   name?: string;
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
-  // todo do not need the below when tools are URLs
-  moduleWatcher: ModuleWatcher;
 }
 
 export interface PatchworkViewElement extends HTMLElement {
@@ -56,7 +53,7 @@ export function registerPatchworkViewElement(
   const name = params.name ?? "patchwork-view";
 
   const repo = params.repo;
-  const moduleWatcher = params.moduleWatcher;
+
 
   if (customElements.get(name)) {
     console.error(`can't redefine a custom element. defining "${name}"`);
@@ -77,7 +74,7 @@ export function registerPatchworkViewElement(
       #docUrl: AutomergeUrl | null = null;
       #toolId: string | null = null;
       #handle: DocHandle<HasPatchworkMetadata> | null = null;
-      #tool: Tool | null = null;
+      #tool: LoadedTool | null = null;
       #state: State = State.none;
 
       get docUrl() {
@@ -270,7 +267,7 @@ export function registerPatchworkViewElement(
           console.warn(`no tool for ${this.#docUrl}`);
         }
 
-        this.#tool = getRegistry<Tool>("patchwork:tool").get(toolId) ?? null;
+        this.#tool = getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
 
         if (!this.#tool) {
           console.warn("Tool not found", toolId);

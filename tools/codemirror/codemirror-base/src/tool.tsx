@@ -20,10 +20,10 @@ import {
   DiffAnnotation,
   getElementsWithDiff,
 } from "@patchwork/context-diff";
-import { getRegistry } from "@patchwork/plugins";
+import { getRegistry } from "@inkandswitch/patchwork-plugins";
 
 /** Styles */
-import { createSignal, onMount } from "solid-js";
+import { createEffect, createSignal, onMount } from "solid-js";
 
 export type TextDoc = {
   content: string;
@@ -32,9 +32,6 @@ export type TextDoc = {
 const PATH = ["content"];
 
 export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
-  if (!props.handle) {
-    return;
-  }
   const contentRef = () =>
     new PathRef(props.handle as DocHandle<TextDoc>, PATH);
   const isReadOnly = () => !!parseAutomergeUrl(props.handle.url).heads;
@@ -166,9 +163,9 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
     const loadedExtensions = await extensionsRegistry.loadAll(
       extensionsRegistry.filter((ext) => {
         return (
-          ext.supportedDataTypes === "*" ||
-          (Array.isArray(ext.supportedDataTypes) &&
-            ext.supportedDataTypes.includes(docType))
+          ext.supportedDatatypes === "*" ||
+          (Array.isArray(ext.supportedDatatypes) &&
+            ext.supportedDatatypes.includes(docType))
         );
       })
     );

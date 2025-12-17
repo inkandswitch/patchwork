@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "description": "A malleable software environment for collaborative work",
   "main": "index.js",
-  "packageManager": "pnpm@10.23.0",
+  "packageManager": "pnpm@10.24.0",
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 pnpm -r build",
     "clean": "rm -rf **/node_modules **/dist",
     "dev": "pnpm -r --filter ...{sites/${SITE:-tiny-patchwork}}... --parallel dev",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md,html,yaml,yml}\"",
@@ -14,20 +14,22 @@
     "make-tool": "node scripts/make-tool.mjs",
     "preinstall": "npx only-allow pnpm",
     "preview": "pnpm --filter gaios preview",
+    "publish-core": "pnpm --filter './core/*' publish --access=public",
     "test": "pnpm --filter \"./os\" test",
     "tsc": "pnpm -r exec tsc"
   },
   "pnpm": {
     "overrides": {
       "@automerge/automerge": "catalog:",
-      "@automerge/automerge-repo": "catalog:",
-      "@keyhive/keyhive": "catalog:"
+      "@automerge/automerge-repo": "catalog:"
     }
   },
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "@vitest/ui": "^3.2.4",
+    "cross-env": "^10.1.0",
     "prettier": "^3.7.3",
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
@@ -35,7 +37,7 @@
     "vitest": "^3.2.4"
   },
   "volta": {
-    "node": "22.19.0"
+    "node": "24.11.1"
   },
   "dependencies": {
     "@types/react": "catalog:",

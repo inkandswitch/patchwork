@@ -1,12 +1,10 @@
-import { Plugin } from "@patchwork/plugins";
+import { Plugin } from "@inkandswitch/patchwork-plugins";
 // @ts-expect-error no types
 import { plugins as patchworkFramePlugins } from "@tiny-patchwork/patchwork-frame";
 // @ts-expect-error no types
 import { plugins as tabViewerPlugins } from "@tiny-patchwork/context-sidebar";
 // @ts-expect-error no types
 import { plugins as branchViewPlugins } from "@tiny-patchwork/history-view";
-// @ts-expect-error no types
-import { plugins as todoPlugins } from "@tiny-patchwork/todo";
 // @ts-expect-error no types
 import { plugins as historyViewPlugins } from "@tiny-patchwork/history-view";
 // @ts-expect-error no types
@@ -39,23 +37,29 @@ import { plugins as codemirrorEmbedPlugins } from "@grjte/codemirror-embed";
 // @ts-expect-error no types
 import { plugins as codemirrorMarkdownPlugins } from "@grjte/codemirror-markdown";
 // @ts-expect-error no types
-import { plugins as markdownLinksPlugins } from "@grjte/codemirror-md-links";
-// @ts-expect-error no types
 import { plugins as syncIndicatorPlugins } from "@tiny-patchwork/sync-indicator";
 // @ts-expect-error no types
 import { plugins as commandsPlugins } from "@orion/commands";
 import "@inkandswitch/tenfold/style.css";
 // @ts-expect-error no types
-import { plugins as tenfoldPlugins } from "@inkandswitch/tenfold";
+const tenfoldPlugins = await import("@inkandswitch/tenfold").then(
+  (mod) => mod.plugins
+);
 // @ts-expect-error no types
 import { plugins as addDocToSidebarButtonPlugins } from "@tiny-patchwork/add-doc-to-sidebar-button";
+
+// @ts-expect-error no types
+import { plugins as contactPlugins } from "@patchwork/contact";
+import "@patchwork/contact/style.css";
+// @ts-expect-error no types
+import { plugins as accountPickerPlugins } from "@patchwork/account-picker";
+import "@patchwork/account-picker/style.css";
 
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
   ...patchworkFramePlugins,
   ...tabViewerPlugins,
   ...branchViewPlugins,
-  ...todoPlugins,
   ...historyViewPlugins,
   ...commentsViewPlugins,
   ...sideboardPlugins,
@@ -70,10 +74,11 @@ export const plugins: Plugin<any>[] = [
   ...syncIndicatorPlugins,
   ...codemirrorBasePlugins,
   ...codemirrorMarkdownPlugins,
-  ...markdownLinksPlugins,
   ...codemirrorEmbedPlugins,
   ...tenfoldPlugins,
   ...addDocToSidebarButtonPlugins,
+  ...contactPlugins,
+  ...accountPickerPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",

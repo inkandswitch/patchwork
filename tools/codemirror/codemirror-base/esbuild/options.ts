@@ -1,5 +1,5 @@
 import type { BuildOptions } from "esbuild";
-import externals from "@patchwork/bootloader/externals";
+import externals from "@inkandswitch/patchwork-bootloader/externals";
 import process from "node:process";
 import pushworkSync from "./plugin-pushwork-sync.ts";
 import pkgJSON from "../package.json" with { type: "json" };

@@ -1,5 +1,5 @@
-import { Plugin } from "@patchwork/plugins";
-import { toolify } from "@patchwork/react";
+import { Plugin } from "@inkandswitch/patchwork-plugins";
+import { toolify } from "@inkandswitch/patchwork-react";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -7,7 +7,7 @@ export const plugins: Plugin<any>[] = [
     id: "context-view",
     name: "Context",
     icon: "TextSearch",
-    supportedDataTypes: ["context-view"],
+    supportedDatatypes: ["context-view"],
     async load() {
       const { ContextView } = await import("./ContextView");
       return toolify(ContextView);

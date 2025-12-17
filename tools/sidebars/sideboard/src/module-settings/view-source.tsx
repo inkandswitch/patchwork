@@ -1,6 +1,6 @@
 import { createSignal, Show, For } from "solid-js";
 import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import type { FolderDoc } from "@patchwork/filesystem";
+import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
 
 interface ViewSourceProps {
   moduleUrl: AutomergeUrl;

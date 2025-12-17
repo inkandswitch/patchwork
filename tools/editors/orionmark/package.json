@@ -38,9 +38,9 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.4",
     "@lezer/highlight": "^1.2.1",
-    "@patchwork/bootloader": "workspace:^",
-    "@patchwork/filesystem": "workspace:^",
-    "@patchwork/plugins": "workspace:^",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
     "react": "^18.3.0",
     "react-dom": "^18.3.1"
   },

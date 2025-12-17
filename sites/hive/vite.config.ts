@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
-import patchwork from "@patchwork/bootloader/vite";
+import patchwork from "@inkandswitch/patchwork-bootloader/vite";
 
 export default defineConfig({
   plugins: [
@@ -26,5 +26,8 @@ export default defineConfig({
     hmr: {
       port: process.env.PORT ? +process.env.PORT : undefined,
     },
+  },
+  optimizeDeps: {
+    exclude: ["@automerge/automerge-repo-keyhive"],
   },
 });

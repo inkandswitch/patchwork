@@ -1,4 +1,4 @@
-import { Plugin } from "@patchwork/plugins";
+import { Plugin } from "@inkandswitch/patchwork-plugins";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -6,7 +6,7 @@ export const plugins: Plugin<any>[] = [
     id: "context-sidebar",
     name: "Context Sidebar",
     icon: "Tabs",
-    supportedDataTypes: ["account"],
+    supportedDatatypes: ["account"],
     async load() {
       const { renderTabbedView } = await import("./ContextSidebar");
       return renderTabbedView;

@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import tailwindcss from "@tailwindcss/vite";
-import externals from "@patchwork/bootloader/externals";
+import externals from "@inkandswitch/patchwork-bootloader/externals";
 
 export default defineConfig({
   base: "./",

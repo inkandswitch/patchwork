@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import type { ToolImplementation } from "@patchwork/plugins";
+import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
 import { SyncIndicator } from "./SyncIndicator";
 
@@ -9,8 +9,9 @@ export const plugins = [
     id: "sync-indicator",
     name: "Sync Indicator",
     icon: "Wifi",
-    supportedDataTypes: "*" as const,
+    supportedDatatypes: "*" as const,
     unlisted: true,
+    forTitleBar: true,
     async load(): Promise<ToolImplementation> {
       return (handle, element) => {
         element.style.width = "fit-content";

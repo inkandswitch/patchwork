@@ -1,5 +1,5 @@
-import { Plugin } from "@patchwork/plugins";
-import { toolify } from "@patchwork/react";
+import { Plugin } from "@inkandswitch/patchwork-plugins";
+import { toolify } from "@inkandswitch/patchwork-react";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -7,7 +7,7 @@ export const plugins: Plugin<any>[] = [
     id: "patchwork-frame",
     name: "Patchwork Frame",
     icon: "Window",
-    supportedDataTypes: ["account"],
+    supportedDatatypes: ["account"],
     async load() {
       const { PatchworkFrame } = await import("./PatchworkFrame");
       return toolify(PatchworkFrame);

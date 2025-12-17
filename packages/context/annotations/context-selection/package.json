@@ -1,6 +1,7 @@
 {
   "name": "@patchwork/context-selection",
   "type": "module",
+  "private": true,
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w --preserveWatchOutput",
@@ -18,7 +19,7 @@
   "dependencies": {
     "@automerge/automerge-repo": "catalog:",
     "@patchwork/context": "workspace:*",
-    "@patchwork/filesystem": "workspace:*"
+    "@inkandswitch/patchwork-filesystem": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

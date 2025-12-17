@@ -945,7 +945,7 @@ interface MediaEncodingConfiguration extends MediaConfiguration {
 
 interface MediaEncryptedEventInit extends EventInit {
     initData?: ArrayBuffer | null;
-    initDataType?: string;
+    initDatatype?: string;
 }
 
 interface MediaImage {
@@ -962,7 +962,7 @@ interface MediaKeyMessageEventInit extends EventInit {
 interface MediaKeySystemConfiguration {
     audioCapabilities?: MediaKeySystemMediaCapability[];
     distinctiveIdentifier?: MediaKeysRequirement;
-    initDataTypes?: string[];
+    initDatatypes?: string[];
     label?: string;
     persistentState?: MediaKeysRequirement;
     sessionTypes?: string[];
@@ -15833,8 +15833,8 @@ declare var MediaElementAudioSourceNode: {
 interface MediaEncryptedEvent extends Event {
     /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/MediaEncryptedEvent/initData) */
     readonly initData: ArrayBuffer | null;
-    /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/MediaEncryptedEvent/initDataType) */
-    readonly initDataType: string;
+    /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/MediaEncryptedEvent/initDatatype) */
+    readonly initDatatype: string;
 }
 
 declare var MediaEncryptedEvent: {
@@ -15912,7 +15912,7 @@ interface MediaKeySession extends EventTarget {
     /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/MediaKeySession/close) */
     close(): Promise<void>;
     /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/MediaKeySession/generateRequest) */
-    generateRequest(initDataType: string, initData: BufferSource): Promise<void>;
+    generateRequest(initDatatype: string, initData: BufferSource): Promise<void>;
     /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/MediaKeySession/load) */
     load(sessionId: string): Promise<boolean>;
     /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/MediaKeySession/remove) */

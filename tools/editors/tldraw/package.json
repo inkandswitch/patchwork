@@ -27,9 +27,9 @@
   "dependencies": {
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@automerge/react": "catalog:",
-    "@patchwork/bootloader": "workspace:^",
-    "@patchwork/filesystem": "workspace:^",
-    "@patchwork/plugins": "workspace:^",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
     "@tldraw/tldraw": "2.0.0-alpha.17",
     "@types/lodash": "^4.17.20",
     "lodash": "^4.17.21",

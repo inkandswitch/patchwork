@@ -6,17 +6,18 @@ import {
 type TinyPatchworkAccountDoc = {
   rootFolderUrl: AutomergeUrl;
   moduleSettingsUrl: AutomergeUrl;
+  contactUrl: AutomergeUrl;
 };
 
 import type { PatchworkToolProps } from "../types.ts";
 import { filter, setFilter } from "./state.ts";
 import CreateNew from "./create-new.tsx";
-import type { FolderDoc } from "@patchwork/filesystem";
+import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
 import { createOpenEvent } from "./events.ts";
 import { SearchIcon } from "./icons.tsx";
 import { DocumentList } from "./document-list/document-list.tsx";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import type { OpenDocumentEventDetail } from "@patchwork/elements";
+import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 
 export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
   const doc = makeDocumentProjection(props.handle);
@@ -27,6 +28,7 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
 
   const moduleSettingsUrl = () => doc.moduleSettingsUrl;
   const accountDocUrl = () => props.handle.url;
+  const contactUrl = () => doc.contactUrl
 
   function open(detail: OpenDocumentEventDetail) {
     props.element.dispatchEvent(createOpenEvent(detail));
@@ -72,7 +74,23 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
           onClick={() =>
             open({
               url: accountDocUrl(),
-              toolId: "frame-configurator",
+              toolId: "account-picker"
+            })
+          }
+          class="sideboard-footer__button"
+        >
+          {/* TODO: declare patchwork-view element for TypeScript */}
+            <patchwork-view
+              doc-url={contactUrl()}
+              tool-id="contact-avatar"
+            />
+        </button>
+
+        <button
+          onClick={() =>
+            open({
+              url: accountDocUrl(),
+              toolId: "frame-configurator"
             })
           }
           class="sideboard-footer__button"

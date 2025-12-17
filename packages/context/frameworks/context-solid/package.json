@@ -1,6 +1,7 @@
 {
   "name": "@patchwork/context-solid",
   "type": "module",
+  "private": true,
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w --preserveWatchOutput",

@@ -7,7 +7,7 @@ export interface HandoffRequest {
 }
 
 export interface HandoffResponse {
-  body?: string | Uint8Array<ArrayBuffer> | ReadableStream;
+  body?: string | Uint8Array<ArrayBuffer>;
   /** defaults to 200 */
   status?: number;
   headers?: [string, string][] | Record<string, string>;

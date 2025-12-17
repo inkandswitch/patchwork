@@ -5,18 +5,18 @@ import {
 } from "@automerge/automerge-repo-react-hooks";
 import {
   AutomergeUrl,
-  DocHandle,
   encodeHeads,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
 } from "@automerge/vanillajs";
-import { DocWithComments, getStoredThreads } from "@patchwork/context-comments";
+import { AnnotationSet } from "@patchwork/annotations";
+import { annotations } from "@patchwork/annotations-context";
 import { ViewHeads } from "@patchwork/annotations-diff";
 import { IsSelected } from "@patchwork/annotations-selection";
-import { annotations } from "@patchwork/annotations-context";
+import { DocWithComments } from "@patchwork/context-comments";
+import { OpenDocumentEvent } from "@patchwork/elements";
 import { useObservable } from "@patchwork/observable-react";
 import { ref } from "@patchwork/refs";
-import { OpenDocumentEvent } from "@patchwork/elements";
 import { useEffect, useMemo, useState } from "react";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
 import "./styles.css";
@@ -25,7 +25,6 @@ import {
   DebugRegistryToast,
   useDebugRegistryToast,
 } from "./useDebugRegistryToast";
-import { AnnotationSet } from "@patchwork/annotations";
 
 export const PatchworkFrame = ({
   docUrl: accountDocUrl,
