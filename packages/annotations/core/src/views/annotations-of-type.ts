@@ -27,6 +27,10 @@ export class AnnotationsOfType<T>
     this.#setupSubscription();
   }
 
+  get value(): Annotation<unknown, T>[] {
+    return [...this];
+  }
+
   #setupSubscription(): void {
     // Subscribe to source changes
     const handleChange = (change: AnnotationChange) => {

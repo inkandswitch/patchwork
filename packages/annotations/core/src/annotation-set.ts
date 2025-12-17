@@ -26,7 +26,7 @@ import { FilteredAnnotationView } from "./views/filtered-annotation-view";
  * Each ref can have multiple annotations of the same type.
  */
 export class AnnotationSet
-  extends ObservableEventEmitter<AnnotationEvents>
+  extends ObservableEventEmitter<AnnotationEvents, Annotation[]>
   implements AnnotationSource
 {
   // stores for each annotation type a map of refs to the annotations
@@ -402,6 +402,10 @@ export class AnnotationSet
       entries.push([ref, ann]);
     }
     return entries;
+  }
+
+  get value(): Annotation[] {
+    return [...this];
   }
 
   /**

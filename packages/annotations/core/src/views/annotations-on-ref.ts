@@ -27,6 +27,10 @@ export class AnnotationsOnRef<T>
     this.#setupSubscription();
   }
 
+  get value(): Annotation<T, unknown>[] {
+    return [...this];
+  }
+
   #setupSubscription(): void {
     const handleChange = (change: AnnotationChange) => {
       const filteredChange = filterAnnotationChange(

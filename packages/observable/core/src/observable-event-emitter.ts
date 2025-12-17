@@ -21,11 +21,12 @@ import type { Observable } from "./observable";
  *
  * @typeParam Events - A record of event names to their handler signatures
  */
-export class ObservableEventEmitter<
+export abstract class ObservableEventEmitter<
     Events extends EventEmitter.ValidEventTypes = string | symbol,
+    Value = unknown,
   >
   extends EventEmitter<Events>
-  implements Observable
+  implements Observable<Value>
 {
   private subscribers = new Set<(value: any) => void>();
 
@@ -35,11 +36,11 @@ export class ObservableEventEmitter<
    *
    * @returns An unsubscribe function
    */
-  subscribe(callback: (value: this) => void): () => void {
+  subscribe(callback: (value: Value) => void): () => void {
     this.subscribers.add(callback);
 
     // Notify immediately with current state
-    callback(this);
+    callback(this.value);
 
     // Return unsubscribe function
     return () => {
@@ -56,4 +57,6 @@ export class ObservableEventEmitter<
       callback(this);
     }
   }
+
+  abstract get value(): Value;
 }

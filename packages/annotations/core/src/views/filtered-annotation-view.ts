@@ -2,6 +2,7 @@ import { ObservableEventEmitter } from "@patchwork/observable";
 import { type Ref } from "@patchwork/refs";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
 import {
+  Annotation,
   AnnotationChange,
   AnnotationEvents,
   AnnotationFilter,
@@ -41,6 +42,10 @@ export class FilteredAnnotationView
     };
 
     this.#source.on("change", handleChange);
+  }
+
+  get value(): Annotation<unknown, unknown>[] {
+    return [...this];
   }
 
   /**
