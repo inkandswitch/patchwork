@@ -1,23 +1,23 @@
 import type { Observable } from "@patchwork/observable";
-import { useCallback, useRef, useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 export function useObservable<T>(observable?: Observable<T>): T | undefined {
-  const valueRef = useRef<T>();
-
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
       if (!observable) {
         return () => {};
       }
-      return observable.subscribe((v) => {
-        valueRef.current = v;
+      return observable.subscribe(() => {
         onStoreChange();
       });
     },
     [observable]
   );
 
-  const getSnapshot = useCallback(() => valueRef.current, []);
+  const getSnapshot = useCallback(
+    () => observable?.value,
+    [observable]
+  );
 
   return useSyncExternalStore(subscribe, getSnapshot);
 }
