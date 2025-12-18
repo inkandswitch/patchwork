@@ -1,5 +1,5 @@
 import { SubscriberSet } from "@inkandswitch/observable";
-import { Ref } from "@patchwork/refs";
+import { type Ref } from "@patchwork/refs";
 import EventEmitter from "eventemitter3";
 import {
   Annotation,
@@ -124,12 +124,12 @@ export class AnnotationSet
     let added: [Ref, AnnotationValue<any>][];
 
     // Case: adding a ref
-    if (refOrSource instanceof Ref) {
+    if ("url" in refOrSource) {
       // Case: Adding multiple annotations
       if (Array.isArray(annotation)) {
         added = [];
-        for (const ann of annotation) {
-          added.push(this.#addSingleAnnotation(refOrSource, ann));
+        for (const a of annotation) {
+          added.push(this.#addSingleAnnotation(refOrSource, a));
         }
       }
       // Case: Adding a single annotation
@@ -255,7 +255,7 @@ export class AnnotationSet
   ): void {
     let removed: Annotation[];
 
-    if (refOrAnnotationTypeOrSource instanceof Ref) {
+    if ("url" in refOrAnnotationTypeOrSource) {
       if (annotationType) {
         removed = this.#removeTypeFromRef(
           refOrAnnotationTypeOrSource,

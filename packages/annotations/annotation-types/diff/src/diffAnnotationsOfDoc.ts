@@ -2,7 +2,7 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { Automerge } from "@automerge/automerge-repo/slim";
 import { AnnotationSet } from "@inkandswitch/annotations";
 import { last, lookup } from "./utils";
-import { ref } from "@patchwork/refs";
+import { cursor, ref } from "@patchwork/refs";
 import { Diff } from "./types";
 
 /**
@@ -74,10 +74,11 @@ export function diffAnnotationsOfDoc(
           if (typeof parent === "string") {
             const position = last(patch.path) as number;
             // Create a text range ref [from, to]
-            const textSpanRef = ref(docHandle, ...parentPath, [
-              position,
-              position,
-            ]);
+            const textSpanRef = ref(
+              docHandle,
+              ...parentPath,
+              cursor(position, position)
+            );
 
             // todo: implement proper before text extraction
             const before = "";
@@ -109,7 +110,7 @@ export function diffAnnotationsOfDoc(
         const from = last(patch.path) as number;
         const to = from + patch.value.length;
         // Create a text range ref
-        const textSpanRef = ref(docHandle, ...parentPath, [from, to]);
+        const textSpanRef = ref(docHandle, ...parentPath, cursor(from, to));
 
         annotations.add(textSpanRef, Diff({ type: "added" }));
         break;

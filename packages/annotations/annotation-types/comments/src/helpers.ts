@@ -1,6 +1,7 @@
 import { DocHandle } from "@automerge/automerge-repo";
-import { Ref, ref } from "@patchwork/refs";
+import { type Ref, type RefOfType, ref, fromUrl } from "@patchwork/refs";
 import { DocWithComments, CommentThread, Comment } from "./types";
+import type { CommentThread as CommentThreadType } from "./types";
 import { AnnotationSet } from "@inkandswitch/annotations";
 
 /**
@@ -41,7 +42,7 @@ export function createReply({
 }): Ref<DocWithComments> {
   const commentId = crypto.randomUUID();
 
-  threadRef.change((thread) => {
+  threadRef.change((thread: CommentThread) => {
     const comment: Comment = {
       id: commentId,
       authorId,
@@ -98,8 +99,11 @@ export function threadAnnotationsOfDoc(
     const threadRef = ref(docHandle, "@comments", "threads", { id: thread.id });
 
     for (const refUrl of thread.refs) {
-      const targetRef = Ref.fromUrl(docHandle, refUrl);
-      result.add(targetRef, CommentThread(threadRef));
+      const targetRef = fromUrl(docHandle, refUrl);
+      result.add(
+        targetRef,
+        CommentThread(threadRef as RefOfType<CommentThreadType>)
+      );
     }
   }
 

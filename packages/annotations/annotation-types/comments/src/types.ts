@@ -1,9 +1,9 @@
 import { defineAnnotationType } from "@inkandswitch/annotations";
-import { AutomergeRefUrl, Ref } from "@patchwork/refs";
+import { RefOfType, RefUrl } from "@patchwork/refs";
 
 export type CommentThread = {
   id: string;
-  refs: AutomergeRefUrl[];
+  refs: RefUrl[];
   isResolved: boolean;
   comments: Comment[];
 };
@@ -27,6 +27,6 @@ export type Comment = {
  * The value is a Ref pointing to the Thread object.
  */
 // todo: ref should be typed to point to a CommentThread object
-export const CommentThread = defineAnnotationType<Ref>(
+export const CommentThread = defineAnnotationType<RefOfType<CommentThread>>(
   "patchwork/commentThread"
 );

@@ -1,7 +1,6 @@
 packages:
   - core/*
   - packages/*
-  - packages/context/**/*
   - packages/annotations/**/*
   - packages/observable/**/*
   - meta/*
