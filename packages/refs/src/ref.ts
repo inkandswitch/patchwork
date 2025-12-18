@@ -7,20 +7,20 @@ import type {
 import type {
   Segment,
   PathSegment,
-  RangeSegment,
-  PathInput,
+  CursorRange,
+  AnyPathInput,
+  Pattern,
   RefOptions,
   InferRefType,
   ChangeFn,
+  RefUrl,
 } from "./types";
 import { KIND } from "./types";
-import { isSegment, isIdPattern } from "./guards";
-import { matchesIdPattern, shallowEqual } from "./utils";
-import {
-  parseAutomergeRefUrl,
-  stringifyAutomergeRefUrl,
-  type AutomergeRefUrl,
-} from "./parser";
+import { isSegment, isPattern } from "./guards";
+import { matchesPattern } from "./utils";
+import { isCursorMarker } from "./guards";
+import type { CursorMarker } from "./types";
+import { stringifyRefUrl } from "./parser";
 import { MutableText } from "./mutable-text";
 
 /**
@@ -51,10 +51,13 @@ const refCleanupRegistry = new FinalizationRegistry<() => void>((cleanup) =>
  * titleRef.dispose();
  * ```
  */
-export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
+export class Ref<
+  TDoc = any,
+  TPath extends readonly AnyPathInput[] = AnyPathInput[],
+> {
   readonly docHandle: DocHandle<TDoc>;
   readonly path: PathSegment[];
-  readonly range?: RangeSegment;
+  readonly range?: CursorRange;
   readonly options: RefOptions;
 
   #unsubscribe: () => void;
@@ -74,14 +77,14 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     const doc = docHandle.doc();
     const { path, range } = this.#normalizePath(
       doc,
-      segments as unknown as PathInput[]
+      segments as unknown as AnyPathInput[]
     );
     this.path = path;
     this.range = range;
 
     const updateHandler = () => {
       const currentDoc = this.docHandle.doc();
-      this.#updateResolvedProps(currentDoc);
+      this.#updateProps(currentDoc);
     };
     this.docHandle.on("change", updateHandler);
     this.#unsubscribe = () => this.docHandle.off("change", updateHandler);
@@ -106,24 +109,6 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     });
   }
 
-  /**
-   * Parse a ref from an Automerge URL string.
-   *
-   * @param handle - The document handle to use
-   * @param url - Full automerge URL like "automerge:documentId/path#heads"
-   *
-   * @example
-   * Ref.fromUrl(handle, "automerge:abc/todos/0#head1|head2" as AutomergeRefUrl)
-   */
-  static fromUrl<TDoc = any>(
-    handle: DocHandle<TDoc>,
-    url: AutomergeRefUrl
-  ): Ref<TDoc, PathInput[]> {
-    const { segments, heads } = parseAutomergeRefUrl(url);
-    const options: RefOptions = heads ? { heads } : {};
-    return new Ref<TDoc, PathInput[]>(handle, segments, options);
-  }
-
   /** Get the current value, or undefined if path can't be resolved */
   value(): InferRefType<TDoc, TPath> | undefined {
     const doc = this.doc();
@@ -145,14 +130,36 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   /**
    * Update the value.
    *
-   * Primitives: return new value to update, void to skip.
-   * Objects/arrays: mutate in place, return void.
-   * Strings: receive MutableText with splice/updateText methods.
+   * For primitives, you can pass either:
+   * - A function that receives the current value and returns the new value
+   * - A direct value (shorthand for primitives)
+   *
+   * @example
+   * ```ts
+   * // Function form (works for all types)
+   * counterRef.change(n => n + 1);
+   * themeRef.change(t => t === 'dark' ? 'light' : 'dark');
+   *
+   * // Shorthand for primitives
+   * themeRef.change('dark');
+   * counterRef.change(42);
+   *
+   * // Objects/arrays: mutate in place (same semantics as automerge-repo)
+   * todoRef.change(todo => { todo.done = true; });
+   * ```
    */
-  change(fn: ChangeFn<InferRefType<TDoc, TPath>>): void {
+  change(
+    fnOrValue: ChangeFn<InferRefType<TDoc, TPath>> | InferRefType<TDoc, TPath>
+  ): void {
     if (this.options.heads) {
       throw new Error("Cannot change a Ref pinned to specific heads");
     }
+
+    // Convert direct value to function form
+    const fn: ChangeFn<InferRefType<TDoc, TPath>> =
+      typeof fnOrValue === "function"
+        ? (fnOrValue as ChangeFn<InferRefType<TDoc, TPath>>)
+        : () => fnOrValue as InferRefType<TDoc, TPath>;
 
     this.docHandle.change((doc: Doc<TDoc>) => {
       if (this.path.length === 0 && !this.range) {
@@ -180,18 +187,19 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
           ? MutableText(doc, propPath, current)
           : current;
 
-      const newValue = fn(valueToPass as any);
+      const newValue = fn(valueToPass);
       if (newValue === undefined) return;
 
       // Warn if non-primitive value is returned (should mutate instead)
-      const isPrimitive =
-        newValue === null ||
-        typeof newValue === "string" ||
-        typeof newValue === "number" ||
-        typeof newValue === "boolean" ||
-        typeof newValue === "bigint";
-
-      if (!isPrimitive) {
+      if (
+        !(
+          newValue === null ||
+          typeof newValue === "string" ||
+          typeof newValue === "number" ||
+          typeof newValue === "boolean" ||
+          typeof newValue === "bigint"
+        )
+      ) {
         console.warn(
           "Ref.change() returned a non-primitive value. For objects and arrays, " +
             "you should mutate them in place rather than returning a new instance. " +
@@ -243,12 +251,12 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     return unsubscribe;
   }
 
-  get url(): AutomergeRefUrl {
+  get url(): RefUrl {
     const allSegments: Segment[] = this.range
       ? [...this.path, this.range]
       : this.path;
 
-    return stringifyAutomergeRefUrl(
+    return stringifyRefUrl(
       this.docHandle.documentId,
       allSegments,
       this.options.heads
@@ -280,8 +288,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
 
     // Must have same or undefined heads
-    const thisHeads = this.heads?.join(",");
-    const otherHeads = other.heads?.join(",");
+    const thisHeads = this.heads?.join();
+    const otherHeads = other.heads?.join();
     if (thisHeads !== otherHeads) {
       return false;
     }
@@ -381,8 +389,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     }
 
     // Must have same heads
-    const thisHeads = this.heads?.join(",");
-    const otherHeads = other.heads?.join(",");
+    const thisHeads = this.heads?.join();
+    const otherHeads = other.heads?.join();
     if (thisHeads !== otherHeads) {
       return false;
     }
@@ -469,53 +477,64 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
    */
   #normalizePath(
     doc: Doc<TDoc>,
-    inputs: PathInput[]
-  ): { path: PathSegment[]; range?: RangeSegment } {
+    inputs: AnyPathInput[]
+  ): { path: PathSegment[]; range?: CursorRange } {
     const pathSegments: PathSegment[] = [];
     const propPath: Automerge.Prop[] = [];
     let current: any = doc;
-    let rangeSegment: RangeSegment | undefined;
+    let rangeSegment: CursorRange | undefined;
 
-    for (const input of inputs) {
-      if (Array.isArray(input) && input.length === 2) {
-        rangeSegment = this.#tryStabilizeRange(
-          doc,
-          propPath,
-          current,
-          input[0],
-          input[1]
-        );
+    for (let i = 0; i < inputs.length; i++) {
+      const input = inputs[i];
+
+      // Handle cursor() marker - creates cursor-based range
+      if (isCursorMarker(input)) {
+        // cursor() must be the last segment
+        if (i < inputs.length - 1) {
+          throw new Error(
+            "cursor() must be the last segment in a ref path. " +
+              "Segments after cursor() are not allowed."
+          );
+        }
+        rangeSegment = this.#createCursorRange(doc, propPath, current, input);
         break;
       }
 
       const segment = isSegment(input)
         ? this.#ensureSegmentResolved(current, input)
-        : this.#normalizeInput(current, input as Exclude<PathInput, Segment>);
+        : this.#normalizeInput(current, input);
 
-      if (segment[KIND] === "range" || segment[KIND] === "stable_range") {
+      if (segment[KIND] === "cursors") {
+        // Cursor range from URL parsing - must also be last
+        if (i < inputs.length - 1) {
+          throw new Error(
+            "Cursor range must be the last segment in a ref path. " +
+              "Segments after cursor range are not allowed."
+          );
+        }
         rangeSegment = segment;
         break;
       }
 
-      pathSegments.push(segment as PathSegment);
+      pathSegments.push(segment);
 
       if (
-        segment.resolvedProp !== undefined &&
+        segment.prop !== undefined &&
         current !== undefined &&
         current !== null
       ) {
-        propPath.push(segment.resolvedProp);
-        current = (current as any)[segment.resolvedProp];
+        propPath.push(segment.prop);
+        current = current[segment.prop];
       }
     }
 
     return { path: pathSegments, range: rangeSegment };
   }
 
-  /** Ensure a segment has its resolvedProp set */
+  /** Ensure a segment has its prop set */
   #ensureSegmentResolved(container: any, segment: Segment): Segment {
-    const resolvedProp = this.#resolveSegmentProp(container, segment);
-    return { ...segment, resolvedProp } as Segment;
+    const prop = this.#resolveSegmentProp(container, segment);
+    return { ...segment, prop } as Segment;
   }
 
   /**
@@ -535,22 +554,14 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
       case "index":
         return segment.index;
 
-      case "stable_index":
+      case "match": {
         if (!Array.isArray(container)) return undefined;
-        const index = container.findIndex(
-          (item) => Automerge.getObjectId(item) === segment.id
+        const matchIndex = container.findIndex((item) =>
+          matchesPattern(item, segment.match)
         );
-        return index !== -1 ? index : undefined;
-
-      case "query":
-        if (!Array.isArray(container)) return undefined;
-        const queryIndex = container.findIndex((item) =>
-          matchesIdPattern(item, segment.idPattern)
-        );
-        return queryIndex !== -1 ? queryIndex : undefined;
-
-      case "range":
-      case "stable_range":
+        return matchIndex !== -1 ? matchIndex : undefined;
+      }
+      case "cursors":
         return undefined;
 
       default:
@@ -560,21 +571,17 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   }
 
   /** Update resolved props for all path segments based on current document state */
-  #updateResolvedProps(doc: Doc<TDoc>): void {
+  #updateProps(doc: Doc<TDoc>): void {
     let current = doc;
 
     for (const segment of this.path) {
-      const resolvedProp = this.#resolveSegmentProp(current, segment);
-      // Internal mutation: Update cached resolvedProp for efficient path resolution.
+      const prop = this.#resolveSegmentProp(current, segment);
+      // Internal mutation: Update cached prop for efficient path resolution.
       // Safe because segments are owned by this Ref instance.
-      (segment as any).resolvedProp = resolvedProp;
+      segment.prop = prop;
 
-      if (
-        resolvedProp !== undefined &&
-        current !== undefined &&
-        current !== null
-      ) {
-        current = (current as any)[resolvedProp];
+      if (prop !== undefined && current !== undefined && current !== null) {
+        current = (current as any)[prop];
       } else {
         break;
       }
@@ -595,50 +602,40 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
         return a.key === (b as typeof a).key;
       case "index":
         return a.index === (b as typeof a).index;
-      case "stable_index":
-        return a.id === (b as typeof a).id;
-      case "query":
-        return shallowEqual(a.idPattern, (b as typeof a).idPattern);
+      case "match": {
+        const aKeys = Object.keys(a.match);
+        const bKeys = Object.keys((b as typeof a).match);
+        if (aKeys.length !== bKeys.length) return false;
+        return aKeys.every(
+          (key) => a.match[key] === (b as typeof a).match[key]
+        );
+      }
       default:
         a satisfies never;
         return false;
     }
   }
 
-  #normalizeInput(container: any, input: Exclude<PathInput, Segment>): Segment {
+  #normalizeInput(container: any, input: string | number | Pattern): Segment {
     if (typeof input === "string") {
-      return { [KIND]: "key", key: input, resolvedProp: input };
+      return { [KIND]: "key", key: input, prop: input };
     }
 
     if (typeof input === "number") {
-      if (!Array.isArray(container)) {
-        return { [KIND]: "index", index: input, resolvedProp: input };
-      }
-
-      const item = container[input];
-      const id = item ? Automerge.getObjectId(item) : undefined;
-
-      return id
-        ? { [KIND]: "stable_index", id, resolvedProp: input }
-        : { [KIND]: "index", index: input, resolvedProp: input };
+      return { [KIND]: "index", index: input, prop: input };
     }
 
-    if (isIdPattern(input)) {
+    if (isPattern(input)) {
       if (!Array.isArray(container)) {
-        return { [KIND]: "query", idPattern: input, resolvedProp: undefined };
+        return { [KIND]: "match", match: input, prop: undefined };
       }
 
-      const index = container.findIndex((obj) => matchesIdPattern(obj, input));
-      const item = index !== -1 ? container[index] : undefined;
-      const id = item ? Automerge.getObjectId(item) : undefined;
-
-      return id
-        ? { [KIND]: "stable_index", id, resolvedProp: index }
-        : {
-            [KIND]: "query",
-            idPattern: input,
-            resolvedProp: index !== -1 ? index : undefined,
-          };
+      const index = container.findIndex((obj) => matchesPattern(obj, input));
+      return {
+        [KIND]: "match",
+        match: input,
+        prop: index !== -1 ? index : undefined,
+      };
     }
 
     throw new Error(
@@ -647,32 +644,37 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     );
   }
 
-  /** Try to stabilize a numeric range to a cursor-based range */
-  #tryStabilizeRange(
+  /** Create a cursor-based range from a CursorMarker */
+  #createCursorRange(
     doc: Doc<TDoc>,
     propPath: Automerge.Prop[],
     container: any,
-    start: number,
-    end: number
-  ): RangeSegment {
+    marker: CursorMarker
+  ): CursorRange {
+    const { start, end } = marker;
+
     if (typeof container !== "string") {
-      return { [KIND]: "range", start, end };
+      throw new Error(
+        `cursor() can only be used on string values, got ${typeof container}`
+      );
     }
 
     const startCursor = Automerge.getCursor(doc, propPath, start);
     const endCursor = Automerge.getCursor(doc, propPath, end);
 
-    return startCursor && endCursor
-      ? { [KIND]: "stable_range", start: startCursor, end: endCursor }
-      : { [KIND]: "range", start, end };
+    if (!startCursor || !endCursor) {
+      throw new Error(`Failed to create cursors at positions ${start}-${end}.`);
+    }
+
+    return { [KIND]: "cursors", start: startCursor, end: endCursor };
   }
 
   /** Extract cached navigation path from segments */
   #getPropPath(): Prop[] | undefined {
     const props: Prop[] = [];
     for (const segment of this.path) {
-      if (segment.resolvedProp === undefined) return undefined;
-      props.push(segment.resolvedProp);
+      if (segment.prop === undefined) return undefined;
+      props.push(segment.prop);
     }
     return props;
   }
@@ -692,7 +694,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     doc: Doc<TDoc>,
     propPath: Prop[],
     text: string,
-    range: RangeSegment
+    range: CursorRange
   ): string | undefined {
     const positions = this.#getRangePositions(doc, propPath, range);
     if (!positions) return undefined;
@@ -717,7 +719,7 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   #spliceRange(
     doc: Doc<TDoc>,
     propPath: Prop[],
-    range: RangeSegment,
+    range: CursorRange,
     newValue: string
   ): void {
     const positions = this.#getRangePositions(doc, propPath, range);
@@ -729,16 +731,12 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
     Automerge.splice(doc, propPath, start, end - start, newValue);
   }
 
-  /** Convert a range segment to numeric [start, end] positions */
+  /** Convert cursor positions to numeric [start, end] positions */
   #getRangePositions(
     doc: Doc<TDoc>,
     propPath: Prop[],
-    range: RangeSegment
+    range: CursorRange
   ): [number, number] | undefined {
-    if (range[KIND] === "range") {
-      return [range.start, range.end];
-    }
-
     const start = Automerge.getCursorPosition(doc, propPath, range.start);
     const end = Automerge.getCursorPosition(doc, propPath, range.end);
 
@@ -748,8 +746,8 @@ export class Ref<TDoc = any, TPath extends readonly PathInput[] = PathInput[]> {
   #patchAffectsRef(patches: Automerge.Patch[]): boolean {
     const refPropPath: Prop[] = [];
     for (const segment of this.path) {
-      if (segment.resolvedProp === undefined) break;
-      refPropPath.push(segment.resolvedProp);
+      if (segment.prop === undefined) break;
+      refPropPath.push(segment.prop);
     }
 
     // If we couldn't resolve any part, ref was never valid - don't fire

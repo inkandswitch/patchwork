@@ -2,37 +2,25 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { Repo } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
-import { at } from "../utils";
-import { ref, findRef, Ref, AutomergeRefUrl } from "../index";
-import { KIND } from "../types";
+import { cursor } from "../utils";
+import { ref, findRef, RefUrl } from "../index";
+import { Ref } from "../ref";
+import { CURSOR_MARKER } from "../types";
 
 describe("utils", () => {
-  describe("at", () => {
-    it("should create an index segment", () => {
-      const segment = at(0);
-      expect(segment[KIND]).toBe("index");
-      expect((segment as any).index).toBe(0);
+  describe("cursor", () => {
+    it("should create a cursor marker", () => {
+      const marker = cursor(0, 5);
+      expect(marker[CURSOR_MARKER]).toBe(true);
+      expect(marker.start).toBe(0);
+      expect(marker.end).toBe(5);
     });
 
-    it("should work with numbers", () => {
-      const segment = at(5);
-      expect(segment[KIND]).toBe("index");
-      expect((segment as any).index).toBe(5);
-    });
-
-    it("should work with objects", () => {
-      const idPattern = { id: "abc" };
-      const segment = at(idPattern);
-      expect(segment[KIND]).toBe("query");
-      expect((segment as any).idPattern).toEqual(idPattern);
-    });
-
-    it("should work with arrays", () => {
-      const range: [number, number] = [0, 10];
-      const segment = at(range);
-      expect(segment[KIND]).toBe("range");
-      expect((segment as any).start).toBe(0);
-      expect((segment as any).end).toBe(10);
+    it("should work with different positions", () => {
+      const marker = cursor(10, 20);
+      expect(marker[CURSOR_MARKER]).toBe(true);
+      expect(marker.start).toBe(10);
+      expect(marker.end).toBe(20);
     });
   });
 
@@ -75,13 +63,13 @@ describe("utils", () => {
       expect(todoRef.value()).toBe("Second");
     });
 
-    it("should work with at() for dynamic refs", () => {
+    it("should work with numeric indices", () => {
       handle.change((d) => {
         d.items = [{ name: "A" }, { name: "B" }];
       });
 
-      const dynamicRef = ref(handle, "items", at(0), "name");
-      expect(dynamicRef.value()).toBe("A");
+      const indexRef = ref(handle, "items", 0, "name");
+      expect(indexRef.value()).toBe("A");
     });
 
     it("should handle deep paths", () => {
@@ -138,7 +126,7 @@ describe("utils", () => {
       expect(foundRef.value()).toBe("blue");
     });
 
-    it("should handle array indices (ObjectId refs)", async () => {
+    it("should handle array indices", async () => {
       handle.change((d: any) => {
         d.todos = [
           { title: "first", done: false },
@@ -151,13 +139,12 @@ describe("utils", () => {
 
       // Reorder array
       handle.change((d: any) => {
-        d.todos.insertAt(0, { title: "second", done: true });
-        d.todos.deleteAt(2);
+        d.todos.insertAt(0, { title: "zeroth", done: false });
       });
 
-      // Found ref should still point to original first item (now at index 1)
+      // With numeric indices, ref still points to position 0 (now "zeroth")
       const foundRef = await findRef(repo, url);
-      expect(foundRef.value()).toBe("first");
+      expect(foundRef.value()).toBe("zeroth");
     });
 
     it("should handle where clauses", async () => {
@@ -175,12 +162,12 @@ describe("utils", () => {
       expect(foundRef.value()).toBe("Alice");
     });
 
-    it("should handle numeric ranges", async () => {
+    it("should handle cursor ranges", async () => {
       handle.change((d: any) => {
         d.text = "hello world";
       });
 
-      const rangeRef = ref(handle, "text", at([0, 5]));
+      const rangeRef = ref(handle, "text", cursor(0, 5));
       const url = rangeRef.url;
 
       const foundRef = await findRef(repo, url);
@@ -212,12 +199,12 @@ describe("utils", () => {
     });
 
     it("should throw on invalid URL format", async () => {
-      await expect(
-        findRef(repo, "not-a-valid-url" as AutomergeRefUrl)
-      ).rejects.toThrow("Invalid Automerge ref URL");
-      await expect(
-        findRef(repo, "wrong:abc/path" as AutomergeRefUrl)
-      ).rejects.toThrow("Invalid Automerge ref URL");
+      await expect(findRef(repo, "not-a-valid-url" as RefUrl)).rejects.toThrow(
+        "Invalid ref URL"
+      );
+      await expect(findRef(repo, "wrong:abc/path" as RefUrl)).rejects.toThrow(
+        "Invalid ref URL"
+      );
     });
 
     it("should handle root path (document ref)", async () => {
