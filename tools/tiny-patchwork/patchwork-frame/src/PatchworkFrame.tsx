@@ -101,6 +101,10 @@ export const PatchworkFrame = ({
         frameAnnotations.add(selectedDocRef, IsSelected(true));
       }
     });
+
+    return () => {
+      globalAnnotations.remove(frameAnnotations);
+    };
   }, [frameAnnotations, selectedDocAnnotations, selectedDocRef]);
 
   const repo = useRepo();
