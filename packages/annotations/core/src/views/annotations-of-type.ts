@@ -1,5 +1,6 @@
-import { ObservableEventEmitter } from "@patchwork/observable";
+import { SubscriberSet } from "@inkandswitch/observable";
 import { type Ref } from "@patchwork/refs";
+import EventEmitter from "eventemitter3";
 import {
   AnnotationSource,
   AnnotationEvents,
@@ -8,17 +9,21 @@ import {
 } from "../types";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
 import { filterAnnotationChange, isChangeEmpty } from "../utils";
+import { ObservableObject } from "../../../../observable/core/dist/observable";
 
 /**
  * Annotations filtered by type
  * Allows lookup by ref
  */
 export class AnnotationsOfType<T>
-  extends ObservableEventEmitter<AnnotationEvents>
-  implements AnnotationSource<unknown, T>
+  extends EventEmitter<AnnotationEvents>
+  implements
+    AnnotationSource<unknown, T>,
+    ObservableObject<AnnotationsOfType<T>>
 {
   #source: AnnotationSource;
   #type: AnnotationType<T>;
+  #subscriberSet = new SubscriberSet<AnnotationsOfType<T>>();
 
   constructor(source: AnnotationSource, type: AnnotationType<T>) {
     super();
@@ -27,8 +32,8 @@ export class AnnotationsOfType<T>
     this.#setupSubscription();
   }
 
-  get value(): Annotation<unknown, T>[] {
-    return [...this];
+  subscribe(callback: (value: AnnotationsOfType<T>) => void): () => void {
+    return this.#subscriberSet.add(callback);
   }
 
   #setupSubscription(): void {
@@ -41,7 +46,7 @@ export class AnnotationsOfType<T>
 
       if (!isChangeEmpty(filteredChange)) {
         this.emit("change", filteredChange);
-        this.notifySubscribers();
+        this.#subscriberSet.notify(this);
       }
     };
 

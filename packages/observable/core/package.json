@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/observable",
+  "name": "@inkandswitch/observable",
   "type": "module",
   "scripts": {
     "build": "tsc",

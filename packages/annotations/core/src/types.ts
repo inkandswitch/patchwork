@@ -1,4 +1,4 @@
-import { ObservableEventEmitter } from "@patchwork/observable";
+import EventEmitter from "eventemitter3";
 import { type Ref } from "@patchwork/refs";
 
 import type { AnnotationType, AnnotationValue } from "./annotation-type";
@@ -6,7 +6,7 @@ import type { AnnotationType, AnnotationValue } from "./annotation-type";
 export type AnnotationSource<
   RefType = unknown,
   AnnotationValueType = unknown,
-> = ObservableEventEmitter<AnnotationEvents> & {
+> = EventEmitter<AnnotationEvents> & {
   [Symbol.iterator](): Iterator<
     [Ref<RefType>, AnnotationValue<AnnotationValueType>]
   >;

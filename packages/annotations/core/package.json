@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/annotations",
+  "name": "@inkandswitch/annotations",
   "type": "module",
   "scripts": {
     "build": "tsc",
@@ -23,7 +23,7 @@
     "vitest": "^2.1.8"
   },
   "dependencies": {
-    "@patchwork/observable": "workspace:*",
+    "@inkandswitch/observable": "workspace:*",
     "@patchwork/refs": "workspace:*",
     "eventemitter3": "^5.0.1"
   }

@@ -1,4 +1,4 @@
-import { defineAnnotationType } from "@patchwork/annotations";
+import { defineAnnotationType } from "@inkandswitch/annotations";
 import { AutomergeRefUrl, Ref } from "@patchwork/refs";
 
 export type CommentThread = {

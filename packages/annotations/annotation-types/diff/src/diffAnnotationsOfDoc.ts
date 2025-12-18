@@ -1,6 +1,6 @@
 import { DocHandle } from "@automerge/automerge-repo";
 import { Automerge } from "@automerge/automerge-repo/slim";
-import { AnnotationSet } from "@patchwork/annotations";
+import { AnnotationSet } from "@inkandswitch/annotations";
 import { last, lookup } from "./utils";
 import { ref } from "@patchwork/refs";
 import { Diff } from "./types";

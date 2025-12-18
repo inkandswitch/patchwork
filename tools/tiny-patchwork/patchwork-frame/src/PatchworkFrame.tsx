@@ -9,13 +9,12 @@ import {
   parseAutomergeUrl,
   stringifyAutomergeUrl,
 } from "@automerge/vanillajs";
-import { AnnotationSet } from "@patchwork/annotations";
-import { annotations } from "@patchwork/annotations-context";
-import { ViewHeads } from "@patchwork/annotations-diff";
-import { IsSelected } from "@patchwork/annotations-selection";
-import { DocWithComments } from "@patchwork/context-comments";
-import { OpenDocumentEvent } from "@patchwork/elements";
-import { useObservable } from "@patchwork/observable-react";
+import { OpenDocumentEvent } from "@inkandswitch/patchwork-elements";
+import { AnnotationSet } from "@inkandswitch/annotations";
+import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
+import { ViewHeads } from "@inkandswitch/annotations-diff";
+import { IsSelected } from "@inkandswitch/annotations-selection";
+import { useObservable } from "@inkandswitch/observable-react";
 import { ref } from "@patchwork/refs";
 import { useEffect, useMemo, useState } from "react";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
@@ -57,20 +56,18 @@ export const PatchworkFrame = ({
     clearAll,
   } = useDebugRegistryToast();
 
-  const [selectedDoc] = useDocument<DocWithComments>(selectedView?.url);
   const selectedDocHandle = useDocHandle(selectedView?.url);
   const selectedDocRef = useMemo(
     () => (selectedDocHandle ? ref(selectedDocHandle) : undefined),
     [selectedDocHandle]
   );
-  const selectedDocAnnotations = useObservable(
-    useMemo(() => {
-      const result = selectedDocRef
-        ? annotations.onRef(selectedDocRef)
-        : undefined;
 
-      return result;
-    }, [selectedDocRef])
+  const selectedDocAnnotations = useObservable(
+    useMemo(
+      () =>
+        selectedDocRef ? globalAnnotations.onRef(selectedDocRef) : undefined,
+      [selectedDocRef]
+    )
   );
 
   const viewHeads = selectedDocAnnotations?.lookup(ViewHeads);
@@ -91,21 +88,20 @@ export const PatchworkFrame = ({
     });
   }, [selectedView?.url, viewHeads]);
 
-  // add selected doc to global annotations
+  //  contribute annotations to the global context
+  const frameAnnotations = useMemo(() => new AnnotationSet(), []);
   useEffect(() => {
-    if (!selectedDocRef) {
-      return;
-    }
+    globalAnnotations.add(frameAnnotations);
 
-    const selection = new AnnotationSet();
-    selection.add(selectedDocRef, IsSelected(true));
+    frameAnnotations.change(() => {
+      frameAnnotations.clear();
 
-    annotations.add(selection);
-
-    return () => {
-      annotations.remove(selection);
-    };
-  }, [selectedDocRef]);
+      // selected doc
+      if (selectedDocRef) {
+        frameAnnotations.add(selectedDocRef, IsSelected(true));
+      }
+    });
+  }, [frameAnnotations, selectedDocAnnotations, selectedDocRef]);
 
   const repo = useRepo();
 

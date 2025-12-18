@@ -1,35 +1,44 @@
-import type { Observable } from "@patchwork/observable";
-import type { Accessor } from "solid-js";
-import { onCleanup } from "solid-js";
-import { createStore, reconcile, type ReconcileOptions } from "solid-js/store";
-
-export type UseObservableOptions = ReconcileOptions;
+import {
+  isObservableValue,
+  type Observable,
+  type ObservableObject,
+  type ObservableValue,
+} from "@inkandswitch/observable";
+import { from, onCleanup, type Accessor } from "solid-js";
+import { createStore, reconcile } from "solid-js/store";
 
 /**
- * Subscribes to an Observable and returns a reactive accessor for its value.
+ * Subscribes to an Observable and returns a reactive accessor.
  *
- * @param observable Observable instance to subscribe to.
- * @param options Optional reconcile options for fine-grained reactivity.
- * @returns Accessor for the observable's current value.
+ * For ObservableObject: Uses Solid's `from` to convert the observable to a signal.
+ * For ObservableValue: Uses a store with `reconcile` for efficient deep updates.
  */
+export function useObservable<T extends object>(
+  observable: ObservableObject<T>
+): Accessor<T>;
+export function useObservable<T>(observable: ObservableValue<T>): Accessor<T>;
+export function useObservable<T>(observable: Observable<T>): Accessor<T>;
 export function useObservable<T>(
-  observable?: Observable<T>,
-  options: UseObservableOptions = {}
+  observable: Observable<T> | undefined
+): Accessor<T | undefined>;
+export function useObservable<T>(
+  observable: Observable<T>
 ): Accessor<T | undefined> {
-  if (!observable) {
-    return () => undefined;
+  if (isObservableValue(observable)) {
+    // For ObservableValue: use createStore with reconcile for granular updates
+    const [store, setStore] = createStore<{ value: T }>({
+      value: observable.value,
+    });
+
+    const unsubscribe = observable.subscribe((newValue) => {
+      setStore(reconcile({ value: newValue }));
+    });
+
+    onCleanup(unsubscribe);
+
+    return () => store.value;
   }
 
-  const [state, setState] = createStore<{ value: T }>({
-    value: observable.value,
-  });
-
-  const unsubscribe = observable.subscribe((newValue) => {
-    setState("value", reconcile(newValue, options));
-  });
-
-  onCleanup(() => unsubscribe());
-
-  return () => state.value;
+  // For ObservableObject: use Solid's `from` to convert to a signal
+  return from<T>(observable, observable) as Accessor<T>;
 }
-

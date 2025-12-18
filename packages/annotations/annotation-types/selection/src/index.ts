@@ -1,6 +1,6 @@
-import { defineAnnotationType } from "@patchwork/annotations";
-import { annotations } from "@patchwork/annotations-context";
-import { computed, Observable } from "@patchwork/observable";
+import { defineAnnotationType } from "@inkandswitch/annotations";
+import { annotations } from "@inkandswitch/annotations-context";
+import { computed, Observable } from "@inkandswitch/observable";
 import { Ref } from "@patchwork/refs";
 
 /**

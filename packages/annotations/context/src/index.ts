@@ -1,4 +1,4 @@
-import { AnnotationSet, AnnotationSource } from "@patchwork/annotations";
+import { AnnotationSet, AnnotationSource } from "@inkandswitch/annotations";
 
 declare global {
   interface Window {

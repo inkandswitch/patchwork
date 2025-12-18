@@ -1,5 +1,6 @@
-import { ObservableEventEmitter } from "@patchwork/observable";
+import { SubscriberSet } from "@inkandswitch/observable";
 import { Ref } from "@patchwork/refs";
+import EventEmitter from "eventemitter3";
 import {
   Annotation,
   AnnotationSource,
@@ -15,6 +16,11 @@ import { AnnotationsOfType } from "./views/annotations-of-type";
 import { AnnotationsOnRef } from "./views/annotations-on-ref";
 import { FilteredAnnotationView } from "./views/filtered-annotation-view";
 
+type Observable<T> = {
+  subscribe: (callback: (value: T) => void) => () => void;
+  value: T;
+};
+
 /**
  * A set of annotations that can be queried and filtered
  *
@@ -26,9 +32,18 @@ import { FilteredAnnotationView } from "./views/filtered-annotation-view";
  * Each ref can have multiple annotations of the same type.
  */
 export class AnnotationSet
-  extends ObservableEventEmitter<AnnotationEvents, Annotation[]>
-  implements AnnotationSource
+  extends EventEmitter<AnnotationEvents>
+  implements Observable<AnnotationSet>
 {
+  #subscriberSet = new SubscriberSet<AnnotationSet>();
+
+  get value(): AnnotationSet {
+    return this;
+  }
+
+  subscribe(callback: (value: AnnotationSet) => void): () => void {
+    return this.#subscriberSet.add(callback);
+  }
   // stores for each annotation type a map of refs to the annotations
   #annotationsByTypeId: Map<
     AnnotationTypeId,
@@ -66,7 +81,7 @@ export class AnnotationSet
 
       if (change && (change.added.length > 0 || change.removed.length > 0)) {
         this.emit("change", change);
-        this.notifySubscribers();
+        this.#subscriberSet.notify(this);
       }
     }
   }
@@ -81,7 +96,7 @@ export class AnnotationSet
     } else {
       if (change.added.length > 0 || change.removed.length > 0) {
         this.emit("change", change);
-        this.notifySubscribers();
+        this.#subscriberSet.notify(this);
       }
     }
   }
@@ -402,10 +417,6 @@ export class AnnotationSet
       entries.push([ref, ann]);
     }
     return entries;
-  }
-
-  get value(): Annotation[] {
-    return [...this];
   }
 
   /**

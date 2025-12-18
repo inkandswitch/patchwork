@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/annotations-diff",
+  "name": "@inkandswitch/annotations-diff",
   "type": "module",
   "scripts": {
     "build": "tsc",
@@ -17,13 +17,12 @@
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
-    "@patchwork/annotations": "workspace:*",
-    "@patchwork/annotations-context": "workspace:*",
-    "@patchwork/observable": "workspace:*",
+    "@inkandswitch/annotations": "workspace:*",
+    "@inkandswitch/annotations-context": "workspace:*",
+    "@inkandswitch/observable": "workspace:*",
     "@patchwork/refs": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.2"
   }
 }
-

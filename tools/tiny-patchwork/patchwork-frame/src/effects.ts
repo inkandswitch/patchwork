@@ -3,12 +3,15 @@ import {
   useDocument,
   useDocuments,
 } from "@automerge/automerge-repo-react-hooks";
-import { useReactive } from "@patchwork/context-react";
 import {
   $selectedDocHandles,
   $selectedDocUrls,
-} from "@patchwork/context-selection";
-import { FolderDoc, HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
+} from "@inkandswitch/annotations-selection";
+import { useObservable } from "@inkandswitch/observable-react";
+import {
+  FolderDoc,
+  HasPatchworkMetadata,
+} from "@inkandswitch/patchwork-filesystem";
 import {
   DatatypeDescription,
   DatatypeImplementation,
@@ -20,7 +23,7 @@ import { useEffect } from "react";
 export const useUpdateDocLinksOfActiveDocumentsEffect = (
   rootFolderUrl: AutomergeUrl
 ) => {
-  const selectedDocUrls = useReactive($selectedDocUrls);
+  const selectedDocUrls = useObservable($selectedDocUrls);
   const [selectedDocsMap] = useDocuments<HasPatchworkMetadata>(selectedDocUrls);
 
   // todo: handle folders
@@ -78,7 +81,8 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
 export const useAddUnknownDocumentsToSidebarEffect = (
   rootFolderUrl: AutomergeUrl
 ) => {
-  const selectedDocHandles = useReactive($selectedDocHandles);
+  const selectedDocHandles = useObservable($selectedDocHandles);
+
   const [rootFolderDoc, changeRootFolderDoc] =
     useDocument<FolderDoc>(rootFolderUrl);
 

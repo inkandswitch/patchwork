@@ -194,13 +194,13 @@ importers:
       '@automerge/automerge-repo':
         specifier: 2.5.2-alpha.0
         version: 2.5.2-alpha.0
-      '@patchwork/annotations':
+      '@inkandswitch/annotations':
         specifier: workspace:*
         version: link:../../core
-      '@patchwork/annotations-context':
+      '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@patchwork/observable':
+      '@inkandswitch/observable':
         specifier: workspace:*
         version: link:../../../observable/core
       '@patchwork/refs':
@@ -219,13 +219,13 @@ importers:
       '@automerge/automerge-repo':
         specifier: 2.5.2-alpha.0
         version: 2.5.2-alpha.0
-      '@patchwork/annotations':
+      '@inkandswitch/annotations':
         specifier: workspace:*
         version: link:../../core
-      '@patchwork/annotations-context':
+      '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@patchwork/observable':
+      '@inkandswitch/observable':
         specifier: workspace:*
         version: link:../../../observable/core
       '@patchwork/refs':
@@ -241,13 +241,13 @@ importers:
       '@automerge/automerge-repo':
         specifier: 2.5.2-alpha.0
         version: 2.5.2-alpha.0
-      '@patchwork/annotations':
+      '@inkandswitch/annotations':
         specifier: workspace:*
         version: link:../../core
-      '@patchwork/annotations-context':
+      '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@patchwork/observable':
+      '@inkandswitch/observable':
         specifier: workspace:*
         version: link:../../../observable/core
       '@patchwork/refs':
@@ -260,7 +260,7 @@ importers:
 
   packages/annotations/context:
     dependencies:
-      '@patchwork/annotations':
+      '@inkandswitch/annotations':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -270,7 +270,7 @@ importers:
 
   packages/annotations/core:
     dependencies:
-      '@patchwork/observable':
+      '@inkandswitch/observable':
         specifier: workspace:*
         version: link:../../observable/core
       '@patchwork/refs':
@@ -422,7 +422,7 @@ importers:
 
   packages/observable/frameworks/react:
     dependencies:
-      '@patchwork/observable':
+      '@inkandswitch/observable':
         specifier: workspace:^
         version: link:../../core
       react:
@@ -438,7 +438,7 @@ importers:
 
   packages/observable/frameworks/solid:
     dependencies:
-      '@patchwork/observable':
+      '@inkandswitch/observable':
         specifier: workspace:^
         version: link:../../core
     devDependencies:
@@ -2049,6 +2049,15 @@ importers:
       '@babel/parser':
         specifier: 7.28.4
         version: 7.28.4
+      '@inkandswitch/annotations-context':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/context
+      '@inkandswitch/annotations-selection':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/selection
+      '@inkandswitch/observable-solid':
+        specifier: workspace:^
+        version: link:../../../packages/observable/frameworks/solid
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../../../core/filesystem
@@ -2058,12 +2067,6 @@ importers:
       '@node-types/node':
         specifier: npm:@types/node@^24.9.1
         version: '@types/node@24.9.1'
-      '@patchwork/annotations-context':
-        specifier: workspace:^
-        version: link:../../../packages/annotations/context
-      '@patchwork/annotations-selection':
-        specifier: workspace:^
-        version: link:../../../packages/annotations/annotation-types/selection
       '@patchwork/solid':
         specifier: workspace:^
         version: link:../../../packages/solid
@@ -2234,6 +2237,21 @@ importers:
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.2-alpha.0
+      '@inkandswitch/annotations':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/core
+      '@inkandswitch/annotations-context':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/context
+      '@inkandswitch/annotations-diff':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/diff
+      '@inkandswitch/annotations-selection':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/selection
+      '@inkandswitch/observable-react':
+        specifier: workspace:^
+        version: link:../../../packages/observable/frameworks/react
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -2246,18 +2264,6 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@patchwork/annotations':
-        specifier: workspace:^
-        version: link:../../../packages/annotations/core
-      '@patchwork/annotations-context':
-        specifier: workspace:^
-        version: link:../../../packages/annotations/context
-      '@patchwork/annotations-diff':
-        specifier: workspace:^
-        version: link:../../../packages/annotations/annotation-types/diff
-      '@patchwork/annotations-selection':
-        specifier: workspace:^
-        version: link:../../../packages/annotations/annotation-types/selection
       '@patchwork/context':
         specifier: workspace:^
         version: link:../../../packages/context/context
@@ -2270,12 +2276,6 @@ importers:
       '@patchwork/context-react':
         specifier: workspace:^
         version: link:../../../packages/context/frameworks/context-react
-      '@patchwork/context-selection':
-        specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-selection
-      '@patchwork/observable-react':
-        specifier: workspace:^
-        version: link:../../../packages/observable/frameworks/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs

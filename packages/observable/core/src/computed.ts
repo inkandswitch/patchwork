@@ -1,10 +1,14 @@
-import type { Observable } from "./observable";
+import {
+  unwrapObservable,
+  type Observable,
+  type ObservableValue,
+} from "./observable";
 
 /**
  * A computed observable that derives its value from one or more source observables.
  * Automatically recomputes when any source observable changes.
  */
-class Computed<Result> implements Observable<Result> {
+class Computed<Result> implements ObservableValue<Result> {
   private subscribers = new Set<(value: Result) => void>();
   private cachedValue: Result;
   private unsubscribes: (() => void)[] = [];
@@ -29,7 +33,7 @@ class Computed<Result> implements Observable<Result> {
   }
 
   private compute(): Result {
-    const values = this.sources.map((s) => s.value);
+    const values = this.sources.map((s) => unwrapObservable(s));
     return this.computeFn(...values);
   }
 
@@ -53,7 +57,7 @@ class Computed<Result> implements Observable<Result> {
 }
 
 /** Maps a tuple of Observables to a tuple of their value types */
-type ObservableValues<T extends readonly Observable[]> = {
+type UnwrappedObservables<T extends readonly Observable[]> = {
   [K in keyof T]: T[K] extends Observable<infer V> ? V : never;
 };
 
@@ -69,8 +73,8 @@ type ObservableValues<T extends readonly Observable[]> = {
  * ```
  */
 export function computed<const Sources extends readonly Observable[], Result>(
-  ...args: [...Sources, (...values: ObservableValues<Sources>) => Result]
-): Observable<Result> {
+  ...args: [...Sources, (...values: UnwrappedObservables<Sources>) => Result]
+): ObservableValue<Result> {
   const computeFn = args.pop() as (...values: any[]) => Result;
   const sources = args as unknown as Observable[];
   return new Computed(sources, computeFn);

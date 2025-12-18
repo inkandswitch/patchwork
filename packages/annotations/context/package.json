@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/annotations-context",
+  "name": "@inkandswitch/annotations-context",
   "type": "module",
   "scripts": {
     "build": "tsc",
@@ -15,7 +15,7 @@
     }
   },
   "dependencies": {
-    "@patchwork/annotations": "workspace:*"
+    "@inkandswitch/annotations": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

@@ -1,5 +1,5 @@
 import { Automerge } from "@automerge/automerge-repo/slim";
-import { defineAnnotationType } from "@patchwork/annotations";
+import { defineAnnotationType } from "@inkandswitch/annotations";
 
 type AddedDiff = {
   type: "added";

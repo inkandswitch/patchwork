@@ -1,5 +1,6 @@
-import { ObservableEventEmitter } from "@patchwork/observable";
+import { SubscriberSet, ObservableObject } from "@inkandswitch/observable";
 import { type Ref } from "@patchwork/refs";
+import EventEmitter from "eventemitter3";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
 import {
   Annotation,
@@ -18,11 +19,12 @@ import { AnnotationsOnRef } from "./annotations-on-ref";
  * Uses lazy iteration - no intermediate data structures are created.
  */
 export class FilteredAnnotationView
-  extends ObservableEventEmitter<AnnotationEvents>
-  implements AnnotationSource
+  extends EventEmitter<AnnotationEvents>
+  implements AnnotationSource, ObservableObject<FilteredAnnotationView>
 {
   #source: AnnotationSource;
   #filter: AnnotationFilter;
+  #subscriberSet = new SubscriberSet<FilteredAnnotationView>();
 
   constructor(source: AnnotationSource, filter: AnnotationFilter) {
     super();
@@ -37,15 +39,15 @@ export class FilteredAnnotationView
 
       if (!isChangeEmpty(filteredChange)) {
         this.emit("change", filteredChange);
-        this.notifySubscribers();
+        this.#subscriberSet.notify(this);
       }
     };
 
     this.#source.on("change", handleChange);
   }
 
-  get value(): Annotation<unknown, unknown>[] {
-    return [...this];
+  subscribe(callback: (value: FilteredAnnotationView) => void): () => void {
+    return this.#subscriberSet.add(callback);
   }
 
   /**

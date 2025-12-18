@@ -1,6 +1,12 @@
-import type { Observable } from "@patchwork/observable";
-import { useCallback, useSyncExternalStore } from "react";
+import {
+  unwrapObservable,
+  computed,
+  type Observable,
+} from "@inkandswitch/observable";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
+export function useObservable<T>(observable: Observable<T>): T;
+export function useObservable<T>(observable?: Observable<T>): T | undefined;
 export function useObservable<T>(observable?: Observable<T>): T | undefined {
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
@@ -15,7 +21,7 @@ export function useObservable<T>(observable?: Observable<T>): T | undefined {
   );
 
   const getSnapshot = useCallback(
-    () => observable?.value,
+    () => (observable ? unwrapObservable(observable) : undefined),
     [observable]
   );
 

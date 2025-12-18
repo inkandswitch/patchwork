@@ -1,7 +1,7 @@
 import { DocHandle } from "@automerge/automerge-repo";
 import { Ref, ref } from "@patchwork/refs";
 import { DocWithComments, CommentThread, Comment } from "./types";
-import { AnnotationSet } from "@patchwork/annotations";
+import { AnnotationSet } from "@inkandswitch/annotations";
 
 /**
  * Create a new comment thread attached to the given refs.
