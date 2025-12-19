@@ -489,6 +489,22 @@ importers:
         specifier: ^8.41.0
         version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
 
+  packages/refs-react:
+    dependencies:
+      '@patchwork/refs':
+        specifier: workspace:^
+        version: link:../refs
+      react:
+        specifier: ^18.0.0
+        version: 18.3.1
+    devDependencies:
+      '@types/react':
+        specifier: 'catalog:'
+        version: 18.3.26
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
   packages/solid:
     dependencies:
       '@automerge/automerge-repo-solid-primitives':
@@ -1854,6 +1870,18 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@inkandswitch/annotations':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/core
+      '@inkandswitch/annotations-context':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/context
+      '@inkandswitch/observable':
+        specifier: workspace:^
+        version: link:../../../packages/observable/core
+      '@inkandswitch/observable-react':
+        specifier: workspace:^
+        version: link:../../../packages/observable/frameworks/react
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -1866,12 +1894,12 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@patchwork/context':
+      '@patchwork/refs':
         specifier: workspace:^
-        version: link:../../../packages/context/context
-      '@patchwork/context-react':
+        version: link:../../../packages/refs
+      '@patchwork/refs-react':
         specifier: workspace:^
-        version: link:../../../packages/context/frameworks/context-react
+        version: link:../../../packages/refs-react
       react:
         specifier: ^18.0.0
         version: 18.3.1
@@ -1939,6 +1967,21 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@inkandswitch/annotations':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/core
+      '@inkandswitch/annotations-context':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/context
+      '@inkandswitch/annotations-diff':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/diff
+      '@inkandswitch/annotations-selection':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/selection
+      '@inkandswitch/observable-react':
+        specifier: workspace:^
+        version: link:../../../packages/observable/frameworks/react
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -1951,18 +1994,12 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@patchwork/context':
+      '@patchwork/refs':
         specifier: workspace:^
-        version: link:../../../packages/context/context
-      '@patchwork/context-diff':
+        version: link:../../../packages/refs
+      '@patchwork/refs-react':
         specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-diff
-      '@patchwork/context-react':
-        specifier: workspace:^
-        version: link:../../../packages/context/frameworks/context-react
-      '@patchwork/context-selection':
-        specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-selection
+        version: link:../../../packages/refs-react
       '@patchwork/util':
         specifier: workspace:^
         version: link:../../../packages/util
