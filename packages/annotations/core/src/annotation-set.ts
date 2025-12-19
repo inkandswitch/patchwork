@@ -1,5 +1,5 @@
 import { SubscriberSet } from "@inkandswitch/observable";
-import { type Ref } from "@patchwork/refs";
+import { RefOfType, type Ref } from "@patchwork/refs";
 import EventEmitter from "eventemitter3";
 import {
   Annotation,
@@ -437,7 +437,7 @@ export class AnnotationSet
    * Filter annotations on direct children of a ref (if ref is an array or text)
    * Returns a filtered view using lazy iteration
    */
-  onChildrenOf(ref: Ref<string | Array<unknown>>): FilteredAnnotationView {
+  onChildrenOf(ref: Ref): FilteredAnnotationView {
     return new FilteredAnnotationView(this, (otherRef, _) =>
       otherRef.isChildOf(ref)
     );
@@ -447,7 +447,7 @@ export class AnnotationSet
    * Filter annotations anywhere on the subtree that ref points to
    * Returns a filtered view using lazy iteration
    */
-  onPartOf(ref: Ref<unknown>): FilteredAnnotationView {
+  onPartOf(ref: Ref): FilteredAnnotationView {
     return new FilteredAnnotationView(this, (otherRef, _) =>
       ref.contains(otherRef)
     );

@@ -1096,6 +1096,27 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.4
         version: 6.38.8
+      '@inkandswitch/annotations':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/core
+      '@inkandswitch/annotations-comments':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/comments
+      '@inkandswitch/annotations-context':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/context
+      '@inkandswitch/annotations-diff':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/diff
+      '@inkandswitch/annotations-selection':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/selection
+      '@inkandswitch/observable':
+        specifier: workspace:^
+        version: link:../../../packages/observable/core
+      '@inkandswitch/observable-solid':
+        specifier: workspace:^
+        version: link:../../../packages/observable/frameworks/solid
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../../core/bootloader
@@ -1105,21 +1126,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
-      '@patchwork/context':
+      '@patchwork/refs':
         specifier: workspace:^
-        version: link:../../../packages/context/context
-      '@patchwork/context-comments':
-        specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-comments
-      '@patchwork/context-diff':
-        specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-diff
-      '@patchwork/context-selection':
-        specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-selection
-      '@patchwork/context-solid':
-        specifier: workspace:^
-        version: link:../../../packages/context/frameworks/context-solid
+        version: link:../../../packages/refs
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9

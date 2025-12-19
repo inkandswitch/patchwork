@@ -11,19 +11,16 @@ import { parseAutomergeUrl } from "@automerge/automerge-repo";
 import type { DocHandle } from "@automerge/automerge-repo";
 
 /** Patchwork */
-import { createReactive, createSubcontext } from "@patchwork/context-solid";
-import { PathRef, Ref, TextSpanRef } from "@patchwork/context";
-import { $selectedRefs, IsSelected } from "@patchwork/context-selection";
-import { createComment, getThreadsAt } from "@patchwork/context-comments";
-import {
-  type Diff,
-  DiffAnnotation,
-  getElementsWithDiff,
-} from "@patchwork/context-diff";
 import { getRegistry } from "@inkandswitch/patchwork-plugins";
+import { ref, type Ref } from "@patchwork/refs";
+import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
+import { Diff } from "@inkandswitch/annotations-diff";
+import { IsSelected } from "@inkandswitch/annotations-selection";
+import { CommentThread } from "@inkandswitch/annotations-comments";
 
 /** Styles */
-import { createEffect, createSignal, onMount } from "solid-js";
+import { createSignal, onMount } from "solid-js";
+import { useObservable } from "@inkandswitch/observable-solid";
 
 export type TextDoc = {
   content: string;
@@ -32,53 +29,56 @@ export type TextDoc = {
 const PATH = ["content"];
 
 export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
-  const contentRef = () =>
-    new PathRef(props.handle as DocHandle<TextDoc>, PATH);
+  const contentRef = () => ref(props.handle as DocHandle<TextDoc>, ...PATH);
+
   const isReadOnly = () => !!parseAutomergeUrl(props.handle.url).heads;
 
   // TODO: what if contentRef() is undefined?
-  // diff references
-  const elementsWithDiff = () => getElementsWithDiff(contentRef());
-  const refsWithDiff = createReactive(() => elementsWithDiff());
 
-  // comment references
-  const commentThreads = () => getThreadsAt(contentRef());
-  const refsWithComments = createReactive(() => commentThreads());
+  const contentAnnotations = globalAnnotations.onChildrenOf(contentRef());
+  const diffAnnotations = useObservable(contentAnnotations.ofType(Diff));
+  const selectionAnnotations = useObservable(
+    contentAnnotations.ofType(IsSelected)
+  );
 
-  // selection references
-  const selectedRefs = createReactive($selectedRefs, false);
-  const isSelected = (otherRef: Ref) => {
-    return selectedRefs().some((ref) => ref.doesOverlap(otherRef));
-  };
+  const commentAnnotations = useObservable(
+    contentAnnotations.ofType(CommentThread)
+  );
+
+  const isSelected = (ref: Ref) =>
+    Array.from(selectionAnnotations()).some(([selectedRef]) =>
+      selectedRef.overlaps(ref)
+    );
 
   // compute decorations
   const decorations = () =>
     RangeSet.of<Decoration>(
       [
         // decorations for diffs
-        ...refsWithDiff().flatMap((ref) => {
-          if (!(ref instanceof TextSpanRef)) return [];
-          if (ref.from === ref.to) return [];
-          const diff = ref.get(DiffAnnotation) as Diff<string>;
+        ...Array.from(diffAnnotations()).flatMap(([ref, diff]) => {
+          const [start, end] = ref.rangePositions!;
+          if (start === end) return [];
 
-          if (diff.type === "deleted") {
+          if (diff.value.type === "deleted") {
             return Decoration.widget({
-              widget: new DeletionMarker(diff.before, isSelected(ref)),
+              widget: new DeletionMarker(
+                diff.value.before as string,
+                isSelected(ref)
+              ),
               side: 1,
-            }).range(ref.from, ref.from);
+            }).range(start, end);
           }
 
-          if (diff.type === "added") {
+          if (diff.value.type === "added") {
             const isDarkMode = window.matchMedia(
               "(prefers-color-scheme: dark)"
             ).matches;
-            const selected = isSelected(ref);
             return Decoration.mark({
               attributes: {
                 style: `
                 border-bottom: 2px solid ${isDarkMode ? "#4ade80" : "#22c55e"};
                 background-color: ${
-                  selected
+                  isSelected(ref)
                     ? isDarkMode
                       ? "#16a34a"
                       : "#86efac"
@@ -88,23 +88,22 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
                 };
               `,
               },
-            }).range(ref.from, ref.to);
+            }).range(start, end);
           }
 
           return [];
         }),
         // decorations for comments
-        ...(refsWithComments()
-          ? refsWithComments().flatMap((ref) => {
-              if (!(ref instanceof TextSpanRef)) return [];
-              if (ref.from === ref.to) return [];
-              const isDarkMode = window.matchMedia(
-                "(prefers-color-scheme: dark)"
-              ).matches;
-              const selected = isSelected(ref);
-              return Decoration.mark({
-                attributes: {
-                  style: `
+        ...Array.from(commentAnnotations()).flatMap(([ref]) => {
+          const [start, end] = ref.rangePositions!;
+          if (start === end) return [];
+          const isDarkMode = window.matchMedia(
+            "(prefers-color-scheme: dark)"
+          ).matches;
+          const selected = isSelected(ref);
+          return Decoration.mark({
+            attributes: {
+              style: `
                   border-bottom: 2px solid ${isDarkMode ? "#facc15" : "#eab308"};
                   background-color: ${
                     selected
@@ -116,35 +115,34 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
                         : "#fef9c3"
                   };
                 `,
-                },
-              }).range(ref.from, ref.to);
-            })
-          : []),
+            },
+          }).range(start, end);
+        }),
       ],
       true // sort ranges
     );
 
   // handle selection changes
-  const selectionContext = createSubcontext();
+  //  const selectionContext = createSubcontext();
   const onChangeSelection = (from: number, to: number) => {
-    const selectedText = new TextSpanRef(
-      props.handle as DocHandle<TextDoc>,
-      PATH,
-      from,
-      to
-    );
-    selectionContext.replace([selectedText.with(IsSelected(true))]);
+    // const selectedText = new TextSpanRef(
+    //   props.handle as DocHandle<TextDoc>,
+    //   PATH,
+    //   from,
+    //   to
+    // );
+    // selectionContext.replace([selectedText.with(IsSelected(true))]);
   };
 
   // handle comment creation
   const onComment = async (from: number, to: number) => {
-    createComment({
-      refs: [
-        new TextSpanRef(props.handle as DocHandle<TextDoc>, PATH, from, to),
-      ],
-      content: "",
-      authorId: (await props.repo.storageId())!,
-    });
+    // createComment({
+    //   refs: [
+    //     new TextSpanRef(props.handle as DocHandle<TextDoc>, PATH, from, to),
+    //   ],
+    //   content: "",
+    //   authorId: (await props.repo.storageId())!,
+    // });
   };
 
   // Base CodeMirror extensions (context-specific, not language-specific)

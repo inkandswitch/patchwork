@@ -98,6 +98,14 @@ export class Ref<
     return this.options.heads;
   }
 
+  get rangePositions(): [number, number] | undefined {
+    if (!this.range) return undefined;
+    const propPath = this.#getPropPath();
+    if (!propPath) return undefined;
+    const doc = this.doc();
+    return this.#getRangePositions(doc, propPath, this.range);
+  }
+
   /**
    * Create a new ref viewing the document at specific heads (time-travel).
    * Returns a new Ref instance with the same path but different heads.
