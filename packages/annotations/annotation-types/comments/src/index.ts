@@ -1,2 +1,12 @@
-export { CommentThread, type Comment } from "./types";
-export { createCommentThread, createReply, createComment } from "./helpers";
+export {
+  CommentThread,
+  type SerializedCommentThread,
+  type Comment,
+  type DocWithComments,
+} from "./types";
+export {
+  createCommentThread,
+  createReply,
+  createComment,
+  commentThreadsWithRefOfDoc,
+} from "./helpers";

@@ -1,7 +1,10 @@
-import { DocHandle } from "@automerge/automerge-repo";
+import { DocHandle, Repo } from "@automerge/automerge-repo";
 import { type Ref, type RefOfType, ref, fromUrl } from "@patchwork/refs";
 import { DocWithComments, CommentThread, Comment } from "./types";
-import type { CommentThread as CommentThreadType } from "./types";
+import type {
+  CommentThread as CommentThreadType,
+  SerializedCommentThread,
+} from "./types";
 import { AnnotationSet } from "@inkandswitch/annotations";
 
 /**
@@ -85,27 +88,30 @@ export function createComment({
 /**
  * Load stored comment threads from a document and return an AnnotationSet.
  */
-export function threadAnnotationsOfDoc(
-  docHandle: DocHandle<DocWithComments>
-): AnnotationSet {
+export async function commentThreadsWithRefOfDoc(
+  docHandle: DocHandle<DocWithComments>,
+  repo: Repo
+): Promise<[RefOfType<SerializedCommentThread>, CommentThread][]> {
   const result = new AnnotationSet();
-  const storedThreads = docHandle.doc()["@comments"]?.threads;
+  const serializedThreads = docHandle.doc()["@comments"]?.threads;
 
-  if (!storedThreads) {
-    return result;
+  if (!serializedThreads) {
+    return [];
   }
 
-  for (const thread of storedThreads) {
-    const threadRef = ref(docHandle, "@comments", "threads", { id: thread.id });
+  return await Promise.all(
+    serializedThreads.map(async (serializedThread) => {
+      const thread = {
+        ...serializedThread,
+        refs: await Promise.all(
+          serializedThread.refs.map((refUrl) => fromUrl(repo, refUrl))
+        ),
+      };
+      const threadRef = ref(docHandle, "@comments", "threads", {
+        id: thread.id,
+      });
 
-    for (const refUrl of thread.refs) {
-      const targetRef = fromUrl(docHandle, refUrl);
-      result.add(
-        targetRef,
-        CommentThread(threadRef as RefOfType<CommentThreadType>)
-      );
-    }
-  }
-
-  return result;
+      return [threadRef as RefOfType<SerializedCommentThread>, thread];
+    })
+  );
 }

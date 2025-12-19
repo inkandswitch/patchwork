@@ -2286,6 +2286,9 @@ importers:
       '@inkandswitch/annotations':
         specifier: workspace:^
         version: link:../../../packages/annotations/core
+      '@inkandswitch/annotations-comments':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/comments
       '@inkandswitch/annotations-context':
         specifier: workspace:^
         version: link:../../../packages/annotations/context

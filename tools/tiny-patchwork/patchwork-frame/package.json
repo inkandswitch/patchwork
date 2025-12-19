@@ -23,6 +23,7 @@
     "@inkandswitch/annotations": "workspace:^",
     "@inkandswitch/annotations-context": "workspace:^",
     "@inkandswitch/annotations-selection": "workspace:^",
+    "@inkandswitch/annotations-comments": "workspace:^",
     "@patchwork/refs": "workspace:^",
     "@inkandswitch/observable-react": "workspace:^",
     "@inkandswitch/annotations-diff": "workspace:^",

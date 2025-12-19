@@ -12,11 +12,14 @@ import type { DocHandle } from "@automerge/automerge-repo";
 
 /** Patchwork */
 import { getRegistry } from "@inkandswitch/patchwork-plugins";
-import { ref, type Ref } from "@patchwork/refs";
+import { cursor, ref, type Ref } from "@patchwork/refs";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
 import { Diff } from "@inkandswitch/annotations-diff";
 import { IsSelected } from "@inkandswitch/annotations-selection";
-import { CommentThread } from "@inkandswitch/annotations-comments";
+import {
+  CommentThread,
+  createComment,
+} from "@inkandswitch/annotations-comments";
 
 /** Styles */
 import { createSignal, onMount } from "solid-js";
@@ -136,13 +139,11 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
 
   // handle comment creation
   const onComment = async (from: number, to: number) => {
-    // createComment({
-    //   refs: [
-    //     new TextSpanRef(props.handle as DocHandle<TextDoc>, PATH, from, to),
-    //   ],
-    //   content: "",
-    //   authorId: (await props.repo.storageId())!,
-    // });
+    createComment({
+      refs: [ref(props.handle, ...PATH, cursor(from, to))],
+      content: "",
+      authorId: (await props.repo.storageId())!,
+    });
   };
 
   // Base CodeMirror extensions (context-specific, not language-specific)
