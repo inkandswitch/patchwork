@@ -5,8 +5,14 @@ import type { PathInput } from "./types";
 /**
  * Cache for ref instances, keyed by document handle and path.
  * Uses WeakMap so refs can be garbage collected when the handle is no longer referenced.
+ *
+ * We store the cache in the globalThis object so multiple library instances can share the same cache.
  */
-const refCache = new WeakMap<DocHandle<any>, Map<string, WeakRef<Ref<any>>>>();
+let refCache = (globalThis as any).__automerge_ref_cache__;
+if (!refCache) {
+  refCache = new WeakMap<DocHandle<any>, Map<string, WeakRef<Ref<any>>>>();
+  (globalThis as any).__automerge_ref_cache__ = refCache;
+}
 
 /**
  * Create a stable cache key from path segments.
