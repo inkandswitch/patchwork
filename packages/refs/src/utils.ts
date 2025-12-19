@@ -28,17 +28,18 @@ export function cursor(start: number, end?: number): CursorMarker {
 /**
  * Parse a ref from a URL string.
  *
- * @param handle - The document handle to use
+ * @param repo - The Automerge repo to use
  * @param url - Full ref URL like "automerge:documentId/path#heads"
  *
  * @example
- * fromUrl(handle, "automerge:abc/todos/0#head1|head2" as RefUrl)
+ * fromUrl(repo, "automerge:abc/todos/0#head1|head2" as RefUrl)
  */
-export function fromUrl<TDoc = any>(
-  handle: DocHandle<TDoc>,
+export async function fromUrl<TDoc = any>(
+  repo: Repo,
   url: RefUrl
-): Ref<TDoc, AnyPathInput[]> {
-  const { segments, heads } = parseRefUrl(url);
+): Promise<Ref<TDoc, AnyPathInput[]>> {
+  const { segments, heads, documentId } = parseRefUrl(url);
+  const handle = await repo.find<TDoc>(documentId);
   const options = heads ? { heads } : {};
   return new Ref<TDoc, AnyPathInput[]>(handle, segments, options);
 }
@@ -79,11 +80,7 @@ export async function findRef<T = any>(
   repo: Repo,
   url: RefUrl
 ): Promise<Ref<T>> {
-  const { documentId } = parseRefUrl(url);
-  const handle = await repo.find(documentId as any);
-  await handle.whenReady();
-
-  return fromUrl(handle as DocHandle<T>, url);
+  return fromUrl<T>(repo, url);
 }
 
 /**

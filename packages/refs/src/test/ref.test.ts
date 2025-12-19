@@ -418,7 +418,7 @@ describe("Ref", () => {
   });
 
   describe("idempotency", () => {
-    it("should produce identical paths when parsing URL twice", () => {
+    it("should produce identical paths when parsing URL twice", async () => {
       handle.change((d) => {
         d.todos = [{ title: "First" }, { title: "Second" }];
       });
@@ -428,7 +428,7 @@ describe("Ref", () => {
       const url = ref1.url;
 
       // Parse URL and create new ref
-      const ref2 = fromUrl(handle, url);
+      const ref2 = await fromUrl(repo, url);
 
       // Both refs should have identical URLs
       expect(ref2.url).toBe(ref1.url);
@@ -437,7 +437,7 @@ describe("Ref", () => {
       expect(ref2.equals(ref1)).toBe(true);
     });
 
-    it("should preserve cursor ranges through URL round-trip", () => {
+    it("should preserve cursor ranges through URL round-trip", async () => {
       handle.change((d) => {
         d.note = "Hello World";
       });
@@ -447,7 +447,7 @@ describe("Ref", () => {
       const url = ref1.url;
 
       // Parse from URL
-      const ref2 = fromUrl(handle, url);
+      const ref2 = await fromUrl(repo, url);
 
       // Should have same cursor range
       expect(ref2.url).toBe(ref1.url);
@@ -463,7 +463,7 @@ describe("Ref", () => {
       expect(ref2.value()).toBe("Hello");
     });
 
-    it("should handle multiple fromUrl round-trips without drift", () => {
+    it("should handle multiple fromUrl round-trips without drift", async () => {
       handle.change((d) => {
         d.data = [{ value: 42 }];
       });
@@ -472,15 +472,15 @@ describe("Ref", () => {
 
       // Round-trip 1
       const url1 = ref1.url;
-      const ref2 = fromUrl(handle, url1);
+      const ref2 = await fromUrl(repo, url1);
 
       // Round-trip 2
       const url2 = ref2.url;
-      const ref3 = fromUrl(handle, url2);
+      const ref3 = await fromUrl(repo, url2);
 
       // Round-trip 3
       const url3 = ref3.url;
-      const ref4 = fromUrl(handle, url3);
+      const ref4 = await fromUrl(repo, url3);
 
       // All URLs should be identical (this is the key invariant)
       expect(url1).toBe(url2);

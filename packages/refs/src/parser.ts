@@ -1,6 +1,7 @@
 import * as Automerge from "@automerge/automerge";
 import type { RefUrl, Segment, SegmentCodec } from "./types";
 import { KIND } from "./types";
+import { DocumentId } from "@automerge/automerge-repo";
 
 /**
  * # Path Segment Encoding Scheme
@@ -224,7 +225,7 @@ export function serializeHeads(heads: string[]): string {
 }
 
 export function parseRefUrl(url: RefUrl): {
-  documentId: string;
+  documentId: DocumentId;
   segments: Segment[];
   heads?: string[];
 } {
@@ -244,7 +245,7 @@ export function parseRefUrl(url: RefUrl): {
   const [, documentId, pathStr] = match;
 
   return {
-    documentId,
+    documentId: documentId as DocumentId,
     segments: pathStr ? parsePath(pathStr) : [],
     heads: parseHeads(headsSection),
   };
