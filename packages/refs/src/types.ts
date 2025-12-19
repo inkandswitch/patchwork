@@ -1,4 +1,5 @@
 import type { Cursor, Heads } from "@automerge/automerge-repo";
+import { Ref } from "./ref";
 
 /**
  * Symbol used as discriminator for segments to avoid collision with user data.
@@ -215,8 +216,7 @@ export type RefUrl = string & { readonly __brand: "RefUrl" };
  * function addComment(thread: RefOfType<Thread>) { ... }
  * ```
  */
-export type RefOfType<T> = {
+export type RefOfType<T> = Omit<Ref, "value" | "change"> & {
   value(): T | undefined;
-  change(fn: ChangeFn<T>): void;
-  readonly url: RefUrl;
+  change(fnOrValue: ChangeFn<T> | T): void;
 };
