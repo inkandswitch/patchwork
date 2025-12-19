@@ -5,6 +5,7 @@ import type { AutomergeUrl, ImmutableString } from "@automerge/automerge-repo";
 export type FolderDoc = {
   title: string;
   docs: DocLink[];
+  lastSyncAt?: number; // pushwork sets lastSyncAt when it wants to trigger HMR
 };
 
 // used in serviceworker & datatype
