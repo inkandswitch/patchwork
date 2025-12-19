@@ -3,6 +3,7 @@ packages:
   - packages/*
   - packages/annotations/**/*
   - packages/observable/**/*
+  - packages/context/**/*
   - meta/*
   - sites/*
   - tools/*
