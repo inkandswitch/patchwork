@@ -7,12 +7,13 @@ import {
 } from "@automerge/automerge-repo/slim";
 import { importModuleFromFolderDocUrl } from "./packages.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
+import { FolderDoc } from "./types.js";
 
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
 } & HasPatchworkMetadata & {
-    "@patchwork": { type: "patchwork:module-settings" };
-  };
+  "@patchwork": { type: "patchwork:module-settings" };
+};
 
 // todo this can be a function that takes a plugin system and returns a change
 // handler
@@ -92,8 +93,15 @@ export class ModuleWatcher {
     // This is probably a built-in, which is fine!
     if (!docUrl) return;
 
-    this.repo.find(docUrl).then((handle) => {
+    this.repo.find<FolderDoc>(docUrl).then((handle) => {
+      let previousSyncAtTime = handle.doc().lastSyncAt || 0
       handle.on("change", () => {
+        const lastSyncAt = handle.doc().lastSyncAt || 0
+        if (lastSyncAt <= previousSyncAtTime) {
+          console.log("handle updated but not lastSyncAt")
+          return
+        }
+        previousSyncAtTime = lastSyncAt;
         const versionedImport = handle.view(handle.heads()).url;
         this.report(versionedImport);
       });
