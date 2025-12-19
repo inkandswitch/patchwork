@@ -88,24 +88,26 @@ export const PatchworkFrame = ({
     });
   }, [selectedView?.url, viewHeads]);
 
-  //  contribute annotations to the global context
-  const frameAnnotations = useMemo(() => new AnnotationSet(), []);
+  //  Contribute annotations to the global context
+  const annotations = useMemo(() => new AnnotationSet(), []);
   useEffect(() => {
-    globalAnnotations.add(frameAnnotations);
+    if (!selectedDocRef) {
+      return;
+    }
 
-    frameAnnotations.change(() => {
-      frameAnnotations.clear();
+    globalAnnotations.add(annotations);
 
-      // selected doc
-      if (selectedDocRef) {
-        frameAnnotations.add(selectedDocRef, IsSelected(true));
-      }
+    annotations.change(() => {
+      annotations.clear();
+
+      // selection
+      annotations.add(selectedDocRef, IsSelected(true));
     });
 
     return () => {
-      globalAnnotations.remove(frameAnnotations);
+      globalAnnotations.remove(annotations);
     };
-  }, [frameAnnotations, selectedDocAnnotations, selectedDocRef]);
+  }, [annotations, selectedDocAnnotations, selectedDocRef]);
 
   const repo = useRepo();
 
@@ -155,6 +157,7 @@ export const PatchworkFrame = ({
           isSidebarCollapsed ? "w-0" : "w-[400px]"
         }`}
       >
+        {/* Account sidebar */}
         {accountSidebarToolId && !isSidebarCollapsed && (
           <patchwork-view
             class="h-full"
@@ -172,6 +175,7 @@ export const PatchworkFrame = ({
         />
       </div>
       <div className="flex flex-col flex-1 h-full">
+        {/* Document toolbar */}
         {selectedDocUrl && (
           <div className="p-2 bg-base-200 border-b border-base-300 flex items-center gap-2 flex-start">
             {accountDoc.documentToolbarToolIds?.map((toolId, index) => (
@@ -184,6 +188,7 @@ export const PatchworkFrame = ({
             ))}
           </div>
         )}
+        {/* Main document view */}
         <div className="w-full flex-1 min-h-0">
           {selectedDocUrl && (
             <patchwork-view
@@ -198,6 +203,7 @@ export const PatchworkFrame = ({
           )}
         </div>
       </div>
+      {/* Context sidebar */}
       {contextSidebarToolId && (
         <div
           className={`flex relative transition-all duration-300 bg-base-100 ${
