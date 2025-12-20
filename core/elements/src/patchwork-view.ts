@@ -203,9 +203,9 @@ export function registerPatchworkViewElement(
               }
 
               if (
-                this.#state == "error" ||
-                this.#state == "rendered" ||
-                this.#state == "fallback"
+                ((this.#state == "error" || this.#state == "rendered") &&
+                  isChosenTool) ||
+                (this.#state == "fallback" && isFallbackTool)
               ) {
                 if (loadedTool.importUrl !== this.#tool?.importUrl) {
                   await this.#teardown();
