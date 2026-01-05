@@ -254,30 +254,6 @@ export const PatchworkFrame = ({
           )}
         </div>
       )}
-      {contextSidebarToolId && (
-        <div
-          className={`flex relative transition-all duration-300 bg-base-100 ${
-            isRightSidebarCollapsed ? "w-[2px]" : "w-[400px]"
-          }`}
-        >
-          <button
-            onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
-            className="sidebar-toggle"
-            aria-label={
-              isRightSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-            }
-            title={
-              isRightSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-            }
-          />
-          {!isRightSidebarCollapsed && (
-            <patchwork-view
-              doc-url={accountDocUrl}
-              tool-id={contextSidebarToolId}
-            />
-          )}
-        </div>
-      )}
     </div>
   );
 };
