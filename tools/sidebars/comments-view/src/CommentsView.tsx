@@ -1,11 +1,12 @@
 import "./styles.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Avatar from "boring-avatars";
 
 import { relativeTime } from "@patchwork/util/src/relative-time";
 import { toolify } from "@inkandswitch/patchwork-react";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
+import { AnnotationSet } from "@inkandswitch/annotations";
 import { IsSelected } from "@inkandswitch/annotations-selection";
 import { computed } from "@inkandswitch/observable";
 import {
@@ -22,10 +23,34 @@ import { Repo } from "@automerge/automerge-repo";
 const CommentsView = () => {
   const allActiveThreadRefs = useObservable($allActiveThreadRefs);
 
+  // Local annotation set for selection from comments sidebar
+  const selectionAnnotations = useMemo(() => new AnnotationSet(), []);
+
+  // Register/unregister with global annotations
+  useEffect(() => {
+    globalAnnotations.add(selectionAnnotations);
+    return () => {
+      globalAnnotations.remove(selectionAnnotations);
+    };
+  }, [selectionAnnotations]);
+
+  const onSelectRefs = (refs: Ref[]) => {
+    selectionAnnotations.change(() => {
+      selectionAnnotations.clear();
+      for (const ref of refs) {
+        selectionAnnotations.add(ref, IsSelected(true));
+      }
+    });
+  };
+
   return (
     <div className="h-full flex flex-col p-2 gap-2">
       {Array.from(allActiveThreadRefs).map((threadRef) => (
-        <ThreadView key={threadRef.toString()} threadRef={threadRef} />
+        <ThreadView
+          key={threadRef.toString()}
+          threadRef={threadRef}
+          onSelectRefs={onSelectRefs}
+        />
       ))}
     </div>
   );
@@ -35,8 +60,10 @@ export const renderCommentsView = toolify(CommentsView);
 
 const ThreadView = ({
   threadRef,
+  onSelectRefs,
 }: {
   threadRef: RefOfType<SerializedCommentThread>;
+  onSelectRefs: (refs: Ref[]) => void;
 }) => {
   const selectedRefs = useObservable($selectedRefs);
 
@@ -68,6 +95,10 @@ const ThreadView = ({
         thread.isResolved = true;
       }
     );
+  };
+
+  const onSelect = () => {
+    onSelectRefs(resolvedRefs);
   };
 
   const onReplyToComment = async () => {
@@ -103,6 +134,43 @@ const ThreadView = ({
     }
   };
 
+  // Find draft comment if any
+  const draftComment = comments.find(
+    (c) => c.draftContent !== undefined || c.content === undefined
+  );
+  const draftCommentRef = draftComment
+    ? ref(
+        threadRef.docHandle,
+        "@comments",
+        "threads",
+        { id: thread.id },
+        "comments",
+        { id: draftComment.id }
+      )
+    : null;
+
+  const onSaveDraft = () => {
+    if (!draftCommentRef) return;
+    (draftCommentRef as Ref<any, any>).change((comment: Comment) => {
+      comment.content = comment.draftContent;
+      comment.timestamp = Date.now();
+
+      delete comment.draftContent;
+    });
+  };
+
+  const onCancelDraft = () => {
+    if (!draftCommentRef) return;
+    const commentValue = draftCommentRef.value() as Comment | undefined;
+    if (commentValue?.content === undefined) {
+      onDeleteComment(draftCommentRef as Ref<any, any>);
+      return;
+    }
+    (draftCommentRef as Ref<any, any>).change((comment: Comment) => {
+      delete comment.draftContent;
+    });
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <div
@@ -124,9 +192,7 @@ const ThreadView = ({
               <CommentView
                 key={commentRef.url}
                 commentRef={commentRef as Ref<any, any>}
-                onDeleteComment={() =>
-                  onDeleteComment(commentRef as Ref<any, any>)
-                }
+                onSelect={onSelect}
               />
             );
           })}
@@ -134,26 +200,51 @@ const ThreadView = ({
       </div>
       {isSelected && (
         <div className="flex gap-2 justify-end">
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onResolveThread();
-            }}
-            title="Resolve comment"
-          >
-            Resolve
-          </button>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReplyToComment();
-            }}
-            title="Reply to comment"
-          >
-            Reply
-          </button>
+          {draftComment ? (
+            <>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCancelDraft();
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSaveDraft();
+                }}
+              >
+                Save
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onResolveThread();
+                }}
+                title="Resolve comment"
+              >
+                Resolve
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReplyToComment();
+                }}
+                title="Reply to comment"
+              >
+                Reply
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -162,10 +253,10 @@ const ThreadView = ({
 
 type CommentViewProps = {
   commentRef: Ref<any, any>;
-  onDeleteComment: () => void;
+  onSelect: () => void;
 };
 
-const CommentView = ({ commentRef, onDeleteComment }: CommentViewProps) => {
+const CommentView = ({ commentRef, onSelect }: CommentViewProps) => {
   const comment = useRefValue(commentRef) as Comment | undefined;
 
   if (!comment) {
@@ -173,28 +264,9 @@ const CommentView = ({ commentRef, onDeleteComment }: CommentViewProps) => {
   }
 
   const { content, timestamp, draftContent } = comment;
-  const isDraft = draftContent || content === undefined;
+  const isDraft = draftContent !== undefined || content === undefined;
 
-  const onSaveComment = (commentRef: Ref<any, any>) => {
-    commentRef.change((comment: Comment) => {
-      comment.content = comment.draftContent;
-      delete comment.draftContent;
-      comment.timestamp = Date.now();
-    });
-  };
-
-  const onCancelDraft = (commentRef: Ref<any, any>) => {
-    if (commentRef.value()?.content === undefined) {
-      onDeleteComment();
-      return;
-    }
-
-    commentRef.change((comment: Comment) => {
-      delete comment.draftContent;
-    });
-  };
-
-  const onChangeDraft = (commentRef: Ref<any, any>, draftContent: string) => {
+  const onChangeDraft = (draftContent: string) => {
     commentRef.change((comment: Comment) => {
       comment.draftContent = draftContent;
     });
@@ -210,36 +282,14 @@ const CommentView = ({ commentRef, onDeleteComment }: CommentViewProps) => {
           </span>
         </div>
       )}
-      {/* Content or textarea */}
       {isDraft ? (
-        <div className="space-y-2">
-          <textarea
-            className="textarea textarea-bordered w-full min-h-24"
-            value={draftContent ?? ""}
-            onChange={(e) => onChangeDraft(commentRef, e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-          />
-          <div className="flex justify-end gap-2">
-            <button
-              className="btn btn-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSaveComment(commentRef);
-              }}
-            >
-              Save
-            </button>
-            <button
-              className="btn btn-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onCancelDraft(commentRef);
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+        <textarea
+          className="textarea textarea-bordered w-full min-h-24"
+          value={draftContent ?? ""}
+          onChange={(e) => onChangeDraft(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          onFocus={onSelect}
+        />
       ) : (
         <div className="text-base text-gray-800 whitespace-pre-wrap">
           {content}
