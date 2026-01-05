@@ -1,7 +1,7 @@
 import "./styles.css";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TinyPatchworkLayoutDoc } from "./types";
 import type { ToolElement } from "@inkandswitch/patchwork-plugins";
 import { useToolDescriptions } from "@inkandswitch/patchwork-react";
@@ -81,6 +81,13 @@ function ArrayEditor({
 }) {
   const [pendingAdd, setPendingAdd] = useState(addOptions[0]?.id ?? "");
 
+  // Update pendingAdd when options become available
+  useEffect(() => {
+    if (!pendingAdd && addOptions.length > 0) {
+      setPendingAdd(addOptions[0].id);
+    }
+  }, [addOptions, pendingAdd]);
+
   const move = useCallback(
     (index: number, delta: number) => {
       if (!values) return;
@@ -133,7 +140,7 @@ function ArrayEditor({
             </option>
           ))}
         </select>
-        <button className="btn btn-sm" onClick={add}>
+        <button className="btn btn-sm" onClick={add} disabled={!pendingAdd}>
           Add
         </button>
       </div>

@@ -28,12 +28,14 @@ import {
   Repo,
   stringifyAutomergeUrl,
   WebSocketClientAdapter,
+  type AutomergeUrl,
   type UrlHeads,
 } from "@automerge/vanillajs";
 import { plugins } from "./tools";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 
+// todo maybe we should have a window.patchwork namespace for this?
 declare global {
   interface Window {
     accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
@@ -124,10 +126,12 @@ const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 
 window.accountDocHandle = accountDocHandle;
 
-const moduleWatcher = new ModuleWatcher(
-  accountDocHandle.doc().moduleSettingsUrl,
-  [],
+const _moduleWatcher = new ModuleWatcher(
   repo,
+  [
+
+    accountDocHandle.doc().moduleSettingsUrl,
+  ],
   (name, mod) => {
     if (Array.isArray(mod.plugins)) {
       // TODO: maybe get rid of this check?
@@ -138,7 +142,7 @@ const moduleWatcher = new ModuleWatcher(
   }
 );
 
-registerPatchworkViewElement({ moduleWatcher, repo });
+registerPatchworkViewElement({ repo });
 
 const rootElement = document.getElementById("root")!;
 

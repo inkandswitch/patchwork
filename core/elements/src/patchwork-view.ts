@@ -54,7 +54,6 @@ export function registerPatchworkViewElement(
 
   const repo = params.repo;
 
-
   if (customElements.get(name)) {
     console.error(`can't redefine a custom element. defining "${name}"`);
     return;
@@ -203,7 +202,11 @@ export function registerPatchworkViewElement(
                 this.#queueRender();
               }
 
-              if (this.#state == "error" || this.#state == "rendered") {
+              if (
+                ((this.#state == "error" || this.#state == "rendered") &&
+                  isChosenTool) ||
+                (this.#state == "fallback" && isFallbackTool)
+              ) {
                 if (loadedTool.importUrl !== this.#tool?.importUrl) {
                   await this.#teardown();
                   this.#init();
@@ -267,7 +270,8 @@ export function registerPatchworkViewElement(
           console.warn(`no tool for ${this.#docUrl}`);
         }
 
-        this.#tool = getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
+        this.#tool =
+          getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
 
         if (!this.#tool) {
           console.warn("Tool not found", toolId);

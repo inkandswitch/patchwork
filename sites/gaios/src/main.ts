@@ -125,9 +125,8 @@ const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 window.accountDocHandle = accountDocHandle;
 
 const moduleWatcher = new ModuleWatcher(
-  accountDocHandle.doc().moduleSettingsUrl,
-  [],
   repo,
+  accountDocHandle.doc().moduleSettingsUrl,
   (name, mod) => {
     if (Array.isArray(mod.plugins)) {
       // TODO: maybe get rid of this check?
