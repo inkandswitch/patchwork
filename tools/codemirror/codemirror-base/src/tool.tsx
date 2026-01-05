@@ -149,11 +149,18 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
   };
 
   // handle comment creation
+  // todo: we should have a better way to get the contactUrl of the current account
   const onComment = async (from: number, to: number) => {
+    const accountDoc = (window as any).accountDocHandle?.doc?.();
+    const contactUrl = accountDoc?.contactUrl;
+    if (!contactUrl) {
+      console.warn("Cannot create comment: no contactUrl available");
+      return;
+    }
     createComment({
       refs: [ref(props.handle, ...PATH, cursor(from, to))],
       content: "",
-      authorId: (await props.repo.storageId())!,
+      contactUrl,
     });
   };
 

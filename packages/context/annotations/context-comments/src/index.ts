@@ -26,7 +26,7 @@ export type Comment = {
   id: string;
   content?: string;
   draftContent?: string;
-  authorId: string;
+  contactUrl: string;
   timestamp: number;
 };
 
@@ -83,11 +83,11 @@ export const getThreadsAt = (ref: Ref) =>
 export const createReply = ({
   threadRef,
   content,
-  authorId,
+  contactUrl,
 }: {
   threadRef: Ref<Thread>;
   content?: string;
-  authorId: string;
+  contactUrl: string;
 }): Ref<Comment> => {
   const docRef = threadRef.docRef as Ref<DocWithComments, DocWithComments>;
 
@@ -96,7 +96,7 @@ export const createReply = ({
   threadRef.change((thread) => {
     const comment: Comment = {
       id: commentId,
-      authorId,
+      contactUrl,
       timestamp: Date.now(),
     };
 
@@ -146,18 +146,18 @@ export const createCommentThread = (refs: Ref[]): Ref<Thread> => {
 export const createComment = ({
   refs,
   content,
-  authorId,
+  contactUrl,
 }: {
   refs: Ref[];
   content: string;
-  authorId: string;
+  contactUrl: string;
 }): Ref<Comment> => {
   const threadRef = createCommentThread(refs);
 
   return createReply({
     threadRef,
     content,
-    authorId,
+    contactUrl,
   });
 };
 

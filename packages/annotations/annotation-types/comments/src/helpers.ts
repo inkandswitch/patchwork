@@ -37,18 +37,18 @@ export function createCommentThread(refs: Ref[]): Ref<DocWithComments> {
 export function createReply({
   threadRef,
   content,
-  authorId,
+  contactUrl,
 }: {
   threadRef: Ref;
   content?: string;
-  authorId: string;
+  contactUrl: string;
 }): Ref<DocWithComments> {
   const commentId = crypto.randomUUID();
 
   threadRef.change((thread: CommentThread) => {
     const comment: Comment = {
       id: commentId,
-      authorId,
+      contactUrl,
       timestamp: Date.now(),
     };
 
@@ -75,14 +75,14 @@ export function createReply({
 export function createComment({
   refs,
   content,
-  authorId,
+  contactUrl,
 }: {
   refs: Ref[];
   content: string;
-  authorId: string;
+  contactUrl: string;
 }): Ref<DocWithComments> {
   const threadRef = createCommentThread(refs);
-  return createReply({ threadRef, content, authorId });
+  return createReply({ threadRef, content, contactUrl });
 }
 
 /**

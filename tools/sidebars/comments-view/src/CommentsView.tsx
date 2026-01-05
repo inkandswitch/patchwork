@@ -1,10 +1,11 @@
 import "./styles.css";
 import { useState, useEffect, useMemo } from "react";
-import Avatar from "boring-avatars";
 
 import { relativeTime } from "@patchwork/util/src/relative-time";
 import { toolify } from "@inkandswitch/patchwork-react";
-import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import { useRepo, useDocument } from "@automerge/automerge-repo-react-hooks";
+import type { AutomergeUrl } from "@automerge/automerge-repo";
+
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
 import { AnnotationSet } from "@inkandswitch/annotations";
 import { IsSelected } from "@inkandswitch/annotations-selection";
@@ -73,6 +74,12 @@ const ThreadView = ({
   );
   const repo = useRepo();
 
+  // Get current account's contactUrl
+  // todo: we should have a better way to get the contactUrl of the current account
+  const [currentAccount] = useDocument<{ contactUrl: AutomergeUrl }>(
+    (window as any).accountDocHandle?.url
+  );
+
   // Resolve thread's RefUrls to actual Ref objects for overlap checking
   const resolvedRefs = useResolvedRefs(thread?.refs, repo);
 
@@ -101,11 +108,12 @@ const ThreadView = ({
     onSelectRefs(resolvedRefs);
   };
 
-  const onReplyToComment = async () => {
+  const onReplyToComment = () => {
+    if (!currentAccount?.contactUrl) return;
     createReply({
       threadRef: threadRef as unknown as Ref<any, any>,
       content: "",
-      authorId: (await repo.storageId())!,
+      contactUrl: currentAccount.contactUrl,
     });
   };
 
@@ -193,6 +201,7 @@ const ThreadView = ({
                 key={commentRef.url}
                 commentRef={commentRef as Ref<any, any>}
                 onSelect={onSelect}
+                currentContactUrl={currentAccount?.contactUrl}
               />
             );
           })}
@@ -254,10 +263,20 @@ const ThreadView = ({
 type CommentViewProps = {
   commentRef: Ref<any, any>;
   onSelect: () => void;
+  currentContactUrl?: string;
 };
 
-const CommentView = ({ commentRef, onSelect }: CommentViewProps) => {
+type ContactDoc = { type: "anonymous" } | { type: "registered"; name: string };
+
+const CommentView = ({
+  commentRef,
+  onSelect,
+  currentContactUrl,
+}: CommentViewProps) => {
   const comment = useRefValue(commentRef) as Comment | undefined;
+  const [contact] = useDocument<ContactDoc>(
+    comment?.contactUrl as AutomergeUrl
+  );
 
   if (!comment) {
     return null;
@@ -265,6 +284,14 @@ const CommentView = ({ commentRef, onSelect }: CommentViewProps) => {
 
   const { content, timestamp, draftContent } = comment;
   const isDraft = draftContent !== undefined || content === undefined;
+
+  // Hide drafts from other users
+  if (isDraft && comment.contactUrl !== currentContactUrl) {
+    return null;
+  }
+
+  const contactName =
+    contact?.type === "registered" ? contact.name : "Anonymous";
 
   const onChangeDraft = (draftContent: string) => {
     commentRef.change((comment: Comment) => {
@@ -274,17 +301,25 @@ const CommentView = ({ commentRef, onSelect }: CommentViewProps) => {
 
   return (
     <div className="space-y-2" data-id={commentRef.url}>
-      {!isDraft && (
-        <div className="flex justify-between">
-          <Avatar size={20} name={comment.authorId} />
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <patchwork-view
+            doc-url={comment.contactUrl}
+            tool-id="contact-avatar"
+          />
+          <span className="text-sm font-medium whitespace-nowrap">
+            {contactName}
+          </span>
+        </div>
+        {!isDraft && timestamp && (
           <span className="text-xs text-gray-400">
             {relativeTime(timestamp)}
           </span>
-        </div>
-      )}
+        )}
+      </div>
       {isDraft ? (
         <textarea
-          className="textarea textarea-bordered w-full min-h-24"
+          className="textarea w-full min-h-24 border border-gray-300 rounded-lg p-2"
           value={draftContent ?? ""}
           onChange={(e) => onChangeDraft(e.target.value)}
           onClick={(e) => e.stopPropagation()}

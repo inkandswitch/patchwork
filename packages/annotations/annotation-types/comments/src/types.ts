@@ -23,7 +23,7 @@ export type Comment = {
   id: string;
   content?: string;
   draftContent?: string;
-  authorId: string;
+  contactUrl: string;
   timestamp: number;
 };
 
