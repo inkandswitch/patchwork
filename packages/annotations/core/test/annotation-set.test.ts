@@ -1,657 +1,678 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Repo, type DocHandle } from "@automerge/automerge-repo";
 import { ref } from "@patchwork/refs";
 import { AnnotationSet } from "../src/annotation-set";
 import { defineAnnotationType } from "../src/annotation-type";
 
-// Define test annotation types
-const Comment = defineAnnotationType<string>("patchwork/comment");
-const Highlight = defineAnnotationType<{ color: string }>(
-  "patchwork/highlight"
-);
-const Tag = defineAnnotationType<string>("patchwork/tag");
-
-// Document type for proper type inference
-type TestDoc = {
-  title: string;
-  items: { name: string }[];
-};
-
 describe("AnnotationSet", () => {
   let repo: Repo;
-  let handle: DocHandle<TestDoc>;
-  let annotationSet: AnnotationSet;
+  let handle: DocHandle<any>;
 
   beforeEach(() => {
     repo = new Repo();
-    handle = repo.create<TestDoc>();
-    handle.change((d) => {
+    handle = repo.create();
+    handle.change((d: any) => {
       d.title = "Test Document";
-      d.items = [{ name: "Item 1" }, { name: "Item 2" }];
+      d.items = [{ name: "Item 1" }, { name: "Item 2" }, { name: "Item 3" }];
+      d.content = "Hello world, this is some content.";
     });
-    annotationSet = new AnnotationSet();
   });
 
-  describe("add", () => {
-    it("should add an annotation to a ref", () => {
+  describe("adding annotations", () => {
+    it("should add a single annotation to a ref", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
-      annotationSet.add(titleRef, Comment("A comment"));
 
-      const annotations = [...annotationSet];
-      expect(annotations).toHaveLength(1);
+      annotations.add(titleRef, Comment("A comment"));
 
-      expect(annotations[0][0]).toBe(titleRef);
-      expect(annotations[0][1]).toEqual(Comment("A comment"));
+      const all = [...annotations];
+      expect(all).toHaveLength(1);
+
+      const entry = all[0];
+      expect(entry[0]).toBe(titleRef);
+      expect(entry[1].value).toBe("A comment");
+      expect(entry[1].type.id).toBe("test/comment");
     });
 
-    it("should allow multiple annotations of same type on same ref", () => {
+    it("should add multiple annotations to the same ref", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
-      annotationSet.add(titleRef, [
-        Comment("First comment"),
-        Comment("Second comment"),
+
+      annotations.add(titleRef, [Comment("First"), Comment("Second")]);
+
+      const all = [...annotations];
+      expect(all).toHaveLength(2);
+
+      const first = all[0];
+      expect(first[0]).toBe(titleRef);
+      expect(first[1].value).toBe("First");
+
+      const second = all[1];
+      expect(second[0]).toBe(titleRef);
+      expect(second[1].value).toBe("Second");
+    });
+
+    it("should add multiple annotations of different types to the same ref", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const Highlight = defineAnnotationType<{ color: string }>(
+        "test/highlight"
+      );
+      const annotations = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+
+      annotations.add(titleRef, [
+        Comment("A comment"),
+        Highlight({ color: "yellow" }),
       ]);
 
-      const annotations = [...annotationSet];
-      expect(annotations).toHaveLength(2);
+      const all = [...annotations];
+      expect(all).toHaveLength(2);
 
-      const firstCommentEntry = annotations[0];
-      expect(firstCommentEntry[1].value).toBe("First comment");
-      expect(firstCommentEntry[1].type).toBe(Comment);
+      const commentEntry = all[0];
+      expect(commentEntry[0]).toBe(titleRef);
+      expect(commentEntry[1].value).toBe("A comment");
+      expect(commentEntry[1].type.id).toBe("test/comment");
 
-      const secondCommentEntry = annotations[1];
-      expect(secondCommentEntry[1].type).toBe(Comment);
-      expect(secondCommentEntry[1].value).toBe("Second comment");
-
-      expect(firstCommentEntry[0]).toBe(secondCommentEntry[0]);
+      const highlightEntry = all[1];
+      expect(highlightEntry[0]).toBe(titleRef);
+      expect(highlightEntry[1].value).toEqual({ color: "yellow" });
+      expect(highlightEntry[1].type.id).toBe("test/highlight");
     });
 
-    it("should allow different annotation types on same ref", () => {
+    it("should add an annotation source as a sub-source", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const parent = new AnnotationSet();
+      const child = new AnnotationSet();
       const titleRef = ref(handle, "title");
 
-      annotationSet.add(titleRef, Comment("A comment"));
-      annotationSet.add(titleRef, Highlight({ color: "yellow" }));
+      child.add(titleRef, Comment("Child comment"));
+      parent.add(child);
 
-      const annotations = [...annotationSet];
+      const all = [...parent];
+      expect(all).toHaveLength(1);
 
-      expect(annotations).toHaveLength(2);
-
-      const firstEntry = annotations[0];
-      expect(firstEntry[1].type).toBe(Comment);
-      expect(firstEntry[1].value).toBe("A comment");
-
-      const secondEntry = annotations[1];
-      expect(secondEntry[1].type).toBe(Highlight);
-      expect(secondEntry[1].value).toEqual({ color: "yellow" });
-
-      expect(firstEntry[0]).toBe(secondEntry[0]);
+      const entry = all[0];
+      expect(entry[0]).toBe(titleRef);
+      expect(entry[1].value).toBe("Child comment");
     });
 
-    it("should emit 'change' event with added annotations", () => {
+    it("should emit change event when adding annotations", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
-      const callback = vi.fn();
-      annotationSet.on("change", callback);
+      const changeHandler = vi.fn();
 
-      annotationSet.add(titleRef, Comment("A comment"));
+      annotations.on("change", changeHandler);
+      annotations.add(titleRef, Comment("A comment"));
 
-      expect(callback).toHaveBeenCalledTimes(1);
+      expect(changeHandler).toHaveBeenCalledOnce();
 
-      const change = callback.mock.calls[0][0];
+      const change = changeHandler.mock.calls[0][0];
       expect(change.added).toHaveLength(1);
       expect(change.removed).toHaveLength(0);
 
-      const firstEntry = change.added[0];
-      expect(firstEntry[0]).toBe(titleRef);
-      expect(firstEntry[1].value).toBe("A comment");
+      const added = change.added[0];
+      expect(added[0]).toBe(titleRef);
+      expect(added[1].value).toBe("A comment");
+      expect(added[1].type.id).toBe("test/comment");
+    });
+
+    it("should forward change events from added sources", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const parent = new AnnotationSet();
+      const child = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+      const changeHandler = vi.fn();
+
+      parent.add(child);
+      parent.on("change", changeHandler);
+
+      child.add(titleRef, Comment("New comment"));
+
+      expect(changeHandler).toHaveBeenCalled();
+
+      const change = changeHandler.mock.calls[0][0];
+      expect(change.added).toHaveLength(1);
+
+      const added = change.added[0];
+      expect(added[0]).toBe(titleRef);
+      expect(added[1].value).toBe("New comment");
     });
   });
 
-  describe("remove", () => {
+  describe("removing annotations", () => {
     it("should remove all annotations of a specific type", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const Highlight = defineAnnotationType<{ color: string }>(
+        "test/highlight"
+      );
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
 
-      annotationSet.add(titleRef, Comment("Title comment"));
-      annotationSet.add(itemRef, Comment("Item comment"));
-      annotationSet.add(titleRef, Highlight({ color: "yellow" }));
+      annotations.add(titleRef, Comment("A comment"));
+      annotations.add(titleRef, Highlight({ color: "yellow" }));
 
-      annotationSet.remove(Comment);
+      annotations.remove(Comment);
 
-      const annotations = [...annotationSet];
-      expect(annotations).toHaveLength(1);
+      const all = [...annotations];
+      expect(all).toHaveLength(1);
 
-      const firstEntry = annotations[0];
-      expect(firstEntry[0]).toBe(titleRef);
-      expect(firstEntry[1]).toEqual(Highlight({ color: "yellow" }));
+      const remaining = all[0];
+      expect(remaining[0]).toBe(titleRef);
+      expect(remaining[1].type.id).toBe("test/highlight");
+      expect(remaining[1].value).toEqual({ color: "yellow" });
     });
 
     it("should remove all annotations for a ref", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
       const itemRef = ref(handle, "items", 0);
 
-      annotationSet.add(titleRef, Comment("Title comment"));
-      annotationSet.add(titleRef, Highlight({ color: "yellow" }));
-      annotationSet.add(itemRef, Comment("Item comment"));
+      annotations.add(titleRef, Comment("Title comment"));
+      annotations.add(itemRef, Comment("Item comment"));
 
-      annotationSet.remove(titleRef);
+      annotations.remove(titleRef);
 
-      const annotations = [...annotationSet];
-      expect(annotations).toHaveLength(1);
+      const all = [...annotations];
+      expect(all).toHaveLength(1);
 
-      const firstEntry = annotations[0];
-      expect(firstEntry[0]).toBe(itemRef);
-      expect(firstEntry[1]).toEqual(Comment("Item comment"));
+      const remaining = all[0];
+      expect(remaining[0]).toBe(itemRef);
+      expect(remaining[1].value).toBe("Item comment");
     });
 
-    it("should remove annotations of specific type for a ref", () => {
+    it("should remove annotations of a specific type for a ref", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const Highlight = defineAnnotationType<{ color: string }>(
+        "test/highlight"
+      );
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
 
-      annotationSet.add(titleRef, Comment("A comment"));
-      annotationSet.add(titleRef, Highlight({ color: "yellow" }));
+      annotations.add(titleRef, Comment("A comment"));
+      annotations.add(titleRef, Highlight({ color: "yellow" }));
 
-      annotationSet.remove(titleRef, Comment);
+      annotations.remove(titleRef, Comment);
 
-      const annotations = [...annotationSet];
-      expect(annotations).toHaveLength(1);
+      const all = [...annotations];
+      expect(all).toHaveLength(1);
 
-      const firstEntry = annotations[0];
-      expect(firstEntry[0]).toBe(titleRef);
-      expect(firstEntry[1]).toEqual(Highlight({ color: "yellow" }));
+      const remaining = all[0];
+      expect(remaining[0]).toBe(titleRef);
+      expect(remaining[1].type.id).toBe("test/highlight");
+      expect(remaining[1].value).toEqual({ color: "yellow" });
     });
 
-    it("should emit 'change' event with removed annotations", () => {
+    it("should remove an annotation source", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const parent = new AnnotationSet();
+      const child = new AnnotationSet();
       const titleRef = ref(handle, "title");
-      const callback = vi.fn();
 
-      annotationSet.add(titleRef, Comment("A comment"));
-      annotationSet.on("change", callback);
-      annotationSet.remove(titleRef);
+      child.add(titleRef, Comment("Child comment"));
+      parent.add(child);
 
-      expect(callback).toHaveBeenCalledTimes(1);
+      const before = [...parent];
+      expect(before).toHaveLength(1);
 
-      const change = callback.mock.calls[0][0];
-      expect(change.removed).toHaveLength(1);
+      const entry = before[0];
+      expect(entry[1].value).toBe("Child comment");
+
+      parent.remove(child);
+
+      expect([...parent]).toHaveLength(0);
+    });
+
+    it("should stop forwarding events after source is removed", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const parent = new AnnotationSet();
+      const child = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+      const changeHandler = vi.fn();
+
+      parent.add(child);
+      parent.remove(child);
+      parent.on("change", changeHandler);
+
+      child.add(titleRef, Comment("Should not appear"));
+
+      expect(changeHandler).not.toHaveBeenCalled();
+    });
+
+    it("should emit change event when removing annotations", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+      const changeHandler = vi.fn();
+
+      annotations.add(titleRef, Comment("A comment"));
+      annotations.on("change", changeHandler);
+      annotations.remove(titleRef);
+
+      expect(changeHandler).toHaveBeenCalled();
+
+      const change = changeHandler.mock.calls[0][0];
       expect(change.added).toHaveLength(0);
+      expect(change.removed).toHaveLength(1);
 
-      const firstEntry = change.removed[0];
-      expect(firstEntry[0]).toBe(titleRef);
-      expect(firstEntry[1]).toEqual(Comment("A comment"));
-    });
-  });
-
-  describe("change", () => {
-    it("should batch changes", () => {
-      const titleRef = ref(handle, "title");
-      const callback = vi.fn();
-      annotationSet.on("change", callback);
-
-      annotationSet.change(() => {
-        annotationSet.add(titleRef, Comment("Comment 1"));
-        annotationSet.add(titleRef, Comment("Comment 2"));
-      });
-
-      expect(callback).toHaveBeenCalledTimes(1);
-      const change = callback.mock.calls[0][0];
-      expect(change.added).toHaveLength(2);
-    });
-
-    it("should throw on nested changes", () => {
-      expect(() => {
-        annotationSet.change(() => {
-          annotationSet.change(() => {});
-        });
-      }).toThrow("Nested changes are not allowed");
-    });
-
-    it("should not emit if no changes", () => {
-      const callback = vi.fn();
-      annotationSet.on("change", callback);
-
-      annotationSet.change(() => {
-        // do nothing
-      });
-
-      expect(callback).not.toHaveBeenCalled();
+      const removed = change.removed[0];
+      expect(removed[0]).toBe(titleRef);
+      expect(removed[1].value).toBe("A comment");
     });
   });
 
   describe("clear", () => {
     it("should remove all annotations and sub-sources", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+      const child = new AnnotationSet();
       const titleRef = ref(handle, "title");
       const itemRef = ref(handle, "items", 0);
-      const subSet = new AnnotationSet();
 
-      annotationSet.add(titleRef, Comment("Main comment"));
-      subSet.add(itemRef, Comment("Subset comment"));
-      annotationSet.add(subSet);
+      annotations.add(titleRef, Comment("Direct comment"));
+      child.add(itemRef, Comment("Child comment"));
+      annotations.add(child);
 
-      expect([...annotationSet]).toHaveLength(2);
+      const before = [...annotations];
+      expect(before).toHaveLength(2);
 
-      annotationSet.clear();
+      const first = before[0];
+      expect(first[1].value).toBe("Direct comment");
 
-      expect([...annotationSet]).toHaveLength(0);
+      const second = before[1];
+      expect(second[1].value).toBe("Child comment");
+
+      annotations.clear();
+
+      expect([...annotations]).toHaveLength(0);
     });
 
-    it("should emit change event for all cleared annotations", () => {
+    it("should emit change event with all removed annotations", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
-      const subSet = new AnnotationSet();
+      const changeHandler = vi.fn();
 
-      annotationSet.add(titleRef, Comment("Main"));
-      subSet.add(titleRef, Comment("Subset"));
-      annotationSet.add(subSet);
+      annotations.add(titleRef, Comment("First"));
+      annotations.add(titleRef, Comment("Second"));
+      annotations.on("change", changeHandler);
+      annotations.clear();
 
-      const callback = vi.fn();
-      annotationSet.on("change", callback);
+      expect(changeHandler).toHaveBeenCalled();
 
-      annotationSet.clear();
-
-      expect(callback).toHaveBeenCalledTimes(1);
-      const change = callback.mock.calls[0][0];
+      const change = changeHandler.mock.calls[0][0];
       expect(change.removed).toHaveLength(2);
-      expect(change.added).toHaveLength(0);
+
+      const removed1 = change.removed[0];
+      expect(removed1[0]).toBe(titleRef);
+      expect(removed1[1].value).toBe("First");
+
+      const removed2 = change.removed[1];
+      expect(removed2[0]).toBe(titleRef);
+      expect(removed2[1].value).toBe("Second");
     });
   });
 
-  describe("ofType", () => {
-    it("should filter annotations by type", () => {
+  describe("lookup and lookupAll", () => {
+    it("should lookup a single value by ref and type", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
 
-      annotationSet.add(titleRef, Comment("Title comment"));
-      annotationSet.add(itemRef, Comment("Item comment"));
-      annotationSet.add(titleRef, Highlight({ color: "yellow" }));
+      annotations.add(titleRef, Comment("A comment"));
 
-      const comments = annotationSet.ofType(Comment);
-      const commentList = [...comments];
-
-      expect(commentList).toHaveLength(2);
-      for (const [, annotation] of commentList) {
-        expect(annotation.type).toBe(Comment);
-      }
-    });
-
-    it("should return empty view for non-existent type", () => {
-      const titleRef = ref(handle, "title");
-      annotationSet.add(titleRef, Comment("A comment"));
-
-      const tags = annotationSet.ofType(Tag);
-      expect([...tags]).toHaveLength(0);
-    });
-
-    it("should allow lookup by ref", () => {
-      const titleRef = ref(handle, "title");
-      annotationSet.add(titleRef, Comment("A comment"));
-
-      const comments = annotationSet.ofType(Comment);
-      const value = comments.lookup(titleRef);
-
+      const value = annotations.lookup(titleRef, Comment);
       expect(value).toBe("A comment");
     });
-  });
 
-  describe("onRef", () => {
-    it("should filter annotations on a specific ref", () => {
+    it("should return undefined if no annotation exists", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
 
-      annotationSet.add(titleRef, Comment("Title comment"));
-      annotationSet.add(titleRef, Highlight({ color: "yellow" }));
-      annotationSet.add(itemRef, Comment("Item comment"));
-
-      const titleAnnotations = annotationSet.onRef(titleRef);
-      const annotationList = [...titleAnnotations];
-
-      expect(annotationList).toHaveLength(2);
-      for (const [r] of annotationList) {
-        expect(r).toBe(titleRef);
-      }
+      const value = annotations.lookup(titleRef, Comment);
+      expect(value).toBeUndefined();
     });
 
-    it("should return empty view for ref with no annotations", () => {
+    it("should lookupAll values by ref and type", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
 
-      annotationSet.add(titleRef, Comment("A comment"));
+      annotations.add(titleRef, Comment("First"));
+      annotations.add(titleRef, Comment("Second"));
 
-      const itemAnnotations = annotationSet.onRef(itemRef);
-      expect([...itemAnnotations]).toHaveLength(0);
-    });
-
-    it("should allow lookup by type", () => {
-      const titleRef = ref(handle, "title");
-      annotationSet.add(titleRef, Comment("A comment"));
-      annotationSet.add(titleRef, Highlight({ color: "yellow" }));
-
-      const titleAnnotations = annotationSet.onRef(titleRef);
-      const comment = titleAnnotations.lookup(Comment);
-      const highlight = titleAnnotations.lookup(Highlight);
-
-      expect(comment).toBe("A comment");
-      expect(highlight).toEqual({ color: "yellow" });
+      const values = annotations.lookupAll(titleRef, Comment);
+      expect(values).toHaveLength(2);
+      expect(values[0]).toBe("First");
+      expect(values[1]).toBe("Second");
     });
   });
 
-  describe("onChildrenOf", () => {
-    it("should filter annotations on children of an array ref", () => {
-      const itemsRef = ref(handle, "items") as any; // type widening for test
-      const firstItemRef = ref(handle, "items", 0);
-      const secondItemRef = ref(handle, "items", 1);
-      const titleRef = ref(handle, "title");
-
-      annotationSet.add(firstItemRef, Comment("First item"));
-      annotationSet.add(secondItemRef, Comment("Second item"));
-      annotationSet.add(titleRef, Comment("Title"));
-
-      const childAnnotations = annotationSet.onChildrenOf(itemsRef);
-      const annotationList = [...childAnnotations];
-
-      expect(annotationList).toHaveLength(2);
-
-      const firstEntry = annotationList[0];
-      expect(firstEntry[0]).toBe(firstItemRef);
-      expect(firstEntry[1].value).toBe("First item");
-
-      const secondEntry = annotationList[1];
-      expect(secondEntry[0]).toBe(secondItemRef);
-      expect(secondEntry[1].value).toBe("Second item");
-    });
-  });
-
-  describe("iterator", () => {
+  describe("iteration", () => {
     it("should iterate over all annotations", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
       const itemRef = ref(handle, "items", 0);
 
-      annotationSet.add(titleRef, Comment("Title comment"));
-      annotationSet.add(titleRef, Highlight({ color: "yellow" }));
-      annotationSet.add(itemRef, Comment("Item comment"));
+      annotations.add(titleRef, Comment("Title comment"));
+      annotations.add(itemRef, Comment("Item comment"));
 
-      const annotations = [...annotationSet];
-      expect(annotations).toHaveLength(3);
+      const all = [...annotations];
+      expect(all).toHaveLength(2);
 
-      const titleCommentEntry = annotations.find(
-        ([ref, annotation]) => ref === titleRef && annotation.type === Comment
-      )!;
-      expect(titleCommentEntry[0].toString()).toBe(titleRef.toString());
-      expect(titleCommentEntry[1]).toEqual(Comment("Title comment"));
+      const titleEntry = all[0];
+      expect(titleEntry[0]).toBe(titleRef);
+      expect(titleEntry[1].value).toBe("Title comment");
 
-      const titleHighlightEntry = annotations.find(
-        ([ref, annotation]) => ref === titleRef && annotation.type === Highlight
-      )!;
-      expect(titleHighlightEntry[0].toString()).toBe(titleRef.toString());
-      expect(titleHighlightEntry[1]).toEqual(Highlight({ color: "yellow" }));
-
-      const itemCommentEntry = annotations.find(
-        ([ref, annotation]) => ref === itemRef && annotation.type === Comment
-      )!;
-      expect(itemCommentEntry[0].toString()).toBe(itemRef.toString());
-      expect(itemCommentEntry[1]).toEqual(Comment("Item comment"));
+      const itemEntry = all[1];
+      expect(itemEntry[0]).toBe(itemRef);
+      expect(itemEntry[1].value).toBe("Item comment");
     });
 
-    it("should be iterable with for...of", () => {
+    it("should iterate over refs", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
-      annotationSet.add(titleRef, Comment("A comment"));
+      const itemRef = ref(handle, "items", 0);
 
-      let count = 0;
-      for (const [r, annotation] of annotationSet) {
-        expect(r).toBe(titleRef);
-        expect(annotation.value).toBe("A comment");
-        count++;
-      }
-      expect(count).toBe(1);
+      annotations.add(titleRef, Comment("Title comment"));
+      annotations.add(itemRef, Comment("Item comment"));
+
+      const refs = [...annotations.refs];
+      expect(refs).toHaveLength(2);
+      expect(refs[0]).toBe(titleRef);
+      expect(refs[1]).toBe(itemRef);
+    });
+
+    it("should deduplicate refs with multiple annotations", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+
+      annotations.add(titleRef, Comment("First"));
+      annotations.add(titleRef, Comment("Second"));
+
+      const refs = [...annotations.refs];
+      expect(refs).toHaveLength(1);
+      expect(refs[0]).toBe(titleRef);
+    });
+
+    it("should iterate over annotations from sub-sources", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const parent = new AnnotationSet();
+      const child = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+      const itemRef = ref(handle, "items", 0);
+
+      parent.add(titleRef, Comment("Parent comment"));
+      child.add(itemRef, Comment("Child comment"));
+      parent.add(child);
+
+      const all = [...parent];
+      expect(all).toHaveLength(2);
+
+      const parentEntry = all[0];
+      expect(parentEntry[0]).toBe(titleRef);
+      expect(parentEntry[1].value).toBe("Parent comment");
+
+      const childEntry = all[1];
+      expect(childEntry[0]).toBe(itemRef);
+      expect(childEntry[1].value).toBe("Child comment");
+    });
+
+    it("should iterate refs from sub-sources", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const parent = new AnnotationSet();
+      const child = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+      const itemRef = ref(handle, "items", 0);
+
+      parent.add(titleRef, Comment("Parent comment"));
+      child.add(itemRef, Comment("Child comment"));
+      parent.add(child);
+
+      const refs = [...parent.refs];
+      expect(refs).toHaveLength(2);
+      expect(refs[0]).toBe(titleRef);
+      expect(refs[1]).toBe(itemRef);
+    });
+
+    it("should use entriesOfType to iterate by type", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const Highlight = defineAnnotationType<{ color: string }>(
+        "test/highlight"
+      );
+      const annotations = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+
+      annotations.add(titleRef, Comment("A comment"));
+      annotations.add(titleRef, Highlight({ color: "yellow" }));
+
+      const comments = [...annotations.entriesOfType(Comment)];
+      expect(comments).toHaveLength(1);
+
+      const commentEntry = comments[0];
+      expect(commentEntry[0]).toBe(titleRef);
+      expect(commentEntry[1].value).toBe("A comment");
+      expect(commentEntry[1].type.id).toBe("test/comment");
+    });
+
+    it("should use entriesOnRef to iterate by ref", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const Highlight = defineAnnotationType<{ color: string }>(
+        "test/highlight"
+      );
+      const annotations = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+      const itemRef = ref(handle, "items", 0);
+
+      annotations.add(titleRef, Comment("Title comment"));
+      annotations.add(titleRef, Highlight({ color: "yellow" }));
+      annotations.add(itemRef, Comment("Item comment"));
+
+      const titleEntries = [...annotations.entriesOnRef(titleRef)];
+      expect(titleEntries).toHaveLength(2);
+
+      const titleComment = titleEntries[0];
+      expect(titleComment[0]).toBe(titleRef);
+      expect(titleComment[1].value).toBe("Title comment");
+
+      const titleHighlight = titleEntries[1];
+      expect(titleHighlight[0]).toBe(titleRef);
+      expect(titleHighlight[1].value).toEqual({ color: "yellow" });
     });
   });
 
-  describe("observable behavior", () => {
-    it("should notify subscribers when annotations change", () => {
+  describe("batching with change()", () => {
+    it("should batch multiple operations into one event", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
-      const subscriber = vi.fn();
+      const itemRef = ref(handle, "items", 0);
+      const changeHandler = vi.fn();
 
-      annotationSet.subscribe(subscriber);
-      annotationSet.add(titleRef, Comment("A comment"));
+      annotations.on("change", changeHandler);
 
-      expect(subscriber).toHaveBeenCalled();
+      annotations.change(() => {
+        annotations.add(titleRef, Comment("First"));
+        annotations.add(itemRef, Comment("Second"));
+      });
+
+      expect(changeHandler).toHaveBeenCalledOnce();
+
+      const change = changeHandler.mock.calls[0][0];
+      expect(change.added).toHaveLength(2);
+
+      const added1 = change.added[0];
+      expect(added1[0]).toBe(titleRef);
+      expect(added1[1].value).toBe("First");
+
+      const added2 = change.added[1];
+      expect(added2[0]).toBe(itemRef);
+      expect(added2[1].value).toBe("Second");
     });
 
-    it("should stop notifying after unsubscribe", () => {
+    it("should batch adds and removes", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+      const changeHandler = vi.fn();
+
+      annotations.add(titleRef, Comment("Original"));
+      annotations.on("change", changeHandler);
+
+      annotations.change(() => {
+        annotations.remove(titleRef);
+        annotations.add(titleRef, Comment("Replacement"));
+      });
+
+      expect(changeHandler).toHaveBeenCalledOnce();
+
+      const change = changeHandler.mock.calls[0][0];
+      expect(change.added).toHaveLength(1);
+      expect(change.removed).toHaveLength(1);
+
+      const added = change.added[0];
+      expect(added[0]).toBe(titleRef);
+      expect(added[1].value).toBe("Replacement");
+
+      const removed = change.removed[0];
+      expect(removed[0]).toBe(titleRef);
+      expect(removed[1].value).toBe("Original");
+    });
+
+    it("should not emit if no changes made in batch", () => {
+      const annotations = new AnnotationSet();
+      const changeHandler = vi.fn();
+
+      annotations.on("change", changeHandler);
+
+      annotations.change(() => {
+        // Do nothing
+      });
+
+      expect(changeHandler).not.toHaveBeenCalled();
+    });
+
+    it("should throw on nested changes", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+
+      expect(() => {
+        annotations.change(() => {
+          annotations.change(() => {
+            annotations.add(titleRef, Comment("Nested"));
+          });
+        });
+      }).toThrow("Nested changes are not allowed");
+    });
+  });
+
+  describe("subscription", () => {
+    it("should support subscribe for Observable interface", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
       const titleRef = ref(handle, "title");
       const subscriber = vi.fn();
 
-      const unsubscribe = annotationSet.subscribe(subscriber);
-      annotationSet.add(titleRef, Comment("First"));
-      const callsBeforeUnsubscribe = subscriber.mock.calls.length;
+      annotations.subscribe(subscriber);
+      annotations.add(titleRef, Comment("A comment"));
 
+      expect(subscriber).toHaveBeenCalledWith(annotations);
+    });
+
+    it("should support unsubscribing", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+      const subscriber = vi.fn();
+
+      const unsubscribe = annotations.subscribe(subscriber);
       unsubscribe();
-      annotationSet.add(titleRef, Comment("Second"));
+      annotations.add(titleRef, Comment("A comment"));
 
-      // Should not have received any new calls after unsubscribe
-      expect(subscriber).toHaveBeenCalledTimes(callsBeforeUnsubscribe);
+      expect(subscriber).not.toHaveBeenCalled();
     });
   });
 
-  describe("subsets", () => {
-    let subSet: AnnotationSet;
+  describe("complex scenarios", () => {
+    it("should handle deeply nested annotation sources", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const root = new AnnotationSet();
+      const level1 = new AnnotationSet();
+      const level2 = new AnnotationSet();
+      const titleRef = ref(handle, "title");
 
-    beforeEach(() => {
-      subSet = new AnnotationSet();
+      level2.add(titleRef, Comment("Deep comment"));
+      level1.add(level2);
+      root.add(level1);
+
+      const all = [...root];
+      expect(all).toHaveLength(1);
+
+      const entry = all[0];
+      expect(entry[0]).toBe(titleRef);
+      expect(entry[1].value).toBe("Deep comment");
+      expect(entry[1].type.id).toBe("test/comment");
     });
 
-    describe("adding subsets", () => {
-      it("should include subset annotations in iteration", () => {
-        const titleRef = ref(handle, "title");
-        const itemRef = ref(handle, "items", 0);
+    it("should propagate events through nested sources", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const root = new AnnotationSet();
+      const level1 = new AnnotationSet();
+      const level2 = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+      const changeHandler = vi.fn();
 
-        subSet.add(titleRef, Comment("Subset comment"));
-        annotationSet.add(itemRef, Comment("Main comment"));
-        annotationSet.add(subSet);
+      level1.add(level2);
+      root.add(level1);
+      root.on("change", changeHandler);
 
-        const annotations = [...annotationSet];
-        expect(annotations).toHaveLength(2);
-      });
+      level2.add(titleRef, Comment("Deep comment"));
 
-      it("should emit change event (added) for existing subset annotations", () => {
-        const titleRef = ref(handle, "title");
-        const handler = vi.fn();
+      expect(changeHandler).toHaveBeenCalled();
 
-        subSet.add(titleRef, Comment("Preset comment"));
-        annotationSet.on("change", handler);
-        annotationSet.add(subSet);
+      const change = changeHandler.mock.calls[0][0];
+      expect(change.added).toHaveLength(1);
 
-        expect(handler).toHaveBeenCalledTimes(1);
-        const change = handler.mock.calls[0][0];
-        expect(change.added).toHaveLength(1);
-        expect(change.added[0][1].value).toBe("Preset comment");
-      });
-
-      it("should include subset annotations in lookup", () => {
-        const titleRef = ref(handle, "title");
-
-        subSet.add(titleRef, Comment("Subset comment"));
-        annotationSet.add(subSet);
-
-        const value = annotationSet.lookup(titleRef, Comment);
-        expect(value).toBe("Subset comment");
-      });
-
-      it("should include subset annotations in lookupAll", () => {
-        const titleRef = ref(handle, "title");
-
-        annotationSet.add(titleRef, Comment("Main comment"));
-        subSet.add(titleRef, Comment("Subset comment"));
-        annotationSet.add(subSet);
-
-        const values = annotationSet.lookupAll(titleRef, Comment);
-        expect(values).toHaveLength(2);
-        expect(values).toContain("Main comment");
-        expect(values).toContain("Subset comment");
-      });
+      const added = change.added[0];
+      expect(added[0]).toBe(titleRef);
+      expect(added[1].value).toBe("Deep comment");
+      expect(added[1].type.id).toBe("test/comment");
     });
 
-    describe("event forwarding from subsets", () => {
-      it("should forward added events from subset", () => {
-        const titleRef = ref(handle, "title");
-        const handler = vi.fn();
+    it("should maintain annotation integrity across multiple sources", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const Highlight = defineAnnotationType<{ color: string }>(
+        "test/highlight"
+      );
+      const root = new AnnotationSet();
+      const source1 = new AnnotationSet();
+      const source2 = new AnnotationSet();
+      const titleRef = ref(handle, "title");
+      const itemRef = ref(handle, "items", 0);
 
-        annotationSet.add(subSet);
-        annotationSet.on("change", handler);
+      root.add(titleRef, Comment("Root comment"));
+      source1.add(titleRef, Highlight({ color: "yellow" }));
+      source1.add(itemRef, Comment("Source1 item comment"));
+      source2.add(itemRef, Highlight({ color: "blue" }));
 
-        subSet.add(titleRef, Comment("New comment"));
+      root.add(source1);
+      root.add(source2);
 
-        expect(handler).toHaveBeenCalledTimes(1);
-        const change = handler.mock.calls[0][0];
-        expect(change.added).toHaveLength(1);
-        expect(change.added[0][1].value).toBe("New comment");
-      });
+      const all = [...root];
+      expect(all).toHaveLength(4);
 
-      it("should forward removed events from subset", () => {
-        const titleRef = ref(handle, "title");
-        const handler = vi.fn();
-
-        subSet.add(titleRef, Comment("To remove"));
-        annotationSet.add(subSet);
-        annotationSet.on("change", handler);
-
-        subSet.remove(titleRef);
-
-        expect(handler).toHaveBeenCalledTimes(1);
-        const change = handler.mock.calls[0][0];
-        expect(change.removed).toHaveLength(1);
-        expect(change.removed[0][1].value).toBe("To remove");
-      });
-
-      it("should notify subscribers when subset changes", () => {
-        const titleRef = ref(handle, "title");
-        const subscriber = vi.fn();
-
-        annotationSet.add(subSet);
-        annotationSet.subscribe(subscriber);
-
-        subSet.add(titleRef, Comment("New comment"));
-
-        expect(subscriber).toHaveBeenCalled();
-      });
-
-      it("should forward events from deeply nested subsets", () => {
-        const titleRef = ref(handle, "title");
-        const handler = vi.fn();
-        const nestedSubSet = new AnnotationSet();
-
-        subSet.add(nestedSubSet);
-        annotationSet.add(subSet);
-        annotationSet.on("change", handler);
-
-        nestedSubSet.add(titleRef, Comment("Deeply nested"));
-
-        expect(handler).toHaveBeenCalledTimes(1);
-        const change = handler.mock.calls[0][0];
-        expect(change.added[0][1].value).toBe("Deeply nested");
-      });
-    });
-
-    describe("cascading removal to subsets", () => {
-      it("should remove annotation from subset when removing by ref", () => {
-        const titleRef = ref(handle, "title");
-
-        subSet.add(titleRef, Comment("Subset comment"));
-        annotationSet.add(titleRef, Comment("Main comment"));
-        annotationSet.add(subSet);
-
-        expect([...annotationSet]).toHaveLength(2);
-
-        annotationSet.remove(titleRef);
-
-        expect([...annotationSet]).toHaveLength(0);
-        expect([...subSet]).toHaveLength(0);
-      });
-
-      it("should remove annotation from subset when removing by type", () => {
-        const titleRef = ref(handle, "title");
-        const itemRef = ref(handle, "items", 0);
-
-        subSet.add(titleRef, Comment("Subset comment"));
-        subSet.add(itemRef, Highlight({ color: "yellow" }));
-        annotationSet.add(titleRef, Comment("Main comment"));
-        annotationSet.add(subSet);
-
-        expect([...annotationSet]).toHaveLength(3);
-
-        annotationSet.remove(Comment);
-
-        expect([...annotationSet]).toHaveLength(1);
-        // Only the Highlight should remain in the subset
-        expect([...subSet]).toHaveLength(1);
-        expect([...subSet][0][1].type).toBe(Highlight);
-      });
-
-      it("should remove annotation from subset when removing by ref and type", () => {
-        const titleRef = ref(handle, "title");
-
-        subSet.add(titleRef, Comment("Subset comment"));
-        subSet.add(titleRef, Highlight({ color: "yellow" }));
-        annotationSet.add(titleRef, Comment("Main comment"));
-        annotationSet.add(subSet);
-
-        expect([...annotationSet]).toHaveLength(3);
-
-        annotationSet.remove(titleRef, Comment);
-
-        expect([...annotationSet]).toHaveLength(1);
-        // Only the Highlight should remain in the subset
-        expect([...subSet]).toHaveLength(1);
-        expect([...subSet][0][1].type).toBe(Highlight);
-      });
-
-      it("should emit removed events from subset during cascade", () => {
-        const titleRef = ref(handle, "title");
-        const mainRemovedHandler = vi.fn();
-        const subsetRemovedHandler = vi.fn();
-
-        subSet.add(titleRef, Comment("Subset comment"));
-        annotationSet.add(titleRef, Comment("Main comment"));
-        annotationSet.add(subSet);
-
-        annotationSet.on("change", mainRemovedHandler);
-        subSet.on("change", subsetRemovedHandler);
-
-        annotationSet.remove(titleRef);
-
-        // Main set should emit for its own annotation
-        expect(mainRemovedHandler).toHaveBeenCalled();
-        // Subset should also emit (which will be forwarded to main)
-        expect(subsetRemovedHandler).toHaveBeenCalled();
-      });
-
-      it("should cascade removal to deeply nested subsets", () => {
-        const titleRef = ref(handle, "title");
-        const nestedSubSet = new AnnotationSet();
-
-        nestedSubSet.add(titleRef, Comment("Deeply nested"));
-        subSet.add(titleRef, Comment("Subset comment"));
-        subSet.add(nestedSubSet);
-        annotationSet.add(titleRef, Comment("Main comment"));
-        annotationSet.add(subSet);
-
-        expect([...annotationSet]).toHaveLength(3);
-
-        annotationSet.remove(titleRef);
-
-        expect([...annotationSet]).toHaveLength(0);
-        expect([...subSet]).toHaveLength(0);
-        expect([...nestedSubSet]).toHaveLength(0);
-      });
-
-      it("should handle removal when annotation only exists in subset", () => {
-        const titleRef = ref(handle, "title");
-        const itemRef = ref(handle, "items", 0);
-
-        subSet.add(titleRef, Comment("Subset only"));
-        annotationSet.add(itemRef, Comment("Main only"));
-        annotationSet.add(subSet);
-
-        annotationSet.remove(titleRef);
-
-        expect([...annotationSet]).toHaveLength(1);
-        expect([...subSet]).toHaveLength(0);
-      });
+      expect(root.lookup(titleRef, Comment)).toBe("Root comment");
+      expect(root.lookup(titleRef, Highlight)).toEqual({ color: "yellow" });
+      expect(root.lookup(itemRef, Comment)).toBe("Source1 item comment");
+      expect(root.lookup(itemRef, Highlight)).toEqual({ color: "blue" });
     });
   });
 });

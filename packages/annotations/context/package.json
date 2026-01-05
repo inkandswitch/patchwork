@@ -4,7 +4,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w --preserveWatchOutput",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,6 +20,10 @@
     "@inkandswitch/annotations": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4",
+    "jsdom": "^26.1.0",
+    "@automerge/automerge-repo": "catalog:",
+    "@patchwork/refs": "workspace:*"
   }
 }

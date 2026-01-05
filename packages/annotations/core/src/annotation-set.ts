@@ -1,25 +1,20 @@
-import { SubscriberSet } from "@inkandswitch/observable";
-import { RefOfType, type Ref } from "@patchwork/refs";
+import { ObservableObject, SubscriberSet } from "@inkandswitch/observable";
+import { type Ref } from "@patchwork/refs";
 import EventEmitter from "eventemitter3";
-import {
-  Annotation,
-  AnnotationSource,
-  AnnotationEvents,
-  AnnotationChange,
-} from "./types";
 import type {
   AnnotationType,
   AnnotationTypeId,
   AnnotationValue,
 } from "./annotation-type";
+import {
+  Annotation,
+  AnnotationChange,
+  AnnotationEvents,
+  AnnotationSource,
+} from "./types";
 import { AnnotationsOfType } from "./views/annotations-of-type";
 import { AnnotationsOnRef } from "./views/annotations-on-ref";
 import { FilteredAnnotationView } from "./views/filtered-annotation-view";
-
-type Observable<T> = {
-  subscribe: (callback: (value: T) => void) => () => void;
-  value: T;
-};
 
 /**
  * A set of annotations that can be queried and filtered
@@ -33,13 +28,9 @@ type Observable<T> = {
  */
 export class AnnotationSet
   extends EventEmitter<AnnotationEvents>
-  implements Observable<AnnotationSet>, AnnotationSource
+  implements ObservableObject<AnnotationSet>, AnnotationSource
 {
   #subscriberSet = new SubscriberSet<AnnotationSet>();
-
-  get value(): AnnotationSet {
-    return this;
-  }
 
   subscribe(callback: (value: AnnotationSet) => void): () => void {
     return this.#subscriberSet.add(callback);
