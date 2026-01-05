@@ -597,24 +597,6 @@ importers:
       '@orion/markwhen':
         specifier: workspace:^
         version: link:../../tools/editors/orionmark
-      '@patchwork/context':
-        specifier: workspace:^
-        version: link:../../packages/context/context
-      '@patchwork/context-comments':
-        specifier: workspace:^
-        version: link:../../packages/context/annotations/context-comments
-      '@patchwork/context-diff':
-        specifier: workspace:^
-        version: link:../../packages/context/annotations/context-diff
-      '@patchwork/context-react':
-        specifier: workspace:^
-        version: link:../../packages/context/frameworks/context-react
-      '@patchwork/context-selection':
-        specifier: workspace:^
-        version: link:../../packages/context/annotations/context-selection
-      '@patchwork/context-solid':
-        specifier: workspace:^
-        version: link:../../packages/context/frameworks/context-solid
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../packages/refs
@@ -857,24 +839,6 @@ importers:
       '@patchwork/contact':
         specifier: workspace:^
         version: link:../../tools/contact
-      '@patchwork/context':
-        specifier: workspace:^
-        version: link:../../packages/context/context
-      '@patchwork/context-comments':
-        specifier: workspace:^
-        version: link:../../packages/context/annotations/context-comments
-      '@patchwork/context-diff':
-        specifier: workspace:^
-        version: link:../../packages/context/annotations/context-diff
-      '@patchwork/context-react':
-        specifier: workspace:^
-        version: link:../../packages/context/frameworks/context-react
-      '@patchwork/context-selection':
-        specifier: workspace:^
-        version: link:../../packages/context/annotations/context-selection
-      '@patchwork/context-solid':
-        specifier: workspace:^
-        version: link:../../packages/context/frameworks/context-solid
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../packages/refs
@@ -1509,6 +1473,9 @@ importers:
       '@grjte/codemirror-markdown':
         specifier: workspace:^
         version: link:../../codemirror/codemirror-markdown
+      '@inkandswitch/annotations-selection':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/selection
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../../core/bootloader
@@ -1524,9 +1491,6 @@ importers:
       '@lezer/javascript':
         specifier: ^1.5.4
         version: 1.5.4
-      '@patchwork/context-selection':
-        specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-selection
       '@patchwork/solid':
         specifier: workspace:^
         version: link:../../../packages/solid
@@ -1588,9 +1552,6 @@ importers:
       '@node-types/node':
         specifier: npm:@types/node@^24.9.1
         version: '@types/node@24.9.1'
-      '@patchwork/context':
-        specifier: workspace:^
-        version: link:../../../packages/context/context
       '@types/audioworklet':
         specifier: ^0.0.90
         version: 0.0.90
@@ -2325,18 +2286,6 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@patchwork/context':
-        specifier: workspace:^
-        version: link:../../../packages/context/context
-      '@patchwork/context-comments':
-        specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-comments
-      '@patchwork/context-diff':
-        specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-diff
-      '@patchwork/context-react':
-        specifier: workspace:^
-        version: link:../../../packages/context/frameworks/context-react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs
@@ -2644,6 +2593,21 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@inkandswitch/annotations':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/core
+      '@inkandswitch/annotations-context':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/context
+      '@inkandswitch/annotations-diff':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/diff
+      '@inkandswitch/annotations-selection':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/selection
+      '@inkandswitch/observable-react':
+        specifier: workspace:^
+        version: link:../../../packages/observable/frameworks/react
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -2656,18 +2620,9 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@patchwork/context':
+      '@patchwork/refs':
         specifier: workspace:^
-        version: link:../../../packages/context/context
-      '@patchwork/context-diff':
-        specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-diff
-      '@patchwork/context-react':
-        specifier: workspace:^
-        version: link:../../../packages/context/frameworks/context-react
-      '@patchwork/context-selection':
-        specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-selection
+        version: link:../../../packages/refs
       react:
         specifier: ^18.0.0
         version: 18.3.1

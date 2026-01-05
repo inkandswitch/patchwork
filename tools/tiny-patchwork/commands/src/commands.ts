@@ -102,12 +102,15 @@ export const commands = (
       const currentDocHandle = (window as any)
         .currentDocHandle as DocHandle<HasPatchworkMetadata>;
       const repo = (window as any).repo as Repo;
-      if (!currentDocHandle) {
+      const accountDoc = (
+        window as any
+      ).accountDocHandle as DocHandle<TinyPatchworkLayoutDoc>;
+      if (!currentDocHandle || !accountDoc) {
         return;
       }
 
       const rootFolderDocHandle = await repo.find<FolderDoc>(
-        accountDocHandle.doc().rootFolderUrl
+        accountDoc.doc().rootFolderUrl
       );
 
       const originalDocLink = rootFolderDocHandle
