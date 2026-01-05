@@ -116,6 +116,10 @@ export const PatchworkFrame = ({
       // comment threads
       for (const [threadRef, thread] of commentThreadsWithRef) {
         for (const ref of thread.refs) {
+          if (threadRef.value()?.isResolved) {
+            continue;
+          }
+
           annotations.add(ref, CommentThread(threadRef));
         }
       }
@@ -225,6 +229,31 @@ export const PatchworkFrame = ({
           )}
         </div>
       </div>
+      {/* Context sidebar */}
+      {contextSidebarToolId && (
+        <div
+          className={`flex relative transition-all duration-300 bg-base-100 ${
+            isRightSidebarCollapsed ? "w-[2px]" : "w-[400px]"
+          }`}
+        >
+          <button
+            onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+            className="sidebar-toggle"
+            aria-label={
+              isRightSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
+            title={
+              isRightSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
+          />
+          {!isRightSidebarCollapsed && (
+            <patchwork-view
+              doc-url={accountDocUrl}
+              tool-id={contextSidebarToolId}
+            />
+          )}
+        </div>
+      )}
       {/* Context sidebar */}
       {contextSidebarToolId && (
         <div

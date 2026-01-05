@@ -92,16 +92,20 @@ const RefView = ({ automergeRef: ref }: { automergeRef: Ref }) => {
 };
 
 const valueToString = (value: any) => {
-  return JSON.stringify(value, (key, value) => {
-    if (
-      typeof value === "object" &&
-      "docHandle" in value &&
-      value.docHandle instanceof DocHandle &&
-      "path" in value.docHandle
-    ) {
-      return value.toString();
-    }
+  try {
+    return JSON.stringify(value, (key, value) => {
+      if (
+        typeof value === "object" &&
+        "docHandle" in value &&
+        value.docHandle instanceof DocHandle &&
+        "path" in value.docHandle
+      ) {
+        return value.toString();
+      }
 
-    return value;
-  });
+      return value;
+    });
+  } catch (e) {
+    return String(value);
+  }
 };

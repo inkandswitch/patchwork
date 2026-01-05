@@ -1,11 +1,12 @@
 import "./styles.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Avatar from "boring-avatars";
 
 import { relativeTime } from "@patchwork/util/src/relative-time";
 import { toolify } from "@inkandswitch/patchwork-react";
 import { useRepo } from "@automerge/automerge-repo-react-hooks";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
+import { IsSelected } from "@inkandswitch/annotations-selection";
 import { computed } from "@inkandswitch/observable";
 import {
   CommentThread,
@@ -14,38 +15,17 @@ import {
   createReply,
 } from "@inkandswitch/annotations-comments";
 import { useObservable } from "@inkandswitch/observable-react";
-import { Ref, RefOfType, ref } from "@patchwork/refs";
+import { Ref, RefOfType, ref, fromUrl, RefUrl } from "@patchwork/refs";
 import { useRefValue } from "@patchwork/refs-react";
+import { Repo } from "@automerge/automerge-repo";
 
 const CommentsView = () => {
   const allActiveThreadRefs = useObservable($allActiveThreadRefs);
 
-  const [selectedThreadRef, setSelectedThreadRef] =
-    useState<RefOfType<SerializedCommentThread> | null>(null);
-
-  // const selectionContext = useSubcontext("COMMENTS_VIEW_SELECTION");
-  // useEffect(() => {
-  //   if (!selectedThreadRef || !selectedThread) {
-  //     selectionContext.replace([]);
-  //     return;
-  //   }
-
-  //   const highlightedRefs = selectedThread.refs.map((ref) =>
-  //     loadRef(selectedThreadRef?.docHandle, ref).with(IsSelected(true))
-  //   );
-
-  //   selectionContext.replace(highlightedRefs);
-  // }, [selectedThread, selectedThreadRef, selectionContext]);
-
   return (
     <div className="h-full flex flex-col p-2 gap-2">
       {Array.from(allActiveThreadRefs).map((threadRef) => (
-        <ThreadView
-          key={threadRef.toString()}
-          threadRef={threadRef}
-          isSelected={selectedThreadRef === threadRef}
-          onSelect={() => setSelectedThreadRef(threadRef)}
-        />
+        <ThreadView key={threadRef.toString()} threadRef={threadRef} />
       ))}
     </div>
   );
@@ -55,18 +35,26 @@ export const renderCommentsView = toolify(CommentsView);
 
 const ThreadView = ({
   threadRef,
-  isSelected,
-  onSelect,
 }: {
   threadRef: RefOfType<SerializedCommentThread>;
-  isSelected: boolean;
-  onSelect: () => void;
 }) => {
+  const selectedRefs = useObservable($selectedRefs);
+
   // Cast to Ref<any, any> for useRefValue - RefOfType is structurally compatible at runtime
   const thread = useRefValue<SerializedCommentThread>(
     threadRef as unknown as Ref<any, any> // todo: fix types
   );
   const repo = useRepo();
+
+  // Resolve thread's RefUrls to actual Ref objects for overlap checking
+  const resolvedRefs = useResolvedRefs(thread?.refs, repo);
+
+  // Check if this thread is selected (has refs overlapping with selected refs)
+  const isSelected = resolvedRefs.some((resolvedRef) =>
+    Array.from(selectedRefs).some((selectedRef) =>
+      selectedRef.overlaps(resolvedRef)
+    )
+  );
 
   if (!thread) {
     return null;
@@ -265,18 +253,44 @@ const $allActiveThreadRefs = computed(
   globalAnnotations,
   () =>
     new Set(
-      Array.from(globalAnnotations.entriesOfType(CommentThread))
-        .filter(([ref, commentAnnotation]) => {
-          const threadRef = commentAnnotation.value;
-          const value = ref.value();
-
-          // Filter out empty refs and resolved threads
-          return (
-            value !== undefined &&
-            value !== "" &&
-            !threadRef?.value()?.isResolved
-          );
-        })
-        .map(([, commentAnnotation]) => commentAnnotation.value)
+      Array.from(globalAnnotations.entriesOfType(CommentThread)).map(
+        ([, commentAnnotation]) => commentAnnotation.value
+      )
     )
 );
+
+const $selectedRefs = computed(globalAnnotations, () => {
+  return new Set(
+    Array.from(globalAnnotations.entriesOfType(IsSelected)).map(
+      ([ref, _annotation]) => ref
+    )
+  );
+});
+
+/** Hook to resolve an array of RefUrls to Ref objects */
+const useResolvedRefs = (refUrls: RefUrl[] | undefined, repo: Repo): Ref[] => {
+  const [resolvedRefs, setResolvedRefs] = useState<Ref[]>([]);
+
+  useEffect(() => {
+    if (!refUrls?.length) {
+      setResolvedRefs([]);
+      return;
+    }
+
+    let isCanceled = false;
+
+    Promise.all(
+      refUrls.map((url) => fromUrl(repo, url).catch(() => null))
+    ).then((refs) => {
+      if (!isCanceled) {
+        setResolvedRefs(refs.filter((r): r is Ref => r !== null));
+      }
+    });
+
+    return () => {
+      isCanceled = true;
+    };
+  }, [refUrls, repo]);
+
+  return resolvedRefs;
+};

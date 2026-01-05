@@ -1712,6 +1712,9 @@ importers:
       '@inkandswitch/annotations-context':
         specifier: workspace:^
         version: link:../../../packages/annotations/context
+      '@inkandswitch/annotations-selection':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/selection
       '@inkandswitch/observable':
         specifier: workspace:^
         version: link:../../../packages/observable/core

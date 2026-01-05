@@ -22,9 +22,9 @@ import {
 } from "@inkandswitch/annotations-comments";
 
 /** Styles */
-import { createSignal, onMount } from "solid-js";
+import { createSignal, onMount, onCleanup } from "solid-js";
 import { useObservable } from "@inkandswitch/observable-solid";
-import { computed } from "@inkandswitch/observable";
+import { AnnotationSet } from "@inkandswitch/annotations";
 
 export type TextDoc = {
   content: string;
@@ -41,22 +41,21 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
 
   const contentAnnotations = globalAnnotations.onChildrenOf(contentRef());
   const diffAnnotations = useObservable(contentAnnotations.ofType(Diff));
-  const selectionAnnotations = useObservable(
-    contentAnnotations.ofType(IsSelected)
+
+  // Get all IsSelected annotations from global context (not just content children)
+  // This allows CommentsView to highlight text by adding IsSelected to thread refs
+  const allSelectionAnnotations = useObservable(
+    globalAnnotations.ofType(IsSelected)
   );
 
   const commentAnnotations = useObservable(
-    computed(contentAnnotations.ofType(CommentThread), (commentAnnotations) =>
-      Array.from(commentAnnotations).filter(([, commentAnnotation]) => {
-        const threadRef = commentAnnotation.value;
-        return !threadRef?.value()?.isResolved;
-      })
-    )
+    contentAnnotations.ofType(CommentThread)
   );
 
-  const isSelected = (ref: Ref) =>
-    Array.from(selectionAnnotations()).some(([selectedRef]) =>
-      selectedRef.overlaps(ref)
+  // Check if a ref overlaps with any selected ref
+  const isSelected = (targetRef: Ref) =>
+    Array.from(allSelectionAnnotations()).some(([selectedRef]) =>
+      selectedRef.overlaps(targetRef)
     );
 
   // compute decorations
@@ -131,16 +130,22 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
       true // sort ranges
     );
 
-  // handle selection changes
-  //  const selectionContext = createSubcontext();
+  // Local annotation set for editor text selections
+  const editorSelectionAnnotations = new AnnotationSet();
+  globalAnnotations.add(editorSelectionAnnotations);
+
+  onCleanup(() => {
+    globalAnnotations.remove(editorSelectionAnnotations);
+  });
+
+  // handle selection changes - broadcast to annotation context
   const onChangeSelection = (from: number, to: number) => {
-    // const selectedText = new TextSpanRef(
-    //   props.handle as DocHandle<TextDoc>,
-    //   PATH,
-    //   from,
-    //   to
-    // );
-    // selectionContext.replace([selectedText.with(IsSelected(true))]);
+    editorSelectionAnnotations.change(() => {
+      editorSelectionAnnotations.clear();
+
+      const selectedRef = ref(props.handle, ...PATH, cursor(from, to));
+      editorSelectionAnnotations.add(selectedRef, IsSelected(true));
+    });
   };
 
   // handle comment creation
