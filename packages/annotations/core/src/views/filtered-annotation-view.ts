@@ -1,9 +1,8 @@
-import { SubscriberSet, ObservableObject } from "@inkandswitch/observable";
+import { ObservableObject, SubscriberSet } from "@inkandswitch/observable";
 import { type Ref } from "@patchwork/refs";
 import EventEmitter from "eventemitter3";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
 import {
-  Annotation,
   AnnotationChange,
   AnnotationEvents,
   AnnotationFilter,
@@ -12,6 +11,14 @@ import {
 import { filterAnnotationChange, isChangeEmpty } from "../utils";
 import { AnnotationsOfType } from "./annotations-of-type";
 import { AnnotationsOnRef } from "./annotations-on-ref";
+
+/**
+ * FinalizationRegistry for automatic cleanup of FilteredAnnotationView instances.
+ * Ensures subscriptions are cleaned up when views are garbage collected.
+ */
+const viewCleanupRegistry = new FinalizationRegistry<() => void>((cleanup) =>
+  cleanup()
+);
 
 /**
  * A generic filtered view of annotations based on a predicate.
@@ -30,10 +37,11 @@ export class FilteredAnnotationView
     super();
     this.#source = source;
     this.#filter = filter;
-    this.#setupSubscription();
+    const unsubscribe = this.#setupSubscription();
+    viewCleanupRegistry.register(this, unsubscribe);
   }
 
-  #setupSubscription(): void {
+  #setupSubscription(): () => void {
     const handleChange = (change: AnnotationChange) => {
       const filteredChange = filterAnnotationChange(change, this.#filter);
 
@@ -44,6 +52,7 @@ export class FilteredAnnotationView
     };
 
     this.#source.on("change", handleChange);
+    return () => this.#source.off("change", handleChange);
   }
 
   subscribe(callback: (value: FilteredAnnotationView) => void): () => void {

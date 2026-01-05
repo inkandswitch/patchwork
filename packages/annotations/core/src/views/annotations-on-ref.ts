@@ -1,14 +1,22 @@
-import { SubscriberSet, ObservableObject } from "@inkandswitch/observable";
+import { ObservableObject, SubscriberSet } from "@inkandswitch/observable";
 import { type Ref } from "@patchwork/refs";
 import EventEmitter from "eventemitter3";
+import { AnnotationType, AnnotationValue } from "../annotation-type";
 import {
   Annotation,
-  AnnotationSource,
-  AnnotationEvents,
   AnnotationChange,
+  AnnotationEvents,
+  AnnotationSource,
 } from "../types";
-import { AnnotationType, AnnotationValue } from "../annotation-type";
 import { filterAnnotationChange, isChangeEmpty } from "../utils";
+
+/**
+ * FinalizationRegistry for automatic cleanup of AnnotationsOnRef instances.
+ * Ensures subscriptions are cleaned up when views are garbage collected.
+ */
+const viewCleanupRegistry = new FinalizationRegistry<() => void>((cleanup) =>
+  cleanup()
+);
 
 /**
  * Annotations filtered by ref
@@ -20,20 +28,21 @@ export class AnnotationsOnRef<T = unknown>
 {
   #source: AnnotationSource;
   #ref: Ref<T>;
-  subscriberSet = new SubscriberSet<AnnotationsOnRef<T>>();
+  #subscriberSet = new SubscriberSet<AnnotationsOnRef<T>>();
 
   constructor(source: AnnotationSource, ref: Ref<T>) {
     super();
     this.#source = source;
     this.#ref = ref;
-    this.#setupSubscription();
+    const unsubscribe = this.#setupSubscription();
+    viewCleanupRegistry.register(this, unsubscribe);
   }
 
   subscribe(callback: (value: AnnotationsOnRef<T>) => void): () => void {
-    return this.subscriberSet.add(callback);
+    return this.#subscriberSet.add(callback);
   }
 
-  #setupSubscription(): void {
+  #setupSubscription(): () => void {
     const handleChange = (change: AnnotationChange) => {
       const filteredChange = filterAnnotationChange(
         change,
@@ -41,11 +50,12 @@ export class AnnotationsOnRef<T = unknown>
       );
       if (!isChangeEmpty(filteredChange)) {
         this.emit("change", filteredChange);
-        this.subscriberSet.notify(this);
+        this.#subscriberSet.notify(this);
       }
     };
 
     this.#source.on("change", handleChange);
+    return () => this.#source.off("change", handleChange);
   }
 
   /**
