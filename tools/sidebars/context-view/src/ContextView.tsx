@@ -16,8 +16,6 @@ const $sortedRefs = computed(globalAnnotations, () =>
 export const ContextView = () => {
   const sortedRefs = useObservable($sortedRefs);
 
-  console.log("sortedRefs", sortedRefs);
-
   return (
     <div className="w-full h-full overflow-auto">
       <table className="divide-y divide-gray-200">

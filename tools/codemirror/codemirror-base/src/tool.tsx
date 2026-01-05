@@ -65,7 +65,6 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
         // decorations for diffs
         ...Array.from(diffAnnotations()).flatMap(([ref, diff]) => {
           const [start, end] = ref.rangePositions!;
-          if (start === end) return [];
 
           if (diff.value.type === "deleted") {
             return Decoration.widget({
@@ -74,8 +73,11 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
                 isSelected(ref)
               ),
               side: 1,
-            }).range(start, end);
+            }).range(start);
           }
+
+          // Skip zero-length ranges for non-deletion diffs
+          if (start === end) return [];
 
           if (diff.value.type === "added") {
             const isDarkMode = window.matchMedia(
