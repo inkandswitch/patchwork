@@ -18,7 +18,7 @@ import { useCallback, useSyncExternalStore } from "react";
  */
 export function useRefValue<T>(ref: Ref<any, any>): T | undefined;
 export function useRefValue<T>(ref: Ref<any, any> | undefined): T | undefined;
-export function useRefValue<T>(ref: Ref<any, any> | undefined): T | undefined {
+export function useRefValue<T>(ref?: Ref<any, any>): T | undefined {
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
       if (!ref) {

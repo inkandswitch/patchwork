@@ -24,6 +24,7 @@ import {
 /** Styles */
 import { createSignal, onMount } from "solid-js";
 import { useObservable } from "@inkandswitch/observable-solid";
+import { computed } from "@inkandswitch/observable";
 
 export type TextDoc = {
   content: string;
@@ -45,7 +46,12 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
   );
 
   const commentAnnotations = useObservable(
-    contentAnnotations.ofType(CommentThread)
+    computed(contentAnnotations.ofType(CommentThread), (commentAnnotations) =>
+      Array.from(commentAnnotations).filter(([, commentAnnotation]) => {
+        const threadRef = commentAnnotation.value;
+        return !threadRef?.value()?.isResolved;
+      })
+    )
   );
 
   const isSelected = (ref: Ref) =>

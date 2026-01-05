@@ -33,7 +33,7 @@ type Observable<T> = {
  */
 export class AnnotationSet
   extends EventEmitter<AnnotationEvents>
-  implements Observable<AnnotationSet>
+  implements Observable<AnnotationSet>, AnnotationSource
 {
   #subscriberSet = new SubscriberSet<AnnotationSet>();
 

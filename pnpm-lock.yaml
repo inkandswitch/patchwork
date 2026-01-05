@@ -1703,6 +1703,21 @@ importers:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@inkandswitch/annotations':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/core
+      '@inkandswitch/annotations-comments':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/annotation-types/comments
+      '@inkandswitch/annotations-context':
+        specifier: workspace:^
+        version: link:../../../packages/annotations/context
+      '@inkandswitch/observable':
+        specifier: workspace:^
+        version: link:../../../packages/observable/core
+      '@inkandswitch/observable-react':
+        specifier: workspace:^
+        version: link:../../../packages/observable/frameworks/react
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -1715,18 +1730,12 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@patchwork/context':
+      '@patchwork/refs':
         specifier: workspace:^
-        version: link:../../../packages/context/context
-      '@patchwork/context-comments':
+        version: link:../../../packages/refs
+      '@patchwork/refs-react':
         specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-comments
-      '@patchwork/context-react':
-        specifier: workspace:^
-        version: link:../../../packages/context/frameworks/context-react
-      '@patchwork/context-selection':
-        specifier: workspace:^
-        version: link:../../../packages/context/annotations/context-selection
+        version: link:../../../packages/refs-react
       '@patchwork/util':
         specifier: workspace:^
         version: link:../../../packages/util

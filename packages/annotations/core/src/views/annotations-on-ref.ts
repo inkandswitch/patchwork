@@ -16,7 +16,7 @@ import { filterAnnotationChange, isChangeEmpty } from "../utils";
  */
 export class AnnotationsOnRef<T = unknown>
   extends EventEmitter<AnnotationEvents>
-  implements AnnotationSource, ObservableObject<AnnotationsOnRef<T>>
+  implements AnnotationSource<T>, ObservableObject<AnnotationsOnRef<T>>
 {
   #source: AnnotationSource;
   #ref: Ref<T>;
