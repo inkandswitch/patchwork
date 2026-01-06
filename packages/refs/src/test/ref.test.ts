@@ -225,6 +225,177 @@ describe("Ref", () => {
     });
   });
 
+  describe("remove", () => {
+    it("should remove a property from an object", () => {
+      handle.change((d) => {
+        d.user = { name: "Alice", age: 30 };
+      });
+
+      const ageRef = new Ref(handle, ["user", "age"]);
+      expect(ageRef.value()).toBe(30);
+
+      ageRef.remove();
+
+      expect(handle.doc().user).toEqual({ name: "Alice" });
+      expect(handle.doc().user.age).toBeUndefined();
+    });
+
+    it("should remove an item from an array", () => {
+      handle.change((d) => {
+        d.todos = [{ title: "First" }, { title: "Second" }, { title: "Third" }];
+      });
+
+      const secondRef = new Ref(handle, ["todos", 1]);
+      expect(secondRef.value()).toEqual({ title: "Second" });
+
+      secondRef.remove();
+
+      expect(handle.doc().todos).toEqual([
+        { title: "First" },
+        { title: "Third" },
+      ]);
+    });
+
+    it("should remove first item from array", () => {
+      handle.change((d) => {
+        d.items = ["a", "b", "c"];
+      });
+
+      const firstRef = new Ref(handle, ["items", 0]);
+      firstRef.remove();
+
+      expect(handle.doc().items).toEqual(["b", "c"]);
+    });
+
+    it("should remove last item from array", () => {
+      handle.change((d) => {
+        d.items = ["a", "b", "c"];
+      });
+
+      const lastRef = new Ref(handle, ["items", 2]);
+      lastRef.remove();
+
+      expect(handle.doc().items).toEqual(["a", "b"]);
+    });
+
+    it("should remove nested property", () => {
+      handle.change((d) => {
+        d.config = {
+          settings: {
+            theme: "dark",
+            fontSize: 14,
+          },
+        };
+      });
+
+      const themeRef = new Ref(handle, ["config", "settings", "theme"]);
+      themeRef.remove();
+
+      expect(handle.doc().config.settings).toEqual({ fontSize: 14 });
+    });
+
+    it("should remove item from nested array", () => {
+      handle.change((d) => {
+        d.board = {
+          columns: [{ name: "Todo" }, { name: "Done" }],
+        };
+      });
+
+      const columnRef = new Ref(handle, ["board", "columns", 0]);
+      columnRef.remove();
+
+      expect(handle.doc().board.columns).toEqual([{ name: "Done" }]);
+    });
+
+    it("should throw when removing root document", () => {
+      const rootRef = new Ref(handle, []);
+
+      expect(() => rootRef.remove()).toThrow("Cannot remove the root document");
+    });
+
+    it("should throw when removing from a ref pinned to heads", () => {
+      handle.change((d) => {
+        d.value = 42;
+      });
+
+      const pinnedRef = new Ref(handle, ["value"], { heads: ["abc"] });
+
+      expect(() => pinnedRef.remove()).toThrow(
+        "Cannot remove from a Ref pinned to specific heads"
+      );
+    });
+
+    it("should remove text within a range", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const rangeRef = new Ref(handle, ["text", cursor(0, 5)]);
+      expect(rangeRef.value()).toBe("Hello");
+
+      rangeRef.remove();
+
+      expect(handle.doc().text).toBe(" World");
+    });
+
+    it("should remove text at end of string", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const rangeRef = new Ref(handle, ["text", cursor(6, 11)]);
+      expect(rangeRef.value()).toBe("World");
+
+      rangeRef.remove();
+
+      expect(handle.doc().text).toBe("Hello ");
+    });
+
+    it("should remove text in middle of string", () => {
+      handle.change((d) => {
+        d.text = "Hello Beautiful World";
+      });
+
+      const rangeRef = new Ref(handle, ["text", cursor(6, 16)]);
+      expect(rangeRef.value()).toBe("Beautiful ");
+
+      rangeRef.remove();
+
+      expect(handle.doc().text).toBe("Hello World");
+    });
+
+    it("should remove item matched by pattern", () => {
+      handle.change((d) => {
+        d.users = [
+          { id: "a", name: "Alice" },
+          { id: "b", name: "Bob" },
+          { id: "c", name: "Charlie" },
+        ];
+      });
+
+      const bobRef = new Ref(handle, ["users", { id: "b" }]);
+      bobRef.remove();
+
+      expect(handle.doc().users).toEqual([
+        { id: "a", name: "Alice" },
+        { id: "c", name: "Charlie" },
+      ]);
+    });
+
+    it("should remove top-level key from document", () => {
+      handle.change((d) => {
+        d.name = "Test";
+        d.value = 42;
+      });
+
+      const nameRef = new Ref(handle, ["name"]);
+      nameRef.remove();
+
+      expect(handle.doc().name).toBeUndefined();
+      expect(handle.doc().value).toBe(42);
+    });
+  });
+
   describe("url generation", () => {
     it("should generate a basic URL", () => {
       handle.change((d) => {

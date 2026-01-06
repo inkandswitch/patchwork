@@ -225,6 +225,73 @@ export class Ref<
   }
 
   /**
+   * Remove the value this ref points to from its parent container.
+   *
+   * - For object properties: deletes the key from the object
+   * - For array elements: removes the item from the array
+   * - For text ranges: deletes the text within the range
+   *
+   * @throws Error if the ref points to the root document
+   * @throws Error if the ref is pinned to specific heads
+   * @throws Error if the path cannot be resolved
+   *
+   * @example
+   * ```ts
+   * // Remove a property from an object
+   * const nameRef = ref(handle, 'user', 'name');
+   * nameRef.remove(); // deletes handle.doc().user.name
+   *
+   * // Remove an item from an array
+   * const todoRef = ref(handle, 'todos', 0);
+   * todoRef.remove(); // removes first todo from array
+   *
+   * // Remove text within a range
+   * const rangeRef = ref(handle, 'text', cursor(0, 5));
+   * rangeRef.remove(); // deletes first 5 characters
+   * ```
+   */
+  remove(): void {
+    if (this.options.heads) {
+      throw new Error("Cannot remove from a Ref pinned to specific heads");
+    }
+
+    if (this.path.length === 0 && !this.range) {
+      throw new Error("Cannot remove the root document");
+    }
+
+    this.docHandle.change((doc: Doc<TDoc>) => {
+      const propPath = this.#getPropPath();
+      if (!propPath || propPath.length === 0) {
+        throw new Error("Cannot resolve path for removal");
+      }
+
+      // Handle range refs - delete the text within the range
+      if (this.range) {
+        this.#spliceRange(doc, propPath, this.range, "");
+        return;
+      }
+
+      const parentPath = propPath.slice(0, -1);
+      const key = propPath[propPath.length - 1];
+      const parent =
+        parentPath.length === 0 ? doc : this.#getValueAt(doc, parentPath);
+
+      if (parent == null) {
+        throw new Error("Cannot remove: parent is null or undefined");
+      }
+
+      if (Array.isArray(parent)) {
+        if (typeof key !== "number") {
+          throw new Error("Cannot remove from array: key is not a number");
+        }
+        parent.splice(key, 1);
+      } else {
+        delete parent[key];
+      }
+    });
+  }
+
+  /**
    * Subscribe to changes that affect this ref's value.
    *
    * Returns an unsubscribe function you can call

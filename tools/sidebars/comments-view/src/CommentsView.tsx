@@ -118,27 +118,11 @@ const ThreadView = ({
   };
 
   const onDeleteComment = (commentRef: Ref<any, any>) => {
-    // Delete the comment by splicing it from the array
-    const commentValue = commentRef.value() as Comment | undefined;
-    if (!commentValue) return;
-
-    // Cast threadRef to use the change method
-    (threadRef as unknown as Ref<any, any>).change(
-      (t: SerializedCommentThread) => {
-        const idx = t.comments.findIndex((c) => c.id === commentValue.id);
-        if (idx !== -1) {
-          t.comments.splice(idx, 1);
-        }
-      }
-    );
+    commentRef.remove();
 
     // If no comments left, delete the thread
     if (threadRef.value()?.comments.length === 0) {
-      // todo: we should actually delete the thread from the parent doc
-      // but currently we don't have a method to delete an object through a ref
-      threadRef.change((thread: SerializedCommentThread) => {
-        thread.isResolved = true;
-      });
+      threadRef.remove();
     }
   };
 
