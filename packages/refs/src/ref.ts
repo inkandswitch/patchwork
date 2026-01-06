@@ -38,7 +38,6 @@ const refCleanupRegistry = new FinalizationRegistry<() => void>((cleanup) =>
  * Refs are stable by default - they track objects by ID, not position.
  *
  * Cleanup: Refs automatically clean up their subscriptions when garbage collected.
- * For immediate cleanup, call dispose() explicitly (recommended for long-lived apps).
  *
  * @example
  * ```ts
@@ -46,9 +45,6 @@ const refCleanupRegistry = new FinalizationRegistry<() => void>((cleanup) =>
  * titleRef.value();           // string | undefined
  * titleRef.change(s => s.toUpperCase());
  * titleRef.onChange(() => console.log('changed!'));
- *
- * // Optional but recommended for immediate cleanup:
- * titleRef.dispose();
  * ```
  */
 export class Ref<
@@ -60,11 +56,10 @@ export class Ref<
   readonly range?: CursorRange;
   readonly options: RefOptions;
 
-  #unsubscribe: () => void;
   #onChangeCallbacks = new Set<
     (payload: DocHandleChangePayload<any>) => void
   >();
-  #disposed = false;
+  #updateHandler: () => void;
 
   constructor(
     docHandle: DocHandle<TDoc>,
@@ -82,16 +77,22 @@ export class Ref<
     this.path = path;
     this.range = range;
 
-    const updateHandler = () => {
+    this.#updateHandler = () => {
       const currentDoc = this.docHandle.doc();
       this.#updateProps(currentDoc);
     };
-    this.docHandle.on("change", updateHandler);
-    this.#unsubscribe = () => this.docHandle.off("change", updateHandler);
+    this.docHandle.on("change", this.#updateHandler);
 
     // Register for automatic cleanup when this Ref is garbage collected
-    // This ensures subscriptions are cleaned up even if dispose() is never called
     refCleanupRegistry.register(this, () => this.#cleanup(), this);
+  }
+
+  #cleanup(): void {
+    this.docHandle.off("change", this.#updateHandler);
+    for (const callback of this.#onChangeCallbacks) {
+      this.docHandle.off("change", callback);
+    }
+    this.#onChangeCallbacks.clear();
   }
 
   get heads(): string[] | undefined {
@@ -226,8 +227,7 @@ export class Ref<
   /**
    * Subscribe to changes that affect this ref's value.
    *
-   * The returned unsubscribe function will automatically be called when the Ref
-   * is disposed or garbage collected. You can also call it manually for immediate cleanup.
+   * Returns an unsubscribe function you can call
    */
   onChange(
     callback: (
@@ -235,10 +235,6 @@ export class Ref<
       payload: DocHandleChangePayload<any>
     ) => void
   ): () => void {
-    if (this.#disposed) {
-      throw new Error("Cannot add onChange listener to a disposed Ref");
-    }
-
     const wrappedCallback = (payload: DocHandleChangePayload<any>) => {
       if (this.#patchAffectsRef(payload.patches)) {
         const value = this.value();
@@ -443,41 +439,6 @@ export class Ref<
 
   toString(): string {
     return this.url;
-  }
-
-  /**
-   * Clean up and unsubscribe from all document changes.
-   *
-   * While cleanup happens automatically when the Ref is garbage collected,
-   * calling dispose() explicitly provides immediate cleanup which is recommended
-   * for long-lived applications or when you know you're done with a Ref.
-   *
-   * After calling dispose(), the Ref cannot be used anymore and onChange() will throw.
-   */
-  dispose(): void {
-    if (this.#disposed) return;
-
-    // Unregister from automatic cleanup since we're cleaning up now
-    refCleanupRegistry.unregister(this);
-
-    this.#cleanup();
-  }
-
-  /**
-   * Internal cleanup method called by both dispose() and the finalization registry.
-   */
-  #cleanup(): void {
-    if (this.#disposed) return;
-    this.#disposed = true;
-
-    // Clean up the main subscription from constructor
-    this.#unsubscribe();
-
-    // Clean up all onChange subscriptions
-    for (const callback of this.#onChangeCallbacks) {
-      this.docHandle.off("change", callback);
-    }
-    this.#onChangeCallbacks.clear();
   }
 
   /**

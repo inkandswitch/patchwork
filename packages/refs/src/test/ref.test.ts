@@ -1904,21 +1904,6 @@ describe("Ref", () => {
 
       expect(ref.value()).toBe("Hello");
     });
-
-    it("should have a dispose method for cleanup", () => {
-      handle.change((d) => {
-        d.items = [{ id: "a" }, { id: "b" }];
-      });
-
-      const ref = new Ref(handle, ["items", 0]);
-      expect(ref.value()).toEqual({ id: "a" });
-
-      // Dispose is available (doesn't throw)
-      expect(() => ref.dispose()).not.toThrow();
-
-      // After disposal, internal listener is removed
-      // (the ref still works, but props won't auto-update)
-    });
   });
 
   describe("change shorthand", () => {

@@ -484,49 +484,6 @@ describe("Edge Cases", () => {
     });
   });
 
-  describe("disposed ref edge cases", () => {
-    it("should still return value() after dispose", () => {
-      handle.change((d) => {
-        d.value = 42;
-      });
-
-      const ref = new Ref(handle, ["value"]);
-      ref.dispose();
-
-      // value() should still work (reads are stateless)
-      expect(ref.value()).toBe(42);
-    });
-
-    it("should still allow change() after dispose", () => {
-      handle.change((d) => {
-        d.value = 42;
-      });
-
-      const ref = new Ref(handle, ["value"]);
-      ref.dispose();
-
-      // TODO: i think this should throw an error?
-      // because the ref is disposed
-      ref.change(() => 100);
-      expect(handle.doc().value).toBe(100);
-    });
-
-    it("should throw on onChange after dispose", () => {
-      const ref = new Ref(handle, ["value"]);
-      ref.dispose();
-
-      expect(() => {
-        ref.onChange(() => {});
-      }).toThrow("disposed");
-    });
-
-    it("should allow double dispose without error", () => {
-      const ref = new Ref(handle, ["value"]);
-      ref.dispose();
-      expect(() => ref.dispose()).not.toThrow();
-    });
-  });
-
   describe("MutableText edge cases", () => {
     it("should handle splice at start of string", () => {
       handle.change((d) => {
