@@ -417,7 +417,7 @@ describe("Ref", () => {
   });
 
   describe("idempotency", () => {
-    it("should produce identical paths when parsing URL twice", async () => {
+    it("should produce identical paths when parsing URL twice", () => {
       handle.change((d) => {
         d.todos = [{ title: "First" }, { title: "Second" }];
       });
@@ -436,7 +436,7 @@ describe("Ref", () => {
       expect(ref2.equals(ref1)).toBe(true);
     });
 
-    it("should preserve cursor ranges through URL round-trip", async () => {
+    it("should preserve cursor ranges through URL round-trip", () => {
       handle.change((d) => {
         d.note = "Hello World";
       });
@@ -462,7 +462,7 @@ describe("Ref", () => {
       expect(ref2.value()).toBe("Hello");
     });
 
-    it("should handle multiple fromUrl round-trips without drift", async () => {
+    it("should handle multiple fromUrl round-trips without drift", () => {
       handle.change((d) => {
         d.data = [{ value: 42 }];
       });
@@ -1905,7 +1905,7 @@ describe("Ref", () => {
       expect(ref.value()).toBe("Hello");
     });
 
-    it("should have a dispose method for cleanup", async () => {
+    it("should have a dispose method for cleanup", () => {
       handle.change((d) => {
         d.items = [{ id: "a" }, { id: "b" }];
       });
