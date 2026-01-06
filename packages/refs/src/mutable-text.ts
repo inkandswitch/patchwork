@@ -3,14 +3,17 @@ import type { Prop } from "@automerge/automerge";
 import type { MutableText as IMutableText } from "./types";
 
 /**
- * Create a MutableText with a Proxy that forwards all string methods.
+ * Create a MutableText wrapper that provides Automerge string mutations.
+ *
+ * Uses a Proxy to forward all standard string methods to the underlying value
+ * while adding Automerge-specific mutation methods (splice, updateText).
  */
 export function MutableText(
-  doc: any,
+  doc: Automerge.Doc<unknown>,
   propPath: Prop[],
   value: string
 ): IMutableText {
-  const target = {
+  const mutations = {
     splice(index: number, deleteCount: number, insert?: string): void {
       Automerge.splice(doc, propPath, index, deleteCount, insert);
     },
@@ -19,21 +22,24 @@ export function MutableText(
     },
   };
 
-  return new Proxy(target, {
-    get(_, prop) {
-      // Our custom Automerge mutation methods
+  return new Proxy(mutations, {
+    get(target, prop) {
+      // Automerge mutation methods
       if (prop in target) {
-        return (target as any)[prop];
+        return target[prop as keyof typeof target];
       }
 
-      // Forward everything else to the underlying string value
-      const stringProp = (value as any)[prop];
+      // Forward to underlying string
+      const stringValue = value as unknown as Record<string | symbol, unknown>;
+      const member = stringValue[prop];
 
-      if (typeof stringProp === "function") {
-        return stringProp.bind(value);
-      }
+      // Bind functions to the string value
+      return typeof member === "function" ? member.bind(value) : member;
+    },
 
-      return stringProp;
+    // Support iteration (for...of, spread)
+    getPrototypeOf() {
+      return String.prototype;
     },
   }) as IMutableText;
 }

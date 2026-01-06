@@ -7,7 +7,7 @@ type TestDoc = {
   content: string;
   doc: { title: string };
   items: Array<{ text: string }>;
-  todos: Array<{ title: string; done: boolean }>;
+  todos: Array<{ id: string; title: string; done: boolean }>;
   users: Array<{ id: string; name: string }>;
   item: { title: string; count: number; done?: boolean };
   count: number;
@@ -98,31 +98,31 @@ describe("RefContext", () => {
   });
 
   describe("MutableText with stable refs", () => {
-    it("should work with ObjectId refs", () => {
+    it("should work with match pattern refs", () => {
       handle.change((d) => {
         d.todos = [
-          { title: "first", done: false },
-          { title: "second", done: false },
+          { id: "a", title: "first", done: false },
+          { id: "b", title: "second", done: false },
         ];
       });
 
-      // Get stable ref to first todo's title
-      const titleRef = ref(handle, "todos", 0, "title");
+      // Get stable ref using match pattern to find by id
+      const titleRef = ref(handle, "todos", { id: "a" }, "title");
 
       // Swap first two elements by inserting second at index 0 and deleting old second
       handle.change((d: any) => {
-        d.todos.insertAt(0, { title: "second", done: false });
+        d.todos.insertAt(0, { id: "c", title: "third", done: false });
         d.todos.deleteAt(2); // Delete old second (now at index 2)
       });
 
-      // Mutation should still work on the original first item (now at index 1)
+      // Match pattern finds the item with id "a" (now at index 1)
       titleRef.change((text) => {
         text.updateText("updated first");
       });
 
       const todos = handle.doc()?.todos;
       expect(todos[1].title).toBe("updated first");
-      expect(todos[0].title).toBe("second");
+      expect(todos[0].title).toBe("third");
     });
 
     it("should work with where clause refs", () => {

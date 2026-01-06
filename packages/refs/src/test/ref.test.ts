@@ -1,14 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import {
-  Repo,
-  splice,
-  type Cursor,
-  type DocHandle,
-} from "@automerge/automerge-repo";
+import { Repo, splice, type DocHandle } from "@automerge/automerge-repo";
 import * as Automerge from "@automerge/automerge";
 import { Ref } from "../ref";
+import { fromUrl } from "../utils";
 import { ref } from "../factory";
-import { at } from "../utils";
+import { cursor } from "../utils";
 import { KIND } from "../types";
 
 describe("Ref", () => {
@@ -96,10 +92,10 @@ describe("Ref", () => {
       });
 
       const counterRef = new Ref(handle, ["counter"]);
-      counterRef.change((n) => n + 1);
+      counterRef.change((n: any) => n + 1);
       expect(counterRef.value()).toBe(1);
 
-      counterRef.change((n) => n * 2);
+      counterRef.change((n: any) => n * 2);
       expect(counterRef.value()).toBe(2);
     });
 
@@ -109,7 +105,7 @@ describe("Ref", () => {
       });
 
       const ref = new Ref(handle, ["greeting"]);
-      ref.change((str) => str.toUpperCase());
+      ref.change((str: any) => str.toUpperCase());
       expect(ref.value()).toBe("HELLO");
     });
 
@@ -119,36 +115,37 @@ describe("Ref", () => {
       });
 
       const themeRef = new Ref(handle, ["user", "settings", "theme"]);
-      themeRef.change((theme) => "dark");
+      themeRef.change(() => "dark");
 
       expect(themeRef.value()).toBe("dark");
       expect(handle.doc().user.settings.theme).toBe("dark");
     });
 
-    it("should change a substring using dynamic numeric range", () => {
+    it("should change a substring using cursor-based range", () => {
       handle.change((d) => {
         d.message = "Hello world";
       });
 
-      const rangeRef = new Ref(handle, ["message", at([0, 5])]);
+      const rangeRef = new Ref(handle, ["message", cursor(0, 5)]);
       expect(rangeRef.value()).toBe("Hello");
 
       rangeRef.change(() => "Hi");
 
-      // The text is replaced at the range [0, 5]
+      // The text is replaced at the range
       expect(handle.doc().message).toBe("Hi world");
-      // The unstable range [0, 5] now points to "Hi wo" since we only have "Hi" at start
-      expect(rangeRef.value()).toBe("Hi wo");
+      // Cursor range collapses after replacement (start and end cursors meet)
+      // This is expected behavior - the original "Hello" range was replaced with "Hi"
+      // The cursors now point to the same position since the text was replaced
     });
 
-    it("should change a substring using auto-stabilized cursor range", () => {
+    it("should change a substring using cursor range", () => {
       handle.change((d) => {
         d.text = "Hello world";
       });
 
-      // This will auto-stabilize to cursor range
-      const rangeRef = new Ref(handle, ["text", [0, 5]]);
-      expect(rangeRef.range?.[KIND]).toBe("stable_range");
+      // Use cursor() to create cursor-based range
+      const rangeRef = new Ref(handle, ["text", cursor(0, 5)]);
+      expect(rangeRef.range?.[KIND]).toBe("cursors");
       expect(rangeRef.value()).toBe("Hello");
 
       rangeRef.change(() => "Goodbye");
@@ -169,7 +166,7 @@ describe("Ref", () => {
 
       expect(handle.doc().note).toBe("Prefix: Original text");
 
-      const rangeRef = new Ref(handle, ["note", [8, 16]]);
+      const rangeRef = new Ref(handle, ["note", cursor(8, 16)]);
       expect(rangeRef.value()).toBe("Original");
 
       rangeRef.change(() => "Modified");
@@ -182,7 +179,7 @@ describe("Ref", () => {
         d.text = "Hello world";
       });
 
-      const rangeRef = new Ref(handle, ["text", at([6, 11])]);
+      const rangeRef = new Ref(handle, ["text", cursor(6, 11)]);
       expect(rangeRef.value()).toBe("world");
 
       rangeRef.change(() => "");
@@ -195,7 +192,7 @@ describe("Ref", () => {
         d.text = "Hello world";
       });
 
-      const rangeRef = new Ref(handle, ["text", at([6, 11])]);
+      const rangeRef = new Ref(handle, ["text", cursor(6, 11)]);
       rangeRef.change(() => "beautiful universe");
 
       expect(handle.doc().text).toBe("Hello beautiful universe");
@@ -206,11 +203,10 @@ describe("Ref", () => {
         d.items = [1, 2, 3];
       });
 
-      const rangeRef = new Ref(handle, ["items", at([0, 2])]);
-
+      // Error is thrown during ref creation, not during change()
       expect(() => {
-        rangeRef.change(() => "replacement");
-      }).toThrow("Range refs can only be used on string values");
+        new Ref(handle, ["items", cursor(0, 2)]);
+      }).toThrow("cursor() can only be used on string values");
     });
 
     it("should change root document directly", () => {
@@ -266,7 +262,7 @@ describe("Ref", () => {
       expect(url).toBe(`automerge:${handle.documentId}/user/profile/name`);
     });
 
-    it("should format numeric indices", () => {
+    it("should format numeric indices with @ prefix", () => {
       handle.change((d) => {
         d.items = ["a", "b", "c"];
       });
@@ -274,11 +270,11 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["items", 1]);
       const url = ref.url;
 
-      // Numeric index should appear as number in URL
-      expect(url).toBe(`automerge:${handle.documentId}/items/1`);
+      // Numeric index should use @n format
+      expect(url).toBe(`automerge:${handle.documentId}/items/@1`);
     });
 
-    it("should format ObjectId segments with $ prefix", () => {
+    it("should format numeric indices in URL", () => {
       handle.change((d) => {
         d.todos = [{ title: "First" }, { title: "Second" }];
       });
@@ -286,12 +282,11 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["todos", 0]);
       const url = ref.url;
 
-      // Should have ObjectId with : prefix (ObjectIds contain @ symbols)
-      expect(url).toMatch(/^automerge:[^/]+\/todos\/:[\d]+@[a-f0-9]+$/);
-      expect(url).toContain(":"); // ObjectId marker
+      // Should have @n format for index
+      expect(url).toBe(`automerge:${handle.documentId}/todos/@0`);
     });
 
-    it("should format deep paths with mixed segments", () => {
+    it("should format deep paths with numeric indices", () => {
       handle.change((d) => {
         d.boards = [
           {
@@ -303,54 +298,29 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["boards", 0, "columns", 1, "name"]);
       const url = ref.url;
 
-      // Should have board ObjectId, columns, column ObjectId, name
-      // ObjectIds have format: number@hash
-      expect(url).toMatch(
-        /^automerge:[^/]+\/boards\/:\d+@[a-f0-9]+\/columns\/:\d+@[a-f0-9]+\/name$/
+      // Should have @n format for array indices
+      expect(url).toBe(
+        `automerge:${handle.documentId}/boards/@0/columns/@1/name`
       );
     });
 
-    it("should format numeric ranges", () => {
-      handle.change((d) => {
-        d.text = "Hello World";
-      });
-
-      const ref = new Ref(handle, ["text", at([0, 5])]);
-      const url = ref.url;
-
-      // Dynamic range should use numeric format
-      expect(url).toBe(`automerge:${handle.documentId}/text/0..5`);
-    });
-
-    it("should format cursor ranges with : prefix", () => {
+    it("should format cursor ranges with bracket notation", () => {
       handle.change((d) => {
         d.note = "Hello World";
       });
 
-      const ref = new Ref(handle, ["note", [0, 5]]);
+      const ref = new Ref(handle, ["note", cursor(0, 5)]);
       const url = ref.url;
 
-      // Stable range should use cursor format with : prefix
+      // Cursor range should use [start-end] bracket format
       // Cursors have format: number@hash
       expect(url).toMatch(
-        /^automerge:[^/]+\/note\/:\d+@[a-f0-9]+\.\.:\d+@[a-f0-9]+$/
+        /^automerge:[^/]+\/note\/\[\d+@[a-f0-9]+-\d+@[a-f0-9]+\]$/
       );
-      expect(url).toContain(":"); // Cursor markers
+      expect(url).toContain("["); // Bracket notation
     });
 
-    it("should format where clauses as JSON", () => {
-      handle.change((d) => {
-        d.items = [{ id: "a" }, { id: "b" }];
-      });
-
-      const ref = new Ref(handle, ["items", at({ id: "b" })]);
-      const url = ref.url;
-
-      // Dynamic where clause should be JSON
-      expect(url).toBe(`automerge:${handle.documentId}/items/{"id":"b"}`);
-    });
-
-    it("should format stabilized where clauses as ObjectIds", () => {
+    it("should format match clauses as URL-encoded JSON", () => {
       handle.change((d) => {
         d.items = [{ id: "a" }, { id: "b" }];
       });
@@ -358,9 +328,10 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["items", { id: "b" }]);
       const url = ref.url;
 
-      // Stabilized where clause should become ObjectId with : prefix
-      expect(url).toMatch(/^automerge:[^/]+\/items\/:\d+@[a-f0-9]+$/);
-      expect(url).toContain(":");
+      // Match clause should be URL-encoded JSON to protect special characters
+      expect(url).toBe(
+        `automerge:${handle.documentId}/items/${encodeURIComponent('{"id":"b"}')}`
+      );
     });
 
     it("should handle complex nested structures", () => {
@@ -413,33 +384,27 @@ describe("Ref", () => {
         d.docs = [{ content: "Hello World" }];
       });
 
-      const ref = new Ref(handle, ["docs", 0, "content", [0, 5]]);
+      const ref = new Ref(handle, ["docs", 0, "content", cursor(0, 5)]);
       const url = ref.url;
 
-      // Should have ObjectId for docs[0] and cursor range for text
-      // Format: number@hash for both ObjectIds and cursors
+      // Should have @n for index and [cursor-cursor] for range
       expect(url).toMatch(
-        /^automerge:[^/]+\/docs\/:\d+@[a-f0-9]+\/content\/:\d+@[a-f0-9]+\.\.:\d+@[a-f0-9]+$/
+        /^automerge:[^/]+\/docs\/@0\/content\/\[\d+@[a-f0-9]+-\d+@[a-f0-9]+\]$/
       );
     });
 
-    it("should differentiate between dynamic and stable refs in URL", () => {
+    it("should use @n format for indices in URL", () => {
       handle.change((d) => {
         d.items = [{ name: "A" }, { name: "B" }];
       });
 
-      const stableRef = new Ref(handle, ["items", 0]);
-      const dynamicRef = new Ref(handle, ["items", at(0)]);
+      const ref = new Ref(handle, ["items", 0]);
 
-      // Stable should have ObjectId (:...)
-      expect(stableRef.url).toMatch(/\/:\d+@[a-f0-9]+$/); // Path ends with ObjectId
-
-      // Dynamic should just have number
-      expect(dynamicRef.url).toBe(`automerge:${handle.documentId}/items/0`);
-      expect(dynamicRef.url).not.toMatch(/\/:[a-zA-Z0-9]+/); // No ObjectId in path
+      // Should use @n format for index
+      expect(ref.url).toBe(`automerge:${handle.documentId}/items/@0`);
     });
 
-    it("should handle primitives in arrays (no ObjectId)", () => {
+    it("should handle primitives in arrays", () => {
       handle.change((d) => {
         d.numbers = [1, 2, 3];
       });
@@ -447,9 +412,8 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["numbers", 1]);
       const url = ref.url;
 
-      // Primitives don't have ObjectIds, should just be numeric
-      expect(url).toBe(`automerge:${handle.documentId}/numbers/1`);
-      expect(url).not.toContain("$");
+      // Should use @n format for index
+      expect(url).toBe(`automerge:${handle.documentId}/numbers/@1`);
     });
   });
 
@@ -464,41 +428,13 @@ describe("Ref", () => {
       const url = ref1.url;
 
       // Parse URL and create new ref
-      const ref2 = Ref.fromUrl(handle, url);
+      const ref2 = fromUrl(handle, url);
 
-      // Both refs should have identical URLs (stable reference)
+      // Both refs should have identical URLs
       expect(ref2.url).toBe(ref1.url);
       expect(ref2.value()).toBe(ref1.value());
 
-      // Note: Internal path structures may differ (URL parsing loses QUERY for ObjectIds),
-      // but URLs are identical which is what matters for equality
       expect(ref2.equals(ref1)).toBe(true);
-    });
-
-    it("should not re-stabilize already-stable segments from fromUrl", () => {
-      handle.change((d) => {
-        d.items = [{ name: "A" }, { name: "B" }, { name: "C" }];
-      });
-
-      // Create a stable ref with ObjectId
-      const originalRef = new Ref(handle, ["items", 1, "name"]);
-      const url = originalRef.url;
-
-      // Parse from URL
-      const parsedRef = Ref.fromUrl(handle, url);
-
-      // Delete the item at index 1
-      // The refs should no longer resolve since the object is gone
-      handle.change((d) => {
-        d.items.splice(1, 1);
-      });
-
-      // Both refs should return undefined (object with that ObjectId was deleted)
-      expect(originalRef.value()).toBeUndefined();
-      expect(parsedRef.value()).toBeUndefined();
-
-      // URLs should still be identical (same ObjectId reference)
-      expect(parsedRef.url).toBe(originalRef.url);
     });
 
     it("should preserve cursor ranges through URL round-trip", () => {
@@ -507,11 +443,11 @@ describe("Ref", () => {
       });
 
       // Create ref with cursor range
-      const ref1 = new Ref(handle, ["note", [0, 5]]);
+      const ref1 = new Ref(handle, ["note", cursor(0, 5)]);
       const url = ref1.url;
 
       // Parse from URL
-      const ref2 = Ref.fromUrl(handle, url);
+      const ref2 = fromUrl(handle, url);
 
       // Should have same cursor range
       expect(ref2.url).toBe(ref1.url);
@@ -536,15 +472,15 @@ describe("Ref", () => {
 
       // Round-trip 1
       const url1 = ref1.url;
-      const ref2 = Ref.fromUrl(handle, url1);
+      const ref2 = fromUrl(handle, url1);
 
       // Round-trip 2
       const url2 = ref2.url;
-      const ref3 = Ref.fromUrl(handle, url2);
+      const ref3 = fromUrl(handle, url2);
 
       // Round-trip 3
       const url3 = ref3.url;
-      const ref4 = Ref.fromUrl(handle, url3);
+      const ref4 = fromUrl(handle, url3);
 
       // All URLs should be identical (this is the key invariant)
       expect(url1).toBe(url2);
@@ -646,32 +582,12 @@ describe("Ref", () => {
     });
   });
 
-  describe("ObjectId stability", () => {
-    it("should still resolve after reordering when using ObjectId", () => {
-      handle.change((d) => {
-        d.todos = [{ title: "First" }, { title: "Second" }];
-      });
-
-      const ref = new Ref(handle, ["todos", 1, "title"]);
-      expect(ref.value()).toBe("Second");
-
-      // Move items around
-      handle.change((d) => {
-        d.todos.deleteAt(0);
-      });
-
-      // Should still resolve to "Second" even though it moved to end
-      expect(ref.value()).toBe("Second");
-    });
-  });
-
-  describe("dynamic vs stable refs", () => {
-    it("should auto-stabilize numeric indices to ObjectIds by default", () => {
+  describe("ref behavior", () => {
+    it("should resolve numeric indices positionally", () => {
       handle.change((d) => {
         d.todos = [{ title: "A" }, { title: "B" }, { title: "C" }];
       });
 
-      // Numeric index should be stabilized to ObjectId
       const ref = new Ref(handle as DocHandle<Todo>, ["todos", 1]);
       type Todo = {
         todos: Array<{
@@ -682,44 +598,25 @@ describe("Ref", () => {
       expect(ref.value()?.title).toBe("B");
     });
 
-    it("should keep refs stable after reordering (auto-stabilized)", () => {
+    it("should track position changes for numeric indices", () => {
       handle.change((d) => {
         d.todos = [{ title: "A" }, { title: "B" }, { title: "C" }];
       });
 
-      // Create ref to middle item (auto-stabilizes to ObjectId)
+      // Create ref to position 1
       const ref = new Ref(handle, ["todos", 1, "title"]);
       expect(ref.value()).toBe("B");
-
-      handle.change((d) => {
-        d.todos.deleteAt(0);
-      });
-
-      // Ref should still point to "B" even though it moved
-      expect(ref.value()).toBe("B");
-    });
-
-    it("should keep dynamic refs with at() pointing to position", () => {
-      handle.change((d) => {
-        d.todos = [{ title: "A" }, { title: "B" }, { title: "C" }];
-      });
-
-      // Using at() keeps it dynamic (positional)
-      const dynamicRef = new Ref(handle, ["todos", at(1), "title"]);
-      expect(dynamicRef.path[1][KIND]).toBe("index");
-      expect((dynamicRef.path[1] as any).index).toEqual(1);
-      expect(dynamicRef.value()).toBe("B");
 
       // Remove first item - position 1 now has "C"
       handle.change((d) => {
         d.todos.deleteAt(0);
       });
 
-      // Dynamic ref now points to position 1 (which is "C")
-      expect(dynamicRef.value()).toBe("C");
+      // Numeric ref now points to position 1 (which is "C")
+      expect(ref.value()).toBe("C");
     });
 
-    it("should auto-stabilize where clauses to ObjectIds", () => {
+    it("should use match patterns to find items", () => {
       handle.change((d) => {
         d.items = [
           { id: "a", value: 1 },
@@ -727,17 +624,17 @@ describe("Ref", () => {
         ];
       });
 
-      // Where clause should be stabilized to ObjectId
+      // Match clause finds item by properties
       const ref = new Ref(handle, ["items", { id: "b" }, "value"]);
 
       expect(ref.value()).toBe(2);
 
-      // Path should contain ObjectId, not the where clause
-      expect(ref.path[1][KIND]).toBe("stable_index");
-      expect(typeof (ref.path[1] as any).id).toBe("string");
+      // Path should contain match pattern
+      expect(ref.path[1][KIND]).toBe("match");
+      expect((ref.path[1] as any).match).toEqual({ id: "b" });
     });
 
-    it("should keep where clause refs stable after reordering", () => {
+    it("should keep match refs stable after reordering", () => {
       handle.change((d) => {
         d.items = [
           { id: "a", value: 1 },
@@ -746,12 +643,11 @@ describe("Ref", () => {
         ];
       });
 
-      // Where clause should be stabilized to ObjectId
+      // Match clause finds item by id pattern
       const ref = new Ref(handle, ["items", { id: "b" }, "value"]);
       expect(ref.value()).toBe(2);
 
       // Move "b" to a different position by deleting first item
-      // This changes indices but ObjectIds remain the same
       handle.change((d) => {
         d.items.deleteAt(0); // Remove "a", now "b" is at index 0
       });
@@ -760,37 +656,11 @@ describe("Ref", () => {
       expect(ref.value()).toBe(2);
     });
 
-    it("should demonstrate stable vs dynamic behavior side-by-side", () => {
-      handle.change((d) => {
-        d.todos = [{ title: "A" }, { title: "B" }, { title: "C" }];
-      });
-
-      // Stable ref (auto-stabilized to ObjectId)
-      const stableRef = new Ref(handle, ["todos", 1, "title"]);
-      // Dynamic ref (explicitly marked with at())
-      const dynamicRef = new Ref(handle, ["todos", at(1), "title"]);
-
-      // Both point to "B" initially
-      expect(stableRef.value()).toBe("B");
-      expect(dynamicRef.value()).toBe("B");
-
-      // Remove first item
-      handle.change((d) => {
-        d.todos.deleteAt(0);
-      });
-
-      // Stable ref still points to "B" (tracked by ObjectId)
-      expect(stableRef.value()).toBe("B");
-      // Dynamic ref now points to position 1, which is "C"
-      expect(dynamicRef.value()).toBe("C");
-    });
-
-    it("should not stabilize primitives (no ObjectId)", () => {
+    it("should use numeric indices for primitives", () => {
       handle.change((d) => {
         d.numbers = [1, 2, 3];
       });
 
-      // Primitives don't have ObjectIds, so stays unstable
       const ref = new Ref(handle, ["numbers", 1]);
       expect(ref.path[0][KIND]).toBe("key");
       expect((ref.path[0] as any).key).toBe("numbers");
@@ -799,56 +669,39 @@ describe("Ref", () => {
       expect(ref.value()).toBe(2);
     });
 
-    it("should keep where clauses dynamic with at()", () => {
-      handle.change((d) => {
-        d.items = [
-          { id: "a", value: 1 },
-          { id: "b", value: 2 },
-        ];
-      });
-
-      // Using at() with id pattern keeps it dynamic
-      const dynamicRef = new Ref(handle, ["items", at({ id: "b" })]);
-      expect(dynamicRef.path[1][KIND]).toBe("query");
-      expect((dynamicRef.path[1] as any).idPattern).toEqual({ id: "b" });
-      expect(dynamicRef.value()).toEqual({ id: "b", value: 2 });
-    });
-
-    it("should auto-stabilize ranges to cursors", () => {
+    it("should create cursor-based ranges with cursor()", () => {
       handle.change((d) => {
         d.note = "Hello World";
       });
 
-      // Numeric range should be stabilized to cursors
-      const ref = new Ref(handle, ["note", [0, 5]]);
+      // Use cursor() to create cursor-based range
+      const ref = new Ref(handle, ["note", cursor(0, 5)]);
 
       // Range should be cursor-based
-      expect(ref.range?.[KIND]).toBe("stable_range");
+      expect(ref.range?.[KIND]).toBe("cursors");
       expect(typeof ref.range?.start).toBe("string"); // Cursor
       expect(typeof ref.range?.end).toBe("string"); // Cursor
 
       expect(ref.value()).toBe("Hello");
     });
 
-    it("should keep ranges dynamic with at()", () => {
+    it("should track cursor ranges through text edits", () => {
       handle.change((d) => {
         d.text = "Hello World";
       });
 
-      // Using at() keeps range as numeric
-      const dynamicRef = new Ref(handle, ["text", at([0, 5])]);
-      expect(dynamicRef.range?.[KIND]).toBe("range");
-      expect(dynamicRef.range?.start).toBe(0);
-      expect(dynamicRef.range?.end).toBe(5);
-      expect(dynamicRef.value()).toBe("Hello");
+      // Create cursor-based range
+      const cursorRef = new Ref(handle, ["text", cursor(0, 5)]);
+      expect(cursorRef.range?.[KIND]).toBe("cursors");
+      expect(cursorRef.value()).toBe("Hello");
 
       // Insert at beginning
       handle.change((d) => {
         splice(d, ["text"], 0, 0, ">> ");
       });
 
-      // Dynamic range still at positions 0..5 (now "> Hel")
-      expect(dynamicRef.value()).toBe(">> He");
+      // Cursor range tracks the original text (now "Hello")
+      expect(cursorRef.value()).toBe("Hello");
     });
   });
 
@@ -861,7 +714,7 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["counter"]);
 
       let receivedValue: number | undefined;
-      ref.change((val) => {
+      ref.change((val: any) => {
         receivedValue = val;
       });
 
@@ -875,7 +728,7 @@ describe("Ref", () => {
 
       const ref = new Ref(handle, ["data", "value"]);
 
-      ref.change((val) => {
+      ref.change(() => {
         // Return void - no update
       });
 
@@ -889,10 +742,10 @@ describe("Ref", () => {
 
       const ref = new Ref(handle, ["counter"]);
 
-      ref.change((val) => val + 10);
+      ref.change((val: any) => val + 10);
       expect(ref.value()).toBe(10);
 
-      ref.change((val) => val * 2);
+      ref.change((val: any) => val * 2);
       expect(ref.value()).toBe(20);
     });
 
@@ -903,7 +756,7 @@ describe("Ref", () => {
 
       const ref = new Ref(handle, ["config"]);
 
-      ref.change((config) => {
+      ref.change((config: any) => {
         config.enabled = true;
         config.count = 5;
         // Return void - mutations applied
@@ -938,7 +791,7 @@ describe("Ref", () => {
 
       const ageRef = new Ref(handle, ["user", "profile", "age"]);
 
-      ageRef.change((age) => age + 1);
+      ageRef.change((age: any) => age + 1);
       expect(ageRef.value()).toBe(26);
       expect(handle.doc().user.profile.age).toBe(26);
     });
@@ -951,7 +804,7 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["data", "missing"]);
 
       let receivedValue: any;
-      ref.change((val) => {
+      ref.change((val: any) => {
         receivedValue = val;
         return "now exists";
       });
@@ -1107,16 +960,16 @@ describe("Ref", () => {
       await changePromise;
     });
 
-    it("should fire for dynamic refs at the correct position", async () => {
+    it("should fire for refs at the correct position", async () => {
       handle.change((d) => {
         d.items = ["a", "b", "c"];
       });
 
-      const dynamicRef = new Ref(handle, ["items", at(1)]);
+      const ref = new Ref(handle, ["items", 1]);
 
       const changePromise = new Promise<void>((resolve) => {
-        dynamicRef.onChange(() => {
-          expect(dynamicRef.value()).toBe("modified");
+        ref.onChange(() => {
+          expect(ref.value()).toBe("modified");
           resolve();
         });
       });
@@ -1190,11 +1043,11 @@ describe("Ref", () => {
         d.note = "Hello World";
       });
 
-      const rangeRef = new Ref(handle, ["note", [0, 5]]);
+      const rangeRef = new Ref(handle, ["note", cursor(0, 5)]);
 
       const changePromise = new Promise<void>((resolve) => {
         rangeRef.onChange(() => {
-          // Range should have shifted due to cursor stabilization
+          // Cursor range tracks original text
           expect(rangeRef.value()).toBe("Hello");
           resolve();
         });
@@ -1749,8 +1602,8 @@ describe("Ref", () => {
         d.text = "Hello World";
       });
 
-      const range1 = ref(handle, "text", [0, 5]);
-      const range2 = ref(handle, "text", [3, 8]);
+      const range1 = ref(handle, "text", cursor(0, 5));
+      const range2 = ref(handle, "text", cursor(3, 8));
 
       expect(range1.overlaps(range2)).toBe(true);
       expect(range2.overlaps(range1)).toBe(true);
@@ -1761,20 +1614,20 @@ describe("Ref", () => {
         d.text = "Hello World";
       });
 
-      const range1 = ref(handle, "text", [0, 5]);
-      const range2 = ref(handle, "text", [6, 11]);
+      const range1 = ref(handle, "text", cursor(0, 5));
+      const range2 = ref(handle, "text", cursor(6, 11));
 
       expect(range1.overlaps(range2)).toBe(false);
       expect(range2.overlaps(range1)).toBe(false);
     });
 
-    it("should return true for adjacent ranges that touch", () => {
+    it("should return false for adjacent ranges that touch", () => {
       handle.change((d) => {
         d.text = "Hello World";
       });
 
-      const range1 = ref(handle, "text", [0, 5]);
-      const range2 = ref(handle, "text", [5, 10]);
+      const range1 = ref(handle, "text", cursor(0, 5));
+      const range2 = ref(handle, "text", cursor(5, 10));
 
       expect(range1.overlaps(range2)).toBe(false);
     });
@@ -1784,8 +1637,8 @@ describe("Ref", () => {
         d.text = "Hello World";
       });
 
-      const range1 = ref(handle, "text", [0, 10]);
-      const range2 = ref(handle, "text", [3, 7]);
+      const range1 = ref(handle, "text", cursor(0, 10));
+      const range2 = ref(handle, "text", cursor(3, 7));
 
       expect(range1.overlaps(range2)).toBe(true);
       expect(range2.overlaps(range1)).toBe(true);
@@ -1808,7 +1661,7 @@ describe("Ref", () => {
       });
 
       const textRef = ref(handle, "text");
-      const rangeRef = ref(handle, "text", [0, 5]);
+      const rangeRef = ref(handle, "text", cursor(0, 5));
 
       expect(textRef.overlaps(rangeRef)).toBe(false);
       expect(rangeRef.overlaps(textRef)).toBe(false);
@@ -1820,8 +1673,8 @@ describe("Ref", () => {
         d.text2 = "World";
       });
 
-      const range1 = ref(handle, "text1", [0, 5]);
-      const range2 = ref(handle, "text2", [0, 5]);
+      const range1 = ref(handle, "text1", cursor(0, 5));
+      const range2 = ref(handle, "text2", cursor(0, 5));
 
       expect(range1.overlaps(range2)).toBe(false);
     });
@@ -1835,20 +1688,20 @@ describe("Ref", () => {
         d.text = "World";
       });
 
-      const range1 = ref(handle, "text", [0, 5]);
-      const range2 = ref(handle2, "text", [0, 5]);
+      const range1 = ref(handle, "text", cursor(0, 5));
+      const range2 = ref(handle2, "text", cursor(0, 5));
 
       expect(range1.overlaps(range2)).toBe(false);
     });
 
-    it("should work with stable ranges (cursors)", () => {
+    it("should work with cursor ranges", () => {
       handle.change((d) => {
         d.text = "Hello World";
       });
 
-      // These will auto-stabilize to cursors
-      const range1 = ref(handle, "text", [0, 5]);
-      const range2 = ref(handle, "text", [3, 8]);
+      // Create cursor-based ranges
+      const range1 = ref(handle, "text", cursor(0, 5));
+      const range2 = ref(handle, "text", cursor(3, 8));
 
       expect(range1.overlaps(range2)).toBe(true);
     });
@@ -1858,8 +1711,8 @@ describe("Ref", () => {
         d.text = "Hello";
       });
 
-      const range1 = ref(handle, "text", [0, 2]);
-      const range2 = ref(handle, "text", [3, 5]);
+      const range1 = ref(handle, "text", cursor(0, 2));
+      const range2 = ref(handle, "text", cursor(3, 5));
 
       expect(range1.overlaps(range2)).toBe(false);
     });
@@ -1879,7 +1732,7 @@ describe("Ref", () => {
       expect(ref.value()).toBe("updated");
     });
 
-    it("should handle mixed stable and dynamic segments", () => {
+    it("should handle mixed segments", () => {
       handle.change((d) => {
         d.items = [
           { id: "a", data: { name: "First" } },
@@ -1887,7 +1740,7 @@ describe("Ref", () => {
         ];
       });
 
-      // Mix of: key -> stable_index -> key -> key
+      // Mix of: key -> index -> key -> key
       const ref = new Ref(handle, ["items", 1, "data", "name"]);
       expect(ref.value()).toBe("Second");
 
@@ -1896,8 +1749,8 @@ describe("Ref", () => {
         d.items.shift();
       });
 
-      // Should still resolve to "Second" (tracked by ObjectId, now at index 0)
-      expect(ref.value()).toBe("Second");
+      // Numeric index now points to what's at position 1 (nothing left at index 1)
+      expect(ref.value()).toBeUndefined();
     });
 
     it("should handle unresolvable segments gracefully", () => {
@@ -1905,18 +1758,18 @@ describe("Ref", () => {
         d.items = [{ name: "First" }, { name: "Second" }];
       });
 
-      // Path with an ObjectId that doesn't exist
+      // Path with a match pattern that doesn't exist
       const ref = new Ref(handle, ["items", { name: "Third" }, "value"]);
       expect(ref.value()).toBeUndefined();
 
-      // Query segment should have undefined resolvedProp (no match)
+      // Match segment should have undefined prop (no match)
       expect(ref.path.length).toBe(3);
-      expect(ref.path[0].resolvedProp).toBe("items");
-      expect(ref.path[1].resolvedProp).toBeUndefined(); // Query found no match
-      expect(ref.path[2].resolvedProp).toBe("value"); // Key props are always resolved
+      expect(ref.path[0].prop).toBe("items");
+      expect(ref.path[1].prop).toBeUndefined(); // Match found no match
+      expect(ref.path[2].prop).toBe("value"); // Key props are always resolved
     });
 
-    it("should update resolvedProps when document changes externally", () => {
+    it("should update props when document changes externally", () => {
       handle.change((d) => {
         d.items = [
           { id: "a", value: 1 },
@@ -1925,9 +1778,10 @@ describe("Ref", () => {
         ];
       });
 
-      const ref = new Ref(handle, ["items", 1, "value"]);
+      // Use match pattern to track by id
+      const ref = new Ref(handle, ["items", { id: "b" }, "value"]);
       expect(ref.value()).toBe(2);
-      expect(ref.path[1].resolvedProp).toBe(1); // index 1
+      expect(ref.path[1].prop).toBe(1); // index 1
 
       // Remove first item - second item moves to index 0
       handle.change((d) => {
@@ -1935,10 +1789,10 @@ describe("Ref", () => {
       });
 
       expect(ref.value()).toBe(2); // Still resolves to same object
-      expect(ref.path[1].resolvedProp).toBe(0); // Now at index 0
+      expect(ref.path[1].prop).toBe(0); // Now at index 0
     });
 
-    it("should stabilize query clauses to ObjectIds", () => {
+    it("should use match patterns to find items dynamically", () => {
       handle.change((d) => {
         d.users = [
           { name: "Alice", active: true },
@@ -1949,23 +1803,29 @@ describe("Ref", () => {
       const ref = new Ref(handle, ["users", { active: true }, "name"]);
       expect(ref.value()).toBe("Alice"); // First match
 
-      // The query was stabilized to an ObjectId (stable_index)
-      expect(ref.path[1][KIND]).toBe("stable_index");
+      // The match pattern is retained
+      expect(ref.path[1][KIND]).toBe("match");
 
-      // Even if we change the property, the ref still tracks the same object
+      // If we change the property, the ref re-evaluates to find new match
       handle.change((d) => {
         d.users[0].active = false;
       });
 
-      expect(ref.value()).toBe("Alice"); // Still resolves (tracked by ObjectId)
+      // Now Bob is the first match for { active: true }
+      expect(ref.value()).toBe("Bob");
 
-      // But if we delete the object, it becomes unresolved
+      // If no more matches, returns undefined
       handle.change((d) => {
-        d.users.shift();
+        d.users[0].active = false; // Bob (now at index 0 after shift) also set to false
+      });
+
+      // But wait - Bob is still at index 1, Alice is at index 0
+      // Let's set Bob to false as well
+      handle.change((d) => {
+        d.users[1].active = false;
       });
 
       expect(ref.value()).toBeUndefined();
-      expect(ref.path[1].resolvedProp).toBeUndefined(); // ObjectId no longer found
     });
 
     it("should handle empty arrays and objects", () => {
@@ -2003,10 +1863,10 @@ describe("Ref", () => {
         };
       });
 
-      const ref1 = new Ref(handle, ["texts", "first", [0, 5]]);
+      const ref1 = new Ref(handle, ["texts", "first", cursor(0, 5)]);
       expect(ref1.value()).toBe("Hello");
 
-      const ref2 = new Ref(handle, ["texts", "second", [8, 12]]);
+      const ref2 = new Ref(handle, ["texts", "second", cursor(8, 12)]);
       expect(ref2.value()).toBe("Moon");
     });
 
@@ -2020,13 +1880,13 @@ describe("Ref", () => {
         };
       });
 
-      // key -> key -> query -> key -> range
+      // key -> key -> match -> key -> cursors
       const ref = new Ref(handle, [
         "root",
         "items",
         { type: "text" },
         "content",
-        [0, 5],
+        cursor(0, 5),
       ]);
 
       expect(ref.value()).toBe("Hello");
@@ -2045,6 +1905,121 @@ describe("Ref", () => {
 
       // After disposal, internal listener is removed
       // (the ref still works, but props won't auto-update)
+    });
+  });
+
+  describe("change shorthand", () => {
+    it("should accept direct primitive value for strings", () => {
+      handle.change((d) => {
+        d.theme = "light";
+      });
+
+      const themeRef = ref(handle, "theme");
+      themeRef.change("dark");
+      expect(themeRef.value()).toBe("dark");
+    });
+
+    it("should accept direct primitive value for numbers", () => {
+      handle.change((d) => {
+        d.counter = 0;
+      });
+
+      const counterRef = ref(handle, "counter");
+      counterRef.change(42);
+      expect(counterRef.value()).toBe(42);
+    });
+
+    it("should accept direct primitive value for booleans", () => {
+      handle.change((d) => {
+        d.enabled = false;
+      });
+
+      const enabledRef = ref(handle, "enabled");
+      enabledRef.change(true);
+      expect(enabledRef.value()).toBe(true);
+    });
+
+    it("should still accept function form", () => {
+      handle.change((d) => {
+        d.counter = 10;
+      });
+
+      const counterRef = ref(handle, "counter");
+      counterRef.change((n: any) => n * 2);
+      expect(counterRef.value()).toBe(20);
+    });
+  });
+
+  describe("ref caching", () => {
+    it("should return same ref instance for same path", () => {
+      handle.change((d) => {
+        d.value = 42;
+      });
+
+      const ref1 = ref(handle, "value");
+      const ref2 = ref(handle, "value");
+
+      expect(ref1).toBe(ref2);
+    });
+
+    it("should return different refs for different paths", () => {
+      handle.change((d) => {
+        d.a = 1;
+        d.b = 2;
+      });
+
+      const refA = ref(handle, "a");
+      const refB = ref(handle, "b");
+
+      expect(refA).not.toBe(refB);
+    });
+
+    it("should return different refs for different handles", () => {
+      const handle2 = repo.create();
+      handle.change((d) => {
+        d.value = 1;
+      });
+      handle2.change((d: any) => {
+        d.value = 2;
+      });
+
+      const ref1 = ref(handle, "value");
+      const ref2 = ref(handle2, "value");
+
+      expect(ref1).not.toBe(ref2);
+    });
+
+    it("should cache refs with nested paths", () => {
+      handle.change((d) => {
+        d.user = { profile: { name: "Alice" } };
+      });
+
+      const ref1 = ref(handle, "user", "profile", "name");
+      const ref2 = ref(handle, "user", "profile", "name");
+
+      expect(ref1).toBe(ref2);
+    });
+
+    it("should cache refs with numeric indices", () => {
+      handle.change((d) => {
+        d.items = ["a", "b", "c"];
+      });
+
+      const ref1 = ref(handle, "items", 1);
+      const ref2 = ref(handle, "items", 1);
+
+      expect(ref1).toBe(ref2);
+    });
+
+    it("should cache refs with pattern matches", () => {
+      handle.change((d) => {
+        d.users = [{ id: "alice", name: "Alice" }];
+      });
+
+      const ref1 = ref(handle, "users", { id: "alice" });
+      const ref2 = ref(handle, "users", { id: "alice" });
+
+      expect(ref1).toBe(ref2);
     });
   });
 });

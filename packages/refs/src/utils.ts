@@ -1,80 +1,99 @@
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import type { Segment, IdPattern } from "./types";
-import { KIND } from "./types";
+import type {
+  Pattern,
+  CursorMarker,
+  RefUrl,
+  AnyPathInput,
+  SegmentsFromString,
+} from "./types";
+import { CURSOR_MARKER } from "./types";
 import { Ref } from "./ref";
-import { parseAutomergeRefUrl, type AutomergeRefUrl } from "./parser";
+import { parseRefUrl } from "./parser";
 
 /**
- * Prevent stabilization for a path segment.
+ * Create a cursor-based range segment for stable text selection.
  *
- * By default, refs are stable: numeric indices → ObjectIds, ranges → cursors.
- * Use `at()` to keep segments dynamic and positional.
+ * Must be used as the last argument in a ref path.
+ * Creates stable cursors that track text positions through edits.
  *
  * @example
  * ```ts
- * ref(handle, 'todos', 0)      // Stable: tracks by ObjectId
- * ref(handle, 'todos', at(0))  // Dynamic: always index 0
+ * ref(handle, 'note', cursor(0, 5))  // Cursor-based range on text
  * ```
  */
-export function at(
-  segment: string | number | IdPattern | [number, number]
-): Segment {
-  if (typeof segment === "string") {
-    return { [KIND]: "key", key: segment };
-  }
-  if (typeof segment === "number") {
-    return { [KIND]: "index", index: segment };
-  }
-  if (Array.isArray(segment)) {
-    return { [KIND]: "range", start: segment[0], end: segment[1] };
-  }
-  return { [KIND]: "query", idPattern: segment };
+export function cursor(start: number, end?: number): CursorMarker {
+  return { [CURSOR_MARKER]: true, start, end: end ?? start };
 }
 
 /**
- * Find a ref by its Automerge URL.
+ * Parse a ref from a URL string.
+ *
+ * @param handle - The document handle to use
+ * @param url - Full ref URL like "automerge:documentId/path#heads"
+ *
+ * @example
+ * fromUrl(handle, "automerge:abc/todos/0#head1|head2" as RefUrl)
+ */
+export function fromUrl<TDoc = any>(
+  handle: DocHandle<TDoc>,
+  url: RefUrl
+): Ref<TDoc, AnyPathInput[]> {
+  const { segments, heads } = parseRefUrl(url);
+  const options = heads ? { heads } : {};
+  return new Ref<TDoc, AnyPathInput[]>(handle, segments, options);
+}
+
+/**
+ * Create a ref from a path string
+ *
+ * @example
+ * ```ts
+ * type Doc = { todos: Array<{ title: string }> };
+ * const titleRef = fromString<Doc>(handle, "todos/0/title");
+ * // titleRef.value() is inferred as string | undefined
+ * ```
+ */
+export function fromString<TDoc, TPath extends string>(
+  docHandle: DocHandle<TDoc>,
+  path: TPath
+): Ref<TDoc, SegmentsFromString<TPath>> {
+  const url = docHandle.url;
+  const { segments } = parseRefUrl(`${url}/${path}` as RefUrl);
+  return new Ref<TDoc, SegmentsFromString<TPath>>(
+    docHandle,
+    segments as unknown as [...SegmentsFromString<TPath>]
+  );
+}
+
+/**
+ * Find a ref by its URL.
  *
  * URL format: `automerge:{documentId}/{path}#{heads}`
  *
  * @example
  * ```ts
- * const ref = await findRef(repo, "automerge:abc123/todos/$xyz/title" as AutomergeRefUrl);
+ * const ref = await findRef(repo, "automerge:abc123/todos/$xyz/title" as RefUrl);
  * ```
  */
 export async function findRef<T = any>(
   repo: Repo,
-  url: AutomergeRefUrl
+  url: RefUrl
 ): Promise<Ref<T>> {
-  const { documentId } = parseAutomergeRefUrl(url);
+  const { documentId } = parseRefUrl(url);
   const handle = await repo.find(documentId as any);
   await handle.whenReady();
 
-  return Ref.fromUrl(handle as DocHandle<T>, url);
+  return fromUrl(handle as DocHandle<T>, url);
 }
 
 /**
- * Shallow equality check for plain objects.
- * Compares only own enumerable properties.
- *
- * @internal
- */
-export function shallowEqual(a: IdPattern, b: IdPattern): boolean {
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-
-  if (aKeys.length !== bKeys.length) return false;
-
-  return aKeys.every((key) => a[key] === b[key]);
-}
-
-/**
- * Check if an item matches an ID pattern.
+ * Check if an item matches a pattern.
  *
  * Note: This performs shallow equality checks only. Nested objects
  * are compared by reference, not by deep value equality.
  *
  * @internal
  */
-export function matchesIdPattern(item: any, idPattern: IdPattern): boolean {
-  return Object.entries(idPattern).every(([key, value]) => item[key] === value);
+export function matchesPattern(item: any, pattern: Pattern): boolean {
+  return Object.entries(pattern).every(([key, value]) => item[key] === value);
 }
