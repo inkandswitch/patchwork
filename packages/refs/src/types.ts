@@ -12,7 +12,6 @@ export const KIND = "AUTOMERGE_REF_KIND";
  */
 export const CURSOR_MARKER = "AUTOMERGE_REF_CURSOR_MARKER";
 
-
 /**
  * Pattern used to match objects in arrays by their properties.
  * Only primitive values are allowed for reliable serialization and comparison.
@@ -217,14 +216,7 @@ export type RefUrl = string & { readonly __brand: "RefUrl" };
  * function addComment(thread: RefOfType<Thread>) { ... }
  * ```
  */
-<<<<<<< HEAD
 export type RefOfType<T> = Omit<Ref, "value" | "change"> & {
   value(): T | undefined;
   change(fnOrValue: ChangeFn<T> | T): void;
-=======
-export type RefOfType<T> = {
-  value(): T | undefined;
-  change(fn: ChangeFn<T>): void;
-  readonly url: RefUrl;
->>>>>>> main
 };

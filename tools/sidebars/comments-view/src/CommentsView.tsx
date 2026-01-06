@@ -17,7 +17,7 @@ import {
   createReply,
 } from "@inkandswitch/annotations-comments";
 import { useObservable } from "@inkandswitch/observable-react";
-import { Ref, RefOfType, ref, fromUrl, RefUrl } from "@patchwork/refs";
+import { Ref, RefOfType, ref, findRef, RefUrl } from "@patchwork/refs";
 import { useRefValue } from "@patchwork/refs-react";
 import { Repo } from "@automerge/automerge-repo";
 
@@ -365,7 +365,7 @@ const useResolvedRefs = (refUrls: RefUrl[] | undefined, repo: Repo): Ref[] => {
     let isCanceled = false;
 
     Promise.all(
-      refUrls.map((url) => fromUrl(repo, url).catch(() => null))
+      refUrls.map((url) => findRef(repo, url).catch(() => null))
     ).then((refs) => {
       if (!isCanceled) {
         setResolvedRefs(refs.filter((r): r is Ref => r !== null));

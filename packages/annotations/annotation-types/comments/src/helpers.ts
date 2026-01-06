@@ -1,5 +1,5 @@
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import { type Ref, type RefOfType, ref, fromUrl } from "@patchwork/refs";
+import { type Ref, type RefOfType, ref, findRef } from "@patchwork/refs";
 import { DocWithComments, CommentThread, Comment } from "./types";
 import type {
   CommentThread as CommentThreadType,
@@ -104,7 +104,7 @@ export async function commentThreadsWithRefOfDoc(
       const thread = {
         ...serializedThread,
         refs: await Promise.all(
-          serializedThread.refs.map((refUrl) => fromUrl(repo, refUrl))
+          serializedThread.refs.map((refUrl) => findRef(repo, refUrl))
         ),
       };
       const threadRef = ref(docHandle, "@comments", "threads", {
