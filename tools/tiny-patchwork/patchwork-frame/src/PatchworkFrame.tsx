@@ -1,28 +1,36 @@
-import "./styles.css";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
+import {
+  useDocHandle,
+  useDocument,
+  useRepo,
+} from "@automerge/automerge-repo-react-hooks";
+import { DocHandle } from "@automerge/automerge-repo";
 import {
   AutomergeUrl,
-  DocHandle,
   encodeHeads,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
 } from "@automerge/vanillajs";
-import { DocWithComments, getStoredThreads } from "@patchwork/context-comments";
-import { getViewHeads } from "@patchwork/context-diff";
-import {
-  useDocRef,
-  useReactive,
-  useSubcontext,
-} from "@patchwork/context-react";
-import { IsSelected } from "@patchwork/context-selection";
-import { useEffect, useMemo, useState } from "react";
-import { TinyPatchworkConfigDoc } from "./types";
 import { OpenDocumentEvent } from "@inkandswitch/patchwork-elements";
+import { AnnotationSet } from "@inkandswitch/annotations";
+import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
+import { ViewHeads } from "@inkandswitch/annotations-diff";
+import { IsSelected } from "@inkandswitch/annotations-selection";
+import { useSubscribe } from "@inkandswitch/subscribables-react";
+import { ref, RefOfType } from "@patchwork/refs";
+import { useEffect, useMemo, useState } from "react";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
+import "./styles.css";
+import { TinyPatchworkConfigDoc } from "./types";
 import {
-  useDebugRegistryToast,
   DebugRegistryToast,
+  useDebugRegistryToast,
 } from "./useDebugRegistryToast";
+import {
+  CommentThread,
+  DocWithComments,
+  SerializedCommentThread,
+} from "@inkandswitch/annotations-comments";
+import { commentThreadsWithRefOfDoc } from "@inkandswitch/annotations-comments";
 
 export const PatchworkFrame = ({
   docUrl: accountDocUrl,
@@ -55,15 +63,21 @@ export const PatchworkFrame = ({
     clearAll,
   } = useDebugRegistryToast();
 
-  const [selectedDoc] = useDocument<DocWithComments>(selectedView?.url);
-  const selectedDocRef = useDocRef(selectedView?.url);
+  const selectedDocHandle = useDocHandle(selectedView?.url);
+  const selectedDocRef = useMemo(
+    () => (selectedDocHandle ? ref(selectedDocHandle) : undefined),
+    [selectedDocHandle]
+  );
 
-  const viewHeads = useReactive(
+  const selectedDocAnnotations = useSubscribe(
     useMemo(
-      () => (selectedDocRef ? getViewHeads(selectedDocRef) : undefined),
+      () =>
+        selectedDocRef ? globalAnnotations.onRef(selectedDocRef) : undefined,
       [selectedDocRef]
     )
   );
+
+  const viewHeads = selectedDocAnnotations?.lookup(ViewHeads);
 
   const selectedDocUrl = useMemo(() => {
     if (!selectedView?.url) {
@@ -81,13 +95,45 @@ export const PatchworkFrame = ({
     });
   }, [selectedView?.url, viewHeads]);
 
-  // add selected doc to context
-  const selectionContext = useSubcontext("SINGLE_VIEW_SELECTION");
+  //  Contribute annotations to the global context
+  const commentThreadsWithRef = useCommentThreadsWithRefOfDoc(
+    selectedDocHandle as DocHandle<DocWithComments>
+  );
+  const annotations = useMemo(() => new AnnotationSet(), []);
   useEffect(() => {
-    selectionContext.replace(
-      selectedDocRef ? [selectedDocRef.with(IsSelected(true))] : []
-    );
-  }, [selectedDocRef, selectionContext]);
+    if (!selectedDocRef) {
+      return;
+    }
+
+    globalAnnotations.add(annotations);
+
+    annotations.change(() => {
+      annotations.clear();
+
+      // selection
+      annotations.add(selectedDocRef, IsSelected(true));
+
+      // comment threads
+      for (const [threadRef, thread] of commentThreadsWithRef) {
+        for (const ref of thread.refs) {
+          if (threadRef.value()?.isResolved) {
+            continue;
+          }
+
+          annotations.add(ref, CommentThread(threadRef));
+        }
+      }
+    });
+
+    return () => {
+      globalAnnotations.remove(annotations);
+    };
+  }, [
+    annotations,
+    selectedDocAnnotations,
+    selectedDocRef,
+    commentThreadsWithRef,
+  ]);
 
   const repo = useRepo();
 
@@ -125,22 +171,6 @@ export const PatchworkFrame = ({
     (window as any).currentDocHandle = selectedDocRef?.docHandle;
   }, [selectedDocRef]);
 
-  // Add comments to context
-  const commentsContext = useSubcontext("SINGLE_VIEW_COMMENTS");
-  useEffect(() => {
-    void selectedDoc;
-
-    if (!selectedView || !selectedDocRef || !selectedDocRef.docHandle) {
-      return;
-    }
-
-    const storedThreads = getStoredThreads(
-      selectedDocRef.docHandle as DocHandle<DocWithComments>
-    );
-
-    commentsContext.replace(storedThreads);
-  }, [commentsContext, selectedView, selectedDocRef, selectedDoc]);
-
   return (
     <div className="w-screen h-screen flex">
       <DebugRegistryToast
@@ -153,6 +183,7 @@ export const PatchworkFrame = ({
           isSidebarCollapsed ? "w-0" : "w-[400px]"
         }`}
       >
+        {/* Account sidebar */}
         {accountSidebarToolId && !isSidebarCollapsed && (
           <patchwork-view
             class="h-full"
@@ -170,6 +201,7 @@ export const PatchworkFrame = ({
         />
       </div>
       <div className="flex flex-col flex-1 h-full">
+        {/* Document toolbar */}
         {selectedDocUrl && (
           <div className="p-2 bg-base-200 border-b border-base-300 flex items-center gap-2 flex-start">
             {accountDoc.documentToolbarToolIds?.map((toolId, index) => (
@@ -182,6 +214,7 @@ export const PatchworkFrame = ({
             ))}
           </div>
         )}
+        {/* Main document view */}
         <div className="w-full flex-1 min-h-0">
           {selectedDocUrl && (
             <patchwork-view
@@ -196,6 +229,7 @@ export const PatchworkFrame = ({
           )}
         </div>
       </div>
+      {/* Context sidebar */}
       {contextSidebarToolId && (
         <div
           className={`flex relative transition-all duration-300 bg-base-100 ${
@@ -222,4 +256,34 @@ export const PatchworkFrame = ({
       )}
     </div>
   );
+};
+
+export const useCommentThreadsWithRefOfDoc = (
+  docHandle?: DocHandle<DocWithComments>
+) => {
+  const repo = useRepo();
+  const [doc] = useDocument(docHandle?.url);
+  const [commentThreadsWithRef, setCommentThreadsWithRef] = useState<
+    [RefOfType<SerializedCommentThread>, CommentThread][]
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!docHandle) {
+      return;
+    }
+
+    commentThreadsWithRefOfDoc(docHandle, repo).then((threadsWithRef) => {
+      if (cancelled) {
+        return;
+      }
+      setCommentThreadsWithRef(threadsWithRef);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [docHandle, repo, doc]);
+
+  return commentThreadsWithRef;
 };

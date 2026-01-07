@@ -9,6 +9,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), cssInjectedByJsPlugin()],
 
   build: {
+    minify: false,
     rollupOptions: {
       external: externals,
       input: "./src/index.ts",

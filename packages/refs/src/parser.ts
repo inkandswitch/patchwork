@@ -1,6 +1,31 @@
 import * as Automerge from "@automerge/automerge";
 import type { RefUrl, Segment, SegmentCodec } from "./types";
 import { KIND } from "./types";
+import { DocumentId } from "@automerge/automerge-repo";
+
+/**
+ * # Path Segment Encoding Scheme
+ *
+ * | Type    | Format              | Example                    | Notes                           |
+ * |---------|---------------------|----------------------------|---------------------------------|
+ * | Key     | string              | `foo`, `my%2Fkey`          | Default, URL-encoded            |
+ * | Index   | `@` + number        | `@0`, `@42`                | Array index                     |
+ * | Match   | `{...}`             | `{"id":"alice"}`           | JSON object pattern (URL-encoded) |
+ * | Cursors | `[start-end]`       | `[2@abc-5@def]`            | Cursor range                    |
+ * | Cursors | `[cursor]`          | `[2@abc]`                  | Collapsed (start === end)       |
+ *
+ * ## Escape Rule
+ * If a key starts with `@`, `{`, `[`, or `\`, prefix with `\` (URL-encoded as `%5C`):
+ * - `\@at` → key "@at" (appears as `%5C%40at` in URL)
+ * - `\{brace` → key "{brace" (appears as `%5C%7Bbrace` in URL)
+ * - `\\backslash` → key "\backslash" (appears as `%5C%5Cbackslash` in URL)
+ *
+ * ## Parsing Priority (first match wins)
+ * 1. Index: `@` + digits
+ * 2. Match: `{...}` or URL-encoded `%7B...`
+ * 3. Cursors: `[...]`
+ * 4. Key: `\...` (escaped, URL-encoded as `%5C...`) or anything else
+ */
 
 /**
  * # Path Segment Encoding Scheme
@@ -224,7 +249,7 @@ export function serializeHeads(heads: string[]): string {
 }
 
 export function parseRefUrl(url: RefUrl): {
-  documentId: string;
+  documentId: DocumentId;
   segments: Segment[];
   heads?: string[];
 } {
@@ -244,7 +269,7 @@ export function parseRefUrl(url: RefUrl): {
   const [, documentId, pathStr] = match;
 
   return {
-    documentId,
+    documentId: documentId as DocumentId,
     segments: pathStr ? parsePath(pathStr) : [],
     heads: parseHeads(headsSection),
   };

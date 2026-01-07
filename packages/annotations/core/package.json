@@ -1,0 +1,31 @@
+{
+  "name": "@inkandswitch/annotations",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "devDependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "@inkandswitch/subscribables": "workspace:*",
+    "@patchwork/refs": "workspace:*",
+    "eventemitter3": "^5.0.1"
+  }
+}

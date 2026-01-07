@@ -1,22 +1,30 @@
-import "./styles.css";
 import * as Automerge from "@automerge/automerge";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { ViewHeads, ViewHeadsAnnotation } from "@patchwork/context-diff";
 import {
-  useDocRef,
-  useReactive,
-  useSubcontext,
-} from "@patchwork/context-react";
-import { getType, HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
-import { useEffect, useState } from "react";
-import { relativeTime } from "@patchwork/util/src/relative-time";
+  useDocHandle,
+  useDocument,
+  useRepo,
+} from "@automerge/automerge-repo-react-hooks";
+import "./styles.css";
+
+import { annotations as ANNOTATIONS } from "@inkandswitch/annotations-context";
+import {
+  getType,
+  HasPatchworkMetadata,
+} from "@inkandswitch/patchwork-filesystem";
 import { toolify } from "@inkandswitch/patchwork-react";
-import { $selectedDocUrls } from "@patchwork/context-selection";
+import { relativeTime } from "@patchwork/util/src/relative-time";
+import { useEffect, useMemo, useState } from "react";
+
+import { AnnotationSet } from "@inkandswitch/annotations";
+import { ViewHeads } from "@inkandswitch/annotations-diff";
+import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
+import { useSubscribe } from "@inkandswitch/subscribables-react";
 import { useDatatype } from "@inkandswitch/patchwork-react";
+import { ref } from "@patchwork/refs";
 
 const HistoryView = () => {
-  const selectedDocUrls = useReactive($selectedDocUrls);
+  const selectedDocUrls = useSubscribe($selectedDocUrls);
 
   return (
     <div className="flex flex-col h-full">
@@ -37,17 +45,31 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   });
   const title = useDatatype(getType(doc))?.module.getTitle(doc);
 
-  const docRef = useDocRef(docUrl);
+  const docHandle = useDocHandle(docUrl, { suspense: true });
+  const docRef = useMemo(() => ref(docHandle), [docHandle]);
 
-  const headsSelectionContext = useSubcontext("HISTORY_HEADS_SELECTION");
+  // add selected view heads to global context
+
+  console.log("viewHeads", viewHeads);
+
+  const annotations = useMemo(() => new AnnotationSet(), []);
   useEffect(() => {
-    if (!docRef || !viewHeads) {
-      headsSelectionContext.replace([]);
+    if (!viewHeads) {
       return;
     }
 
-    headsSelectionContext.replace(docRef.with(ViewHeadsAnnotation(viewHeads)));
-  }, [viewHeads, headsSelectionContext, docRef]);
+    ANNOTATIONS.add(annotations);
+
+    annotations.change(() => {
+      annotations.clear();
+      annotations.add(docRef, ViewHeads(viewHeads));
+    });
+    return () => {
+      ANNOTATIONS.remove(annotations);
+    };
+  }, [annotations, docRef, viewHeads]);
+
+  // load history
 
   useEffect(() => {
     const loadHistory = async () => {

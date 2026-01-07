@@ -1,19 +1,20 @@
-import "./styles.css";
-import { contextComputation, Ref, TextSpanRef } from "@patchwork/context";
-import { useReactive } from "@patchwork/context-react";
+import { DocHandle } from "@automerge/automerge-repo";
+import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
+import { computed } from "@inkandswitch/subscribables";
+import { useSubscribe } from "@inkandswitch/subscribables-react";
+import { type Ref } from "@patchwork/refs";
+import { useRefValue } from "@patchwork/refs-react";
 import { Fragment } from "react/jsx-runtime";
+import "./styles.css";
 
-const $refs = contextComputation((context) => context.refs);
+const $sortedRefs = computed(globalAnnotations, () =>
+  Array.from(globalAnnotations.refs).sort((a, b) =>
+    a.toString().localeCompare(b.toString())
+  )
+);
 
 export const ContextView = () => {
-  const refs = useReactive($refs);
-
-  // Sort refs by refToString
-  const sortedRefs = refs.slice().sort((a, b) => {
-    const aString = refToString(a);
-    const bString = refToString(b);
-    return aString.localeCompare(bString);
-  });
+  const sortedRefs = useSubscribe($sortedRefs);
 
   return (
     <div className="w-full h-full overflow-auto">
@@ -29,62 +30,80 @@ export const ContextView = () => {
           </tr>
         </thead>
         <tbody className="bg-white">
-          {sortedRefs.map((ref, index) => (
-            <Fragment key={index}>
-              <tr data-key={index}>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
-                  <span className="bg-blue-100 border border-blue-300 rounded-md p-1 font-mono">
-                    {refToString(ref)}
-                  </span>
-                </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-blue-900 font-mono">
-                  {valueToString(ref.value)}
-                </td>
-              </tr>
-              {ref.fields.map(([key, value]) => (
-                <tr key={key}>
-                  <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
-                    {key}
-                  </td>
-                  <td className="px-6 py-2 whitespace-nowrap text-sm text-blue-900 font-mono">
-                    {valueToString(value)}
-                  </td>
-                </tr>
-              ))}
-              <tr data-key={`${index}-separator`}>
-                <td
-                  colSpan={2}
-                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                >
-                  <hr className="border-gray-200" />
-                </td>
-              </tr>
-            </Fragment>
-          ))}
+          {sortedRefs.map((ref, index) => {
+            const isLast = index === sortedRefs.length - 1;
+            return (
+              <Fragment key={ref.toString()}>
+                <RefView automergeRef={ref} />
+                {!isLast && (
+                  <tr>
+                    <td colSpan={2} className="px-6 py-2">
+                      <hr className="border-gray-200" />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
 };
 
-const refToString = (ref: Ref) => {
-  const shortId = ref.docUrl.slice(10, 18);
+const RefView = ({ automergeRef: ref }: { automergeRef: Ref }) => {
+  const annotations = useSubscribe(globalAnnotations.onRef(ref));
+  const value = useRefValue(ref);
 
-  if (ref instanceof TextSpanRef) {
-    return `${shortId}/${ref.path.join("/")}[${
-      ref.from === ref.to ? ref.from : `${ref.from}:${ref.to}]`
-    }]`;
-  }
-
-  return `${shortId}${ref.path.length > 0 ? "/" : ""}${ref.path.join("/")}`;
+  return (
+    <Fragment>
+      <tr>
+        <td
+          className="px-6 py-2 whitespace-nowrap text-sm text-gray-900"
+          colSpan={2}
+        >
+          <span className="bg-blue-100 border border-blue-300 rounded-md p-1 font-mono">
+            {ref.toString()}
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+          value
+        </td>
+        <td className="px-6 py-2 whitespace-nowrap text-sm text-blue-900 font-mono">
+          {valueToString(value)}
+        </td>
+      </tr>
+      {Array.from(annotations).map(([, annotation]) => (
+        <tr key={annotation.type.id}>
+          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+            {annotation.type.id}
+          </td>
+          <td className="px-6 py-2 whitespace-nowrap text-sm text-blue-900 font-mono">
+            {valueToString(annotation.value)}
+          </td>
+        </tr>
+      ))}
+    </Fragment>
+  );
 };
 
 const valueToString = (value: any) => {
-  return JSON.stringify(value, (key, value) => {
-    if (value instanceof Ref) {
-      return refToString(value);
-    }
+  try {
+    return JSON.stringify(value, (key, value) => {
+      if (
+        typeof value === "object" &&
+        "docHandle" in value &&
+        value.docHandle instanceof DocHandle &&
+        "path" in value.docHandle
+      ) {
+        return value.toString();
+      }
 
-    return value;
-  });
+      return value;
+    });
+  } catch (e) {
+    return String(value);
+  }
 };

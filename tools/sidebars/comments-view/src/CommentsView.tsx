@@ -1,56 +1,56 @@
 import "./styles.css";
-import { IdRef, loadRef, Ref } from "@patchwork/context";
-import type { Comment, Thread } from "@patchwork/context-comments";
-import { $allActiveThreadRefs, createReply } from "@patchwork/context-comments";
-import {
-  useReactive,
-  useRefValue,
-  useSubcontext,
-} from "@patchwork/context-react";
-import { useEffect, useMemo, useState } from "react";
-import Avatar from "boring-avatars";
+import { useState, useEffect, useMemo } from "react";
 
-import { IsSelected } from "@patchwork/context-selection";
 import { relativeTime } from "@patchwork/util/src/relative-time";
 import { toolify } from "@inkandswitch/patchwork-react";
-import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import { useRepo, useDocument } from "@automerge/automerge-repo-react-hooks";
+import type { AutomergeUrl } from "@automerge/automerge-repo";
+
+import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
+import { AnnotationSet } from "@inkandswitch/annotations";
+import { IsSelected } from "@inkandswitch/annotations-selection";
+import { computed } from "@inkandswitch/subscribables";
+import {
+  CommentThread,
+  SerializedCommentThread,
+  Comment,
+  createReply,
+} from "@inkandswitch/annotations-comments";
+import { useSubscribe } from "@inkandswitch/subscribables-react";
+import { Ref, RefOfType, ref, findRef, RefUrl } from "@patchwork/refs";
+import { useRefValue } from "@patchwork/refs-react";
+import { Repo } from "@automerge/automerge-repo";
 
 const CommentsView = () => {
-  const allThreadRefs = useReactive($allActiveThreadRefs) as Ref<Thread>[];
+  const allActiveThreadRefs = useSubscribe($allActiveThreadRefs);
 
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  // Local annotation set for selection from comments sidebar
+  const selectionAnnotations = useMemo(() => new AnnotationSet(), []);
 
-  const selectedThreadRef = useMemo(() => {
-    return allThreadRefs.find(
-      (threadRef) => threadRef.value?.id === selectedThreadId
-    );
-  }, [allThreadRefs, selectedThreadId]);
-
-  const selectedThread = useRefValue(selectedThreadRef);
-
-  const selectionContext = useSubcontext("COMMENTS_VIEW_SELECTION");
+  // Register/unregister with global annotations
   useEffect(() => {
-    if (!selectedThreadRef || !selectedThread) {
-      selectionContext.replace([]);
-      return;
-    }
+    globalAnnotations.add(selectionAnnotations);
+    return () => {
+      globalAnnotations.remove(selectionAnnotations);
+    };
+  }, [selectionAnnotations]);
 
-    const highlightedRefs = selectedThread.refs.map((ref) =>
-      loadRef(selectedThreadRef?.docHandle, ref).with(IsSelected(true))
-    );
-
-    selectionContext.replace(highlightedRefs);
-  }, [selectedThread, selectedThreadRef, selectionContext]);
+  const onSelectRefs = (refs: Ref[]) => {
+    selectionAnnotations.change(() => {
+      selectionAnnotations.clear();
+      for (const ref of refs) {
+        selectionAnnotations.add(ref, IsSelected(true));
+      }
+    });
+  };
 
   return (
     <div className="h-full flex flex-col p-2 gap-2">
-      {allThreadRefs.map((threadRef, index) => (
+      {Array.from(allActiveThreadRefs).map((threadRef) => (
         <ThreadView
-          key={threadRef.toId()}
-          index={index}
+          key={threadRef.toString()}
           threadRef={threadRef}
-          isSelected={threadRef.value?.id === selectedThreadId}
-          onSelect={() => setSelectedThreadId(threadRef.value?.id)}
+          onSelectRefs={onSelectRefs}
         />
       ))}
     </div>
@@ -61,17 +61,34 @@ export const renderCommentsView = toolify(CommentsView);
 
 const ThreadView = ({
   threadRef,
-  index,
-  isSelected,
-  onSelect,
+  onSelectRefs,
 }: {
-  threadRef: Ref<Thread>;
-  index: number;
-  isSelected: boolean;
-  onSelect: () => void;
+  threadRef: RefOfType<SerializedCommentThread>;
+  onSelectRefs: (refs: Ref[]) => void;
 }) => {
-  const thread = useRefValue(threadRef);
+  const selectedRefs = useSubscribe($selectedRefs);
+
+  // Cast to Ref<any, any> for useRefValue - RefOfType is structurally compatible at runtime
+  const thread = useRefValue<SerializedCommentThread>(
+    threadRef as unknown as Ref<any, any> // todo: fix types
+  );
   const repo = useRepo();
+
+  // Get current account's contactUrl
+  // todo: we should have a better way to get the contactUrl of the current account
+  const [currentAccount] = useDocument<{ contactUrl: AutomergeUrl }>(
+    (window as any).accountDocHandle?.url
+  );
+
+  // Resolve thread's RefUrls to actual Ref objects for overlap checking
+  const resolvedRefs = useResolvedRefs(thread?.refs, repo);
+
+  // Check if this thread is selected (has refs overlapping with selected refs)
+  const isSelected = resolvedRefs.some((resolvedRef) =>
+    Array.from(selectedRefs).some((selectedRef) =>
+      selectedRef.overlaps(resolvedRef)
+    )
+  );
 
   if (!thread) {
     return null;
@@ -80,25 +97,70 @@ const ThreadView = ({
   const { comments } = thread;
 
   const onResolveThread = () => {
-    threadRef.change((thread) => {
-      thread.isResolved = true;
-    });
+    (threadRef as unknown as Ref<any, any>).change(
+      (thread: SerializedCommentThread) => {
+        thread.isResolved = true;
+      }
+    );
   };
 
-  const onReplyToComment = async () => {
+  const onSelect = () => {
+    onSelectRefs(resolvedRefs);
+  };
+
+  const onReplyToComment = () => {
+    if (!currentAccount?.contactUrl) return;
     createReply({
-      threadRef,
+      threadRef: threadRef as unknown as Ref<any, any>,
       content: "",
-      authorId: (await repo.storageId())!,
+      contactUrl: currentAccount.contactUrl,
     });
   };
 
-  const onDeleteComment = (commentRef: Ref<Comment>) => {
-    commentRef.destroy();
+  const onDeleteComment = (commentRef: Ref<any, any>) => {
+    commentRef.remove();
 
-    if (threadRef.value.comments.length === 0) {
-      threadRef.destroy();
+    // If no comments left, delete the thread
+    if (threadRef.value()?.comments.length === 0) {
+      threadRef.remove();
     }
+  };
+
+  // Find draft comment if any
+  const draftComment = comments.find(
+    (c) => c.draftContent !== undefined || c.content === undefined
+  );
+  const draftCommentRef = draftComment
+    ? ref(
+        threadRef.docHandle,
+        "@comments",
+        "threads",
+        { id: thread.id },
+        "comments",
+        { id: draftComment.id }
+      )
+    : null;
+
+  const onSaveDraft = () => {
+    if (!draftCommentRef) return;
+    (draftCommentRef as Ref<any, any>).change((comment: Comment) => {
+      comment.content = comment.draftContent;
+      comment.timestamp = Date.now();
+
+      delete comment.draftContent;
+    });
+  };
+
+  const onCancelDraft = () => {
+    if (!draftCommentRef) return;
+    const commentValue = draftCommentRef.value() as Comment | undefined;
+    if (commentValue?.content === undefined) {
+      onDeleteComment(draftCommentRef as Ref<any, any>);
+      return;
+    }
+    (draftCommentRef as Ref<any, any>).change((comment: Comment) => {
+      delete comment.draftContent;
+    });
   };
 
   return (
@@ -109,20 +171,21 @@ const ThreadView = ({
       >
         <div className="card-body p-2 space-y-2">
           {comments.map((comment) => {
-            const commentRef = new IdRef(
+            const commentRef = ref(
               threadRef.docHandle,
-              ["@comments", "threads", index, "comments"],
-              comment.id,
-              "id"
+              "@comments",
+              "threads",
+              { id: thread.id },
+              "comments",
+              { id: comment.id }
             );
 
             return (
               <CommentView
-                key={commentRef.toId()}
-                commentRef={commentRef as Ref<Comment>}
-                onDeleteComment={() =>
-                  onDeleteComment(commentRef as Ref<Comment>)
-                }
+                key={commentRef.url}
+                commentRef={commentRef as Ref<any, any>}
+                onSelect={onSelect}
+                currentContactUrl={currentAccount?.contactUrl}
               />
             );
           })}
@@ -130,26 +193,51 @@ const ThreadView = ({
       </div>
       {isSelected && (
         <div className="flex gap-2 justify-end">
-          {/* <button
-            className="btn btn-ghost btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onResolveThread();
-            }}
-            title="Resolve comment"
-          >
-            Resolve
-          </button> */}
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReplyToComment();
-            }}
-            title="Reply to comment"
-          >
-            Reply
-          </button>
+          {draftComment ? (
+            <>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCancelDraft();
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSaveDraft();
+                }}
+              >
+                Save
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onResolveThread();
+                }}
+                title="Resolve comment"
+              >
+                Resolve
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReplyToComment();
+                }}
+                title="Reply to comment"
+              >
+                Reply
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -157,85 +245,70 @@ const ThreadView = ({
 };
 
 type CommentViewProps = {
-  commentRef: Ref<Comment>;
-  onDeleteComment: () => void;
+  commentRef: Ref<any, any>;
+  onSelect: () => void;
+  currentContactUrl?: string;
 };
 
-const CommentView = ({ commentRef, onDeleteComment }: CommentViewProps) => {
-  const comment = useRefValue(commentRef);
+type ContactDoc = { type: "anonymous" } | { type: "registered"; name: string };
+
+const CommentView = ({
+  commentRef,
+  onSelect,
+  currentContactUrl,
+}: CommentViewProps) => {
+  const comment = useRefValue(commentRef) as Comment | undefined;
+  const [contact] = useDocument<ContactDoc>(
+    comment?.contactUrl as AutomergeUrl
+  );
 
   if (!comment) {
     return null;
   }
 
   const { content, timestamp, draftContent } = comment;
-  const isDraft = draftContent || content === undefined;
+  const isDraft = draftContent !== undefined || content === undefined;
 
-  const onSaveComment = (commentRef: Ref<Comment>) => {
-    commentRef.change((comment) => {
-      comment.content = comment.draftContent;
-      delete comment.draftContent;
-      comment.timestamp = Date.now();
-    });
-  };
+  // Hide drafts from other users
+  if (isDraft && comment.contactUrl !== currentContactUrl) {
+    return null;
+  }
 
-  const onCancelDraft = (commentRef: Ref<Comment>) => {
-    if (commentRef.value.content === undefined) {
-      onDeleteComment();
-      return;
-    }
+  const contactName =
+    contact?.type === "registered" ? contact.name : "Anonymous";
 
-    commentRef.change((comment) => {
-      delete comment.draftContent;
-    });
-  };
-
-  const onChangeDraft = (commentRef: Ref<Comment>, draftContent: string) => {
-    commentRef.change((comment) => {
+  const onChangeDraft = (draftContent: string) => {
+    commentRef.change((comment: Comment) => {
       comment.draftContent = draftContent;
     });
   };
 
   return (
-    <div className="space-y-2" data-id={commentRef.toId()}>
-      {!isDraft && (
-        <div className="flex justify-between">
-          <Avatar size={20} name={comment.authorId} />
+    <div className="space-y-2" data-id={commentRef.url}>
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <patchwork-view
+            doc-url={comment.contactUrl}
+            tool-id="contact-avatar"
+          />
+          <span className="text-sm font-medium whitespace-nowrap">
+            {contactName}
+          </span>
+        </div>
+        {!isDraft && timestamp && (
           <span className="text-xs text-gray-400">
             {relativeTime(timestamp)}
           </span>
-        </div>
-      )}
-      {/* Content or textarea */}
+        )}
+      </div>
       {isDraft ? (
-        <div className="space-y-2">
-          <textarea
-            className="textarea textarea-bordered w-full min-h-[6rem]"
-            value={draftContent ?? ""}
-            onChange={(e) => onChangeDraft(commentRef, e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-          />
-          <div className="flex justify-end gap-2">
-            <button
-              className="btn btn-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSaveComment(commentRef);
-              }}
-            >
-              Save
-            </button>
-            <button
-              className="btn btn-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onCancelDraft(commentRef);
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+        <textarea
+          className="textarea w-full min-h-24 border border-gray-300 rounded-lg p-2"
+          value={draftContent ?? ""}
+          onChange={(e) => onChangeDraft(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          onFocus={onSelect}
+        />
       ) : (
         <div className="text-base text-gray-800 whitespace-pre-wrap">
           {content}
@@ -243,4 +316,50 @@ const CommentView = ({ commentRef, onDeleteComment }: CommentViewProps) => {
       )}
     </div>
   );
+};
+
+const $allActiveThreadRefs = computed(
+  globalAnnotations,
+  () =>
+    new Set(
+      Array.from(globalAnnotations.entriesOfType(CommentThread)).map(
+        ([, commentAnnotation]) => commentAnnotation.value
+      )
+    )
+);
+
+const $selectedRefs = computed(globalAnnotations, () => {
+  return new Set(
+    Array.from(globalAnnotations.entriesOfType(IsSelected)).map(
+      ([ref, _annotation]) => ref
+    )
+  );
+});
+
+/** Hook to resolve an array of RefUrls to Ref objects */
+const useResolvedRefs = (refUrls: RefUrl[] | undefined, repo: Repo): Ref[] => {
+  const [resolvedRefs, setResolvedRefs] = useState<Ref[]>([]);
+
+  useEffect(() => {
+    if (!refUrls?.length) {
+      setResolvedRefs([]);
+      return;
+    }
+
+    let isCanceled = false;
+
+    Promise.all(
+      refUrls.map((url) => findRef(repo, url).catch(() => null))
+    ).then((refs) => {
+      if (!isCanceled) {
+        setResolvedRefs(refs.filter((r): r is Ref => r !== null));
+      }
+    });
+
+    return () => {
+      isCanceled = true;
+    };
+  }, [refUrls, repo]);
+
+  return resolvedRefs;
 };

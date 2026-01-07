@@ -4,19 +4,16 @@ import {
   type Repo,
 } from "@automerge/automerge-repo";
 import { useDocument } from "@automerge/automerge-repo-solid-primitives";
+import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
-import { createEffect, createSignal, onMount, Suspense } from "solid-js";
-import { DocumentList } from "./document-list.tsx";
-import {
-  filter,
-  filterMatches,
-  selectedDocUrls,
-  setRenaming,
-} from "../state.ts";
+import { createEffect, createSignal, onMount } from "solid-js";
 import CreateNew from "../create-new.tsx";
+import { filter, filterMatches, setRenaming } from "../state.ts";
+import { DocumentList } from "./document-list.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
+import { useSubscribe } from "@inkandswitch/subscribables-solid";
+import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
 
 export default function Folder(props: {
   url: AutomergeUrl;
@@ -34,6 +31,8 @@ export default function Folder(props: {
   const depth = () => props.depth ?? 1;
   const depthStyle = () => ({ "--depth": depth() + 1 });
   const folderDepthStyle = () => ({ "--depth": depth() });
+
+  const selectedDocUrls = useSubscribe($selectedDocUrls);
 
   createEffect((last) => {
     if (!last && filter() && filterMatches(folder()!?.title ?? props.name)) {

@@ -1,15 +1,3 @@
-import type {
-  DocLink,
-  FolderDoc,
-  HasPatchworkMetadata,
-} from "@inkandswitch/patchwork-filesystem";
-import { For, Match, Suspense, Switch } from "solid-js";
-import {
-  filter,
-  filterMatches,
-  selectedDocUrls,
-  setRenaming,
-} from "../state.ts";
 import {
   deleteAt,
   updateText,
@@ -17,10 +5,19 @@ import {
   type Repo,
 } from "@automerge/automerge-repo";
 import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
+import type {
+  DocLink,
+  FolderDoc,
+  HasPatchworkMetadata,
+} from "@inkandswitch/patchwork-filesystem";
+import { getRegistry, type Datatype } from "@inkandswitch/patchwork-plugins";
+import { For, Match, Switch } from "solid-js";
+import { filter, filterMatches, setRenaming } from "../state.ts";
 import Folder from "./folder.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import { getRegistry, type Datatype } from "@inkandswitch/patchwork-plugins";
+import { useSubscribe } from "@inkandswitch/subscribables-solid";
+import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
 
 export interface DocumentListProps {
   handle: DocHandle<FolderDoc>;
@@ -34,6 +31,9 @@ export function DocumentList(props: DocumentListProps) {
   function removeItem(index: number) {
     props.handle.change((folder) => deleteAt(folder.docs, index));
   }
+
+  const selectedDocUrls = useSubscribe($selectedDocUrls);
+
   return (
     <For each={props.docs}>
       {(doc, index) => {
@@ -85,7 +85,7 @@ export function DocumentList(props: DocumentListProps) {
                   id={relid()}
                   startRenaming={() => setRenaming(relid())}
                   remove={remove}
-                  pressed={selectedDocUrls()?.includes(doc.url)}
+                  pressed={selectedDocUrls().includes(doc.url)}
                   type={doc.type}
                   openWith={(toolId) =>
                     props.open({

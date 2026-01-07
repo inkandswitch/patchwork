@@ -1,6 +1,5 @@
 import "./global.css";
 
-import { CONTEXT, Context } from "@patchwork/context";
 import {
   registerPatchworkViewElement,
   openDocument,
@@ -40,7 +39,6 @@ import * as AutomergeRepo from "@automerge/automerge-repo";
 declare global {
   interface Window {
     accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
-    CONTEXT: Context;
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
@@ -90,7 +88,6 @@ try {
 window.repo = repo;
 window.Automerge = Automerge;
 window.AutomergeRepo = AutomergeRepo;
-window.CONTEXT = CONTEXT;
 
 const handlers = {
   "automerge:": createFilesystemHandoffHandler(repo),

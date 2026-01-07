@@ -38,7 +38,6 @@ const refCleanupRegistry = new FinalizationRegistry<() => void>((cleanup) =>
  * Refs are stable by default - they track objects by ID, not position.
  *
  * Cleanup: Refs automatically clean up their subscriptions when garbage collected.
- * For immediate cleanup, call dispose() explicitly (recommended for long-lived apps).
  *
  * @example
  * ```ts
@@ -46,9 +45,6 @@ const refCleanupRegistry = new FinalizationRegistry<() => void>((cleanup) =>
  * titleRef.value();           // string | undefined
  * titleRef.change(s => s.toUpperCase());
  * titleRef.onChange(() => console.log('changed!'));
- *
- * // Optional but recommended for immediate cleanup:
- * titleRef.dispose();
  * ```
  */
 export class Ref<
@@ -60,11 +56,10 @@ export class Ref<
   readonly range?: CursorRange;
   readonly options: RefOptions;
 
-  #unsubscribe: () => void;
   #onChangeCallbacks = new Set<
     (payload: DocHandleChangePayload<any>) => void
   >();
-  #disposed = false;
+  #updateHandler: () => void;
 
   constructor(
     docHandle: DocHandle<TDoc>,
@@ -82,20 +77,34 @@ export class Ref<
     this.path = path;
     this.range = range;
 
-    const updateHandler = () => {
+    this.#updateHandler = () => {
       const currentDoc = this.docHandle.doc();
       this.#updateProps(currentDoc);
     };
-    this.docHandle.on("change", updateHandler);
-    this.#unsubscribe = () => this.docHandle.off("change", updateHandler);
+    this.docHandle.on("change", this.#updateHandler);
 
     // Register for automatic cleanup when this Ref is garbage collected
-    // This ensures subscriptions are cleaned up even if dispose() is never called
     refCleanupRegistry.register(this, () => this.#cleanup(), this);
+  }
+
+  #cleanup(): void {
+    this.docHandle.off("change", this.#updateHandler);
+    for (const callback of this.#onChangeCallbacks) {
+      this.docHandle.off("change", callback);
+    }
+    this.#onChangeCallbacks.clear();
   }
 
   get heads(): string[] | undefined {
     return this.options.heads;
+  }
+
+  get rangePositions(): [number, number] | undefined {
+    if (!this.range) return undefined;
+    const propPath = this.#getPropPath();
+    if (!propPath) return undefined;
+    const doc = this.doc();
+    return this.#getRangePositions(doc, propPath, this.range);
   }
 
   /**
@@ -216,10 +225,76 @@ export class Ref<
   }
 
   /**
+   * Remove the value this ref points to from its parent container.
+   *
+   * - For object properties: deletes the key from the object
+   * - For array elements: removes the item from the array
+   * - For text ranges: deletes the text within the range
+   *
+   * @throws Error if the ref points to the root document
+   * @throws Error if the ref is pinned to specific heads
+   * @throws Error if the path cannot be resolved
+   *
+   * @example
+   * ```ts
+   * // Remove a property from an object
+   * const nameRef = ref(handle, 'user', 'name');
+   * nameRef.remove(); // deletes handle.doc().user.name
+   *
+   * // Remove an item from an array
+   * const todoRef = ref(handle, 'todos', 0);
+   * todoRef.remove(); // removes first todo from array
+   *
+   * // Remove text within a range
+   * const rangeRef = ref(handle, 'text', cursor(0, 5));
+   * rangeRef.remove(); // deletes first 5 characters
+   * ```
+   */
+  remove(): void {
+    if (this.options.heads) {
+      throw new Error("Cannot remove from a Ref pinned to specific heads");
+    }
+
+    if (this.path.length === 0 && !this.range) {
+      throw new Error("Cannot remove the root document");
+    }
+
+    this.docHandle.change((doc: Doc<TDoc>) => {
+      const propPath = this.#getPropPath();
+      if (!propPath || propPath.length === 0) {
+        throw new Error("Cannot resolve path for removal");
+      }
+
+      // Handle range refs - delete the text within the range
+      if (this.range) {
+        this.#spliceRange(doc, propPath, this.range, "");
+        return;
+      }
+
+      const parentPath = propPath.slice(0, -1);
+      const key = propPath[propPath.length - 1];
+      const parent =
+        parentPath.length === 0 ? doc : this.#getValueAt(doc, parentPath);
+
+      if (parent == null) {
+        throw new Error("Cannot remove: parent is null or undefined");
+      }
+
+      if (Array.isArray(parent)) {
+        if (typeof key !== "number") {
+          throw new Error("Cannot remove from array: key is not a number");
+        }
+        parent.splice(key, 1);
+      } else {
+        delete parent[key];
+      }
+    });
+  }
+
+  /**
    * Subscribe to changes that affect this ref's value.
    *
-   * The returned unsubscribe function will automatically be called when the Ref
-   * is disposed or garbage collected. You can also call it manually for immediate cleanup.
+   * Returns an unsubscribe function you can call
    */
   onChange(
     callback: (
@@ -227,10 +302,6 @@ export class Ref<
       payload: DocHandleChangePayload<any>
     ) => void
   ): () => void {
-    if (this.#disposed) {
-      throw new Error("Cannot add onChange listener to a disposed Ref");
-    }
-
     const wrappedCallback = (payload: DocHandleChangePayload<any>) => {
       if (this.#patchAffectsRef(payload.patches)) {
         const value = this.value();
@@ -310,6 +381,68 @@ export class Ref<
   }
 
   /**
+   * Check if this ref is a child of another ref.
+   *
+   * For arrays: only direct array elements are considered children
+   * (path must be exactly one segment longer).
+   *
+   * For text: sub-ranges within the text are considered children
+   * (same path with a range, or one segment deeper).
+   *
+   * @example
+   * ```ts
+   * // Array children
+   * const arrayRef = ref(handle, 'items');
+   * const itemRef = ref(handle, 'items', 0);
+   * itemRef.isChildOf(arrayRef); // true
+   *
+   * // Text range children
+   * const textRef = ref(handle, 'content');
+   * const rangeRef = ref(handle, 'content', [0, 10]);
+   * rangeRef.isChildOf(textRef); // true
+   * ```
+   */
+  isChildOf(parent: Ref<any>): boolean {
+    // Must be same document
+    if (this.docHandle.documentId !== parent.docHandle.documentId) {
+      return false;
+    }
+
+    // Must have same heads
+    const thisHeads = this.heads?.join(",");
+    const parentHeads = parent.heads?.join(",");
+    if (thisHeads !== parentHeads) {
+      return false;
+    }
+
+    // Check if paths match up to parent's length
+    if (this.path.length < parent.path.length) {
+      return false;
+    }
+
+    // All of parent's path segments must match
+    for (let i = 0; i < parent.path.length; i++) {
+      if (!this.#segmentsEqual(this.path[i], parent.path[i])) {
+        return false;
+      }
+    }
+
+    // Case 1: Same path length - only valid if this has a range and parent doesn't
+    // (this is a range child of text)
+    if (this.path.length === parent.path.length) {
+      return this.range !== undefined && parent.range === undefined;
+    }
+
+    // Case 2: Path is exactly one segment longer (direct child)
+    if (this.path.length === parent.path.length + 1) {
+      return true;
+    }
+
+    // Case 3: Path is more than one segment longer (not a direct child)
+    return false;
+  }
+
+  /**
    * Check if this ref overlaps with another ref (for text/range refs).
    * Two refs overlap if they refer to the same parent location and their ranges overlap.
    *
@@ -373,41 +506,6 @@ export class Ref<
 
   toString(): string {
     return this.url;
-  }
-
-  /**
-   * Clean up and unsubscribe from all document changes.
-   *
-   * While cleanup happens automatically when the Ref is garbage collected,
-   * calling dispose() explicitly provides immediate cleanup which is recommended
-   * for long-lived applications or when you know you're done with a Ref.
-   *
-   * After calling dispose(), the Ref cannot be used anymore and onChange() will throw.
-   */
-  dispose(): void {
-    if (this.#disposed) return;
-
-    // Unregister from automatic cleanup since we're cleaning up now
-    refCleanupRegistry.unregister(this);
-
-    this.#cleanup();
-  }
-
-  /**
-   * Internal cleanup method called by both dispose() and the finalization registry.
-   */
-  #cleanup(): void {
-    if (this.#disposed) return;
-    this.#disposed = true;
-
-    // Clean up the main subscription from constructor
-    this.#unsubscribe();
-
-    // Clean up all onChange subscriptions
-    for (const callback of this.#onChangeCallbacks) {
-      this.docHandle.off("change", callback);
-    }
-    this.#onChangeCallbacks.clear();
   }
 
   /**

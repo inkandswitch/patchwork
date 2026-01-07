@@ -28,8 +28,12 @@ export function cursor(start: number, end?: number): CursorMarker {
 /**
  * Parse a ref from a URL string.
  *
- * @param handle - The document handle to use
+ * The URL's documentId must match the provided handle's documentId.
+ * Use `findRef` instead if you don't have the handle and need to look it up.
+ *
+ * @param handle - The document handle to use (must match URL's documentId)
  * @param url - Full ref URL like "automerge:documentId/path#heads"
+ * @throws Error if URL's documentId doesn't match handle's documentId
  *
  * @example
  * fromUrl(handle, "automerge:abc/todos/0#head1|head2" as RefUrl)
@@ -38,7 +42,14 @@ export function fromUrl<TDoc = any>(
   handle: DocHandle<TDoc>,
   url: RefUrl
 ): Ref<TDoc, AnyPathInput[]> {
-  const { segments, heads } = parseRefUrl(url);
+  const { documentId, segments, heads } = parseRefUrl(url);
+
+  if (documentId !== handle.documentId) {
+    throw new Error(
+      `URL documentId "${documentId}" does not match handle's documentId "${handle.documentId}"`
+    );
+  }
+
   const options = heads ? { heads } : {};
   return new Ref<TDoc, AnyPathInput[]>(handle, segments, options);
 }

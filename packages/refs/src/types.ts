@@ -1,15 +1,16 @@
 import type { Cursor, Heads } from "@automerge/automerge-repo";
+import { Ref } from "./ref";
 
 /**
  * Symbol used as discriminator for segments to avoid collision with user data.
  * Users might have objects with a 'kind' property in id patterns.
  */
-export const KIND = Symbol("kind");
+export const KIND = "AUTOMERGE_REF_KIND";
 
 /**
  * Symbol to mark a cursor request for stabilization during ref creation.
  */
-export const CURSOR_MARKER = Symbol("cursor");
+export const CURSOR_MARKER = "AUTOMERGE_REF_CURSOR_MARKER";
 
 /**
  * Pattern used to match objects in arrays by their properties.
@@ -215,8 +216,7 @@ export type RefUrl = string & { readonly __brand: "RefUrl" };
  * function addComment(thread: RefOfType<Thread>) { ... }
  * ```
  */
-export type RefOfType<T> = {
+export type RefOfType<T> = Omit<Ref, "value" | "change"> & {
   value(): T | undefined;
-  change(fn: ChangeFn<T>): void;
-  readonly url: RefUrl;
+  change(fnOrValue: ChangeFn<T> | T): void;
 };
