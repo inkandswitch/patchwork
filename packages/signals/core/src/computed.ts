@@ -1,25 +1,25 @@
 import {
-  unwrapObservable,
-  type Observable,
-  type ObservableValue,
-} from "./observable";
+  valueOfSignal,
+  type Signal,
+  type SignalValue,
+} from "./signal";
 
 /**
- * A computed observable that derives its value from one or more source observables.
- * Automatically recomputes when any source observable changes.
+ * A computed signal that derives its value from one or more source signals.
+ * Automatically recomputes when any source signal changes.
  */
-class Computed<Result> implements ObservableValue<Result> {
+class Computed<Result> implements SignalValue<Result> {
   private subscribers = new Set<(value: Result) => void>();
   private cachedValue: Result;
   private unsubscribes: (() => void)[] = [];
 
   constructor(
-    private sources: Observable[],
+    private sources: Signal[],
     private computeFn: (...values: any[]) => Result
   ) {
     this.cachedValue = this.compute();
 
-    // Subscribe to all source observables
+    // Subscribe to all source signals
     for (const source of sources) {
       const unsubscribe = source.subscribe(() => {
         const newValue = this.compute();
@@ -33,7 +33,7 @@ class Computed<Result> implements ObservableValue<Result> {
   }
 
   private compute(): Result {
-    const values = this.sources.map((s) => unwrapObservable(s));
+    const values = this.sources.map((s) => valueOfSignal(s));
     return this.computeFn(...values);
   }
 
@@ -56,26 +56,26 @@ class Computed<Result> implements ObservableValue<Result> {
   }
 }
 
-/** Maps a tuple of Observables to a tuple of their value types */
-type UnwrappedObservables<T extends readonly Observable[]> = {
-  [K in keyof T]: T[K] extends Observable<infer V> ? V : never;
+/** Maps a tuple of Signals to a tuple of their value types */
+type UnwrappedSignals<T extends readonly Signal[]> = {
+  [K in keyof T]: T[K] extends Signal<infer V> ? V : never;
 };
 
 /**
- * Create a computed observable that derives its value from one or more source observables.
+ * Create a computed signal that derives its value from one or more source signals.
  *
  * @example
  * ```ts
- * const firstName = createObservable("John");
- * const lastName = createObservable("Doe");
+ * const firstName = createSignal("John");
+ * const lastName = createSignal("Doe");
  * const fullName = compute(firstName, lastName, (first, last) => `${first} ${last}`);
  * console.log(fullName.value); // "John Doe"
  * ```
  */
-export function computed<const Sources extends readonly Observable[], Result>(
-  ...args: [...Sources, (...values: UnwrappedObservables<Sources>) => Result]
-): ObservableValue<Result> {
+export function computed<const Sources extends readonly Signal[], Result>(
+  ...args: [...Sources, (...values: UnwrappedSignals<Sources>) => Result]
+): SignalValue<Result> {
   const computeFn = args.pop() as (...values: any[]) => Result;
-  const sources = args as unknown as Observable[];
+  const sources = args as unknown as Signal[];
   return new Computed(sources, computeFn);
 }

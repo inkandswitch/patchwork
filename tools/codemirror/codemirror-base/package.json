@@ -36,8 +36,8 @@
     "@inkandswitch/annotations-selection": "workspace:^",
     "@inkandswitch/annotations-diff": "workspace:^",
     "@patchwork/refs": "workspace:^",
-    "@inkandswitch/observable": "workspace:^",
-    "@inkandswitch/observable-solid": "workspace:^",
+    "@inkandswitch/signals": "workspace:^",
+    "@inkandswitch/signals-solid": "workspace:^",
     "@inkandswitch/annotations-comments": "workspace:^",
     "solid-js": "^1.9.9",
     "vite-plugin-wasm": "^3.5.0"

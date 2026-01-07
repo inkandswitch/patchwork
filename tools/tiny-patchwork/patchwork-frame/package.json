@@ -21,7 +21,7 @@
     "@inkandswitch/annotations-selection": "workspace:^",
     "@inkandswitch/annotations-comments": "workspace:^",
     "@patchwork/refs": "workspace:^",
-    "@inkandswitch/observable-react": "workspace:^",
+    "@inkandswitch/signals-react": "workspace:^",
     "@inkandswitch/annotations-diff": "workspace:^",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",

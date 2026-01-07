@@ -23,7 +23,7 @@ import {
 
 /** Styles */
 import { createSignal, onMount, onCleanup } from "solid-js";
-import { useObservable } from "@inkandswitch/observable-solid";
+import { usePatchworkSignal } from "@inkandswitch/signals-solid";
 import { AnnotationSet } from "@inkandswitch/annotations";
 
 export type TextDoc = {
@@ -40,15 +40,15 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
   // TODO: what if contentRef() is undefined?
 
   const contentAnnotations = globalAnnotations.onChildrenOf(contentRef());
-  const diffAnnotations = useObservable(contentAnnotations.ofType(Diff));
+  const diffAnnotations = usePatchworkSignal(contentAnnotations.ofType(Diff));
 
   // Get all IsSelected annotations from global context (not just content children)
   // This allows CommentsView to highlight text by adding IsSelected to thread refs
-  const allSelectionAnnotations = useObservable(
+  const allSelectionAnnotations = usePatchworkSignal(
     globalAnnotations.ofType(IsSelected)
   );
 
-  const commentAnnotations = useObservable(
+  const commentAnnotations = usePatchworkSignal(
     contentAnnotations.ofType(CommentThread)
   );
 

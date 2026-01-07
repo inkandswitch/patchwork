@@ -200,9 +200,9 @@ importers:
       '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@inkandswitch/observable':
+      '@inkandswitch/signals':
         specifier: workspace:*
-        version: link:../../../observable/core
+        version: link:../../../signals/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../../refs
@@ -225,9 +225,9 @@ importers:
       '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@inkandswitch/observable':
+      '@inkandswitch/signals':
         specifier: workspace:*
-        version: link:../../../observable/core
+        version: link:../../../signals/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../../refs
@@ -247,9 +247,9 @@ importers:
       '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@inkandswitch/observable':
+      '@inkandswitch/signals':
         specifier: workspace:*
-        version: link:../../../observable/core
+        version: link:../../../signals/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../../refs
@@ -282,9 +282,9 @@ importers:
 
   packages/annotations/core:
     dependencies:
-      '@inkandswitch/observable':
+      '@inkandswitch/signals':
         specifier: workspace:*
-        version: link:../../observable/core
+        version: link:../../signals/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../refs
@@ -304,45 +304,6 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@24.9.1)(@vitest/ui@3.2.4(vitest@3.2.4))(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.0)
-
-  packages/observable/core:
-    dependencies:
-      eventemitter3:
-        specifier: ^5.0.1
-        version: 5.0.1
-    devDependencies:
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
-
-  packages/observable/frameworks/react:
-    dependencies:
-      '@inkandswitch/observable':
-        specifier: workspace:^
-        version: link:../../core
-      react:
-        specifier: ^18.0.0
-        version: 18.3.1
-    devDependencies:
-      '@types/react':
-        specifier: 'catalog:'
-        version: 18.3.26
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
-
-  packages/observable/frameworks/solid:
-    dependencies:
-      '@inkandswitch/observable':
-        specifier: workspace:^
-        version: link:../../core
-    devDependencies:
-      solid-js:
-        specifier: ^1.9.0
-        version: 1.9.10
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
 
   packages/react:
     dependencies:
@@ -396,6 +357,45 @@ importers:
       '@types/react':
         specifier: 'catalog:'
         version: 18.3.26
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/signals/core:
+    dependencies:
+      eventemitter3:
+        specifier: ^5.0.1
+        version: 5.0.1
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/signals/frameworks/react:
+    dependencies:
+      '@inkandswitch/signals':
+        specifier: workspace:^
+        version: link:../../core
+      react:
+        specifier: ^18.0.0
+        version: 18.3.1
+    devDependencies:
+      '@types/react':
+        specifier: 'catalog:'
+        version: 18.3.26
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/signals/frameworks/solid:
+    dependencies:
+      '@inkandswitch/signals':
+        specifier: workspace:^
+        version: link:../../core
+    devDependencies:
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.10
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
@@ -970,12 +970,6 @@ importers:
       '@inkandswitch/annotations-selection':
         specifier: workspace:^
         version: link:../../../packages/annotations/annotation-types/selection
-      '@inkandswitch/observable':
-        specifier: workspace:^
-        version: link:../../../packages/observable/core
-      '@inkandswitch/observable-solid':
-        specifier: workspace:^
-        version: link:../../../packages/observable/frameworks/solid
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../../core/bootloader
@@ -985,6 +979,12 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
+      '@inkandswitch/signals':
+        specifier: workspace:^
+        version: link:../../../packages/signals/core
+      '@inkandswitch/signals-solid':
+        specifier: workspace:^
+        version: link:../../../packages/signals/frameworks/solid
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs
@@ -1571,12 +1571,6 @@ importers:
       '@inkandswitch/annotations-selection':
         specifier: workspace:^
         version: link:../../../packages/annotations/annotation-types/selection
-      '@inkandswitch/observable':
-        specifier: workspace:^
-        version: link:../../../packages/observable/core
-      '@inkandswitch/observable-react':
-        specifier: workspace:^
-        version: link:../../../packages/observable/frameworks/react
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -1589,6 +1583,12 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
+      '@inkandswitch/signals':
+        specifier: workspace:^
+        version: link:../../../packages/signals/core
+      '@inkandswitch/signals-react':
+        specifier: workspace:^
+        version: link:../../../packages/signals/frameworks/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs
@@ -1753,12 +1753,6 @@ importers:
       '@inkandswitch/annotations-context':
         specifier: workspace:^
         version: link:../../../packages/annotations/context
-      '@inkandswitch/observable':
-        specifier: workspace:^
-        version: link:../../../packages/observable/core
-      '@inkandswitch/observable-react':
-        specifier: workspace:^
-        version: link:../../../packages/observable/frameworks/react
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -1771,6 +1765,12 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
+      '@inkandswitch/signals':
+        specifier: workspace:^
+        version: link:../../../packages/signals/core
+      '@inkandswitch/signals-react':
+        specifier: workspace:^
+        version: link:../../../packages/signals/frameworks/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs
@@ -1856,9 +1856,6 @@ importers:
       '@inkandswitch/annotations-selection':
         specifier: workspace:^
         version: link:../../../packages/annotations/annotation-types/selection
-      '@inkandswitch/observable-react':
-        specifier: workspace:^
-        version: link:../../../packages/observable/frameworks/react
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -1871,6 +1868,9 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
+      '@inkandswitch/signals-react':
+        specifier: workspace:^
+        version: link:../../../packages/signals/frameworks/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs
@@ -1969,15 +1969,15 @@ importers:
       '@inkandswitch/annotations-selection':
         specifier: workspace:^
         version: link:../../../packages/annotations/annotation-types/selection
-      '@inkandswitch/observable-solid':
-        specifier: workspace:^
-        version: link:../../../packages/observable/frameworks/solid
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../../../core/filesystem
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
+      '@inkandswitch/signals-solid':
+        specifier: workspace:^
+        version: link:../../../packages/signals/frameworks/solid
       '@node-types/node':
         specifier: npm:@types/node@^24.9.1
         version: '@types/node@24.9.1'
@@ -2166,9 +2166,6 @@ importers:
       '@inkandswitch/annotations-selection':
         specifier: workspace:^
         version: link:../../../packages/annotations/annotation-types/selection
-      '@inkandswitch/observable-react':
-        specifier: workspace:^
-        version: link:../../../packages/observable/frameworks/react
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -2181,6 +2178,9 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
+      '@inkandswitch/signals-react':
+        specifier: workspace:^
+        version: link:../../../packages/signals/frameworks/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs
@@ -2500,9 +2500,6 @@ importers:
       '@inkandswitch/annotations-selection':
         specifier: workspace:^
         version: link:../../../packages/annotations/annotation-types/selection
-      '@inkandswitch/observable-react':
-        specifier: workspace:^
-        version: link:../../../packages/observable/frameworks/react
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -2515,6 +2512,9 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
+      '@inkandswitch/signals-react':
+        specifier: workspace:^
+        version: link:../../../packages/signals/frameworks/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs

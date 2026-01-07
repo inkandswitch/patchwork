@@ -1,5 +1,5 @@
 {
-  "name": "@inkandswitch/observable",
+  "name": "@inkandswitch/signals",
   "type": "module",
   "scripts": {
     "build": "tsc",

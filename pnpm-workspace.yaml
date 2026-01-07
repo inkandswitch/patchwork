@@ -2,7 +2,7 @@ packages:
   - core/*
   - packages/*
   - packages/annotations/**/*
-  - packages/observable/**/*
+  - packages/signals/**/*
   - meta/*
   - sites/*
   - tools/*

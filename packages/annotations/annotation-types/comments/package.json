@@ -18,7 +18,7 @@
     "@automerge/automerge-repo": "catalog:",
     "@inkandswitch/annotations": "workspace:*",
     "@inkandswitch/annotations-context": "workspace:*",
-    "@inkandswitch/observable": "workspace:*",
+    "@inkandswitch/signals": "workspace:*",
     "@patchwork/refs": "workspace:*"
   },
   "devDependencies": {

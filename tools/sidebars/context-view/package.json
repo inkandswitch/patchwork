@@ -19,10 +19,10 @@
     "@inkandswitch/patchwork-react": "workspace:^",
     "@inkandswitch/annotations": "workspace:^",
     "@inkandswitch/annotations-context": "workspace:^",
-    "@inkandswitch/observable-react": "workspace:^",
+    "@inkandswitch/signals-react": "workspace:^",
     "@patchwork/refs": "workspace:^",
     "@patchwork/refs-react": "workspace:^",
-    "@inkandswitch/observable": "workspace:^",
+    "@inkandswitch/signals": "workspace:^",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "tailwindcss": "^4.1.14"

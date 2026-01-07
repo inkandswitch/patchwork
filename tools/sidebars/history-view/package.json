@@ -17,7 +17,7 @@
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@inkandswitch/patchwork-react": "workspace:^",
-    "@inkandswitch/observable-react": "workspace:^",
+    "@inkandswitch/signals-react": "workspace:^",
     "@inkandswitch/annotations": "workspace:^",
     "@inkandswitch/annotations-selection": "workspace:^",
     "@inkandswitch/annotations-context": "workspace:^",

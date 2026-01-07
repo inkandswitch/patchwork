@@ -43,7 +43,7 @@
     "@node-types/node": "npm:@types/node@^24.9.1",
     "@inkandswitch/annotations-context": "workspace:^",
     "@inkandswitch/annotations-selection": "workspace:^",
-    "@inkandswitch/observable-solid": "workspace:^",
+    "@inkandswitch/signals-solid": "workspace:^",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@patchwork/solid": "workspace:^",

@@ -1,5 +1,5 @@
 {
-  "name": "@inkandswitch/observable-solid",
+  "name": "@inkandswitch/signals-solid",
   "type": "module",
   "scripts": {
     "build": "tsc",
@@ -14,7 +14,7 @@
     }
   },
   "dependencies": {
-    "@inkandswitch/observable": "workspace:^"
+    "@inkandswitch/signals": "workspace:^"
   },
   "peerDependencies": {
     "solid-js": "^1.9.0"

@@ -1,4 +1,4 @@
-import { ObservableObject, SubscriberSet } from "@inkandswitch/observable";
+import { SignalObject, SubscriberSet } from "@inkandswitch/signals";
 import { type Ref } from "@patchwork/refs";
 import EventEmitter from "eventemitter3";
 import type {
@@ -28,7 +28,7 @@ import { FilteredAnnotationView } from "./views/filtered-annotation-view";
  */
 export class AnnotationSet
   extends EventEmitter<AnnotationEvents>
-  implements ObservableObject<AnnotationSet>, AnnotationSource
+  implements SignalObject<AnnotationSet>, AnnotationSource
 {
   #subscriberSet = new SubscriberSet<AnnotationSet>();
 

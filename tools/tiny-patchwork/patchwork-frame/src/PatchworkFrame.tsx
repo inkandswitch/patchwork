@@ -15,7 +15,7 @@ import { AnnotationSet } from "@inkandswitch/annotations";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
 import { ViewHeads } from "@inkandswitch/annotations-diff";
 import { IsSelected } from "@inkandswitch/annotations-selection";
-import { useObservable } from "@inkandswitch/observable-react";
+import { usePatchworkSignal } from "@inkandswitch/signals-react";
 import { ref, RefOfType } from "@patchwork/refs";
 import { useEffect, useMemo, useState } from "react";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
@@ -69,7 +69,7 @@ export const PatchworkFrame = ({
     [selectedDocHandle]
   );
 
-  const selectedDocAnnotations = useObservable(
+  const selectedDocAnnotations = usePatchworkSignal(
     useMemo(
       () =>
         selectedDocRef ? globalAnnotations.onRef(selectedDocRef) : undefined,

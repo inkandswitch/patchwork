@@ -1,7 +1,6 @@
-import { SubscriberSet } from "@inkandswitch/observable";
+import { SignalObject, SubscriberSet } from "@inkandswitch/signals";
 import { type Ref } from "@patchwork/refs";
 import EventEmitter from "eventemitter3";
-import { ObservableObject } from "../../../../observable/core/dist/observable";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
 import {
   Annotation,
@@ -27,7 +26,7 @@ export class AnnotationsOfType<T>
   extends EventEmitter<AnnotationEvents>
   implements
     AnnotationSource<unknown, T>,
-    ObservableObject<AnnotationsOfType<T>>
+    SignalObject<AnnotationsOfType<T>>
 {
   #source: AnnotationSource;
   #type: AnnotationType<T>;

@@ -1,7 +1,7 @@
 import { DocHandle } from "@automerge/automerge-repo";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
-import { computed } from "@inkandswitch/observable";
-import { useObservable } from "@inkandswitch/observable-react";
+import { computed } from "@inkandswitch/signals";
+import { usePatchworkSignal } from "@inkandswitch/signals-react";
 import { type Ref } from "@patchwork/refs";
 import { useRefValue } from "@patchwork/refs-react";
 import { Fragment } from "react/jsx-runtime";
@@ -14,7 +14,7 @@ const $sortedRefs = computed(globalAnnotations, () =>
 );
 
 export const ContextView = () => {
-  const sortedRefs = useObservable($sortedRefs);
+  const sortedRefs = usePatchworkSignal($sortedRefs);
 
   return (
     <div className="w-full h-full overflow-auto">
@@ -52,7 +52,7 @@ export const ContextView = () => {
 };
 
 const RefView = ({ automergeRef: ref }: { automergeRef: Ref }) => {
-  const annotations = useObservable(globalAnnotations.onRef(ref));
+  const annotations = usePatchworkSignal(globalAnnotations.onRef(ref));
   const value = useRefValue(ref);
 
   return (
