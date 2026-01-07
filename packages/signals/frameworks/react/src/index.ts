@@ -1,9 +1,5 @@
-import {
-  valueOfSignal,
-  computed,
-  type Signal,
-} from "@inkandswitch/signals";
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { valueOfSignal, type Signal } from "@inkandswitch/signals";
+import { useCallback, useSyncExternalStore } from "react";
 
 export function usePatchworkSignal<T>(signal: Signal<T>): T;
 export function usePatchworkSignal<T>(signal?: Signal<T>): T | undefined;
