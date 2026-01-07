@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-refs
 
+## 0.1.1
+
+### Patch Changes
+
+- d76fcc7: Rename @patchwork/refs to @inkandswitch/patchwork-refs
+
 ## 0.1.0
 
 ### Minor Changes

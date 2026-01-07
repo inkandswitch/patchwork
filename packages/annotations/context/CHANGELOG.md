@@ -1,5 +1,13 @@
 # @inkandswitch/annotations-context
 
+## 0.1.1
+
+### Patch Changes
+
+- d76fcc7: Rename @patchwork/refs to @inkandswitch/patchwork-refs
+- Updated dependencies [d76fcc7]
+  - @inkandswitch/annotations@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes
