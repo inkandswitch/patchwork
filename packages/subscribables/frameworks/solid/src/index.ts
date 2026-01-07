@@ -3,7 +3,7 @@ import {
   type Signal,
   type SignalObject,
   type SignalValue,
-} from "@inkandswitch/signals";
+} from "@inkandswitch/subscribables";
 import { from, onCleanup, type Accessor } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 
@@ -13,17 +13,15 @@ import { createStore, reconcile } from "solid-js/store";
  * For SignalObject: Uses Solid's `from` to convert the signal to a Solid signal.
  * For SignalValue: Uses a store with `reconcile` for efficient deep updates.
  */
-export function usePatchworkSignal<T extends object>(
+export function useSubscribe<T extends object>(
   signal: SignalObject<T>
 ): Accessor<T>;
-export function usePatchworkSignal<T>(signal: SignalValue<T>): Accessor<T>;
-export function usePatchworkSignal<T>(signal: Signal<T>): Accessor<T>;
-export function usePatchworkSignal<T>(
+export function useSubscribe<T>(signal: SignalValue<T>): Accessor<T>;
+export function useSubscribe<T>(signal: Signal<T>): Accessor<T>;
+export function useSubscribe<T>(
   signal: Signal<T> | undefined
 ): Accessor<T | undefined>;
-export function usePatchworkSignal<T>(
-  signal: Signal<T>
-): Accessor<T | undefined> {
+export function useSubscribe<T>(signal: Signal<T>): Accessor<T | undefined> {
   if (isSignalValue(signal)) {
     // For SignalValue: use createStore with reconcile for granular updates
     const [store, setStore] = createStore<{ value: T }>({

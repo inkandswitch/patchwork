@@ -200,9 +200,9 @@ importers:
       '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@inkandswitch/signals':
+      '@inkandswitch/subscribables':
         specifier: workspace:*
-        version: link:../../../signals/core
+        version: link:../../../subscribables/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../../refs
@@ -225,9 +225,9 @@ importers:
       '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@inkandswitch/signals':
+      '@inkandswitch/subscribables':
         specifier: workspace:*
-        version: link:../../../signals/core
+        version: link:../../../subscribables/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../../refs
@@ -247,9 +247,9 @@ importers:
       '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@inkandswitch/signals':
+      '@inkandswitch/subscribables':
         specifier: workspace:*
-        version: link:../../../signals/core
+        version: link:../../../subscribables/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../../refs
@@ -282,9 +282,9 @@ importers:
 
   packages/annotations/core:
     dependencies:
-      '@inkandswitch/signals':
+      '@inkandswitch/subscribables':
         specifier: workspace:*
-        version: link:../../signals/core
+        version: link:../../subscribables/core
       '@patchwork/refs':
         specifier: workspace:*
         version: link:../../refs
@@ -361,7 +361,19 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
-  packages/signals/core:
+  packages/solid:
+    dependencies:
+      '@automerge/automerge-repo-solid-primitives':
+        specifier: 'catalog:'
+        version: 2.4.0(@automerge/automerge@3.2.1)(solid-js@1.9.9)
+      '@inkandswitch/patchwork-plugins':
+        specifier: workspace:^
+        version: link:../../core/plugins
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.9
+
+  packages/subscribables/core:
     dependencies:
       eventemitter3:
         specifier: ^5.0.1
@@ -371,9 +383,9 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
-  packages/signals/frameworks/react:
+  packages/subscribables/frameworks/react:
     dependencies:
-      '@inkandswitch/signals':
+      '@inkandswitch/subscribables':
         specifier: workspace:^
         version: link:../../core
       react:
@@ -387,9 +399,9 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
-  packages/signals/frameworks/solid:
+  packages/subscribables/frameworks/solid:
     dependencies:
-      '@inkandswitch/signals':
+      '@inkandswitch/subscribables':
         specifier: workspace:^
         version: link:../../core
     devDependencies:
@@ -399,18 +411,6 @@ importers:
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
-
-  packages/solid:
-    dependencies:
-      '@automerge/automerge-repo-solid-primitives':
-        specifier: 'catalog:'
-        version: 2.4.0(@automerge/automerge@3.2.1)(solid-js@1.9.9)
-      '@inkandswitch/patchwork-plugins':
-        specifier: workspace:^
-        version: link:../../core/plugins
-      solid-js:
-        specifier: ^1.9.0
-        version: 1.9.9
 
   packages/util:
     dependencies:
@@ -979,12 +979,12 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
-      '@inkandswitch/signals':
+      '@inkandswitch/subscribables':
         specifier: workspace:^
-        version: link:../../../packages/signals/core
-      '@inkandswitch/signals-solid':
+        version: link:../../../packages/subscribables/core
+      '@inkandswitch/subscribables-solid':
         specifier: workspace:^
-        version: link:../../../packages/signals/frameworks/solid
+        version: link:../../../packages/subscribables/frameworks/solid
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs
@@ -1583,12 +1583,12 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@inkandswitch/signals':
+      '@inkandswitch/subscribables':
         specifier: workspace:^
-        version: link:../../../packages/signals/core
-      '@inkandswitch/signals-react':
+        version: link:../../../packages/subscribables/core
+      '@inkandswitch/subscribables-react':
         specifier: workspace:^
-        version: link:../../../packages/signals/frameworks/react
+        version: link:../../../packages/subscribables/frameworks/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs
@@ -1765,12 +1765,12 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@inkandswitch/signals':
+      '@inkandswitch/subscribables':
         specifier: workspace:^
-        version: link:../../../packages/signals/core
-      '@inkandswitch/signals-react':
+        version: link:../../../packages/subscribables/core
+      '@inkandswitch/subscribables-react':
         specifier: workspace:^
-        version: link:../../../packages/signals/frameworks/react
+        version: link:../../../packages/subscribables/frameworks/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs
@@ -1868,9 +1868,9 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@inkandswitch/signals-react':
+      '@inkandswitch/subscribables-react':
         specifier: workspace:^
-        version: link:../../../packages/signals/frameworks/react
+        version: link:../../../packages/subscribables/frameworks/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs
@@ -1975,9 +1975,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
-      '@inkandswitch/signals-solid':
+      '@inkandswitch/subscribables-solid':
         specifier: workspace:^
-        version: link:../../../packages/signals/frameworks/solid
+        version: link:../../../packages/subscribables/frameworks/solid
       '@node-types/node':
         specifier: npm:@types/node@^24.9.1
         version: '@types/node@24.9.1'
@@ -2178,9 +2178,9 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@inkandswitch/signals-react':
+      '@inkandswitch/subscribables-react':
         specifier: workspace:^
-        version: link:../../../packages/signals/frameworks/react
+        version: link:../../../packages/subscribables/frameworks/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs
@@ -2512,9 +2512,9 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@inkandswitch/signals-react':
+      '@inkandswitch/subscribables-react':
         specifier: workspace:^
-        version: link:../../../packages/signals/frameworks/react
+        version: link:../../../packages/subscribables/frameworks/react
       '@patchwork/refs':
         specifier: workspace:^
         version: link:../../../packages/refs

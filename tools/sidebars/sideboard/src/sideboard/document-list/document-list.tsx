@@ -16,7 +16,7 @@ import { filter, filterMatches, setRenaming } from "../state.ts";
 import Folder from "./folder.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import { usePatchworkSignal } from "@inkandswitch/signals-solid";
+import { useSubscribe } from "@inkandswitch/subscribables-solid";
 import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
 
 export interface DocumentListProps {
@@ -32,7 +32,7 @@ export function DocumentList(props: DocumentListProps) {
     props.handle.change((folder) => deleteAt(folder.docs, index));
   }
 
-  const selectedDocUrls = usePatchworkSignal($selectedDocUrls);
+  const selectedDocUrls = useSubscribe($selectedDocUrls);
 
   return (
     <For each={props.docs}>

@@ -1,5 +1,5 @@
 {
-  "name": "@inkandswitch/signals-react",
+  "name": "@inkandswitch/subscribables-react",
   "type": "module",
   "scripts": {
     "build": "tsc",
@@ -14,7 +14,7 @@
     }
   },
   "dependencies": {
-    "@inkandswitch/signals": "workspace:^"
+    "@inkandswitch/subscribables": "workspace:^"
   },
   "peerDependencies": {
     "react": "^18.0.0"

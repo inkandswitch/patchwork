@@ -1,5 +1,5 @@
 ---
-"@inkandswitch/signals": minor
+"@inkandswitch/subscribables": minor
 "@patchwork/refs-react": minor
 "@patchwork/refs": minor
 "@inkandswitch/annotations": minor
@@ -9,10 +9,10 @@
 "@inkandswitch/annotations-selection": minor
 ---
 
-### @inkandswitch/signals
+### @inkandswitch/subscribables
 
 - `Signal`, `SignalValue`, and `SignalObject` types
-- `computed()` for derived signals
+- `computed()` for derived subscribabless
 - `SubscriberSet` for managing subscriptions
 - `valueOfSignal()` and `isSignalValue()` helpers
 
@@ -56,5 +56,5 @@
 ### @inkandswitch/annotations-selection
 
 - `IsSelected` annotation type
-- `$selectedRefs`, `$selectedDocUrls`, `$selectedDocHandles` computed signals
+- `$selectedRefs`, `$selectedDocUrls`, `$selectedDocHandles` computed subscribabless
 - `isSelected()` helper

@@ -9,10 +9,10 @@ import {
   ViewHeads,
 } from "@inkandswitch/annotations-diff";
 import { $selectedRefs } from "@inkandswitch/annotations-selection";
-import { usePatchworkSignal } from "@inkandswitch/signals-react";
+import { useSubscribe } from "@inkandswitch/subscribables-react";
 
 export const HighlightChangesOption = () => {
-  const selectedRefs = usePatchworkSignal($selectedRefs);
+  const selectedRefs = useSubscribe($selectedRefs);
   const selectedDocs = useDocuments(
     useMemo(() => selectedRefs.map((ref) => ref.docHandle.url), [selectedRefs])
   );

@@ -9,20 +9,20 @@ import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
 import { AnnotationSet } from "@inkandswitch/annotations";
 import { IsSelected } from "@inkandswitch/annotations-selection";
-import { computed } from "@inkandswitch/signals";
+import { computed } from "@inkandswitch/subscribables";
 import {
   CommentThread,
   SerializedCommentThread,
   Comment,
   createReply,
 } from "@inkandswitch/annotations-comments";
-import { usePatchworkSignal } from "@inkandswitch/signals-react";
+import { useSubscribe } from "@inkandswitch/subscribables-react";
 import { Ref, RefOfType, ref, findRef, RefUrl } from "@patchwork/refs";
 import { useRefValue } from "@patchwork/refs-react";
 import { Repo } from "@automerge/automerge-repo";
 
 const CommentsView = () => {
-  const allActiveThreadRefs = usePatchworkSignal($allActiveThreadRefs);
+  const allActiveThreadRefs = useSubscribe($allActiveThreadRefs);
 
   // Local annotation set for selection from comments sidebar
   const selectionAnnotations = useMemo(() => new AnnotationSet(), []);
@@ -66,7 +66,7 @@ const ThreadView = ({
   threadRef: RefOfType<SerializedCommentThread>;
   onSelectRefs: (refs: Ref[]) => void;
 }) => {
-  const selectedRefs = usePatchworkSignal($selectedRefs);
+  const selectedRefs = useSubscribe($selectedRefs);
 
   // Cast to Ref<any, any> for useRefValue - RefOfType is structurally compatible at runtime
   const thread = useRefValue<SerializedCommentThread>(

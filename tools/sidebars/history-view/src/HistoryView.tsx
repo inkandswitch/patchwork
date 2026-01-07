@@ -19,12 +19,12 @@ import { useEffect, useMemo, useState } from "react";
 import { AnnotationSet } from "@inkandswitch/annotations";
 import { ViewHeads } from "@inkandswitch/annotations-diff";
 import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
-import { usePatchworkSignal } from "@inkandswitch/signals-react";
+import { useSubscribe } from "@inkandswitch/subscribables-react";
 import { useDatatype } from "@inkandswitch/patchwork-react";
 import { ref } from "@patchwork/refs";
 
 const HistoryView = () => {
-  const selectedDocUrls = usePatchworkSignal($selectedDocUrls);
+  const selectedDocUrls = useSubscribe($selectedDocUrls);
 
   return (
     <div className="flex flex-col h-full">

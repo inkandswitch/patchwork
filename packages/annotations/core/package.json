@@ -24,7 +24,7 @@
     "vitest": "^2.1.8"
   },
   "dependencies": {
-    "@inkandswitch/signals": "workspace:*",
+    "@inkandswitch/subscribables": "workspace:*",
     "@patchwork/refs": "workspace:*",
     "eventemitter3": "^5.0.1"
   }

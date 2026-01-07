@@ -7,7 +7,7 @@ import {
   $selectedDocHandles,
   $selectedDocUrls,
 } from "@inkandswitch/annotations-selection";
-import { usePatchworkSignal } from "@inkandswitch/signals-react";
+import { useSubscribe } from "@inkandswitch/subscribables-react";
 import {
   FolderDoc,
   HasPatchworkMetadata,
@@ -23,7 +23,7 @@ import { useEffect } from "react";
 export const useUpdateDocLinksOfActiveDocumentsEffect = (
   rootFolderUrl: AutomergeUrl
 ) => {
-  const selectedDocUrls = usePatchworkSignal($selectedDocUrls);
+  const selectedDocUrls = useSubscribe($selectedDocUrls);
   const [selectedDocsMap] = useDocuments<HasPatchworkMetadata>(selectedDocUrls);
 
   // todo: handle folders
@@ -81,7 +81,7 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
 export const useAddUnknownDocumentsToSidebarEffect = (
   rootFolderUrl: AutomergeUrl
 ) => {
-  const selectedDocHandles = usePatchworkSignal($selectedDocHandles);
+  const selectedDocHandles = useSubscribe($selectedDocHandles);
 
   const [rootFolderDoc, changeRootFolderDoc] =
     useDocument<FolderDoc>(rootFolderUrl);

@@ -1,10 +1,9 @@
 {
-  "name": "@inkandswitch/signals",
+  "name": "@inkandswitch/subscribables-solid",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc -w --preserveWatchOutput",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "dev": "tsc -w --preserveWatchOutput"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,9 +14,13 @@
     }
   },
   "dependencies": {
-    "eventemitter3": "^5.0.1"
+    "@inkandswitch/subscribables": "workspace:^"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.0"
   },
   "devDependencies": {
+    "solid-js": "^1.9.0",
     "typescript": "^5.9.2"
   }
 }

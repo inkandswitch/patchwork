@@ -12,7 +12,7 @@ import { filter, filterMatches, setRenaming } from "../state.ts";
 import { DocumentList } from "./document-list.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import { usePatchworkSignal } from "@inkandswitch/signals-solid";
+import { useSubscribe } from "@inkandswitch/subscribables-solid";
 import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
 
 export default function Folder(props: {
@@ -32,7 +32,7 @@ export default function Folder(props: {
   const depthStyle = () => ({ "--depth": depth() + 1 });
   const folderDepthStyle = () => ({ "--depth": depth() });
 
-  const selectedDocUrls = usePatchworkSignal($selectedDocUrls);
+  const selectedDocUrls = useSubscribe($selectedDocUrls);
 
   createEffect((last) => {
     if (!last && filter() && filterMatches(folder()!?.title ?? props.name)) {
