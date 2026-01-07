@@ -1,7 +1,7 @@
 {
   "name": "@patchwork/refs-react",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w --preserveWatchOutput"
