@@ -21,7 +21,7 @@ import { ViewHeads } from "@inkandswitch/annotations-diff";
 import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
 import { useSubscribe } from "@inkandswitch/subscribables-react";
 import { useDatatype } from "@inkandswitch/patchwork-react";
-import { ref } from "@patchwork/refs";
+import { ref } from "@inkandswitch/patchwork-refs";
 
 const HistoryView = () => {
   const selectedDocUrls = useSubscribe($selectedDocUrls);

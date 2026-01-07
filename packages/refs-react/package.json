@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/refs-react",
+  "name": "@inkandswitch/patchwork-refs-react",
   "type": "module",
   "version": "0.1.0",
   "scripts": {
@@ -15,7 +15,7 @@
     }
   },
   "dependencies": {
-    "@patchwork/refs": "workspace:^"
+    "@inkandswitch/patchwork-refs": "workspace:^"
   },
   "peerDependencies": {
     "react": "^18.0.0"

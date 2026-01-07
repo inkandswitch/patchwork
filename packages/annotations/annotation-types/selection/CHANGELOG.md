@@ -16,5 +16,5 @@
 - Updated dependencies [4ba3100]
   - @inkandswitch/annotations-context@0.1.0
   - @inkandswitch/annotations@0.1.0
-  - @patchwork/refs@0.1.0
+  - @inkandswitch/patchwork-refs@0.1.0
   - @inkandswitch/subscribables@0.1.0

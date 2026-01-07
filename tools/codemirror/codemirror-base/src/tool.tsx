@@ -12,7 +12,7 @@ import type { DocHandle } from "@automerge/automerge-repo";
 
 /** Patchwork */
 import { getRegistry } from "@inkandswitch/patchwork-plugins";
-import { cursor, ref, type Ref } from "@patchwork/refs";
+import { cursor, ref, type Ref } from "@inkandswitch/patchwork-refs";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
 import { Diff } from "@inkandswitch/annotations-diff";
 import { IsSelected } from "@inkandswitch/annotations-selection";

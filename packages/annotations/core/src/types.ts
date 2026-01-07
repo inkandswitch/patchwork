@@ -1,5 +1,5 @@
 import EventEmitter from "eventemitter3";
-import { type Ref } from "@patchwork/refs";
+import { type Ref } from "@inkandswitch/patchwork-refs";
 
 import type { AnnotationType, AnnotationValue } from "./annotation-type";
 

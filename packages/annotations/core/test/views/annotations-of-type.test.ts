@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Repo, type DocHandle } from "@automerge/automerge-repo";
-import { ref } from "@patchwork/refs";
+import { ref } from "@inkandswitch/patchwork-refs";
 import { AnnotationSet } from "../../src/annotation-set";
 import { defineAnnotationType } from "../../src/annotation-type";
 

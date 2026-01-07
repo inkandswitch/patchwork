@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/refs",
+  "name": "@inkandswitch/patchwork-refs",
   "type": "module",
   "version": "0.1.0",
   "scripts": {

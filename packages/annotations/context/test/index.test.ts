@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Repo, type DocHandle } from "@automerge/automerge-repo";
-import { ref } from "@patchwork/refs";
+import { ref } from "@inkandswitch/patchwork-refs";
 import { AnnotationSet } from "../../core/src/annotation-set";
 import { defineAnnotationType } from "../../core/src/annotation-type";
 
@@ -312,4 +312,3 @@ describe("annotations context", () => {
     });
   });
 });
-

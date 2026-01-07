@@ -1,4 +1,4 @@
-# @patchwork/refs-react
+# @inkandswitch/patchwork-refs-react
 
 ## 0.1.0
 
@@ -9,4 +9,4 @@
 ### Patch Changes
 
 - Updated dependencies [4ba3100]
-  - @patchwork/refs@0.1.0
+  - @inkandswitch/patchwork-refs@0.1.0

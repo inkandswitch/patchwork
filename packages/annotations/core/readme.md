@@ -30,7 +30,7 @@ When you add an annotation set to another, the parent receives live updates when
 
 ```ts
 import { AnnotationSet } from "@patchwork/annotations";
-import { ref } from "@patchwork/refs";
+import { ref } from "@inkandswitch/patchwork-refs";
 
 const annotations = new AnnotationSet();
 

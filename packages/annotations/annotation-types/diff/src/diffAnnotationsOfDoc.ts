@@ -2,7 +2,7 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { Automerge } from "@automerge/automerge-repo/slim";
 import { AnnotationSet } from "@inkandswitch/annotations";
 import { last, lookup } from "./utils";
-import { cursor, ref } from "@patchwork/refs";
+import { cursor, ref } from "@inkandswitch/patchwork-refs";
 import { Diff } from "./types";
 
 /**

@@ -1,4 +1,4 @@
-# @patchwork/refs
+# @inkandswitch/patchwork-refs
 
 ## 0.1.0
 

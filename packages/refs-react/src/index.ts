@@ -1,4 +1,4 @@
-import { Ref } from "@patchwork/refs";
+import { Ref } from "@inkandswitch/patchwork-refs";
 import { useCallback, useSyncExternalStore } from "react";
 
 /**

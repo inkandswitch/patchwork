@@ -21,7 +21,7 @@
     "@inkandswitch/annotations": "workspace:*",
     "@inkandswitch/annotations-context": "workspace:*",
     "@inkandswitch/subscribables": "workspace:*",
-    "@patchwork/refs": "workspace:*"
+    "@inkandswitch/patchwork-refs": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

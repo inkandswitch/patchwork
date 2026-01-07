@@ -17,8 +17,14 @@ import {
   createReply,
 } from "@inkandswitch/annotations-comments";
 import { useSubscribe } from "@inkandswitch/subscribables-react";
-import { Ref, RefOfType, ref, findRef, RefUrl } from "@patchwork/refs";
-import { useRefValue } from "@patchwork/refs-react";
+import {
+  Ref,
+  RefOfType,
+  ref,
+  findRef,
+  RefUrl,
+} from "@inkandswitch/patchwork-refs";
+import { useRefValue } from "@inkandswitch/patchwork-refs-react";
 import { Repo } from "@automerge/automerge-repo";
 
 const CommentsView = () => {

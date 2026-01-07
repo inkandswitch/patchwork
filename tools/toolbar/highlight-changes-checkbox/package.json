@@ -21,7 +21,7 @@
     "@inkandswitch/annotations-diff": "workspace:^",
     "@inkandswitch/annotations-selection": "workspace:^",
     "@inkandswitch/subscribables-react": "workspace:^",
-    "@patchwork/refs": "workspace:^",
+    "@inkandswitch/patchwork-refs": "workspace:^",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "tailwindcss": "^4.1.14"

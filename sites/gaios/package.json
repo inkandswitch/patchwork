@@ -48,7 +48,7 @@
     "@keyhive/keyhive": "catalog:",
     "@orion/commands": "workspace:^",
     "@orion/markwhen": "workspace:^",
-    "@patchwork/refs": "workspace:^",
+    "@inkandswitch/patchwork-refs": "workspace:^",
     "@patchwork/tldraw": "workspace:^",
     "@patchwork/util": "workspace:^",
     "@tiny-patchwork/back-link-button": "workspace:^",

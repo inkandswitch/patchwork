@@ -1,6 +1,6 @@
 import { defineAnnotationType } from "@inkandswitch/annotations";
-import { RefOfType, RefUrl } from "@patchwork/refs";
-import { Ref } from "@patchwork/refs";
+import { RefOfType, RefUrl } from "@inkandswitch/patchwork-refs";
+import { Ref } from "@inkandswitch/patchwork-refs";
 
 export type CommentThread = {
   id: string;

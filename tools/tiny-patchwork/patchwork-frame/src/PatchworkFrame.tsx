@@ -16,7 +16,7 @@ import { annotations as globalAnnotations } from "@inkandswitch/annotations-cont
 import { ViewHeads } from "@inkandswitch/annotations-diff";
 import { IsSelected } from "@inkandswitch/annotations-selection";
 import { useSubscribe } from "@inkandswitch/subscribables-react";
-import { ref, RefOfType } from "@patchwork/refs";
+import { ref, RefOfType } from "@inkandswitch/patchwork-refs";
 import { useEffect, useMemo, useState } from "react";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
 import "./styles.css";

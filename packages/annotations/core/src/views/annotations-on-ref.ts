@@ -1,5 +1,5 @@
 import { SignalObject, SubscriberSet } from "@inkandswitch/subscribables";
-import { type Ref } from "@patchwork/refs";
+import { type Ref } from "@inkandswitch/patchwork-refs";
 import EventEmitter from "eventemitter3";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
 import {

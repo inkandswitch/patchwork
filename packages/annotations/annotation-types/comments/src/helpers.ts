@@ -1,5 +1,10 @@
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import { type Ref, type RefOfType, ref, findRef } from "@patchwork/refs";
+import {
+  type Ref,
+  type RefOfType,
+  ref,
+  findRef,
+} from "@inkandswitch/patchwork-refs";
 import { DocWithComments, CommentThread, Comment } from "./types";
 import type {
   CommentThread as CommentThreadType,

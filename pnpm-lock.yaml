@@ -203,7 +203,7 @@ importers:
       '@inkandswitch/subscribables':
         specifier: workspace:*
         version: link:../../../subscribables/core
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:*
         version: link:../../../refs
     devDependencies:
@@ -228,7 +228,7 @@ importers:
       '@inkandswitch/subscribables':
         specifier: workspace:*
         version: link:../../../subscribables/core
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:*
         version: link:../../../refs
     devDependencies:
@@ -250,7 +250,7 @@ importers:
       '@inkandswitch/subscribables':
         specifier: workspace:*
         version: link:../../../subscribables/core
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:*
         version: link:../../../refs
     devDependencies:
@@ -267,7 +267,7 @@ importers:
       '@automerge/automerge-repo':
         specifier: 2.5.2-alpha.0
         version: 2.5.2-alpha.0
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:*
         version: link:../../refs
       jsdom:
@@ -285,7 +285,7 @@ importers:
       '@inkandswitch/subscribables':
         specifier: workspace:*
         version: link:../../subscribables/core
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:*
         version: link:../../refs
       eventemitter3:
@@ -347,7 +347,7 @@ importers:
 
   packages/refs-react:
     dependencies:
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../refs
       react:
@@ -492,7 +492,7 @@ importers:
       '@orion/markwhen':
         specifier: workspace:^
         version: link:../../tools/editors/orionmark
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../packages/refs
       '@patchwork/tldraw':
@@ -734,7 +734,7 @@ importers:
       '@patchwork/contact':
         specifier: workspace:^
         version: link:../../tools/contact
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../packages/refs
       '@patchwork/tldraw':
@@ -985,7 +985,7 @@ importers:
       '@inkandswitch/subscribables-solid':
         specifier: workspace:^
         version: link:../../../packages/subscribables/frameworks/solid
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../../packages/refs
       solid-js:
@@ -1589,10 +1589,10 @@ importers:
       '@inkandswitch/subscribables-react':
         specifier: workspace:^
         version: link:../../../packages/subscribables/frameworks/react
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../../packages/refs
-      '@patchwork/refs-react':
+      '@inkandswitch/patchwork-refs-react':
         specifier: workspace:^
         version: link:../../../packages/refs-react
       '@patchwork/util':
@@ -1771,10 +1771,10 @@ importers:
       '@inkandswitch/subscribables-react':
         specifier: workspace:^
         version: link:../../../packages/subscribables/frameworks/react
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../../packages/refs
-      '@patchwork/refs-react':
+      '@inkandswitch/patchwork-refs-react':
         specifier: workspace:^
         version: link:../../../packages/refs-react
       react:
@@ -1871,10 +1871,10 @@ importers:
       '@inkandswitch/subscribables-react':
         specifier: workspace:^
         version: link:../../../packages/subscribables/frameworks/react
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../../packages/refs
-      '@patchwork/refs-react':
+      '@inkandswitch/patchwork-refs-react':
         specifier: workspace:^
         version: link:../../../packages/refs-react
       '@patchwork/util':
@@ -2181,7 +2181,7 @@ importers:
       '@inkandswitch/subscribables-react':
         specifier: workspace:^
         version: link:../../../packages/subscribables/frameworks/react
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../../packages/refs
       react:
@@ -2515,7 +2515,7 @@ importers:
       '@inkandswitch/subscribables-react':
         specifier: workspace:^
         version: link:../../../packages/subscribables/frameworks/react
-      '@patchwork/refs':
+      '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../../packages/refs
       react:

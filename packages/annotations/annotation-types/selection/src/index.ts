@@ -1,7 +1,7 @@
 import { defineAnnotationType } from "@inkandswitch/annotations";
 import { annotations } from "@inkandswitch/annotations-context";
 import { computed, Signal } from "@inkandswitch/subscribables";
-import { Ref } from "@patchwork/refs";
+import { Ref } from "@inkandswitch/patchwork-refs";
 
 /**
  * Annotation type for marking refs as selected.

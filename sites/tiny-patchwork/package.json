@@ -50,7 +50,7 @@
     "@patchwork/account-picker": "workspace:^",
     "@patchwork/contact": "workspace:^",
     "@inkandswitch/patchwork-react": "workspace:^",
-    "@patchwork/refs": "workspace:^",
+    "@inkandswitch/patchwork-refs": "workspace:^",
     "@patchwork/tldraw": "workspace:^",
     "@patchwork/util": "workspace:^",
     "@tiny-patchwork/add-doc-to-sidebar-button": "workspace:^",

@@ -2,8 +2,8 @@ import { DocHandle } from "@automerge/automerge-repo";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
 import { computed } from "@inkandswitch/subscribables";
 import { useSubscribe } from "@inkandswitch/subscribables-react";
-import { type Ref } from "@patchwork/refs";
-import { useRefValue } from "@patchwork/refs-react";
+import { type Ref } from "@inkandswitch/patchwork-refs";
+import { useRefValue } from "@inkandswitch/patchwork-refs-react";
 import { Fragment } from "react/jsx-runtime";
 import "./styles.css";
 

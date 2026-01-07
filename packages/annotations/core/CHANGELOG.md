@@ -13,5 +13,5 @@
 
 - Updated dependencies [4ba3100]
 - Updated dependencies [4ba3100]
-  - @patchwork/refs@0.1.0
+  - @inkandswitch/patchwork-refs@0.1.0
   - @inkandswitch/subscribables@0.1.0
