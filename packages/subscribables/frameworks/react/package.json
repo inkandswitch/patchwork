@@ -1,5 +1,6 @@
 {
   "name": "@inkandswitch/subscribables-react",
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "build": "tsc",

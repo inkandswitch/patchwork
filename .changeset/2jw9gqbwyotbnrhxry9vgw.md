@@ -1,5 +1,7 @@
 ---
 "@inkandswitch/subscribables": minor
+"@inkandswitch/subscribables-react": minor
+"@inkandswitch/subscribables-solid": minor
 "@patchwork/refs-react": minor
 "@patchwork/refs": minor
 "@inkandswitch/annotations": minor
@@ -12,9 +14,19 @@
 ### @inkandswitch/subscribables
 
 - `Signal`, `SignalValue`, and `SignalObject` types
-- `computed()` for derived subscribabless
+- `computed()` for derived subscribables
 - `SubscriberSet` for managing subscriptions
 - `valueOfSignal()` and `isSignalValue()` helpers
+
+### @inkandswitch/subscribables-react
+
+- `useSubscribe()` hook for subscribing to Signal values in React components
+
+### @inkandswitch/subscribables-solid
+
+- `useSubscribe()` hook for subscribing to Signal values in Solid components
+- Uses `createStore` with `reconcile` for SignalValue (granular updates)
+- Uses Solid's `from` for SignalObject
 
 ### @patchwork/refs-react
 
@@ -56,5 +68,5 @@
 ### @inkandswitch/annotations-selection
 
 - `IsSelected` annotation type
-- `$selectedRefs`, `$selectedDocUrls`, `$selectedDocHandles` computed subscribabless
+- `$selectedRefs`, `$selectedDocUrls`, `$selectedDocHandles` computed subscribables
 - `isSelected()` helper
