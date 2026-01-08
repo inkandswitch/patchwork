@@ -200,12 +200,12 @@ importers:
       '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@inkandswitch/subscribables':
-        specifier: workspace:*
-        version: link:../../../subscribables/core
       '@inkandswitch/patchwork-refs':
         specifier: workspace:*
         version: link:../../../refs
+      '@inkandswitch/subscribables':
+        specifier: workspace:*
+        version: link:../../../subscribables/core
     devDependencies:
       typescript:
         specifier: ^5.9.2
@@ -225,12 +225,12 @@ importers:
       '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@inkandswitch/subscribables':
-        specifier: workspace:*
-        version: link:../../../subscribables/core
       '@inkandswitch/patchwork-refs':
         specifier: workspace:*
         version: link:../../../refs
+      '@inkandswitch/subscribables':
+        specifier: workspace:*
+        version: link:../../../subscribables/core
     devDependencies:
       typescript:
         specifier: ^5.9.2
@@ -247,12 +247,12 @@ importers:
       '@inkandswitch/annotations-context':
         specifier: workspace:*
         version: link:../../context
-      '@inkandswitch/subscribables':
-        specifier: workspace:*
-        version: link:../../../subscribables/core
       '@inkandswitch/patchwork-refs':
         specifier: workspace:*
         version: link:../../../refs
+      '@inkandswitch/subscribables':
+        specifier: workspace:*
+        version: link:../../../subscribables/core
     devDependencies:
       typescript:
         specifier: ^5.9.2
@@ -282,12 +282,12 @@ importers:
 
   packages/annotations/core:
     dependencies:
-      '@inkandswitch/subscribables':
-        specifier: workspace:*
-        version: link:../../subscribables/core
       '@inkandswitch/patchwork-refs':
         specifier: workspace:*
         version: link:../../refs
+      '@inkandswitch/subscribables':
+        specifier: workspace:*
+        version: link:../../subscribables/core
       eventemitter3:
         specifier: ^5.0.1
         version: 5.0.1
@@ -480,6 +480,9 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../packages/react
+      '@inkandswitch/patchwork-refs':
+        specifier: workspace:^
+        version: link:../../packages/refs
       '@inkandswitch/tenfold':
         specifier: workspace:^
         version: link:../../tools/editors/tenfold
@@ -492,9 +495,6 @@ importers:
       '@orion/markwhen':
         specifier: workspace:^
         version: link:../../tools/editors/orionmark
-      '@inkandswitch/patchwork-refs':
-        specifier: workspace:^
-        version: link:../../packages/refs
       '@patchwork/tldraw':
         specifier: workspace:^
         version: link:../../tools/editors/tldraw
@@ -716,6 +716,9 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../packages/react
+      '@inkandswitch/patchwork-refs':
+        specifier: workspace:^
+        version: link:../../packages/refs
       '@inkandswitch/tenfold':
         specifier: workspace:^
         version: link:../../tools/editors/tenfold
@@ -734,9 +737,6 @@ importers:
       '@patchwork/contact':
         specifier: workspace:^
         version: link:../../tools/contact
-      '@inkandswitch/patchwork-refs':
-        specifier: workspace:^
-        version: link:../../packages/refs
       '@patchwork/tldraw':
         specifier: workspace:^
         version: link:../../tools/editors/tldraw
@@ -979,15 +979,15 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
+      '@inkandswitch/patchwork-refs':
+        specifier: workspace:^
+        version: link:../../../packages/refs
       '@inkandswitch/subscribables':
         specifier: workspace:^
         version: link:../../../packages/subscribables/core
       '@inkandswitch/subscribables-solid':
         specifier: workspace:^
         version: link:../../../packages/subscribables/frameworks/solid
-      '@inkandswitch/patchwork-refs':
-        specifier: workspace:^
-        version: link:../../../packages/refs
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9
@@ -1583,18 +1583,18 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@inkandswitch/subscribables':
-        specifier: workspace:^
-        version: link:../../../packages/subscribables/core
-      '@inkandswitch/subscribables-react':
-        specifier: workspace:^
-        version: link:../../../packages/subscribables/frameworks/react
       '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../../packages/refs
       '@inkandswitch/patchwork-refs-react':
         specifier: workspace:^
         version: link:../../../packages/refs-react
+      '@inkandswitch/subscribables':
+        specifier: workspace:^
+        version: link:../../../packages/subscribables/core
+      '@inkandswitch/subscribables-react':
+        specifier: workspace:^
+        version: link:../../../packages/subscribables/frameworks/react
       '@patchwork/util':
         specifier: workspace:^
         version: link:../../../packages/util
@@ -1765,18 +1765,18 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@inkandswitch/subscribables':
-        specifier: workspace:^
-        version: link:../../../packages/subscribables/core
-      '@inkandswitch/subscribables-react':
-        specifier: workspace:^
-        version: link:../../../packages/subscribables/frameworks/react
       '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../../packages/refs
       '@inkandswitch/patchwork-refs-react':
         specifier: workspace:^
         version: link:../../../packages/refs-react
+      '@inkandswitch/subscribables':
+        specifier: workspace:^
+        version: link:../../../packages/subscribables/core
+      '@inkandswitch/subscribables-react':
+        specifier: workspace:^
+        version: link:../../../packages/subscribables/frameworks/react
       react:
         specifier: ^18.0.0
         version: 18.3.1
@@ -1868,15 +1868,15 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@inkandswitch/subscribables-react':
-        specifier: workspace:^
-        version: link:../../../packages/subscribables/frameworks/react
       '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../../packages/refs
       '@inkandswitch/patchwork-refs-react':
         specifier: workspace:^
         version: link:../../../packages/refs-react
+      '@inkandswitch/subscribables-react':
+        specifier: workspace:^
+        version: link:../../../packages/subscribables/frameworks/react
       '@patchwork/util':
         specifier: workspace:^
         version: link:../../../packages/util
@@ -2178,12 +2178,12 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@inkandswitch/subscribables-react':
-        specifier: workspace:^
-        version: link:../../../packages/subscribables/frameworks/react
       '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../../packages/refs
+      '@inkandswitch/subscribables-react':
+        specifier: workspace:^
+        version: link:../../../packages/subscribables/frameworks/react
       react:
         specifier: ^18.0.0
         version: 18.3.1
@@ -2512,12 +2512,12 @@ importers:
       '@inkandswitch/patchwork-react':
         specifier: workspace:^
         version: link:../../../packages/react
-      '@inkandswitch/subscribables-react':
-        specifier: workspace:^
-        version: link:../../../packages/subscribables/frameworks/react
       '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../../packages/refs
+      '@inkandswitch/subscribables-react':
+        specifier: workspace:^
+        version: link:../../../packages/subscribables/frameworks/react
       react:
         specifier: ^18.0.0
         version: 18.3.1
