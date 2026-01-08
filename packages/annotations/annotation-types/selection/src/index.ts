@@ -1,6 +1,6 @@
 import { defineAnnotationType } from "@inkandswitch/annotations";
 import { annotations } from "@inkandswitch/annotations-context";
-import { computed, Signal } from "@inkandswitch/subscribables";
+import { computed, Subscribable } from "@inkandswitch/subscribables";
 import { Ref } from "@inkandswitch/patchwork-refs";
 
 /**
@@ -11,7 +11,7 @@ export const IsSelected = defineAnnotationType<boolean>("patchwork/isSelected");
 /**
  * Computed observable that returns all refs that are currently selected.
  */
-export const $selectedRefs: Signal<Ref[]> = computed(annotations, () => {
+export const $selectedRefs: Subscribable<Ref[]> = computed(annotations, () => {
   const result: Ref[] = [];
   for (const [ref, annotation] of annotations.entriesOfType(IsSelected)) {
     if (annotation.value === true) {
@@ -24,7 +24,7 @@ export const $selectedRefs: Signal<Ref[]> = computed(annotations, () => {
 /**
  * Computed observable that returns whether a specific ref is selected.
  */
-export function isSelected(ref: Ref): Signal<boolean> {
+export function isSelected(ref: Ref): Subscribable<boolean> {
   return computed($selectedRefs, (selectedRefs) => selectedRefs.includes(ref));
 }
 

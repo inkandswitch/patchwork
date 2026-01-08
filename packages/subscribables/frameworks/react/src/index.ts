@@ -1,24 +1,27 @@
-import { valueOfSignal, type Signal } from "@inkandswitch/subscribables";
+import {
+  valueOfSubscribable,
+  type Subscribable,
+} from "@inkandswitch/subscribables";
 import { useCallback, useSyncExternalStore } from "react";
 
-export function useSubscribe<T>(signal: Signal<T>): T;
-export function useSubscribe<T>(signal?: Signal<T>): T | undefined;
-export function useSubscribe<T>(signal?: Signal<T>): T | undefined {
+export function useSubscribe<T>(subscribable: Subscribable<T>): T;
+export function useSubscribe<T>(subscribable?: Subscribable<T>): T | undefined;
+export function useSubscribe<T>(subscribable?: Subscribable<T>): T | undefined {
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
-      if (!signal) {
+      if (!subscribable) {
         return () => {};
       }
-      return signal.subscribe(() => {
+      return subscribable.subscribe(() => {
         onStoreChange();
       });
     },
-    [signal]
+    [subscribable]
   );
 
   const getSnapshot = useCallback(
-    () => (signal ? valueOfSignal(signal) : undefined),
-    [signal]
+    () => (subscribable ? valueOfSubscribable(subscribable) : undefined),
+    [subscribable]
   );
 
   return useSyncExternalStore(subscribe, getSnapshot);

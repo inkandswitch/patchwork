@@ -1,4 +1,4 @@
-import { SignalObject, SubscriberSet } from "@inkandswitch/subscribables";
+import { SubscribableObject, SubscriberSet } from "@inkandswitch/subscribables";
 import { type Ref } from "@inkandswitch/patchwork-refs";
 import EventEmitter from "eventemitter3";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
@@ -24,7 +24,7 @@ const viewCleanupRegistry = new FinalizationRegistry<() => void>((cleanup) =>
  */
 export class AnnotationsOnRef<T = unknown>
   extends EventEmitter<AnnotationEvents>
-  implements AnnotationSource<T>, SignalObject<AnnotationsOnRef<T>>
+  implements AnnotationSource<T>, SubscribableObject<AnnotationsOnRef<T>>
 {
   #source: AnnotationSource;
   #ref: Ref<T>;
