@@ -1,5 +1,13 @@
 # @inkandswitch/annotations-context
 
+## 0.1.2
+
+### Patch Changes
+
+- 443451b: ensure 'dist' folder is properly included in the published package
+- Updated dependencies [443451b]
+  - @inkandswitch/annotations@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes
