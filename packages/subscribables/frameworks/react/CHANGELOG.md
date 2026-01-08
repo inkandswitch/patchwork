@@ -1,5 +1,13 @@
 # @inkandswitch/subscribables-react
 
+## 0.1.1
+
+### Patch Changes
+
+- c7e5e1f: ensure dist folder ist included in package
+- Updated dependencies [c7e5e1f]
+  - @inkandswitch/subscribables@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes

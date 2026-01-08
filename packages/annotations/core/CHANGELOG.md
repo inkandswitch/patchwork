@@ -1,5 +1,12 @@
 # @inkandswitch/annotations
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [c7e5e1f]
+  - @inkandswitch/subscribables@0.1.1
+
 ## 0.1.2
 
 ### Patch Changes
