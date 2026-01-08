@@ -267,15 +267,19 @@ export function registerPatchworkViewElement(
         const toolId = this.toolId ?? this.#fallbackId;
 
         if (!toolId) {
+          this.#state = "unable";
           console.warn(`no tool for ${this.#docUrl}`);
+          this.#displayError(`I couldn't find a tool to open ${this.#docUrl}.`);
+          return;
         }
 
         this.#tool =
           getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
 
         if (!this.#tool) {
-          console.warn("Tool not found", toolId);
           this.#state = "unable";
+          console.warn("Tool not found", toolId);
+          this.#displayError(`I couldn't find the tool with id ${toolId}.`);
           return;
         }
 
@@ -283,6 +287,7 @@ export function registerPatchworkViewElement(
           getRegistry("patchwork:tool").load(this.#tool.id);
           this.#state = "unable";
           console.warn("Tool not loaded", toolId);
+          this.#displayError(`I couldn't load the tool with id ${toolId}.`);
           return;
         }
 
@@ -310,6 +315,19 @@ export function registerPatchworkViewElement(
           this.#state = "error";
         }
       }
+
+      #displayError = (error: string) => {
+        this.style.display = "flex";
+        this.style.alignItems = "center";
+        this.style.justifyContent = "center";
+        this.append(
+          Object.assign(document.createElement("div"), {
+            innerHTML: /* html */ `
+              <p>Oh no! ${error}</p>
+            `,
+          })
+        );
+      };
     }
   );
 }
