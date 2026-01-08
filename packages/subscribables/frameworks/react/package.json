@@ -2,6 +2,9 @@
   "name": "@inkandswitch/subscribables-react",
   "version": "0.1.0",
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w --preserveWatchOutput"
