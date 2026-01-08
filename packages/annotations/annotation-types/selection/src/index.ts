@@ -11,15 +11,18 @@ export const IsSelected = defineAnnotationType<boolean>("patchwork/isSelected");
 /**
  * Computed observable that returns all refs that are currently selected.
  */
-export const $selectedRefs: Subscribable<Ref[]> = computed(annotations, () => {
-  const result: Ref[] = [];
-  for (const [ref, annotation] of annotations.entriesOfType(IsSelected)) {
-    if (annotation.value === true) {
-      result.push(ref);
+export const $selectedRefs: Subscribable<Ref[]> = computed(
+  annotations.ofType(IsSelected),
+  () => {
+    const result: Ref[] = [];
+    for (const [ref, annotation] of annotations) {
+      if (annotation.value === true) {
+        result.push(ref);
+      }
     }
+    return result;
   }
-  return result;
-});
+);
 
 /**
  * Computed observable that returns whether a specific ref is selected.
