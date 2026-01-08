@@ -4,7 +4,6 @@
 "@inkandswitch/annotations-selection": patch
 "@inkandswitch/annotations-context": patch
 "@inkandswitch/annotations": patch
-"@inkandswitch/patchwork-react": patch
 "@inkandswitch/patchwork-refs": patch
 ---
 
