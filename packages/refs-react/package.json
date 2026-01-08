@@ -2,6 +2,9 @@
   "name": "@inkandswitch/patchwork-refs-react",
   "type": "module",
   "version": "0.1.1",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w --preserveWatchOutput"
