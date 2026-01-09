@@ -1,5 +1,9 @@
 import { useDocuments } from "@automerge/automerge-repo-react-hooks";
-import { decodeHeads, parseAutomergeUrl } from "@automerge/automerge-repo/slim";
+import {
+  decodeHeads,
+  parseAutomergeUrl,
+  encodeHeads,
+} from "@automerge/automerge-repo/slim";
 import { AnnotationSet } from "@inkandswitch/annotations";
 import {
   annotations,
@@ -43,7 +47,9 @@ export const HighlightChangesOption = () => {
 
     if (highlightChanges) {
       for (const ref of selectedRefs) {
-        let beforeHeads = viewHeadAnnotations.lookup(ref)?.beforeHeads;
+        const viewHeads = viewHeadAnnotations.lookup(ref);
+        let beforeHeads = viewHeads?.beforeHeads;
+        const afterHeads = viewHeads?.afterHeads;
 
         if (!beforeHeads) {
           // Fall back to copyOf metadata
@@ -56,7 +62,12 @@ export const HighlightChangesOption = () => {
           beforeHeads = decodeHeads(parseAutomergeUrl(originalDocUrl).heads!);
         }
 
-        const diffSet = diffAnnotationsOfDoc(ref.docHandle, beforeHeads);
+        const diffSet = diffAnnotationsOfDoc(
+          afterHeads
+            ? ref.docHandle.view(encodeHeads(afterHeads))
+            : ref.docHandle,
+          beforeHeads
+        );
         diffSets.push(diffSet);
       }
     }
