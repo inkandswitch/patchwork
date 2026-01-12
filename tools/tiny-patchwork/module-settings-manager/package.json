@@ -1,0 +1,29 @@
+{
+  "name": "@tiny-patchwork/module-settings-manager",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "sync": "vite build && pushwork sync"
+  },
+  "dependencies": {
+    "@automerge/automerge-repo-solid-primitives": "^2.4.0",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-elements": "workspace:^"
+  },
+  "devDependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@node-types/node": "npm:@types/node@^24.9.1",
+    "@patchwork/solid": "workspace:^",
+    "solid-js": "^1.9.10",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vite-plugin-solid": "^2.11.10"
+  }
+}
