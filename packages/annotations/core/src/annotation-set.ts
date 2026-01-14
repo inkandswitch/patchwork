@@ -462,20 +462,22 @@ export class AnnotationSet
   }
 
   *entriesOnRef(ref: Ref<any>): Iterable<[Ref<any>, AnnotationValue<any>]> {
-    const typeIdsForRef = this.#typeIdsByRef.get(ref);
-    if (typeIdsForRef) {
-      for (const typeId of typeIdsForRef) {
-        const typeMap = this.#annotationsByTypeId.get(typeId);
-        if (typeMap) {
-          const annotations = typeMap.get(ref);
-          if (annotations) {
-            for (const annotation of annotations) {
-              yield [ref, annotation];
+    for (const [storedRef, typeIds] of this.#typeIdsByRef) {
+      if (storedRef.isEquivalent(ref)) {
+        for (const typeId of typeIds) {
+          const typeMap = this.#annotationsByTypeId.get(typeId);
+          if (typeMap) {
+            const annotations = typeMap.get(storedRef);
+            if (annotations) {
+              for (const annotation of annotations) {
+                yield [storedRef, annotation];
+              }
             }
           }
         }
       }
     }
+
     // Check sub-sets
     for (const subSet of this.#addedSources) {
       yield* subSet.entriesOnRef(ref);

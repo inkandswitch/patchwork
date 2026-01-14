@@ -675,4 +675,119 @@ describe("AnnotationSet", () => {
       expect(root.lookup(itemRef, Highlight)).toEqual({ color: "blue" });
     });
   });
+
+  describe("equivalent ref lookup", () => {
+    it("should find annotations using equivalent refs with different addressing", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+
+      // Add items with identifiable ids
+      handle.change((d: any) => {
+        d.todos = [
+          { id: "abc", title: "First" },
+          { id: "def", title: "Second" },
+        ];
+      });
+
+      // Add annotation using pattern-based ref
+      const patternRef = ref(handle, "todos", { id: "abc" });
+      annotations.add(patternRef, Comment("Comment on first todo"));
+
+      // Lookup using index-based ref (equivalent to pattern ref)
+      const indexRef = ref(handle, "todos", 0);
+      expect(indexRef.isEquivalent(patternRef)).toBe(true);
+
+      const found = annotations.lookup(indexRef, Comment);
+      expect(found).toBe("Comment on first todo");
+    });
+
+    it("should find annotations when adding by index and looking up by pattern", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+
+      handle.change((d: any) => {
+        d.todos = [
+          { id: "abc", title: "First" },
+          { id: "def", title: "Second" },
+        ];
+      });
+
+      // Add annotation using index-based ref
+      const indexRef = ref(handle, "todos", 0);
+      annotations.add(indexRef, Comment("Comment on first todo"));
+
+      // Lookup using pattern-based ref
+      const patternRef = ref(handle, "todos", { id: "abc" });
+      expect(patternRef.isEquivalent(indexRef)).toBe(true);
+
+      const found = annotations.lookup(patternRef, Comment);
+      expect(found).toBe("Comment on first todo");
+    });
+
+    it("should yield entries using equivalent refs in entriesOnRef", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+
+      handle.change((d: any) => {
+        d.todos = [
+          { id: "abc", title: "First" },
+          { id: "def", title: "Second" },
+        ];
+      });
+
+      const patternRef = ref(handle, "todos", { id: "def" });
+      annotations.add(patternRef, Comment("Comment on second"));
+
+      // Query using index ref
+      const indexRef = ref(handle, "todos", 1);
+      const entries = [...annotations.entriesOnRef(indexRef)];
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0][1].value).toBe("Comment on second");
+    });
+
+    it("should find all annotations using lookupAll with equivalent refs", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+
+      handle.change((d: any) => {
+        d.todos = [{ id: "abc", title: "First" }];
+      });
+
+      const patternRef = ref(handle, "todos", { id: "abc" });
+      annotations.add(patternRef, [
+        Comment("First comment"),
+        Comment("Second comment"),
+      ]);
+
+      const indexRef = ref(handle, "todos", 0);
+      const found = annotations.lookupAll(indexRef, Comment);
+
+      expect(found).toHaveLength(2);
+      expect(found).toContain("First comment");
+      expect(found).toContain("Second comment");
+    });
+
+    it("should not find annotations when refs point to different items", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+
+      handle.change((d: any) => {
+        d.todos = [
+          { id: "abc", title: "First" },
+          { id: "def", title: "Second" },
+        ];
+      });
+
+      const firstRef = ref(handle, "todos", { id: "abc" });
+      annotations.add(firstRef, Comment("Comment on first"));
+
+      // Try to lookup with ref to second item
+      const secondRef = ref(handle, "todos", { id: "def" });
+      expect(firstRef.isEquivalent(secondRef)).toBe(false);
+
+      const found = annotations.lookup(secondRef, Comment);
+      expect(found).toBeUndefined();
+    });
+  });
 });

@@ -44,9 +44,8 @@ export class AnnotationsOnRef<T = unknown>
 
   #setupSubscription(): () => void {
     const handleChange = (change: AnnotationChange) => {
-      const filteredChange = filterAnnotationChange(
-        change,
-        (ref) => ref === this.#ref
+      const filteredChange = filterAnnotationChange(change, (ref) =>
+        ref.isEquivalent(this.#ref)
       );
       if (!isChangeEmpty(filteredChange)) {
         this.emit("change", filteredChange);
@@ -100,8 +99,8 @@ export class AnnotationsOnRef<T = unknown>
    * Iterator for all annotations on a specific ref
    */
   *entriesOnRef(ref: Ref<any>): Iterable<[Ref<any>, AnnotationValue<any>]> {
-    // Only yield if requested ref matches our filtered ref
-    if (ref === this.#ref) {
+    // Only yield if requested ref is equivalent to our filtered ref
+    if (ref.isEquivalent(this.#ref)) {
       yield* this.#source.entriesOnRef(ref);
     }
   }
