@@ -6,7 +6,7 @@
   "main": "index.js",
   "packageManager": "pnpm@10.24.0",
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 pnpm -r build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 pnpm -r --workspace-concurrency=1 build",
     "clean": "rm -rf **/node_modules **/dist",
     "dev": "pnpm -r --filter ...{sites/${SITE:-tiny-patchwork}}... --parallel dev",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md,html,yaml,yml}\"",
