@@ -261,6 +261,9 @@ export function registerPatchworkViewElement(
           return;
         }
 
+        // Clear any previous content and error styles
+        this.#resetDisplay();
+
         this.#fallbackId = getFallbackTool(this.#handle.doc())?.id;
         const fallingBack = !this.toolId;
 
@@ -327,6 +330,13 @@ export function registerPatchworkViewElement(
             `,
           })
         );
+      };
+
+      #resetDisplay = () => {
+        this.replaceChildren();
+        this.style.display = "";
+        this.style.alignItems = "";
+        this.style.justifyContent = "";
       };
     }
   );
