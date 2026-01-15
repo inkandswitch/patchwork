@@ -565,21 +565,18 @@ export class Ref<
     }
 
     // Segments differ structurally - check if they resolve to the same prop path
-    const thisPropPath = this.#getPropPath();
-    const otherPropPath = other.#getPropPath();
+    // Note: we access other.path[i].prop directly (public) instead of calling
+    // private methods on other, since other may be from a different bundle
+    for (let i = 0; i < this.path.length; i++) {
+      const thisProp = this.path[i].prop;
+      const otherProp = other.path[i].prop;
 
-    // If either can't be resolved, they're not equivalent
-    if (!thisPropPath || !otherPropPath) {
-      return false;
-    }
+      // If either can't be resolved, they're not equivalent
+      if (thisProp === undefined || otherProp === undefined) {
+        return false;
+      }
 
-    // Compare resolved prop paths
-    if (thisPropPath.length !== otherPropPath.length) {
-      return false;
-    }
-
-    for (let i = 0; i < thisPropPath.length; i++) {
-      if (thisPropPath[i] !== otherPropPath[i]) {
+      if (thisProp !== otherProp) {
         return false;
       }
     }
