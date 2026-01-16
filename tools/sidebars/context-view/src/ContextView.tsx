@@ -8,10 +8,27 @@ import { Fragment } from "react/jsx-runtime";
 import "./styles.css";
 
 const $sortedRefs = computed(globalAnnotations, () =>
-  Array.from(globalAnnotations.refs).sort((a, b) =>
-    a.toString().localeCompare(b.toString())
+  Array.from(
+    new Set(
+      Array.from(globalAnnotations.refs).sort((a, b) =>
+        a.toString().localeCompare(b.toString())
+      )
+    )
   )
 );
+
+(window as any).$context = {
+  dump() {
+    return Array.from([...globalAnnotations]).map(([ref, annotation]) => {
+      return [
+        ref.toString(),
+        annotation.type.id,
+        valueToString(annotation.value),
+      ];
+    });
+  },
+  refs: () => Array.from(globalAnnotations.refs),
+};
 
 export const ContextView = () => {
   const sortedRefs = useSubscribe($sortedRefs);
