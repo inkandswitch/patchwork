@@ -91,8 +91,10 @@ const ThreadView = ({
 
   // Check if this thread is selected (has refs overlapping with selected refs)
   const isSelected = resolvedRefs.some((resolvedRef) =>
-    Array.from(selectedRefs).some((selectedRef) =>
-      selectedRef.overlaps(resolvedRef)
+    Array.from(selectedRefs).some(
+      (selectedRef) =>
+        selectedRef.isEquivalent(resolvedRef) ||
+        selectedRef.overlaps(resolvedRef)
     )
   );
 

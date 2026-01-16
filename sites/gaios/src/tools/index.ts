@@ -41,6 +41,16 @@ import { plugins as commandsPlugins } from "@orion/commands";
 // @ts-expect-error no types
 import { plugins as tenfoldPlugins } from "@inkandswitch/tenfold";
 
+// @ts-expect-error no types
+import { plugins as addDocToSidebarButtonPlugins } from "@tiny-patchwork/add-doc-to-sidebar-button";
+
+// @ts-expect-error no types
+import { plugins as contactPlugins } from "@patchwork/contact";
+import "@patchwork/contact/style.css";
+// @ts-expect-error no types
+import { plugins as accountPickerPlugins } from "@patchwork/account-picker";
+import "@patchwork/account-picker/style.css";
+
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
   ...patchworkFramePlugins,
@@ -61,6 +71,9 @@ export const plugins: Plugin<any>[] = [
   ...codemirrorMarkdownPlugins,
   ...codemirrorEmbedPlugins,
   ...tenfoldPlugins,
+  ...addDocToSidebarButtonPlugins,
+  ...contactPlugins,
+  ...accountPickerPlugins,
   {
     id: "folder",
     type: "patchwork:datatype",
