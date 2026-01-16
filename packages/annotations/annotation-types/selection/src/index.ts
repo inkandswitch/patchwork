@@ -28,7 +28,11 @@ export const $selectedRefs: Subscribable<Ref[]> = computed(
  * Computed observable that returns whether a specific ref is selected.
  */
 export function isSelected(ref: Ref): Subscribable<boolean> {
-  return computed($selectedRefs, (selectedRefs) => selectedRefs.includes(ref));
+  return computed($selectedRefs, (selectedRefs) =>
+    selectedRefs.some(
+      (otherRef) => otherRef.overlaps(ref) || otherRef.isEquivalent(ref)
+    )
+  );
 }
 
 /**
