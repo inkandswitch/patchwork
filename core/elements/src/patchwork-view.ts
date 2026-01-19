@@ -264,15 +264,28 @@ export function registerPatchworkViewElement(
         // Clear any previous content and error styles
         this.#resetDisplay();
 
-        this.#fallbackId = getFallbackTool(this.#handle.doc())?.id;
+        const doc = this.#handle.doc();
+        this.#fallbackId = getFallbackTool(doc)?.id;
         const fallingBack = !this.toolId;
-
         const toolId = this.toolId ?? this.#fallbackId;
 
         if (!toolId) {
           this.#state = "unable";
-          console.warn(`no tool for ${this.#docUrl}`);
-          this.#displayError(`I couldn't find a tool to open ${this.#docUrl}.`);
+          // Check if the document is missing @patchwork metadata
+          const hasPatchworkMetadata = doc && "@patchwork" in doc;
+          if (!hasPatchworkMetadata) {
+            console.warn(
+              `Document ${this.#docUrl} is missing @patchwork metadata`
+            );
+            this.#displayError(
+              `This document is missing @patchwork metadata and cannot be opened.`
+            );
+          } else {
+            console.warn(`no tool for ${this.#docUrl}`);
+            this.#displayError(
+              `I couldn't find a tool to open ${this.#docUrl}.`
+            );
+          }
           return;
         }
 
