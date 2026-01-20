@@ -202,4 +202,97 @@ describe("AnnotationsOnRef", () => {
     const titleAnnotations = annotations.onRef(titleRef);
     expect([...titleAnnotations]).toHaveLength(3);
   });
+
+  describe("equivalent ref support", () => {
+    it("should find annotations when onRef uses equivalent ref", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+
+      handle.change((d: any) => {
+        d.todos = [
+          { id: "abc", title: "First" },
+          { id: "def", title: "Second" },
+        ];
+      });
+
+      // Add annotation using pattern-based ref
+      const patternRef = ref(handle, "todos", { id: "abc" });
+      annotations.add(patternRef, Comment("Comment on first"));
+
+      // Create view using index-based ref
+      const indexRef = ref(handle, "todos", 0);
+      const view = annotations.onRef(indexRef);
+
+      expect([...view]).toHaveLength(1);
+      expect(view.lookup(Comment)).toBe("Comment on first");
+    });
+
+    it("should emit change events for equivalent refs", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+      const changeHandler = vi.fn();
+
+      handle.change((d: any) => {
+        d.todos = [{ id: "abc", title: "First" }];
+      });
+
+      // Create view with index-based ref
+      const indexRef = ref(handle, "todos", 0);
+      const view = annotations.onRef(indexRef);
+      view.on("change", changeHandler);
+
+      // Add annotation with pattern-based ref (equivalent)
+      const patternRef = ref(handle, "todos", { id: "abc" });
+      annotations.add(patternRef, Comment("New comment"));
+
+      expect(changeHandler).toHaveBeenCalled();
+      const change = changeHandler.mock.calls[0][0];
+      expect(change.added).toHaveLength(1);
+    });
+
+    it("should not emit change events for non-equivalent refs", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+      const changeHandler = vi.fn();
+
+      handle.change((d: any) => {
+        d.todos = [
+          { id: "abc", title: "First" },
+          { id: "def", title: "Second" },
+        ];
+      });
+
+      // Create view for first item
+      const firstRef = ref(handle, "todos", 0);
+      const view = annotations.onRef(firstRef);
+      view.on("change", changeHandler);
+
+      // Add annotation to second item
+      const secondRef = ref(handle, "todos", { id: "def" });
+      annotations.add(secondRef, Comment("Comment on second"));
+
+      expect(changeHandler).not.toHaveBeenCalled();
+    });
+
+    it("should support entriesOnRef with equivalent refs", () => {
+      const Comment = defineAnnotationType<string>("test/comment");
+      const annotations = new AnnotationSet();
+
+      handle.change((d: any) => {
+        d.todos = [{ id: "abc", title: "First" }];
+      });
+
+      const patternRef = ref(handle, "todos", { id: "abc" });
+      annotations.add(patternRef, Comment("A comment"));
+
+      const indexRef = ref(handle, "todos", 0);
+      const view = annotations.onRef(indexRef);
+
+      // entriesOnRef with the same ref should work
+      expect([...view.entriesOnRef(indexRef)]).toHaveLength(1);
+
+      // entriesOnRef with an equivalent ref should also work
+      expect([...view.entriesOnRef(patternRef)]).toHaveLength(1);
+    });
+  });
 });

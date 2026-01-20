@@ -1,25 +1,25 @@
 import {
-  valueOfSignal,
-  type Signal,
-  type SignalValue,
-} from "./signal";
+  valueOfSubscribable,
+  type Subscribable,
+  type SubscribableValue,
+} from "./subscribable";
 
 /**
- * A computed signal that derives its value from one or more source signals.
- * Automatically recomputes when any source signal changes.
+ * A computed subscribable that derives its value from one or more source subscribables.
+ * Automatically recomputes when any source subscribable changes.
  */
-class Computed<Result> implements SignalValue<Result> {
+class Computed<Result> implements SubscribableValue<Result> {
   private subscribers = new Set<(value: Result) => void>();
   private cachedValue: Result;
   private unsubscribes: (() => void)[] = [];
 
   constructor(
-    private sources: Signal[],
+    private sources: Subscribable[],
     private computeFn: (...values: any[]) => Result
   ) {
     this.cachedValue = this.compute();
 
-    // Subscribe to all source signals
+    // Subscribe to all source subscribables
     for (const source of sources) {
       const unsubscribe = source.subscribe(() => {
         const newValue = this.compute();
@@ -33,7 +33,7 @@ class Computed<Result> implements SignalValue<Result> {
   }
 
   private compute(): Result {
-    const values = this.sources.map((s) => valueOfSignal(s));
+    const values = this.sources.map((s) => valueOfSubscribable(s));
     return this.computeFn(...values);
   }
 
@@ -56,26 +56,29 @@ class Computed<Result> implements SignalValue<Result> {
   }
 }
 
-/** Maps a tuple of Signals to a tuple of their value types */
-type UnwrappedSignals<T extends readonly Signal[]> = {
-  [K in keyof T]: T[K] extends Signal<infer V> ? V : never;
+/** Maps a tuple of Subscribables to a tuple of their value types */
+type UnwrappedSubscribables<T extends readonly Subscribable[]> = {
+  [K in keyof T]: T[K] extends Subscribable<infer V> ? V : never;
 };
 
 /**
- * Create a computed signal that derives its value from one or more source signals.
+ * Create a computed subscribable that derives its value from one or more source subscribables.
  *
  * @example
  * ```ts
- * const firstName = createSignal("John");
- * const lastName = createSignal("Doe");
+ * const firstName = createSubscribable("John");
+ * const lastName = createSubscribable("Doe");
  * const fullName = compute(firstName, lastName, (first, last) => `${first} ${last}`);
  * console.log(fullName.value); // "John Doe"
  * ```
  */
-export function computed<const Sources extends readonly Signal[], Result>(
-  ...args: [...Sources, (...values: UnwrappedSignals<Sources>) => Result]
-): SignalValue<Result> {
+export function computed<
+  const Sources extends readonly Subscribable[],
+  Result,
+>(
+  ...args: [...Sources, (...values: UnwrappedSubscribables<Sources>) => Result]
+): SubscribableValue<Result> {
   const computeFn = args.pop() as (...values: any[]) => Result;
-  const sources = args as unknown as Signal[];
+  const sources = args as unknown as Subscribable[];
   return new Computed(sources, computeFn);
 }

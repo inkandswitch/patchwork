@@ -1,14 +1,9 @@
 import { DocHandle, Repo } from "@automerge/automerge-repo";
-import type {
-  Pattern,
-  CursorMarker,
-  RefUrl,
-  AnyPathInput,
-  SegmentsFromString,
-} from "./types";
-import { CURSOR_MARKER } from "./types";
-import { Ref } from "./ref";
+import { getOrCreateCachedRef } from "./factory";
 import { parseRefUrl } from "./parser";
+import { Ref } from "./ref";
+import type { AnyPathInput, CursorMarker, Pattern, RefUrl } from "./types";
+import { CURSOR_MARKER } from "./types";
 
 /**
  * Create a cursor-based range segment for stable text selection.
@@ -51,7 +46,7 @@ export function fromUrl<TDoc = any>(
   }
 
   const options = heads ? { heads } : {};
-  return new Ref<TDoc, AnyPathInput[]>(handle, segments, options);
+  return getOrCreateCachedRef<TDoc, AnyPathInput[]>(handle, segments, options);
 }
 
 /**
@@ -67,12 +62,14 @@ export function fromUrl<TDoc = any>(
 export function fromString<TDoc, TPath extends string>(
   docHandle: DocHandle<TDoc>,
   path: TPath
-): Ref<TDoc, SegmentsFromString<TPath>> {
+): Ref<TDoc, AnyPathInput[]> {
   const url = docHandle.url;
-  const { segments } = parseRefUrl(`${url}/${path}` as RefUrl);
-  return new Ref<TDoc, SegmentsFromString<TPath>>(
+  const { segments, heads } = parseRefUrl(`${url}/${path}` as RefUrl);
+  const options = heads ? { heads } : {};
+  return getOrCreateCachedRef<TDoc, AnyPathInput[]>(
     docHandle,
-    segments as unknown as [...SegmentsFromString<TPath>]
+    segments,
+    options
   );
 }
 

@@ -1,6 +1,6 @@
 import { DocHandle } from "@automerge/automerge-repo";
 import { Ref } from "./ref";
-import type { PathInput } from "./types";
+import type { PathInput, AnyPathInput, RefOptions } from "./types";
 
 /**
  * Cache for ref instances, keyed by document handle and path.
@@ -15,12 +15,15 @@ if (!refCache) {
 }
 
 /**
- * Create a stable cache key from path segments.
+ * Create a stable cache key from path segments and optional heads.
  * Serializes the path to a string for comparison.
  */
 // TODO: this *could* use ref.url but we need to resolve some encoding scheme questions first
-function pathToCacheKey(segments: readonly PathInput[]): string {
-  return segments
+function createCacheKey(
+  segments: readonly AnyPathInput[],
+  heads?: string[]
+): string {
+  const pathKey = segments
     .map((seg) => {
       if (typeof seg === "string") return `s:${seg}`;
       if (typeof seg === "number") return `n:${seg}`;
@@ -31,6 +34,57 @@ function pathToCacheKey(segments: readonly PathInput[]): string {
       return `?:${String(seg)}`;
     })
     .join("/");
+
+  if (heads && heads.length > 0) {
+    // Sort heads for consistent cache key regardless of order
+    const sortedHeads = [...heads].sort().join("|");
+    return `${pathKey}#${sortedHeads}`;
+  }
+
+  return pathKey;
+}
+
+/**
+ * Get or create a cached ref instance.
+ *
+ * This is the internal implementation that handles cache lookup.
+ * Refs are cached by path and heads, so refs with the same path and heads
+ * return the same instance.
+ *
+ * @internal
+ */
+export function getOrCreateCachedRef<
+  TDoc,
+  TPath extends readonly AnyPathInput[],
+>(
+  docHandle: DocHandle<TDoc>,
+  segments: TPath,
+  options?: RefOptions
+): Ref<TDoc, TPath> {
+  // Get or create cache for this document handle
+  let handleCache = refCache.get(docHandle);
+  if (!handleCache) {
+    handleCache = new Map();
+    refCache.set(docHandle, handleCache);
+  }
+
+  // Check if we have a cached ref for this path and heads
+  const cacheKey = createCacheKey(segments, options?.heads);
+  const existingRef = handleCache.get(cacheKey)?.deref();
+
+  if (existingRef) {
+    return existingRef as Ref<TDoc, TPath>;
+  }
+
+  // Create new ref and cache it
+  const newRef = new Ref<TDoc, TPath>(
+    docHandle,
+    segments as [...TPath],
+    options
+  );
+  handleCache.set(cacheKey, new WeakRef(newRef));
+
+  return newRef;
 }
 
 /**
@@ -53,24 +107,5 @@ export function ref<TDoc, TPath extends readonly PathInput[]>(
   docHandle: DocHandle<TDoc>,
   ...segments: [...TPath]
 ): Ref<TDoc, TPath> {
-  // Get or create cache for this document handle
-  let handleCache = refCache.get(docHandle);
-  if (!handleCache) {
-    handleCache = new Map();
-    refCache.set(docHandle, handleCache);
-  }
-
-  // Check if we have a cached ref for this path
-  const cacheKey = pathToCacheKey(segments);
-  const existingRef = handleCache.get(cacheKey)?.deref();
-
-  if (existingRef) {
-    return existingRef as Ref<TDoc, TPath>;
-  }
-
-  // Create new ref and cache it
-  const newRef = new Ref<TDoc, TPath>(docHandle, segments as [...TPath]);
-  handleCache.set(cacheKey, new WeakRef(newRef));
-
-  return newRef;
+  return getOrCreateCachedRef(docHandle, segments);
 }

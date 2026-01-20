@@ -500,6 +500,99 @@ export class Ref<
     return thisStart < otherEnd && otherStart < thisEnd;
   }
 
+  /**
+   * Check if this ref is equivalent to another ref.
+   * Two refs are equivalent if they point to the same value in the document,
+   * even if they use different addressing schemes (e.g., index vs pattern).
+   *
+   * Short-circuits for fast rejection when refs are obviously different.
+   *
+   * @example
+   * ```ts
+   * const byIndex = ref(handle, 'todos', 0);
+   * const byId = ref(handle, 'todos', { id: 'abc' });
+   * // If todos[0].id === 'abc', these are equivalent
+   * byIndex.isEquivalent(byId); // true
+   * ```
+   */
+  isEquivalent(other: Ref<any>): boolean {
+    // Fast path: identity check
+    if (this === other) {
+      return true;
+    }
+
+    // Different documents can't be equivalent
+    if (this.docHandle.documentId !== other.docHandle.documentId) {
+      return false;
+    }
+
+    // Check heads equivalence
+    // undefined heads means "current document state"
+    // If one has undefined and other has explicit heads, check if they match current
+    if (!this.#headsEquivalent(other)) {
+      return false;
+    }
+
+    // Different path lengths can't be equivalent
+    if (this.path.length !== other.path.length) {
+      return false;
+    }
+
+    // Check range presence mismatch
+    if ((this.range === undefined) !== (other.range === undefined)) {
+      return false;
+    }
+
+    // Fast path: if segments are structurally equal, they're equivalent
+    let segmentsEqual = true;
+    for (let i = 0; i < this.path.length; i++) {
+      if (!this.#segmentsEqual(this.path[i], other.path[i])) {
+        segmentsEqual = false;
+        break;
+      }
+    }
+
+    if (segmentsEqual) {
+      // Same path structure, now check ranges
+      if (!this.range && !other.range) {
+        return true;
+      }
+      // Both have ranges (checked above), compare them
+      return (
+        this.range!.start === other.range!.start &&
+        this.range!.end === other.range!.end
+      );
+    }
+
+    // Segments differ structurally - check if they resolve to the same prop path
+    // Note: we access other.path[i].prop directly (public) instead of calling
+    // private methods on other, since other may be from a different bundle
+    for (let i = 0; i < this.path.length; i++) {
+      const thisProp = this.path[i].prop;
+      const otherProp = other.path[i].prop;
+
+      // If either can't be resolved, they're not equivalent
+      if (thisProp === undefined || otherProp === undefined) {
+        return false;
+      }
+
+      if (thisProp !== otherProp) {
+        return false;
+      }
+    }
+
+    // Prop paths match, now check ranges
+    if (!this.range && !other.range) {
+      return true;
+    }
+
+    // Both have ranges - compare cursor values
+    return (
+      this.range!.start === other.range!.start &&
+      this.range!.end === other.range!.end
+    );
+  }
+
   valueOf(): string {
     return this.url;
   }
@@ -777,6 +870,30 @@ export class Ref<
     const end = Automerge.getCursorPosition(doc, propPath, range.end);
 
     return start !== undefined && end !== undefined ? [start, end] : undefined;
+  }
+
+  /**
+   * Check if this ref's heads are equivalent to another ref's heads.
+   * undefined heads means "current document state", so a ref with undefined heads
+   * is equivalent to a ref with explicit heads matching the current document.
+   */
+  #headsEquivalent(other: Ref<any>): boolean {
+    const thisHeads = this.heads;
+    const otherHeads = other.heads;
+
+    // Both undefined or both have same explicit heads
+    if (thisHeads?.join(",") === otherHeads?.join(",")) {
+      return true;
+    }
+
+    // One has undefined heads (current), check if other matches current doc heads
+    const currentHeads = Automerge.getHeads(this.docHandle.doc());
+    const currentHeadsStr = currentHeads.join(",");
+
+    const thisHeadsStr = thisHeads?.join(",") ?? currentHeadsStr;
+    const otherHeadsStr = otherHeads?.join(",") ?? currentHeadsStr;
+
+    return thisHeadsStr === otherHeadsStr;
   }
 
   #patchAffectsRef(patches: Automerge.Patch[]): boolean {

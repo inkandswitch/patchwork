@@ -1,9 +1,9 @@
 export {
-  type Signal,
-  type SignalObject,
-  type SignalValue,
-  isSignalValue,
-  valueOfSignal,
-} from "./signal";
+  type Subscribable,
+  type SubscribableObject,
+  type SubscribableValue,
+  isSubscribableValue,
+  valueOfSubscribable,
+} from "./subscribable";
 export { SubscriberSet } from "./subscriber-set";
 export { computed } from "./computed";

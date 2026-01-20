@@ -1,25 +1,28 @@
-import { valueOfSignal, type Signal } from "@inkandswitch/subscribables";
-import { useCallback, useSyncExternalStore } from "react";
+import {
+  valueOfSubscribable,
+  type Subscribable,
+} from "@inkandswitch/subscribables";
+import { useEffect, useState } from "react";
 
-export function useSubscribe<T>(signal: Signal<T>): T;
-export function useSubscribe<T>(signal?: Signal<T>): T | undefined;
-export function useSubscribe<T>(signal?: Signal<T>): T | undefined {
-  const subscribe = useCallback(
-    (onStoreChange: () => void) => {
-      if (!signal) {
-        return () => {};
-      }
-      return signal.subscribe(() => {
-        onStoreChange();
-      });
-    },
-    [signal]
-  );
+export function useSubscribe<T>(subscribable: Subscribable<T>): T;
+export function useSubscribe<T>(subscribable?: Subscribable<T>): T | undefined;
+export function useSubscribe<T>(subscribable?: Subscribable<T>): T | undefined {
+  const forceUpdate = useForceUpdate();
 
-  const getSnapshot = useCallback(
-    () => (signal ? valueOfSignal(signal) : undefined),
-    [signal]
-  );
+  // we can't use useSyncExternalStore here because it ignores updates 
+  // if the value returned by getSnapshot is the same as the previous value
+  // this means it won't work with subscribable objects
+  useEffect(() => {
+    if (!subscribable) return;
+    return subscribable.subscribe(() => {
+      forceUpdate();
+    });
+  }, [subscribable]);
 
-  return useSyncExternalStore(subscribe, getSnapshot);
+  return subscribable ? valueOfSubscribable(subscribable) : undefined;
+}
+
+function useForceUpdate(): () => void {
+  const [, setState] = useState({});
+  return () => setState({});
 }

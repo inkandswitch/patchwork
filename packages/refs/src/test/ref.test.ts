@@ -1902,6 +1902,181 @@ describe("Ref", () => {
     });
   });
 
+  describe("isEquivalent", () => {
+    it("should return true for identical refs", () => {
+      handle.change((d) => {
+        d.title = "Test";
+      });
+
+      const ref1 = ref(handle, "title");
+      expect(ref1.isEquivalent(ref1)).toBe(true);
+    });
+
+    it("should return true for refs with same path", () => {
+      handle.change((d) => {
+        d.title = "Test";
+      });
+
+      const ref1 = ref(handle, "title");
+      const ref2 = ref(handle, "title");
+
+      expect(ref1.isEquivalent(ref2)).toBe(true);
+    });
+
+    it("should return true when index and pattern point to same item", () => {
+      handle.change((d) => {
+        d.todos = [
+          { id: "abc", title: "First" },
+          { id: "def", title: "Second" },
+        ];
+      });
+
+      const byIndex = ref(handle, "todos", 0);
+      const byPattern = ref(handle, "todos", { id: "abc" });
+
+      expect(byIndex.isEquivalent(byPattern)).toBe(true);
+      expect(byPattern.isEquivalent(byIndex)).toBe(true);
+    });
+
+    it("should return false when index and pattern point to different items", () => {
+      handle.change((d) => {
+        d.todos = [
+          { id: "abc", title: "First" },
+          { id: "def", title: "Second" },
+        ];
+      });
+
+      const byIndex = ref(handle, "todos", 0);
+      const byPattern = ref(handle, "todos", { id: "def" });
+
+      expect(byIndex.isEquivalent(byPattern)).toBe(false);
+    });
+
+    it("should return false for different documents", () => {
+      const handle2 = repo.create();
+      handle.change((d) => {
+        d.title = "Test";
+      });
+      handle2.change((d: any) => {
+        d.title = "Test";
+      });
+
+      const ref1 = ref(handle, "title");
+      const ref2 = ref(handle2, "title");
+
+      expect(ref1.isEquivalent(ref2)).toBe(false);
+    });
+
+    it("should return false for different path lengths", () => {
+      handle.change((d) => {
+        d.nested = { value: "Test" };
+      });
+
+      const ref1 = ref(handle, "nested");
+      const ref2 = ref(handle, "nested", "value");
+
+      expect(ref1.isEquivalent(ref2)).toBe(false);
+    });
+
+    it("should return false when one has a range and other does not", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const textRef = ref(handle, "text");
+      const rangeRef = ref(handle, "text", cursor(0, 5));
+
+      expect(textRef.isEquivalent(rangeRef)).toBe(false);
+      expect(rangeRef.isEquivalent(textRef)).toBe(false);
+    });
+
+    it("should return true for equivalent cursor ranges", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const range1 = ref(handle, "text", cursor(0, 5));
+      const range2 = ref(handle, "text", cursor(0, 5));
+
+      expect(range1.isEquivalent(range2)).toBe(true);
+    });
+
+    it("should return false for different cursor ranges", () => {
+      handle.change((d) => {
+        d.text = "Hello World";
+      });
+
+      const range1 = ref(handle, "text", cursor(0, 5));
+      const range2 = ref(handle, "text", cursor(0, 6));
+
+      expect(range1.isEquivalent(range2)).toBe(false);
+    });
+
+    it("should return false when pattern cannot be resolved", () => {
+      handle.change((d) => {
+        d.todos = [{ id: "abc", title: "First" }];
+      });
+
+      const byIndex = ref(handle, "todos", 0);
+      const byPattern = ref(handle, "todos", { id: "nonexistent" });
+
+      expect(byIndex.isEquivalent(byPattern)).toBe(false);
+    });
+
+    it("should return false for different heads", () => {
+      handle.change((d) => {
+        d.title = "Initial";
+      });
+
+      const heads1 = Automerge.getHeads(handle.doc());
+
+      handle.change((d) => {
+        d.title = "Updated";
+      });
+
+      const ref1 = ref(handle, "title");
+      const ref2 = ref(handle, "title").viewAt(heads1);
+
+      // ref1 has no heads (current), ref2 is pinned to old heads
+      expect(ref1.isEquivalent(ref2)).toBe(false);
+    });
+
+    it("should return true for equivalent refs when only one has explicit heads", () => {
+      handle.change((d) => {
+        d.title = "Initial";
+      });
+
+      const heads1 = Automerge.getHeads(handle.doc());
+
+      const ref1 = ref(handle, "title");
+      const ref2 = ref(handle, "title").viewAt(heads1);
+
+      expect(ref1.isEquivalent(ref2)).toBe(true);
+    });
+
+    it("should work with nested paths using different addressing", () => {
+      handle.change((d) => {
+        d.todos = [{ id: "abc", nested: { value: "Test" } }];
+      });
+
+      const byIndex = ref(handle, "todos", 0, "nested", "value");
+      const byPattern = ref(handle, "todos", { id: "abc" }, "nested", "value");
+
+      expect(byIndex.isEquivalent(byPattern)).toBe(true);
+    });
+
+    it("should be symmetric", () => {
+      handle.change((d) => {
+        d.items = [{ id: "x" }, { id: "y" }];
+      });
+
+      const a = ref(handle, "items", 1);
+      const b = ref(handle, "items", { id: "y" });
+
+      expect(a.isEquivalent(b)).toBe(b.isEquivalent(a));
+    });
+  });
+
   describe("O(D) traversal architecture", () => {
     it("should resolve deeply nested paths efficiently", () => {
       handle.change((d) => {
