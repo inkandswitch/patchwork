@@ -1,5 +1,15 @@
 # @inkandswitch/subscribables
 
+## 0.1.2
+
+### Patch Changes
+
+- 398dffc: - Rename Signal → Subscribable
+  - Rename SignalValue → SubscribableValue
+  - Rename SignalObject → SubscribableObject
+  - Rename valueOfSignal → valueOfSubscribable
+  - Rename isSignalValue → isSubscribableValue
+
 ## 0.1.1
 
 ### Patch Changes
