@@ -1,5 +1,16 @@
 # @inkandswitch/annotations
 
+## 0.1.4
+
+### Patch Changes
+
+- 398dffc: - Use SubscribableObject instead of SignalObject
+  - `entriesOnRef` and `AnnotationsOnRef` use `isEquivalent()` for ref comparison
+- Updated dependencies [398dffc]
+- Updated dependencies [398dffc]
+  - @inkandswitch/patchwork-refs@0.1.3
+  - @inkandswitch/subscribables@0.1.2
+
 ## 0.1.3
 
 ### Patch Changes

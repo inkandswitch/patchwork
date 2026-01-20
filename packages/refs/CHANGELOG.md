@@ -1,5 +1,13 @@
 # @inkandswitch/patchwork-refs
 
+## 0.1.3
+
+### Patch Changes
+
+- 398dffc: - Add `isEquivalent()` method to compare refs with different addressing (index vs pattern)
+  - Cache key now includes heads
+  - `fromUrl` and `fromString` use cached ref factory
+
 ## 0.1.2
 
 ### Patch Changes

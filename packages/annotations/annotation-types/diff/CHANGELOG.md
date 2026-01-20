@@ -1,5 +1,17 @@
 # @inkandswitch/annotations-diff
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [398dffc]
+- Updated dependencies [398dffc]
+- Updated dependencies [398dffc]
+  - @inkandswitch/annotations@0.1.4
+  - @inkandswitch/patchwork-refs@0.1.3
+  - @inkandswitch/subscribables@0.1.2
+  - @inkandswitch/annotations-context@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes

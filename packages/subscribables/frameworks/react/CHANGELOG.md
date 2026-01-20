@@ -1,5 +1,14 @@
 # @inkandswitch/subscribables-react
 
+## 0.1.2
+
+### Patch Changes
+
+- 398dffc: - Update to use Subscribable types
+  - Fix useSubscribable
+- Updated dependencies [398dffc]
+  - @inkandswitch/subscribables@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes
