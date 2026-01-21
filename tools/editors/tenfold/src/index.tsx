@@ -21,7 +21,7 @@ export type TenfoldLetters = TenfoldLetterer[][];
 
 export type TenfoldLettersDoc = { letters: string[][] };
 
-/* function addStyles(
+function addStyles(
   textContent: string,
   element: HTMLElement = self.document?.head
 ) {
@@ -34,7 +34,7 @@ export type TenfoldLettersDoc = { letters: string[][] };
 async function loadStyles() {
   const url = new URL("./tenfold.css", import.meta.url);
   return (await fetch(url)).text();
-} */
+}
 
 export interface TenfoldState {
   /** letter index */
@@ -102,8 +102,8 @@ export const plugins = [
     name: "Tenfold",
     supportedDatatypes: ["inkandswitch/tenfold"],
     async load() {
-      //const styles = await loadStyles();
-      //addStyles(styles);
+      const styles = await loadStyles();
+      addStyles(styles);
       const tool = await import("./tool.tsx");
       return (handle, element) => {
         return render(

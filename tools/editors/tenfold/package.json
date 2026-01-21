@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/index.js",
+  "pushwork": {
+    "url": "automerge:L45rfzTVcMDsyXRyuhpNMPXqPwf"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
