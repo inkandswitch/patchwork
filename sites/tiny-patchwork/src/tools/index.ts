@@ -5,9 +5,6 @@ import { plugins as patchworkFramePlugins } from "@tiny-patchwork/patchwork-fram
 import { plugins as backLinkButtonPlugins } from "@tiny-patchwork/back-link-button";
 // @ts-expect-error no types
 import { plugins as documentTitlePlugins } from "@tiny-patchwork/doc-title";
-// @ts-expect-error no types
-import { plugins as tldrawPlugins } from "@patchwork/tldraw";
-import "@patchwork/tldraw/style";
 
 // @ts-expect-error no types
 import { plugins as sideboardPlugins } from "@chee/patchwork-sideboard";
@@ -45,7 +42,6 @@ export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
   ...patchworkFramePlugins,
   ...sideboardPlugins,
-  ...tldrawPlugins,
   ...backLinkButtonPlugins,
   ...documentTitlePlugins,
   ...spacerPlugins,
