@@ -21,5 +21,9 @@ const externals = [
 
   // rip
   "solid-js",
+  "solid-js/html",
+  "solid-js/web",
+  "solid-js/h",
+  "solid-js/store",
 ];
 export default externals;
