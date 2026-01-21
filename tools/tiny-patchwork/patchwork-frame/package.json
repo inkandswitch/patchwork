@@ -2,6 +2,9 @@
   "name": "@tiny-patchwork/patchwork-frame",
   "type": "module",
   "main": "./dist/index.js",
+  "pushwork": {
+    "url": "automerge:45rzj2gtHHTpMg22bc9NRsSDq4QX"
+  },
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
