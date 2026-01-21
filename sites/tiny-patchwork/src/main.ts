@@ -131,6 +131,8 @@ const _moduleWatcher = new ModuleWatcher(
   [
 
     accountDocHandle.doc().moduleSettingsUrl,
+    // tiny patchwork default tools
+    "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl
   ],
   (name, mod) => {
     if (Array.isArray(mod.plugins)) {
