@@ -2,16 +2,6 @@ import { Plugin } from "@inkandswitch/patchwork-plugins";
 // @ts-expect-error no types
 import { plugins as patchworkFramePlugins } from "@tiny-patchwork/patchwork-frame";
 // @ts-expect-error no types
-import { plugins as tabViewerPlugins } from "@tiny-patchwork/context-sidebar";
-// @ts-expect-error no types
-import { plugins as branchViewPlugins } from "@tiny-patchwork/history-view";
-// @ts-expect-error no types
-import { plugins as historyViewPlugins } from "@tiny-patchwork/history-view";
-// @ts-expect-error no types
-import { plugins as commentsViewPlugins } from "@tiny-patchwork/comments-view";
-// @ts-expect-error no types
-import { plugins as contextViewPlugins } from "@tiny-patchwork/context-view";
-// @ts-expect-error no types
 import { plugins as backLinkButtonPlugins } from "@tiny-patchwork/back-link-button";
 // @ts-expect-error no types
 import { plugins as documentTitlePlugins } from "@tiny-patchwork/doc-title";
@@ -40,11 +30,7 @@ import { plugins as codemirrorMarkdownPlugins } from "@grjte/codemirror-markdown
 import { plugins as syncIndicatorPlugins } from "@tiny-patchwork/sync-indicator";
 // @ts-expect-error no types
 import { plugins as commandsPlugins } from "@orion/commands";
-import "@inkandswitch/tenfold/style.css";
-// @ts-expect-error no types
-const tenfoldPlugins = await import("@inkandswitch/tenfold").then(
-  (mod) => mod.plugins
-);
+
 // @ts-expect-error no types
 import { plugins as addDocToSidebarButtonPlugins } from "@tiny-patchwork/add-doc-to-sidebar-button";
 
@@ -58,13 +44,8 @@ import "@patchwork/account-picker/style.css";
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
   ...patchworkFramePlugins,
-  ...tabViewerPlugins,
-  ...branchViewPlugins,
-  ...historyViewPlugins,
-  ...commentsViewPlugins,
   ...sideboardPlugins,
   ...tldrawPlugins,
-  ...contextViewPlugins,
   ...backLinkButtonPlugins,
   ...documentTitlePlugins,
   ...spacerPlugins,
@@ -75,7 +56,6 @@ export const plugins: Plugin<any>[] = [
   ...codemirrorBasePlugins,
   ...codemirrorMarkdownPlugins,
   ...codemirrorEmbedPlugins,
-  ...tenfoldPlugins,
   ...addDocToSidebarButtonPlugins,
   ...contactPlugins,
   ...accountPickerPlugins,
