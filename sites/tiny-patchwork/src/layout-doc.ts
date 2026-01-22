@@ -108,6 +108,7 @@ async function createLayoutDoc(
       "back-link-button",
       "spacer",
       "highlight-changes-checkbox",
+      "add-doc-to-sidebar-button",
     ],
   });
 

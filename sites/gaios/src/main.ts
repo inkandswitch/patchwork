@@ -126,7 +126,11 @@ window.accountDocHandle = accountDocHandle;
 
 const moduleWatcher = new ModuleWatcher(
   repo,
-  accountDocHandle.doc().moduleSettingsUrl,
+  [
+    accountDocHandle.doc().moduleSettingsUrl,
+    // default tools for gaios
+    "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
+  ],
   (name, mod) => {
     if (Array.isArray(mod.plugins)) {
       // TODO: maybe get rid of this check?
