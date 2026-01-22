@@ -224,8 +224,8 @@ export function registerPatchworkViewElement(
           }
         );
 
-
-        await this.moduleWatcher.loadSuggestedImportUrl(this.docUrl);        
+        // load the suggested import url for the document in the background
+        this.moduleWatcher.loadSuggestedImportUrl(this.docUrl)
 
         this.#teardowns.add(() => {
           removeAddedListener();
