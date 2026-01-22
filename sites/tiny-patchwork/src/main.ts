@@ -172,7 +172,7 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
 rootElement.addEventListener(
   "patchwork:mounted",
   () => {
-      handleHashChange();
+    handleHashChange();
   }
 );
 
@@ -212,9 +212,6 @@ const handleHashChange = async () => {
 
 // Listen for hash changes and interpret them as Automerge URLs
 window.addEventListener("hashchange", () => {
-
-
-    handleHashChange();
-  
+  handleHashChange();
 });
 
