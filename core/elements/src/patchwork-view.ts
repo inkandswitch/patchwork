@@ -16,6 +16,7 @@ import {
   isLoadablePlugin,
   type LoadedTool,
 } from "@inkandswitch/patchwork-plugins";
+import { MountedEvent } from "./events.js";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
@@ -63,7 +64,7 @@ export function registerPatchworkViewElement(
   }
 
   const attrs = {
-    docUrl: "doc-url",
+      docUrl: "doc-url",
     toolId: "tool-id",
   };
 
@@ -325,6 +326,7 @@ export function registerPatchworkViewElement(
           }
           this.#teardowns.add(cleanup);
           this.#state = fallingBack ? "fallback" : "rendered";
+          this.dispatchEvent(new MountedEvent({ url: this.docUrl, toolId }));
         } catch (error) {
           this.append(
             Object.assign(document.createElement("div"), {

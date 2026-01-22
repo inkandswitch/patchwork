@@ -17,12 +17,29 @@ export class OpenDocumentEvent extends CustomEvent<OpenDocumentEventDetail> {
   }
 }
 
+export interface MountedEventDetail {
+  url: AutomergeUrl;
+  toolId: string;
+}
+
+export class MountedEvent extends CustomEvent<MountedEventDetail> {
+  constructor(detail: MountedEventDetail) {
+    super("patchwork:mounted", {
+      detail,
+      composed: true,
+      bubbles: true,
+    });
+  }
+}
+
 declare global {
   interface ShadowRootEventMap extends ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
+    "patchwork:mounted": MountedEvent;
   }
   interface ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
+    "patchwork:mounted": MountedEvent;
   }
 }
 
