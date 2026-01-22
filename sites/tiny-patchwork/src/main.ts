@@ -126,7 +126,7 @@ const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 
 window.accountDocHandle = accountDocHandle;
 
-const _moduleWatcher = new ModuleWatcher(
+const moduleWatcher = new ModuleWatcher(
   repo,
   [
 
@@ -144,7 +144,7 @@ const _moduleWatcher = new ModuleWatcher(
   }
 );
 
-registerPatchworkViewElement({ repo });
+registerPatchworkViewElement({ moduleWatcher, repo });
 
 const rootElement = document.getElementById("root")!;
 

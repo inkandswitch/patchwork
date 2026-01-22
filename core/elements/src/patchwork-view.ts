@@ -8,6 +8,7 @@ import {
   getSuggestedImportUrl,
   getType,
   type HasPatchworkMetadata,
+  type ModuleWatcher,
 } from "@inkandswitch/patchwork-filesystem";
 import {
   getFallbackTool,
@@ -38,11 +39,13 @@ export interface RegisterPatchworkViewElementParams {
   name?: string;
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
+  moduleWatcher: ModuleWatcher;
 }
 
 export interface PatchworkViewElement extends HTMLElement {
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
+  moduleWatcher: ModuleWatcher;
   docUrl?: AutomergeUrl;
   toolId?: string;
 }
@@ -69,6 +72,7 @@ export function registerPatchworkViewElement(
     class PatchworkViewElement extends HTMLElement {
       repo = repo;
       hive = params.hive;
+      moduleWatcher = params.moduleWatcher;
       // attributes, if these change it's new game +
       #docUrl: AutomergeUrl | null = null;
       #toolId: string | null = null;
@@ -168,6 +172,10 @@ export function registerPatchworkViewElement(
 
         this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
 
+        if (!this.#handle) {
+          debugger
+        }
+
         // TODO: these are inlined and not separate functions
         // because we need to do some work getting types working well here.
         // @chee would be good to chat about this at some point.
@@ -215,6 +223,9 @@ export function registerPatchworkViewElement(
             }
           }
         );
+
+
+        await this.moduleWatcher.loadSuggestedImportUrl(this.docUrl);        
 
         this.#teardowns.add(() => {
           removeAddedListener();
