@@ -1,7 +1,5 @@
 import { Plugin } from "@inkandswitch/patchwork-plugins";
 // @ts-expect-error no types
-import { plugins as patchworkFramePlugins } from "@tiny-patchwork/patchwork-frame";
-// @ts-expect-error no types
 import { plugins as backLinkButtonPlugins } from "@tiny-patchwork/back-link-button";
 // @ts-expect-error no types
 import { plugins as documentTitlePlugins } from "@tiny-patchwork/doc-title";
@@ -11,8 +9,7 @@ import { plugins as sideboardPlugins } from "@chee/patchwork-sideboard";
 import "@chee/patchwork-sideboard/styles.css";
 // @ts-expect-error no types
 import { plugins as spacerPlugins } from "@tiny-patchwork/spacer";
-// @ts-expect-error no types
-import { plugins as highlightChangesCheckboxPlugins } from "@tiny-patchwork/highlight-changes-checkbox";
+
 // @ts-expect-error no types
 import { plugins as frameConfiguratorPlugins } from "@tiny-patchwork/frame-configurator";
 // @ts-expect-error no types
@@ -40,12 +37,11 @@ import "@patchwork/account-picker/style.css";
 
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
-  ...patchworkFramePlugins,
   ...sideboardPlugins,
   ...backLinkButtonPlugins,
   ...documentTitlePlugins,
   ...spacerPlugins,
-  ...highlightChangesCheckboxPlugins,
+
   ...frameConfiguratorPlugins,
   ...orionMarkwhen,
   ...syncIndicatorPlugins,
