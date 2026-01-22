@@ -64,7 +64,7 @@ export function registerPatchworkViewElement(
   }
 
   const attrs = {
-      docUrl: "doc-url",
+    docUrl: "doc-url",
     toolId: "tool-id",
   };
 
@@ -129,7 +129,7 @@ export function registerPatchworkViewElement(
 
       // When defined, this is called instead of connectedCallback() and disconnectedCallback()
       // each time the element is moved to a different place in the DOM via Element.moveBefore()
-      connectedMoveCallback() {}
+      connectedMoveCallback() { }
 
       attributeChangedCallback(name: string, _: string, val: string | null) {
         if (name === attrs.toolId) {
@@ -150,8 +150,8 @@ export function registerPatchworkViewElement(
       ) => {
         const { before, after } = payload.patchInfo;
 
-        if (getSuggestedImportUrl(before) != getSuggestedImportUrl(after)) {
-          this.#teardown().then(() => this.#init());
+        if (this.docUrl && getSuggestedImportUrl(before) != getSuggestedImportUrl(after)) {
+          this.moduleWatcher.loadSuggestedImportUrl(this.docUrl);
         }
 
         if (getType(before) != getType(after)) {
@@ -172,10 +172,6 @@ export function registerPatchworkViewElement(
         this.#state = State.initializing;
 
         this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
-
-        if (!this.#handle) {
-          debugger
-        }
 
         // TODO: these are inlined and not separate functions
         // because we need to do some work getting types working well here.
