@@ -57,7 +57,6 @@
     "@tiny-patchwork/context-view": "workspace:^",
     "@tiny-patchwork/doc-title": "workspace:^",
     "@tiny-patchwork/frame-configurator": "workspace:^",
-    "@tiny-patchwork/highlight-changes-checkbox": "workspace:^",
     "@tiny-patchwork/history-view": "workspace:^",
     "@tiny-patchwork/patchwork-frame": "workspace:^",
     "@tiny-patchwork/spacer": "workspace:^",
