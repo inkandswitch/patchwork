@@ -112,7 +112,11 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
       try {
         if (handoffURL) {
           // cache-first strategy for handoff requests
-          if (match) return match;
+
+          if (match) {
+            log(`serving handoff ${handoffURL} from cache`);
+            return match;
+          }
           const client = await self.clients.get(fetchEvent.clientId);
 
           // set up a request id
@@ -139,7 +143,7 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
               referrer: request.referrer,
             },
           };
-          log("sending handoff request", message);
+          log("sending handoff request to main thread", message);
           // send request event to main thread to ask them how to handle it
           client.postMessage(message);
           // this'll finish when the main thread gets back to us

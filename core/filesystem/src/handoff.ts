@@ -8,6 +8,8 @@ import {
 } from "@automerge/automerge-repo";
 import type { UnixFileEntry, FolderDoc } from "./types.js";
 import type { HandoffHandler } from "@inkandswitch/patchwork-bootloader/types";
+import debug from "debug";
+const log = debug("patchwork:filesystem:handoff");
 
 export async function findFileHandleInFolderHandle(
   repo: Repo,
@@ -25,8 +27,18 @@ export async function findFileHandleInFolderHandle(
     const target = f.docs.find((link) => link.name == part);
     if (!isValidAutomergeUrl(target?.url)) {
       throw new Error(
-        `couldn't find ${part} in ${f.title} (resolving ${parts.join("/")} in ${folder.url})`
+        `couldn't find ${part} in folder with title "${f.title}". (resolving ${parts.join("/")} in folder at ${folder.url})`
       );
+    }
+    if (log.enabled) {
+      const { heads, documentId } = parseAutomergeUrl(target.url);
+      const h = await repo.find(documentId);
+      const latestHeads = h.heads();
+      if (heads && heads.join("|") !== latestHeads.join("|")) {
+        log(
+          `${target.url} is not latest. requested heads: ${heads}, latest heads: ${latestHeads}`
+        );
+      }
     }
     const fileHandle = await repo.find<UnixFileEntry>(target.url);
     if (index == partsLength - 1) {
@@ -51,7 +63,7 @@ export function createFilesystemHandoffHandler(repo: Repo) {
   const handle: HandoffHandler = async (href, _request) => {
     try {
       const [maybeAutomergeUrl, ...path] = href.split("/");
-
+      log(`recieved handoff request for ${href}`);
       if (isValidAutomergeUrl(maybeAutomergeUrl)) {
         const folder = await repo.find<FolderDoc>(maybeAutomergeUrl);
         if (!path[path.length - 1]) {
@@ -60,10 +72,18 @@ export function createFilesystemHandoffHandler(repo: Repo) {
 
         const { heads } = parseAutomergeUrl(maybeAutomergeUrl);
 
+        if (heads && heads.join("|") !== folder.heads()?.join("|")) {
+          log(
+            `serving ${maybeAutomergeUrl}. latest heads are ${folder.heads()}`
+          );
+        }
+
         if (!heads) {
+          const latestHeads = folder.heads();
+          log(`redirecting ${maybeAutomergeUrl} to ${latestHeads}`);
           const url = stringifyAutomergeUrl({
             documentId: folder.documentId,
-            heads: folder.heads(),
+            heads: latestHeads,
           });
 
           let location = `/${encodeURIComponent(url)}`;
