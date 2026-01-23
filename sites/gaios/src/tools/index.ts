@@ -23,8 +23,6 @@ import "@chee/patchwork-sideboard/styles.css";
 // @ts-expect-error no types
 import { plugins as spacerPlugins } from "@tiny-patchwork/spacer";
 // @ts-expect-error no types
-import { plugins as highlightChangesCheckboxPlugins } from "@tiny-patchwork/highlight-changes-checkbox";
-// @ts-expect-error no types
 import { plugins as frameConfiguratorPlugins } from "@tiny-patchwork/frame-configurator";
 // @ts-expect-error no types
 import { plugins as orionMarkwhen } from "@orion/markwhen";
@@ -61,7 +59,6 @@ export const plugins: Plugin<any>[] = [
   ...backLinkButtonPlugins,
   ...documentTitlePlugins,
   ...spacerPlugins,
-  ...highlightChangesCheckboxPlugins,
   ...frameConfiguratorPlugins,
   ...orionMarkwhen,
   ...syncIndicatorPlugins,
