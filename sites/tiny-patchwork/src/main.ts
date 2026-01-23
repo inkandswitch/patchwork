@@ -126,7 +126,7 @@ const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 
 window.accountDocHandle = accountDocHandle;
 
-const _moduleWatcher = new ModuleWatcher(
+const moduleWatcher = new ModuleWatcher(
   repo,
   [
 
@@ -144,7 +144,7 @@ const _moduleWatcher = new ModuleWatcher(
   }
 );
 
-registerPatchworkViewElement({ repo });
+registerPatchworkViewElement({ moduleWatcher, repo });
 
 const rootElement = document.getElementById("root")!;
 
@@ -169,10 +169,18 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
   window.location.hash = params.toString();
 });
 
+rootElement.addEventListener(
+  "patchwork:mounted",
+  () => {
+    handleHashChange();
+  }
+);
+
 const bigPatchworkHashRegex =
   /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;
 
-const handleHashChange = async (hash: string) => {
+const handleHashChange = async () => {
+  const hash = window.location.hash.slice(1);
   const legacy = bigPatchworkHashRegex.exec(hash);
 
   if (legacy) {
@@ -204,14 +212,6 @@ const handleHashChange = async (hash: string) => {
 
 // Listen for hash changes and interpret them as Automerge URLs
 window.addEventListener("hashchange", () => {
-  const hash = window.location.hash;
-  handleHashChange(hash.slice(1));
+  handleHashChange();
 });
 
-if (window.location.hash) {
-  const hash = window.location.hash.slice(1);
-  // todo: actually wait for root to be mounted
-  setTimeout(() => {
-    handleHashChange(hash);
-  }, 100);
-}

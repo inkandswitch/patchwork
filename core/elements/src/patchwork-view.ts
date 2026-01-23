@@ -8,6 +8,7 @@ import {
   getSuggestedImportUrl,
   getType,
   type HasPatchworkMetadata,
+  type ModuleWatcher,
 } from "@inkandswitch/patchwork-filesystem";
 import {
   getFallbackTool,
@@ -15,6 +16,7 @@ import {
   isLoadablePlugin,
   type LoadedTool,
 } from "@inkandswitch/patchwork-plugins";
+import { MountedEvent } from "./events.js";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
@@ -38,11 +40,13 @@ export interface RegisterPatchworkViewElementParams {
   name?: string;
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
+  moduleWatcher: ModuleWatcher;
 }
 
 export interface PatchworkViewElement extends HTMLElement {
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
+  moduleWatcher: ModuleWatcher;
   docUrl?: AutomergeUrl;
   toolId?: string;
 }
@@ -69,6 +73,7 @@ export function registerPatchworkViewElement(
     class PatchworkViewElement extends HTMLElement {
       repo = repo;
       hive = params.hive;
+      moduleWatcher = params.moduleWatcher;
       // attributes, if these change it's new game +
       #docUrl: AutomergeUrl | null = null;
       #toolId: string | null = null;
@@ -124,7 +129,7 @@ export function registerPatchworkViewElement(
 
       // When defined, this is called instead of connectedCallback() and disconnectedCallback()
       // each time the element is moved to a different place in the DOM via Element.moveBefore()
-      connectedMoveCallback() {}
+      connectedMoveCallback() { }
 
       attributeChangedCallback(name: string, _: string, val: string | null) {
         if (name === attrs.toolId) {
@@ -145,8 +150,8 @@ export function registerPatchworkViewElement(
       ) => {
         const { before, after } = payload.patchInfo;
 
-        if (getSuggestedImportUrl(before) != getSuggestedImportUrl(after)) {
-          this.#teardown().then(() => this.#init());
+        if (this.docUrl && getSuggestedImportUrl(before) != getSuggestedImportUrl(after)) {
+          this.moduleWatcher.loadSuggestedImportUrl(this.docUrl);
         }
 
         if (getType(before) != getType(after)) {
@@ -215,6 +220,9 @@ export function registerPatchworkViewElement(
             }
           }
         );
+
+        // load the suggested import url for the document in the background
+        this.moduleWatcher.loadSuggestedImportUrl(this.docUrl)
 
         this.#teardowns.add(() => {
           removeAddedListener();
@@ -314,6 +322,7 @@ export function registerPatchworkViewElement(
           }
           this.#teardowns.add(cleanup);
           this.#state = fallingBack ? "fallback" : "rendered";
+          this.dispatchEvent(new MountedEvent({ url: this.docUrl, toolId }));
         } catch (error) {
           this.append(
             Object.assign(document.createElement("div"), {
