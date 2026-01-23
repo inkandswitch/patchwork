@@ -1,3 +1,4 @@
+import type { Repo } from "@automerge/vanillajs/slim";
 import type {
   HandoffHandler,
   HandoffRequestMessage,
@@ -45,18 +46,29 @@ export function bumpServiceWorkerCache(
 
 const encoder = new TextEncoder();
 
+declare global {
+  interface Window {
+    repo: Repo;
+  }
+}
+
 export default async function setupServiceWorker(
   handler: HandoffHandler,
   options?: SetupServiceWorkerOptions
 ) {
-  navigator.serviceWorker.addEventListener("controllerchange", function () {
-    console.log(
-      "%cnew service worker, reloading",
-      "color: pink; font-weight: bold"
-    );
-    bumpServiceWorkerCache(navigator.serviceWorker.controller);
-    location.reload();
-  });
+  navigator.serviceWorker.addEventListener(
+    "controllerchange",
+    async function () {
+      console.log(
+        "%cnew service worker, reloading",
+        "color: pink; font-weight: bold"
+      );
+      bumpServiceWorkerCache(navigator.serviceWorker.controller);
+      // ensure we've saved docs before we reload
+      await window.repo.flush?.();
+      location.reload();
+    }
+  );
 
   navigator.serviceWorker.addEventListener("message", async (event) => {
     if (event.data.type == "request") {
