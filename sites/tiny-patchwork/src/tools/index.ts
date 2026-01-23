@@ -3,10 +3,6 @@ import { Plugin } from "@inkandswitch/patchwork-plugins";
 import { plugins as backLinkButtonPlugins } from "@tiny-patchwork/back-link-button";
 // @ts-expect-error no types
 import { plugins as documentTitlePlugins } from "@tiny-patchwork/doc-title";
-
-// @ts-expect-error no types
-import { plugins as sideboardPlugins } from "@chee/patchwork-sideboard";
-import "@chee/patchwork-sideboard/styles.css";
 // @ts-expect-error no types
 import { plugins as spacerPlugins } from "@tiny-patchwork/spacer";
 
@@ -37,11 +33,9 @@ import "@patchwork/account-picker/style.css";
 
 export const plugins: Plugin<any>[] = [
   ...commandsPlugins,
-  ...sideboardPlugins,
   ...backLinkButtonPlugins,
   ...documentTitlePlugins,
   ...spacerPlugins,
-
   ...frameConfiguratorPlugins,
   ...orionMarkwhen,
   ...syncIndicatorPlugins,
