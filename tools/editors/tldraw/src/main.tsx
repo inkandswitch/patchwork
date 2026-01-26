@@ -4,10 +4,7 @@ import { datatype as datatype } from "./datatype.ts";
 import { RepoContext } from "@automerge/react";
 import "./main.css";
 
-function addStyles(
-  textContent: string,
-  element: HTMLElement = self.document?.head
-) {
+function addStyles(textContent: string, element: HTMLElement = document.head) {
   const id = "tldraw-styles";
   const el = element.querySelector(`#${id}`) ?? document.createElement("style");
   Object.assign(el, { textContent, id });
@@ -39,7 +36,7 @@ export const plugins = [
       const styles = await loadStyles();
       return (handle, element) => {
         const root = createRoot(element);
-        addStyles(styles, element);
+        addStyles(styles);
         root.render(
           <RepoContext.Provider value={element.repo}>
             <TldrawTool docUrl={handle.url} />

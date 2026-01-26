@@ -1,8 +1,8 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo/slim";
 
-export type HasPatchworkMetadata = {
+export type HasPatchworkMetadata<Type extends string = string> = {
   "@patchwork": {
-    type: string;
+    type: Type;
     suggestedImportUrl?: string;
     copies?: AutomergeUrl[];
     copyOf?: AutomergeUrl;
