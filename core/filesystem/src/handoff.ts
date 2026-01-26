@@ -24,6 +24,12 @@ export async function findFileHandleInFolderHandle(
   for (const [index, part] of parts.entries()) {
     const f = folder.doc();
 
+    if (!f.docs) {
+      throw new Error(
+        `folder at ${folder.url} has no docs array. (resolving ${parts.join("/")})`
+      );
+    }
+
     const target = f.docs.find((link) => link.name == part);
     if (!isValidAutomergeUrl(target?.url)) {
       throw new Error(
@@ -107,6 +113,12 @@ export function createFilesystemHandoffHandler(repo: Repo) {
         )) as DocHandle<UnixFileEntry>;
 
         const content = file?.doc().content;
+
+        if (!content) {
+          throw new Error(
+            `file at ${href} (url: ${file?.doc()}, heads: ${file?.heads()}) has no content`
+          );
+        }
 
         return {
           body:
