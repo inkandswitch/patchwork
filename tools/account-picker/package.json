@@ -3,6 +3,9 @@
   "type": "module",
   "private": true,
   "main": "./dist/tool.js",
+  "pushwork": {
+    "url": "automerge:4LpZgiCvBmUrqhoEK7fspCkp5jgh"
+  },
   "exports": {
     ".": {
       "import": "./dist/tool.js",
