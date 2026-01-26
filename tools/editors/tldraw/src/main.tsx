@@ -15,7 +15,7 @@ function addStyles(
 }
 
 async function loadStyles() {
-  const url = new URL("./tenfold.css", import.meta.url);
+  const url = new URL("./main.css", import.meta.url);
   return (await fetch(url)).text();
 }
 
