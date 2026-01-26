@@ -8,7 +8,7 @@ function addStyles(
   textContent: string,
   element: HTMLElement = self.document?.head
 ) {
-  const id = "tenfold-styles";
+  const id = "tldraw-styles";
   const el = element.querySelector(`#${id}`) ?? document.createElement("style");
   Object.assign(el, { textContent, id });
   element.append(el);
