@@ -60,13 +60,13 @@ export default async function setupServiceWorker(
     "controllerchange",
     async function () {
       console.log(
-        "%cnew service worker, reloading",
+        "%cnew service worker. i'd imagine that refreshing would be a good idea, but... i'm scared",
         "color: pink; font-weight: bold"
       );
       bumpServiceWorkerCache(navigator.serviceWorker.controller);
       // ensure we've saved docs before we reload
       await window.repo.flush?.();
-      location.reload();
+      //location.reload();
     }
   );
 
