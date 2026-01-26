@@ -150,9 +150,9 @@ export function registerPatchworkViewElement(
       ) => {
         const { before, after } = payload.patchInfo;
 
-        if (this.docUrl && getSuggestedImportUrl(before) != getSuggestedImportUrl(after)) {
-          this.moduleWatcher.loadSuggestedImportUrl(this.docUrl);
-        }
+        //if (this.docUrl && getSuggestedImportUrl(before) != getSuggestedImportUrl(after)) {
+        //  this.moduleWatcher.loadSuggestedImportUrl(this.docUrl);
+        //}
 
         if (getType(before) != getType(after)) {
           this.#teardown().then(() => this.#init());
@@ -222,7 +222,7 @@ export function registerPatchworkViewElement(
         );
 
         // load the suggested import url for the document in the background
-        this.moduleWatcher.loadSuggestedImportUrl(this.docUrl)
+        // this.moduleWatcher.loadSuggestedImportUrl(this.docUrl)
 
         this.#teardowns.add(() => {
           removeAddedListener();
