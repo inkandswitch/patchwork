@@ -2,6 +2,9 @@
   "name": "@tiny-patchwork/back-link-button",
   "type": "module",
   "main": "./dist/index.js",
+  "pushwork": {
+    "url": "automerge:38bVH1cbYTqv5p2BpC5drJQLLLFL"
+  },
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
