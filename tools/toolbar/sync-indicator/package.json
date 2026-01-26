@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/tool.js",
+  "pushwork": {
+    "url": "automerge:2JwvUFqFGwxaZPu9CUDT5TBTq35M"
+  },
   "exports": {
     ".": {
       "import": "./dist/tool.js",
