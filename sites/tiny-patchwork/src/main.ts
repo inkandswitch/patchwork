@@ -31,6 +31,9 @@ import {
   type AutomergeUrl,
   type UrlHeads,
 } from "@automerge/vanillajs";
+import { SubductionStorageBridge } from "@automerge/automerge-repo-subduction-bridge";
+import { Subduction, SubductionWebSocket, WebCryptoSigner } from "@automerge/automerge_subduction";
+import { plugins } from "./tools";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 
@@ -41,11 +44,37 @@ declare global {
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
+    subduction: Subduction;
     getRepoChannel: () => MessagePort;
   }
 }
 
-const repo = new Repo({ storage: new IndexedDBStorageAdapter() });
+const { repo, subduction } = await (async () => {
+  const signer = await WebCryptoSigner.setup();
+  const storageAdapter = new IndexedDBStorageAdapter();
+  const storage = new SubductionStorageBridge(storageAdapter);
+  const subduction = await Subduction.hydrate(signer, storage);
+
+  try {
+    const conn = await SubductionWebSocket.tryDiscover(
+      new URL("ws://localhost:8080"),
+      signer,
+      "0.0.0.0:8080",
+      5000
+    );
+    await subduction.attach(conn);
+    console.log("Connected to Subduction server");
+  } catch (e) {
+    console.warn("No Subduction server, running local-only:", e);
+  }
+
+  const repo = new Repo({
+    network: [],
+    subduction,
+  });
+
+  return { repo, subduction };
+})();
 
 function createSharedWorker() {
   return new SharedWorker(new URL("./automerge-worker.ts", import.meta.url), {
@@ -71,18 +100,20 @@ function getRepoChannel() {
 
 window.getRepoChannel = getRepoChannel;
 
-try {
-  const sharedWorker = createSharedWorker();
-  repo.networkSubsystem.addNetworkAdapter(
-    new MessageChannelNetworkAdapter(sharedWorker.port)
-  );
-} catch (error) {
-  console.error(error);
-  console.error("Falling back to tab-only repo strategy");
-  repo.networkSubsystem.addNetworkAdapter(
-    new WebSocketClientAdapter("wss://sync3.automerge.org")
-  );
-}
+// TEMPORARILY DISABLED: SharedWorker may interfere with Subduction debugging
+// try {
+//   const sharedWorker = createSharedWorker();
+//   repo.networkSubsystem.addNetworkAdapter(
+//     new MessageChannelNetworkAdapter(sharedWorker.port)
+//   );
+// } catch (error) {
+//   console.error(error);
+//   console.error("Falling back to tab-only repo strategy");
+//   repo.networkSubsystem.addNetworkAdapter(
+//     new WebSocketClientAdapter("wss://sync3.automerge.org")
+//   );
+// }
+console.log("Subduction-only mode (SharedWorker disabled for debugging)")
 
 document.body.style.background = "#fffffe";
 
@@ -90,6 +121,7 @@ await repo.networkSubsystem.adapters[0].whenReady();
 // if this helps then we are sad and confused but at least it helped
 await new Promise((resolve) => setTimeout(resolve, 1000));
 window.repo = repo;
+window.subduction = subduction;
 window.Automerge = Automerge;
 window.AutomergeRepo = AutomergeRepo;
 

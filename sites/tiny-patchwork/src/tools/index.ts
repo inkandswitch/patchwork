@@ -1,0 +1,63 @@
+import { Plugin } from "@inkandswitch/patchwork-plugins";
+// @ts-expect-error no types
+import { plugins as accountPickerPlugins } from "@patchwork/account-picker";
+import "@patchwork/account-picker/style.css";
+// @ts-expect-error no types
+import { plugins as addDocToSidebarButtonPlugins } from "@tiny-patchwork/add-doc-to-sidebar-button";
+// @ts-expect-error no types
+import { plugins as backLinkButtonPlugins } from "@tiny-patchwork/back-link-button";
+// @ts-expect-error no types
+import { plugins as codemirrorBasePlugins } from "@grjte/codemirror-base";
+// @ts-expect-error no types
+import { plugins as codemirrorEmbedPlugins } from "@grjte/codemirror-embed";
+// @ts-expect-error no types
+import { plugins as codemirrorMarkdownPlugins } from "@grjte/codemirror-markdown";
+// @ts-expect-error no types
+import { plugins as commandsPlugins } from "@orion/commands";
+// @ts-expect-error no types
+import { plugins as commentsViewPlugins } from "@tiny-patchwork/comments-view";
+// @ts-expect-error no types
+import { plugins as contactPlugins } from "@patchwork/contact";
+import "@patchwork/contact/style.css";
+// @ts-expect-error no types
+import { plugins as contextSidebarPlugins } from "@tiny-patchwork/context-sidebar";
+// @ts-expect-error no types
+import { plugins as contextViewPlugins } from "@tiny-patchwork/context-view";
+// @ts-expect-error no types
+import { plugins as documentTitlePlugins } from "@tiny-patchwork/doc-title";
+// @ts-expect-error no types
+import { plugins as frameConfiguratorPlugins } from "@tiny-patchwork/frame-configurator";
+// @ts-expect-error no types
+import { plugins as historyViewPlugins } from "@tiny-patchwork/history-view";
+// @ts-expect-error no types
+import { plugins as orionMarkwhen } from "@orion/markwhen";
+// @ts-expect-error no types
+import { plugins as patchworkFramePlugins } from "@tiny-patchwork/patchwork-frame";
+// @ts-expect-error no types
+import { plugins as sideboardPlugins } from "@chee/patchwork-sideboard";
+// @ts-expect-error no types
+import { plugins as spacerPlugins } from "@tiny-patchwork/spacer";
+// @ts-expect-error no types
+import { plugins as syncIndicatorPlugins } from "@tiny-patchwork/sync-indicator";
+
+export const plugins: Plugin<any>[] = [
+  ...accountPickerPlugins,
+  ...addDocToSidebarButtonPlugins,
+  ...backLinkButtonPlugins,
+  ...codemirrorBasePlugins,
+  ...codemirrorEmbedPlugins,
+  ...codemirrorMarkdownPlugins,
+  ...commandsPlugins,
+  ...commentsViewPlugins,
+  ...contactPlugins,
+  ...contextSidebarPlugins,
+  ...contextViewPlugins,
+  ...documentTitlePlugins,
+  ...frameConfiguratorPlugins,
+  ...historyViewPlugins,
+  ...orionMarkwhen,
+  ...patchworkFramePlugins,
+  ...sideboardPlugins,
+  ...spacerPlugins,
+  ...syncIndicatorPlugins,
+];

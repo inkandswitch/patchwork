@@ -57,11 +57,13 @@ async function createLayoutDoc(
     moduleSettingsUrl?: AutomergeUrl;
   }
 ) {
+  console.log("[createLayoutDoc] Starting document creation...");
   let contactUrl = options?.contactUrl;
   let rootFolderUrl = options?.rootFolderUrl;
   let moduleSettingsUrl = options?.moduleSettingsUrl;
 
   if (!contactUrl) {
+    console.log("[createLayoutDoc] Creating contact document...");
     const contactHandle = await repo.create2<ContactDoc & HasPatchworkMetadata>(
       {
         ["@patchwork"]: { type: "patchwork:contact" },
@@ -69,6 +71,7 @@ async function createLayoutDoc(
       }
     );
     contactUrl = contactHandle.url;
+    console.log("[createLayoutDoc] Contact created:", contactUrl);
   }
 
   if (!rootFolderUrl) {
@@ -92,6 +95,7 @@ async function createLayoutDoc(
     moduleSettingsUrl = moduleSettingsHandle.url;
   }
 
+  console.log("[createLayoutDoc] Creating account document...");
   const account = await repo.create2<
     TinyPatchworkLayoutDoc & HasPatchworkMetadata
   >({
@@ -111,6 +115,7 @@ async function createLayoutDoc(
       "add-doc-to-sidebar-button",
     ],
   });
+  console.log("[createLayoutDoc] Account created:", account.url);
 
   return account;
 }
@@ -127,7 +132,17 @@ export async function getOrCreateLayoutDocHandle(
   if (existing) {
     const accountDocHandle = await repo.find<
       TinyPatchworkLayoutDoc & HasPatchworkMetadata
-    >(existing);
+    >(existing, { allowableStates: ["ready", "unavailable"] });
+
+    // Check if document is unavailable (e.g., migrating from pre-Subduction storage)
+    if (accountDocHandle.state === "unavailable") {
+      console.warn(
+        "Account document unavailable (possibly from pre-Subduction storage), creating new account"
+      );
+      const account = await createLayoutDoc(repo);
+      localStorage.setItem(accountDocKey, account.url);
+      return account;
+    }
 
     const accountDoc = accountDocHandle.doc();
 
