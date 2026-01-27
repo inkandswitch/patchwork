@@ -85,6 +85,7 @@ try {
 }
 
 await repo.networkSubsystem.adapters[0].whenReady();
+await new Promise((yay) => setTimeout(yay, 5000));
 
 window.repo = repo;
 window.Automerge = Automerge;
