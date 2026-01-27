@@ -26,20 +26,5 @@ export default defineConfig({
     target: "firefox137",
     minify: false,
     sourcemap: true,
-    rollupOptions: {
-      input: {
-        main: "index.html",
-        tools: "src/tools/index.ts",
-      },
-      output: {
-        entryFileNames: (chunkInfo) => {
-          if (chunkInfo.name === "tools") {
-            return "tools.js";
-          }
-          return "[name].js";
-        },
-      },
-      preserveEntrySignatures: "strict",
-    },
   },
 });

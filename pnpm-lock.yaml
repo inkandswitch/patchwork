@@ -444,9 +444,6 @@ importers:
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.2-alpha.0
-      '@chee/patchwork-sideboard':
-        specifier: workspace:^
-        version: link:../../tools/sidebars/sideboard
       '@codemirror/commands':
         specifier: ^6.9.0
         version: 6.9.0
@@ -459,15 +456,6 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.6
         version: 6.38.8
-      '@grjte/codemirror-base':
-        specifier: workspace:^
-        version: link:../../tools/codemirror/codemirror-base
-      '@grjte/codemirror-embed':
-        specifier: workspace:^
-        version: link:../../tools/codemirror/codemirror-embed
-      '@grjte/codemirror-markdown':
-        specifier: workspace:^
-        version: link:../../tools/codemirror/codemirror-markdown
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../core/elements
@@ -483,63 +471,9 @@ importers:
       '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../packages/refs
-      '@inkandswitch/tenfold':
-        specifier: workspace:^
-        version: link:../../tools/editors/tenfold
       '@keyhive/keyhive':
         specifier: 'catalog:'
         version: 0.0.0-alpha.54
-      '@orion/commands':
-        specifier: workspace:^
-        version: link:../../tools/tiny-patchwork/commands
-      '@orion/markwhen':
-        specifier: workspace:^
-        version: link:../../tools/editors/orionmark
-      '@patchwork/account-picker':
-        specifier: workspace:^
-        version: link:../../tools/account-picker
-      '@patchwork/contact':
-        specifier: workspace:^
-        version: link:../../tools/contact
-      '@patchwork/tldraw':
-        specifier: workspace:^
-        version: link:../../tools/editors/tldraw
-      '@patchwork/util':
-        specifier: workspace:^
-        version: link:../../packages/util
-      '@tiny-patchwork/add-doc-to-sidebar-button':
-        specifier: workspace:^
-        version: link:../../tools/toolbar/add-doc-to-sidebar-button
-      '@tiny-patchwork/back-link-button':
-        specifier: workspace:^
-        version: link:../../tools/toolbar/back-link-button
-      '@tiny-patchwork/comments-view':
-        specifier: workspace:^
-        version: link:../../tools/sidebars/comments-view
-      '@tiny-patchwork/context-sidebar':
-        specifier: workspace:^
-        version: link:../../tools/sidebars/context-sidebar
-      '@tiny-patchwork/context-view':
-        specifier: workspace:^
-        version: link:../../tools/sidebars/context-view
-      '@tiny-patchwork/doc-title':
-        specifier: workspace:^
-        version: link:../../tools/toolbar/doc-title
-      '@tiny-patchwork/frame-configurator':
-        specifier: workspace:^
-        version: link:../../tools/tiny-patchwork/frame-configurator
-      '@tiny-patchwork/history-view':
-        specifier: workspace:^
-        version: link:../../tools/sidebars/history-view
-      '@tiny-patchwork/patchwork-frame':
-        specifier: workspace:^
-        version: link:../../tools/tiny-patchwork/patchwork-frame
-      '@tiny-patchwork/spacer':
-        specifier: workspace:^
-        version: link:../../tools/toolbar/spacer
-      '@tiny-patchwork/sync-indicator':
-        specifier: workspace:^
-        version: link:../../tools/toolbar/sync-indicator
       add:
         specifier: ^2.0.6
         version: 2.0.6
@@ -686,9 +620,6 @@ importers:
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.2-alpha.0
-      '@chee/patchwork-sideboard':
-        specifier: workspace:^
-        version: link:../../tools/sidebars/sideboard
       '@codemirror/commands':
         specifier: ^6.9.0
         version: 6.9.0
@@ -701,15 +632,6 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.6
         version: 6.38.8
-      '@grjte/codemirror-base':
-        specifier: workspace:^
-        version: link:../../tools/codemirror/codemirror-base
-      '@grjte/codemirror-embed':
-        specifier: workspace:^
-        version: link:../../tools/codemirror/codemirror-embed
-      '@grjte/codemirror-markdown':
-        specifier: workspace:^
-        version: link:../../tools/codemirror/codemirror-markdown
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../core/elements
@@ -725,63 +647,15 @@ importers:
       '@inkandswitch/patchwork-refs':
         specifier: workspace:^
         version: link:../../packages/refs
-      '@inkandswitch/tenfold':
-        specifier: workspace:^
-        version: link:../../tools/editors/tenfold
       '@keyhive/keyhive':
         specifier: 'catalog:'
         version: 0.0.0-alpha.54
-      '@orion/commands':
-        specifier: workspace:^
-        version: link:../../tools/tiny-patchwork/commands
-      '@orion/markwhen':
-        specifier: workspace:^
-        version: link:../../tools/editors/orionmark
       '@patchwork/account-picker':
         specifier: workspace:^
         version: link:../../tools/account-picker
       '@patchwork/contact':
         specifier: workspace:^
         version: link:../../tools/contact
-      '@patchwork/tldraw':
-        specifier: workspace:^
-        version: link:../../tools/editors/tldraw
-      '@patchwork/util':
-        specifier: workspace:^
-        version: link:../../packages/util
-      '@tiny-patchwork/add-doc-to-sidebar-button':
-        specifier: workspace:^
-        version: link:../../tools/toolbar/add-doc-to-sidebar-button
-      '@tiny-patchwork/back-link-button':
-        specifier: workspace:^
-        version: link:../../tools/toolbar/back-link-button
-      '@tiny-patchwork/comments-view':
-        specifier: workspace:^
-        version: link:../../tools/sidebars/comments-view
-      '@tiny-patchwork/context-sidebar':
-        specifier: workspace:^
-        version: link:../../tools/sidebars/context-sidebar
-      '@tiny-patchwork/context-view':
-        specifier: workspace:^
-        version: link:../../tools/sidebars/context-view
-      '@tiny-patchwork/doc-title':
-        specifier: workspace:^
-        version: link:../../tools/toolbar/doc-title
-      '@tiny-patchwork/frame-configurator':
-        specifier: workspace:^
-        version: link:../../tools/tiny-patchwork/frame-configurator
-      '@tiny-patchwork/history-view':
-        specifier: workspace:^
-        version: link:../../tools/sidebars/history-view
-      '@tiny-patchwork/patchwork-frame':
-        specifier: workspace:^
-        version: link:../../tools/tiny-patchwork/patchwork-frame
-      '@tiny-patchwork/spacer':
-        specifier: workspace:^
-        version: link:../../tools/toolbar/spacer
-      '@tiny-patchwork/sync-indicator':
-        specifier: workspace:^
-        version: link:../../tools/toolbar/sync-indicator
       add:
         specifier: ^2.0.6
         version: 2.0.6
