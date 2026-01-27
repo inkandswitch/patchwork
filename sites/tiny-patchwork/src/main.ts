@@ -84,6 +84,8 @@ try {
   );
 }
 
+await repo.networkSubsystem.adapters[0].whenReady();
+
 window.repo = repo;
 window.Automerge = Automerge;
 window.AutomergeRepo = AutomergeRepo;
