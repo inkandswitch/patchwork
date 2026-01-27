@@ -30,7 +30,6 @@ import {
   WebSocketClientAdapter,
   type UrlHeads,
 } from "@automerge/vanillajs";
-import { plugins } from "./tools";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 
@@ -94,31 +93,6 @@ const handlers = {
 setup(async (href, request) =>
   handlers[new URL(href).protocol as keyof typeof handlers]?.(href, request)
 );
-
-// TODO: delete once we have moved all of tools to their own thing
-const loadedPlugins = Object.groupBy(
-  await Promise.allSettled<LoadedPlugin<PluginDescription, any>>(
-    plugins.map(async (plugin) => ({
-      ...plugin,
-      module: plugin.module || (await plugin.load()),
-    }))
-  ),
-  (result) => result.status
-);
-
-if (loadedPlugins.fulfilled) {
-  registerPlugins(
-    // @ts-expect-error TODO: we are violating the registry here, but its okay til we get the tools out of here
-    loadedPlugins.fulfilled
-      .filter((x) => x.status == "fulfilled")
-      .map((x) => x.value),
-    "DEV"
-  );
-}
-
-if (loadedPlugins.rejected) {
-  console.warn("failed to load some plugins:", loadedPlugins.rejected);
-}
 
 const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 

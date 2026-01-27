@@ -31,7 +31,6 @@ import {
   type AutomergeUrl,
   type UrlHeads,
 } from "@automerge/vanillajs";
-import { plugins } from "./tools";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 
@@ -97,31 +96,6 @@ setup(async (href, request) =>
   handlers[new URL(href).protocol as keyof typeof handlers]?.(href, request)
 );
 
-// TODO: delete once we have moved all of tools to their own thing
-const loadedPlugins = Object.groupBy(
-  await Promise.allSettled<LoadedPlugin<PluginDescription, any>>(
-    plugins.map(async (plugin) => ({
-      ...plugin,
-      module: plugin.module || (await plugin.load()),
-    }))
-  ),
-  (result) => result.status
-);
-
-if (loadedPlugins.fulfilled) {
-  registerPlugins(
-    // @ts-expect-error TODO: we are violating the registry here, but its okay til we get the tools out of here
-    loadedPlugins.fulfilled
-      .filter((x) => x.status == "fulfilled")
-      .map((x) => x.value),
-    "DEV"
-  );
-}
-
-if (loadedPlugins.rejected) {
-  console.warn("failed to load some plugins:", loadedPlugins.rejected);
-}
-
 const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 
 window.accountDocHandle = accountDocHandle;
@@ -129,10 +103,9 @@ window.accountDocHandle = accountDocHandle;
 const moduleWatcher = new ModuleWatcher(
   repo,
   [
-
     accountDocHandle.doc().moduleSettingsUrl,
     // tiny patchwork default tools
-    "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl
+    "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl,
   ],
   (name, mod) => {
     if (Array.isArray(mod.plugins)) {
@@ -169,12 +142,9 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
   window.location.hash = params.toString();
 });
 
-rootElement.addEventListener(
-  "patchwork:mounted",
-  () => {
-    handleHashChange();
-  }
-);
+rootElement.addEventListener("patchwork:mounted", () => {
+  handleHashChange();
+});
 
 const bigPatchworkHashRegex =
   /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;
@@ -214,4 +184,3 @@ const handleHashChange = async () => {
 window.addEventListener("hashchange", () => {
   handleHashChange();
 });
-
