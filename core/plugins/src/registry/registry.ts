@@ -17,7 +17,11 @@ import type { DatatypeImplementation } from "../datatypes.js";
 const log = debug("patchwork:plugins");
 
 function isAsyncFunction(fn: unknown) {
-  return typeof fn == "function" && Symbol.toStringTag in fn && fn[Symbol.toStringTag] == "AsyncFunction"
+  return (
+    typeof fn == "function" &&
+    Symbol.toStringTag in fn &&
+    fn[Symbol.toStringTag] == "AsyncFunction"
+  );
 }
 
 /**
@@ -33,10 +37,18 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   /**
    * Register an plugin with this registry
    */
-  register(plugin: LoadablePlugin<D, I>, importUrl?: string) {
+  register(plugin: LoadablePlugin<D, I>, importUrl: string) {
     // If an import URL was provided, attach it to the plugin
     if (importUrl && !plugin.importUrl) {
       plugin.importUrl = importUrl;
+    }
+
+    const existing = this.#plugins.get(plugin.id);
+
+    if (existing) {
+      console.warn(
+        `overriding "${plugin.id}" provided by "${existing.importUrl}" with new plugin provided by "${importUrl}"`
+      );
     }
 
     this.#plugins.set(plugin.id, plugin);
@@ -111,12 +123,20 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
           // todo remove tomorrow
           // think about where this should live etc
           if (description.type == "patchwork:datatype") {
-            const impl = implementation as DatatypeImplementation
+            const impl = implementation as DatatypeImplementation;
             if (isAsyncFunction(impl.getTitle)) {
-              console.warn(description.id, description.importUrl, "getTitle should not be an async function")
+              console.warn(
+                description.id,
+                description.importUrl,
+                "getTitle should not be an async function"
+              );
             }
             if (isAsyncFunction(impl.setTitle)) {
-              console.warn(description.id, description.importUrl, "getTitle should be an async function")
+              console.warn(
+                description.id,
+                description.importUrl,
+                "getTitle should be an async function"
+              );
             }
           }
 
