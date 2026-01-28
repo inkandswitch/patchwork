@@ -1,19 +1,7 @@
 import "./global.css";
 
-import {
-  registerPatchworkViewElement,
-  openDocument,
-} from "@inkandswitch/patchwork-elements";
-import {
-  ModuleWatcher,
-  createFilesystemHandoffHandler,
-} from "@inkandswitch/patchwork-filesystem";
-import setup from "@inkandswitch/patchwork-bootloader";
-import { registerPlugins } from "@inkandswitch/patchwork-plugins";
-import {
-  getOrCreateLayoutDocHandle,
-  TinyPatchworkLayoutDoc,
-} from "./layout-doc";
+import * as Automerge from "@automerge/automerge";
+import * as AutomergeRepo from "@automerge/automerge-repo";
 import {
   DocHandle,
   IndexedDBStorageAdapter,
@@ -26,8 +14,20 @@ import {
   WebSocketClientAdapter,
   type UrlHeads,
 } from "@automerge/vanillajs";
-import * as Automerge from "@automerge/automerge";
-import * as AutomergeRepo from "@automerge/automerge-repo";
+import setup from "@inkandswitch/patchwork-bootloader";
+import {
+  openDocument,
+  registerPatchworkViewElement,
+} from "@inkandswitch/patchwork-elements";
+import {
+  createFilesystemHandoffHandler,
+  ModuleWatcher,
+} from "@inkandswitch/patchwork-filesystem";
+import { registerPlugins } from "@inkandswitch/patchwork-plugins";
+import {
+  getOrCreateLayoutDocHandle,
+  TinyPatchworkLayoutDoc,
+} from "./layout-doc";
 
 declare global {
   interface Window {
