@@ -1,6 +1,6 @@
 import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import "./styles.css";
-import  { createRoot } from "react-dom/client"
+import "./styles.css"; // esbuild extracts this to tool.css
+import { createRoot } from "react-dom/client";
 
 export const plugins = [
   {
@@ -19,7 +19,9 @@ export const plugins = [
     name: "Contact Viewer",
     supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
-      const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");
+      injectStyles();
+      const { RepoContext } =
+        await import("@automerge/automerge-repo-react-hooks");
       const { ContactViewer } = await import("./components/ContactViewer");
       return (handle, element) => {
         const root = createRoot(element);
@@ -38,7 +40,9 @@ export const plugins = [
     name: "Contact Avatar",
     supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
-      const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");
+      injectStyles();
+      const { RepoContext } =
+        await import("@automerge/automerge-repo-react-hooks");
       const { ContactAvatar } = await import("./components/ContactAvatar");
       return (handle, element) => {
         const root = createRoot(element);
@@ -57,8 +61,11 @@ export const plugins = [
     name: "Inline Contact Avatar",
     supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
-      const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");
-      const { InlineContactAvatar } = await import("./components/InlineContactAvatar");
+      injectStyles();
+      const { RepoContext } =
+        await import("@automerge/automerge-repo-react-hooks");
+      const { InlineContactAvatar } =
+        await import("./components/InlineContactAvatar");
       return (handle, element) => {
         const root = createRoot(element);
         root.render(
@@ -71,3 +78,14 @@ export const plugins = [
     },
   },
 ];
+
+function injectStyles() {
+  // hack: Inject link element with stylesheet
+  const cssHref = new URL("./tool.css", import.meta.url).href;
+  if (!document.querySelector(`link[href="${cssHref}"]`)) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = cssHref;
+    document.head.appendChild(link);
+  }
+}

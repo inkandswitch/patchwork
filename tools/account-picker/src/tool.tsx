@@ -1,5 +1,6 @@
 import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import {createRoot} from "react-dom/client";
+import { createRoot } from "react-dom/client";
+import "./styles.css";
 
 export const plugins = [
   {
@@ -8,9 +9,10 @@ export const plugins = [
     name: "Account Picker",
     supportedDatatypes: ["account"],
     async load(): Promise<ToolImplementation> {
-
-      const { RepoContext } = await import("@automerge/automerge-repo-react-hooks");
-      const {AccountPicker} = await import("./AccountPicker")
+      injectStyles();
+      const { RepoContext } =
+        await import("@automerge/automerge-repo-react-hooks");
+      const { AccountPicker } = await import("./AccountPicker");
       return (handle, element) => {
         const root = createRoot(element);
         root.render(
@@ -23,3 +25,14 @@ export const plugins = [
     },
   },
 ];
+
+function injectStyles() {
+  // hack: Inject link element with stylesheet
+  const cssHref = new URL("./tool.css", import.meta.url).href;
+  if (!document.querySelector(`link[href="${cssHref}"]`)) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = cssHref;
+    document.head.appendChild(link);
+  }
+}
