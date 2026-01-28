@@ -1,7 +1,23 @@
 import "./global.css";
 
-import * as Automerge from "@automerge/automerge";
-import * as AutomergeRepo from "@automerge/automerge-repo";
+import {
+  registerPatchworkViewElement,
+  openDocument,
+} from "@inkandswitch/patchwork-elements";
+import {
+  ModuleWatcher,
+  createFilesystemHandoffHandler,
+} from "@inkandswitch/patchwork-filesystem";
+import setup from "@inkandswitch/patchwork-bootloader";
+import {
+  LoadedPlugin,
+  PluginDescription,
+  registerPlugins,
+} from "@inkandswitch/patchwork-plugins";
+import {
+  getOrCreateLayoutDocHandle,
+  TinyPatchworkLayoutDoc,
+} from "./layout-doc";
 import {
   DocHandle,
   IndexedDBStorageAdapter,
@@ -12,22 +28,11 @@ import {
   Repo,
   stringifyAutomergeUrl,
   WebSocketClientAdapter,
+  type AutomergeUrl,
   type UrlHeads,
 } from "@automerge/vanillajs";
-import setup from "@inkandswitch/patchwork-bootloader";
-import {
-  openDocument,
-  registerPatchworkViewElement,
-} from "@inkandswitch/patchwork-elements";
-import {
-  createFilesystemHandoffHandler,
-  ModuleWatcher,
-} from "@inkandswitch/patchwork-filesystem";
-import { registerPlugins } from "@inkandswitch/patchwork-plugins";
-import {
-  getOrCreateLayoutDocHandle,
-  TinyPatchworkLayoutDoc,
-} from "./layout-doc";
+import * as Automerge from "@automerge/automerge";
+import * as AutomergeRepo from "@automerge/automerge-repo";
 
 declare global {
   interface Window {
@@ -81,7 +86,7 @@ try {
 document.body.style.background = "#fffffe";
 
 await repo.networkSubsystem.adapters[0].whenReady();
-// todo ???
+// if this helps then we are sad and confused but at least it helped
 await new Promise((resolve) => setTimeout(resolve, 1000));
 window.repo = repo;
 window.Automerge = Automerge;
@@ -104,7 +109,7 @@ const moduleWatcher = new ModuleWatcher(
   [
     accountDocHandle.doc().moduleSettingsUrl,
     // default tools for gaios
-    "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
+    "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeUrl,
   ],
   (name, mod) => {
     if (Array.isArray(mod.plugins)) {
