@@ -345,6 +345,9 @@ export function registerPatchworkViewElement(
         this.style.display = "flex";
         this.style.alignItems = "center";
         this.style.justifyContent = "center";
+        // wait a second then face in over half a second
+        this.style.transition = "opacity 1s linear 0.5s";
+        this.style.opacity = "0";
         this.append(
           Object.assign(document.createElement("div"), {
             innerHTML: /* html */ `
@@ -352,6 +355,7 @@ export function registerPatchworkViewElement(
             `,
           })
         );
+        requestAnimationFrame(() => (this.style.opacity = "1"));
       };
 
       #resetDisplay = () => {
