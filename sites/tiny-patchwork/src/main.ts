@@ -84,6 +84,8 @@ try {
   );
 }
 
+document.body.style.background = "#fffffe";
+
 await repo.networkSubsystem.adapters[0].whenReady();
 // if this helps then we are sad and confused but at least it helped
 await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -124,6 +126,7 @@ registerPatchworkViewElement({ moduleWatcher, repo });
 
 const rootElement = document.getElementById("root")!;
 rootElement.style.visibility = "hidden";
+document.body.style.background = "#fffefe";
 rootElement.setAttribute("doc-url", accountDocHandle.url);
 rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
 
@@ -150,6 +153,7 @@ rootElement.addEventListener("patchwork:mounted", () => {
   if (firstMount) {
     firstMount = false;
     rootElement.style.visibility = "visible";
+    document.body.style.background = "";
     return;
   }
   handleHashChange();
@@ -157,6 +161,7 @@ rootElement.addEventListener("patchwork:mounted", () => {
 setTimeout(() => {
   if (firstMount) {
     rootElement.style.visibility = "visible";
+    document.body.style.background = "";
   }
 }, 5000);
 
