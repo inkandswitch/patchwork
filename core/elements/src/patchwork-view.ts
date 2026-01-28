@@ -129,7 +129,7 @@ export function registerPatchworkViewElement(
 
       // When defined, this is called instead of connectedCallback() and disconnectedCallback()
       // each time the element is moved to a different place in the DOM via Element.moveBefore()
-      connectedMoveCallback() { }
+      connectedMoveCallback() {}
 
       attributeChangedCallback(name: string, _: string, val: string | null) {
         if (name === attrs.toolId) {
@@ -347,7 +347,7 @@ export function registerPatchworkViewElement(
         div.style.alignItems = "center";
         div.style.justifyContent = "center";
         // wait a second then face in over half a second
-        div.style.transition = "opacity 0.5s linear 1s";
+        div.style.transition = "opacity 2s linear 2s";
         div.style.opacity = "0";
         div.innerHTML = /* html */ `
           <p>Oh no! ${error}</p>
