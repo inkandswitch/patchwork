@@ -123,7 +123,7 @@ const moduleWatcher = new ModuleWatcher(
 registerPatchworkViewElement({ moduleWatcher, repo });
 
 const rootElement = document.getElementById("root")!;
-
+rootElement.style.visibility = "hidden";
 rootElement.setAttribute("doc-url", accountDocHandle.url);
 rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
 
@@ -145,9 +145,20 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
   window.location.hash = params.toString();
 });
 
+let firstMount = true;
 rootElement.addEventListener("patchwork:mounted", () => {
+  if (firstMount) {
+    firstMount = false;
+    rootElement.style.visibility = "visible";
+    return;
+  }
   handleHashChange();
 });
+setTimeout(() => {
+  if (firstMount) {
+    rootElement.style.visibility = "visible";
+  }
+}, 5000);
 
 const bigPatchworkHashRegex =
   /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;
