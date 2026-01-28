@@ -77,6 +77,11 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     return this.#plugins.get(id)?.at(0)?.plugin;
   }
 
+  entry(id: string): PluginEntry<D, I> | undefined {
+    const list = this.#plugins.get(id);
+    return list ? list[0] : undefined;
+  }
+
   entries(id: string): PluginEntry<D, I>[] {
     const list = this.#plugins.get(id);
     return list ?? [];
@@ -116,11 +121,13 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     }
 
     // Get the plugin description
-    const description = this.#plugins.get(id);
+    const entry = this.entry(id);
+    const description = entry?.plugin;
     if (!description) {
       log(`Plugin not registered: ${id}`);
       return undefined;
     }
+    const identifier = `${id}@${entry.importUrl}`;
 
     // If the plugin is loadable, load it
     if (isLoadablePlugin(description)) {
@@ -161,8 +168,19 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
           }
 
           // Store the loaded version
-          this.#plugins.set(description.id, plugin);
-          this.#loadPromises.delete(id);
+          const entries = this.#plugins.get(description.id);
+          if (!entries) {
+            throw new Error("Plugin entries missing after load");
+          }
+          const existing = entries.find(
+            (e) => e.importUrl === description.importUrl
+          );
+          if (!existing) {
+            throw new Error("Plugin entry missing after load");
+          }
+          existing.plugin = plugin;
+          this.#plugins.set(description.id, entries);
+          this.#loadPromises.delete(identifier);
 
           // Notify listeners that an plugin has been loaded
           this.#events.emit("loaded", plugin);
@@ -172,12 +190,12 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
         })
         .catch((error) => {
           console.error(`Failed to load plugin implementation: ${id}`, error);
-          this.#loadPromises.delete(id);
+          this.#loadPromises.delete(identifier);
           throw error;
         });
 
       // Store the promise so we don't load twice
-      this.#loadPromises.set(id, loadPromise);
+      this.#loadPromises.set(identifier, loadPromise);
       return loadPromise;
     }
 
@@ -185,7 +203,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
       return description;
     }
 
-    throw new Error(`Plugin ${id} is not loadable`);
+    throw new Error(`Plugin ${identifier} is not loadable`);
   }
 
   /**
