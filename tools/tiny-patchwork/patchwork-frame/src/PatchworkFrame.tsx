@@ -17,7 +17,7 @@ import { ViewHeads } from "@inkandswitch/annotations-diff";
 import { IsSelected } from "@inkandswitch/annotations-selection";
 import { useSubscribe } from "@inkandswitch/subscribables-react";
 import { ref, RefOfType } from "@inkandswitch/patchwork-refs";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useUpdateDocLinksOfActiveDocumentsEffect } from "./effects";
 import "./styles.css";
 import { TinyPatchworkConfigDoc } from "./types";
@@ -53,8 +53,76 @@ export const PatchworkFrame = ({
     { url: AutomergeUrl; toolId?: string } | undefined
   >(undefined);
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
+  // Sidebar state with localStorage persistence (read once on mount, no subscription to other tabs)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    const stored = localStorage.getItem('patchwork:leftSidebarCollapsed');
+    return stored === 'true';
+  });
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(() => {
+    const stored = localStorage.getItem('patchwork:rightSidebarCollapsed');
+    return stored === 'true';
+  });
+
+  // Resizable sidebar state with localStorage persistence
+  const [leftSidebarWidth, setLeftSidebarWidth] = useState(() => {
+    const stored = localStorage.getItem('patchwork:leftSidebarWidth');
+    return stored ? parseInt(stored, 10) : 400;
+  });
+  const [rightSidebarWidth, setRightSidebarWidth] = useState(() => {
+    const stored = localStorage.getItem('patchwork:rightSidebarWidth');
+    return stored ? parseInt(stored, 10) : 400;
+  });
+  const isResizing = useRef<'left' | 'right' | null>(null);
+
+  // Persist sidebar state to localStorage
+  useEffect(() => {
+    localStorage.setItem('patchwork:leftSidebarCollapsed', String(isSidebarCollapsed));
+  }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    localStorage.setItem('patchwork:rightSidebarCollapsed', String(isRightSidebarCollapsed));
+  }, [isRightSidebarCollapsed]);
+
+  useEffect(() => {
+    localStorage.setItem('patchwork:leftSidebarWidth', String(leftSidebarWidth));
+  }, [leftSidebarWidth]);
+
+  useEffect(() => {
+    localStorage.setItem('patchwork:rightSidebarWidth', String(rightSidebarWidth));
+  }, [rightSidebarWidth]);
+
+  const handleMouseDown = useCallback((side: 'left' | 'right') => {
+    isResizing.current = side;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    isResizing.current = null;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing.current) return;
+
+    if (isResizing.current === 'left') {
+      const newWidth = Math.max(200, Math.min(600, e.clientX));
+      setLeftSidebarWidth(newWidth);
+    } else if (isResizing.current === 'right') {
+      const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX));
+      setRightSidebarWidth(newWidth);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
 
   // Debug registry toast
   const {
@@ -179,9 +247,8 @@ export const PatchworkFrame = ({
         onClearAll={clearAll}
       />
       <div
-        className={`flex relative transition-all duration-300 ${
-          isSidebarCollapsed ? "w-0" : "w-[400px]"
-        }`}
+        className={`flex relative ${isSidebarCollapsed ? "w-0" : ""}`}
+        style={{ width: isSidebarCollapsed ? 0 : leftSidebarWidth }}
       >
         {/* Account sidebar */}
         {accountSidebarToolId && !isSidebarCollapsed && (
@@ -199,6 +266,13 @@ export const PatchworkFrame = ({
           }
           title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         />
+        {/* Resize handle for left sidebar */}
+        {!isSidebarCollapsed && (
+          <div
+            className="sidebar-resize-handle sidebar-resize-handle--right"
+            onMouseDown={() => handleMouseDown('left')}
+          />
+        )}
       </div>
       <div className="flex flex-col flex-1 h-full">
         {/* Document toolbar */}
@@ -232,10 +306,18 @@ export const PatchworkFrame = ({
       {/* Context sidebar */}
       {contextSidebarToolId && (
         <div
-          className={`flex relative transition-all duration-300 bg-base-100 ${
-            isRightSidebarCollapsed ? "w-[2px]" : "w-[400px]"
+          className={`flex relative bg-base-100 ${
+            isRightSidebarCollapsed ? "w-[2px]" : ""
           }`}
+          style={{ width: isRightSidebarCollapsed ? 2 : rightSidebarWidth }}
         >
+          {/* Resize handle for right sidebar */}
+          {!isRightSidebarCollapsed && (
+            <div
+              className="sidebar-resize-handle sidebar-resize-handle--left"
+              onMouseDown={() => handleMouseDown('right')}
+            />
+          )}
           <button
             onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
             className="sidebar-toggle"
