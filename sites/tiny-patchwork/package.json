@@ -39,8 +39,6 @@
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@keyhive/keyhive": "catalog:",
-    "@patchwork/account-picker": "workspace:^",
-    "@patchwork/contact": "workspace:^",
     "@inkandswitch/patchwork-react": "workspace:^",
     "@inkandswitch/patchwork-refs": "workspace:^",
     "add": "^2.0.6",

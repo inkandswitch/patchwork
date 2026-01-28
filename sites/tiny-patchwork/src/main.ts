@@ -1,23 +1,7 @@
 import "./global.css";
 
-import {
-  registerPatchworkViewElement,
-  openDocument,
-} from "@inkandswitch/patchwork-elements";
-import {
-  ModuleWatcher,
-  createFilesystemHandoffHandler,
-} from "@inkandswitch/patchwork-filesystem";
-import setup from "@inkandswitch/patchwork-bootloader";
-import {
-  LoadedPlugin,
-  PluginDescription,
-  registerPlugins,
-} from "@inkandswitch/patchwork-plugins";
-import {
-  getOrCreateLayoutDocHandle,
-  TinyPatchworkLayoutDoc,
-} from "./layout-doc";
+import * as Automerge from "@automerge/automerge";
+import * as AutomergeRepo from "@automerge/automerge-repo";
 import {
   DocHandle,
   IndexedDBStorageAdapter,
@@ -31,8 +15,20 @@ import {
   type AutomergeUrl,
   type UrlHeads,
 } from "@automerge/vanillajs";
-import * as Automerge from "@automerge/automerge";
-import * as AutomergeRepo from "@automerge/automerge-repo";
+import setup from "@inkandswitch/patchwork-bootloader";
+import {
+  openDocument,
+  registerPatchworkViewElement,
+} from "@inkandswitch/patchwork-elements";
+import {
+  createFilesystemHandoffHandler,
+  ModuleWatcher,
+} from "@inkandswitch/patchwork-filesystem";
+import { registerPlugins } from "@inkandswitch/patchwork-plugins";
+import {
+  getOrCreateLayoutDocHandle,
+  TinyPatchworkLayoutDoc,
+} from "./layout-doc";
 
 // todo maybe we should have a window.patchwork namespace for this?
 declare global {

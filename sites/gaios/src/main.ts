@@ -78,6 +78,8 @@ try {
   );
 }
 
+document.body.style.background = "#fffffe";
+
 await repo.networkSubsystem.adapters[0].whenReady();
 // todo ???
 await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -117,7 +119,8 @@ const moduleWatcher = new ModuleWatcher(
 registerPatchworkViewElement({ moduleWatcher, repo });
 
 const rootElement = document.getElementById("root")!;
-
+rootElement.style.visibility = "hidden";
+document.body.style.background = "#fffefe";
 rootElement.setAttribute("doc-url", accountDocHandle.url);
 rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
 
@@ -135,9 +138,22 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
   window.location.hash = params.toString();
 });
 
+let firstMount = true;
 rootElement.addEventListener("patchwork:mounted", () => {
+  if (firstMount) {
+    firstMount = false;
+    rootElement.style.visibility = "visible";
+    document.body.style.background = "";
+    return;
+  }
   handleHashChange();
 });
+setTimeout(() => {
+  if (firstMount) {
+    rootElement.style.visibility = "visible";
+    document.body.style.background = "";
+  }
+}, 5000);
 
 const bigPatchworkHashRegex =
   /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;
