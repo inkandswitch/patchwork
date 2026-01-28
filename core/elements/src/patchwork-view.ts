@@ -342,20 +342,20 @@ export function registerPatchworkViewElement(
       }
 
       #displayError = (error: string) => {
-        this.style.display = "flex";
-        this.style.alignItems = "center";
-        this.style.justifyContent = "center";
+        const div = document.createElement("div");
+        div.style.display = "flex";
+        div.style.alignItems = "center";
+        div.style.justifyContent = "center";
         // wait a second then face in over half a second
-        this.style.transition = "opacity 1s linear 0.5s";
-        this.style.opacity = "0";
-        this.append(
-          Object.assign(document.createElement("div"), {
-            innerHTML: /* html */ `
-              <p>Oh no! ${error}</p>
-            `,
-          })
-        );
-        requestAnimationFrame(() => (this.style.opacity = "1"));
+        div.style.transition = "opacity 0.5s linear 1s";
+        div.style.opacity = "0";
+        div.innerHTML = /* html */ `
+          <p>Oh no! ${error}</p>
+        `;
+        this.append(div);
+        setTimeout(() => {
+          div.style.opacity = "1";
+        });
       };
 
       #resetDisplay = () => {
