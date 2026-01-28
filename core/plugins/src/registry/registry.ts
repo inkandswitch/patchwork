@@ -24,13 +24,18 @@ function isAsyncFunction(fn: unknown) {
   );
 }
 
+export type PluginEntry<D extends PluginDescription, I> = {
+  importUrl: string;
+  plugin: Plugin<D, I>;
+};
+
 /**
  * Registry for managing plugins of a specific type
  * D = Description type that extends PluginDescription
  * I = Implementation type that will be loaded and combined with the description
  */
 export class PluginRegistry<D extends PluginDescription, I = any> {
-  #plugins = new Map<string, Plugin<D, I>>();
+  #plugins = new Map<string, PluginEntry<D, I>[]>();
   #loadPromises = new Map<string, Promise<LoadedPlugin<D, I>>>();
   #events = new EventEmitter<PluginRegistryEvents<D, I>>();
 
@@ -43,16 +48,24 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
       plugin.importUrl = importUrl;
     }
 
-    const existing = this.#plugins.get(plugin.id);
+    let entries = this.#plugins.get(plugin.id);
 
-    if (existing) {
-      console.warn(
-        `overriding "${plugin.id}" provided by "${existing.importUrl}" with new plugin provided by "${importUrl}"`
-      );
+    if (entries?.[0]) {
+      const old = entries[0].importUrl;
+      if (old === importUrl) {
+        log(`Updating existing plugin: ${plugin.id} from ${importUrl}`);
+      } else {
+        console.warn(
+          `overriding "${plugin.id}" provided by "${entries[0].importUrl}" with new plugin provided by "${importUrl}"`
+        );
+      }
     }
 
-    this.#plugins.set(plugin.id, plugin);
+    if (!entries) entries = [];
 
+    entries.unshift({ importUrl: importUrl, plugin });
+
+    this.#plugins.set(plugin.id, entries);
     this.#events.emit("registered", plugin);
     this.#events.emit("changed");
   }
@@ -61,12 +74,19 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
    * Get an plugin by ID, returning either its description or loaded state
    */
   get(id: string): Plugin<D, I> | undefined {
-    return this.#plugins.get(id);
+    return this.#plugins.get(id)?.at(0)?.plugin;
+  }
+
+  entries(id: string): PluginEntry<D, I>[] {
+    const list = this.#plugins.get(id);
+    return list ?? [];
   }
 
   /** Get all plugins, both descriptions and loaded */
   all(): Plugin<D, I>[] {
-    const entries = Array.from(this.#plugins.values());
+    const entries = Array.from(
+      this.#plugins.values().map((entries) => entries[0].plugin)
+    );
     return entries as Plugin<D, I>[];
   }
 
