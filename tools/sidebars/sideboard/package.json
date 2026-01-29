@@ -38,6 +38,7 @@
   "devDependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-keyhive": "catalog:",
     "@babel/core": "7.28.4",
     "@babel/parser": "7.28.4",
     "@node-types/node": "npm:@types/node@^24.9.1",

@@ -3,6 +3,7 @@ import {
   type AutomergeUrl,
   type Repo,
 } from "@automerge/automerge-repo";
+import type { AutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 import { useDocument } from "@automerge/automerge-repo-solid-primitives";
 import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
@@ -22,6 +23,7 @@ export default function Folder(props: {
   removeFromParent(): void;
   open(detail: OpenDocumentEventDetail): void;
   name?: string;
+  hive?: AutomergeRepoKeyhive;
 }) {
   const [ref, setRef] = createSignal<HTMLElement>();
   const [open, setOpen] = createSignal(false);
@@ -92,6 +94,7 @@ export default function Folder(props: {
         />
         <CreateNew
           repo={props.repo}
+          hive={props.hive}
           changeFolder={(fn) => handle()?.change(fn)}
           open={props.open}
         />
@@ -110,6 +113,7 @@ export default function Folder(props: {
           depth={depth() + 1}
           handle={handle.latest!}
           open={props.open}
+          hive={props.hive}
         />
       </div>
     </div>

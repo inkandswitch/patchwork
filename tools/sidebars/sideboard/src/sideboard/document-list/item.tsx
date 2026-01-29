@@ -17,6 +17,9 @@ export default function Item(props: {
   openWith(toolId?: string): void;
   startRenaming(): void;
   remove(): void;
+  share?(): void;
+  shareDisabled?: boolean;
+  makeSecureCopy?(): void;
 }) {
   const tools = useSupportedToolsForType(props.type);
   const [trigger, setTrigger] = createSignal<HTMLButtonElement>();
@@ -98,6 +101,23 @@ export default function Item(props: {
           >
             Rename
           </ContextMenu.Item>
+          <Show when={props.share}>
+            <ContextMenu.Item
+              class="popmenu__item"
+              onSelect={() => props.share?.()}
+              disabled={props.shareDisabled}
+            >
+              Share
+            </ContextMenu.Item>
+          </Show>
+          <Show when={props.makeSecureCopy}>
+            <ContextMenu.Item
+              class="popmenu__item"
+              onSelect={() => props.makeSecureCopy?.()}
+            >
+              Make secure copy
+            </ContextMenu.Item>
+          </Show>
           <ContextMenu.Item
             class="popmenu__item"
             onSelect={() => props.remove()}
