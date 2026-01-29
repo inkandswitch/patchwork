@@ -166,7 +166,7 @@ export function DocumentList(props: DocumentListProps) {
                   makeSecureCopy={MAKE_SECURE_COPY_ENABLED && props.hive && !isKeyhiveProtected(doc.url) ? () => makeSecureCopy(doc) : undefined}
                 >
                   <ItemName name={doc.name} id={relid()} rename={rename} />
-                  <Show when={!isKeyhiveProtected(doc.url)}>
+                  <Show when={props.hive && !isKeyhiveProtected(doc.url)}>
                     <span class="document-list-item__unprotected">[insecure]</span>
                   </Show>
                 </Item>
