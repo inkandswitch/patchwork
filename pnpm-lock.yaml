@@ -1834,6 +1834,9 @@ importers:
       '@automerge/automerge-repo':
         specifier: 2.5.2-alpha.0
         version: 2.5.2-alpha.0
+      '@automerge/automerge-repo-keyhive':
+        specifier: 'catalog:'
+        version: 0.1.0-alpha.14
       '@babel/core':
         specifier: 7.28.4
         version: 7.28.4
