@@ -24,6 +24,8 @@ overrides:
   "@automerge/automerge-repo": link:../automerge-repo/packages/automerge-repo
   "@automerge/automerge-repo-react-hooks": link:../automerge-repo/packages/automerge-repo-react-hooks
   "@automerge/automerge-repo-solid-primitives": link:../automerge-repo/packages/automerge-repo-solid-primitives
+  "@automerge/automerge-repo-subduction-bridge": link:../automerge-repo/packages/automerge-repo-subduction-bridge
+  "@automerge/automerge_subduction": link:../subduction/automerge_subduction_wasm
   "@automerge/vanillajs": link:../automerge-repo/packages/automerge-vanillajs
   react: 18.3.26
   react-dom: 18.3.7

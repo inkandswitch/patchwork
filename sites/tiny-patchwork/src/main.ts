@@ -32,7 +32,11 @@ import {
   type UrlHeads,
 } from "@automerge/vanillajs";
 import { SubductionStorageBridge } from "@automerge/automerge-repo-subduction-bridge";
-import { Subduction, SubductionWebSocket, WebCryptoSigner } from "@automerge/automerge_subduction";
+import {
+  Subduction,
+  SubductionWebSocket,
+  WebCryptoSigner,
+} from "@automerge/automerge_subduction";
 import { plugins } from "./tools";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
@@ -57,10 +61,8 @@ const { repo, subduction } = await (async () => {
 
   try {
     const conn = await SubductionWebSocket.tryDiscover(
-      new URL("ws://localhost:8080"),
-      signer,
-      "0.0.0.0:8080",
-      5000
+      new URL("wss://hel.subduction.keyhive.org"),
+      signer
     );
     await subduction.attach(conn);
     console.log("Connected to Subduction server");
@@ -113,11 +115,13 @@ window.getRepoChannel = getRepoChannel;
 //     new WebSocketClientAdapter("wss://sync3.automerge.org")
 //   );
 // }
-console.log("Subduction-only mode (SharedWorker disabled for debugging)")
+console.log("Subduction-only mode (SharedWorker disabled for debugging)");
 
 document.body.style.background = "#fffffe";
 
-await repo.networkSubsystem.adapters[0].whenReady();
+if (repo.networkSubsystem.adapters[0]) {
+  await repo.networkSubsystem.adapters[0].whenReady();
+}
 // if this helps then we are sad and confused but at least it helped
 await new Promise((resolve) => setTimeout(resolve, 1000));
 window.repo = repo;
@@ -136,6 +140,9 @@ setup(async (href, request) =>
 const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 
 window.accountDocHandle = accountDocHandle;
+
+// Register bundled plugins
+registerPlugins(plugins, "DEV");
 
 const moduleWatcher = new ModuleWatcher(
   repo,

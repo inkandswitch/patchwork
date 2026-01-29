@@ -9,8 +9,10 @@ self.addEventListener("connect", (e: MessageEvent) => {
 const repoPromise = (async () => {
   const { Repo } = await import("@automerge/automerge-repo");
   const { IndexedDBStorageAdapter } = await import("@automerge/vanillajs");
-  const { SubductionStorageBridge } = await import("@automerge/automerge-repo-subduction-bridge");
-  const { Subduction, SubductionWebSocket, WebCryptoSigner } = await import("@automerge/automerge_subduction");
+  const { SubductionStorageBridge } =
+    await import("@automerge/automerge-repo-subduction-bridge");
+  const { Subduction, SubductionWebSocket, WebCryptoSigner } =
+    await import("@automerge/automerge_subduction");
 
   const signer = await WebCryptoSigner.setup();
   const storageAdapter = new IndexedDBStorageAdapter();
@@ -19,10 +21,8 @@ const repoPromise = (async () => {
 
   try {
     const conn = await SubductionWebSocket.tryDiscover(
-      new URL("ws://localhost:8080"),
-      signer,
-      "0.0.0.0:8080",
-      5000
+      new URL("wss://hel.subduction.keyhive.org"),
+      signer
     );
     await subduction.attach(conn);
     console.log("SharedWorker: Connected to Subduction server");
