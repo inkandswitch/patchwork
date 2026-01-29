@@ -40,6 +40,7 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
         <CreateNew
           changeFolder={(fn) => folderHandle()?.change(fn)}
           repo={props.repo}
+          hive={props.element.hive}
           open={open}
         />
       </header>
@@ -60,6 +61,7 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
           docs={folder()?.docs}
           handle={folderHandle.latest!}
           open={open}
+          hive={props.element.hive}
         />
       </nav>
       <footer class="sideboard-footer">
