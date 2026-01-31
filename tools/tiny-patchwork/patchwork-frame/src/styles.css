@@ -126,3 +126,46 @@
   --debug-toast-removed: oklch(0.65 0.25 25);
   --debug-toast-changed: oklch(0.75 0.2 80);
 }
+
+/* Sidebar resize handles */
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle:active {
+  background-color: oklch(0.6 0.15 250 / 0.5);
+}
+
+.sidebar-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 32px;
+  background-color: oklch(0.5 0.05 270);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.sidebar-resize-handle:hover::after {
+  opacity: 1;
+}
+
+.sidebar-resize-handle--right {
+  right: 0;
+}
+
+.sidebar-resize-handle--left {
+  left: 0;
+}
