@@ -55,72 +55,123 @@ export const PatchworkFrame = ({
 
   // Sidebar state with localStorage persistence (read once on mount, no subscription to other tabs)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    const stored = localStorage.getItem('patchwork:leftSidebarCollapsed');
-    return stored === 'true';
+    const stored = localStorage.getItem("patchwork:leftSidebarCollapsed");
+    return stored === "true";
   });
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(() => {
-    const stored = localStorage.getItem('patchwork:rightSidebarCollapsed');
-    return stored === 'true';
+    const stored = localStorage.getItem("patchwork:rightSidebarCollapsed");
+    return stored === "true";
   });
 
   // Resizable sidebar state with localStorage persistence
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(() => {
-    const stored = localStorage.getItem('patchwork:leftSidebarWidth');
+    const stored = localStorage.getItem("patchwork:leftSidebarWidth");
     return stored ? parseInt(stored, 10) : 400;
   });
   const [rightSidebarWidth, setRightSidebarWidth] = useState(() => {
-    const stored = localStorage.getItem('patchwork:rightSidebarWidth');
+    const stored = localStorage.getItem("patchwork:rightSidebarWidth");
     return stored ? parseInt(stored, 10) : 400;
   });
-  const isResizing = useRef<'left' | 'right' | null>(null);
+  const isResizing = useRef<"left" | "right" | null>(null);
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  const hasDragged = useRef(false);
 
   // Persist sidebar state to localStorage
   useEffect(() => {
-    localStorage.setItem('patchwork:leftSidebarCollapsed', String(isSidebarCollapsed));
+    localStorage.setItem(
+      "patchwork:leftSidebarCollapsed",
+      String(isSidebarCollapsed)
+    );
   }, [isSidebarCollapsed]);
 
   useEffect(() => {
-    localStorage.setItem('patchwork:rightSidebarCollapsed', String(isRightSidebarCollapsed));
+    localStorage.setItem(
+      "patchwork:rightSidebarCollapsed",
+      String(isRightSidebarCollapsed)
+    );
   }, [isRightSidebarCollapsed]);
 
   useEffect(() => {
-    localStorage.setItem('patchwork:leftSidebarWidth', String(leftSidebarWidth));
+    localStorage.setItem(
+      "patchwork:leftSidebarWidth",
+      String(leftSidebarWidth)
+    );
   }, [leftSidebarWidth]);
 
   useEffect(() => {
-    localStorage.setItem('patchwork:rightSidebarWidth', String(rightSidebarWidth));
+    localStorage.setItem(
+      "patchwork:rightSidebarWidth",
+      String(rightSidebarWidth)
+    );
   }, [rightSidebarWidth]);
 
-  const handleMouseDown = useCallback((side: 'left' | 'right') => {
-    isResizing.current = side;
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  }, []);
+  const handleMouseDown = useCallback(
+    (side: "left" | "right", e: React.MouseEvent) => {
+      e.preventDefault();
+      dragStartPos.current = { x: e.clientX, y: e.clientY };
+      hasDragged.current = false;
+      isResizing.current = side;
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    },
+    []
+  );
 
   const handleMouseUp = useCallback(() => {
     isResizing.current = null;
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
+    dragStartPos.current = null;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
   }, []);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isResizing.current) return;
+    if (!isResizing.current || !dragStartPos.current) return;
 
-    if (isResizing.current === 'left') {
+    // Check if we've moved enough to consider it a drag (threshold: 3px)
+    const deltaX = Math.abs(e.clientX - dragStartPos.current.x);
+    const deltaY = Math.abs(e.clientY - dragStartPos.current.y);
+    if (deltaX > 3 || deltaY > 3) {
+      hasDragged.current = true;
+    }
+
+    if (isResizing.current === "left") {
       const newWidth = Math.max(200, Math.min(600, e.clientX));
       setLeftSidebarWidth(newWidth);
-    } else if (isResizing.current === 'right') {
-      const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX));
+    } else if (isResizing.current === "right") {
+      const newWidth = Math.max(
+        200,
+        Math.min(600, window.innerWidth - e.clientX)
+      );
       setRightSidebarWidth(newWidth);
     }
   }, []);
 
+  const handleToggleClick = useCallback(
+    (side: "left" | "right", e: React.MouseEvent) => {
+      // Only toggle if we didn't drag
+      if (hasDragged.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        // Reset the flag for next interaction
+        hasDragged.current = false;
+        return;
+      }
+
+      if (side === "left") {
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+      } else {
+        setIsRightSidebarCollapsed(!isRightSidebarCollapsed);
+      }
+    },
+    [isSidebarCollapsed, isRightSidebarCollapsed]
+  );
+
   useEffect(() => {
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [handleMouseMove, handleMouseUp]);
 
@@ -258,19 +309,21 @@ export const PatchworkFrame = ({
             tool-id={accountSidebarToolId}
           />
         )}
-        <button
-          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="sidebar-toggle"
-          aria-label={
-            isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-          }
-          title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        />
-        {/* Resize handle for left sidebar */}
         {!isSidebarCollapsed && (
-          <div
-            className="sidebar-resize-handle sidebar-resize-handle--right"
-            onMouseDown={() => handleMouseDown('left')}
+          <button
+            onClick={(e) => handleToggleClick("left", e)}
+            onMouseDown={(e) => handleMouseDown("left", e)}
+            className="sidebar-toggle sidebar-toggle--resizable"
+            aria-label="Toggle or resize sidebar"
+            title="Click to toggle, drag to resize"
+          />
+        )}
+        {isSidebarCollapsed && (
+          <button
+            onClick={(e) => handleToggleClick("left", e)}
+            className="sidebar-toggle"
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
           />
         )}
       </div>
@@ -311,23 +364,23 @@ export const PatchworkFrame = ({
           }`}
           style={{ width: isRightSidebarCollapsed ? 2 : rightSidebarWidth }}
         >
-          {/* Resize handle for right sidebar */}
           {!isRightSidebarCollapsed && (
-            <div
-              className="sidebar-resize-handle sidebar-resize-handle--left"
-              onMouseDown={() => handleMouseDown('right')}
+            <button
+              onClick={(e) => handleToggleClick("right", e)}
+              onMouseDown={(e) => handleMouseDown("right", e)}
+              className="sidebar-toggle sidebar-toggle--resizable"
+              aria-label="Toggle or resize sidebar"
+              title="Click to toggle, drag to resize"
             />
           )}
-          <button
-            onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
-            className="sidebar-toggle"
-            aria-label={
-              isRightSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-            }
-            title={
-              isRightSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-            }
-          />
+          {isRightSidebarCollapsed && (
+            <button
+              onClick={(e) => handleToggleClick("right", e)}
+              className="sidebar-toggle"
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            />
+          )}
           {!isRightSidebarCollapsed && (
             <patchwork-view
               doc-url={accountDocUrl}

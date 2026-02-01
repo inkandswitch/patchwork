@@ -127,6 +127,37 @@
   --debug-toast-changed: oklch(0.75 0.2 80);
 }
 
+.sidebar-toggle {
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  width: 2px;
+  z-index: 1;
+  cursor: pointer;
+  &::before {
+    content: "";
+    display: block;
+    width: 20px;
+    height: 100%;
+    margin-left: -10px;
+  }
+  &:hover {
+    background: var(--color-base-content);
+  }
+}
+
+.sidebar-toggle--resizable {
+  cursor: col-resize;
+  &:hover {
+    cursor: col-resize;
+  }
+  &:active {
+    cursor: col-resize;
+  }
+}
+
 /* Sidebar resize handles */
 .sidebar-resize-handle {
   position: absolute;
@@ -145,7 +176,7 @@
 }
 
 .sidebar-resize-handle::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
