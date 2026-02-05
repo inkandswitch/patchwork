@@ -44,6 +44,8 @@ export function bumpServiceWorkerCache(
   setServiceWorkerCacheName(sw);
 }
 
+(window as any).bumpServiceWorkerCache = bumpServiceWorkerCache;
+
 const encoder = new TextEncoder();
 
 declare global {
@@ -63,7 +65,8 @@ export default async function setupServiceWorker(
         "%cnew service worker. i'd imagine that refreshing would be a good idea, but... i'm scared",
         "color: pink; font-weight: bold"
       );
-      bumpServiceWorkerCache(navigator.serviceWorker.controller);
+      // i don't think we need to bump the service worker cache when we deploy, it's chill
+      //bumpServiceWorkerCache(navigator.serviceWorker.controller);
       // ensure we've saved docs before we reload
       await window.repo.flush?.();
       //location.reload();
@@ -135,6 +138,7 @@ export default async function setupServiceWorker(
       });
 
       if (!existingSw?.active) {
+        // bump the sw cache once
         bumpServiceWorkerCache(sw.installing);
         queueMicrotask(() => location.reload());
         return sw.active!;
