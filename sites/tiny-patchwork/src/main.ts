@@ -127,8 +127,15 @@ registerPatchworkViewElement({ moduleWatcher, repo });
 const rootElement = document.getElementById("root")!;
 rootElement.style.visibility = "hidden";
 document.body.style.background = "#fffefe";
-rootElement.setAttribute("doc-url", accountDocHandle.url);
-rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
+const initialParams = new URLSearchParams(location.hash);
+if (initialParams.has("frame")) {
+  rootElement.setAttribute("tool-id", initialParams.get("frame")!);
+  const docUrl = initialParams.get("doc") ?? accountDocHandle.url;
+  rootElement.setAttribute("doc-url", docUrl);
+} else {
+  rootElement.setAttribute("doc-url", accountDocHandle.url);
+  rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
+}
 
 // todo the stuff below this can be wrapped up in a library
 // and used by any frame tool if they !element.closest("patchwork-view")
