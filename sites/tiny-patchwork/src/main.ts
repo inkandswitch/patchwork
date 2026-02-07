@@ -142,7 +142,7 @@ if (initialParams.has("frame")) {
 // could also, perhaps insanely, be added directly to patchwork-view?
 
 rootElement.addEventListener("patchwork:open-document", (event) => {
-  const params = new URLSearchParams();
+  const params = new URLSearchParams(window.location.hash.slice(1));
   const { url, toolId, type, title } = event.detail;
   const { documentId, heads } = parseAutomergeUrl(url);
   params.set("doc", documentId);
