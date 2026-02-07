@@ -186,12 +186,19 @@ const handleHashChange = async () => {
     }
     return;
   }
+
   const params = new URLSearchParams(hash);
   const documentId = params.get("doc");
   const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
   const toolId = params.get("tool");
   const title = params.get("title");
   const type = params.get("type");
+  const frame = params.get("frame");
+  if (frame) {
+    rootElement.setAttribute("tool-id", frame);
+    const docUrl = initialParams.get("doc") ?? accountDocHandle.url;
+    rootElement.setAttribute("doc-url", docUrl);
+  }
   if (isValidDocumentId(documentId)) {
     rootElement.dispatchEvent(
       new CustomEvent("patchwork:open-document", {
