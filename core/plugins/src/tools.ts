@@ -55,8 +55,8 @@ export function getSupportedToolsForType(type: string): LoadedTool[] {
   const plugins = getRegistry<ToolDescription>("patchwork:tool").filter(
     (desc) => {
       return (
-        desc.supportedDatatypes.includes(type) ||
-        desc.supportedDatatypes.includes("*")
+        desc.supportedDatatypes?.includes(type) ||
+        desc.supportedDatatypes?.includes("*")
       );
     }
   );
