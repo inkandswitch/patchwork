@@ -9,11 +9,7 @@ import {
   createFilesystemHandoffHandler,
 } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
-import {
-  LoadedPlugin,
-  PluginDescription,
-  registerPlugins,
-} from "@inkandswitch/patchwork-plugins";
+import { registerPlugins } from "@inkandswitch/patchwork-plugins";
 import {
   getOrCreateLayoutDocHandle,
   TinyPatchworkLayoutDoc,
@@ -217,3 +213,20 @@ const handleHashChange = async () => {
 window.addEventListener("hashchange", () => {
   handleHashChange();
 });
+
+window.addEventListener("error", (event) => {
+  console.info(event);
+});
+
+async function uncache(match: string) {
+  for (const name of await caches.keys()) {
+    const cache = await caches.open(name);
+    for (const request of await cache.keys()) {
+      if (request.url.includes(match)) {
+        cache.delete(request);
+      }
+    }
+  }
+}
+
+(window as any).uncache = uncache;
