@@ -46,9 +46,13 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     const existing = this.#plugins.get(plugin.id);
 
     if (existing) {
-      console.warn(
-        `overriding "${plugin.id}" provided by "${existing.importUrl}" with new plugin provided by "${importUrl}"`
-      );
+      if (existing.importUrl == importUrl) {
+        log(`updating ${plugin.id} provided by "${existing.importUrl}"`);
+      } else {
+        console.warn(
+          `overriding "${plugin.id}" provided by "${existing.importUrl}" with new plugin provided by "${importUrl}"`
+        );
+      }
     }
 
     this.#plugins.set(plugin.id, plugin);
