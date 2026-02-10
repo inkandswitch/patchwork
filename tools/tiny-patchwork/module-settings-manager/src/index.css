@@ -36,6 +36,62 @@
     var(--module-settings-manager-fill),
     var(--module-settings-manager-line) 10%
   );
+
+  /* Common widget-fill variations (light mode) */
+  --msm-widget-darken-3: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 3%);
+  --msm-widget-darken-5: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 5%);
+  --msm-widget-darken-8: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 8%);
+  --msm-widget-darken-10: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 10%);
+  --msm-widget-darken-12: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 12%);
+  --msm-widget-darken-15: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
+  --msm-widget-darken-16: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 16%);
+  --msm-widget-darken-20: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 20%);
+  --msm-widget-darken-30: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 30%);
+
+  /* Common color variations (light mode) */
+  --msm-blue-light-10: color-mix(in oklab, #3b82f6, white 10%);
+  --msm-blue-light-20: color-mix(in oklab, #3b82f6, white 20%);
+  --msm-blue-light-40: color-mix(in oklab, #3b82f6, white 40%);
+  --msm-blue-light-50: color-mix(in oklab, #3b82f6, white 50%);
+  --msm-blue-light-70: color-mix(in oklab, #3b82f6, white 70%);
+  --msm-blue-dark-5: color-mix(in oklab, #3b82f6, black 5%);
+  --msm-blue-dark-10: color-mix(in oklab, #3b82f6, black 10%);
+  --msm-blue-dark-20: color-mix(in oklab, #3b82f6, black 20%);
+  --msm-blue-dark-40: color-mix(in oklab, #3b82f6, black 40%);
+  --msm-blue-dark-50: color-mix(in oklab, #3b82f6, black 50%);
+
+  --msm-green-light-40: color-mix(in oklab, #22c55e, white 40%);
+  --msm-green-light-85: color-mix(in oklab, #22c55e, white 85%);
+  --msm-green-dark-20: color-mix(in oklab, #22c55e, black 20%);
+  --msm-green-dark-30: color-mix(in oklab, #22c55e, black 30%);
+  --msm-green-dark-70: color-mix(in oklab, #22c55e, black 70%);
+
+  --msm-red-light-20: color-mix(in oklab, #ef4444, white 20%);
+  --msm-red-light-40: color-mix(in oklab, #ef4444, white 40%);
+  --msm-red-light-60: color-mix(in oklab, #ef4444, white 60%);
+  --msm-red-light-80: color-mix(in oklab, #ef4444, white 80%);
+  --msm-red-dark-5: color-mix(in oklab, #ef4444, black 5%);
+  --msm-red-dark-10: color-mix(in oklab, #ef4444, black 10%);
+  --msm-red-dark-20: color-mix(in oklab, #ef4444, black 20%);
+  --msm-red-dark-30: color-mix(in oklab, #ef4444, black 30%);
+  --msm-red-dark-50: color-mix(in oklab, #ef4444, black 50%);
+  --msm-red-dark-70: color-mix(in oklab, #ef4444, black 70%);
+
+  --msm-yellow-light-50: color-mix(in oklab, #eab308, white 50%);
+  --msm-yellow-light-70: color-mix(in oklab, #eab308, white 70%);
+  --msm-yellow-dark-40: color-mix(in oklab, #eab308, black 40%);
+  --msm-yellow-dark-50: color-mix(in oklab, #eab308, black 50%);
+  --msm-yellow-dark-60: color-mix(in oklab, #eab308, black 60%);
+
+  /* Semantic colors */
+  --msm-text-error-light: #991b1b;
+  --msm-text-error-dark: #fca5a5;
+  --msm-text-warning-light: #854d0e;
+  --msm-text-warning-dark: #fef08a;
+  --msm-text-blue-light: #1e40af;
+  --msm-text-blue-dark: #93c5fd;
+  --msm-text-green-light: #166534;
+  --msm-text-green-dark: #86efac;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -48,6 +104,58 @@
     --module-settings-manager-create-new-shadow-color: #111;
     --module-settings-manager-create-new-border-line: #555;
     --module-settings-manager-primary: #0099cc;
+
+    /* Common widget-fill variations (dark mode) */
+    --msm-widget-darken-3: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 3%);
+    --msm-widget-darken-5: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 5%);
+    --msm-widget-darken-8: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 8%);
+    --msm-widget-darken-10: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 10%);
+    --msm-widget-darken-12: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 12%);
+    --msm-widget-darken-15: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 15%);
+    --msm-widget-darken-16: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 16%);
+    --msm-widget-darken-20: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 20%);
+    --msm-widget-darken-30: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 30%);
+
+    /* Common color variations (dark mode) */
+    --msm-blue-light-10: color-mix(in oklab, #3b82f6, black 10%);
+    --msm-blue-light-20: color-mix(in oklab, #3b82f6, black 20%);
+    --msm-blue-light-40: color-mix(in oklab, #3b82f6, black 50%);
+    --msm-blue-light-50: color-mix(in oklab, #3b82f6, black 50%);
+    --msm-blue-light-70: color-mix(in oklab, #3b82f6, black 70%);
+    --msm-blue-dark-5: color-mix(in oklab, #3b82f6, white 5%);
+    --msm-blue-dark-10: color-mix(in oklab, #3b82f6, white 10%);
+    --msm-blue-dark-20: color-mix(in oklab, #3b82f6, black 20%);
+    --msm-blue-dark-40: color-mix(in oklab, #3b82f6, black 40%);
+    --msm-blue-dark-50: color-mix(in oklab, #3b82f6, black 50%);
+
+    --msm-green-light-40: color-mix(in oklab, #22c55e, black 20%);
+    --msm-green-light-85: color-mix(in oklab, #22c55e, black 70%);
+    --msm-green-dark-20: color-mix(in oklab, #22c55e, black 20%);
+    --msm-green-dark-30: color-mix(in oklab, #22c55e, black 30%);
+    --msm-green-dark-70: color-mix(in oklab, #22c55e, black 70%);
+
+    --msm-red-light-20: color-mix(in oklab, #ef4444, black 20%);
+    --msm-red-light-40: color-mix(in oklab, #ef4444, black 30%);
+    --msm-red-light-60: color-mix(in oklab, #ef4444, black 50%);
+    --msm-red-light-80: color-mix(in oklab, #ef4444, black 70%);
+    --msm-red-dark-5: color-mix(in oklab, #ef4444, white 5%);
+    --msm-red-dark-10: color-mix(in oklab, #ef4444, white 10%);
+    --msm-red-dark-20: color-mix(in oklab, #ef4444, black 20%);
+    --msm-red-dark-30: color-mix(in oklab, #ef4444, black 30%);
+    --msm-red-dark-50: color-mix(in oklab, #ef4444, black 50%);
+    --msm-red-dark-70: color-mix(in oklab, #ef4444, black 70%);
+
+    --msm-yellow-light-50: color-mix(in oklab, #eab308, black 40%);
+    --msm-yellow-light-70: color-mix(in oklab, #eab308, black 60%);
+    --msm-yellow-dark-40: color-mix(in oklab, #eab308, black 40%);
+    --msm-yellow-dark-50: color-mix(in oklab, #eab308, black 50%);
+    --msm-yellow-dark-60: color-mix(in oklab, #eab308, black 60%);
+
+    /* Semantic colors */
+    --msm-text-error-light: #fca5a5;
+    --msm-text-warning-light: #fef08a;
+    --msm-text-blue-light: #93c5fd;
+    --msm-text-green-light: #86efac;
   }
 }
 
@@ -78,7 +186,7 @@
 .module-settings-account-url {
   padding: 1rem;
   margin-bottom: 1rem;
-  border: 1px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
+  border: 1px solid var(--msm-widget-darken-15);
   border-radius: 6px;
   background: var(--module-settings-manager-widget-fill);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -86,7 +194,7 @@
 
 @media (prefers-color-scheme: dark) {
   .module-settings-account-url {
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 15%);
+    border-color: var(--msm-widget-darken-15);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 }
@@ -120,7 +228,7 @@
 
 .module-settings-account-url__overlay-button {
   padding: 0.375rem 0.5rem;
-  border: 1px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 20%);
+  border: 1px solid var(--msm-widget-darken-20);
   border-radius: 4px;
   background: var(--module-settings-manager-widget-fill);
   font-size: 0.875rem;
@@ -134,8 +242,8 @@
 }
 
 .module-settings-account-url__overlay-button:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 8%);
-  border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 30%);
+  background: var(--msm-widget-darken-8);
+  border-color: var(--msm-widget-darken-30);
 }
 
 .module-settings-account-url__overlay-button:disabled {
@@ -152,20 +260,20 @@
 
 @media (prefers-color-scheme: dark) {
   .module-settings-account-url__overlay-button {
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 20%);
+    border-color: var(--msm-widget-darken-20);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   }
 
   .module-settings-account-url__overlay-button:hover:not(:disabled) {
-    background: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 12%);
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 30%);
+    background: var(--msm-widget-darken-12);
+    border-color: var(--msm-widget-darken-30);
   }
 }
 
 .module-settings-account-url__input {
   width: 100%;
   padding: 0.5rem 5rem 0.5rem 0.75rem;
-  border: 1px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
+  border: 1px solid var(--msm-widget-darken-15);
   border-radius: 4px;
   background: var(--module-settings-manager-widget-fill);
   font-family: "SF Mono", "Monaco", "Menlo", "Consolas", monospace;
@@ -173,24 +281,24 @@
 }
 
 .module-settings-account-url__input--invalid {
-  border-color: color-mix(in oklab, #ef4444, white 40%);
+  border-color: var(--msm-red-light-40);
 }
 
 .module-settings-account-url__input--valid {
-  border-color: color-mix(in oklab, #22c55e, white 40%);
+  border-color: var(--msm-green-light-40);
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-account-url__input {
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 15%);
+    border-color: var(--msm-widget-darken-15);
   }
 
   .module-settings-account-url__input--invalid {
-    border-color: color-mix(in oklab, #ef4444, black 30%);
+    border-color: var(--msm-red-dark-30);
   }
 
   .module-settings-account-url__input--valid {
-    border-color: color-mix(in oklab, #22c55e, black 30%);
+    border-color: var(--msm-green-dark-30);
   }
 }
 
@@ -205,19 +313,19 @@
 
 .module-settings-account-url__error {
   padding: 0.5rem 0.75rem;
-  background: color-mix(in oklab, #ef4444, white 80%);
-  border: 1px solid color-mix(in oklab, #ef4444, white 60%);
+  background: var(--msm-red-light-80);
+  border: 1px solid var(--msm-red-light-60);
   border-radius: 4px;
-  color: #991b1b;
+  color: var(--msm-text-error-light);
   font-size: 0.875rem;
   margin-top: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-account-url__error {
-    background: color-mix(in oklab, #ef4444, black 70%);
-    border-color: color-mix(in oklab, #ef4444, black 50%);
-    color: #fca5a5;
+    background: var(--msm-red-dark-70);
+    border-color: var(--msm-red-dark-50);
+    color: var(--msm-text-error-dark);
   }
 }
 
@@ -233,7 +341,7 @@
 .module-settings-account-url__display code {
   display: block;
   padding: 0.5rem 3rem 0.5rem 0.75rem;
-  background: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 5%);
+  background: var(--msm-widget-darken-5);
   border: 1px solid transparent;
   border-radius: 4px;
   font-size: 0.8125rem;
@@ -245,18 +353,18 @@
 }
 
 .module-settings-account-url__display--copied code {
-  border-color: color-mix(in oklab, #22c55e, white 40%);
-  background: color-mix(in oklab, #22c55e, white 85%);
+  border-color: var(--msm-green-light-40);
+  background: var(--msm-green-light-85);
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-account-url__display code {
-    background: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 8%);
+    background: var(--msm-widget-darken-8);
   }
 
   .module-settings-account-url__display--copied code {
-    border-color: color-mix(in oklab, #22c55e, black 20%);
-    background: color-mix(in oklab, #22c55e, black 70%);
+    border-color: var(--msm-green-dark-20);
+    background: var(--msm-green-dark-70);
   }
 }
 
@@ -305,7 +413,7 @@
   flex: 1;
   min-width: 0;
   padding: 0.5rem 2.5rem;
-  border: 1px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
+  border: 1px solid var(--msm-widget-darken-15);
   border-radius: 4px;
   background: var(--module-settings-manager-widget-fill);
   font-family: inherit;
@@ -316,7 +424,7 @@
 
 .module-settings-manager__filter-select {
   padding: 0.5rem 0.75rem;
-  border: 1px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
+  border: 1px solid var(--msm-widget-darken-15);
   border-radius: 4px;
   background: var(--module-settings-manager-widget-fill);
   font-family: inherit;
@@ -328,7 +436,7 @@
 @media (prefers-color-scheme: dark) {
   .module-settings-manager__search,
   .module-settings-manager__filter-select {
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 15%);
+    border-color: var(--msm-widget-darken-15);
   }
 }
 
@@ -383,7 +491,7 @@
 .module-settings-module-input__field {
   width: 100%;
   padding: 0.5rem 2.5rem;
-  border: 1px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
+  border: 1px solid var(--msm-widget-darken-15);
   border-radius: 4px;
   background: var(--module-settings-manager-widget-fill);
   font-family: inherit;
@@ -399,7 +507,7 @@
 
 @media (prefers-color-scheme: dark) {
   .module-settings-module-input__field {
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 15%);
+    border-color: var(--msm-widget-darken-15);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 }
@@ -410,7 +518,7 @@
 
 .module-settings-module-input__validation {
   padding: 1rem;
-  border: 1px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
+  border: 1px solid var(--msm-widget-darken-15);
   border-top: none;
   border-bottom-left-radius: 4px;
   border-bottom-right-radius: 4px;
@@ -420,7 +528,7 @@
 
 @media (prefers-color-scheme: dark) {
   .module-settings-module-input__validation {
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 15%);
+    border-color: var(--msm-widget-darken-15);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 }
@@ -441,14 +549,14 @@
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
-  background: color-mix(in oklab, #3b82f6, white 10%);
-  border: 1px solid color-mix(in oklab, #3b82f6, black 5%);
+  background: var(--msm-blue-light-10);
+  border: 1px solid var(--msm-blue-dark-5);
   color: white;
 }
 
 .module-settings-module-input__add-button:hover:not(:disabled) {
   background: #3b82f6;
-  border-color: color-mix(in oklab, #3b82f6, black 10%);
+  border-color: var(--msm-blue-dark-10);
 }
 
 .module-settings-module-input__add-button:disabled {
@@ -458,30 +566,30 @@
 
 @media (prefers-color-scheme: dark) {
   .module-settings-module-input__add-button {
-    background: color-mix(in oklab, #3b82f6, black 20%);
-    border-color: color-mix(in oklab, #3b82f6, white 5%);
+    background: var(--msm-blue-dark-20);
+    border-color: var(--msm-blue-dark-5);
   }
 
   .module-settings-module-input__add-button:hover:not(:disabled) {
-    background: color-mix(in oklab, #3b82f6, black 10%);
-    border-color: color-mix(in oklab, #3b82f6, white 10%);
+    background: var(--msm-blue-dark-10);
+    border-color: var(--msm-blue-light-10);
   }
 }
 
 .module-settings-module-input__error {
   padding: 0.5rem 0.75rem;
-  background: color-mix(in oklab, #ef4444, white 80%);
-  border: 1px solid color-mix(in oklab, #ef4444, white 60%);
+  background: var(--msm-red-light-80);
+  border: 1px solid var(--msm-red-light-60);
   border-radius: 4px;
-  color: #991b1b;
+  color: var(--msm-text-error-light);
   font-size: 0.875rem;
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-module-input__error {
-    background: color-mix(in oklab, #ef4444, black 70%);
-    border-color: color-mix(in oklab, #ef4444, black 50%);
-    color: #fca5a5;
+    background: var(--msm-red-dark-70);
+    border-color: var(--msm-red-dark-50);
+    color: var(--msm-text-error-dark);
   }
 }
 
@@ -494,18 +602,18 @@
 
 .module-settings-module-input__preview-error {
   padding: 0.5rem 0.75rem;
-  background: color-mix(in oklab, #eab308, white 70%);
-  border: 1px solid color-mix(in oklab, #eab308, white 50%);
+  background: var(--msm-yellow-light-70);
+  border: 1px solid var(--msm-yellow-light-50);
   border-radius: 4px;
-  color: #854d0e;
+  color: var(--msm-text-warning-light);
   font-size: 0.875rem;
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-module-input__preview-error {
-    background: color-mix(in oklab, #eab308, black 60%);
-    border-color: color-mix(in oklab, #eab308, black 40%);
-    color: #fef08a;
+    background: var(--msm-yellow-dark-60);
+    border-color: var(--msm-yellow-dark-40);
+    color: var(--msm-text-warning-dark);
   }
 }
 
@@ -515,16 +623,12 @@
   gap: 0.75rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid
-    color-mix(in oklab, var(--module-settings-manager-widget-fill), black 10%);
+    var(--msm-widget-darken-10);
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-module-input__package-info {
-    border-bottom-color: color-mix(
-      in oklab,
-      var(--module-settings-manager-widget-fill),
-      white 10%
-    );
+    border-bottom-color: var(--msm-widget-darken-10);
   }
 }
 
@@ -543,14 +647,14 @@
 .module-settings-module-input__package-value {
   font-family: "SF Mono", "Monaco", "Menlo", "Consolas", monospace;
   padding: 0.25rem 0.5rem;
-  background: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 5%);
+  background: var(--msm-widget-darken-5);
   border-radius: 3px;
   font-size: 0.8125rem;
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-module-input__package-value {
-    background: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 8%);
+    background: var(--msm-widget-darken-8);
   }
 }
 
@@ -563,19 +667,19 @@
 .module-settings-module-input__plugin-pill {
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  background: color-mix(in oklab, #3b82f6, white 40%);
-  border: 1px solid color-mix(in oklab, #3b82f6, white 20%);
+  background: var(--msm-blue-light-40);
+  border: 1px solid var(--msm-blue-light-20);
   border-radius: 3px;
   font-size: 0.75rem;
-  color: #1e40af;
+  color: var(--msm-text-blue-light);
   font-weight: 500;
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-module-input__plugin-pill {
-    background: color-mix(in oklab, #3b82f6, black 50%);
-    border-color: color-mix(in oklab, #3b82f6, black 40%);
-    color: #93c5fd;
+    background: var(--msm-blue-dark-50);
+    border-color: var(--msm-blue-dark-40);
+    color: var(--msm-text-blue-dark);
   }
 }
 
@@ -584,24 +688,24 @@
   align-items: center;
   font-size: 0.875rem;
   padding: 0.25rem 0.5rem;
-  background: color-mix(in oklab, #3b82f6, white 40%);
-  border: 1px solid color-mix(in oklab, #3b82f6, white 20%);
+  background: var(--msm-blue-light-40);
+  border: 1px solid var(--msm-blue-light-20);
   border-radius: 3px;
-  color: #1e40af;
+  color: var(--msm-text-blue-light);
   font-weight: 500;
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-module-input__installed-pill {
-    background: color-mix(in oklab, #3b82f6, black 50%);
-    border-color: color-mix(in oklab, #3b82f6, black 40%);
-    color: #93c5fd;
+    background: var(--msm-blue-dark-50);
+    border-color: var(--msm-blue-dark-40);
+    color: var(--msm-text-blue-dark);
   }
 }
 
 .module-settings-module-input__no-package {
   padding: 0.5rem 0.75rem;
-  background: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 5%);
+  background: var(--msm-widget-darken-5);
   border-radius: 4px;
   font-size: 0.875rem;
   opacity: 0.8;
@@ -610,7 +714,7 @@
 
 @media (prefers-color-scheme: dark) {
   .module-settings-module-input__no-package {
-    background: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 8%);
+    background: var(--msm-widget-darken-8);
   }
 }
 
@@ -646,14 +750,14 @@
 /* Module Table View */
 .module-settings-manager__table-container {
   overflow-x: auto;
-  border: 1px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
+  border: 1px solid var(--msm-widget-darken-15);
   border-radius: 6px;
   background: var(--module-settings-manager-widget-fill);
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-manager__table-container {
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 15%);
+    border-color: var(--msm-widget-darken-15);
   }
 }
 
@@ -664,14 +768,14 @@
 }
 
 .module-settings-manager__table thead {
-  background: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 5%);
-  border-bottom: 2px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
+  background: var(--msm-widget-darken-5);
+  border-bottom: 2px solid var(--msm-widget-darken-15);
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-manager__table thead {
-    background: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 5%);
-    border-bottom-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 15%);
+    background: var(--msm-widget-darken-5);
+    border-bottom-color: var(--msm-widget-darken-15);
   }
 }
 
@@ -703,23 +807,23 @@
 
 .module-settings-manager__table td {
   padding: 0.875rem 1rem;
-  border-top: 1px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 10%);
+  border-top: 1px solid var(--msm-widget-darken-10);
   vertical-align: middle;
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-manager__table td {
-    border-top-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 10%);
+    border-top-color: var(--msm-widget-darken-10);
   }
 }
 
 .module-settings-manager__table tbody tr:hover {
-  background: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 3%);
+  background: var(--msm-widget-darken-3);
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-manager__table tbody tr:hover {
-    background: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 3%);
+    background: var(--msm-widget-darken-8);
   }
 }
 
@@ -767,8 +871,8 @@
 .module-settings-manager__datatype-pill {
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  background: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 5%);
-  border: 1px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
+  background: var(--msm-widget-darken-5);
+  border: 1px solid var(--msm-widget-darken-15);
   border-radius: 4px;
   font-size: 0.75rem;
   line-height: 1;
@@ -776,15 +880,15 @@
 }
 
 .module-settings-manager__datatype-pill--any {
-  background: color-mix(in oklab, #3b82f6, white 70%);
-  border-color: color-mix(in oklab, #3b82f6, white 50%);
-  color: #1e40af;
+  background: var(--msm-blue-light-70);
+  border-color: var(--msm-blue-light-50);
+  color: var(--msm-text-blue-light);
 }
 
 .module-settings-manager__datatype-pill--none {
-  background: color-mix(in oklab, #eab308, white 70%);
-  border-color: color-mix(in oklab, #eab308, white 50%);
-  color: #854d0e;
+  background: var(--msm-yellow-light-70);
+  border-color: var(--msm-yellow-light-50);
+  color: var(--msm-text-warning-light);
 }
 
 .module-settings-manager__datatype-pill--empty {
@@ -795,20 +899,20 @@
 
 @media (prefers-color-scheme: dark) {
   .module-settings-manager__datatype-pill {
-    background: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 8%);
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 20%);
+    background: var(--msm-widget-darken-8);
+    border-color: var(--msm-widget-darken-20);
   }
 
   .module-settings-manager__datatype-pill--any {
-    background: color-mix(in oklab, #3b82f6, black 50%);
-    border-color: color-mix(in oklab, #3b82f6, black 40%);
-    color: #93c5fd;
+    background: var(--msm-blue-dark-50);
+    border-color: var(--msm-blue-dark-40);
+    color: var(--msm-text-blue-dark);
   }
 
   .module-settings-manager__datatype-pill--none {
-    background: color-mix(in oklab, #eab308, black 50%);
-    border-color: color-mix(in oklab, #eab308, black 40%);
-    color: #fef08a;
+    background: var(--msm-yellow-dark-50);
+    border-color: var(--msm-yellow-dark-40);
+    color: var(--msm-text-warning-dark);
   }
 }
 
@@ -827,7 +931,7 @@
 .module-settings-manager__copyable {
   display: inline-block;
   padding: 0.375rem 0.5rem;
-  background: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 5%);
+  background: var(--msm-widget-darken-5);
   border: 1px solid transparent;
   border-radius: 4px;
   cursor: pointer;
@@ -843,30 +947,30 @@
 }
 
 .module-settings-manager__copyable:hover {
-  background: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 8%);
-  border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
+  background: var(--msm-widget-darken-8);
+  border-color: var(--msm-widget-darken-15);
 }
 
 .module-settings-manager__copyable--copied {
-  background: color-mix(in oklab, #22c55e, white 85%) !important;
-  border-color: color-mix(in oklab, #22c55e, white 40%) !important;
-  color: #166534 !important;
+  background: var(--msm-green-light-85) !important;
+  border-color: var(--msm-green-light-40) !important;
+  color: var(--msm-text-green-light) !important;
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-manager__copyable {
-    background: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 8%);
+    background: var(--msm-widget-darken-8);
   }
 
   .module-settings-manager__copyable:hover {
-    background: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 12%);
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 20%);
+    background: var(--msm-widget-darken-12);
+    border-color: var(--msm-widget-darken-20);
   }
 
   .module-settings-manager__copyable--copied {
-    background: color-mix(in oklab, #22c55e, black 70%) !important;
-    border-color: color-mix(in oklab, #22c55e, black 20%) !important;
-    color: #86efac !important;
+    background: var(--msm-green-dark-70) !important;
+    border-color: var(--msm-green-dark-20) !important;
+    color: var(--msm-text-green-dark) !important;
   }
 }
 
@@ -895,52 +999,52 @@
 
 /* Remove button specific styles */
 .module-settings-manager__remove-btn {
-  background: color-mix(in oklab, #ef4444, white 20%);
-  border: 1px solid color-mix(in oklab, #ef4444, black 5%);
+  background: var(--msm-red-light-20);
+  border: 1px solid var(--msm-red-dark-5);
   color: white;
 }
 
 .module-settings-manager__remove-btn:hover {
   background: #ef4444;
-  border-color: color-mix(in oklab, #ef4444, black 10%);
+  border-color: var(--msm-red-dark-10);
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-manager__remove-btn {
-    background: color-mix(in oklab, #ef4444, black 20%);
-    border-color: color-mix(in oklab, #ef4444, white 5%);
+    background: var(--msm-red-dark-20);
+    border-color: var(--msm-red-dark-5);
   }
 
   .module-settings-manager__remove-btn:hover {
-    background: color-mix(in oklab, #ef4444, black 10%);
-    border-color: color-mix(in oklab, #ef4444, white 10%);
+    background: var(--msm-red-dark-10);
+    border-color: var(--msm-red-dark-10);
   }
 }
 
 /* View raw button specific styles */
 .module-settings-manager__view-raw-button,
 .module-settings-module-input__view-raw-button {
-  background: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 5%);
-  border: 1px solid color-mix(in oklab, var(--module-settings-manager-widget-fill), black 8%);
+  background: var(--msm-widget-darken-5);
+  border: 1px solid var(--msm-widget-darken-8);
   color: var(--module-settings-manager-widget-line);
 }
 
 .module-settings-manager__view-raw-button:hover,
 .module-settings-module-input__view-raw-button:hover {
-  background: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 8%);
-  border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 12%);
+  background: var(--msm-widget-darken-8);
+  border-color: var(--msm-widget-darken-12);
 }
 
 @media (prefers-color-scheme: dark) {
   .module-settings-manager__view-raw-button,
   .module-settings-module-input__view-raw-button {
-    background: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 8%);
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 12%);
+    background: var(--msm-widget-darken-8);
+    border-color: var(--msm-widget-darken-12);
   }
 
   .module-settings-manager__view-raw-button:hover,
   .module-settings-module-input__view-raw-button:hover {
-    background: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 12%);
-    border-color: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 16%);
+    background: var(--msm-widget-darken-12);
+    border-color: var(--msm-widget-darken-16);
   }
 }

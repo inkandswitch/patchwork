@@ -1,11 +1,13 @@
 interface SearchIconProps {
   class?: string;
+  onClick?: () => void;
 }
 
 export function SearchIcon(props: SearchIconProps) {
   return (
     <svg
       class={props.class}
+      onClick={props.onClick}
       xmlns="http://www.w3.org/2000/svg"
       width="16"
       height="16"
