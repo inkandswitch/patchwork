@@ -26,6 +26,7 @@ export function ViewRaw(props: ViewRawProps) {
       class={props.class || "view-raw-button"}
       onClick={handleClick}
       title="View Raw"
+      style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -37,12 +38,11 @@ export function ViewRaw(props: ViewRawProps) {
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
-        style={{ "margin-right": "0.5rem" }}
       >
         <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
-      <span>View Raw</span>
+      <span class="module-settings-manager__button-text">View Raw</span>
     </button>
   );
 }

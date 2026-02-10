@@ -267,7 +267,7 @@ export function ModuleInput(props: ModuleInputProps) {
                         style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}
                       >
                         <InstallIcon />
-                        <span>Add</span>
+                        <span class="module-settings-manager__button-text">Add</span>
                       </button>
                     </Show>
                     <Show when={props.isInstalled(previewUrl()!)}>
