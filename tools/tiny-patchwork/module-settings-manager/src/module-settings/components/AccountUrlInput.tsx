@@ -11,6 +11,7 @@ export function AccountUrlInput() {
   );
   const [url, setUrl] = createSignal("");
   const [isEditing, setIsEditing] = createSignal(false);
+  const [isExpanded, setIsExpanded] = createSignal(false);
   const [copiedText, copy] = useCopyToClipboard();
 
   // Initialize editing state from stored URL on mount
@@ -118,19 +119,29 @@ export function AccountUrlInput() {
             class="module-settings-account-url__display"
             classList={{
               "account-url__display--copied": copiedText() === url(),
+              "account-url__display--expanded": isExpanded(),
             }}
             onClick={handleCopy}
             title="Click to copy"
           >
             <code>{url()}</code>
           </div>
-          <button
-            class="module-settings-account-url__overlay-button module-settings-account-url__edit-button"
-            onClick={() => setIsEditing(true)}
-            title="Edit URL"
-          >
-            ✏️
-          </button>
+          <div class="module-settings-account-url__display-buttons">
+            <button
+              class="module-settings-account-url__overlay-button module-settings-account-url__expand-button"
+              onClick={() => setIsExpanded(!isExpanded())}
+              title={isExpanded() ? "Collapse" : "Expand"}
+            >
+              {isExpanded() ? "−" : "+"}
+            </button>
+            <button
+              class="module-settings-account-url__overlay-button module-settings-account-url__edit-button"
+              onClick={() => setIsEditing(true)}
+              title="Edit URL"
+            >
+              ✏️
+            </button>
+          </div>
         </div>
       </Show>
     </div>
