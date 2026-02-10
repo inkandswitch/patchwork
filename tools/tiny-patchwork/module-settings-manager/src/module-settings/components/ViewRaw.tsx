@@ -16,14 +16,15 @@ interface ViewRawProps {
 }
 
 export function ViewRaw(props: ViewRawProps) {
+  const handleClick = (e: MouseEvent) => {
+    const target = e.currentTarget as HTMLButtonElement;
+    target.dispatchEvent(createOpenEvent({ url: props.url, toolId: "raw" }));
+  };
+
   return (
     <button
       class={props.class || "view-raw-button"}
-      onClick={(e) => {
-        e.currentTarget.dispatchEvent(
-          createOpenEvent({ url: props.url, toolId: "raw" })
-        );
-      }}
+      onClick={handleClick}
       title="View Raw"
     >
       <svg
@@ -36,10 +37,12 @@ export function ViewRaw(props: ViewRawProps) {
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
+        style={{ "margin-right": "0.5rem" }}
       >
         <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
+      <span>View Raw</span>
     </button>
   );
 }

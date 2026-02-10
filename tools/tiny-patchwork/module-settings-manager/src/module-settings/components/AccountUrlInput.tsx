@@ -1,52 +1,54 @@
-import { createSignal, createEffect, Show } from "solid-js";
+import { createSignal, createMemo, onMount, Show } from "solid-js";
 import { isValidAutomergeUrl } from "@automerge/automerge-repo";
-
-const STORAGE_KEY = "tinyPatchworkAccountUrl";
+import { STORAGE_KEY_ACCOUNT_URL } from "../constants.ts";
+import { useCopyToClipboard } from "../hooks/useCopyToClipboard.ts";
+import { useLocalStorage } from "../hooks/useLocalStorage.ts";
 
 export function AccountUrlInput() {
+  const [storedUrl, setStoredUrl] = useLocalStorage(
+    STORAGE_KEY_ACCOUNT_URL,
+    ""
+  );
   const [url, setUrl] = createSignal("");
   const [isEditing, setIsEditing] = createSignal(false);
-  const [isValid, setIsValid] = createSignal<boolean | null>(null);
-  const [copied, setCopied] = createSignal(false);
+  const [copiedText, copy] = useCopyToClipboard();
 
-  // Load from localStorage on mount
-  createEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setUrl(stored);
+  // Initialize editing state from stored URL on mount
+  onMount(() => {
+    if (storedUrl()) {
+      setUrl(storedUrl());
     }
   });
 
-  // Validate URL whenever it changes
-  createEffect(() => {
+  // Validate URL whenever it changes (using memo for performance)
+  const isValid = createMemo(() => {
     const value = url().trim();
-    if (!value) {
-      setIsValid(null);
-      return;
-    }
-    setIsValid(isValidAutomergeUrl(value));
+    if (!value) return null;
+    return isValidAutomergeUrl(value);
   });
 
   const handleSave = () => {
     const value = url().trim();
     if (value && isValid()) {
-      localStorage.setItem(STORAGE_KEY, value);
+      setStoredUrl(value);
       setIsEditing(false);
       // Reload the page to apply the new account URL
       window.location.reload();
     }
   };
 
-  const handleCopy = async () => {
+  const handleCopy = () => {
     const value = url().trim();
     if (value) {
-      try {
-        await navigator.clipboard.writeText(value);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error("Failed to copy:", err);
-      }
+      copy(value);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    const stored = storedUrl();
+    if (stored) {
+      setUrl(stored);
     }
   };
 
@@ -56,12 +58,7 @@ export function AccountUrlInput() {
       handleSave();
     } else if (e.key === "Escape") {
       e.preventDefault();
-      setIsEditing(false);
-      // Restore from localStorage
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setUrl(stored);
-      }
+      handleCancel();
     }
   };
 
@@ -90,23 +87,17 @@ export function AccountUrlInput() {
           />
           <div class="module-settings-account-url__overlay-buttons">
             <button
-              class="module-settings-account-url__overlay-button account-url__save-button"
+              class="module-settings-account-url__overlay-button module-settings-account-url__save-button"
               onClick={handleSave}
               disabled={!isValid()}
               title="Save"
             >
               ✓
             </button>
-            <Show when={url().trim() && localStorage.getItem(STORAGE_KEY)}>
+            <Show when={url().trim() && storedUrl()}>
               <button
-                class="module-settings-account-url__overlay-button account-url__cancel-button"
-                onClick={() => {
-                  setIsEditing(false);
-                  const stored = localStorage.getItem(STORAGE_KEY);
-                  if (stored) {
-                    setUrl(stored);
-                  }
-                }}
+                class="module-settings-account-url__overlay-button module-settings-account-url__cancel-button"
+                onClick={handleCancel}
                 title="Cancel"
               >
                 ✕
@@ -126,7 +117,7 @@ export function AccountUrlInput() {
           <div
             class="module-settings-account-url__display"
             classList={{
-              "account-url__display--copied": copied(),
+              "account-url__display--copied": copiedText() === url(),
             }}
             onClick={handleCopy}
             title="Click to copy"
@@ -134,7 +125,7 @@ export function AccountUrlInput() {
             <code>{url()}</code>
           </div>
           <button
-            class="module-settings-account-url__overlay-button account-url__edit-button"
+            class="module-settings-account-url__overlay-button module-settings-account-url__edit-button"
             onClick={() => setIsEditing(true)}
             title="Edit URL"
           >

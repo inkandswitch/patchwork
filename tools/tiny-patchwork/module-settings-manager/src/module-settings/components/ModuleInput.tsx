@@ -6,9 +6,9 @@ import {
 } from "@automerge/automerge-repo";
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
 import { automergeUrlToServiceWorkerUrl } from "@inkandswitch/patchwork-filesystem";
-import { ViewRaw } from "./view-raw.tsx";
-import { InstallIcon } from "./icons/install-icon.tsx";
-import { ClearIcon } from "./icons/clear-icon.tsx";
+import { ViewRaw } from "./ViewRaw.tsx";
+import { ClearIcon, InstallIcon } from "../icons/index.ts";
+import { MODULE_FETCH_DEBOUNCE } from "../constants.ts";
 
 interface ModuleInputProps {
   isInstalled: (url: AutomergeUrl) => boolean;
@@ -121,7 +121,7 @@ export function ModuleInput(props: ModuleInputProps) {
         } finally {
           setIsLoading(false);
         }
-      }, 300);
+      }, MODULE_FETCH_DEBOUNCE);
     } else {
       setPreview(null);
     }
@@ -149,8 +149,10 @@ export function ModuleInput(props: ModuleInputProps) {
   };
 
   const hasValidation = () =>
-    input().trim() &&
-    (isValid() === false || isLoading() || preview() !== null);
+    Boolean(
+      input().trim() &&
+      (isValid() === false || isLoading() || preview() !== null)
+    );
 
   return (
     <div class="module-settings-module-input">
@@ -262,8 +264,10 @@ export function ModuleInput(props: ModuleInputProps) {
                           preview()?.error !== undefined ||
                           !preview()?.isFolder
                         }
+                        style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}
                       >
-                        Add
+                        <InstallIcon />
+                        <span>Add</span>
                       </button>
                     </Show>
                     <Show when={props.isInstalled(previewUrl()!)}>
@@ -282,8 +286,11 @@ export function ModuleInput(props: ModuleInputProps) {
   );
 }
 
-function isFolderDoc(doc: any): doc is FolderDoc {
-  return (
-    doc && typeof doc === "object" && "docs" in doc && Array.isArray(doc.docs)
+function isFolderDoc(doc: unknown): doc is FolderDoc {
+  return Boolean(
+    doc &&
+    typeof doc === "object" &&
+    "docs" in doc &&
+    Array.isArray((doc as { docs?: unknown }).docs)
   );
 }

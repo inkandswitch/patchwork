@@ -18,7 +18,7 @@ export const plugins = [
             <ModuleSettings
               handle={handle}
               repo={element.repo}
-              element={element}
+              element={element as any}
             />
           ),
           element
