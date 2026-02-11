@@ -66,7 +66,7 @@ export function docHandleToServiceWorkerUrl(handle: DocHandle<any>): string {
   return automergeUrlToServiceWorkerUrl(handle.url);
 }
 
-const loaders: Record<AutomergeUrl, Record<string, string>> = {};
+const loaders: Record<AutomergeUrl, Record<string, string> | false> = {};
 
 export function createFilesystemHandoffHandler(repo: Repo) {
   const handle: HandoffHandler = async (href, request) => {
