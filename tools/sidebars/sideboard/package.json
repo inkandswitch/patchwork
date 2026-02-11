@@ -17,11 +17,6 @@
       "patchwork": "./dist/sideboard/sideboard.js",
       "source": "./src/sideboard/sideboard.tsx"
     },
-    "./tools/module-settings": {
-      "import": "./dist/module-settings/module-settings.js",
-      "patchwork": "./dist/module-settings/module-settings.js",
-      "source": "./src/module-settings/module-settings.tsx"
-    },
     "./styles.css": "./dist/index.css"
   },
   "scripts": {

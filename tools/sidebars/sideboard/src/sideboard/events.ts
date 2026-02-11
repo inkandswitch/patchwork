@@ -8,12 +8,3 @@ export function createOpenEvent(detail: OpenDocumentEventDetail) {
   });
   return openEvent;
 }
-
-export function createOpenEventHandler(detail: OpenDocumentEventDetail) {
-  return function (this: HTMLElement, event: Event) {
-    event.stopPropagation();
-    event.preventDefault();
-    const openEvent = createOpenEvent(detail);
-    this.dispatchEvent(openEvent);
-  };
-}

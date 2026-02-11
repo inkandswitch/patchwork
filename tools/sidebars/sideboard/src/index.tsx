@@ -1,6 +1,5 @@
 import "./index.css";
 import { render } from "solid-js/web";
-import type { ModuleSettingsDoc } from "@inkandswitch/patchwork-filesystem";
 import { type ToolImplementation } from "@inkandswitch/patchwork-plugins";
 import type { TinyPatchworkAccountDoc } from "./types.ts";
 
@@ -31,32 +30,6 @@ export const plugins = [
         return render(
           () => (
             <Sideboard handle={handle} repo={element.repo} element={element} />
-          ),
-          element
-        );
-      };
-    },
-  },
-  {
-    id: "chee/module-settings",
-    type: "patchwork:tool",
-    name: "Module Settings",
-    icon: "Settings",
-    supportedDatatypes: ["patchwork:module-settings", "my-tools"],
-    async load(): Promise<ToolImplementation<ModuleSettingsDoc>> {
-      const { ModuleSettings } = await import(
-        "./module-settings/module-settings.tsx"
-      );
-      const styles = await loadStyles();
-      return function (handle, element) {
-        addStyles(element, styles);
-        return render(
-          () => (
-            <ModuleSettings
-              handle={handle}
-              repo={element.repo}
-              element={element}
-            />
           ),
           element
         );
