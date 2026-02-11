@@ -130,11 +130,11 @@ export function createFilesystemHandoffHandler(repo: Repo) {
         if (!isPackageJsonRequest) {
           const key = maybeAutomergeUrl;
           if (!(key in loaders)) {
-            console.log({ key });
             const pkg = await packageJsonContentsFromFolderDocUrl(key);
-            console.log({ pkg });
+
             const patchworkField = pkg?.["patchwork"];
-            if (!patchworkField) {
+
+            if (!patchworkField?.loaders) {
               loaders[key] = false;
             } else {
               loaders[key] = patchworkField.loaders;
@@ -142,10 +142,21 @@ export function createFilesystemHandoffHandler(repo: Repo) {
           }
 
           if (loaders[key]) {
-            const ext = doc.extension ?? path[path.length - 1].split(".")[0];
-            console.log({ ext });
+            const ext =
+              "." + (doc.extension ?? path[path.length - 1].split(".")[0]);
+
             if (ext in loaders[key]) {
-              const loader = await import(/* @vite-ignore */ loaders[key][ext]);
+              let path = loaders[key][ext];
+              if (path.startsWith(".")) {
+                path = new URL(
+                  path,
+                  new URL(
+                    automergeUrlToServiceWorkerUrl(maybeAutomergeUrl),
+                    location.origin
+                  )
+                ).href;
+              }
+              const loader = await import(/* @vite-ignore */ path);
               const loaded = await loader.default({
                 ...request,
                 url: href,
