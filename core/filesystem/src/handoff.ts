@@ -119,6 +119,7 @@ export function createFilesystemHandoffHandler(repo: Repo) {
 
         let content = doc?.content;
         let mimeType = doc?.mimeType ?? "text/plain";
+        const isPackageJsonRequest = path[0] == "package.json";
 
         if (!content) {
           throw new Error(
@@ -126,30 +127,33 @@ export function createFilesystemHandoffHandler(repo: Repo) {
           );
         }
 
-        const key = maybeAutomergeUrl;
-        if (!(key in loaders)) {
-          console.log({ key });
-          const pkg = await packageJsonContentsFromFolderDocUrl(key);
-          console.log({ pkg });
-          const patchworkField = pkg?.["patchwork"];
-          if (!patchworkField) {
-            loaders[key] = false;
-          } else {
-            loaders[key] = patchworkField.loaders;
+        if (!isPackageJsonRequest) {
+          const key = maybeAutomergeUrl;
+          if (!(key in loaders)) {
+            console.log({ key });
+            const pkg = await packageJsonContentsFromFolderDocUrl(key);
+            console.log({ pkg });
+            const patchworkField = pkg?.["patchwork"];
+            if (!patchworkField) {
+              loaders[key] = false;
+            } else {
+              loaders[key] = patchworkField.loaders;
+            }
           }
-        }
 
-        if (loaders[key]) {
-          const ext = doc.extension ?? path[path.length - 1].split(".")[0];
-          if (ext in loaders[key]) {
-            const loader = await import(/* @vite-ignore */ loaders[key][ext]);
-            const loaded = await loader.default({
-              ...request,
-              url: href,
-              content: content.toString(),
-            });
-            content = loaded.content;
-            mimeType = loaded.contentType ?? "application/javascript";
+          if (loaders[key]) {
+            const ext = doc.extension ?? path[path.length - 1].split(".")[0];
+            console.log({ ext });
+            if (ext in loaders[key]) {
+              const loader = await import(/* @vite-ignore */ loaders[key][ext]);
+              const loaded = await loader.default({
+                ...request,
+                url: href,
+                content: content.toString(),
+              });
+              content = loaded.content;
+              mimeType = loaded.contentType ?? "application/javascript";
+            }
           }
         }
 
