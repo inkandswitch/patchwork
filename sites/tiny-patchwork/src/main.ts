@@ -143,11 +143,13 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
   const { documentId, heads } = parseAutomergeUrl(url);
   params.set("doc", documentId);
   if (heads) params.set("heads", heads?.join("|"));
+  else params.delete("heads");
   if (toolId) params.set("tool", toolId);
+  else params.delete("tool");
   if (title) params.set("title", title);
-  if (type) {
-    params.set("type", type);
-  }
+  else params.delete("title");
+  if (type) params.set("type", type);
+  else params.delete("type");
   window.location.hash = params.toString();
 });
 
