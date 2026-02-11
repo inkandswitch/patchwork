@@ -16,7 +16,7 @@ export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
   return import(/* @vite-ignore */ entryPointUrl);
 }
 
-async function packageJsonContentsFromFolderDocUrl(
+export async function packageJsonContentsFromFolderDocUrl(
   folderDocUrl: AutomergeUrl
 ): Promise<Record<string, any> | undefined> {
   const packageJSONPath = new URL(

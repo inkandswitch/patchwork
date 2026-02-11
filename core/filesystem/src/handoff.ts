@@ -9,6 +9,7 @@ import {
 import type { UnixFileEntry, FolderDoc } from "./types.js";
 import type { HandoffHandler } from "@inkandswitch/patchwork-bootloader/types";
 import debug from "debug";
+import { packageJsonContentsFromFolderDocUrl } from "./packages.js";
 const log = debug("patchwork:filesystem:handoff");
 
 export async function findFileHandleInFolderHandle(
@@ -65,8 +66,10 @@ export function docHandleToServiceWorkerUrl(handle: DocHandle<any>): string {
   return automergeUrlToServiceWorkerUrl(handle.url);
 }
 
+const loaders: Record<AutomergeUrl, Record<string, string>> = {};
+
 export function createFilesystemHandoffHandler(repo: Repo) {
-  const handle: HandoffHandler = async (href, _request) => {
+  const handle: HandoffHandler = async (href, request) => {
     try {
       const [maybeAutomergeUrl, ...path] = href.split("/");
       log(`recieved handoff request for ${href}`);
@@ -112,12 +115,40 @@ export function createFilesystemHandoffHandler(repo: Repo) {
           path.map(decodeURIComponent)
         )) as DocHandle<UnixFileEntry>;
 
-        const content = file?.doc().content;
+        const doc = file?.doc();
+
+        let content = doc?.content;
+        let mimeType = doc?.mimeType ?? "text/plain";
 
         if (!content) {
           throw new Error(
             `file at ${href} (url: ${file?.doc()}, heads: ${file?.heads()}) has no content`
           );
+        }
+
+        const key = maybeAutomergeUrl;
+        if (!(key in loaders)) {
+          const pkg = await packageJsonContentsFromFolderDocUrl(key);
+          const patchworkField = pkg?.["patchwork"];
+          if (!patchworkField) {
+            loaders[key] = false;
+          } else {
+            loaders[key] = patchworkField.loaders;
+          }
+        }
+
+        if (loaders[key]) {
+          const ext = doc.extension ?? path[path.length - 1].split(".")[0];
+          if (ext in loaders[key]) {
+            const loader = await import(loaders[key][ext]);
+            const loaded = await loader.default({
+              ...request,
+              url: href,
+              content: content.toString(),
+            });
+            content = loaded.content;
+            mimeType = loaded.contentType ?? "application/javascript";
+          }
         }
 
         return {
@@ -126,7 +157,7 @@ export function createFilesystemHandoffHandler(repo: Repo) {
               ? (content as Uint8Array<ArrayBuffer>)
               : content.toString(),
           headers: {
-            "content-type": file.doc().mimeType ?? "text/plain",
+            "content-type": mimeType,
           } as Record<string, string>,
         };
       }
