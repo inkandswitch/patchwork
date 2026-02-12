@@ -9,7 +9,7 @@ import {
   getAllRegistries,
   getSupportedToolsForType,
 } from "@inkandswitch/patchwork-plugins";
-import { createEffect, onCleanup, createMemo } from "solid-js";
+import { createEffect, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 
 export type MaybeAccessor<T> = T | (() => T);
@@ -49,7 +49,8 @@ export function useDatatypes(): Plugin<DatatypeDescription>[] {
 export function useFilteredDatatypes(
   filter: (item: DatatypeDescription) => boolean
 ): Plugin<DatatypeDescription>[] {
-  const datatypeRegistry = getRegistry<DatatypeDescription>("patchwork:datatype");
+  const datatypeRegistry =
+    getRegistry<DatatypeDescription>("patchwork:datatype");
   const [plugins, setPlugins] = createStore(datatypeRegistry.filter(filter));
   const dispose = datatypeRegistry.on("changed", () =>
     setPlugins(reconcile(datatypeRegistry.filter(filter)))
@@ -124,4 +125,3 @@ export function useSupportedToolsForType(
 
   return plugins;
 }
-

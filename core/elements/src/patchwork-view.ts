@@ -150,10 +150,6 @@ export function registerPatchworkViewElement(
       ) => {
         const { before, after } = payload.patchInfo;
 
-        //if (this.docUrl && getSuggestedImportUrl(before) != getSuggestedImportUrl(after)) {
-        //  this.moduleWatcher.loadSuggestedImportUrl(this.docUrl);
-        //}
-
         if (getType(before) != getType(after)) {
           this.#teardown().then(() => this.#init());
         }
@@ -221,9 +217,6 @@ export function registerPatchworkViewElement(
           }
         );
 
-        // load the suggested import url for the document in the background
-        // this.moduleWatcher.loadSuggestedImportUrl(this.docUrl)
-
         this.#teardowns.add(() => {
           removeAddedListener();
           removeLoadedListener();
@@ -276,6 +269,13 @@ export function registerPatchworkViewElement(
         this.#fallbackId = getFallbackTool(doc)?.id;
         const fallingBack = !this.toolId;
         const toolId = this.toolId ?? this.#fallbackId;
+
+        if (fallingBack) {
+          console.warn(
+            `falling back to default tool for ${this.#docUrl}. attempting to load suggested import URL`
+          );
+          this.moduleWatcher.loadSuggestedImportUrl(this.docUrl);
+        }
 
         if (!toolId) {
           this.#state = "unable";
