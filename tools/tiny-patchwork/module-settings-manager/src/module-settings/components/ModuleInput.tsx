@@ -156,30 +156,53 @@ export function ModuleInput(props: ModuleInputProps) {
 
   return (
     <div class="module-settings-module-input">
-      <div class="module-settings-module-input__input-container">
-        <InstallIcon class="module-settings-module-input__install-icon" />
-        <input
-          class="module-settings-module-input__field"
-          classList={{
-            "module-input__field--has-validation": hasValidation(),
-          }}
-          type="text"
-          value={input()}
-          onInput={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="automerge:..."
-        />
-        <Show when={input().trim()}>
-          <ClearIcon
-            class="module-settings-module-input__clear-icon"
-            onClick={() => {
-              setInput("");
-              setIsValid(null);
-              setPreview(null);
-              setPreviewUrl(null);
+      <div
+        class="module-settings-module-input__row"
+        style={{ display: "flex", gap: "0.5rem", "align-items": "center" }}
+      >
+        <div
+          class="module-settings-module-input__input-container"
+          style={{ flex: "1", "min-width": "0" }}
+        >
+          <InstallIcon class="module-settings-module-input__install-icon" />
+          <input
+            class="module-settings-module-input__field"
+            classList={{
+              "module-input__field--has-validation": hasValidation(),
             }}
+            type="text"
+            value={input()}
+            onInput={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="automerge:..."
+            autofocus
           />
-        </Show>
+          <Show when={input().trim()}>
+            <ClearIcon
+              class="module-settings-module-input__clear-icon"
+              onClick={() => {
+                setInput("");
+                setIsValid(null);
+                setPreview(null);
+                setPreviewUrl(null);
+              }}
+            />
+          </Show>
+        </div>
+        <button
+          class="module-settings-module-input__add-button"
+          onClick={handleAdd}
+          disabled={!isValid() || !input().trim()}
+          style={{
+            display: "flex",
+            "align-items": "center",
+            gap: "0.5rem",
+            "flex-shrink": "0",
+          }}
+        >
+          <InstallIcon />
+          <span class="module-settings-manager__button-text">Install</span>
+        </button>
       </div>
 
       <Show when={hasValidation()}>

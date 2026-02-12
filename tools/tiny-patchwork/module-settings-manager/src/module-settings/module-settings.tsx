@@ -82,7 +82,6 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
     <div class="module-settings-manager">
       <div class="module-settings-manager__header">
         <label>
-          <h2 class="module-settings-manager__title">Install module</h2>
           <ModuleInput
             onAdd={handleAddModule}
             isInstalled={isModuleInstalled}
