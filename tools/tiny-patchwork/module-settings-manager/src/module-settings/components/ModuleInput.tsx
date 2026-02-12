@@ -192,7 +192,9 @@ export function ModuleInput(props: ModuleInputProps) {
         <button
           class="module-settings-module-input__add-button"
           onClick={handleAdd}
-          disabled={!isValid() || !input().trim()}
+          disabled={
+            !isValid() || !input().trim() || props.isInstalled(previewUrl()!)
+          }
           style={{
             display: "flex",
             "align-items": "center",
@@ -278,27 +280,6 @@ export function ModuleInput(props: ModuleInputProps) {
                       url={previewUrl()!}
                       class="module-settings-module-input__view-raw-button"
                     />
-                    <Show when={!props.isInstalled(previewUrl()!)}>
-                      <button
-                        class="module-settings-module-input__add-button"
-                        onClick={handleAdd}
-                        disabled={
-                          isLoading() ||
-                          preview()?.error !== undefined ||
-                          !preview()?.isFolder
-                        }
-                        style={{
-                          display: "flex",
-                          "align-items": "center",
-                          gap: "0.5rem",
-                        }}
-                      >
-                        <InstallIcon />
-                        <span class="module-settings-manager__button-text">
-                          Add
-                        </span>
-                      </button>
-                    </Show>
                     <Show when={props.isInstalled(previewUrl()!)}>
                       <span class="module-settings-module-input__installed-pill">
                         Installed

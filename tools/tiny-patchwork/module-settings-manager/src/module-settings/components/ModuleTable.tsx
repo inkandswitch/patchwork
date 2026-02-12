@@ -1,4 +1,4 @@
-import { For, Show, createSignal, onMount, onCleanup } from "solid-js";
+import { For, Show } from "solid-js";
 import { type AutomergeUrl } from "@automerge/automerge-repo";
 import { ViewRaw } from "./ViewRaw.tsx";
 import { TrashIcon } from "../icons";
@@ -7,27 +7,20 @@ import type { EnrichedPlugin } from "../hooks/useModulePlugins.ts";
 
 interface ModuleTableProps {
   plugins: EnrichedPlugin[];
-  sortOrder: "name-asc" | "name-desc" | "type-asc" | "type-desc";
-  onToggleSort: (column: "name" | "type") => void;
+  sortOrder:
+    | "name-asc"
+    | "name-desc"
+    | "type-asc"
+    | "type-desc"
+    | "id-asc"
+    | "id-desc";
+  onToggleSort: (column: "name" | "type" | "id") => void;
   onRemoveModule: (url: AutomergeUrl) => void;
 }
 
 export function ModuleTable(props: ModuleTableProps) {
   const [copiedIdText, copyId] = useCopyToClipboard();
   const [copiedUrlText, copyUrl] = useCopyToClipboard();
-  const [isMobile, setIsMobile] = createSignal(window.innerWidth <= 768);
-
-  const handleResize = () => {
-    setIsMobile(window.innerWidth <= 768);
-  };
-
-  onMount(() => {
-    window.addEventListener("resize", handleResize);
-  });
-
-  onCleanup(() => {
-    window.removeEventListener("resize", handleResize);
-  });
 
   return (
     <div class="module-settings-manager__table-container">
@@ -60,13 +53,21 @@ export function ModuleTable(props: ModuleTableProps) {
                   : ""}
               </span>
             </th>
-            <Show when={!isMobile()}>
-              <th>Identifiers</th>
-            </Show>
-            <Show when={isMobile()}>
-              <th>Tool ID</th>
-              <th>URL</th>
-            </Show>
+
+            <th
+              class="module-settings-manager__sortable-header"
+              onClick={() => props.onToggleSort("id")}
+            >
+              Tool ID
+              <span class="module-settings-manager__sort-indicator">
+                {props.sortOrder.startsWith("id")
+                  ? props.sortOrder === "id-asc"
+                    ? " ▲"
+                    : " ▼"
+                  : ""}
+              </span>
+            </th>
+            <th>URL</th>
             <th>Data Types</th>
             <th>Actions</th>
           </tr>
@@ -79,94 +80,59 @@ export function ModuleTable(props: ModuleTableProps) {
                   {plugin.name}
                 </td>
                 <td class="module-settings-manager__table-type">
-                  {plugin.type}
+                  <span
+                    class="module-settings-manager__type-pill"
+                    classList={{
+                      "module-settings-manager__type-pill--datatype":
+                        plugin.type === "patchwork:datatype",
+                      "module-settings-manager__type-pill--tool":
+                        plugin.type === "patchwork:tool",
+                      "module-settings-manager__type-pill--other":
+                        plugin.type !== "patchwork:datatype" &&
+                        plugin.type !== "patchwork:tool",
+                    }}
+                  >
+                    {plugin.type}
+                  </span>
                 </td>
-                <Show when={!isMobile()}>
-                  <td class="module-settings-manager__table-id-url">
-                    <div class="module-settings-manager__id-url-group">
-                      <Show when={plugin.id}>
-                        <div class="module-settings-manager__id-url-row">
-                          <span class="module-settings-manager__id-url-label">
-                            ID:
-                          </span>
-                          <code
-                            class="module-settings-manager__copyable"
-                            classList={{
-                              "module-settings-manager__copyable--copied":
-                                copiedIdText() === plugin.id,
-                            }}
-                            onClick={() => copyId(plugin.id)}
-                            title="Click to copy ID"
-                          >
-                            {copiedIdText() === plugin.id
-                              ? "Copied!"
-                              : plugin.id}
-                          </code>
-                        </div>
-                      </Show>
-                      <Show when={plugin.isValidUrl && plugin.importUrl}>
-                        <div class="module-settings-manager__id-url-row">
-                          <span class="module-settings-manager__id-url-label">
-                            URL:
-                          </span>
-                          <code
-                            class="module-settings-manager__copyable"
-                            classList={{
-                              "module-settings-manager__copyable--copied":
-                                copiedUrlText() === plugin.importUrl,
-                            }}
-                            onClick={() => copyUrl(plugin.importUrl as string)}
-                            title="Click to copy URL"
-                          >
-                            {copiedUrlText() === plugin.importUrl
-                              ? "Copied!"
-                              : plugin.importUrl}
-                          </code>
-                        </div>
-                      </Show>
-                    </div>
-                  </td>
-                </Show>
-                <Show when={isMobile()}>
-                  <td class="module-settings-manager__table-id">
-                    <Show
-                      when={plugin.id}
-                      fallback={<span style={{ opacity: 0.5 }}>—</span>}
+                <td class="module-settings-manager__table-id">
+                  <Show
+                    when={plugin.id}
+                    fallback={<span style={{ opacity: 0.5 }}>—</span>}
+                  >
+                    <code
+                      class="module-settings-manager__copyable"
+                      classList={{
+                        "module-settings-manager__copyable--copied":
+                          copiedIdText() === plugin.id,
+                      }}
+                      onClick={() => copyId(plugin.id)}
+                      title="Click to copy ID"
                     >
-                      <code
-                        class="module-settings-manager__copyable"
-                        classList={{
-                          "module-settings-manager__copyable--copied":
-                            copiedIdText() === plugin.id,
-                        }}
-                        onClick={() => copyId(plugin.id)}
-                        title="Click to copy ID"
-                      >
-                        {copiedIdText() === plugin.id ? "Copied!" : plugin.id}
-                      </code>
-                    </Show>
-                  </td>
-                  <td class="module-settings-manager__table-url">
-                    <Show
-                      when={plugin.isValidUrl && plugin.importUrl}
-                      fallback={<span style={{ opacity: 0.5 }}>—</span>}
+                      {copiedIdText() === plugin.id ? "Copied!" : plugin.id}
+                    </code>
+                  </Show>
+                </td>
+                <td class="module-settings-manager__table-url">
+                  <Show
+                    when={plugin.isValidUrl && plugin.importUrl}
+                    fallback={<span style={{ opacity: 0.5 }}>—</span>}
+                  >
+                    <code
+                      class="module-settings-manager__copyable"
+                      classList={{
+                        "module-settings-manager__copyable--copied":
+                          copiedUrlText() === plugin.importUrl,
+                      }}
+                      onClick={() => copyUrl(plugin.importUrl as string)}
+                      title="Click to copy URL"
                     >
-                      <code
-                        class="module-settings-manager__copyable"
-                        classList={{
-                          "module-settings-manager__copyable--copied":
-                            copiedUrlText() === plugin.importUrl,
-                        }}
-                        onClick={() => copyUrl(plugin.importUrl as string)}
-                        title="Click to copy URL"
-                      >
-                        {copiedUrlText() === plugin.importUrl
-                          ? "Copied!"
-                          : plugin.importUrl}
-                      </code>
-                    </Show>
-                  </td>
-                </Show>
+                      {copiedUrlText() === plugin.importUrl
+                        ? "Copied!"
+                        : plugin.importUrl}
+                    </code>
+                  </Show>
+                </td>
                 <td class="module-settings-manager__table-datatypes">
                   <div class="module-settings-manager__datatypes-pills">
                     <Show
@@ -182,9 +148,9 @@ export function ModuleTable(props: ModuleTableProps) {
                           <span
                             class="module-settings-manager__datatype-pill"
                             classList={{
-                              "module-settings__datatype-pill--any":
+                              "module-settings-manager__datatype-pill--any":
                                 plugin.datatypesDisplay.type === "any",
-                              "module-settings__datatype-pill--none":
+                              "module-settings-manager__datatype-pill--none":
                                 plugin.datatypesDisplay.type === "none",
                             }}
                           >

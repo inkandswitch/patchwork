@@ -30,7 +30,7 @@ export interface DatatypesDisplay {
  * @returns Normalized display object with type and values
  *
  * @example
- * getSupportedDatatypesDisplay("*") // { type: "any", values: ["Any"] }
+ * getSupportedDatatypesDisplay("*") // { type: "any", values: ["any"] }
  * getSupportedDatatypesDisplay(["text", "image"]) // { type: "list", values: ["text", "image"] }
  * getSupportedDatatypesDisplay(undefined) // { type: "empty", values: [] }
  */
@@ -44,17 +44,17 @@ export function getSupportedDatatypesDisplay(
   // Handle string case (typically "*" for all types)
   if (typeof supportedDatatypes === "string") {
     return supportedDatatypes === "*"
-      ? { type: "any", values: ["Any"] }
+      ? { type: "any", values: ["any"] }
       : { type: "list", values: [supportedDatatypes] };
   }
 
   // Handle array case
   if (supportedDatatypes.includes("*")) {
-    return { type: "any", values: ["Any"] };
+    return { type: "any", values: ["any"] };
   }
 
   if (supportedDatatypes.length === 0) {
-    return { type: "none", values: ["None"] };
+    return { type: "none", values: ["none"] };
   }
 
   return { type: "list", values: supportedDatatypes };
@@ -64,12 +64,12 @@ export function getSupportedDatatypesDisplay(
  * Checks if a plugin matches a specific datatype filter.
  *
  * @param plugin - The plugin to check
- * @param filterDataType - The datatype to filter by (e.g., "text", "image", "Any")
+ * @param filterDataType - The datatype to filter by (e.g., "text", "image", "any")
  * @returns true if the plugin supports the filtered datatype
  *
  * @example
  * matchesDatatype(plugin, "text") // true if plugin supports "text"
- * matchesDatatype(plugin, "Any") // true if plugin supports "*"
+ * matchesDatatype(plugin, "any") // true if plugin supports "*"
  */
 export function matchesDatatype(
   plugin: Plugin<PluginDescription>,
@@ -87,7 +87,7 @@ export function matchesDatatype(
     return datatypes.includes(filterDataType);
   }
 
-  if (datatypes === "*" && filterDataType === "Any") {
+  if (datatypes === "*" && filterDataType === "any") {
     return true;
   }
 
@@ -96,13 +96,13 @@ export function matchesDatatype(
 
 /**
  * Extracts all unique datatypes from a list of plugins.
- * Converts "*" wildcard to "Any" for display purposes.
+ * Converts "*" wildcard to "any" for display purposes.
  *
  * @param plugins - Array of plugins to extract datatypes from
  * @returns Sorted array of unique datatype strings
  *
  * @example
- * extractUniqueDatatypes(plugins) // ["Any", "image", "text"]
+ * extractUniqueDatatypes(plugins) // ["any", "image", "text"]
  */
 export function extractUniqueDatatypes(
   plugins: Plugin<PluginDescription>[]
@@ -117,7 +117,7 @@ export function extractUniqueDatatypes(
     if (Array.isArray(datatypes)) {
       datatypes.forEach((dt) => dataTypes.add(dt));
     } else if (datatypes === "*") {
-      dataTypes.add("Any");
+      dataTypes.add("any");
     } else if (datatypes) {
       dataTypes.add(datatypes);
     }
