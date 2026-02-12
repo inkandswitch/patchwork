@@ -6,7 +6,7 @@ export const COPY_FEEDBACK_DURATION = 2000;
 /**
  * Debounce delay (in ms) for module fetch operations
  */
-export const MODULE_FETCH_DEBOUNCE = 300;
+export const MODULE_FETCH_DEBOUNCE = 0;
 
 /**
  * LocalStorage key for storing the account URL

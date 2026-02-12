@@ -35,7 +35,7 @@ export function ModuleFilters(props: ModuleFiltersProps) {
         <input
           type="text"
           class="module-settings-manager__search"
-          placeholder="Search modules..."
+          placeholder="pizza..."
           value={props.searchQuery}
           onInput={(e) => props.onSearchChange(e.currentTarget.value)}
         />

@@ -288,6 +288,7 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0);
   transition: box-shadow 0.2s ease;
   margin-bottom: 0em;
+  border-bottom: 1px solid var(--msm-widget-darken-10);
 }
 
 @media (min-width: 769px) {
@@ -338,9 +339,7 @@
   flex: 1;
   min-width: 0;
   padding: 0.5rem 2.5rem;
-  border: 1px solid var(--msm-widget-darken-15);
-  border-top-width: 0;
-  border-left-width: 0;
+  border: 0;
   background: var(--module-settings-manager-widget-fill);
   font-family: inherit;
   font-size: clamp(0.875rem, 2.5vw, 0.9375rem);
@@ -359,6 +358,8 @@
 .module-settings-manager__filter-select {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--msm-widget-darken-15);
+  border-top-width: 0;
+  border: 0;
   background: var(--module-settings-manager-widget-fill);
   font-family: inherit;
   font-size: clamp(0.875rem, 2.5vw, 0.9375rem);
