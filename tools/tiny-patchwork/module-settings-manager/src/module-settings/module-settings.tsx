@@ -91,7 +91,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
       </div>
 
       <div class="module-settings-manager__content-container">
-        <h2 class="module-settings-manager__title">Modules</h2>
+        <h2 class="module-settings-manager__title">Plugins</h2>
 
         <div class="module-settings-manager__content">
           <ModuleFilters
