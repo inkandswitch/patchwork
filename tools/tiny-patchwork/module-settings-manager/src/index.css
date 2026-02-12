@@ -268,7 +268,7 @@
 
 .module-settings-manager__title {
   font-size: clamp(1rem, 4vw, 1.2rem);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.75rem;
   margin-top: 0;
 }
 
