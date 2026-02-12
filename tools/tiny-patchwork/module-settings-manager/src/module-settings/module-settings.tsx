@@ -4,12 +4,7 @@ import { makeDocumentProjection } from "@automerge/automerge-repo-solid-primitiv
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { ModuleSettingsDoc } from "@inkandswitch/patchwork-filesystem";
 import type { PatchworkToolProps } from "../types.ts";
-import {
-  AccountUrlInput,
-  ModuleFilters,
-  ModuleTable,
-  ModuleInput,
-} from "./components";
+import { ModuleFilters, ModuleTable, ModuleInput } from "./components";
 import { useModulePlugins } from "./hooks/useModulePlugins.ts";
 import { MODULE_FETCH_DEBOUNCE } from "./constants.ts";
 
@@ -78,15 +73,14 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   return (
     <div class="module-settings-manager">
       <div class="module-settings-manager__header">
-        <h1 class="module-settings-manager__title">Modules</h1>
-        <AccountUrlInput />
-
+        <h2 class="module-settings-manager__title">Install module</h2>
         <ModuleInput
           onAdd={handleAddModule}
           isInstalled={isModuleInstalled}
           repo={props.repo}
         />
       </div>
+      <h2 class="module-settings-manager__title">Existing modules</h2>
       <div class="module-settings-manager__content">
         <ModuleFilters
           searchQuery={searchInputValue()}

@@ -167,7 +167,7 @@ export function ModuleInput(props: ModuleInputProps) {
           value={input()}
           onInput={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Install a new module by URL (automerge:...)"
+          placeholder="automerge:..."
         />
         <Show when={input().trim()}>
           <ClearIcon
@@ -264,10 +264,16 @@ export function ModuleInput(props: ModuleInputProps) {
                           preview()?.error !== undefined ||
                           !preview()?.isFolder
                         }
-                        style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}
+                        style={{
+                          display: "flex",
+                          "align-items": "center",
+                          gap: "0.5rem",
+                        }}
                       >
                         <InstallIcon />
-                        <span class="module-settings-manager__button-text">Add</span>
+                        <span class="module-settings-manager__button-text">
+                          Add
+                        </span>
                       </button>
                     </Show>
                     <Show when={props.isInstalled(previewUrl()!)}>

@@ -38,15 +38,51 @@
   );
 
   /* Common widget-fill variations (light mode) */
-  --msm-widget-darken-3: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 3%);
-  --msm-widget-darken-5: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 5%);
-  --msm-widget-darken-8: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 8%);
-  --msm-widget-darken-10: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 10%);
-  --msm-widget-darken-12: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 12%);
-  --msm-widget-darken-15: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 15%);
-  --msm-widget-darken-16: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 16%);
-  --msm-widget-darken-20: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 20%);
-  --msm-widget-darken-30: color-mix(in oklab, var(--module-settings-manager-widget-fill), black 30%);
+  --msm-widget-darken-3: color-mix(
+    in oklab,
+    var(--module-settings-manager-widget-fill),
+    black 3%
+  );
+  --msm-widget-darken-5: color-mix(
+    in oklab,
+    var(--module-settings-manager-widget-fill),
+    black 5%
+  );
+  --msm-widget-darken-8: color-mix(
+    in oklab,
+    var(--module-settings-manager-widget-fill),
+    black 8%
+  );
+  --msm-widget-darken-10: color-mix(
+    in oklab,
+    var(--module-settings-manager-widget-fill),
+    black 10%
+  );
+  --msm-widget-darken-12: color-mix(
+    in oklab,
+    var(--module-settings-manager-widget-fill),
+    black 12%
+  );
+  --msm-widget-darken-15: color-mix(
+    in oklab,
+    var(--module-settings-manager-widget-fill),
+    black 15%
+  );
+  --msm-widget-darken-16: color-mix(
+    in oklab,
+    var(--module-settings-manager-widget-fill),
+    black 16%
+  );
+  --msm-widget-darken-20: color-mix(
+    in oklab,
+    var(--module-settings-manager-widget-fill),
+    black 20%
+  );
+  --msm-widget-darken-30: color-mix(
+    in oklab,
+    var(--module-settings-manager-widget-fill),
+    black 30%
+  );
 
   /* Common color variations (light mode) */
   --msm-blue-light-10: color-mix(in oklab, #3b82f6, white 10%);
@@ -98,7 +134,9 @@
   :root:not([data-theme]) {
     --module-settings-manager-fill: black;
     --module-settings-manager-line: white;
-    --module-settings-manager-widget-fill: var(--module-settings-manager-fill-offset);
+    --module-settings-manager-widget-fill: var(
+      --module-settings-manager-fill-offset
+    );
     --module-settings-manager-create-new-fill: #333;
     --module-settings-manager-create-new-line: #ccc;
     --module-settings-manager-create-new-shadow-color: #111;
@@ -106,15 +144,51 @@
     --module-settings-manager-primary: #0099cc;
 
     /* Common widget-fill variations (dark mode) */
-    --msm-widget-darken-3: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 3%);
-    --msm-widget-darken-5: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 5%);
-    --msm-widget-darken-8: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 8%);
-    --msm-widget-darken-10: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 10%);
-    --msm-widget-darken-12: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 12%);
-    --msm-widget-darken-15: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 15%);
-    --msm-widget-darken-16: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 16%);
-    --msm-widget-darken-20: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 20%);
-    --msm-widget-darken-30: color-mix(in oklab, var(--module-settings-manager-widget-fill), white 30%);
+    --msm-widget-darken-3: color-mix(
+      in oklab,
+      var(--module-settings-manager-widget-fill),
+      white 3%
+    );
+    --msm-widget-darken-5: color-mix(
+      in oklab,
+      var(--module-settings-manager-widget-fill),
+      white 5%
+    );
+    --msm-widget-darken-8: color-mix(
+      in oklab,
+      var(--module-settings-manager-widget-fill),
+      white 8%
+    );
+    --msm-widget-darken-10: color-mix(
+      in oklab,
+      var(--module-settings-manager-widget-fill),
+      white 10%
+    );
+    --msm-widget-darken-12: color-mix(
+      in oklab,
+      var(--module-settings-manager-widget-fill),
+      white 12%
+    );
+    --msm-widget-darken-15: color-mix(
+      in oklab,
+      var(--module-settings-manager-widget-fill),
+      white 15%
+    );
+    --msm-widget-darken-16: color-mix(
+      in oklab,
+      var(--module-settings-manager-widget-fill),
+      white 16%
+    );
+    --msm-widget-darken-20: color-mix(
+      in oklab,
+      var(--module-settings-manager-widget-fill),
+      white 20%
+    );
+    --msm-widget-darken-30: color-mix(
+      in oklab,
+      var(--module-settings-manager-widget-fill),
+      white 30%
+    );
 
     /* Common color variations (dark mode) */
     --msm-blue-light-10: color-mix(in oklab, #3b82f6, black 10%);
@@ -190,239 +264,8 @@
 }
 
 .module-settings-manager__title {
-  margin: 0 0 0.75rem 0;
   font-size: clamp(1rem, 4vw, 1.2rem);
-}
-
-.module-settings-account-url {
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  border: 1px solid var(--msm-widget-darken-15);
-  border-radius: 6px;
-  background: var(--module-settings-manager-widget-fill);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-@media (min-width: 769px) {
-  .module-settings-account-url {
-    padding: 1rem;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .module-settings-account-url {
-    border-color: var(--msm-widget-darken-15);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
-}
-
-.module-settings-account-url__header {
-  margin-bottom: 0.75rem;
-}
-
-.module-settings-account-url__label {
-  margin: 0;
-  font-size: clamp(0.8125rem, 2vw, 0.875rem);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.7;
-}
-
-.module-settings-account-url__input-container,
-.module-settings-account-url__display-container {
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.module-settings-account-url__overlay-buttons {
-  position: absolute;
-  top: 50%;
-  right: 0.5rem;
-  transform: translateY(-50%);
-  display: flex;
-  gap: 0.25rem;
-}
-
-.module-settings-account-url__overlay-button {
-  padding: 0.375rem 0.5rem;
-  border: 1px solid var(--msm-widget-darken-20);
-  border-radius: 4px;
-  background: var(--module-settings-manager-widget-fill);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-
-.module-settings-account-url__overlay-button:hover:not(:disabled) {
-  background: var(--msm-widget-darken-8);
-  border-color: var(--msm-widget-darken-30);
-}
-
-.module-settings-account-url__overlay-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.module-settings-account-url__display-buttons {
-  position: absolute;
-  top: 50%;
-  right: 0.5rem;
-  transform: translateY(-50%);
-  display: flex;
-  gap: 0.25rem;
-}
-
-.module-settings-account-url__expand-button {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .module-settings-account-url__expand-button {
-    display: flex;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .module-settings-account-url__overlay-button {
-    border-color: var(--msm-widget-darken-20);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  }
-
-  .module-settings-account-url__overlay-button:hover:not(:disabled) {
-    background: var(--msm-widget-darken-12);
-    border-color: var(--msm-widget-darken-30);
-  }
-}
-
-.module-settings-account-url__input {
-  width: 100%;
-  max-width: 100%;
-  padding: 0.5rem 3rem 0.5rem 0.75rem;
-  border: 1px solid var(--msm-widget-darken-15);
-  border-radius: 4px;
-  background: var(--module-settings-manager-widget-fill);
-  font-family: "SF Mono", "Monaco", "Menlo", "Consolas", monospace;
-  font-size: 0.8125rem;
-  box-sizing: border-box;
-}
-
-@media (min-width: 769px) {
-  .module-settings-account-url__input {
-    padding: 0.5rem 5rem 0.5rem 0.75rem;
-  }
-}
-
-.module-settings-account-url__input--invalid {
-  border-color: var(--msm-red-light-40);
-}
-
-.module-settings-account-url__input--valid {
-  border-color: var(--msm-green-light-40);
-}
-
-@media (prefers-color-scheme: dark) {
-  .module-settings-account-url__input {
-    border-color: var(--msm-widget-darken-15);
-  }
-
-  .module-settings-account-url__input--invalid {
-    border-color: var(--msm-red-dark-30);
-  }
-
-  .module-settings-account-url__input--valid {
-    border-color: var(--msm-green-dark-30);
-  }
-}
-
-.module-settings-account-url__input:focus {
-  outline: 2px solid var(--module-settings-manager-primary);
-  outline-offset: 1px;
-}
-
-.module-settings-account-url__input::placeholder {
-  opacity: 0.5;
-}
-
-.module-settings-account-url__error {
-  padding: 0.5rem 0.75rem;
-  background: var(--msm-red-light-80);
-  border: 1px solid var(--msm-red-light-60);
-  border-radius: 4px;
-  color: var(--msm-text-error-light);
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  .module-settings-account-url__error {
-    background: var(--msm-red-dark-70);
-    border-color: var(--msm-red-dark-50);
-    color: var(--msm-text-error-dark);
-  }
-}
-
-.module-settings-account-url__display {
-  cursor: pointer;
-  transition: all 0.15s ease;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.module-settings-account-url__display:hover {
-  opacity: 0.8;
-}
-
-.module-settings-account-url__display code {
-  display: block;
-  padding: 0.5rem 3rem 0.5rem 0.75rem;
-  background: var(--msm-widget-darken-5);
-  border: 1px solid transparent;
-  border-radius: 4px;
-  font-size: 0.8125rem;
-  font-family: "SF Mono", "Monaco", "Menlo", "Consolas", monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.module-settings-account-url__display--expanded code {
-  white-space: normal;
-  word-break: break-all;
-  text-overflow: unset;
-  overflow-wrap: break-word;
-}
-
-.module-settings-account-url__display--copied code {
-  border-color: var(--msm-green-light-40);
-  background: var(--msm-green-light-85);
-}
-
-@media (prefers-color-scheme: dark) {
-  .module-settings-account-url__display code {
-    background: var(--msm-widget-darken-8);
-  }
-
-  .module-settings-account-url__display--copied code {
-    border-color: var(--msm-green-dark-20);
-    background: var(--msm-green-dark-70);
-  }
+  margin-bottom: 0.25rem;
 }
 
 .module-settings-manager__content {
@@ -439,18 +282,15 @@
   flex-direction: column;
   gap: 0.5rem;
   align-items: stretch;
-  padding: 0.5rem 0;
-  margin: -0.5rem 0 0.5rem 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0);
   transition: box-shadow 0.2s ease;
+  margin-bottom: 0.25em;
 }
 
 @media (min-width: 769px) {
   .module-settings-manager__filter-bar {
     flex-direction: row;
     gap: 0.75rem;
-    padding: 0.75rem 0;
-    margin: -0.75rem 0 0.75rem 0;
   }
 }
 
@@ -743,8 +583,7 @@
   flex-direction: column;
   gap: 0.75rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid
-    var(--msm-widget-darken-10);
+  border-bottom: 1px solid var(--msm-widget-darken-10);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -868,7 +707,6 @@
   opacity: 0.8;
 }
 
-
 /* Module Table View */
 .module-settings-manager__table-container {
   overflow-x: auto;
@@ -884,13 +722,17 @@
 /* Add scroll hint shadow on mobile */
 @media (max-width: 768px) {
   .module-settings-manager__table-container::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     right: 0;
     bottom: 0;
     width: 40px;
-    background: linear-gradient(to left, var(--module-settings-manager-widget-fill), transparent);
+    background: linear-gradient(
+      to left,
+      var(--module-settings-manager-widget-fill),
+      transparent
+    );
     pointer-events: none;
   }
 }
@@ -1157,7 +999,6 @@
   min-width: 2.5rem;
   flex-shrink: 0;
 }
-
 
 .module-settings-manager__table-datatypes {
   width: 20%;
