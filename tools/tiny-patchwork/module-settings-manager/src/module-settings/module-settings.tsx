@@ -7,6 +7,7 @@ import type { PatchworkToolProps } from "../types.ts";
 import { ModuleFilters, ModuleTable, ModuleInput } from "./components";
 import { useModulePlugins } from "./hooks/useModulePlugins.ts";
 import { MODULE_FETCH_DEBOUNCE } from "./constants.ts";
+import { DebugToggle } from "./components/DebugToggle.tsx";
 
 export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   const [searchInputValue, setSearchInputValue] = createSignal("");
@@ -90,26 +91,32 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
         </label>
       </div>
 
-      <h2 class="module-settings-manager__title">Modules</h2>
+      <div class="module-settings-manager__content-container">
+        <h2 class="module-settings-manager__title">Modules</h2>
 
-      <div class="module-settings-manager__content">
-        <ModuleFilters
-          searchQuery={searchInputValue()}
-          onSearchChange={handleSearchChange}
-          filterPluginType={filterPluginType()}
-          onPluginTypeChange={setFilterPluginType}
-          filterDataType={filterDataType()}
-          onDataTypeChange={setFilterDataType}
-          uniquePluginTypes={uniquePluginTypes()}
-          uniqueDataTypes={uniqueDataTypes()}
-        />
-        <ModuleTable
-          plugins={filteredPlugins()}
-          sortOrder={sortOrder()}
-          onToggleSort={handleToggleSort}
-          onRemoveModule={handleRemoveModule}
-        />
+        <div class="module-settings-manager__content">
+          <ModuleFilters
+            searchQuery={searchInputValue()}
+            onSearchChange={handleSearchChange}
+            filterPluginType={filterPluginType()}
+            onPluginTypeChange={setFilterPluginType}
+            filterDataType={filterDataType()}
+            onDataTypeChange={setFilterDataType}
+            uniquePluginTypes={uniquePluginTypes()}
+            uniqueDataTypes={uniqueDataTypes()}
+          />
+          <ModuleTable
+            plugins={filteredPlugins()}
+            sortOrder={sortOrder()}
+            onToggleSort={handleToggleSort}
+            onRemoveModule={handleRemoveModule}
+          />
+        </div>
       </div>
+
+      <footer class="module-settings-manager__footer">
+        <DebugToggle />
+      </footer>
     </div>
   );
 }

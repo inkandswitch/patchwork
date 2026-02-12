@@ -242,6 +242,9 @@
   background-repeat: repeat;
   width: 100%;
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 @media (min-width: 769px) {
@@ -1205,4 +1208,8 @@
     background: var(--msm-widget-darken-12);
     border-color: var(--msm-widget-darken-16);
   }
+}
+
+.module-settings-manager__footer {
+  margin-top: auto;
 }
