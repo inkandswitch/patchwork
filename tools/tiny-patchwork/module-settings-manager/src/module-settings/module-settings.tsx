@@ -11,9 +11,9 @@ import { MODULE_FETCH_DEBOUNCE } from "./constants.ts";
 export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   const [searchInputValue, setSearchInputValue] = createSignal("");
   const [debouncedSearch, setDebouncedSearch] = createSignal("");
-  const [sortOrder, setSortOrder] = createSignal<"name-asc" | "name-desc">(
-    "name-asc"
-  );
+  const [sortOrder, setSortOrder] = createSignal<
+    "name-asc" | "name-desc" | "type-asc" | "type-desc"
+  >("name-asc");
   const [filterPluginType, setFilterPluginType] = createSignal<string>("");
   const [filterDataType, setFilterDataType] = createSignal<string>("");
   const doc = makeDocumentProjection(props.handle);
@@ -62,8 +62,15 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
     });
   };
 
-  const handleToggleSort = () => {
-    setSortOrder(sortOrder() === "name-asc" ? "name-desc" : "name-asc");
+  const handleToggleSort = (column: "name" | "type") => {
+    const current = sortOrder();
+    if (current.startsWith(column)) {
+      setSortOrder(
+        current.endsWith("-asc") ? `${column}-desc` : `${column}-asc`
+      );
+    } else {
+      setSortOrder(`${column}-asc`);
+    }
   };
 
   const isModuleInstalled = (url: AutomergeUrl) => {
@@ -73,14 +80,18 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   return (
     <div class="module-settings-manager">
       <div class="module-settings-manager__header">
-        <h2 class="module-settings-manager__title">Install module</h2>
-        <ModuleInput
-          onAdd={handleAddModule}
-          isInstalled={isModuleInstalled}
-          repo={props.repo}
-        />
+        <label>
+          <h2 class="module-settings-manager__title">Install module</h2>
+          <ModuleInput
+            onAdd={handleAddModule}
+            isInstalled={isModuleInstalled}
+            repo={props.repo}
+          />
+        </label>
       </div>
-      <h2 class="module-settings-manager__title">Existing modules</h2>
+
+      <h2 class="module-settings-manager__title">Modules</h2>
+
       <div class="module-settings-manager__content">
         <ModuleFilters
           searchQuery={searchInputValue()}

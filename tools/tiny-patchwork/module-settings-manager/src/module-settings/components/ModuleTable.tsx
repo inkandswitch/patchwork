@@ -7,8 +7,8 @@ import type { EnrichedPlugin } from "../hooks/useModulePlugins.ts";
 
 interface ModuleTableProps {
   plugins: EnrichedPlugin[];
-  sortOrder: "name-asc" | "name-desc";
-  onToggleSort: () => void;
+  sortOrder: "name-asc" | "name-desc" | "type-asc" | "type-desc";
+  onToggleSort: (column: "name" | "type") => void;
   onRemoveModule: (url: AutomergeUrl) => void;
 }
 
@@ -36,14 +36,30 @@ export function ModuleTable(props: ModuleTableProps) {
           <tr>
             <th
               class="module-settings-manager__sortable-header"
-              onClick={props.onToggleSort}
+              onClick={() => props.onToggleSort("name")}
             >
               Name
               <span class="module-settings-manager__sort-indicator">
-                {props.sortOrder === "name-asc" ? " ▲" : " ▼"}
+                {props.sortOrder.startsWith("name")
+                  ? props.sortOrder === "name-asc"
+                    ? " ▲"
+                    : " ▼"
+                  : ""}
               </span>
             </th>
-            <th>Plugin Type</th>
+            <th
+              class="module-settings-manager__sortable-header"
+              onClick={() => props.onToggleSort("type")}
+            >
+              Plugin Type
+              <span class="module-settings-manager__sort-indicator">
+                {props.sortOrder.startsWith("type")
+                  ? props.sortOrder === "type-asc"
+                    ? " ▲"
+                    : " ▼"
+                  : ""}
+              </span>
+            </th>
             <Show when={!isMobile()}>
               <th>Identifiers</th>
             </Show>
@@ -82,7 +98,9 @@ export function ModuleTable(props: ModuleTableProps) {
                             onClick={() => copyId(plugin.id)}
                             title="Click to copy ID"
                           >
-                            {copiedIdText() === plugin.id ? "Copied!" : plugin.id}
+                            {copiedIdText() === plugin.id
+                              ? "Copied!"
+                              : plugin.id}
                           </code>
                         </div>
                       </Show>
@@ -111,7 +129,10 @@ export function ModuleTable(props: ModuleTableProps) {
                 </Show>
                 <Show when={isMobile()}>
                   <td class="module-settings-manager__table-id">
-                    <Show when={plugin.id} fallback={<span style={{ opacity: 0.5 }}>—</span>}>
+                    <Show
+                      when={plugin.id}
+                      fallback={<span style={{ opacity: 0.5 }}>—</span>}
+                    >
                       <code
                         class="module-settings-manager__copyable"
                         classList={{
@@ -126,7 +147,10 @@ export function ModuleTable(props: ModuleTableProps) {
                     </Show>
                   </td>
                   <td class="module-settings-manager__table-url">
-                    <Show when={plugin.isValidUrl && plugin.importUrl} fallback={<span style={{ opacity: 0.5 }}>—</span>}>
+                    <Show
+                      when={plugin.isValidUrl && plugin.importUrl}
+                      fallback={<span style={{ opacity: 0.5 }}>—</span>}
+                    >
                       <code
                         class="module-settings-manager__copyable"
                         classList={{
@@ -185,10 +209,16 @@ export function ModuleTable(props: ModuleTableProps) {
                         props.onRemoveModule(plugin.importUrl as AutomergeUrl)
                       }
                       title="Uninstall"
-                      style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}
+                      style={{
+                        display: "flex",
+                        "align-items": "center",
+                        gap: "0.5rem",
+                      }}
                     >
                       <TrashIcon />
-                      <span class="module-settings-manager__button-text">Uninstall</span>
+                      <span class="module-settings-manager__button-text">
+                        Uninstall
+                      </span>
                     </button>
                   </div>
                 </td>

@@ -237,7 +237,7 @@
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0.75rem;
+  padding: 0.25rem;
   box-sizing: border-box;
   background-repeat: repeat;
   width: 100%;
@@ -266,6 +266,7 @@
 .module-settings-manager__title {
   font-size: clamp(1rem, 4vw, 1.2rem);
   margin-bottom: 0.25rem;
+  margin-top: 0;
 }
 
 .module-settings-manager__content {
@@ -275,6 +276,8 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  border: 1px solid var(--msm-widget-darken-10);
+  border-radius: 0.25rem;
 }
 
 .module-settings-manager__filter-bar {
@@ -284,7 +287,7 @@
   align-items: stretch;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0);
   transition: box-shadow 0.2s ease;
-  margin-bottom: 0.25em;
+  margin-bottom: 0em;
 }
 
 @media (min-width: 769px) {
@@ -336,7 +339,8 @@
   min-width: 0;
   padding: 0.5rem 2.5rem;
   border: 1px solid var(--msm-widget-darken-15);
-  border-radius: 4px;
+  border-top-width: 0;
+  border-left-width: 0;
   background: var(--module-settings-manager-widget-fill);
   font-family: inherit;
   font-size: clamp(0.875rem, 2.5vw, 0.9375rem);
@@ -355,7 +359,6 @@
 .module-settings-manager__filter-select {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--msm-widget-darken-15);
-  border-radius: 4px;
   background: var(--module-settings-manager-widget-fill);
   font-family: inherit;
   font-size: clamp(0.875rem, 2.5vw, 0.9375rem);
@@ -710,7 +713,6 @@
 /* Module Table View */
 .module-settings-manager__table-container {
   overflow-x: auto;
-  border: 1px solid var(--msm-widget-darken-15);
   border-radius: 6px;
   background: var(--module-settings-manager-widget-fill);
   position: relative;
@@ -749,18 +751,6 @@
   font-size: clamp(0.8125rem, 2vw, 0.875rem);
 }
 
-.module-settings-manager__table thead {
-  background: var(--msm-widget-darken-5);
-  border-bottom: 2px solid var(--msm-widget-darken-15);
-}
-
-@media (prefers-color-scheme: dark) {
-  .module-settings-manager__table thead {
-    background: var(--msm-widget-darken-5);
-    border-bottom-color: var(--msm-widget-darken-15);
-  }
-}
-
 .module-settings-manager__table th {
   text-align: left;
   padding: 0.75rem 1rem;
@@ -782,6 +772,7 @@
   cursor: pointer;
   user-select: none;
   transition: opacity 0.15s ease;
+  margin-bottom: 2rem;
 }
 
 .module-settings-manager__sortable-header:hover {
@@ -802,22 +793,6 @@
 @media (max-width: 1024px) and (min-width: 769px) {
   .module-settings-manager__table td {
     padding: 0.625rem 0.75rem;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .module-settings-manager__table td {
-    border-top-color: var(--msm-widget-darken-10);
-  }
-}
-
-.module-settings-manager__table tbody tr:hover {
-  background: var(--msm-widget-darken-3);
-}
-
-@media (prefers-color-scheme: dark) {
-  .module-settings-manager__table tbody tr:hover {
-    background: var(--msm-widget-darken-8);
   }
 }
 

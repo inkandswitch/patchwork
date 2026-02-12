@@ -20,7 +20,7 @@ interface UseModulePluginsParams {
   searchQuery: Accessor<string>;
   filterPluginType: Accessor<string>;
   filterDataType: Accessor<string>;
-  sortOrder: Accessor<"name-asc" | "name-desc">;
+  sortOrder: Accessor<"name-asc" | "name-desc" | "type-asc" | "type-desc">;
 }
 
 export type EnrichedPlugin = Plugin<PluginDescription> & {
@@ -66,9 +66,16 @@ export function useModulePlugins(params: UseModulePluginsParams) {
     const plugins = allPlugins();
     if (!plugins) return [];
 
+    const order = sortOrder();
     return [...plugins].sort((a, b) => {
+      if (order === "type-asc" || order === "type-desc") {
+        const typeCompare = a.type.localeCompare(b.type);
+        if (typeCompare !== 0)
+          return order === "type-asc" ? typeCompare : -typeCompare;
+        return a.name.localeCompare(b.name);
+      }
       const nameCompare = a.name.localeCompare(b.name);
-      return sortOrder() === "name-asc" ? nameCompare : -nameCompare;
+      return order === "name-asc" ? nameCompare : -nameCompare;
     });
   });
 

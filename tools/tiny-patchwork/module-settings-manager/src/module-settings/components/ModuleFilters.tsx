@@ -51,7 +51,9 @@ export function ModuleFilters(props: ModuleFiltersProps) {
         value={props.filterPluginType}
         onChange={(e) => props.onPluginTypeChange(e.currentTarget.value)}
       >
-        <option value="">{isMobile() ? "Plugin Type" : "All Plugin Types"}</option>
+        <option value="">
+          {isMobile() ? "Plugin Type" : "All Plugin Types"}
+        </option>
         <For each={props.uniquePluginTypes}>
           {(type) => <option value={type}>{type}</option>}
         </For>
@@ -66,7 +68,6 @@ export function ModuleFilters(props: ModuleFiltersProps) {
           {(dataType) => <option value={dataType}>{dataType}</option>}
         </For>
       </select>
-      <DebugToggle />
     </div>
   );
 }
