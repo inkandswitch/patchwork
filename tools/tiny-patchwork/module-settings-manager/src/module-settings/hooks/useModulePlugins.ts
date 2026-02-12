@@ -20,7 +20,7 @@ interface UseModulePluginsParams {
   searchQuery: Accessor<string>;
   filterPluginType: Accessor<string>;
   filterDataType: Accessor<string>;
-  sortOrder: Accessor<"name-asc" | "name-desc" | "type-asc" | "type-desc">;
+  sortOrder: Accessor<"name-asc" | "name-desc" | "type-asc" | "type-desc" | "id-asc" | "id-desc">;
 }
 
 export type EnrichedPlugin = Plugin<PluginDescription> & {
@@ -72,6 +72,14 @@ export function useModulePlugins(params: UseModulePluginsParams) {
         const typeCompare = a.type.localeCompare(b.type);
         if (typeCompare !== 0)
           return order === "type-asc" ? typeCompare : -typeCompare;
+        return a.name.localeCompare(b.name);
+      }
+      if (order === "id-asc" || order === "id-desc") {
+        const aId = a.id || "";
+        const bId = b.id || "";
+        const idCompare = aId.localeCompare(bId);
+        if (idCompare !== 0)
+          return order === "id-asc" ? idCompare : -idCompare;
         return a.name.localeCompare(b.name);
       }
       const nameCompare = a.name.localeCompare(b.name);

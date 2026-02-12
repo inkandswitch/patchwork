@@ -100,6 +100,8 @@
   --msm-green-light-85: color-mix(in oklab, #22c55e, white 85%);
   --msm-green-dark-20: color-mix(in oklab, #22c55e, black 20%);
   --msm-green-dark-30: color-mix(in oklab, #22c55e, black 30%);
+  --msm-green-dark-40: color-mix(in oklab, #22c55e, black 40%);
+  --msm-green-dark-50: color-mix(in oklab, #22c55e, black 50%);
   --msm-green-dark-70: color-mix(in oklab, #22c55e, black 70%);
 
   --msm-red-light-20: color-mix(in oklab, #ef4444, white 20%);
@@ -119,6 +121,12 @@
   --msm-yellow-dark-50: color-mix(in oklab, #eab308, black 50%);
   --msm-yellow-dark-60: color-mix(in oklab, #eab308, black 60%);
 
+
+  --msm-pink-light-50: color-mix(in oklab, #ff009d, white 50%);
+  --msm-pink-light-70: color-mix(in oklab, #ff009d, white 70%);
+  --msm-pink-dark-40: color-mix(in oklab, #ff009d, black 40%);
+  --msm-pink-dark-50: color-mix(in oklab, #ff009d, black 50%);
+
   /* Semantic colors */
   --msm-text-error-light: #991b1b;
   --msm-text-error-dark: #fca5a5;
@@ -128,6 +136,8 @@
   --msm-text-blue-dark: #93c5fd;
   --msm-text-green-light: #166534;
   --msm-text-green-dark: #86efac;
+  --msm-text-pink-light: #ff009d;
+  --msm-text-pink-dark: #fc80cd;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -244,12 +254,13 @@
   max-width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 0.5rem;
 }
 
 @media (min-width: 769px) {
   .module-settings-manager {
     padding: 1rem;
+    gap: 2rem;
   }
 }
 
@@ -633,7 +644,7 @@
 
 .module-settings-module-input__plugin-pill {
   display: inline-block;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 1rem;
   background: var(--msm-blue-light-40);
   border: 1px solid var(--msm-blue-light-20);
   border-radius: 3px;
@@ -654,7 +665,7 @@
   display: inline-flex;
   align-items: center;
   font-size: 0.875rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 1rem;
   background: var(--msm-blue-light-40);
   border: 1px solid var(--msm-blue-light-20);
   border-radius: 3px;
@@ -857,7 +868,6 @@
 
   .module-settings-manager__table th {
     text-align: left;
-    width: 120px;
     min-height: 4rem;
     height: 4rem;
     display: flex;
@@ -867,8 +877,6 @@
   }
 
   .module-settings-manager__table td {
-    min-width: 200px;
-    max-width: 300px;
     min-height: 4rem;
     height: 4rem;
     padding: 0.75rem 1rem;
@@ -876,11 +884,6 @@
     display: flex;
     align-items: center;
     overflow: visible;
-  }
-
-  /* Ensure table-actions cell is wide enough for buttons */
-  .module-settings-manager__table-actions {
-    min-width: 250px;
   }
 
   .module-settings-manager__table thead tr th:last-child,
@@ -915,78 +918,68 @@
     min-width: 0;
   }
 
-  /* Ensure table name and type use full cell width */
-  .module-settings-manager__table-name,
-  .module-settings-manager__table-type {
-    width: auto;
-  }
-
   .module-settings-manager__sortable-header {
     cursor: default;
-  }
-
-  /* Mobile-specific styles for Tool ID and URL cells */
-  .module-settings-manager__table-id,
-  .module-settings-manager__table-url {
-    min-width: 200px;
-    max-width: 300px;
+    margin-bottom: unset !important;
   }
 }
 
 .module-settings-manager__table-name {
   font-weight: 500;
-  width: 25%;
-  min-width: 150px;
 }
 
-@media (max-width: 1024px) {
-  .module-settings-manager__table-name {
-    width: auto;
-  }
-}
 
-.module-settings-manager__table-id-url {
-  width: 280px;
-  max-width: 280px;
-}
-
-@media (max-width: 1024px) {
-  .module-settings-manager__table-id-url {
-    width: auto;
-    min-width: 200px;
-    max-width: 280px;
-  }
-}
-
-.module-settings-manager__id-url-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.module-settings-manager__id-url-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.module-settings-manager__id-url-label {
-  font-weight: 600;
+.module-settings-manager__type-pill {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: var(--msm-widget-darken-5);
+  border: 1px solid var(--msm-widget-darken-15);
+  border-radius: 4px;
   font-size: 0.75rem;
-  text-transform: uppercase;
-  opacity: 0.6;
-  min-width: 2.5rem;
-  flex-shrink: 0;
+  line-height: 1;
+  font-family: "SF Mono", "Monaco", "Menlo", "Consolas", monospace;
 }
 
-.module-settings-manager__table-datatypes {
-  width: 20%;
-  min-width: 120px;
+.module-settings-manager__type-pill--datatype {
+  background: var(--msm-blue-light-70);
+  border-color: var(--msm-blue-light-50);
+  color: var(--msm-text-blue-light);
 }
 
-@media (max-width: 1024px) {
-  .module-settings-manager__table-datatypes {
-    width: auto;
+.module-settings-manager__type-pill--tool {
+  background: var(--msm-green-light-85);
+  border-color: var(--msm-green-light-40);
+  color: var(--msm-text-green-light);
+}
+
+.module-settings-manager__type-pill--other {
+  background: var(--msm-pink-light-70);
+  border-color: var(--msm-pink-light-50);
+  color: var(--msm-text-pink-light);
+}
+
+@media (prefers-color-scheme: dark) {
+  .module-settings-manager__type-pill {
+    background: var(--msm-widget-darken-8);
+    border-color: var(--msm-widget-darken-20);
+  }
+
+  .module-settings-manager__type-pill--datatype {
+    background: var(--msm-blue-dark-50);
+    border-color: var(--msm-blue-dark-40);
+    color: var(--msm-text-blue-dark);
+  }
+
+  .module-settings-manager__type-pill--tool {
+    background: var(--msm-green-dark-50);
+    border-color: var(--msm-green-dark-40);
+    color: var(--msm-text-green-dark);
+  }
+
+  .module-settings-manager__type-pill--other {
+    background: var(--msm-pink-dark-50);
+    border-color: var(--msm-pink-dark-40);
+    color: var(--msm-text-pink-dark);
   }
 }
 
@@ -1106,7 +1099,7 @@
 .module-settings-manager__remove-btn,
 .module-settings-manager__view-raw-button,
 .module-settings-module-input__view-raw-button {
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   min-width: 2rem;
   min-height: 2rem;
   border-radius: 6px;

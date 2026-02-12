@@ -13,7 +13,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   const [searchInputValue, setSearchInputValue] = createSignal("");
   const [debouncedSearch, setDebouncedSearch] = createSignal("");
   const [sortOrder, setSortOrder] = createSignal<
-    "name-asc" | "name-desc" | "type-asc" | "type-desc"
+    "name-asc" | "name-desc" | "type-asc" | "type-desc" | "id-asc" | "id-desc"
   >("name-asc");
   const [filterPluginType, setFilterPluginType] = createSignal<string>("");
   const [filterDataType, setFilterDataType] = createSignal<string>("");
@@ -63,7 +63,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
     });
   };
 
-  const handleToggleSort = (column: "name" | "type") => {
+  const handleToggleSort = (column: "name" | "type" | "id") => {
     const current = sortOrder();
     if (current.startsWith(column)) {
       setSortOrder(
