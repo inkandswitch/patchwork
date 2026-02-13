@@ -1,2 +1,7 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+/* Hide timeline line on last item in each date group */
+.last-timeline-item .timeline-line {
+  display: none;
+}

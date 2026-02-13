@@ -1,53 +1,55 @@
-import { useDocuments } from "@automerge/automerge-repo-react-hooks";
 import {
   decodeHeads,
   parseAutomergeUrl,
   encodeHeads,
+  AutomergeUrl,
+  Repo,
 } from "@automerge/automerge-repo/slim";
 import { AnnotationSet } from "@inkandswitch/annotations";
-import {
-  annotations,
-  annotations as globalAnnotations,
-} from "@inkandswitch/annotations-context";
+import { annotations } from "@inkandswitch/annotations-context";
 import {
   diffAnnotationsOfDoc,
   ViewHeads,
 } from "@inkandswitch/annotations-diff";
 import { $selectedRefs } from "@inkandswitch/annotations-selection";
-import { useSubscribe } from "@inkandswitch/subscribables-react";
-import { useEffect, useMemo, useState } from "react";
+import { useSubscribe } from "@inkandswitch/subscribables-solid";
+import { createSignal, createEffect, onCleanup } from "solid-js";
+import { useDocuments } from "./hooks/useDocuments";
 import "./styles.css";
 
-export const HighlightChangesOption = () => {
+const PATCHWORK_HIGHLIGHT_CHANGES = "PATCHWORK_HIGHLIGHT_CHANGES";
+
+export function HighlightChangesOption(props: { repo: Repo }) {
   const selectedRefs = useSubscribe($selectedRefs);
   const viewHeadAnnotations = useSubscribe(annotations.ofType(ViewHeads));
-  const selectedDocs = useDocuments(
-    useMemo(() => selectedRefs.map((ref) => ref.docHandle.url), [selectedRefs])
+  const [selectedDocsMap] = useDocuments(
+    () => selectedRefs().map((ref) => ref.docHandle.url as AutomergeUrl),
+    props.repo
   );
-  const [highlightChanges, setHighlightChanges] = useState(true);
+  const [highlightChanges, setHighlightChanges] = createSignal(
+    localStorage.getItem(PATCHWORK_HIGHLIGHT_CHANGES) !== "false"
+  );
 
   // Local annotation set for diff highlights
-  const diffAnnotations = useMemo(() => new AnnotationSet(), []);
+  const diffAnnotations = new AnnotationSet();
 
   // Register/unregister with global annotations
-  useEffect(() => {
-    globalAnnotations.add(diffAnnotations);
-    return () => {
-      globalAnnotations.remove(diffAnnotations);
-    };
-  }, [diffAnnotations]);
+  annotations.add(diffAnnotations);
+  onCleanup(() => {
+    annotations.remove(diffAnnotations);
+  });
 
   // Compute and publish diffs when on a branch with highlight changes enabled
-  useEffect(() => {
+  createEffect(() => {
     // We need to rerun the diffs when the selected docs change
-    void selectedDocs;
+    void selectedDocsMap();
 
     // Collect all diff sets first (outside of change block)
     const diffSets: AnnotationSet[] = [];
 
-    if (highlightChanges) {
-      for (const ref of selectedRefs) {
-        const viewHeads = viewHeadAnnotations.lookup(ref);
+    if (highlightChanges()) {
+      for (const ref of selectedRefs()) {
+        const viewHeads = viewHeadAnnotations().lookup(ref);
         let beforeHeads = viewHeads?.beforeHeads;
         const afterHeads = viewHeads?.afterHeads;
 
@@ -79,25 +81,21 @@ export const HighlightChangesOption = () => {
         diffAnnotations.add(diffSet);
       }
     });
-  }, [
-    highlightChanges,
-    selectedRefs,
-    selectedDocs,
-    diffAnnotations,
-    viewHeadAnnotations,
-  ]);
+  });
 
   return (
-    <label className="label text-sm flex items-center h-full min-w-0 w-fit">
+    <label class="label text-sm flex items-center h-full min-w-0 w-fit">
       <input
         type="checkbox"
-        className="checkbox checkbox-sm"
-        checked={highlightChanges}
+        class="checkbox checkbox-sm"
+        checked={highlightChanges()}
         onChange={(e) => {
-          setHighlightChanges(e.target.checked);
+          const checked = e.currentTarget.checked;
+          setHighlightChanges(checked);
+          localStorage.setItem(PATCHWORK_HIGHLIGHT_CHANGES, String(checked));
         }}
       />
       Highlight changes
     </label>
   );
-};
+}

@@ -6,6 +6,7 @@ export type HasPatchworkMetadata<Type extends string = string> = {
     suggestedImportUrl?: string;
     copies?: AutomergeUrl[];
     copyOf?: AutomergeUrl;
+    history?: AutomergeUrl;
   };
 };
 
