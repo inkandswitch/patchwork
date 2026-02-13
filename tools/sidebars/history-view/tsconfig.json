@@ -9,7 +9,8 @@
     "strict": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "jsx": "react-jsx"
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js"
   },
   "include": ["src"]
 }
