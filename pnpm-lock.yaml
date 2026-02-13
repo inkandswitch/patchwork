@@ -1440,8 +1440,8 @@ importers:
         specifier: workspace:^
         version: link:../../../core/plugins
       '@tldraw/tldraw':
-        specifier: 4.3.0
-        version: 4.3.0(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 4.3.1
+        version: 4.3.1(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/lodash':
         specifier: ^4.17.20
         version: 4.17.20
@@ -1455,8 +1455,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       tldraw:
-        specifier: ^4.3.0
-        version: 4.3.0(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^4.3.1
+        version: 4.3.1(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       vite-plugin-wasm:
         specifier: ^3.5.0
         version: 3.5.0(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
@@ -5532,8 +5532,8 @@ packages:
       react: ^18.2.0 || ^19.0.0
       react-dom: ^18.2.0 || ^19.0.0
 
-  '@tldraw/editor@4.3.0':
-    resolution: {integrity: sha512-9I9lh6QFfREfL5CDNQ5dlaAL16JCJSLxxhAIkPsw5zRFgLWptpm79nIBgF5C1LaFVfbkIRIz95BUDD1GfpL9Jg==}
+  '@tldraw/editor@4.3.1':
+    resolution: {integrity: sha512-7qEhQjRAXrzBVMRQad6APCWOHWuid3LHozUHJ3lPBj9ua/5KG1g4ZE6uEluNTU7mx5o8TBrYdDEpgv5FpHWUaA==}
     peerDependencies:
       react: ^18.2.0 || ^19.2.1
       react-dom: ^18.2.0 || ^19.2.1
@@ -5544,8 +5544,8 @@ packages:
       react: ^18.2.0 || ^19.0.0
       react-dom: ^18.2.0 || ^19.0.0
 
-  '@tldraw/state-react@4.3.0':
-    resolution: {integrity: sha512-hEqNopiqRBUs3ts6WHdUQbW3vP+IBTq4z4auBJ+833bEi578yujyL+wE1ff1QbRP4NAz/rOpAbTZLlI8KCNosQ==}
+  '@tldraw/state-react@4.3.1':
+    resolution: {integrity: sha512-rXddhMhWPP5LhzgrOMe0Na1N7Pbyv7lJqynL8Idv5HEp8xIXnFT0Qlu8LhhiJ3hyWji52O0dkoAPqJ/AZYb8PA==}
     peerDependencies:
       react: ^18.2.0 || ^19.2.1
       react-dom: ^18.2.0 || ^19.2.1
@@ -5558,8 +5558,8 @@ packages:
   '@tldraw/state@4.1.1':
     resolution: {integrity: sha512-QdRn97oFHolU0Iw1OKdxiqR4TjQE6d7OJcWE130m5HTcFhsUNGzvz0djisfVrqL4Gs74/YLt3gLFHGxfk4gx/A==}
 
-  '@tldraw/state@4.3.0':
-    resolution: {integrity: sha512-FswKKodNrbL2c1OoxEuOnuq/B7A6Oy/0Mns9IscoEvbK3eWuxGPHXpR9L5wQZepXgKIM1nn5FtPDuVB6+NYwyA==}
+  '@tldraw/state@4.3.1':
+    resolution: {integrity: sha512-5VtARGQ36cH/T9jMbQV93XDfpPH+WXPoLzZ11O3GHB2M8JQwE0Qoc88K7OZD4rlqe/TbkvbTWo/n1V8tfB3ODQ==}
 
   '@tldraw/store@2.0.0-alpha.17':
     resolution: {integrity: sha512-eIQwQc4ZiaDImE+ZYsnMCgR/olE5Ayn8E8zPU9+tzVQi4j9co2Gzhmlamx69J3jtf9suzzp2HJG48fhCkoAFTA==}
@@ -5569,8 +5569,8 @@ packages:
     peerDependencies:
       react: ^18.2.0 || ^19.0.0
 
-  '@tldraw/store@4.3.0':
-    resolution: {integrity: sha512-pIMdaQqdGCq/IcywSOEleQ4ngsYAQg0IKXAiD4GzHbNS9B2y4K0P6zZJQ72DWc+4I9MS47cgqHVkIEPjmAw2iw==}
+  '@tldraw/store@4.3.1':
+    resolution: {integrity: sha512-ytw3MGEe2+nC7CFRD5llCdgVi9W3TiTRNqdyqeEgzBXKTjpD81P3UPC5KJi2kXyhe1t6HWWV3Ld4gfPUICuNFg==}
     peerDependencies:
       react: ^18.2.0 || ^19.2.1
 
@@ -5580,8 +5580,8 @@ packages:
       react: ^18
       react-dom: ^18
 
-  '@tldraw/tldraw@4.3.0':
-    resolution: {integrity: sha512-S+6c57muc2KilI5JqZc1YzA2nhVbYWn3sBq6AIrjbPwKiCSN5sLBlJgqoo4OvnrXtLE9lMM+OPmdTHb+CKLS5Q==}
+  '@tldraw/tldraw@4.3.1':
+    resolution: {integrity: sha512-2AknMcaAWhaEjNSbXmKaLVXOUfpTm9xnc0i3bLAjAMlzJNuS9VgIge1Nh2iBQMEPJfKPfpBaWyhlcgV3MhWyyA==}
     peerDependencies:
       react: ^18.2.0 || ^19.2.1
       react-dom: ^18.2.0 || ^19.2.1
@@ -5595,8 +5595,8 @@ packages:
       react: ^18.2.0 || ^19.0.0
       react-dom: ^18.2.0 || ^19.0.0
 
-  '@tldraw/tlschema@4.3.0':
-    resolution: {integrity: sha512-kNy87A6za2ZB9C0wnTu7/7ThGTquTRXtsD2lZpSQ4zLApTF2hGmRpQV9egf2GgiSQk/mh6pvWuxd5ENYJTS6NQ==}
+  '@tldraw/tlschema@4.3.1':
+    resolution: {integrity: sha512-+PDQsFkAdEd4BMyB5AGLZVECHQhXUyKLV08ihkZvMjsuTn2WfOrJvANHGkHhJ7XwGiyNj+ROhNaGmWnKPxOoXQ==}
     peerDependencies:
       react: ^18.2.0 || ^19.2.1
       react-dom: ^18.2.0 || ^19.2.1
@@ -5607,8 +5607,8 @@ packages:
   '@tldraw/utils@4.1.1':
     resolution: {integrity: sha512-qIrnuzHKzpX0Q/cxpAlXRW1tScfa6/G8xLsJMiNt84rgXhe8/lDJRh0ZNAf2wGmzUdHeMtPOigUmPihkrvizug==}
 
-  '@tldraw/utils@4.3.0':
-    resolution: {integrity: sha512-4vHew73741ITHTyLJjcKIkBZvnMkPFwGMQLten6gOgBrdC0DSp4kNfZ8VO5XwLS2ElBDswzq+xL4aV9gkO/x+A==}
+  '@tldraw/utils@4.3.1':
+    resolution: {integrity: sha512-6Low8mIRzupdkNooPboZyBJ3lnJGcKHTMk5ZdNAOu+aL3ffnoP/+rstNoH5k4kFdyv+ScBSRZ8Oj97nHPwc2CQ==}
 
   '@tldraw/validate@2.0.0-alpha.17':
     resolution: {integrity: sha512-FRkw3yIFR6ioQAYWklzuM/ScTFEBFy+iZLMIUs4Cu8UcRUTBO6WsPAhRH7yKIuDPD7Klglfi4pMVWi4Tm/HOWg==}
@@ -5616,8 +5616,8 @@ packages:
   '@tldraw/validate@4.1.1':
     resolution: {integrity: sha512-0aTOAuxNSgDEIvGIahMQx/nPLs7pv3HvSPvGKTDGO3y2tRn5gWtRAtsgAiy7aSjK3MwME03+jrWB57MSGDkzfQ==}
 
-  '@tldraw/validate@4.3.0':
-    resolution: {integrity: sha512-eRtwINMZiECv6Z/xfMF0GrMVYaHAFw1peIQdWT7RpmAp7d32Ek0en41w/DtTYIumzhIL/2W54qRotb4SGHKVfg==}
+  '@tldraw/validate@4.3.1':
+    resolution: {integrity: sha512-kKrPheHfKlVDiokYArgShGn2HYHgSJ5af7oThPlnrACil3ZXcbcedUJcEoSY10uTnYJ9h/eKGrDX26VdSPUWPQ==}
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -7397,8 +7397,8 @@ packages:
       react: ^18.2.0 || ^19.0.0
       react-dom: ^18.2.0 || ^19.0.0
 
-  tldraw@4.3.0:
-    resolution: {integrity: sha512-gCp1i6AWcQM94bOUhsLvSlnhTZTvWWRv6lZoY8ezISnP0WsxuQ7ERNJFlqEINQO+bPRc07rGM90RRu333KOUZw==}
+  tldraw@4.3.1:
+    resolution: {integrity: sha512-duKi/aHG/PlsHLsRBXPbhxQgLKzRN9E52AeP4GRg4ysQniQY6pk7qIm89Vevfi3yP5vF4koX8FpQp/J6Z1L9aQ==}
     peerDependencies:
       react: ^18.2.0 || ^19.2.1
       react-dom: ^18.2.0 || ^19.2.1
@@ -11177,17 +11177,17 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@tldraw/editor@4.3.0(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@tldraw/editor@4.3.1(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@tiptap/core': 3.19.0(@tiptap/pm@3.19.0)
       '@tiptap/pm': 3.19.0
       '@tiptap/react': 3.19.0(@floating-ui/dom@1.7.4)(@tiptap/core@3.19.0(@tiptap/pm@3.19.0))(@tiptap/pm@3.19.0)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@tldraw/state': 4.3.0
-      '@tldraw/state-react': 4.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@tldraw/store': 4.3.0(react@18.3.1)
-      '@tldraw/tlschema': 4.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@tldraw/utils': 4.3.0
-      '@tldraw/validate': 4.3.0
+      '@tldraw/state': 4.3.1
+      '@tldraw/state-react': 4.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tldraw/store': 4.3.1(react@18.3.1)
+      '@tldraw/tlschema': 4.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tldraw/utils': 4.3.1
+      '@tldraw/validate': 4.3.1
       '@types/core-js': 2.5.8
       '@use-gesture/react': 10.3.1(react@18.3.1)
       classnames: 2.5.1
@@ -11209,10 +11209,10 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@tldraw/state-react@4.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@tldraw/state-react@4.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@tldraw/state': 4.3.0
-      '@tldraw/utils': 4.3.0
+      '@tldraw/state': 4.3.1
+      '@tldraw/utils': 4.3.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
@@ -11224,9 +11224,9 @@ snapshots:
     dependencies:
       '@tldraw/utils': 4.1.1
 
-  '@tldraw/state@4.3.0':
+  '@tldraw/state@4.3.1':
     dependencies:
-      '@tldraw/utils': 4.3.0
+      '@tldraw/utils': 4.3.1
 
   '@tldraw/store@2.0.0-alpha.17(react@18.3.1)':
     dependencies:
@@ -11243,10 +11243,10 @@ snapshots:
       '@tldraw/utils': 4.1.1
       react: 18.3.1
 
-  '@tldraw/store@4.3.0(react@18.3.1)':
+  '@tldraw/store@4.3.1(react@18.3.1)':
     dependencies:
-      '@tldraw/state': 4.3.0
-      '@tldraw/utils': 4.3.0
+      '@tldraw/state': 4.3.1
+      '@tldraw/utils': 4.3.1
       react: 18.3.1
 
   '@tldraw/tldraw@2.0.0-alpha.17(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
@@ -11270,11 +11270,11 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@tldraw/tldraw@4.3.0(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@tldraw/tldraw@4.3.1(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      tldraw: 4.3.0(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      tldraw: 4.3.1(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - '@floating-ui/dom'
       - '@types/react'
@@ -11299,12 +11299,12 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@tldraw/tlschema@4.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@tldraw/tlschema@4.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@tldraw/state': 4.3.0
-      '@tldraw/store': 4.3.0(react@18.3.1)
-      '@tldraw/utils': 4.3.0
-      '@tldraw/validate': 4.3.0
+      '@tldraw/state': 4.3.1
+      '@tldraw/store': 4.3.1(react@18.3.1)
+      '@tldraw/utils': 4.3.1
+      '@tldraw/validate': 4.3.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
@@ -11318,7 +11318,7 @@ snapshots:
       lodash.throttle: 4.1.1
       lodash.uniq: 4.5.0
 
-  '@tldraw/utils@4.3.0':
+  '@tldraw/utils@4.3.1':
     dependencies:
       jittered-fractional-indexing: 1.0.0
       lodash.isequal: 4.5.0
@@ -11334,9 +11334,9 @@ snapshots:
     dependencies:
       '@tldraw/utils': 4.1.1
 
-  '@tldraw/validate@4.3.0':
+  '@tldraw/validate@4.3.1':
     dependencies:
-      '@tldraw/utils': 4.3.0
+      '@tldraw/utils': 4.3.1
 
   '@tybys/wasm-util@0.10.1':
     dependencies:
@@ -13325,7 +13325,7 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  tldraw@4.3.0(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  tldraw@4.3.1(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@tiptap/core': 3.19.0(@tiptap/pm@3.19.0)
       '@tiptap/extension-code': 3.19.0(@tiptap/core@3.19.0(@tiptap/pm@3.19.0))
@@ -13334,8 +13334,8 @@ snapshots:
       '@tiptap/pm': 3.19.0
       '@tiptap/react': 3.19.0(@floating-ui/dom@1.7.4)(@tiptap/core@3.19.0(@tiptap/pm@3.19.0))(@tiptap/pm@3.19.0)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tiptap/starter-kit': 3.19.0
-      '@tldraw/editor': 4.3.0(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@tldraw/store': 4.3.0(react@18.3.1)
+      '@tldraw/editor': 4.3.1(@floating-ui/dom@1.7.4)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tldraw/store': 4.3.1(react@18.3.1)
       classnames: 2.5.1
       hotkeys-js: 3.13.15
       idb: 7.1.1
