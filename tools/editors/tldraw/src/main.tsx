@@ -22,6 +22,7 @@ export const plugins = [
     id: "tldraw",
     name: "Drawing",
     icon: "PenLine",
+    unlisted: true,
     async load() {
       return datatype;
     },
