@@ -20,7 +20,7 @@ export const plugins = [
   {
     type: "patchwork:datatype",
     id: "tldraw4",
-    name: "Canvas",
+    name: "tldraw",
     icon: "PenLine",
     async load() {
       return datatype;
@@ -29,7 +29,7 @@ export const plugins = [
   {
     type: "patchwork:tool",
     id: "tldraw4",
-    name: "Canvas",
+    name: "tldraw",
     supportedDatatypes: ["tldraw4"],
     async load(): Promise<ToolImplementation> {
       const { TldrawTool } = await import("./tool.tsx");
