@@ -1,0 +1,61 @@
+{
+  "name": "@patchwork/tldraw4",
+  "pushwork": {
+    "url": "automerge:49gmqzzPJHSLc35MfCVCxWB86zo2"
+  },
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/main.js",
+  "exports": {
+    ".": {
+      "import": "./dist/main.js",
+      "source": "./src/main.tsx"
+    },
+    "./tool": {
+      "import": "./dist/tool.js",
+      "source": "./src/tool.tsx"
+    },
+    "./datatype": {
+      "import": "./dist/datatype.js",
+      "source": "./src/datatype.ts"
+    },
+    "./style": "./dist/main.css"
+  },
+  "scripts": {
+    "build": "node esbuild/build.ts",
+    "dev": "node esbuild/watch.ts",
+    "pushwatch": "pnpm dev pushwork"
+  },
+  "dependencies": {
+    "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@automerge/react": "catalog:",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@tldraw/tldraw": "4.3.0",
+    "@types/lodash": "^4.17.20",
+    "lodash": "^4.17.21",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tldraw": "^4.3.0",
+    "vite-plugin-wasm": "^3.5.0"
+  },
+  "devDependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@eslint/js": "^9.36.0",
+    "@types/node": "^24.6.0",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "^5.0.4",
+    "babel-plugin-react-compiler": "19.1.0-rc.3",
+    "esbuild": "^0.23.1",
+    "eslint": "^9.36.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.22",
+    "globals": "^16.4.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.45.0"
+  }
+}
