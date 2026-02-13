@@ -45,7 +45,7 @@ export const init = (doc: TLDrawDoc) => {
     meta: {},
     id: "page:page" as TLPageId,
     index: "a1" as TLPage["index"],
-    name: "My canvas",
+    name: "New tldraw",
     typeName: "page",
   };
 };
