@@ -4,6 +4,17 @@ import { computed, Subscribable } from "@inkandswitch/subscribables";
 import { Ref } from "@inkandswitch/patchwork-refs";
 
 /**
+ * Helper function to check if two arrays contain the same values in the same order.
+ */
+function arraysEqual<T>(a: T[], b: T[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/**
  * Annotation type for marking refs as selected.
  */
 export const IsSelected = defineAnnotationType<boolean>("patchwork/isSelected");
@@ -13,9 +24,9 @@ export const IsSelected = defineAnnotationType<boolean>("patchwork/isSelected");
  */
 export const $selectedRefs: Subscribable<Ref[]> = computed(
   annotations.ofType(IsSelected),
-  () => {
+  (isSelectedAnnotations) => {
     const result: Ref[] = [];
-    for (const [ref, annotation] of annotations) {
+    for (const [ref, annotation] of isSelectedAnnotations) {
       if (annotation.value === true) {
         result.push(ref);
       }
@@ -38,9 +49,24 @@ export function isSelected(ref: Ref): Subscribable<boolean> {
 /**
  * Computed observable that returns unique document URLs of all selected refs.
  */
+let cachedDocUrls: string[] = [];
 export const $selectedDocUrls = computed($selectedRefs, (selectedRefs) => {
   const docUrls = selectedRefs.map((ref) => ref.docHandle.url);
-  return Array.from(new Set(docUrls));
+  const uniqueDocUrls = Array.from(new Set(docUrls));
+
+  // If we'd return an empty array but we have a cached value, keep the cached value
+  // This handles the case where annotations are briefly empty during document updates
+  if (uniqueDocUrls.length === 0 && cachedDocUrls.length > 0) {
+    return cachedDocUrls;
+  }
+
+  // Only return a new array if the contents have actually changed
+  if (arraysEqual(uniqueDocUrls, cachedDocUrls)) {
+    return cachedDocUrls;
+  }
+
+  cachedDocUrls = uniqueDocUrls;
+  return uniqueDocUrls;
 });
 
 /**
