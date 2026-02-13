@@ -127,7 +127,7 @@ export function createFilesystemHandoffHandler(repo: Repo) {
           );
         }
 
-        if (!isPackageJsonRequest) {
+        if (!isPackageJsonRequest && path.length) {
           const key = maybeAutomergeUrl;
           if (!(key in loaders)) {
             const pkg = await packageJsonContentsFromFolderDocUrl(key);
