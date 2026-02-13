@@ -268,7 +268,7 @@ export function registerPatchworkViewElement(
         const doc = this.#handle.doc();
         this.#fallbackId = getFallbackTool(doc)?.id;
         const fallingBack = !this.toolId;
-        const toolId = this.toolId ?? this.#fallbackId;
+        const toolId = this.toolId || this.#fallbackId;
 
         if (fallingBack) {
           console.warn(
