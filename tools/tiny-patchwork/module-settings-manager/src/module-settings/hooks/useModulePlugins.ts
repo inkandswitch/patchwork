@@ -1,4 +1,4 @@
-import { createMemo, createResource, type Accessor } from "solid-js";
+import { createMemo, createResource, mapArray, type Accessor } from "solid-js";
 import {
   isValidAutomergeUrl,
   type AutomergeUrl,
@@ -20,7 +20,9 @@ interface UseModulePluginsParams {
   searchQuery: Accessor<string>;
   filterPluginType: Accessor<string>;
   filterDataType: Accessor<string>;
-  sortOrder: Accessor<"name-asc" | "name-desc" | "type-asc" | "type-desc" | "id-asc" | "id-desc">;
+  sortOrder: Accessor<
+    "name-asc" | "name-desc" | "type-asc" | "type-desc" | "id-asc" | "id-desc"
+  >;
 }
 
 export type EnrichedPlugin = Plugin<PluginDescription> & {
@@ -33,18 +35,26 @@ export function useModulePlugins(params: UseModulePluginsParams) {
     params;
 
   // Load all plugins from user's modules
-  const [allPlugins] = createResource(
+  const modulePlugins = mapArray(
     () => modules,
-    async (moduleUrls) => {
-      const pluginArrays = await Promise.all(
-        moduleUrls.map(async (url) => {
+    (url) => {
+      const [plugins] = createResource(
+        () => url,
+        async (url) => {
           const module = await importModuleFromFolderDocUrl(url);
           return module?.plugins || [];
-        })
+        }
       );
-      return pluginArrays.flat();
+      return plugins;
     }
   );
+
+  // Flatten all plugin accessors into a single array
+  const allPlugins = createMemo(() => {
+    return modulePlugins().flatMap(
+      (pluginsAccessor) => pluginsAccessor() || []
+    );
+  });
 
   // Get unique plugin types for filter dropdown
   const uniquePluginTypes = createMemo(() => {
@@ -78,8 +88,7 @@ export function useModulePlugins(params: UseModulePluginsParams) {
         const aId = a.id || "";
         const bId = b.id || "";
         const idCompare = aId.localeCompare(bId);
-        if (idCompare !== 0)
-          return order === "id-asc" ? idCompare : -idCompare;
+        if (idCompare !== 0) return order === "id-asc" ? idCompare : -idCompare;
         return a.name.localeCompare(b.name);
       }
       const nameCompare = a.name.localeCompare(b.name);
