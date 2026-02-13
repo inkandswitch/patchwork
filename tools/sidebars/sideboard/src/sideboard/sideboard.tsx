@@ -18,6 +18,8 @@ import { SearchIcon } from "./icons.tsx";
 import { DocumentList } from "./document-list/document-list.tsx";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
+import { useSubscribe } from "@inkandswitch/subscribables-solid";
+import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
 
 export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
   const doc = makeDocumentProjection(props.handle);
@@ -29,6 +31,7 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
   const moduleSettingsUrl = () => doc.moduleSettingsUrl;
   const accountDocUrl = () => props.handle.url;
   const contactUrl = () => doc.contactUrl;
+  const selectedDocUrls = useSubscribe($selectedDocUrls);
 
   function open(detail: OpenDocumentEventDetail) {
     props.element.dispatchEvent(createOpenEvent(detail));
@@ -62,6 +65,7 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
           handle={folderHandle.latest!}
           open={open}
           hive={props.element.hive}
+          selectedDocUrls={selectedDocUrls() ?? []}
         />
       </nav>
       <footer class="sideboard-footer">
@@ -81,7 +85,6 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
           }
           class="sideboard-footer__button"
         >
-          {/* TODO: declare patchwork-view element for TypeScript */}
           <patchwork-view doc-url={contactUrl()} tool-id="contact-avatar" />
         </button>
 

@@ -13,8 +13,6 @@ import { filter, filterMatches, setRenaming } from "../state.ts";
 import { DocumentList } from "./document-list.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import { useSubscribe } from "@inkandswitch/subscribables-solid";
-import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
 
 export default function Folder(props: {
   url: AutomergeUrl;
@@ -24,6 +22,7 @@ export default function Folder(props: {
   open(detail: OpenDocumentEventDetail): void;
   name?: string;
   hive?: AutomergeRepoKeyhive;
+  selectedDocUrls: AutomergeUrl[];
 }) {
   const [ref, setRef] = createSignal<HTMLElement>();
   const [open, setOpen] = createSignal(false);
@@ -33,8 +32,6 @@ export default function Folder(props: {
   const depth = () => props.depth ?? 1;
   const depthStyle = () => ({ "--depth": depth() + 1 });
   const folderDepthStyle = () => ({ "--depth": depth() });
-
-  const selectedDocUrls = useSubscribe($selectedDocUrls);
 
   createEffect((last) => {
     if (!last && filter() && filterMatches(folder()!?.title ?? props.name)) {
@@ -70,7 +67,7 @@ export default function Folder(props: {
         }}
         remove={props.removeFromParent}
         id={props.url}
-        pressed={selectedDocUrls()?.includes(props.url)}
+        pressed={props.selectedDocUrls.includes(props.url)}
         type="folder"
         openWith={(toolId) => {
           props.open({
@@ -114,6 +111,7 @@ export default function Folder(props: {
           handle={handle.latest!}
           open={props.open}
           hive={props.hive}
+          selectedDocUrls={props.selectedDocUrls}
         />
       </div>
     </div>

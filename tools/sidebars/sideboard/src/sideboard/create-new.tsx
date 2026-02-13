@@ -16,7 +16,11 @@ import { DropdownMenu } from "@kobalte/core/dropdown-menu";
 import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 import type { AutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
-async function createNew(repo: Repo, datatype: Plugin<DatatypeDescription>, hive?: AutomergeRepoKeyhive) {
+async function createNew(
+  repo: Repo,
+  datatype: Plugin<DatatypeDescription>,
+  hive?: AutomergeRepoKeyhive
+) {
   if (isLoadablePlugin(datatype)) {
     const registry = getRegistry("patchwork:datatype");
     await registry.load(datatype.id);
@@ -24,6 +28,7 @@ async function createNew(repo: Repo, datatype: Plugin<DatatypeDescription>, hive
   if (!isLoadedPlugin(datatype)) {
     throw new Error("plugin not loaded after loading");
   }
+
   const docHandle = await createDocOfDatatype2(datatype, repo, undefined, hive);
   const doc = docHandle.doc();
   const name = datatype.module.getTitle(doc);
@@ -65,7 +70,11 @@ export default function CreateNew(props: CreateNewProps) {
               <DropdownMenu.Item
                 class="popmenu__item"
                 onSelect={async () => {
-                  const freshy = await createNew(props.repo, datatype, props.hive);
+                  const freshy = await createNew(
+                    props.repo,
+                    datatype,
+                    props.hive
+                  );
                   props.changeFolder(async (doc) => {
                     doc.docs.push(freshy);
                   });

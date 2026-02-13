@@ -23,8 +23,6 @@ import { filter, filterMatches, setRenaming } from "../state.ts";
 import Folder from "./folder.tsx";
 import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
-import { useSubscribe } from "@inkandswitch/subscribables-solid";
-import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
 import { ShareModal } from "../share-modal.tsx";
 
 // TODO: Re-enable when secure copy feature is ready
@@ -46,16 +44,17 @@ export interface DocumentListProps {
   repo: Repo;
   open(detail: OpenDocumentEventDetail): void;
   hive?: AutomergeRepoKeyhive;
+  selectedDocUrls: AutomergeUrl[];
 }
 
 export function DocumentList(props: DocumentListProps) {
-  const [shareModalUrl, setShareModalUrl] = createSignal<AutomergeUrl | null>(null);
+  const [shareModalUrl, setShareModalUrl] = createSignal<AutomergeUrl | null>(
+    null
+  );
 
   function removeItem(index: number) {
     props.handle.change((folder) => deleteAt(folder.docs, index));
   }
-
-  const selectedDocUrls = useSubscribe($selectedDocUrls);
 
   async function makeSecureCopy(docLink: DocLink) {
     if (!props.hive) return;
@@ -65,20 +64,31 @@ export function DocumentList(props: DocumentListProps) {
     const oldDoc = oldHandle.doc();
 
     // Create new secure doc with create2 (uses keyhive idFactory)
-    const newHandle = await props.repo.create2<HasPatchworkMetadata>(structuredClone(oldDoc));
+    const newHandle = await props.repo.create2<HasPatchworkMetadata>(
+      structuredClone(oldDoc)
+    );
 
     // Add sync server with pull access
     if (props.hive.syncServer) {
       try {
-        const serverContactCard = ContactCard.fromJson(props.hive.syncServer.contactCard.toJson());
+        const serverContactCard = ContactCard.fromJson(
+          props.hive.syncServer.contactCard.toJson()
+        );
         if (serverContactCard) {
           const pullAccess = Access.tryFromString("pull");
           if (pullAccess) {
-            await props.hive.addMemberToDoc(newHandle.url, serverContactCard, pullAccess);
+            await props.hive.addMemberToDoc(
+              newHandle.url,
+              serverContactCard,
+              pullAccess
+            );
           }
         }
       } catch (err) {
-        console.error("[DocumentList] Failed to add sync server to secure copy:", err);
+        console.error(
+          "[DocumentList] Failed to add sync server to secure copy:",
+          err
+        );
       }
     }
 
@@ -100,90 +110,105 @@ export function DocumentList(props: DocumentListProps) {
   }
   return (
     <>
-    <For each={props.docs}>
-      {(doc, index) => {
-        const visible = () => !filter().length || filterMatches(doc.name);
-        const remove = () => removeItem(index());
-        const relid = () => props.handle.url + "/" + index();
-        const rename = (name: string) => {
-          props.handle.change((doc) => {
-            updateText(doc, ["docs", index(), "name"], name);
-          });
-          const datatypes = getRegistry<Datatype>("patchwork:datatype");
-          props.repo
-            .find<Partial<HasPatchworkMetadata>>(doc.url)
-            .then(async (handle) => {
-              const { "@patchwork": metadata } = handle.doc();
-
-              if (metadata) {
-                const datatype = datatypes.get(metadata.type) as Datatype;
-
-                if (datatype) {
-                  await datatypes.load(datatype.id);
-                  handle.change((doc) => datatype.module.setTitle?.(doc, name));
-                }
-              }
+      <For each={props.docs}>
+        {(doc, index) => {
+          const visible = () => !filter().length || filterMatches(doc.name);
+          const remove = () => removeItem(index());
+          const relid = () => props.handle.url + "/" + index();
+          const rename = (name: string) => {
+            props.handle.change((doc) => {
+              updateText(doc, ["docs", index(), "name"], name);
             });
-        };
+            const datatypes = getRegistry<Datatype>("patchwork:datatype");
+            props.repo
+              .find<Partial<HasPatchworkMetadata>>(doc.url)
+              .then(async (handle) => {
+                const { "@patchwork": metadata } = handle.doc();
 
-        return (
-          <div
-            classList={{
-              sideboard__item: true,
-              "sideboard__item--visible": visible(),
-              "sideboard__item--invisible": !visible(),
-            }}
-          >
-            <Switch>
-              <Match when={doc.type == "folder"}>
-                <Folder
-                  url={doc.url}
-                  depth={props.depth}
-                  repo={props.repo}
-                  removeFromParent={remove}
-                  open={props.open}
-                  name={doc.name}
-                  hive={props.hive}
-                />
-              </Match>
-              <Match when={doc.type != "folder"}>
-                <Item
-                  id={relid()}
-                  startRenaming={() => setRenaming(relid())}
-                  remove={remove}
-                  pressed={selectedDocUrls().includes(doc.url)}
-                  type={doc.type}
-                  openWith={(toolId) =>
-                    props.open({
-                      url: doc.url,
-                      toolId,
-                      title: doc.name,
-                      type: doc.type,
-                    })
+                if (metadata) {
+                  const datatype = datatypes.get(metadata.type) as Datatype;
+
+                  if (datatype) {
+                    await datatypes.load(datatype.id);
+                    handle.change((doc) =>
+                      (datatype as any).module.setTitle?.(doc, name)
+                    );
                   }
-                  share={props.hive ? () => setShareModalUrl(doc.url) : undefined}
-                  shareDisabled={props.hive ? !isKeyhiveProtected(doc.url) : false}
-                  makeSecureCopy={MAKE_SECURE_COPY_ENABLED && props.hive && !isKeyhiveProtected(doc.url) ? () => makeSecureCopy(doc) : undefined}
-                >
-                  <ItemName name={doc.name} id={relid()} rename={rename} />
-                  <Show when={props.hive && !isKeyhiveProtected(doc.url)}>
-                    <span class="document-list-item__unprotected">[insecure]</span>
-                  </Show>
-                </Item>
-              </Match>
-            </Switch>
-          </div>
-        );
-      }}
-    </For>
-    <Show when={shareModalUrl() && props.hive}>
-      <ShareModal
-        isOpen={!!shareModalUrl()}
-        docUrl={shareModalUrl()!}
-        hive={props.hive!}
-        onClose={() => setShareModalUrl(null)}
-      />
-    </Show>
+                }
+              });
+          };
+
+          return (
+            <div
+              classList={{
+                sideboard__item: true,
+                "sideboard__item--visible": visible(),
+                "sideboard__item--invisible": !visible(),
+              }}
+            >
+              <Switch>
+                <Match when={doc.type == "folder"}>
+                  <Folder
+                    url={doc.url}
+                    depth={props.depth}
+                    repo={props.repo}
+                    removeFromParent={remove}
+                    open={props.open}
+                    name={doc.name}
+                    hive={props.hive}
+                    selectedDocUrls={props.selectedDocUrls}
+                  />
+                </Match>
+                <Match when={doc.type != "folder"}>
+                  <Item
+                    id={relid()}
+                    startRenaming={() => setRenaming(relid())}
+                    remove={remove}
+                    pressed={props.selectedDocUrls.includes(doc.url)}
+                    type={doc.type}
+                    openWith={(toolId) =>
+                      props.open({
+                        url: doc.url,
+                        toolId,
+                        title: doc.name,
+                        type: doc.type,
+                      })
+                    }
+                    share={
+                      props.hive ? () => setShareModalUrl(doc.url) : undefined
+                    }
+                    shareDisabled={
+                      props.hive ? !isKeyhiveProtected(doc.url) : false
+                    }
+                    makeSecureCopy={
+                      MAKE_SECURE_COPY_ENABLED &&
+                      props.hive &&
+                      !isKeyhiveProtected(doc.url)
+                        ? () => makeSecureCopy(doc)
+                        : undefined
+                    }
+                  >
+                    <ItemName name={doc.name} id={relid()} rename={rename} />
+                    <Show when={props.hive && !isKeyhiveProtected(doc.url)}>
+                      <span class="document-list-item__unprotected">
+                        [insecure]
+                      </span>
+                    </Show>
+                  </Item>
+                </Match>
+              </Switch>
+            </div>
+          );
+        }}
+      </For>
+      <Show when={shareModalUrl() && props.hive}>
+        <ShareModal
+          isOpen={!!shareModalUrl()}
+          docUrl={shareModalUrl()!}
+          hive={props.hive!}
+          onClose={() => setShareModalUrl(null)}
+        />
+      </Show>
     </>
   );
 }

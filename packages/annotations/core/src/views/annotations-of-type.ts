@@ -24,7 +24,9 @@ const viewCleanupRegistry = new FinalizationRegistry<() => void>((cleanup) =>
  */
 export class AnnotationsOfType<T>
   extends EventEmitter<AnnotationEvents>
-  implements AnnotationSource<unknown, T>, SubscribableObject<AnnotationsOfType<T>>
+  implements
+    AnnotationSource<unknown, T>,
+    SubscribableObject<AnnotationsOfType<T>>
 {
   #source: AnnotationSource;
   #type: AnnotationType<T>;

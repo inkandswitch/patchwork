@@ -24,7 +24,9 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
   rootFolderUrl: AutomergeUrl
 ) => {
   const selectedDocUrls = useSubscribe($selectedDocUrls);
-  const [selectedDocsMap] = useDocuments<HasPatchworkMetadata>(selectedDocUrls);
+  const [selectedDocsMap] = useDocuments<HasPatchworkMetadata>(
+    selectedDocUrls as AutomergeUrl[]
+  );
 
   // todo: handle folders
   const [rootFolderDoc, changeRootFolderDoc] = useDocument<FolderDoc>(
@@ -43,7 +45,7 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
     >;
 
     for (const docUrl of selectedDocUrls) {
-      const doc = selectedDocsMap.get(docUrl);
+      const doc = selectedDocsMap.get(docUrl as AutomergeUrl);
 
       if (!doc) {
         continue;
