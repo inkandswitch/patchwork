@@ -20,6 +20,8 @@ import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 import { useSubscribe } from "@inkandswitch/subscribables-solid";
 import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
+import { createSignal } from "solid-js";
+import { handleFilesDrop } from "./document-list/file-drop.ts";
 
 export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
   const doc = makeDocumentProjection(props.handle);
@@ -36,6 +38,8 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
   function open(detail: OpenDocumentEventDetail) {
     props.element.dispatchEvent(createOpenEvent(detail));
   }
+
+  const [isDraggingFile, setIsDraggingFile] = createSignal(false);
 
   return (
     <aside class="sideboard">
@@ -59,8 +63,34 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
       </div>
       <nav
         class="sideboard__doclist sideboard-widget"
+        classList={{
+          "sideboard__doclist--drag-over": isDraggingFile(),
+        }}
         role="tree"
         aria-multiselectable="true"
+        onDragOver={(event: DragEvent) => {
+          // Only handle file drops from OS
+          if (event.dataTransfer?.types.includes("Files")) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+            setIsDraggingFile(true);
+          }
+        }}
+        onDragLeave={(event: DragEvent) => {
+          const related = event.relatedTarget as Element;
+          if (!related || !(event.currentTarget as Element).contains(related)) {
+            setIsDraggingFile(false);
+          }
+        }}
+        onDrop={(event: DragEvent) => {
+          event.preventDefault();
+          setIsDraggingFile(false);
+
+          const files = event.dataTransfer?.files;
+          if (files && files.length > 0 && folderHandle()) {
+            handleFilesDrop(files, folderHandle()!, props.repo);
+          }
+        }}
       >
         <DocumentList
           depth={0}

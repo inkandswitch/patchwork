@@ -28,6 +28,8 @@ import {
 } from "@automerge/automerge-repo";
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
 import { executeDrop } from "../dnd/operations.ts";
+import { handleFilesDrop } from "./file-drop.ts";
+import { log } from "../dnd/debug.ts";
 
 export default function Item(props: {
   "aria-label": string;
@@ -78,20 +80,31 @@ export default function Item(props: {
     return target.position;
   };
 
-  function handleDrop(
+  async function handleDrop(
     event: DragEvent,
     targetId: string,
     position: "above" | "below"
   ) {
-    console.log("[DnD] Item drop handler called for:", targetId, position);
+    log("Item drop handler called for:", targetId, position);
+
+    // Handle file drops from OS - add to parent folder
+    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+      await handleFilesDrop(
+        event.dataTransfer.files,
+        props.rootFolderHandle,
+        props.repo
+      );
+      return;
+    }
+
     const dndData = event.dataTransfer?.getData("text/x-patchwork-dnd");
     if (!dndData) {
-      console.warn("[DnD] No dnd data in drop event");
+      log("No dnd data in drop event");
       return;
     }
 
     const { source, items } = JSON.parse(dndData);
-    console.log("[DnD] Drop data:", { source, items, targetId, position });
+    log("Drop data:", { source, items, targetId, position });
 
     executeDrop(
       {
@@ -188,7 +201,6 @@ export default function Item(props: {
           // Clean up after drag
           setTimeout(() => preview.remove(), 0);
 
-          console.log(event.dataTransfer);
           setDragging(true);
         }}
         ondrag={(event: DragEvent) => {
@@ -274,12 +286,12 @@ export default function Item(props: {
             return;
           }
 
-          console.log("[DnD] Item handling drop itself");
+          log("Item handling drop itself");
           event.preventDefault();
           event.stopPropagation();
 
           if (!target) {
-            console.warn("[DnD] No drop target set");
+            log("No drop target set");
             return;
           }
 

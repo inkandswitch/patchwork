@@ -167,6 +167,16 @@
   width: 100%;
   max-height: 100%;
   overflow: scroll;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.sideboard__doclist--drag-over {
+  background: color-mix(in oklch, var(--sideboard-primary), transparent 95%);
+  box-shadow:
+    0 0 0 2px var(--sideboard-primary) inset,
+    0 1px 2px rgba(0, 20, 50, 0.05);
 }
 
 .document-list-item {

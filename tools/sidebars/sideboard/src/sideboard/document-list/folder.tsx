@@ -11,6 +11,7 @@ import type {
   PatchworkViewElement,
 } from "@inkandswitch/patchwork-elements";
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
+import { handleFilesDrop } from "./file-drop.ts";
 import { createEffect, createSignal, onMount, Show } from "solid-js";
 import CreateNew from "../create-new.tsx";
 import { filter, filterMatches, setRenaming } from "../state.ts";
@@ -25,6 +26,7 @@ import {
   copyMode,
 } from "../dnd/dnd.ts";
 import { executeDrop } from "../dnd/operations.ts";
+import { log } from "../dnd/debug.ts";
 
 export default function Folder(props: {
   url: AutomergeUrl;
@@ -73,16 +75,26 @@ export default function Folder(props: {
     handle()?.change((doc) => updateText(doc, ["title"], name));
   }
 
-  function handleDropIntoFolder(event: DragEvent, folderUrl: AutomergeUrl) {
-    console.log("[DnD] Folder drop handler called for:", folderUrl);
+  async function handleDropIntoFolder(
+    event: DragEvent,
+    folderUrl: AutomergeUrl
+  ) {
+    log("Folder drop handler called for:", folderUrl);
+
+    // Handle file drops from OS
+    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+      await handleFilesDrop(event.dataTransfer.files, handle()!, props.repo);
+      return;
+    }
+
     const dndData = event.dataTransfer?.getData("text/x-patchwork-dnd");
     if (!dndData) {
-      console.warn("[DnD] No dnd data in drop event");
+      log("No dnd data in drop event");
       return;
     }
 
     const { source, items } = JSON.parse(dndData);
-    console.log("[DnD] Drop data:", { source, items, folderUrl });
+    log("Drop data:", { source, items, folderUrl });
 
     executeDrop(
       {
@@ -139,7 +151,7 @@ export default function Folder(props: {
         }
       }}
       ondrop={(event: DragEvent) => {
-        console.log("[DnD] Folder ondrop event fired", props.url);
+        log("Folder ondrop event fired", props.url);
         event.preventDefault();
         event.stopPropagation();
 

@@ -1,6 +1,7 @@
 import type { DocHandle, Repo, AutomergeUrl } from "@automerge/automerge-repo";
 import type { FolderDoc, DocLink } from "@inkandswitch/patchwork-filesystem";
 import { deleteAt } from "@automerge/automerge-repo";
+import { log } from "./debug.ts";
 
 // Track loaded folders to prevent memory leaks
 const folderCache = new Map<AutomergeUrl, DocHandle<FolderDoc>>();
@@ -51,7 +52,7 @@ export async function executeDrop(
   rootFolderHandle: DocHandle<FolderDoc>,
   toolId: string
 ) {
-  console.log("[DnD] executeDrop called with:", {
+  log("executeDrop called with:", {
     draggedIds: operation.draggedIds,
     targetId: operation.targetId,
     position: operation.position,
@@ -61,8 +62,8 @@ export async function executeDrop(
 
   // 1. Validate source - only accept drops from the same tool instance
   if (operation.sourceToolId !== toolId) {
-    console.warn(
-      "[DnD] Drop from external source not yet supported:",
+    log(
+      "Drop from external source not yet supported:",
       operation.sourceToolId,
       "expected:",
       toolId
@@ -72,11 +73,11 @@ export async function executeDrop(
 
   // 2. Validate we have items to drop
   if (operation.draggedIds.length === 0 || operation.draggedUrls.length === 0) {
-    console.error("[DnD] No items to drop");
+    log("No items to drop");
     return;
   }
 
-  console.log("[DnD] Starting location finding...");
+  log("Starting location finding...");
 
   // 3. Find source and target locations
   const locations = await findItemLocations(
@@ -88,28 +89,28 @@ export async function executeDrop(
   );
 
   if (!locations) {
-    console.error(
-      "[DnD] Could not find source or target locations. Target:",
+    log(
+      "Could not find source or target locations. Target:",
       operation.targetId
     );
     return;
   }
 
-  console.log("[DnD] Locations found:", {
+  log("Locations found:", {
     sourceItemsCount: locations.sourceItems.length,
     targetFolder: locations.targetFolder,
     targetIndex: locations.targetIndex,
   });
 
   // 4. Validate drop is legal (no circular references, etc)
-  console.log("[DnD] Validating drop...");
+  log("Validating drop...");
   const validationError = getDropValidationError(locations, operation);
   if (validationError) {
-    console.error("[DnD] Invalid drop operation:", validationError);
+    log("Invalid drop operation:", validationError);
     return;
   }
 
-  console.log("[DnD] Validation passed, executing operation...");
+  log("Validation passed, executing operation...");
 
   // 5. Execute the move or copy
   if (operation.copyMode) {
@@ -118,7 +119,7 @@ export async function executeDrop(
     await performMove(rootFolderHandle, locations, operation);
   }
 
-  console.log("[DnD] Operation complete!");
+  log("Operation complete!");
 }
 
 async function findItemLocations(
@@ -150,9 +151,7 @@ async function findItemLocations(
 
     // Prevent infinite recursion with depth limit
     if (depth >= MAX_FOLDER_DEPTH) {
-      console.warn(
-        `[DnD] Max folder depth (${MAX_FOLDER_DEPTH}) reached, stopping traversal`
-      );
+      log(`Max folder depth (${MAX_FOLDER_DEPTH}) reached, stopping traversal`);
       return;
     }
 
@@ -200,13 +199,13 @@ async function findItemLocations(
       if (doc.type === "folder" && doc.url) {
         // Skip if folder references itself (only skip recursion, not target matching above)
         if (doc.url === folderUrl) {
-          console.warn("[DnD] Skipping self-referencing folder:", doc.url);
+          log("Skipping self-referencing folder:", doc.url);
           continue;
         }
 
         // Skip if we've already visited this folder (prevent circular refs)
         if (visitedFolders.has(doc.url)) {
-          console.warn("[DnD] Skipping already visited folder:", doc.url);
+          log("Skipping already visited folder:", doc.url);
           continue;
         }
 
@@ -219,7 +218,7 @@ async function findItemLocations(
             nestedHandle = await repo.find<FolderDoc>(doc.url);
             folderCache.set(doc.url, nestedHandle);
           } catch (error) {
-            console.error("[DnD] Failed to load folder:", doc.url, error);
+            log("Failed to load folder:", doc.url, error);
             continue;
           }
         }
@@ -337,8 +336,8 @@ async function performMove(
   locations: ItemLocations,
   operation: DropOperation
 ) {
-  console.log(
-    `[DnD] Moving ${locations.sourceItems.length} item(s) to position:`,
+  log(
+    `Moving ${locations.sourceItems.length} item(s) to position:`,
     operation.position
   );
 
@@ -426,8 +425,8 @@ async function performCopy(
   operation: DropOperation,
   _repo: Repo
 ) {
-  console.log(
-    `[DnD] Copying ${locations.sourceItems.length} item(s) to position:`,
+  log(
+    `Copying ${locations.sourceItems.length} item(s) to position:`,
     operation.position
   );
 
