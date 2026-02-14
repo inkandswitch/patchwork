@@ -327,6 +327,8 @@ export default function Item(props: {
             const current = event.currentTarget as HTMLElement;
             const allItems = Array.from(
               document.querySelectorAll("[data-dnd-item]")
+            ).filter(
+              (item) => (item as HTMLElement).offsetParent !== null
             ) as HTMLElement[];
             const currentIndex = allItems.indexOf(current);
 
