@@ -4,7 +4,7 @@ import { makeDocumentProjection } from "@automerge/automerge-repo-solid-primitiv
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { ModuleSettingsDoc } from "@inkandswitch/patchwork-filesystem";
 import type { PatchworkToolProps } from "../types.ts";
-import { ModuleFilters, ModuleTable, ModuleInput } from "./components";
+import { ModuleFilters, ModuleTable } from "./components";
 import { useModulePlugins } from "./hooks/useModulePlugins.ts";
 import { MODULE_FETCH_DEBOUNCE } from "./constants.ts";
 import { DebugToggle } from "./components/DebugToggle.tsx";
@@ -80,16 +80,6 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
 
   return (
     <div class="module-settings-manager">
-      <div class="module-settings-manager__header">
-        <label>
-          <ModuleInput
-            onAdd={handleAddModule}
-            isInstalled={isModuleInstalled}
-            repo={props.repo}
-          />
-        </label>
-      </div>
-
       <div class="module-settings-manager__content-container">
         <h2 class="module-settings-manager__title">Plugins</h2>
 
@@ -103,6 +93,9 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
             onDataTypeChange={setFilterDataType}
             uniquePluginTypes={uniquePluginTypes()}
             uniqueDataTypes={uniqueDataTypes()}
+            repo={props.repo}
+            onAdd={handleAddModule}
+            isInstalled={isModuleInstalled}
           />
           <ModuleTable
             plugins={filteredPlugins()}
