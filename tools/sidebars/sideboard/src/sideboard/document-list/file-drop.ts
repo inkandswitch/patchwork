@@ -1,6 +1,7 @@
 import type { Repo, DocHandle } from "@automerge/automerge-repo";
 import type {
   FolderDoc,
+  HasPatchworkMetadata,
   UnixFileEntry,
 } from "@inkandswitch/patchwork-filesystem";
 import { log } from "../dnd/debug.ts";
@@ -12,7 +13,9 @@ import { log } from "../dnd/debug.ts";
 export async function handleFilesDrop(
   files: FileList,
   folderHandle: DocHandle<FolderDoc>,
-  repo: Repo
+  repo: Repo,
+  position: "above" | "below" | "inside",
+  targetIndex: number
 ): Promise<void> {
   for (const file of Array.from(files)) {
     try {
@@ -26,16 +29,27 @@ export async function handleFilesDrop(
       const nameWithoutExt = nameParts.join(".");
 
       // Create UnixFileEntry document
-      const handle = await repo.create<UnixFileEntry>({
+      const handle = await repo.create2<UnixFileEntry & HasPatchworkMetadata>({
+        "@patchwork": {
+          type: "file",
+        },
         content,
         extension,
         mimeType: file.type || "application/octet-stream",
         name: nameWithoutExt,
       });
 
-      // Add to folder
+      // Calculate insertion index based on position
+      const insertIndex =
+        position === "above"
+          ? targetIndex
+          : position === "below"
+            ? targetIndex + 1
+            : 0; // "inside" means at the beginning of the folder
+
+      // Add to folder at the correct position
       folderHandle.change((folder) => {
-        folder.docs.push({
+        folder.docs.splice(insertIndex, 0, {
           url: handle.url,
           name: file.name,
           type: "file",

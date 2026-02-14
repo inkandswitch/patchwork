@@ -11,7 +11,10 @@ import {
   ContactCard,
   type AutomergeRepoKeyhive,
 } from "@automerge/automerge-repo-keyhive";
-import type { OpenDocumentEventDetail, PatchworkViewElement } from "@inkandswitch/patchwork-elements";
+import type {
+  OpenDocumentEventDetail,
+  PatchworkViewElement,
+} from "@inkandswitch/patchwork-elements";
 import type {
   DocLink,
   FolderDoc,
@@ -191,6 +194,8 @@ export function DocumentList(props: DocumentListProps) {
                     element={props.element}
                     repo={props.repo}
                     rootFolderHandle={props.rootFolderHandle}
+                    parentFolderHandle={props.handle}
+                    itemIndex={index()}
                     openWith={(toolId) =>
                       props.open({
                         url: doc.url,

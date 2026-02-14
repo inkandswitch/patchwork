@@ -81,9 +81,15 @@ export default function Folder(props: {
   ) {
     log("Folder drop handler called for:", folderUrl);
 
-    // Handle file drops from OS
+    // Handle file drops from OS - add to beginning of folder
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-      await handleFilesDrop(event.dataTransfer.files, handle()!, props.repo);
+      await handleFilesDrop(
+        event.dataTransfer.files,
+        handle()!,
+        props.repo,
+        "inside",
+        0
+      );
       return;
     }
 

@@ -48,6 +48,8 @@ export default function Item(props: {
   element: PatchworkViewElement;
   repo: Repo;
   rootFolderHandle: DocHandle<FolderDoc>;
+  parentFolderHandle: DocHandle<FolderDoc>;
+  itemIndex: number;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
 }) {
@@ -87,12 +89,14 @@ export default function Item(props: {
   ) {
     log("Item drop handler called for:", targetId, position);
 
-    // Handle file drops from OS - add to parent folder
+    // Handle file drops from OS - add to parent folder at correct position
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
       await handleFilesDrop(
         event.dataTransfer.files,
-        props.rootFolderHandle,
-        props.repo
+        props.parentFolderHandle,
+        props.repo,
+        position,
+        props.itemIndex
       );
       return;
     }
@@ -238,13 +242,6 @@ export default function Item(props: {
             } else {
               position = "inside";
             }
-
-            console.log(
-              "[DnD] Folder position calculated:",
-              position,
-              "relative:",
-              relativePosition
-            );
 
             // Only bubble to container for "inside" drops
             if (position !== "inside") {

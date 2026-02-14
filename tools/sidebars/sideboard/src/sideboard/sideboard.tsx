@@ -88,7 +88,15 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
 
           const files = event.dataTransfer?.files;
           if (files && files.length > 0 && folderHandle()) {
-            handleFilesDrop(files, folderHandle()!, props.repo);
+            const folderDoc = folderHandle()!.doc();
+            const insertIndex = folderDoc?.docs?.length || 0;
+            handleFilesDrop(
+              files,
+              folderHandle()!,
+              props.repo,
+              "inside",
+              insertIndex
+            );
           }
         }}
       >
