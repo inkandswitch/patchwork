@@ -206,9 +206,7 @@ export function ModuleFilters(props: ModuleFiltersProps) {
               classList={{
                 "module-input__field--has-validation": hasValidation(),
               }}
-              placeholder={
-                showInstallUI() ? "automerge:..." : "Search plugins..."
-              }
+              placeholder={"tenfold... or automerge:..."}
               value={props.searchQuery}
               onInput={(e) => props.onSearchChange(e.currentTarget.value)}
               onKeyDown={handleKeyDown}
