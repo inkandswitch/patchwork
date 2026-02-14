@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import { datatype as datatype } from "./datatype.ts";
+
 import { RepoContext } from "@automerge/react";
 import "./main.css";
 
@@ -23,7 +23,7 @@ export const plugins = [
     name: "tldraw",
     icon: "PenLine",
     async load() {
-      return datatype;
+      return (await import("./datatype.ts")).datatype;
     },
   },
   {
