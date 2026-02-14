@@ -45,12 +45,14 @@ export interface DocumentListProps {
   open(detail: OpenDocumentEventDetail): void;
   hive?: AutomergeRepoKeyhive;
   selectedDocUrls: AutomergeUrl[];
+  visitedFolders?: Set<AutomergeUrl>;
 }
 
 export function DocumentList(props: DocumentListProps) {
   const [shareModalUrl, setShareModalUrl] = createSignal<AutomergeUrl | null>(
     null
   );
+  const visitedFolders = props.visitedFolders ?? new Set<AutomergeUrl>();
 
   function removeItem(index: number) {
     props.handle.change((folder) => deleteAt(folder.docs, index));
@@ -148,16 +150,29 @@ export function DocumentList(props: DocumentListProps) {
             >
               <Switch>
                 <Match when={doc.type == "folder"}>
-                  <Folder
-                    url={doc.url}
-                    depth={props.depth}
-                    repo={props.repo}
-                    removeFromParent={remove}
-                    open={props.open}
-                    name={doc.name}
-                    hive={props.hive}
-                    selectedDocUrls={props.selectedDocUrls}
-                  />
+                  <Show
+                    when={!visitedFolders.has(doc.url)}
+                    fallback={
+                      <div
+                        class="document-list-folder__circular-ref"
+                        style={{ "padding-left": `calc(var(--depth) * 1rem)` }}
+                      >
+                        <span>⚠️ {doc.name} (circular reference)</span>
+                      </div>
+                    }
+                  >
+                    <Folder
+                      url={doc.url}
+                      depth={props.depth}
+                      repo={props.repo}
+                      removeFromParent={remove}
+                      open={props.open}
+                      name={doc.name}
+                      hive={props.hive}
+                      selectedDocUrls={props.selectedDocUrls}
+                      visitedFolders={visitedFolders}
+                    />
+                  </Show>
                 </Match>
                 <Match when={doc.type != "folder"}>
                   <Item

@@ -7,7 +7,7 @@ import type { AutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 import { useDocument } from "@automerge/automerge-repo-solid-primitives";
 import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
-import { createEffect, createSignal, onMount } from "solid-js";
+import { createEffect, createSelector, createSignal, onMount } from "solid-js";
 import CreateNew from "../create-new.tsx";
 import { filter, filterMatches, setRenaming } from "../state.ts";
 import { DocumentList } from "./document-list.tsx";
@@ -23,11 +23,16 @@ export default function Folder(props: {
   name?: string;
   hive?: AutomergeRepoKeyhive;
   selectedDocUrls: AutomergeUrl[];
+  visitedFolders?: Set<AutomergeUrl>;
 }) {
   const [ref, setRef] = createSignal<HTMLElement>();
   const [open, setOpen] = createSignal(false);
 
   const [folder, handle] = useDocument<FolderDoc>(() => props.url, props);
+
+  // Create a new Set with the current folder URL to prevent circular references
+  const nextVisitedFolders = new Set(props.visitedFolders ?? []);
+  nextVisitedFolders.add(props.url);
 
   const depth = () => props.depth ?? 1;
   const depthStyle = () => ({ "--depth": depth() + 1 });
@@ -53,6 +58,8 @@ export default function Folder(props: {
   function rename(name: string) {
     handle()?.change((doc) => updateText(doc, ["title"], name));
   }
+
+  const selector = createSelector(() => props.url);
 
   return (
     <div
@@ -112,6 +119,7 @@ export default function Folder(props: {
           open={props.open}
           hive={props.hive}
           selectedDocUrls={props.selectedDocUrls}
+          visitedFolders={nextVisitedFolders}
         />
       </div>
     </div>

@@ -242,6 +242,14 @@
   display: none;
 }
 
+.document-list-folder__circular-ref {
+  padding: 0.5rem;
+  padding-left: calc(2.2rem * var(--depth));
+  color: #666;
+  font-style: italic;
+  font-size: 0.9em;
+}
+
 .sideboard__item--invisible {
   display: none;
 }
@@ -428,7 +436,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
+  border-bottom: 1px solid
+    color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
 }
 
 .share-modal__header h2 {
@@ -546,7 +555,8 @@
 
 .share-modal__divider {
   border: none;
-  border-top: 1px solid color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
+  border-top: 1px solid
+    color-mix(in oklab, var(--sideboard-widget-fill), black 15%);
   margin: 0 0 1.5rem 0;
 }
 
@@ -640,7 +650,11 @@
 /* Dark mode overrides for share modal */
 @media (prefers-color-scheme: dark) {
   .share-modal__header {
-    border-bottom-color: color-mix(in oklab, var(--sideboard-widget-fill), white 15%);
+    border-bottom-color: color-mix(
+      in oklab,
+      var(--sideboard-widget-fill),
+      white 15%
+    );
   }
 
   .share-modal__close:hover {
@@ -653,7 +667,11 @@
   }
 
   .share-modal__divider {
-    border-top-color: color-mix(in oklab, var(--sideboard-widget-fill), white 15%);
+    border-top-color: color-mix(
+      in oklab,
+      var(--sideboard-widget-fill),
+      white 15%
+    );
   }
 
   .share-modal__member {
