@@ -196,28 +196,25 @@ export function FrameConfigurator({
 
   const documentToolbarOptions = useMemo(() => {
     return allTools
-      .filter((tool) => tool.tags.includes("titlebar-tool"))
-      .map((tool) => ({
-        id: tool.id,
-        name: tool.name || tool.id,
-      }))
+      .filter((tool) => (tool.tags || []).includes("titlebar-tool"))
+      .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [allTools]);
 
   const frameOptions = allTools
-    .filter((tool) => tool.tags.includes("frame-tool"))
+    .filter((tool) => (tool.tags || []).includes("frame-tool"))
     .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
     .sort((a, b) => a.name.localeCompare(b.name));
   const sidebarOptions = allTools
-    .filter((tool) => tool.tags.includes("sidebar-account"))
+    .filter((tool) => (tool.tags || []).includes("sidebar-account"))
     .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
     .sort((a, b) => a.name.localeCompare(b.name));
   const contextSidebarOptions = allTools
-    .filter((tool) => tool.tags.includes("sidebar-context"))
+    .filter((tool) => (tool.tags || []).includes("sidebar-context"))
     .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
     .sort((a, b) => a.name.localeCompare(b.name));
   const contextToolOptions = allTools
-    .filter((tool) => tool.tags.includes("context-tool"))
+    .filter((tool) => (tool.tags || []).includes("context-tool"))
     .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
