@@ -5,6 +5,7 @@ export const plugins: Plugin<any>[] = [
   {
     type: "patchwork:tool",
     id: "back-link-button",
+    tags: ["titlebar-tool"],
     name: "Back Link Button",
     icon: "ArrowLeft",
     supportedDatatypes: "*",

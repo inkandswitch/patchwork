@@ -5,6 +5,7 @@ export const plugins: Plugin<any>[] = [
   {
     type: "patchwork:tool",
     id: "add-doc-to-sidebar-button",
+    tags: ["titlebar-tool"],
     name: "Add doc to sidebar button",
     icon: "Plus",
     supportedDatatypes: "*",

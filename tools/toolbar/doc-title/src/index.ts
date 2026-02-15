@@ -5,6 +5,7 @@ export const plugins: Plugin<any>[] = [
   {
     type: "patchwork:tool",
     id: "document-title",
+    tags: ["titlebar-tool"],
     name: "Document Title",
     icon: "Heading",
     supportedDatatypes: "*",
