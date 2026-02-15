@@ -193,9 +193,10 @@ export function FrameConfigurator({
 
   // Dynamically discover tools marked for titlebar
   const allTools = useToolDescriptions();
+
   const documentToolbarOptions = useMemo(() => {
     return allTools
-      .filter((tool) => tool.forTitleBar === true)
+      .filter((tool) => tool.tags.includes("titlebar-tool"))
       .map((tool) => ({
         id: tool.id,
         name: tool.name || tool.id,
@@ -203,10 +204,22 @@ export function FrameConfigurator({
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [allTools]);
 
-  const frameOptions = FRAME_TOOL_OPTIONS;
-  const sidebarOptions = ACCOUNT_SIDEBAR_OPTIONS;
-  const contextSidebarOptions = CONTEXT_SIDEBAR_OPTIONS;
-  const contextToolOptions = CONTEXT_TOOL_OPTIONS;
+  const frameOptions = allTools
+    .filter((tool) => tool.tags.includes("frame-tool"))
+    .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const sidebarOptions = allTools
+    .filter((tool) => tool.tags.includes("sidebar-account"))
+    .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const contextSidebarOptions = allTools
+    .filter((tool) => tool.tags.includes("sidebar-context"))
+    .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const contextToolOptions = allTools
+    .filter((tool) => tool.tags.includes("context-tool"))
+    .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const setField = useCallback(
     <K extends keyof TinyPatchworkLayoutDoc>(
