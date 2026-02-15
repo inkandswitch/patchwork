@@ -1909,6 +1909,12 @@ importers:
       '@kobalte/core':
         specifier: ^0.13.11
         version: 0.13.11(solid-js@1.9.9)
+      '@types/debug':
+        specifier: ^4.1.12
+        version: 4.1.12
+      debug:
+        specifier: ^4.4.3
+        version: 4.4.3
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9
