@@ -31,7 +31,7 @@ export type ToolRender<T = unknown> = (
 // todo this will be in the package.json
 export type ToolDescription = PluginDescription & {
   id: string;
-  tags: string[];
+  tags?: string[];
   type: "patchwork:tool";
   supportedDatatypes: "*" | string[];
   name: string;
