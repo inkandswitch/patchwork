@@ -961,55 +961,6 @@ importers:
         specifier: ^8.45.0
         version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
 
-  tools/codemirror/codemirror-latex:
-    dependencies:
-      '@codemirror/state':
-        specifier: ^6.5.2
-        version: 6.5.2
-      '@codemirror/view':
-        specifier: ^6.38.4
-        version: 6.38.8
-      '@inkandswitch/patchwork-bootloader':
-        specifier: workspace:^
-        version: link:../../../core/bootloader
-      katex:
-        specifier: ^0.16.11
-        version: 0.16.28
-    devDependencies:
-      '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
-      '@babel/core':
-        specifier: ^7.28.4
-        version: 7.28.4
-      '@babel/parser':
-        specifier: ^7.28.4
-        version: 7.28.4
-      '@eslint/js':
-        specifier: ^9.36.0
-        version: 9.38.0
-      '@node-types/node':
-        specifier: npm:@types/node@^24.9.1
-        version: '@types/node@24.9.1'
-      '@types/babel__core':
-        specifier: ^7.20.5
-        version: 7.20.5
-      esbuild:
-        specifier: ^0.23.1
-        version: 0.23.1
-      eslint:
-        specifier: ^9.36.0
-        version: 9.38.0(jiti@2.6.1)
-      globals:
-        specifier: ^16.4.0
-        version: 16.4.0
-      typescript:
-        specifier: ~5.9.3
-        version: 5.9.3
-      typescript-eslint:
-        specifier: ^8.45.0
-        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
-
   tools/codemirror/codemirror-markdown:
     dependencies:
       '@automerge/automerge':
@@ -1153,70 +1104,6 @@ importers:
         specifier: ^5.8.3
         version: 5.9.3
 
-  tools/editors/latex-pdf-editor:
-    dependencies:
-      '@automerge/automerge-codemirror':
-        specifier: ^0.2.0
-        version: 0.2.0
-      '@automerge/automerge-repo-react-hooks':
-        specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@automerge/react':
-        specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@codemirror/commands':
-        specifier: ^6.9.0
-        version: 6.9.0
-      '@codemirror/state':
-        specifier: ^6.5.2
-        version: 6.5.2
-      '@codemirror/view':
-        specifier: ^6.38.4
-        version: 6.38.8
-      '@inkandswitch/patchwork-bootloader':
-        specifier: workspace:^
-        version: link:../../../core/bootloader
-      '@inkandswitch/patchwork-plugins':
-        specifier: workspace:^
-        version: link:../../../core/plugins
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-    devDependencies:
-      '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
-      '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
-      '@eslint/js':
-        specifier: ^9.36.0
-        version: 9.38.0
-      '@types/node':
-        specifier: ^24.6.0
-        version: 24.9.1
-      '@types/react':
-        specifier: 'catalog:'
-        version: 18.3.27
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 18.3.7(@types/react@18.3.27)
-      esbuild:
-        specifier: ^0.23.1
-        version: 0.23.1
-      eslint:
-        specifier: ^9.36.0
-        version: 9.38.0(jiti@2.6.1)
-      typescript:
-        specifier: ~5.9.3
-        version: 5.9.3
-      typescript-eslint:
-        specifier: ^8.45.0
-        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
-
   tools/editors/orionmark:
     dependencies:
       '@automerge/automerge':
@@ -1310,61 +1197,6 @@ importers:
       globals:
         specifier: ^16.4.0
         version: 16.4.0
-      typescript:
-        specifier: ~5.9.3
-        version: 5.9.3
-      typescript-eslint:
-        specifier: ^8.45.0
-        version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
-
-  tools/editors/pdf-viewer:
-    dependencies:
-      '@automerge/automerge-repo-react-hooks':
-        specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@automerge/react':
-        specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@inkandswitch/patchwork-bootloader':
-        specifier: workspace:^
-        version: link:../../../core/bootloader
-      '@inkandswitch/patchwork-plugins':
-        specifier: workspace:^
-        version: link:../../../core/plugins
-      pdfjs-dist:
-        specifier: ^4.8.69
-        version: 4.10.38
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-    devDependencies:
-      '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
-      '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
-      '@eslint/js':
-        specifier: ^9.36.0
-        version: 9.38.0
-      '@types/node':
-        specifier: ^24.6.0
-        version: 24.9.1
-      '@types/react':
-        specifier: 'catalog:'
-        version: 18.3.27
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 18.3.7(@types/react@18.3.27)
-      esbuild:
-        specifier: ^0.23.1
-        version: 0.23.1
-      eslint:
-        specifier: ^9.36.0
-        version: 9.38.0(jiti@2.6.1)
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
@@ -3789,76 +3621,6 @@ packages:
 
   '@marijn/find-cluster-break@1.0.2':
     resolution: {integrity: sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g==}
-
-  '@napi-rs/canvas-android-arm64@0.1.90':
-    resolution: {integrity: sha512-3JBULVF+BIgr7yy7Rf8UjfbkfFx4CtXrkJFD1MDgKJ83b56o0U9ciT8ZGTCNmwWkzu8RbNKlyqPP3KYRG88y7Q==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [android]
-
-  '@napi-rs/canvas-darwin-arm64@0.1.90':
-    resolution: {integrity: sha512-L8XVTXl+8vd8u7nPqcX77NyG5RuFdVsJapQrKV9WE3jBayq1aSMht/IH7Dwiz/RNJ86E5ZSg9pyUPFIlx52PZA==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@napi-rs/canvas-darwin-x64@0.1.90':
-    resolution: {integrity: sha512-h0ukhlnGhacbn798VWYTQZpf6JPDzQYaow+vtQ2Fat7j7ImDdpg6tfeqvOTO1r8wS+s+VhBIFITC7aA1Aik0ZQ==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [darwin]
-
-  '@napi-rs/canvas-linux-arm-gnueabihf@0.1.90':
-    resolution: {integrity: sha512-JCvTl99b/RfdBtgftqrf+5UNF7GIbp7c5YBFZ+Bd6++4Y3phaXG/4vD9ZcF1bw1P4VpALagHmxvodHuQ9/TfTg==}
-    engines: {node: '>= 10'}
-    cpu: [arm]
-    os: [linux]
-
-  '@napi-rs/canvas-linux-arm64-gnu@0.1.90':
-    resolution: {integrity: sha512-vbWFp8lrP8NIM5L4zNOwnsqKIkJo0+GIRUDcLFV9XEJCptCc1FY6/tM02PT7GN4PBgochUPB1nBHdji6q3ieyQ==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@napi-rs/canvas-linux-arm64-musl@0.1.90':
-    resolution: {integrity: sha512-8Bc0BgGEeOaux4EfIfNzcRRw0JE+lO9v6RWQFCJNM9dJFE4QJffTf88hnmbOaI6TEMpgWOKipbha3dpIdUqb/g==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@napi-rs/canvas-linux-riscv64-gnu@0.1.90':
-    resolution: {integrity: sha512-0iiVDG5IH+gJb/YUrY/pRdbsjcgvwUmeckL/0gShWAA7004ygX2ST69M1wcfyxXrzFYjdF8S/Sn6aCAeBi89XQ==}
-    engines: {node: '>= 10'}
-    cpu: [riscv64]
-    os: [linux]
-
-  '@napi-rs/canvas-linux-x64-gnu@0.1.90':
-    resolution: {integrity: sha512-SkKmlHMvA5spXuKfh7p6TsScDf7lp5XlMbiUhjdCtWdOS6Qke/A4qGVOciy6piIUCJibL+YX+IgdGqzm2Mpx/w==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  '@napi-rs/canvas-linux-x64-musl@0.1.90':
-    resolution: {integrity: sha512-o6QgS10gAS4vvELGDOOWYfmERXtkVRYFWBCjomILWfMgCvBVutn8M97fsMW5CrEuJI8YuxuJ7U+/DQ9oG93vDA==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  '@napi-rs/canvas-win32-arm64-msvc@0.1.90':
-    resolution: {integrity: sha512-2UHO/DC1oyuSjeCAhHA0bTD9qsg58kknRqjJqRfvIEFtdqdtNTcWXMCT9rQCuJ8Yx5ldhyh2SSp7+UDqD2tXZQ==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [win32]
-
-  '@napi-rs/canvas-win32-x64-msvc@0.1.90':
-    resolution: {integrity: sha512-48CxEbzua5BP4+OumSZdi3+9fNiRO8cGNBlO2bKwx1PoyD1R2AXzPtqd/no1f1uSl0W2+ihOO1v3pqT3USbmgQ==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [win32]
-
-  '@napi-rs/canvas@0.1.90':
-    resolution: {integrity: sha512-vO9j7TfwF9qYCoTOPO39yPLreTRslBVOaeIwhDZkizDvBb0MounnTl0yeWUMBxP4Pnkg9Sv+3eQwpxNUmTwt0w==}
-    engines: {node: '>= 10'}
 
   '@napi-rs/wasm-runtime@1.0.7':
     resolution: {integrity: sha512-SeDnOO0Tk7Okiq6DbXmmBODgOAb9dp9gjlphokTUxmt8U3liIP1ZsozBahH69j/RJv+Rfs6IwUKHTgQYJ/HBAw==}
@@ -6417,10 +6179,6 @@ packages:
   commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
 
-  commander@8.3.0:
-    resolution: {integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==}
-    engines: {node: '>= 12'}
-
   comment-json@4.4.1:
     resolution: {integrity: sha512-r1To31BQD5060QdkC+Iheai7gHwoSZobzunqkf2/kQ6xIAfJyrKNAFUwdKvkK7Qgu7pVTKQEa7ok7Ed3ycAJgg==}
     engines: {node: '>= 6'}
@@ -6915,10 +6673,6 @@ packages:
   jsonfile@4.0.0:
     resolution: {integrity: sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg==}
 
-  katex@0.16.28:
-    resolution: {integrity: sha512-YHzO7721WbmAL6Ov1uzN/l5mY5WWWhJBSW+jq4tkfZfsxmo1hu6frS0EOswvjBUnWE6NtjEs48SFn5CQESRLZg==}
-    hasBin: true
-
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
@@ -7215,10 +6969,6 @@ packages:
   pathval@2.0.1:
     resolution: {integrity: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==}
     engines: {node: '>= 14.16'}
-
-  pdfjs-dist@4.10.38:
-    resolution: {integrity: sha512-/Y3fcFrXEAsMjJXeL9J8+ZG9U01LbuWaYypvDW2ycW1jL269L3js3DVBjDJ0Up9Np1uqDXsDrRihHANhZOlwdQ==}
-    engines: {node: '>=20'}
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -9353,54 +9103,6 @@ snapshots:
       read-yaml-file: 1.1.0
 
   '@marijn/find-cluster-break@1.0.2': {}
-
-  '@napi-rs/canvas-android-arm64@0.1.90':
-    optional: true
-
-  '@napi-rs/canvas-darwin-arm64@0.1.90':
-    optional: true
-
-  '@napi-rs/canvas-darwin-x64@0.1.90':
-    optional: true
-
-  '@napi-rs/canvas-linux-arm-gnueabihf@0.1.90':
-    optional: true
-
-  '@napi-rs/canvas-linux-arm64-gnu@0.1.90':
-    optional: true
-
-  '@napi-rs/canvas-linux-arm64-musl@0.1.90':
-    optional: true
-
-  '@napi-rs/canvas-linux-riscv64-gnu@0.1.90':
-    optional: true
-
-  '@napi-rs/canvas-linux-x64-gnu@0.1.90':
-    optional: true
-
-  '@napi-rs/canvas-linux-x64-musl@0.1.90':
-    optional: true
-
-  '@napi-rs/canvas-win32-arm64-msvc@0.1.90':
-    optional: true
-
-  '@napi-rs/canvas-win32-x64-msvc@0.1.90':
-    optional: true
-
-  '@napi-rs/canvas@0.1.90':
-    optionalDependencies:
-      '@napi-rs/canvas-android-arm64': 0.1.90
-      '@napi-rs/canvas-darwin-arm64': 0.1.90
-      '@napi-rs/canvas-darwin-x64': 0.1.90
-      '@napi-rs/canvas-linux-arm-gnueabihf': 0.1.90
-      '@napi-rs/canvas-linux-arm64-gnu': 0.1.90
-      '@napi-rs/canvas-linux-arm64-musl': 0.1.90
-      '@napi-rs/canvas-linux-riscv64-gnu': 0.1.90
-      '@napi-rs/canvas-linux-x64-gnu': 0.1.90
-      '@napi-rs/canvas-linux-x64-musl': 0.1.90
-      '@napi-rs/canvas-win32-arm64-msvc': 0.1.90
-      '@napi-rs/canvas-win32-x64-msvc': 0.1.90
-    optional: true
 
   '@napi-rs/wasm-runtime@1.0.7':
     dependencies:
@@ -12417,8 +12119,6 @@ snapshots:
   commander@2.20.3:
     optional: true
 
-  commander@8.3.0: {}
-
   comment-json@4.4.1:
     dependencies:
       array-timsort: 1.0.3
@@ -12944,10 +12644,6 @@ snapshots:
     optionalDependencies:
       graceful-fs: 4.2.11
 
-  katex@0.16.28:
-    dependencies:
-      commander: 8.3.0
-
   keyv@4.5.4:
     dependencies:
       json-buffer: 3.0.1
@@ -13188,10 +12884,6 @@ snapshots:
   pathe@2.0.3: {}
 
   pathval@2.0.1: {}
-
-  pdfjs-dist@4.10.38:
-    optionalDependencies:
-      '@napi-rs/canvas': 0.1.90
 
   picocolors@1.1.1: {}
 

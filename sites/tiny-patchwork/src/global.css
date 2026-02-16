@@ -62,3 +62,7 @@ body > patchwork-view {
     background: var(--color-base-content);
   }
 }
+
+.tl-watermark_SEE-LICENSE {
+  display: none;
+}
