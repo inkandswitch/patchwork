@@ -11,6 +11,17 @@ import type { HandoffHandler } from "@inkandswitch/patchwork-bootloader/types";
 import debug from "debug";
 const log = debug("patchwork:filesystem:handoff");
 
+export async function uncache(match: string) {
+  for (const name of await caches.keys()) {
+    const cache = await caches.open(name);
+    for (const request of await cache.keys()) {
+      if (request.url.includes(match)) {
+        cache.delete(request);
+      }
+    }
+  }
+}
+
 export async function findFileHandleInFolderHandle(
   repo: Repo,
   folder: DocHandle<FolderDoc>,
@@ -132,6 +143,9 @@ export function createFilesystemHandoffHandler(repo: Repo) {
       }
     } catch (error) {
       console.error({ error });
+      const [maybeAutomergeUrl] = href.split("/");
+      await uncache(maybeAutomergeUrl);
+      console.info(`uncached ${maybeAutomergeUrl}, try refreshing`);
       return {
         body: `${error}`,
         status: 567,
