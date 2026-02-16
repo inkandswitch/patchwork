@@ -4,6 +4,7 @@ export const plugins: Plugin<any>[] = [
   {
     type: "patchwork:tool",
     id: "context-sidebar",
+    tags: ["sidebar-context"],
     name: "Context Sidebar",
     icon: "Tabs",
     supportedDatatypes: ["account"],

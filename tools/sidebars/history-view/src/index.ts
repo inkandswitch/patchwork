@@ -5,6 +5,7 @@ export const plugins: Plugin<any>[] = [
   {
     type: "patchwork:tool",
     id: "history-view",
+    category: "context-tool",
     name: "History",
     icon: "History",
     supportedDatatypes: ["account"],
@@ -17,6 +18,7 @@ export const plugins: Plugin<any>[] = [
   {
     type: "patchwork:tool",
     id: "highlight-changes-checkbox",
+    tags: ["titlebar-tool"],
     name: "Highlight Changes",
     icon: "Highlighter",
     supportedDatatypes: "*",

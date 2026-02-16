@@ -4,6 +4,7 @@ export const plugins: Plugin<any>[] = [
   {
     type: "patchwork:tool",
     id: "comments-view",
+    tags: ["context-tool"],
     name: "Comments",
     icon: "Comments",
     supportedDatatypes: ["account"],
