@@ -120,9 +120,10 @@ export const plugins = [
   } satisfies LoadablePlugin<ToolDescription, ToolImplementation>,
   {
     type: "patchwork:tool",
-    id: "chee/temporary-file-viewer",
+    id: "js-viewer",
     name: "File Viewer (don't @ me)",
-    supportedDatatypes: ["file"],
+    supportedDatatypes: [],
+    unlisted: true,
     async load() {
       const tool = await import("./file-viewer.tsx");
       return (handle, element) => {
