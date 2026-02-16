@@ -3,7 +3,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "pushwork": {
-    "url": "automerge:45rzj2gtHHTpMg22bc9NRsSDq4QX"
+    "url": "automerge:4JumiRGdrRZJPXjWF5X98foob3MG"
   },
   "scripts": {
     "dev": "vite build --watch",
