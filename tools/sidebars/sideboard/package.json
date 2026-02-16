@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "pushwork": {
-    "url": "automerge:3Fj5zE7QdhbbWVJNsAHPbf84YfX6"
+    "url": "automerge:kFcrzeDmr5zXE1jShvxUPsoToAN"
   },
   "exports": {
     ".": {

@@ -13,6 +13,7 @@
 html,
 body {
   overscroll-behavior: none;
+  font-family: system-ui, sans-serif;
 }
 html {
   font-size: 16px;
