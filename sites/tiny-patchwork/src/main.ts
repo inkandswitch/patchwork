@@ -172,17 +172,14 @@ let firstMount = true;
 rootElement.addEventListener("patchwork:mounted", (event) => {
   console.info(`tool mounted`, event.detail.toolId);
   if (event.target != rootElement) return;
-
   console.info(`root element mounted`);
   if (firstMount) {
     firstMount = false;
     rootElement.style.visibility = "visible";
     document.body.style.background = "";
-    return;
   }
-  setTimeout(() => {
-    handleHashChange();
-  }, 100);
+
+  setTimeout(() => handleHashChange(), 100);
 });
 setTimeout(() => {
   if (firstMount) {
