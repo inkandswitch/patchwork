@@ -9,3 +9,4 @@ packages/*/dist/
 sites/*/dist/
 dummy-non-existing-folder/
 **/.pnpm-store/
+.claude/

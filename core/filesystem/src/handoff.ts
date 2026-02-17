@@ -151,9 +151,9 @@ export function createFilesystemHandoffHandler(repo: Repo) {
         "automerge:".length,
         maybeAutomergeUrl.indexOf("#")
       );
-      const cleared = await uncache(key);
-      console.info(`uncached ${key}`, cleared ? "refreshing" : "");
-      cleared && location.reload();
+      const _cleared = await uncache(key);
+      // console.info(`uncached ${key}`, cleared ? "refreshing" : "");
+      // cleared && location.reload();
 
       return {
         body: `${error}`,
