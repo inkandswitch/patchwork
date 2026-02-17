@@ -7,7 +7,6 @@ import { DocHandle } from "@automerge/automerge-repo";
 import {
   AutomergeUrl,
   encodeHeads,
-  isValidDocumentId,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
 } from "@automerge/vanillajs";
@@ -278,22 +277,7 @@ export const PatchworkFrame = ({
       onOpenDocument as EventListener
     );
 
-    // Process any document already specified in the URL hash on initial mount,
-    // since the patchwork:mounted event fires before this listener is ready.
-    const hash = window.location.hash.slice(1);
-    const params = new URLSearchParams(hash);
-    const documentId = params.get("doc");
-    const toolId = params.get("tool") || undefined;
-    const headsParam = params.get("heads");
-    const heads = headsParam ? headsParam.split("|") : undefined;
-    if (isValidDocumentId(documentId)) {
-      setSelectedView({
-        url: stringifyAutomergeUrl({ documentId, heads }),
-        toolId,
-      });
-    }
-
-    return () => {
+return () => {
       (element as HTMLElement).removeEventListener(
         "patchwork:open-document",
         onOpenDocument

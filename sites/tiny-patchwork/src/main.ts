@@ -42,6 +42,24 @@ declare global {
 
 const repo = new Repo({ storage: new IndexedDBStorageAdapter() });
 
+// DEBUG: trace every repo.find call to discover what's loading all documents
+const _originalFind = repo.find.bind(repo);
+const _findCounts = new Map<string, number>();
+repo.find = function debugFind(...args: any[]) {
+  const url = args[0];
+  const count = (_findCounts.get(url) ?? 0) + 1;
+  _findCounts.set(url, count);
+  const stack = new Error().stack?.split("\n").slice(1, 5).join("\n");
+  console.groupCollapsed(
+    `%c[repo.find]%c #${count} ${url}`,
+    "color: red; font-weight: bold",
+    "color: inherit"
+  );
+  console.log(stack);
+  console.groupEnd();
+  return (_originalFind as any)(...args);
+} as any;
+
 function createSharedWorker() {
   return new SharedWorker(new URL("./automerge-worker.ts", import.meta.url), {
     type: "module",
@@ -151,14 +169,15 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
 });
 
 let firstMount = true;
-rootElement.addEventListener("patchwork:mounted", () => {
+rootElement.addEventListener("patchwork:mounted", (event) => {
   if (firstMount) {
     firstMount = false;
     rootElement.style.visibility = "visible";
     document.body.style.background = "";
-    return;
   }
-  handleHashChange();
+  if (event.target === rootElement) {
+    handleHashChange();
+  }
 });
 setTimeout(() => {
   if (firstMount) {
