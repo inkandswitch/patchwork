@@ -27,7 +27,7 @@ import {
   TooltipTrigger,
 } from "./ui/index";
 import { Copy, Eye, EyeOff } from "lucide-react";
-import "./styles.css";
+
 
 // Declare the patchwork-view custom element for TypeScript
 // eslint-disable-next-line @typescript-eslint/no-namespace

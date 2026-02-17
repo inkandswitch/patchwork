@@ -1,6 +1,18 @@
 import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
 import "./styles.css";
-import  { createRoot } from "react-dom/client"
+import { createRoot } from "react-dom/client";
+
+function addStyles(element: HTMLElement, textContent: string) {
+  const id = "contact-styles";
+  const el = element.querySelector(`#${id}`) ?? document.createElement("style");
+  Object.assign(el, { textContent, id });
+  element.append(el);
+}
+
+async function loadStyles() {
+  const url = new URL("./tool.css", import.meta.url);
+  return (await fetch(url)).text();
+}
 
 export const plugins = [
   {
@@ -19,9 +31,12 @@ export const plugins = [
     name: "Contact Viewer",
     supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
-      const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");
+      const { RepoContext } =
+        await import("@automerge/automerge-repo-react-hooks");
       const { ContactViewer } = await import("./components/ContactViewer");
+      const css = await loadStyles();
       return (handle, element) => {
+        addStyles(document.head, css);
         const root = createRoot(element);
         root.render(
           <RepoContext.Provider value={element.repo}>
@@ -38,9 +53,12 @@ export const plugins = [
     name: "Contact Avatar",
     supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
-      const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");
+      const { RepoContext } =
+        await import("@automerge/automerge-repo-react-hooks");
       const { ContactAvatar } = await import("./components/ContactAvatar");
+      const css = await loadStyles();
       return (handle, element) => {
+        addStyles(element, css);
         const root = createRoot(element);
         root.render(
           <RepoContext.Provider value={element.repo}>
@@ -57,9 +75,13 @@ export const plugins = [
     name: "Inline Contact Avatar",
     supportedDatatypes: ["contact"],
     async load(): Promise<ToolImplementation> {
-      const { RepoContext } = await import( "@automerge/automerge-repo-react-hooks");
-      const { InlineContactAvatar } = await import("./components/InlineContactAvatar");
+      const { RepoContext } =
+        await import("@automerge/automerge-repo-react-hooks");
+      const { InlineContactAvatar } =
+        await import("./components/InlineContactAvatar");
+      const css = await loadStyles();
       return (handle, element) => {
+        addStyles(element, css);
         const root = createRoot(element);
         root.render(
           <RepoContext.Provider value={element.repo}>

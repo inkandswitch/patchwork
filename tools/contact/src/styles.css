@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "./";
 
 /* Ensure avatar fallback is visible in all contexts */
 [data-radix-avatar-fallback] {
