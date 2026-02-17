@@ -156,6 +156,7 @@ rootElement.addEventListener("patchwork:mounted", () => {
     firstMount = false;
     rootElement.style.visibility = "visible";
     document.body.style.background = "";
+    return;
   }
   handleHashChange();
 });
