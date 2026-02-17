@@ -1,6 +1,5 @@
-import type { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocHandle } from "@automerge/react";
-import { useRepo } from "@automerge/automerge-repo-react-hooks";
+import type { AutomergeUrl, DocHandle } from "@automerge/automerge-repo";
+import { useDocHandle, useDocument, useRepo } from "@automerge/react";
 import {
   Tldraw,
   useEditor,
@@ -10,9 +9,12 @@ import {
   type TLAssetId,
   type TLAsset,
 } from "@tldraw/tldraw";
-import { useAutomergeStore } from "./lith/useAutomergeStore.ts";
+import {
+  useAutomergeStore,
+  useAutomergePresence,
+} from "./lith/useAutomergeStore.ts";
 import type { TLDrawDoc } from "./datatype.ts";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { UnixFileEntry } from "@inkandswitch/patchwork-filesystem";
 import { automergeUrlToServiceWorkerUrl } from "@inkandswitch/patchwork-filesystem";
 
@@ -34,10 +36,47 @@ function extensionForMimeType(mimeType: string): string {
   return MIME_TO_EXT[mimeType] || mimeType.split("/")[1] || "bin";
 }
 
+interface ContactDoc {
+  type: string;
+  name?: string;
+  color?: string;
+}
+
+function useContactInfo() {
+  const [contactUrl, setContactUrl] = useState<AutomergeUrl | undefined>();
+
+  useEffect(() => {
+    const accountDocHandle = (
+      window as any
+    ).accountDocHandle as DocHandle<{ contactUrl: AutomergeUrl }> | undefined;
+    if (!accountDocHandle) return;
+    accountDocHandle.whenReady().then(() => {
+      const doc = accountDocHandle.doc();
+      if (doc?.contactUrl) {
+        setContactUrl(doc.contactUrl);
+      }
+    });
+  }, []);
+
+  const [contactDoc] = useDocument<ContactDoc>(contactUrl);
+
+  return {
+    userId: contactUrl ?? (window as any).repo?.peerId ?? "anonymous",
+    name: contactDoc?.name ?? "Anonymous",
+    color: contactDoc?.color,
+  };
+}
+
 export function TldrawTool({ docUrl }: { docUrl: AutomergeUrl }) {
   const handle = useDocHandle<TLDrawDoc>(docUrl, { suspense: true });
-  const userId = "chee";
-  const store = useAutomergeStore({ handle, userId });
+  const contactInfo = useContactInfo();
+  const store = useAutomergeStore({ handle, userId: contactInfo.userId });
+
+  useAutomergePresence({
+    handle: handle as DocHandle<any>,
+    store,
+    userMetadata: contactInfo,
+  });
 
   return (
     <Tldraw inferDarkMode autoFocus store={store}>
