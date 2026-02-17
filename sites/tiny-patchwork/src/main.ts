@@ -5,11 +5,8 @@ import {
   openDocument,
 } from "@inkandswitch/patchwork-elements";
 import {
-  ModuleSettingsDoc,
   ModuleWatcher,
-  automergeUrlToServiceWorkerUrl,
   createFilesystemHandoffHandler,
-  importModuleFromFolderDocUrl,
 } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
 import { registerPlugins } from "@inkandswitch/patchwork-plugins";
@@ -20,7 +17,6 @@ import {
 import {
   DocHandle,
   IndexedDBStorageAdapter,
-  isValidAutomergeUrl,
   isValidDocumentId,
   MessageChannelNetworkAdapter,
   parseAutomergeUrl,
@@ -128,33 +124,15 @@ function onModuleLoaded(name: string, mod: any) {
   }
 }
 
-const defaultToolsModuleWatcher = new ModuleWatcher(
+const moduleWatcher = new ModuleWatcher(
   repo,
-  defaultToolsUrl,
+  [defaultToolsUrl, accountDocHandle.doc().moduleSettingsUrl],
   onModuleLoaded
 );
 
-// try waiting for the default tools first
-await defaultToolsModuleWatcher.doneLoading;
-console.log("default tools loaded");
-
-setTimeout(() => {
-  new ModuleWatcher(
-    repo,
-    accountDocHandle.doc().moduleSettingsUrl,
-    onModuleLoaded
-  ).doneLoading.then(() => {
-    console.log("personal modules loaded");
-  });
-}, 10);
-
 rootElement.addEventListener("patchwork:no-tool", (event) => {
-  defaultToolsModuleWatcher.loadSuggestedImportUrl(event.detail.url);
+  moduleWatcher.loadSuggestedImportUrl(event.detail.url);
 });
-
-// todo the stuff below this can be wrapped up in a library
-// and used by any frame tool if they !element.closest("patchwork-view")
-// could also, perhaps insanely, be added directly to patchwork-view?
 
 rootElement.addEventListener("patchwork:open-document", (event) => {
   const params = new URLSearchParams(window.location.hash.slice(1));
