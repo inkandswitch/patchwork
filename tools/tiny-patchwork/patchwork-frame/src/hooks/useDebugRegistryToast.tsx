@@ -1,5 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
-import { getAllRegistries, PluginRegistry } from "@inkandswitch/patchwork-plugins";
+import { createEffect, createSignal, onCleanup } from "solid-js";
+import {
+  getAllRegistries,
+  PluginRegistry,
+} from "@inkandswitch/patchwork-plugins";
 
 // NOTE: THIS IS GARBAGE CODE AND WILL BE REMOVED
 // Written by Claude
@@ -54,49 +57,55 @@ export function useDebugRegistryToast(
 ) {
   const { events: subscribedEvents = DEFAULT_EVENTS } = options;
 
-  const [events, setEvents] = useState<RegistryEvent[]>([]);
-  const [isEnabled, setIsEnabled] = useState(isDebugModalEnabled);
+  const [events, setEvents] = createSignal<RegistryEvent[]>([]);
+  const [isEnabled, setIsEnabled] = createSignal(isDebugModalEnabled());
 
-  const addEvent = useCallback(
-    (
-      type: string,
-      event: RegistryEvent["event"],
-      pluginId?: string,
-      pluginName?: string
-    ) => {
-      const newEvent: RegistryEvent = {
-        id: `${type}-${event}-${Date.now()}-${Math.random()}`,
-        type,
-        event,
-        pluginId,
-        pluginName,
-        timestamp: Date.now(),
-      };
+  // Track timeouts for cleanup
+  const timeouts = new Set<number>();
 
-      setEvents((prev) => {
-        const updated = [newEvent, ...prev].slice(0, 50); // Keep last 50 events
-        return updated;
-      });
+  const addEvent = (
+    type: string,
+    event: RegistryEvent["event"],
+    pluginId?: string,
+    pluginName?: string
+  ) => {
+    const newEvent: RegistryEvent = {
+      id: crypto.randomUUID(),
+      type,
+      event,
+      pluginId,
+      pluginName,
+      timestamp: Date.now(),
+    };
 
-      // Auto-remove after 5 seconds
-      setTimeout(() => {
-        setEvents((prev) => prev.filter((e) => e.id !== newEvent.id));
-      }, 5000);
-    },
-    []
-  );
+    setEvents((prev) => {
+      const updated = [newEvent, ...prev].slice(0, 50); // Keep last 50 events
+      return updated;
+    });
 
-  const dismissEvent = useCallback((eventId: string) => {
+    // Auto-remove after 5 seconds
+    const timeoutId = setTimeout(() => {
+      setEvents((prev) => prev.filter((e) => e.id !== newEvent.id));
+      timeouts.delete(timeoutId);
+    }, 5000) as unknown as number;
+
+    timeouts.add(timeoutId);
+  };
+
+  const dismissEvent = (eventId: string) => {
     setEvents((prev) => prev.filter((e) => e.id !== eventId));
-  }, []);
+  };
 
-  const clearAll = useCallback(() => {
+  const clearAll = () => {
     setEvents([]);
-  }, []);
+  };
 
-  useEffect(() => {
-    if (!isEnabled) {
+  createEffect(() => {
+    if (!isEnabled()) {
       setEvents([]);
+      // Clear any pending timeouts
+      timeouts.forEach((id) => clearTimeout(id));
+      timeouts.clear();
       return;
     }
 
@@ -154,13 +163,16 @@ export function useDebugRegistryToast(
       }
     });
 
-    return () => {
+    onCleanup(() => {
       unsubscribes.forEach((unsub) => unsub());
-    };
-  }, [isEnabled, addEvent, subscribedEvents]);
+      // Clear all pending timeouts
+      timeouts.forEach((id) => clearTimeout(id));
+      timeouts.clear();
+    });
+  });
 
   // Listen for storage changes (for cross-tab sync)
-  useEffect(() => {
+  createEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === DEBUG_MODAL_KEY) {
         setIsEnabled(e.newValue === "true");
@@ -168,8 +180,8 @@ export function useDebugRegistryToast(
     };
 
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+    onCleanup(() => window.removeEventListener("storage", handleStorageChange));
+  });
 
   return {
     events,
@@ -209,36 +221,35 @@ export function DebugRegistryToast({
   };
 
   return (
-    <div className="debug-registry-toast">
-      <div className="debug-registry-toast__header">
-        <span className="debug-registry-toast__title">
+    <div class="debug-registry-toast">
+      <div class="debug-registry-toast__header">
+        <span class="debug-registry-toast__title">
           🔧 Registry ({events.length})
         </span>
         <button
-          className="debug-registry-toast__clear"
+          class="debug-registry-toast__clear"
           onClick={onClearAll}
           title="Clear all"
         >
           ✕
         </button>
       </div>
-      <div className="debug-registry-toast__list">
+      <div class="debug-registry-toast__list">
         {events.map((event) => (
           <div
-            key={event.id}
-            className="debug-registry-toast__item"
-            style={{ borderLeftColor: eventColor(event.event) }}
+            class="debug-registry-toast__item"
+            style={{ "border-left-color": eventColor(event.event) }}
             onClick={() => onDismiss(event.id)}
           >
-            <div className="debug-registry-toast__content">
-              <span className="debug-registry-toast__event-type">
+            <div class="debug-registry-toast__content">
+              <span class="debug-registry-toast__event-type">
                 {event.event}
               </span>
-              <span className="debug-registry-toast__plugin-type">
+              <span class="debug-registry-toast__plugin-type">
                 {event.type}
               </span>
               {event.pluginId && (
-                <span className="debug-registry-toast__plugin-id">
+                <span class="debug-registry-toast__plugin-id">
                   {event.pluginId}
                 </span>
               )}
