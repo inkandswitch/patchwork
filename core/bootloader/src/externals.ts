@@ -25,5 +25,8 @@ const externals = [
   "solid-js/web",
   "solid-js/h",
   "solid-js/store",
+
+  "react",
+  "react-dom",
 ];
 export default externals;
