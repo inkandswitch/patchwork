@@ -50,14 +50,19 @@ repo.find = function debugFind(...args: any[]) {
   const count = (_findCounts.get(url) ?? 0) + 1;
   _findCounts.set(url, count);
   const stack = new Error().stack?.split("\n").slice(1, 5).join("\n");
-  console.groupCollapsed(
-    `%c[repo.find]%c #${count} ${url}`,
-    "color: red; font-weight: bold",
-    "color: inherit"
-  );
-  console.log(stack);
-  console.groupEnd();
-  return (_originalFind as any)(...args);
+  const start = performance.now();
+  const handle = (_originalFind as any)(...args);
+  handle.whenReady().then(() => {
+    const ms = (performance.now() - start).toFixed(1);
+    console.groupCollapsed(
+      `%c[repo.find]%c #${count} ${ms}ms ${url}`,
+      "color: red; font-weight: bold",
+      "color: inherit"
+    );
+    console.log(stack);
+    console.groupEnd();
+  });
+  return handle;
 } as any;
 
 function createSharedWorker() {
