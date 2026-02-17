@@ -277,7 +277,7 @@ export const PatchworkFrame = ({
       onOpenDocument as EventListener
     );
 
-return () => {
+    return () => {
       (element as HTMLElement).removeEventListener(
         "patchwork:open-document",
         onOpenDocument
