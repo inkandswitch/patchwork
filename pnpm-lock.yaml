@@ -10,17 +10,17 @@ catalogs:
       specifier: 0.1.0-alpha.14
       version: 0.1.0-alpha.14
     '@automerge/automerge-repo-react-hooks':
-      specifier: 2.5.2-alpha.0
-      version: 2.5.2-alpha.0
+      specifier: 2.5.2
+      version: 2.5.2
     '@automerge/automerge-repo-solid-primitives':
       specifier: 2.4.0
       version: 2.4.0
     '@automerge/react':
-      specifier: 2.5.2-alpha.0
-      version: 2.5.2-alpha.0
+      specifier: 2.5.2
+      version: 2.5.2
     '@automerge/vanillajs':
-      specifier: 2.5.2-alpha.0
-      version: 2.5.2-alpha.0
+      specifier: 2.5.2
+      version: 2.5.2
     '@keyhive/keyhive':
       specifier: 0.0.0-alpha.54
       version: 0.0.0-alpha.54
@@ -38,8 +38,8 @@ catalogs:
       version: 18.3.1
 
 overrides:
-  '@automerge/automerge': 3.2.1
-  '@automerge/automerge-repo': 2.5.2-alpha.0
+  '@automerge/automerge': 3.2.4
+  '@automerge/automerge-repo': 2.5.2
 
 importers:
 
@@ -80,14 +80,23 @@ importers:
   core/bootloader:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/vanillajs':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0
+        version: 2.5.2
+      '@inkandswitch/patchwork-elements':
+        specifier: ^0.0.5
+        version: 0.0.5
+      '@inkandswitch/patchwork-filesystem':
+        specifier: ^0.0.3
+        version: 0.0.3
+      '@inkandswitch/patchwork-plugins':
+        specifier: ^0.0.5
+        version: 0.0.5
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -117,8 +126,8 @@ importers:
   core/elements:
     dependencies:
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -136,11 +145,11 @@ importers:
   core/filesystem:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -161,11 +170,11 @@ importers:
   core/plugins:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -198,8 +207,8 @@ importers:
   packages/annotations/annotation-types/comments:
     dependencies:
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@inkandswitch/annotations':
         specifier: workspace:*
         version: link:../../core
@@ -220,11 +229,11 @@ importers:
   packages/annotations/annotation-types/diff:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@inkandswitch/annotations':
         specifier: workspace:*
         version: link:../../core
@@ -245,8 +254,8 @@ importers:
   packages/annotations/annotation-types/selection:
     dependencies:
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@inkandswitch/annotations':
         specifier: workspace:*
         version: link:../../core
@@ -271,8 +280,8 @@ importers:
         version: link:../core
     devDependencies:
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@inkandswitch/patchwork-refs':
         specifier: workspace:*
         version: link:../../refs
@@ -299,11 +308,11 @@ importers:
         version: 5.0.1
     devDependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
@@ -315,10 +324,10 @@ importers:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/vanillajs':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0
+        version: 2.5.2
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../core/plugins
@@ -332,11 +341,11 @@ importers:
   packages/refs:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
     devDependencies:
       '@eslint/js':
         specifier: ^9.37.0
@@ -371,7 +380,7 @@ importers:
     dependencies:
       '@automerge/automerge-repo-solid-primitives':
         specifier: 'catalog:'
-        version: 2.4.0(@automerge/automerge@3.2.1)(solid-js@1.9.9)
+        version: 2.4.0(@automerge/automerge@3.2.4)(solid-js@1.9.9)
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../core/plugins
@@ -421,11 +430,11 @@ importers:
   packages/util:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -439,17 +448,17 @@ importers:
   sites/gaios:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/vanillajs':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0
+        version: 2.5.2
       '@codemirror/commands':
         specifier: ^6.9.0
         version: 6.9.0
@@ -560,17 +569,17 @@ importers:
   sites/tiny-patchwork:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/vanillajs':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0
+        version: 2.5.2
       '@codemirror/commands':
         specifier: ^6.9.0
         version: 6.9.0
@@ -687,14 +696,14 @@ importers:
   tools/account-picker:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../core/bootloader
@@ -776,7 +785,7 @@ importers:
         version: 0.2.0
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.4.0
-        version: 2.4.0(@automerge/automerge@3.2.1)(solid-js@1.9.9)
+        version: 2.4.0(@automerge/automerge@3.2.4)(solid-js@1.9.9)
       '@codemirror/state':
         specifier: ^6.5.2
         version: 6.5.2
@@ -824,11 +833,11 @@ importers:
         version: 3.5.0(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
     devDependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@babel/core':
         specifier: ^7.28.4
         version: 7.28.4
@@ -879,8 +888,8 @@ importers:
         version: link:../../../core/bootloader
     devDependencies:
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@babel/core':
         specifier: ^7.28.4
         version: 7.28.4
@@ -915,8 +924,8 @@ importers:
   tools/codemirror/codemirror-markdown:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@codemirror/autocomplete':
         specifier: ^6.19.0
         version: 6.19.0
@@ -985,14 +994,14 @@ importers:
   tools/contact:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../../core/filesystem
@@ -1058,20 +1067,20 @@ importers:
   tools/editors/orionmark:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-codemirror':
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/react':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@codemirror/autocomplete':
         specifier: ^6.19.0
         version: 6.19.0
@@ -1158,17 +1167,17 @@ importers:
   tools/editors/tenfold:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.4.0
-        version: 2.4.0(@automerge/automerge@3.2.1)(solid-js@1.9.9)
+        version: 2.4.0(@automerge/automerge@3.2.4)(solid-js@1.9.9)
       '@automerge/vanillajs':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0
+        version: 2.5.2
       '@codemirror/autocomplete':
         specifier: ^6.19.0
         version: 6.19.0
@@ -1292,10 +1301,10 @@ importers:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/react':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../../core/bootloader
@@ -1328,11 +1337,11 @@ importers:
         version: 3.5.0(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
     devDependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@eslint/js':
         specifier: ^9.36.0
         version: 9.38.0
@@ -1377,10 +1386,10 @@ importers:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/react':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../../core/bootloader
@@ -1413,11 +1422,11 @@ importers:
         version: 3.5.0(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
     devDependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@eslint/js':
         specifier: ^9.36.0
         version: 9.38.0
@@ -1461,17 +1470,17 @@ importers:
   tools/sidebars/comments-view:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-codemirror':
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/annotations':
         specifier: workspace:^
         version: link:../../../packages/annotations/core
@@ -1570,17 +1579,17 @@ importers:
   tools/sidebars/context-sidebar:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-codemirror':
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -1649,17 +1658,17 @@ importers:
   tools/sidebars/context-view:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-codemirror':
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/annotations':
         specifier: workspace:^
         version: link:../../../packages/annotations/core
@@ -1746,17 +1755,17 @@ importers:
   tools/sidebars/history-view:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-codemirror':
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/annotations':
         specifier: workspace:^
         version: link:../../../packages/annotations/core
@@ -1850,7 +1859,7 @@ importers:
     dependencies:
       '@automerge/automerge-repo-solid-primitives':
         specifier: file:./src/automerge-repo-solid-primitives
-        version: file:tools/sidebars/sideboard/src/automerge-repo-solid-primitives(@automerge/automerge@3.2.1)(solid-js@1.9.9)(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+        version: file:tools/sidebars/sideboard/src/automerge-repo-solid-primitives(@automerge/automerge@3.2.4)(solid-js@1.9.9)(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../../core/bootloader
@@ -1871,11 +1880,11 @@ importers:
         version: 1.9.9
     devDependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
         version: 0.1.0-alpha.14
@@ -1929,7 +1938,7 @@ importers:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../../core/bootloader
@@ -1950,8 +1959,8 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@eslint/js':
         specifier: ^9.36.0
         version: 9.38.0
@@ -1989,17 +1998,17 @@ importers:
   tools/tiny-patchwork/frame-configurator:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-codemirror':
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -2069,7 +2078,7 @@ importers:
     dependencies:
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.4.0
-        version: 2.4.0(@automerge/automerge@3.2.1)(solid-js@1.9.10)
+        version: 2.4.0(@automerge/automerge@3.2.4)(solid-js@1.9.10)
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../../core/bootloader
@@ -2078,11 +2087,11 @@ importers:
         version: link:../../../core/elements
     devDependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../../../core/filesystem
@@ -2114,17 +2123,17 @@ importers:
   tools/tiny-patchwork/patchwork-frame:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/vanillajs':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0
+        version: 2.5.2
       '@inkandswitch/annotations':
         specifier: workspace:^
         version: link:../../../packages/annotations/core
@@ -2214,17 +2223,17 @@ importers:
   tools/toolbar/add-doc-to-sidebar-button:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-codemirror':
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -2293,17 +2302,17 @@ importers:
   tools/toolbar/back-link-button:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-codemirror':
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -2372,17 +2381,17 @@ importers:
   tools/toolbar/doc-title:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-codemirror':
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../../core/elements
@@ -2451,11 +2460,11 @@ importers:
   tools/toolbar/spacer:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
@@ -2485,14 +2494,14 @@ importers:
   tools/toolbar/sync-indicator:
     dependencies:
       '@automerge/automerge':
-        specifier: 3.2.1
-        version: 3.2.1
+        specifier: 3.2.4
+        version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2-alpha.0
-        version: 2.5.2-alpha.0
+        specifier: 2.5.2
+        version: 2.5.2
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
-        version: 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../../core/bootloader
@@ -2579,17 +2588,20 @@ packages:
   '@automerge/automerge-repo-keyhive@0.1.0-alpha.14':
     resolution: {integrity: sha512-4EFZtWJUXhI4yVgMMEEyADiq9Kop/h9c91kFNx4CSW5GrxuxkkrUGRwebEeGMUtBctgKozAoybtGXbos+qGjJw==}
 
-  '@automerge/automerge-repo-network-broadcastchannel@2.5.2-alpha.0':
-    resolution: {integrity: sha512-/i0N5GHFz6wKPmP93qxzgVZOe3xX5H1DRAzBcZLm94DD5884lW7U+tD678jQ1EbKSaFvT4MTW1urJPkN/PDcmw==}
+  '@automerge/automerge-repo-network-broadcastchannel@2.5.2':
+    resolution: {integrity: sha512-AZB7XSABu/ODZ1EE6zdCYKQ9zjwQIyI2T5G4Woz1SIthG9OSBvma7AmiQGOFcHvE1VEes9FnQSpfmNHXJORUtw==}
 
-  '@automerge/automerge-repo-network-messagechannel@2.5.2-alpha.0':
-    resolution: {integrity: sha512-YOffBtxyHsw75hsfe2gztQ3qiqGs/Y7OHCJqktNIksVedZwhrKwd+nvfpSG8y9v2Q0soLRXMaToxEGDCistIUA==}
+  '@automerge/automerge-repo-network-messagechannel@2.5.2':
+    resolution: {integrity: sha512-hm1V/e4HCJzTLAIAhlT0Fl3VB6V1Aj6uMOwkla9efYw2faVHK7mvEaouP/gdE7N1VhShiKUUBG0rZPStOHxSoQ==}
+
+  '@automerge/automerge-repo-network-websocket@2.5.2':
+    resolution: {integrity: sha512-+3RqXCBWBX330wGviN0DJmeMAFLdvatpqSD/gBJRTl8q1v3H5zqmJ/dX8/2h/ip0zzZQea0fCiLjl3TrpqKiYQ==}
 
   '@automerge/automerge-repo-network-websocket@2.5.2-alpha.0':
     resolution: {integrity: sha512-r6oDOW7CztDEZ4qaxqXXMPMjyXQFr1BXQ8rRmgT+I7QhZncTALvX2mZWzjwMHpuLY6wChg4MHYnA2lAFe7ALUg==}
 
-  '@automerge/automerge-repo-react-hooks@2.5.2-alpha.0':
-    resolution: {integrity: sha512-msjr9GF33X2iHEtcYidC4E9sEzraWI9VvAhIlOgxiYCSWMz35wvh+C0xARj6Zn+lPFzqsMOok55aJhGGRXgp9A==}
+  '@automerge/automerge-repo-react-hooks@2.5.2':
+    resolution: {integrity: sha512-zA4jWjmSa9WiGPkYMtVeybxWQrfxkUNmPBbKa2Xekc/WM8Ro8goYqeSSu1ljrNMrr7CksmnHJp7LVtYTq9f0Bw==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -2597,31 +2609,31 @@ packages:
   '@automerge/automerge-repo-solid-primitives@2.4.0':
     resolution: {integrity: sha512-Z3sgpqXIukrCca6VG1/KmKGGxvLSauEDfUF/4PmFqn267T0+2zwYDxTClgciMe6JGmpXVq7dh3iH2+Q3kZWPmg==}
     peerDependencies:
-      '@automerge/automerge': 3.2.1
+      '@automerge/automerge': 3.2.4
       solid-js: ^1.9.4
 
   '@automerge/automerge-repo-solid-primitives@file:tools/sidebars/sideboard/src/automerge-repo-solid-primitives':
     resolution: {directory: tools/sidebars/sideboard/src/automerge-repo-solid-primitives, type: directory}
     peerDependencies:
-      '@automerge/automerge': 3.2.1
+      '@automerge/automerge': 3.2.4
       solid-js: ^1.9.4
 
-  '@automerge/automerge-repo-storage-indexeddb@2.5.2-alpha.0':
-    resolution: {integrity: sha512-LS0tGlQJqVB99dJ8zNpjqtktxFC5R+3zFOYcfmjEnDKb9DursEiJ1OXQzlFTGWjb8gwMQ/xwLufeyDKDjBIX3g==}
+  '@automerge/automerge-repo-storage-indexeddb@2.5.2':
+    resolution: {integrity: sha512-O/yGb3/VQarSeQxeNX10APoG9QNSIHVnL0OPGZI6TiUeyBK+pwgxxw/lWnNrfg4en56G/s9576Vei9uJKmTIpQ==}
 
-  '@automerge/automerge-repo@2.5.2-alpha.0':
-    resolution: {integrity: sha512-Q30SZRTlCaXj///S7Kx5+hSepJ1afcvjfrC9d0o0qXLwuVJ3+UL6UQgSFS12c8b5y9bInCh6+Po5pFYx09j/Dw==}
+  '@automerge/automerge-repo@2.5.2':
+    resolution: {integrity: sha512-oHpH+/XdOjFgp3IEyKS9FP+ORJvQZ5rj/WZMdzVmobzF2AXUSUZF/lPUMYOsvSWTR177t2Qw7PJNkakHVqPhaw==}
 
-  '@automerge/automerge@3.2.1':
-    resolution: {integrity: sha512-xsEZlZe8lWyVCbD7Z7roH4X6ZKlRxMmmumb0M5CuxJWptUEfYsf+1z9lFEJh4aDBbWTLAgxsXd+TBi6jKTj0+g==}
+  '@automerge/automerge@3.2.4':
+    resolution: {integrity: sha512-/IAShHSxme5d4ZK0Vs4A0P+tGaR/bSz6KtIJSCIPfwilCxsIqfRHAoNjmsXip6TGouadmbuw3WfLop6cal8pPQ==}
 
-  '@automerge/react@2.5.2-alpha.0':
-    resolution: {integrity: sha512-sUHa/g50n2lDxGq7DcM0BG8Y0ujk2opWUyrinRcp1EsmV6Jx6l1+xdz8qq1Qfi+suDacQK9x7HJr43rFjVAxhA==}
+  '@automerge/react@2.5.2':
+    resolution: {integrity: sha512-+sEomni+NeV5KB+SQWdIT5ElJvKSuNLOU2kPrvrrksDTa+TUpnfPYILzDUMu/KWo8N1CBhC6aWiEBLukterRXw==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
 
-  '@automerge/vanillajs@2.5.2-alpha.0':
-    resolution: {integrity: sha512-CXmH4s46DQfg/+OzddCB2uML2HfqMHroKcLkOIjn0GXdYyWqu5CgZa3HJI5E0/7lq+0AxxKnVxZ2md4U/7d08A==}
+  '@automerge/vanillajs@2.5.2':
+    resolution: {integrity: sha512-QP4AexskJlupBqnkdpZp+/srT/MqyOfrhra8oohSIgQgK0ufGLWNSK7EXsG2Q0wYl3YMrjc21jsl/glN9laXMg==}
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -3465,6 +3477,15 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@inkandswitch/patchwork-elements@0.0.5':
+    resolution: {integrity: sha512-4MugOD0opAXa5c3OgsUDVq/yVwp8xe/CEXYWHt2LGPyl5AhMLKQa3t8Rk8qEZe13qMUkfR4kVKp2YdIcI9ghjw==}
+
+  '@inkandswitch/patchwork-filesystem@0.0.3':
+    resolution: {integrity: sha512-x6yqX1Xyr05ug4YfRyfKJ7jSm/zjhMxU7g/e70nz4QbxfLmcG98LHB9qAkFI2zd+VvKLnTvSpPGu2UvJzXGciw==}
+
+  '@inkandswitch/patchwork-plugins@0.0.5':
+    resolution: {integrity: sha512-pQv5M7asDdN8J2moTmLoSnqA8FC/vcOuNJnKveL3MzjEhH0GQdIl6vV3k5jxs83ZpB8stwceE85Zsve/QRnVSA==}
 
   '@inquirer/external-editor@1.0.3':
     resolution: {integrity: sha512-RWbSrDiYmO4LbejWY7ttpxczuwQyZLBUyygsA9Nsv95hpzUWwnNTVQmAq3xuh7vNwCp07UTmE5i11XAEExx4RA==}
@@ -7874,14 +7895,14 @@ snapshots:
 
   '@automerge/automerge-codemirror@0.2.0':
     dependencies:
-      '@automerge/automerge': 3.2.1
+      '@automerge/automerge': 3.2.4
       '@codemirror/state': 6.5.2
       '@codemirror/view': 6.38.8
       codemirror: 6.0.2
 
   '@automerge/automerge-repo-keyhive@0.1.0-alpha.14':
     dependencies:
-      '@automerge/automerge-repo': 2.5.2-alpha.0
+      '@automerge/automerge-repo': 2.5.2
       '@automerge/automerge-repo-network-websocket': 2.5.2-alpha.0
       '@keyhive/keyhive': 0.0.0-alpha.54
       cbor-x: 1.6.0
@@ -7891,23 +7912,23 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@automerge/automerge-repo-network-broadcastchannel@2.5.2-alpha.0':
+  '@automerge/automerge-repo-network-broadcastchannel@2.5.2':
     dependencies:
-      '@automerge/automerge-repo': 2.5.2-alpha.0
+      '@automerge/automerge-repo': 2.5.2
     transitivePeerDependencies:
       - supports-color
 
-  '@automerge/automerge-repo-network-messagechannel@2.5.2-alpha.0':
+  '@automerge/automerge-repo-network-messagechannel@2.5.2':
     dependencies:
-      '@automerge/automerge-repo': 2.5.2-alpha.0
+      '@automerge/automerge-repo': 2.5.2
       debug: 4.4.3
       eventemitter3: 5.0.1
     transitivePeerDependencies:
       - supports-color
 
-  '@automerge/automerge-repo-network-websocket@2.5.2-alpha.0':
+  '@automerge/automerge-repo-network-websocket@2.5.2':
     dependencies:
-      '@automerge/automerge-repo': 2.5.2-alpha.0
+      '@automerge/automerge-repo': 2.5.2
       cbor-x: 1.6.0
       debug: 4.4.3
       eventemitter3: 5.0.1
@@ -7918,10 +7939,23 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@automerge/automerge-repo-react-hooks@2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@automerge/automerge-repo-network-websocket@2.5.2-alpha.0':
     dependencies:
-      '@automerge/automerge': 3.2.1
-      '@automerge/automerge-repo': 2.5.2-alpha.0
+      '@automerge/automerge-repo': 2.5.2
+      cbor-x: 1.6.0
+      debug: 4.4.3
+      eventemitter3: 5.0.1
+      isomorphic-ws: 5.0.0(ws@8.18.3)
+      ws: 8.18.3
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  '@automerge/automerge-repo-react-hooks@2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@automerge/automerge': 3.2.4
+      '@automerge/automerge-repo': 2.5.2
       eventemitter3: 5.0.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -7929,33 +7963,33 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@automerge/automerge-repo-solid-primitives@2.4.0(@automerge/automerge@3.2.1)(solid-js@1.9.10)':
+  '@automerge/automerge-repo-solid-primitives@2.4.0(@automerge/automerge@3.2.4)(solid-js@1.9.10)':
     dependencies:
-      '@automerge/automerge': 3.2.1
+      '@automerge/automerge': 3.2.4
       solid-js: 1.9.10
 
-  '@automerge/automerge-repo-solid-primitives@2.4.0(@automerge/automerge@3.2.1)(solid-js@1.9.9)':
+  '@automerge/automerge-repo-solid-primitives@2.4.0(@automerge/automerge@3.2.4)(solid-js@1.9.9)':
     dependencies:
-      '@automerge/automerge': 3.2.1
+      '@automerge/automerge': 3.2.4
       solid-js: 1.9.9
 
-  '@automerge/automerge-repo-solid-primitives@file:tools/sidebars/sideboard/src/automerge-repo-solid-primitives(@automerge/automerge@3.2.1)(solid-js@1.9.9)(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))':
+  '@automerge/automerge-repo-solid-primitives@file:tools/sidebars/sideboard/src/automerge-repo-solid-primitives(@automerge/automerge@3.2.4)(solid-js@1.9.9)(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))':
     dependencies:
-      '@automerge/automerge': 3.2.1
+      '@automerge/automerge': 3.2.4
       solid-js: 1.9.9
       vite-plugin-wasm: 3.5.0(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
     transitivePeerDependencies:
       - vite
 
-  '@automerge/automerge-repo-storage-indexeddb@2.5.2-alpha.0':
+  '@automerge/automerge-repo-storage-indexeddb@2.5.2':
     dependencies:
-      '@automerge/automerge-repo': 2.5.2-alpha.0
+      '@automerge/automerge-repo': 2.5.2
     transitivePeerDependencies:
       - supports-color
 
-  '@automerge/automerge-repo@2.5.2-alpha.0':
+  '@automerge/automerge-repo@2.5.2':
     dependencies:
-      '@automerge/automerge': 3.2.1
+      '@automerge/automerge': 3.2.4
       bs58check: 3.0.1
       cbor-x: 1.6.0
       debug: 4.4.3
@@ -7966,16 +8000,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@automerge/automerge@3.2.1': {}
+  '@automerge/automerge@3.2.4': {}
 
-  '@automerge/react@2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@automerge/react@2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@automerge/automerge-repo': 2.5.2-alpha.0
-      '@automerge/automerge-repo-network-broadcastchannel': 2.5.2-alpha.0
-      '@automerge/automerge-repo-network-messagechannel': 2.5.2-alpha.0
-      '@automerge/automerge-repo-network-websocket': 2.5.2-alpha.0
-      '@automerge/automerge-repo-react-hooks': 2.5.2-alpha.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@automerge/automerge-repo-storage-indexeddb': 2.5.2-alpha.0
+      '@automerge/automerge-repo': 2.5.2
+      '@automerge/automerge-repo-network-broadcastchannel': 2.5.2
+      '@automerge/automerge-repo-network-messagechannel': 2.5.2
+      '@automerge/automerge-repo-network-websocket': 2.5.2
+      '@automerge/automerge-repo-react-hooks': 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@automerge/automerge-repo-storage-indexeddb': 2.5.2
       react: 18.3.1
     transitivePeerDependencies:
       - bufferutil
@@ -7983,13 +8017,13 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@automerge/vanillajs@2.5.2-alpha.0':
+  '@automerge/vanillajs@2.5.2':
     dependencies:
-      '@automerge/automerge-repo': 2.5.2-alpha.0
-      '@automerge/automerge-repo-network-broadcastchannel': 2.5.2-alpha.0
-      '@automerge/automerge-repo-network-messagechannel': 2.5.2-alpha.0
-      '@automerge/automerge-repo-network-websocket': 2.5.2-alpha.0
-      '@automerge/automerge-repo-storage-indexeddb': 2.5.2-alpha.0
+      '@automerge/automerge-repo': 2.5.2
+      '@automerge/automerge-repo-network-broadcastchannel': 2.5.2
+      '@automerge/automerge-repo-network-messagechannel': 2.5.2
+      '@automerge/automerge-repo-network-websocket': 2.5.2
+      '@automerge/automerge-repo-storage-indexeddb': 2.5.2
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -8876,6 +8910,38 @@ snapshots:
   '@humanwhocodes/module-importer@1.0.1': {}
 
   '@humanwhocodes/retry@0.4.3': {}
+
+  '@inkandswitch/patchwork-elements@0.0.5':
+    dependencies:
+      '@automerge/automerge-repo': 2.5.2
+      '@inkandswitch/patchwork-filesystem': 0.0.3
+      '@inkandswitch/patchwork-plugins': 0.0.5
+    transitivePeerDependencies:
+      - supports-color
+
+  '@inkandswitch/patchwork-filesystem@0.0.3':
+    dependencies:
+      '@automerge/automerge': 3.2.4
+      '@automerge/automerge-repo': 2.5.2
+      '@types/debug': 4.1.12
+      '@types/node': 20.19.22
+      debug: 4.4.3
+      resolve.exports: 2.0.3
+    transitivePeerDependencies:
+      - supports-color
+
+  '@inkandswitch/patchwork-plugins@0.0.5':
+    dependencies:
+      '@automerge/automerge': 3.2.4
+      '@automerge/automerge-repo': 2.5.2
+      '@inkandswitch/patchwork-filesystem': 0.0.3
+      '@types/debug': 4.1.12
+      '@types/node': 20.19.22
+      debug: 4.4.3
+      eventemitter3: 5.0.1
+      resolve.exports: 2.0.3
+    transitivePeerDependencies:
+      - supports-color
 
   '@inquirer/external-editor@1.0.3(@types/node@24.9.1)':
     dependencies:
