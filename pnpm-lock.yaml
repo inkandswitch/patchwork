@@ -88,15 +88,6 @@ importers:
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.2
-      '@inkandswitch/patchwork-elements':
-        specifier: ^0.0.5
-        version: 0.0.5
-      '@inkandswitch/patchwork-filesystem':
-        specifier: ^0.0.3
-        version: 0.0.3
-      '@inkandswitch/patchwork-plugins':
-        specifier: ^0.0.5
-        version: 0.0.5
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -3477,15 +3468,6 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
-
-  '@inkandswitch/patchwork-elements@0.0.5':
-    resolution: {integrity: sha512-4MugOD0opAXa5c3OgsUDVq/yVwp8xe/CEXYWHt2LGPyl5AhMLKQa3t8Rk8qEZe13qMUkfR4kVKp2YdIcI9ghjw==}
-
-  '@inkandswitch/patchwork-filesystem@0.0.3':
-    resolution: {integrity: sha512-x6yqX1Xyr05ug4YfRyfKJ7jSm/zjhMxU7g/e70nz4QbxfLmcG98LHB9qAkFI2zd+VvKLnTvSpPGu2UvJzXGciw==}
-
-  '@inkandswitch/patchwork-plugins@0.0.5':
-    resolution: {integrity: sha512-pQv5M7asDdN8J2moTmLoSnqA8FC/vcOuNJnKveL3MzjEhH0GQdIl6vV3k5jxs83ZpB8stwceE85Zsve/QRnVSA==}
 
   '@inquirer/external-editor@1.0.3':
     resolution: {integrity: sha512-RWbSrDiYmO4LbejWY7ttpxczuwQyZLBUyygsA9Nsv95hpzUWwnNTVQmAq3xuh7vNwCp07UTmE5i11XAEExx4RA==}
@@ -8910,38 +8892,6 @@ snapshots:
   '@humanwhocodes/module-importer@1.0.1': {}
 
   '@humanwhocodes/retry@0.4.3': {}
-
-  '@inkandswitch/patchwork-elements@0.0.5':
-    dependencies:
-      '@automerge/automerge-repo': 2.5.2
-      '@inkandswitch/patchwork-filesystem': 0.0.3
-      '@inkandswitch/patchwork-plugins': 0.0.5
-    transitivePeerDependencies:
-      - supports-color
-
-  '@inkandswitch/patchwork-filesystem@0.0.3':
-    dependencies:
-      '@automerge/automerge': 3.2.4
-      '@automerge/automerge-repo': 2.5.2
-      '@types/debug': 4.1.12
-      '@types/node': 20.19.22
-      debug: 4.4.3
-      resolve.exports: 2.0.3
-    transitivePeerDependencies:
-      - supports-color
-
-  '@inkandswitch/patchwork-plugins@0.0.5':
-    dependencies:
-      '@automerge/automerge': 3.2.4
-      '@automerge/automerge-repo': 2.5.2
-      '@inkandswitch/patchwork-filesystem': 0.0.3
-      '@types/debug': 4.1.12
-      '@types/node': 20.19.22
-      debug: 4.4.3
-      eventemitter3: 5.0.1
-      resolve.exports: 2.0.3
-    transitivePeerDependencies:
-      - supports-color
 
   '@inquirer/external-editor@1.0.3(@types/node@24.9.1)':
     dependencies:
