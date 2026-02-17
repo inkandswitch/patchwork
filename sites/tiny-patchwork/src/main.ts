@@ -45,23 +45,23 @@ const repo = new Repo({ storage: new IndexedDBStorageAdapter() });
 // DEBUG: trace every repo.find call to discover what's loading all documents
 const _originalFind = repo.find.bind(repo);
 const _findCounts = new Map<string, number>();
-repo.find = function debugFind(...args: any[]) {
+repo.find = async function debugFind(...args: any[]) {
   const url = args[0];
   const count = (_findCounts.get(url) ?? 0) + 1;
   _findCounts.set(url, count);
   const stack = new Error().stack?.split("\n").slice(1, 5).join("\n");
   const start = performance.now();
-  const handle = (_originalFind as any)(...args);
-  handle.whenReady().then(() => {
-    const ms = (performance.now() - start).toFixed(1);
-    console.groupCollapsed(
-      `%c[repo.find]%c #${count} ${ms}ms ${url}`,
-      "color: red; font-weight: bold",
-      "color: inherit"
-    );
-    console.log(stack);
-    console.groupEnd();
-  });
+  const handle = await (_originalFind as any)(...args);
+
+  const ms = (performance.now() - start).toFixed(1);
+  console.groupCollapsed(
+    `%c[repo.find]%c #${count} ${ms}ms ${url}`,
+    "color: red; font-weight: bold",
+    "color: inherit"
+  );
+  console.log(stack);
+  console.groupEnd();
+
   return handle;
 } as any;
 
