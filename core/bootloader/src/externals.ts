@@ -25,8 +25,11 @@ const externals = [
   "solid-js/web",
   "solid-js/h",
   "solid-js/store",
+  "solid-js/jsx-runtime",
 
   "react",
   "react-dom",
+  "react-dom/client",
+  "react/jsx-runtime",
 ];
 export default externals;
