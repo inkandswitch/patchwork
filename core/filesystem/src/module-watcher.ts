@@ -133,10 +133,11 @@ export class ModuleWatcher {
 
   private async load() {
     if (!this.handles) throw new Error("No handles");
-    for (const handle of this.handles) {
+    const promises = this.handles.map(async (handle) => {
       const doc = handle.doc();
       const { modules = [] } = doc;
       await this.loadModules(modules);
-    }
+    });
+    await Promise.all(promises);
   }
 }
