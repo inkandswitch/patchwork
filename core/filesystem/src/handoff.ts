@@ -11,6 +11,8 @@ import type { HandoffHandler } from "@inkandswitch/patchwork-bootloader/types";
 import debug from "debug";
 const log = debug("patchwork:filesystem:handoff");
 
+let refreshTimeout: NodeJS.Timeout;
+
 export async function uncache(match: string) {
   let matched = false;
   for (const name of await caches.keys()) {
@@ -151,9 +153,15 @@ export function createFilesystemHandoffHandler(repo: Repo) {
         "automerge:".length,
         maybeAutomergeUrl.indexOf("#")
       );
-      const _cleared = await uncache(key);
-      // console.info(`uncached ${key}`, cleared ? "refreshing" : "");
-      // cleared && location.reload();
+      const cleared = await uncache(key);
+      console.info(
+        `uncached ${key}`,
+        cleared ? "i'll try refreshing in a sec!" : ""
+      );
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => {
+        cleared && location.reload();
+      }, 1000);
 
       return {
         body: `${error}`,
