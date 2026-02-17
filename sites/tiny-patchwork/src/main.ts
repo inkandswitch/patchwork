@@ -152,6 +152,7 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
 
 let firstMount = true;
 rootElement.addEventListener("patchwork:mounted", (event) => {
+  handleHashChange();
   console.info(`tool mounted`, event.detail.toolId);
   if (event.target != rootElement) return;
   console.info(`root element mounted`);
@@ -160,8 +161,9 @@ rootElement.addEventListener("patchwork:mounted", (event) => {
     rootElement.style.visibility = "visible";
     document.body.style.background = "";
   }
-
-  setTimeout(() => handleHashChange(), 100);
+  setTimeout(() => {
+    handleHashChange();
+  }, 1000);
 });
 setTimeout(() => {
   if (firstMount) {
