@@ -11,13 +11,17 @@ import {
   type AutomergeUrl,
 } from "@automerge/vanillajs";
 import { registerPatchworkViewElement } from "@inkandswitch/patchwork-elements";
-import { initializeAutomergeRepoKeyhive, initKeyhiveWasm, setPanicHook } from "@automerge/automerge-repo-keyhive";
+import {
+  initializeAutomergeRepoKeyhive,
+  initKeyhiveWasm,
+  setPanicHook,
+} from "@automerge/automerge-repo-keyhive";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 import bootstrap from "@inkandswitch/patchwork-bootloader";
 
-initKeyhiveWasm()
-setPanicHook()
+initKeyhiveWasm();
+setPanicHook();
 
 const storage = new IndexedDBStorageAdapter("hive");
 const network = new WebSocketClientAdapter("wss://keyhive.sync.automerge.org");
@@ -68,11 +72,7 @@ const moduleWatcher = new ModuleWatcher(
 
 const params = new URLSearchParams(document.location.search);
 
-registerPatchworkViewElement({
-  moduleWatcher,
-  repo,
-  hive,
-});
+registerPatchworkViewElement({ repo, hive });
 
 const docUrl = params.get("docUrl");
 const toolId = params.get("toolId");

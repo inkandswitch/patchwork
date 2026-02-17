@@ -97,24 +97,7 @@ const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 
 window.accountDocHandle = accountDocHandle;
 
-const moduleWatcher = new ModuleWatcher(
-  repo,
-  [
-    accountDocHandle.doc().moduleSettingsUrl,
-    // default tools for gaios
-    "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
-  ],
-  (name, mod) => {
-    if (Array.isArray(mod.plugins)) {
-      // TODO: maybe get rid of this check?
-      if (isValidAutomergeUrl(name)) {
-        registerPlugins(mod.plugins, name);
-      }
-    }
-  }
-);
-
-registerPatchworkViewElement({ moduleWatcher, repo });
+registerPatchworkViewElement({ repo });
 
 const rootElement = document.getElementById("root")!;
 
@@ -137,6 +120,27 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
 
 rootElement.addEventListener("patchwork:mounted", () => {
   handleHashChange();
+});
+
+const moduleWatcher = new ModuleWatcher(
+  repo,
+  [
+    accountDocHandle.doc().moduleSettingsUrl,
+    // default tools for gaios
+    "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
+  ],
+  (name, mod) => {
+    if (Array.isArray(mod.plugins)) {
+      // TODO: maybe get rid of this check?
+      if (isValidAutomergeUrl(name)) {
+        registerPlugins(mod.plugins, name);
+      }
+    }
+  }
+);
+
+rootElement.addEventListener("patchwork:no-tool", (event) => {
+  moduleWatcher.loadSuggestedImportUrl(event.detail.url);
 });
 
 const bigPatchworkHashRegex =

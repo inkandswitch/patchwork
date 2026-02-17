@@ -16,7 +16,7 @@ import {
   isLoadablePlugin,
   type LoadedTool,
 } from "@inkandswitch/patchwork-plugins";
-import { MountedEvent } from "./events.js";
+import { MountedEvent, NoToolEvent } from "./events.js";
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
@@ -40,13 +40,11 @@ export interface RegisterPatchworkViewElementParams {
   name?: string;
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
-  moduleWatcher: ModuleWatcher;
 }
 
 export interface PatchworkViewElement extends HTMLElement {
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
-  moduleWatcher: ModuleWatcher;
   docUrl?: AutomergeUrl;
   toolId?: string;
 }
@@ -73,7 +71,6 @@ export function registerPatchworkViewElement(
     class PatchworkViewElement extends HTMLElement {
       repo = repo;
       hive = params.hive;
-      moduleWatcher = params.moduleWatcher;
       // attributes, if these change it's new game +
       #docUrl: AutomergeUrl | null = null;
       #toolId: string | null = null;
@@ -274,7 +271,7 @@ export function registerPatchworkViewElement(
           console.warn(
             `falling back to default tool for ${this.#docUrl}. attempting to load suggested import URL`
           );
-          this.moduleWatcher.loadSuggestedImportUrl(this.docUrl);
+          this.dispatchEvent(new NoToolEvent({ url: this.docUrl }));
         }
 
         if (!toolId) {

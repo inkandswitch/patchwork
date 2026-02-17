@@ -5,7 +5,9 @@ import {
   openDocument,
 } from "@inkandswitch/patchwork-elements";
 import {
+  ModuleSettingsDoc,
   ModuleWatcher,
+  automergeUrlToServiceWorkerUrl,
   createFilesystemHandoffHandler,
 } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
@@ -101,24 +103,7 @@ const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 
 window.accountDocHandle = accountDocHandle;
 
-const moduleWatcher = new ModuleWatcher(
-  repo,
-  [
-    accountDocHandle.doc().moduleSettingsUrl,
-    // tiny patchwork default tools
-    "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl,
-  ],
-  (name, mod) => {
-    if (Array.isArray(mod.plugins)) {
-      // TODO: maybe get rid of this check?
-      if (isValidAutomergeUrl(name)) {
-        registerPlugins(mod.plugins, name);
-      }
-    }
-  }
-);
-
-registerPatchworkViewElement({ moduleWatcher, repo });
+registerPatchworkViewElement({ repo });
 
 const rootElement = document.getElementById("root")!;
 rootElement.style.visibility = "hidden";
@@ -132,6 +117,52 @@ if (initialParams.has("frame")) {
   rootElement.setAttribute("doc-url", accountDocHandle.url);
   rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
 }
+
+const defaultToolsUrl =
+  "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl;
+
+const account = accountDocHandle.doc();
+const defaultPackagesHandle =
+  await repo.find<ModuleSettingsDoc>(defaultToolsUrl);
+const defaultPackages = defaultPackagesHandle.doc().modules;
+const importantTools = [
+  account.frameToolId,
+  ...account.documentToolbarToolIds,
+  account.contextSidebarToolId,
+  ...account.contextToolIds,
+  account.accountSidebarToolId,
+];
+for (const url of defaultPackages) {
+  const pkg = await import(automergeUrlToServiceWorkerUrl(url));
+
+  for (const plugin of pkg.plugins) {
+    if (importantTools.includes(plugin.id)) {
+      registerPlugins(pkg, url);
+      continue;
+    }
+  }
+}
+
+const moduleWatcher = new ModuleWatcher(
+  repo,
+  [
+    defaultToolsUrl,
+    accountDocHandle.doc().moduleSettingsUrl,
+    // tiny patchwork default tools
+  ],
+  (name, mod) => {
+    if (Array.isArray(mod.plugins)) {
+      // TODO: maybe get rid of this check?
+      if (isValidAutomergeUrl(name)) {
+        registerPlugins(mod.plugins, name);
+      }
+    }
+  }
+);
+
+rootElement.addEventListener("patchwork:no-tool", (event) => {
+  moduleWatcher.loadSuggestedImportUrl(event.detail.url);
+});
 
 // todo the stuff below this can be wrapped up in a library
 // and used by any frame tool if they !element.closest("patchwork-view")
