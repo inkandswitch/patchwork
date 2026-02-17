@@ -122,28 +122,6 @@ if (initialParams.has("frame")) {
 const defaultToolsUrl =
   "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl;
 
-const account = accountDocHandle.doc();
-const defaultPackagesHandle =
-  await repo.find<ModuleSettingsDoc>(defaultToolsUrl);
-const defaultPackages = defaultPackagesHandle.doc().modules;
-const importantTools = [
-  account.frameToolId,
-  ...account.documentToolbarToolIds,
-  account.contextSidebarToolId,
-  ...account.contextToolIds,
-  account.accountSidebarToolId,
-];
-for (const url of defaultPackages) {
-  const pkg = await importModuleFromFolderDocUrl(url);
-
-  for (const plugin of pkg.plugins) {
-    if (importantTools.includes(plugin.id)) {
-      registerPlugins(pkg, url);
-      continue;
-    }
-  }
-}
-
 const moduleWatcher = new ModuleWatcher(
   repo,
   [
