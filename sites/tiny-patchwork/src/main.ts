@@ -138,11 +138,15 @@ const defaultToolsModuleWatcher = new ModuleWatcher(
 await defaultToolsModuleWatcher.doneLoading;
 console.log("default tools loaded");
 
-const personalToolsModuleWatcher = new ModuleWatcher(
-  repo,
-  accountDocHandle.doc().moduleSettingsUrl,
-  onModuleLoaded
-);
+setTimeout(() => {
+  new ModuleWatcher(
+    repo,
+    accountDocHandle.doc().moduleSettingsUrl,
+    onModuleLoaded
+  ).doneLoading.then(() => {
+    console.log("personal modules loaded");
+  });
+}, 10);
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
   defaultToolsModuleWatcher.loadSuggestedImportUrl(event.detail.url);
@@ -247,7 +251,3 @@ async function uncache(match: string) {
 }
 
 (window as any).uncache = uncache;
-
-personalToolsModuleWatcher.doneLoading.then(() => {
-  console.log("person modules loaded");
-});

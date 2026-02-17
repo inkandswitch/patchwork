@@ -64,7 +64,7 @@ export class ModuleWatcher {
     await Promise.all(
       modules.map(async (importName) => {
         this.setDocWatcher(importName);
-        await this.report(importName).catch((error) => {
+        await this.announce(importName).catch((error) => {
           console.log(
             new Error(`Failed to load module ${importName}: ${error}`, {
               cause: error,
@@ -99,7 +99,7 @@ export class ModuleWatcher {
     }
   }
 
-  private async report(importName: string) {
+  private async announce(importName: string) {
     const mod = await this.importModuleSafe(importName);
     mod && this.onLoad(importName, mod);
   }
@@ -126,17 +126,17 @@ export class ModuleWatcher {
         previousSyncAtTime = lastSyncAt;
         const versionedImport = handle.view(handle.heads()).url;
         console.log(`change in ${importName}, reloading at ${versionedImport}`);
-        this.report(versionedImport);
+        this.announce(versionedImport);
       });
     });
   }
 
   private async load() {
     if (!this.handles) throw new Error("No handles");
-    const promises = this.handles.map(async (handle) => {
+    const promises = this.handles.map((handle) => {
       const doc = handle.doc();
       const { modules = [] } = doc;
-      await this.loadModules(modules);
+      return this.loadModules(modules);
     });
     await Promise.all(promises);
   }
