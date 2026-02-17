@@ -144,7 +144,12 @@ export function createFilesystemHandoffHandler(repo: Repo) {
     } catch (error) {
       console.error({ error });
       const [maybeAutomergeUrl] = href.split("/");
-      await uncache(maybeAutomergeUrl);
+      await uncache(
+        maybeAutomergeUrl.slice(
+          "automerge%3A".length,
+          maybeAutomergeUrl.indexOf("#")
+        )
+      );
       console.info(`uncached ${maybeAutomergeUrl}, try refreshing`);
       return {
         body: `${error}`,
