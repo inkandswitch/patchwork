@@ -122,25 +122,30 @@ if (initialParams.has("frame")) {
 const defaultToolsUrl =
   "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl;
 
-const moduleWatcher = new ModuleWatcher(
-  repo,
-  [
-    defaultToolsUrl,
-    accountDocHandle.doc().moduleSettingsUrl,
-    // tiny patchwork default tools
-  ],
-  (name, mod) => {
-    if (Array.isArray(mod.plugins)) {
-      // TODO: maybe get rid of this check?
-      if (isValidAutomergeUrl(name)) {
-        registerPlugins(mod.plugins, name);
-      }
-    }
+function onModuleLoaded(name: string, mod: any) {
+  if (Array.isArray(mod.plugins)) {
+    registerPlugins(mod.plugins, name);
   }
+}
+
+const defaultToolsModuleWatcher = new ModuleWatcher(
+  repo,
+  defaultToolsUrl,
+  onModuleLoaded
+);
+
+// try waiting for the default tools first
+await defaultToolsModuleWatcher.doneLoading;
+console.log("default tools loaded");
+
+const personalToolsModuleWatcher = new ModuleWatcher(
+  repo,
+  accountDocHandle.doc().moduleSettingsUrl,
+  onModuleLoaded
 );
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
-  moduleWatcher.loadSuggestedImportUrl(event.detail.url);
+  defaultToolsModuleWatcher.loadSuggestedImportUrl(event.detail.url);
 });
 
 // todo the stuff below this can be wrapped up in a library
@@ -242,3 +247,7 @@ async function uncache(match: string) {
 }
 
 (window as any).uncache = uncache;
+
+personalToolsModuleWatcher.doneLoading.then(() => {
+  console.log("person modules loaded");
+});
