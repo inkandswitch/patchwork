@@ -12,14 +12,17 @@ import debug from "debug";
 const log = debug("patchwork:filesystem:handoff");
 
 export async function uncache(match: string) {
+  let matched = false;
   for (const name of await caches.keys()) {
     const cache = await caches.open(name);
     for (const request of await cache.keys()) {
       if (request.url.includes(match)) {
+        matched = true;
         cache.delete(request);
       }
     }
   }
+  return matched;
 }
 
 export async function findFileHandleInFolderHandle(
@@ -144,13 +147,18 @@ export function createFilesystemHandoffHandler(repo: Repo) {
     } catch (error) {
       console.error({ error });
       const [maybeAutomergeUrl] = href.split("/");
-      await uncache(
+      const cleared = await uncache(
         maybeAutomergeUrl.slice(
           "automerge%3A".length,
           maybeAutomergeUrl.indexOf("#")
         )
       );
-      console.info(`uncached ${maybeAutomergeUrl}, try refreshing`);
+      console.info(
+        `uncached ${maybeAutomergeUrl}`,
+        cleared ? "refreshing" : ""
+      );
+      cleared && location.reload();
+
       return {
         body: `${error}`,
         status: 567,
