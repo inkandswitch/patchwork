@@ -117,21 +117,5 @@ export const plugins = [
         );
       };
     },
-  } satisfies LoadablePlugin<ToolDescription, ToolImplementation>,
-  {
-    type: "patchwork:tool",
-    id: "js-viewer",
-    name: "File Viewer (don't @ me)",
-    supportedDatatypes: [],
-    unlisted: true,
-    async load() {
-      const tool = await import("./file-viewer.tsx");
-      return (handle, element) => {
-        return render(
-          () => <tool.default handle={handle as any} element={element} />,
-          element
-        );
-      };
-    },
-  } satisfies LoadablePlugin<ToolDescription, ToolImplementation>,
+  } satisfies LoadablePlugin<ToolDescription, ToolImplementation>
 ];
