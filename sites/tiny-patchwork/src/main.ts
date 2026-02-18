@@ -44,7 +44,7 @@ const workerLogChannel = new BroadcastChannel("automerge-worker-logs");
 workerLogChannel.onmessage = (event) => {
   const { level, args } = event.data;
   const method = level in console ? level : "log";
-  (console as any)[method]("[shared worker]", ...args);
+  (console as any)[method](...args);
 };
 
 const repo = new Repo({ storage: new IndexedDBStorageAdapter() });

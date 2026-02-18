@@ -17,7 +17,9 @@ function log(level: string, args: any[]) {
             : a
       ),
     });
-  } catch {}
+  } catch {
+    // ok
+  }
 }
 
 const originalConsole = {
