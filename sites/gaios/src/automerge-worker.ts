@@ -8,13 +8,15 @@ self.addEventListener("connect", (e: MessageEvent) => {
 
 const repoPromise = (async () => {
   const { Repo } = await import("@automerge/automerge-repo");
-  const { IndexedDBStorageAdapter, WebSocketClientAdapter } = await import(
-    "@automerge/vanillajs"
-  );
+  const { IndexedDBStorageAdapter, WebSocketClientAdapter } =
+    await import("@automerge/vanillajs");
   return new Repo({
     storage: new IndexedDBStorageAdapter(),
     network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
     peerId: ("shared-worker-" + Math.round(Math.random() * 10000)) as any,
+    async sharePolicy(peerId) {
+      return peerId.startsWith("storage-server-");
+    },
   });
 })();
 
