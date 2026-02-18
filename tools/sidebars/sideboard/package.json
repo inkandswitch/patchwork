@@ -27,7 +27,7 @@
     "pushwatch": "pnpm dev pushwork"
   },
   "dependencies": {
-    "@automerge/automerge-repo-solid-primitives": "file:./src/automerge-repo-solid-primitives",
+    "@automerge/automerge-repo-solid-primitives": "2.5.2",
     "@kobalte/core": "^0.13.11",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@inkandswitch/patchwork-elements": "workspace:^",
