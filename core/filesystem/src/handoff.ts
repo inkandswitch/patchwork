@@ -154,15 +154,13 @@ export function createFilesystemHandoffHandler(repo: Repo) {
         maybeAutomergeUrl.indexOf("#")
       );
       const cleared = await uncache(key);
-      console.info(
-        `uncached ${key}`,
-        cleared ? "i'll try refreshing in a sec!" : ""
-      );
-      clearTimeout(refreshTimeout);
-      refreshTimeout = setTimeout(() => {
-        cleared && location.reload();
-      }, 4000);
-
+      console.info(`uncached ${key}`, cleared ? "refresh?" : "");
+      // clearTimeout(refreshTimeout);
+      // if (cleared) {
+      // refreshTimeout = setTimeout(() => {
+      //   cleared && location.reload();
+      // }, 4000);
+      //}
       return {
         body: `${error}`,
         status: 567,
