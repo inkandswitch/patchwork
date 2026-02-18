@@ -58,7 +58,7 @@ export const plugins = [
       const { ContactAvatar } = await import("./components/ContactAvatar");
       const css = await loadStyles();
       return (handle, element) => {
-        addStyles(element, css);
+        addStyles(document.head, css);
         const root = createRoot(element);
         root.render(
           <RepoContext.Provider value={element.repo}>
@@ -81,7 +81,7 @@ export const plugins = [
         await import("./components/InlineContactAvatar");
       const css = await loadStyles();
       return (handle, element) => {
-        addStyles(element, css);
+        addStyles(document.head, css);
         const root = createRoot(element);
         root.render(
           <RepoContext.Provider value={element.repo}>

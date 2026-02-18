@@ -23,6 +23,6 @@ export default {
   jsxImportSource: "react",
   external: externals,
   plugins: [tailwind()].concat(pushworking ? [pushworkSync()] : []),
-  loader: { ".ttf": "dataurl" },
+  loader: { ".ttf": "dataurl", ".css": "file" },
   conditions: ["style", "browser", "import"],
 } satisfies BuildOptions;
