@@ -161,7 +161,7 @@ export function createFilesystemHandoffHandler(repo: Repo) {
       clearTimeout(refreshTimeout);
       refreshTimeout = setTimeout(() => {
         cleared && location.reload();
-      }, 1000);
+      }, 4000);
 
       return {
         body: `${error}`,
