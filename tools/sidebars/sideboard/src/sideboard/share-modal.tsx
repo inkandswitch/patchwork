@@ -198,12 +198,11 @@ export function ShareModal(props: ShareModalProps) {
 
     try {
       await props.hive.revokeMemberFromDoc(props.docUrl, hexId);
-
-      // Refresh access list
-      const accessList = await fetchAccessList(props.hive, props.docUrl);
-      setDocAccessList(accessList);
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      const accessList = await fetchAccessList(props.hive, props.docUrl);
+      setDocAccessList(accessList);
     }
   };
 
@@ -218,12 +217,13 @@ export function ShareModal(props: ShareModalProps) {
 
       // TODO: pass to tool
       await props.hive.setPublicAccess(props.docUrl, access);
-
-      // Refresh access list
-      const accessList = await fetchAccessList(props.hive, props.docUrl);
-      setDocAccessList(accessList);
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      // Refresh access list even on error, since the delegation may
+      // have succeeded even if a subsequent CGKA operation failed.
+      const accessList = await fetchAccessList(props.hive, props.docUrl);
+      setDocAccessList(accessList);
     }
   };
 
@@ -232,12 +232,11 @@ export function ShareModal(props: ShareModalProps) {
 
     try {
       await props.hive.revokeMemberFromDoc(props.docUrl, publicHexId());
-
-      // Refresh access list
-      const accessList = await fetchAccessList(props.hive, props.docUrl);
-      setDocAccessList(accessList);
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      const accessList = await fetchAccessList(props.hive, props.docUrl);
+      setDocAccessList(accessList);
     }
   };
 
