@@ -48,7 +48,6 @@ export function ShareModal(props: ShareModalProps) {
   const [currentUserAccess, setCurrentUserAccess] = createSignal<
     string | undefined
   >(undefined);
-  const [error, setError] = createSignal<string | null>(null);
   const [isSubmitting, setIsSubmitting] = createSignal(false);
   const keyhiveDocId = createMemo(() => docIdFromAutomergeUrl(props.docUrl));
 
@@ -161,7 +160,6 @@ export function ShareModal(props: ShareModalProps) {
 
   const handleAddMember = async (e: Event) => {
     e.preventDefault();
-    setError(null);
 
     const input = contactCardInput().trim();
     if (!input) return;
@@ -187,19 +185,17 @@ export function ShareModal(props: ShareModalProps) {
 
       setContactCardInput("");
     } catch (err) {
-      setError((err as Error).message);
+      console.error("[ShareModal]", err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleRemoveMember = async (hexId: string) => {
-    setError(null);
-
     try {
       await props.hive.revokeMemberFromDoc(props.docUrl, hexId);
     } catch (err) {
-      setError((err as Error).message);
+      console.error("[ShareModal]", err);
     } finally {
       const accessList = await fetchAccessList(props.hive, props.docUrl);
       setDocAccessList(accessList);
@@ -207,8 +203,6 @@ export function ShareModal(props: ShareModalProps) {
   };
 
   const handleMakePublic = async () => {
-    setError(null);
-
     try {
       const access = Access.tryFromString("write");
       if (!access) {
@@ -218,7 +212,7 @@ export function ShareModal(props: ShareModalProps) {
       // TODO: pass to tool
       await props.hive.setPublicAccess(props.docUrl, access);
     } catch (err) {
-      setError((err as Error).message);
+      console.error("[ShareModal]", err);
     } finally {
       // Refresh access list even on error, since the delegation may
       // have succeeded even if a subsequent CGKA operation failed.
@@ -228,12 +222,10 @@ export function ShareModal(props: ShareModalProps) {
   };
 
   const handleMakePrivate = async () => {
-    setError(null);
-
     try {
       await props.hive.revokeMemberFromDoc(props.docUrl, publicHexId());
     } catch (err) {
-      setError((err as Error).message);
+      console.error("[ShareModal]", err);
     } finally {
       const accessList = await fetchAccessList(props.hive, props.docUrl);
       setDocAccessList(accessList);
@@ -273,11 +265,7 @@ export function ShareModal(props: ShareModalProps) {
           </header>
 
           <div class="share-modal__body">
-            <Show when={error()}>
-              <div class="share-modal__error">{error()}</div>
-            </Show>
-
-            <section class="share-modal__public-section">
+<section class="share-modal__public-section">
               <h3 class="share-modal__section-title">Public Access</h3>
               <div class="share-modal__public-controls">
                 <Show when={currentPublicAccess()}>
