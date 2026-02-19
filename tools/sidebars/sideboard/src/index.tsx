@@ -22,8 +22,9 @@ export const plugins = [
     type: "patchwork:tool",
     tags: ["sidebar-account"],
     name: "Sideboard",
-    supportedDatatypes: ["patchwork:account"],
+    supportedDatatypes: ["patchwork:account", "folder"],
     icon: "FolderOpen",
+    unlisted: true,
     async load(): Promise<ToolImplementation<TinyPatchworkAccountDoc>> {
       const { Sideboard } = await import("./sideboard/sideboard.tsx");
       const css = await loadStyles();

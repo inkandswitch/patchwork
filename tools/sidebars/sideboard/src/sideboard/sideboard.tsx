@@ -20,19 +20,22 @@ import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 import { useSubscribe } from "@inkandswitch/subscribables-solid";
 import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
-import { createSignal } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import { handleFilesDrop } from "./document-list/file-drop.ts";
 
-export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
+export function Sideboard(
+  props: PatchworkToolProps<TinyPatchworkAccountDoc | FolderDoc>
+) {
   const doc = makeDocumentProjection(props.handle);
   const [folder, folderHandle] = useDocument<FolderDoc>(
-    () => doc.rootFolderUrl,
+    () => ("rootFolderUrl" in doc ? doc.rootFolderUrl : props.handle.url),
     props
   );
 
-  const moduleSettingsUrl = () => doc.moduleSettingsUrl;
+  const moduleSettingsUrl = () =>
+    "moduleSettingsUrl" in doc ? doc.moduleSettingsUrl : undefined;
   const accountDocUrl = () => props.handle.url;
-  const contactUrl = () => doc.contactUrl;
+  const contactUrl = () => ("contactUrl" in doc ? doc.contactUrl : undefined);
   const selectedDocUrls = useSubscribe($selectedDocUrls);
 
   function open(detail: OpenDocumentEventDetail) {
@@ -107,43 +110,45 @@ export function Sideboard(props: PatchworkToolProps<TinyPatchworkAccountDoc>) {
           handle={folderHandle.latest!}
           open={open}
           hive={props.element.hive}
-          selectedDocUrls={selectedDocUrls() ?? []}
+          selectedDocUrls={(selectedDocUrls() as AutomergeUrl[]) ?? []}
           element={props.element}
           rootFolderHandle={folderHandle.latest!}
         />
       </nav>
-      <footer class="sideboard-footer">
-        <button
-          onClick={() => open({ url: moduleSettingsUrl() })}
-          class="sideboard-footer__button"
-        >
-          Modules
-        </button>
+      <Show when={moduleSettingsUrl() && contactUrl()}>
+        <footer class="sideboard-footer">
+          <button
+            onClick={() => open({ url: moduleSettingsUrl()! })}
+            class="sideboard-footer__button"
+          >
+            Modules
+          </button>
 
-        <button
-          onClick={() =>
-            open({
-              url: accountDocUrl(),
-              toolId: "account-picker",
-            })
-          }
-          class="sideboard-footer__button"
-        >
-          <patchwork-view doc-url={contactUrl()} tool-id="contact-avatar" />
-        </button>
+          <button
+            onClick={() =>
+              open({
+                url: accountDocUrl(),
+                toolId: "account-picker",
+              })
+            }
+            class="sideboard-footer__button"
+          >
+            <patchwork-view doc-url={contactUrl()!} tool-id="contact-avatar" />
+          </button>
 
-        <button
-          onClick={() =>
-            open({
-              url: accountDocUrl(),
-              toolId: "frame-configurator",
-            })
-          }
-          class="sideboard-footer__button"
-        >
-          Settings
-        </button>
-      </footer>
+          <button
+            onClick={() =>
+              open({
+                url: accountDocUrl(),
+                toolId: "frame-configurator",
+              })
+            }
+            class="sideboard-footer__button"
+          >
+            Settings
+          </button>
+        </footer>
+      </Show>
     </aside>
   );
 }

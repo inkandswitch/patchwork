@@ -322,7 +322,7 @@ export default function Item(props: {
             dragstack.clear();
           }
         }}
-        onClick={(event: MouseEvent) => {
+        on:click={(event: MouseEvent) => {
           if (event.ctrlKey || event.metaKey) {
             return;
           }
