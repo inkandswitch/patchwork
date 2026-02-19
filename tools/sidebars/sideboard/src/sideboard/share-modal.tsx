@@ -286,11 +286,6 @@ export function ShareModal(props: ShareModalProps) {
                     This document is <strong>public</strong>
                   </span>
                 </Show>
-                <Show when={!currentPublicAccess()}>
-                  <span class="share-modal__public-status">
-                    This document is <strong>private</strong>
-                  </span>
-                </Show>
                 <Show when={isAdmin()}>
                   <div class="share-modal__public-actions">
                     <Show when={currentPublicAccess()}>
