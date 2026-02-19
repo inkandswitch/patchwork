@@ -9,7 +9,12 @@ import {
   createFilesystemHandoffHandler,
 } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
-import { registerPlugins } from "@inkandswitch/patchwork-plugins";
+import {
+  registerPlugins,
+  DatatypeDescription,
+  DatatypeImplementation,
+  getRegistry,
+} from "@inkandswitch/patchwork-plugins";
 import {
   getOrCreateLayoutDocHandle,
   TinyPatchworkLayoutDoc,
@@ -141,7 +146,7 @@ rootElement.addEventListener("patchwork:no-tool", (event) => {
   moduleWatcher.loadSuggestedImportUrl(event.detail.url);
 });
 
-rootElement.addEventListener("patchwork:open-document", (event) => {
+rootElement.addEventListener("patchwork:open-document", async (event) => {
   const params = new URLSearchParams(window.location.hash.slice(1));
   const { url, toolId, type, title } = event.detail;
   const { documentId, heads } = parseAutomergeUrl(url);
@@ -155,6 +160,25 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
   if (type) params.set("type", type);
   else params.delete("type");
   window.location.hash = params.toString();
+
+  try {
+    const docHandle = repo.find(stringifyAutomergeUrl({ documentId, heads }));
+    await docHandle.whenReady();
+    const doc = docHandle.doc();
+    const docType = type || doc?.["@patchwork"]?.type;
+    if (docType) {
+      const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
+      const datatype = await registry.load(docType);
+      if (datatype) {
+        const docTitle = (datatype.module as DatatypeImplementation).getTitle(doc);
+        if (docTitle) {
+          document.title = `${docTitle} | patchwork`;
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Failed to update document title", e);
+  }
 });
 
 let firstMount = true;
