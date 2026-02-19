@@ -75,6 +75,7 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
   );
   const [showAccountUrl, setShowAccountUrl] = useState(false);
   const [isCopyTooltipOpen, setIsCopyTooltipOpen] = useState(false);
+  const [isContactCardCopyTooltipOpen, setIsContactCardCopyTooltipOpen] = useState(false);
 
   const [accountTokenToLogin, setAccountTokenToLogin] = useState<string>("");
   const accountAutomergeUrlToLogin =
@@ -191,6 +192,17 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
     setIsCopyTooltipOpen(true);
     setTimeout(() => {
       setIsCopyTooltipOpen(false);
+    }, 1000);
+  };
+
+  const onCopyContactCard = () => {
+    const hive = props.element.hive;
+    if (!hive?.active?.contactCard) return;
+    const contactCardJson = hive.active.contactCard.toJson();
+    navigator.clipboard.writeText(contactCardJson);
+    setIsContactCardCopyTooltipOpen(true);
+    setTimeout(() => {
+      setIsContactCardCopyTooltipOpen(false);
     }, 1000);
   };
 
@@ -371,6 +383,34 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
                 private docs.
               </p>
             </form>
+
+            {props.element.hive?.active?.contactCard && (
+              <div className="grid w-full max-w-sm items-center gap-1.5 py-4">
+                <Label>Contact Card</Label>
+                <p className="text-gray-500 text-justify text-sm pb-2">
+                  To share a document with someone, they'll need your contact
+                  card. Copy it and send it to them.
+                </p>
+                <TooltipProvider>
+                  <Tooltip open={isContactCardCopyTooltipOpen}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        onClick={onCopyContactCard}
+                        type="button"
+                        className="w-full"
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy Contact Card
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Copied</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
           </>
         )}
       </div>
