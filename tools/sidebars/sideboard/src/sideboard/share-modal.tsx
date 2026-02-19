@@ -43,7 +43,6 @@ async function fetchAccessList(
 
 export function ShareModal(props: ShareModalProps) {
   const [contactCardInput, setContactCardInput] = createSignal("");
-  const [selectedAccessLevel, setSelectedAccessLevel] = createSignal("Write");
   const [docAccessList, setDocAccessList] = createSignal<DocAccessList>({});
   const [isLoadingAccessList, setIsLoadingAccessList] = createSignal(true);
   const [currentUserAccess, setCurrentUserAccess] = createSignal<
@@ -51,8 +50,6 @@ export function ShareModal(props: ShareModalProps) {
   >(undefined);
   const [error, setError] = createSignal<string | null>(null);
   const [isSubmitting, setIsSubmitting] = createSignal(false);
-  const [selectedPublicAccessLevel, setSelectedPublicAccessLevel] = createSignal<"Read" | "Write">("Write");
-
   const keyhiveDocId = createMemo(() => docIdFromAutomergeUrl(props.docUrl));
 
   const currentUserHexId = createMemo(() => {
@@ -77,13 +74,6 @@ export function ShareModal(props: ShareModalProps) {
     const accessList = docAccessList();
     const pubHexId = publicHexId();
     return accessList[pubHexId] || null;
-  });
-
-  const sharingOptions = createMemo(() => {
-    const access = currentUserAccess();
-    if (!access) return [];
-    const idx = ACCESS_LEVELS.indexOf(access as (typeof ACCESS_LEVELS)[number]);
-    return ACCESS_LEVELS.slice(0, idx + 1);
   });
 
   const isAdmin = createMemo(() => currentUserAccess() === "Admin");
@@ -152,50 +142,6 @@ export function ShareModal(props: ShareModalProps) {
     });
   });
 
-  // Sync public access dropdown with current public access level
-  createEffect(() => {
-    const publicAccess = currentPublicAccess();
-    if (publicAccess === "Read" || publicAccess === "Write") {
-      setSelectedPublicAccessLevel(publicAccess);
-    }
-  });
-
-  // Ref for the select element to manually sync value
-  let selectRef: HTMLSelectElement | undefined;
-
-  let hasSetDefaultForOpen = false;
-
-  // Set default access level when modal opens and options are available
-  createEffect(() => {
-    const isOpen = props.isOpen;
-    const options = sharingOptions();
-
-    if (!isOpen) {
-      hasSetDefaultForOpen = false;
-      return;
-    }
-
-    if (options.length === 0) return;
-
-    const current = selectedAccessLevel();
-
-    if (!hasSetDefaultForOpen || !options.includes(current)) {
-      const newLevel = options.includes("Write")
-        ? "Write"
-        : options[options.length - 1];
-      setSelectedAccessLevel(newLevel);
-      hasSetDefaultForOpen = true;
-    }
-  });
-
-  // Manually sync select element value when signal changes
-  createEffect(() => {
-    const value = selectedAccessLevel();
-    if (selectRef && sharingOptions().includes(value)) {
-      selectRef.value = value;
-    }
-  });
-
   // Escape key handler
   createEffect(() => {
     if (!props.isOpen) return;
@@ -228,7 +174,7 @@ export function ShareModal(props: ShareModalProps) {
         throw new Error("Invalid ContactCard JSON");
       }
 
-      const access = Access.tryFromString(selectedAccessLevel().toLowerCase());
+      const access = Access.tryFromString("write");
       if (!access) {
         throw new Error("Invalid access level");
       }
@@ -265,7 +211,7 @@ export function ShareModal(props: ShareModalProps) {
     setError(null);
 
     try {
-      const access = Access.tryFromString(selectedPublicAccessLevel().toLowerCase());
+      const access = Access.tryFromString("write");
       if (!access) {
         throw new Error("Invalid access level");
       }
@@ -347,26 +293,12 @@ export function ShareModal(props: ShareModalProps) {
                 </Show>
                 <Show when={isAdmin()}>
                   <div class="share-modal__public-actions">
-                    <select
-                      class="share-modal__select"
-                      value={selectedPublicAccessLevel()}
-                      onChange={(e) => setSelectedPublicAccessLevel(e.currentTarget.value as "Read" | "Write")}
-                    >
-                      <option value="Read">READ</option>
-                      <option value="Write">WRITE</option>
-                    </select>
                     <Show when={currentPublicAccess()}>
-                      <button
-                        class="share-modal__add-button"
-                        onClick={handleMakePublic}
-                      >
-                        Update
-                      </button>
                       <button
                         class="share-modal__add-button"
                         onClick={handleMakePrivate}
                       >
-                        Make Private
+                        Revoke Public Access
                       </button>
                     </Show>
                     <Show when={!currentPublicAccess()}>
@@ -382,45 +314,30 @@ export function ShareModal(props: ShareModalProps) {
               </div>
             </section>
 
-            {/* TODO: Re-enable individual sharing by removing this false condition */}
-            {false && (
-              <>
-                <hr class="share-modal__divider" />
+            <Show when={isAdmin()}>
+              <hr class="share-modal__divider" />
 
-                <form class="share-modal__form" onSubmit={handleAddMember}>
-                  <textarea
-                    class="share-modal__input"
-                    placeholder="Paste ContactCard JSON..."
-                    value={contactCardInput()}
-                    onInput={(e) => setContactCardInput(e.currentTarget.value)}
-                    rows={3}
-                  />
-                  <div class="share-modal__form-actions">
-                    <select
-                      ref={(el) => (selectRef = el)}
-                      class="share-modal__select"
-                      value={selectedAccessLevel()}
-                      onChange={(e) => setSelectedAccessLevel(e.currentTarget.value)}
-                    >
-                      <For each={sharingOptions()}>
-                        {(level) => (
-                          <option value={level}>{level.toUpperCase()}</option>
-                        )}
-                      </For>
-                    </select>
-                    <button
-                      type="submit"
-                      class="share-modal__add-button"
-                      disabled={isSubmitting() || !contactCardInput().trim()}
-                    >
-                      {isSubmitting() ? "Adding..." : "Add"}
-                    </button>
-                  </div>
-                </form>
+              <form class="share-modal__form" onSubmit={handleAddMember}>
+                <textarea
+                  class="share-modal__input"
+                  placeholder="Paste ContactCard JSON..."
+                  value={contactCardInput()}
+                  onInput={(e) => setContactCardInput(e.currentTarget.value)}
+                  rows={3}
+                />
+                <div class="share-modal__form-actions">
+                  <button
+                    type="submit"
+                    class="share-modal__add-button"
+                    disabled={isSubmitting() || !contactCardInput().trim()}
+                  >
+                    {isSubmitting() ? "Adding..." : "Add"}
+                  </button>
+                </div>
+              </form>
 
-                <hr class="share-modal__divider" />
-              </>
-            )}
+              <hr class="share-modal__divider" />
+            </Show>
 
             <section>
               <h3 class="share-modal__section-title">Current Access</h3>
