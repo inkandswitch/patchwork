@@ -1,5 +1,4 @@
 import { Plugin } from "@inkandswitch/patchwork-plugins";
-import { toolify } from "@inkandswitch/patchwork-react";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -10,8 +9,10 @@ export const plugins: Plugin<any>[] = [
     icon: "Plus",
     supportedDatatypes: "*",
     async load() {
-      const { AddDocToSidebarButton } = await import("./AddDocToSidebarButton");
-      return toolify(AddDocToSidebarButton);
+      const { renderAddDocToSidebarButton } = await import(
+        "./AddDocToSidebarButton.js"
+      );
+      return renderAddDocToSidebarButton;
     },
     unlisted: true,
     forTitleBar: true,
