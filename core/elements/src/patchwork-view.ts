@@ -327,8 +327,8 @@ export function registerPatchworkViewElement(
                 <p>oh no!</p>
                 <details>
                   <summary>${(error as Error).message ?? error}</summary>
-                  <pre>${(error as Error).stack ?? ""}</pre>
-              </details>
+                  <pre style="white-space: pre-wrap;">${(error as Error).stack ?? ""}</pre>
+                </details>
               `,
             })
           );
@@ -347,7 +347,7 @@ export function registerPatchworkViewElement(
         div.style.transition = "opacity 2s linear 2s";
         div.style.opacity = "0";
         div.innerHTML = /* html */ `
-          <p>Oh no! ${error}</p>
+          <details style="display: flex"><summary></summary><pre style="white-space: pre-wrap;"><code>${error}</code></pre></details>
         `;
         this.append(div);
         setTimeout(() => {
