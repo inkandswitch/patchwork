@@ -15,6 +15,9 @@ export function renderDocumentTitle(
 	handle: DocHandle<HasPatchworkMetadata>,
 	element: ToolElement
 ) {
+	element.style.flex = "1"
+	element.style.minWidth = "0"
+
 	const span = document.createElement("span")
 	span.className = "doc-title"
 	span.textContent = "Untitled"

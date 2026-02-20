@@ -13,9 +13,10 @@
 
 .doc-title-input {
   display: none;
-  font-weight: 600;
+  font-weight: 400;
   white-space: nowrap;
   height: 100%;
+  width: 100%;
   background: transparent;
   outline: none;
   border: none;

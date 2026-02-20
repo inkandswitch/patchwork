@@ -44,8 +44,43 @@ export function Sideboard(
 
   const [isDraggingFile, setIsDraggingFile] = createSignal(false);
 
+  const isAccount = () => "rootFolderUrl" in doc;
+
+  function closeSidebar() {
+    let root: Document | ShadowRoot = props.element.getRootNode() as
+      | Document
+      | ShadowRoot;
+    if (root instanceof ShadowRoot) {
+      root = root.host.getRootNode() as Document | ShadowRoot;
+    }
+    const toggles = root.querySelectorAll(".sidebar-toggle");
+    (toggles[0] as HTMLElement)?.click();
+  }
+
   return (
     <aside class="sideboard">
+      <Show when={isAccount()}>
+        <button
+          class="sideboard-close-button"
+          onClick={closeSidebar}
+          title="Close account sidebar"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M9 3v18" />
+          </svg>
+        </button>
+      </Show>
       <header class="sideboard-header">
         <CreateNew
           changeFolder={(fn) => folderHandle()?.change(fn)}
