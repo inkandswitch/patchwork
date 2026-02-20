@@ -130,8 +130,7 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
   window.location.hash = params.toString();
 
   try {
-    const docHandle = repo.find(stringifyAutomergeUrl({ documentId, heads }));
-    await docHandle.whenReady();
+    const docHandle = await repo.find(stringifyAutomergeUrl({ documentId, heads }));
     const doc = docHandle.doc();
     const docType = type || doc?.["@patchwork"]?.type;
     if (docType) {

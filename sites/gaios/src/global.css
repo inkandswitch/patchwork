@@ -6,6 +6,8 @@
     cupcake;
 }
 
+@layer patchwork, tool, user;
+
 :root {
   --max-text-line-width: 100ex;
 }
@@ -13,6 +15,7 @@
 html,
 body {
   overscroll-behavior: none;
+  font-family: system-ui, sans-serif;
 }
 html {
   font-size: 16px;
@@ -30,4 +33,39 @@ patchwork-view {
   height: 100%;
   width: 100%;
   contain: layout;
+}
+
+body > patchwork-view {
+  height: 100vh;
+  width: 100vw;
+}
+
+/**
+`absolute top-1/2 -translate-y-1/2 z-10 bg-base-200 border border-base-300 p-2 hover:bg-base-300 transition-all duration-300 ${
+            isSidebarCollapsed ? "left-0 rounded-r-md" : "right-0 rounded-md"
+          }`
+          **/
+
+.sidebar-toggle {
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  width: 2px;
+  z-index: 1;
+  &::before {
+    content: "";
+    display: block;
+    width: 20px;
+    height: 100%;
+    margin-left: -10px;
+  }
+  &:hover {
+    background: var(--color-base-content);
+  }
+}
+
+.tl-watermark_SEE-LICENSE {
+  display: none;
 }
