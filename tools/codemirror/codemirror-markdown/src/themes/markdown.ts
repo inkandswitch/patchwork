@@ -39,6 +39,7 @@ const MARKDOWN_STYLES: Record<string, any> = {
     // textAlign: "justify",
     textWrap: "pretty",
     lineHeight: "1.5rem",
+    color: "var(--color-base-content)",
     caretColor: "var(--color-base-content)",
     background: "var(--color-base-100)",
     marginBlock: "2rem",
@@ -69,7 +70,7 @@ const MARKDOWN_STYLES: Record<string, any> = {
   ".cm-gutters": {
     borderRight: "0",
     border: "0",
-    background: "transparent",
+    background: "var(--color-base-100)",
   },
 
   ".cm-comment-gutter": {
@@ -81,22 +82,33 @@ const MARKDOWN_STYLES: Record<string, any> = {
   },
 
   ".cm-folded-range-gutter": {
-    background: "white",
+    background: "var(--color-base-100)",
     borderRight: "0px",
     width: "40px",
   },
 
   ".cm-folded-line-widget": {
-    background: "white",
+    background: "var(--color-base-100)",
     border: "0px",
   },
 
   ".cm-folded-range": {
-    background: "white",
+    background: "var(--color-base-100)",
   },
 
   ".codeblock": {
     background: "orange",
+  },
+
+  // When deeply nested (3+ patchwork-views above), remove editor chrome
+  "patchwork-view patchwork-view patchwork-view & .cm-content": {
+    margin: "0",
+    padding: "1em",
+    maxWidth: "none",
+    borderRadius: "0",
+  },
+  "patchwork-view patchwork-view patchwork-view .p-4:has(&)": {
+    padding: "0",
   },
 };
 
