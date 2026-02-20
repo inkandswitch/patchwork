@@ -40,7 +40,7 @@ const ContextSidebar = ({
   return (
     <div className="w-full h-full flex flex-col bg-base-300 context-sidebar">
       {/* Tab Bar */}
-      <div className="flex place-content-center place-items-center">
+      <div className="flex place-content-center place-items-start">
         <div role="tablist" className="tabs tabs-lifted flex-1">
           {accountDoc.contextToolIds.map((toolId, index) => (
             <TabLabel
