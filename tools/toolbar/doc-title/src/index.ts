@@ -1,5 +1,4 @@
 import { Plugin } from "@inkandswitch/patchwork-plugins";
-import { toolify } from "@inkandswitch/patchwork-react";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -10,8 +9,8 @@ export const plugins: Plugin<any>[] = [
     icon: "Heading",
     supportedDatatypes: "*",
     async load() {
-      const { DocumentTitle } = await import("./DocumentTitle");
-      return toolify(DocumentTitle);
+      const { renderDocumentTitle } = await import("./DocumentTitle.js");
+      return renderDocumentTitle;
     },
     unlisted: true,
     forTitleBar: true,

@@ -2338,36 +2338,15 @@ importers:
       '@automerge/automerge':
         specifier: 3.2.4
         version: 3.2.4
-      '@automerge/automerge-codemirror':
-        specifier: ^0.2.0
-        version: 0.2.0
       '@automerge/automerge-repo':
         specifier: 2.5.2
         version: 2.5.2
-      '@automerge/automerge-repo-react-hooks':
-        specifier: 'catalog:'
-        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@inkandswitch/patchwork-elements':
-        specifier: workspace:^
-        version: link:../../../core/elements
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../../../core/filesystem
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
-      '@inkandswitch/patchwork-react':
-        specifier: workspace:^
-        version: link:../../../packages/react
-      react:
-        specifier: ^18.0.0
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.0.0
-        version: 18.3.1(react@18.3.1)
-      tailwindcss:
-        specifier: ^4.1.14
-        version: 4.1.15
     devDependencies:
       '@eslint/js':
         specifier: ^9.37.0
@@ -2375,30 +2354,12 @@ importers:
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../../core/bootloader
-      '@tailwindcss/vite':
-        specifier: ^4.1.14
-        version: 4.1.15(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
-      '@types/react':
-        specifier: 'catalog:'
-        version: 18.3.1
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 18.3.1
       '@typescript-eslint/parser':
         specifier: ^8.40.0
         version: 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
-      '@vitejs/plugin-react':
-        specifier: ^5.0.4
-        version: 5.0.4(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
-      daisyui:
-        specifier: ^5.1.29
-        version: 5.4.4
       eslint:
         specifier: ^9.34.0
         version: 9.38.0(jiti@2.6.1)
-      eslint-plugin-react-hooks:
-        specifier: ^5.2.0
-        version: 5.2.0(eslint@9.38.0(jiti@2.6.1))
       globals:
         specifier: ^16.4.0
         version: 16.4.0
