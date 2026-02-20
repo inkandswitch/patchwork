@@ -1,6 +1,7 @@
 import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import { createRoot } from "react-dom/client";
+import { render } from "solid-js/web";
 import "./styles.css";
+import { RepoContext } from "@automerge/automerge-repo-solid-primitives";
 
 function addStyles(element: HTMLElement, textContent: string) {
   const id = "account-picker-styles";
@@ -21,20 +22,20 @@ export const plugins = [
     name: "Account Picker",
     supportedDatatypes: ["account"],
     async load(): Promise<ToolImplementation> {
-      const { RepoContext } =
-        await import("@automerge/automerge-repo-react-hooks");
       const { AccountPicker } = await import("./AccountPicker");
       const css = await loadStyles();
       return (handle, element) => {
         addStyles(document.head, css);
         console.log("account picker");
-        const root = createRoot(element);
-        root.render(
-          <RepoContext.Provider value={element.repo}>
-            <AccountPicker handle={handle} element={element} />
-          </RepoContext.Provider>
+        const dispose = render(
+          () => (
+            <RepoContext.Provider value={element.repo}>
+              <AccountPicker handle={handle} element={element} />
+            </RepoContext.Provider>
+          ),
+          element
         );
-        return () => root.unmount();
+        return () => dispose();
       };
     },
   },

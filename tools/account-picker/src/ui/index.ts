@@ -3,9 +3,4 @@ export { ColorPicker } from "./color-picker";
 export { Input } from "./input";
 export { Label } from "./label";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
-export {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./tooltip";
+export { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";

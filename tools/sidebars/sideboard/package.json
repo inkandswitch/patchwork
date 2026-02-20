@@ -31,7 +31,6 @@
     "@kobalte/core": "^0.13.11",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@inkandswitch/patchwork-elements": "workspace:^",
-    "@kobalte/core": "^0.13.11",
     "@types/debug": "^4.1.12",
     "debug": "^4.4.3",
     "solid-js": "^1.9.9"

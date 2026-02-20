@@ -1,8 +1,8 @@
-import type { BuildOptions } from "esbuild";
+import type { BuildOptions, Plugin } from "esbuild";
 import externals from "@inkandswitch/patchwork-bootloader/externals";
 import process from "node:process";
-import tailwind from "esbuild-plugin-tailwindcss";
-
+import { existsSync, rmSync } from "node:fs";
+import { solid } from "./plugin-solid.ts";
 import pushworkSync from "./plugin-pushwork-sync.ts";
 import pkgJSON from "../package.json" with { type: "json" };
 
@@ -19,10 +19,19 @@ export default {
   splitting: true,
   logLevel: "debug",
   sourcemap: false,
-  jsx: "automatic",
-  jsxImportSource: "react",
   external: externals,
-  plugins: [tailwind()].concat(pushworking ? [pushworkSync()] : []),
-  loader: { ".ttf": "dataurl", ".css": "file" },
+  plugins: [
+    solid(),
+    {
+      name: "empty outdir",
+      setup(build) {
+        build.onStart(() => {
+          const { outdir } = build.initialOptions;
+          if (outdir && existsSync(outdir)) rmSync(outdir, { recursive: true });
+        });
+      },
+    } satisfies Plugin,
+  ].concat(pushworking ? [pushworkSync()] : []),
+  loader: { ".ttf": "dataurl" },
   conditions: ["style", "browser", "import"],
 } satisfies BuildOptions;

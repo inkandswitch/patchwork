@@ -1,6 +1,4 @@
-import * as React from "react";
-import { Check } from "lucide-react";
-import { cn } from "./utils";
+import { createSignal, createEffect, For, Show } from "solid-js";
 import {
   USER_COLOR_PALETTE,
   createHslColor,
@@ -12,134 +10,129 @@ import { Input } from "./input";
 interface ColorPickerProps {
   value?: string;
   onChange: (color: string) => void;
-  className?: string;
 }
 
-export function ColorPicker({ value, onChange, className }: ColorPickerProps) {
-  const [showCustom, setShowCustom] = React.useState(false);
-  const [customHue, setCustomHue] = React.useState(200);
-  const [customSat, setCustomSat] = React.useState(70);
-  const [customLight, setCustomLight] = React.useState(50);
+export function ColorPicker(props: ColorPickerProps) {
+  const [showCustom, setShowCustom] = createSignal(false);
+  const [customHue, setCustomHue] = createSignal(200);
+  const [customSat, setCustomSat] = createSignal(70);
+  const [customLight, setCustomLight] = createSignal(50);
 
-  React.useEffect(() => {
-    if (value) {
-      const parsed = parseHslColor(value);
+  createEffect(() => {
+    if (props.value) {
+      const parsed = parseHslColor(props.value);
       if (parsed) {
         setCustomHue(parsed.h);
         setCustomSat(parsed.s);
         setCustomLight(parsed.l);
       }
     }
-  }, [value]);
+  });
 
-  const handleCustomColorChange = React.useCallback(() => {
-    const color = createHslColor(customHue, customSat, customLight);
-    onChange(color);
-  }, [customHue, customSat, customLight, onChange]);
-
-  React.useEffect(() => {
-    if (showCustom) {
-      handleCustomColorChange();
+  createEffect(() => {
+    if (showCustom()) {
+      const color = createHslColor(customHue(), customSat(), customLight());
+      props.onChange(color);
     }
-  }, [showCustom, handleCustomColorChange]);
+  });
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div class="color-picker">
       <Label>Color</Label>
 
-      {/* Preset color grid */}
-      <div className="grid grid-cols-6 gap-2">
-        {USER_COLOR_PALETTE.map((color) => (
-          <button
-            key={color.value}
-            type="button"
-            className={cn(
-              "w-10 h-10 rounded-md border-2 transition-all hover:scale-110",
-              value === color.value
-                ? "border-gray-900 dark:border-gray-100 ring-2 ring-offset-2 ring-gray-900 dark:ring-gray-100"
-                : "border-gray-300 dark:border-gray-600"
-            )}
-            style={{ backgroundColor: color.value }}
-            onClick={() => {
-              setShowCustom(false);
-              onChange(color.value);
-            }}
-            title={color.name}
-          >
-            {value === color.value && (
-              <Check
-                className="w-5 h-5 mx-auto text-white drop-shadow-lg"
-                strokeWidth={3}
-              />
-            )}
-          </button>
-        ))}
+      <div class="color-grid">
+        <For each={[...USER_COLOR_PALETTE]}>
+          {(color) => (
+            <button
+              type="button"
+              class={`color-swatch${props.value === color.value ? " selected" : ""}`}
+              style={{ "background-color": color.value }}
+              onClick={() => {
+                setShowCustom(false);
+                props.onChange(color.value);
+              }}
+              title={color.name}
+            >
+              <Show when={props.value === color.value}>
+                <svg
+                  class="icon-check"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </Show>
+            </button>
+          )}
+        </For>
       </div>
 
-      {/* Custom color toggle */}
       <button
         type="button"
-        className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 underline"
-        onClick={() => setShowCustom(!showCustom)}
+        class="color-custom-toggle"
+        onClick={() => setShowCustom(!showCustom())}
       >
-        {showCustom ? "Hide" : "Show"} custom color
+        {showCustom() ? "Hide" : "Show"} custom color
       </button>
 
-      {/* Custom color sliders */}
-      {showCustom && (
-        <div className="space-y-3 p-4 border rounded-md bg-gray-50 dark:bg-gray-900">
-          <div className="flex items-center gap-3">
+      <Show when={showCustom()}>
+        <div class="color-custom-panel">
+          <div class="color-custom-row">
             <div
-              className="w-12 h-12 rounded-md border-2 border-gray-300 dark:border-gray-600"
+              class="color-preview"
               style={{
-                backgroundColor: createHslColor(
-                  customHue,
-                  customSat,
-                  customLight
+                "background-color": createHslColor(
+                  customHue(),
+                  customSat(),
+                  customLight()
                 ),
               }}
             />
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2">
-                <Label className="w-20 text-xs">Hue</Label>
+            <div class="color-sliders">
+              <div class="color-slider-row">
+                <Label class="xs">Hue</Label>
                 <Input
                   type="range"
                   min="0"
                   max="360"
-                  value={customHue}
-                  onChange={(e) => setCustomHue(Number(e.target.value))}
-                  className="flex-1"
+                  value={customHue()}
+                  onInput={(e) => setCustomHue(Number(e.currentTarget.value))}
+                  class="range"
                 />
-                <span className="text-xs w-8 text-right">{customHue}°</span>
+                <span class="color-slider-value">{customHue()}°</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-20 text-xs">Saturation</Label>
+              <div class="color-slider-row">
+                <Label class="xs">Saturation</Label>
                 <Input
                   type="range"
                   min="0"
                   max="100"
-                  value={customSat}
-                  onChange={(e) => setCustomSat(Number(e.target.value))}
-                  className="flex-1"
+                  value={customSat()}
+                  onInput={(e) => setCustomSat(Number(e.currentTarget.value))}
+                  class="range"
                 />
-                <span className="text-xs w-8 text-right">{customSat}%</span>
+                <span class="color-slider-value">{customSat()}%</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-20 text-xs">Lightness</Label>
+              <div class="color-slider-row">
+                <Label class="xs">Lightness</Label>
                 <Input
                   type="range"
                   min="20"
                   max="80"
-                  value={customLight}
-                  onChange={(e) => setCustomLight(Number(e.target.value))}
-                  className="flex-1"
+                  value={customLight()}
+                  onInput={(e) => setCustomLight(Number(e.currentTarget.value))}
+                  class="range"
                 />
-                <span className="text-xs w-8 text-right">{customLight}%</span>
+                <span class="color-slider-value">{customLight()}%</span>
               </div>
             </div>
           </div>
         </div>
-      )}
+      </Show>
     </div>
   );
 }
