@@ -8,6 +8,7 @@ export default defineConfig({
   base: "./",
   plugins: [react(), tailwindcss(), cssInjectedByJsPlugin()],
   build: {
+    emptyOutDir: true,
     rollupOptions: {
       external: externals,
       input: "./src/index.ts",

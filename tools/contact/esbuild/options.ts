@@ -1,6 +1,7 @@
-import type { BuildOptions } from "esbuild";
+import type { BuildOptions, Plugin } from "esbuild";
 import externals from "@inkandswitch/patchwork-bootloader/externals";
 import process from "node:process";
+import { existsSync, rmSync } from "node:fs";
 import tailwind from "esbuild-plugin-tailwindcss";
 
 import pushworkSync from "./plugin-pushwork-sync.ts";
@@ -22,7 +23,18 @@ export default {
   jsx: "automatic",
   jsxImportSource: "react",
   external: externals,
-  plugins: [tailwind()].concat(pushworking ? [pushworkSync()] : []),
+  plugins: [
+    {
+      name: "empty outdir",
+      setup(build) {
+        build.onStart(() => {
+          const { outdir } = build.initialOptions;
+          if (outdir && existsSync(outdir)) rmSync(outdir, { recursive: true });
+        });
+      },
+    } satisfies Plugin,
+    tailwind(),
+  ].concat(pushworking ? [pushworkSync()] : []),
   loader: { ".ttf": "dataurl", ".css": "file" },
   conditions: ["style", "browser", "import"],
 } satisfies BuildOptions;

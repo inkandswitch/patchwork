@@ -9,6 +9,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), cssInjectedByJsPlugin()],
 
   build: {
+    emptyOutDir: true,
     minify: false,
     sourcemap: true,
     rollupOptions: {

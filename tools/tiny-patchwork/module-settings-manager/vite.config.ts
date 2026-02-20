@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [solid(), cssInjectedByJsPlugin()],
 
   build: {
+    emptyOutDir: true,
     rollupOptions: {
       external: externals,
       input: "./src/index.tsx",

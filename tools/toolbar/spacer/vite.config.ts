@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [],
 
   build: {
+    emptyOutDir: true,
     rollupOptions: {
       external: externals,
       input: "./src/index.ts",

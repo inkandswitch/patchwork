@@ -1,5 +1,6 @@
-import type { BuildOptions } from "esbuild";
+import type { BuildOptions, Plugin } from "esbuild";
 import process from "node:process";
+import { existsSync, rmSync } from "node:fs";
 import pushworkSync from "./plugin-pushwork-sync.ts";
 import pkgJSON from "../package.json" with { type: "json" };
 import externals from "@inkandswitch/patchwork-bootloader/externals";
@@ -16,6 +17,16 @@ export default {
   logLevel: "debug",
   sourcemap: false,
   external: externals,
-  plugins: pushworking ? [pushworkSync()] : [],
+  plugins: [
+    {
+      name: "empty outdir",
+      setup(build) {
+        build.onStart(() => {
+          const { outdir } = build.initialOptions;
+          if (outdir && existsSync(outdir)) rmSync(outdir, { recursive: true });
+        });
+      },
+    } satisfies Plugin,
+  ].concat(pushworking ? [pushworkSync()] : []),
   loader: { ".ttf": "dataurl" },
 } satisfies BuildOptions;

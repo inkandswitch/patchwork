@@ -9,6 +9,7 @@ export default defineConfig({
   base: "./",
   plugins: [topLevelAwait(), react(), tailwindcss(), cssInjectedByJsPlugin()],
   build: {
+    emptyOutDir: true,
     rollupOptions: {
       external: externals,
       input: "./src/tool.tsx",

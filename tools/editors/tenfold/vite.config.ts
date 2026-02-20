@@ -6,6 +6,7 @@ export default defineConfig({
   base: "./",
   plugins: [solid()],
   build: {
+    emptyOutDir: true,
     minify: false,
     sourcemap: true,
     lib: {
