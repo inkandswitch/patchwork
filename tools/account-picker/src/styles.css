@@ -42,6 +42,27 @@
     padding-block-end: 1rem;
   }
 
+  & .avatar-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 50%;
+    position: relative;
+
+    &:hover [tool-id="contact"] img {
+      outline: 2px solid hotpink;
+    }
+
+    &.disabled {
+      cursor: default;
+
+      &:hover::after {
+        content: none;
+      }
+    }
+  }
+
   /* ---- Form groups ---- */
 
   & .field-group {

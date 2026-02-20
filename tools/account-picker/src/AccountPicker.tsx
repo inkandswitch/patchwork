@@ -41,7 +41,6 @@ declare module "solid-js" {
   }
 }
 
-const MAX_AVATAR_SIZE = 1024 * 1024;
 const ACCOUNT_URL_STORAGE_KEY = "tinyPatchworkAccountUrl";
 
 enum AccountPickerTab {
@@ -64,6 +63,8 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
     () => currentAccount.contactUrl,
     props.element
   );
+
+  let avatarInputRef: HTMLInputElement | undefined;
 
   const [signupName, setSignupName] = createSignal("");
   const [activeTab, setActiveTab] = createSignal<string>(
@@ -134,23 +135,19 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
     const avatarFile = !target.files ? undefined : target.files[0];
     if (!avatarFile) return;
 
-    if (avatarFile.size > MAX_AVATAR_SIZE) {
-      alert("Avatar is too large. Please choose a file under 1MB.");
-      target.value = "";
-      return;
-    }
+    const compressed = await compressAvatar(avatarFile);
+    if (!compressed) return;
 
     const repo = props.element.repo as Repo;
     const imageHandle = await repo.create2<{
       content: Uint8Array;
       mimeType: string;
     }>();
-    const arrayBuffer = await avatarFile.arrayBuffer();
     imageHandle.change((doc) => {
-      doc.content = new Uint8Array(arrayBuffer);
-      doc.mimeType = avatarFile.type;
+      doc.content = compressed.content;
+      doc.mimeType = compressed.mimeType;
       (doc as any).name = avatarFile.name;
-      (doc as any).extension = avatarFile.name.split(".").pop() || "";
+      (doc as any).extension = "webp";
     });
 
     selfHandle()?.change((contact: ContactDoc) => {
@@ -232,10 +229,24 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
         <div class="sr-only">Account</div>
         <div class="sr-only">Manage your account settings</div>
         <Show when={currentAccount?.contactUrl}>
-          <patchwork-view
-            doc-url={currentAccount.contactUrl}
-            tool-id="contact"
+          <input
+            ref={(el) => (avatarInputRef = el)}
+            type="file"
+            accept="image/*"
+            class="sr-only"
+            onChange={onAvatarChange}
           />
+          <button
+            type="button"
+            class={`avatar-button${isLoggedIn() ? "" : " disabled"}`}
+            onClick={() => isLoggedIn() && avatarInputRef?.click()}
+            title={isLoggedIn() ? "Click to change avatar" : undefined}
+          >
+            <patchwork-view
+              doc-url={currentAccount.contactUrl}
+              tool-id="contact"
+            />
+          </button>
         </Show>
       </div>
 
@@ -330,16 +341,6 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
               id="name"
               value={name()}
               onInput={(e) => onNameChange(e.currentTarget.value)}
-            />
-          </div>
-
-          <div class="field-group no-pad">
-            <Label for="avatar">Avatar</Label>
-            <Input
-              id="avatar"
-              type="file"
-              accept="image/*"
-              onChange={onAvatarChange}
             />
           </div>
 
@@ -446,6 +447,26 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
     </div>
   );
 };
+
+const AVATAR_MAX_SIZE = 512;
+
+async function compressAvatar(
+  file: File
+): Promise<{ content: Uint8Array; mimeType: string } | undefined> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, AVATAR_MAX_SIZE / Math.max(bitmap.width, bitmap.height));
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+
+  const canvas = new OffscreenCanvas(width, height);
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  const blob = await canvas.convertToBlob({ type: "image/webp", quality: 0.8 });
+  const buffer = await blob.arrayBuffer();
+  return { content: new Uint8Array(buffer), mimeType: "image/webp" };
+}
 
 // Inline SVG icon components
 
