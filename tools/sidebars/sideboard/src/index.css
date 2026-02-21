@@ -170,6 +170,10 @@
   transition:
     background-color 0.2s ease,
     box-shadow 0.2s ease;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .sideboard__doclist--drag-over {
@@ -364,6 +368,10 @@
 }
 
 .sideboard-widget:empty {
+  display: none;
+}
+
+.sideboard__filter-container:has(~ .sideboard__doclist:empty) {
   display: none;
 }
 
