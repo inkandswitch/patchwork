@@ -29,7 +29,7 @@ export const plugins = [
       const { Sideboard } = await import("./sideboard/sideboard.tsx");
       const css = await loadStyles();
       return (handle, element) => {
-        addStyles(element, css);
+        addStyles(document.head, css);
         return render(
           () => (
             <Sideboard handle={handle} repo={element.repo} element={element} />
