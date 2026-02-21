@@ -454,6 +454,40 @@
   }
 }
 
+.popmenu__item--highlighted {
+  outline: none;
+  background-color: color-mix(
+    in oklch,
+    var(--sideboard-primary),
+    var(--sideboard-widget-fill) 20%
+  );
+  color: var(--sideboard-widget-line);
+}
+
+.create-new-filter {
+  padding: 4px;
+}
+
+.create-new-filter__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  border: 1px solid hsl(240 6% 80%);
+  border-radius: 4px;
+  background: var(--sideboard-widget-fill);
+  color: var(--sideboard-widget-line);
+  outline: none;
+}
+
+.create-new-filter__input:focus {
+  border-color: var(--sideboard-primary);
+}
+
+.create-new-filter__input::placeholder {
+  color: hsl(240 5% 65%);
+}
+
 /* Share Modal */
 .share-modal__overlay {
   position: fixed;
