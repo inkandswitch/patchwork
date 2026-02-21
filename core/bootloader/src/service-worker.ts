@@ -84,7 +84,7 @@ self.addEventListener("message", async (event) => {
 
 // request ids are kept in a counter
 let reqcount = 0;
-self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
+self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
   const request = fetchEvent.request;
   if (request.method !== "GET") return fetchEvent.respondWith(fetch(request));
   const url = new URL(fetchEvent.request.url);
