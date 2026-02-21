@@ -2410,9 +2410,6 @@ importers:
       solid-js:
         specifier: ^1.9.9
         version: 1.9.10
-      xstate:
-        specifier: ^5.18.2
-        version: 5.23.0
     devDependencies:
       typescript:
         specifier: ~5.9.3
