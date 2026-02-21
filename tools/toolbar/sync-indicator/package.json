@@ -3,14 +3,14 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "./dist/tool.js",
+  "main": "./dist/index.js",
   "pushwork": {
     "url": "automerge:2JwvUFqFGwxaZPu9CUDT5TBTq35M"
   },
   "exports": {
     ".": {
-      "import": "./dist/tool.js",
-      "source": "./src/tool.tsx"
+      "import": "./dist/index.js",
+      "source": "./src/index.tsx"
     }
   },
   "scripts": {
@@ -24,11 +24,10 @@
     "@automerge/automerge-repo-solid-primitives": "^2.5.2",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
-    "solid-js": "^1.9.9",
-    "xstate": "^5.18.2"
+    "solid-js": "^1.9.9"
   },
   "devDependencies": {
-"typescript": "~5.9.3",
+    "typescript": "~5.9.3",
     "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-solid": "^2.11.10",
     "vite-plugin-top-level-await": "^1.6.0"

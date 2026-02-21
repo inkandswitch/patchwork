@@ -40,7 +40,7 @@ export function Popover(props: {
     <PopoverContext.Provider
       value={{ open: isOpen, setOpen, triggerRef, setTriggerRef }}
     >
-      <div class="inline-block">{props.children}</div>
+      <div class="sync-popover-wrapper">{props.children}</div>
     </PopoverContext.Provider>
   );
 }
@@ -125,7 +125,7 @@ export function PopoverContent(props: {
         <Portal>
           <div
             ref={contentRef}
-            class={`fixed z-[2147483647] w-72 rounded-md border border-gray-200 bg-white p-4 shadow-md outline-none ${props.class ?? ""}`}
+            class="sync-popover"
             style={{
               top: `${position().top}px`,
               left: `${position().left}px`,

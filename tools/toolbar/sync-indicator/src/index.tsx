@@ -1,6 +1,4 @@
-import { render } from "solid-js/web";
 import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import { SyncIndicator, RepoContext } from "./SyncIndicator";
 
 export const plugins = [
   {
@@ -13,6 +11,8 @@ export const plugins = [
     unlisted: true,
     forTitleBar: true,
     async load(): Promise<ToolImplementation> {
+      const { render } = await import("solid-js/web");
+      const { SyncIndicator, RepoContext } = await import("./SyncIndicator");
       return (handle, element) => {
         element.style.width = "fit-content";
         element.style.zIndex = "10";

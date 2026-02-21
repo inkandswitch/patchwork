@@ -59,6 +59,10 @@ const repo = new Repo({
   enableRemoteHeadsGossiping: true,
 });
 
+repo.subscribeToRemotes([
+  "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
+]);
+
 function createSharedWorker() {
   return new SharedWorker(new URL("./automerge-worker.ts", import.meta.url), {
     type: "module",

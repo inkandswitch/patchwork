@@ -1,11 +1,12 @@
 interface SyncIconProps {
   size?: number;
   class?: string;
-  alert?: boolean;
+  state?: "synced" | "syncing" | "error" | "unknown";
 }
 
 export function SyncIcon(props: SyncIconProps) {
   const s = () => props.size ?? 20;
+  const state = () => props.state ?? "synced";
 
   return (
     <svg
@@ -13,21 +14,37 @@ export function SyncIcon(props: SyncIconProps) {
       height={s()}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
       class={props.class ?? ""}
     >
-      <path d="M17 2l3 3-3 3" />
-      <path d="M3 11V9a4 4 0 0 1 4-4h13" />
-      <path d="M7 22l-3-3 3-3" />
-      <path d="M21 13v2a4 4 0 0 1-4 4H4" />
-      {props.alert && (
-        <>
-          <line x1="12" y1="9" x2="12" y2="13" stroke-width="2.5" />
-          <circle cx="12" cy="15.5" r="0.5" fill="currentColor" stroke-width="1.5" />
-        </>
+      <circle
+        cx="12"
+        cy="12"
+        r="8"
+        stroke="currentColor"
+        stroke-width="2"
+        fill="currentColor"
+        fill-opacity={state() === "synced" ? 1 : 0}
+        style={{
+          transition: state() === "synced"
+            ? "fill-opacity 0s"
+            : "fill-opacity 2s ease-out",
+        }}
+      />
+      {state() === "error" && (
+        <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+      )}
+      {state() === "unknown" && (
+        <text
+          x="12"
+          y="12"
+          text-anchor="middle"
+          dominant-baseline="central"
+          fill="currentColor"
+          font-size="11"
+          font-weight="bold"
+        >
+          ?
+        </text>
       )}
     </svg>
   );

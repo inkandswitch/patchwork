@@ -92,6 +92,9 @@ const repoPromise = (async () => {
     },
     enableRemoteHeadsGossiping: true,
   });
+  repo.subscribeToRemotes([
+    "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
+  ]);
   network.whenReady().then(() => {
     console.log("[automerge worker: CONNECTED] websocket ready");
   });
