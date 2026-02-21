@@ -1,20 +1,16 @@
-import { stripTypeScriptTypes } from "node:module";
 import type { Plugin } from "vite";
 
 export function serviceworker(): Plugin {
-  const serviceWorkerExport =
-    "@inkandswitch/patchwork-bootloader/service-worker";
   return {
-    name: "@patchwork/vite",
+    name: "@patchwork/service-worker",
     async buildStart() {
-      const exportPath = await this.resolve(serviceWorkerExport);
-      const file = await this.fs.readFile(exportPath!.id, {
-        encoding: "utf8",
-      });
+      const resolved = await this.resolve(
+        "@inkandswitch/patchwork-bootloader/service-worker"
+      );
       this.emitFile({
-        type: "prebuilt-chunk",
+        type: "chunk",
+        id: resolved!.id,
         fileName: "service-worker.js",
-        code: stripTypeScriptTypes(file, { mode: "strip" }),
       });
     },
   };
