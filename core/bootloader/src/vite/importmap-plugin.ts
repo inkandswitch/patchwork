@@ -33,15 +33,13 @@ export function importmap(options?: PatchworkVitePluginOptions): Plugin {
   return {
     name: "@patchwork/vite",
     async buildStart() {
-      if (this.environment.mode == "build") {
-        for (const [id, fileName] of Object.entries(builtins)) {
-          this.emitFile({
-            type: "chunk",
-            fileName: fileName.slice(1),
-            id,
-            preserveSignature: "strict",
-          });
-        }
+      for (const [id, fileName] of Object.entries(builtins)) {
+        this.emitFile({
+          type: "chunk",
+          fileName: fileName.slice(1),
+          id,
+          preserveSignature: "strict",
+        });
       }
     },
     resolveId(id) {
@@ -51,21 +49,14 @@ export function importmap(options?: PatchworkVitePluginOptions): Plugin {
     },
     transformIndexHtml: {
       order: "pre",
-      handler(html, ctx) {
-        const map = structuredClone(importmap);
-        if (ctx.server) {
-          // serve builtins from dev server in dev mode
-          for (const id of Object.keys(builtins)) {
-            map.imports[id] = `/@id/${id}`;
-          }
-        }
+      handler(html) {
         return {
           html,
           tags: [
             {
               tag: "script",
               attrs: { type: "importmap" },
-              children: JSON.stringify(map, null, 2),
+              children: JSON.stringify(importmap, null, 2),
             },
           ],
         };

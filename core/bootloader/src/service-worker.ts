@@ -143,7 +143,10 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
               referrer: request.referrer,
             },
           };
-          log(`sending handoff request to main thread for cache ${cachename}`, message);
+          log(
+            `sending handoff request to main thread for cache ${cachename}`,
+            message
+          );
           // send request event to main thread to ask them how to handle it
           client.postMessage(message);
           // this'll finish when the main thread gets back to us
@@ -155,11 +158,11 @@ self.addEventListener("fetch", async (fetchEvent: FetchEvent) => {
               status: handoffResponse.status,
               headers: handoffResponse.headers,
             });
-            if (handoffResponse.cache !== false) {
+            if (handoffResponse.cache === false) {
+              log(`caching disabled on ${handoffURL}`);
+            } else {
               log(`caching ${handoffURL}`);
               await cache.put(request, response.clone());
-            } else {
-              log(`caching disabled on ${handoffURL}`);
             }
             return response;
           }

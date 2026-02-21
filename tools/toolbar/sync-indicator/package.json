@@ -28,9 +28,7 @@
     "xstate": "^5.18.2"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.15",
-    "tailwindcss": "^4.1.15",
-    "typescript": "~5.9.3",
+"typescript": "~5.9.3",
     "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-solid": "^2.11.10",
     "vite-plugin-top-level-await": "^1.6.0"

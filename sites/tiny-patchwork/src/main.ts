@@ -168,14 +168,18 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
   window.location.hash = params.toString();
 
   try {
-    const docHandle = await repo.find(stringifyAutomergeUrl({ documentId, heads }));
+    const docHandle = await repo.find(
+      stringifyAutomergeUrl({ documentId, heads })
+    );
     const doc = docHandle.doc();
     const docType = type || doc?.["@patchwork"]?.type;
     if (docType) {
       const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
       const datatype = await registry.load(docType);
       if (datatype) {
-        const docTitle = (datatype.module as DatatypeImplementation).getTitle(doc);
+        const docTitle = (datatype.module as DatatypeImplementation).getTitle(
+          doc
+        );
         if (docTitle) {
           document.title = `${docTitle} | patchwork`;
         }

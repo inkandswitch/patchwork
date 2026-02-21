@@ -19,7 +19,7 @@ export default defineConfig({
     format: "es",
     plugins: () => [wasm()],
   },
-  server: {
+  preview: {
     port: process.env.PORT ? +process.env.PORT : 5173,
   },
   build: {
