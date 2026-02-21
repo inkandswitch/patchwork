@@ -57,7 +57,7 @@
 .sync-peers {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .sync-peer {
@@ -66,6 +66,22 @@
   padding: 6px 8px;
   font-size: 12px;
   color: #4b5563;
+}
+
+.sync-peer-clickable {
+  cursor: pointer;
+}
+
+.sync-peer-clickable:hover {
+  background: #f9fafb;
+}
+
+.sync-arrow {
+  text-align: center;
+  color: #111827;
+  font-size: 12px;
+  line-height: 1;
+  margin: 0.5em 0;
 }
 
 

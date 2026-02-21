@@ -179,6 +179,12 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
       });
     }
 
+    // sort: shared worker first, sync server last
+    const peerOrder = (p: PeerSyncInfo) =>
+      p.name === "Shared Worker" ? 0 :
+      p.name === "Sync Server" ? 2 : 1;
+    peerList.sort((a, b) => peerOrder(a) - peerOrder(b));
+
     console.log("[sync-indicator] peers", peerList);
     setPeers(reconcile(peerList));
   }
@@ -216,7 +222,7 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
     if (!isOnline()) return "Offline";
     if (syncServerInSync()) return "Synced to server";
     if (syncServerHeads()) return "Syncing...";
-    return "Server status unknown";
+    return "Sync server status unknown";
   };
 
   const onCopy = async () => {
@@ -250,6 +256,15 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
     return ts ? getRelativeTimeString(ts) : "-";
   };
 
+  const copyHeads = async (heads: UrlHeads | undefined) => {
+    if (!heads) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(heads));
+    } catch (err) {
+      console.error("Failed to copy heads:", err);
+    }
+  };
+
   return (
     <Popover open={isPopoverOpen()} onOpenChange={setIsPopoverOpen}>
       <PopoverTrigger class={isOnline() ? "sync-trigger" : "sync-trigger-offline"}>
@@ -262,7 +277,7 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
           </div>
 
           <div class="sync-peers">
-            <div class="sync-peer">
+            <div class="sync-peer sync-peer-clickable" onClick={() => copyHeads(ownHeads())}>
               <div class="sync-peer-header">
                 <span class="sync-peer-name">Tab</span>
               </div>
@@ -275,24 +290,27 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
 
             <For each={peers}>
               {(peer) => (
-                <div class="sync-peer">
-                  <div class="sync-peer-header">
-                    <span class="sync-peer-name">{peer.name}</span>
-                    <span class="sync-peer-status">
-                      {peer.inSync ? "synced" : peer.heads ? "behind" : "unknown"}
-                    </span>
+                <>
+                  <div class="sync-arrow">↓</div>
+                  <div class="sync-peer sync-peer-clickable" onClick={() => copyHeads(peer.heads)}>
+                    <div class="sync-peer-header">
+                      <span class="sync-peer-name">{peer.name}</span>
+                      <span class="sync-peer-status">
+                        {peer.inSync ? "synced" : peer.heads ? "behind" : "unknown"}
+                      </span>
+                    </div>
+                    <Show when={peer.heads}>
+                      <div class="sync-peer-detail">
+                        heads: {JSON.stringify(peer.heads!.map((h) => h.slice(0, 6)))}
+                      </div>
+                    </Show>
+                    <Show when={peer.lastSyncTimestamp}>
+                      <div class="sync-peer-detail">
+                        {relativeTime(peer.lastSyncTimestamp)}
+                      </div>
+                    </Show>
                   </div>
-                  <Show when={peer.heads}>
-                    <div class="sync-peer-detail">
-                      heads: {JSON.stringify(peer.heads!.map((h) => h.slice(0, 6)))}
-                    </div>
-                  </Show>
-                  <Show when={peer.lastSyncTimestamp}>
-                    <div class="sync-peer-detail">
-                      {relativeTime(peer.lastSyncTimestamp)}
-                    </div>
-                  </Show>
-                </div>
+                </>
               )}
             </For>
           </div>
