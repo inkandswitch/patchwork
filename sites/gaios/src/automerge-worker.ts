@@ -84,6 +84,7 @@ const repoPromise = (async () => {
     async sharePolicy(peerId) {
       return peerId.startsWith("storage-server-");
     },
+    enableRemoteHeadsGossiping: true,
   });
   network.whenReady().then(() => {
     console.log("[automerge worker: CONNECTED] websocket ready");

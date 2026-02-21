@@ -51,7 +51,13 @@ workerLogChannel.onmessage = (event) => {
   (console as any)[method](...args);
 };
 
-const repo = new Repo({ storage: new IndexedDBStorageAdapter() });
+const repo = new Repo({
+  storage: new IndexedDBStorageAdapter(),
+  async sharePolicy(peerId) {
+    return peerId.includes("shared-worker");
+  },
+  enableRemoteHeadsGossiping: true,
+});
 
 function createSharedWorker() {
   return new SharedWorker(new URL("./automerge-worker.ts", import.meta.url), {
