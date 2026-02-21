@@ -9,14 +9,7 @@ import {
   useRepo,
   RepoContext,
 } from "@automerge/automerge-repo-solid-primitives";
-import {
-  createSignal,
-  createEffect,
-  on,
-  onCleanup,
-  Show,
-  For,
-} from "solid-js";
+import { createSignal, createEffect, on, onCleanup, Show, For } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 import { getRelativeTimeString } from "./lib/relative-time";
 import { Button, Popover, PopoverTrigger, PopoverContent } from "./lib/ui";
@@ -54,8 +47,12 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
   const [isOnline, setIsOnline] = createSignal(navigator.onLine);
 
   // sync server state (driven by its known storage ID)
-  const [syncServerHeads, setSyncServerHeads] = createSignal<UrlHeads | undefined>();
-  const [syncServerTimestamp, setSyncServerTimestamp] = createSignal<number | undefined>();
+  const [syncServerHeads, setSyncServerHeads] = createSignal<
+    UrlHeads | undefined
+  >();
+  const [syncServerTimestamp, setSyncServerTimestamp] = createSignal<
+    number | undefined
+  >();
 
   // connected peers (shared worker, etc)
   const [peers, setPeers] = createStore<PeerSyncInfo[]>([]);
@@ -100,7 +97,11 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
       heads: UrlHeads;
       timestamp: number;
     }) => {
-      console.log("[sync-indicator] remote-heads", { storageId, heads, timestamp });
+      console.log("[sync-indicator] remote-heads", {
+        storageId,
+        heads,
+        timestamp,
+      });
 
       // sync server (gossiped through shared worker)
       if (storageId === SYNC_SERVER_STORAGE_ID) {
@@ -153,9 +154,10 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
         storageId,
         heads: syncInfo?.lastHeads,
         lastSyncTimestamp: syncInfo?.lastSyncTimestamp,
-        inSync: syncInfo?.lastHeads && currentHeads
-          ? A.equals(currentHeads, syncInfo.lastHeads)
-          : false,
+        inSync:
+          syncInfo?.lastHeads && currentHeads
+            ? A.equals(currentHeads, syncInfo.lastHeads)
+            : false,
       };
     });
 
@@ -172,21 +174,29 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
         name: "Sync Server",
         storageId: SYNC_SERVER_STORAGE_ID,
         heads: serverInfo?.lastHeads ?? syncServerHeads(),
-        lastSyncTimestamp: serverInfo?.lastSyncTimestamp ?? syncServerTimestamp(),
-        inSync: (serverInfo?.lastHeads ?? syncServerHeads()) && currentHeads
-          ? A.equals(currentHeads, serverInfo?.lastHeads ?? syncServerHeads()!)
-          : false,
+        lastSyncTimestamp:
+          serverInfo?.lastSyncTimestamp ?? syncServerTimestamp(),
+        inSync:
+          (serverInfo?.lastHeads ?? syncServerHeads()) && currentHeads
+            ? A.equals(
+                currentHeads,
+                serverInfo?.lastHeads ?? syncServerHeads()!
+              )
+            : false,
       });
     }
 
     // sort: shared worker first, sync server last
     const peerOrder = (p: PeerSyncInfo) =>
-      p.name === "Shared Worker" ? 0 :
-      p.name === "Sync Server" ? 2 : 1;
+      p.name === "Shared Worker" ? 0 : p.name === "Sync Server" ? 2 : 1;
     peerList.sort((a, b) => peerOrder(a) - peerOrder(b));
+    let p = peerList;
 
     console.log("[sync-indicator] peers", peerList);
-    setPeers(reconcile(peerList));
+    if (!localStorage.debug && !localStorage.DEBUG) {
+      p = p.filter((p) => p.name != "Shared Worker");
+    }
+    setPeers(reconcile(p));
   }
 
   // recompute inSync when own heads change
@@ -267,41 +277,50 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
 
   return (
     <Popover open={isPopoverOpen()} onOpenChange={setIsPopoverOpen}>
-      <PopoverTrigger class={isOnline() ? "sync-trigger" : "sync-trigger-offline"}>
+      <PopoverTrigger
+        class={isOnline() ? "sync-trigger" : "sync-trigger-offline"}
+      >
         <SyncIcon size={20} state={iconState()} />
       </PopoverTrigger>
       <PopoverContent>
         <div class="sync-popover-body">
-          <div class="sync-status-header">
-            {statusText()}
-          </div>
+          <div class="sync-status-header">{statusText()}</div>
 
           <div class="sync-peers">
-            <div class="sync-peer sync-peer-clickable" onClick={() => copyHeads(ownHeads())}>
+            <div
+              class="sync-peer sync-peer-clickable"
+              onClick={() => copyHeads(ownHeads())}
+            >
               <div class="sync-peer-header">
                 <span class="sync-peer-name">Tab</span>
               </div>
               <div class="sync-peer-detail">
-                heads: {JSON.stringify(
-                  (ownHeads() ?? []).map((h) => h.slice(0, 6))
-                )}
+                heads:{" "}
+                {JSON.stringify((ownHeads() ?? []).map((h) => h.slice(0, 6)))}
               </div>
             </div>
 
             <For each={peers}>
               {(peer) => (
                 <>
-                  <div class="sync-arrow">↓</div>
-                  <div class="sync-peer sync-peer-clickable" onClick={() => copyHeads(peer.heads)}>
+                  <div
+                    class="sync-peer sync-peer-clickable"
+                    onClick={() => copyHeads(peer.heads)}
+                  >
                     <div class="sync-peer-header">
                       <span class="sync-peer-name">{peer.name}</span>
                       <span class="sync-peer-status">
-                        {peer.inSync ? "synced" : peer.heads ? "behind" : "unknown"}
+                        {peer.inSync
+                          ? "synced"
+                          : peer.heads
+                            ? "behind"
+                            : "unknown"}
                       </span>
                     </div>
                     <Show when={peer.heads}>
                       <div class="sync-peer-detail">
-                        heads: {JSON.stringify(peer.heads!.map((h) => h.slice(0, 6)))}
+                        heads:{" "}
+                        {JSON.stringify(peer.heads!.map((h) => h.slice(0, 6)))}
                       </div>
                     </Show>
                     <Show when={peer.lastSyncTimestamp}>
