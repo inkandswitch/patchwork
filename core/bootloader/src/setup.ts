@@ -130,7 +130,7 @@ export default async function setupServiceWorker(
   const existingSw = await navigator.serviceWorker.getRegistration();
 
   return navigator.serviceWorker
-    .register(options?.path ?? "/service-worker.js")
+    .register(options?.path ?? "/service-worker.js", { type: "module" })
     .then(async (sw) => {
       sw.active?.postMessage({
         type: "debug",

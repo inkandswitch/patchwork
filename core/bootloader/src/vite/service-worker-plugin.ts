@@ -1,5 +1,5 @@
-import { type Plugin, transformWithEsbuild } from "vite";
-import type { RollupFsModule } from "rollup";
+import { stripTypeScriptTypes } from "node:module";
+import type { Plugin } from "vite";
 
 export function serviceworker(): Plugin {
   const serviceWorkerExport =
@@ -11,16 +11,10 @@ export function serviceworker(): Plugin {
       const file = await this.fs.readFile(exportPath!.id, {
         encoding: "utf8",
       });
-      const transformation = await transformWithEsbuild(
-        file,
-        serviceWorkerExport,
-        { format: "iife" }
-      );
       this.emitFile({
         type: "prebuilt-chunk",
         fileName: "service-worker.js",
-        code: transformation.code,
-        map: transformation.map,
+        code: stripTypeScriptTypes(file, { mode: "strip" }),
       });
     },
   };
