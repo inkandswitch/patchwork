@@ -363,6 +363,10 @@
   color: var(--sideboard-widget-line);
 }
 
+.sideboard-widget:empty {
+  display: none;
+}
+
 .popmenu__trigger,
 .popmenu__sub-trigger {
   cursor: default;
