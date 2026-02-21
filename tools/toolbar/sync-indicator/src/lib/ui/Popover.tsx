@@ -1,120 +1,140 @@
-import React, { useState, useRef, useEffect } from "react";
+import {
+  type JSX,
+  createSignal,
+  createContext,
+  useContext,
+  onCleanup,
+  createEffect,
+  on,
+} from "solid-js";
+import { Portal } from "solid-js/web";
 
-interface PopoverProps {
+interface PopoverContextValue {
+  open: () => boolean;
+  setOpen: (v: boolean) => void;
+  triggerRef: () => HTMLButtonElement | undefined;
+  setTriggerRef: (el: HTMLButtonElement) => void;
+}
+
+const PopoverContext = createContext<PopoverContextValue>();
+
+export function Popover(props: {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  children: React.ReactNode;
-}
+  children: JSX.Element;
+}) {
+  const [internalOpen, setInternalOpen] = createSignal(false);
+  const [triggerRef, setTriggerRef] = createSignal<HTMLButtonElement>();
 
-interface PopoverTriggerProps {
-  className?: string;
-  children: React.ReactNode;
-}
+  const isOpen = () =>
+    props.open !== undefined ? props.open : internalOpen();
 
-interface PopoverContentProps {
-  className?: string;
-  children: React.ReactNode;
-}
-
-const PopoverContext = React.createContext<{
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  triggerRef: React.RefObject<HTMLButtonElement>;
-}>({
-  open: false,
-  setOpen: () => {},
-  triggerRef: { current: null },
-});
-
-export const Popover: React.FC<PopoverProps> = ({
-  open,
-  onOpenChange,
-  children,
-}) => {
-  const [internalOpen, setInternalOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  const isControlled = open !== undefined;
-  const isOpen = isControlled ? open : internalOpen;
-
-  const setOpen = (newOpen: boolean) => {
-    if (!isControlled) {
-      setInternalOpen(newOpen);
+  const setOpen = (v: boolean) => {
+    if (props.open === undefined) {
+      setInternalOpen(v);
     }
-    onOpenChange?.(newOpen);
+    props.onOpenChange?.(v);
   };
 
   return (
-    <PopoverContext.Provider value={{ open: isOpen, setOpen, triggerRef }}>
-      <div className="relative inline-block">{children}</div>
+    <PopoverContext.Provider
+      value={{ open: isOpen, setOpen, triggerRef, setTriggerRef }}
+    >
+      <div class="inline-block">{props.children}</div>
     </PopoverContext.Provider>
   );
-};
+}
 
-export const PopoverTrigger: React.FC<PopoverTriggerProps> = ({
-  className = "",
-  children,
-}) => {
-  const { setOpen, triggerRef } = React.useContext(PopoverContext);
+export function PopoverTrigger(props: {
+  class?: string;
+  children: JSX.Element;
+}) {
+  const ctx = useContext(PopoverContext)!;
 
   return (
     <button
-      ref={triggerRef}
+      ref={(el) => ctx.setTriggerRef(el)}
       type="button"
-      className={className}
-      onClick={() => setOpen(true)}
+      class={props.class ?? ""}
+      onClick={() => ctx.setOpen(!ctx.open())}
     >
-      {children}
+      {props.children}
     </button>
   );
-};
+}
 
-export const PopoverContent: React.FC<PopoverContentProps> = ({
-  className = "",
-  children,
-}) => {
-  const { open, setOpen, triggerRef } = React.useContext(PopoverContext);
-  const contentRef = useRef<HTMLDivElement>(null);
+export function PopoverContent(props: {
+  class?: string;
+  children: JSX.Element;
+}) {
+  const ctx = useContext(PopoverContext)!;
+  let contentRef!: HTMLDivElement;
+  const [position, setPosition] = createSignal({ top: 0, left: 0 });
 
-  useEffect(() => {
-    if (!open) return;
+  const updatePosition = () => {
+    const trigger = ctx.triggerRef();
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    setPosition({
+      top: rect.bottom + 8,
+      left: Math.max(0, rect.right - 288),
+    });
+  };
 
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        contentRef.current &&
-        !contentRef.current.contains(target) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(target)
-      ) {
-        setOpen(false);
-      }
-    };
+  createEffect(
+    on(ctx.open, (open) => {
+      if (!open) return;
 
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    };
+      updatePosition();
 
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as Node;
+        if (
+          contentRef &&
+          !contentRef.contains(target) &&
+          ctx.triggerRef() &&
+          !ctx.triggerRef()!.contains(target)
+        ) {
+          ctx.setOpen(false);
+        }
+      };
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [open, setOpen, triggerRef]);
+      const handleEscape = (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          ctx.setOpen(false);
+        }
+      };
 
-  if (!open) return null;
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
+      window.addEventListener("resize", updatePosition);
+      window.addEventListener("scroll", updatePosition, true);
+
+      onCleanup(() => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("keydown", handleEscape);
+        window.removeEventListener("resize", updatePosition);
+        window.removeEventListener("scroll", updatePosition, true);
+      });
+    })
+  );
 
   return (
-    <div
-      ref={contentRef}
-      className={`absolute z-50 w-72 rounded-md border border-gray-200 bg-white p-4 shadow-md outline-none ${className}`}
-      style={{ top: "100%", right: 0, marginTop: "0.5rem" }}
-    >
-      {children}
-    </div>
+    <>
+      {ctx.open() && (
+        <Portal>
+          <div
+            ref={contentRef}
+            class={`fixed z-[2147483647] w-72 rounded-md border border-gray-200 bg-white p-4 shadow-md outline-none ${props.class ?? ""}`}
+            style={{
+              top: `${position().top}px`,
+              left: `${position().left}px`,
+            }}
+          >
+            {props.children}
+          </div>
+        </Portal>
+      )}
+    </>
   );
-};
+}

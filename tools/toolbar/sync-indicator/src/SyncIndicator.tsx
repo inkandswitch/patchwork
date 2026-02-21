@@ -1,97 +1,85 @@
 import * as A from "@automerge/automerge";
 import {
   type AutomergeUrl,
-  DocHandle,
+  type DocHandle,
   type StorageId,
   type UrlHeads,
   type SyncInfo,
 } from "@automerge/automerge-repo";
-import { useDocHandle, useRepo } from "@automerge/automerge-repo-react-hooks";
-import { useMachine } from "@xstate/react";
-import { WifiIcon, WifiOffIcon, Copy } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  useDocHandle,
+  useRepo,
+  RepoContext,
+} from "@automerge/automerge-repo-solid-primitives";
+import {
+  createSignal,
+  createEffect,
+  on,
+  onCleanup,
+  Show,
+  type Accessor,
+} from "solid-js";
+import { createActor, type AnyStateMachine } from "xstate";
 import { createMachine, raise, stateIn } from "xstate";
-import { useForceUpdate } from "./lib/hooks";
 import { getRelativeTimeString } from "./lib/relative-time";
 import { Button, Popover, PopoverTrigger, PopoverContent } from "./lib/ui";
+import { SyncIcon } from "./SyncIcon";
+import { CopyIcon } from "./CopyIcon";
 import "./styles.css";
 
 export const AUTOMERGE_SYNC_SERVER_STORAGE_ID = (import.meta.env
   ?.VITE_SYNC_SERVER_STORAGE_ID ??
   "3760df37-a4c6-4f66-9ecd-732039a9385d") as StorageId;
 
-export const SyncIndicator = ({
-  docUrl,
-  storageId,
-  name,
-}: {
+export { RepoContext };
+
+export function SyncIndicator(props: {
   docUrl: AutomergeUrl;
   storageId?: StorageId;
   name?: string;
-}) => {
-  const handle = useDocHandle(docUrl);
-  if (!handle) {
-    return null;
-  }
-  return (
-    <SyncIndicatorInner
-      key={handle.url}
-      handle={handle}
-      storageId={storageId}
-      name={name}
-    />
-  );
-};
+}) {
+  const handle = useDocHandle<unknown>(() => props.docUrl);
 
-// NOTE: this sync indicator component does *not* support changing the handle between renders.
-// If you want to change the handle, you should re-mount the component.
-const SyncIndicatorInner = ({
-  handle,
-  storageId = AUTOMERGE_SYNC_SERVER_STORAGE_ID,
-  name,
-}: {
+  return (
+    <Show when={handle()}>
+      {(h) => (
+        <SyncIndicatorInner
+          handle={h()}
+          storageId={props.storageId}
+          name={props.name}
+        />
+      )}
+    </Show>
+  );
+}
+
+function SyncIndicatorInner(props: {
   handle: DocHandle<unknown>;
   storageId?: StorageId;
   name?: string;
-}) => {
-  const {
-    lastSyncUpdate,
-    isInternetConnected,
-    syncState,
-    syncServerConnectionError,
-    syncServerResponseError,
-    syncServerHeads,
-    ownHeads,
-  } = useSyncIndicatorState(handle, storageId);
+}) {
   const repo = useRepo();
-  const isSynced = syncState === "InSync";
-  const forceUpdate = useForceUpdate();
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const storageId = () =>
+    props.storageId ?? AUTOMERGE_SYNC_SERVER_STORAGE_ID;
 
-  const prevHandle = useRef<DocHandle<unknown> | undefined>(undefined);
+  const state = createSyncIndicatorState(
+    () => props.handle,
+    storageId
+  );
 
-  // rerender every second to update the lastSyncUpdate only when popover is open
-  useEffect(() => {
-    if (!isPopoverOpen) return;
+  const [isPopoverOpen, setIsPopoverOpen] = createSignal(false);
+  const [now, setNow] = createSignal(Date.now());
 
-    const interval = setInterval(() => {
-      forceUpdate();
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [forceUpdate, isPopoverOpen]);
+  // tick every second while popover is open
+  createEffect(
+    on(isPopoverOpen, (open) => {
+      if (!open) return;
+      const interval = setInterval(() => setNow(Date.now()), 1000);
+      onCleanup(() => clearInterval(interval));
+    })
+  );
 
-  useEffect(() => {
-    if (prevHandle.current && prevHandle.current.url !== handle.url) {
-      console.warn(
-        "Warning: do not change the handle between renders of SyncIndicator",
-        {
-          previous: prevHandle.current.url,
-          current: handle.url,
-        }
-      );
-    }
-    prevHandle.current = handle;
-  }, [handle]);
+  const isSynced = () => state.syncState() === "InSync";
 
   const onCopySyncState = async () => {
     if (repo.peers.length !== 1) {
@@ -100,367 +88,337 @@ const SyncIndicatorInner = ({
 
     const ownStorageId = await repo.storageId();
 
-    // TODO: JAH strict fix - lots of !s here
-
     const ownSyncState = await repo.storageSubsystem!.loadSyncState(
-      handle.documentId,
+      props.handle.documentId,
       ownStorageId!
     );
 
     const syncServerSyncState = await repo.storageSubsystem!.loadSyncState(
-      handle.documentId,
-      storageId
+      props.handle.documentId,
+      storageId()
     );
 
     const data = {
-      syncServerHeads,
+      syncServerHeads: state.syncServerHeads(),
       self: {
         storageId: ownStorageId,
-        heads: ownHeads,
+        heads: state.ownHeads(),
         syncState: ownSyncState,
       },
       syncServer: {
-        name,
-        heads: syncServerHeads,
-        storageId,
+        name: props.name,
+        heads: state.syncServerHeads(),
+        storageId: storageId(),
         syncState: syncServerSyncState,
       },
     };
 
     navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(
-      () => {
-        console.log("Copied sync state to clipboard", data);
-      },
-      (err) => {
-        console.error("Failed to copy sync state:", err);
-      }
+      () => console.log("Copied sync state to clipboard", data),
+      (err) => console.error("Failed to copy sync state:", err)
     );
   };
 
-  const headsView = (
-    <div className="mt-2 pt-2 border-t border-gray-300 relative">
-      {name && (
-        <div className="whitespace-nowrap flex">
-          <dt className="font-bold inline mr-1">Name:</dt>
-          <dd className="inline text-ellipsis shrink overflow-hidden min-w-0">
-            {name}
+  // Force `now` to be read so relative times update
+  const lastSyncString = () => {
+    void now();
+    const ts = state.lastSyncUpdate();
+    return ts ? getRelativeTimeString(ts) : "-";
+  };
+
+  const headsView = () => (
+    <div class="mt-2 pt-2 border-t border-gray-300 relative">
+      <Show when={props.name}>
+        <div class="whitespace-nowrap flex">
+          <dt class="font-bold inline mr-1">Name:</dt>
+          <dd class="inline text-ellipsis shrink overflow-hidden min-w-0">
+            {props.name}
           </dd>
         </div>
-      )}
+      </Show>
 
-      <div className="flex justify-between">
+      <div class="flex justify-between">
         <div>
-          <div className="whitespace-nowrap flex">
-            <dt className="font-bold inline mr-1">Server heads:</dt>
-            <dd className="text-ellipsis shrink overflow-hidden min-w-0 flex gap-1 items-center">
+          <div class="whitespace-nowrap flex">
+            <dt class="font-bold inline mr-1">Server heads:</dt>
+            <dd class="text-ellipsis shrink overflow-hidden min-w-0 flex gap-1 items-center">
               {JSON.stringify(
-                (syncServerHeads ?? []).map((part) => part.slice(0, 4))
+                (state.syncServerHeads() ?? []).map((part) => part.slice(0, 4))
               )}
             </dd>
           </div>
-          <div className="whitespace-nowrap flex">
-            <dt className="font-bold inline mr-1">Local heads:</dt>
-            <dd className="text-ellipsis shrink overflow-hidden min-w-0 flex gap-1 items-center">
-              {JSON.stringify((ownHeads ?? []).map((part) => part.slice(0, 4)))}
+          <div class="whitespace-nowrap flex">
+            <dt class="font-bold inline mr-1">Local heads:</dt>
+            <dd class="text-ellipsis shrink overflow-hidden min-w-0 flex gap-1 items-center">
+              {JSON.stringify(
+                (state.ownHeads() ?? []).map((part) => part.slice(0, 4))
+              )}
             </dd>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          className="w-full"
-          size="sm"
-          onClick={onCopySyncState}
-        >
-          <Copy size={14} />
+        <Button variant="ghost" class="w-full" size="sm" onClick={onCopySyncState}>
+          <CopyIcon size={14} />
         </Button>
       </div>
     </div>
   );
 
-  if (isInternetConnected) {
-    if (!syncServerConnectionError && !syncServerResponseError) {
-      return (
-        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-          <PopoverTrigger className=" p-1 rounded-md text-gray-500 hover:text-gray-900 align-top">
-            <WifiIcon size={"20px"} />
+  return (
+    <Show
+      when={state.isInternetConnected()}
+      fallback={
+        <Popover open={isPopoverOpen()} onOpenChange={setIsPopoverOpen}>
+          <PopoverTrigger class="hover:bg-gray-100 p-2 rounded-md">
+            <div class="text-gray-500">
+              <SyncIcon size={20} alert={!isSynced()} />
+            </div>
           </PopoverTrigger>
-          <PopoverContent className="flex flex-col gap-1.5 pb-2">
-            <dl className="text-sm text-gray-600">
+          <PopoverContent>
+            <dl class="text-sm text-gray-600">
               <div>
-                <dt className="font-bold inline mr-1">Connection:</dt>
-                <dd className="inline">Connected to server</dd>
+                <dt class="font-bold inline mr-1">Connection:</dt>
+                <dd class="inline">Offline</dd>
               </div>
               <div>
-                <dt className="font-bold inline mr-1">Last synced:</dt>
-                <dd className="inline">
-                  {lastSyncUpdate ? getRelativeTimeString(lastSyncUpdate) : "-"}
+                <dt class="font-bold inline mr-1">Last synced:</dt>
+                <dd class="inline">{lastSyncString()}</dd>
+              </div>
+              <div>
+                <dt class="font-bold inline mr-1">Sync status:</dt>
+                <dd class="inline">
+                  <Show
+                    when={state.syncState() !== "Unknown"}
+                    fallback="-"
+                  >
+                    <Show
+                      when={!isSynced()}
+                      fallback="No unsynced changes"
+                    >
+                      <span class="text-red-500">
+                        You have unsynced changes. They are saved locally and
+                        will sync next time you have internet and you open the
+                        app.
+                      </span>
+                    </Show>
+                  </Show>
                 </dd>
               </div>
-              <div>
-                <dt className="font-bold inline mr-1">Sync status:</dt>
-                <dd className="inline">
-                  {isSynced ? "Up to date" : "Syncing..."}
-                </dd>
-              </div>
-              {headsView}
+              {headsView()}
             </dl>
           </PopoverContent>
         </Popover>
-      );
-    } else {
-      return (
-        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-          <PopoverTrigger className="bg-red-50 border border-red-100 hover:bg-red-100 p-2 rounded-md">
-            <div className="text-red-500 flex items-center text-sm">
-              <WifiIcon
-                size={"20px"}
-                className={`inline-block ${isSynced ? "mr-[7px]" : ""}`}
-              />
-              {!isSynced && <div className="inline text-xs">*</div>}
-            </div>
+      }
+    >
+      <Show
+        when={
+          !state.syncServerConnectionError() &&
+          !state.syncServerResponseError()
+        }
+        fallback={
+          <Popover open={isPopoverOpen()} onOpenChange={setIsPopoverOpen}>
+            <PopoverTrigger class="bg-red-50 border border-red-100 hover:bg-red-100 p-2 rounded-md">
+              <div class="text-red-500 flex items-center text-sm">
+                <SyncIcon size={20} alert />
+              </div>
+            </PopoverTrigger>
+            <PopoverContent class="flex flex-col gap-1.5 pb-2">
+              <div class="mb-2 text-sm">
+                <p>
+                  There was an unexpected error connecting to the sync server.
+                  Don't worry, your changes are saved locally.
+                </p>
+                <p class="mt-2">
+                  Please try reloading and see if that fixes the issue. If not,
+                  drop a note in the lab Discord with a screenshot.
+                </p>
+              </div>
+              <dl class="text-sm text-gray-600">
+                <div>
+                  <dt class="font-bold inline mr-1">Connection:</dt>
+                  <dd class="inline text-red-500">
+                    {state.syncServerConnectionError()
+                      ? "Server not connected"
+                      : "Server not responding"}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="font-bold inline mr-1">Last synced:</dt>
+                  <dd class="inline">{lastSyncString()}</dd>
+                </div>
+                <div>
+                  <dt class="font-bold inline mr-1">Sync status:</dt>
+                  <dd class="inline">
+                    <Show
+                      when={state.syncState() !== "Unknown"}
+                      fallback="-"
+                    >
+                      <Show
+                        when={state.syncState() !== "InSync"}
+                        fallback="No unsynced changes"
+                      >
+                        <span class="text-red-500">Unsynced changes (*)</span>
+                      </Show>
+                    </Show>
+                  </dd>
+                  {headsView()}
+                </div>
+              </dl>
+            </PopoverContent>
+          </Popover>
+        }
+      >
+        <Popover open={isPopoverOpen()} onOpenChange={setIsPopoverOpen}>
+          <PopoverTrigger class=" p-1 rounded-md text-gray-500 hover:text-gray-900 align-top">
+            <SyncIcon size={20} />
           </PopoverTrigger>
-          <PopoverContent className="flex flex-col gap-1.5 pb-2">
-            <div className="mb-2 text-sm">
-              <p>
-                There was an unexpected error connecting to the sync server.
-                Don't worry, your changes are saved locally.
-              </p>
-              <p className="mt-2">
-                Please try reloading and see if that fixes the issue. If not,
-                drop a note in the lab Discord with a screenshot.
-              </p>
-            </div>
-            <dl className="text-sm text-gray-600">
+          <PopoverContent class="flex flex-col gap-1.5 pb-2">
+            <dl class="text-sm text-gray-600">
               <div>
-                <dt className="font-bold inline mr-1">Connection:</dt>
-                <dd className="inline text-red-500">
-                  {syncServerConnectionError
-                    ? "Server not connected"
-                    : "Server not responding"}
-                </dd>
+                <dt class="font-bold inline mr-1">Connection:</dt>
+                <dd class="inline">Connected to server</dd>
               </div>
               <div>
-                <dt className="font-bold inline mr-1">Last synced:</dt>
-                <dd className="inline">
-                  {lastSyncUpdate ? getRelativeTimeString(lastSyncUpdate) : "-"}
-                </dd>
+                <dt class="font-bold inline mr-1">Last synced:</dt>
+                <dd class="inline">{lastSyncString()}</dd>
               </div>
               <div>
-                <dt className="font-bold inline mr-1">Sync status:</dt>
-                <dd className="inline">
-                  {syncState === "Unknown" ? (
-                    "-"
-                  ) : syncState === "InSync" ? (
-                    "No unsynced changes"
-                  ) : (
-                    <span className="text-red-500">Unsynced changes (*)</span>
-                  )}
+                <dt class="font-bold inline mr-1">Sync status:</dt>
+                <dd class="inline">
+                  {isSynced() ? "Up to date" : "Syncing..."}
                 </dd>
-                {headsView}
               </div>
+              {headsView()}
             </dl>
           </PopoverContent>
         </Popover>
-      );
-    }
-  } else {
-    return (
-      <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-        <PopoverTrigger className="hover:bg-gray-100 p-2 rounded-md">
-          <div className="text-gray-500">
-            <WifiOffIcon
-              size={"20px"}
-              className={`inline-block ${isSynced ? "mr-[7px]" : ""}`}
-            />
-            {!isSynced && (
-              <div className="inline text-xs font-bold text-red-600">*</div>
-            )}
-          </div>
-        </PopoverTrigger>
-        <PopoverContent>
-          <dl className="text-sm text-gray-600">
-            <div>
-              <dt className="font-bold inline mr-1">Connection:</dt>
-              <dd className="inline">Offline</dd>
-            </div>
-            <div>
-              <dt className="font-bold inline mr-1">Last synced:</dt>
-              <dd className="inline">
-                {lastSyncUpdate ? getRelativeTimeString(lastSyncUpdate) : "-"}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-bold inline mr-1">Sync status:</dt>
-              <dd className="inline">
-                {syncState === "Unknown" ? (
-                  "-"
-                ) : isSynced ? (
-                  "No unsynced changes"
-                ) : (
-                  <span className="text-red-500">
-                    You have unsynced changes. They are saved locally and will
-                    sync next time you have internet and you open the app.
-                  </span>
-                )}
-              </dd>
-            </div>
-            {headsView}
-          </dl>
-        </PopoverContent>
-      </Popover>
-    );
-  }
-};
+      </Show>
+    </Show>
+  );
+}
 
 type SyncState = "InSync" | "OutOfSync" | "Unknown";
 
-interface SyncIndicatorState {
-  syncServerHeads: UrlHeads | undefined;
-  ownHeads: UrlHeads | undefined;
-  lastSyncUpdate?: number;
-  isInternetConnected: boolean;
-  syncState: SyncState;
-  syncServerConnectionError: boolean;
-  syncServerResponseError: boolean;
+interface SyncIndicatorSignals {
+  syncServerHeads: Accessor<UrlHeads | undefined>;
+  ownHeads: Accessor<UrlHeads | undefined>;
+  lastSyncUpdate: Accessor<number | undefined>;
+  isInternetConnected: Accessor<boolean>;
+  syncState: Accessor<SyncState>;
+  syncServerConnectionError: Accessor<boolean>;
+  syncServerResponseError: Accessor<boolean>;
 }
 
-function useSyncIndicatorState(
-  handle: DocHandle<unknown>,
-  storageId: StorageId
-): SyncIndicatorState {
-  const [syncInfo, setSyncInfo] = useState<SyncInfo | undefined>();
-  const [ownHeads, setOwnHeads] = useState<UrlHeads | undefined>();
+function useMachine(machine: AnyStateMachine) {
+  const actor = createActor(machine);
+  const [snapshot, setSnapshot] = createSignal(actor.getSnapshot());
+  actor.subscribe((s) => setSnapshot(s));
+  actor.start();
+  onCleanup(() => actor.stop());
+  return [snapshot, actor.send] as const;
+}
 
-  const [machineConfig] = useState(() =>
-    getSyncIndicatorMachine({
-      connectionInitTimeout: 2000,
-      maxSyncMessageDelay: 1000,
-      isInternetConnected: navigator.onLine,
-      isSyncServerConnected: true,
+function createSyncIndicatorState(
+  handle: Accessor<DocHandle<unknown>>,
+  storageId: Accessor<StorageId>
+): SyncIndicatorSignals {
+  const [syncInfo, setSyncInfo] = createSignal<SyncInfo | undefined>();
+  const [ownHeads, setOwnHeads] = createSignal<UrlHeads | undefined>();
+
+  const machineConfig = getSyncIndicatorMachine({
+    connectionInitTimeout: 2000,
+    maxSyncMessageDelay: 1000,
+    isInternetConnected: navigator.onLine,
+    isSyncServerConnected: true,
+  });
+
+  const [snapshot, send] = useMachine(machineConfig);
+
+  // online / offline listener
+  {
+    const onOnline = () => send({ type: "INTERNET_CONNECTED" });
+    const onOffline = () => send({ type: "INTERNET_DISCONNECTED" });
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    onCleanup(() => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    });
+  }
+
+  // heads change listener
+  createEffect(
+    on([handle, storageId], ([h, sid]) => {
+      if (snapshot().matches("sync.unknown")) {
+        const info = h.getSyncInfo(sid);
+        if (info) setSyncInfo(info);
+        setOwnHeads(h.heads());
+      }
+
+      const onChange = () => {
+        if (h.doc()) setOwnHeads(h.heads());
+      };
+
+      const onRemoteHeads = ({
+        storageId: remoteStorageId,
+        heads,
+        timestamp,
+      }: {
+        storageId: StorageId;
+        heads: UrlHeads;
+        timestamp: number;
+      }) => {
+        if (sid === remoteStorageId) {
+          send({ type: "RECEIVED_SYNC_MESSAGE" });
+          setSyncInfo({ lastHeads: heads, lastSyncTimestamp: timestamp });
+        }
+      };
+
+      h.on("change", onChange);
+      h.on("remote-heads", onRemoteHeads);
+
+      onCleanup(() => {
+        h.off("change", onChange);
+        h.off("remote-heads", onRemoteHeads);
+      });
     })
   );
 
-  const [machine, send] = useMachine(machineConfig);
+  // sync check
+  createEffect(() => {
+    const heads = ownHeads();
+    const info = syncInfo();
+    if (!heads || !info) return;
 
-  // online / offline listener
-  useEffect(() => {
-    const onOnline = () => {
-      send({ type: "INTERNET_CONNECTED" });
-    };
-
-    const onOffline = () => {
-      send({ type: "INTERNET_DISCONNECTED" });
-    };
-
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
-
-    return () => {
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
-    };
-  }, [send]);
-
-  // sync server connect / disconnect handling
-  // todo: need reachability information for that
-
-  // heads change listener
-  useEffect(() => {
-    if (machine.matches("sync.unknown")) {
-      const syncInfo = handle.getSyncInfo(storageId);
-
-      if (syncInfo) {
-        setSyncInfo(syncInfo);
-      }
-
-      setOwnHeads(handle.heads());
-    }
-
-    const onChange = () => {
-      const doc = handle.doc();
-      if (doc) {
-        setOwnHeads(handle.heads());
-      }
-    };
-
-    const onRemoteHeads = ({
-      storageId: remoteStorageId,
-      heads,
-      timestamp,
-    }: {
-      storageId: StorageId;
-      heads: UrlHeads;
-      timestamp: number;
-    }) => {
-      if (storageId === remoteStorageId) {
-        /*        console.log("RECEIVED_SYNC_MESSAGE", {
-          timestamp: timestamp ? getRelativeTimeString(timestamp) : "unknown",
-          heads,
-          storageId,
-          remoteStorageId,
-        }); */
-        send({ type: "RECEIVED_SYNC_MESSAGE" });
-        setSyncInfo({
-          lastHeads: heads,
-          lastSyncTimestamp: timestamp,
-        });
-      }
-    };
-
-    handle.on("change", onChange);
-    handle.on("remote-heads", onRemoteHeads);
-
-    return () => {
-      handle.off("change", onChange);
-      handle.off("remote-heads", onRemoteHeads);
-    };
-  }, [handle, machine, send, storageId]);
-
-  useEffect(() => {
-    if (!ownHeads || !syncInfo) {
-      return;
-    }
-
-    if (A.equals(ownHeads, syncInfo.lastHeads)) {
+    if (A.equals(heads, info.lastHeads)) {
       send({ type: "IS_IN_SYNC" });
     } else {
       send({ type: "IS_OUT_OF_SYNC" });
     }
-  }, [ownHeads, send, syncInfo]);
+  });
 
   return {
     ownHeads,
-    lastSyncUpdate: syncInfo?.lastSyncTimestamp,
-    syncServerHeads: syncInfo?.lastHeads,
-    isInternetConnected: machine.matches("internet.connected"),
-    syncState: machine.matches("sync.unknown")
-      ? "Unknown"
-      : machine.matches("sync.inSync")
-        ? "InSync"
-        : "OutOfSync",
-
-    // todo: add reachability check, currently this value will be always true
-    syncServerConnectionError: machine.matches("syncServer.disconnected.error"),
-    syncServerResponseError: machine.matches("sync.outOfSync.error"),
+    lastSyncUpdate: () => syncInfo()?.lastSyncTimestamp,
+    syncServerHeads: () => syncInfo()?.lastHeads,
+    isInternetConnected: () => snapshot().matches("internet.connected"),
+    syncState: () =>
+      snapshot().matches("sync.unknown")
+        ? "Unknown"
+        : snapshot().matches("sync.inSync")
+          ? "InSync"
+          : "OutOfSync",
+    syncServerConnectionError: () =>
+      snapshot().matches("syncServer.disconnected.error"),
+    syncServerResponseError: () =>
+      snapshot().matches("sync.outOfSync.error"),
   };
 }
 
 interface SyncIndicatorMachineConfig {
-  // the duration we wait for the sync server to respond in the unsynced state before we show an error
-  // the timer starts once both internet.connected and sync.isOutOfSync become true
   connectionInitTimeout: number;
-
-  // the duration we wait for the sync server to respond in the unsynced state before we show an error
-  // the timer starts once both internet.connected and sync.isOutOfSync become true
   maxSyncMessageDelay: number;
-
-  // initial internet connection state
   isInternetConnected?: boolean;
-
-  // initial sync server connection state
   isSyncServerConnected?: boolean;
-
-  // initial is sync state
   isInSync?: boolean;
 }
 
@@ -519,7 +477,6 @@ export function getSyncIndicatorMachine({
               states: {
                 ok: {
                   after: {
-                    // every time we re-enter the out of sync state the timeout gets reset
                     [maxSyncMessageDelay]: {
                       target: "error",
                       guard: stateIn({ internet: "connected" }),

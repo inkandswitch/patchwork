@@ -1,4 +1,4 @@
-import react from "@vitejs/plugin-react";
+import solid from "vite-plugin-solid";
 import { defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
@@ -7,7 +7,7 @@ import externals from "@inkandswitch/patchwork-bootloader/externals";
 
 export default defineConfig({
   base: "./",
-  plugins: [topLevelAwait(), react(), tailwindcss(), cssInjectedByJsPlugin()],
+  plugins: [topLevelAwait(), solid(), tailwindcss(), cssInjectedByJsPlugin()],
   build: {
     emptyOutDir: true,
     rollupOptions: {
