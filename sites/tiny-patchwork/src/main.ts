@@ -197,7 +197,7 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
 let firstMount = true;
 rootElement.addEventListener("patchwork:mounted", (event) => {
   handleHashChange();
-  console.info(`tool mounted`, event.detail.toolId);
+  //console.info(`tool mounted`, event.detail.toolId);
   if (event.target != rootElement) return;
   console.info(`root element mounted`);
   if (firstMount) {
@@ -214,7 +214,7 @@ setTimeout(() => {
     rootElement.style.visibility = "visible";
     document.body.style.background = "";
   }
-}, 5000);
+}, 12000);
 
 const bigPatchworkHashRegex =
   /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;
@@ -260,10 +260,6 @@ const handleHashChange = async () => {
 // Listen for hash changes and interpret them as Automerge URLs
 window.addEventListener("hashchange", () => {
   handleHashChange();
-});
-
-window.addEventListener("error", (event) => {
-  console.info(event);
 });
 
 async function uncache(match: string) {
