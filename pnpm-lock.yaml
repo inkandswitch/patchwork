@@ -1925,6 +1925,46 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  tools/stringbox:
+    dependencies:
+      '@automerge/automerge':
+        specifier: 3.2.4
+        version: 3.2.4
+      '@automerge/automerge-repo':
+        specifier: 2.5.2
+        version: 2.5.2
+      '@automerge/automerge-repo-react-hooks':
+        specifier: 'catalog:'
+        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@inkandswitch/patchwork-filesystem':
+        specifier: workspace:^
+        version: link:../../core/filesystem
+      '@inkandswitch/patchwork-plugins':
+        specifier: workspace:^
+        version: link:../../core/plugins
+      react:
+        specifier: ^18.0.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.0.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@inkandswitch/patchwork-bootloader':
+        specifier: workspace:^
+        version: link:../../core/bootloader
+      '@node-types/node':
+        specifier: npm:@types/node@^24.9.1
+        version: '@types/node@24.9.1'
+      '@types/react':
+        specifier: ^18.3.23
+        version: 18.3.26
+      esbuild:
+        specifier: ^0.23.1
+        version: 0.23.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
   tools/tiny-patchwork/commands:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
