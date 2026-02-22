@@ -72,27 +72,61 @@ self.addEventListener("connect", (e: MessageEvent) => {
 });
 
 const repoPromise = (async () => {
-  console.log("[automerge worker: STARTING] creating repo");
+  console.log("[automerge worker: STARTING] creating repo with Subduction");
+
+  // Dynamic imports
   const { Repo } = await import("@automerge/automerge-repo");
-  const { IndexedDBStorageAdapter, WebSocketClientAdapter } =
-    await import("@automerge/vanillajs");
-  const network = new WebSocketClientAdapter("wss://sync3.automerge.org");
+  const { IndexedDBStorageAdapter } = await import("@automerge/vanillajs");
+  type PeerId = import("@automerge/automerge-repo").PeerId;
+  const { SubductionStorageBridge } =
+    await import("@automerge/automerge-repo-subduction-bridge");
+  const initSubduction = (await import("@automerge/automerge_subduction"))
+    .default;
+  const { Subduction, SubductionWebSocket, WebCryptoSigner } =
+    await import("@automerge/automerge_subduction");
+
+  // Initialize Subduction Wasm module
+  await initSubduction();
+  console.log("[automerge worker: INIT] Subduction Wasm initialized");
+
+  // Setup cryptographic signer (persisted in IndexedDB via WebCrypto)
+  const signer = await WebCryptoSigner.setup();
+  console.log("[automerge worker: INIT] WebCryptoSigner ready");
+
+  // Create storage bridge wrapping IndexedDB
+  const storageAdapter = new IndexedDBStorageAdapter();
+  const storage = new SubductionStorageBridge(storageAdapter);
+
+  // Hydrate Subduction state from storage
+  const subduction = await Subduction.hydrate(signer, storage);
+  console.log("[automerge worker: INIT] Subduction hydrated from storage");
+
+  // Connect to Subduction sync server
+  const SUBDUCTION_SERVER_URL = "ws://localhost:8080";
+  try {
+    const conn = await SubductionWebSocket.tryDiscover(
+      new URL(SUBDUCTION_SERVER_URL),
+      signer
+    );
+    await subduction.attach(conn);
+    console.log(
+      `[automerge worker: CONNECTED] Subduction server at ${SUBDUCTION_SERVER_URL}`
+    );
+  } catch (e) {
+    console.warn(
+      "[automerge worker: OFFLINE] No Subduction server, running local-only:",
+      e
+    );
+  }
+
+  // Create Repo with Subduction (handles both storage and network)
   const repo = new Repo({
-    storage: new IndexedDBStorageAdapter(),
-    network: [network],
-    peerId: ("shared-worker-" + Math.round(Math.random() * 10000)) as any,
-    async sharePolicy(peerId) {
-      return peerId.startsWith("storage-server-");
-    },
-    enableRemoteHeadsGossiping: true,
+    subduction,
+    peerId: ("shared-worker-" +
+      (Math.random() * 10000).toString(36).slice(2)) as PeerId,
   });
-  repo.subscribeToRemotes([
-    "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
-  ]);
-  network.whenReady().then(() => {
-    console.log("[automerge worker: CONNECTED] websocket ready");
-  });
-  console.log("[automerge worker: READY] repo created");
+
+  console.log("[automerge worker: READY] Repo created with Subduction");
   return repo;
 })();
 

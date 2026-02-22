@@ -31,6 +31,8 @@
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@automerge/automerge-repo-subduction-bridge": "link:../../../automerge-repo/packages/automerge-repo-subduction-bridge",
+    "@automerge/automerge_subduction": "link:../../../subduction/automerge_subduction_wasm",
     "@automerge/vanillajs": "catalog:",
     "@codemirror/commands": "^6.9.0",
     "@codemirror/language": "^6.11.3",

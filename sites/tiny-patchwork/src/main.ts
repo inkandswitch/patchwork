@@ -21,13 +21,11 @@ import {
 } from "./layout-doc";
 import {
   DocHandle,
-  IndexedDBStorageAdapter,
   isValidDocumentId,
   MessageChannelNetworkAdapter,
   parseAutomergeUrl,
   Repo,
   stringifyAutomergeUrl,
-  WebSocketClientAdapter,
   type AutomergeUrl,
   type UrlHeads,
 } from "@automerge/vanillajs";
@@ -52,24 +50,19 @@ workerLogChannel.onmessage = (event) => {
   (console as any)[method](...args);
 };
 
-const repo = new Repo({
-  storage: new IndexedDBStorageAdapter(),
-  async sharePolicy(peerId) {
-    return peerId.includes("shared-worker");
-  },
-  enableRemoteHeadsGossiping: true,
-});
-
-repo.subscribeToRemotes([
-  "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
-]);
-
 function createSharedWorker() {
   return new SharedWorker(new URL("./automerge-worker.ts", import.meta.url), {
     type: "module",
     name: "automerge-repo-shared-worker",
   });
 }
+
+// Create a lightweight Repo with no storage — syncs via SharedWorker
+// The SharedWorker owns Subduction (storage + network sync)
+const repo = new Repo({
+  // No storage: worker handles persistence via Subduction
+  // No network: worker handles sync via Subduction
+});
 
 function getRepoChannel() {
   try {
@@ -88,24 +81,19 @@ function getRepoChannel() {
 
 window.getRepoChannel = getRepoChannel;
 
+// Connect to SharedWorker for sync — worker has Subduction
 try {
   const sharedWorker = createSharedWorker();
   repo.networkSubsystem.addNetworkAdapter(
     new MessageChannelNetworkAdapter(sharedWorker.port)
   );
+  console.log("Connected to SharedWorker (Subduction sync)");
 } catch (error) {
   console.error(error);
-  console.error("Falling back to tab-only repo strategy");
-  repo.networkSubsystem.addNetworkAdapter(
-    new WebSocketClientAdapter("wss://sync3.automerge.org")
-  );
+  console.error("SharedWorker not available — no sync available");
 }
 
 document.body.style.background = "#fffffe";
-
-await repo.networkSubsystem.adapters[0].whenReady();
-// if this helps then we are sad and confused but at least it helped
-await new Promise((resolve) => setTimeout(resolve, 1000));
 window.repo = repo;
 window.Automerge = Automerge;
 window.AutomergeRepo = AutomergeRepo;
