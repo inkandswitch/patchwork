@@ -179,14 +179,14 @@ export function ShareModal(props: ShareModalProps) {
 
       await props.hive.addMemberToDoc(props.docUrl, contactCard, access);
 
-      // Refresh access list
-      const accessList = await fetchAccessList(props.hive, props.docUrl);
-      setDocAccessList(accessList);
-
       setContactCardInput("");
     } catch (err) {
       console.error("[ShareModal]", err);
     } finally {
+      // Refresh access list even on error, since the delegation may
+      // have succeeded even if there is an error.
+      const accessList = await fetchAccessList(props.hive, props.docUrl);
+      setDocAccessList(accessList);
       setIsSubmitting(false);
     }
   };
@@ -215,7 +215,7 @@ export function ShareModal(props: ShareModalProps) {
       console.error("[ShareModal]", err);
     } finally {
       // Refresh access list even on error, since the delegation may
-      // have succeeded even if a subsequent CGKA operation failed.
+      // have succeeded even if there is an error.
       const accessList = await fetchAccessList(props.hive, props.docUrl);
       setDocAccessList(accessList);
     }
