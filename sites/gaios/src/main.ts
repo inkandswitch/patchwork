@@ -21,6 +21,7 @@ import {
 } from "./layout-doc";
 import {
   DocHandle,
+  IndexedDBStorageAdapter,
   isValidAutomergeUrl,
   isValidDocumentId,
   MessageChannelNetworkAdapter,
@@ -31,6 +32,13 @@ import {
 } from "@automerge/vanillajs";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
+import { SubductionStorageBridge } from "@automerge/automerge-repo-subduction-bridge";
+import initSubduction, {
+  Subduction,
+  WebCryptoSigner,
+} from "@automerge/automerge_subduction";
+import * as subductionModule from "@automerge/automerge_subduction";
+import { initSubductionModule } from "@automerge/automerge-repo-subduction-bridge";
 
 declare global {
   interface Window {
@@ -49,19 +57,27 @@ workerLogChannel.onmessage = (event) => {
   (console as any)[method](...args);
 };
 
+// Initialize Subduction (shares IndexedDB storage with SharedWorker)
+// Tab handles local operations; SharedWorker handles server sync
+await initSubduction();
+initSubductionModule(subductionModule);
+
+const signer = await WebCryptoSigner.setup();
+const storageAdapter = new IndexedDBStorageAdapter();
+const storage = new SubductionStorageBridge(storageAdapter);
+const subduction = await Subduction.hydrate(signer, storage);
+
+// Tab's Subduction does NOT connect to server — worker handles that
+// This avoids duplicate connections while sharing the same storage
+
+const repo = new Repo({ subduction });
+
 function createSharedWorker() {
   return new SharedWorker(new URL("./automerge-worker.ts", import.meta.url), {
     type: "module",
     name: "automerge-repo-shared-worker",
   });
 }
-
-// Create a lightweight Repo with no storage — syncs via SharedWorker
-// The SharedWorker owns Subduction (storage + network sync)
-const repo = new Repo({
-  // No storage: worker handles persistence via Subduction
-  // No network: worker handles sync via Subduction
-});
 
 function getRepoChannel() {
   try {
@@ -80,16 +96,17 @@ function getRepoChannel() {
 
 window.getRepoChannel = getRepoChannel;
 
-// Connect to SharedWorker for sync — worker has Subduction
+// Connect to SharedWorker for cross-tab sync
+// Worker has its own Subduction with server connection
 try {
   const sharedWorker = createSharedWorker();
   repo.networkSubsystem.addNetworkAdapter(
     new MessageChannelNetworkAdapter(sharedWorker.port)
   );
-  console.log("Connected to SharedWorker (Subduction sync)");
+  console.log("Connected to SharedWorker (cross-tab sync)");
 } catch (error) {
   console.error(error);
-  console.error("SharedWorker not available — no sync available");
+  console.error("SharedWorker not available — running single-tab mode");
 }
 window.repo = repo;
 window.Automerge = Automerge;

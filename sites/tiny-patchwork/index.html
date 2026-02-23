@@ -11,5 +11,8 @@
   <meta name="msapplication-TileColor" content="#00aba9" />
   <meta name="theme-color" content="#ffffff" />
   <patchwork-view id="root"></patchwork-view>
-  <script type="module" src="src/main.ts"></script>
+  <!-- Initialize Subduction Wasm before loading main app -->
+  <script type="module">
+    import("./src/init-wasm.ts").then(() => import("./src/main.ts"));
+  </script>
 </html>

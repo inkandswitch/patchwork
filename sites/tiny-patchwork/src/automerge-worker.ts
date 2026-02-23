@@ -82,15 +82,15 @@ const repoPromise = (async () => {
   // Dynamic imports
   const { Repo } = await import("@automerge/automerge-repo");
   const { IndexedDBStorageAdapter } = await import("@automerge/vanillajs");
-  const { SubductionStorageBridge } =
+  const { SubductionStorageBridge, initSubductionModule } =
     await import("@automerge/automerge-repo-subduction-bridge");
-  const initSubduction = (await import("@automerge/automerge_subduction"))
-    .default;
-  const { Subduction, SubductionWebSocket, WebCryptoSigner } =
-    await import("@automerge/automerge_subduction");
+  const subductionModule = await import("@automerge/automerge_subduction");
+  const initSubduction = subductionModule.default;
+  const { Subduction, SubductionWebSocket, WebCryptoSigner } = subductionModule;
 
-  // Initialize Subduction Wasm module
+  // Initialize Subduction Wasm module and register with lazy loaders
   await initSubduction();
+  initSubductionModule(subductionModule);
   console.log("[automerge worker: INIT] Subduction Wasm initialized");
 
   // Setup cryptographic signer (persisted in IndexedDB via WebCrypto)
