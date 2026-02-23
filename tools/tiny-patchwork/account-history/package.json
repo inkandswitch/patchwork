@@ -1,0 +1,33 @@
+{
+  "name": "@tiny-patchwork/account-history",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "pushwork": {
+    "url": "automerge:C7F6yua1W3LX3Pp6jSnQx53Byv3"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "dependencies": {
+    "@automerge/automerge-repo-solid-primitives": "2.5.2"
+  },
+  "devDependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@babel/core": "7.28.4",
+    "@babel/parser": "7.28.4",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-elements": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "babel-preset-solid": "^1.9.9",
+    "solid-js": "^1.9.9",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.9",
+    "vite-plugin-solid": "^2.11.10",
+    "vite-plugin-css-injected-by-js": "^3.5.2"
+  }
+}

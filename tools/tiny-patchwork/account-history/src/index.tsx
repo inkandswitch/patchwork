@@ -1,0 +1,70 @@
+import { render } from "solid-js/web";
+import { type ToolImplementation } from "@inkandswitch/patchwork-plugins";
+import { ACCOUNT_HISTORY_DATATYPE, VIEWER_TOOL_ID } from "./constants.ts";
+import type { HistoryDoc } from "./types.ts";
+import "./index.css";
+
+export const plugins = [
+  {
+    id: ACCOUNT_HISTORY_DATATYPE,
+    type: "patchwork:datatype",
+    name: "Account History",
+    icon: "Clock",
+    async load() {
+      return {
+        getTitle: (doc: HistoryDoc) => doc.title || "Account History",
+        create: (): HistoryDoc => ({
+          ["@patchwork"]: { type: ACCOUNT_HISTORY_DATATYPE },
+          title: "Account History",
+          entries: [],
+        }),
+      };
+    },
+  },
+  {
+    id: "account-history-toolbar",
+    type: "patchwork:tool",
+    tags: ["titlebar-tool"],
+    name: "Account History Recorder",
+    supportedDatatypes: ["account"],
+    icon: "Clock",
+    unlisted: true,
+    async load(): Promise<ToolImplementation<any>> {
+      const { HistoryRecorder } = await import("./HistoryRecorder.tsx");
+      return (handle, element) => {
+        return render(
+          () => (
+            <HistoryRecorder
+              handle={handle}
+              repo={element.repo}
+              element={element}
+            />
+          ),
+          element
+        );
+      };
+    },
+  },
+  {
+    id: VIEWER_TOOL_ID,
+    type: "patchwork:tool",
+    name: "Account History Viewer",
+    supportedDatatypes: [ACCOUNT_HISTORY_DATATYPE],
+    icon: "Clock",
+    async load(): Promise<ToolImplementation<HistoryDoc>> {
+      const { HistoryViewer } = await import("./HistoryViewer.tsx");
+      return (handle, element) => {
+        return render(
+          () => (
+            <HistoryViewer
+              handle={handle}
+              repo={element.repo}
+              element={element}
+            />
+          ),
+          element
+        );
+      };
+    },
+  },
+];
