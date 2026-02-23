@@ -1,6 +1,6 @@
-import { Plugin } from "@inkandswitch/patchwork-plugins";
+import type { PluginDescription } from "@inkandswitch/patchwork-plugins";
 
-export const plugins: Plugin<any>[] = [
+export const plugins: PluginDescription[] = [
   {
     type: "patchwork:tool",
     id: "context-sidebar",
@@ -8,9 +8,6 @@ export const plugins: Plugin<any>[] = [
     name: "Context Sidebar",
     icon: "Tabs",
     supportedDatatypes: ["account"],
-    async load() {
-      const { renderTabbedView } = await import("./ContextSidebar");
-      return renderTabbedView;
-    },
-  },
+    importPath: "./dist/mount.js",
+  } as any,
 ];

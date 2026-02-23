@@ -23,6 +23,18 @@
     "./datatype": {
       "import": "./dist/datatype.js",
       "source": "./src/datatype.ts"
+    },
+    "./mount-datatype": {
+      "import": "./dist/mount-datatype.js",
+      "source": "./src/mount-datatype.ts"
+    },
+    "./mount-ext-markdown": {
+      "import": "./dist/mount-ext-markdown.js",
+      "source": "./src/mount-ext-markdown.ts"
+    },
+    "./mount-ext-links": {
+      "import": "./dist/mount-ext-links.js",
+      "source": "./src/mount-ext-links.ts"
     }
   },
   "scripts": {

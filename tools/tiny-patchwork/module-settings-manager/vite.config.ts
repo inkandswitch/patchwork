@@ -10,7 +10,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       external: externals,
-      input: "./src/index.tsx",
+      input: ["./src/index.tsx", "./src/mount.tsx"],
       output: {
         format: "es",
         entryFileNames: "[name].js",

@@ -1,41 +1,9 @@
-import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import { createRoot } from "react-dom/client";
-import "./styles.css";
-
-function addStyles(element: HTMLElement, textContent: string) {
-  const id = "account-picker-styles";
-  const el = element.querySelector(`#${id}`) ?? document.createElement("style");
-  Object.assign(el, { textContent, id });
-  element.append(el);
-}
-
-async function loadStyles() {
-  const url = new URL("./tool.css", import.meta.url);
-  return (await fetch(url)).text();
-}
-
 export const plugins = [
   {
     type: "patchwork:tool",
     id: "account-picker",
     name: "Account Picker",
     supportedDatatypes: ["account"],
-    async load(): Promise<ToolImplementation> {
-      const { RepoContext } =
-        await import("@automerge/automerge-repo-react-hooks");
-      const { AccountPicker } = await import("./AccountPicker");
-      const css = await loadStyles();
-      return (handle, element) => {
-        addStyles(document.head, css);
-        console.log("account picker");
-        const root = createRoot(element);
-        root.render(
-          <RepoContext.Provider value={element.repo}>
-            <AccountPicker handle={handle} element={element} />
-          </RepoContext.Provider>
-        );
-        return () => root.unmount();
-      };
-    },
+    importPath: "./dist/mount.js",
   },
 ];

@@ -7,6 +7,7 @@ import {
 import {
   ModuleWatcher,
   createFilesystemHandoffHandler,
+  automergeUrlToServiceWorkerUrl,
 } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
 import { registerPlugins } from "@inkandswitch/patchwork-plugins";
@@ -116,12 +117,12 @@ if (initialParams.has("frame")) {
 }
 
 const defaultToolsUrl =
-  "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl;
+  "automerge:3SfMF3rEbJHDR31V6BsqBDhREjtr" as AutomergeUrl;
 
 function onModuleLoaded(name: string, mod: any) {
-  console.log(`[main] onModuleLoaded`, name, { hasPlugins: Array.isArray(mod.plugins), pluginCount: mod.plugins?.length, keys: Object.keys(mod) });
   if (Array.isArray(mod.plugins)) {
-    registerPlugins(mod.plugins, name);
+    const baseUrl = automergeUrlToServiceWorkerUrl(name as AutomergeUrl);
+    registerPlugins(mod.plugins, baseUrl);
   }
 }
 

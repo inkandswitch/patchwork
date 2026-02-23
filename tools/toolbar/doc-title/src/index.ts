@@ -1,7 +1,6 @@
-import { Plugin } from "@inkandswitch/patchwork-plugins";
-import { toolify } from "@inkandswitch/patchwork-react";
+import type { PluginDescription } from "@inkandswitch/patchwork-plugins";
 
-export const plugins: Plugin<any>[] = [
+export const plugins: PluginDescription[] = [
   {
     type: "patchwork:tool",
     id: "document-title",
@@ -9,11 +8,8 @@ export const plugins: Plugin<any>[] = [
     name: "Document Title",
     icon: "Heading",
     supportedDatatypes: "*",
-    async load() {
-      const { DocumentTitle } = await import("./DocumentTitle");
-      return toolify(DocumentTitle);
-    },
+    importPath: "./dist/mount.js",
     unlisted: true,
     forTitleBar: true,
-  },
+  } as any,
 ];

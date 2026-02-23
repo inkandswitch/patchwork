@@ -7,6 +7,7 @@ import {
 import {
   ModuleWatcher,
   createFilesystemHandoffHandler,
+  automergeUrlToServiceWorkerUrl,
 } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
 import { registerPlugins } from "@inkandswitch/patchwork-plugins";
@@ -131,9 +132,11 @@ const moduleWatcher = new ModuleWatcher(
   ],
   (name, mod) => {
     if (Array.isArray(mod.plugins)) {
-      // TODO: maybe get rid of this check?
       if (isValidAutomergeUrl(name)) {
-        registerPlugins(mod.plugins, name);
+        const baseUrl = automergeUrlToServiceWorkerUrl(
+          name as AutomergeRepo.AutomergeUrl
+        );
+        registerPlugins(mod.plugins, baseUrl);
       }
     }
   }

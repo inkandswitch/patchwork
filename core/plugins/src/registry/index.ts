@@ -1,27 +1,22 @@
-import type { Tool } from "../tools.js";
+import type { ToolDescription } from "../tools.js";
 import { PluginRegistry } from "./registry.js";
-import { LoadablePlugin, PluginDescription } from "./types.js";
+import { PluginDescription } from "./types.js";
 
 export { PluginRegistry };
 export type {
-  LoadablePlugin,
-  LoadedPlugin,
   Plugin,
   PluginDescription,
   PluginRegistryEvents,
 } from "./types.js";
 
-// Map of plugin types to their registries
 const registries: Record<string, PluginRegistry<any>> = {};
 
 /**
  * Get a registry for a specific plugin type, creating it if it doesn't exist
- * This implicitly registers the plugin type if it hasn't been registered yet
  */
 export function getRegistry<T extends PluginDescription>(
   type: string
 ): PluginRegistry<T> {
-  // If the registry doesn't exist yet, create it
   if (!registries[type]) {
     registries[type] = new PluginRegistry<T>();
   }
@@ -29,11 +24,9 @@ export function getRegistry<T extends PluginDescription>(
   return registries[type] as PluginRegistry<T>;
 }
 
-// todo remove this tomorrow
-// ugly and transitional
-function migrate(plugin: LoadablePlugin) {
+function migrate(plugin: PluginDescription) {
   if (plugin.type == "patchwork:tool") {
-    const tool = plugin as Tool;
+    const tool = plugin as ToolDescription;
     if ("supportedDataTypes" in tool) {
       console.warn(
         plugin.id,
@@ -53,21 +46,30 @@ function migrate(plugin: LoadablePlugin) {
 }
 
 /**
- * Register plugins
+ * Register plugins. The baseUrl is the service-worker base URL for the package
+ * (e.g. "/{encodedAutomergeUrl}/"). Each plugin's importPath is resolved against
+ * it to produce a fully-qualified importUrl.
  */
-export function registerPlugins<D extends PluginDescription, I>(
-  plugins: LoadablePlugin<D, I>[],
-  importUrl: string
+export function registerPlugins<D extends PluginDescription>(
+  plugins: D[],
+  baseUrl: string
 ) {
-  // Register each group with its appropriate registry
   plugins.forEach((plugin) => {
     if (!plugin.type) {
       console.warn("Plugin has no type", plugin);
       return;
     }
     migrate(plugin);
+
+    if (plugin.importPath && !plugin.importUrl) {
+      plugin.importUrl = new URL(
+        plugin.importPath,
+        new URL(baseUrl, globalThis.location.origin)
+      ).href;
+    }
+
     const registry = getRegistry(plugin.type);
-    registry.register(plugin, importUrl);
+    registry.register(plugin);
   });
 }
 

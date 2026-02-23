@@ -12,6 +12,9 @@ export default defineConfig({
       entry: {
         index: "src/index.tsx",
         "tools/tenfold": "src/tool.tsx",
+        "mount-datatype": "src/mount-datatype.ts",
+        "mount-tool": "src/mount-tool.tsx",
+        "mount-file-viewer": "src/mount-file-viewer.tsx",
       },
       formats: ["es"],
     },

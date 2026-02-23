@@ -20,6 +20,14 @@
       "import": "./dist/datatype.js",
       "source": "./src/datatype.ts"
     },
+    "./mount-tool": {
+      "import": "./dist/mount-tool.js",
+      "source": "./src/mount-tool.tsx"
+    },
+    "./mount-datatype": {
+      "import": "./dist/mount-datatype.js",
+      "source": "./src/mount-datatype.ts"
+    },
     "./style": "./dist/main.css"
   },
   "scripts": {

@@ -171,29 +171,36 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
     commentButtonGutter(onComment),
   ]);
 
-  // Load CodeMirror extensions dynamically on mount
   onMount(async () => {
-    // Get document type from handle
     const docType = (props.handle.doc() as any)?.["@patchwork"]?.type;
 
-    // Load extensions that support this document type
     const extensionsRegistry = getRegistry<any>("codemirror:extension");
 
-    const loadedExtensions = await extensionsRegistry.loadAll(
-      extensionsRegistry.filter((ext) => {
-        return (
-          ext.supportedDatatypes === "*" ||
-          (Array.isArray(ext.supportedDatatypes) &&
-            ext.supportedDatatypes.includes(docType))
-        );
-      })
+    const compatible = extensionsRegistry.filter((ext) => {
+      return (
+        ext.supportedDatatypes === "*" ||
+        (Array.isArray(ext.supportedDatatypes) &&
+          ext.supportedDatatypes.includes(docType))
+      );
+    });
+
+    const loaded = await Promise.all(
+      compatible
+        .filter((ext) => ext.importUrl)
+        .map(async (ext) => {
+          try {
+            const mod = await import(/* @vite-ignore */ ext.importUrl);
+            return mod.default;
+          } catch (err) {
+            console.warn(`Failed to load extension ${ext.id}:`, err);
+            return undefined;
+          }
+        })
     );
 
-    // Flatten and add to existing extensions
-    const flattenedExts = loadedExtensions.flatMap((ext) => {
-      const impl = ext.module;
-      return Array.isArray(impl) ? impl : [impl];
-    });
+    const flattenedExts = loaded
+      .filter(Boolean)
+      .flatMap((impl) => (Array.isArray(impl) ? impl : [impl]));
 
     setExtensions((exts) => [...exts, ...flattenedExts]);
   });

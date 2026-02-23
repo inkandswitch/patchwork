@@ -20,7 +20,10 @@ import type {
   FolderDoc,
   HasPatchworkMetadata,
 } from "@inkandswitch/patchwork-filesystem";
-import { getRegistry, type Datatype } from "@inkandswitch/patchwork-plugins";
+import {
+  getRegistry,
+  type DatatypeDescription,
+} from "@inkandswitch/patchwork-plugins";
 import { createSignal, For, Match, Show, Switch } from "solid-js";
 import { filter, filterMatches, setRenaming } from "../state.ts";
 import Folder from "./folder.tsx";
@@ -126,20 +129,21 @@ export function DocumentList(props: DocumentListProps) {
             props.handle.change((doc) => {
               updateText(doc, ["docs", index(), "name"], name);
             });
-            const datatypes = getRegistry<Datatype>("patchwork:datatype");
+            const datatypes =
+              getRegistry<DatatypeDescription>("patchwork:datatype");
             props.repo
               .find<Partial<HasPatchworkMetadata>>(doc.url)
               .then(async (handle) => {
                 const { "@patchwork": metadata } = handle.doc();
 
                 if (metadata) {
-                  const datatype = datatypes.get(metadata.type) as Datatype;
+                  const datatype = datatypes.get(metadata.type);
 
-                  if (datatype) {
-                    await datatypes.load(datatype.id);
-                    handle.change((doc) =>
-                      (datatype as any).module.setTitle?.(doc, name)
+                  if (datatype?.importUrl) {
+                    const mod = await import(
+                      /* @vite-ignore */ datatype.importUrl
                     );
+                    handle.change((doc) => mod.default.setTitle?.(doc, name));
                   }
                 }
               });

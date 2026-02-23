@@ -11,6 +11,10 @@
       "import": "./dist/tool.js",
       "source": "./src/tool.tsx"
     },
+    "./mount": {
+      "import": "./dist/mount.js",
+      "source": "./src/mount.tsx"
+    },
     "./style.css": "./dist/tool.css"
   },
   "scripts": {

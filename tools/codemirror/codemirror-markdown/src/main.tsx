@@ -1,15 +1,10 @@
-import type { Extension } from "@codemirror/state";
-
 export const plugins = [
   {
     type: "patchwork:datatype",
     id: "markdown",
     name: "Markdown",
     icon: "FileText",
-    async load() {
-      const { MarkdownDatatype } = await import("./datatype.js");
-      return MarkdownDatatype;
-    },
+    importPath: "./dist/mount-datatype.js",
   },
   {
     type: "patchwork:datatype",
@@ -17,29 +12,20 @@ export const plugins = [
     name: "Markdown",
     icon: "FileText",
     unlisted: true,
-    async load() {
-      const { MarkdownDatatype } = await import("./datatype.js");
-      return MarkdownDatatype;
-    },
+    importPath: "./dist/mount-datatype.js",
   },
   {
     type: "codemirror:extension",
     id: "codemirror-markdown",
     name: "Markdown",
     supportedDatatypes: ["essay", "markdown"],
-    async load(): Promise<Extension> {
-      const { markdownExtensions } = await import("./extensions/markdown.js");
-      return markdownExtensions();
-    },
+    importPath: "./dist/mount-ext-markdown.js",
   },
   {
     type: "codemirror:extension",
     id: "codemirror-markdown-links",
     name: "Markdown Clickable Links",
     supportedDatatypes: ["essay", "markdown"],
-    async load(): Promise<Extension> {
-      const { markdownLinks } = await import("./extensions/links.js");
-      return markdownLinks();
-    },
+    importPath: "./dist/mount-ext-links.js",
   },
 ];

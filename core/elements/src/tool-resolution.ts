@@ -12,15 +12,12 @@ import {
   getSupportedTools,
   type ToolDescription,
   getRegistry,
-  isLoadablePlugin,
-  type LoadedTool,
 } from "@inkandswitch/patchwork-plugins";
 
 export interface ToolOption {
   id: string;
   name: string;
-  toolUrl: string;
-  mount: (handle: any, element: any) => () => void;
+  importUrl: string;
   icon?: string;
 }
 
@@ -29,13 +26,12 @@ export interface ToolResolution {
   availableTools: ToolOption[];
 }
 
-function toolToOption(tool: LoadedTool): ToolOption | null {
-  if (!tool.importUrl || !tool.module) return null;
+function toolToOption(tool: ToolDescription): ToolOption | null {
+  if (!tool.importUrl) return null;
   return {
     id: tool.id,
     name: tool.name,
-    toolUrl: tool.importUrl,
-    mount: tool.module as any,
+    importUrl: tool.importUrl,
     icon: tool.icon,
   };
 }
@@ -57,14 +53,11 @@ function resolve(
   let selectedTool: ToolOption | null = null;
 
   if (preferredToolId) {
-    // First check type-compatible tools, then fall back to a direct registry
-    // lookup. This handles cases like frame tools that may not match the
-    // document's type but are explicitly requested.
     selectedTool =
       availableTools.find((t) => t.id === preferredToolId) ?? null;
 
     if (!selectedTool) {
-      const tool = toolRegistry.get(preferredToolId) as LoadedTool | undefined;
+      const tool = toolRegistry.get(preferredToolId);
       if (tool) {
         selectedTool = toolToOption(tool);
       }
@@ -84,7 +77,7 @@ function resolve(
 /**
  * Reactively resolves which tools are available for a document and auto-selects
  * the best match. Subscribes to registry and document changes so the resolution
- * stays up to date as tools are registered/loaded or the document type changes.
+ * stays up to date as tools are registered or the document type changes.
  *
  * Returns a cleanup function that unsubscribes from all listeners.
  */
@@ -114,52 +107,20 @@ export function watchToolForDocument(
 
   const toolRegistry = getRegistry<ToolDescription>("patchwork:tool");
 
-  console.log(`[tool-resolution] watchToolForDocument started`, { docUrl, preferredToolId });
-
-  // Subscribe to events BEFORE the async work so we don't miss registrations
-  const offRegistered = toolRegistry.on("registered", (addedTool) => {
-    console.log(`[tool-resolution] "registered" event`, { id: addedTool.id, isLoadable: isLoadablePlugin(addedTool), preferredToolId, destroyed });
-    if (destroyed) return;
-    if (!isLoadablePlugin(addedTool)) return;
-
-    if (preferredToolId && addedTool.id === preferredToolId) {
-      console.log(`[tool-resolution] loading preferred tool`, addedTool.id);
-      toolRegistry.load(addedTool.id);
-      return;
-    }
-
-    if (!handle) return;
-    const doc = handle.doc();
-    const type = doc ? getType(doc) : undefined;
-    if (!type) return;
-    const supports =
-      addedTool.supportedDatatypes === "*" ||
-      addedTool.supportedDatatypes?.includes(type);
-    if (supports) {
-      console.log(`[tool-resolution] loading type-compatible tool`, addedTool.id);
-      toolRegistry.load(addedTool.id);
-    }
-  });
-  teardowns.push(offRegistered);
-
-  const offLoaded = toolRegistry.on("loaded", (loadedTool) => {
-    console.log(`[tool-resolution] "loaded" event`, { id: loadedTool?.id, destroyed });
+  const offRegistered = toolRegistry.on("registered", () => {
     if (destroyed || !handle) return;
     reResolve(handle);
   });
-  teardowns.push(offLoaded);
+  teardowns.push(offRegistered);
 
   let handle: DocHandle<HasPatchworkMetadata> | null = null;
 
   (async () => {
     handle = await repo.find<HasPatchworkMetadata>(docUrl);
-    console.log(`[tool-resolution] doc found, running initial resolve`);
     if (destroyed) return;
 
-    // Initial resolution
     reResolve(handle);
 
-    // When the document changes, re-resolve if the type changed
     const h = handle;
     let lastType = getType(h.doc());
     const onChange = (payload: {

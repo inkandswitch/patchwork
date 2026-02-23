@@ -15,6 +15,10 @@
     "./extension": {
       "import": "./dist/extension.js",
       "source": "./src/extension.ts"
+    },
+    "./mount": {
+      "import": "./dist/mount.js",
+      "source": "./src/mount.ts"
     }
   },
   "scripts": {

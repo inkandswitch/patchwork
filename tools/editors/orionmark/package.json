@@ -19,6 +19,10 @@
     "./datatype": {
       "import": "./dist/datatype.js",
       "source": "./src/datatype.ts"
+    },
+    "./mount": {
+      "import": "./dist/mount.js",
+      "source": "./src/mount.tsx"
     }
   },
   "scripts": {

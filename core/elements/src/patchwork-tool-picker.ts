@@ -143,7 +143,7 @@ export function registerPatchworkToolPickerElement(
 
         this.dispatchEvent(
           new ToolSelectedEvent({
-            toolUrl: this.#resolution.selectedTool?.toolUrl ?? null,
+            toolUrl: this.#resolution.selectedTool?.importUrl ?? null,
             toolId: this.#resolution.selectedTool?.id ?? null,
           })
         );
@@ -152,7 +152,7 @@ export function registerPatchworkToolPickerElement(
       #updateTargetView() {
         const view = this.#findTargetView();
         if (!view || !this.#resolution.selectedTool) return;
-        view.setAttribute("tool-url", this.#resolution.selectedTool.toolUrl);
+        view.setAttribute("tool-url", this.#resolution.selectedTool.importUrl);
         if (this.#docUrl && !view.getAttribute("doc-url")) {
           view.setAttribute("doc-url", this.#docUrl);
         }

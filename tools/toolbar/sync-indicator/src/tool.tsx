@@ -1,8 +1,3 @@
-import { createRoot } from "react-dom/client";
-import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import { RepoContext } from "@automerge/automerge-repo-react-hooks";
-import { SyncIndicator } from "./SyncIndicator";
-
 export const plugins = [
   {
     type: "patchwork:tool",
@@ -13,19 +8,6 @@ export const plugins = [
     supportedDatatypes: "*" as const,
     unlisted: true,
     forTitleBar: true,
-    async load(): Promise<ToolImplementation> {
-      return (handle, element) => {
-        element.style.width = "fit-content";
-        element.style.zIndex = "10";
-
-        const root = createRoot(element);
-        root.render(
-          <RepoContext.Provider value={element.repo}>
-            <SyncIndicator docUrl={handle.url} />
-          </RepoContext.Provider>
-        );
-        return () => root.unmount();
-      };
-    },
+    importPath: "./dist/mount.js",
   },
 ];

@@ -59,6 +59,10 @@ export function registerPatchworkViewElement(
       #initGeneration = 0;
       #reinitQueued = false;
 
+      get repo() {
+        return repo;
+      }
+
       get docUrl() {
         return this.#docUrl;
       }
@@ -119,7 +123,6 @@ export function registerPatchworkViewElement(
         this.#docUrl = this.getAttribute(attrs.docUrl) as AutomergeUrl;
         this.#toolId = this.getAttribute(attrs.toolId);
         this.#toolUrl = this.getAttribute(attrs.toolUrl);
-        console.log(`[patchwork-view] connectedCallback`, { docUrl: this.#docUrl, toolId: this.#toolId, toolUrl: this.#toolUrl });
         this.#init();
       }
 
@@ -130,7 +133,6 @@ export function registerPatchworkViewElement(
       connectedMoveCallback() {}
 
       attributeChangedCallback(name: string, old: string, val: string | null) {
-        console.log(`[patchwork-view] attributeChangedCallback`, { name, old, val });
         if (name === attrs.docUrl) {
           this.#docUrl = val as AutomergeUrl;
         } else if (name === attrs.toolId) {
@@ -141,7 +143,6 @@ export function registerPatchworkViewElement(
         this.#scheduleReinit();
       }
 
-      // Coalesce multiple synchronous attribute changes into one teardown+init cycle
       #scheduleReinit() {
         if (this.#reinitQueued) return;
         this.#reinitQueued = true;
@@ -152,47 +153,33 @@ export function registerPatchworkViewElement(
       }
 
       #init = async () => {
-        console.log(`[patchwork-view] #init`, { docUrl: this.#docUrl, toolId: this.#toolId, toolUrl: this.#toolUrl });
-        if (!this.#docUrl) {
-          console.log(`[patchwork-view] #init: no docUrl, returning`);
-          return;
-        }
+        if (!this.#docUrl) return;
 
         const generation = ++this.#initGeneration;
         this.#state = State.initializing;
-        console.log(`[patchwork-view] #init: finding doc`, this.#docUrl, `gen=${generation}`);
         this.#handle = await repo.find<unknown>(this.#docUrl);
-        console.log(`[patchwork-view] #init: doc found`, `gen=${generation}`, `current=${this.#initGeneration}`);
 
-        if (generation !== this.#initGeneration) {
-          console.log(`[patchwork-view] #init: stale generation, bailing`);
-          return;
-        }
+        if (generation !== this.#initGeneration) return;
 
         if (this.#toolUrl) {
-          console.log(`[patchwork-view] #init: explicit toolUrl, loading`, this.#toolUrl);
           await this.#loadToolFromUrl(this.#toolUrl);
           if (generation !== this.#initGeneration) return;
           this.#queueRender();
         } else {
-          console.log(`[patchwork-view] #init: starting watchToolForDocument`, { docUrl: this.#docUrl, toolId: this.#toolId });
           this.#stopWatching = watchToolForDocument(
             repo,
             this.#docUrl,
             { toolId: this.#toolId },
-            (resolution) => {
-              console.log(`[patchwork-view] watchToolForDocument callback`, { gen: generation, current: this.#initGeneration, selectedTool: resolution.selectedTool?.id, toolUrl: resolution.selectedTool?.toolUrl, availableCount: resolution.availableTools.length });
+            async (resolution) => {
               if (generation !== this.#initGeneration) return;
               const tool = resolution.selectedTool;
-              const newUrl = tool?.toolUrl ?? null;
+              const newUrl = tool?.importUrl ?? null;
               if (newUrl === this.#resolvedToolUrl) return;
               this.#resolvedToolUrl = newUrl;
               if (tool) {
-                console.log(`[patchwork-view] tool resolved from registry`, tool.id);
-                this.#mount = tool.mount;
+                await this.#loadToolFromUrl(tool.importUrl);
+                if (generation !== this.#initGeneration) return;
                 this.#queueRender();
-              } else {
-                console.log(`[patchwork-view] no tool resolved yet`);
               }
             }
           );
@@ -200,14 +187,13 @@ export function registerPatchworkViewElement(
       };
 
       async #loadToolFromUrl(url: string) {
-        const { mount } = await import(url);
-        this.#mount = mount;
+        const mod = await import(/* @vite-ignore */ url);
+        this.#mount = mod.default;
       }
 
       #teardowns = new Set<() => unknown | Promise<void>>();
 
       async #teardown() {
-        console.log(`[patchwork-view] #teardown`, { state: this.#state });
         if (this.#state == State.none) return;
 
         this.#stopWatching?.();
@@ -232,7 +218,6 @@ export function registerPatchworkViewElement(
       }
 
       #render() {
-        console.log(`[patchwork-view] #render`, { state: this.#state, docUrl: this.#docUrl, effectiveToolUrl: this.effectiveToolUrl, hasMount: !!this.#mount });
         if (this.#state != State.rendering) return;
 
         if (!this.docUrl) {

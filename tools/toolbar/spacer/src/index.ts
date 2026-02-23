@@ -1,6 +1,6 @@
-import { Plugin } from "@inkandswitch/patchwork-plugins";
+import type { PluginDescription } from "@inkandswitch/patchwork-plugins";
 
-export const plugins: Plugin<any>[] = [
+export const plugins: PluginDescription[] = [
   {
     type: "patchwork:tool",
     tags: ["titlebar-tool"],
@@ -8,11 +8,8 @@ export const plugins: Plugin<any>[] = [
     name: "Spacer",
     icon: "Spacer",
     supportedDatatypes: "*",
-    async load() {
-      const { renderSpacer } = await import("./Spacer.js");
-      return renderSpacer;
-    },
+    importPath: "./dist/mount.js",
     unlisted: true,
     forTitleBar: true,
-  },
+  } as any,
 ];
