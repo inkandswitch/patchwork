@@ -11,7 +11,7 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       external: externals,
-      input: "./src/index.tsx",
+      input: ["./src/tool.tsx", "./src/mount.tsx"],
       output: {
         format: "es",
         entryFileNames: "[name].js",

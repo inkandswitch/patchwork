@@ -1,219 +1,101 @@
 import EventEmitter from "eventemitter3";
-import type {
-  LoadedPlugin,
-  PluginDescription,
-  Plugin,
-  PluginRegistryEvents,
-  LoadablePlugin,
-} from "./types";
+import type { PluginDescription, PluginRegistryEvents } from "./types";
 import debug from "debug";
-import {
-  isLoadablePlugin,
-  isLoadedPlugin,
-  isPluginDescription,
-} from "./guards.js";
-import type { DatatypeImplementation } from "../datatypes.js";
 
 const log = debug("patchwork:plugins");
 
-function isAsyncFunction(fn: unknown) {
-  return (
-    typeof fn == "function" &&
-    Symbol.toStringTag in fn &&
-    fn[Symbol.toStringTag] == "AsyncFunction"
-  );
-}
+const DEFAULT_BRANCH = "default";
 
 /**
- * Registry for managing plugins of a specific type
- * D = Description type that extends PluginDescription
- * I = Implementation type that will be loaded and combined with the description
+ * Registry for managing plugins of a specific type.
+ * Supports multiple versions per plugin ID, keyed by branch name.
+ * Stores plugin descriptions only -- consumers call import(plugin.importUrl)
+ * to load implementations on demand.
  */
-export class PluginRegistry<D extends PluginDescription, I = any> {
-  #plugins = new Map<string, Plugin<D, I>>();
-  #loadPromises = new Map<string, Promise<LoadedPlugin<D, I>>>();
-  #events = new EventEmitter<PluginRegistryEvents<D, I>>();
+export class PluginRegistry<D extends PluginDescription> {
+  /** Outer key: plugin id, inner key: branch name (or "__pinned:<version>" for anonymous) */
+  #plugins = new Map<string, Map<string, D>>();
+  #events = new EventEmitter<PluginRegistryEvents<D>>();
 
-  /**
-   * Register an plugin with this registry
-   */
-  register(plugin: LoadablePlugin<D, I>, importUrl: string) {
-    // If an import URL was provided, attach it to the plugin
+  register(plugin: D, importUrl?: string) {
     if (importUrl && !plugin.importUrl) {
       plugin.importUrl = importUrl;
     }
 
-    const existing = this.#plugins.get(plugin.id);
+    const branch = plugin.branch ?? DEFAULT_BRANCH;
+    const key = plugin.branch ? branch : this.#pinnedKey(plugin.version);
 
-    if (existing) {
-      if (existing.importUrl == importUrl) {
-        log(`updating ${plugin.id} provided by "${existing.importUrl}"`);
-      } else {
-        console.warn(
-          `overriding "${plugin.id}" provided by "${existing.importUrl}" with new plugin provided by "${importUrl}"`
-        );
-      }
+    let versions = this.#plugins.get(plugin.id);
+    if (!versions) {
+      versions = new Map();
+      this.#plugins.set(plugin.id, versions);
     }
 
-    this.#plugins.set(plugin.id, plugin);
+    const existing = versions.get(key);
+    if (existing) {
+      if (existing.importUrl === plugin.importUrl) {
+        log(`updating ${plugin.id}@${key}`);
+      } else {
+        log(`replacing ${plugin.id}@${key}: "${existing.importUrl}" -> "${plugin.importUrl}"`);
+      }
+    } else {
+      log(`registering ${plugin.id}@${key}`);
+    }
+
+    versions.set(key, plugin);
 
     this.#events.emit("registered", plugin);
     this.#events.emit("changed");
   }
 
-  /**
-   * Get an plugin by ID, returning either its description or loaded state
-   */
-  get(id: string): Plugin<D, I> | undefined {
-    return this.#plugins.get(id);
+  /** Get the default branch version of a plugin (backward compat) */
+  get(id: string): D | undefined {
+    return this.#plugins.get(id)?.get(DEFAULT_BRANCH);
   }
 
-  /** Get all plugins, both descriptions and loaded */
-  all(): Plugin<D, I>[] {
-    const entries = Array.from(this.#plugins.values());
-    return entries as Plugin<D, I>[];
+  /** Get a specific branch version */
+  getBranch(id: string, branch: string): D | undefined {
+    return this.#plugins.get(id)?.get(branch);
   }
 
-  /** Return a filtered list of plugins */
-  filter(filter: (plugin: Plugin<D, I>) => boolean): Plugin<D, I>[] {
-    return this.all().filter(filter);
+  /** Get a pinned version by its heads string */
+  getVersion(id: string, version: string): D | undefined {
+    return this.#plugins.get(id)?.get(this.#pinnedKey(version));
   }
 
-  /**
-   * Load an plugin by ID, loading it on demand if necessary (asynchronous)
-   * If shouldWait is true, will wait for the plugin to be registered if it isn't already
-   */
-  async load(id: string): Promise<LoadedPlugin<D, I> | undefined> {
-    // TODO: error handling?
-    log(`load called for: ${id}`, {});
-
-    // Check if we already have a loaded plugin
-    const plugin = this.#plugins.get(id);
-    log(`Found existing plugin: ${id}`, {
-      hasPlugin: !!plugin,
-      isLoadable: plugin ? isLoadablePlugin<D, I>(plugin) : "N/A",
-    });
-
-    if (plugin && isLoadedPlugin<D, I>(plugin)) {
-      log(`Returning already loaded plugin: ${id}`);
-      return plugin;
-    }
-
-    // Get the plugin description
-    const description = this.#plugins.get(id);
-    if (!description) {
-      log(`Plugin not registered: ${id}`);
-      return undefined;
-    }
-
-    // If the plugin is loadable, load it
-    if (isLoadablePlugin(description)) {
-      log(`Loading plugin implementation: ${id}`);
-      const loadPromise = description
-        .load()
-        .then((implementation) => {
-          log(`Successfully loaded implementation for: ${id}`, implementation);
-          // Merge the implementation with the plugin metadata to create a complete Plugin
-          // Omit the load method as it's no longer needed
-          const { load, ...descriptionWithoutLoad } = description;
-          if (!isPluginDescription<D>(descriptionWithoutLoad)) {
-            throw new Error("Invalid plugin description");
-          }
-          const plugin = {
-            ...descriptionWithoutLoad,
-            module: implementation,
-          };
-
-          // todo remove tomorrow
-          // think about where this should live etc
-          if (description.type == "patchwork:datatype") {
-            const impl = implementation as DatatypeImplementation;
-            if (isAsyncFunction(impl.getTitle)) {
-              console.warn(
-                description.id,
-                description.importUrl,
-                "getTitle should not be an async function"
-              );
-            }
-            if (isAsyncFunction(impl.setTitle)) {
-              console.warn(
-                description.id,
-                description.importUrl,
-                "getTitle should be an async function"
-              );
-            }
-          }
-
-          // Store the loaded version
-          this.#plugins.set(description.id, plugin);
-          this.#loadPromises.delete(id);
-
-          // Notify listeners that an plugin has been loaded
-          this.#events.emit("loaded", plugin);
-          this.#events.emit("changed");
-
-          return plugin;
-        })
-        .catch((error) => {
-          console.error(`Failed to load plugin implementation: ${id}`, error);
-          this.#loadPromises.delete(id);
-          throw error;
-        });
-
-      // Store the promise so we don't load twice
-      this.#loadPromises.set(id, loadPromise);
-      return loadPromise;
-    }
-
-    if (isLoadedPlugin<D, I>(description)) {
-      return description;
-    }
-
-    throw new Error(`Plugin ${id} is not loadable`);
+  /** Get all known versions/branches for a plugin */
+  getVersions(id: string): D[] {
+    const versions = this.#plugins.get(id);
+    if (!versions) return [];
+    return Array.from(versions.values());
   }
 
-  /**
-   * Load all provided plugins
-   * @returns A promise resolving to an array of loaded plugins
-   */
-  async loadAll(plugins: Plugin<D, I>[]): Promise<LoadedPlugin<D, I>[]> {
-    // Get all plugins or filter them if a filter function is provided
-    // Create an array of promises for loading each plugin
-    const loadPromises = plugins.map(async (plugin) => {
-      try {
-        const Plugin = await this.load(plugin.id);
-        return Plugin;
-      } catch (error) {
-        console.warn(`Failed to load plugin ${plugin.id}:`, error);
-        return undefined;
+  /** Get all plugins across all IDs (returns the default branch for each) */
+  all(): D[] {
+    const result: D[] = [];
+    for (const versions of this.#plugins.values()) {
+      const def = versions.get(DEFAULT_BRANCH);
+      if (def) {
+        result.push(def);
+      } else {
+        const first = versions.values().next().value;
+        if (first) result.push(first);
       }
-    });
-
-    // Wait for all plugins to load and filter out any that failed
-    // TODO: use Promise.allSettled instead?
-    // TODO: error handling?
-    const results = await Promise.all(loadPromises);
-    return results.filter(
-      (plugin): plugin is Awaited<LoadedPlugin<D, I>> => plugin !== undefined
-    );
+    }
+    return result;
   }
 
-  /**
-   * Check if an plugin ID is registered
-   */
+  filter(predicate: (plugin: D) => boolean): D[] {
+    return this.all().filter(predicate);
+  }
+
   has(id: string): boolean {
     return this.#plugins.has(id);
   }
 
-  /** Subscribe to plugin events */
-  // TODO: see if we can / want to reuse the eventemitter3 API here.
   on(
     event: "registered",
-    callback: (plugin: Plugin<D, I>) => void | Promise<void>
-  ): () => void;
-  on(
-    event: "loaded",
-    callback: (plugin: LoadedPlugin<D, I>) => void | Promise<void>
+    callback: (plugin: D) => void | Promise<void>
   ): () => void;
   on(
     event: "removed",
@@ -221,7 +103,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   ): () => void;
   on(event: "changed", callback: () => void | Promise<void>): () => void;
   on(
-    event: keyof PluginRegistryEvents<D, I>,
+    event: keyof PluginRegistryEvents<D>,
     callback: (...args: any[]) => void | Promise<void>
   ): () => void {
     if (!callback || typeof callback !== "function") {
@@ -233,11 +115,14 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     };
   }
 
-  /** Unsubscribe from plugin events */
   off(
-    event: keyof PluginRegistryEvents<D, I>,
+    event: keyof PluginRegistryEvents<D>,
     callback: (...args: any[]) => void
   ): void {
     this.#events.off(event, callback);
+  }
+
+  #pinnedKey(version?: string): string {
+    return version ? `__pinned:${version}` : DEFAULT_BRANCH;
   }
 }

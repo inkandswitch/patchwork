@@ -13,7 +13,7 @@ export default defineConfig({
     minify: false,
     rollupOptions: {
       external: externals,
-      input: "./src/index.ts",
+      input: ["./src/index.ts", "./src/mount-history-view.ts", "./src/mount-highlight-changes.ts"],
       output: {
         format: "es",
         entryFileNames: "[name].js",

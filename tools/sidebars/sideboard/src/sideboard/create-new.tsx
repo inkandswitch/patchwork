@@ -6,11 +6,7 @@ import {
 } from "@automerge/automerge-repo";
 import {
   type DatatypeDescription,
-  type Plugin,
   createDocOfDatatype2,
-  getRegistry,
-  isLoadablePlugin,
-  isLoadedPlugin,
 } from "@inkandswitch/patchwork-plugins";
 import { createSignal, For, Show } from "solid-js";
 import { PlusIcon } from "./icons.tsx";
@@ -25,23 +21,20 @@ import type { AutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
 async function createNew(
   repo: Repo,
-  datatype: Plugin<DatatypeDescription>,
+  datatype: DatatypeDescription,
   hive?: AutomergeRepoKeyhive
 ) {
-  if (isLoadablePlugin(datatype)) {
-    const registry = getRegistry("patchwork:datatype");
-    await registry.load(datatype.id);
-  }
-  if (!isLoadedPlugin(datatype)) {
-    throw new Error("plugin not loaded after loading");
-  }
-
   const docHandle = await createDocOfDatatype2(datatype, repo);
   if (hive) {
     await hive.addSyncServerPullToDoc(docHandle.url);
   }
   const doc = docHandle.doc();
-  const name = datatype.module.getTitle(doc);
+
+  if (!datatype.importUrl) {
+    throw new Error(`Datatype "${datatype.id}" has no importUrl`);
+  }
+  const mod = await import(/* @vite-ignore */ datatype.importUrl);
+  const name = mod.default.getTitle(doc);
 
   return {
     name,

@@ -1,6 +1,6 @@
-import { Plugin } from "@inkandswitch/patchwork-plugins";
+import type { PluginDescription } from "@inkandswitch/patchwork-plugins";
 
-export const plugins: Plugin<any>[] = [
+export const plugins: PluginDescription[] = [
   {
     type: "patchwork:tool",
     id: "comments-view",
@@ -8,9 +8,6 @@ export const plugins: Plugin<any>[] = [
     name: "Comments",
     icon: "Comments",
     supportedDatatypes: ["account"],
-    async load() {
-      const { renderCommentsView } = await import("./CommentsView");
-      return renderCommentsView;
-    },
-  },
+    importPath: "./dist/mount.js",
+  } as any,
 ];

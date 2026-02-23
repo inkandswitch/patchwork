@@ -13,6 +13,22 @@
       "import": "./dist/tool.js",
       "source": "./src/tool.tsx"
     },
+    "./mount-datatype": {
+      "import": "./dist/mount-datatype.js",
+      "source": "./src/mount-datatype.ts"
+    },
+    "./mount-contact": {
+      "import": "./dist/mount-contact.js",
+      "source": "./src/mount-contact.tsx"
+    },
+    "./mount-avatar": {
+      "import": "./dist/mount-avatar.js",
+      "source": "./src/mount-avatar.tsx"
+    },
+    "./mount-inline": {
+      "import": "./dist/mount-inline.js",
+      "source": "./src/mount-inline.tsx"
+    },
     "./style.css": "./dist/tool.css"
   },
   "scripts": {

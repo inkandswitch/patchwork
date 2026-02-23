@@ -46,16 +46,33 @@ export class NoToolEvent extends CustomEvent<NoToolEventDetail> {
   }
 }
 
+export interface ToolSelectedEventDetail {
+  toolUrl: string | null;
+  toolId: string | null;
+}
+
+export class ToolSelectedEvent extends CustomEvent<ToolSelectedEventDetail> {
+  constructor(detail: ToolSelectedEventDetail) {
+    super("patchwork:tool-selected", {
+      detail,
+      composed: true,
+      bubbles: true,
+    });
+  }
+}
+
 declare global {
   interface ShadowRootEventMap extends ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
     "patchwork:mounted": MountedEvent;
     "patchwork:no-tool": NoToolEvent;
+    "patchwork:tool-selected": ToolSelectedEvent;
   }
   interface ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
     "patchwork:mounted": MountedEvent;
     "patchwork:no-tool": NoToolEvent;
+    "patchwork:tool-selected": ToolSelectedEvent;
   }
 }
 

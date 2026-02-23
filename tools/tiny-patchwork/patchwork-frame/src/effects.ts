@@ -14,10 +14,8 @@ import {
 } from "@inkandswitch/patchwork-filesystem";
 import {
   DatatypeDescription,
-  DatatypeImplementation,
   getRegistry,
 } from "@inkandswitch/patchwork-plugins";
-import { PluginRegistry } from "@inkandswitch/patchwork-plugins/dist/registry/registry";
 import { useEffect } from "react";
 
 export const useUpdateDocLinksOfActiveDocumentsEffect = (
@@ -28,7 +26,6 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
     selectedDocUrls as AutomergeUrl[]
   );
 
-  // todo: handle folders
   const [rootFolderDoc, changeRootFolderDoc] = useDocument<FolderDoc>(
     rootFolderUrl,
     {
@@ -39,10 +36,7 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
   useEffect(() => {
     let canceled = false;
 
-    const registry = getRegistry("patchwork:datatype") as PluginRegistry<
-      DatatypeDescription,
-      DatatypeImplementation
-    >;
+    const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
 
     for (const docUrl of selectedDocUrls) {
       const doc = selectedDocsMap.get(docUrl as AutomergeUrl);
@@ -57,12 +51,13 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
         continue;
       }
 
-      registry.load(type).then((datatype) => {
-        if (canceled || !datatype) {
-          return;
-        }
+      const datatype = registry.get(type);
+      if (!datatype?.importUrl) continue;
 
-        const title = datatype.module.getTitle(doc);
+      import(/* @vite-ignore */ datatype.importUrl).then((mod) => {
+        if (canceled) return;
+
+        const title = mod.default.getTitle(doc);
 
         changeRootFolderDoc((doc) => {
           for (const docLink of doc.docs) {
@@ -104,12 +99,13 @@ export const useAddUnknownDocumentsToSidebarEffect = (
         continue;
       }
 
-      registry.load(type).then((datatype) => {
-        if (canceled || !datatype) {
-          return;
-        }
+      const datatype = registry.get(type);
+      if (!datatype?.importUrl) continue;
 
-        const title = datatype.module.getTitle(docHandle.doc());
+      import(/* @vite-ignore */ datatype.importUrl).then((mod) => {
+        if (canceled) return;
+
+        const title = mod.default.getTitle(docHandle.doc());
         if (rootFolderDoc.docs.some((doc) => doc.url === docHandle.url)) {
           return;
         }

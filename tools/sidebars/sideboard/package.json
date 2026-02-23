@@ -19,7 +19,14 @@
       "patchwork": "./dist/sideboard/sideboard.js",
       "source": "./src/sideboard/sideboard.tsx"
     },
-    "./styles.css": "./dist/index.css"
+    "./mount": {
+      "import": "./dist/mount.js",
+      "source": "./src/mount.tsx"
+    },
+    "./styles.css": {
+      "import": "./dist/index.css",
+      "source": "./src/index.css"
+    }
   },
   "scripts": {
     "build": "node esbuild/build.ts",

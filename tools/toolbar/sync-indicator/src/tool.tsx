@@ -1,7 +1,3 @@
-import { render } from "solid-js/web";
-import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import { SyncIndicator, RepoContext } from "./SyncIndicator";
-
 export const plugins = [
   {
     type: "patchwork:tool",
@@ -12,21 +8,6 @@ export const plugins = [
     supportedDatatypes: "*" as const,
     unlisted: true,
     forTitleBar: true,
-    async load(): Promise<ToolImplementation> {
-      return (handle, element) => {
-        element.style.width = "fit-content";
-        element.style.zIndex = "10";
-
-        const dispose = render(
-          () => (
-            <RepoContext.Provider value={element.repo}>
-              <SyncIndicator handle={handle} />
-            </RepoContext.Provider>
-          ),
-          element
-        );
-        return () => dispose();
-      };
-    },
+    importPath: "./dist/mount.js",
   },
 ];

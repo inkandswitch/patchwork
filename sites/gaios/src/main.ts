@@ -7,6 +7,7 @@ import {
 import {
   ModuleWatcher,
   createFilesystemHandoffHandler,
+  automergeUrlToServiceWorkerUrl,
 } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
 import {
@@ -149,14 +150,14 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
       stringifyAutomergeUrl({ documentId, heads })
     );
     const doc = docHandle.doc();
-    const docType = type || doc?.["@patchwork"]?.type;
+    const docType = type || (doc as any)?.["@patchwork"]?.type;
     if (docType) {
       const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
-      const datatype = await registry.load(docType);
-      if (datatype) {
-        const docTitle = (datatype.module as DatatypeImplementation).getTitle(
-          doc
-        );
+      const datatype = registry.get(docType);
+      if (datatype?.importUrl) {
+        const mod = await import(/* @vite-ignore */ datatype.importUrl);
+        const impl = mod.default as DatatypeImplementation;
+        const docTitle = impl.getTitle(doc);
         if (docTitle) {
           document.title = `${docTitle} | GAIOS`;
         }
@@ -178,11 +179,13 @@ const moduleWatcher = new ModuleWatcher(
     // default tools for gaios
     "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
   ],
-  (name, mod) => {
+  (name, mod, meta) => {
     if (Array.isArray(mod.plugins)) {
-      // TODO: maybe get rid of this check?
       if (isValidAutomergeUrl(name)) {
-        registerPlugins(mod.plugins, name);
+        const baseUrl = automergeUrlToServiceWorkerUrl(
+          name as AutomergeRepo.AutomergeUrl
+        );
+        registerPlugins(mod.plugins, baseUrl, meta);
       }
     }
   }

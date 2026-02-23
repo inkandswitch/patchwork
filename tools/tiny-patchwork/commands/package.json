@@ -11,6 +11,10 @@
     ".": {
       "import": "./dist/main.js",
       "source": "./src/main.tsx"
+    },
+    "./mount": {
+      "import": "./dist/mount.js",
+      "source": "./src/mount.tsx"
     }
   },
   "scripts": {

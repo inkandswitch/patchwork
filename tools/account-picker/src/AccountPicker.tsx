@@ -35,6 +35,8 @@ declare module "solid-js" {
       "patchwork-view": {
         "doc-url"?: string;
         "tool-id"?: string;
+        "tool-url"?: string;
+        id?: string;
         style?: string | JSX.CSSProperties;
       };
     }
@@ -283,7 +285,9 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
 
                 <div class="input-row">
                   <Input
-                    class={accountTokenToLoginStatus() === "valid" ? "valid" : ""}
+                    class={
+                      accountTokenToLoginStatus() === "valid" ? "valid" : ""
+                    }
                     id="accountUrl"
                     value={accountTokenToLogin()}
                     onInput={(e) =>
@@ -310,9 +314,7 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
                   </Show>
                 </div>
 
-                <p class="hint">
-                  To login, paste your account token.
-                </p>
+                <p class="hint">To login, paste your account token.</p>
                 <p class="hint">
                   You can find your token by accessing the account dialog on any
                   device where you are currently logged in.
@@ -387,8 +389,8 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
               into the login screen on the other device.
             </p>
             <p class="hint">
-              Warning: this app has limited security, don't use it for
-              private docs.
+              Warning: this app has limited security, don't use it for private
+              docs.
             </p>
           </form>
 
@@ -454,7 +456,10 @@ async function compressAvatar(
   file: File
 ): Promise<{ content: Uint8Array; mimeType: string } | undefined> {
   const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, AVATAR_MAX_SIZE / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(
+    1,
+    AVATAR_MAX_SIZE / Math.max(bitmap.width, bitmap.height)
+  );
   const width = Math.round(bitmap.width * scale);
   const height = Math.round(bitmap.height * scale);
 

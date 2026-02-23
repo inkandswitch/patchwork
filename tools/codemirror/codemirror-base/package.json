@@ -16,6 +16,10 @@
     "./component": {
       "import": "./dist/lib/codemirror.js",
       "source": "./src/lib/codemirror.tsx"
+    },
+    "./mount": {
+      "import": "./dist/mount.js",
+      "source": "./src/mount.tsx"
     }
   },
   "scripts": {

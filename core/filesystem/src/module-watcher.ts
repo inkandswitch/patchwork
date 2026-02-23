@@ -3,37 +3,58 @@ import {
   type DocHandle,
   type DocumentId,
   isValidAutomergeUrl,
+  parseAutomergeUrl,
+  stringifyAutomergeUrl,
   type Repo,
 } from "@automerge/automerge-repo/slim";
 import { importModuleFromFolderDocUrl } from "./packages.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
 import { FolderDoc } from "./types.js";
 
+export type BranchPointer = {
+  heads: string[];
+};
+
+export type ModuleEntry = {
+  branches: Record<string, BranchPointer>;
+};
+
 export type ModuleSettingsDoc = {
+  modules: Record<AutomergeUrl, ModuleEntry>;
+} & HasPatchworkMetadata & {
+    "@patchwork": { type: "patchwork:module-settings" };
+  };
+
+/** Legacy format: flat array of AutomergeUrls */
+export type LegacyModuleSettingsDoc = {
   modules: AutomergeUrl[];
 } & HasPatchworkMetadata & {
     "@patchwork": { type: "patchwork:module-settings" };
   };
 
-// todo this can be a function that takes a plugin system and returns a change
-// handler
+export type ModuleLoadedMeta = {
+  branch: string;
+  sourceDocUrl: AutomergeUrl;
+  version: string;
+};
 
 /**
- * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
- * It also watches the modules themselves for changes and reloads them when they change.
+ * This class watches moduleSettingsDocs and loads modules based on the contents therein.
+ * Supports both the new branched format (modules as a map with branches) and the
+ * legacy flat array format.
  */
 export class ModuleWatcher {
   repo: Repo;
   urls: AutomergeUrl[];
-  handles: DocHandle<ModuleSettingsDoc>[] | undefined;
+  handles: DocHandle<any>[] | undefined;
   doneLoading: Promise<void>;
 
-  onLoad: (name: string, mod: any) => void;
+  onLoad: (name: string, mod: any, meta?: ModuleLoadedMeta) => void;
 
   constructor(
     repo: Repo,
     urls: AutomergeUrl | AutomergeUrl[],
-    callback: (name: string, mod: any) => void
+    callback: (name: string, mod: any, meta?: ModuleLoadedMeta) => void
   ) {
     this.repo = repo;
     this.urls = Array.isArray(urls) ? urls : [urls];
@@ -44,20 +65,26 @@ export class ModuleWatcher {
   onChange = () => this.load().catch(console.error);
 
   private async init() {
-    this.handles = (
-      await Promise.allSettled(
-        this.urls.map(async (url) => this.repo.find<ModuleSettingsDoc>(url))
-      )
-    )
+    console.log("[ModuleWatcher] init: finding handles for", this.urls);
+    const results = await Promise.allSettled(
+      this.urls.map(async (url) => this.repo.find<any>(url))
+    );
+    this.handles = results
       .filter((result) => {
+        if (result.status === "rejected") {
+          console.warn("[ModuleWatcher] failed to find handle:", result.reason);
+        }
         return result.status == "fulfilled";
       })
       .map((result) => result.value);
+
+    console.log("[ModuleWatcher] found", this.handles.length, "handles");
 
     for (const handle of this.handles) {
       handle.addListener("change", this.onChange);
     }
     await this.load();
+    console.log("[ModuleWatcher] init complete");
   }
 
   async loadModules(modules: string[]) {
@@ -99,20 +126,16 @@ export class ModuleWatcher {
     }
   }
 
-  private async announce(importName: string) {
+  private async announce(importName: string, meta?: ModuleLoadedMeta) {
     const mod = await this.importModuleSafe(importName);
-    mod && this.onLoad(importName, mod);
+    mod && this.onLoad(importName, mod, meta);
   }
 
-  // TODO: This is a bit janky and relies on a bunch of heuristics.
-  // It would be better to watch all the files in the folder recursively
-  // and to have some relationship with those other than just parsing the URL.
   private setDocWatcher(importName: string) {
     const docUrl = isValidAutomergeUrl(importName)
       ? importName
       : (importName.match(/\/automerge\/(\w+)\//)?.[1] as DocumentId);
 
-    // This is probably a built-in, which is fine!
     if (!docUrl) return;
 
     this.repo.find<FolderDoc>(docUrl).then((handle) => {
@@ -131,12 +154,96 @@ export class ModuleWatcher {
     });
   }
 
+  private isLegacyFormat(doc: any): doc is LegacyModuleSettingsDoc {
+    return Array.isArray(doc.modules);
+  }
+
+  private async loadBranchedDoc(doc: ModuleSettingsDoc) {
+    const entries = Object.entries(doc.modules ?? {}) as [
+      AutomergeUrl,
+      ModuleEntry,
+    ][];
+
+    console.log(
+      "[ModuleWatcher] loadBranchedDoc:",
+      entries.length,
+      "packages"
+    );
+
+    await Promise.all(
+      entries.flatMap(([packageUrl, entry]) => {
+        let documentId: ReturnType<typeof parseAutomergeUrl>["documentId"];
+        try {
+          documentId = parseAutomergeUrl(packageUrl).documentId;
+        } catch (e) {
+          console.error(
+            "[ModuleWatcher] failed to parse package URL:",
+            packageUrl,
+            e
+          );
+          return [];
+        }
+        return Object.entries(entry.branches ?? {}).map(
+          async ([branch, pointer]) => {
+            if (!pointer.heads || pointer.heads.length === 0) {
+              console.warn(
+                `[ModuleWatcher] skipping ${packageUrl}@${branch}: no heads`
+              );
+              return;
+            }
+            const versionedUrl = stringifyAutomergeUrl({
+              documentId,
+              heads: pointer.heads as any,
+            });
+            const version = pointer.heads.join(",");
+            const meta: ModuleLoadedMeta = {
+              branch,
+              sourceDocUrl: packageUrl,
+              version,
+            };
+            console.log(
+              `[ModuleWatcher] loading ${packageUrl}@${branch} -> ${versionedUrl.slice(0, 40)}...`
+            );
+            this.setDocWatcher(versionedUrl);
+            await this.announce(versionedUrl, meta).catch((error) => {
+              console.log(
+                new Error(
+                  `Failed to load module ${packageUrl}@${branch}: ${error}`,
+                  { cause: error }
+                )
+              );
+            });
+          }
+        );
+      })
+    );
+  }
+
+  private async loadLegacyDoc(doc: LegacyModuleSettingsDoc) {
+    const { modules = [] } = doc;
+    console.log("[ModuleWatcher] loadLegacyDoc:", modules.length, "modules");
+    return this.loadModules(modules);
+  }
+
   private async load() {
     if (!this.handles) throw new Error("No handles");
     const promises = this.handles.map((handle) => {
       const doc = handle.doc();
-      const { modules = [] } = doc;
-      return this.loadModules(modules);
+      if (!doc?.modules) {
+        console.warn(
+          "[ModuleWatcher] handle has no modules field:",
+          handle.url,
+          "doc keys:",
+          doc ? Object.keys(doc) : "null"
+        );
+        return;
+      }
+      const format = this.isLegacyFormat(doc) ? "legacy" : "branched";
+      console.log(`[ModuleWatcher] loading ${handle.url} (${format})`);
+      if (this.isLegacyFormat(doc)) {
+        return this.loadLegacyDoc(doc);
+      }
+      return this.loadBranchedDoc(doc as ModuleSettingsDoc);
     });
     await Promise.all(promises);
   }

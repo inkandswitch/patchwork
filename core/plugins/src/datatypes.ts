@@ -1,50 +1,59 @@
 import type { DocHandle, Repo } from "@automerge/automerge-repo";
+import type { PluginDescription } from "./registry/types.js";
 import type {
-  LoadablePlugin,
-  LoadedPlugin,
-  PluginDescription,
-} from "./registry/types.js";
-import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
+  HasPatchworkMetadata,
+  ToolSource,
+} from "@inkandswitch/patchwork-filesystem";
 
-// Datatype implementation interface
 export type DatatypeImplementation<D = unknown> = {
   init(doc: D, repo: Repo): void;
   getTitle(doc: D): string;
   setTitle?(doc: D, title: string): void;
 };
 
-// The Datatype description extends the base PluginDescription
 export interface DatatypeDescription extends PluginDescription {
   type: "patchwork:datatype";
   icon: string;
   unlisted?: boolean;
 }
 
-// Loadable Datatype description using the generic LoadablePlugin
-export type Datatype<D = unknown> = LoadablePlugin<
-  DatatypeDescription,
-  DatatypeImplementation<D>
->;
+export type Datatype = DatatypeDescription;
 
-// The complete loaded Datatype using the generic Plugin
-export type LoadedDatatype<D = unknown> = LoadedPlugin<
-  DatatypeDescription,
-  DatatypeImplementation<D>
->;
+/** Import and return a datatype's implementation module */
+async function importDatatypeImpl<D>(
+  datatype: DatatypeDescription
+): Promise<DatatypeImplementation<D>> {
+  if (!datatype.importUrl) {
+    throw new Error(`Datatype "${datatype.id}" has no importUrl`);
+  }
+  const mod = await import(/* @vite-ignore */ datatype.importUrl);
+  return mod.default as DatatypeImplementation<D>;
+}
 
 /** Creates a new document initialized with the given datatype using create2 */
 export const createDocOfDatatype2 = async <D>(
-  datatype: LoadedDatatype<D>,
+  datatype: DatatypeDescription,
   repo: Repo,
   change?: (doc: D) => void
 ): Promise<DocHandle<D & HasPatchworkMetadata>> => {
+  const impl = await importDatatypeImpl<D>(datatype);
   const handle = await repo.create2<D & HasPatchworkMetadata>();
   handle.change((doc) => {
-    datatype.module.init(doc, repo);
-    (doc as any)["@patchwork"] = {
+    impl.init(doc, repo);
+    const metadata: Record<string, any> = {
       type: datatype.id,
       suggestedImportUrl: datatype.importUrl,
     };
+    if (datatype.sourceDocUrl) {
+      const toolSource: ToolSource = {
+        packageUrl: datatype.sourceDocUrl as any,
+      };
+      if (datatype.branch) {
+        toolSource.branch = datatype.branch;
+      }
+      metadata.toolSource = toolSource;
+    }
+    (doc as any)["@patchwork"] = metadata;
     if (change) {
       change(doc);
     }

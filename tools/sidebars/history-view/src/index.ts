@@ -1,7 +1,6 @@
-import { Plugin } from "@inkandswitch/patchwork-plugins";
-import { toolify } from "@inkandswitch/patchwork-react";
+import type { PluginDescription } from "@inkandswitch/patchwork-plugins";
 
-export const plugins: Plugin<any>[] = [
+export const plugins: PluginDescription[] = [
   {
     type: "patchwork:tool",
     id: "history-view",
@@ -9,12 +8,9 @@ export const plugins: Plugin<any>[] = [
     name: "History",
     icon: "History",
     supportedDatatypes: ["account"],
-    async load() {
-      const { renderHistoryView } = await import("./HistoryView");
-      return renderHistoryView;
-    },
+    importPath: "./dist/mount-history-view.js",
     unlisted: true,
-  },
+  } as any,
   {
     type: "patchwork:tool",
     id: "highlight-changes-checkbox",
@@ -22,12 +18,8 @@ export const plugins: Plugin<any>[] = [
     name: "Highlight Changes",
     icon: "Highlighter",
     supportedDatatypes: "*",
-    async load() {
-      const { HighlightChangesOption } =
-        await import("./HighlightChangesCheckbox");
-      return toolify(HighlightChangesOption);
-    },
+    importPath: "./dist/mount-highlight-changes.js",
     unlisted: true,
     forTitleBar: true,
-  },
+  } as any,
 ];

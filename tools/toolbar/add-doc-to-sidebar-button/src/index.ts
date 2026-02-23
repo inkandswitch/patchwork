@@ -1,6 +1,6 @@
-import { Plugin } from "@inkandswitch/patchwork-plugins";
+import type { PluginDescription } from "@inkandswitch/patchwork-plugins";
 
-export const plugins: Plugin<any>[] = [
+export const plugins: PluginDescription[] = [
   {
     type: "patchwork:tool",
     id: "add-doc-to-sidebar-button",
@@ -8,13 +8,8 @@ export const plugins: Plugin<any>[] = [
     name: "Add doc to sidebar button",
     icon: "Plus",
     supportedDatatypes: "*",
-    async load() {
-      const { renderAddDocToSidebarButton } = await import(
-        "./AddDocToSidebarButton.js"
-      );
-      return renderAddDocToSidebarButton;
-    },
+    importPath: "./dist/mount.js",
     unlisted: true,
     forTitleBar: true,
-  },
+  } as any,
 ];

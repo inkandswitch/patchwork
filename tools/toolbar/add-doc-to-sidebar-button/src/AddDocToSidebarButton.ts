@@ -74,20 +74,15 @@ export function renderAddDocToSidebarButton(
   handle.on("change", update);
   update();
 
-  // try to load the datatype async if it wasn't ready yet
-  const doc = handle.doc();
-  if (doc) {
-    const datatypeId = getType(doc);
-    if (datatypeId) {
-      const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
-      registry.load(datatypeId).then(() => update());
-    }
-  }
+  // Listen for registry changes in case datatype loads later
+  const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
+  const unsubscribeRegistry = registry.on("changed", update);
 
   element.appendChild(wrapper);
 
   return () => {
     handle.off("change", update);
     button.removeEventListener("click", onAddDocToSidebar);
+    unsubscribeRegistry();
   };
 }

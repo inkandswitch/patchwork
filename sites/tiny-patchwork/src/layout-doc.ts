@@ -4,7 +4,10 @@ import {
   type HasPatchworkMetadata,
 } from "@inkandswitch/patchwork-filesystem";
 import { AutomergeUrl, isValidAutomergeUrl, Repo } from "@automerge/vanillajs";
-import type { AutomergeRepoKeyhive } from "virtual:patchwork/setup";
+import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
+type AutomergeRepoKeyhive = Awaited<
+  ReturnType<typeof initializeAutomergeRepoKeyhive>
+>;
 
 export type TinyPatchworkLayoutDoc = {
   contactUrl: AutomergeUrl;
@@ -87,7 +90,7 @@ async function createLayoutDoc(
       ModuleSettingsDoc & HasPatchworkMetadata
     >({
       ["@patchwork"]: { type: "patchwork:module-settings" },
-      modules: [],
+      modules: {},
     });
     moduleSettingsUrl = moduleSettingsHandle.url;
   }

@@ -1,9 +1,5 @@
 import type { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-import type {
-  LoadablePlugin,
-  LoadedPlugin,
-  PluginDescription,
-} from "./registry/index.js";
+import type { PluginDescription } from "./registry/index.js";
 import {
   getType,
   type HasPatchworkMetadata,
@@ -17,7 +13,6 @@ type AutomergeRepoKeyhive = Awaited<
 
 export type ToolImplementation<T = unknown> = ToolRender<T>;
 
-// todo(chee): repo and hive on here might be temporary, think about it
 export type ToolElement = HTMLElement & {
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
@@ -28,7 +23,6 @@ export type ToolRender<T = unknown> = (
   element: ToolElement
 ) => () => void;
 
-// todo this will be in the package.json
 export type ToolDescription = PluginDescription & {
   id: string;
   tags?: string[];
@@ -40,63 +34,47 @@ export type ToolDescription = PluginDescription & {
   forTitleBar?: boolean;
 };
 
-export type LoadedTool<T = unknown> = LoadedPlugin<
-  ToolDescription,
-  ToolImplementation<T>
->;
-
-export type Tool<T = unknown> = LoadablePlugin<
-  ToolDescription,
-  ToolImplementation<T>
->;
+export type Tool = ToolDescription;
 
 export type LegacyEditorProps = { docUrl: AutomergeUrl };
 
-export function getSupportedToolsForType(type: string): LoadedTool[] {
-  const plugins = getRegistry<ToolDescription>("patchwork:tool").filter(
-    (desc) => {
-      return (
-        desc.supportedDatatypes?.includes(type) ||
-        desc.supportedDatatypes?.includes("*")
-      );
-    }
-  );
-
-  return plugins as LoadedTool[];
+export function getSupportedToolsForType(type: string): ToolDescription[] {
+  return getRegistry<ToolDescription>("patchwork:tool").filter((desc) => {
+    return (
+      desc.supportedDatatypes?.includes(type) ||
+      desc.supportedDatatypes?.includes("*")
+    );
+  });
 }
 
-export function getSupportedTools(doc: HasPatchworkMetadata): LoadedTool[] {
+export function getSupportedTools(
+  doc: HasPatchworkMetadata
+): ToolDescription[] {
   const type = getType(doc);
   if (!type) return [];
   return getSupportedToolsForType(type);
 }
 
-export function getFallbackTool(doc: HasPatchworkMetadata) {
+export function getFallbackTool(
+  doc: HasPatchworkMetadata
+): ToolDescription | undefined {
   const type = getType(doc)!;
   const plugins = getSupportedTools(doc);
-  return sortPlugins<LoadedTool, ToolDescription, ToolImplementation>(
-    plugins,
-    "supportedDatatypes",
-    type,
-    "id"
-  )?.filter((tool) => !tool.unlisted)?.[0];
+  return sortPlugins(plugins, "supportedDatatypes", type, "id")?.filter(
+    (tool) => !tool.unlisted
+  )?.[0];
 }
 
-const sortPlugins = <
-  T extends LoadedPlugin<D, I>,
-  D extends PluginDescription,
-  I,
->(
-  plugins: T[],
-  matchField: keyof D,
+const sortPlugins = (
+  plugins: ToolDescription[],
+  matchField: keyof ToolDescription,
   matchValue: string,
-  sortField?: keyof D
-): T[] => {
+  sortField?: keyof ToolDescription
+): ToolDescription[] => {
   return [...plugins].sort((a, b) => {
     const aValue = a[matchField];
     const bValue = b[matchField];
 
-    // Convert string values to arrays for consistent comparison
     const aArray = Array.isArray(aValue)
       ? (aValue as string[])
       : [aValue as string];
@@ -109,15 +87,12 @@ const sortPlugins = <
     const aHasMatch = aArray.includes(matchValue);
     const bHasMatch = bArray.includes(matchValue);
 
-    // Specific matches come first
     if (aHasMatch && !bHasMatch) return -1;
     if (!aHasMatch && bHasMatch) return 1;
 
-    // Then wildcard matches come last
     if (aHasWildcard && !bHasWildcard) return 1;
     if (!aHasWildcard && bHasWildcard) return -1;
 
-    // If both are wildcards or both are specific matches, sort by the optional sort field
     if (sortField) {
       const aSort = a[sortField];
       const bSort = b[sortField];

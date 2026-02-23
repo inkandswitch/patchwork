@@ -9,6 +9,7 @@ import {
 import {
   ModuleWatcher,
   createFilesystemHandoffHandler,
+  automergeUrlToServiceWorkerUrl,
 } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
 import {
@@ -137,11 +138,23 @@ if (initialParams.has("frame")) {
 }
 
 const defaultToolsUrl =
-  "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl;
+  "automerge:2AprWUew8LpPGrVTGsX29ANsXEU7" as AutomergeUrl;
 
-function onModuleLoaded(name: string, mod: any) {
+function onModuleLoaded(
+  name: string,
+  mod: any,
+  meta?: { branch: string; sourceDocUrl: AutomergeUrl; version: string }
+) {
+  console.log(
+    "[main] onModuleLoaded:",
+    name.slice(0, 30) + "...",
+    "plugins?",
+    Array.isArray(mod.plugins),
+    meta ? `branch=${meta.branch}` : "(no meta)"
+  );
   if (Array.isArray(mod.plugins)) {
-    registerPlugins(mod.plugins, name);
+    const baseUrl = automergeUrlToServiceWorkerUrl(name as AutomergeUrl);
+    registerPlugins(mod.plugins, baseUrl, meta);
   }
 }
 
@@ -175,14 +188,14 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
       stringifyAutomergeUrl({ documentId, heads })
     );
     const doc = docHandle.doc();
-    const docType = type || doc?.["@patchwork"]?.type;
+    const docType = type || (doc as any)?.["@patchwork"]?.type;
     if (docType) {
       const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
-      const datatype = await registry.load(docType);
-      if (datatype) {
-        const docTitle = (datatype.module as DatatypeImplementation).getTitle(
-          doc
-        );
+      const datatype = registry.get(docType);
+      if (datatype?.importUrl) {
+        const mod = await import(/* @vite-ignore */ datatype.importUrl);
+        const impl = mod.default as DatatypeImplementation;
+        const docTitle = impl.getTitle(doc);
         if (docTitle) {
           document.title = `${docTitle} | patchwork`;
         }

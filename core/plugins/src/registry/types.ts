@@ -1,9 +1,8 @@
 import { DatatypeDescription } from "../datatypes.js";
 import { ToolDescription } from "../tools.js";
 
-export interface PluginRegistryEvents<D extends PluginDescription, I = any> {
-  registered: (plugin: Plugin<D, I>) => void;
-  loaded: (plugin: LoadedPlugin<D, I>) => void;
+export interface PluginRegistryEvents<D extends PluginDescription> {
+  registered: (plugin: D) => void;
   removed: (id: string) => void;
   changed: () => void;
 }
@@ -19,43 +18,28 @@ export type RegistryTypeMap = {
 };
 
 /**
- * Base interface for all plugin descriptions
+ * Base interface for all plugin descriptions.
+ * The registry stores descriptions only. Consumers call import(importUrl)
+ * to load the implementation module when needed.
  */
 export interface PluginDescription {
   id: string;
   type: string;
   name: string;
-  icon?: string; // an icon name from the icon font
+  icon?: string;
+  /** Relative path to the implementation module within the package */
+  importPath?: string;
+  /** Fully resolved URL for import() -- set by registerPlugins */
   importUrl?: string;
+  /** Plain automerge URL of the tool package (no heads) */
+  sourceDocUrl?: string;
+  /** Branch name this version is registered under (e.g. "default", "pvh-dev") */
+  branch?: string;
+  /** Automerge heads string identifying this specific version */
+  version?: string;
 }
 
 /**
- * Generic loadable plugin
- * D = Description type that extends PluginDescription
- * I = Implementation type that will be loaded
+ * Plugin type as stored in the registry -- just the description.
  */
-export type LoadablePlugin<
-  D extends PluginDescription = PluginDescription,
-  I = any,
-> = D & {
-  load: () => Promise<I>;
-};
-
-/**
- * A fully loaded plugin combining description and implementation
- * D = Description type, I = Implementation type
- */
-export type LoadedPlugin<
-  D extends PluginDescription = PluginDescription,
-  I = any,
-> = D & {
-  module: I;
-};
-
-// NOTE: I know i know... this is here so that Plugin<any, any> is PluginDescription and doesn't collapse to 'any'
-type IsAny<T> = 0 extends 1 & T ? true : false;
-
-export type Plugin<D extends PluginDescription = PluginDescription, I = any> =
-  IsAny<D> extends true
-    ? PluginDescription & { [key: string]: any }
-    : LoadedPlugin<D, I> | D;
+export type Plugin<D extends PluginDescription = PluginDescription> = D;
