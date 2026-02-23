@@ -317,3 +317,208 @@ If the first log appears but not the second, the event isn't bubbling to the fra
 
 ### Console logging
 There is extensive `console.log` output prefixed with `[ModuleWatcher]`, `[ToolPicker]`, `[PatchworkFrame]`, and `[main]`. Filter by these prefixes in DevTools to trace the loading and selection flow.
+
+## Migrating a Tool from the Old Format
+
+If you have an existing tool in another repo (e.g. `patchwork-extra`) and want it to work with the new module loading system, you need to update its plugin exports. The key change is: **replace `load()` functions with `importPath` references**.
+
+### The old format (patchwork-extra style)
+
+Old tools use `@patchwork/sdk` types and lazy `load()` functions that do dynamic imports:
+
+```typescript
+// OLD: src/index.ts
+import { type LoadablePlugin } from "@patchwork/sdk";
+
+export const plugins: LoadablePlugin<any>[] = [
+  {
+    type: "patchwork:dataType",    // note: camelCase "dataType"
+    id: "counter",
+    name: "Counter",
+    icon: "CirclePlus",
+    async load() {
+      const { dataType } = await import("./datatype");
+      return dataType;
+    },
+  },
+  {
+    type: "patchwork:tool",
+    id: "counter",
+    name: "Counter",
+    icon: "CirclePlus",
+    supportedDataTypes: ["counter"],  // note: camelCase "DataTypes"
+    async load() {
+      const { Tool } = await import("./tool");
+      return { EditorComponent: Tool };
+    },
+  },
+];
+```
+
+### The new format (patchwork-next style)
+
+New tools export plain description objects with `importPath` instead of `load()`. The actual implementation lives in a separate "mount" file that exports a default function.
+
+**Step 1: Create a `main.ts` (or `main.tsx`) with plugin descriptions**
+
+```typescript
+// NEW: src/main.ts
+export const plugins = [
+  {
+    type: "patchwork:datatype",       // lowercase "datatype"
+    id: "counter",
+    name: "Counter",
+    icon: "CirclePlus",
+    importPath: "./dist/mount-datatype.js",
+  },
+  {
+    type: "patchwork:tool",
+    id: "counter",
+    name: "Counter",
+    icon: "CirclePlus",
+    supportedDatatypes: ["counter"],  // lowercase "Datatypes"
+    importPath: "./dist/mount.js",
+  },
+];
+```
+
+Key differences:
+- **No `load()` function.** Instead, `importPath` is a relative path (from the package root) to the built implementation module.
+- **No SDK import needed.** The descriptions are plain objects.
+- **`type: "patchwork:datatype"`** not `"patchwork:dataType"` (lowercase t).
+- **`supportedDatatypes`** not `supportedDataTypes` (lowercase t).
+- **This file is the package entry point.** It gets loaded first; the `importPath` modules are loaded on demand.
+
+**Step 2: Create a mount file for each tool**
+
+The mount file default-exports a function that receives `(handle, element)` and renders the tool into the element. Return a cleanup function.
+
+For **React** tools, use the `toolify` helper:
+
+```typescript
+// NEW: src/mount.ts
+import { toolify } from "@inkandswitch/patchwork-react";
+import { MyTool } from "./tool";
+export default toolify(MyTool);
+```
+
+`toolify` wraps a React component that accepts `{ docUrl, element }` props (an `EditorProps`-style interface) into a mount function. It handles React rendering and cleanup.
+
+For **Solid** tools:
+
+```typescript
+// NEW: src/mount.tsx
+/** @jsxImportSource solid-js */
+import { render } from "solid-js/web";
+import { MyTool } from "./tool";
+import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
+
+const mount: ToolImplementation<MyDoc> = (handle, element) => {
+  return render(() => <MyTool handle={handle} repo={element.repo} />, element);
+};
+
+export default mount;
+```
+
+For **datatype** mounts, export an object with `init` (and optionally import/export methods):
+
+```typescript
+// NEW: src/mount-datatype.ts
+export default {
+  init(doc: any) {
+    doc.count = 0;
+  },
+};
+```
+
+**Step 3: Update your build to produce the right outputs**
+
+Your build should emit:
+- `dist/main.js` -- the plugin descriptions (entry point)
+- `dist/mount.js` -- the tool implementation
+- `dist/mount-datatype.js` -- the datatype implementation (if applicable)
+
+The `importPath` values in `main.ts` must match these output paths.
+
+If you're using Vite, a config like this works:
+
+```typescript
+// vite.config.ts
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  build: {
+    lib: {
+      entry: {
+        main: "src/main.ts",
+        mount: "src/mount.ts",
+        "mount-datatype": "src/mount-datatype.ts",
+      },
+      formats: ["es"],
+    },
+    rollupOptions: {
+      external: [
+        /^@automerge\//,
+        /^@inkandswitch\//,
+        /^@patchwork\//,
+        "react",
+        "react-dom",
+      ],
+    },
+  },
+});
+```
+
+**Step 4: Update `package.json`**
+
+Make sure the main export points to your built `main.js`:
+
+```json
+{
+  "main": "./dist/main.js",
+  "exports": {
+    ".": {
+      "import": "./dist/main.js",
+      "source": "./src/main.ts"
+    },
+    "./mount": {
+      "import": "./dist/mount.js",
+      "source": "./src/mount.ts"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "push": "pushwork sync"
+  }
+}
+```
+
+**Step 5: Deploy and register**
+
+```bash
+cd my-tool
+pnpm build
+pushwork push .        # pushes built files to the tool's Automerge document
+pushwork url .         # prints the tool's Automerge URL
+
+# Add to a modules document
+patchwork-modules add <modules-doc-url> <tool-url>
+```
+
+### Migration checklist
+
+| Old format | New format |
+|-----------|-----------|
+| `type: "patchwork:dataType"` | `type: "patchwork:datatype"` |
+| `supportedDataTypes: [...]` | `supportedDatatypes: [...]` |
+| `async load() { ... }` | `importPath: "./dist/mount.js"` |
+| `{ EditorComponent: Tool }` | `export default toolify(Tool)` or `export default mount` |
+| `import { LoadablePlugin } from "@patchwork/sdk"` | No import needed (plain objects) |
+| SDK types from `@patchwork/sdk` | Types from `@inkandswitch/patchwork-plugins` (optional) |
+
+### What if my tool uses `@patchwork/sdk` imports at runtime?
+
+The SDK package is being replaced. For the migration:
+- **UI components**: `@patchwork/sdk/ui` components (shadcn) are still available but may need to be sourced differently depending on your build setup.
+- **Hooks**: `useDocument`, `useRepo` come from `@automerge/automerge-repo-react-hooks`. `useCurrentAccountDoc` and other Patchwork-specific hooks come from `@inkandswitch/patchwork-react`.
+- **Types**: `EditorProps` becomes `{ docUrl: AutomergeUrl; element: ToolElement }` passed through `toolify`, or raw `(handle, element)` for the mount function.
