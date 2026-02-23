@@ -130,13 +130,13 @@ const moduleWatcher = new ModuleWatcher(
     // default tools for gaios
     "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
   ],
-  (name, mod) => {
+  (name, mod, meta) => {
     if (Array.isArray(mod.plugins)) {
       if (isValidAutomergeUrl(name)) {
         const baseUrl = automergeUrlToServiceWorkerUrl(
           name as AutomergeRepo.AutomergeUrl
         );
-        registerPlugins(mod.plugins, baseUrl);
+        registerPlugins(mod.plugins, baseUrl, meta);
       }
     }
   }

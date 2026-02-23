@@ -17,6 +17,7 @@ export const DocumentTitle = ({
 
   return (
     <span className="font-semibold whitespace-nowrap h-full flex items-center">
+      <span className="text-purple-500 mr-1">★</span>
       {title ?? "Untitled"}
     </span>
   );

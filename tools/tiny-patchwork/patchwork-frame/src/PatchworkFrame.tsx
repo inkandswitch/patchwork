@@ -10,7 +10,10 @@ import {
   parseAutomergeUrl,
   stringifyAutomergeUrl,
 } from "@automerge/vanillajs";
-import { OpenDocumentEvent } from "@inkandswitch/patchwork-elements";
+import {
+  OpenDocumentEvent,
+  ToolSelectedEvent,
+} from "@inkandswitch/patchwork-elements";
 import { AnnotationSet } from "@inkandswitch/annotations";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
 import { ViewHeads } from "@inkandswitch/annotations-diff";
@@ -285,6 +288,38 @@ export const PatchworkFrame = ({
     };
   }, [changeAccountDoc, element, repo]);
 
+  const mainViewRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const onToolSelected = (event: ToolSelectedEvent) => {
+      console.log("[PatchworkFrame] tool-selected event received:", event.detail);
+      console.log("[PatchworkFrame] mainViewRef.current:", mainViewRef.current);
+      event.stopPropagation();
+      if (event.detail.toolUrl && mainViewRef.current) {
+        console.log("[PatchworkFrame] setting tool-url to:", event.detail.toolUrl);
+        mainViewRef.current.removeAttribute("tool-id");
+        mainViewRef.current.setAttribute("tool-url", event.detail.toolUrl);
+      } else {
+        console.warn("[PatchworkFrame] missing toolUrl or mainViewRef:", {
+          toolUrl: event.detail.toolUrl,
+          hasRef: !!mainViewRef.current,
+        });
+      }
+    };
+
+    element.addEventListener(
+      "patchwork:tool-selected",
+      onToolSelected as EventListener
+    );
+
+    return () => {
+      (element as HTMLElement).removeEventListener(
+        "patchwork:tool-selected",
+        onToolSelected
+      );
+    };
+  }, [element]);
+
   // Add current handle to window
   useEffect(() => {
     (window as any).currentDocHandle = selectedDocRef?.docHandle;
@@ -345,6 +380,7 @@ export const PatchworkFrame = ({
         <div className="w-full flex-1 min-h-0">
           {selectedDocUrl && (
             <patchwork-view
+              ref={mainViewRef}
               doc-url={selectedDocUrl}
               tool-id={selectedView?.toolId}
             />

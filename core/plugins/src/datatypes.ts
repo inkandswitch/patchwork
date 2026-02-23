@@ -1,6 +1,9 @@
 import type { DocHandle, Repo } from "@automerge/automerge-repo";
 import type { PluginDescription } from "./registry/types.js";
-import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
+import type {
+  HasPatchworkMetadata,
+  ToolSource,
+} from "@inkandswitch/patchwork-filesystem";
 
 export type DatatypeImplementation<D = unknown> = {
   init(doc: D, repo: Repo): void;
@@ -37,10 +40,20 @@ export const createDocOfDatatype2 = async <D>(
   const handle = await repo.create2<D & HasPatchworkMetadata>();
   handle.change((doc) => {
     impl.init(doc, repo);
-    (doc as any)["@patchwork"] = {
+    const metadata: Record<string, any> = {
       type: datatype.id,
       suggestedImportUrl: datatype.importUrl,
     };
+    if (datatype.sourceDocUrl) {
+      const toolSource: ToolSource = {
+        packageUrl: datatype.sourceDocUrl as any,
+      };
+      if (datatype.branch) {
+        toolSource.branch = datatype.branch;
+      }
+      metadata.toolSource = toolSource;
+    }
+    (doc as any)["@patchwork"] = metadata;
     if (change) {
       change(doc);
     }

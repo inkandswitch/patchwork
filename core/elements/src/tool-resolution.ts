@@ -5,6 +5,7 @@ import {
 } from "@automerge/automerge-repo";
 import {
   getType,
+  getToolSource,
   type HasPatchworkMetadata,
 } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -19,6 +20,8 @@ export interface ToolOption {
   name: string;
   importUrl: string;
   icon?: string;
+  branch?: string;
+  sourceDocUrl?: string;
 }
 
 export interface ToolResolution {
@@ -33,6 +36,8 @@ function toolToOption(tool: ToolDescription): ToolOption | null {
     name: tool.name,
     importUrl: tool.importUrl,
     icon: tool.icon,
+    branch: tool.branch,
+    sourceDocUrl: tool.sourceDocUrl,
   };
 }
 
@@ -52,9 +57,23 @@ function resolve(
 
   let selectedTool: ToolOption | null = null;
 
+  const toolSource = getToolSource(doc);
+
   if (preferredToolId) {
-    selectedTool =
-      availableTools.find((t) => t.id === preferredToolId) ?? null;
+    if (toolSource?.branch) {
+      const branchVersion = toolRegistry.getBranch(
+        preferredToolId,
+        toolSource.branch
+      );
+      if (branchVersion) {
+        selectedTool = toolToOption(branchVersion);
+      }
+    }
+
+    if (!selectedTool) {
+      selectedTool =
+        availableTools.find((t) => t.id === preferredToolId) ?? null;
+    }
 
     if (!selectedTool) {
       const tool = toolRegistry.get(preferredToolId);
@@ -67,7 +86,18 @@ function resolve(
   if (!selectedTool) {
     const fallback = getFallbackTool(doc);
     if (fallback) {
-      selectedTool = toolToOption(fallback);
+      if (toolSource?.branch) {
+        const branchVersion = toolRegistry.getBranch(
+          fallback.id,
+          toolSource.branch
+        );
+        if (branchVersion) {
+          selectedTool = toolToOption(branchVersion);
+        }
+      }
+      if (!selectedTool) {
+        selectedTool = toolToOption(fallback);
+      }
     }
   }
 

@@ -31,6 +31,12 @@ export interface PluginDescription {
   importPath?: string;
   /** Fully resolved URL for import() -- set by registerPlugins */
   importUrl?: string;
+  /** Plain automerge URL of the tool package (no heads) */
+  sourceDocUrl?: string;
+  /** Branch name this version is registered under (e.g. "default", "pvh-dev") */
+  branch?: string;
+  /** Automerge heads string identifying this specific version */
+  version?: string;
 }
 
 /**

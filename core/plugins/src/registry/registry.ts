@@ -4,13 +4,17 @@ import debug from "debug";
 
 const log = debug("patchwork:plugins");
 
+const DEFAULT_BRANCH = "default";
+
 /**
  * Registry for managing plugins of a specific type.
+ * Supports multiple versions per plugin ID, keyed by branch name.
  * Stores plugin descriptions only -- consumers call import(plugin.importUrl)
  * to load implementations on demand.
  */
 export class PluginRegistry<D extends PluginDescription> {
-  #plugins = new Map<string, D>();
+  /** Outer key: plugin id, inner key: branch name (or "__pinned:<version>" for anonymous) */
+  #plugins = new Map<string, Map<string, D>>();
   #events = new EventEmitter<PluginRegistryEvents<D>>();
 
   register(plugin: D, importUrl?: string) {
@@ -18,30 +22,67 @@ export class PluginRegistry<D extends PluginDescription> {
       plugin.importUrl = importUrl;
     }
 
-    const existing = this.#plugins.get(plugin.id);
+    const branch = plugin.branch ?? DEFAULT_BRANCH;
+    const key = plugin.branch ? branch : this.#pinnedKey(plugin.version);
 
-    if (existing) {
-      if (existing.importUrl == importUrl) {
-        log(`updating ${plugin.id} provided by "${existing.importUrl}"`);
-      } else {
-        console.warn(
-          `overriding "${plugin.id}" provided by "${existing.importUrl}" with new plugin provided by "${importUrl}"`
-        );
-      }
+    let versions = this.#plugins.get(plugin.id);
+    if (!versions) {
+      versions = new Map();
+      this.#plugins.set(plugin.id, versions);
     }
 
-    this.#plugins.set(plugin.id, plugin);
+    const existing = versions.get(key);
+    if (existing) {
+      if (existing.importUrl === plugin.importUrl) {
+        log(`updating ${plugin.id}@${key}`);
+      } else {
+        log(`replacing ${plugin.id}@${key}: "${existing.importUrl}" -> "${plugin.importUrl}"`);
+      }
+    } else {
+      log(`registering ${plugin.id}@${key}`);
+    }
+
+    versions.set(key, plugin);
 
     this.#events.emit("registered", plugin);
     this.#events.emit("changed");
   }
 
+  /** Get the default branch version of a plugin (backward compat) */
   get(id: string): D | undefined {
-    return this.#plugins.get(id);
+    return this.#plugins.get(id)?.get(DEFAULT_BRANCH);
   }
 
+  /** Get a specific branch version */
+  getBranch(id: string, branch: string): D | undefined {
+    return this.#plugins.get(id)?.get(branch);
+  }
+
+  /** Get a pinned version by its heads string */
+  getVersion(id: string, version: string): D | undefined {
+    return this.#plugins.get(id)?.get(this.#pinnedKey(version));
+  }
+
+  /** Get all known versions/branches for a plugin */
+  getVersions(id: string): D[] {
+    const versions = this.#plugins.get(id);
+    if (!versions) return [];
+    return Array.from(versions.values());
+  }
+
+  /** Get all plugins across all IDs (returns the default branch for each) */
   all(): D[] {
-    return Array.from(this.#plugins.values());
+    const result: D[] = [];
+    for (const versions of this.#plugins.values()) {
+      const def = versions.get(DEFAULT_BRANCH);
+      if (def) {
+        result.push(def);
+      } else {
+        const first = versions.values().next().value;
+        if (first) result.push(first);
+      }
+    }
+    return result;
   }
 
   filter(predicate: (plugin: D) => boolean): D[] {
@@ -79,5 +120,9 @@ export class PluginRegistry<D extends PluginDescription> {
     callback: (...args: any[]) => void
   ): void {
     this.#events.off(event, callback);
+  }
+
+  #pinnedKey(version?: string): string {
+    return version ? `__pinned:${version}` : DEFAULT_BRANCH;
   }
 }

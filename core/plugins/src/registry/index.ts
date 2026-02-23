@@ -45,14 +45,27 @@ function migrate(plugin: PluginDescription) {
   }
 }
 
+export type RegisterPluginsOptions = {
+  /** Branch name this set of plugins is registered under */
+  branch?: string;
+  /** Plain automerge URL of the package (no heads) */
+  sourceDocUrl?: string;
+  /** Automerge heads string identifying this version */
+  version?: string;
+};
+
 /**
  * Register plugins. The baseUrl is the service-worker base URL for the package
  * (e.g. "/{encodedAutomergeUrl}/"). Each plugin's importPath is resolved against
  * it to produce a fully-qualified importUrl.
+ *
+ * When options.branch is provided, plugins are registered under that branch.
+ * Otherwise they register under "default".
  */
 export function registerPlugins<D extends PluginDescription>(
   plugins: D[],
-  baseUrl: string
+  baseUrl: string,
+  options?: RegisterPluginsOptions
 ) {
   plugins.forEach((plugin) => {
     if (!plugin.type) {
@@ -67,6 +80,10 @@ export function registerPlugins<D extends PluginDescription>(
         new URL(baseUrl, globalThis.location.origin)
       ).href;
     }
+
+    if (options?.branch !== undefined) plugin.branch = options.branch;
+    if (options?.sourceDocUrl) plugin.sourceDocUrl = options.sourceDocUrl;
+    if (options?.version) plugin.version = options.version;
 
     const registry = getRegistry(plugin.type);
     registry.register(plugin);

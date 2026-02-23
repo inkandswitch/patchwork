@@ -206,7 +206,7 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
   });
 
   return (
-    <div class="w-full h-full overflow-auto bg-base">
+    <div class="w-full h-full overflow-auto" style="background: hotpink !important;">
       <div class="p-4 h-full">
         <div class="flex h-full">
           <div class="relative flex-1 h-full">

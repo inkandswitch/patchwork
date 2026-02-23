@@ -117,12 +117,23 @@ if (initialParams.has("frame")) {
 }
 
 const defaultToolsUrl =
-  "automerge:3SfMF3rEbJHDR31V6BsqBDhREjtr" as AutomergeUrl;
+  "automerge:2AprWUew8LpPGrVTGsX29ANsXEU7" as AutomergeUrl;
 
-function onModuleLoaded(name: string, mod: any) {
+function onModuleLoaded(
+  name: string,
+  mod: any,
+  meta?: { branch: string; sourceDocUrl: AutomergeUrl; version: string }
+) {
+  console.log(
+    "[main] onModuleLoaded:",
+    name.slice(0, 30) + "...",
+    "plugins?",
+    Array.isArray(mod.plugins),
+    meta ? `branch=${meta.branch}` : "(no meta)"
+  );
   if (Array.isArray(mod.plugins)) {
     const baseUrl = automergeUrlToServiceWorkerUrl(name as AutomergeUrl);
-    registerPlugins(mod.plugins, baseUrl);
+    registerPlugins(mod.plugins, baseUrl, meta);
   }
 }
 
