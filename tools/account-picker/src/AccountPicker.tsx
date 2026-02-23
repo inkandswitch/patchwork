@@ -29,15 +29,14 @@ import {
 import { Copy, Eye, EyeOff } from "lucide-react";
 
 
-// Declare the patchwork-view custom element for TypeScript
-// eslint-disable-next-line @typescript-eslint/no-namespace
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
       "patchwork-view": {
         "doc-url"?: string;
         "tool-id"?: string;
+        "tool-url"?: string;
+        id?: string;
         style?: React.CSSProperties;
       };
     }

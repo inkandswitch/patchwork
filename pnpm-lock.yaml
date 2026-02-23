@@ -1849,8 +1849,8 @@ importers:
   tools/sidebars/sideboard:
     dependencies:
       '@automerge/automerge-repo-solid-primitives':
-        specifier: file:./src/automerge-repo-solid-primitives
-        version: file:tools/sidebars/sideboard/src/automerge-repo-solid-primitives(@automerge/automerge@3.2.4)(solid-js@1.9.9)(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
+        specifier: ^2.4.0
+        version: 2.4.0(@automerge/automerge@3.2.4)(solid-js@1.9.9)
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../../core/bootloader
@@ -1923,46 +1923,6 @@ importers:
         version: 0.34.5(solid-js@1.9.9)(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
       typescript:
         specifier: ^5.9.3
-        version: 5.9.3
-
-  tools/stringbox:
-    dependencies:
-      '@automerge/automerge':
-        specifier: 3.2.4
-        version: 3.2.4
-      '@automerge/automerge-repo':
-        specifier: 2.5.2
-        version: 2.5.2
-      '@automerge/automerge-repo-react-hooks':
-        specifier: 'catalog:'
-        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@inkandswitch/patchwork-filesystem':
-        specifier: workspace:^
-        version: link:../../core/filesystem
-      '@inkandswitch/patchwork-plugins':
-        specifier: workspace:^
-        version: link:../../core/plugins
-      react:
-        specifier: ^18.0.0
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.0.0
-        version: 18.3.1(react@18.3.1)
-    devDependencies:
-      '@inkandswitch/patchwork-bootloader':
-        specifier: workspace:^
-        version: link:../../core/bootloader
-      '@node-types/node':
-        specifier: npm:@types/node@^24.9.1
-        version: '@types/node@24.9.1'
-      '@types/react':
-        specifier: ^18.3.23
-        version: 18.3.26
-      esbuild:
-        specifier: ^0.23.1
-        version: 0.23.1
-      typescript:
-        specifier: ^5.8.3
         version: 5.9.3
 
   tools/tiny-patchwork/commands:
@@ -2639,12 +2599,6 @@ packages:
 
   '@automerge/automerge-repo-solid-primitives@2.4.0':
     resolution: {integrity: sha512-Z3sgpqXIukrCca6VG1/KmKGGxvLSauEDfUF/4PmFqn267T0+2zwYDxTClgciMe6JGmpXVq7dh3iH2+Q3kZWPmg==}
-    peerDependencies:
-      '@automerge/automerge': 3.2.4
-      solid-js: ^1.9.4
-
-  '@automerge/automerge-repo-solid-primitives@file:tools/sidebars/sideboard/src/automerge-repo-solid-primitives':
-    resolution: {directory: tools/sidebars/sideboard/src/automerge-repo-solid-primitives, type: directory}
     peerDependencies:
       '@automerge/automerge': 3.2.4
       solid-js: ^1.9.4
@@ -7994,14 +7948,6 @@ snapshots:
     dependencies:
       '@automerge/automerge': 3.2.4
       solid-js: 1.9.9
-
-  '@automerge/automerge-repo-solid-primitives@file:tools/sidebars/sideboard/src/automerge-repo-solid-primitives(@automerge/automerge@3.2.4)(solid-js@1.9.9)(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))':
-    dependencies:
-      '@automerge/automerge': 3.2.4
-      solid-js: 1.9.9
-      vite-plugin-wasm: 3.5.0(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
-    transitivePeerDependencies:
-      - vite
 
   '@automerge/automerge-repo-storage-indexeddb@2.5.2':
     dependencies:

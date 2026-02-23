@@ -13,7 +13,7 @@
     "@inkandswitch/patchwork-plugins": "workspace:^"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/elements.d.ts dist/ && echo '/// <reference path=\"./elements.d.ts\" />' | cat - dist/index.d.ts > dist/index.d.ts.tmp && mv dist/index.d.ts.tmp dist/index.d.ts",
     "dev": "tsc -w --preserveWatchOutput",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

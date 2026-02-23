@@ -3,6 +3,7 @@ import {
   type DocHandle,
   type Repo,
 } from "@automerge/automerge-repo";
+import { watchToolForDocument } from "./tool-resolution.js";
 
 const State = {
   none: "none",
@@ -24,6 +25,7 @@ export interface PatchworkViewElement extends HTMLElement {
   repo: Repo;
   docUrl: AutomergeUrl;
   toolUrl: string;
+  toolId: string;
 }
 
 export function registerPatchworkViewElement(
@@ -39,18 +41,23 @@ export function registerPatchworkViewElement(
 
   const attrs = {
     docUrl: "doc-url",
+    toolId: "tool-id",
     toolUrl: "tool-url",
   };
 
   customElements.define(
     name,
     class PatchworkViewElement extends HTMLElement {
-      // attributes, if these change it's new game +
       #docUrl: AutomergeUrl | null = null;
+      #toolId: string | null = null;
       #toolUrl: string | null = null;
+      #resolvedToolUrl: string | null = null;
       #state: State = State.none;
       #handle: DocHandle<unknown> | null = null;
       #mount: any;
+      #stopWatching: (() => void) | null = null;
+      #initGeneration = 0;
+      #reinitQueued = false;
 
       get docUrl() {
         return this.#docUrl;
@@ -65,6 +72,22 @@ export function registerPatchworkViewElement(
           this.setAttribute(attrs.docUrl, url);
         } else {
           this.removeAttribute(attrs.docUrl);
+        }
+      }
+
+      get toolId() {
+        return this.#toolId;
+      }
+
+      set toolId(id: string | null) {
+        if (this.#toolId === id) return;
+        this.#toolId = id;
+        const attr = this.getAttribute(attrs.toolId);
+        if (attr == id) return;
+        if (id) {
+          this.setAttribute(attrs.toolId, id);
+        } else {
+          this.removeAttribute(attrs.toolId);
         }
       }
 
@@ -84,13 +107,19 @@ export function registerPatchworkViewElement(
         }
       }
 
+      get effectiveToolUrl(): string | null {
+        return this.#toolUrl ?? this.#resolvedToolUrl;
+      }
+
       static get observedAttributes() {
-        return [attrs.docUrl, attrs.toolUrl];
+        return [attrs.docUrl, attrs.toolId, attrs.toolUrl];
       }
 
       connectedCallback() {
-        this.docUrl = this.getAttribute(attrs.docUrl) as AutomergeUrl;
-        this.toolUrl = this.getAttribute(attrs.toolUrl);
+        this.#docUrl = this.getAttribute(attrs.docUrl) as AutomergeUrl;
+        this.#toolId = this.getAttribute(attrs.toolId);
+        this.#toolUrl = this.getAttribute(attrs.toolUrl);
+        console.log(`[patchwork-view] connectedCallback`, { docUrl: this.#docUrl, toolId: this.#toolId, toolUrl: this.#toolUrl });
         this.#init();
       }
 
@@ -98,43 +127,92 @@ export function registerPatchworkViewElement(
         this.#teardown();
       }
 
-      // When defined, this is called instead of connectedCallback() and disconnectedCallback()
-      // each time the element is moved to a different place in the DOM via Element.moveBefore()
       connectedMoveCallback() {}
 
-      attributeChangedCallback(name: string, _: string, val: string | null) {
+      attributeChangedCallback(name: string, old: string, val: string | null) {
+        console.log(`[patchwork-view] attributeChangedCallback`, { name, old, val });
         if (name === attrs.docUrl) {
-          this.docUrl = val as AutomergeUrl;
-          this.#teardown().then(() => this.#init());
+          this.#docUrl = val as AutomergeUrl;
+        } else if (name === attrs.toolId) {
+          this.#toolId = val;
+        } else if (name === attrs.toolUrl) {
+          this.#toolUrl = val;
         }
+        this.#scheduleReinit();
+      }
 
-        if (name === attrs.toolUrl) {
-          this.toolUrl = val;
+      // Coalesce multiple synchronous attribute changes into one teardown+init cycle
+      #scheduleReinit() {
+        if (this.#reinitQueued) return;
+        this.#reinitQueued = true;
+        queueMicrotask(() => {
+          this.#reinitQueued = false;
           this.#teardown().then(() => this.#init());
-        }
+        });
       }
 
       #init = async () => {
-        if (!this.docUrl) {
+        console.log(`[patchwork-view] #init`, { docUrl: this.#docUrl, toolId: this.#toolId, toolUrl: this.#toolUrl });
+        if (!this.#docUrl) {
+          console.log(`[patchwork-view] #init: no docUrl, returning`);
           return;
         }
 
+        const generation = ++this.#initGeneration;
         this.#state = State.initializing;
-        this.#handle = await repo.find<unknown>(this.docUrl);
+        console.log(`[patchwork-view] #init: finding doc`, this.#docUrl, `gen=${generation}`);
+        this.#handle = await repo.find<unknown>(this.#docUrl);
+        console.log(`[patchwork-view] #init: doc found`, `gen=${generation}`, `current=${this.#initGeneration}`);
 
-        // if toolUrl is set, load the tool from the import URL
-        if (this.#toolUrl) {
-          const { mount } = await import(this.#toolUrl);
-          this.#mount = mount;
+        if (generation !== this.#initGeneration) {
+          console.log(`[patchwork-view] #init: stale generation, bailing`);
+          return;
         }
 
-        this.#queueRender();
+        if (this.#toolUrl) {
+          console.log(`[patchwork-view] #init: explicit toolUrl, loading`, this.#toolUrl);
+          await this.#loadToolFromUrl(this.#toolUrl);
+          if (generation !== this.#initGeneration) return;
+          this.#queueRender();
+        } else {
+          console.log(`[patchwork-view] #init: starting watchToolForDocument`, { docUrl: this.#docUrl, toolId: this.#toolId });
+          this.#stopWatching = watchToolForDocument(
+            repo,
+            this.#docUrl,
+            { toolId: this.#toolId },
+            (resolution) => {
+              console.log(`[patchwork-view] watchToolForDocument callback`, { gen: generation, current: this.#initGeneration, selectedTool: resolution.selectedTool?.id, toolUrl: resolution.selectedTool?.toolUrl, availableCount: resolution.availableTools.length });
+              if (generation !== this.#initGeneration) return;
+              const tool = resolution.selectedTool;
+              const newUrl = tool?.toolUrl ?? null;
+              if (newUrl === this.#resolvedToolUrl) return;
+              this.#resolvedToolUrl = newUrl;
+              if (tool) {
+                console.log(`[patchwork-view] tool resolved from registry`, tool.id);
+                this.#mount = tool.mount;
+                this.#queueRender();
+              } else {
+                console.log(`[patchwork-view] no tool resolved yet`);
+              }
+            }
+          );
+        }
       };
+
+      async #loadToolFromUrl(url: string) {
+        const { mount } = await import(url);
+        this.#mount = mount;
+      }
 
       #teardowns = new Set<() => unknown | Promise<void>>();
 
       async #teardown() {
+        console.log(`[patchwork-view] #teardown`, { state: this.#state });
         if (this.#state == State.none) return;
+
+        this.#stopWatching?.();
+        this.#stopWatching = null;
+        this.#resolvedToolUrl = null;
 
         for (const fn of this.#teardowns) {
           await fn?.();
@@ -154,6 +232,7 @@ export function registerPatchworkViewElement(
       }
 
       #render() {
+        console.log(`[patchwork-view] #render`, { state: this.#state, docUrl: this.#docUrl, effectiveToolUrl: this.effectiveToolUrl, hasMount: !!this.#mount });
         if (this.#state != State.rendering) return;
 
         if (!this.docUrl) {
@@ -161,7 +240,7 @@ export function registerPatchworkViewElement(
           this.#displayError(`I need a doc URL to open.`);
           return;
         }
-        if (!this.toolUrl) {
+        if (!this.effectiveToolUrl) {
           this.#state = State.unable;
           this.#displayError(`I need a tool URL to open ${this.#docUrl}.`);
           return;
@@ -184,8 +263,6 @@ export function registerPatchworkViewElement(
         div.style.display = "flex";
         div.style.alignItems = "center";
         div.style.justifyContent = "center";
-        // TODO: no, don't do this.
-        // wait a second then face in over half a second
         div.style.transition = "opacity 2s linear 2s";
         div.style.opacity = "0";
         div.innerHTML = /* html */ `

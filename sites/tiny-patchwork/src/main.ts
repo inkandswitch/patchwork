@@ -119,6 +119,7 @@ const defaultToolsUrl =
   "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl;
 
 function onModuleLoaded(name: string, mod: any) {
+  console.log(`[main] onModuleLoaded`, name, { hasPlugins: Array.isArray(mod.plugins), pluginCount: mod.plugins?.length, keys: Object.keys(mod) });
   if (Array.isArray(mod.plugins)) {
     registerPlugins(mod.plugins, name);
   }

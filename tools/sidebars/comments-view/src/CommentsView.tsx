@@ -1,4 +1,5 @@
 import "./styles.css";
+import "@inkandswitch/patchwork-elements";
 import { useState, useEffect, useMemo } from "react";
 
 import { relativeTime } from "@patchwork/util/src/relative-time";
