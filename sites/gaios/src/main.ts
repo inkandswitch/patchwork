@@ -2,6 +2,7 @@ import "./global.css";
 
 import {
   registerPatchworkViewElement,
+  registerPatchworkToolPickerElement,
   openDocument,
 } from "@inkandswitch/patchwork-elements";
 import {
@@ -99,6 +100,7 @@ const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 window.accountDocHandle = accountDocHandle;
 
 registerPatchworkViewElement({ repo });
+registerPatchworkToolPickerElement({ repo });
 
 const rootElement = document.getElementById("root")!;
 

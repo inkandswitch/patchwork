@@ -1,23 +1,11 @@
 import "./styles.css";
 import { AutomergeUrl } from "@automerge/automerge-repo";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import {
-  getType,
-  HasPatchworkMetadata,
-  getToolSource,
-} from "@inkandswitch/patchwork-filesystem";
 import {
   ToolElement,
   ToolDescription,
-  getRegistry,
-  getSupportedToolsForType,
 } from "@inkandswitch/patchwork-plugins";
-import { useToolDescriptions } from "@inkandswitch/patchwork-react";
-import {
-  openDocument,
-  ToolSelectedEvent,
-} from "@inkandswitch/patchwork-elements";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import type { PatchworkToolPickerElement } from "@inkandswitch/patchwork-elements";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export const ToolPicker = ({
   docUrl,
@@ -26,96 +14,87 @@ export const ToolPicker = ({
   docUrl: AutomergeUrl;
   element: ToolElement;
 }) => {
-  const [doc] = useDocument<HasPatchworkMetadata>(docUrl);
-  const allTools = useToolDescriptions();
-
-  const docType = doc ? getType(doc) : undefined;
-  const toolSource = doc ? getToolSource(doc) : undefined;
-
-  const supportedTools = useMemo(() => {
-    if (!docType) return [];
-    return getSupportedToolsForType(docType).filter((t) => !t.unlisted);
-  }, [docType, allTools]);
-
-  const toolRegistry = useMemo(
-    () => getRegistry<ToolDescription>("patchwork:tool"),
-    []
-  );
-
+  const pickerRef = useRef<PatchworkToolPickerElement | null>(null);
+  const [availableTools, setAvailableTools] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string>("default");
+  const [branches, setBranches] = useState<ToolDescription[]>([]);
 
   useEffect(() => {
-    if (!selectedToolId && supportedTools.length > 0) {
-      setSelectedToolId(supportedTools[0].id);
-    }
-  }, [supportedTools, selectedToolId]);
+    const picker = document.createElement(
+      "patchwork-tool-picker"
+    ) as PatchworkToolPickerElement;
+    picker.setAttribute("doc-url", docUrl);
+    picker.style.display = "none";
+    element.appendChild(picker);
+    pickerRef.current = picker;
 
-  const branches = useMemo(() => {
-    if (!selectedToolId) return [];
-    return toolRegistry.getVersions(selectedToolId).filter((v) => v.branch);
-  }, [selectedToolId, allTools]);
+    const syncState = () => {
+      const tools = picker.availableTools ?? [];
+      const selected = picker.selectedTool;
+      setAvailableTools(tools.map((t) => ({ id: t.id, name: t.name })));
+      setSelectedToolId(selected?.id ?? null);
+      setSelectedBranch(selected?.branch ?? "default");
+      if (selected) {
+        setBranches(picker.getBranchesForTool(selected.id));
+      }
+    };
+
+    picker.addEventListener("patchwork:tool-selected", syncState);
+    syncState();
+
+    return () => {
+      picker.removeEventListener("patchwork:tool-selected", syncState);
+      picker.remove();
+      pickerRef.current = null;
+    };
+  }, [docUrl, element]);
 
   const handleToolChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const toolId = e.target.value;
-      setSelectedToolId(toolId);
-      setSelectedBranch("default");
-      openDocument(element, docUrl, toolId);
+      pickerRef.current?.selectTool(e.target.value);
     },
-    [element, docUrl]
+    []
   );
 
   const handleBranchChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const branch = e.target.value;
       if (!selectedToolId) return;
-      const branchVersion = toolRegistry.getBranch(selectedToolId, branch);
-      if (!branchVersion?.importUrl) return;
-
-      setSelectedBranch(branch);
-
-      console.log("[ToolPicker] dispatching tool-selected:", {
-        branch,
-        toolId: branchVersion.id,
-        toolUrl: branchVersion.importUrl?.slice(0, 60) + "...",
-      });
-      element.dispatchEvent(
-        new ToolSelectedEvent({
-          toolUrl: branchVersion.importUrl,
-          toolId: branchVersion.id,
-        })
-      );
+      pickerRef.current?.selectTool(selectedToolId, e.target.value);
     },
-    [element, docUrl, selectedToolId, toolRegistry]
+    [selectedToolId]
   );
 
-  if (supportedTools.length <= 1 && branches.length <= 1) {
+  const filteredBranches = branches.filter((v) => v.branch);
+
+  if (availableTools.length <= 1 && filteredBranches.length <= 1) {
     return null;
   }
 
   return (
     <div className="flex items-center gap-1 h-full">
-      {supportedTools.length > 1 && (
+      {availableTools.length > 1 && (
         <select
           className="select select-xs select-bordered h-6 min-h-0"
           value={selectedToolId ?? ""}
           onChange={handleToolChange}
         >
-          {supportedTools.map((tool) => (
+          {availableTools.map((tool) => (
             <option key={tool.id} value={tool.id}>
               {tool.name}
             </option>
           ))}
         </select>
       )}
-      {branches.length > 1 && (
+      {filteredBranches.length > 1 && (
         <select
           className="select select-xs select-bordered h-6 min-h-0 text-xs opacity-70"
           value={selectedBranch}
           onChange={handleBranchChange}
         >
-          {branches.map((b) => (
+          {filteredBranches.map((b) => (
             <option key={b.branch} value={b.branch}>
               {b.branch}
             </option>

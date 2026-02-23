@@ -12,15 +12,22 @@ import {
 
 export interface RegisterPatchworkToolPickerElementParams {
   name?: string;
-  viewName?: string;
   repo: Repo;
+}
+
+export interface PatchworkToolPickerElement extends HTMLElement {
+  docUrl: AutomergeUrl | null;
+  toolId: string | null;
+  readonly selectedTool: ToolOption | null;
+  readonly availableTools: ToolOption[];
+  selectTool(toolId: string, branch?: string): void;
+  getBranchesForTool(toolId: string): ToolDescription[];
 }
 
 export function registerPatchworkToolPickerElement(
   params: RegisterPatchworkToolPickerElementParams
 ) {
   const name = params.name ?? "patchwork-tool-picker";
-  const viewName = params.viewName ?? "patchwork-view";
   const repo = params.repo;
 
   if (customElements.get(name)) {
@@ -31,8 +38,6 @@ export function registerPatchworkToolPickerElement(
   const attrs = {
     docUrl: "doc-url",
     toolId: "tool-id",
-    for: "for",
-    headless: "headless",
   };
 
   customElements.define(
@@ -45,12 +50,6 @@ export function registerPatchworkToolPickerElement(
         availableTools: [],
       };
       #stopWatching: (() => void) | null = null;
-      #shadow: ShadowRoot;
-
-      constructor() {
-        super();
-        this.#shadow = this.attachShadow({ mode: "open" });
-      }
 
       get docUrl() {
         return this.#docUrl;
@@ -89,7 +88,7 @@ export function registerPatchworkToolPickerElement(
       }
 
       static get observedAttributes() {
-        return [attrs.docUrl, attrs.toolId, attrs.for, attrs.headless];
+        return [attrs.docUrl, attrs.toolId];
       }
 
       connectedCallback() {
@@ -116,8 +115,6 @@ export function registerPatchworkToolPickerElement(
         } else if (attrName === attrs.toolId) {
           this.#toolId = val;
           this.#restart();
-        } else if (attrName === attrs.headless) {
-          this.#renderUI();
         }
       }
 
@@ -136,41 +133,14 @@ export function registerPatchworkToolPickerElement(
           { toolId: this.#toolId },
           (resolution) => {
             this.#resolution = resolution;
-            this.#onResolutionChanged();
+            this.dispatchEvent(
+              new ToolSelectedEvent({
+                toolUrl: resolution.selectedTool?.importUrl ?? null,
+                toolId: resolution.selectedTool?.id ?? null,
+              })
+            );
           }
         );
-      }
-
-      #onResolutionChanged() {
-        this.#renderUI();
-        this.#updateTargetView();
-
-        this.dispatchEvent(
-          new ToolSelectedEvent({
-            toolUrl: this.#resolution.selectedTool?.importUrl ?? null,
-            toolId: this.#resolution.selectedTool?.id ?? null,
-          })
-        );
-      }
-
-      #updateTargetView() {
-        const view = this.#findTargetView();
-        if (!view || !this.#resolution.selectedTool) return;
-        view.setAttribute("tool-url", this.#resolution.selectedTool.importUrl);
-        if (this.#docUrl && !view.getAttribute("doc-url")) {
-          view.setAttribute("doc-url", this.#docUrl);
-        }
-      }
-
-      #findTargetView(): Element | null {
-        const forAttr = this.getAttribute(attrs.for);
-        if (forAttr) {
-          const root = this.getRootNode() as Document | ShadowRoot;
-          return root.querySelector(forAttr);
-        }
-        const sibling = this.parentElement?.querySelector(viewName);
-        if (sibling && sibling !== this) return sibling;
-        return this.querySelector(viewName);
       }
 
       selectTool(toolId: string, branch?: string) {
@@ -199,100 +169,17 @@ export function registerPatchworkToolPickerElement(
 
         if (!tool) return;
         this.#resolution = { ...this.#resolution, selectedTool: tool };
-        this.#onResolutionChanged();
+        this.dispatchEvent(
+          new ToolSelectedEvent({
+            toolUrl: tool.importUrl,
+            toolId: tool.id,
+          })
+        );
       }
 
-      /** Get branches available for a tool */
-      #getBranchesForTool(toolId: string): ToolDescription[] {
+      getBranchesForTool(toolId: string): ToolDescription[] {
         const toolRegistry = getRegistry<ToolDescription>("patchwork:tool");
         return toolRegistry.getVersions(toolId);
-      }
-
-      #renderUI() {
-        if (this.hasAttribute(attrs.headless)) {
-          this.#shadow.innerHTML = "";
-          return;
-        }
-
-        const { selectedTool, availableTools } = this.#resolution;
-
-        if (availableTools.length <= 1) {
-          const selectedBranches = selectedTool
-            ? this.#getBranchesForTool(selectedTool.id)
-            : [];
-          if (selectedBranches.length <= 1) {
-            this.#shadow.innerHTML = "";
-            return;
-          }
-        }
-
-        const toolOptions = availableTools
-          .map(
-            (t) =>
-              `<option value="${t.id}"${t.id === selectedTool?.id ? " selected" : ""}>${t.name}</option>`
-          )
-          .join("");
-
-        const branches = selectedTool
-          ? this.#getBranchesForTool(selectedTool.id)
-          : [];
-        const showBranches = branches.length > 1;
-
-        const branchOptions = showBranches
-          ? branches
-              .map((b) => {
-                const branchName = b.branch ?? "default";
-                const isSelected = branchName === (selectedTool?.branch ?? "default");
-                return `<option value="${branchName}"${isSelected ? " selected" : ""}>${branchName}</option>`;
-              })
-              .join("")
-          : "";
-
-        this.#shadow.innerHTML = /* html */ `
-          <style>
-            :host {
-              display: inline-flex;
-              align-items: center;
-              gap: 4px;
-            }
-            select {
-              font: inherit;
-              border: 1px solid #ccc;
-              border-radius: 4px;
-              padding: 2px 6px;
-              background: #fff;
-              cursor: pointer;
-            }
-            select:hover {
-              border-color: #999;
-            }
-            .branch-select {
-              font-size: 0.85em;
-              color: #666;
-            }
-          </style>
-          <select part="select" data-role="tool">${toolOptions}</select>
-          ${showBranches ? `<select part="branch-select" class="branch-select" data-role="branch">${branchOptions}</select>` : ""}
-        `;
-
-        this.#shadow
-          .querySelector('select[data-role="tool"]')!
-          .addEventListener("change", (e) => {
-            const select = e.target as HTMLSelectElement;
-            this.selectTool(select.value);
-          });
-
-        const branchSelect = this.#shadow.querySelector(
-          'select[data-role="branch"]'
-        );
-        if (branchSelect) {
-          branchSelect.addEventListener("change", (e) => {
-            const select = e.target as HTMLSelectElement;
-            if (selectedTool) {
-              this.selectTool(selectedTool.id, select.value);
-            }
-          });
-        }
       }
     }
   );

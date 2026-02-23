@@ -20,8 +20,6 @@ declare module "react" {
       > & {
         "doc-url": string;
         "tool-id"?: string | null;
-        for?: string;
-        headless?: boolean;
         class?: string;
       };
     }
@@ -41,8 +39,6 @@ declare module "solid-js" {
       "patchwork-tool-picker": {
         "doc-url": string;
         "tool-id"?: string;
-        for?: string;
-        headless?: boolean;
       };
     }
   }
@@ -67,8 +63,6 @@ declare namespace JSX {
     > & {
       "doc-url": string;
       "tool-id"?: string | null;
-      for?: string;
-      headless?: boolean;
       class?: string;
     };
   }
