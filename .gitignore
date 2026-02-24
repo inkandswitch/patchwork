@@ -10,4 +10,5 @@ sites/*/dist/
 dummy-non-existing-folder/
 **/.pnpm-store/
 .claude/
+.darn/
 .pushwork/

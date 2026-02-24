@@ -4,9 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/main.js",
-  "pushwork": {
-    "url": "automerge:b5LT7iW7jjznmRdFiPmCz2vbx7H"
-  },
   "exports": {
     ".": {
       "import": "./dist/main.js",
@@ -20,7 +17,8 @@
   "scripts": {
     "build": "node esbuild/build.ts",
     "dev": "node esbuild/watch.ts",
-    "pushwatch": "pnpm dev pushwork"
+    "sync": "pnpm build && darn sync --force",
+    "watch:sync": "pnpm dev darn"
   },
   "dependencies": {
     "@automerge/automerge-repo-react-hooks": "catalog:",
@@ -44,5 +42,8 @@
     "globals": "^16.4.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0"
+  },
+  "darn": {
+    "url": "automerge:b5LT7iW7jjznmRdFiPmCz2vbx7H"
   }
 }

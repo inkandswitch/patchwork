@@ -25,7 +25,8 @@
   "scripts": {
     "build": "node esbuild/build.ts",
     "dev": "node esbuild/watch.ts",
-    "pushwatch": "pnpm dev pushwork"
+    "sync": "pnpm build && darn sync --force",
+    "watch:sync": "pnpm dev darn"
   },
   "dependencies": {
     "@automerge/automerge-codemirror": "^0.2.0",
@@ -60,5 +61,6 @@
     "globals": "^16.4.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0"
-  }
+  },
+  "darn": null
 }

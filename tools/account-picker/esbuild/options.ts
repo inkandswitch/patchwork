@@ -3,10 +3,10 @@ import externals from "@inkandswitch/patchwork-bootloader/externals";
 import process from "node:process";
 import { existsSync, rmSync } from "node:fs";
 import { solid } from "./plugin-solid.ts";
-import pushworkSync from "./plugin-pushwork-sync.ts";
+import darnSync from "./plugin-darn-sync.ts";
 import pkgJSON from "../package.json" with { type: "json" };
 
-const pushworking = process.argv.includes("pushwork") || process.env.PUSHWORK;
+const syncing = process.argv.includes("darn") || process.env.DARN_SYNC;
 
 export default {
   entryPoints: Object.values(pkgJSON.exports)
@@ -31,7 +31,7 @@ export default {
         });
       },
     } satisfies Plugin,
-  ].concat(pushworking ? [pushworkSync()] : []),
+  ].concat(syncing ? [darnSync()] : []),
   loader: { ".ttf": "dataurl" },
   conditions: ["style", "browser", "import"],
 } satisfies BuildOptions;

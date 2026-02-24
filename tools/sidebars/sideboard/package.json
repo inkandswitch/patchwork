@@ -4,9 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/index.js",
-  "pushwork": {
-    "url": "automerge:kFcrzeDmr5zXE1jShvxUPsoToAN"
-  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -31,7 +28,8 @@
   "scripts": {
     "build": "node esbuild/build.ts",
     "dev": "node esbuild/watch.ts",
-    "pushwatch": "pnpm dev pushwork"
+    "sync": "pnpm build && darn sync --force",
+    "watch:sync": "pnpm dev darn"
   },
   "dependencies": {
     "@automerge/automerge-repo-solid-primitives": "2.5.2",
@@ -64,5 +62,8 @@
   },
   "volta": {
     "node": "22.21.0"
+  },
+  "darn": {
+    "url": "automerge:kFcrzeDmr5zXE1jShvxUPsoToAN"
   }
 }

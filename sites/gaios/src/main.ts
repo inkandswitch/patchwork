@@ -177,7 +177,7 @@ const moduleWatcher = new ModuleWatcher(
   [
     accountDocHandle.doc().moduleSettingsUrl,
     // default tools for gaios
-    "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
+    "automerge:2u4x5b6JdSMDkyyMrQRzb8dreHhL" as AutomergeRepo.AutomergeUrl,
   ],
   (name, mod, meta) => {
     if (Array.isArray(mod.plugins)) {

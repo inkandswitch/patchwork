@@ -3,9 +3,6 @@
   "type": "module",
   "private": true,
   "main": "./dist/tool.js",
-  "pushwork": {
-    "url": "automerge:4LpZgiCvBmUrqhoEK7fspCkp5jgh"
-  },
   "exports": {
     ".": {
       "import": "./dist/tool.js",
@@ -20,7 +17,8 @@
   "scripts": {
     "build": "node esbuild/build.ts",
     "dev": "node esbuild/watch.ts",
-    "pushwatch": "pnpm dev pushwork"
+    "sync": "pnpm build && darn sync --force",
+    "watch:sync": "pnpm dev darn"
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
@@ -40,5 +38,8 @@
     "babel-preset-solid": "^1.9.9",
     "esbuild": "^0.23.1",
     "typescript": "^5.8.3"
+  },
+  "darn": {
+    "url": "automerge:4LpZgiCvBmUrqhoEK7fspCkp5jgh"
   }
 }

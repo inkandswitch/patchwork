@@ -65,9 +65,17 @@ self.onerror = (event, source, lineno, colno, error) => {
 };
 
 self.onunhandledrejection = (event) => {
+  const reason = event.reason;
   log("error", [
     "[automerge worker: UNHANDLED REJECTION]",
-    String(event.reason),
+    {
+      string: String(reason),
+      message: reason?.message || "(no message)",
+      name: reason?.name || "(no name)",
+      constructor: reason?.constructor?.name || "(no constructor)",
+      stack: reason?.stack || "(no stack)",
+      keys: reason ? Object.keys(reason) : [],
+    },
   ]);
 };
 
@@ -85,11 +93,11 @@ const repoPromise = (async () => {
   const { SubductionStorageBridge, initSubductionModule } =
     await import("@automerge/automerge-repo-subduction-bridge");
   const subductionModule = await import("@automerge/automerge_subduction");
-  const initSubduction = subductionModule.default;
   const { Subduction, SubductionWebSocket, WebCryptoSigner } = subductionModule;
 
-  // Initialize Subduction Wasm module and register with lazy loaders
-  await initSubduction();
+  // Initialize Subduction Wasm module (default export is the init function)
+  // @ts-expect-error - default is the wasm init function
+  await subductionModule.default();
   initSubductionModule(subductionModule);
   console.log("[automerge worker: INIT] Subduction Wasm initialized");
 

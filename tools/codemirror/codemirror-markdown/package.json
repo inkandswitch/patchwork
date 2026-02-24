@@ -4,9 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/main.js",
-  "pushwork": {
-    "url": "automerge:dhkuYMpSttbRJPBJ7J5XST28bu7"
-  },
   "exports": {
     ".": {
       "import": "./dist/main.js",
@@ -40,7 +37,8 @@
   "scripts": {
     "build": "node esbuild/build.ts",
     "dev": "node esbuild/watch.ts",
-    "pushwatch": "pnpm dev pushwork"
+    "sync": "pnpm build && darn sync --force",
+    "watch:sync": "pnpm dev darn"
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
@@ -67,5 +65,8 @@
     "globals": "^16.4.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0"
+  },
+  "darn": {
+    "url": "automerge:dhkuYMpSttbRJPBJ7J5XST28bu7"
   }
 }

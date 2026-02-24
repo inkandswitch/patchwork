@@ -138,7 +138,7 @@ if (initialParams.has("frame")) {
 }
 
 const defaultToolsUrl =
-  "automerge:2AprWUew8LpPGrVTGsX29ANsXEU7" as AutomergeUrl;
+  "automerge:2u4x5b6JdSMDkyyMrQRzb8dreHhL" as AutomergeUrl;
 
 function onModuleLoaded(
   name: string,
