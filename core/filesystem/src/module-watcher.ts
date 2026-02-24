@@ -98,6 +98,7 @@ export class ModuleWatcher {
     );
   }
 
+  /** Load the package at doc's suggestedImportUrl (expected to be a package/folder URL so the loaded module has plugins). */
   async loadSuggestedImportUrl(docUrl: AutomergeUrl) {
     const handle = await this.repo.find<Partial<HasPatchworkMetadata>>(docUrl);
     const doc = handle.doc();

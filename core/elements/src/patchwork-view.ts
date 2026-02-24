@@ -4,6 +4,7 @@ import {
   type Repo,
 } from "@automerge/automerge-repo";
 import { watchToolForDocument } from "./tool-resolution.js";
+import { NoToolEvent } from "./events.js";
 
 const State = {
   none: "none",
@@ -179,8 +180,8 @@ export function registerPatchworkViewElement(
               if (tool) {
                 await this.#loadToolFromUrl(tool.importUrl);
                 if (generation !== this.#initGeneration) return;
-                this.#queueRender();
               }
+              this.#queueRender();
             }
           );
         }
@@ -228,6 +229,7 @@ export function registerPatchworkViewElement(
         if (!this.effectiveToolUrl) {
           this.#state = State.unable;
           this.#displayError(`I need a tool URL to open ${this.#docUrl}.`);
+          this.dispatchEvent(new NoToolEvent({ url: this.#docUrl }));
           return;
         }
 
