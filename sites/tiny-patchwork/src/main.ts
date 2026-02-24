@@ -158,26 +158,9 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
   window.location.hash = params.toString();
 });
 
-let firstMount = true;
-rootElement.addEventListener("patchwork:mounted", (event) => {
-  handleHashChange();
-  console.info(`tool mounted`, event.detail.toolId);
-  if (event.target != rootElement) return;
-  console.info(`root element mounted`);
-  if (firstMount) {
-    firstMount = false;
-    rootElement.style.visibility = "visible";
-    document.body.style.background = "";
-  }
-  setTimeout(() => {
-    handleHashChange();
-  }, 1000);
-});
 setTimeout(() => {
-  if (firstMount) {
-    rootElement.style.visibility = "visible";
-    document.body.style.background = "";
-  }
+  rootElement.style.visibility = "visible";
+  document.body.style.background = "";
 }, 5000);
 
 const bigPatchworkHashRegex =

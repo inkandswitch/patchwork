@@ -121,10 +121,6 @@ rootElement.addEventListener("patchwork:open-document", (event) => {
   window.location.hash = params.toString();
 });
 
-rootElement.addEventListener("patchwork:mounted", () => {
-  handleHashChange();
-});
-
 const moduleWatcher = new ModuleWatcher(
   repo,
   [
