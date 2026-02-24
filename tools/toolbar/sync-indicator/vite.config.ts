@@ -3,10 +3,11 @@ import { defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import externals from "@inkandswitch/patchwork-bootloader/externals";
+import { toolPackage } from "@inkandswitch/patchwork-bootloader/vite/tool-package";
 
 export default defineConfig({
   base: "./",
-  plugins: [topLevelAwait(), solid(), cssInjectedByJsPlugin()],
+  plugins: [topLevelAwait(), solid(), cssInjectedByJsPlugin(), toolPackage()],
   build: {
     emptyOutDir: true,
     rollupOptions: {

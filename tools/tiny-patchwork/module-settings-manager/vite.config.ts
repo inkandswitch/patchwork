@@ -2,10 +2,11 @@ import { defineConfig } from "vite";
 import solid from "vite-plugin-solid";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import externals from "@inkandswitch/patchwork-bootloader/externals";
+import { toolPackage } from "@inkandswitch/patchwork-bootloader/vite/tool-package";
 
 export default defineConfig({
   base: "./",
-  plugins: [solid(), cssInjectedByJsPlugin()],
+  plugins: [solid(), cssInjectedByJsPlugin(), toolPackage()],
 
   build: {
     emptyOutDir: true,
@@ -21,4 +22,4 @@ export default defineConfig({
       preserveEntrySignatures: "strict",
     },
   },
-})
+});

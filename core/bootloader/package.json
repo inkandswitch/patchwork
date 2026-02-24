@@ -22,6 +22,10 @@
       "import": "./dist/vite/patchwork-plugin.js",
       "types": "./dist/vite/patchwork-plugin.d.ts"
     },
+    "./vite/tool-package": {
+      "import": "./dist/vite/tool-package-plugin.js",
+      "types": "./dist/vite/tool-package-plugin.d.ts"
+    },
     "./service-worker": {
       "import": "./dist/service-worker.js",
       "types": "./dist/service-worker.d.ts"

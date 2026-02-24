@@ -13,12 +13,13 @@
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
-    "@automerge/automerge-repo-network-websocket": "^2.0.2",
     "@automerge/automerge-repo-storage-nodefs": "^2.0.2",
+    "@automerge/automerge-repo-subduction-bridge": "link:../../../automerge-repo/packages/automerge-repo-subduction-bridge",
+    "@automerge/automerge_subduction": "link:../../../subduction/automerge_subduction_wasm/pkg-node",
     "commander": "^12.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "@types/node": "^20.17.57"
+    "@types/node": "^20.17.57",
+    "typescript": "^5.4.0"
   }
 }

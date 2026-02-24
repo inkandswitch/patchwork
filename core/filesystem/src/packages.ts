@@ -27,12 +27,35 @@ async function packageJsonContentsFromFolderDocUrl(
     )
   ).href;
 
+  console.log("[packages] fetching package.json from:", packageJSONPath);
   const response = await fetch(packageJSONPath);
+  console.log(
+    "[packages] response status:",
+    response.status,
+    response.statusText
+  );
   if (!response.ok) {
+    const text = await response.text();
+    console.error("[packages] response not ok, body:", text.slice(0, 200));
     return undefined;
   }
 
-  return response.json();
+  const text = await response.text();
+  console.log(
+    "[packages] package.json content (first 200 chars):",
+    text.slice(0, 200)
+  );
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error(
+      "[packages] JSON parse error:",
+      e,
+      "content:",
+      text.slice(0, 500)
+    );
+    return undefined;
+  }
 }
 
 function packageEntryPointFromPackageJson(

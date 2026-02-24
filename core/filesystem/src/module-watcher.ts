@@ -112,17 +112,24 @@ export class ModuleWatcher {
   private async importModuleSafe(importName: string): Promise<any | null> {
     try {
       const valid = isValidAutomergeUrl(importName);
+      console.log(
+        `[ModuleWatcher] importModuleSafe: ${importName.slice(0, 50)}... valid=${valid}`
+      );
 
       const mod = valid
-        ? importModuleFromFolderDocUrl(importName)
-        : import(/* @vite-ignore */ importName);
+        ? await importModuleFromFolderDocUrl(importName)
+        : await import(/* @vite-ignore */ importName);
+      console.log(
+        `[ModuleWatcher] importModuleSafe: SUCCESS for ${importName.slice(0, 50)}...`,
+        mod
+      );
       return mod;
     } catch (error) {
       console.error(
-        `%c Failed to import ${importName}`,
-        "color: #000, background: #ffbcef",
+        `[ModuleWatcher] importModuleSafe: FAILED for ${importName}`,
         error
       );
+      return null;
     }
   }
 
@@ -159,16 +166,56 @@ export class ModuleWatcher {
   }
 
   private async loadBranchedDoc(doc: ModuleSettingsDoc) {
+    console.log(
+      "[ModuleWatcher] loadBranchedDoc: doc.modules type:",
+      typeof doc.modules
+    );
+    console.log(
+      "[ModuleWatcher] loadBranchedDoc: doc.modules constructor:",
+      doc.modules?.constructor?.name
+    );
+
     const entries = Object.entries(doc.modules ?? {}) as [
       AutomergeUrl,
       ModuleEntry,
     ][];
 
-    console.log(
-      "[ModuleWatcher] loadBranchedDoc:",
-      entries.length,
-      "packages"
-    );
+    console.log("[ModuleWatcher] loadBranchedDoc:", entries.length, "packages");
+
+    if (entries.length > 0) {
+      const [firstUrl, firstEntry] = entries[0];
+      console.warn("🔴 [ModuleWatcher] first entry URL:", firstUrl);
+      console.warn(
+        "🔴 [ModuleWatcher] first entry value:",
+        JSON.stringify(firstEntry)
+      );
+      console.warn(
+        "🔴 [ModuleWatcher] first entry.branches:",
+        JSON.stringify(firstEntry?.branches)
+      );
+      if (firstEntry?.branches) {
+        const branchEntries = Object.entries(firstEntry.branches);
+        console.warn(
+          "🔴 [ModuleWatcher] first entry branch count:",
+          branchEntries.length
+        );
+        if (branchEntries.length > 0) {
+          const [branchName, pointer] = branchEntries[0];
+          console.warn(
+            "🔴 [ModuleWatcher] first branch:",
+            branchName,
+            "pointer:",
+            JSON.stringify(pointer)
+          );
+          console.warn(
+            "🔴 [ModuleWatcher] pointer.heads:",
+            pointer?.heads,
+            "length:",
+            pointer?.heads?.length
+          );
+        }
+      }
+    }
 
     await Promise.all(
       entries.flatMap(([packageUrl, entry]) => {
@@ -226,9 +273,22 @@ export class ModuleWatcher {
   }
 
   private async load() {
+    console.log(
+      "[ModuleWatcher] load() called, handles:",
+      this.handles?.length
+    );
     if (!this.handles) throw new Error("No handles");
     const promises = this.handles.map((handle) => {
+      console.log("[ModuleWatcher] processing handle:", handle.url);
       const doc = handle.doc();
+      console.log("[ModuleWatcher] doc keys:", doc ? Object.keys(doc) : "null");
+      console.log(
+        "[ModuleWatcher] doc.modules type:",
+        typeof doc?.modules,
+        "isArray:",
+        Array.isArray(doc?.modules)
+      );
+      console.log("[ModuleWatcher] doc.modules:", doc?.modules);
       if (!doc?.modules) {
         console.warn(
           "[ModuleWatcher] handle has no modules field:",
@@ -246,5 +306,6 @@ export class ModuleWatcher {
       return this.loadBranchedDoc(doc as ModuleSettingsDoc);
     });
     await Promise.all(promises);
+    console.log("[ModuleWatcher] load() complete");
   }
 }

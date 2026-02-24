@@ -1,9 +1,10 @@
 import externals from "@inkandswitch/patchwork-bootloader/externals";
+import { toolPackage } from "@inkandswitch/patchwork-bootloader/vite/tool-package";
 import { defineConfig } from "vite";
 
 export default defineConfig({
   base: "./",
-  plugins: [],
+  plugins: [toolPackage()],
 
   build: {
     emptyOutDir: true,

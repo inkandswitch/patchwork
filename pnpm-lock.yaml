@@ -314,12 +314,15 @@ importers:
       '@automerge/automerge-repo':
         specifier: link:../../../automerge-repo/packages/automerge-repo
         version: link:../../../automerge-repo/packages/automerge-repo
-      '@automerge/automerge-repo-network-websocket':
-        specifier: ^2.0.2
-        version: 2.5.3
       '@automerge/automerge-repo-storage-nodefs':
         specifier: ^2.0.2
         version: 2.5.3
+      '@automerge/automerge-repo-subduction-bridge':
+        specifier: link:../../../automerge-repo/packages/automerge-repo-subduction-bridge
+        version: link:../../../automerge-repo/packages/automerge-repo-subduction-bridge
+      '@automerge/automerge_subduction':
+        specifier: link:../../../subduction/automerge_subduction_wasm/pkg-node
+        version: link:../../../subduction/automerge_subduction_wasm/pkg-node
       commander:
         specifier: ^12.0.0
         version: 12.1.0
@@ -2534,9 +2537,6 @@ packages:
 
   '@automerge/automerge-repo-network-websocket@2.5.2-alpha.0':
     resolution: {integrity: sha512-r6oDOW7CztDEZ4qaxqXXMPMjyXQFr1BXQ8rRmgT+I7QhZncTALvX2mZWzjwMHpuLY6wChg4MHYnA2lAFe7ALUg==}
-
-  '@automerge/automerge-repo-network-websocket@2.5.3':
-    resolution: {integrity: sha512-p6K1YLo34cyGxJ6oMWqeBbWX9rGvEPGyPdX2eq8S/iWNDjYf8lbjKSOhOD8DX87uAMZN/y1XOY/RckwS8lPJbQ==}
 
   '@automerge/automerge-repo-storage-nodefs@2.5.3':
     resolution: {integrity: sha512-5+dlpoopjw88FXvD/5cpXqsVbmvDhWIWxcm8m7k5nvZ3R32e7HZwrvvh9orRSAPkLgVyZRU3+OZ0y5v2ByGNxg==}
@@ -7895,19 +7895,6 @@ snapshots:
       - utf-8-validate
 
   '@automerge/automerge-repo-network-websocket@2.5.2-alpha.0':
-    dependencies:
-      '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
-      cbor-x: 1.6.0
-      debug: 4.4.3
-      eventemitter3: 5.0.1
-      isomorphic-ws: 5.0.0(ws@8.18.3)
-      ws: 8.18.3
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-
-  '@automerge/automerge-repo-network-websocket@2.5.3':
     dependencies:
       '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
       cbor-x: 1.6.0
