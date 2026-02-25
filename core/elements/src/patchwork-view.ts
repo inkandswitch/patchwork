@@ -57,7 +57,7 @@ export function registerPatchworkViewElement(
       #handle: DocHandle<unknown> | null = null;
       #mount: any;
       #stopWatching: (() => void) | null = null;
-      #initGeneration = 0;
+      #initController: AbortController | null = null;
       #reinitQueued = false;
 
       get repo() {
@@ -156,15 +156,17 @@ export function registerPatchworkViewElement(
       #init = async () => {
         if (!this.#docUrl) return;
 
-        const generation = ++this.#initGeneration;
+        this.#initController?.abort();
+        this.#initController = new AbortController();
+        const abortSignal = this.#initController.signal;
+
         this.#state = State.initializing;
         this.#handle = await repo.find<unknown>(this.#docUrl);
-
-        if (generation !== this.#initGeneration) return;
+        if (abortSignal.aborted) return;
 
         if (this.#toolUrl) {
           await this.#loadToolFromUrl(this.#toolUrl);
-          if (generation !== this.#initGeneration) return;
+          if (abortSignal.aborted) return;
           this.#queueRender();
         } else {
           this.#stopWatching = watchToolForDocument(
@@ -172,14 +174,14 @@ export function registerPatchworkViewElement(
             this.#docUrl,
             { toolId: this.#toolId },
             async (resolution) => {
-              if (generation !== this.#initGeneration) return;
+              if (abortSignal.aborted) return;
               const tool = resolution.selectedTool;
               const newUrl = tool?.importUrl ?? null;
               if (newUrl === this.#resolvedToolUrl) return;
               this.#resolvedToolUrl = newUrl;
               if (tool) {
                 await this.#loadToolFromUrl(tool.importUrl);
-                if (generation !== this.#initGeneration) return;
+                if (abortSignal.aborted) return;
               }
               this.#queueRender();
             }
@@ -197,6 +199,8 @@ export function registerPatchworkViewElement(
       async #teardown() {
         if (this.#state == State.none) return;
 
+        this.#initController?.abort();
+        this.#initController = null;
         this.#stopWatching?.();
         this.#stopWatching = null;
         this.#resolvedToolUrl = null;
