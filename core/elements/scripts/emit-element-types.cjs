@@ -1,6 +1,6 @@
 /**
  * Post-build: copy elements.d.ts to dist and ensure index.d.ts references it
- * so consumers get JSX intrinsic element types for patchwork-view and patchwork-tool-picker.
+ * so consumers get JSX intrinsic element types for patchwork-view.
  */
 const fs = require("fs");
 const path = require("path");

@@ -14,14 +14,6 @@ declare module "react" {
         id?: string;
         class?: string;
       };
-      "patchwork-tool-picker": React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement>,
-        HTMLElement
-      > & {
-        "doc-url": string;
-        "tool-id"?: string | null;
-        class?: string;
-      };
     }
   }
 }
@@ -35,10 +27,6 @@ declare module "solid-js" {
         "tool-url"?: string;
         id?: string;
         class?: string;
-      };
-      "patchwork-tool-picker": {
-        "doc-url": string;
-        "tool-id"?: string;
       };
     }
   }
@@ -55,14 +43,6 @@ declare namespace JSX {
       "tool-id"?: string | null;
       "tool-url"?: string | null;
       id?: string;
-      class?: string;
-    };
-    "patchwork-tool-picker": React.DetailedHTMLProps<
-      React.HTMLAttributes<HTMLElement>,
-      HTMLElement
-    > & {
-      "doc-url": string;
-      "tool-id"?: string | null;
       class?: string;
     };
   }
