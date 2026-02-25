@@ -192,11 +192,9 @@ export class ModuleWatcher {
             };
             this.setDocWatcher(versionedUrl);
             await this.announce(versionedUrl, meta).catch((error) => {
-              console.log(
-                new Error(
-                  `Failed to load module ${packageUrl}@${branch}: ${error}`,
-                  { cause: error }
-                )
+              console.error(
+                `[ModuleWatcher] Failed to load module ${packageUrl}@${branch}:`,
+                error
               );
             });
           }
