@@ -29,13 +29,13 @@ export const ToolPicker = ({
   }, [repo, docUrl]);
 
   const selectedToolId = resolution.selectedTool?.id ?? null;
-  const selectedBranch = resolution.selectedTool?.branch ?? "default";
+  const selectedTag = resolution.selectedTool?.tag ?? "default";
 
   const toolRegistry = useRef(getRegistry<ToolDescription>("patchwork:tool"));
-  const branches = selectedToolId
+  const tags = selectedToolId
     ? toolRegistry.current.getVersions(selectedToolId)
     : [];
-  const filteredBranches = branches.filter((v) => v.branch);
+  const filteredTags = tags.filter((v) => v.tag);
 
   const handleToolChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -48,10 +48,10 @@ export const ToolPicker = ({
     [resolution.availableTools]
   );
 
-  const handleBranchChange = useCallback(
+  const handleTagChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       if (!selectedToolId) return;
-      const desc = toolRegistry.current.getBranch(
+      const desc = toolRegistry.current.getTag(
         selectedToolId,
         e.target.value
       );
@@ -64,7 +64,7 @@ export const ToolPicker = ({
           name: desc.name,
           importUrl,
           icon: desc.icon,
-          branch: desc.branch,
+          tag: desc.tag,
           sourceDocUrl: desc.sourceDocUrl,
         },
       }));
@@ -74,7 +74,7 @@ export const ToolPicker = ({
 
   const { availableTools } = resolution;
 
-  if (availableTools.length <= 1 && filteredBranches.length <= 1) {
+  if (availableTools.length <= 1 && filteredTags.length <= 1) {
     return null;
   }
 
@@ -93,15 +93,15 @@ export const ToolPicker = ({
           ))}
         </select>
       )}
-      {filteredBranches.length > 1 && (
+      {filteredTags.length > 1 && (
         <select
           className="select select-xs select-bordered h-6 min-h-0 text-xs opacity-70"
-          value={selectedBranch}
-          onChange={handleBranchChange}
+          value={selectedTag}
+          onChange={handleTagChange}
         >
-          {filteredBranches.map((b) => (
-            <option key={b.branch} value={b.branch}>
-              {b.branch}
+          {filteredTags.map((t) => (
+            <option key={t.tag} value={t.tag}>
+              {t.tag}
             </option>
           ))}
         </select>

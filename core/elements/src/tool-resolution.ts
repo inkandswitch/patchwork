@@ -20,7 +20,7 @@ export interface ToolOption {
   name: string;
   importUrl: string;
   icon?: string;
-  branch?: string;
+  tag?: string;
   sourceDocUrl?: string;
 }
 
@@ -36,7 +36,7 @@ function toolToOption(tool: ToolDescription): ToolOption | null {
     name: tool.name,
     importUrl: tool.importUrl,
     icon: tool.icon,
-    branch: tool.branch,
+    tag: tool.tag,
     sourceDocUrl: tool.sourceDocUrl,
   };
 }
@@ -60,13 +60,13 @@ function resolve(
   const toolSource = getToolSource(doc);
 
   if (preferredToolId) {
-    if (toolSource?.branch) {
-      const branchVersion = toolRegistry.getBranch(
+    if (toolSource?.tag) {
+      const tagVersion = toolRegistry.getTag(
         preferredToolId,
-        toolSource.branch
+        toolSource.tag
       );
-      if (branchVersion) {
-        selectedTool = toolToOption(branchVersion);
+      if (tagVersion) {
+        selectedTool = toolToOption(tagVersion);
       }
     }
 
@@ -86,13 +86,13 @@ function resolve(
   if (!selectedTool) {
     const fallback = getFallbackTool(doc);
     if (fallback) {
-      if (toolSource?.branch) {
-        const branchVersion = toolRegistry.getBranch(
+      if (toolSource?.tag) {
+        const tagVersion = toolRegistry.getTag(
           fallback.id,
-          toolSource.branch
+          toolSource.tag
         );
-        if (branchVersion) {
-          selectedTool = toolToOption(branchVersion);
+        if (tagVersion) {
+          selectedTool = toolToOption(tagVersion);
         }
       }
       if (!selectedTool) {

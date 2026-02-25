@@ -11,12 +11,12 @@ import { importModuleFromFolderDocUrl } from "./packages.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
 import { FolderDoc } from "./types.js";
 
-export type BranchPointer = {
+export type TagPointer = {
   heads: string[];
 };
 
 export type ModuleEntry = {
-  branches: Record<string, BranchPointer>;
+  tags: Record<string, TagPointer>;
 };
 
 export type ModuleSettingsDoc = {
@@ -33,14 +33,14 @@ export type LegacyModuleSettingsDoc = {
   };
 
 export type ModuleLoadedMeta = {
-  branch: string;
+  tag: string;
   sourceDocUrl: AutomergeUrl;
   version: string;
 };
 
 /**
  * This class watches moduleSettingsDocs and loads modules based on the contents therein.
- * Supports both the new branched format (modules as a map with branches) and the
+ * Supports both the new tagged format (modules as a map with tags) and the
  * legacy flat array format.
  */
 export class ModuleWatcher {
@@ -153,7 +153,7 @@ export class ModuleWatcher {
     return Array.isArray(doc.modules);
   }
 
-  private async loadBranchedDoc(doc: ModuleSettingsDoc) {
+  private async loadTaggedDoc(doc: ModuleSettingsDoc) {
     const entries = Object.entries(doc.modules ?? {}) as [
       AutomergeUrl,
       ModuleEntry,
@@ -172,11 +172,11 @@ export class ModuleWatcher {
           );
           return [];
         }
-        return Object.entries(entry.branches ?? {}).map(
-          async ([branch, pointer]) => {
+        return Object.entries(entry.tags ?? {}).map(
+          async ([tag, pointer]) => {
             if (!pointer.heads || pointer.heads.length === 0) {
               console.warn(
-                `[ModuleWatcher] skipping ${packageUrl}@${branch}: no heads`
+                `[ModuleWatcher] skipping ${packageUrl}@${tag}: no heads`
               );
               return;
             }
@@ -186,14 +186,14 @@ export class ModuleWatcher {
             });
             const version = pointer.heads.join(",");
             const meta: ModuleLoadedMeta = {
-              branch,
+              tag,
               sourceDocUrl: packageUrl,
               version,
             };
             this.setDocWatcher(versionedUrl);
             await this.announce(versionedUrl, meta).catch((error) => {
               console.error(
-                `[ModuleWatcher] Failed to load module ${packageUrl}@${branch}:`,
+                `[ModuleWatcher] Failed to load module ${packageUrl}@${tag}:`,
                 error
               );
             });
@@ -224,7 +224,7 @@ export class ModuleWatcher {
       if (this.isLegacyFormat(doc)) {
         return this.loadLegacyDoc(doc);
       }
-      return this.loadBranchedDoc(doc as ModuleSettingsDoc);
+      return this.loadTaggedDoc(doc as ModuleSettingsDoc);
     });
     await Promise.all(promises);
   }

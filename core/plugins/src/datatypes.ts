@@ -50,8 +50,8 @@ export const createDocOfDatatype2 = async <D>(
       const toolSource: ToolSource = {
         packageUrl: datatype.sourceDocUrl as any,
       };
-      if (datatype.branch) {
-        toolSource.branch = datatype.branch;
+      if (datatype.tag) {
+        toolSource.tag = datatype.tag;
       }
       metadata.toolSource = toolSource;
     }

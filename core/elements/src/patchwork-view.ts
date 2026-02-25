@@ -255,7 +255,14 @@ export function registerPatchworkViewElement(
           this.#state = State.rendered;
         } catch (error) {
           this.#state = State.error;
-          this.#displayError(`I couldn't mount the tool: ${error}`);
+          const toolUrl = this.effectiveToolUrl;
+          console.error(
+            `patchwork-view: tool ${toolUrl} threw during mount for ${this.#docUrl}`,
+            error
+          );
+          this.#displayError(
+            `Tool ${toolUrl} failed to mount: ${error instanceof Error ? error.message : error}`
+          );
         }
       }
 

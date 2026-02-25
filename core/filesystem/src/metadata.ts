@@ -1,10 +1,10 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo/slim";
 
 export type ToolSource = {
-  /** Plain URL for branch-following, versioned URL (with #heads) for pinned */
+  /** Plain URL for tag-following, versioned URL (with #heads) for pinned */
   packageUrl: AutomergeUrl;
-  /** Present = follow this branch as it moves, absent = pinned to heads in packageUrl */
-  branch?: string;
+  /** Present = follow this tag as it moves, absent = pinned to heads in packageUrl */
+  tag?: string;
 };
 
 export type HasPatchworkMetadata<Type extends string = string> = {

@@ -33,8 +33,8 @@ export interface PluginDescription {
   importUrl?: string;
   /** Plain automerge URL of the tool package (no heads) */
   sourceDocUrl?: string;
-  /** Branch name this version is registered under (e.g. "default", "pvh-dev") */
-  branch?: string;
+  /** Tag name this version is registered under (e.g. "default", "pvh-dev") */
+  tag?: string;
   /** Automerge heads string identifying this specific version */
   version?: string;
 }

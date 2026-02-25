@@ -1,11 +1,11 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 
-export type BranchPointer = {
+export type TagPointer = {
   heads: string[];
 };
 
 export type ModuleEntry = {
-  branches: Record<string, BranchPointer>;
+  tags: Record<string, TagPointer>;
 };
 
 export type ModuleSettingsDoc = {

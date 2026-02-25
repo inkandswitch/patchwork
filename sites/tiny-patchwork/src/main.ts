@@ -122,7 +122,7 @@ const defaultToolsUrl =
 function onModuleLoaded(
   name: string,
   mod: any,
-  meta?: { branch: string; sourceDocUrl: AutomergeUrl; version: string }
+  meta?: { tag: string; sourceDocUrl: AutomergeUrl; version: string }
 ) {
   if (Array.isArray(mod.plugins)) {
     const baseUrl = automergeUrlToServiceWorkerUrl(name as AutomergeUrl);
