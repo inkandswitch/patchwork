@@ -8,7 +8,11 @@ import {
 } from "@codemirror/view";
 import { Range } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
-import { type DocumentId, isValidDocumentId, parseAutomergeUrl } from "@automerge/automerge-repo";
+import {
+  type DocumentId,
+  isValidDocumentId,
+  parseAutomergeUrl,
+} from "@automerge/automerge-repo";
 import { embedTheme } from "./theme.ts";
 import { openLinkIcon } from "./icons.ts";
 
@@ -164,7 +168,9 @@ function embedDropHandlers() {
       const raw = event.dataTransfer.getData(PATCHWORK_DND);
       if (!raw) return false;
       try {
-        const data = JSON.parse(raw) as { items?: Array<{ url?: string; source?: string }> };
+        const data = JSON.parse(raw) as {
+          items?: Array<{ url?: string; type?: string }>;
+        };
         const items = data?.items;
         if (!Array.isArray(items) || items.length === 0) return false;
         const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
@@ -172,7 +178,7 @@ function embedDropHandlers() {
         const inserts: string[] = [];
         for (const item of items) {
           const url = item?.url;
-          const toolId = item?.source;
+          const toolId = item?.type;
           if (!url || !toolId) continue;
           const { documentId } = parseAutomergeUrl(url);
           if (!isValidDocumentId(documentId)) continue;
