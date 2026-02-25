@@ -65,7 +65,6 @@ export class ModuleWatcher {
   onChange = () => this.load().catch(console.error);
 
   private async init() {
-    console.log("[ModuleWatcher] init: finding handles for", this.urls);
     const results = await Promise.allSettled(
       this.urls.map(async (url) => this.repo.find<any>(url))
     );
@@ -78,13 +77,10 @@ export class ModuleWatcher {
       })
       .map((result) => result.value);
 
-    console.log("[ModuleWatcher] found", this.handles.length, "handles");
-
     for (const handle of this.handles) {
       handle.addListener("change", this.onChange);
     }
     await this.load();
-    console.log("[ModuleWatcher] init complete");
   }
 
   async loadModules(modules: string[]) {
@@ -102,6 +98,7 @@ export class ModuleWatcher {
     );
   }
 
+  /** Load the package at doc's suggestedImportUrl (expected to be a package/folder URL so the loaded module has plugins). */
   async loadSuggestedImportUrl(docUrl: AutomergeUrl) {
     const handle = await this.repo.find<Partial<HasPatchworkMetadata>>(docUrl);
     const doc = handle.doc();
@@ -150,12 +147,10 @@ export class ModuleWatcher {
       handle.on("change", () => {
         const lastSyncAt = handle.doc().lastSyncAt || 0;
         if (lastSyncAt <= previousSyncAtTime) {
-          console.log("handle updated but not lastSyncAt");
           return;
         }
         previousSyncAtTime = lastSyncAt;
         const versionedImport = handle.view(handle.heads()).url;
-        console.log(`change in ${importName}, reloading at ${versionedImport}`);
         this.announce(versionedImport);
       });
     });
@@ -179,43 +174,6 @@ export class ModuleWatcher {
       AutomergeUrl,
       ModuleEntry,
     ][];
-
-    console.log("[ModuleWatcher] loadBranchedDoc:", entries.length, "packages");
-
-    if (entries.length > 0) {
-      const [firstUrl, firstEntry] = entries[0];
-      console.warn("🔴 [ModuleWatcher] first entry URL:", firstUrl);
-      console.warn(
-        "🔴 [ModuleWatcher] first entry value:",
-        JSON.stringify(firstEntry)
-      );
-      console.warn(
-        "🔴 [ModuleWatcher] first entry.branches:",
-        JSON.stringify(firstEntry?.branches)
-      );
-      if (firstEntry?.branches) {
-        const branchEntries = Object.entries(firstEntry.branches);
-        console.warn(
-          "🔴 [ModuleWatcher] first entry branch count:",
-          branchEntries.length
-        );
-        if (branchEntries.length > 0) {
-          const [branchName, pointer] = branchEntries[0];
-          console.warn(
-            "🔴 [ModuleWatcher] first branch:",
-            branchName,
-            "pointer:",
-            JSON.stringify(pointer)
-          );
-          console.warn(
-            "🔴 [ModuleWatcher] pointer.heads:",
-            pointer?.heads,
-            "length:",
-            pointer?.heads?.length
-          );
-        }
-      }
-    }
 
     await Promise.all(
       entries.flatMap(([packageUrl, entry]) => {
@@ -248,9 +206,6 @@ export class ModuleWatcher {
               sourceDocUrl: packageUrl,
               version,
             };
-            console.log(
-              `[ModuleWatcher] loading ${packageUrl}@${branch} -> ${versionedUrl.slice(0, 40)}...`
-            );
             this.setDocWatcher(versionedUrl);
             await this.announce(versionedUrl, meta).catch((error) => {
               console.log(
@@ -268,7 +223,6 @@ export class ModuleWatcher {
 
   private async loadLegacyDoc(doc: LegacyModuleSettingsDoc) {
     const { modules = [] } = doc;
-    console.log("[ModuleWatcher] loadLegacyDoc:", modules.length, "modules");
     return this.loadModules(modules);
   }
 
@@ -298,8 +252,6 @@ export class ModuleWatcher {
         );
         return;
       }
-      const format = this.isLegacyFormat(doc) ? "legacy" : "branched";
-      console.log(`[ModuleWatcher] loading ${handle.url} (${format})`);
       if (this.isLegacyFormat(doc)) {
         return this.loadLegacyDoc(doc);
       }

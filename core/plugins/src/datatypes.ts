@@ -42,7 +42,9 @@ export const createDocOfDatatype2 = async <D>(
     impl.init(doc, repo);
     const metadata: Record<string, any> = {
       type: datatype.id,
-      suggestedImportUrl: datatype.importUrl,
+      // Package URL so loadSuggestedImportUrl loads the package main (which exports plugins).
+      // Fall back to datatype.importUrl for backward compat when sourceDocUrl is not set.
+      suggestedImportUrl: datatype.sourceDocUrl ?? datatype.importUrl,
     };
     if (datatype.sourceDocUrl) {
       const toolSource: ToolSource = {

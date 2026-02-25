@@ -58,11 +58,6 @@ export class PluginRegistry<D extends PluginDescription> {
     return this.#plugins.get(id)?.get(branch);
   }
 
-  /** Get a pinned version by its heads string */
-  getVersion(id: string, version: string): D | undefined {
-    return this.#plugins.get(id)?.get(this.#pinnedKey(version));
-  }
-
   /** Get all known versions/branches for a plugin */
   getVersions(id: string): D[] {
     const versions = this.#plugins.get(id);

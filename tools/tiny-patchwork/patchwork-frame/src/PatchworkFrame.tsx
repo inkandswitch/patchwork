@@ -292,18 +292,10 @@ export const PatchworkFrame = ({
 
   useEffect(() => {
     const onToolSelected = (event: ToolSelectedEvent) => {
-      console.log("[PatchworkFrame] tool-selected event received:", event.detail);
-      console.log("[PatchworkFrame] mainViewRef.current:", mainViewRef.current);
       event.stopPropagation();
       if (event.detail.toolUrl && mainViewRef.current) {
-        console.log("[PatchworkFrame] setting tool-url to:", event.detail.toolUrl);
         mainViewRef.current.removeAttribute("tool-id");
         mainViewRef.current.setAttribute("tool-url", event.detail.toolUrl);
-      } else {
-        console.warn("[PatchworkFrame] missing toolUrl or mainViewRef:", {
-          toolUrl: event.detail.toolUrl,
-          hasRef: !!mainViewRef.current,
-        });
       }
     };
 

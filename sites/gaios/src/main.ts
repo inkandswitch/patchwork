@@ -2,6 +2,7 @@ import "./global.css";
 
 import {
   registerPatchworkViewElement,
+  registerPatchworkToolPickerElement,
   openDocument,
 } from "@inkandswitch/patchwork-elements";
 import {
@@ -126,6 +127,7 @@ const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 window.accountDocHandle = accountDocHandle;
 
 registerPatchworkViewElement({ repo });
+registerPatchworkToolPickerElement({ repo });
 
 const rootElement = document.getElementById("root")!;
 
@@ -166,10 +168,6 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
   } catch (e) {
     console.error("Failed to update document title", e);
   }
-});
-
-rootElement.addEventListener("patchwork:mounted", () => {
-  handleHashChange();
 });
 
 const moduleWatcher = new ModuleWatcher(

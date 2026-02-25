@@ -4,6 +4,7 @@ import "./global.css";
 
 import {
   registerPatchworkViewElement,
+  registerPatchworkToolPickerElement,
   openDocument,
 } from "@inkandswitch/patchwork-elements";
 import {
@@ -124,6 +125,7 @@ const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 window.accountDocHandle = accountDocHandle;
 
 registerPatchworkViewElement({ repo });
+registerPatchworkToolPickerElement({ repo });
 
 const rootElement = document.getElementById("root")!;
 rootElement.style.visibility = "hidden";
@@ -200,27 +202,10 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
   }
 });
 
-let firstMount = true;
-rootElement.addEventListener("patchwork:mounted", (event) => {
-  handleHashChange();
-  //console.info(`tool mounted`, event.detail.toolId);
-  if (event.target != rootElement) return;
-  console.info(`root element mounted`);
-  if (firstMount) {
-    firstMount = false;
-    rootElement.style.visibility = "visible";
-    document.body.style.background = "";
-  }
-  setTimeout(() => {
-    handleHashChange();
-  }, 1000);
-});
 setTimeout(() => {
-  if (firstMount) {
-    rootElement.style.visibility = "visible";
-    document.body.style.background = "";
-  }
-}, 12000);
+  rootElement.style.visibility = "visible";
+  document.body.style.background = "";
+}, 5000);
 
 const bigPatchworkHashRegex =
   /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;

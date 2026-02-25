@@ -13,12 +13,20 @@
     "@inkandswitch/patchwork-plugins": "workspace:^"
   },
   "scripts": {
-    "build": "tsc && cp src/elements.d.ts dist/ && echo '/// <reference path=\"./elements.d.ts\" />' | cat - dist/index.d.ts > dist/index.d.ts.tmp && mv dist/index.d.ts.tmp dist/index.d.ts",
+    "build": "tsc && node scripts/emit-element-types.cjs",
     "dev": "tsc -w --preserveWatchOutput",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@types/node": "^20.19.9"
+  },
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   }
 }
