@@ -165,9 +165,9 @@ export function registerPatchworkViewElement(
         if (abortSignal.aborted) return;
 
         if (this.#toolUrl) {
-          await this.#loadToolFromUrl(this.#toolUrl);
+          const loaded = await this.#loadToolFromUrl(this.#toolUrl);
           if (abortSignal.aborted) return;
-          this.#queueRender();
+          if (loaded) this.#queueRender();
         } else {
           this.#stopWatching = watchToolForDocument(
             repo,
@@ -180,8 +180,9 @@ export function registerPatchworkViewElement(
               if (newUrl === this.#resolvedToolUrl) return;
               this.#resolvedToolUrl = newUrl;
               if (tool) {
-                await this.#loadToolFromUrl(tool.importUrl);
+                const loaded = await this.#loadToolFromUrl(tool.importUrl);
                 if (abortSignal.aborted) return;
+                if (!loaded) return;
               }
               this.#queueRender();
             }
@@ -189,9 +190,18 @@ export function registerPatchworkViewElement(
         }
       };
 
-      async #loadToolFromUrl(url: string) {
-        const mod = await import(/* @vite-ignore */ url);
-        this.#mount = mod.default;
+      async #loadToolFromUrl(url: string): Promise<boolean> {
+        try {
+          const mod = await import(/* @vite-ignore */ url);
+          this.#mount = mod.default;
+          return true;
+        } catch (error) {
+          console.error(`Failed to load tool from ${url}:`, error);
+          this.#mount = null;
+          this.#state = State.error;
+          this.#displayError(`I couldn't load the tool from ${url}.`);
+          return false;
+        }
       }
 
       #teardowns = new Set<() => unknown | Promise<void>>();
