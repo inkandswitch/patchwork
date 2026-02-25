@@ -46,8 +46,8 @@ function migrate(plugin: PluginDescription) {
 }
 
 export type RegisterPluginsOptions = {
-  /** Tag name this set of plugins is registered under */
-  tag?: string;
+  /** Branch name this set of plugins is registered under */
+  branch?: string;
   /** Plain automerge URL of the package (no heads) */
   sourceDocUrl?: string;
   /** Automerge heads string identifying this version */
@@ -59,7 +59,7 @@ export type RegisterPluginsOptions = {
  * (e.g. "/{encodedAutomergeUrl}/"). Each plugin's importPath is resolved against
  * it to produce a fully-qualified importUrl.
  *
- * When options.tag is provided, plugins are registered under that tag.
+ * When options.branch is provided, plugins are registered under that branch.
  * Otherwise they register under "default".
  */
 export function registerPlugins<D extends PluginDescription>(
@@ -81,7 +81,7 @@ export function registerPlugins<D extends PluginDescription>(
       ).href;
     }
 
-    if (options?.tag !== undefined) plugin.tag = options.tag;
+    if (options?.branch !== undefined) plugin.branch = options.branch;
     if (options?.sourceDocUrl) plugin.sourceDocUrl = options.sourceDocUrl;
     if (options?.version) plugin.version = options.version;
 

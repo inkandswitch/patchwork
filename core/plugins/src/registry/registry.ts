@@ -4,16 +4,16 @@ import debug from "debug";
 
 const log = debug("patchwork:plugins");
 
-const DEFAULT_TAG = "default";
+const DEFAULT_BRANCH = "default";
 
 /**
  * Registry for managing plugins of a specific type.
- * Supports multiple versions per plugin ID, keyed by tag name.
+ * Supports multiple versions per plugin ID, keyed by branch name.
  * Stores plugin descriptions only -- consumers call import(plugin.importUrl)
  * to load implementations on demand.
  */
 export class PluginRegistry<D extends PluginDescription> {
-  /** Outer key: plugin id, inner key: tag name (or "__pinned:<version>" for anonymous) */
+  /** Outer key: plugin id, inner key: branch name (or "__pinned:<version>" for anonymous) */
   #plugins = new Map<string, Map<string, D>>();
   #events = new EventEmitter<PluginRegistryEvents<D>>();
 
@@ -22,8 +22,8 @@ export class PluginRegistry<D extends PluginDescription> {
       plugin.importUrl = importUrl;
     }
 
-    const tag = plugin.tag ?? DEFAULT_TAG;
-    const key = plugin.tag ? tag : this.#pinnedKey(plugin.version);
+    const branch = plugin.branch ?? DEFAULT_BRANCH;
+    const key = plugin.branch ? branch : this.#pinnedKey(plugin.version);
 
     let versions = this.#plugins.get(plugin.id);
     if (!versions) {
@@ -48,28 +48,28 @@ export class PluginRegistry<D extends PluginDescription> {
     this.#events.emit("changed");
   }
 
-  /** Get the default tag version of a plugin (backward compat) */
+  /** Get the default branch version of a plugin (backward compat) */
   get(id: string): D | undefined {
-    return this.#plugins.get(id)?.get(DEFAULT_TAG);
+    return this.#plugins.get(id)?.get(DEFAULT_BRANCH);
   }
 
-  /** Get a specific tag version */
-  getTag(id: string, tag: string): D | undefined {
-    return this.#plugins.get(id)?.get(tag);
+  /** Get a specific branch version */
+  getBranch(id: string, branch: string): D | undefined {
+    return this.#plugins.get(id)?.get(branch);
   }
 
-  /** Get all known versions/tags for a plugin */
+  /** Get all known versions/branches for a plugin */
   getVersions(id: string): D[] {
     const versions = this.#plugins.get(id);
     if (!versions) return [];
     return Array.from(versions.values());
   }
 
-  /** Get all plugins across all IDs (returns the default tag for each) */
+  /** Get all plugins across all IDs (returns the default branch for each) */
   all(): D[] {
     const result: D[] = [];
     for (const versions of this.#plugins.values()) {
-      const def = versions.get(DEFAULT_TAG);
+      const def = versions.get(DEFAULT_BRANCH);
       if (def) {
         result.push(def);
       } else {
@@ -118,6 +118,6 @@ export class PluginRegistry<D extends PluginDescription> {
   }
 
   #pinnedKey(version?: string): string {
-    return version ? `__pinned:${version}` : DEFAULT_TAG;
+    return version ? `__pinned:${version}` : DEFAULT_BRANCH;
   }
 }

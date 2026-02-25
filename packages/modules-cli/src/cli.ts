@@ -7,7 +7,7 @@ import {
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { createRepo, findDoc, waitForSync } from "./repo.js";
-import type { ModuleSettingsDoc, TagPointer } from "./types.js";
+import type { ModuleSettingsDoc, BranchPointer } from "./types.js";
 
 const program = new Command();
 
@@ -43,7 +43,7 @@ program
 
 program
   .command("list")
-  .description("List all tools and tags")
+  .description("List all tools and branches")
   .argument("<modules-doc-url>", "Module settings document URL")
   .action(async (modulesDocUrl: string) => {
     const url = validateUrl(modulesDocUrl);
@@ -58,7 +58,7 @@ program
 
     const entries = Object.entries(doc.modules) as [
       AutomergeUrl,
-      { tags: Record<string, TagPointer> },
+      { branches: Record<string, BranchPointer> },
     ][];
 
     if (entries.length === 0) {
@@ -68,13 +68,13 @@ program
 
     for (const [packageUrl, entry] of entries) {
       console.log(`\n${packageUrl}`);
-      const tags = Object.entries(entry.tags ?? {});
-      if (tags.length === 0) {
-        console.log("  (no tags)");
+      const branches = Object.entries(entry.branches ?? {});
+      if (branches.length === 0) {
+        console.log("  (no branches)");
       }
-      for (const [tagName, pointer] of tags) {
+      for (const [branchName, pointer] of branches) {
         const headsStr = pointer.heads?.join(",") ?? "(none)";
-        console.log(`  ${tagName}: ${headsStr}`);
+        console.log(`  ${branchName}: ${headsStr}`);
       }
     }
 
@@ -83,7 +83,7 @@ program
 
 program
   .command("add")
-  .description("Add a tool package with a default tag at its current heads")
+  .description("Add a tool package with a default branch at its current heads")
   .argument("<modules-doc-url>", "Module settings document URL")
   .argument("<package-url>", "Automerge URL of the tool package")
   .action(async (modulesDocUrl: string, packageUrl: string) => {
@@ -98,13 +98,13 @@ program
     settingsHandle.change((doc) => {
       if (!doc.modules) doc.modules = {} as any;
       (doc.modules as any)[pkgUrl] = {
-        tags: {
+        branches: {
           default: { heads: [...heads] },
         },
       };
     });
 
-    console.log(`Added ${pkgUrl} with default tag at heads: ${heads.join(",")}`);
+    console.log(`Added ${pkgUrl} with default branch at heads: ${heads.join(",")}`);
     console.log("Waiting for sync...");
     await waitForSync();
     console.log("Done.");
@@ -136,17 +136,17 @@ program
   });
 
 program
-  .command("tag")
-  .description("Create or update a tag for a tool")
+  .command("branch")
+  .description("Create or update a branch for a tool")
   .argument("<modules-doc-url>", "Module settings document URL")
   .argument("<package-url>", "Automerge URL of the tool package")
-  .argument("<tag-name>", "Tag name (e.g. 'pvh-dev')")
+  .argument("<branch-name>", "Branch name (e.g. 'pvh-dev')")
   .option("--heads <heads>", "Comma-separated heads (defaults to current)")
   .action(
     async (
       modulesDocUrl: string,
       packageUrl: string,
-      tagName: string,
+      branchName: string,
       opts: { heads?: string }
     ) => {
       const docUrl = validateUrl(modulesDocUrl);
@@ -167,16 +167,16 @@ program
         const entry = (doc.modules as any)[pkgUrl];
         if (!entry) {
           (doc.modules as any)[pkgUrl] = {
-            tags: { [tagName]: { heads } },
+            branches: { [branchName]: { heads } },
           };
         } else {
-          if (!entry.tags) entry.tags = {};
-          entry.tags[tagName] = { heads };
+          if (!entry.branches) entry.branches = {};
+          entry.branches[branchName] = { heads };
         }
       });
 
       console.log(
-        `Set tag "${tagName}" for ${pkgUrl} to heads: ${heads.join(",")}`
+        `Set branch "${branchName}" for ${pkgUrl} to heads: ${heads.join(",")}`
       );
       console.log("Waiting for sync...");
       await waitForSync();
@@ -187,13 +187,13 @@ program
 
 program
   .command("release")
-  .description("Move the default tag to current (or specified) heads")
+  .description("Move the default branch to current (or specified) heads")
   .argument("<modules-doc-url>", "Module settings document URL")
   .argument("<package-url>", "Automerge URL of the tool package")
   .option("--heads <heads>", "Comma-separated heads (defaults to current)")
   .option(
-    "--from <tag>",
-    "Copy heads from another tag instead of the package"
+    "--from <branch>",
+    "Copy heads from another branch instead of the package"
   )
   .action(
     async (
@@ -212,14 +212,14 @@ program
         const settingsHandle = await findDoc<ModuleSettingsDoc>(repo, docUrl);
         const doc = settingsHandle.doc();
         const entry = (doc.modules as any)?.[pkgUrl];
-        const sourceTag = entry?.tags?.[opts.from];
-        if (!sourceTag?.heads) {
+        const sourceBranch = entry?.branches?.[opts.from];
+        if (!sourceBranch?.heads) {
           console.error(
-            `Tag "${opts.from}" not found for ${pkgUrl}`
+            `Branch "${opts.from}" not found for ${pkgUrl}`
           );
           process.exit(1);
         }
-        heads = [...sourceTag.heads];
+        heads = [...sourceBranch.heads];
       } else {
         const pkgHandle = await findDoc<any>(repo, pkgUrl);
         heads = [...pkgHandle.heads()];
@@ -231,16 +231,16 @@ program
         const entry = (doc.modules as any)[pkgUrl];
         if (!entry) {
           (doc.modules as any)[pkgUrl] = {
-            tags: { default: { heads } },
+            branches: { default: { heads } },
           };
         } else {
-          if (!entry.tags) entry.tags = {};
-          entry.tags.default = { heads };
+          if (!entry.branches) entry.branches = {};
+          entry.branches.default = { heads };
         }
       });
 
       console.log(
-        `Released ${pkgUrl}: default tag now at heads: ${heads.join(",")}`
+        `Released ${pkgUrl}: default branch now at heads: ${heads.join(",")}`
       );
       console.log("Waiting for sync...");
       await waitForSync();
@@ -251,7 +251,7 @@ program
 
 program
   .command("status")
-  .description("Show status of all tools (current heads vs tag pointers)")
+  .description("Show status of all tools (current heads vs branch pointers)")
   .argument("<modules-doc-url>", "Module settings document URL")
   .action(async (modulesDocUrl: string) => {
     const url = validateUrl(modulesDocUrl);
@@ -266,7 +266,7 @@ program
 
     const entries = Object.entries(doc.modules) as [
       AutomergeUrl,
-      { tags: Record<string, TagPointer> },
+      { branches: Record<string, BranchPointer> },
     ][];
 
     for (const [packageUrl, entry] of entries) {
@@ -281,13 +281,13 @@ program
       console.log(`\n${packageUrl}`);
       console.log(`  latest: ${currentHeads.join(",")}`);
 
-      for (const [tagName, pointer] of Object.entries(
-        entry.tags ?? {}
+      for (const [branchName, pointer] of Object.entries(
+        entry.branches ?? {}
       )) {
-        const tagHeads = pointer.heads?.join(",") ?? "(none)";
+        const branchHeads = pointer.heads?.join(",") ?? "(none)";
         const upToDate =
-          tagHeads === currentHeads.join(",") ? " (up to date)" : " (behind)";
-        console.log(`  ${tagName}: ${tagHeads}${upToDate}`);
+          branchHeads === currentHeads.join(",") ? " (up to date)" : " (behind)";
+        console.log(`  ${branchName}: ${branchHeads}${upToDate}`);
       }
     }
 
