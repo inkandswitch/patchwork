@@ -1,4 +1,4 @@
-import { makeDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
+import { useDocHandle } from "@automerge/automerge-repo-solid-primitives";
 import type { DocHandle, Repo } from "@automerge/automerge-repo";
 import type { DocWithComments } from "@inkandswitch/annotations-comments";
 import type { TinyPatchworkConfigDoc } from "./types";
@@ -14,6 +14,7 @@ import {
 import { Sidebar } from "./components/Sidebar";
 import { DocumentToolbar } from "./components/DocumentToolbar";
 import { MainDocumentView } from "./components/MainDocumentView";
+import { createMemo } from "solid-js";
 import "./styles.css";
 
 // Sidebar dimensions
@@ -30,7 +31,13 @@ export const PatchworkFrame = ({
   element: HTMLElement | ShadowRoot;
   repo: Repo;
 }) => {
-  const accountDoc = makeDocumentProjection(handle);
+  // Use useDocHandle and read doc() directly to avoid autoproduce wrapper
+  // which conflicts with pattern-based refs used in comment modifications
+  const accountDocHandle = useDocHandle<TinyPatchworkConfigDoc>(
+    () => handle.url,
+    { repo }
+  );
+  const accountDoc = createMemo(() => accountDocHandle()?.doc());
   const accountDocUrl = handle.url;
 
   // Sidebar state management
@@ -82,12 +89,12 @@ export const PatchworkFrame = ({
       />
 
       {/* Left Sidebar */}
-      {accountDoc.accountSidebarToolId && (
+      {accountDoc()?.accountSidebarToolId && (
         <Sidebar
           side="left"
           isCollapsed={sidebarState.isSidebarCollapsed}
           width={sidebarState.leftSidebarWidth}
-          toolId={accountDoc.accountSidebarToolId}
+          toolId={accountDoc()!.accountSidebarToolId}
           docUrl={accountDocUrl}
           onMouseDown={handleMouseDown}
           onToggleClick={handleToggleClick}
@@ -97,7 +104,7 @@ export const PatchworkFrame = ({
       {/* Main Content Area */}
       <div class="flex flex-col flex-1 h-full">
         <DocumentToolbar
-          toolIds={accountDoc.documentToolbarToolIds}
+          toolIds={accountDoc()?.documentToolbarToolIds}
           docUrl={selectedDoc.selectedDocUrl}
         />
         <MainDocumentView
@@ -108,12 +115,12 @@ export const PatchworkFrame = ({
       </div>
 
       {/* Right Sidebar */}
-      {accountDoc.contextSidebarToolId && (
+      {accountDoc()?.contextSidebarToolId && (
         <Sidebar
           side="right"
           isCollapsed={sidebarState.isRightSidebarCollapsed}
           width={sidebarState.rightSidebarWidth}
-          toolId={accountDoc.contextSidebarToolId}
+          toolId={accountDoc()!.contextSidebarToolId}
           docUrl={accountDocUrl}
           onMouseDown={handleMouseDown}
           onToggleClick={handleToggleClick}
