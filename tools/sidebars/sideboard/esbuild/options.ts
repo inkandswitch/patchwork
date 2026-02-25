@@ -18,7 +18,7 @@ export default {
   format: "esm",
   splitting: false,
   logLevel: "debug",
-  sourcemap: !pushworking,
+  sourcemap: !syncing,
   external: externals,
   minify: false,
   plugins: [

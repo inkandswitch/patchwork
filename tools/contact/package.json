@@ -26,7 +26,10 @@
       "import": "./dist/mount-inline.js",
       "source": "./src/mount-inline.tsx"
     },
-    "./style.css": "./dist/tool.css"
+    "./style.css": {
+      "import": "./dist/tool.css",
+      "source": "./src/tool.css"
+    }
   },
   "scripts": {
     "build": "node esbuild/build.ts",
@@ -64,6 +67,6 @@
     "typescript": "^5.8.3"
   },
   "darn": {
-    "url": "automerge:5sEcRSQ771Lo63SbiJuwPTDNtzX"
+    "url": "automerge:4ZrfvStN9U7ULfc5PWp8wPsgqRCn"
   }
 }

@@ -19,6 +19,12 @@ const externals = [
   "@codemirror/view",
   "@codemirror/language",
 
+  // react
+  "react",
+  "react-dom",
+  "react-dom/client",
+  "react/jsx-runtime",
+
   // rip
   "solid-js",
   "solid-js/html",

@@ -1,0 +1,28 @@
+# darn attributes file
+# Patterns here control how files are stored and merged
+#
+# Format: <pattern> <attribute>
+#
+# Attributes:
+#   text   - Character-level CRDT merging (for source code, prose)
+#   binary - Last-writer-wins (for generated files, images)
+#   auto   - Detect based on content (default)
+#
+# Examples:
+#   *.md text
+#   *.png binary
+#   *.min.js binary
+
+# Source maps (contain encoded binary data)
+*.js.map binary
+*.css.map binary
+
+# Minified files (character-level merge is meaningless)
+*.min.js binary
+*.min.css binary
+
+# Lock files (should be regenerated, not merged)
+package-lock.json binary
+pnpm-lock.yaml binary
+yarn.lock binary
+Cargo.lock binary

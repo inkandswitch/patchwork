@@ -115,20 +115,8 @@ const handlers = {
 } as const;
 
 setup(async (href, request) => {
-  console.log("[main] handoff request:", href);
   const protocol = new URL(href).protocol as keyof typeof handlers;
-  console.log(
-    "[main] protocol:",
-    protocol,
-    "has handler:",
-    !!handlers[protocol]
-  );
-  const result = await handlers[protocol]?.(href, request);
-  console.log(
-    "[main] handoff result:",
-    result ? "got response" : "no response"
-  );
-  return result;
+  return handlers[protocol]?.(href, request);
 });
 
 const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
@@ -153,63 +141,22 @@ if (initialParams.has("frame")) {
 const defaultToolsUrl =
   "automerge:2u4x5b6JdSMDkyyMrQRzb8dreHhL" as AutomergeUrl;
 
-console.log("[main] accountDocHandle ready:", accountDocHandle.url);
-console.log(
-  "[main] accountDoc:",
-  JSON.stringify(accountDocHandle.doc(), null, 2)
-);
-console.log(
-  "[main] moduleSettingsUrl:",
-  accountDocHandle.doc().moduleSettingsUrl
-);
-console.log("[main] frameToolId:", accountDocHandle.doc().frameToolId);
-console.log("[main] defaultToolsUrl:", defaultToolsUrl);
-
 function onModuleLoaded(
   name: string,
   mod: any,
   meta?: { branch: string; sourceDocUrl: AutomergeUrl; version: string }
 ) {
-  console.log(
-    "[main] onModuleLoaded:",
-    name.slice(0, 30) + "...",
-    "plugins?",
-    Array.isArray(mod.plugins),
-    meta ? `branch=${meta.branch}` : "(no meta)"
-  );
   if (Array.isArray(mod.plugins)) {
     const baseUrl = automergeUrlToServiceWorkerUrl(name as AutomergeUrl);
     registerPlugins(mod.plugins, baseUrl, meta);
   }
 }
 
-console.log("[main] Creating ModuleWatcher with URLs:", [
-  defaultToolsUrl,
-  accountDocHandle.doc().moduleSettingsUrl,
-]);
 const moduleWatcher = new ModuleWatcher(
   repo,
   [defaultToolsUrl, accountDocHandle.doc().moduleSettingsUrl],
   onModuleLoaded
 );
-console.log("[main] ModuleWatcher created, waiting for doneLoading...");
-moduleWatcher.doneLoading
-  .then(async () => {
-    console.log("[main] ModuleWatcher doneLoading resolved");
-    // Debug: check what the settings docs contain
-    try {
-      const settingsHandle = await repo.find(defaultToolsUrl);
-      console.log(
-        "[main] defaultToolsUrl doc:",
-        JSON.stringify(settingsHandle.doc(), null, 2)
-      );
-    } catch (e) {
-      console.error("[main] Failed to load defaultToolsUrl:", e);
-    }
-  })
-  .catch((err) => {
-    console.error("[main] ModuleWatcher doneLoading failed:", err);
-  });
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
   moduleWatcher.loadSuggestedImportUrl(event.detail.url);

@@ -11,6 +11,42 @@ import type { HandoffHandler } from "@inkandswitch/patchwork-bootloader/types";
 import debug from "debug";
 const log = debug("patchwork:filesystem:handoff");
 
+/**
+ * Check if a string looks like an automerge URL (either standard or darn format).
+ *
+ * Standard automerge URLs use bs58check encoding of 16 bytes (~27 chars).
+ * Darn URLs use plain bs58 encoding of 32 bytes (~44 chars).
+ * Both start with "automerge:".
+ */
+function isAutomergeUrlLike(url: unknown): url is AutomergeUrl {
+  // Handle non-string types (e.g., Automerge Text objects)
+  if (typeof url !== "string") {
+    // Try to convert to string if it has toString
+    if (url && typeof (url as any).toString === "function") {
+      const str = (url as any).toString();
+      if (typeof str === "string" && str.startsWith("automerge:")) {
+        return isAutomergeUrlLike(str);
+      }
+    }
+    return false;
+  }
+
+  if (!url.startsWith("automerge:")) return false;
+
+  // Accept standard automerge URLs
+  if (isValidAutomergeUrl(url)) return true;
+
+  // Accept darn-style URLs (longer, plain bs58 encoded 32-byte IDs)
+  const encoded = url.slice("automerge:".length).split("#")[0];
+  // Plain bs58 of 32 bytes is ~43-44 chars
+  if (encoded.length >= 40 && encoded.length <= 50) {
+    // Basic bs58 character validation
+    return /^[1-9A-HJ-NP-Za-km-z]+$/.test(encoded);
+  }
+
+  return false;
+}
+
 let refreshTimeout: NodeJS.Timeout;
 
 export async function uncache(match: string) {
@@ -27,6 +63,65 @@ export async function uncache(match: string) {
   return matched;
 }
 
+/**
+ * Wait for a document to have a specific property.
+ * This handles the case where the document is syncing and initially empty.
+ */
+async function waitForDocProperty<T, K extends keyof T>(
+  handle: DocHandle<T>,
+  property: K,
+  timeoutMs = 10000
+): Promise<T> {
+  const doc = handle.doc();
+  if (doc && doc[property] !== undefined) {
+    return doc;
+  }
+
+  // Wait for the document to sync
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(
+        new Error(
+          `Timeout waiting for ${handle.url} to have ${String(property)}`
+        )
+      );
+    }, timeoutMs);
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      handle.off("change", onChange);
+    };
+
+    const onChange = () => {
+      const doc = handle.doc();
+      if (doc && doc[property] !== undefined) {
+        cleanup();
+        resolve(doc);
+      }
+    };
+
+    handle.on("change", onChange);
+
+    // Check again in case it changed while setting up listener
+    const currentDoc = handle.doc();
+    if (currentDoc && currentDoc[property] !== undefined) {
+      cleanup();
+      resolve(currentDoc);
+    }
+  });
+}
+
+/**
+ * Wait for a folder document to have a `docs` array.
+ */
+async function waitForFolderDocs(
+  folder: DocHandle<FolderDoc>,
+  timeoutMs = 10000
+): Promise<FolderDoc> {
+  return waitForDocProperty(folder, "docs", timeoutMs);
+}
+
 export async function findFileHandleInFolderHandle(
   repo: Repo,
   folder: DocHandle<FolderDoc>,
@@ -38,7 +133,7 @@ export async function findFileHandleInFolderHandle(
 
   const partsLength = parts.length;
   for (const [index, part] of parts.entries()) {
-    const f = folder.doc();
+    const f = await waitForFolderDocs(folder);
 
     if (!f.docs) {
       throw new Error(
@@ -46,23 +141,26 @@ export async function findFileHandleInFolderHandle(
       );
     }
 
-    const target = f.docs.find((link) => link.name == part);
-    if (!isValidAutomergeUrl(target?.url)) {
+    const target = f.docs.find((link) => String(link.name) == part);
+    if (!isAutomergeUrlLike(target?.url)) {
       throw new Error(
         `couldn't find ${part} in folder with title "${f.title}". (resolving ${parts.join("/")} in folder at ${folder.url})`
       );
     }
-    if (log.enabled) {
-      const { heads, documentId } = parseAutomergeUrl(target.url);
+    // Coerce to primitive string in case Automerge returns an ImmutableString object
+    const targetUrl = String(target.url) as AutomergeUrl;
+    if (log.enabled && isValidAutomergeUrl(targetUrl)) {
+      // Only do heads comparison for standard automerge URLs
+      const { heads, documentId } = parseAutomergeUrl(targetUrl);
       const h = await repo.find(documentId);
       const latestHeads = h.heads();
       if (heads && heads.join("|") !== latestHeads.join("|")) {
         log(
-          `${target.url} is not latest. requested heads: ${heads}, latest heads: ${latestHeads}`
+          `${targetUrl} is not latest. requested heads: ${heads}, latest heads: ${latestHeads}`
         );
       }
     }
-    const fileHandle = await repo.find<UnixFileEntry>(target.url);
+    const fileHandle = await repo.find<UnixFileEntry>(targetUrl);
     if (index == partsLength - 1) {
       return fileHandle as DocHandle<UnixFileEntry>;
     } else {
@@ -86,7 +184,7 @@ export function createFilesystemHandoffHandler(repo: Repo) {
     try {
       const [maybeAutomergeUrl, ...path] = href.split("/");
       log(`recieved handoff request for ${href}`);
-      if (isValidAutomergeUrl(maybeAutomergeUrl)) {
+      if (isAutomergeUrlLike(maybeAutomergeUrl)) {
         const folder = await repo.find<FolderDoc>(maybeAutomergeUrl);
         if (!path[path.length - 1]) {
           path.pop();
@@ -128,11 +226,13 @@ export function createFilesystemHandoffHandler(repo: Repo) {
           path.map(decodeURIComponent)
         )) as DocHandle<UnixFileEntry>;
 
-        const content = file?.doc().content;
+        // Wait for file content to sync
+        const fileDoc = await waitForDocProperty(file, "content");
+        const content = fileDoc.content;
 
         if (!content) {
           throw new Error(
-            `file at ${href} (url: ${file?.doc()}, heads: ${file?.heads()}) has no content`
+            `file at ${href} (url: ${file?.url}, heads: ${file?.heads()}) has no content`
           );
         }
 
@@ -142,7 +242,7 @@ export function createFilesystemHandoffHandler(repo: Repo) {
               ? (content as Uint8Array<ArrayBuffer>)
               : content.toString(),
           headers: {
-            "content-type": file.doc().mimeType ?? "text/plain",
+            "content-type": String(file.doc().mimeType ?? "text/plain"),
           } as Record<string, string>,
         };
       }

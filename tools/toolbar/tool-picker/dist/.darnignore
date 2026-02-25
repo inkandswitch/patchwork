@@ -1,0 +1,11 @@
+# darn ignore file
+# Patterns here will be excluded from sync (gitignore syntax)
+
+# Version control
+.git/
+
+# Example patterns:
+# *.log
+# target/
+# node_modules/
+# .env

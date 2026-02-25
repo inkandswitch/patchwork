@@ -33,6 +33,31 @@ export default {
         });
       },
     } satisfies Plugin,
+    {
+      // CJS packages like use-sync-external-store do require("react") which
+      // esbuild wraps in a __require shim that throws in the browser.
+      // Intercept these require-calls and resolve them to a virtual ESM
+      // wrapper that re-exports from the external ESM module, avoiding CJS.
+      name: "cjs-external-to-esm",
+      setup(build) {
+        const externalSet = new Set(externals);
+        build.onResolve({ filter: /.*/ }, (args) => {
+          if (args.kind === "require-call" && externalSet.has(args.path)) {
+            return {
+              path: `__esm_shim__/${args.path}`,
+              namespace: "cjs-esm-shim",
+            };
+          }
+        });
+        build.onLoad({ filter: /.*/, namespace: "cjs-esm-shim" }, (args) => {
+          const pkg = args.path.replace("__esm_shim__/", "");
+          return {
+            contents: `export * from ${JSON.stringify(pkg)}; export { default } from ${JSON.stringify(pkg)};`,
+            loader: "js",
+          };
+        });
+      },
+    } satisfies Plugin,
     tailwind(),
   ].concat(syncing ? [darnSync()] : []),
   loader: { ".ttf": "dataurl", ".css": "file" },

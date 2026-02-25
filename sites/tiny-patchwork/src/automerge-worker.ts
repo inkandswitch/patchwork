@@ -95,9 +95,8 @@ const repoPromise = (async () => {
   const subductionModule = await import("@automerge/automerge_subduction");
   const { Subduction, SubductionWebSocket, WebCryptoSigner } = subductionModule;
 
-  // Initialize Subduction Wasm module (default export is the init function)
-  // @ts-expect-error - default is the wasm init function
-  await subductionModule.default();
+  // Bundler-target Wasm auto-initializes on import via __wbindgen_start(),
+  // so no explicit init call is needed — just register the module.
   initSubductionModule(subductionModule);
   console.log("[automerge worker: INIT] Subduction Wasm initialized");
 
