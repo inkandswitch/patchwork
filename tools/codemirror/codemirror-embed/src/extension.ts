@@ -8,7 +8,7 @@ import {
 } from "@codemirror/view";
 import { Range } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
-import { type DocumentId, isValidDocumentId } from "@automerge/automerge-repo";
+import { type DocumentId, isValidDocumentId, parseAutomergeUrl } from "@automerge/automerge-repo";
 import { embedTheme } from "./theme.ts";
 import { openLinkIcon } from "./icons.ts";
 
@@ -144,6 +144,55 @@ function getEmbedLinks(view: EditorView) {
   return Decoration.set(widgets);
 }
 
+/** MIME type used by the sideboard (and similar) for document drag-and-drop. */
+const PATCHWORK_DND = "text/x-patchwork-dnd";
+
+/**
+ * Drop handler that accepts documents dragged from the sidebar (or elsewhere)
+ * using text/x-patchwork-dnd. Inserts [patchwork:docId/toolId] at the drop position.
+ */
+function embedDropHandlers() {
+  return EditorView.domEventHandlers({
+    dragover(event, view) {
+      if (!event.dataTransfer?.types.includes(PATCHWORK_DND)) return false;
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+      return true;
+    },
+    drop(event, view) {
+      if (!event.dataTransfer?.types.includes(PATCHWORK_DND)) return false;
+      const raw = event.dataTransfer.getData(PATCHWORK_DND);
+      if (!raw) return false;
+      try {
+        const data = JSON.parse(raw) as { items?: Array<{ url?: string; source?: string }> };
+        const items = data?.items;
+        if (!Array.isArray(items) || items.length === 0) return false;
+        const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+        if (pos == null) return false;
+        const inserts: string[] = [];
+        for (const item of items) {
+          const url = item?.url;
+          const toolId = item?.source;
+          if (!url || !toolId) continue;
+          const { documentId } = parseAutomergeUrl(url);
+          if (!isValidDocumentId(documentId)) continue;
+          inserts.push(`[patchwork:${documentId}/${toolId}]`);
+        }
+        if (inserts.length === 0) return false;
+        event.preventDefault();
+        const text = inserts.join("\n\n");
+        view.dispatch({
+          changes: { from: pos, insert: text },
+          selection: { anchor: pos + text.length },
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  });
+}
+
 const embedPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
@@ -170,5 +219,5 @@ const embedPlugin = ViewPlugin.fromClass(
 );
 
 export function codeMirrorEmbed() {
-  return [embedPlugin, embedTheme];
+  return [embedPlugin, embedTheme, embedDropHandlers()];
 }
