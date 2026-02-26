@@ -33,6 +33,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   #plugins = new Map<string, Plugin<D, I>>();
   #loadPromises = new Map<string, Promise<LoadedPlugin<D, I>>>();
   #events = new EventEmitter<PluginRegistryEvents<D, I>>();
+  loading = new Set<string>();
 
   /**
    * Register an plugin with this registry
@@ -109,6 +110,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     // If the plugin is loadable, load it
     if (isLoadablePlugin(description)) {
       log(`Loading plugin implementation: ${id}`);
+      this.loading.add(id);
       const loadPromise = description
         .load()
         .then((implementation) => {
@@ -147,6 +149,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
           // Store the loaded version
           this.#plugins.set(description.id, plugin);
           this.#loadPromises.delete(id);
+          this.loading.delete(id);
 
           // Notify listeners that an plugin has been loaded
           this.#events.emit("loaded", plugin);
@@ -157,6 +160,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
         .catch((error) => {
           console.error(`Failed to load plugin implementation: ${id}`, error);
           this.#loadPromises.delete(id);
+          this.loading.delete(id);
           throw error;
         });
 

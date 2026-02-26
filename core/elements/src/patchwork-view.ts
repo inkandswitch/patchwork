@@ -305,10 +305,17 @@ export function registerPatchworkViewElement(
         }
 
         if (!this.#tool.module) {
-          getRegistry("patchwork:tool").load(this.#tool.id);
-          this.#state = "unable";
-          console.warn("Tool not loaded", toolId);
-          this.#displayError(`I couldn't load the tool with id ${toolId}.`);
+          const toolRegistry = getRegistry("patchwork:tool");
+          toolRegistry.load(this.#tool.id);
+          if (toolRegistry.loading.has(this.#tool.id)) {
+            this.#state = "unable";
+            console.log(`loading ${toolId}`);
+            this.#displayLoading(toolId);
+          } else {
+            this.#state = "unable";
+            console.warn("Tool not loaded", toolId);
+            this.#displayError(`I couldn't load the tool with id ${toolId}.`);
+          }
           return;
         }
 
@@ -337,6 +344,33 @@ export function registerPatchworkViewElement(
           this.#state = "error";
         }
       }
+
+      #displayLoading = (toolId: string) => {
+        const div = document.createElement("div");
+        div.style.display = "flex";
+        div.style.alignItems = "center";
+        div.style.justifyContent = "center";
+        div.style.height = "100%";
+        div.innerHTML = /* html */ `
+          <style>
+            @keyframes pw-loading-spin {
+              to { transform: rotate(360deg); }
+            }
+          </style>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="
+              width: 24px;
+              height: 24px;
+              border: 3px solid #e0e0e0;
+              border-top-color: #888;
+              border-radius: 50%;
+              animation: pw-loading-spin 0.8s linear infinite;
+            "></div>
+            <div style="font-size: 12px; color: #888;">loading ${toolId}</div>
+          </div>
+        `;
+        this.append(div);
+      };
 
       #displayError = (error: string) => {
         const div = document.createElement("div");

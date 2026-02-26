@@ -438,8 +438,52 @@
   }
 
   & .error-text {
-    height: 2rem;
     font-size: 0.875rem;
     color: hsl(0 70% 50%);
+
+    &:not(:empty) {
+      height: 2rem;
+    }
+  }
+
+  & .loading-text {
+    color: var(--ap-muted-foreground);
+  }
+
+  & .btn.sign-out:hover {
+    background: hsl(0 70% 50%);
+    color: white;
+  }
+
+  & .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgb(0 0 0 / 40%);
+    z-index: 100;
+  }
+
+  & .modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 101;
+    background: var(--ap-background);
+    border: 1px solid var(--ap-border);
+    border-radius: var(--ap-radius);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 24rem;
+    max-width: 90vw;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 15%);
+  }
+
+  & .sign-out-confirm-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-block-start: 0.25rem;
   }
 }

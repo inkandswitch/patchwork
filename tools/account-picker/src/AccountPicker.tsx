@@ -48,7 +48,7 @@ enum AccountPickerTab {
   SignUp = "signUp",
 }
 
-type AccountTokenToLoginStatus = null | "valid" | "malformed" | "not-found";
+type AccountTokenToLoginStatus = null | "valid" | "malformed" | "not-found" | "loading";
 
 export interface PatchworkToolProps<T> {
   handle: DocHandle<T>;
@@ -74,16 +74,17 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
   const [isCopyTooltipOpen, setIsCopyTooltipOpen] = createSignal(false);
   const [isContactCardCopyTooltipOpen, setIsContactCardCopyTooltipOpen] =
     createSignal(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = createSignal(false);
 
   const [accountTokenToLogin, setAccountTokenToLogin] = createSignal("");
   const accountAutomergeUrlToLogin = createMemo(() =>
     accountTokenToAutomergeUrl(accountTokenToLogin())
   );
 
-  const [accountToLogin] = useDocument<TinyPatchworkLayoutDoc>(
+  const [accountToLogin, accountToLoginHandle] = useDocument<TinyPatchworkLayoutDoc>(
     accountAutomergeUrlToLogin
   );
-  const [contactToLogin] = useDocument<ContactDoc>(
+  const [contactToLogin, contactToLoginHandle] = useDocument<ContactDoc>(
     () => accountToLogin()?.contactUrl
   );
 
@@ -92,8 +93,12 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
       const token = accountTokenToLogin();
       if (!token || token === "") return null;
       if (!accountAutomergeUrlToLogin()) return "malformed";
-      if (!accountToLogin()) return "not-found";
-      if (!contactToLogin()) return "not-found";
+      if (!accountToLogin()) {
+        return accountToLoginHandle.loading ? "loading" : "not-found";
+      }
+      if (!contactToLogin()) {
+        return contactToLoginHandle.loading ? "loading" : "not-found";
+      }
       return "valid";
     }
   );
@@ -275,10 +280,24 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
                   onInput={(e) => setSignupName(e.currentTarget.value)}
                   placeholder="Enter your name"
                 />
+                <Button
+                  type="submit"
+                  onClick={onSignUp}
+                  disabled={!canSignUp()}
+                >
+                  Sign up
+                </Button>
               </div>
             </TabsContent>
             <TabsContent value={AccountPickerTab.LogIn} class="tabs-content">
-              <form class="field-group">
+              <form class="field-group" onSubmit={(e) => { e.preventDefault(); if (canLogIn()) onLogIn(); }}>
+                <p class="hint">
+                  To login, paste your account token.
+                </p>
+                <p class="hint">
+                  You can find your token by accessing the account dialog on any
+                  device where you are currently logged in.
+                </p>
                 <Label for="accountUrl">Account token</Label>
 
                 <div class="input-row">
@@ -305,36 +324,42 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
                       Not a valid account token, try copy-pasting again.
                     </div>
                   </Show>
+                  <Show when={accountTokenToLoginStatus() === "loading"}>
+                    <div class="loading-text">Looking up account...</div>
+                  </Show>
                   <Show when={accountTokenToLoginStatus() === "not-found"}>
                     <div>Account not found</div>
                   </Show>
                 </div>
 
-                <p class="hint">
-                  To login, paste your account token.
-                </p>
-                <p class="hint">
-                  You can find your token by accessing the account dialog on any
-                  device where you are currently logged in.
-                </p>
+                <Button
+                  type="submit"
+                  onClick={onLogIn}
+                  disabled={!canLogIn()}
+                >
+                  {`Log in${
+                    contactToLogin()?.type === "registered"
+                      ? ` as ${(contactToLogin() as RegisteredContactDoc).name}`
+                      : ""
+                  }`}
+                </Button>
               </form>
             </TabsContent>
           </Tabs>
         </Show>
 
-        {/* Color picker for all users */}
-        <div class="field-group">
-          <ColorPicker
-            value={(self() as any)?.color}
-            onChange={onColorChange}
-          />
-          <p class="hint">
-            This color will be used for your cursor and presence indicators in
-            collaborative editing.
-          </p>
-        </div>
-
         <Show when={isLoggedIn()}>
+          <div class="field-group">
+            <ColorPicker
+              value={(self() as any)?.color}
+              onChange={onColorChange}
+            />
+            <p class="hint">
+              This color will be used for your cursor and presence indicators in
+              collaborative editing.
+            </p>
+          </div>
+
           <div class="field-group">
             <Label for="name">Name</Label>
             <Input
@@ -416,32 +441,63 @@ export const AccountPicker = (props: PatchworkToolProps<any>) => {
               </Tooltip>
             </div>
           </Show>
-        </Show>
-      </div>
 
-      {/* FOOTER */}
-      <div class="footer">
-        <Show
-          when={isLoggedIn()}
-          fallback={
-            <Button
-              type="submit"
-              onClick={activeTab() === "signUp" ? onSignUp : onLogIn}
-              disabled={!(canSignUp() || canLogIn())}
-            >
-              {activeTab() === "signUp"
-                ? "Sign up"
-                : `Log in${
-                    contactToLogin()?.type === "registered"
-                      ? ` as ${(contactToLogin() as RegisteredContactDoc).name}`
-                      : ""
-                  }`}
-            </Button>
-          }
-        >
-          <Button onClick={onLogout} variant="secondary">
+          <Button onClick={() => setShowSignOutConfirm(true)} variant="secondary" class="sign-out">
             Sign out
           </Button>
+
+          <Show when={showSignOutConfirm()}>
+            <div class="modal-backdrop" onClick={() => setShowSignOutConfirm(false)} />
+            <div class="modal">
+              <p>Are you sure you want to sign out?</p>
+              <p class="hint">
+                Make sure you've copied your account token so you can log back
+                in.
+              </p>
+
+              <Label for="signOutAccountUrl">Account token</Label>
+              <div class="input-row">
+                <Input
+                  onFocus={(e) => e.currentTarget.select()}
+                  value={currentAccountToken() || ""}
+                  id="signOutAccountUrl"
+                  type={showAccountUrl() ? "text" : "password"}
+                  readOnly
+                  autocomplete="off"
+                />
+                <Button variant="ghost" onClick={onToggleShowAccountUrl} type="button">
+                  <Show when={showAccountUrl()} fallback={<EyeOffIcon />}>
+                    <EyeIcon />
+                  </Show>
+                </Button>
+              </div>
+
+              <Tooltip open={isCopyTooltipOpen()}>
+                <TooltipTrigger
+                  as="div"
+                  onClick={() => { onCopy(); }}
+                  onBlur={() => setIsCopyTooltipOpen(false)}
+                >
+                  <Button variant="outline" class="wide" type="button">
+                    <CopyIcon class="icon-inline" />
+                    Copy token
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent class="tooltip-content">
+                  <p>Copied</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <div class="sign-out-confirm-actions">
+                <Button onClick={onLogout} class="sign-out">
+                  Sign out
+                </Button>
+                <Button variant="secondary" onClick={() => setShowSignOutConfirm(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Show>
         </Show>
       </div>
     </div>
