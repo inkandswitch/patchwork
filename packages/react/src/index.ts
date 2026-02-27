@@ -1,6 +1,7 @@
 import type {
   DatatypeDescription,
   DatatypeImplementation,
+  LoadedPlugin,
   PluginDescription,
   ToolDescription,
   ToolImplementation,
@@ -13,10 +14,15 @@ import { createRoot } from "react-dom/client";
 import { RepoContext } from "@automerge/automerge-repo-react-hooks";
 import type { AutomergeUrl } from "@automerge/vanillajs";
 
-export const usePluginDescriptions = <Description extends PluginDescription>(
+export const usePluginDescriptions = <
+  Description extends PluginDescription,
+  Implementation = unknown,
+>(
   type: string
 ) => {
-  const [plugins, setPlugins] = useState<Description[]>([]);
+  const [plugins, setPlugins] = useState<Plugin<Description, Implementation>[]>(
+    []
+  );
 
   useEffect(() => {
     const registry = getRegistry<Description>(type);
@@ -33,7 +39,6 @@ export const usePluginDescriptions = <Description extends PluginDescription>(
   return plugins;
 };
 
-/** Returns a plugin description and its loaded implementation module */
 export const usePlugin = <
   Description extends PluginDescription,
   Implementation = unknown,
@@ -41,27 +46,27 @@ export const usePlugin = <
   type: string,
   id?: string
 ) => {
-  const [result, setResult] = useState<
-    (Description & { module: Implementation }) | undefined
+  const [plugin, setPlugin] = useState<
+    LoadedPlugin<Description, Implementation> | undefined
   >(undefined);
 
   useEffect(() => {
     let canceled = false;
     const registry = getRegistry<Description>(type);
 
-    const loadPlugin = () => {
-      if (!id) return;
-      const desc = registry.get(id);
-      if (!desc?.importUrl) return;
-      import(/* @vite-ignore */ desc.importUrl).then((mod) => {
+    const loadDatatype = () => {
+      if (!id) {
+        return;
+      }
+      registry.load(id).then((datatype) => {
         if (canceled) return;
-        setResult({ ...desc, module: mod.default as Implementation });
+        setPlugin(datatype as LoadedPlugin<Description, Implementation>);
       });
     };
 
-    const unsubscribe = registry.on("changed", loadPlugin);
+    const unsubscribe = registry.on("changed", loadDatatype);
 
-    loadPlugin();
+    loadDatatype();
 
     return () => {
       canceled = true;
@@ -69,11 +74,14 @@ export const usePlugin = <
     };
   }, [id, type]);
 
-  return result?.id === id ? result : undefined;
+  // ensure that we never return an outdated datatype
+  return plugin?.id === id ? plugin : undefined;
 };
 
 export const useDatatypeDescriptions = () => {
-  return usePluginDescriptions<DatatypeDescription>("patchwork:datatype");
+  return usePluginDescriptions<DatatypeDescription, DatatypeImplementation>(
+    "patchwork:datatype"
+  );
 };
 
 export const useDatatype = (id?: string) => {
@@ -84,7 +92,9 @@ export const useDatatype = (id?: string) => {
 };
 
 export const useToolDescriptions = () => {
-  return usePluginDescriptions<ToolDescription>("patchwork:tool");
+  return usePluginDescriptions<ToolDescription, ToolImplementation>(
+    "patchwork:tool"
+  );
 };
 
 export const useTool = (id?: string) => {

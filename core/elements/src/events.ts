@@ -17,6 +17,21 @@ export class OpenDocumentEvent extends CustomEvent<OpenDocumentEventDetail> {
   }
 }
 
+export interface MountedEventDetail {
+  url: AutomergeUrl;
+  toolId: string;
+}
+
+export class MountedEvent extends CustomEvent<MountedEventDetail> {
+  constructor(detail: MountedEventDetail) {
+    super("patchwork:mounted", {
+      detail,
+      composed: true,
+      bubbles: true,
+    });
+  }
+}
+
 export interface NoToolEventDetail {
   url: AutomergeUrl;
 }
@@ -32,8 +47,8 @@ export class NoToolEvent extends CustomEvent<NoToolEventDetail> {
 }
 
 export interface ToolSelectedEventDetail {
-  toolUrl: string | null;
-  toolId: string | null;
+  toolUrl: string;
+  toolId: string;
 }
 
 export class ToolSelectedEvent extends CustomEvent<ToolSelectedEventDetail> {
@@ -49,13 +64,13 @@ export class ToolSelectedEvent extends CustomEvent<ToolSelectedEventDetail> {
 declare global {
   interface ShadowRootEventMap extends ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
+    "patchwork:mounted": MountedEvent;
     "patchwork:no-tool": NoToolEvent;
-    "patchwork:tool-selected": ToolSelectedEvent;
   }
   interface ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
+    "patchwork:mounted": MountedEvent;
     "patchwork:no-tool": NoToolEvent;
-    "patchwork:tool-selected": ToolSelectedEvent;
   }
 }
 

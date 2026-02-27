@@ -229,7 +229,7 @@ export default function Folder(props: {
       <div
         ref={(el) => setRef(el)}
         class="document-list-folder__contents"
-        classList={{ "document-list-folder__contents--hidden": !expanded() }}
+        classList={{ "document-list-folder__contents--hidden": !expanded() && !filter() }}
         data-depth={depth()}
         style={depthStyle()}
       >

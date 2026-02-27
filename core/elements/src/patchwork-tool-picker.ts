@@ -135,8 +135,8 @@ export function registerPatchworkToolPickerElement(
             this.#resolution = resolution;
             this.dispatchEvent(
               new ToolSelectedEvent({
-                toolUrl: resolution.selectedTool?.importUrl ?? null,
-                toolId: resolution.selectedTool?.id ?? null,
+                toolUrl: resolution.selectedTool?.importUrl ?? "",
+                toolId: resolution.selectedTool?.id ?? "",
               })
             );
           }
@@ -162,9 +162,7 @@ export function registerPatchworkToolPickerElement(
         }
 
         if (!tool) {
-          tool = this.#resolution.availableTools.find(
-            (t) => t.id === toolId
-          );
+          tool = this.#resolution.availableTools.find((t) => t.id === toolId);
         }
 
         if (!tool) return;

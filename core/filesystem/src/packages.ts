@@ -5,18 +5,13 @@ import { automergeUrlToServiceWorkerUrl } from "./handoff.js";
 const log = debug("patchwork:filesystem");
 
 export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
-  console.log(
-    `[packages] Importing module from folder doc url ${folderDocUrl}`
-  );
+  log(`Importing module from folder doc url ${folderDocUrl}`);
   const entryPointUrl = await packageEntryPointUrl(folderDocUrl);
   if (!entryPointUrl) {
-    console.error(`[packages] No entry point found for ${folderDocUrl}`);
     throw new Error("No entry point found in package.json");
   }
 
-  console.log(
-    `[packages] Importing module from entry point url ${entryPointUrl}`
-  );
+  log(`Importing module from entry point url ${entryPointUrl}`);
 
   return import(/* @vite-ignore */ entryPointUrl);
 }
@@ -32,28 +27,12 @@ async function packageJsonContentsFromFolderDocUrl(
     )
   ).href;
 
-  console.log("[packages] fetching package.json from:", packageJSONPath);
   const response = await fetch(packageJSONPath);
-  console.log(
-    "[packages] response status:",
-    response.status,
-    response.statusText
-  );
-
   if (!response.ok) {
-    const body = await response.text().catch(() => "(no body)");
-    console.error("[packages] response not ok, body:", body);
     return undefined;
   }
 
-  const text = await response.text();
-  console.log("[packages] package.json contents:", text.slice(0, 500));
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    console.error("[packages] JSON parse error:", e, "raw text:", text);
-    return undefined;
-  }
+  return response.json();
 }
 
 function packageEntryPointFromPackageJson(
