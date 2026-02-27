@@ -4,6 +4,6 @@ export const plugins = [
     id: "account-picker",
     name: "Account Picker",
     supportedDatatypes: ["account"],
-    importPath: "./dist/mount.js",
+    importPath: "./mount.js",
   },
 ];
