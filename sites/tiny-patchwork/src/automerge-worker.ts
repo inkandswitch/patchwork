@@ -79,14 +79,9 @@ self.onunhandledrejection = (event) => {
   ]);
 };
 
-const readyChannel = new BroadcastChannel("automerge-worker-ready");
-
-self.addEventListener("connect", async (e: MessageEvent) => {
+self.addEventListener("connect", (e: MessageEvent) => {
   console.log("[automerge worker: CONNECTED] new client connected");
   configureRepoNetworkPort(e.ports[0]);
-  // Signal readiness after repo is initialized (resolves immediately if already done)
-  await repoPromise;
-  readyChannel.postMessage({ type: "ready" });
 });
 
 const repoPromise = (async () => {

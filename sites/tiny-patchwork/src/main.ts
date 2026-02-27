@@ -99,24 +99,6 @@ window.getRepoChannel = getRepoChannel;
 
 document.body.style.background = "#fffffe";
 
-// Set up the ready listener before creating the SharedWorker to avoid races.
-// The worker broadcasts "ready" once its repo is initialized (including hel connection).
-const workerReady = new Promise<void>((resolve) => {
-  const channel = new BroadcastChannel("automerge-worker-ready");
-  const timeout = setTimeout(() => {
-    console.warn("SharedWorker ready timeout — proceeding without server sync");
-    channel.close();
-    resolve();
-  }, 30_000);
-  channel.onmessage = (event) => {
-    if (event.data.type === "ready") {
-      clearTimeout(timeout);
-      channel.close();
-      resolve();
-    }
-  };
-});
-
 // Connect to SharedWorker for cross-tab sync
 // Worker has its own Subduction with server connection
 try {
@@ -129,11 +111,6 @@ try {
   console.error(error);
   console.error("SharedWorker not available — running single-tab mode");
 }
-
-// Wait for SharedWorker to connect to hel and create its repo.
-// Tool loading depends on data being available via the MessageChannel,
-// so we must not activate the service worker handoff until the worker is ready.
-await workerReady;
 
 window.repo = repo;
 window.Automerge = Automerge;

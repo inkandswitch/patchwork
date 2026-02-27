@@ -109,6 +109,9 @@ async function waitForFolderData(
  * the dynamic `import()` triggers fetch requests. Without this, the
  * handoff's `waitForDocProperty(file, "content")` would race against sync
  * and time out on cold start.
+ *
+ * Throws if any file fails to sync within the timeout — callers should
+ * catch this and skip the tool rather than attempt a doomed import.
  */
 async function waitForAllFileContent(
   repo: Repo,
@@ -120,13 +123,8 @@ async function waitForAllFileContent(
 
   await Promise.all(
     doc.docs.map(async (link) => {
-      try {
-        const fileHandle = await repo.find<UnixFileEntry>(link.url);
-        await waitForDocProperty(fileHandle, "content", timeoutMs);
-      } catch {
-        // Individual file timeout — non-fatal, the import may still work
-        // for files that did sync, or fail gracefully later.
-      }
+      const fileHandle = await repo.find<UnixFileEntry>(link.url);
+      await waitForDocProperty(fileHandle, "content", timeoutMs);
     })
   );
 }
