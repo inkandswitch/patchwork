@@ -7,9 +7,9 @@ import {
   type Repo,
 } from "@automerge/automerge-repo/slim";
 import { importModuleFromFolderDocUrl } from "./packages.js";
-import { isAutomergeUrlLike, waitForDocProperty } from "./handoff.js";
+import { isAutomergeUrlLike } from "./handoff.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
-import type { FolderDoc, UnixFileEntry } from "./types.js";
+import type { FolderDoc } from "./types.js";
 
 export type BranchPointer = {
   heads: string[];
@@ -100,33 +100,6 @@ async function waitForFolderData(
       // not ready yet
     }
   });
-}
-
-/**
- * Wait for every file in a folder doc to have synced `content`.
- *
- * This ensures the service worker handoff can serve files immediately when
- * the dynamic `import()` triggers fetch requests. Without this, the
- * handoff's `waitForDocProperty(file, "content")` would race against sync
- * and time out on cold start.
- *
- * Throws if any file fails to sync within the timeout — callers should
- * catch this and skip the tool rather than attempt a doomed import.
- */
-async function waitForAllFileContent(
-  repo: Repo,
-  folderHandle: DocHandle<FolderDoc>,
-  timeoutMs = FOLDER_SYNC_TIMEOUT_MS
-): Promise<void> {
-  const doc = folderHandle.doc();
-  if (!doc?.docs) return;
-
-  await Promise.all(
-    doc.docs.map(async (link) => {
-      const fileHandle = await repo.find<UnixFileEntry>(link.url);
-      await waitForDocProperty(fileHandle, "content", timeoutMs);
-    })
-  );
 }
 
 /**
@@ -276,13 +249,13 @@ export class ModuleWatcher {
               version,
             };
 
-            // Wait for folder data and all file content to sync before
-            // importing. On cold start repo.find() resolves with an empty
-            // doc; the actual data arrives later via the SharedWorker.
+            // Wait for folder data to sync before importing. On cold start
+            // repo.find() resolves with an empty doc; the actual data arrives
+            // later via the SharedWorker. Per-file content is waited on by the
+            // handoff's waitForDocProperty when each import() triggers a fetch.
             try {
               const folderHandle = await this.repo.find<FolderDoc>(packageUrl);
               await waitForFolderData(folderHandle);
-              await waitForAllFileContent(this.repo, folderHandle);
             } catch (error) {
               console.warn(
                 `[ModuleWatcher] folder ${packageUrl} not available, skipping ${branch}:`,

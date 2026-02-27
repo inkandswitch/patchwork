@@ -1,6 +1,6 @@
 import type { ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import { createRoot } from "react-dom/client";
-import { RepoContext } from "@automerge/automerge-repo-react-hooks";
+import { render } from "solid-js/web";
+import { RepoContext } from "@automerge/automerge-repo-solid-primitives";
 import { AccountPicker } from "./AccountPicker";
 
 function addStyles(element: HTMLElement, textContent: string) {
@@ -19,13 +19,15 @@ const css = await loadStyles();
 
 const mount: ToolImplementation = (handle, element) => {
   addStyles(document.head, css);
-  const root = createRoot(element);
-  root.render(
-    <RepoContext.Provider value={element.repo}>
-      <AccountPicker handle={handle} element={element} />
-    </RepoContext.Provider>
+  const dispose = render(
+    () => (
+      <RepoContext.Provider value={element.repo}>
+        <AccountPicker handle={handle} element={element} />
+      </RepoContext.Provider>
+    ),
+    element
   );
-  return () => root.unmount();
+  return () => dispose();
 };
 
 export default mount;
