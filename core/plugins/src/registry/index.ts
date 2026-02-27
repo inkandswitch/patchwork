@@ -53,21 +53,42 @@ function migrate(plugin: LoadablePlugin) {
 }
 
 /**
- * Register plugins
+ * Register plugins.
+ *
+ * Tool modules export plain plugin descriptors with an `importPath` field
+ * (e.g. `"./mount.js"`). This function converts that into a `load()` method
+ * that resolves the path against the folder-doc base URL and dynamically
+ * imports the module, which is what the registry's lazy-loading expects.
  */
 export function registerPlugins<D extends PluginDescription, I>(
-  plugins: LoadablePlugin<D, I>[],
+  plugins: Array<(LoadablePlugin<D, I> | D) & { importPath?: string }>,
   importUrl: string
 ) {
-  // Register each group with its appropriate registry
   plugins.forEach((plugin) => {
     if (!plugin.type) {
       console.warn("Plugin has no type", plugin);
       return;
     }
-    migrate(plugin);
+    migrate(plugin as LoadablePlugin);
+
+    // Convert importPath to a lazy load() function if not already present
+    if (
+      "importPath" in plugin &&
+      plugin.importPath &&
+      !("load" in plugin && typeof (plugin as any).load === "function")
+    ) {
+      const resolvedUrl = new URL(
+        plugin.importPath,
+        new URL(importUrl, window.location.origin)
+      ).href;
+      (plugin as any).load = () =>
+        import(/* @vite-ignore */ resolvedUrl).then(
+          (mod) => mod.default ?? mod
+        );
+    }
+
     const registry = getRegistry(plugin.type);
-    registry.register(plugin, importUrl);
+    registry.register(plugin as LoadablePlugin<D, I>, importUrl);
   });
 }
 

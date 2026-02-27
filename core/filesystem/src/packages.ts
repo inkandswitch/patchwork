@@ -4,11 +4,14 @@ import debug from "debug";
 import { automergeUrlToServiceWorkerUrl } from "./handoff.js";
 const log = debug("patchwork:filesystem");
 
+const MAX_RETRIES = 5;
+const INITIAL_DELAY_MS = 500;
+
 export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
   log(`Importing module from folder doc url ${folderDocUrl}`);
   const entryPointUrl = await packageEntryPointUrl(folderDocUrl);
   if (!entryPointUrl) {
-    throw new Error("No entry point found in package.json");
+    throw new Error(`No entry point found in package.json for ${folderDocUrl}`);
   }
 
   log(`Importing module from entry point url ${entryPointUrl}`);
@@ -27,12 +30,24 @@ async function packageJsonContentsFromFolderDocUrl(
     )
   ).href;
 
-  const response = await fetch(packageJSONPath);
-  if (!response.ok) {
-    return undefined;
+  // Retry with exponential backoff — folder docs may still be syncing
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const response = await fetch(packageJSONPath);
+    if (response.ok) {
+      return response.json();
+    }
+
+    log(
+      `fetch package.json failed (attempt ${attempt + 1}/${MAX_RETRIES + 1}, status ${response.status}) for ${folderDocUrl}`
+    );
+
+    if (attempt < MAX_RETRIES) {
+      const delay = INITIAL_DELAY_MS * Math.pow(2, attempt);
+      await new Promise((r) => setTimeout(r, delay));
+    }
   }
 
-  return response.json();
+  return undefined;
 }
 
 function packageEntryPointFromPackageJson(

@@ -1,6 +1,8 @@
 import { defineConfig, type Plugin } from "vite";
 import wasm from "vite-plugin-wasm";
 import tailwindcss from "@tailwindcss/vite";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * Custom importmap plugin. Wasm init ordering is handled by index.html's
@@ -191,6 +193,20 @@ export default defineConfig({
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cross-Origin-Embedder-Policy": "require-corp",
+    },
+  },
+  resolve: {
+    alias: {
+      // Use the web target (base64-inlined Wasm with initSync) instead of the
+      // bundler target. The bundler target's `.wasm` import is silently dropped
+      // by Rollup, leaving the wasm binding uninitialized.
+      // import.meta.resolve gives .../dist/esm/bundler.js → sibling web.js
+      "@automerge/automerge-subduction": resolve(
+        dirname(
+          fileURLToPath(import.meta.resolve("@automerge/automerge-subduction"))
+        ),
+        "web.js"
+      ),
     },
   },
   build: {

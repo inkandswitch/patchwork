@@ -6,7 +6,9 @@ import {
 } from "@automerge/automerge-repo";
 import {
   type DatatypeDescription,
+  type DatatypeImplementation,
   createDocOfDatatype2,
+  getRegistry,
 } from "@inkandswitch/patchwork-plugins";
 import { createSignal, For, Show } from "solid-js";
 import { PlusIcon } from "./icons.tsx";
@@ -30,11 +32,12 @@ async function createNew(
   }
   const doc = docHandle.doc();
 
-  if (!datatype.importUrl) {
-    throw new Error(`Datatype "${datatype.id}" has no importUrl`);
-  }
-  const mod = await import(/* @vite-ignore */ datatype.importUrl);
-  const name = mod.default.getTitle(doc);
+  // Use the registry to get the already-loaded datatype module.
+  // createDocOfDatatype2 loads it internally, so it should be available.
+  const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
+  const loaded = await registry.load(datatype.id);
+  const impl = loaded?.module as DatatypeImplementation | undefined;
+  const name = impl?.getTitle(doc) ?? "Untitled";
 
   return {
     name,
@@ -192,7 +195,9 @@ export default function CreateNew(props: CreateNewProps) {
           <Show when={isUrl()}>
             <DropdownMenu.Item
               class="popmenu__item"
-              classList={{ "popmenu__item--highlighted": highlightIndex() === 0 }}
+              classList={{
+                "popmenu__item--highlighted": highlightIndex() === 0,
+              }}
               onSelect={() => handleUrlSubmit(query())}
               onPointerMove={() => setHighlightIndex(0)}
             >

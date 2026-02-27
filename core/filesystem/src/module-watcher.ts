@@ -8,6 +8,7 @@ import {
   type Repo,
 } from "@automerge/automerge-repo/slim";
 import { importModuleFromFolderDocUrl } from "./packages.js";
+import { isAutomergeUrlLike } from "./handoff.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
 import { FolderDoc } from "./types.js";
 
@@ -108,13 +109,13 @@ export class ModuleWatcher {
 
   private async importModuleSafe(importName: string): Promise<any | null> {
     try {
-      const valid = isValidAutomergeUrl(importName);
+      const valid = isAutomergeUrlLike(importName);
       console.log(
         `[ModuleWatcher] importModuleSafe: ${importName.slice(0, 50)}... valid=${valid}`
       );
 
       const mod = valid
-        ? await importModuleFromFolderDocUrl(importName)
+        ? await importModuleFromFolderDocUrl(importName as AutomergeUrl)
         : await import(/* @vite-ignore */ importName);
       console.log(
         `[ModuleWatcher] importModuleSafe: SUCCESS for ${importName.slice(0, 50)}...`,
@@ -136,8 +137,8 @@ export class ModuleWatcher {
   }
 
   private setDocWatcher(importName: string) {
-    const docUrl = isValidAutomergeUrl(importName)
-      ? importName
+    const docUrl = isAutomergeUrlLike(importName)
+      ? (importName as AutomergeUrl)
       : (importName.match(/\/automerge\/(\w+)\//)?.[1] as DocumentId);
 
     if (!docUrl) return;

@@ -18,7 +18,7 @@ const log = debug("patchwork:filesystem:handoff");
  * Darn URLs use plain bs58 encoding of 32 bytes (~44 chars).
  * Both start with "automerge:".
  */
-function isAutomergeUrlLike(url: unknown): url is AutomergeUrl {
+export function isAutomergeUrlLike(url: unknown): url is AutomergeUrl {
   // Handle non-string types (e.g., Automerge Text objects)
   if (typeof url !== "string") {
     // Try to convert to string if it has toString

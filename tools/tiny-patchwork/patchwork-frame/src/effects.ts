@@ -14,6 +14,7 @@ import {
 } from "@inkandswitch/patchwork-filesystem";
 import {
   DatatypeDescription,
+  DatatypeImplementation,
   getRegistry,
 } from "@inkandswitch/patchwork-plugins";
 import { useEffect } from "react";
@@ -52,12 +53,13 @@ export const useUpdateDocLinksOfActiveDocumentsEffect = (
       }
 
       const datatype = registry.get(type);
-      if (!datatype?.importUrl) continue;
+      if (!datatype) continue;
 
-      import(/* @vite-ignore */ datatype.importUrl).then((mod) => {
-        if (canceled) return;
+      registry.load(type).then((loaded) => {
+        if (canceled || !loaded) return;
 
-        const title = mod.default.getTitle(doc);
+        const impl = loaded.module as DatatypeImplementation;
+        const title = impl.getTitle(doc);
 
         changeRootFolderDoc((doc) => {
           for (const docLink of doc.docs) {
@@ -100,12 +102,13 @@ export const useAddUnknownDocumentsToSidebarEffect = (
       }
 
       const datatype = registry.get(type);
-      if (!datatype?.importUrl) continue;
+      if (!datatype) continue;
 
-      import(/* @vite-ignore */ datatype.importUrl).then((mod) => {
-        if (canceled) return;
+      registry.load(type).then((loaded) => {
+        if (canceled || !loaded) return;
 
-        const title = mod.default.getTitle(docHandle.doc());
+        const impl = loaded.module as DatatypeImplementation;
+        const title = impl.getTitle(docHandle.doc());
         if (rootFolderDoc.docs.some((doc) => doc.url === docHandle.url)) {
           return;
         }

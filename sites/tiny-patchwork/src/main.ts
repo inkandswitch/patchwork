@@ -37,7 +37,11 @@ import {
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 import { SubductionStorageBridge } from "@automerge/automerge-repo-subduction-bridge";
-import { Subduction, WebCryptoSigner } from "@automerge/automerge-subduction";
+
+// Dynamic import: Wasm must be fully initialized (by init-wasm.ts) before we
+// can access any exports. Static imports would race with the async Wasm fetch.
+const { Subduction, WebCryptoSigner } =
+  await import("@automerge/automerge-subduction");
 
 // todo maybe we should have a window.patchwork namespace for this?
 declare global {
@@ -58,7 +62,7 @@ workerLogChannel.onmessage = (event) => {
 };
 
 // Create Subduction instance (shares IndexedDB storage with SharedWorker)
-// Wasm was initialized in repo-init.ts before this module loaded
+// Wasm was initialized in init-wasm.ts before this module loaded
 const signer = await WebCryptoSigner.setup();
 const storageAdapter = new IndexedDBStorageAdapter();
 const storage = new SubductionStorageBridge(storageAdapter);
@@ -188,12 +192,14 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
     if (docType) {
       const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
       const datatype = registry.get(docType);
-      if (datatype?.importUrl) {
-        const mod = await import(/* @vite-ignore */ datatype.importUrl);
-        const impl = mod.default as DatatypeImplementation;
-        const docTitle = impl.getTitle(doc);
-        if (docTitle) {
-          document.title = `${docTitle} | patchwork`;
+      if (datatype) {
+        const loaded = await registry.load(docType);
+        if (loaded) {
+          const impl = loaded.module as DatatypeImplementation;
+          const docTitle = impl.getTitle(doc);
+          if (docTitle) {
+            document.title = `${docTitle} | patchwork`;
+          }
         }
       }
     }

@@ -23,6 +23,7 @@ import type {
 import {
   getRegistry,
   type DatatypeDescription,
+  type DatatypeImplementation,
 } from "@inkandswitch/patchwork-plugins";
 import { createSignal, For, Match, Show, Switch } from "solid-js";
 import { filter, filterMatches, setRenaming } from "../state.ts";
@@ -139,11 +140,12 @@ export function DocumentList(props: DocumentListProps) {
                 if (metadata) {
                   const datatype = datatypes.get(metadata.type);
 
-                  if (datatype?.importUrl) {
-                    const mod = await import(
-                      /* @vite-ignore */ datatype.importUrl
-                    );
-                    handle.change((doc) => mod.default.setTitle?.(doc, name));
+                  if (datatype) {
+                    const loaded = await datatypes.load(metadata.type);
+                    if (loaded) {
+                      const impl = loaded.module as DatatypeImplementation;
+                      handle.change((doc) => impl.setTitle?.(doc, name));
+                    }
                   }
                 }
               });
