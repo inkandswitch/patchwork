@@ -61,15 +61,17 @@ workerLogChannel.onmessage = (event) => {
   (console as any)[method](...args);
 };
 
-// Create Subduction instance (shares IndexedDB storage with SharedWorker)
-// Wasm was initialized in init-wasm.ts before this module loaded
+// Create Subduction instance with its own IndexedDB database to avoid
+// contention with the SharedWorker's Subduction (which uses the default
+// "automerge" database). Both instances are on the same origin, and
+// concurrent IDB connections to the same database cause
+// "The database connection is closing" errors.
 const signer = await WebCryptoSigner.setup();
-const storageAdapter = new IndexedDBStorageAdapter();
+const storageAdapter = new IndexedDBStorageAdapter("automerge-tab");
 const storage = new SubductionStorageBridge(storageAdapter);
 const subduction = await Subduction.hydrate(signer, storage);
 
 // Tab's Subduction does NOT connect to server — worker handles that
-// This avoids duplicate connections while sharing the same storage
 
 const repo = new Repo({ subduction });
 
