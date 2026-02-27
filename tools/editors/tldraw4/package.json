@@ -1,6 +1,8 @@
 {
   "name": "@patchwork/tldraw4",
-  "darn": null,
+  "darn": {
+    "url": "automerge:3ArYduEurpv7nve1C9pAE5vbJr2j"
+  },
   "private": true,
   "version": "0.0.0",
   "type": "module",

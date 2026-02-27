@@ -8,10 +8,12 @@ import pkgJSON from "../package.json" with { type: "json" };
 
 const syncing = process.argv.includes("darn") || process.env.DARN_SYNC;
 
+const jsEntryPoints = Object.values(pkgJSON.exports)
+  .filter((dsc) => typeof dsc == "object" && "source" in dsc)
+  .map((dsc) => dsc.source);
+
 export default {
-  entryPoints: Object.values(pkgJSON.exports)
-    .filter((dsc) => typeof dsc == "object" && "source" in dsc)
-    .map((dsc) => dsc.source),
+  entryPoints: [...jsEntryPoints, "src/main.css"],
   outdir: "dist",
   bundle: true,
   platform: "browser",
