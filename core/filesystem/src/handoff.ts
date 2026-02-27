@@ -67,7 +67,7 @@ export async function uncache(match: string) {
  * Wait for a document to have a specific property.
  * This handles the case where the document is syncing and initially empty.
  */
-async function waitForDocProperty<T, K extends keyof T>(
+export async function waitForDocProperty<T, K extends keyof T>(
   handle: DocHandle<T>,
   property: K,
   timeoutMs = 10000
