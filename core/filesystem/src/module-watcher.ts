@@ -2,7 +2,6 @@ import {
   type AutomergeUrl,
   type DocHandle,
   type DocumentId,
-  isValidAutomergeUrl,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
   type Repo,
@@ -38,6 +37,70 @@ export type ModuleLoadedMeta = {
   sourceDocUrl: AutomergeUrl;
   version: string;
 };
+
+/** Default timeout for waiting on folder doc data to sync (ms). */
+const FOLDER_SYNC_TIMEOUT_MS = 30_000;
+
+/**
+ * Wait for a folder doc handle to have a `docs` array.
+ *
+ * On cold start the tab's repo resolves `repo.find()` immediately with an
+ * empty `A.init()` doc because the tab's Subduction has no server connection.
+ * Actual data arrives later via the SharedWorker → MessageChannel legacy sync.
+ * This helper blocks until the folder has meaningful content.
+ */
+async function waitForFolderData(
+  handle: DocHandle<FolderDoc>,
+  timeoutMs = FOLDER_SYNC_TIMEOUT_MS
+): Promise<void> {
+  try {
+    const doc = handle.doc();
+    if (doc && doc.docs !== undefined) return;
+  } catch {
+    // handle may not be ready yet — fall through to wait
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(
+        new Error(
+          `[ModuleWatcher] timeout waiting for folder ${handle.url} to sync`
+        )
+      );
+    }, timeoutMs);
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      handle.off("change", onChange);
+    };
+
+    const onChange = () => {
+      try {
+        const doc = handle.doc();
+        if (doc && doc.docs !== undefined) {
+          cleanup();
+          resolve();
+        }
+      } catch {
+        // not ready yet
+      }
+    };
+
+    handle.on("change", onChange);
+
+    // Re-check in case data arrived between the initial check and the listener.
+    try {
+      const doc = handle.doc();
+      if (doc && doc.docs !== undefined) {
+        cleanup();
+        resolve();
+      }
+    } catch {
+      // not ready yet
+    }
+  });
+}
 
 /**
  * This class watches moduleSettingsDocs and loads modules based on the contents therein.
@@ -89,10 +152,9 @@ export class ModuleWatcher {
       modules.map(async (importName) => {
         this.setDocWatcher(importName);
         await this.announce(importName).catch((error) => {
-          console.log(
-            new Error(`Failed to load module ${importName}: ${error}`, {
-              cause: error,
-            })
+          console.warn(
+            `[ModuleWatcher] failed to load module ${importName}`,
+            error
           );
         });
       })
@@ -109,24 +171,12 @@ export class ModuleWatcher {
 
   private async importModuleSafe(importName: string): Promise<any | null> {
     try {
-      const valid = isAutomergeUrlLike(importName);
-      console.log(
-        `[ModuleWatcher] importModuleSafe: ${importName.slice(0, 50)}... valid=${valid}`
-      );
-
-      const mod = valid
+      const mod = isAutomergeUrlLike(importName)
         ? await importModuleFromFolderDocUrl(importName as AutomergeUrl)
         : await import(/* @vite-ignore */ importName);
-      console.log(
-        `[ModuleWatcher] importModuleSafe: SUCCESS for ${importName.slice(0, 50)}...`,
-        mod
-      );
       return mod;
     } catch (error) {
-      console.error(
-        `[ModuleWatcher] importModuleSafe: FAILED for ${importName}`,
-        error
-      );
+      console.error(`[ModuleWatcher] failed to import ${importName}`, error);
       return null;
     }
   }
@@ -162,15 +212,6 @@ export class ModuleWatcher {
   }
 
   private async loadBranchedDoc(doc: ModuleSettingsDoc) {
-    console.log(
-      "[ModuleWatcher] loadBranchedDoc: doc.modules type:",
-      typeof doc.modules
-    );
-    console.log(
-      "[ModuleWatcher] loadBranchedDoc: doc.modules constructor:",
-      doc.modules?.constructor?.name
-    );
-
     const entries = Object.entries(doc.modules ?? {}) as [
       AutomergeUrl,
       ModuleEntry,
@@ -207,13 +248,26 @@ export class ModuleWatcher {
               sourceDocUrl: packageUrl,
               version,
             };
+
+            // Wait for folder data to sync before importing. On cold start
+            // repo.find() resolves with an empty doc; the actual data arrives
+            // later via the SharedWorker.
+            try {
+              const folderHandle = await this.repo.find<FolderDoc>(packageUrl);
+              await waitForFolderData(folderHandle);
+            } catch (error) {
+              console.warn(
+                `[ModuleWatcher] folder ${packageUrl} not available, skipping ${branch}:`,
+                error
+              );
+              return;
+            }
+
             this.setDocWatcher(versionedUrl);
             await this.announce(versionedUrl, meta).catch((error) => {
-              console.log(
-                new Error(
-                  `Failed to load module ${packageUrl}@${branch}: ${error}`,
-                  { cause: error }
-                )
+              console.warn(
+                `[ModuleWatcher] failed to load module ${packageUrl}@${branch}`,
+                error
               );
             });
           }
@@ -228,28 +282,13 @@ export class ModuleWatcher {
   }
 
   private async load() {
-    console.log(
-      "[ModuleWatcher] load() called, handles:",
-      this.handles?.length
-    );
     if (!this.handles) throw new Error("No handles");
     const promises = this.handles.map((handle) => {
-      console.log("[ModuleWatcher] processing handle:", handle.url);
       const doc = handle.doc();
-      console.log("[ModuleWatcher] doc keys:", doc ? Object.keys(doc) : "null");
-      console.log(
-        "[ModuleWatcher] doc.modules type:",
-        typeof doc?.modules,
-        "isArray:",
-        Array.isArray(doc?.modules)
-      );
-      console.log("[ModuleWatcher] doc.modules:", doc?.modules);
       if (!doc?.modules) {
         console.warn(
           "[ModuleWatcher] handle has no modules field:",
-          handle.url,
-          "doc keys:",
-          doc ? Object.keys(doc) : "null"
+          handle.url
         );
         return;
       }
@@ -259,6 +298,5 @@ export class ModuleWatcher {
       return this.loadBranchedDoc(doc as ModuleSettingsDoc);
     });
     await Promise.all(promises);
-    console.log("[ModuleWatcher] load() complete");
   }
 }

@@ -299,8 +299,8 @@ export function registerPatchworkViewElement(
 
         if (!this.#tool) {
           this.#state = "unable";
-          console.warn("Tool not found", toolId);
-          this.#displayError(`I couldn't find the tool with id ${toolId}.`);
+          console.log("Tool not found yet, waiting for registration:", toolId);
+          this.#displayLoading(toolId);
           return;
         }
 
