@@ -26,7 +26,7 @@ import * as fs from "node:fs";
 import { NodeFSSigner, setPeerIdConstructor } from "./node-signer.js";
 
 const STORAGE_DIR = path.join(os.homedir(), ".patchwork-modules");
-const DEFAULT_SYNC_SERVER = "ws://localhost:8080";
+const DEFAULT_SYNC_SERVER = "wss://hel.subduction.keyhive.org";
 
 let repoInstance: Repo | null = null;
 let subductionInstance: any = null;

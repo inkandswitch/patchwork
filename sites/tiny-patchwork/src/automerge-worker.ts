@@ -113,7 +113,7 @@ const repoPromise = (async () => {
   console.log("[automerge worker: INIT] Subduction hydrated from storage");
 
   // Connect to Subduction sync server
-  const SUBDUCTION_SERVER_URL = "ws://localhost:8080";
+  const SUBDUCTION_SERVER_URL = "wss://hel.subduction.keyhive.org";
   try {
     const conn = await SubductionWebSocket.tryDiscover(
       new URL(SUBDUCTION_SERVER_URL),

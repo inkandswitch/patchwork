@@ -2,9 +2,6 @@
   "name": "@tiny-patchwork/context-sidebar",
   "type": "module",
   "private": true,
-  "pushwork": {
-    "url": "automerge:36eA2C4SFzNKPnPjPAUHUpKJAAHG"
-  },
   "main": "./dist/index.js",
   "scripts": {
     "dev": "vite build --watch",
@@ -39,5 +36,8 @@
     "typescript-eslint": "^8.41.0",
     "vite": "^7.1.9",
     "vite-plugin-css-injected-by-js": "^3.5.2"
+  },
+  "darn": {
+    "url": "automerge:3rsgPNUkgSCLS8Ch6HGrDn43HHjj"
   }
 }

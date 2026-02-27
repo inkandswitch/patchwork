@@ -2,9 +2,6 @@
   "name": "@tiny-patchwork/patchwork-frame",
   "type": "module",
   "main": "./dist/index.js",
-  "pushwork": {
-    "url": "automerge:4JumiRGdrRZJPXjWF5X98foob3MG"
-  },
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
@@ -45,5 +42,8 @@
     "typescript-eslint": "^8.41.0",
     "vite": "^7.1.9",
     "vite-plugin-css-injected-by-js": "^3.5.2"
+  },
+  "darn": {
+    "url": "automerge:38aMvr2o3MF4o7gYaYZL6QT4R9bM"
   }
 }

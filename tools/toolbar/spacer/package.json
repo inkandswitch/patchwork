@@ -3,9 +3,6 @@
   "type": "module",
   "private": true,
   "main": "./dist/index.js",
-  "pushwork": {
-    "url": "automerge:2RZPBJVL6nenLKR4myKz6bsHqjsz"
-  },
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
@@ -24,5 +21,8 @@
     "globals": "^16.4.0",
     "typescript-eslint": "^8.41.0",
     "vite": "^7.1.9"
+  },
+  "darn": {
+    "url": "automerge:Pk82C2JQwHo81bS6ziPJmRnLy8d"
   }
 }

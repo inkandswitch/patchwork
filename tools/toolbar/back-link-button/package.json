@@ -2,9 +2,6 @@
   "name": "@tiny-patchwork/back-link-button",
   "type": "module",
   "main": "./dist/index.js",
-  "pushwork": {
-    "url": "automerge:38bVH1cbYTqv5p2BpC5drJQLLLFL"
-  },
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
@@ -38,5 +35,8 @@
     "typescript-eslint": "^8.41.0",
     "vite": "^7.1.9",
     "vite-plugin-css-injected-by-js": "^3.5.2"
+  },
+  "darn": {
+    "url": "automerge:2FZbTb97SCQVteGDsWjKAW1GWwDF"
   }
 }

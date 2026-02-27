@@ -3,9 +3,6 @@
   "type": "module",
   "private": true,
   "main": "./dist/index.js",
-  "pushwork": {
-    "url": "automerge:YhaLGJZZ1WgQkhJg7BcJqYPD12a"
-  },
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
@@ -19,5 +16,8 @@
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "vite": "^7.1.9",
     "vite-plugin-css-injected-by-js": "^3.5.2"
+  },
+  "darn": {
+    "url": "automerge:4AjyRkVRw7BmotRb2ZH1iqtXa4MS"
   }
 }
