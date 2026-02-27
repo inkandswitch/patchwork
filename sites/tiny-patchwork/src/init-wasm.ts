@@ -7,7 +7,7 @@
  */
 console.log("[init-wasm] Starting Wasm initialization...");
 
-import * as subductionModule from "@automerge/automerge_subduction";
+import * as subductionModule from "@automerge/automerge-subduction";
 import { initSubductionModule } from "@automerge/automerge-repo-subduction-bridge";
 
 try {

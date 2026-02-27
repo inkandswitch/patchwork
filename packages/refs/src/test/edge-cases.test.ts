@@ -16,7 +16,7 @@ describe("Edge Cases", () => {
   let handle: DocHandle<any>;
 
   beforeEach(() => {
-    repo = new Repo();
+    repo = new Repo({} as any);
     handle = repo.create();
   });
 

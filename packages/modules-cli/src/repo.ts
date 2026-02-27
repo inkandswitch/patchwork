@@ -45,7 +45,7 @@ export async function createRepo(
   }
 
   // Dynamic import of subduction module (it's a wasm module)
-  const subductionModule = await import("@automerge/automerge_subduction");
+  const subductionModule = await import("@automerge/automerge-subduction");
   const { Subduction, SubductionWebSocket, PeerId } = subductionModule;
 
   // Initialize wasm and register module

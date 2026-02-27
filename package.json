@@ -21,11 +21,11 @@
   "pnpm": {
     "overrides": {
       "@automerge/automerge": "catalog:",
-      "@automerge/automerge-repo": "link:../automerge-repo/packages/automerge-repo",
-      "@automerge/automerge-repo-react-hooks": "link:../automerge-repo/packages/automerge-repo-react-hooks",
-      "@automerge/automerge-repo-solid-primitives": "link:../automerge-repo/packages/automerge-repo-solid-primitives",
-      "@automerge/react": "link:../automerge-repo/packages/automerge-react",
-      "@automerge/vanillajs": "link:../automerge-repo/packages/automerge-vanillajs"
+      "@automerge/automerge-repo": "catalog:",
+      "@automerge/automerge-repo-react-hooks": "catalog:",
+      "@automerge/automerge-repo-solid-primitives": "catalog:",
+      "@automerge/react": "catalog:",
+      "@automerge/vanillajs": "catalog:"
     }
   },
   "keywords": [],

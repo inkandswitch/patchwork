@@ -1,8 +1,0 @@
-{
-  "name": "@tiny-patchwork/tool-picker",
-  "type": "module",
-  "main": "./index.js",
-  "pushwork": {
-    "url": "automerge:4E1EYjpSVPVUhnUgRtdM5KVDJ7bZ"
-  }
-}

@@ -92,7 +92,7 @@ const repoPromise = (async () => {
   const { IndexedDBStorageAdapter } = await import("@automerge/vanillajs");
   const { SubductionStorageBridge, initSubductionModule } =
     await import("@automerge/automerge-repo-subduction-bridge");
-  const subductionModule = await import("@automerge/automerge_subduction");
+  const subductionModule = await import("@automerge/automerge-subduction");
   const { Subduction, SubductionWebSocket, WebCryptoSigner } = subductionModule;
 
   // Bundler-target Wasm auto-initializes on import via __wbindgen_start(),

@@ -1,1 +1,0 @@
-const t=[{type:"patchwork:tool",id:"tool-picker",tags:["titlebar-tool"],name:"Tool Picker",icon:"Wrench",supportedDatatypes:"*",importPath:"./mount.js",unlisted:!0,forTitleBar:!0}];export{t as plugins};

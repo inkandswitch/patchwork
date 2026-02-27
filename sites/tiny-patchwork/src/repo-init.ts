@@ -6,7 +6,7 @@ import initSubduction, {
   Subduction,
   SubductionWebSocket,
   WebCryptoSigner,
-} from "@automerge/automerge_subduction";
+} from "@automerge/automerge-subduction";
 
 // Initialize Wasm immediately
 await initSubduction();

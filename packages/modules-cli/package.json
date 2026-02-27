@@ -14,8 +14,8 @@
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-storage-nodefs": "^2.0.2",
-    "@automerge/automerge-repo-subduction-bridge": "link:../../../automerge-repo/packages/automerge-repo-subduction-bridge",
-    "@automerge/automerge_subduction": "link:../../../subduction/automerge_subduction_wasm/pkg-node",
+    "@automerge/automerge-repo-subduction-bridge": "catalog:",
+    "@automerge/automerge-subduction": "catalog:",
     "commander": "^12.0.0"
   },
   "devDependencies": {

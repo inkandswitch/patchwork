@@ -1,8 +1,0 @@
-{
-  "name": "@tiny-patchwork/sidebar-toggles",
-  "type": "module",
-  "main": "./index.js",
-  "pushwork": {
-    "url": "automerge:YhaLGJZZ1WgQkhJg7BcJqYPD12a"
-  }
-}

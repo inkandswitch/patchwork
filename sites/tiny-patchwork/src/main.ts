@@ -37,7 +37,7 @@ import {
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 import { SubductionStorageBridge } from "@automerge/automerge-repo-subduction-bridge";
-import { Subduction, WebCryptoSigner } from "@automerge/automerge_subduction";
+import { Subduction, WebCryptoSigner } from "@automerge/automerge-subduction";
 
 // todo maybe we should have a window.patchwork namespace for this?
 declare global {

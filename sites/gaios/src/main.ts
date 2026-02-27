@@ -35,11 +35,8 @@ import {
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 import { SubductionStorageBridge } from "@automerge/automerge-repo-subduction-bridge";
-import initSubduction, {
-  Subduction,
-  WebCryptoSigner,
-} from "@automerge/automerge_subduction";
-import * as subductionModule from "@automerge/automerge_subduction";
+import { Subduction, WebCryptoSigner } from "@automerge/automerge-subduction";
+import * as subductionModule from "@automerge/automerge-subduction";
 import { initSubductionModule } from "@automerge/automerge-repo-subduction-bridge";
 
 declare global {
@@ -59,9 +56,7 @@ workerLogChannel.onmessage = (event) => {
   (console as any)[method](...args);
 };
 
-// Initialize Subduction (shares IndexedDB storage with SharedWorker)
-// Tab handles local operations; SharedWorker handles server sync
-await initSubduction();
+// Bundler-target Wasm auto-initializes on import via __wbindgen_start()
 initSubductionModule(subductionModule);
 
 const signer = await WebCryptoSigner.setup();

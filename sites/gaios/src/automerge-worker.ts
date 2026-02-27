@@ -80,12 +80,10 @@ const repoPromise = (async () => {
   type PeerId = import("@automerge/automerge-repo").PeerId;
   const { SubductionStorageBridge, initSubductionModule } =
     await import("@automerge/automerge-repo-subduction-bridge");
-  const subductionModule = await import("@automerge/automerge_subduction");
-  const initSubduction = subductionModule.default;
+  const subductionModule = await import("@automerge/automerge-subduction");
   const { Subduction, SubductionWebSocket, WebCryptoSigner } = subductionModule;
 
-  // Initialize Subduction Wasm module and register with lazy loaders
-  await initSubduction();
+  // Bundler-target Wasm auto-initializes on import via __wbindgen_start()
   initSubductionModule(subductionModule);
   console.log("[automerge worker: INIT] Subduction Wasm initialized");
 
