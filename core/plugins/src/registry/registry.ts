@@ -132,6 +132,17 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
         .load()
         .then((implementation) => {
           log(`Successfully loaded implementation for: ${id}`, implementation);
+
+          // Guard: if load() returned an ES module namespace instead of the
+          // implementation value, unwrap its default export.
+          if (
+            implementation &&
+            typeof implementation === "object" &&
+            (implementation as any)[Symbol.toStringTag] === "Module"
+          ) {
+            implementation = (implementation as any).default ?? implementation;
+          }
+
           // Merge the implementation with the plugin metadata to create a complete Plugin
           // Omit the load method as it's no longer needed
           const { load, ...descriptionWithoutLoad } = description;
