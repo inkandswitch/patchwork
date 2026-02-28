@@ -96,6 +96,15 @@ const repoPromise = (async () => {
   return repo;
 })();
 
+const deleteChannel = new BroadcastChannel("automerge-worker-delete");
+deleteChannel.onmessage = async (event) => {
+  if (event.data?.type === "delete") {
+    const repo = await repoPromise;
+    repo.delete(event.data.docId);
+    console.log(`[automerge worker: DELETE] deleted ${event.data.docId}`);
+  }
+};
+
 async function configureRepoNetworkPort(port: MessagePort) {
   const repo = await repoPromise;
   const { MessageChannelNetworkAdapter } = await import("@automerge/vanillajs");
