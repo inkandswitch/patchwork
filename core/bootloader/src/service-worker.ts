@@ -117,7 +117,17 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
             log(`serving handoff ${handoffURL} from cache ${cachename}`);
             return match;
           }
-          const client = await self.clients.get(fetchEvent.clientId);
+          let client = await self.clients.get(fetchEvent.clientId);
+
+          if (!client) {
+            // SharedWorkers and direct navigations aren't window clients.
+            // Find any available window client to handle the request.
+            const allClients = await self.clients.matchAll({ type: "window" });
+            client = allClients[0] ?? null;
+            log(
+              `clientId ${fetchEvent.clientId} not found, falling back to ${client ? "another window client" : "nobody"}`
+            );
+          }
 
           // set up a request id
           const reqid = reqcount++;
@@ -125,12 +135,6 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           const resolvers = Promise.withResolvers<HandoffResponse>();
           responseResolvers.set(reqid, resolvers);
 
-          // i don't think this can happen
-          if (!client) {
-            throw new Error(
-              `the client has gone missing!!! ${fetchEvent.clientId}. i have NO IDEA what to do`
-            );
-          }
           const message = {
             id: reqid,
             type: "request",
@@ -144,10 +148,14 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
             },
           };
           log(
-            `sending handoff request to main thread for cache ${cachename}`,
+            `sending handoff request to client for cache ${cachename}`,
             message
           );
-          // send request event to main thread to ask them how to handle it
+          if (!client) {
+            return new Response("no patchwork tabs available to handle request", {
+              status: 503,
+            });
+          }
           client.postMessage(message);
           // this'll finish when the main thread gets back to us
           fetchEvent.waitUntil(resolvers.promise);
