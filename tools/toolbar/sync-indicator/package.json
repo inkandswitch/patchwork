@@ -24,6 +24,8 @@
     "@automerge/automerge-repo-solid-primitives": "^2.5.2",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@types/debug": "^4.1.12",
+    "debug": "^4.4.3",
     "solid-js": "^1.9.9"
   },
   "devDependencies": {

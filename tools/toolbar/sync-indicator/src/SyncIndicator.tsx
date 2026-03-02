@@ -1,3 +1,4 @@
+import Debug from "debug";
 import * as A from "@automerge/automerge";
 import {
   type DocHandle,
@@ -16,6 +17,8 @@ import { Button, Popover, PopoverTrigger, PopoverContent } from "./lib/ui";
 import { SyncIcon } from "./SyncIcon";
 import { CopyIcon } from "./CopyIcon";
 import "./styles.css";
+
+const log = Debug("patchwork:sync-indicator");
 
 export { RepoContext };
 
@@ -97,11 +100,7 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
       heads: UrlHeads;
       timestamp: number;
     }) => {
-      console.log("[sync-indicator] remote-heads", {
-        storageId,
-        heads,
-        timestamp,
-      });
+      log("remote-heads", { storageId, heads, timestamp });
 
       // sync server (gossiped through shared worker)
       if (storageId === SYNC_SERVER_STORAGE_ID) {
@@ -192,7 +191,7 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
     peerList.sort((a, b) => peerOrder(a) - peerOrder(b));
     let p = peerList;
 
-    console.log("[sync-indicator] peers", peerList);
+    log("peers", peerList);
     if (!localStorage.debug && !localStorage.DEBUG) {
       p = p.filter((p) => p.name != "Shared Worker");
     }
@@ -255,9 +254,9 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
     };
     try {
       await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-      console.log("Copied sync state to clipboard", data);
+      log("copied sync state to clipboard", data);
     } catch (err) {
-      console.error("Failed to copy sync state:", err);
+      log("failed to copy sync state:", err);
     }
   };
 
@@ -271,7 +270,7 @@ export function SyncIndicator(props: { handle: DocHandle<unknown> }) {
     try {
       await navigator.clipboard.writeText(JSON.stringify(heads));
     } catch (err) {
-      console.error("Failed to copy heads:", err);
+      log("failed to copy heads:", err);
     }
   };
 
