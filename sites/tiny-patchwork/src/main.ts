@@ -65,9 +65,9 @@ repo.subscribeToRemotes([
 ]);
 
 function createSharedWorker() {
-  return new SharedWorker(new URL("./automerge-worker.ts", import.meta.url), {
+  return new SharedWorker(new URL("./samod-worker.ts", import.meta.url), {
     type: "module",
-    name: "automerge-repo-shared-worker",
+    name: "samod-shared-worker",
   });
 }
 
