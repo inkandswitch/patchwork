@@ -24,7 +24,7 @@ export { RepoContext };
 
 export const SYNC_SERVER_STORAGE_ID = (import.meta.env
   ?.VITE_SYNC_SERVER_STORAGE_ID ??
-  "3760df37-a4c6-4f66-9ecd-732039a9385d") as StorageId;
+  "1fcd2698-3426-4288-9c47-85364db5073b") as StorageId;
 
 interface PeerSyncInfo {
   id: string;

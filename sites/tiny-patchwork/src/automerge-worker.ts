@@ -81,7 +81,7 @@ const repoPromise = (async () => {
   const { Repo } = await import("@automerge/automerge-repo");
   const { IndexedDBStorageAdapter, WebSocketClientAdapter } =
     await import("@automerge/vanillajs");
-  const network = new WebSocketClientAdapter("wss://sync3.automerge.org");
+  const network = new WebSocketClientAdapter("wss://samod.sync.automerge.org");
   const repo = new Repo({
     storage: new IndexedDBStorageAdapter(),
     network: [network],
@@ -93,7 +93,7 @@ const repoPromise = (async () => {
     enableRemoteHeadsGossiping: true,
   });
   repo.subscribeToRemotes([
-    "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
+    "1fcd2698-3426-4288-9c47-85364db5073b" as import("@automerge/automerge-repo").StorageId,
   ]);
   network.whenReady().then(() => {
     console.log("[automerge worker: CONNECTED] websocket ready");

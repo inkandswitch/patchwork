@@ -60,7 +60,7 @@ const repo = new Repo({
 });
 
 repo.subscribeToRemotes([
-  "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
+  "1fcd2698-3426-4288-9c47-85364db5073b" as import("@automerge/automerge-repo").StorageId,
 ]);
 
 function createSharedWorker() {
@@ -96,7 +96,7 @@ try {
   console.error(error);
   console.error("Falling back to tab-only repo strategy");
   repo.networkSubsystem.addNetworkAdapter(
-    new WebSocketClientAdapter("wss://sync3.automerge.org")
+    new WebSocketClientAdapter("wss://samod.sync.automerge.org")
   );
 }
 
