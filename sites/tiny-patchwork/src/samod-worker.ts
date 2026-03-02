@@ -88,10 +88,12 @@ const repoPromise = (async () => {
     peerId: ("shared-worker-" +
       (Math.random() * 10000).toString(36).slice(2)) as PeerId,
     async sharePolicy(peerId) {
+      console.log(`[automerge worker: SHARE POLICY] evaluating ${peerId}`);
       return peerId.startsWith("storage-server-");
     },
     enableRemoteHeadsGossiping: true,
   });
+  (self as any).repo = repo;
   repo.subscribeToRemotes([
     "1fcd2698-3426-4288-9c47-85364db5073b" as import("@automerge/automerge-repo").StorageId,
   ]);
