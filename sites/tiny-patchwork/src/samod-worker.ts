@@ -89,7 +89,7 @@ const repoPromise = (async () => {
       (Math.random() * 10000).toString(36).slice(2)) as PeerId,
     async sharePolicy(peerId) {
       console.log(`[automerge worker: SHARE POLICY] evaluating ${peerId}`);
-      return peerId.startsWith("storage-server-");
+      return peerId.includes("storage-");
     },
     enableRemoteHeadsGossiping: true,
   });
