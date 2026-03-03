@@ -25,7 +25,7 @@ export const plugins = [
     id: "account-history-toolbar",
     type: "patchwork:tool",
     tags: ["titlebar-tool"],
-    name: "Account History Recorder",
+    name: "Account History",
     supportedDatatypes: ["account"],
     icon: "Clock",
     unlisted: true,
