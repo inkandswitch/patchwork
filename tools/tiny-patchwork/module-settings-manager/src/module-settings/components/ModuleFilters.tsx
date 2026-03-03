@@ -241,7 +241,7 @@ export function ModuleFilters(props: ModuleFiltersProps) {
               }}
             >
               <InstallIcon />
-              <span class="module-settings-manager__button-text">Install</span>
+              <span>Install</span>
             </button>
           </Show>
         </div>
