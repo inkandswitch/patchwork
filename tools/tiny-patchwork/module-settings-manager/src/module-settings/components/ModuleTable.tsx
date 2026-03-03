@@ -25,6 +25,14 @@ export function ModuleTable(props: ModuleTableProps) {
   return (
     <div class="module-settings-manager__table-container">
       <table class="module-settings-manager__table">
+        <colgroup>
+          <col style={{ width: "20%" }} />
+          <col style={{ width: "14%" }} />
+          <col style={{ width: "20%" }} />
+          <col style={{ width: "20%" }} />
+          <col style={{ width: "14%" }} />
+          <col style={{ width: "12%" }} />
+        </colgroup>
         <thead>
           <tr>
             <th
@@ -76,10 +84,10 @@ export function ModuleTable(props: ModuleTableProps) {
           <For each={props.plugins}>
             {(plugin) => (
               <tr>
-                <td class="module-settings-manager__table-name">
-                  {plugin.name}
+                <td class="module-settings-manager__table-name" title={plugin.name}>
+                  <span class="module-settings-manager__table-name-text">{plugin.name}</span>
                 </td>
-                <td class="module-settings-manager__table-type">
+                <td class="module-settings-manager__table-type" title={plugin.type}>
                   <span
                     class="module-settings-manager__type-pill"
                     classList={{
@@ -133,7 +141,7 @@ export function ModuleTable(props: ModuleTableProps) {
                     </code>
                   </Show>
                 </td>
-                <td class="module-settings-manager__table-datatypes">
+                <td class="module-settings-manager__table-datatypes" title={plugin.datatypesDisplay.values.join(", ")}>
                   <div class="module-settings-manager__datatypes-pills">
                     <Show
                       when={plugin.datatypesDisplay.type !== "empty"}
@@ -182,9 +190,6 @@ export function ModuleTable(props: ModuleTableProps) {
                       }}
                     >
                       <TrashIcon />
-                      <span class="module-settings-manager__button-text">
-                        Uninstall
-                      </span>
                     </button>
                   </div>
                 </td>

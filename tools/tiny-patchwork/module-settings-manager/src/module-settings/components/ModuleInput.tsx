@@ -203,7 +203,7 @@ export function ModuleInput(props: ModuleInputProps) {
           }}
         >
           <InstallIcon />
-          <span class="module-settings-manager__button-text">Install</span>
+          <span>Install</span>
         </button>
       </div>
 
