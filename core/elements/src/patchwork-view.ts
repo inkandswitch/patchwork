@@ -309,8 +309,9 @@ export function registerPatchworkViewElement(
 
         if (!this.#tool) {
           this.#state = "unable";
-          console.warn("Tool not found", toolId);
+          console.warn("Tool not found", toolId, "available tools:", getRegistry<LoadedTool>("patchwork:tool").all().map(t => t.id));
           this.#displayError(`I couldn't find the tool with id ${toolId}.`);
+          console.log("dispatching patchwork:no-tool for", this.docUrl);
           this.dispatchEvent(new NoToolEvent({ url: this.docUrl }));
           return;
         }
