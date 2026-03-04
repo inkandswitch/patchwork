@@ -41,6 +41,9 @@
     "node": "24.11.1"
   },
   "dependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-network-websocket": "2.5.2",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:"
   }
