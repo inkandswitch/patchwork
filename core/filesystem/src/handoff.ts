@@ -161,12 +161,12 @@ export function createFilesystemHandoffHandler(repo: Repo) {
       //   cleared && location.reload();
       // }, 4000);
       //}
-      repo.delete(
+      /*      repo.delete(
         maybeAutomergeUrl as import("@automerge/automerge-repo").DocumentId
       );
       const deleteChannel = new BroadcastChannel("automerge-worker-delete");
       deleteChannel.postMessage({ type: "delete", docId: maybeAutomergeUrl });
-      deleteChannel.close();
+      deleteChannel.close(); */
       return {
         body: `${error}`,
         status: 567,
