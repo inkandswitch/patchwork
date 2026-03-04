@@ -1,4 +1,4 @@
-import { automergeWasmBase64 } from "https://esm.sh/@automerge/automerge@3.2.4/automerge.wasm.base64.js";
+import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64.js";
 import {
   initializeBase64Wasm,
   Repo,
@@ -7,9 +7,9 @@ import {
   stringifyAutomergeUrl,
   type AutomergeUrl,
   type DocHandle,
-} from "https://esm.sh/@automerge/automerge-repo@2.5.2/slim";
-import { WebSocketClientAdapter } from "https://esm.sh/@automerge/automerge-repo-network-websocket@2.5.2";
-import { getHeads } from "https://esm.sh/@automerge/automerge@3.2.4";
+} from "@automerge/automerge-repo/slim";
+import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
+import { getHeads } from "@automerge/automerge";
 
 await initializeBase64Wasm(automergeWasmBase64);
 
