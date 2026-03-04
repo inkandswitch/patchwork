@@ -131,7 +131,7 @@ export default async function handler(request: Request): Promise<Response> {
         },
       });
     } finally {
-      repo.shutdown();
+      try { repo.shutdown(); } catch {}
     }
   } catch (error) {
     console.error("automerge edge function error:", error);
