@@ -130,8 +130,15 @@ registerPatchworkViewElement({ repo });
 
 const rootElement = document.getElementById("root")!;
 
-rootElement.setAttribute("doc-url", accountDocHandle.url);
-rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
+const initialParams = new URLSearchParams(location.hash);
+if (initialParams.has("frame")) {
+  rootElement.setAttribute("tool-id", initialParams.get("frame")!);
+  const docUrl = initialParams.get("doc") ?? accountDocHandle.url;
+  rootElement.setAttribute("doc-url", docUrl);
+} else {
+  rootElement.setAttribute("doc-url", accountDocHandle.url);
+  rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
+}
 
 rootElement.addEventListener("patchwork:open-document", async (event) => {
   const params = new URLSearchParams();
@@ -211,6 +218,17 @@ const handleHashChange = async () => {
     return;
   }
   const params = new URLSearchParams(hash);
+  const frame = params.get("frame");
+  if (frame) {
+    const docUrl = params.get("doc") ?? accountDocHandle.url;
+    if (
+      rootElement.getAttribute("tool-id") !== frame ||
+      rootElement.getAttribute("doc-url") !== docUrl
+    ) {
+      rootElement.setAttribute("tool-id", frame);
+      rootElement.setAttribute("doc-url", docUrl);
+    }
+  }
   const documentId = params.get("doc");
   const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
   const toolId = params.get("tool");

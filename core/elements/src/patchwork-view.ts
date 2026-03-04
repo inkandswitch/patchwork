@@ -214,25 +214,25 @@ export function registerPatchworkViewElement(
           }
         );
 
+        // Re-render when the registry changes and we're stuck in "unable"
+        // state. This handles the case where tools are registered/loaded
+        // after our initial render failed to find the tool.
+        const removeChangedListener = toolRegistry.on("changed", () => {
+          if (this.#state == "unable") {
+            this.#queueRender();
+          }
+        });
+
         this.#teardowns.add(() => {
           removeAddedListener();
           removeLoadedListener();
+          removeChangedListener();
         });
 
         this.#handle.on("change", this.#onDocChange);
         this.#teardowns.add(() =>
           this.#handle!.off("change", this.#onDocChange)
         );
-
-        // If the tool we need was already registered (and possibly loaded)
-        // before our listeners were set up, trigger loading now so we don't
-        // miss the "loaded" event.
-        if (this.toolId) {
-          const existingTool = toolRegistry.get(this.toolId);
-          if (existingTool && isLoadablePlugin(existingTool)) {
-            toolRegistry.load(existingTool.id);
-          }
-        }
 
         this.#queueRender();
       };
