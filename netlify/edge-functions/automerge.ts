@@ -135,7 +135,8 @@ export default async function handler(request: Request): Promise<Response> {
     }
   } catch (error) {
     console.error("automerge edge function error:", error);
-    return new Response(`error: ${error}`, { status: 500 });
+    const message = error instanceof Error ? error.stack ?? error.message : String(error);
+    return new Response(`error: ${message}`, { status: 500 });
   }
 }
 
