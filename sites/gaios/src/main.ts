@@ -15,6 +15,7 @@ import {
   DatatypeImplementation,
   getRegistry,
 } from "@inkandswitch/patchwork-plugins";
+import * as plugins from "@inkandswitch/patchwork-plugins";
 import {
   getOrCreateLayoutDocHandle,
   TinyPatchworkLayoutDoc,
@@ -41,6 +42,12 @@ declare global {
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
     getRepoChannel: () => MessagePort;
+    patchwork: {
+      repo: Repo;
+      modules: ModuleWatcher;
+      plugins: typeof plugins;
+      accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
+    };
   }
 }
 
@@ -182,6 +189,8 @@ const moduleWatcher = new ModuleWatcher(
     }
   }
 );
+
+window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
   moduleWatcher.loadSuggestedImportUrl(event.detail.url);

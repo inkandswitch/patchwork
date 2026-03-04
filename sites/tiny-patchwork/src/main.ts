@@ -15,6 +15,7 @@ import {
   DatatypeImplementation,
   getRegistry,
 } from "@inkandswitch/patchwork-plugins";
+import * as plugins from "@inkandswitch/patchwork-plugins";
 import {
   getOrCreateLayoutDocHandle,
   TinyPatchworkLayoutDoc,
@@ -34,7 +35,6 @@ import {
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 
-// todo maybe we should have a window.patchwork namespace for this?
 declare global {
   interface Window {
     accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
@@ -42,6 +42,12 @@ declare global {
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
     getRepoChannel: () => MessagePort;
+    patchwork: {
+      repo: Repo;
+      modules: ModuleWatcher;
+      plugins: typeof plugins;
+      accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
+    };
   }
 }
 
@@ -151,6 +157,8 @@ const moduleWatcher = new ModuleWatcher(
   [defaultToolsUrl, accountDocHandle.doc().moduleSettingsUrl],
   onModuleLoaded
 );
+
+window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
   moduleWatcher.loadSuggestedImportUrl(event.detail.url);
