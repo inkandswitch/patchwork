@@ -9,7 +9,7 @@ import {
   type DocHandle,
 } from "@automerge/automerge-repo/slim";
 import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
-import { getHeads } from "@automerge/automerge";
+import { getHeads } from "@automerge/automerge/slim";
 
 await initializeBase64Wasm(automergeWasmBase64);
 
