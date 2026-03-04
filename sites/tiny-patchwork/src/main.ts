@@ -239,9 +239,14 @@ const handleHashChange = async () => {
   const type = params.get("type");
   const frame = params.get("frame");
   if (frame) {
-    rootElement.setAttribute("tool-id", frame);
-    const docUrl = initialParams.get("doc") ?? accountDocHandle.url;
-    rootElement.setAttribute("doc-url", docUrl);
+    const docUrl = params.get("doc") ?? accountDocHandle.url;
+    if (
+      rootElement.getAttribute("tool-id") !== frame ||
+      rootElement.getAttribute("doc-url") !== docUrl
+    ) {
+      rootElement.setAttribute("tool-id", frame);
+      rootElement.setAttribute("doc-url", docUrl);
+    }
   }
   if (isValidDocumentId(documentId)) {
     rootElement.dispatchEvent(
