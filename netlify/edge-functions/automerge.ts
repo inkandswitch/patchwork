@@ -6,9 +6,8 @@ import {
   stringifyAutomergeUrl,
   type AutomergeUrl,
   type DocHandle,
-} from "npm:@automerge/automerge-repo@2.5.2";
-// fullfat import bundles WASM as base64, no separate init needed
-import { getHeads } from "npm:@automerge/automerge@3.2.4";
+} from "https://esm.sh/@automerge/automerge-repo@2.5.2";
+import { getHeads } from "https://esm.sh/@automerge/automerge@3.2.4";
 
 type FolderDoc = {
   title: string;
