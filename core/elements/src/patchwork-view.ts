@@ -224,6 +224,16 @@ export function registerPatchworkViewElement(
           this.#handle!.off("change", this.#onDocChange)
         );
 
+        // If the tool we need was already registered (and possibly loaded)
+        // before our listeners were set up, trigger loading now so we don't
+        // miss the "loaded" event.
+        if (this.toolId) {
+          const existingTool = toolRegistry.get(this.toolId);
+          if (existingTool && isLoadablePlugin(existingTool)) {
+            toolRegistry.load(existingTool.id);
+          }
+        }
+
         this.#queueRender();
       };
 
