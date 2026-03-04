@@ -1,13 +1,17 @@
+import { automergeWasmBase64 } from "https://esm.sh/@automerge/automerge@3.2.4/automerge.wasm.base64.js";
 import {
+  initializeBase64Wasm,
   Repo,
-  WebSocketClientAdapter,
   isValidAutomergeUrl,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
   type AutomergeUrl,
   type DocHandle,
-} from "https://esm.sh/@automerge/automerge-repo@2.5.2";
+} from "https://esm.sh/@automerge/automerge-repo@2.5.2/slim";
+import { WebSocketClientAdapter } from "https://esm.sh/@automerge/automerge-repo-network-websocket@2.5.2";
 import { getHeads } from "https://esm.sh/@automerge/automerge@3.2.4";
+
+await initializeBase64Wasm(automergeWasmBase64);
 
 type FolderDoc = {
   title: string;
