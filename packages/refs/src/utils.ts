@@ -89,7 +89,6 @@ export async function findRef<T = any>(
 ): Promise<Ref<T>> {
   const { documentId } = parseRefUrl(url);
   const handle = await repo.find(documentId as any);
-  await handle.whenReady();
 
   return fromUrl(handle as DocHandle<T>, url);
 }

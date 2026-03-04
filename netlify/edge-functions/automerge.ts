@@ -39,8 +39,7 @@ async function findFile(
     const target = doc.docs.find((link) => link.name === part);
     if (!target?.url || !isValidAutomergeUrl(target.url)) return undefined;
 
-    const handle = repo.find<any>(target.url);
-    await handle.whenReady();
+    const handle = await repo.find<any>(target.url);
 
     if (index === parts.length - 1) {
       return handle as DocHandle<UnixFileEntry>;
@@ -82,8 +81,7 @@ export default async function handler(request: Request): Promise<Response> {
     });
 
     try {
-      const folderHandle = repo.find<FolderDoc>(maybeAutomergeUrl);
-      await folderHandle.whenReady();
+      const folderHandle = await repo.find<FolderDoc>(maybeAutomergeUrl);
 
       // if no heads pinned, redirect to the latest heads
       if (!heads) {
