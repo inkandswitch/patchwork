@@ -1,4 +1,3 @@
-import { render, createComponent } from "solid-js/web";
 const scriptRel = "modulepreload";
 const assetsURL = function(dep, importerUrl) {
   return new URL(dep, importerUrl).href;
@@ -57,37 +56,27 @@ const __vitePreload = function preload(baseModule, deps, importerUrl) {
     return baseModule().catch(handlePreloadError);
   });
 };
-const plugins = [{
-  type: "patchwork:tool",
-  id: "space-frame",
-  category: "frame",
-  name: "Space Frame",
-  icon: "LayoutGrid",
-  supportedDatatypes: ["account"],
-  async load() {
-    const {
-      SpaceFrame
-    } = await __vitePreload(async () => {
-      const {
-        SpaceFrame: SpaceFrame2
-      } = await import("./SpaceFrame-C0hu-tim.js");
-      return {
-        SpaceFrame: SpaceFrame2
+const plugins = [
+  {
+    type: "patchwork:tool",
+    id: "space-frame",
+    category: "frame",
+    name: "Space Frame",
+    icon: "LayoutGrid",
+    supportedDatatypes: ["account"],
+    async load() {
+      const { mountSpaceFrame } = await __vitePreload(async () => {
+        const { mountSpaceFrame: mountSpaceFrame2 } = await import("./space-frame-DidxyTdB.js");
+        return { mountSpaceFrame: mountSpaceFrame2 };
+      }, true ? [] : void 0, import.meta.url);
+      return (handle, element) => {
+        return mountSpaceFrame(handle, element, element.repo);
       };
-    }, true ? [] : void 0, import.meta.url);
-    return (handle, element) => {
-      return render(() => createComponent(SpaceFrame, {
-        handle,
-        element,
-        get repo() {
-          return element.repo;
-        }
-      }), element);
-    };
+    }
   }
-}];
+];
 export {
   __vitePreload as _,
   plugins as p
 };
-//# sourceMappingURL=index-BQfELDrz.js.map
+//# sourceMappingURL=index-C2Ff-Tea.js.map

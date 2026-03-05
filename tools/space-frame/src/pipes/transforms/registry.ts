@@ -4,6 +4,7 @@ export type TransformDescriptor = {
   type: string;
   name: string;
   description?: string;
+  url?: string;
   run: TransformFn;
 };
 
@@ -11,14 +12,25 @@ const transforms = new Map<string, TransformDescriptor>();
 
 export function registerTransform(descriptor: TransformDescriptor) {
   transforms.set(descriptor.type, descriptor);
+  if (descriptor.url) {
+    transforms.set(descriptor.url, descriptor);
+  }
 }
 
-export function getTransform(type: string): TransformDescriptor | undefined {
-  return transforms.get(type);
+export function getTransform(typeOrUrl: string): TransformDescriptor | undefined {
+  return transforms.get(typeOrUrl);
 }
 
 export function getAvailableTransforms(): TransformDescriptor[] {
-  return Array.from(transforms.values());
+  const seen = new Set<string>();
+  const result: TransformDescriptor[] = [];
+  for (const desc of transforms.values()) {
+    if (!seen.has(desc.type)) {
+      seen.add(desc.type);
+      result.push(desc);
+    }
+  }
+  return result;
 }
 
 export async function runTransformChain(

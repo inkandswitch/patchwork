@@ -8,9 +8,7 @@
     "lib": ["ESNext", "DOM"],
     "strict": true,
     "skipLibCheck": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "jsxImportSource": "solid-js"
+    "isolatedModules": true
   },
   "include": ["src"]
 }

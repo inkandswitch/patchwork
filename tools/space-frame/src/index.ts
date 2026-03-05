@@ -1,5 +1,4 @@
 import type { Plugin, ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import { render } from "solid-js/web";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -10,18 +9,9 @@ export const plugins: Plugin<any>[] = [
     icon: "LayoutGrid",
     supportedDatatypes: ["account"],
     async load(): Promise<ToolImplementation<any>> {
-      const { SpaceFrame } = await import("./SpaceFrame");
+      const { mountSpaceFrame } = await import("./space-frame");
       return (handle, element) => {
-        return render(
-          () => (
-            <SpaceFrame
-              handle={handle}
-              element={element}
-              repo={element.repo}
-            />
-          ),
-          element
-        );
+        return mountSpaceFrame(handle, element, element.repo);
       };
     },
   },

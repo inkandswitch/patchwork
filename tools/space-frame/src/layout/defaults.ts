@@ -1,5 +1,5 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import type { SpaceLayout, SpaceItem } from "./types";
+import type { SpaceLayout, SpaceNode } from "./types";
 
 export type AccountConfig = {
   accountSidebarToolId: string;
@@ -7,30 +7,13 @@ export type AccountConfig = {
   documentToolbarToolIds: string[];
 };
 
-/**
- * Generate the default layout that replicates the current patchwork-frame.
- * Grid dimensions are computed at runtime from the window, so positions
- * here are expressed as fractions of the total grid that get resolved
- * by `resolveDefaultLayout`.
- */
 export function createDefaultLayout(
   accountDocUrl: AutomergeUrl,
-  config: AccountConfig,
-  gridCols: number,
-  gridRows: number
+  config: AccountConfig
 ): SpaceLayout {
-  const sidebarCols = Math.max(2, Math.round(gridCols * 0.17));
-  const contextCols = Math.max(2, Math.round(gridCols * 0.17));
-  const centerCols = gridCols - sidebarCols - contextCols;
-  const toolbarRows = 1;
-  const mainRows = gridRows - toolbarRows;
-
-  const sidebar: SpaceItem = {
+  const sidebar: SpaceNode = {
     id: "sidebar",
-    col: 0,
-    row: 0,
-    cols: sidebarCols,
-    rows: gridRows,
+    size: 17,
     collapsible: true,
     content: {
       type: "view",
@@ -39,46 +22,29 @@ export function createDefaultLayout(
     },
   };
 
-  const toolbar: SpaceItem = {
+  const toolbar: SpaceNode = {
     id: "toolbar",
-    col: 0,
-    row: 0,
-    cols: centerCols,
-    rows: toolbarRows,
+    fixedSize: 40,
     content: {
       type: "view",
       toolId: "document-toolbar-group",
     },
   };
 
-  const main: SpaceItem = {
+  const main: SpaceNode = {
     id: "main",
-    col: 0,
-    row: toolbarRows,
-    cols: centerCols,
-    rows: mainRows,
     content: { type: "view" },
   };
 
-  const center: SpaceItem = {
+  const center: SpaceNode = {
     id: "center",
-    col: sidebarCols,
-    row: 0,
-    cols: centerCols,
-    rows: gridRows,
-    content: {
-      type: "group",
-      children: [toolbar, main],
-      pipes: [],
-    },
+    direction: "vertical",
+    children: [toolbar, main],
   };
 
-  const context: SpaceItem = {
+  const context: SpaceNode = {
     id: "context",
-    col: sidebarCols + centerCols,
-    row: 0,
-    cols: contextCols,
-    rows: gridRows,
+    size: 17,
     collapsible: true,
     content: {
       type: "view",
@@ -87,8 +53,11 @@ export function createDefaultLayout(
     },
   };
 
-  return {
-    items: [sidebar, center, context],
-    pipes: [],
+  const root: SpaceNode = {
+    id: "root",
+    direction: "horizontal",
+    children: [sidebar, center, context],
   };
+
+  return { root };
 }

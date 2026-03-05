@@ -3,15 +3,1276 @@
   try {
     if (typeof document != "undefined") {
       var elementStyle = document.createElement("style");
-      elementStyle.appendChild(document.createTextNode('/*! tailwindcss v4.1.18 | MIT License | https://tailwindcss.com */\n@layer properties {\n  @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {\n    *, :before, :after, ::backdrop {\n      --tw-rotate-x: initial;\n      --tw-rotate-y: initial;\n      --tw-rotate-z: initial;\n      --tw-skew-x: initial;\n      --tw-skew-y: initial;\n      --tw-border-style: solid;\n      --tw-outline-style: solid;\n      --tw-blur: initial;\n      --tw-brightness: initial;\n      --tw-contrast: initial;\n      --tw-grayscale: initial;\n      --tw-hue-rotate: initial;\n      --tw-invert: initial;\n      --tw-opacity: initial;\n      --tw-saturate: initial;\n      --tw-sepia: initial;\n      --tw-drop-shadow: initial;\n      --tw-drop-shadow-color: initial;\n      --tw-drop-shadow-alpha: 100%;\n      --tw-drop-shadow-size: initial;\n      --tw-backdrop-blur: initial;\n      --tw-backdrop-brightness: initial;\n      --tw-backdrop-contrast: initial;\n      --tw-backdrop-grayscale: initial;\n      --tw-backdrop-hue-rotate: initial;\n      --tw-backdrop-invert: initial;\n      --tw-backdrop-opacity: initial;\n      --tw-backdrop-saturate: initial;\n      --tw-backdrop-sepia: initial;\n      --tw-ease: initial;\n    }\n  }\n}\n\n@layer theme {\n  :root, :host {\n    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";\n    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;\n    --ease-in-out: cubic-bezier(.4, 0, .2, 1);\n    --default-transition-duration: .15s;\n    --default-transition-timing-function: cubic-bezier(.4, 0, .2, 1);\n    --default-font-family: var(--font-sans);\n    --default-mono-font-family: var(--font-mono);\n    --color-base-100: #fff;\n    --color-base-200: #f2f2f2;\n    --color-base-300: #e5e6e6;\n    --color-base-content: #1f2937;\n    --color-edit-accent: oklch(55% .2 250);\n  }\n}\n\n@layer base {\n  *, :after, :before, ::backdrop {\n    box-sizing: border-box;\n    border: 0 solid;\n    margin: 0;\n    padding: 0;\n  }\n\n  ::file-selector-button {\n    box-sizing: border-box;\n    border: 0 solid;\n    margin: 0;\n    padding: 0;\n  }\n\n  html, :host {\n    -webkit-text-size-adjust: 100%;\n    tab-size: 4;\n    line-height: 1.5;\n    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");\n    font-feature-settings: var(--default-font-feature-settings, normal);\n    font-variation-settings: var(--default-font-variation-settings, normal);\n    -webkit-tap-highlight-color: transparent;\n  }\n\n  hr {\n    height: 0;\n    color: inherit;\n    border-top-width: 1px;\n  }\n\n  abbr:where([title]) {\n    -webkit-text-decoration: underline dotted;\n    text-decoration: underline dotted;\n  }\n\n  h1, h2, h3, h4, h5, h6 {\n    font-size: inherit;\n    font-weight: inherit;\n  }\n\n  a {\n    color: inherit;\n    -webkit-text-decoration: inherit;\n    -webkit-text-decoration: inherit;\n    -webkit-text-decoration: inherit;\n    text-decoration: inherit;\n  }\n\n  b, strong {\n    font-weight: bolder;\n  }\n\n  code, kbd, samp, pre {\n    font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);\n    font-feature-settings: var(--default-mono-font-feature-settings, normal);\n    font-variation-settings: var(--default-mono-font-variation-settings, normal);\n    font-size: 1em;\n  }\n\n  small {\n    font-size: 80%;\n  }\n\n  sub, sup {\n    vertical-align: baseline;\n    font-size: 75%;\n    line-height: 0;\n    position: relative;\n  }\n\n  sub {\n    bottom: -.25em;\n  }\n\n  sup {\n    top: -.5em;\n  }\n\n  table {\n    text-indent: 0;\n    border-color: inherit;\n    border-collapse: collapse;\n  }\n\n  :-moz-focusring {\n    outline: auto;\n  }\n\n  progress {\n    vertical-align: baseline;\n  }\n\n  summary {\n    display: list-item;\n  }\n\n  ol, ul, menu {\n    list-style: none;\n  }\n\n  img, svg, video, canvas, audio, iframe, embed, object {\n    vertical-align: middle;\n    display: block;\n  }\n\n  img, video {\n    max-width: 100%;\n    height: auto;\n  }\n\n  button, input, select, optgroup, textarea {\n    font: inherit;\n    font-feature-settings: inherit;\n    font-variation-settings: inherit;\n    letter-spacing: inherit;\n    color: inherit;\n    opacity: 1;\n    background-color: #0000;\n    border-radius: 0;\n  }\n\n  ::file-selector-button {\n    font: inherit;\n    font-feature-settings: inherit;\n    font-variation-settings: inherit;\n    letter-spacing: inherit;\n    color: inherit;\n    opacity: 1;\n    background-color: #0000;\n    border-radius: 0;\n  }\n\n  :where(select:is([multiple], [size])) optgroup {\n    font-weight: bolder;\n  }\n\n  :where(select:is([multiple], [size])) optgroup option {\n    padding-inline-start: 20px;\n  }\n\n  ::file-selector-button {\n    margin-inline-end: 4px;\n  }\n\n  ::placeholder {\n    opacity: 1;\n  }\n\n  @supports (not ((-webkit-appearance: -apple-pay-button))) or (contain-intrinsic-size: 1px) {\n    ::placeholder {\n      color: currentColor;\n    }\n\n    @supports (color: color-mix(in lab, red, red)) {\n      ::placeholder {\n        color: color-mix(in oklab, currentcolor 50%, transparent);\n      }\n    }\n  }\n\n  textarea {\n    resize: vertical;\n  }\n\n  ::-webkit-search-decoration {\n    -webkit-appearance: none;\n  }\n\n  ::-webkit-date-and-time-value {\n    min-height: 1lh;\n    text-align: inherit;\n  }\n\n  ::-webkit-datetime-edit {\n    display: inline-flex;\n  }\n\n  ::-webkit-datetime-edit-fields-wrapper {\n    padding: 0;\n  }\n\n  ::-webkit-datetime-edit {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-year-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-month-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-day-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-hour-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-minute-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-second-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-millisecond-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-datetime-edit-meridiem-field {\n    padding-block: 0;\n  }\n\n  ::-webkit-calendar-picker-indicator {\n    line-height: 1;\n  }\n\n  :-moz-ui-invalid {\n    box-shadow: none;\n  }\n\n  button, input:where([type="button"], [type="reset"], [type="submit"]) {\n    appearance: button;\n  }\n\n  ::file-selector-button {\n    appearance: button;\n  }\n\n  ::-webkit-inner-spin-button {\n    height: auto;\n  }\n\n  ::-webkit-outer-spin-button {\n    height: auto;\n  }\n\n  [hidden]:where(:not([hidden="until-found"])) {\n    display: none !important;\n  }\n}\n\n@layer components;\n\n@layer utilities {\n  .visible {\n    visibility: visible;\n  }\n\n  .fixed {\n    position: fixed;\n  }\n\n  .relative {\n    position: relative;\n  }\n\n  .static {\n    position: static;\n  }\n\n  .block {\n    display: block;\n  }\n\n  .flex {\n    display: flex;\n  }\n\n  .grid {\n    display: grid;\n  }\n\n  .hidden {\n    display: none;\n  }\n\n  .table {\n    display: table;\n  }\n\n  .border-collapse {\n    border-collapse: collapse;\n  }\n\n  .transform {\n    transform: var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );\n  }\n\n  .resize {\n    resize: both;\n  }\n\n  .border {\n    border-style: var(--tw-border-style);\n    border-width: 1px;\n  }\n\n  .underline {\n    text-decoration-line: underline;\n  }\n\n  .outline {\n    outline-style: var(--tw-outline-style);\n    outline-width: 1px;\n  }\n\n  .filter {\n    filter: var(--tw-blur, ) var(--tw-brightness, ) var(--tw-contrast, ) var(--tw-grayscale, ) var(--tw-hue-rotate, ) var(--tw-invert, ) var(--tw-saturate, ) var(--tw-sepia, ) var(--tw-drop-shadow, );\n  }\n\n  .backdrop-filter {\n    -webkit-backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );\n    backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );\n  }\n\n  .transition {\n    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;\n    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));\n    transition-duration: var(--tw-duration, var(--default-transition-duration));\n  }\n\n  .ease-in-out {\n    --tw-ease: var(--ease-in-out);\n    transition-timing-function: var(--ease-in-out);\n  }\n}\n\npatchwork-space#space-root {\n  width: 100vw;\n  height: 100vh;\n  transition: gap .35s, padding .35s;\n}\n\npatchwork-space#space-root[data-editing] {\n  background-color: currentColor;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  patchwork-space#space-root[data-editing] {\n    background-color: color-mix(in oklch, currentColor 6%, transparent);\n  }\n}\n\npatchwork-space#space-root[data-editing] {\n  background-image: linear-gradient(to right, currentColor 1px, #0000 1px), linear-gradient(currentColor 1px, #0000 1px);\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  patchwork-space#space-root[data-editing] {\n    background-image: linear-gradient(to right, color-mix(in oklch, currentColor 8%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklch, currentColor 8%, transparent) 1px, transparent 1px);\n  }\n}\n\npatchwork-space#space-root[data-editing] {\n  background-size: calc(100% / var(--grid-cols)) calc(100% / var(--grid-rows));\n}\n\npatchwork-space > patchwork-view {\n  width: 100%;\n  height: 100%;\n  display: block;\n}\n\npatchwork-space > patchwork-space {\n  transition: border-radius .3s, box-shadow .3s, grid-column .2s, grid-row .2s;\n  overflow: hidden;\n}\n\npatchwork-space[data-editing] > patchwork-space {\n  border-radius: 10px;\n  box-shadow: 0 0 0 1px, 0 2px 12px;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  patchwork-space[data-editing] > patchwork-space {\n    box-shadow: 0 0 0 1px color-mix(in oklch, currentColor 12%, transparent), 0 2px 12px color-mix(in oklch, currentColor 8%, transparent);\n  }\n}\n\npatchwork-space[data-editing] > patchwork-space > patchwork-space {\n  box-shadow: none;\n  border-radius: 0;\n}\n\npatchwork-space[collapsed] {\n  cursor: pointer;\n  max-width: 3px !important;\n  max-height: 3px !important;\n}\n\npatchwork-space[collapsed] > * {\n  display: none !important;\n}\n\n.space-empty-state {\n  opacity: .5;\n  justify-content: center;\n  align-items: center;\n  width: 100%;\n  height: 100%;\n  font-size: 14px;\n  display: flex;\n}\n\n.space-toolbar {\n  align-items: center;\n  gap: 8px;\n  width: 100%;\n  height: 100%;\n  padding: 4px 8px;\n  display: flex;\n  overflow: hidden;\n}\n\n.space-toolbar-item {\n  width: fit-content !important;\n  height: 32px !important;\n  display: flex !important;\n  overflow: hidden !important;\n}\n\n.space-edit-controls {\n  z-index: 10;\n  pointer-events: none;\n  position: absolute;\n  inset: -1px;\n}\n\n.space-remove-btn {\n  color: #fff;\n  cursor: pointer;\n  pointer-events: auto;\n  z-index: 20;\n  background: #ef4444;\n  border: 2px solid #fff;\n  border-radius: 50%;\n  justify-content: center;\n  align-items: center;\n  width: 22px;\n  height: 22px;\n  font-size: 14px;\n  font-weight: bold;\n  line-height: 1;\n  transition: transform .1s;\n  display: flex;\n  position: absolute;\n  top: -10px;\n  left: -10px;\n  box-shadow: 0 1px 4px #0000004d;\n}\n\n.space-remove-btn:hover {\n  transform: scale(1.2);\n}\n\n.space-drag-handle {\n  cursor: grab;\n  pointer-events: auto;\n  background: linear-gradient(currentColor, #0000);\n  justify-content: center;\n  align-items: center;\n  height: 28px;\n  display: flex;\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 0;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .space-drag-handle {\n    background: linear-gradient(to bottom, color-mix(in oklch, currentColor 30%, transparent), transparent);\n  }\n}\n\n.space-drag-handle {\n  color: currentColor;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .space-drag-handle {\n    color: color-mix(in oklch, currentColor 60%, white);\n  }\n}\n\n.space-drag-handle {\n  z-index: 11;\n  -webkit-user-select: none;\n  user-select: none;\n  touch-action: none;\n  opacity: .5;\n  transition: opacity .15s;\n}\n\n.space-drag-handle:hover {\n  opacity: 1;\n}\n\n.space-drag-handle:active {\n  cursor: grabbing;\n}\n\n.space-dragging {\n  border-radius: 10px;\n  box-shadow: 0 8px 32px #00000040 !important;\n}\n\n.space-resize-handle {\n  pointer-events: auto;\n  z-index: 12;\n  touch-action: none;\n  position: absolute;\n}\n\n.space-resize-right {\n  cursor: ew-resize;\n  background: var(--color-edit-accent);\n  opacity: .35;\n  border-radius: 3px;\n  width: 6px;\n  height: 80%;\n  transition: opacity .15s, width .15s;\n  top: 10%;\n  right: -3px;\n}\n\n.space-resize-right:hover {\n  opacity: 1;\n  width: 8px;\n  right: -4px;\n}\n\n.space-resize-bottom {\n  cursor: ns-resize;\n  background: var(--color-edit-accent);\n  opacity: .35;\n  border-radius: 3px;\n  width: 80%;\n  height: 6px;\n  transition: opacity .15s, height .15s;\n  bottom: -3px;\n  left: 10%;\n}\n\n.space-resize-bottom:hover {\n  opacity: 1;\n  height: 8px;\n  bottom: -4px;\n}\n\n.space-resize-corner {\n  cursor: nwse-resize;\n  background: var(--color-edit-accent);\n  opacity: .5;\n  border-radius: 50%;\n  width: 12px;\n  height: 12px;\n  transition: opacity .15s, transform .15s;\n  bottom: -4px;\n  right: -4px;\n}\n\n.space-resize-corner:hover {\n  opacity: 1;\n  transform: scale(1.3);\n}\n\n.edit-overlay {\n  pointer-events: none;\n  z-index: 1000;\n  position: fixed;\n  inset: 0;\n}\n\n.edit-overlay > * {\n  pointer-events: auto;\n}\n\n.edit-backdrop {\n  z-index: 1001;\n  position: fixed;\n  inset: 0;\n}\n\n.edit-top-bar {\n  z-index: 1001;\n  gap: 8px;\n  display: flex;\n  position: fixed;\n  top: 12px;\n  right: 12px;\n}\n\n.edit-done-btn {\n  background: var(--color-edit-accent);\n  color: #fff;\n  cursor: pointer;\n  border: none;\n  border-radius: 20px;\n  padding: 8px 20px;\n  font-size: 14px;\n  font-weight: 600;\n  transition: transform .15s, opacity .15s;\n  box-shadow: 0 2px 8px #00000026;\n}\n\n.edit-done-btn:hover {\n  transform: scale(1.05);\n}\n\n.edit-reset-btn {\n  border: 1px solid;\n  border-radius: 20px;\n  padding: 8px 16px;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .edit-reset-btn {\n    border: 1px solid color-mix(in oklch, currentColor 20%, transparent);\n  }\n}\n\n.edit-reset-btn {\n  background: currentColor;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .edit-reset-btn {\n    background: color-mix(in oklch, currentColor 10%, transparent);\n  }\n}\n\n.edit-reset-btn {\n  -webkit-backdrop-filter: blur(8px);\n  backdrop-filter: blur(8px);\n  color: inherit;\n  cursor: pointer;\n  font-size: 13px;\n  transition: background .15s;\n}\n\n.edit-reset-btn:hover {\n  background: currentColor;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .edit-reset-btn:hover {\n    background: color-mix(in oklch, currentColor 18%, transparent);\n  }\n}\n\n.pipe-connection-point {\n  background: var(--color-edit-accent);\n  color: #fff;\n  cursor: pointer;\n  pointer-events: auto;\n  z-index: 20;\n  border-radius: 50%;\n  justify-content: center;\n  align-items: center;\n  width: 24px;\n  height: 24px;\n  font-size: 16px;\n  line-height: 1;\n  transition: transform .15s;\n  display: flex;\n  position: fixed;\n  box-shadow: 0 2px 8px #00000026;\n}\n\n.pipe-connection-point:hover {\n  transform: scale(1.2);\n}\n\n.pipe-indicator {\n  background: var(--color-edit-accent);\n  color: #fff;\n  cursor: pointer;\n  pointer-events: auto;\n  z-index: 20;\n  white-space: nowrap;\n  border-radius: 12px;\n  align-items: center;\n  gap: 4px;\n  padding: 3px 10px;\n  font-size: 11px;\n  font-weight: 600;\n  transition: transform .15s;\n  display: flex;\n  position: fixed;\n  box-shadow: 0 2px 8px #00000026;\n}\n\n.pipe-indicator:hover {\n  transform: scale(1.08);\n}\n\n.add-space-btn {\n  border: 2px dashed var(--color-edit-accent);\n  background: currentColor;\n  border-radius: 50%;\n  width: 40px;\n  height: 40px;\n  position: fixed;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .add-space-btn {\n    background: color-mix(in oklch, currentColor 5%, transparent);\n  }\n}\n\n.add-space-btn {\n  color: var(--color-edit-accent);\n  cursor: pointer;\n  pointer-events: auto;\n  -webkit-backdrop-filter: blur(8px);\n  backdrop-filter: blur(8px);\n  justify-content: center;\n  align-items: center;\n  font-size: 22px;\n  transition: background .15s, transform .15s;\n  display: flex;\n  box-shadow: 0 2px 8px #00000014;\n}\n\n.add-space-btn:hover {\n  background: currentColor;\n  transform: scale(1.1);\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .add-space-btn:hover {\n    background: color-mix(in oklch, currentColor 12%, transparent);\n  }\n}\n\n.add-space-picker {\n  z-index: 1002;\n  background: currentColor;\n  position: fixed;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .add-space-picker {\n    background: color-mix(in oklch, currentColor 5%, Canvas);\n  }\n}\n\n.add-space-picker {\n  border-radius: 12px;\n  box-shadow: 0 8px 32px #00000026, 0 0 0 1px;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .add-space-picker {\n    box-shadow: 0 8px 32px #00000026, 0 0 0 1px color-mix(in oklch, currentColor 10%, transparent);\n  }\n}\n\n.add-space-picker {\n  color: canvastext;\n  min-width: 200px;\n  padding: 8px;\n}\n\n.add-space-picker-item {\n  text-align: left;\n  cursor: pointer;\n  width: 100%;\n  color: inherit;\n  background: none;\n  border: none;\n  border-radius: 8px;\n  padding: 8px 12px;\n  font-size: 13px;\n  transition: background .1s;\n  display: block;\n}\n\n.add-space-picker-item:hover {\n  background: currentColor;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .add-space-picker-item:hover {\n    background: color-mix(in oklch, currentColor 8%, transparent);\n  }\n}\n\n.pipe-editor {\n  z-index: 1002;\n  background: currentColor;\n  position: fixed;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .pipe-editor {\n    background: color-mix(in oklch, currentColor 5%, Canvas);\n  }\n}\n\n.pipe-editor {\n  border-radius: 12px;\n  box-shadow: 0 8px 32px #00000026, 0 0 0 1px;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .pipe-editor {\n    box-shadow: 0 8px 32px #00000026, 0 0 0 1px color-mix(in oklch, currentColor 10%, transparent);\n  }\n}\n\n.pipe-editor {\n  color: canvastext;\n  min-width: 260px;\n  overflow: hidden;\n}\n\n.pipe-editor-header {\n  border-bottom: 1px solid;\n  padding: 12px 16px;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .pipe-editor-header {\n    border-bottom: 1px solid color-mix(in oklch, currentColor 10%, transparent);\n  }\n}\n\n.pipe-editor-header {\n  justify-content: space-between;\n  align-items: center;\n  font-size: 12px;\n  font-weight: 600;\n  display: flex;\n}\n\n.pipe-editor-body {\n  padding: 8px;\n}\n\n.pipe-editor-transform {\n  background: currentColor;\n  border-radius: 8px;\n  justify-content: space-between;\n  align-items: center;\n  padding: 8px 12px;\n  display: flex;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .pipe-editor-transform {\n    background: color-mix(in oklch, currentColor 5%, transparent);\n  }\n}\n\n.pipe-editor-transform {\n  margin-bottom: 4px;\n  font-size: 13px;\n}\n\n.pipe-editor-transform-remove {\n  color: #ef4444;\n  cursor: pointer;\n  background: none;\n  border: none;\n  border-radius: 4px;\n  padding: 2px 6px;\n  font-size: 14px;\n}\n\n.pipe-editor-transform-remove:hover {\n  background: #ef44441a;\n}\n\n.pipe-editor-add-btn {\n  border: 1px dashed;\n  width: 100%;\n  padding: 8px;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .pipe-editor-add-btn {\n    border: 1px dashed color-mix(in oklch, currentColor 15%, transparent);\n  }\n}\n\n.pipe-editor-add-btn {\n  color: var(--color-edit-accent);\n  cursor: pointer;\n  background: none;\n  border-radius: 8px;\n  font-size: 13px;\n  transition: background .15s;\n}\n\n.pipe-editor-add-btn:hover {\n  background: currentColor;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .pipe-editor-add-btn:hover {\n    background: color-mix(in oklch, currentColor 5%, transparent);\n  }\n}\n\n.pipe-editor-actions {\n  border-top: 1px solid;\n  padding: 8px 12px;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .pipe-editor-actions {\n    border-top: 1px solid color-mix(in oklch, currentColor 10%, transparent);\n  }\n}\n\n.pipe-editor-actions {\n  justify-content: flex-end;\n  gap: 8px;\n  display: flex;\n}\n\n.pipe-editor-action-btn {\n  border: 1px solid;\n  border-radius: 6px;\n  padding: 4px 12px;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .pipe-editor-action-btn {\n    border: 1px solid color-mix(in oklch, currentColor 10%, transparent);\n  }\n}\n\n.pipe-editor-action-btn {\n  cursor: pointer;\n  color: inherit;\n  background: none;\n  font-size: 12px;\n  transition: background .15s;\n}\n\n.pipe-editor-action-btn:hover {\n  background: currentColor;\n}\n\n@supports (color: color-mix(in lab, red, red)) {\n  .pipe-editor-action-btn:hover {\n    background: color-mix(in oklch, currentColor 8%, transparent);\n  }\n}\n\n.pipe-editor-action-btn--danger {\n  color: #ef4444;\n  border-color: #ef44444d;\n}\n\n.pipe-editor-action-btn--danger:hover {\n  background: #ef44440d;\n}\n\n@property --tw-rotate-x {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-rotate-y {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-rotate-z {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-skew-x {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-skew-y {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-border-style {\n  syntax: "*";\n  inherits: false;\n  initial-value: solid;\n}\n\n@property --tw-outline-style {\n  syntax: "*";\n  inherits: false;\n  initial-value: solid;\n}\n\n@property --tw-blur {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-brightness {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-contrast {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-grayscale {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-hue-rotate {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-invert {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-opacity {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-saturate {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-sepia {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-drop-shadow {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-drop-shadow-color {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-drop-shadow-alpha {\n  syntax: "<percentage>";\n  inherits: false;\n  initial-value: 100%;\n}\n\n@property --tw-drop-shadow-size {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-backdrop-blur {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-backdrop-brightness {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-backdrop-contrast {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-backdrop-grayscale {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-backdrop-hue-rotate {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-backdrop-invert {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-backdrop-opacity {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-backdrop-saturate {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-backdrop-sepia {\n  syntax: "*";\n  inherits: false\n}\n\n@property --tw-ease {\n  syntax: "*";\n  inherits: false\n}'));
+      elementStyle.appendChild(document.createTextNode(`/*! tailwindcss v4.1.18 | MIT License | https://tailwindcss.com */
+@layer properties {
+  @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
+    *, :before, :after, ::backdrop {
+      --tw-rotate-x: initial;
+      --tw-rotate-y: initial;
+      --tw-rotate-z: initial;
+      --tw-skew-x: initial;
+      --tw-skew-y: initial;
+      --tw-border-style: solid;
+      --tw-outline-style: solid;
+      --tw-blur: initial;
+      --tw-brightness: initial;
+      --tw-contrast: initial;
+      --tw-grayscale: initial;
+      --tw-hue-rotate: initial;
+      --tw-invert: initial;
+      --tw-opacity: initial;
+      --tw-saturate: initial;
+      --tw-sepia: initial;
+      --tw-drop-shadow: initial;
+      --tw-drop-shadow-color: initial;
+      --tw-drop-shadow-alpha: 100%;
+      --tw-drop-shadow-size: initial;
+      --tw-backdrop-blur: initial;
+      --tw-backdrop-brightness: initial;
+      --tw-backdrop-contrast: initial;
+      --tw-backdrop-grayscale: initial;
+      --tw-backdrop-hue-rotate: initial;
+      --tw-backdrop-invert: initial;
+      --tw-backdrop-opacity: initial;
+      --tw-backdrop-saturate: initial;
+      --tw-backdrop-sepia: initial;
+      --tw-ease: initial;
+    }
+  }
+}
+
+@layer theme {
+  :root, :host {
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --ease-in-out: cubic-bezier(.4, 0, .2, 1);
+    --default-transition-duration: .15s;
+    --default-transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+    --default-font-family: var(--font-sans);
+    --default-mono-font-family: var(--font-mono);
+  }
+}
+
+@layer base {
+  *, :after, :before, ::backdrop {
+    box-sizing: border-box;
+    border: 0 solid;
+    margin: 0;
+    padding: 0;
+  }
+
+  ::file-selector-button {
+    box-sizing: border-box;
+    border: 0 solid;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, :host {
+    -webkit-text-size-adjust: 100%;
+    tab-size: 4;
+    line-height: 1.5;
+    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+    font-feature-settings: var(--default-font-feature-settings, normal);
+    font-variation-settings: var(--default-font-variation-settings, normal);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  hr {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px;
+  }
+
+  abbr:where([title]) {
+    -webkit-text-decoration: underline dotted;
+    text-decoration: underline dotted;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  a {
+    color: inherit;
+    -webkit-text-decoration: inherit;
+    -webkit-text-decoration: inherit;
+    -webkit-text-decoration: inherit;
+    text-decoration: inherit;
+  }
+
+  b, strong {
+    font-weight: bolder;
+  }
+
+  code, kbd, samp, pre {
+    font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    font-feature-settings: var(--default-mono-font-feature-settings, normal);
+    font-variation-settings: var(--default-mono-font-variation-settings, normal);
+    font-size: 1em;
+  }
+
+  small {
+    font-size: 80%;
+  }
+
+  sub, sup {
+    vertical-align: baseline;
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+  }
+
+  sub {
+    bottom: -.25em;
+  }
+
+  sup {
+    top: -.5em;
+  }
+
+  table {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+  }
+
+  :-moz-focusring {
+    outline: auto;
+  }
+
+  progress {
+    vertical-align: baseline;
+  }
+
+  summary {
+    display: list-item;
+  }
+
+  ol, ul, menu {
+    list-style: none;
+  }
+
+  img, svg, video, canvas, audio, iframe, embed, object {
+    vertical-align: middle;
+    display: block;
+  }
+
+  img, video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  button, input, select, optgroup, textarea {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    background-color: #0000;
+    border-radius: 0;
+  }
+
+  ::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    background-color: #0000;
+    border-radius: 0;
+  }
+
+  :where(select:is([multiple], [size])) optgroup {
+    font-weight: bolder;
+  }
+
+  :where(select:is([multiple], [size])) optgroup option {
+    padding-inline-start: 20px;
+  }
+
+  ::file-selector-button {
+    margin-inline-end: 4px;
+  }
+
+  ::placeholder {
+    opacity: 1;
+  }
+
+  @supports (not ((-webkit-appearance: -apple-pay-button))) or (contain-intrinsic-size: 1px) {
+    ::placeholder {
+      color: currentColor;
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      ::placeholder {
+        color: color-mix(in oklab, currentcolor 50%, transparent);
+      }
+    }
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  ::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+
+  ::-webkit-date-and-time-value {
+    min-height: 1lh;
+    text-align: inherit;
+  }
+
+  ::-webkit-datetime-edit {
+    display: inline-flex;
+  }
+
+  ::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+
+  ::-webkit-datetime-edit {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-year-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-month-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-day-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-hour-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-minute-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-second-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-millisecond-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-meridiem-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-calendar-picker-indicator {
+    line-height: 1;
+  }
+
+  :-moz-ui-invalid {
+    box-shadow: none;
+  }
+
+  button, input:where([type="button"], [type="reset"], [type="submit"]) {
+    appearance: button;
+  }
+
+  ::file-selector-button {
+    appearance: button;
+  }
+
+  ::-webkit-inner-spin-button {
+    height: auto;
+  }
+
+  ::-webkit-outer-spin-button {
+    height: auto;
+  }
+
+  [hidden]:where(:not([hidden="until-found"])) {
+    display: none !important;
+  }
+}
+
+@layer components;
+
+@layer utilities {
+  .visible {
+    visibility: visible;
+  }
+
+  .fixed {
+    position: fixed;
+  }
+
+  .relative {
+    position: relative;
+  }
+
+  .static {
+    position: static;
+  }
+
+  .container {
+    width: 100%;
+  }
+
+  @media (min-width: 40rem) {
+    .container {
+      max-width: 40rem;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .container {
+      max-width: 48rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .container {
+      max-width: 64rem;
+    }
+  }
+
+  @media (min-width: 80rem) {
+    .container {
+      max-width: 80rem;
+    }
+  }
+
+  @media (min-width: 96rem) {
+    .container {
+      max-width: 96rem;
+    }
+  }
+
+  .block {
+    display: block;
+  }
+
+  .flex {
+    display: flex;
+  }
+
+  .grid {
+    display: grid;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  .inline {
+    display: inline;
+  }
+
+  .table {
+    display: table;
+  }
+
+  .flex-shrink, .shrink {
+    flex-shrink: 1;
+  }
+
+  .flex-grow, .grow {
+    flex-grow: 1;
+  }
+
+  .border-collapse {
+    border-collapse: collapse;
+  }
+
+  .transform {
+    transform: var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
+  }
+
+  .resize {
+    resize: both;
+  }
+
+  .rounded {
+    border-radius: .25rem;
+  }
+
+  .border {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+  }
+
+  .underline {
+    text-decoration-line: underline;
+  }
+
+  .outline {
+    outline-style: var(--tw-outline-style);
+    outline-width: 1px;
+  }
+
+  .filter {
+    filter: var(--tw-blur, ) var(--tw-brightness, ) var(--tw-contrast, ) var(--tw-grayscale, ) var(--tw-hue-rotate, ) var(--tw-invert, ) var(--tw-saturate, ) var(--tw-sepia, ) var(--tw-drop-shadow, );
+  }
+
+  .backdrop-filter {
+    -webkit-backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+    backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+  }
+
+  .transition {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .ease-in-out {
+    --tw-ease: var(--ease-in-out);
+    transition-timing-function: var(--ease-in-out);
+  }
+}
+
+patchwork-space#space-root {
+  gap: 0;
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  transition: gap .35s, padding .35s;
+}
+
+patchwork-space#space-root[editing] {
+  background-image: radial-gradient(circle, currentColor .7px, #0000 .7px);
+  gap: 6px;
+  padding: 8px;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  patchwork-space#space-root[editing] {
+    background-image: radial-gradient(circle, color-mix(in oklch, currentColor 15%, transparent) .7px, transparent .7px);
+  }
+}
+
+patchwork-space#space-root[editing] {
+  background-size: 16px 16px;
+}
+
+patchwork-space > patchwork-view {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+patchwork-space > patchwork-space {
+  border: 1.5px solid #0000;
+  gap: 0;
+  padding: 0;
+  transition: border-radius .3s, box-shadow .3s, gap .3s, padding .3s, border-color .3s;
+}
+
+patchwork-space[editing] > patchwork-space {
+  --depth-chroma: clamp(0, calc((var(--depth, 0)  - 1) * .15), .15);
+  --depth-hue: calc(250 - max(0, var(--depth, 0)  - 2) * 40);
+  --depth-color: oklch(.55 var(--depth-chroma) var(--depth-hue));
+  border-color: var(--depth-color);
+  border-radius: 10px;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  patchwork-space[editing] > patchwork-space {
+    border-color: color-mix(in oklch, var(--depth-color) 45%, transparent);
+  }
+}
+
+patchwork-space[editing] > patchwork-space {
+  overflow: hidden;
+}
+
+patchwork-space[editing] > patchwork-space[direction] {
+  background: var(--depth-color);
+  gap: 6px;
+  padding: 4px;
+  overflow: visible;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  patchwork-space[editing] > patchwork-space[direction] {
+    background: color-mix(in oklch, var(--depth-color) 8%, transparent);
+  }
+}
+
+patchwork-space[editing] > patchwork-space[direction] {
+  box-shadow: inset 0 0 0 1px var(--depth-color), inset 0 2px 12px var(--depth-color);
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  patchwork-space[editing] > patchwork-space[direction] {
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 10%, transparent), inset 0 2px 12px color-mix(in oklch, var(--depth-color) 6%, transparent);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  patchwork-space[editing] > patchwork-space[direction] {
+    background: var(--depth-color);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    patchwork-space[editing] > patchwork-space[direction] {
+      background: color-mix(in oklch, var(--depth-color) 10%, transparent);
+    }
+  }
+
+  patchwork-space[editing] > patchwork-space[direction] {
+    box-shadow: inset 0 0 0 1px var(--depth-color), inset 0 2px 12px var(--depth-color);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    patchwork-space[editing] > patchwork-space[direction] {
+      box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 12%, transparent), inset 0 2px 12px color-mix(in oklch, var(--depth-color) 8%, transparent);
+    }
+  }
+}
+
+patchwork-space {
+  --drag-x: 0px;
+  --drag-y: 0px;
+  transform: translate(var(--drag-x), var(--drag-y));
+  transition: transform .2s, border-radius .3s, box-shadow .3s, border-color .3s;
+}
+
+patchwork-space[aria-grabbed="true"] {
+  z-index: 999999;
+  opacity: .85;
+  transition: none;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 48px #0000004d !important;
+}
+
+patchwork-space.drop-target {
+  transition: box-shadow .1s !important;
+  box-shadow: 0 0 0 2px oklch(60% .2 250), 0 0 16px oklch(60% .2 250 / .25) !important;
+}
+
+.space-empty-state {
+  opacity: .5;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 14px;
+  display: flex;
+}
+
+.space-toolbar {
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 4px 8px;
+  display: flex;
+  overflow: hidden;
+}
+
+.space-toolbar-item {
+  width: fit-content !important;
+  height: 32px !important;
+  display: flex !important;
+  overflow: hidden !important;
+}
+
+.space-drag-handle {
+  cursor: grab;
+  z-index: 11;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+  opacity: 0;
+  height: 22px;
+  color: var(--depth-color, currentColor);
+  border-radius: 8px 8px 0 0;
+  justify-content: center;
+  align-items: center;
+  transition: opacity .15s;
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-drag-handle {
+    color: var(--depth-color, color-mix(in oklch, currentColor 50%, transparent));
+  }
+}
+
+.space-drag-handle {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='22'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"), var(--depth-color, currentColor);
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-drag-handle {
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='22'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"), color-mix(in oklch, var(--depth-color, currentColor) 8%, transparent);
+  }
+}
+
+.space-drag-handle {
+  background-size: 100px 22px, auto;
+}
+
+patchwork-space[editing] > patchwork-space > .space-drag-handle {
+  opacity: .7;
+}
+
+.space-drag-handle:hover {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='22'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.1'/%3E%3C/svg%3E"), var(--depth-color, currentColor);
+  opacity: 1 !important;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-drag-handle:hover {
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='22'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.1'/%3E%3C/svg%3E"), color-mix(in oklch, var(--depth-color, currentColor) 14%, transparent);
+  }
+}
+
+.space-drag-handle:hover {
+  background-size: 100px 22px, auto;
+}
+
+.space-drag-handle:active {
+  cursor: grabbing;
+}
+
+.space-handle-close {
+  width: 16px;
+  height: 16px;
+  color: inherit;
+  cursor: pointer;
+  opacity: .5;
+  pointer-events: auto;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  transition: opacity .1s, background .1s;
+  display: flex;
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+}
+
+.space-handle-close:hover {
+  opacity: 1;
+  background: var(--depth-color, currentColor);
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-handle-close:hover {
+    background: color-mix(in oklch, var(--depth-color, currentColor) 20%, transparent);
+  }
+}
+
+.space-divider {
+  z-index: 5;
+  touch-action: none;
+  border-radius: 2px;
+  flex-shrink: 0;
+  transition: background .15s, box-shadow .15s;
+}
+
+.space-divider-vertical {
+  cursor: col-resize;
+  background: var(--depth-color, currentColor);
+  width: 4px;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-divider-vertical {
+    background: color-mix(in oklch, var(--depth-color, currentColor) 25%, transparent);
+  }
+}
+
+.space-divider-vertical:hover {
+  background: var(--depth-color, currentColor);
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-divider-vertical:hover {
+    background: color-mix(in oklch, var(--depth-color, currentColor) 60%, transparent);
+  }
+}
+
+.space-divider-vertical:hover {
+  box-shadow: 0 0 6px var(--depth-color, currentColor);
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-divider-vertical:hover {
+    box-shadow: 0 0 6px color-mix(in oklch, var(--depth-color, currentColor) 30%, transparent);
+  }
+}
+
+.space-divider-horizontal {
+  cursor: row-resize;
+  background: var(--depth-color, currentColor);
+  height: 4px;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-divider-horizontal {
+    background: color-mix(in oklch, var(--depth-color, currentColor) 25%, transparent);
+  }
+}
+
+.space-divider-horizontal:hover {
+  background: var(--depth-color, currentColor);
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-divider-horizontal:hover {
+    background: color-mix(in oklch, var(--depth-color, currentColor) 60%, transparent);
+  }
+}
+
+.space-divider-horizontal:hover {
+  box-shadow: 0 0 6px var(--depth-color, currentColor);
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-divider-horizontal:hover {
+    box-shadow: 0 0 6px color-mix(in oklch, var(--depth-color, currentColor) 30%, transparent);
+  }
+}
+
+.edit-overlay {
+  pointer-events: none;
+  z-index: 1000;
+  position: fixed;
+  inset: 0;
+}
+
+.edit-overlay > * {
+  pointer-events: auto;
+}
+
+.edit-controls-bar {
+  background: currentColor;
+  border-radius: 10px;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  display: flex;
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .edit-controls-bar {
+    background: color-mix(in oklch, currentColor 6%, Canvas);
+  }
+}
+
+.edit-controls-bar {
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  backdrop-filter: blur(20px) saturate(1.8);
+  box-shadow: 0 0 0 1px, 0 4px 16px #0000001a;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .edit-controls-bar {
+    box-shadow: 0 0 0 1px color-mix(in oklch, currentColor 10%, transparent), 0 4px 16px #0000001a;
+  }
+}
+
+.edit-controls-bar {
+  z-index: 1001;
+  color: canvastext;
+}
+
+.edit-ctrl-btn {
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  transition: background .12s;
+}
+
+.edit-ctrl-btn:hover {
+  background: currentColor;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .edit-ctrl-btn:hover {
+    background: color-mix(in oklch, currentColor 8%, transparent);
+  }
+}
+
+.edit-ctrl-btn--primary {
+  color: #fff;
+  background: oklch(55% .2 250);
+  font-weight: 600;
+}
+
+.edit-ctrl-btn--primary:hover {
+  background: oklch(50% .22 250);
+}
+
+.edit-ctrl-btn--add {
+  color: oklch(55% .2 250);
+  font-weight: 600;
+}
+
+.edit-ctrl-btn--add:hover {
+  background: oklch(55% .2 250 / .08);
+}
+
+.edit-ctrl-sep {
+  background: currentColor;
+  width: 1px;
+  height: 16px;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .edit-ctrl-sep {
+    background: color-mix(in oklch, currentColor 12%, transparent);
+  }
+}
+
+.edit-ctrl-sep {
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+.pipe-indicator {
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  z-index: 10;
+  background: oklch(55% .2 250);
+  border: none;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  transition: transform .15s;
+}
+
+.pipe-indicator:hover {
+  transform: scale(1.1);
+}
+
+.pipe-editor {
+  z-index: 1002;
+  background: currentColor;
+  position: absolute;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-editor {
+    background: color-mix(in oklch, currentColor 5%, Canvas);
+  }
+}
+
+.pipe-editor {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px #00000026, 0 0 0 1px;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-editor {
+    box-shadow: 0 8px 32px #00000026, 0 0 0 1px color-mix(in oklch, currentColor 10%, transparent);
+  }
+}
+
+.pipe-editor {
+  color: canvastext;
+  min-width: 240px;
+  overflow: visible;
+}
+
+.pipe-editor-header {
+  border-bottom: 1px solid;
+  padding: 10px 14px;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-editor-header {
+    border-bottom: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  }
+}
+
+.pipe-editor-header {
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+}
+
+.pipe-editor-close {
+  cursor: pointer;
+  color: inherit;
+  opacity: .5;
+  background: none;
+  border: none;
+  font-size: 16px;
+}
+
+.pipe-editor-close:hover {
+  opacity: 1;
+}
+
+.pipe-editor-body {
+  padding: 8px;
+}
+
+.pipe-editor-empty {
+  text-align: center;
+  opacity: .5;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.pipe-editor-transform {
+  background: currentColor;
+  border-radius: 6px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  display: flex;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-editor-transform {
+    background: color-mix(in oklch, currentColor 5%, transparent);
+  }
+}
+
+.pipe-editor-transform {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.pipe-editor-transform-remove {
+  color: oklch(55% .25 25);
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 14px;
+}
+
+.pipe-editor-transform-remove:hover {
+  background: oklch(55% .25 25 / .1);
+}
+
+.pipe-editor-add-btn {
+  border: 1px dashed;
+  width: 100%;
+  padding: 6px;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-editor-add-btn {
+    border: 1px dashed color-mix(in oklch, currentColor 15%, transparent);
+  }
+}
+
+.pipe-editor-add-btn {
+  color: oklch(55% .2 250);
+  cursor: pointer;
+  background: none;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: background .15s;
+}
+
+.pipe-editor-add-btn:hover {
+  background: currentColor;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-editor-add-btn:hover {
+    background: color-mix(in oklch, currentColor 5%, transparent);
+  }
+}
+
+.pipe-editor-picker-item {
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  transition: background .1s;
+  display: block;
+}
+
+.pipe-editor-picker-item:hover {
+  background: currentColor;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-editor-picker-item:hover {
+    background: color-mix(in oklch, currentColor 8%, transparent);
+  }
+}
+
+.pipe-editor-actions {
+  border-top: 1px solid;
+  padding: 8px;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-editor-actions {
+    border-top: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  }
+}
+
+.pipe-editor-actions {
+  justify-content: flex-end;
+  display: flex;
+}
+
+.pipe-editor-action-btn {
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-editor-action-btn {
+    border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  }
+}
+
+.pipe-editor-action-btn {
+  cursor: pointer;
+  color: inherit;
+  background: none;
+  font-size: 12px;
+  transition: background .15s;
+}
+
+.pipe-editor-action-btn:hover {
+  background: currentColor;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-editor-action-btn:hover {
+    background: color-mix(in oklch, currentColor 8%, transparent);
+  }
+}
+
+.pipe-editor-action-btn--danger {
+  color: oklch(55% .25 25);
+  border-color: oklch(55% .25 25 / .3);
+}
+
+.pipe-editor-action-btn--danger:hover {
+  background: oklch(55% .25 25 / .05);
+}
+
+patchwork-pipe {
+  flex-shrink: 0;
+  position: relative;
+}
+
+patchwork-pipe[editing] {
+  background: currentColor;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  patchwork-pipe[editing] {
+    background: color-mix(in oklch, currentColor 4%, transparent);
+  }
+}
+
+patchwork-pipe[editing] {
+  border-radius: 4px;
+  transition: background .15s;
+}
+
+patchwork-pipe[editing]:hover {
+  background: oklch(55% .2 250 / .15);
+}
+
+@property --tw-rotate-x {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-rotate-y {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-rotate-z {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-skew-x {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-skew-y {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-border-style {
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
+}
+
+@property --tw-outline-style {
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
+}
+
+@property --tw-blur {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-brightness {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-contrast {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-grayscale {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-hue-rotate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-invert {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-opacity {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-saturate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-sepia {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --tw-drop-shadow-size {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-backdrop-blur {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-backdrop-brightness {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-backdrop-contrast {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-backdrop-grayscale {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-backdrop-hue-rotate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-backdrop-invert {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-backdrop-opacity {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-backdrop-saturate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-backdrop-sepia {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ease {
+  syntax: "*";
+  inherits: false
+}`));
       document.head.appendChild(elementStyle);
     }
   } catch (e) {
     console.error("vite-plugin-css-injected-by-js", e);
   }
 })();
-import { p } from "./assets/index-BQfELDrz.js";
-import "solid-js/web";
+import { p } from "./assets/index-C2Ff-Tea.js";
 export {
   p as plugins
 };

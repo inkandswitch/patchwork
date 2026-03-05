@@ -1,30 +1,24 @@
 @import "tailwindcss";
 
-@theme {
-  --color-base-100: #ffffff;
-  --color-base-200: #f2f2f2;
-  --color-base-300: #e5e6e6;
-  --color-base-content: #1f2937;
-  --color-edit-accent: oklch(0.55 0.2 250);
-}
-
 /* ===== Root ===== */
+
 patchwork-space#space-root {
   width: 100vw;
   height: 100vh;
+  gap: 0px;
+  padding: 0px;
   transition: gap 0.35s ease, padding 0.35s ease;
 }
 
-/* Grid background pattern — only when editing */
-patchwork-space#space-root[data-editing] {
-  background-color: color-mix(in oklch, currentColor 6%, transparent);
-  background-image:
-    linear-gradient(to right, color-mix(in oklch, currentColor 8%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklch, currentColor 8%, transparent) 1px, transparent 1px);
-  background-size: calc(100% / var(--grid-cols)) calc(100% / var(--grid-rows));
+patchwork-space#space-root[editing] {
+  gap: 6px;
+  padding: 8px;
+  background-image: radial-gradient(circle, color-mix(in oklch, currentColor 15%, transparent) 0.7px, transparent 0.7px);
+  background-size: 16px 16px;
 }
 
 /* ===== Views fill their space ===== */
+
 patchwork-space > patchwork-view {
   width: 100%;
   height: 100%;
@@ -32,34 +26,82 @@ patchwork-space > patchwork-view {
 }
 
 /* ===== Child spaces ===== */
+
 patchwork-space > patchwork-space {
-  transition: border-radius 0.3s ease, box-shadow 0.3s ease, grid-column 0.2s ease, grid-row 0.2s ease;
+  gap: 0px;
+  padding: 0px;
+  transition: border-radius 0.3s ease, box-shadow 0.3s ease, gap 0.3s ease, padding 0.3s ease, border-color 0.3s ease;
+  border: 1.5px solid transparent;
+}
+
+/*
+ * Depth color system:
+ *   depth 0 = root (invisible)
+ *   depth 1 = outermost visible spaces → grey (no chroma)
+ *   depth 2+ = nested → hue-shifted colors
+ *
+ * We use (depth - 2) so that depth=2 starts at the base hue.
+ */
+patchwork-space[editing] > patchwork-space {
+  --depth-chroma: clamp(0, calc((var(--depth, 0) - 1) * 0.15), 0.15);
+  --depth-hue: calc(250 - max(0, var(--depth, 0) - 2) * 40);
+  --depth-color: oklch(0.55 var(--depth-chroma) var(--depth-hue));
+  border-radius: 10px;
+  border-color: color-mix(in oklch, var(--depth-color) 45%, transparent);
   overflow: hidden;
 }
 
-/* Edit mode treatment: rounded + shadow, no jiggle */
-patchwork-space[data-editing] > patchwork-space {
-  border-radius: 10px;
-  box-shadow: 0 0 0 1px color-mix(in oklch, currentColor 12%, transparent), 0 2px 12px color-mix(in oklch, currentColor 8%, transparent);
+/* Container children in edit mode */
+patchwork-space[editing] > patchwork-space[direction] {
+  gap: 6px;
+  padding: 4px;
+  overflow: visible;
 }
 
-/* Sub-groups don't get the visual treatment */
-patchwork-space[data-editing] > patchwork-space > patchwork-space {
-  border-radius: 0;
-  box-shadow: none;
+/* ===== Depth-based nesting ===== */
+
+patchwork-space[editing] > patchwork-space[direction] {
+  background: color-mix(in oklch, var(--depth-color) 8%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 10%, transparent),
+    inset 0 2px 12px color-mix(in oklch, var(--depth-color) 6%, transparent);
 }
 
-/* ===== Collapsed ===== */
-patchwork-space[collapsed] {
-  max-width: 3px !important;
-  max-height: 3px !important;
-  cursor: pointer;
+@media (prefers-color-scheme: light) {
+  patchwork-space[editing] > patchwork-space[direction] {
+    background: color-mix(in oklch, var(--depth-color) 10%, transparent);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 12%, transparent),
+      inset 0 2px 12px color-mix(in oklch, var(--depth-color) 8%, transparent);
+  }
 }
-patchwork-space[collapsed] > * {
-  display: none !important;
+
+/* ===== Drag (folk-reorderable pattern) ===== */
+
+patchwork-space {
+  --drag-x: 0px;
+  --drag-y: 0px;
+  transform: translate(var(--drag-x), var(--drag-y));
+  transition: transform 0.2s ease, border-radius 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+patchwork-space[aria-grabbed="true"] {
+  z-index: 999999;
+  transition: none;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.3) !important;
+  opacity: 0.85;
+  border-radius: 12px !important;
+}
+
+/* ===== Drop target ===== */
+
+patchwork-space.drop-target {
+  box-shadow: 0 0 0 2px oklch(0.6 0.2 250), 0 0 16px oklch(0.6 0.2 250 / 0.25) !important;
+  transition: box-shadow 0.1s ease !important;
 }
 
 /* ===== Empty state ===== */
+
 .space-empty-state {
   display: flex;
   align-items: center;
@@ -71,6 +113,7 @@ patchwork-space[collapsed] > * {
 }
 
 /* ===== Toolbar ===== */
+
 .space-toolbar {
   display: flex;
   align-items: center;
@@ -80,6 +123,7 @@ patchwork-space[collapsed] > * {
   width: 100%;
   overflow: hidden;
 }
+
 .space-toolbar-item {
   width: fit-content !important;
   height: 32px !important;
@@ -87,131 +131,107 @@ patchwork-space[collapsed] > * {
   display: flex !important;
 }
 
-/* ===== Inline edit controls ===== */
+/* ===== Drag handle (bar with grip icon + close button) ===== */
 
-.space-edit-controls {
-  position: absolute;
-  inset: -1px;
-  z-index: 10;
-  pointer-events: none;
-}
-
-/* Remove button */
-.space-remove-btn {
-  position: absolute;
-  top: -10px;
-  left: -10px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid white;
-  background: #ef4444;
-  color: white;
-  font-size: 14px;
-  font-weight: bold;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  pointer-events: auto;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-  transition: transform 0.1s ease;
-  z-index: 20;
-}
-.space-remove-btn:hover {
-  transform: scale(1.2);
-}
-
-/* Drag handle */
 .space-drag-handle {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 28px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
-  pointer-events: auto;
-  background: linear-gradient(to bottom, color-mix(in oklch, currentColor 30%, transparent), transparent);
-  color: color-mix(in oklch, currentColor 60%, white);
   z-index: 11;
   user-select: none;
   touch-action: none;
-  opacity: 0.5;
+  opacity: 0;
   transition: opacity 0.15s ease;
+  border-radius: 8px 8px 0 0;
+  color: var(--depth-color, color-mix(in oklch, currentColor 50%, transparent));
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='22'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+    color-mix(in oklch, var(--depth-color, currentColor) 8%, transparent);
+  background-size: 100px 22px, auto;
 }
+
+patchwork-space[editing] > patchwork-space > .space-drag-handle {
+  opacity: 0.7;
+}
+
 .space-drag-handle:hover {
-  opacity: 1;
+  opacity: 1 !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='22'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.1'/%3E%3C/svg%3E"),
+    color-mix(in oklch, var(--depth-color, currentColor) 14%, transparent);
+  background-size: 100px 22px, auto;
 }
+
 .space-drag-handle:active {
   cursor: grabbing;
 }
 
-/* Dragging state */
-.space-dragging {
-  box-shadow: 0 8px 32px rgba(0,0,0,0.25) !important;
-  border-radius: 10px;
-}
-
-/* Resize handles */
-.space-resize-handle {
+/* Close button integrated into drag handle */
+.space-handle-close {
   position: absolute;
-  pointer-events: auto;
-  z-index: 12;
-  touch-action: none;
-}
-.space-resize-right {
-  top: 10%;
-  right: -3px;
-  width: 6px;
-  height: 80%;
-  cursor: ew-resize;
-  border-radius: 3px;
-  background: var(--color-edit-accent);
-  opacity: 0.35;
-  transition: opacity 0.15s ease, width 0.15s ease;
-}
-.space-resize-right:hover {
-  opacity: 1;
-  width: 8px;
-  right: -4px;
-}
-.space-resize-bottom {
-  left: 10%;
-  bottom: -3px;
-  width: 80%;
-  height: 6px;
-  cursor: ns-resize;
-  border-radius: 3px;
-  background: var(--color-edit-accent);
-  opacity: 0.35;
-  transition: opacity 0.15s ease, height 0.15s ease;
-}
-.space-resize-bottom:hover {
-  opacity: 1;
-  height: 8px;
-  bottom: -4px;
-}
-.space-resize-corner {
-  right: -4px;
-  bottom: -4px;
-  width: 12px;
-  height: 12px;
-  cursor: nwse-resize;
-  border-radius: 50%;
-  background: var(--color-edit-accent);
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
   opacity: 0.5;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.space-resize-corner:hover {
-  opacity: 1;
-  transform: scale(1.3);
+  transition: opacity 0.1s ease, background 0.1s ease;
+  pointer-events: auto;
 }
 
-/* ===== Edit overlay ===== */
+.space-handle-close:hover {
+  opacity: 1;
+  background: color-mix(in oklch, var(--depth-color, currentColor) 20%, transparent);
+}
+
+/* ===== Resize dividers ===== */
+
+.space-divider {
+  flex-shrink: 0;
+  z-index: 5;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+  touch-action: none;
+  border-radius: 2px;
+}
+
+.space-divider-vertical {
+  width: 4px;
+  cursor: col-resize;
+  background: color-mix(in oklch, var(--depth-color, currentColor) 25%, transparent);
+}
+
+.space-divider-vertical:hover {
+  background: color-mix(in oklch, var(--depth-color, currentColor) 60%, transparent);
+  box-shadow: 0 0 6px color-mix(in oklch, var(--depth-color, currentColor) 30%, transparent);
+}
+
+.space-divider-horizontal {
+  height: 4px;
+  cursor: row-resize;
+  background: color-mix(in oklch, var(--depth-color, currentColor) 25%, transparent);
+}
+
+.space-divider-horizontal:hover {
+  background: color-mix(in oklch, var(--depth-color, currentColor) 60%, transparent);
+  box-shadow: 0 0 6px color-mix(in oklch, var(--depth-color, currentColor) 30%, transparent);
+}
+
+/* ===== Edit controls bar ===== */
 
 .edit-overlay {
   position: fixed;
@@ -219,165 +239,109 @@ patchwork-space[collapsed] > * {
   pointer-events: none;
   z-index: 1000;
 }
+
 .edit-overlay > * {
   pointer-events: auto;
 }
-.edit-backdrop {
+
+.edit-controls-bar {
   position: fixed;
-  inset: 0;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: color-mix(in oklch, currentColor 6%, Canvas);
+  backdrop-filter: blur(20px) saturate(1.8);
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, currentColor 10%, transparent),
+    0 4px 16px rgba(0,0,0,0.10);
   z-index: 1001;
-}
-
-.edit-top-bar {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  gap: 8px;
-  z-index: 1001;
-}
-
-.edit-done-btn {
-  padding: 8px 20px;
-  border-radius: 20px;
-  border: none;
-  background: var(--color-edit-accent);
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  transition: transform 0.15s ease, opacity 0.15s ease;
-}
-.edit-done-btn:hover {
-  transform: scale(1.05);
-}
-
-.edit-reset-btn {
-  padding: 8px 16px;
-  border-radius: 20px;
-  border: 1px solid color-mix(in oklch, currentColor 20%, transparent);
-  background: color-mix(in oklch, currentColor 10%, transparent);
-  backdrop-filter: blur(8px);
-  color: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-.edit-reset-btn:hover {
-  background: color-mix(in oklch, currentColor 18%, transparent);
-}
-
-/* Pipe connection points */
-.pipe-connection-point {
-  position: fixed;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--color-edit-accent);
-  color: white;
-  font-size: 16px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  pointer-events: auto;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  transition: transform 0.15s ease;
-  z-index: 20;
-}
-.pipe-connection-point:hover {
-  transform: scale(1.2);
-}
-
-.pipe-indicator {
-  position: fixed;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
-  border-radius: 12px;
-  background: var(--color-edit-accent);
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  pointer-events: auto;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  z-index: 20;
-  transition: transform 0.15s ease;
-  white-space: nowrap;
-}
-.pipe-indicator:hover {
-  transform: scale(1.08);
-}
-
-/* Add space button */
-.add-space-btn {
-  position: fixed;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px dashed var(--color-edit-accent);
-  background: color-mix(in oklch, currentColor 5%, transparent);
-  color: var(--color-edit-accent);
-  font-size: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  pointer-events: auto;
-  transition: background 0.15s ease, transform 0.15s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  backdrop-filter: blur(8px);
-}
-.add-space-btn:hover {
-  transform: scale(1.1);
-  background: color-mix(in oklch, currentColor 12%, transparent);
-}
-
-/* Popovers */
-.add-space-picker {
-  position: fixed;
-  z-index: 1002;
-  background: color-mix(in oklch, currentColor 5%, Canvas);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 0 0 1px color-mix(in oklch, currentColor 10%, transparent);
-  min-width: 200px;
-  padding: 8px;
   color: CanvasText;
 }
-.add-space-picker-item {
-  display: block;
-  width: 100%;
-  padding: 8px 12px;
+
+.edit-ctrl-btn {
+  padding: 5px 12px;
+  border-radius: 7px;
   border: none;
   background: transparent;
-  text-align: left;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
   color: inherit;
-  transition: background 0.1s ease;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  white-space: nowrap;
 }
-.add-space-picker-item:hover {
+
+.edit-ctrl-btn:hover {
   background: color-mix(in oklch, currentColor 8%, transparent);
 }
 
-/* Pipe editor */
+.edit-ctrl-btn--primary {
+  background: oklch(0.55 0.2 250);
+  color: white;
+  font-weight: 600;
+}
+
+.edit-ctrl-btn--primary:hover {
+  background: oklch(0.50 0.22 250);
+}
+
+.edit-ctrl-btn--add {
+  color: oklch(0.55 0.2 250);
+  font-weight: 600;
+}
+
+.edit-ctrl-btn--add:hover {
+  background: oklch(0.55 0.2 250 / 0.08);
+}
+
+.edit-ctrl-sep {
+  width: 1px;
+  height: 16px;
+  background: color-mix(in oklch, currentColor 12%, transparent);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+/* ===== Pipe indicator ===== */
+
+.pipe-indicator {
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: none;
+  background: oklch(0.55 0.2 250);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  z-index: 10;
+  transition: transform 0.15s ease;
+}
+
+.pipe-indicator:hover {
+  transform: scale(1.1);
+}
+
+/* ===== Pipe editor ===== */
+
 .pipe-editor {
-  position: fixed;
+  position: absolute;
   z-index: 1002;
   background: color-mix(in oklch, currentColor 5%, Canvas);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 0 0 1px color-mix(in oklch, currentColor 10%, transparent);
-  min-width: 260px;
-  overflow: hidden;
+  min-width: 240px;
+  overflow: visible;
   color: CanvasText;
 }
+
 .pipe-editor-header {
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid color-mix(in oklch, currentColor 10%, transparent);
   font-size: 12px;
   font-weight: 600;
@@ -385,54 +349,99 @@ patchwork-space[collapsed] > * {
   align-items: center;
   justify-content: space-between;
 }
+
+.pipe-editor-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: inherit;
+  opacity: 0.5;
+}
+
+.pipe-editor-close:hover {
+  opacity: 1;
+}
+
 .pipe-editor-body {
   padding: 8px;
 }
+
+.pipe-editor-empty {
+  padding: 12px;
+  text-align: center;
+  opacity: 0.5;
+  font-size: 13px;
+}
+
 .pipe-editor-transform {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
   background: color-mix(in oklch, currentColor 5%, transparent);
   margin-bottom: 4px;
   font-size: 13px;
 }
+
 .pipe-editor-transform-remove {
   background: none;
   border: none;
-  color: #ef4444;
+  color: oklch(0.55 0.25 25);
   cursor: pointer;
   font-size: 14px;
   padding: 2px 6px;
   border-radius: 4px;
 }
+
 .pipe-editor-transform-remove:hover {
-  background: rgba(239,68,68,0.1);
+  background: oklch(0.55 0.25 25 / 0.1);
 }
+
 .pipe-editor-add-btn {
   width: 100%;
-  padding: 8px;
+  padding: 6px;
   border: 1px dashed color-mix(in oklch, currentColor 15%, transparent);
-  border-radius: 8px;
+  border-radius: 6px;
   background: transparent;
-  color: var(--color-edit-accent);
+  color: oklch(0.55 0.2 250);
   cursor: pointer;
   font-size: 13px;
   transition: background 0.15s ease;
 }
+
 .pipe-editor-add-btn:hover {
   background: color-mix(in oklch, currentColor 5%, transparent);
 }
+
+.pipe-editor-picker-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: inherit;
+  transition: background 0.1s ease;
+}
+
+.pipe-editor-picker-item:hover {
+  background: color-mix(in oklch, currentColor 8%, transparent);
+}
+
 .pipe-editor-actions {
-  padding: 8px 12px;
+  padding: 8px;
   border-top: 1px solid color-mix(in oklch, currentColor 10%, transparent);
   display: flex;
-  gap: 8px;
   justify-content: flex-end;
 }
+
 .pipe-editor-action-btn {
-  padding: 4px 12px;
+  padding: 4px 10px;
   border-radius: 6px;
   border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
   background: transparent;
@@ -441,13 +450,33 @@ patchwork-space[collapsed] > * {
   color: inherit;
   transition: background 0.15s ease;
 }
+
 .pipe-editor-action-btn:hover {
   background: color-mix(in oklch, currentColor 8%, transparent);
 }
+
 .pipe-editor-action-btn--danger {
-  color: #ef4444;
-  border-color: rgba(239,68,68,0.3);
+  color: oklch(0.55 0.25 25);
+  border-color: oklch(0.55 0.25 25 / 0.3);
 }
+
 .pipe-editor-action-btn--danger:hover {
-  background: rgba(239,68,68,0.05);
+  background: oklch(0.55 0.25 25 / 0.05);
+}
+
+/* ===== patchwork-pipe ===== */
+
+patchwork-pipe {
+  position: relative;
+  flex-shrink: 0;
+}
+
+patchwork-pipe[editing] {
+  background: color-mix(in oklch, currentColor 4%, transparent);
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+patchwork-pipe[editing]:hover {
+  background: oklch(0.55 0.2 250 / 0.15);
 }

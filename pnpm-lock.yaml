@@ -1900,9 +1900,6 @@ importers:
       '@automerge/automerge-repo':
         specifier: 2.5.2
         version: 2.5.2
-      '@automerge/automerge-repo-solid-primitives':
-        specifier: ^2.4.0
-        version: 2.5.2(@automerge/automerge@3.2.4)(solid-js@1.9.10)
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.2
@@ -1912,9 +1909,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../core/plugins
-      solid-js:
-        specifier: ^1.9.10
-        version: 1.9.10
+      lucide:
+        specifier: ^0.577.0
+        version: 0.577.0
       tailwindcss:
         specifier: ^4.1.14
         version: 4.1.18
@@ -1931,9 +1928,6 @@ importers:
       vite-plugin-css-injected-by-js:
         specifier: ^3.5.2
         version: 3.5.2(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
-      vite-plugin-solid:
-        specifier: ^2.11.10
-        version: 2.11.10(@testing-library/jest-dom@6.9.1)(solid-js@1.9.10)(vite@7.2.6(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
 
   tools/tiny-patchwork/account-history:
     dependencies:
@@ -6715,6 +6709,9 @@ packages:
     resolution: {integrity: sha512-7r1/yUuflQDSt4f1bpn5ZAocyIxcTyVyBBChSVtBKn5M+392cPmI5YJMWOJKk/HUWGm5wg83chlAZtCcGbEZtw==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  lucide@0.577.0:
+    resolution: {integrity: sha512-PpC/m5eOItp/WU/GlQPFBXDOhq6HibL73KzYP37OX3LM7VmzWQF8voEj8QRWUFvy9FIKfeDQkWYoyS1D/MdWFA==}
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -12801,6 +12798,8 @@ snapshots:
   lucide-react@0.545.0(react@18.3.1):
     dependencies:
       react: 18.3.1
+
+  lucide@0.577.0: {}
 
   lz-string@1.5.0: {}
 
