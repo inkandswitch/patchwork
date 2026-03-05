@@ -1,0 +1,453 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base-100: #ffffff;
+  --color-base-200: #f2f2f2;
+  --color-base-300: #e5e6e6;
+  --color-base-content: #1f2937;
+  --color-edit-accent: oklch(0.55 0.2 250);
+}
+
+/* ===== Root ===== */
+patchwork-space#space-root {
+  width: 100vw;
+  height: 100vh;
+  transition: gap 0.35s ease, padding 0.35s ease;
+}
+
+/* Grid background pattern — only when editing */
+patchwork-space#space-root[data-editing] {
+  background-color: color-mix(in oklch, currentColor 6%, transparent);
+  background-image:
+    linear-gradient(to right, color-mix(in oklch, currentColor 8%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, currentColor 8%, transparent) 1px, transparent 1px);
+  background-size: calc(100% / var(--grid-cols)) calc(100% / var(--grid-rows));
+}
+
+/* ===== Views fill their space ===== */
+patchwork-space > patchwork-view {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ===== Child spaces ===== */
+patchwork-space > patchwork-space {
+  transition: border-radius 0.3s ease, box-shadow 0.3s ease, grid-column 0.2s ease, grid-row 0.2s ease;
+  overflow: hidden;
+}
+
+/* Edit mode treatment: rounded + shadow, no jiggle */
+patchwork-space[data-editing] > patchwork-space {
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px color-mix(in oklch, currentColor 12%, transparent), 0 2px 12px color-mix(in oklch, currentColor 8%, transparent);
+}
+
+/* Sub-groups don't get the visual treatment */
+patchwork-space[data-editing] > patchwork-space > patchwork-space {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ===== Collapsed ===== */
+patchwork-space[collapsed] {
+  max-width: 3px !important;
+  max-height: 3px !important;
+  cursor: pointer;
+}
+patchwork-space[collapsed] > * {
+  display: none !important;
+}
+
+/* ===== Empty state ===== */
+.space-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  opacity: 0.5;
+  font-size: 14px;
+}
+
+/* ===== Toolbar ===== */
+.space-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+.space-toolbar-item {
+  width: fit-content !important;
+  height: 32px !important;
+  overflow: hidden !important;
+  display: flex !important;
+}
+
+/* ===== Inline edit controls ===== */
+
+.space-edit-controls {
+  position: absolute;
+  inset: -1px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Remove button */
+.space-remove-btn {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: #ef4444;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  transition: transform 0.1s ease;
+  z-index: 20;
+}
+.space-remove-btn:hover {
+  transform: scale(1.2);
+}
+
+/* Drag handle */
+.space-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  pointer-events: auto;
+  background: linear-gradient(to bottom, color-mix(in oklch, currentColor 30%, transparent), transparent);
+  color: color-mix(in oklch, currentColor 60%, white);
+  z-index: 11;
+  user-select: none;
+  touch-action: none;
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+.space-drag-handle:hover {
+  opacity: 1;
+}
+.space-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Dragging state */
+.space-dragging {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25) !important;
+  border-radius: 10px;
+}
+
+/* Resize handles */
+.space-resize-handle {
+  position: absolute;
+  pointer-events: auto;
+  z-index: 12;
+  touch-action: none;
+}
+.space-resize-right {
+  top: 10%;
+  right: -3px;
+  width: 6px;
+  height: 80%;
+  cursor: ew-resize;
+  border-radius: 3px;
+  background: var(--color-edit-accent);
+  opacity: 0.35;
+  transition: opacity 0.15s ease, width 0.15s ease;
+}
+.space-resize-right:hover {
+  opacity: 1;
+  width: 8px;
+  right: -4px;
+}
+.space-resize-bottom {
+  left: 10%;
+  bottom: -3px;
+  width: 80%;
+  height: 6px;
+  cursor: ns-resize;
+  border-radius: 3px;
+  background: var(--color-edit-accent);
+  opacity: 0.35;
+  transition: opacity 0.15s ease, height 0.15s ease;
+}
+.space-resize-bottom:hover {
+  opacity: 1;
+  height: 8px;
+  bottom: -4px;
+}
+.space-resize-corner {
+  right: -4px;
+  bottom: -4px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  border-radius: 50%;
+  background: var(--color-edit-accent);
+  opacity: 0.5;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.space-resize-corner:hover {
+  opacity: 1;
+  transform: scale(1.3);
+}
+
+/* ===== Edit overlay ===== */
+
+.edit-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+.edit-overlay > * {
+  pointer-events: auto;
+}
+.edit-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+}
+
+.edit-top-bar {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 1001;
+}
+
+.edit-done-btn {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: none;
+  background: var(--color-edit-accent);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.edit-done-btn:hover {
+  transform: scale(1.05);
+}
+
+.edit-reset-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in oklch, currentColor 20%, transparent);
+  background: color-mix(in oklch, currentColor 10%, transparent);
+  backdrop-filter: blur(8px);
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.edit-reset-btn:hover {
+  background: color-mix(in oklch, currentColor 18%, transparent);
+}
+
+/* Pipe connection points */
+.pipe-connection-point {
+  position: fixed;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-edit-accent);
+  color: white;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform 0.15s ease;
+  z-index: 20;
+}
+.pipe-connection-point:hover {
+  transform: scale(1.2);
+}
+
+.pipe-indicator {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: var(--color-edit-accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 20;
+  transition: transform 0.15s ease;
+  white-space: nowrap;
+}
+.pipe-indicator:hover {
+  transform: scale(1.08);
+}
+
+/* Add space button */
+.add-space-btn {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px dashed var(--color-edit-accent);
+  background: color-mix(in oklch, currentColor 5%, transparent);
+  color: var(--color-edit-accent);
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  backdrop-filter: blur(8px);
+}
+.add-space-btn:hover {
+  transform: scale(1.1);
+  background: color-mix(in oklch, currentColor 12%, transparent);
+}
+
+/* Popovers */
+.add-space-picker {
+  position: fixed;
+  z-index: 1002;
+  background: color-mix(in oklch, currentColor 5%, Canvas);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 0 0 1px color-mix(in oklch, currentColor 10%, transparent);
+  min-width: 200px;
+  padding: 8px;
+  color: CanvasText;
+}
+.add-space-picker-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: inherit;
+  transition: background 0.1s ease;
+}
+.add-space-picker-item:hover {
+  background: color-mix(in oklch, currentColor 8%, transparent);
+}
+
+/* Pipe editor */
+.pipe-editor {
+  position: fixed;
+  z-index: 1002;
+  background: color-mix(in oklch, currentColor 5%, Canvas);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 0 0 1px color-mix(in oklch, currentColor 10%, transparent);
+  min-width: 260px;
+  overflow: hidden;
+  color: CanvasText;
+}
+.pipe-editor-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pipe-editor-body {
+  padding: 8px;
+}
+.pipe-editor-transform {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: color-mix(in oklch, currentColor 5%, transparent);
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+.pipe-editor-transform-remove {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.pipe-editor-transform-remove:hover {
+  background: rgba(239,68,68,0.1);
+}
+.pipe-editor-add-btn {
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed color-mix(in oklch, currentColor 15%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-edit-accent);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s ease;
+}
+.pipe-editor-add-btn:hover {
+  background: color-mix(in oklch, currentColor 5%, transparent);
+}
+.pipe-editor-actions {
+  padding: 8px 12px;
+  border-top: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.pipe-editor-action-btn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+  color: inherit;
+  transition: background 0.15s ease;
+}
+.pipe-editor-action-btn:hover {
+  background: color-mix(in oklch, currentColor 8%, transparent);
+}
+.pipe-editor-action-btn--danger {
+  color: #ef4444;
+  border-color: rgba(239,68,68,0.3);
+}
+.pipe-editor-action-btn--danger:hover {
+  background: rgba(239,68,68,0.05);
+}
