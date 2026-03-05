@@ -202,16 +202,6 @@ const moduleWatcher = new ModuleWatcher(
 
 window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
 
-// After modules finish loading, re-set the doc-url to kick the element
-// into re-rendering in case it missed the registry events during init.
-moduleWatcher.doneLoading.then(() => {
-  const docUrl = rootElement.getAttribute("doc-url");
-  if (docUrl) {
-    rootElement.removeAttribute("doc-url");
-    rootElement.setAttribute("doc-url", docUrl);
-  }
-});
-
 rootElement.addEventListener("patchwork:no-tool", (event) => {
   moduleWatcher.loadSuggestedImportUrl(event.detail.url);
 });

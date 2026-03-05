@@ -214,19 +214,9 @@ export function registerPatchworkViewElement(
           }
         );
 
-        // Re-render when the registry changes and we're stuck in "unable"
-        // state. This handles the case where tools are registered/loaded
-        // after our initial render failed to find the tool.
-        const removeChangedListener = toolRegistry.on("changed", () => {
-          if (this.#state == "unable") {
-            this.#queueRender();
-          }
-        });
-
         this.#teardowns.add(() => {
           removeAddedListener();
           removeLoadedListener();
-          removeChangedListener();
         });
 
         this.#handle.on("change", this.#onDocChange);
