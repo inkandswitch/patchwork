@@ -55,13 +55,9 @@ patchwork-space[editing] > patchwork-space:has(> patchwork-space) {
   gap: 6px;
   padding: 4px;
   overflow: visible;
-}
-
-/* ===== Depth-based nesting ===== */
-
-patchwork-space[editing] > patchwork-space:has(> patchwork-space) {
   background: color-mix(in oklch, var(--depth-color) 8%, transparent);
   box-shadow:
+    0 0 0 1.5px color-mix(in oklch, var(--depth-color) 45%, transparent),
     inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 10%, transparent),
     inset 0 2px 12px color-mix(in oklch, var(--depth-color) 6%, transparent);
 }
@@ -70,6 +66,7 @@ patchwork-space[editing] > patchwork-space:has(> patchwork-space) {
   patchwork-space[editing] > patchwork-space:has(> patchwork-space) {
     background: color-mix(in oklch, var(--depth-color) 10%, transparent);
     box-shadow:
+      0 0 0 1.5px color-mix(in oklch, var(--depth-color) 45%, transparent),
       inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 12%, transparent),
       inset 0 2px 12px color-mix(in oklch, var(--depth-color) 8%, transparent);
   }
@@ -231,6 +228,7 @@ patchwork-space[editing] > patchwork-space > .space-drag-handle {
 
 .space-divider {
   flex-shrink: 0;
+  align-self: stretch;
   z-index: 5;
   transition: background 0.15s ease, box-shadow 0.15s ease;
   touch-action: none;

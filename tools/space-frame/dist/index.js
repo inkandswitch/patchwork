@@ -523,12 +523,12 @@ patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
 }
 
 patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
-  box-shadow: inset 0 0 0 1px var(--depth-color), inset 0 2px 12px var(--depth-color);
+  box-shadow: 0 0 0 1.5px var(--depth-color), inset 0 0 0 1px var(--depth-color), inset 0 2px 12px var(--depth-color);
 }
 
 @supports (color: color-mix(in lab, red, red)) {
   patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
-    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 10%, transparent), inset 0 2px 12px color-mix(in oklch, var(--depth-color) 6%, transparent);
+    box-shadow: 0 0 0 1.5px color-mix(in oklch, var(--depth-color) 45%, transparent), inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 10%, transparent), inset 0 2px 12px color-mix(in oklch, var(--depth-color) 6%, transparent);
   }
 }
 
@@ -544,12 +544,12 @@ patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
   }
 
   patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
-    box-shadow: inset 0 0 0 1px var(--depth-color), inset 0 2px 12px var(--depth-color);
+    box-shadow: 0 0 0 1.5px var(--depth-color), inset 0 0 0 1px var(--depth-color), inset 0 2px 12px var(--depth-color);
   }
 
   @supports (color: color-mix(in lab, red, red)) {
     patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
-      box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 12%, transparent), inset 0 2px 12px color-mix(in oklch, var(--depth-color) 8%, transparent);
+      box-shadow: 0 0 0 1.5px color-mix(in oklch, var(--depth-color) 45%, transparent), inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 12%, transparent), inset 0 2px 12px color-mix(in oklch, var(--depth-color) 8%, transparent);
     }
   }
 }
@@ -726,6 +726,7 @@ patchwork-space[editing] > patchwork-space > .space-drag-handle {
   touch-action: none;
   border-radius: 2px;
   flex-shrink: 0;
+  align-self: stretch;
   transition: background .15s, box-shadow .15s;
 }
 
