@@ -66,7 +66,7 @@ const plugins = [
     supportedDatatypes: ["account"],
     async load() {
       const { mountSpaceFrame } = await __vitePreload(async () => {
-        const { mountSpaceFrame: mountSpaceFrame2 } = await import("./space-frame-DidxyTdB.js");
+        const { mountSpaceFrame: mountSpaceFrame2 } = await import("./space-frame-B9IuJGk7.js");
         return { mountSpaceFrame: mountSpaceFrame2 };
       }, true ? [] : void 0, import.meta.url);
       return (handle, element) => {
@@ -79,4 +79,4 @@ export {
   __vitePreload as _,
   plugins as p
 };
-//# sourceMappingURL=index-C2Ff-Tea.js.map
+//# sourceMappingURL=index-ByGD5ICM.js.map

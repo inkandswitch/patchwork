@@ -1,37 +1,96 @@
+import { LitElement, nothing } from "lit";
 import { createElement, GripHorizontal, X } from "lucide";
 
 declare global {
   interface Element {
-    moveBefore?(child: Element, referenceChild: Element | null): void;
+    moveBefore(child: Element, referenceChild: Element | null): void;
   }
 }
 
 const TAG = "patchwork-space";
+const DIVIDER_CLASS = "space-divider";
 
-function canMoveBefore(): boolean {
-  return typeof Element.prototype.moveBefore === "function";
+if (typeof Element.prototype.moveBefore !== "function") {
+  alert("This browser does not support moveBefore(). Please use Chrome or Firefox.");
 }
 
 function createIcon(iconData: typeof GripHorizontal, size = 14): SVGSVGElement {
   return createElement(iconData, { width: size, height: size }) as SVGSVGElement;
 }
 
-export class PatchworkSpaceElement extends HTMLElement {
-  static observedAttributes = ["direction", "editing"];
-
-  #dragHandle: HTMLElement | null = null;
-  #removeBtn: HTMLElement | null = null;
-  #dividers: HTMLElement[] = [];
-  #childObserver: MutationObserver | null = null;
-  #abortController: AbortController | null = null;
-  #updatingUI = false;
-
-  get direction(): "horizontal" | "vertical" {
-    return (this.getAttribute("direction") as any) || "horizontal";
+function findDropTarget(
+  elementBelow: Element,
+  draggedEl: Element,
+  clientX: number,
+  clientY: number
+): { container: PatchworkSpaceElement | null; refChild: Element | null } {
+  let candidate: Element | null = elementBelow;
+  while (candidate) {
+    if (candidate === draggedEl) {
+      candidate = candidate.parentElement;
+      continue;
+    }
+    if (candidate.tagName.toLowerCase() === TAG) {
+      const isLeaf = !candidate.querySelector(`:scope > ${TAG}`);
+      if (isLeaf) {
+        candidate = candidate.parentElement;
+        if (candidate === draggedEl) candidate = candidate?.parentElement ?? null;
+      }
+      break;
+    }
+    candidate = candidate.parentElement;
   }
 
-  get editing(): boolean {
-    return this.hasAttribute("editing");
+  if (!candidate || candidate.tagName.toLowerCase() !== TAG) {
+    return { container: null, refChild: null };
+  }
+
+  const container = candidate as PatchworkSpaceElement;
+  const children = Array.from(container.querySelectorAll(`:scope > ${TAG}`))
+    .filter((c) => c !== draggedEl);
+
+  if (children.length === 0) {
+    return { container, refChild: null };
+  }
+
+  const isHoriz = container.direction !== "vertical";
+  let bestRef: Element | null = null;
+  for (const child of children) {
+    const r = child.getBoundingClientRect();
+    const mid = isHoriz ? r.left + r.width / 2 : r.top + r.height / 2;
+    const pos = isHoriz ? clientX : clientY;
+    if (pos < mid) {
+      bestRef = child;
+      break;
+    }
+  }
+
+  return { container, refChild: bestRef };
+}
+
+export class PatchworkSpaceElement extends LitElement {
+  static properties = {
+    direction: { reflect: true },
+    editing: { type: Boolean, reflect: true },
+  };
+
+  // `declare` prevents TS from creating instance fields that shadow Lit's accessors
+  declare direction: "horizontal" | "vertical";
+  declare editing: boolean;
+
+  #isDragging = false;
+  #dragMoveHandler: ((ev: PointerEvent) => void) | null = null;
+  #dragUpHandler: (() => void) | null = null;
+  #dragHandleEl: HTMLElement | null = null;
+
+  constructor() {
+    super();
+    this.direction = "horizontal";
+    this.editing = false;
+  }
+
+  createRenderRoot() {
+    return this;
   }
 
   get isLeaf(): boolean {
@@ -48,30 +107,46 @@ export class PatchworkSpaceElement extends HTMLElement {
     return d;
   }
 
+  getSpaceChildren(): PatchworkSpaceElement[] {
+    return Array.from(this.querySelectorAll(`:scope > ${TAG}`)) as PatchworkSpaceElement[];
+  }
+
+  // ---- Lifecycle ----
+
   connectedCallback() {
-    this.#applyLayout();
-    this.#childObserver = new MutationObserver(() => {
-      if (this.#updatingUI) return;
-      this.#applyLayout();
-    });
-    this.#childObserver.observe(this, { childList: true });
+    super.connectedCallback();
+    this.#applyLayoutStyles();
+    if (this.editing) {
+      this.#syncEditUI();
+      this.#cascadeEditing();
+    }
   }
 
   disconnectedCallback() {
-    this.#childObserver?.disconnect();
-    this.#childObserver = null;
-    this.#teardownEditUI();
+    super.disconnectedCallback();
+    if (!this.#isDragging) {
+      this.#removeDividers();
+    }
   }
 
-  attributeChangedCallback() {
-    this.#applyLayout();
-    this.#updateEditUI();
+  connectedMoveCallback() {
+    this.#applyLayoutStyles();
+    this.#syncEditUI();
+  }
+
+  updated(_changed: Map<string, unknown>) {
+    this.#applyLayoutStyles();
+    this.#syncEditUI();
     this.#cascadeEditing();
   }
 
-  connectedMoveCallback() {}
+  render() {
+    return nothing;
+  }
 
-  #applyLayout() {
+  // ---- Layout styles ----
+
+  #applyLayoutStyles() {
     this.style.display = "flex";
     this.style.flexDirection = this.direction === "vertical" ? "column" : "row";
     this.style.position = "relative";
@@ -87,11 +162,10 @@ export class PatchworkSpaceElement extends HTMLElement {
   }
 
   #cascadeEditing() {
-    const isEdit = this.editing;
-    for (const child of this.children) {
+    for (const child of Array.from(this.children)) {
       const tag = child.tagName.toLowerCase();
       if (tag === TAG || tag === "patchwork-pipe") {
-        if (isEdit) {
+        if (this.editing) {
           child.setAttribute("editing", "");
         } else {
           child.removeAttribute("editing");
@@ -100,189 +174,92 @@ export class PatchworkSpaceElement extends HTMLElement {
     }
   }
 
-  #updateEditUI() {
-    this.#updatingUI = true;
-    try {
-      if (this.editing) {
-        if (this.isLeaf) {
-          this.#showLeafControls();
-          this.#removeDividers();
-        } else {
-          this.#hideLeafControls();
-          this.#createDividers();
-        }
-      } else {
-        this.#hideLeafControls();
+  // ---- Edit UI ----
+
+  #syncEditUI() {
+    if (this.editing) {
+      if (this.isLeaf) {
+        this.#ensureDragHandle();
         this.#removeDividers();
+      } else {
+        this.#removeDragHandle();
+        this.#syncDividers();
       }
-    } finally {
-      this.#updatingUI = false;
+    } else {
+      this.#removeDragHandle();
+      this.#removeDividers();
     }
   }
 
-  // ---- Leaf edit controls ----
+  refreshEditUI() {
+    this.#applyLayoutStyles();
+    this.#syncEditUI();
+    this.#cascadeEditing();
+  }
 
-  #showLeafControls() {
-    if (!this.#dragHandle) {
-      this.#dragHandle = document.createElement("div");
-      this.#dragHandle.className = "space-drag-handle";
+  // ---- Drag handle ----
+
+  #ensureDragHandle() {
+    if (!this.#dragHandleEl) {
+      const handle = document.createElement("div");
+      handle.className = "space-drag-handle";
 
       const grip = createIcon(GripHorizontal, 14);
       grip.style.flexShrink = "0";
-      this.#dragHandle.appendChild(grip);
+      handle.appendChild(grip);
 
-      this.#removeBtn = document.createElement("button");
-      this.#removeBtn.className = "space-handle-close";
-      this.#removeBtn.appendChild(createIcon(X, 10));
-      this.#removeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
-      this.#removeBtn.addEventListener("click", (e) => {
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "space-handle-close";
+      closeBtn.appendChild(createIcon(X, 12));
+      closeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
+      closeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        this.dispatchEvent(new CustomEvent("space:remove", {
-          detail: { id: this.id },
-          bubbles: true,
-        }));
+        this.dispatchEvent(
+          new CustomEvent("space:remove", { detail: { id: this.id }, bubbles: true })
+        );
       });
-      this.#dragHandle.appendChild(this.#removeBtn);
+      handle.appendChild(closeBtn);
 
-      this.#dragHandle.addEventListener("pointerdown", this.#onDragStart);
-      this.#dragHandle.addEventListener("dragstart", (e) => e.preventDefault());
+      handle.addEventListener("pointerdown", this.#onDragStart);
+      handle.addEventListener("dragstart", (e) => e.preventDefault());
+      this.#dragHandleEl = handle;
     }
-    if (!this.#dragHandle.parentElement) {
-      this.appendChild(this.#dragHandle);
+
+    if (!this.contains(this.#dragHandleEl)) {
+      this.appendChild(this.#dragHandleEl);
     }
   }
 
-  #hideLeafControls() {
-    this.#dragHandle?.remove();
+  #removeDragHandle() {
+    this.#dragHandleEl?.remove();
   }
 
-  // ---- Drag reorder ----
+  // ---- Dividers ----
 
-  #onDragStart = (event: PointerEvent) => {
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-
-    const container = this.parentElement;
-    if (!container || container.children.length < 2) return;
-
-    this.setAttribute("aria-grabbed", "true");
-
-    const rect = this.getBoundingClientRect();
-    const offsetX = event.clientX - rect.left;
-    const offsetY = event.clientY - rect.top;
-
-    this.#abortController = new AbortController();
-    const { signal } = this.#abortController;
-
-    const onMove = (ev: PointerEvent) => {
-      this.style.setProperty("--drag-x", "0px");
-      this.style.setProperty("--drag-y", "0px");
-
-      const r = this.getBoundingClientRect();
-      const targetX = ev.clientX - (r.left + offsetX);
-      const targetY = ev.clientY - (r.top + offsetY);
-      this.style.setProperty("--drag-x", `${targetX}px`);
-      this.style.setProperty("--drag-y", `${targetY}px`);
-
-      this.style.pointerEvents = "none";
-      const elementBelow = document.elementFromPoint(ev.clientX, ev.clientY);
-      this.style.pointerEvents = "";
-
-      let targetSibling = elementBelow;
-      while (targetSibling && targetSibling.parentElement !== container) {
-        targetSibling = targetSibling.parentElement;
-      }
-
-      for (const el of container.querySelectorAll(".drop-target")) {
-        el.classList.remove("drop-target");
-      }
-
-      if (
-        targetSibling &&
-        targetSibling !== this &&
-        targetSibling.parentElement === container &&
-        targetSibling.tagName.toLowerCase() === TAG
-      ) {
-        const siblings = Array.from(container.children);
-        const currentIndex = siblings.indexOf(this);
-        const targetIndex = siblings.indexOf(targetSibling);
-
-        const siblingRect = targetSibling.getBoundingClientRect();
-        const isHorizontal = (container as PatchworkSpaceElement).direction !== "vertical";
-        const mid = isHorizontal
-          ? siblingRect.left + siblingRect.width / 2
-          : siblingRect.top + siblingRect.height / 2;
-        const pos = isHorizontal ? ev.clientX : ev.clientY;
-        const shouldMoveBefore = pos < mid;
-        const insertIndex = shouldMoveBefore ? targetIndex : targetIndex + 1;
-
-        targetSibling.classList.add("drop-target");
-
-        if (insertIndex !== currentIndex && insertIndex !== currentIndex + 1) {
-          const refNode = insertIndex >= siblings.length ? null : siblings[insertIndex];
-          if (canMoveBefore()) {
-            container.moveBefore!(this, refNode);
-          } else {
-            container.insertBefore(this, refNode);
-          }
-          this.style.setProperty("--drag-x", "0px");
-          this.style.setProperty("--drag-y", "0px");
-          const newRect = this.getBoundingClientRect();
-          const newX = ev.clientX - (newRect.left + offsetX);
-          const newY = ev.clientY - (newRect.top + offsetY);
-          this.style.setProperty("--drag-x", `${newX}px`);
-          this.style.setProperty("--drag-y", `${newY}px`);
-        }
-      }
-    };
-
-    const onUp = () => {
-      this.removeAttribute("aria-grabbed");
-      this.style.removeProperty("--drag-x");
-      this.style.removeProperty("--drag-y");
-      this.#abortController?.abort();
-      this.#abortController = null;
-
-      for (const el of document.querySelectorAll(".drop-target")) {
-        el.classList.remove("drop-target");
-      }
-
-      this.dispatchEvent(new CustomEvent("space:reorder", {
-        bubbles: true,
-      }));
-    };
-
-    document.addEventListener("pointermove", onMove, { signal });
-    document.addEventListener("pointerup", onUp, { signal });
-  };
-
-  // ---- Resize dividers ----
-
-  #getSpaceChildren(): PatchworkSpaceElement[] {
-    return Array.from(this.querySelectorAll(`:scope > ${TAG}`)) as PatchworkSpaceElement[];
+  #removeDividers() {
+    for (const d of Array.from(this.querySelectorAll(`:scope > .${DIVIDER_CLASS}`))) {
+      d.remove();
+    }
   }
 
-  #createDividers() {
+  #syncDividers() {
     this.#removeDividers();
-    const spaceChildren = this.#getSpaceChildren();
-    if (spaceChildren.length < 2) return;
+    const children = this.getSpaceChildren();
+    if (children.length < 2) return;
 
-    // Compute the child depth color so dividers match siblings
     const childDepth = this.depth + 1;
     const chroma = Math.min(0.15, Math.max(0, (childDepth - 1) * 0.15));
     const hue = 250 - Math.max(0, childDepth - 2) * 40;
     const depthColor = `oklch(0.55 ${chroma} ${hue})`;
+    const orientation = this.direction === "vertical" ? "horizontal" : "vertical";
 
-    for (let i = 0; i < spaceChildren.length - 1; i++) {
+    for (let i = 0; i < children.length - 1; i++) {
       const divider = document.createElement("div");
-      divider.className = `space-divider space-divider-${this.direction === "vertical" ? "horizontal" : "vertical"}`;
-      divider.dataset.afterIndex = String(i);
+      divider.className = `${DIVIDER_CLASS} space-divider-${orientation}`;
       divider.style.setProperty("--depth-color", depthColor);
 
-      const beforeEl = spaceChildren[i];
-      const afterEl = spaceChildren[i + 1];
-
+      const beforeEl = children[i];
+      const afterEl = children[i + 1];
       divider.addEventListener("pointerdown", (e) => {
         if (e.button !== 0) return;
         e.preventDefault();
@@ -291,14 +268,104 @@ export class PatchworkSpaceElement extends HTMLElement {
       });
 
       beforeEl.after(divider);
-      this.#dividers.push(divider);
     }
   }
 
-  #removeDividers() {
-    for (const d of this.#dividers) d.remove();
-    this.#dividers = [];
+  // ---- Drag reorder (with cross-container reparenting) ----
+
+  #cleanupDrag() {
+    if (this.#dragMoveHandler) {
+      document.removeEventListener("pointermove", this.#dragMoveHandler as any);
+      this.#dragMoveHandler = null;
+    }
+    if (this.#dragUpHandler) {
+      document.removeEventListener("pointerup", this.#dragUpHandler);
+      this.#dragUpHandler = null;
+    }
+    this.#isDragging = false;
   }
+
+  #onDragStart = (event: PointerEvent) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const originalParent = this.parentElement as PatchworkSpaceElement | null;
+    if (!originalParent) return;
+
+    this.#isDragging = true;
+    this.setAttribute("aria-grabbed", "true");
+
+    const rect = this.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+
+    const onMove = (ev: PointerEvent) => {
+      this.style.setProperty("--drag-x", "0px");
+      this.style.setProperty("--drag-y", "0px");
+      const r = this.getBoundingClientRect();
+      this.style.setProperty("--drag-x", `${ev.clientX - (r.left + offsetX)}px`);
+      this.style.setProperty("--drag-y", `${ev.clientY - (r.top + offsetY)}px`);
+
+      this.style.pointerEvents = "none";
+      const elementBelow = document.elementFromPoint(ev.clientX, ev.clientY);
+      this.style.pointerEvents = "";
+
+      for (const el of Array.from(document.querySelectorAll(".drop-target"))) {
+        el.classList.remove("drop-target");
+      }
+
+      if (!elementBelow) return;
+
+      const { container, refChild } = findDropTarget(elementBelow, this, ev.clientX, ev.clientY);
+      if (!container) return;
+
+      container.classList.add("drop-target");
+
+      const currentParent = this.parentElement;
+      const siblings = Array.from(container.children);
+      const myIdx = currentParent === container ? siblings.indexOf(this) : -1;
+      const refIdx = refChild ? siblings.indexOf(refChild) : siblings.length;
+      if (myIdx >= 0 && (refIdx === myIdx || refIdx === myIdx + 1)) return;
+
+      container.moveBefore(this, refChild);
+
+      this.style.setProperty("--drag-x", "0px");
+      this.style.setProperty("--drag-y", "0px");
+      const nr = this.getBoundingClientRect();
+      this.style.setProperty("--drag-x", `${ev.clientX - (nr.left + offsetX)}px`);
+      this.style.setProperty("--drag-y", `${ev.clientY - (nr.top + offsetY)}px`);
+    };
+
+    const onUp = () => {
+      this.removeAttribute("aria-grabbed");
+      this.style.removeProperty("--drag-x");
+      this.style.removeProperty("--drag-y");
+
+      this.#cleanupDrag();
+
+      for (const el of Array.from(document.querySelectorAll(".drop-target"))) {
+        el.classList.remove("drop-target");
+      }
+
+      const newParent = this.parentElement as PatchworkSpaceElement | null;
+      if (originalParent !== newParent) {
+        originalParent.refreshEditUI();
+      }
+      if (newParent) {
+        newParent.refreshEditUI();
+      }
+
+      this.dispatchEvent(new CustomEvent("space:reorder", { bubbles: true }));
+    };
+
+    this.#dragMoveHandler = onMove;
+    this.#dragUpHandler = onUp;
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  };
+
+  // ---- Resize ----
 
   #onResizeStart(
     e: PointerEvent,
@@ -308,31 +375,27 @@ export class PatchworkSpaceElement extends HTMLElement {
   ) {
     divider.setPointerCapture(e.pointerId);
 
-    const isVertical = this.direction === "vertical";
-    const startPos = isVertical ? e.clientY : e.clientX;
-    const allChildren = this.#getSpaceChildren();
+    const isVert = this.direction === "vertical";
+    const startPos = isVert ? e.clientY : e.clientX;
+    const allChildren = this.getSpaceChildren();
 
-    // Snapshot ALL sizes BEFORE any style changes
     const snapshots = new Map<PatchworkSpaceElement, number>();
     for (const child of allChildren) {
-      const rect = child.getBoundingClientRect();
-      snapshots.set(child, isVertical ? rect.height : rect.width);
+      const r = child.getBoundingClientRect();
+      snapshots.set(child, isVert ? r.height : r.width);
     }
 
     const startBefore = snapshots.get(beforeEl)!;
     const startAfter = snapshots.get(afterEl)!;
 
-    // Freeze all children to pixel values to prevent flex redistribution
     for (const [child, size] of snapshots) {
       child.style.flex = `0 0 ${size}px`;
     }
 
     const onMove = (ev: PointerEvent) => {
-      const delta = (isVertical ? ev.clientY : ev.clientX) - startPos;
-      const newBefore = Math.max(30, startBefore + delta);
-      const newAfter = Math.max(30, startAfter - delta);
-      beforeEl.style.flex = `0 0 ${newBefore}px`;
-      afterEl.style.flex = `0 0 ${newAfter}px`;
+      const delta = (isVert ? ev.clientY : ev.clientX) - startPos;
+      beforeEl.style.flex = `0 0 ${Math.max(30, startBefore + delta)}px`;
+      afterEl.style.flex = `0 0 ${Math.max(30, startAfter - delta)}px`;
     };
 
     const onUp = () => {
@@ -340,18 +403,17 @@ export class PatchworkSpaceElement extends HTMLElement {
       divider.removeEventListener("pointerup", onUp);
       divider.removeEventListener("lostpointercapture", onUp);
 
-      // Read final sizes and normalize ALL to proportional ratios
-      let totalSize = 0;
-      const finalSizes: number[] = [];
+      let total = 0;
+      const sizes: number[] = [];
       for (const child of allChildren) {
-        const rect = child.getBoundingClientRect();
-        const s = isVertical ? rect.height : rect.width;
-        finalSizes.push(s);
-        totalSize += s;
+        const r = child.getBoundingClientRect();
+        const s = isVert ? r.height : r.width;
+        sizes.push(s);
+        total += s;
       }
-      if (totalSize > 0) {
+      if (total > 0) {
         for (let i = 0; i < allChildren.length; i++) {
-          allChildren[i].style.flex = `${finalSizes[i] / totalSize} 0 0px`;
+          allChildren[i].style.flex = `${sizes[i] / total} 0 0px`;
         }
       }
 
@@ -361,17 +423,6 @@ export class PatchworkSpaceElement extends HTMLElement {
     divider.addEventListener("pointermove", onMove);
     divider.addEventListener("pointerup", onUp);
     divider.addEventListener("lostpointercapture", onUp);
-  }
-
-  refreshEditUI() {
-    this.#updateEditUI();
-  }
-
-  #teardownEditUI() {
-    this.#hideLeafControls();
-    this.#removeDividers();
-    this.#abortController?.abort();
-    this.#abortController = null;
   }
 }
 

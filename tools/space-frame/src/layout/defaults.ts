@@ -13,7 +13,7 @@ export function createDefaultLayout(
 ): SpaceLayout {
   const sidebar: SpaceNode = {
     id: "sidebar",
-    size: 17,
+    size: 0.2,
     collapsible: true,
     content: {
       type: "view",
@@ -39,12 +39,13 @@ export function createDefaultLayout(
   const center: SpaceNode = {
     id: "center",
     direction: "vertical",
+    size: 0.6,
     children: [toolbar, main],
   };
 
   const context: SpaceNode = {
     id: "context",
-    size: 17,
+    size: 0.2,
     collapsible: true,
     content: {
       type: "view",

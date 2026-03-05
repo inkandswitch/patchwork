@@ -6,7 +6,12 @@ import { registerPatchworkPreviewElement } from "./elements/patchwork-preview";
 import { registerPatchworkPipe } from "./elements/patchwork-pipe";
 import { loadLayout, saveLayout, clearLayout } from "./layout/storage";
 import { createDefaultLayout, type AccountConfig } from "./layout/defaults";
-import type { SpaceLayout, SpaceNode, SpaceChild, PipeNode } from "./layout/types";
+import type {
+  SpaceLayout,
+  SpaceNode,
+  SpaceChild,
+  PipeNode,
+} from "./layout/types";
 import { isPipeNode } from "./layout/types";
 import "./styles.css";
 
@@ -107,6 +112,11 @@ export function mountSpaceFrame(
   function buildContent(container: HTMLElement, node: SpaceNode) {
     if (!node.content) return;
 
+    if (node.content.type === "picker") {
+      buildPicker(container, node);
+      return;
+    }
+
     if (node.content.type === "preview") {
       const preview = document.createElement("patchwork-preview");
       preview.style.width = "100%";
@@ -149,7 +159,11 @@ export function mountSpaceFrame(
     }
   }
 
-  function appendView(container: HTMLElement, docUrl: AutomergeUrl, toolId?: string) {
+  function appendView(
+    container: HTMLElement,
+    docUrl: AutomergeUrl,
+    toolId?: string
+  ) {
     const view = document.createElement("patchwork-view");
     view.setAttribute("doc-url", docUrl);
     if (toolId) view.setAttribute("tool-id", toolId);
@@ -157,6 +171,87 @@ export function mountSpaceFrame(
     view.style.height = "100%";
     view.style.display = "block";
     container.appendChild(view);
+  }
+
+  function buildPicker(container: HTMLElement, node: SpaceNode) {
+    const nodeId = node.id;
+    const picker = document.createElement("div");
+    picker.className = "space-picker";
+
+    const title = document.createElement("div");
+    title.className = "space-picker-title";
+    title.textContent = "Choose content";
+    picker.appendChild(title);
+
+    function updateNode(updater: (n: SpaceNode) => void) {
+      const liveNode = layout ? findNodeById(layout.root, nodeId) : null;
+      if (liveNode) updater(liveNode);
+      updater(node);
+    }
+
+    const options: Array<{ label: string; icon: string; action: () => void }> =
+      [
+        {
+          label: "Document view",
+          icon: "📄",
+          action: () => {
+            updateNode((n) => {
+              n.content = { type: "view" };
+            });
+            picker.remove();
+            container.dataset.mainView = "true";
+            if (selectedDoc) {
+              appendView(container, selectedDoc.url, selectedDoc.toolId);
+            } else {
+              const ph = document.createElement("div");
+              ph.className = "space-empty-state";
+              ph.textContent = "Select a document";
+              container.appendChild(ph);
+            }
+            persistLayout();
+          },
+        },
+        {
+          label: "Preview",
+          icon: "👁",
+          action: () => {
+            updateNode((n) => {
+              n.content = { type: "preview" };
+            });
+            picker.remove();
+            const preview = document.createElement("patchwork-preview");
+            preview.style.width = "100%";
+            preview.style.height = "100%";
+            container.appendChild(preview);
+            persistLayout();
+          },
+        },
+        {
+          label: "Container",
+          icon: "◫",
+          action: () => {
+            updateNode((n) => {
+              n.content = undefined;
+              n.direction = "horizontal";
+              n.children = [];
+            });
+            picker.remove();
+            container.setAttribute("direction", "horizontal");
+            (container as any).refreshEditUI?.();
+            persistLayout();
+          },
+        },
+      ];
+
+    for (const opt of options) {
+      const btn = document.createElement("button");
+      btn.className = "space-picker-option";
+      btn.innerHTML = `<span class="space-picker-icon">${opt.icon}</span><span>${opt.label}</span>`;
+      btn.addEventListener("click", opt.action);
+      picker.appendChild(btn);
+    }
+
+    container.appendChild(picker);
   }
 
   function buildToolbar(container: HTMLElement, docUrl: AutomergeUrl) {
@@ -218,7 +313,10 @@ export function mountSpaceFrame(
     const id = el.dataset.spaceId;
     if (!id) return null;
 
-    const direction = el.getAttribute("direction") as "horizontal" | "vertical" | null;
+    const direction = el.getAttribute("direction") as
+      | "horizontal"
+      | "vertical"
+      | null;
     const node: SpaceNode = { id };
 
     if (direction) node.direction = direction;
@@ -226,7 +324,11 @@ export function mountSpaceFrame(
     // Parse sizing from flex shorthand: "grow shrink basis"
     const flexGrow = parseFloat(el.style.flexGrow);
     const flexBasis = el.style.flexBasis;
-    if (flexGrow === 0 && flexBasis.endsWith("px") && parseFloat(flexBasis) > 0) {
+    if (
+      flexGrow === 0 &&
+      flexBasis.endsWith("px") &&
+      parseFloat(flexBasis) > 0
+    ) {
       node.fixedSize = parseInt(flexBasis);
     } else if (flexGrow > 0 && flexGrow !== 1) {
       node.size = flexGrow;
@@ -324,6 +426,11 @@ export function mountSpaceFrame(
       addBtn.className = "edit-ctrl-btn edit-ctrl-btn--add";
       addBtn.textContent = "+ Add";
       addBtn.addEventListener("click", () => addSpace());
+      addBtn.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        startAddDrag(e, addBtn);
+      });
       bar.appendChild(addBtn);
 
       const sep1 = document.createElement("div");
@@ -348,27 +455,377 @@ export function mountSpaceFrame(
     }
   }
 
+  // ---- Drag-to-add: drag the "+ Add" button into the layout ----
+
+  function startAddDrag(e: PointerEvent, btn: HTMLElement) {
+    if (!rootEl) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let dragging = false;
+
+    let ghost: HTMLElement | null = null;
+    const indicator = document.createElement("div");
+    indicator.className = "space-drop-indicator";
+
+    let lastContainer: HTMLElement | null = null;
+    let lastRefChild: Element | null = null;
+
+    const cleanup = () => {
+      ghost?.remove();
+      indicator.remove();
+      for (const el of document.querySelectorAll(".drop-target")) {
+        el.classList.remove("drop-target");
+      }
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      if (!dragging && Math.abs(dx) + Math.abs(dy) < 6) return;
+
+      if (!dragging) {
+        dragging = true;
+        ghost = document.createElement("div");
+        ghost.className = "space-add-ghost";
+        ghost.textContent = "+ Add";
+        document.body.appendChild(ghost);
+      }
+
+      ghost!.style.left = `${ev.clientX}px`;
+      ghost!.style.top = `${ev.clientY}px`;
+
+      ghost!.style.display = "none";
+      const elBelow = document.elementFromPoint(ev.clientX, ev.clientY);
+      ghost!.style.display = "";
+
+      if (!elBelow) return;
+
+      for (const el of document.querySelectorAll(".drop-target")) {
+        el.classList.remove("drop-target");
+      }
+
+      const target = findNearestContainer(elBelow, rootEl!);
+      if (!target) {
+        indicator.remove();
+        lastContainer = null;
+        return;
+      }
+
+      const { container, refChild } = computeInsertionPoint(
+        target,
+        ev.clientX,
+        ev.clientY
+      );
+      container.classList.add("drop-target");
+      lastContainer = container;
+      lastRefChild = refChild;
+
+      positionIndicator(indicator, container, refChild);
+      if (!indicator.parentElement) document.body.appendChild(indicator);
+    };
+
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      cleanup();
+
+      if (dragging && lastContainer) {
+        insertSpaceAt(lastContainer, lastRefChild);
+      }
+      // If not dragging, the click handler will fire normally and call addSpace()
+    };
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  }
+
+  // ---- HTML5 drag-and-drop for file drops from sidebar ----
+
+  function setupFileDrop() {
+    let dropIndicator: HTMLElement | null = null;
+
+    element.addEventListener("dragover", (e) => {
+      if (!rootEl) return;
+      const data = e.dataTransfer;
+      if (!data) return;
+      if (
+        !data.types.includes("text/x-patchwork-urls") &&
+        !data.types.includes("text/x-patchwork-dnd")
+      )
+        return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      data.dropEffect = "copy";
+
+      const elBelow = document.elementFromPoint(e.clientX, e.clientY);
+      if (!elBelow) return;
+
+      for (const el of document.querySelectorAll(".drop-target")) {
+        el.classList.remove("drop-target");
+      }
+
+      const target = findNearestContainer(elBelow, rootEl);
+      if (!target) return;
+
+      const { container } = computeInsertionPoint(target, e.clientX, e.clientY);
+      container.classList.add("drop-target");
+
+      if (!dropIndicator) {
+        dropIndicator = document.createElement("div");
+        dropIndicator.className = "space-drop-indicator";
+      }
+      const { refChild } = computeInsertionPoint(target, e.clientX, e.clientY);
+      positionIndicator(dropIndicator, container, refChild);
+      if (!dropIndicator.parentElement)
+        document.body.appendChild(dropIndicator);
+    });
+
+    element.addEventListener("dragleave", (e) => {
+      if (e.relatedTarget && element.contains(e.relatedTarget as Node)) return;
+      for (const el of document.querySelectorAll(".drop-target")) {
+        el.classList.remove("drop-target");
+      }
+      dropIndicator?.remove();
+      dropIndicator = null;
+    });
+
+    element.addEventListener("drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      for (const el of document.querySelectorAll(".drop-target")) {
+        el.classList.remove("drop-target");
+      }
+      dropIndicator?.remove();
+      dropIndicator = null;
+
+      if (!rootEl) return;
+      const data = e.dataTransfer;
+      if (!data) return;
+
+      let urls: AutomergeUrl[] = [];
+      const urlData = data.getData("text/x-patchwork-urls");
+      if (urlData) {
+        try {
+          urls = JSON.parse(urlData);
+        } catch {}
+      }
+      if (urls.length === 0) {
+        const dndData = data.getData("text/x-patchwork-dnd");
+        if (dndData) {
+          try {
+            const parsed = JSON.parse(dndData);
+            urls = (parsed.items || []).map((i: any) => i.url).filter(Boolean);
+          } catch {}
+        }
+      }
+
+      if (urls.length === 0) return;
+
+      const elBelow = document.elementFromPoint(e.clientX, e.clientY);
+      if (!elBelow) return;
+      const target = findNearestContainer(elBelow, rootEl);
+      if (!target) return;
+      const { container, refChild } = computeInsertionPoint(
+        target,
+        e.clientX,
+        e.clientY
+      );
+
+      // If dropped on a leaf space, check if it's an empty/picker space and fill it instead
+      const spaceBelow = findLeafSpace(elBelow);
+      if (spaceBelow) {
+        const spaceId = spaceBelow.dataset.spaceId;
+        if (spaceId && layout) {
+          const node = findNodeById(layout.root, spaceId);
+          if (node && node.content?.type === "picker") {
+            const pickerEl = spaceBelow.querySelector(".space-picker");
+            pickerEl?.remove();
+            node.content = { type: "view", docUrl: urls[0] };
+            spaceBelow.dataset.mainView = "true";
+            appendView(spaceBelow, urls[0]);
+            persistLayout();
+            return;
+          }
+        }
+      }
+
+      // If we're in edit mode, insert new space(s) at the drop location
+      // Otherwise, if we're dropping on a main view, open it there
+      if (editing) {
+        for (const url of urls) {
+          insertDocViewAt(container, refChild, url);
+        }
+      } else {
+        updateSelectedDoc(urls[0]);
+      }
+    });
+  }
+
+  // ---- Shared drop-target utilities ----
+
+  function findNearestContainer(
+    el: Element,
+    root: HTMLElement
+  ): HTMLElement | null {
+    let candidate: Element | null = el;
+    while (candidate && candidate !== root.parentElement) {
+      if (candidate.tagName.toLowerCase() === "patchwork-space") {
+        return candidate as HTMLElement;
+      }
+      candidate = candidate.parentElement;
+    }
+    return root;
+  }
+
+  function findLeafSpace(el: Element): HTMLElement | null {
+    let candidate: Element | null = el;
+    while (candidate) {
+      if (
+        candidate.tagName.toLowerCase() === "patchwork-space" &&
+        !candidate.querySelector(":scope > patchwork-space")
+      ) {
+        return candidate as HTMLElement;
+      }
+      candidate = candidate.parentElement;
+    }
+    return null;
+  }
+
+  function computeInsertionPoint(
+    target: HTMLElement,
+    clientX: number,
+    clientY: number
+  ): { container: HTMLElement; refChild: Element | null } {
+    // If it's a leaf, use its parent as the container
+    const isLeaf = !target.querySelector(":scope > patchwork-space");
+    const container = isLeaf
+      ? ((target.parentElement as HTMLElement) ?? target)
+      : target;
+
+    if (container.tagName.toLowerCase() !== "patchwork-space") {
+      return { container: target, refChild: null };
+    }
+
+    const children = Array.from(
+      container.querySelectorAll(":scope > patchwork-space")
+    );
+    if (children.length === 0) return { container, refChild: null };
+
+    const isHoriz = container.getAttribute("direction") !== "vertical";
+
+    for (const child of children) {
+      const r = child.getBoundingClientRect();
+      const mid = isHoriz ? r.left + r.width / 2 : r.top + r.height / 2;
+      const pos = isHoriz ? clientX : clientY;
+      if (pos < mid) return { container, refChild: child };
+    }
+
+    return { container, refChild: null };
+  }
+
+  function positionIndicator(
+    indicator: HTMLElement,
+    container: HTMLElement,
+    refChild: Element | null
+  ) {
+    const isHoriz = container.getAttribute("direction") !== "vertical";
+
+    if (refChild) {
+      const r = refChild.getBoundingClientRect();
+      if (isHoriz) {
+        indicator.style.left = `${r.left - 2}px`;
+        indicator.style.top = `${r.top}px`;
+        indicator.style.width = "4px";
+        indicator.style.height = `${r.height}px`;
+      } else {
+        indicator.style.left = `${r.left}px`;
+        indicator.style.top = `${r.top - 2}px`;
+        indicator.style.width = `${r.width}px`;
+        indicator.style.height = "4px";
+      }
+    } else {
+      // After the last child
+      const children = container.querySelectorAll(":scope > patchwork-space");
+      const lastChild = children[children.length - 1];
+      if (lastChild) {
+        const r = lastChild.getBoundingClientRect();
+        if (isHoriz) {
+          indicator.style.left = `${r.right - 2}px`;
+          indicator.style.top = `${r.top}px`;
+          indicator.style.width = "4px";
+          indicator.style.height = `${r.height}px`;
+        } else {
+          indicator.style.left = `${r.left}px`;
+          indicator.style.top = `${r.bottom - 2}px`;
+          indicator.style.width = `${r.width}px`;
+          indicator.style.height = "4px";
+        }
+      } else {
+        const cr = container.getBoundingClientRect();
+        indicator.style.left = `${cr.left + 4}px`;
+        indicator.style.top = `${cr.top + 4}px`;
+        indicator.style.width = `${cr.width - 8}px`;
+        indicator.style.height = `${cr.height - 8}px`;
+      }
+    }
+  }
+
   function addSpace() {
     if (!rootEl || !layout) return;
     const newId = `space-${Date.now()}`;
     const newNode: SpaceNode = {
       id: newId,
-      content: { type: "preview" },
+      content: { type: "picker" },
     };
     const el = buildNode(newNode);
     rootEl.appendChild(el);
     if (editing) {
       el.setAttribute("editing", "");
+      (rootEl as any).refreshEditUI?.();
     }
     persistLayout();
   }
 
-  function refreshDividers() {
-    if (!rootEl) return;
-    const containers = rootEl.querySelectorAll("patchwork-space[editing]");
-    for (const c of containers) {
-      (c as any).refreshEditUI?.();
+  function insertSpaceAt(
+    container: HTMLElement,
+    refChild: Element | null,
+    content?: SpaceNode["content"]
+  ) {
+    if (!rootEl || !layout) return;
+    const newId = `space-${Date.now()}`;
+    const newNode: SpaceNode = {
+      id: newId,
+      content: content ?? { type: "picker" },
+    };
+    const el = buildNode(newNode);
+    container.insertBefore(el, refChild);
+    if (editing) {
+      el.setAttribute("editing", "");
+      (container as any).refreshEditUI?.();
     }
+    persistLayout();
+  }
+
+  function insertDocViewAt(
+    container: HTMLElement,
+    refChild: Element | null,
+    docUrl: AutomergeUrl
+  ) {
+    const newId = `space-${Date.now()}`;
+    const newNode: SpaceNode = {
+      id: newId,
+      content: { type: "view", docUrl },
+    };
+    const el = buildNode(newNode);
+    container.insertBefore(el, refChild);
+    if (editing) {
+      el.setAttribute("editing", "");
+      (container as any).refreshEditUI?.();
+    }
+    persistLayout();
   }
 
   // ---- Event listeners ----
@@ -380,20 +837,27 @@ export function mountSpaceFrame(
       updateSelectedDoc(e.detail.url, e.detail.toolId);
     });
 
-    element.addEventListener("space:reorder", () => {
+    element.addEventListener("space:reorder", (e: Event) => {
+      // Refresh the parent container's dividers after reorder
+      const target = e.target as HTMLElement;
+      const parent = target.parentElement;
+      if (parent) (parent as any).refreshEditUI?.();
       persistLayout();
-      refreshDividers();
     });
     element.addEventListener("space:resize", () => persistLayout());
     element.addEventListener("space:remove", ((e: CustomEvent) => {
       const target = e.target as HTMLElement;
+      const parent = target.parentElement;
       target.remove();
+      // Refresh parent's dividers after child removal
+      if (parent) (parent as any).refreshEditUI?.();
       persistLayout();
     }) as EventListener);
     element.addEventListener("pipe:update", () => persistLayout());
     element.addEventListener("pipe:delete", () => persistLayout());
 
     window.addEventListener("keydown", onKeyDown);
+    setupFileDrop();
   }
 
   function onKeyDown(e: KeyboardEvent) {

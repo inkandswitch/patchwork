@@ -21,7 +21,8 @@ export type PipeNode = {
 
 export type SpaceContent =
   | { type: "view"; docUrl?: string; toolId?: string }
-  | { type: "preview" };
+  | { type: "preview" }
+  | { type: "picker" };
 
 export type TransformStep = {
   id: string;

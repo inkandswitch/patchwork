@@ -1,8 +1,14 @@
+import { LitElement, html } from "lit";
+
 const ELEMENT_NAME = "patchwork-preview";
 
-export class PatchworkPreviewElement extends HTMLElement {
+export class PatchworkPreviewElement extends LitElement {
   #iframe: HTMLIFrameElement | null = null;
   #currentBlobUrl: string | null = null;
+
+  createRenderRoot() {
+    return this;
+  }
 
   get value(): string | Blob | null {
     return null;
@@ -33,6 +39,7 @@ export class PatchworkPreviewElement extends HTMLElement {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     this.style.display = "block";
     this.style.width = "100%";
     this.style.height = "100%";
@@ -40,12 +47,13 @@ export class PatchworkPreviewElement extends HTMLElement {
 
     this.#iframe = document.createElement("iframe");
     this.#iframe.style.cssText =
-      "width:100%;height:100%;border:none;background:#fff;";
+      "width:100%;height:100%;border:none;background:transparent;";
     this.#iframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
     this.appendChild(this.#iframe);
   }
 
   disconnectedCallback() {
+    super.disconnectedCallback();
     if (this.#currentBlobUrl) {
       URL.revokeObjectURL(this.#currentBlobUrl);
       this.#currentBlobUrl = null;

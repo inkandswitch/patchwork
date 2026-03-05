@@ -13,6 +13,20 @@
       --tw-skew-x: initial;
       --tw-skew-y: initial;
       --tw-border-style: solid;
+      --tw-shadow: 0 0 #0000;
+      --tw-shadow-color: initial;
+      --tw-shadow-alpha: 100%;
+      --tw-inset-shadow: 0 0 #0000;
+      --tw-inset-shadow-color: initial;
+      --tw-inset-shadow-alpha: 100%;
+      --tw-ring-color: initial;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-inset-ring-color: initial;
+      --tw-inset-ring-shadow: 0 0 #0000;
+      --tw-ring-inset: initial;
+      --tw-ring-offset-width: 0px;
+      --tw-ring-offset-color: #fff;
+      --tw-ring-offset-shadow: 0 0 #0000;
       --tw-outline-style: solid;
       --tw-blur: initial;
       --tw-brightness: initial;
@@ -410,6 +424,11 @@
     text-decoration-line: underline;
   }
 
+  .shadow {
+    --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, #0000001a), 0 1px 2px -1px var(--tw-shadow-color, #0000001a);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
   .outline {
     outline-style: var(--tw-outline-style);
     outline-width: 1px;
@@ -467,23 +486,22 @@ patchwork-space > patchwork-view {
 }
 
 patchwork-space > patchwork-space {
-  border: 1.5px solid #0000;
   gap: 0;
   padding: 0;
-  transition: border-radius .3s, box-shadow .3s, gap .3s, padding .3s, border-color .3s;
+  transition: border-radius .3s, box-shadow .3s, gap .3s, padding .3s;
 }
 
 patchwork-space[editing] > patchwork-space {
   --depth-chroma: clamp(0, calc((var(--depth, 0)  - 1) * .15), .15);
   --depth-hue: calc(250 - max(0, var(--depth, 0)  - 2) * 40);
   --depth-color: oklch(.55 var(--depth-chroma) var(--depth-hue));
-  border-color: var(--depth-color);
+  box-shadow: 0 0 0 1.5px var(--depth-color);
   border-radius: 10px;
 }
 
 @supports (color: color-mix(in lab, red, red)) {
   patchwork-space[editing] > patchwork-space {
-    border-color: color-mix(in oklch, var(--depth-color) 45%, transparent);
+    box-shadow: 0 0 0 1.5px color-mix(in oklch, var(--depth-color) 45%, transparent);
   }
 }
 
@@ -491,7 +509,7 @@ patchwork-space[editing] > patchwork-space {
   overflow: hidden;
 }
 
-patchwork-space[editing] > patchwork-space[direction] {
+patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
   background: var(--depth-color);
   gap: 6px;
   padding: 4px;
@@ -499,38 +517,38 @@ patchwork-space[editing] > patchwork-space[direction] {
 }
 
 @supports (color: color-mix(in lab, red, red)) {
-  patchwork-space[editing] > patchwork-space[direction] {
+  patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
     background: color-mix(in oklch, var(--depth-color) 8%, transparent);
   }
 }
 
-patchwork-space[editing] > patchwork-space[direction] {
+patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
   box-shadow: inset 0 0 0 1px var(--depth-color), inset 0 2px 12px var(--depth-color);
 }
 
 @supports (color: color-mix(in lab, red, red)) {
-  patchwork-space[editing] > patchwork-space[direction] {
+  patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
     box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 10%, transparent), inset 0 2px 12px color-mix(in oklch, var(--depth-color) 6%, transparent);
   }
 }
 
 @media (prefers-color-scheme: light) {
-  patchwork-space[editing] > patchwork-space[direction] {
+  patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
     background: var(--depth-color);
   }
 
   @supports (color: color-mix(in lab, red, red)) {
-    patchwork-space[editing] > patchwork-space[direction] {
+    patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
       background: color-mix(in oklch, var(--depth-color) 10%, transparent);
     }
   }
 
-  patchwork-space[editing] > patchwork-space[direction] {
+  patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
     box-shadow: inset 0 0 0 1px var(--depth-color), inset 0 2px 12px var(--depth-color);
   }
 
   @supports (color: color-mix(in lab, red, red)) {
-    patchwork-space[editing] > patchwork-space[direction] {
+    patchwork-space[editing] > patchwork-space:has( > patchwork-space) {
       box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 12%, transparent), inset 0 2px 12px color-mix(in oklch, var(--depth-color) 8%, transparent);
     }
   }
@@ -554,6 +572,31 @@ patchwork-space[aria-grabbed="true"] {
 patchwork-space.drop-target {
   transition: box-shadow .1s !important;
   box-shadow: 0 0 0 2px oklch(60% .2 250), 0 0 16px oklch(60% .2 250 / .25) !important;
+}
+
+.space-drop-indicator {
+  z-index: 100000;
+  pointer-events: none;
+  background: oklch(60% .2 250);
+  border-radius: 3px;
+  transition: left .1s, top .1s, width .1s, height .1s;
+  position: fixed;
+  box-shadow: 0 0 8px oklch(60% .2 250 / .5);
+}
+
+.space-add-ghost {
+  z-index: 100001;
+  pointer-events: none;
+  color: oklch(90% .05 250);
+  white-space: nowrap;
+  background: oklch(30% .15 250);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  position: fixed;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 4px 16px #0000004d;
 }
 
 .space-empty-state {
@@ -610,36 +653,36 @@ patchwork-space.drop-target {
 }
 
 .space-drag-handle {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='22'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"), var(--depth-color, currentColor);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='40'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E"), var(--depth-color, currentColor);
 }
 
 @supports (color: color-mix(in lab, red, red)) {
   .space-drag-handle {
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='22'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"), color-mix(in oklch, var(--depth-color, currentColor) 8%, transparent);
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='40'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E"), color-mix(in oklch, var(--depth-color, currentColor) 10%, transparent);
   }
 }
 
 .space-drag-handle {
-  background-size: 100px 22px, auto;
+  background-size: 200px 40px, auto;
 }
 
 patchwork-space[editing] > patchwork-space > .space-drag-handle {
-  opacity: .7;
+  opacity: .8;
 }
 
 .space-drag-handle:hover {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='22'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.1'/%3E%3C/svg%3E"), var(--depth-color, currentColor);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='40'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E"), var(--depth-color, currentColor);
   opacity: 1 !important;
 }
 
 @supports (color: color-mix(in lab, red, red)) {
   .space-drag-handle:hover {
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='22'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.1'/%3E%3C/svg%3E"), color-mix(in oklch, var(--depth-color, currentColor) 14%, transparent);
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='40'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E"), color-mix(in oklch, var(--depth-color, currentColor) 16%, transparent);
   }
 }
 
 .space-drag-handle:hover {
-  background-size: 100px 22px, auto;
+  background-size: 200px 40px, auto;
 }
 
 .space-drag-handle:active {
@@ -647,11 +690,11 @@ patchwork-space[editing] > patchwork-space > .space-drag-handle {
 }
 
 .space-handle-close {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   color: inherit;
   cursor: pointer;
-  opacity: .5;
+  opacity: .8;
   pointer-events: auto;
   background: none;
   border: none;
@@ -674,7 +717,7 @@ patchwork-space[editing] > patchwork-space > .space-drag-handle {
 
 @supports (color: color-mix(in lab, red, red)) {
   .space-handle-close:hover {
-    background: color-mix(in oklch, var(--depth-color, currentColor) 20%, transparent);
+    background: color-mix(in oklch, var(--depth-color, currentColor) 25%, transparent);
   }
 }
 
@@ -854,6 +897,92 @@ patchwork-space[editing] > patchwork-space > .space-drag-handle {
 .edit-ctrl-sep {
   flex-shrink: 0;
   margin: 0 2px;
+}
+
+patchwork-preview {
+  color: canvastext;
+  background: canvas;
+}
+
+.space-picker {
+  background: currentColor;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  display: flex;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-picker {
+    background: color-mix(in oklch, currentColor 3%, Canvas);
+  }
+}
+
+.space-picker {
+  color: canvastext;
+}
+
+.space-picker-title {
+  opacity: .5;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.space-picker-option {
+  border: 1px solid;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  display: flex;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-picker-option {
+    border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  }
+}
+
+.space-picker-option {
+  color: inherit;
+  cursor: pointer;
+  background: none;
+  border-radius: 8px;
+  min-width: 160px;
+  font-size: 13px;
+  transition: background .12s, border-color .12s;
+}
+
+.space-picker-option:hover {
+  background: currentColor;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-picker-option:hover {
+    background: color-mix(in oklch, currentColor 6%, transparent);
+  }
+}
+
+.space-picker-option:hover {
+  border-color: currentColor;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .space-picker-option:hover {
+    border-color: color-mix(in oklch, currentColor 20%, transparent);
+  }
+}
+
+.space-picker-icon {
+  text-align: center;
+  width: 20px;
+  font-size: 16px;
 }
 
 .pipe-indicator {
@@ -1145,6 +1274,85 @@ patchwork-pipe[editing]:hover {
   initial-value: solid;
 }
 
+@property --tw-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --tw-inset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-inset-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-inset-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --tw-ring-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-inset-ring-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-inset-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-ring-inset {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ring-offset-width {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --tw-ring-offset-color {
+  syntax: "*";
+  inherits: false;
+  initial-value: #fff;
+}
+
+@property --tw-ring-offset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
 @property --tw-outline-style {
   syntax: "*";
   inherits: false;
@@ -1272,7 +1480,7 @@ patchwork-pipe[editing]:hover {
     console.error("vite-plugin-css-injected-by-js", e);
   }
 })();
-import { p } from "./assets/index-C2Ff-Tea.js";
+import { p } from "./assets/index-ByGD5ICM.js";
 export {
   p as plugins
 };

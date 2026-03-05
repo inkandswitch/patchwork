@@ -1,3 +1,4 @@
+import { LitElement, html, nothing } from "lit";
 import type { DocHandle } from "@automerge/automerge-repo";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { runTransformChain, getAvailableTransforms } from "../pipes/transforms/registry";
@@ -9,16 +10,29 @@ import "../pipes/transforms/passthrough";
 
 const TAG = "patchwork-pipe";
 
-export class PatchworkPipeElement extends HTMLElement {
-  static observedAttributes = ["editing"];
+export class PatchworkPipeElement extends LitElement {
+  static properties = {
+    editing: { type: Boolean, reflect: true },
+    _editorOpen: { state: true },
+    _showPicker: { state: true },
+  };
+
+  declare editing: boolean;
+  declare _editorOpen: boolean;
+  declare _showPicker: boolean;
+
+  constructor() {
+    super();
+    this.editing = false;
+    this._editorOpen = false;
+    this._showPicker = false;
+  }
 
   #cleanup: (() => void) | null = null;
-  #indicator: HTMLElement | null = null;
-  #editorEl: HTMLElement | null = null;
   #debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  get editing(): boolean {
-    return this.hasAttribute("editing");
+  createRenderRoot() {
+    return this;
   }
 
   get transforms(): string[] {
@@ -36,27 +50,23 @@ export class PatchworkPipeElement extends HTMLElement {
   }
 
   connectedCallback() {
-    this.#updateDisplay();
+    super.connectedCallback();
+    this.#applyDisplayStyles();
     this.#setupPipe();
   }
 
   disconnectedCallback() {
+    super.disconnectedCallback();
     this.#teardownPipe();
-    this.#indicator?.remove();
-    this.#indicator = null;
-    this.#editorEl?.remove();
-    this.#editorEl = null;
   }
 
-  attributeChangedCallback() {
-    this.#updateDisplay();
+  connectedMoveCallback() {}
+
+  updated(_changed: Map<string, unknown>) {
+    this.#applyDisplayStyles();
   }
 
-  connectedMoveCallback() {
-    // Preserve state during moveBefore
-  }
-
-  #updateDisplay() {
+  #applyDisplayStyles() {
     if (this.editing) {
       this.style.display = "flex";
       this.style.alignItems = "center";
@@ -73,136 +83,103 @@ export class PatchworkPipeElement extends HTMLElement {
         this.style.height = "100%";
         this.style.cursor = "col-resize";
       }
-      this.#showIndicator();
     } else {
       this.style.display = "none";
-      this.#indicator?.remove();
-      this.#indicator = null;
-      this.#editorEl?.remove();
-      this.#editorEl = null;
+      this._editorOpen = false;
+      this._showPicker = false;
     }
   }
 
-  #showIndicator() {
-    if (!this.#indicator) {
-      this.#indicator = document.createElement("button");
-      this.#indicator.className = "pipe-indicator";
-      this.#indicator.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.#toggleEditor();
-      });
-    }
+  render() {
+    if (!this.editing) return nothing;
+
     const t = this.transforms;
-    this.#indicator.textContent = t.length > 0 ? t.join(" → ") : "⊕";
-    this.#indicator.title = t.length > 0 ? "Edit pipe" : "Configure pipe";
-    if (!this.#indicator.parentElement) {
-      this.appendChild(this.#indicator);
-    }
+    const indicatorText = t.length > 0 ? t.join(" → ") : "⊕";
+    const indicatorTitle = t.length > 0 ? "Edit pipe" : "Configure pipe";
+
+    return html`
+      <button
+        class="pipe-indicator"
+        title=${indicatorTitle}
+        @click=${this.#toggleEditor}
+      >${indicatorText}</button>
+      ${this._editorOpen ? this.#renderEditor() : nothing}
+    `;
   }
 
-  #toggleEditor() {
-    if (this.#editorEl) {
-      this.#editorEl.remove();
-      this.#editorEl = null;
-      return;
-    }
-    this.#editorEl = document.createElement("div");
-    this.#editorEl.className = "pipe-editor";
-    this.#renderEditor();
-    this.appendChild(this.#editorEl);
-  }
+  #toggleEditor = () => {
+    this._editorOpen = !this._editorOpen;
+    this._showPicker = false;
+  };
 
   #renderEditor() {
-    const el = this.#editorEl;
-    if (!el) return;
-    el.innerHTML = "";
-
-    const header = document.createElement("div");
-    header.className = "pipe-editor-header";
-    header.innerHTML = `<span>Pipe transforms</span>`;
-    const closeBtn = document.createElement("button");
-    closeBtn.textContent = "×";
-    closeBtn.className = "pipe-editor-close";
-    closeBtn.addEventListener("click", () => {
-      this.#editorEl?.remove();
-      this.#editorEl = null;
-    });
-    header.appendChild(closeBtn);
-    el.appendChild(header);
-
-    const body = document.createElement("div");
-    body.className = "pipe-editor-body";
-
     const current = this.transforms;
-    if (current.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "pipe-editor-empty";
-      empty.textContent = "No transforms — data passes through unchanged";
-      body.appendChild(empty);
-    } else {
-      for (const t of current) {
-        const row = document.createElement("div");
-        row.className = "pipe-editor-transform";
-        const label = document.createElement("span");
-        label.textContent = t;
-        row.appendChild(label);
-        const removeBtn = document.createElement("button");
-        removeBtn.className = "pipe-editor-transform-remove";
-        removeBtn.textContent = "×";
-        removeBtn.addEventListener("click", () => {
-          this.transforms = current.filter((x) => x !== t);
-          this.#renderEditor();
-          this.#showIndicator();
-          this.#teardownPipe();
-          this.#setupPipe();
-          this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
-        });
-        row.appendChild(removeBtn);
-        body.appendChild(row);
-      }
-    }
+    const available = getAvailableTransforms();
 
-    const addBtn = document.createElement("button");
-    addBtn.className = "pipe-editor-add-btn";
-    addBtn.textContent = "+ Add transform";
-    addBtn.addEventListener("click", () => {
-      addBtn.remove();
-      const picker = document.createElement("div");
-      picker.className = "pipe-editor-picker";
-      for (const desc of getAvailableTransforms()) {
-        const opt = document.createElement("button");
-        opt.className = "pipe-editor-picker-item";
-        opt.textContent = desc.name;
-        opt.addEventListener("click", () => {
-          this.transforms = [...this.transforms, desc.type];
-          this.#renderEditor();
-          this.#showIndicator();
-          this.#teardownPipe();
-          this.#setupPipe();
-          this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
-        });
-        picker.appendChild(opt);
-      }
-      body.appendChild(picker);
-    });
-    body.appendChild(addBtn);
-    el.appendChild(body);
-
-    const actions = document.createElement("div");
-    actions.className = "pipe-editor-actions";
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "pipe-editor-action-btn pipe-editor-action-btn--danger";
-    deleteBtn.textContent = "Delete pipe";
-    deleteBtn.addEventListener("click", () => {
-      this.dispatchEvent(new CustomEvent("pipe:delete", {
-        detail: { id: this.id },
-        bubbles: true,
-      }));
-      this.remove();
-    });
-    actions.appendChild(deleteBtn);
-    el.appendChild(actions);
+    return html`
+      <div class="pipe-editor">
+        <div class="pipe-editor-header">
+          <span>Pipe transforms</span>
+          <button class="pipe-editor-close" @click=${() => { this._editorOpen = false; }}>×</button>
+        </div>
+        <div class="pipe-editor-body">
+          ${current.length === 0
+            ? html`<div class="pipe-editor-empty">No transforms — data passes through unchanged</div>`
+            : current.map((t) => html`
+                <div class="pipe-editor-transform">
+                  <span>${t}</span>
+                  <button class="pipe-editor-transform-remove" @click=${() => this.#removeTransform(t)}>×</button>
+                </div>
+              `)}
+          ${this._showPicker
+            ? html`
+                <div class="pipe-editor-picker">
+                  ${available.map((desc) => html`
+                    <button class="pipe-editor-picker-item" @click=${() => this.#addTransform(desc.type)}>
+                      ${desc.name}
+                    </button>
+                  `)}
+                </div>
+              `
+            : html`
+                <button class="pipe-editor-add-btn" @click=${() => { this._showPicker = true; }}>
+                  + Add transform
+                </button>
+              `}
+        </div>
+        <div class="pipe-editor-actions">
+          <button
+            class="pipe-editor-action-btn pipe-editor-action-btn--danger"
+            @click=${this.#deletePipe}
+          >Delete pipe</button>
+        </div>
+      </div>
+    `;
   }
+
+  #removeTransform(t: string) {
+    this.transforms = this.transforms.filter((x) => x !== t);
+    this.#teardownPipe();
+    this.#setupPipe();
+    this.requestUpdate();
+    this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
+  }
+
+  #addTransform(type: string) {
+    this.transforms = [...this.transforms, type];
+    this._showPicker = false;
+    this.#teardownPipe();
+    this.#setupPipe();
+    this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
+  }
+
+  #deletePipe = () => {
+    this.dispatchEvent(new CustomEvent("pipe:delete", {
+      detail: { id: this.id },
+      bubbles: true,
+    }));
+    this.remove();
+  };
 
   // ---- Pipe execution ----
 
@@ -237,7 +214,6 @@ export class PatchworkPipeElement extends HTMLElement {
     const types = this.transforms;
     if (types.length === 0) return;
 
-    // Delay to let DOM settle
     const timer = setTimeout(() => {
       const source = this.#findSource();
       const target = this.#findTarget();
