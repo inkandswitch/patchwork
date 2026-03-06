@@ -1,0 +1,212 @@
+/* ===== Notebook Viewer Layout ===== */
+
+.notebook-viewer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--account-history-text);
+  background: var(--account-history-hover);
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* ===== Timeline Controls (top section) ===== */
+
+.notebook-viewer-timeline {
+  flex-shrink: 0;
+  padding: var(--account-history-space-sm) var(--account-history-space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--account-history-space-2xs);
+  background: transparent;
+  z-index: 2;
+}
+
+.notebook-viewer-date-label {
+  font-size: var(--account-history-text-md);
+  font-weight: 600;
+  color: var(--account-history-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.notebook-viewer-timeline-row {
+  display: flex;
+  align-items: center;
+  gap: var(--account-history-space-sm);
+  width: 100%;
+  max-width: 660px;
+}
+
+.notebook-viewer-timeline-label {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: var(--account-history-text-sm);
+  font-weight: 500;
+  color: var(--account-history-text-secondary);
+  padding: var(--account-history-space-2xs) var(--account-history-space-xs);
+  border-radius: var(--account-history-radius);
+  white-space: nowrap;
+  transition: color var(--account-history-transition-fast) var(--easing);
+  font-family: inherit;
+}
+
+.notebook-viewer-timeline-label:hover {
+  color: var(--account-history-primary);
+}
+
+.notebook-viewer-timeline-slider {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  accent-color: var(--account-history-primary);
+}
+
+/* ===== Page Area (middle section) ===== */
+
+.notebook-viewer-page-area {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
+  padding: 0 var(--account-history-space-sm);
+  gap: var(--account-history-space-xs);
+}
+
+/* Arrow buttons */
+.notebook-viewer-arrow {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--account-history-text-secondary);
+  font-size: 2rem;
+  transition: color var(--account-history-transition-fast) var(--easing),
+              opacity var(--account-history-transition-fast) var(--easing);
+  border-radius: var(--account-history-radius);
+  padding: 0;
+}
+
+.notebook-viewer-arrow:hover:not(:disabled) {
+  color: var(--account-history-primary);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.notebook-viewer-arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* The "page" - the central patchwork-view container */
+.notebook-viewer-page {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background: var(--account-history-bg);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 1px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.notebook-viewer-page patchwork-view {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== Bottom Controls ===== */
+
+.notebook-viewer-bottom {
+  flex-shrink: 0;
+  padding: var(--account-history-space-sm) var(--account-history-space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--account-history-space-xs);
+  z-index: 2;
+}
+
+.notebook-viewer-step-control {
+  display: flex;
+  align-items: center;
+  gap: var(--account-history-space-sm);
+  font-size: var(--account-history-text-sm);
+  color: var(--account-history-text-secondary);
+}
+
+.notebook-viewer-step-label {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.notebook-viewer-step-slider {
+  width: 150px;
+  accent-color: var(--account-history-primary);
+  cursor: pointer;
+}
+
+.notebook-viewer-step-value {
+  min-width: 2em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.notebook-viewer-entry-info {
+  font-size: var(--account-history-text-sm);
+  color: var(--account-history-text-tertiary);
+  display: flex;
+  gap: var(--account-history-space-sm);
+  align-items: center;
+}
+
+.notebook-viewer-entry-info-position {
+  font-weight: 500;
+  color: var(--account-history-text-secondary);
+}
+
+/* ===== Empty State ===== */
+
+.notebook-viewer-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--account-history-text-tertiary);
+  font-size: var(--account-history-text-md);
+}
+
+/* ===== Dark Mode ===== */
+@media (prefers-color-scheme: dark) {
+  .notebook-viewer {
+    background: #111;
+  }
+
+  .notebook-viewer-page {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+
+  .notebook-viewer-arrow:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .notebook-viewer-arrow {
+    width: 32px;
+    font-size: 1.5rem;
+  }
+
+  .notebook-viewer-step-slider {
+    width: 100px;
+  }
+}

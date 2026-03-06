@@ -26,6 +26,7 @@ import {
   ACCOUNT_HISTORY_DATATYPE,
   DEDUPLICATION_TIME_THRESHOLD,
   VIEWER_TOOL_ID,
+  NOTEBOOK_VIEWER_TOOL_ID,
 } from "./constants.ts";
 import {
   type PatchworkToolProps,
@@ -154,7 +155,7 @@ export function HistoryRecorder(props: PatchworkToolProps<any>) {
         toolId = fallbackTool.id;
       }
 
-      if (toolId === VIEWER_TOOL_ID) {
+      if (toolId === VIEWER_TOOL_ID || toolId === NOTEBOOK_VIEWER_TOOL_ID) {
         return; // Don't record when opening the history viewer itself
       }
 
