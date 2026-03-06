@@ -1,6 +1,7 @@
 import { createSignal, createMemo, createEffect, Show, For, onCleanup } from "solid-js";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { makeDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
+import { OpenDocumentEvent } from "@inkandswitch/patchwork-elements";
 import {
   type PatchworkToolProps,
   type HistoryDoc,
@@ -284,6 +285,56 @@ export function NotebookViewer(props: PatchworkToolProps<HistoryDoc>) {
 
   onCleanup(stopPlayback);
 
+  // --- Open Document ---
+  const [showVersionDropdown, setShowVersionDropdown] = createSignal(false);
+
+  // Check if the current entry has saved heads (meaning it's a snapshot from a point in time).
+  // If it has heads, we offer the choice of opening "this version" vs "latest version".
+  const hasHeads = createMemo(() => {
+    const entry = currentEntry();
+    return !!(entry && entry.heads && entry.heads.length > 0);
+  });
+
+  const openDocument = (useLatest: boolean) => {
+    const entry = currentEntry();
+    if (!entry) return;
+
+    let url: AutomergeUrl;
+    if (useLatest || !entry.heads || entry.heads.length === 0) {
+      url = entry.docUrl;
+    } else {
+      url = `${entry.docUrl}#${entry.heads.join("|")}` as AutomergeUrl;
+    }
+
+    props.element.dispatchEvent(
+      new OpenDocumentEvent({
+        url,
+        toolId: entry.toolId,
+      })
+    );
+
+    setShowVersionDropdown(false);
+  };
+
+  const handleOpenDocClick = () => {
+    if (hasHeads()) {
+      setShowVersionDropdown((v) => !v);
+    } else {
+      openDocument(true);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  const onClickOutside = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest(".notebook-viewer-open-doc")) {
+      setShowVersionDropdown(false);
+    }
+  };
+
+  document.addEventListener("click", onClickOutside);
+  onCleanup(() => document.removeEventListener("click", onClickOutside));
+
   // Keyboard navigation
   const onKeyDown = (e: KeyboardEvent) => {
     const target = e.target as HTMLElement;
@@ -365,6 +416,40 @@ export function NotebookViewer(props: PatchworkToolProps<HistoryDoc>) {
               </svg>
             </Show>
           </button>
+        </div>
+
+        {/* Open document — floating top-right */}
+        <div class="notebook-viewer-open-doc">
+          <button
+            class="notebook-viewer-open-doc-button"
+            onClick={handleOpenDocClick}
+            title="Open this document"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+            Open document
+          </button>
+
+          <Show when={showVersionDropdown()}>
+            <div class="notebook-viewer-version-dropdown">
+              <button
+                class="notebook-viewer-version-option"
+                onClick={() => openDocument(true)}
+              >
+                Latest version
+              </button>
+              <button
+                class="notebook-viewer-version-option"
+                onClick={() => openDocument(false)}
+              >
+                This version
+              </button>
+            </div>
+          </Show>
         </div>
 
         {/* Timeline controls */}

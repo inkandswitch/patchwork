@@ -261,6 +261,79 @@
   color: var(--account-history-text-secondary);
 }
 
+/* ===== Open Document Button (top-right) ===== */
+
+.notebook-viewer-open-doc {
+  position: absolute;
+  top: var(--account-history-space-sm);
+  right: var(--account-history-space-sm);
+  z-index: 3;
+}
+
+.notebook-viewer-open-doc-button {
+  height: 36px;
+  border-radius: 18px;
+  border: 1px solid var(--account-history-border);
+  background: var(--account-history-bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--account-history-space-2xs);
+  color: var(--account-history-text);
+  font-size: var(--account-history-text-sm);
+  font-weight: 500;
+  font-family: inherit;
+  padding: 0 var(--account-history-space-sm) 0 var(--account-history-space-xs);
+  transition: background-color var(--account-history-transition-fast) var(--easing),
+              color var(--account-history-transition-fast) var(--easing);
+  white-space: nowrap;
+}
+
+.notebook-viewer-open-doc-button:hover {
+  background: var(--account-history-primary);
+  color: var(--account-history-bg);
+  border-color: var(--account-history-primary);
+}
+
+.notebook-viewer-open-doc-button svg {
+  flex-shrink: 0;
+}
+
+.notebook-viewer-version-dropdown {
+  position: absolute;
+  top: calc(100% + var(--account-history-space-2xs));
+  right: 0;
+  min-width: 160px;
+  background: var(--account-history-bg);
+  border: 1px solid var(--account-history-border);
+  border-radius: var(--account-history-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.08);
+  z-index: 4;
+  overflow: hidden;
+}
+
+.notebook-viewer-version-option {
+  display: block;
+  width: 100%;
+  padding: var(--account-history-space-xs) var(--account-history-space-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: var(--account-history-text-sm);
+  font-family: inherit;
+  color: var(--account-history-text);
+  transition: background-color var(--account-history-transition-fast) var(--easing);
+}
+
+.notebook-viewer-version-option:hover {
+  background: var(--account-history-hover);
+}
+
+.notebook-viewer-version-option + .notebook-viewer-version-option {
+  border-top: 1px solid var(--account-history-border);
+}
+
 /* ===== Empty State ===== */
 
 .notebook-viewer-empty {
