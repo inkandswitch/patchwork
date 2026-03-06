@@ -245,6 +245,45 @@ export function NotebookViewer(props: PatchworkToolProps<HistoryDoc>) {
   const goToFirst = () => setRawCurrentIndex(0);
   const goToLatest = () => setRawCurrentIndex(totalEntries() - 1);
 
+  // --- Playback ---
+  const [isPlaying, setIsPlaying] = createSignal(false);
+  const [playDirection, setPlayDirection] = createSignal<"forward" | "reverse">("forward");
+  let playIntervalId: number | undefined;
+
+  const stopPlayback = () => {
+    setIsPlaying(false);
+    if (playIntervalId !== undefined) {
+      clearInterval(playIntervalId);
+      playIntervalId = undefined;
+    }
+  };
+
+  const togglePlayback = () => {
+    if (isPlaying()) {
+      stopPlayback();
+    } else {
+      setIsPlaying(true);
+      playIntervalId = window.setInterval(() => {
+        const dir = playDirection();
+        if (dir === "forward") {
+          if (!canGoForward()) {
+            stopPlayback();
+            return;
+          }
+          goForward();
+        } else {
+          if (!canGoBack()) {
+            stopPlayback();
+            return;
+          }
+          goBack();
+        }
+      }, 1000);
+    }
+  };
+
+  onCleanup(stopPlayback);
+
   // Keyboard navigation
   const onKeyDown = (e: KeyboardEvent) => {
     const target = e.target as HTMLElement;
@@ -289,6 +328,45 @@ export function NotebookViewer(props: PatchworkToolProps<HistoryDoc>) {
           </div>
         }
       >
+        {/* Playback controls — floating top-left */}
+        <div class="notebook-viewer-playback">
+          {/* Direction toggle */}
+          <div
+            class="notebook-viewer-direction-toggle"
+            onClick={() => setPlayDirection((d) => d === "forward" ? "reverse" : "forward")}
+            title={`Direction: ${playDirection()}`}
+          >
+            <span class={`notebook-viewer-direction-option ${playDirection() === "reverse" ? "active" : ""}`}>
+              Rev
+            </span>
+            <span class={`notebook-viewer-direction-option ${playDirection() === "forward" ? "active" : ""}`}>
+              Fwd
+            </span>
+            <div class={`notebook-viewer-direction-thumb ${playDirection() === "forward" ? "right" : "left"}`} />
+          </div>
+
+          {/* Play/Pause button */}
+          <button
+            class="notebook-viewer-play-button"
+            onClick={togglePlayback}
+            title={isPlaying() ? "Pause" : "Play"}
+          >
+            <Show when={!isPlaying()}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                fill="currentColor" stroke="none">
+                <polygon points="6 3 20 12 6 21" />
+              </svg>
+            </Show>
+            <Show when={isPlaying()}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                fill="currentColor" stroke="none">
+                <rect x="5" y="3" width="5" height="18" />
+                <rect x="14" y="3" width="5" height="18" />
+              </svg>
+            </Show>
+          </button>
+        </div>
+
         {/* Timeline controls */}
         <div class="notebook-viewer-timeline">
           <div class="notebook-viewer-date-label">{currentDateLabel()}</div>

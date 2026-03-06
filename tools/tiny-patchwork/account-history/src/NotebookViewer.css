@@ -33,6 +33,86 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Playback controls — floating top-left */
+.notebook-viewer-playback {
+  position: absolute;
+  top: var(--account-history-space-sm);
+  left: var(--account-history-space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--account-history-space-xs);
+  z-index: 3;
+}
+
+.notebook-viewer-play-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--account-history-border);
+  background: var(--account-history-bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--account-history-text);
+  transition: background-color var(--account-history-transition-fast) var(--easing),
+              color var(--account-history-transition-fast) var(--easing);
+  padding: 0;
+}
+
+.notebook-viewer-play-button:hover {
+  background: var(--account-history-primary);
+  color: var(--account-history-bg);
+  border-color: var(--account-history-primary);
+}
+
+/* Direction toggle switch */
+.notebook-viewer-direction-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  border: 1px solid var(--account-history-border);
+  background: var(--account-history-bg);
+  cursor: pointer;
+  overflow: hidden;
+  user-select: none;
+  height: 24px;
+}
+
+.notebook-viewer-direction-option {
+  position: relative;
+  z-index: 1;
+  padding: 0 var(--account-history-space-xs);
+  font-size: var(--account-history-text-2xs);
+  font-weight: 600;
+  color: var(--account-history-text-tertiary);
+  transition: color var(--account-history-transition-fast) var(--easing);
+  line-height: 24px;
+}
+
+.notebook-viewer-direction-option.active {
+  color: var(--account-history-bg);
+}
+
+.notebook-viewer-direction-thumb {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  width: 50%;
+  border-radius: 10px;
+  background: var(--account-history-primary);
+  transition: left var(--account-history-transition-base) var(--easing);
+}
+
+.notebook-viewer-direction-thumb.left {
+  left: 1px;
+}
+
+.notebook-viewer-direction-thumb.right {
+  left: calc(50% - 1px);
+}
+
 .notebook-viewer-timeline-row {
   display: flex;
   align-items: center;
