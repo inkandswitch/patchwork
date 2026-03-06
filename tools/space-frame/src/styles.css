@@ -224,39 +224,7 @@ patchwork-space[editing] > patchwork-space > .space-drag-handle {
   background: color-mix(in oklch, var(--depth-color, currentColor) 25%, transparent);
 }
 
-/* ===== Resize dividers ===== */
-
-.space-divider {
-  position: relative;
-  flex-shrink: 0;
-  align-self: stretch;
-  z-index: 5;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
-  touch-action: none;
-  border-radius: 2px;
-}
-
-.space-divider-vertical {
-  width: 4px;
-  cursor: col-resize;
-  background: color-mix(in oklch, var(--depth-color, currentColor) 25%, transparent);
-}
-
-.space-divider-vertical:hover {
-  background: color-mix(in oklch, var(--depth-color, currentColor) 60%, transparent);
-  box-shadow: 0 0 6px color-mix(in oklch, var(--depth-color, currentColor) 30%, transparent);
-}
-
-.space-divider-horizontal {
-  height: 4px;
-  cursor: row-resize;
-  background: color-mix(in oklch, var(--depth-color, currentColor) 25%, transparent);
-}
-
-.space-divider-horizontal:hover {
-  background: color-mix(in oklch, var(--depth-color, currentColor) 60%, transparent);
-  box-shadow: 0 0 6px color-mix(in oklch, var(--depth-color, currentColor) 30%, transparent);
-}
+/* (dividers are now patchwork-pipe elements — styles below) */
 
 /* ===== Edit controls bar ===== */
 
@@ -391,39 +359,50 @@ patchwork-preview {
   text-align: center;
 }
 
-/* ===== Add pipe button (on dividers) ===== */
+/* ===== Pipe center button ===== */
 
-.space-add-pipe-btn {
+.pipe-center-btn {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 11;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  border: 1.5px solid oklch(0.55 0.2 250 / 0.6);
+  border: 1.5px solid color-mix(in oklch, var(--depth-color, currentColor) 40%, transparent);
   background: Canvas;
-  color: oklch(0.55 0.2 250);
-  font-size: 14px;
-  font-weight: 600;
+  color: color-mix(in oklch, var(--depth-color, currentColor) 70%, CanvasText);
+  font-size: 12px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  opacity: 1;
-  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
   pointer-events: auto;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 
-.space-add-pipe-btn:hover {
+patchwork-pipe[editing]:hover .pipe-center-btn {
+  opacity: 1;
+}
+
+patchwork-pipe[editing][transform] .pipe-center-btn {
+  opacity: 0.7;
+  border-color: oklch(0.55 0.2 250 / 0.6);
+  color: oklch(0.55 0.2 250);
+}
+
+patchwork-pipe[editing][transform]:hover .pipe-center-btn {
+  opacity: 1;
+}
+
+.pipe-center-btn:hover {
   background: oklch(0.55 0.2 250);
   color: white;
   border-color: oklch(0.55 0.2 250);
   transform: translate(-50%, -50%) scale(1.15);
-  box-shadow: 0 2px 8px oklch(0.55 0.2 250 / 0.3);
 }
 
 /* ===== Pipe indicator ===== */
@@ -583,21 +562,22 @@ patchwork-preview {
   background: oklch(0.55 0.25 25 / 0.05);
 }
 
-/* ===== patchwork-pipe ===== */
+/* ===== patchwork-pipe (also serves as resize divider) ===== */
 
 patchwork-pipe {
   position: relative;
   flex-shrink: 0;
-}
-
-patchwork-pipe[editing] {
-  background: color-mix(in oklch, currentColor 4%, transparent);
-  border-radius: 4px;
+  touch-action: none;
+  border-radius: 2px;
   transition: background 0.15s ease;
 }
 
+patchwork-pipe[editing] {
+  background: color-mix(in oklch, var(--depth-color, currentColor) 20%, transparent);
+}
+
 patchwork-pipe[editing]:hover {
-  background: oklch(0.55 0.2 250 / 0.15);
+  background: color-mix(in oklch, var(--depth-color, currentColor) 50%, transparent);
 }
 
 patchwork-pipe[expanded] {
@@ -606,4 +586,33 @@ patchwork-pipe[expanded] {
   overflow: hidden;
   border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
   background: Canvas;
+}
+
+/* ===== Expanded pipe header ===== */
+
+.pipe-expanded-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 8px;
+  background: color-mix(in oklch, currentColor 6%, Canvas);
+  border-bottom: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: color-mix(in oklch, currentColor 60%, Canvas);
+}
+
+.pipe-expanded-collapse {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: inherit;
+  opacity: 0.6;
+  padding: 2px 4px;
+}
+
+.pipe-expanded-collapse:hover {
+  opacity: 1;
 }

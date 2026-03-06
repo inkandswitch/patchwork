@@ -8,7 +8,6 @@ declare global {
 }
 
 const TAG = "patchwork-space";
-const DIVIDER_CLASS = "space-divider";
 
 if (typeof Element.prototype.moveBefore !== "function") {
   alert("This browser does not support moveBefore(). Please use Chrome or Firefox.");
@@ -124,9 +123,6 @@ export class PatchworkSpaceElement extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    if (!this.#isDragging) {
-      this.#removeDividers();
-    }
   }
 
   connectedMoveCallback() {
@@ -180,14 +176,12 @@ export class PatchworkSpaceElement extends LitElement {
     if (this.editing) {
       if (this.isLeaf) {
         this.#ensureDragHandle();
-        this.#removeDividers();
       } else {
         this.#removeDragHandle();
-        this.#syncDividers();
+        this.#syncPipes();
       }
     } else {
       this.#removeDragHandle();
-      this.#removeDividers();
     }
   }
 
@@ -234,70 +228,36 @@ export class PatchworkSpaceElement extends LitElement {
     this.#dragHandleEl?.remove();
   }
 
-  // ---- Dividers ----
+  // ---- Pipes (act as dividers between siblings) ----
 
-  #removeDividers() {
-    for (const d of Array.from(this.querySelectorAll(`:scope > .${DIVIDER_CLASS}`))) {
-      d.remove();
-    }
-    for (const b of Array.from(this.querySelectorAll(`:scope > .space-add-pipe-btn`))) {
-      b.remove();
-    }
-  }
-
-  #hasPipeBetween(beforeEl: Element, afterEl: Element): boolean {
+  #findPipeBetween(beforeEl: Element, afterEl: Element): HTMLElement | null {
     let sibling: Element | null = beforeEl.nextElementSibling;
     while (sibling && sibling !== afterEl) {
-      if (sibling.tagName.toLowerCase() === "patchwork-pipe") return true;
+      if (sibling.tagName.toLowerCase() === "patchwork-pipe") return sibling as HTMLElement;
       sibling = sibling.nextElementSibling;
     }
-    return false;
+    return null;
   }
 
-  #syncDividers() {
-    this.#removeDividers();
+  #syncPipes() {
     const children = this.getSpaceChildren();
     if (children.length < 2) return;
-
-    const childDepth = this.depth + 1;
-    const chroma = Math.min(0.15, Math.max(0, (childDepth - 1) * 0.15));
-    const hue = 250 - Math.max(0, childDepth - 2) * 40;
-    const depthColor = `oklch(0.55 ${chroma} ${hue})`;
-    const orientation = this.direction === "vertical" ? "horizontal" : "vertical";
 
     for (let i = 0; i < children.length - 1; i++) {
       const beforeEl = children[i];
       const afterEl = children[i + 1];
 
-      const divider = document.createElement("div");
-      divider.className = `${DIVIDER_CLASS} space-divider-${orientation}`;
-      divider.style.setProperty("--depth-color", depthColor);
+      let pipe = this.#findPipeBetween(beforeEl, afterEl);
+      if (!pipe) {
+        pipe = document.createElement("patchwork-pipe");
+        pipe.id = `pipe-${Date.now()}-${i}`;
+        beforeEl.after(pipe);
+      }
 
-      divider.addEventListener("pointerdown", (e) => {
-        if (e.button !== 0) return;
-        if ((e.target as HTMLElement).closest(".space-add-pipe-btn")) return;
-        e.preventDefault();
-        e.stopPropagation();
-        this.#onResizeStart(e, divider, beforeEl, afterEl);
-      });
-
-      beforeEl.after(divider);
-
-      if (!this.#hasPipeBetween(beforeEl, afterEl)) {
-        const addPipeBtn = document.createElement("button");
-        addPipeBtn.className = "space-add-pipe-btn";
-        addPipeBtn.title = "Add pipe";
-        addPipeBtn.textContent = "⊕";
-        addPipeBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const pipe = document.createElement("patchwork-pipe");
-          pipe.id = `pipe-${Date.now()}`;
-          if (this.editing) pipe.setAttribute("editing", "");
-          divider.after(pipe);
-          this.refreshEditUI();
-          this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
-        });
-        divider.appendChild(addPipeBtn);
+      if (this.editing) {
+        pipe.setAttribute("editing", "");
+      } else {
+        pipe.removeAttribute("editing");
       }
     }
   }
@@ -396,65 +356,6 @@ export class PatchworkSpaceElement extends LitElement {
     document.addEventListener("pointerup", onUp);
   };
 
-  // ---- Resize ----
-
-  #onResizeStart(
-    e: PointerEvent,
-    divider: HTMLElement,
-    beforeEl: PatchworkSpaceElement,
-    afterEl: PatchworkSpaceElement
-  ) {
-    divider.setPointerCapture(e.pointerId);
-
-    const isVert = this.direction === "vertical";
-    const startPos = isVert ? e.clientY : e.clientX;
-    const allChildren = this.getSpaceChildren();
-
-    const snapshots = new Map<PatchworkSpaceElement, number>();
-    for (const child of allChildren) {
-      const r = child.getBoundingClientRect();
-      snapshots.set(child, isVert ? r.height : r.width);
-    }
-
-    const startBefore = snapshots.get(beforeEl)!;
-    const startAfter = snapshots.get(afterEl)!;
-
-    for (const [child, size] of snapshots) {
-      child.style.flex = `0 0 ${size}px`;
-    }
-
-    const onMove = (ev: PointerEvent) => {
-      const delta = (isVert ? ev.clientY : ev.clientX) - startPos;
-      beforeEl.style.flex = `0 0 ${Math.max(30, startBefore + delta)}px`;
-      afterEl.style.flex = `0 0 ${Math.max(30, startAfter - delta)}px`;
-    };
-
-    const onUp = () => {
-      divider.removeEventListener("pointermove", onMove);
-      divider.removeEventListener("pointerup", onUp);
-      divider.removeEventListener("lostpointercapture", onUp);
-
-      let total = 0;
-      const sizes: number[] = [];
-      for (const child of allChildren) {
-        const r = child.getBoundingClientRect();
-        const s = isVert ? r.height : r.width;
-        sizes.push(s);
-        total += s;
-      }
-      if (total > 0) {
-        for (let i = 0; i < allChildren.length; i++) {
-          allChildren[i].style.flex = `${sizes[i] / total} 0 0px`;
-        }
-      }
-
-      this.dispatchEvent(new CustomEvent("space:resize", { bubbles: true }));
-    };
-
-    divider.addEventListener("pointermove", onMove);
-    divider.addEventListener("pointerup", onUp);
-    divider.addEventListener("lostpointercapture", onUp);
-  }
 }
 
 export function registerPatchworkSpace() {

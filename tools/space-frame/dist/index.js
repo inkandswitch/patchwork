@@ -721,80 +721,6 @@ patchwork-space[editing] > patchwork-space > .space-drag-handle {
   }
 }
 
-.space-divider {
-  z-index: 5;
-  touch-action: none;
-  border-radius: 2px;
-  flex-shrink: 0;
-  align-self: stretch;
-  transition: background .15s, box-shadow .15s;
-  position: relative;
-}
-
-.space-divider-vertical {
-  cursor: col-resize;
-  background: var(--depth-color, currentColor);
-  width: 4px;
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .space-divider-vertical {
-    background: color-mix(in oklch, var(--depth-color, currentColor) 25%, transparent);
-  }
-}
-
-.space-divider-vertical:hover {
-  background: var(--depth-color, currentColor);
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .space-divider-vertical:hover {
-    background: color-mix(in oklch, var(--depth-color, currentColor) 60%, transparent);
-  }
-}
-
-.space-divider-vertical:hover {
-  box-shadow: 0 0 6px var(--depth-color, currentColor);
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .space-divider-vertical:hover {
-    box-shadow: 0 0 6px color-mix(in oklch, var(--depth-color, currentColor) 30%, transparent);
-  }
-}
-
-.space-divider-horizontal {
-  cursor: row-resize;
-  background: var(--depth-color, currentColor);
-  height: 4px;
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .space-divider-horizontal {
-    background: color-mix(in oklch, var(--depth-color, currentColor) 25%, transparent);
-  }
-}
-
-.space-divider-horizontal:hover {
-  background: var(--depth-color, currentColor);
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .space-divider-horizontal:hover {
-    background: color-mix(in oklch, var(--depth-color, currentColor) 60%, transparent);
-  }
-}
-
-.space-divider-horizontal:hover {
-  box-shadow: 0 0 6px var(--depth-color, currentColor);
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .space-divider-horizontal:hover {
-    box-shadow: 0 0 6px color-mix(in oklch, var(--depth-color, currentColor) 30%, transparent);
-  }
-}
-
 .edit-overlay {
   pointer-events: none;
   z-index: 1000;
@@ -987,37 +913,66 @@ patchwork-preview {
   font-size: 16px;
 }
 
-.space-add-pipe-btn {
+.pipe-center-btn {
   z-index: 11;
-  color: oklch(55% .2 250);
-  cursor: pointer;
-  opacity: 1;
-  pointer-events: auto;
-  background: canvas;
-  border: 1.5px solid oklch(55% .2 250 / .6);
+  border: 1.5px solid var(--depth-color, currentColor);
   border-radius: 50%;
-  justify-content: center;
-  align-items: center;
-  width: 24px;
-  height: 24px;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1;
-  transition: transform .15s, background .15s, border-color .15s, box-shadow .15s;
-  display: flex;
+  width: 22px;
+  height: 22px;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0 1px 4px #0000001a;
 }
 
-.space-add-pipe-btn:hover {
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-center-btn {
+    border: 1.5px solid color-mix(in oklch, var(--depth-color, currentColor) 40%, transparent);
+  }
+}
+
+.pipe-center-btn {
+  color: var(--depth-color, currentColor);
+  background: canvas;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-center-btn {
+    color: color-mix(in oklch, var(--depth-color, currentColor) 70%, CanvasText);
+  }
+}
+
+.pipe-center-btn {
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: auto;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  line-height: 1;
+  transition: opacity .15s, transform .15s, background .15s, border-color .15s;
+  display: flex;
+}
+
+patchwork-pipe[editing]:hover .pipe-center-btn {
+  opacity: 1;
+}
+
+patchwork-pipe[editing][transform] .pipe-center-btn {
+  opacity: .7;
+  color: oklch(55% .2 250);
+  border-color: oklch(55% .2 250 / .6);
+}
+
+patchwork-pipe[editing][transform]:hover .pipe-center-btn {
+  opacity: 1;
+}
+
+.pipe-center-btn:hover {
   color: #fff;
   background: oklch(55% .2 250);
   border-color: oklch(55% .2 250);
   transform: translate(-50%, -50%)scale(1.15);
-  box-shadow: 0 2px 8px oklch(55% .2 250 / .3);
 }
 
 .pipe-indicator {
@@ -1255,27 +1210,31 @@ patchwork-preview {
 }
 
 patchwork-pipe {
+  touch-action: none;
+  border-radius: 2px;
   flex-shrink: 0;
+  transition: background .15s;
   position: relative;
 }
 
 patchwork-pipe[editing] {
-  background: currentColor;
+  background: var(--depth-color, currentColor);
 }
 
 @supports (color: color-mix(in lab, red, red)) {
   patchwork-pipe[editing] {
-    background: color-mix(in oklch, currentColor 4%, transparent);
+    background: color-mix(in oklch, var(--depth-color, currentColor) 20%, transparent);
   }
 }
 
-patchwork-pipe[editing] {
-  border-radius: 4px;
-  transition: background .15s;
+patchwork-pipe[editing]:hover {
+  background: var(--depth-color, currentColor);
 }
 
-patchwork-pipe[editing]:hover {
-  background: oklch(55% .2 250 / .15);
+@supports (color: color-mix(in lab, red, red)) {
+  patchwork-pipe[editing]:hover {
+    background: color-mix(in oklch, var(--depth-color, currentColor) 50%, transparent);
+  }
 }
 
 patchwork-pipe[expanded] {
@@ -1293,6 +1252,57 @@ patchwork-pipe[expanded] {
 
 patchwork-pipe[expanded] {
   background: canvas;
+}
+
+.pipe-expanded-header {
+  background: currentColor;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 8px;
+  display: flex;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-expanded-header {
+    background: color-mix(in oklch, currentColor 6%, Canvas);
+  }
+}
+
+.pipe-expanded-header {
+  border-bottom: 1px solid;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-expanded-header {
+    border-bottom: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  }
+}
+
+.pipe-expanded-header {
+  color: currentColor;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .pipe-expanded-header {
+    color: color-mix(in oklch, currentColor 60%, Canvas);
+  }
+}
+
+.pipe-expanded-collapse {
+  cursor: pointer;
+  color: inherit;
+  opacity: .6;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  font-size: 14px;
+}
+
+.pipe-expanded-collapse:hover {
+  opacity: 1;
 }
 
 @property --tw-rotate-x {
@@ -1600,7 +1610,7 @@ const plugins = [
     supportedDatatypes: ["account"],
     async load() {
       const { mountSpaceFrame } = await __vitePreload(async () => {
-        const { mountSpaceFrame: mountSpaceFrame2 } = await import("./assets/space-frame-BU2pql0-.js");
+        const { mountSpaceFrame: mountSpaceFrame2 } = await import("./assets/space-frame-Ng3wMzuR.js");
         return { mountSpaceFrame: mountSpaceFrame2 };
       }, true ? [] : void 0, import.meta.url);
       return (handle, element) => {

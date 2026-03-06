@@ -350,10 +350,12 @@ export function mountSpaceFrame(
           const childNode = serializeNode(child as HTMLElement);
           if (childNode) node.children.push(childNode);
         } else if (tag === "patchwork-pipe") {
-          const pipeId = child.id?.replace("pipe-", "") || `pipe-${Date.now()}`;
           const transform = child.getAttribute("transform") || "";
           const expanded = child.hasAttribute("expanded");
-          node.children.push({ id: pipeId, type: "pipe", transform, expanded });
+          if (transform || expanded) {
+            const pipeId = child.id?.replace("pipe-", "") || `pipe-${Date.now()}`;
+            node.children.push({ id: pipeId, type: "pipe", transform, expanded });
+          }
         }
       }
     } else {

@@ -9,15 +9,11 @@ import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements";
 import type { PatchworkPreviewElement } from "./patchwork-preview";
 
 const TAG = "patchwork-pipe";
-const SKIP_TAGS = new Set(["div", "button"]);
+const SPACE_TAG = "patchwork-space";
 
 function isLayoutChrome(el: Element): boolean {
-  return (
-    SKIP_TAGS.has(el.tagName.toLowerCase()) ||
-    el.classList.contains("space-divider") ||
-    el.classList.contains("space-drag-handle") ||
-    el.classList.contains("space-add-pipe-btn")
-  );
+  const tag = el.tagName.toLowerCase();
+  return tag !== SPACE_TAG && tag !== TAG && tag !== "patchwork-view" && tag !== "patchwork-preview";
 }
 
 export class PatchworkPipeElement extends LitElement {
@@ -53,56 +49,51 @@ export class PatchworkPipeElement extends LitElement {
     this._showPicker = false;
   }
 
-  get input(): any {
-    return this.#input;
-  }
+  get input(): any { return this.#input; }
 
   set input(value: any) {
     this.#input = value;
     this.#runTransform();
   }
 
-  get output(): any {
-    return this.#output;
-  }
+  get output(): any { return this.#output; }
 
-  get config(): Record<string, unknown> {
-    return { ...this.#config };
-  }
+  get config(): Record<string, unknown> { return { ...this.#config }; }
 
   set config(value: Record<string, unknown>) {
     this.#config = { ...value };
-    if (this.#input !== undefined) {
-      this.#runTransform();
-    }
+    if (this.#input !== undefined) this.#runTransform();
   }
 
-  createRenderRoot() {
-    return this;
-  }
+  createRenderRoot() { return this; }
 
   connectedCallback() {
     super.connectedCallback();
-    this.#applyDisplayStyles();
-    this.#loadAndSetup();
+    this.#applyStyles();
+    this.addEventListener("pointerdown", this.#onPointerDown);
+    if (this.transform) this.#loadAndSetup();
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    this.removeEventListener("pointerdown", this.#onPointerDown);
     this.#teardownPipe();
-    if (this.#retryTimer) {
-      clearTimeout(this.#retryTimer);
-      this.#retryTimer = null;
-    }
+    if (this.#retryTimer) { clearTimeout(this.#retryTimer); this.#retryTimer = null; }
   }
+
+  #onPointerDown = (e: PointerEvent) => {
+    if (!this.editing || this.expanded) return;
+    if ((e.target as HTMLElement).closest(".pipe-center-btn, .pipe-editor")) return;
+    this.handleResize(e);
+  };
 
   connectedMoveCallback() {}
 
   updated(changed: Map<string, unknown>) {
-    this.#applyDisplayStyles();
+    this.#applyStyles();
     if (changed.has("transform")) {
       this.#teardownPipe();
-      this.#loadAndSetup();
+      if (this.transform) this.#loadAndSetup();
     }
     if (changed.has("editing") && !this.editing && this.transform) {
       this.#teardownPipe();
@@ -113,7 +104,22 @@ export class PatchworkPipeElement extends LitElement {
     }
   }
 
-  #applyDisplayStyles() {
+  // ---- Styles ----
+
+  #applyStyles() {
+    const parent = this.parentElement;
+    const parentDir = parent?.getAttribute("direction");
+    const isVertical = parentDir === "vertical";
+
+    // Inherit depth color from parent space's children depth
+    const parentDepth = parent?.tagName.toLowerCase() === SPACE_TAG
+      ? parseInt(getComputedStyle(parent).getPropertyValue("--depth") || "0", 10)
+      : 0;
+    const childDepth = parentDepth + 1;
+    const chroma = Math.min(0.15, Math.max(0, (childDepth - 1) * 0.15));
+    const hue = 250 - Math.max(0, childDepth - 2) * 40;
+    this.style.setProperty("--depth-color", `oklch(0.55 ${chroma} ${hue})`);
+
     if (this.expanded && this.transform) {
       this.style.display = "flex";
       this.style.flexDirection = "column";
@@ -135,14 +141,14 @@ export class PatchworkPipeElement extends LitElement {
       this.style.flex = "";
       this.style.minWidth = "";
       this.style.minHeight = "";
+      this.style.position = "relative";
 
-      const parentDir = this.parentElement?.getAttribute("direction");
-      if (parentDir === "vertical") {
-        this.style.height = "8px";
+      if (isVertical) {
+        this.style.height = "6px";
         this.style.width = "100%";
         this.style.cursor = "row-resize";
       } else {
-        this.style.width = "8px";
+        this.style.width = "6px";
         this.style.height = "100%";
         this.style.cursor = "col-resize";
       }
@@ -153,6 +159,8 @@ export class PatchworkPipeElement extends LitElement {
     }
   }
 
+  // ---- Render ----
+
   render() {
     if (!this.editing && !this.expanded) return nothing;
 
@@ -160,10 +168,10 @@ export class PatchworkPipeElement extends LitElement {
 
     if (this.expanded && hasTransform) {
       return html`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 8px;background:color-mix(in oklch, currentColor 6%, Canvas);border-bottom:1px solid color-mix(in oklch, currentColor 10%, transparent);flex-shrink:0;font-size:11px;color:color-mix(in oklch, currentColor 60%, Canvas);">
-          <span style="font-weight:600;">${this.transform}</span>
+        <div class="pipe-expanded-header">
+          <span>${this.transform}</span>
           <button
-            style="border:none;background:none;cursor:pointer;font-size:14px;color:inherit;opacity:0.6;padding:2px 4px;"
+            class="pipe-expanded-collapse"
             title="Collapse preview"
             @click=${() => { this.expanded = false; this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true })); }}
           >▾</button>
@@ -173,24 +181,13 @@ export class PatchworkPipeElement extends LitElement {
 
     if (!this.editing) return nothing;
 
-    const indicatorText = hasTransform ? this.transform : "⊕";
-    const indicatorTitle = hasTransform ? `Transform: ${this.transform}` : "Add transform";
-
     return html`
-      <div style="display:flex;align-items:center;gap:4px;">
-        <button
-          class="pipe-indicator"
-          title=${indicatorTitle}
-          @click=${this.#toggleEditor}
-        >${indicatorText}</button>
-        ${hasTransform ? html`
-          <button
-            style="border:none;background:oklch(0.55 0.2 250 / 0.15);color:oklch(0.55 0.2 250);cursor:pointer;font-size:10px;padding:1px 5px;border-radius:4px;font-weight:600;"
-            title="Expand preview"
-            @click=${() => { this.expanded = true; this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true })); }}
-          >▸</button>
-        ` : nothing}
-      </div>
+      <button
+        class="pipe-center-btn"
+        title=${hasTransform ? this.transform : "Configure pipe"}
+        @pointerdown=${(e: PointerEvent) => e.stopPropagation()}
+        @click=${this.#toggleEditor}
+      >${hasTransform ? "⟡" : "⊕"}</button>
       ${this._editorOpen ? this.#renderEditor() : nothing}
     `;
   }
@@ -203,24 +200,29 @@ export class PatchworkPipeElement extends LitElement {
   #renderEditor() {
     const registry = getTransformRegistry();
     const available = registry.all();
+    const hasTransform = !!this.transform;
 
     return html`
-      <div class="pipe-editor">
+      <div class="pipe-editor" @pointerdown=${(e: Event) => e.stopPropagation()}>
         <div class="pipe-editor-header">
-          <span>Pipe transform</span>
+          <span>Pipe</span>
           <button class="pipe-editor-close" @click=${() => { this._editorOpen = false; }}>×</button>
         </div>
         <div class="pipe-editor-body">
-          ${this.transform
+          ${hasTransform
             ? html`
                 <div class="pipe-editor-transform">
                   <span>${this.transform}</span>
                   <button class="pipe-editor-transform-remove" @click=${this.#removeTransform}>×</button>
                 </div>
+                <button
+                  class="pipe-editor-add-btn"
+                  @click=${() => { this.expanded = true; this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true })); }}
+                >▸ Expand preview</button>
               `
-            : html`<div class="pipe-editor-empty">No transform — data passes through unchanged</div>`
+            : html`<div class="pipe-editor-empty">No transform set</div>`
           }
-          ${!this.transform
+          ${!hasTransform
             ? (this._showPicker
                 ? html`
                     <div class="pipe-editor-picker">
@@ -229,6 +231,10 @@ export class PatchworkPipeElement extends LitElement {
                           ${desc.name}
                         </button>
                       `)}
+                      ${available.length === 0
+                        ? html`<div class="pipe-editor-empty">No transforms available</div>`
+                        : nothing
+                      }
                     </div>
                   `
                 : html`
@@ -239,15 +245,11 @@ export class PatchworkPipeElement extends LitElement {
             : nothing
           }
         </div>
-        <div class="pipe-editor-actions">
-          <button
-            class="pipe-editor-action-btn pipe-editor-action-btn--danger"
-            @click=${this.#deletePipe}
-          >Delete pipe</button>
-        </div>
       </div>
     `;
   }
+
+  // ---- Transform management ----
 
   #removeTransform = () => {
     this.transform = "";
@@ -267,13 +269,86 @@ export class PatchworkPipeElement extends LitElement {
     this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
   }
 
-  #deletePipe = () => {
-    this.dispatchEvent(new CustomEvent("pipe:delete", {
-      detail: { id: this.id },
-      bubbles: true,
-    }));
-    this.remove();
-  };
+  // ---- Resize (this element IS the divider) ----
+
+  handleResize(e: PointerEvent) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const parent = this.parentElement;
+    if (!parent) return;
+
+    this.setPointerCapture(e.pointerId);
+
+    const isVert = parent.getAttribute("direction") === "vertical";
+    const startPos = isVert ? e.clientY : e.clientX;
+
+    const beforeEl = this.#findAdjacentSpace("before");
+    const afterEl = this.#findAdjacentSpace("after");
+    if (!beforeEl || !afterEl) return;
+
+    const allSpaces = Array.from(
+      parent.querySelectorAll(`:scope > ${SPACE_TAG}`)
+    ) as HTMLElement[];
+
+    const snapshots = new Map<HTMLElement, number>();
+    for (const child of allSpaces) {
+      const r = child.getBoundingClientRect();
+      snapshots.set(child, isVert ? r.height : r.width);
+    }
+
+    const startBefore = snapshots.get(beforeEl)!;
+    const startAfter = snapshots.get(afterEl)!;
+
+    for (const [child, size] of snapshots) {
+      child.style.flex = `0 0 ${size}px`;
+    }
+
+    const onMove = (ev: PointerEvent) => {
+      const delta = (isVert ? ev.clientY : ev.clientX) - startPos;
+      beforeEl.style.flex = `0 0 ${Math.max(30, startBefore + delta)}px`;
+      afterEl.style.flex = `0 0 ${Math.max(30, startAfter - delta)}px`;
+    };
+
+    const onUp = () => {
+      this.removeEventListener("pointermove", onMove);
+      this.removeEventListener("pointerup", onUp);
+      this.removeEventListener("lostpointercapture", onUp);
+
+      let total = 0;
+      const sizes: number[] = [];
+      for (const child of allSpaces) {
+        const r = child.getBoundingClientRect();
+        const s = isVert ? r.height : r.width;
+        sizes.push(s);
+        total += s;
+      }
+      if (total > 0) {
+        for (let i = 0; i < allSpaces.length; i++) {
+          allSpaces[i].style.flex = `${sizes[i] / total} 0 0px`;
+        }
+      }
+
+      this.dispatchEvent(new CustomEvent("space:resize", { bubbles: true }));
+    };
+
+    this.addEventListener("pointermove", onMove);
+    this.addEventListener("pointerup", onUp);
+    this.addEventListener("lostpointercapture", onUp);
+  }
+
+  #findAdjacentSpace(direction: "before" | "after"): HTMLElement | null {
+    let el: Element | null = direction === "before"
+      ? this.previousElementSibling
+      : this.nextElementSibling;
+    while (el && el.tagName.toLowerCase() !== SPACE_TAG) {
+      el = direction === "before" ? el.previousElementSibling : el.nextElementSibling;
+    }
+    return el as HTMLElement | null;
+  }
+
+  // ---- Data pipe ----
 
   async #loadAndSetup() {
     if (!this.transform) return;
@@ -357,8 +432,7 @@ export class PatchworkPipeElement extends LitElement {
         return;
       }
 
-      const needsExternalTarget = !this.expanded;
-      if (needsExternalTarget && !target) {
+      if (!this.expanded && !target) {
         if (retryCount < 8) {
           this.#retryTimer = setTimeout(() => this.#setupPipe(retryCount + 1), delay);
         }
@@ -397,10 +471,7 @@ export class PatchworkPipeElement extends LitElement {
   #teardownPipe() {
     this.#cleanup?.();
     this.#cleanup = null;
-    if (this.#retryTimer) {
-      clearTimeout(this.#retryTimer);
-      this.#retryTimer = null;
-    }
+    if (this.#retryTimer) { clearTimeout(this.#retryTimer); this.#retryTimer = null; }
   }
 
   #syncExpandedPreview() {

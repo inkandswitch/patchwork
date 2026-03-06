@@ -537,7 +537,6 @@ const X = [
   ["path", { d: "m6 6 12 12" }]
 ];
 const TAG$1 = "patchwork-space";
-const DIVIDER_CLASS = "space-divider";
 if (typeof Element.prototype.moveBefore !== "function") {
   alert("This browser does not support moveBefore(). Please use Chrome or Firefox.");
 }
@@ -625,9 +624,6 @@ class PatchworkSpaceElement extends i {
   }
   disconnectedCallback() {
     super.disconnectedCallback();
-    if (!this.#isDragging) {
-      this.#removeDividers();
-    }
   }
   connectedMoveCallback() {
     this.#applyLayoutStyles();
@@ -672,14 +668,12 @@ class PatchworkSpaceElement extends i {
     if (this.editing) {
       if (this.isLeaf) {
         this.#ensureDragHandle();
-        this.#removeDividers();
       } else {
         this.#removeDragHandle();
-        this.#syncDividers();
+        this.#syncPipes();
       }
     } else {
       this.#removeDragHandle();
-      this.#removeDividers();
     }
   }
   refreshEditUI() {
@@ -717,61 +711,31 @@ class PatchworkSpaceElement extends i {
   #removeDragHandle() {
     this.#dragHandleEl?.remove();
   }
-  // ---- Dividers ----
-  #removeDividers() {
-    for (const d2 of Array.from(this.querySelectorAll(`:scope > .${DIVIDER_CLASS}`))) {
-      d2.remove();
-    }
-    for (const b2 of Array.from(this.querySelectorAll(`:scope > .space-add-pipe-btn`))) {
-      b2.remove();
-    }
-  }
-  #hasPipeBetween(beforeEl, afterEl) {
+  // ---- Pipes (act as dividers between siblings) ----
+  #findPipeBetween(beforeEl, afterEl) {
     let sibling = beforeEl.nextElementSibling;
     while (sibling && sibling !== afterEl) {
-      if (sibling.tagName.toLowerCase() === "patchwork-pipe") return true;
+      if (sibling.tagName.toLowerCase() === "patchwork-pipe") return sibling;
       sibling = sibling.nextElementSibling;
     }
-    return false;
+    return null;
   }
-  #syncDividers() {
-    this.#removeDividers();
+  #syncPipes() {
     const children = this.getSpaceChildren();
     if (children.length < 2) return;
-    const childDepth = this.depth + 1;
-    const chroma = Math.min(0.15, Math.max(0, (childDepth - 1) * 0.15));
-    const hue = 250 - Math.max(0, childDepth - 2) * 40;
-    const depthColor = `oklch(0.55 ${chroma} ${hue})`;
-    const orientation = this.direction === "vertical" ? "horizontal" : "vertical";
     for (let i2 = 0; i2 < children.length - 1; i2++) {
       const beforeEl = children[i2];
       const afterEl = children[i2 + 1];
-      const divider = document.createElement("div");
-      divider.className = `${DIVIDER_CLASS} space-divider-${orientation}`;
-      divider.style.setProperty("--depth-color", depthColor);
-      divider.addEventListener("pointerdown", (e2) => {
-        if (e2.button !== 0) return;
-        if (e2.target.closest(".space-add-pipe-btn")) return;
-        e2.preventDefault();
-        e2.stopPropagation();
-        this.#onResizeStart(e2, divider, beforeEl, afterEl);
-      });
-      beforeEl.after(divider);
-      if (!this.#hasPipeBetween(beforeEl, afterEl)) {
-        const addPipeBtn = document.createElement("button");
-        addPipeBtn.className = "space-add-pipe-btn";
-        addPipeBtn.title = "Add pipe";
-        addPipeBtn.textContent = "⊕";
-        addPipeBtn.addEventListener("click", (e2) => {
-          e2.stopPropagation();
-          const pipe = document.createElement("patchwork-pipe");
-          pipe.id = `pipe-${Date.now()}`;
-          if (this.editing) pipe.setAttribute("editing", "");
-          divider.after(pipe);
-          this.refreshEditUI();
-          this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
-        });
-        divider.appendChild(addPipeBtn);
+      let pipe = this.#findPipeBetween(beforeEl, afterEl);
+      if (!pipe) {
+        pipe = document.createElement("patchwork-pipe");
+        pipe.id = `pipe-${Date.now()}-${i2}`;
+        beforeEl.after(pipe);
+      }
+      if (this.editing) {
+        pipe.setAttribute("editing", "");
+      } else {
+        pipe.removeAttribute("editing");
       }
     }
   }
@@ -848,50 +812,6 @@ class PatchworkSpaceElement extends i {
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
   };
-  // ---- Resize ----
-  #onResizeStart(e2, divider, beforeEl, afterEl) {
-    divider.setPointerCapture(e2.pointerId);
-    const isVert = this.direction === "vertical";
-    const startPos = isVert ? e2.clientY : e2.clientX;
-    const allChildren = this.getSpaceChildren();
-    const snapshots = /* @__PURE__ */ new Map();
-    for (const child of allChildren) {
-      const r2 = child.getBoundingClientRect();
-      snapshots.set(child, isVert ? r2.height : r2.width);
-    }
-    const startBefore = snapshots.get(beforeEl);
-    const startAfter = snapshots.get(afterEl);
-    for (const [child, size] of snapshots) {
-      child.style.flex = `0 0 ${size}px`;
-    }
-    const onMove = (ev) => {
-      const delta = (isVert ? ev.clientY : ev.clientX) - startPos;
-      beforeEl.style.flex = `0 0 ${Math.max(30, startBefore + delta)}px`;
-      afterEl.style.flex = `0 0 ${Math.max(30, startAfter - delta)}px`;
-    };
-    const onUp = () => {
-      divider.removeEventListener("pointermove", onMove);
-      divider.removeEventListener("pointerup", onUp);
-      divider.removeEventListener("lostpointercapture", onUp);
-      let total = 0;
-      const sizes = [];
-      for (const child of allChildren) {
-        const r2 = child.getBoundingClientRect();
-        const s2 = isVert ? r2.height : r2.width;
-        sizes.push(s2);
-        total += s2;
-      }
-      if (total > 0) {
-        for (let i2 = 0; i2 < allChildren.length; i2++) {
-          allChildren[i2].style.flex = `${sizes[i2] / total} 0 0px`;
-        }
-      }
-      this.dispatchEvent(new CustomEvent("space:resize", { bubbles: true }));
-    };
-    divider.addEventListener("pointermove", onMove);
-    divider.addEventListener("pointerup", onUp);
-    divider.addEventListener("lostpointercapture", onUp);
-  }
 }
 function registerPatchworkSpace() {
   if (customElements.get(TAG$1)) return;
@@ -959,9 +879,10 @@ async function loadTransform(id) {
   return getTransformRegistry().load(id);
 }
 const TAG = "patchwork-pipe";
-const SKIP_TAGS = /* @__PURE__ */ new Set(["div", "button"]);
+const SPACE_TAG = "patchwork-space";
 function isLayoutChrome(el) {
-  return SKIP_TAGS.has(el.tagName.toLowerCase()) || el.classList.contains("space-divider") || el.classList.contains("space-drag-handle") || el.classList.contains("space-add-pipe-btn");
+  const tag = el.tagName.toLowerCase();
+  return tag !== SPACE_TAG && tag !== TAG && tag !== "patchwork-view" && tag !== "patchwork-preview";
 }
 class PatchworkPipeElement extends i {
   static properties = {
@@ -1002,33 +923,38 @@ class PatchworkPipeElement extends i {
   }
   set config(value) {
     this.#config = { ...value };
-    if (this.#input !== void 0) {
-      this.#runTransform();
-    }
+    if (this.#input !== void 0) this.#runTransform();
   }
   createRenderRoot() {
     return this;
   }
   connectedCallback() {
     super.connectedCallback();
-    this.#applyDisplayStyles();
-    this.#loadAndSetup();
+    this.#applyStyles();
+    this.addEventListener("pointerdown", this.#onPointerDown);
+    if (this.transform) this.#loadAndSetup();
   }
   disconnectedCallback() {
     super.disconnectedCallback();
+    this.removeEventListener("pointerdown", this.#onPointerDown);
     this.#teardownPipe();
     if (this.#retryTimer) {
       clearTimeout(this.#retryTimer);
       this.#retryTimer = null;
     }
   }
+  #onPointerDown = (e2) => {
+    if (!this.editing || this.expanded) return;
+    if (e2.target.closest(".pipe-center-btn, .pipe-editor")) return;
+    this.handleResize(e2);
+  };
   connectedMoveCallback() {
   }
   updated(changed) {
-    this.#applyDisplayStyles();
+    this.#applyStyles();
     if (changed.has("transform")) {
       this.#teardownPipe();
-      this.#loadAndSetup();
+      if (this.transform) this.#loadAndSetup();
     }
     if (changed.has("editing") && !this.editing && this.transform) {
       this.#teardownPipe();
@@ -1038,7 +964,16 @@ class PatchworkPipeElement extends i {
       this.#syncExpandedPreview();
     }
   }
-  #applyDisplayStyles() {
+  // ---- Styles ----
+  #applyStyles() {
+    const parent = this.parentElement;
+    const parentDir = parent?.getAttribute("direction");
+    const isVertical = parentDir === "vertical";
+    const parentDepth = parent?.tagName.toLowerCase() === SPACE_TAG ? parseInt(getComputedStyle(parent).getPropertyValue("--depth") || "0", 10) : 0;
+    const childDepth = parentDepth + 1;
+    const chroma = Math.min(0.15, Math.max(0, (childDepth - 1) * 0.15));
+    const hue = 250 - Math.max(0, childDepth - 2) * 40;
+    this.style.setProperty("--depth-color", `oklch(0.55 ${chroma} ${hue})`);
     if (this.expanded && this.transform) {
       this.style.display = "flex";
       this.style.flexDirection = "column";
@@ -1060,13 +995,13 @@ class PatchworkPipeElement extends i {
       this.style.flex = "";
       this.style.minWidth = "";
       this.style.minHeight = "";
-      const parentDir = this.parentElement?.getAttribute("direction");
-      if (parentDir === "vertical") {
-        this.style.height = "8px";
+      this.style.position = "relative";
+      if (isVertical) {
+        this.style.height = "6px";
         this.style.width = "100%";
         this.style.cursor = "row-resize";
       } else {
-        this.style.width = "8px";
+        this.style.width = "6px";
         this.style.height = "100%";
         this.style.cursor = "col-resize";
       }
@@ -1076,15 +1011,16 @@ class PatchworkPipeElement extends i {
       this._showPicker = false;
     }
   }
+  // ---- Render ----
   render() {
     if (!this.editing && !this.expanded) return A;
     const hasTransform = !!this.transform;
     if (this.expanded && hasTransform) {
       return b`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 8px;background:color-mix(in oklch, currentColor 6%, Canvas);border-bottom:1px solid color-mix(in oklch, currentColor 10%, transparent);flex-shrink:0;font-size:11px;color:color-mix(in oklch, currentColor 60%, Canvas);">
-          <span style="font-weight:600;">${this.transform}</span>
+        <div class="pipe-expanded-header">
+          <span>${this.transform}</span>
           <button
-            style="border:none;background:none;cursor:pointer;font-size:14px;color:inherit;opacity:0.6;padding:2px 4px;"
+            class="pipe-expanded-collapse"
             title="Collapse preview"
             @click=${() => {
         this.expanded = false;
@@ -1095,26 +1031,13 @@ class PatchworkPipeElement extends i {
       `;
     }
     if (!this.editing) return A;
-    const indicatorText = hasTransform ? this.transform : "⊕";
-    const indicatorTitle = hasTransform ? `Transform: ${this.transform}` : "Add transform";
     return b`
-      <div style="display:flex;align-items:center;gap:4px;">
-        <button
-          class="pipe-indicator"
-          title=${indicatorTitle}
-          @click=${this.#toggleEditor}
-        >${indicatorText}</button>
-        ${hasTransform ? b`
-          <button
-            style="border:none;background:oklch(0.55 0.2 250 / 0.15);color:oklch(0.55 0.2 250);cursor:pointer;font-size:10px;padding:1px 5px;border-radius:4px;font-weight:600;"
-            title="Expand preview"
-            @click=${() => {
-      this.expanded = true;
-      this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
-    }}
-          >▸</button>
-        ` : A}
-      </div>
+      <button
+        class="pipe-center-btn"
+        title=${hasTransform ? this.transform : "Configure pipe"}
+        @pointerdown=${(e2) => e2.stopPropagation()}
+        @click=${this.#toggleEditor}
+      >${hasTransform ? "⟡" : "⊕"}</button>
       ${this._editorOpen ? this.#renderEditor() : A}
     `;
   }
@@ -1125,28 +1048,37 @@ class PatchworkPipeElement extends i {
   #renderEditor() {
     const registry = getTransformRegistry();
     const available = registry.all();
+    const hasTransform = !!this.transform;
     return b`
-      <div class="pipe-editor">
+      <div class="pipe-editor" @pointerdown=${(e2) => e2.stopPropagation()}>
         <div class="pipe-editor-header">
-          <span>Pipe transform</span>
+          <span>Pipe</span>
           <button class="pipe-editor-close" @click=${() => {
       this._editorOpen = false;
     }}>×</button>
         </div>
         <div class="pipe-editor-body">
-          ${this.transform ? b`
+          ${hasTransform ? b`
                 <div class="pipe-editor-transform">
                   <span>${this.transform}</span>
                   <button class="pipe-editor-transform-remove" @click=${this.#removeTransform}>×</button>
                 </div>
-              ` : b`<div class="pipe-editor-empty">No transform — data passes through unchanged</div>`}
-          ${!this.transform ? this._showPicker ? b`
+                <button
+                  class="pipe-editor-add-btn"
+                  @click=${() => {
+      this.expanded = true;
+      this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
+    }}
+                >▸ Expand preview</button>
+              ` : b`<div class="pipe-editor-empty">No transform set</div>`}
+          ${!hasTransform ? this._showPicker ? b`
                     <div class="pipe-editor-picker">
                       ${available.map((desc) => b`
                         <button class="pipe-editor-picker-item" @click=${() => this.#setTransform(desc.id)}>
                           ${desc.name}
                         </button>
                       `)}
+                      ${available.length === 0 ? b`<div class="pipe-editor-empty">No transforms available</div>` : A}
                     </div>
                   ` : b`
                     <button class="pipe-editor-add-btn" @click=${() => {
@@ -1156,15 +1088,10 @@ class PatchworkPipeElement extends i {
                     </button>
                   ` : A}
         </div>
-        <div class="pipe-editor-actions">
-          <button
-            class="pipe-editor-action-btn pipe-editor-action-btn--danger"
-            @click=${this.#deletePipe}
-          >Delete pipe</button>
-        </div>
       </div>
     `;
   }
+  // ---- Transform management ----
   #removeTransform = () => {
     this.transform = "";
     this.expanded = false;
@@ -1181,13 +1108,68 @@ class PatchworkPipeElement extends i {
     this.#loadAndSetup();
     this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
   }
-  #deletePipe = () => {
-    this.dispatchEvent(new CustomEvent("pipe:delete", {
-      detail: { id: this.id },
-      bubbles: true
-    }));
-    this.remove();
-  };
+  // ---- Resize (this element IS the divider) ----
+  handleResize(e2) {
+    if (e2.button !== 0) return;
+    e2.preventDefault();
+    e2.stopPropagation();
+    const parent = this.parentElement;
+    if (!parent) return;
+    this.setPointerCapture(e2.pointerId);
+    const isVert = parent.getAttribute("direction") === "vertical";
+    const startPos = isVert ? e2.clientY : e2.clientX;
+    const beforeEl = this.#findAdjacentSpace("before");
+    const afterEl = this.#findAdjacentSpace("after");
+    if (!beforeEl || !afterEl) return;
+    const allSpaces = Array.from(
+      parent.querySelectorAll(`:scope > ${SPACE_TAG}`)
+    );
+    const snapshots = /* @__PURE__ */ new Map();
+    for (const child of allSpaces) {
+      const r2 = child.getBoundingClientRect();
+      snapshots.set(child, isVert ? r2.height : r2.width);
+    }
+    const startBefore = snapshots.get(beforeEl);
+    const startAfter = snapshots.get(afterEl);
+    for (const [child, size] of snapshots) {
+      child.style.flex = `0 0 ${size}px`;
+    }
+    const onMove = (ev) => {
+      const delta = (isVert ? ev.clientY : ev.clientX) - startPos;
+      beforeEl.style.flex = `0 0 ${Math.max(30, startBefore + delta)}px`;
+      afterEl.style.flex = `0 0 ${Math.max(30, startAfter - delta)}px`;
+    };
+    const onUp = () => {
+      this.removeEventListener("pointermove", onMove);
+      this.removeEventListener("pointerup", onUp);
+      this.removeEventListener("lostpointercapture", onUp);
+      let total = 0;
+      const sizes = [];
+      for (const child of allSpaces) {
+        const r2 = child.getBoundingClientRect();
+        const s2 = isVert ? r2.height : r2.width;
+        sizes.push(s2);
+        total += s2;
+      }
+      if (total > 0) {
+        for (let i2 = 0; i2 < allSpaces.length; i2++) {
+          allSpaces[i2].style.flex = `${sizes[i2] / total} 0 0px`;
+        }
+      }
+      this.dispatchEvent(new CustomEvent("space:resize", { bubbles: true }));
+    };
+    this.addEventListener("pointermove", onMove);
+    this.addEventListener("pointerup", onUp);
+    this.addEventListener("lostpointercapture", onUp);
+  }
+  #findAdjacentSpace(direction) {
+    let el = direction === "before" ? this.previousElementSibling : this.nextElementSibling;
+    while (el && el.tagName.toLowerCase() !== SPACE_TAG) {
+      el = direction === "before" ? el.previousElementSibling : el.nextElementSibling;
+    }
+    return el;
+  }
+  // ---- Data pipe ----
   async #loadAndSetup() {
     if (!this.transform) return;
     try {
@@ -1255,8 +1237,7 @@ class PatchworkPipeElement extends i {
         }
         return;
       }
-      const needsExternalTarget = !this.expanded;
-      if (needsExternalTarget && !target) {
+      if (!this.expanded && !target) {
         if (retryCount < 8) {
           this.#retryTimer = setTimeout(() => this.#setupPipe(retryCount + 1), delay);
         }
@@ -1653,10 +1634,12 @@ function mountSpaceFrame(handle, element, repo) {
           const childNode = serializeNode(child);
           if (childNode) node.children.push(childNode);
         } else if (tag === "patchwork-pipe") {
-          const pipeId = child.id?.replace("pipe-", "") || `pipe-${Date.now()}`;
           const transform = child.getAttribute("transform") || "";
           const expanded = child.hasAttribute("expanded");
-          node.children.push({ id: pipeId, type: "pipe", transform, expanded });
+          if (transform || expanded) {
+            const pipeId = child.id?.replace("pipe-", "") || `pipe-${Date.now()}`;
+            node.children.push({ id: pipeId, type: "pipe", transform, expanded });
+          }
         }
       }
     } else {
@@ -2075,4 +2058,4 @@ function mountSpaceFrame(handle, element, repo) {
 export {
   mountSpaceFrame
 };
-//# sourceMappingURL=space-frame-BU2pql0-.js.map
+//# sourceMappingURL=space-frame-Ng3wMzuR.js.map
