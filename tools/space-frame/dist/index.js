@@ -728,6 +728,7 @@ patchwork-space[editing] > patchwork-space > .space-drag-handle {
   flex-shrink: 0;
   align-self: stretch;
   transition: background .15s, box-shadow .15s;
+  position: relative;
 }
 
 .space-divider-vertical {
@@ -984,6 +985,39 @@ patchwork-preview {
   text-align: center;
   width: 20px;
   font-size: 16px;
+}
+
+.space-add-pipe-btn {
+  z-index: 11;
+  color: oklch(55% .2 250);
+  cursor: pointer;
+  opacity: 1;
+  pointer-events: auto;
+  background: canvas;
+  border: 1.5px solid oklch(55% .2 250 / .6);
+  border-radius: 50%;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  transition: transform .15s, background .15s, border-color .15s, box-shadow .15s;
+  display: flex;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 4px #0000001a;
+}
+
+.space-add-pipe-btn:hover {
+  color: #fff;
+  background: oklch(55% .2 250);
+  border-color: oklch(55% .2 250);
+  transform: translate(-50%, -50%)scale(1.15);
+  box-shadow: 0 2px 8px oklch(55% .2 250 / .3);
 }
 
 .pipe-indicator {
@@ -1244,6 +1278,23 @@ patchwork-pipe[editing]:hover {
   background: oklch(55% .2 250 / .15);
 }
 
+patchwork-pipe[expanded] {
+  border: 1px solid;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex !important;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  patchwork-pipe[expanded] {
+    border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  }
+}
+
+patchwork-pipe[expanded] {
+  background: canvas;
+}
+
 @property --tw-rotate-x {
   syntax: "*";
   inherits: false
@@ -1481,8 +1532,99 @@ patchwork-pipe[editing]:hover {
     console.error("vite-plugin-css-injected-by-js", e);
   }
 })();
-import { p } from "./assets/index-ByGD5ICM.js";
+const scriptRel = "modulepreload";
+const assetsURL = function(dep, importerUrl) {
+  return new URL(dep, importerUrl).href;
+};
+const seen = {};
+const __vitePreload = function preload(baseModule, deps, importerUrl) {
+  let promise = Promise.resolve();
+  if (deps && deps.length > 0) {
+    let allSettled = function(promises$2) {
+      return Promise.all(promises$2.map((p) => Promise.resolve(p).then((value$1) => ({
+        status: "fulfilled",
+        value: value$1
+      }), (reason) => ({
+        status: "rejected",
+        reason
+      }))));
+    };
+    const links = document.getElementsByTagName("link");
+    const cspNonceMeta = document.querySelector("meta[property=csp-nonce]");
+    const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute("nonce");
+    promise = allSettled(deps.map((dep) => {
+      dep = assetsURL(dep, importerUrl);
+      if (dep in seen) return;
+      seen[dep] = true;
+      const isCss = dep.endsWith(".css");
+      const cssSelector = isCss ? '[rel="stylesheet"]' : "";
+      if (!!importerUrl) for (let i$1 = links.length - 1; i$1 >= 0; i$1--) {
+        const link$1 = links[i$1];
+        if (link$1.href === dep && (!isCss || link$1.rel === "stylesheet")) return;
+      }
+      else if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) return;
+      const link = document.createElement("link");
+      link.rel = isCss ? "stylesheet" : scriptRel;
+      if (!isCss) link.as = "script";
+      link.crossOrigin = "";
+      link.href = dep;
+      if (cspNonce) link.setAttribute("nonce", cspNonce);
+      document.head.appendChild(link);
+      if (isCss) return new Promise((res, rej) => {
+        link.addEventListener("load", res);
+        link.addEventListener("error", () => rej(/* @__PURE__ */ new Error(`Unable to preload CSS for ${dep}`)));
+      });
+    }));
+  }
+  function handlePreloadError(err$2) {
+    const e$1 = new Event("vite:preloadError", { cancelable: true });
+    e$1.payload = err$2;
+    window.dispatchEvent(e$1);
+    if (!e$1.defaultPrevented) throw err$2;
+  }
+  return promise.then((res) => {
+    for (const item of res || []) {
+      if (item.status !== "rejected") continue;
+      handlePreloadError(item.reason);
+    }
+    return baseModule().catch(handlePreloadError);
+  });
+};
+const plugins = [
+  {
+    type: "patchwork:tool",
+    id: "space-frame",
+    category: "frame",
+    name: "Space Frame",
+    icon: "LayoutGrid",
+    supportedDatatypes: ["account"],
+    async load() {
+      const { mountSpaceFrame } = await __vitePreload(async () => {
+        const { mountSpaceFrame: mountSpaceFrame2 } = await import("./assets/space-frame-BU2pql0-.js");
+        return { mountSpaceFrame: mountSpaceFrame2 };
+      }, true ? [] : void 0, import.meta.url);
+      return (handle, element) => {
+        return mountSpaceFrame(handle, element, element.repo);
+      };
+    }
+  },
+  {
+    type: "patchwork:transform",
+    id: "passthrough",
+    name: "Passthrough",
+    async load() {
+      return {
+        run(input) {
+          if (typeof input === "string") return input;
+          if (input?.content && typeof input.content === "string")
+            return input.content;
+          return JSON.stringify(input, null, 2);
+        }
+      };
+    }
+  }
+];
 export {
-  p as plugins
+  plugins
 };
 //# sourceMappingURL=index.js.map

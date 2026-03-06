@@ -227,6 +227,7 @@ patchwork-space[editing] > patchwork-space > .space-drag-handle {
 /* ===== Resize dividers ===== */
 
 .space-divider {
+  position: relative;
   flex-shrink: 0;
   align-self: stretch;
   z-index: 5;
@@ -388,6 +389,41 @@ patchwork-preview {
   font-size: 16px;
   width: 20px;
   text-align: center;
+}
+
+/* ===== Add pipe button (on dividers) ===== */
+
+.space-add-pipe-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid oklch(0.55 0.2 250 / 0.6);
+  background: Canvas;
+  color: oklch(0.55 0.2 250);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 1;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  pointer-events: auto;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.space-add-pipe-btn:hover {
+  background: oklch(0.55 0.2 250);
+  color: white;
+  border-color: oklch(0.55 0.2 250);
+  transform: translate(-50%, -50%) scale(1.15);
+  box-shadow: 0 2px 8px oklch(0.55 0.2 250 / 0.3);
 }
 
 /* ===== Pipe indicator ===== */
@@ -562,4 +598,12 @@ patchwork-pipe[editing] {
 
 patchwork-pipe[editing]:hover {
   background: oklch(0.55 0.2 250 / 0.15);
+}
+
+patchwork-pipe[expanded] {
+  display: flex !important;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  background: Canvas;
 }

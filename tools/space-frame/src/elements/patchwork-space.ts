@@ -240,6 +240,18 @@ export class PatchworkSpaceElement extends LitElement {
     for (const d of Array.from(this.querySelectorAll(`:scope > .${DIVIDER_CLASS}`))) {
       d.remove();
     }
+    for (const b of Array.from(this.querySelectorAll(`:scope > .space-add-pipe-btn`))) {
+      b.remove();
+    }
+  }
+
+  #hasPipeBetween(beforeEl: Element, afterEl: Element): boolean {
+    let sibling: Element | null = beforeEl.nextElementSibling;
+    while (sibling && sibling !== afterEl) {
+      if (sibling.tagName.toLowerCase() === "patchwork-pipe") return true;
+      sibling = sibling.nextElementSibling;
+    }
+    return false;
   }
 
   #syncDividers() {
@@ -254,20 +266,39 @@ export class PatchworkSpaceElement extends LitElement {
     const orientation = this.direction === "vertical" ? "horizontal" : "vertical";
 
     for (let i = 0; i < children.length - 1; i++) {
+      const beforeEl = children[i];
+      const afterEl = children[i + 1];
+
       const divider = document.createElement("div");
       divider.className = `${DIVIDER_CLASS} space-divider-${orientation}`;
       divider.style.setProperty("--depth-color", depthColor);
 
-      const beforeEl = children[i];
-      const afterEl = children[i + 1];
       divider.addEventListener("pointerdown", (e) => {
         if (e.button !== 0) return;
+        if ((e.target as HTMLElement).closest(".space-add-pipe-btn")) return;
         e.preventDefault();
         e.stopPropagation();
         this.#onResizeStart(e, divider, beforeEl, afterEl);
       });
 
       beforeEl.after(divider);
+
+      if (!this.#hasPipeBetween(beforeEl, afterEl)) {
+        const addPipeBtn = document.createElement("button");
+        addPipeBtn.className = "space-add-pipe-btn";
+        addPipeBtn.title = "Add pipe";
+        addPipeBtn.textContent = "⊕";
+        addPipeBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const pipe = document.createElement("patchwork-pipe");
+          pipe.id = `pipe-${Date.now()}`;
+          if (this.editing) pipe.setAttribute("editing", "");
+          divider.after(pipe);
+          this.refreshEditUI();
+          this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
+        });
+        divider.appendChild(addPipeBtn);
+      }
     }
   }
 

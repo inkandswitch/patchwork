@@ -1,0 +1,41 @@
+{
+  "name": "@patchwork/latex",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "push": "vite build && pushwork sync"
+  },
+  "dependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-codemirror": "^0.2.0",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@codemirror/autocomplete": "^6.18.0",
+    "@codemirror/commands": "^6.9.0",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/search": "^6.5.0",
+    "@codemirror/state": "^6.5.0",
+    "@codemirror/view": "^6.38.0",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "codemirror-lang-latex": "^0.2.0",
+    "latex.js": "^0.12.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@types/react": "^18.3.27",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^5.1.2",
+    "typescript": "^5.8.3",
+    "vite": "^7.1.9",
+    "vite-plugin-css-injected-by-js": "^3.5.2"
+  }
+}

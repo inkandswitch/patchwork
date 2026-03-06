@@ -103,8 +103,11 @@ export function mountSpaceFrame(
   function buildPipeNode(pipe: PipeNode): HTMLElement {
     const el = document.createElement("patchwork-pipe");
     el.id = `pipe-${pipe.id}`;
-    if (pipe.transforms.length > 0) {
-      el.setAttribute("transforms", pipe.transforms.join(","));
+    if (pipe.transform) {
+      el.setAttribute("transform", pipe.transform);
+    }
+    if (pipe.expanded) {
+      el.setAttribute("expanded", "");
     }
     return el;
   }
@@ -348,11 +351,9 @@ export function mountSpaceFrame(
           if (childNode) node.children.push(childNode);
         } else if (tag === "patchwork-pipe") {
           const pipeId = child.id?.replace("pipe-", "") || `pipe-${Date.now()}`;
-          const transforms = (child.getAttribute("transforms") || "")
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean) as AutomergeUrl[];
-          node.children.push({ id: pipeId, type: "pipe", transforms });
+          const transform = child.getAttribute("transform") || "";
+          const expanded = child.hasAttribute("expanded");
+          node.children.push({ id: pipeId, type: "pipe", transform, expanded });
         }
       }
     } else {

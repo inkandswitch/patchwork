@@ -1,5 +1,3 @@
-import type { AutomergeUrl } from "@automerge/automerge-repo";
-
 export type SpaceChild = SpaceNode | PipeNode;
 
 export type SpaceNode = {
@@ -16,19 +14,15 @@ export type SpaceNode = {
 export type PipeNode = {
   id: string;
   type: "pipe";
-  transforms: AutomergeUrl[];
+  transform: string;
+  config?: Record<string, unknown>;
+  expanded?: boolean;
 };
 
 export type SpaceContent =
   | { type: "view"; docUrl?: string; toolId?: string }
   | { type: "preview" }
   | { type: "picker" };
-
-export type TransformStep = {
-  id: string;
-  type: string;
-  config?: Record<string, unknown>;
-};
 
 export type SpaceLayout = {
   root: SpaceNode;

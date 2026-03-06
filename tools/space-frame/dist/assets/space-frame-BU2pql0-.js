@@ -1,4 +1,4 @@
-import { _ as __vitePreload } from "./index-ByGD5ICM.js";
+import { getRegistry } from "@inkandswitch/patchwork-plugins";
 const t$1 = globalThis, e$2 = t$1.ShadowRoot && (void 0 === t$1.ShadyCSS || t$1.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype, s$2 = Symbol(), o$3 = /* @__PURE__ */ new WeakMap();
 let n$2 = class n {
   constructor(t2, e2, o2) {
@@ -722,6 +722,17 @@ class PatchworkSpaceElement extends i {
     for (const d2 of Array.from(this.querySelectorAll(`:scope > .${DIVIDER_CLASS}`))) {
       d2.remove();
     }
+    for (const b2 of Array.from(this.querySelectorAll(`:scope > .space-add-pipe-btn`))) {
+      b2.remove();
+    }
+  }
+  #hasPipeBetween(beforeEl, afterEl) {
+    let sibling = beforeEl.nextElementSibling;
+    while (sibling && sibling !== afterEl) {
+      if (sibling.tagName.toLowerCase() === "patchwork-pipe") return true;
+      sibling = sibling.nextElementSibling;
+    }
+    return false;
   }
   #syncDividers() {
     this.#removeDividers();
@@ -733,18 +744,35 @@ class PatchworkSpaceElement extends i {
     const depthColor = `oklch(0.55 ${chroma} ${hue})`;
     const orientation = this.direction === "vertical" ? "horizontal" : "vertical";
     for (let i2 = 0; i2 < children.length - 1; i2++) {
+      const beforeEl = children[i2];
+      const afterEl = children[i2 + 1];
       const divider = document.createElement("div");
       divider.className = `${DIVIDER_CLASS} space-divider-${orientation}`;
       divider.style.setProperty("--depth-color", depthColor);
-      const beforeEl = children[i2];
-      const afterEl = children[i2 + 1];
       divider.addEventListener("pointerdown", (e2) => {
         if (e2.button !== 0) return;
+        if (e2.target.closest(".space-add-pipe-btn")) return;
         e2.preventDefault();
         e2.stopPropagation();
         this.#onResizeStart(e2, divider, beforeEl, afterEl);
       });
       beforeEl.after(divider);
+      if (!this.#hasPipeBetween(beforeEl, afterEl)) {
+        const addPipeBtn = document.createElement("button");
+        addPipeBtn.className = "space-add-pipe-btn";
+        addPipeBtn.title = "Add pipe";
+        addPipeBtn.textContent = "⊕";
+        addPipeBtn.addEventListener("click", (e2) => {
+          e2.stopPropagation();
+          const pipe = document.createElement("patchwork-pipe");
+          pipe.id = `pipe-${Date.now()}`;
+          if (this.editing) pipe.setAttribute("editing", "");
+          divider.after(pipe);
+          this.refreshEditUI();
+          this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
+        });
+        divider.appendChild(addPipeBtn);
+      }
     }
   }
   // ---- Drag reorder (with cross-container reparenting) ----
@@ -923,127 +951,115 @@ function registerPatchworkPreviewElement() {
   if (customElements.get(ELEMENT_NAME)) return;
   customElements.define(ELEMENT_NAME, PatchworkPreviewElement);
 }
-const transforms = /* @__PURE__ */ new Map();
-function registerTransform(descriptor) {
-  transforms.set(descriptor.type, descriptor);
-  if (descriptor.url) {
-    transforms.set(descriptor.url, descriptor);
-  }
+const TRANSFORM_TYPE = "patchwork:transform";
+function getTransformRegistry() {
+  return getRegistry(TRANSFORM_TYPE);
 }
-function getAvailableTransforms() {
-  const seen = /* @__PURE__ */ new Set();
-  const result = [];
-  for (const desc of transforms.values()) {
-    if (!seen.has(desc.type)) {
-      seen.add(desc.type);
-      result.push(desc);
-    }
-  }
-  return result;
+async function loadTransform(id) {
+  return getTransformRegistry().load(id);
 }
-async function runTransformChain(types, doc) {
-  let value = doc;
-  for (const type of types) {
-    const transform = transforms.get(type);
-    if (!transform) {
-      console.warn(`Transform "${type}" not found, skipping`);
-      continue;
-    }
-    value = await transform.run(value);
-  }
-  return value;
-}
-const LATEXJS_BASE_URL = "https://cdn.jsdelivr.net/npm/latex.js/dist/";
-let cachedModule = null;
-async function loadLatexJs() {
-  if (cachedModule) return cachedModule;
-  cachedModule = await __vitePreload(() => import(
-    /* @vite-ignore */
-    "https://cdn.jsdelivr.net/npm/latex.js/dist/latex.mjs"
-  ), true ? [] : void 0, import.meta.url);
-  return cachedModule;
-}
-registerTransform({
-  type: "latex-to-html",
-  name: "LaTeX → HTML",
-  description: "Renders LaTeX source to HTML using latex.js",
-  async run(doc) {
-    const content = typeof doc === "string" ? doc : doc?.content;
-    if (!content || typeof content !== "string") {
-      return "<html><body><p>No LaTeX content</p></body></html>";
-    }
-    try {
-      const mod = await loadLatexJs();
-      const generator = new mod.HtmlGenerator({ hyphenate: false });
-      const parsed = mod.parse(content, { generator });
-      const htmlDoc = parsed.htmlDocument(LATEXJS_BASE_URL);
-      return "<!DOCTYPE html>\n" + htmlDoc.documentElement.outerHTML;
-    } catch (e2) {
-      const msg = e2.location ? `Line ${e2.location.start.line}, Col ${e2.location.start.column}: ${e2.message}` : e2.message || "Failed to render LaTeX";
-      return `<!DOCTYPE html><html><body style="font-family:system-ui;padding:20px;color:#ef4444;"><h3>LaTeX Error</h3><pre>${msg}</pre></body></html>`;
-    }
-  }
-});
-registerTransform({
-  type: "passthrough",
-  name: "Passthrough",
-  description: "Passes data through unchanged",
-  run(doc) {
-    if (typeof doc === "string") return doc;
-    if (doc?.content && typeof doc.content === "string") return doc.content;
-    return JSON.stringify(doc, null, 2);
-  }
-});
 const TAG = "patchwork-pipe";
+const SKIP_TAGS = /* @__PURE__ */ new Set(["div", "button"]);
+function isLayoutChrome(el) {
+  return SKIP_TAGS.has(el.tagName.toLowerCase()) || el.classList.contains("space-divider") || el.classList.contains("space-drag-handle") || el.classList.contains("space-add-pipe-btn");
+}
 class PatchworkPipeElement extends i {
   static properties = {
     editing: { type: Boolean, reflect: true },
+    transform: { type: String, reflect: true },
+    expanded: { type: Boolean, reflect: true },
     _editorOpen: { state: true },
     _showPicker: { state: true }
   };
+  #input = void 0;
+  #output = void 0;
+  #loadedTransform = null;
+  #cleanup = null;
+  #debounceTimer = null;
+  #config = {};
+  #previewIframe = null;
+  #retryTimer = null;
   constructor() {
     super();
     this.editing = false;
+    this.transform = "";
+    this.expanded = false;
     this._editorOpen = false;
     this._showPicker = false;
   }
-  #cleanup = null;
-  #debounceTimer = null;
+  get input() {
+    return this.#input;
+  }
+  set input(value) {
+    this.#input = value;
+    this.#runTransform();
+  }
+  get output() {
+    return this.#output;
+  }
+  get config() {
+    return { ...this.#config };
+  }
+  set config(value) {
+    this.#config = { ...value };
+    if (this.#input !== void 0) {
+      this.#runTransform();
+    }
+  }
   createRenderRoot() {
     return this;
-  }
-  get transforms() {
-    const attr = this.getAttribute("transforms");
-    if (!attr) return [];
-    return attr.split(",").map((s2) => s2.trim()).filter(Boolean);
-  }
-  set transforms(list) {
-    if (list.length === 0) {
-      this.removeAttribute("transforms");
-    } else {
-      this.setAttribute("transforms", list.join(","));
-    }
   }
   connectedCallback() {
     super.connectedCallback();
     this.#applyDisplayStyles();
-    this.#setupPipe();
+    this.#loadAndSetup();
   }
   disconnectedCallback() {
     super.disconnectedCallback();
     this.#teardownPipe();
+    if (this.#retryTimer) {
+      clearTimeout(this.#retryTimer);
+      this.#retryTimer = null;
+    }
   }
   connectedMoveCallback() {
   }
-  updated(_changed) {
+  updated(changed) {
     this.#applyDisplayStyles();
+    if (changed.has("transform")) {
+      this.#teardownPipe();
+      this.#loadAndSetup();
+    }
+    if (changed.has("editing") && !this.editing && this.transform) {
+      this.#teardownPipe();
+      this.#loadAndSetup();
+    }
+    if (changed.has("expanded")) {
+      this.#syncExpandedPreview();
+    }
   }
   #applyDisplayStyles() {
-    if (this.editing) {
+    if (this.expanded && this.transform) {
       this.style.display = "flex";
+      this.style.flexDirection = "column";
+      this.style.alignItems = "stretch";
+      this.style.justifyContent = "stretch";
+      this.style.flexShrink = "0";
+      this.style.flex = "1 0 0px";
+      this.style.minWidth = "0";
+      this.style.minHeight = "0";
+      this.style.cursor = "";
+      this.style.width = "";
+      this.style.height = "";
+    } else if (this.editing) {
+      this.style.display = "flex";
+      this.style.flexDirection = "";
       this.style.alignItems = "center";
       this.style.justifyContent = "center";
       this.style.flexShrink = "0";
+      this.style.flex = "";
+      this.style.minWidth = "";
+      this.style.minHeight = "";
       const parentDir = this.parentElement?.getAttribute("direction");
       if (parentDir === "vertical") {
         this.style.height = "8px";
@@ -1061,16 +1077,44 @@ class PatchworkPipeElement extends i {
     }
   }
   render() {
+    if (!this.editing && !this.expanded) return A;
+    const hasTransform = !!this.transform;
+    if (this.expanded && hasTransform) {
+      return b`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 8px;background:color-mix(in oklch, currentColor 6%, Canvas);border-bottom:1px solid color-mix(in oklch, currentColor 10%, transparent);flex-shrink:0;font-size:11px;color:color-mix(in oklch, currentColor 60%, Canvas);">
+          <span style="font-weight:600;">${this.transform}</span>
+          <button
+            style="border:none;background:none;cursor:pointer;font-size:14px;color:inherit;opacity:0.6;padding:2px 4px;"
+            title="Collapse preview"
+            @click=${() => {
+        this.expanded = false;
+        this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
+      }}
+          >▾</button>
+        </div>
+      `;
+    }
     if (!this.editing) return A;
-    const t2 = this.transforms;
-    const indicatorText = t2.length > 0 ? t2.join(" → ") : "⊕";
-    const indicatorTitle = t2.length > 0 ? "Edit pipe" : "Configure pipe";
+    const indicatorText = hasTransform ? this.transform : "⊕";
+    const indicatorTitle = hasTransform ? `Transform: ${this.transform}` : "Add transform";
     return b`
-      <button
-        class="pipe-indicator"
-        title=${indicatorTitle}
-        @click=${this.#toggleEditor}
-      >${indicatorText}</button>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <button
+          class="pipe-indicator"
+          title=${indicatorTitle}
+          @click=${this.#toggleEditor}
+        >${indicatorText}</button>
+        ${hasTransform ? b`
+          <button
+            style="border:none;background:oklch(0.55 0.2 250 / 0.15);color:oklch(0.55 0.2 250);cursor:pointer;font-size:10px;padding:1px 5px;border-radius:4px;font-weight:600;"
+            title="Expand preview"
+            @click=${() => {
+      this.expanded = true;
+      this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
+    }}
+          >▸</button>
+        ` : A}
+      </div>
       ${this._editorOpen ? this.#renderEditor() : A}
     `;
   }
@@ -1079,38 +1123,38 @@ class PatchworkPipeElement extends i {
     this._showPicker = false;
   };
   #renderEditor() {
-    const current = this.transforms;
-    const available = getAvailableTransforms();
+    const registry = getTransformRegistry();
+    const available = registry.all();
     return b`
       <div class="pipe-editor">
         <div class="pipe-editor-header">
-          <span>Pipe transforms</span>
+          <span>Pipe transform</span>
           <button class="pipe-editor-close" @click=${() => {
       this._editorOpen = false;
     }}>×</button>
         </div>
         <div class="pipe-editor-body">
-          ${current.length === 0 ? b`<div class="pipe-editor-empty">No transforms — data passes through unchanged</div>` : current.map((t2) => b`
+          ${this.transform ? b`
                 <div class="pipe-editor-transform">
-                  <span>${t2}</span>
-                  <button class="pipe-editor-transform-remove" @click=${() => this.#removeTransform(t2)}>×</button>
+                  <span>${this.transform}</span>
+                  <button class="pipe-editor-transform-remove" @click=${this.#removeTransform}>×</button>
                 </div>
-              `)}
-          ${this._showPicker ? b`
-                <div class="pipe-editor-picker">
-                  ${available.map((desc) => b`
-                    <button class="pipe-editor-picker-item" @click=${() => this.#addTransform(desc.type)}>
-                      ${desc.name}
-                    </button>
-                  `)}
-                </div>
-              ` : b`
-                <button class="pipe-editor-add-btn" @click=${() => {
+              ` : b`<div class="pipe-editor-empty">No transform — data passes through unchanged</div>`}
+          ${!this.transform ? this._showPicker ? b`
+                    <div class="pipe-editor-picker">
+                      ${available.map((desc) => b`
+                        <button class="pipe-editor-picker-item" @click=${() => this.#setTransform(desc.id)}>
+                          ${desc.name}
+                        </button>
+                      `)}
+                    </div>
+                  ` : b`
+                    <button class="pipe-editor-add-btn" @click=${() => {
       this._showPicker = true;
     }}>
-                  + Add transform
-                </button>
-              `}
+                      + Set transform
+                    </button>
+                  ` : A}
         </div>
         <div class="pipe-editor-actions">
           <button
@@ -1121,18 +1165,20 @@ class PatchworkPipeElement extends i {
       </div>
     `;
   }
-  #removeTransform(t2) {
-    this.transforms = this.transforms.filter((x2) => x2 !== t2);
+  #removeTransform = () => {
+    this.transform = "";
+    this.expanded = false;
+    this.#loadedTransform = null;
     this.#teardownPipe();
-    this.#setupPipe();
+    this.#removeExpandedPreview();
     this.requestUpdate();
     this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
-  }
-  #addTransform(type) {
-    this.transforms = [...this.transforms, type];
+  };
+  #setTransform(id) {
+    this.transform = id;
     this._showPicker = false;
     this.#teardownPipe();
-    this.#setupPipe();
+    this.#loadAndSetup();
     this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
   }
   #deletePipe = () => {
@@ -1142,21 +1188,52 @@ class PatchworkPipeElement extends i {
     }));
     this.remove();
   };
-  // ---- Pipe execution ----
-  #findSource() {
+  async #loadAndSetup() {
+    if (!this.transform) return;
+    try {
+      const loaded = await loadTransform(this.transform);
+      if (!loaded) {
+        console.warn(`Transform "${this.transform}" not found in registry`);
+        return;
+      }
+      this.#loadedTransform = loaded;
+    } catch (e2) {
+      console.error(`Failed to load transform "${this.transform}":`, e2);
+      return;
+    }
+    this.#setupPipe();
+  }
+  async #runTransform() {
+    if (!this.#loadedTransform || this.#input === void 0) return;
+    try {
+      const result = await this.#loadedTransform.module.run(this.#input, this.#config);
+      this.#output = result;
+      if (this.expanded && this.#previewIframe && typeof result === "string") {
+        this.#previewIframe.removeAttribute("src");
+        this.#previewIframe.srcdoc = result;
+      }
+      const target = this.#findTarget();
+      if (target && result !== null) {
+        target.value = result;
+      }
+    } catch (e2) {
+      console.error("Pipe transform error:", e2);
+    }
+  }
+  async #findSource() {
     let el = this.previousElementSibling;
-    while (el && el.tagName.toLowerCase() === TAG) {
+    while (el && (el.tagName.toLowerCase() === TAG || isLayoutChrome(el))) {
       el = el.previousElementSibling;
     }
     if (!el) return null;
     const view = el.tagName.toLowerCase() === "patchwork-view" ? el : el.querySelector("patchwork-view");
     if (!view?.docUrl || !view?.repo) return null;
-    const handle = view.repo.find(view.docUrl);
+    const handle = await view.repo.find(view.docUrl);
     return handle ? { handle, view } : null;
   }
   #findTarget() {
     let el = this.nextElementSibling;
-    while (el && el.tagName.toLowerCase() === TAG) {
+    while (el && (el.tagName.toLowerCase() === TAG || isLayoutChrome(el))) {
       el = el.nextElementSibling;
     }
     if (!el) return null;
@@ -1165,20 +1242,31 @@ class PatchworkPipeElement extends i {
     }
     return el.querySelector("patchwork-preview");
   }
-  #setupPipe() {
+  #setupPipe(retryCount = 0) {
     this.#teardownPipe();
-    const types = this.transforms;
-    if (types.length === 0) return;
-    const timer = setTimeout(() => {
-      const source = this.#findSource();
-      const target = this.#findTarget();
-      if (!source || !target) return;
+    if (!this.transform || !this.#loadedTransform) return;
+    const delay = retryCount === 0 ? 100 : Math.min(500 * retryCount, 3e3);
+    const timer = setTimeout(async () => {
+      const source = await this.#findSource();
+      const target = this.expanded ? null : this.#findTarget();
+      if (!source) {
+        if (retryCount < 8) {
+          this.#retryTimer = setTimeout(() => this.#setupPipe(retryCount + 1), delay);
+        }
+        return;
+      }
+      const needsExternalTarget = !this.expanded;
+      if (needsExternalTarget && !target) {
+        if (retryCount < 8) {
+          this.#retryTimer = setTimeout(() => this.#setupPipe(retryCount + 1), delay);
+        }
+        return;
+      }
       const runPipe = async () => {
         try {
           const doc = source.handle.doc();
           if (!doc) return;
-          const result = await runTransformChain(types, doc);
-          if (result !== null) target.value = result;
+          this.input = doc;
         } catch (e2) {
           console.error("Pipe error:", e2);
         }
@@ -1193,12 +1281,44 @@ class PatchworkPipeElement extends i {
         source.handle.off("change", onChange);
         if (this.#debounceTimer) clearTimeout(this.#debounceTimer);
       };
-    }, 100);
-    this.#cleanup = () => clearTimeout(timer);
+    }, retryCount === 0 ? 100 : 0);
+    if (retryCount === 0) {
+      this.#cleanup = () => clearTimeout(timer);
+    }
   }
   #teardownPipe() {
     this.#cleanup?.();
     this.#cleanup = null;
+    if (this.#retryTimer) {
+      clearTimeout(this.#retryTimer);
+      this.#retryTimer = null;
+    }
+  }
+  #syncExpandedPreview() {
+    if (this.expanded && this.transform) {
+      if (!this.#previewIframe) {
+        this.#previewIframe = document.createElement("iframe");
+        this.#previewIframe.style.cssText = "width:100%;flex:1;border:none;background:Canvas;min-height:0;";
+        this.#previewIframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
+      }
+      if (!this.contains(this.#previewIframe)) {
+        this.appendChild(this.#previewIframe);
+      }
+      if (this.#output && typeof this.#output === "string") {
+        this.#previewIframe.removeAttribute("src");
+        this.#previewIframe.srcdoc = this.#output;
+      }
+      this.#teardownPipe();
+      this.#setupPipe();
+    } else {
+      this.#removeExpandedPreview();
+    }
+  }
+  #removeExpandedPreview() {
+    if (this.#previewIframe) {
+      this.#previewIframe.remove();
+      this.#previewIframe = null;
+    }
   }
 }
 function registerPatchworkPipe() {
@@ -1337,8 +1457,11 @@ function mountSpaceFrame(handle, element, repo) {
   function buildPipeNode(pipe) {
     const el = document.createElement("patchwork-pipe");
     el.id = `pipe-${pipe.id}`;
-    if (pipe.transforms.length > 0) {
-      el.setAttribute("transforms", pipe.transforms.join(","));
+    if (pipe.transform) {
+      el.setAttribute("transform", pipe.transform);
+    }
+    if (pipe.expanded) {
+      el.setAttribute("expanded", "");
     }
     return el;
   }
@@ -1531,8 +1654,9 @@ function mountSpaceFrame(handle, element, repo) {
           if (childNode) node.children.push(childNode);
         } else if (tag === "patchwork-pipe") {
           const pipeId = child.id?.replace("pipe-", "") || `pipe-${Date.now()}`;
-          const transforms2 = (child.getAttribute("transforms") || "").split(",").map((s2) => s2.trim()).filter(Boolean);
-          node.children.push({ id: pipeId, type: "pipe", transforms: transforms2 });
+          const transform = child.getAttribute("transform") || "";
+          const expanded = child.hasAttribute("expanded");
+          node.children.push({ id: pipeId, type: "pipe", transform, expanded });
         }
       }
     } else {
@@ -1951,4 +2075,4 @@ function mountSpaceFrame(handle, element, repo) {
 export {
   mountSpaceFrame
 };
-//# sourceMappingURL=space-frame-B9IuJGk7.js.map
+//# sourceMappingURL=space-frame-BU2pql0-.js.map
