@@ -230,34 +230,61 @@ export class PatchworkSpaceElement extends LitElement {
 
   // ---- Pipes (act as dividers between siblings) ----
 
-  #findPipeBetween(beforeEl: Element, afterEl: Element): HTMLElement | null {
+  #isContentElement(el: Element): boolean {
+    const tag = el.tagName.toLowerCase();
+    if (tag === TAG) return true;
+    if (tag === "patchwork-pipe" && el.hasAttribute("expanded")) return true;
+    return false;
+  }
+
+  #isDividerPipe(el: Element): boolean {
+    return el.tagName.toLowerCase() === "patchwork-pipe" && !el.hasAttribute("expanded");
+  }
+
+  #findDividerBetween(beforeEl: Element, afterEl: Element): HTMLElement | null {
     let sibling: Element | null = beforeEl.nextElementSibling;
     while (sibling && sibling !== afterEl) {
-      if (sibling.tagName.toLowerCase() === "patchwork-pipe") return sibling as HTMLElement;
+      if (this.#isDividerPipe(sibling)) return sibling as HTMLElement;
       sibling = sibling.nextElementSibling;
     }
     return null;
   }
 
   #syncPipes() {
-    const children = this.getSpaceChildren();
-    if (children.length < 2) return;
+    const contentChildren: Element[] = [];
+    for (const child of Array.from(this.children)) {
+      if (this.#isContentElement(child)) {
+        contentChildren.push(child);
+      }
+    }
 
-    for (let i = 0; i < children.length - 1; i++) {
-      const beforeEl = children[i];
-      const afterEl = children[i + 1];
+    if (contentChildren.length < 2) return;
 
-      let pipe = this.#findPipeBetween(beforeEl, afterEl);
+    const usedDividers = new Set<Element>();
+
+    for (let i = 0; i < contentChildren.length - 1; i++) {
+      const beforeEl = contentChildren[i];
+      const afterEl = contentChildren[i + 1];
+
+      let pipe = this.#findDividerBetween(beforeEl, afterEl);
       if (!pipe) {
         pipe = document.createElement("patchwork-pipe");
         pipe.id = `pipe-${Date.now()}-${i}`;
         beforeEl.after(pipe);
       }
 
+      usedDividers.add(pipe);
+
       if (this.editing) {
         pipe.setAttribute("editing", "");
       } else {
         pipe.removeAttribute("editing");
+      }
+    }
+
+    for (const child of Array.from(this.children)) {
+      if (this.#isDividerPipe(child) && !usedDividers.has(child) && !child.getAttribute("transform")) {
+        child.remove();
       }
     }
   }

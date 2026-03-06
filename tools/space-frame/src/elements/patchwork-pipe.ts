@@ -1,20 +1,28 @@
 import { LitElement, html, nothing } from "lit";
 import type { DocHandle } from "@automerge/automerge-repo";
+import { createElement, Maximize2, Minimize2, Trash2, X } from "lucide";
 import {
   getTransformRegistry,
   loadTransform,
   type LoadedTransform,
 } from "../transforms";
 import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements";
-import type { PatchworkPreviewElement } from "./patchwork-preview";
 
 const TAG = "patchwork-pipe";
 const SPACE_TAG = "patchwork-space";
+
+function icon(data: typeof X, size = 12): SVGSVGElement {
+  return createElement(data, { width: size, height: size }) as SVGSVGElement;
+}
 
 function isLayoutChrome(el: Element): boolean {
   const tag = el.tagName.toLowerCase();
   return tag !== SPACE_TAG && tag !== TAG && tag !== "patchwork-view" && tag !== "patchwork-preview";
 }
+
+type PipeSource =
+  | { type: "pipe"; pipe: PatchworkPipeElement }
+  | { type: "view"; handle: DocHandle<any>; view: PatchworkViewElement };
 
 export class PatchworkPipeElement extends LitElement {
   static properties = {
@@ -22,14 +30,12 @@ export class PatchworkPipeElement extends LitElement {
     transform: { type: String, reflect: true },
     expanded: { type: Boolean, reflect: true },
     _editorOpen: { state: true },
-    _showPicker: { state: true },
   };
 
   declare editing: boolean;
   declare transform: string;
   declare expanded: boolean;
   declare _editorOpen: boolean;
-  declare _showPicker: boolean;
 
   #input: any = undefined;
   #output: any = undefined;
@@ -46,7 +52,6 @@ export class PatchworkPipeElement extends LitElement {
     this.transform = "";
     this.expanded = false;
     this._editorOpen = false;
-    this._showPicker = false;
   }
 
   get input(): any { return this.#input; }
@@ -71,7 +76,6 @@ export class PatchworkPipeElement extends LitElement {
     super.connectedCallback();
     this.#applyStyles();
     this.addEventListener("pointerdown", this.#onPointerDown);
-    if (this.transform) this.#loadAndSetup();
   }
 
   disconnectedCallback() {
@@ -91,16 +95,27 @@ export class PatchworkPipeElement extends LitElement {
 
   updated(changed: Map<string, unknown>) {
     this.#applyStyles();
+
     if (changed.has("transform")) {
       this.#teardownPipe();
       if (this.transform) this.#loadAndSetup();
     }
+
     if (changed.has("editing") && !this.editing && this.transform) {
       this.#teardownPipe();
       this.#loadAndSetup();
     }
+
     if (changed.has("expanded")) {
       this.#syncExpandedPreview();
+    }
+
+    if (changed.has("transform") || changed.has("expanded")) {
+      this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
+      requestAnimationFrame(() => {
+        const parent = this.parentElement;
+        if (parent) (parent as any).refreshEditUI?.();
+      });
     }
   }
 
@@ -111,7 +126,6 @@ export class PatchworkPipeElement extends LitElement {
     const parentDir = parent?.getAttribute("direction");
     const isVertical = parentDir === "vertical";
 
-    // Inherit depth color from parent space's children depth
     const parentDepth = parent?.tagName.toLowerCase() === SPACE_TAG
       ? parseInt(getComputedStyle(parent).getPropertyValue("--depth") || "0", 10)
       : 0;
@@ -155,7 +169,6 @@ export class PatchworkPipeElement extends LitElement {
     } else {
       this.style.display = "none";
       this._editorOpen = false;
-      this._showPicker = false;
     }
   }
 
@@ -164,17 +177,15 @@ export class PatchworkPipeElement extends LitElement {
   render() {
     if (!this.editing && !this.expanded) return nothing;
 
-    const hasTransform = !!this.transform;
-
-    if (this.expanded && hasTransform) {
+    if (this.expanded && this.transform) {
       return html`
         <div class="pipe-expanded-header">
           <span>${this.transform}</span>
           <button
             class="pipe-expanded-collapse"
             title="Collapse preview"
-            @click=${() => { this.expanded = false; this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true })); }}
-          >▾</button>
+            @click=${() => { this.expanded = false; }}
+          >${icon(Minimize2, 14)}</button>
         </div>
       `;
     }
@@ -184,65 +195,46 @@ export class PatchworkPipeElement extends LitElement {
     return html`
       <button
         class="pipe-center-btn"
-        title=${hasTransform ? this.transform : "Configure pipe"}
+        title=${this.transform || "Configure pipe"}
         @pointerdown=${(e: PointerEvent) => e.stopPropagation()}
-        @click=${this.#toggleEditor}
-      >${hasTransform ? "⟡" : "⊕"}</button>
+        @click=${() => { this._editorOpen = !this._editorOpen; }}
+      >${this.transform ? "⟡" : "⊕"}</button>
       ${this._editorOpen ? this.#renderEditor() : nothing}
     `;
   }
 
-  #toggleEditor = () => {
-    this._editorOpen = !this._editorOpen;
-    this._showPicker = false;
-  };
-
   #renderEditor() {
-    const registry = getTransformRegistry();
-    const available = registry.all();
-    const hasTransform = !!this.transform;
+    const available = getTransformRegistry().all();
 
     return html`
       <div class="pipe-editor" @pointerdown=${(e: Event) => e.stopPropagation()}>
         <div class="pipe-editor-header">
           <span>Pipe</span>
-          <button class="pipe-editor-close" @click=${() => { this._editorOpen = false; }}>×</button>
+          <div class="pipe-editor-header-actions">
+            ${this.transform ? html`
+              <button
+                class="pipe-editor-expand-btn"
+                title=${this.expanded ? "Collapse" : "Expand preview"}
+                @click=${() => { this.expanded = !this.expanded; }}
+              >${this.expanded ? icon(Minimize2, 14) : icon(Maximize2, 14)}</button>
+              <button
+                class="pipe-editor-clear-btn"
+                title="Clear transform"
+                @click=${this.#removeTransform}
+              >${icon(Trash2, 12)}</button>
+            ` : nothing}
+            <button class="pipe-editor-close" @click=${() => { this._editorOpen = false; }}>${icon(X, 14)}</button>
+          </div>
         </div>
         <div class="pipe-editor-body">
-          ${hasTransform
-            ? html`
-                <div class="pipe-editor-transform">
-                  <span>${this.transform}</span>
-                  <button class="pipe-editor-transform-remove" @click=${this.#removeTransform}>×</button>
-                </div>
+          ${available.length === 0
+            ? html`<div class="pipe-editor-empty">No transforms available</div>`
+            : available.map((desc) => html`
                 <button
-                  class="pipe-editor-add-btn"
-                  @click=${() => { this.expanded = true; this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true })); }}
-                >▸ Expand preview</button>
-              `
-            : html`<div class="pipe-editor-empty">No transform set</div>`
-          }
-          ${!hasTransform
-            ? (this._showPicker
-                ? html`
-                    <div class="pipe-editor-picker">
-                      ${available.map((desc) => html`
-                        <button class="pipe-editor-picker-item" @click=${() => this.#setTransform(desc.id)}>
-                          ${desc.name}
-                        </button>
-                      `)}
-                      ${available.length === 0
-                        ? html`<div class="pipe-editor-empty">No transforms available</div>`
-                        : nothing
-                      }
-                    </div>
-                  `
-                : html`
-                    <button class="pipe-editor-add-btn" @click=${() => { this._showPicker = true; }}>
-                      + Set transform
-                    </button>
-                  `)
-            : nothing
+                  class="pipe-editor-picker-item ${desc.id === this.transform ? "active" : ""}"
+                  @click=${() => this.#setTransform(desc.id)}
+                >${desc.name}</button>
+              `)
           }
         </div>
       </div>
@@ -255,18 +247,11 @@ export class PatchworkPipeElement extends LitElement {
     this.transform = "";
     this.expanded = false;
     this.#loadedTransform = null;
-    this.#teardownPipe();
-    this.#removeExpandedPreview();
-    this.requestUpdate();
-    this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
   };
 
   #setTransform(id: string) {
     this.transform = id;
-    this._showPicker = false;
-    this.#teardownPipe();
-    this.#loadAndSetup();
-    this.dispatchEvent(new CustomEvent("pipe:update", { bubbles: true }));
+    this.expanded = true;
   }
 
   // ---- Resize (this element IS the divider) ----
@@ -284,16 +269,17 @@ export class PatchworkPipeElement extends LitElement {
     const isVert = parent.getAttribute("direction") === "vertical";
     const startPos = isVert ? e.clientY : e.clientX;
 
-    const beforeEl = this.#findAdjacentSpace("before");
-    const afterEl = this.#findAdjacentSpace("after");
+    const beforeEl = this.#findAdjacentResizable("before");
+    const afterEl = this.#findAdjacentResizable("after");
     if (!beforeEl || !afterEl) return;
 
-    const allSpaces = Array.from(
-      parent.querySelectorAll(`:scope > ${SPACE_TAG}`)
-    ) as HTMLElement[];
+    const allResizable = Array.from(parent.children).filter((child) => {
+      const tag = child.tagName.toLowerCase();
+      return tag === SPACE_TAG || (tag === TAG && child.hasAttribute("expanded"));
+    }) as HTMLElement[];
 
     const snapshots = new Map<HTMLElement, number>();
-    for (const child of allSpaces) {
+    for (const child of allResizable) {
       const r = child.getBoundingClientRect();
       snapshots.set(child, isVert ? r.height : r.width);
     }
@@ -318,15 +304,15 @@ export class PatchworkPipeElement extends LitElement {
 
       let total = 0;
       const sizes: number[] = [];
-      for (const child of allSpaces) {
+      for (const child of allResizable) {
         const r = child.getBoundingClientRect();
         const s = isVert ? r.height : r.width;
         sizes.push(s);
         total += s;
       }
       if (total > 0) {
-        for (let i = 0; i < allSpaces.length; i++) {
-          allSpaces[i].style.flex = `${sizes[i] / total} 0 0px`;
+        for (let i = 0; i < allResizable.length; i++) {
+          allResizable[i].style.flex = `${sizes[i] / total} 0 0px`;
         }
       }
 
@@ -338,17 +324,20 @@ export class PatchworkPipeElement extends LitElement {
     this.addEventListener("lostpointercapture", onUp);
   }
 
-  #findAdjacentSpace(direction: "before" | "after"): HTMLElement | null {
+  #findAdjacentResizable(direction: "before" | "after"): HTMLElement | null {
     let el: Element | null = direction === "before"
       ? this.previousElementSibling
       : this.nextElementSibling;
-    while (el && el.tagName.toLowerCase() !== SPACE_TAG) {
+    while (el) {
+      const tag = el.tagName.toLowerCase();
+      if (tag === SPACE_TAG) return el as HTMLElement;
+      if (tag === TAG && el.hasAttribute("expanded")) return el as HTMLElement;
       el = direction === "before" ? el.previousElementSibling : el.nextElementSibling;
     }
-    return el as HTMLElement | null;
+    return null;
   }
 
-  // ---- Data pipe ----
+  // ---- Data pipe (strict chaining) ----
 
   async #loadAndSetup() {
     if (!this.transform) return;
@@ -380,39 +369,46 @@ export class PatchworkPipeElement extends LitElement {
         this.#previewIframe.srcdoc = result;
       }
 
-      const target = this.#findTarget();
-      if (target && result !== null) {
-        target.value = result;
-      }
+      this.dispatchEvent(new CustomEvent("pipe:output", { bubbles: false }));
     } catch (e) {
       console.error("Pipe transform error:", e);
     }
   }
 
-  async #findSource(): Promise<{ handle: DocHandle<any>; view: PatchworkViewElement } | null> {
+  async #findSource(): Promise<PipeSource | null> {
     let el: Element | null = this.previousElementSibling;
-    while (el && (el.tagName.toLowerCase() === TAG || isLayoutChrome(el))) {
-      el = el.previousElementSibling;
-    }
-    if (!el) return null;
-    const view = el.tagName.toLowerCase() === "patchwork-view"
-      ? (el as PatchworkViewElement)
-      : (el.querySelector("patchwork-view") as PatchworkViewElement | null);
-    if (!view?.docUrl || !view?.repo) return null;
-    const handle = await (view.repo as any).find(view.docUrl) as DocHandle<any>;
-    return handle ? { handle, view } : null;
-  }
 
-  #findTarget(): PatchworkPreviewElement | null {
-    let el: Element | null = this.nextElementSibling;
-    while (el && (el.tagName.toLowerCase() === TAG || isLayoutChrome(el))) {
-      el = el.nextElementSibling;
+    while (el) {
+      const tag = el.tagName.toLowerCase();
+
+      if (isLayoutChrome(el)) {
+        el = el.previousElementSibling;
+        continue;
+      }
+
+      // Skip divider pipes that have no transform — they don't produce output
+      if (tag === TAG && !el.getAttribute("transform")) {
+        el = el.previousElementSibling;
+        continue;
+      }
+
+      break;
     }
+
     if (!el) return null;
-    if (el.tagName.toLowerCase() === "patchwork-preview") {
-      return el as PatchworkPreviewElement;
+
+    if (el.tagName.toLowerCase() === TAG) {
+      return { type: "pipe", pipe: el as PatchworkPipeElement };
     }
-    return el.querySelector("patchwork-preview") as PatchworkPreviewElement | null;
+
+    const space = el.tagName.toLowerCase() === SPACE_TAG ? el : null;
+    if (!space) return null;
+
+    const view = space.querySelector("patchwork-view") as PatchworkViewElement | null;
+    if (!view?.docUrl || !view?.repo) return null;
+
+    const handle = await (view.repo as any).find(view.docUrl) as DocHandle<any>;
+    return handle ? { type: "view", handle, view } : null;
   }
 
   #setupPipe(retryCount = 0) {
@@ -423,7 +419,6 @@ export class PatchworkPipeElement extends LitElement {
 
     const timer = setTimeout(async () => {
       const source = await this.#findSource();
-      const target = this.expanded ? null : this.#findTarget();
 
       if (!source) {
         if (retryCount < 8) {
@@ -432,35 +427,52 @@ export class PatchworkPipeElement extends LitElement {
         return;
       }
 
-      if (!this.expanded && !target) {
-        if (retryCount < 8) {
-          this.#retryTimer = setTimeout(() => this.#setupPipe(retryCount + 1), delay);
-        }
-        return;
+      if (source.type === "pipe") {
+        const upstream = source.pipe;
+
+        const runPipe = () => {
+          const val = upstream.output;
+          if (val !== undefined) {
+            this.input = val;
+          }
+        };
+
+        const onChange = () => {
+          if (this.#debounceTimer) clearTimeout(this.#debounceTimer);
+          this.#debounceTimer = setTimeout(runPipe, 50);
+        };
+
+        upstream.addEventListener("pipe:output", onChange);
+        runPipe();
+
+        this.#cleanup = () => {
+          upstream.removeEventListener("pipe:output", onChange);
+          if (this.#debounceTimer) clearTimeout(this.#debounceTimer);
+        };
+      } else {
+        const runPipe = () => {
+          try {
+            const doc = source.handle.doc();
+            if (!doc) return;
+            this.input = doc;
+          } catch (e) {
+            console.error("Pipe error:", e);
+          }
+        };
+
+        const onChange = () => {
+          if (this.#debounceTimer) clearTimeout(this.#debounceTimer);
+          this.#debounceTimer = setTimeout(runPipe, 300);
+        };
+
+        source.handle.on("change", onChange);
+        runPipe();
+
+        this.#cleanup = () => {
+          source.handle.off("change", onChange);
+          if (this.#debounceTimer) clearTimeout(this.#debounceTimer);
+        };
       }
-
-      const runPipe = async () => {
-        try {
-          const doc = source.handle.doc();
-          if (!doc) return;
-          this.input = doc;
-        } catch (e) {
-          console.error("Pipe error:", e);
-        }
-      };
-
-      const onChange = () => {
-        if (this.#debounceTimer) clearTimeout(this.#debounceTimer);
-        this.#debounceTimer = setTimeout(runPipe, 300);
-      };
-
-      source.handle.on("change", onChange);
-      runPipe();
-
-      this.#cleanup = () => {
-        source.handle.off("change", onChange);
-        if (this.#debounceTimer) clearTimeout(this.#debounceTimer);
-      };
     }, retryCount === 0 ? 100 : 0);
 
     if (retryCount === 0) {
@@ -480,7 +492,7 @@ export class PatchworkPipeElement extends LitElement {
         this.#previewIframe = document.createElement("iframe");
         this.#previewIframe.style.cssText =
           "width:100%;flex:1;border:none;background:Canvas;min-height:0;";
-        this.#previewIframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
+        this.#previewIframe.setAttribute("sandbox", "allow-scripts");
       }
       if (!this.contains(this.#previewIframe)) {
         this.appendChild(this.#previewIframe);
@@ -489,8 +501,6 @@ export class PatchworkPipeElement extends LitElement {
         this.#previewIframe.removeAttribute("src");
         this.#previewIframe.srcdoc = this.#output;
       }
-      this.#teardownPipe();
-      this.#setupPipe();
     } else {
       this.#removeExpandedPreview();
     }

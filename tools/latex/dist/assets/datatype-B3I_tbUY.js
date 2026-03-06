@@ -1,10 +1,4 @@
-import { DatatypeImplementation } from "@inkandswitch/patchwork-plugins";
 import { updateText } from "@automerge/automerge";
-
-export type LaTeXDoc = {
-  content: string;
-};
-
 const DEFAULT_CONTENT = `\\documentclass{article}
 \\title{On the Composability of Local-First Software}
 \\author{A.~Researcher}
@@ -58,22 +52,18 @@ we bring the spirit of Unix pipes and moldable development to
 collaborative document environments.
 
 \\end{document}`;
-
-export function getDocTitle(content: string): string {
+function getDocTitle(content) {
   const match = content.match(/\\title\{([^}]*)\}/);
   return match ? match[1] : "Untitled";
 }
-
-export const LaTeXDatatype: DatatypeImplementation<LaTeXDoc> = {
-  init(doc: LaTeXDoc) {
+const LaTeXDatatype = {
+  init(doc) {
     doc.content = DEFAULT_CONTENT;
   },
-
-  getTitle(doc: LaTeXDoc) {
+  getTitle(doc) {
     return getDocTitle(doc.content);
   },
-
-  setTitle(doc: LaTeXDoc, title: string) {
+  setTitle(doc, title) {
     const hasTitle = doc.content.match(/\\title\{[^}]*\}/);
     if (hasTitle) {
       updateText(
@@ -82,5 +72,10 @@ export const LaTeXDatatype: DatatypeImplementation<LaTeXDoc> = {
         doc.content.replace(/\\title\{[^}]*\}/, `\\title{${title}}`)
       );
     }
-  },
+  }
 };
+export {
+  LaTeXDatatype,
+  getDocTitle
+};
+//# sourceMappingURL=datatype-B3I_tbUY.js.map

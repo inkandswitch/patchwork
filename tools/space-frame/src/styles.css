@@ -448,21 +448,43 @@ patchwork-pipe[editing][transform]:hover .pipe-center-btn {
   justify-content: space-between;
 }
 
-.pipe-editor-close {
+.pipe-editor-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pipe-editor-close,
+.pipe-editor-expand-btn,
+.pipe-editor-clear-btn {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 16px;
   color: inherit;
   opacity: 0.5;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1;
 }
 
-.pipe-editor-close:hover {
+.pipe-editor-close:hover,
+.pipe-editor-expand-btn:hover {
   opacity: 1;
 }
 
+.pipe-editor-clear-btn {
+  color: oklch(0.55 0.25 25);
+  opacity: 0.7;
+}
+
+.pipe-editor-clear-btn:hover {
+  opacity: 1;
+  background: oklch(0.55 0.25 25 / 0.1);
+}
+
 .pipe-editor-body {
-  padding: 8px;
+  padding: 4px;
 }
 
 .pipe-editor-empty {
@@ -470,47 +492,6 @@ patchwork-pipe[editing][transform]:hover .pipe-center-btn {
   text-align: center;
   opacity: 0.5;
   font-size: 13px;
-}
-
-.pipe-editor-transform {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: color-mix(in oklch, currentColor 5%, transparent);
-  margin-bottom: 4px;
-  font-size: 13px;
-}
-
-.pipe-editor-transform-remove {
-  background: none;
-  border: none;
-  color: oklch(0.55 0.25 25);
-  cursor: pointer;
-  font-size: 14px;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.pipe-editor-transform-remove:hover {
-  background: oklch(0.55 0.25 25 / 0.1);
-}
-
-.pipe-editor-add-btn {
-  width: 100%;
-  padding: 6px;
-  border: 1px dashed color-mix(in oklch, currentColor 15%, transparent);
-  border-radius: 6px;
-  background: transparent;
-  color: oklch(0.55 0.2 250);
-  cursor: pointer;
-  font-size: 13px;
-  transition: background 0.15s ease;
-}
-
-.pipe-editor-add-btn:hover {
-  background: color-mix(in oklch, currentColor 5%, transparent);
 }
 
 .pipe-editor-picker-item {
@@ -531,35 +512,10 @@ patchwork-pipe[editing][transform]:hover .pipe-center-btn {
   background: color-mix(in oklch, currentColor 8%, transparent);
 }
 
-.pipe-editor-actions {
-  padding: 8px;
-  border-top: 1px solid color-mix(in oklch, currentColor 10%, transparent);
-  display: flex;
-  justify-content: flex-end;
-}
-
-.pipe-editor-action-btn {
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
-  background: transparent;
-  font-size: 12px;
-  cursor: pointer;
-  color: inherit;
-  transition: background 0.15s ease;
-}
-
-.pipe-editor-action-btn:hover {
-  background: color-mix(in oklch, currentColor 8%, transparent);
-}
-
-.pipe-editor-action-btn--danger {
-  color: oklch(0.55 0.25 25);
-  border-color: oklch(0.55 0.25 25 / 0.3);
-}
-
-.pipe-editor-action-btn--danger:hover {
-  background: oklch(0.55 0.25 25 / 0.05);
+.pipe-editor-picker-item.active {
+  background: oklch(0.55 0.2 250 / 0.12);
+  color: oklch(0.45 0.2 250);
+  font-weight: 500;
 }
 
 /* ===== patchwork-pipe (also serves as resize divider) ===== */

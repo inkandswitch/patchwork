@@ -856,7 +856,12 @@ export function mountSpaceFrame(
       if (parent) (parent as any).refreshEditUI?.();
       persistLayout();
     }) as EventListener);
-    element.addEventListener("pipe:update", () => persistLayout());
+    element.addEventListener("pipe:update", (e: Event) => {
+      const target = e.target as HTMLElement;
+      const parent = target.parentElement;
+      if (parent) (parent as any).refreshEditUI?.();
+      persistLayout();
+    });
     element.addEventListener("pipe:delete", () => persistLayout());
 
     window.addEventListener("keydown", onKeyDown);

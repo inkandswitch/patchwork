@@ -1041,21 +1041,40 @@ patchwork-pipe[editing][transform]:hover .pipe-center-btn {
   display: flex;
 }
 
-.pipe-editor-close {
+.pipe-editor-header-actions {
+  align-items: center;
+  gap: 2px;
+  display: flex;
+}
+
+.pipe-editor-close, .pipe-editor-expand-btn, .pipe-editor-clear-btn {
   cursor: pointer;
   color: inherit;
   opacity: .5;
   background: none;
   border: none;
-  font-size: 16px;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 14px;
+  line-height: 1;
 }
 
-.pipe-editor-close:hover {
+.pipe-editor-close:hover, .pipe-editor-expand-btn:hover {
   opacity: 1;
 }
 
+.pipe-editor-clear-btn {
+  color: oklch(55% .25 25);
+  opacity: .7;
+}
+
+.pipe-editor-clear-btn:hover {
+  opacity: 1;
+  background: oklch(55% .25 25 / .1);
+}
+
 .pipe-editor-body {
-  padding: 8px;
+  padding: 4px;
 }
 
 .pipe-editor-empty {
@@ -1063,71 +1082,6 @@ patchwork-pipe[editing][transform]:hover .pipe-center-btn {
   opacity: .5;
   padding: 12px;
   font-size: 13px;
-}
-
-.pipe-editor-transform {
-  background: currentColor;
-  border-radius: 6px;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 10px;
-  display: flex;
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .pipe-editor-transform {
-    background: color-mix(in oklch, currentColor 5%, transparent);
-  }
-}
-
-.pipe-editor-transform {
-  margin-bottom: 4px;
-  font-size: 13px;
-}
-
-.pipe-editor-transform-remove {
-  color: oklch(55% .25 25);
-  cursor: pointer;
-  background: none;
-  border: none;
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 14px;
-}
-
-.pipe-editor-transform-remove:hover {
-  background: oklch(55% .25 25 / .1);
-}
-
-.pipe-editor-add-btn {
-  border: 1px dashed;
-  width: 100%;
-  padding: 6px;
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .pipe-editor-add-btn {
-    border: 1px dashed color-mix(in oklch, currentColor 15%, transparent);
-  }
-}
-
-.pipe-editor-add-btn {
-  color: oklch(55% .2 250);
-  cursor: pointer;
-  background: none;
-  border-radius: 6px;
-  font-size: 13px;
-  transition: background .15s;
-}
-
-.pipe-editor-add-btn:hover {
-  background: currentColor;
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .pipe-editor-add-btn:hover {
-    background: color-mix(in oklch, currentColor 5%, transparent);
-  }
 }
 
 .pipe-editor-picker-item {
@@ -1154,59 +1108,10 @@ patchwork-pipe[editing][transform]:hover .pipe-center-btn {
   }
 }
 
-.pipe-editor-actions {
-  border-top: 1px solid;
-  padding: 8px;
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .pipe-editor-actions {
-    border-top: 1px solid color-mix(in oklch, currentColor 10%, transparent);
-  }
-}
-
-.pipe-editor-actions {
-  justify-content: flex-end;
-  display: flex;
-}
-
-.pipe-editor-action-btn {
-  border: 1px solid;
-  border-radius: 6px;
-  padding: 4px 10px;
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .pipe-editor-action-btn {
-    border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
-  }
-}
-
-.pipe-editor-action-btn {
-  cursor: pointer;
-  color: inherit;
-  background: none;
-  font-size: 12px;
-  transition: background .15s;
-}
-
-.pipe-editor-action-btn:hover {
-  background: currentColor;
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .pipe-editor-action-btn:hover {
-    background: color-mix(in oklch, currentColor 8%, transparent);
-  }
-}
-
-.pipe-editor-action-btn--danger {
-  color: oklch(55% .25 25);
-  border-color: oklch(55% .25 25 / .3);
-}
-
-.pipe-editor-action-btn--danger:hover {
-  background: oklch(55% .25 25 / .05);
+.pipe-editor-picker-item.active {
+  color: oklch(45% .2 250);
+  background: oklch(55% .2 250 / .12);
+  font-weight: 500;
 }
 
 patchwork-pipe {
@@ -1610,7 +1515,7 @@ const plugins = [
     supportedDatatypes: ["account"],
     async load() {
       const { mountSpaceFrame } = await __vitePreload(async () => {
-        const { mountSpaceFrame: mountSpaceFrame2 } = await import("./assets/space-frame-Ng3wMzuR.js");
+        const { mountSpaceFrame: mountSpaceFrame2 } = await import("./assets/space-frame-3YIqmUJ2.js");
         return { mountSpaceFrame: mountSpaceFrame2 };
       }, true ? [] : void 0, import.meta.url);
       return (handle, element) => {
