@@ -1,6 +1,6 @@
 import { render } from "solid-js/web";
 import { type ToolImplementation } from "@inkandswitch/patchwork-plugins";
-import { ACCOUNT_HISTORY_DATATYPE, VIEWER_TOOL_ID } from "./constants.ts";
+import { ACCOUNT_HISTORY_DATATYPE, VIEWER_TOOL_ID, NOTEBOOK_VIEWER_TOOL_ID } from "./constants.ts";
 import type { HistoryDoc } from "./types.ts";
 import "./index.css";
 
@@ -57,6 +57,28 @@ export const plugins = [
         return render(
           () => (
             <HistoryViewer
+              handle={handle}
+              repo={element.repo}
+              element={element}
+            />
+          ),
+          element
+        );
+      };
+    },
+  },
+  {
+    id: NOTEBOOK_VIEWER_TOOL_ID,
+    type: "patchwork:tool",
+    name: "Account History Viewer",
+    supportedDatatypes: [ACCOUNT_HISTORY_DATATYPE],
+    icon: "BookOpen",
+    async load(): Promise<ToolImplementation<HistoryDoc>> {
+      const { NotebookViewer } = await import("./NotebookViewer.tsx");
+      return (handle, element) => {
+        return render(
+          () => (
+            <NotebookViewer
               handle={handle}
               repo={element.repo}
               element={element}
