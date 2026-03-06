@@ -135,7 +135,8 @@
   z-index: 2;
 }
 
-.notebook-viewer-step-control {
+/* Step row — single-line layout: [dropdown] [dropdown?] [slider] [value] */
+.notebook-viewer-step-row {
   display: flex;
   align-items: center;
   gap: var(--account-history-space-sm);
@@ -143,9 +144,15 @@
   color: var(--account-history-text-secondary);
 }
 
-.notebook-viewer-step-label {
-  white-space: nowrap;
-  font-weight: 500;
+.notebook-viewer-select {
+  padding: var(--account-history-space-2xs) var(--account-history-space-xs);
+  border-radius: var(--account-history-radius);
+  border: 1px solid var(--account-history-border);
+  background: var(--account-history-bg);
+  color: var(--account-history-text);
+  font-size: var(--account-history-text-sm);
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .notebook-viewer-step-slider {
@@ -158,6 +165,7 @@
   min-width: 2em;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .notebook-viewer-entry-info {
