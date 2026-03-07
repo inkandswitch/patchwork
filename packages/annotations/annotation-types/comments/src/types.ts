@@ -1,6 +1,5 @@
 import { defineAnnotationType } from "@inkandswitch/annotations";
-import { RefOfType, RefUrl } from "@inkandswitch/patchwork-refs";
-import { Ref } from "@inkandswitch/patchwork-refs";
+import type { Ref, RefUrl } from "@automerge/automerge-repo";
 
 export type CommentThread = {
   id: string;
@@ -33,5 +32,5 @@ export type Comment = {
  */
 // todo: ref should be typed to point to a CommentThread object
 export const CommentThread = defineAnnotationType<
-  RefOfType<SerializedCommentThread>
+  Ref<SerializedCommentThread>
 >("patchwork/commentThread");

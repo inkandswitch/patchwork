@@ -22,8 +22,7 @@
     "@automerge/automerge-repo": "catalog:",
     "@inkandswitch/annotations": "workspace:*",
     "@inkandswitch/annotations-context": "workspace:*",
-    "@inkandswitch/subscribables": "workspace:*",
-    "@inkandswitch/patchwork-refs": "workspace:*"
+    "@inkandswitch/subscribables": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

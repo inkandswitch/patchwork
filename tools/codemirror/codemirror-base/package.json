@@ -35,7 +35,6 @@
     "@inkandswitch/annotations-context": "workspace:^",
     "@inkandswitch/annotations-selection": "workspace:^",
     "@inkandswitch/annotations-diff": "workspace:^",
-    "@inkandswitch/patchwork-refs": "workspace:^",
     "@inkandswitch/subscribables": "workspace:^",
     "@inkandswitch/subscribables-solid": "workspace:^",
     "@inkandswitch/annotations-comments": "workspace:^",

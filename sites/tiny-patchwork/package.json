@@ -40,7 +40,6 @@
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@inkandswitch/patchwork-react": "workspace:^",
-    "@inkandswitch/patchwork-refs": "workspace:^",
     "@keyhive/keyhive": "catalog:",
     "@patchwork/account-picker": "workspace:^",
     "@patchwork/contact": "workspace:^",

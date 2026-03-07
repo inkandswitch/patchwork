@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Repo, type DocHandle } from "@automerge/automerge-repo";
-import { ref } from "@inkandswitch/patchwork-refs";
+
 import { AnnotationSet } from "../../core/src/annotation-set";
 import { defineAnnotationType } from "../../core/src/annotation-type";
 
@@ -85,7 +85,7 @@ describe("annotations context", () => {
     describe("add (source)", () => {
       it("should add an AnnotationSource to the context", () => {
         const Comment = defineAnnotationType<string>("test/comment");
-        const titleRef = ref(handle, "title");
+        const titleRef = handle.ref("title");
 
         const source = new AnnotationSet();
         source.add(titleRef, Comment("A comment"));
@@ -100,7 +100,7 @@ describe("annotations context", () => {
 
       it("should forward events from added sources", () => {
         const Comment = defineAnnotationType<string>("test/comment");
-        const titleRef = ref(handle, "title");
+        const titleRef = handle.ref("title");
         const changeHandler = vi.fn();
 
         const source = new AnnotationSet();
@@ -118,7 +118,7 @@ describe("annotations context", () => {
     describe("remove (source)", () => {
       it("should remove an AnnotationSource from the context", () => {
         const Comment = defineAnnotationType<string>("test/comment");
-        const titleRef = ref(handle, "title");
+        const titleRef = handle.ref("title");
 
         const source = new AnnotationSet();
         source.add(titleRef, Comment("A comment"));
@@ -133,7 +133,7 @@ describe("annotations context", () => {
 
       it("should stop forwarding events after source is removed", () => {
         const Comment = defineAnnotationType<string>("test/comment");
-        const titleRef = ref(handle, "title");
+        const titleRef = handle.ref("title");
         const changeHandler = vi.fn();
 
         const source = new AnnotationSet();
@@ -153,7 +153,7 @@ describe("annotations context", () => {
         const Highlight = defineAnnotationType<{ color: string }>(
           "test/highlight"
         );
-        const titleRef = ref(handle, "title");
+        const titleRef = handle.ref("title");
 
         const source = new AnnotationSet();
         source.add(titleRef, Comment("A comment"));
@@ -166,8 +166,8 @@ describe("annotations context", () => {
 
       it("should support onRef queries", () => {
         const Comment = defineAnnotationType<string>("test/comment");
-        const titleRef = ref(handle, "title");
-        const itemRef = ref(handle, "items", 0);
+        const titleRef = handle.ref("title");
+        const itemRef = handle.ref("items", 0);
 
         const source = new AnnotationSet();
         source.add(titleRef, Comment("Title comment"));
@@ -180,7 +180,7 @@ describe("annotations context", () => {
 
       it("should support lookup", () => {
         const Comment = defineAnnotationType<string>("test/comment");
-        const titleRef = ref(handle, "title");
+        const titleRef = handle.ref("title");
 
         const source = new AnnotationSet();
         source.add(titleRef, Comment("A comment"));
@@ -192,7 +192,7 @@ describe("annotations context", () => {
 
       it("should support lookupAll", () => {
         const Comment = defineAnnotationType<string>("test/comment");
-        const titleRef = ref(handle, "title");
+        const titleRef = handle.ref("title");
 
         const source = new AnnotationSet();
         source.add(titleRef, Comment("First"));
@@ -209,8 +209,8 @@ describe("annotations context", () => {
     describe("iteration", () => {
       it("should iterate over all annotations from all sources", () => {
         const Comment = defineAnnotationType<string>("test/comment");
-        const titleRef = ref(handle, "title");
-        const itemRef = ref(handle, "items", 0);
+        const titleRef = handle.ref("title");
+        const itemRef = handle.ref("items", 0);
 
         const source1 = new AnnotationSet();
         source1.add(titleRef, Comment("Source 1 comment"));
@@ -227,8 +227,8 @@ describe("annotations context", () => {
 
       it("should iterate over refs from all sources", () => {
         const Comment = defineAnnotationType<string>("test/comment");
-        const titleRef = ref(handle, "title");
-        const itemRef = ref(handle, "items", 0);
+        const titleRef = handle.ref("title");
+        const itemRef = handle.ref("items", 0);
 
         const source1 = new AnnotationSet();
         source1.add(titleRef, Comment("Source 1 comment"));
@@ -247,7 +247,7 @@ describe("annotations context", () => {
     describe("subscription", () => {
       it("should support subscribing to changes", () => {
         const Comment = defineAnnotationType<string>("test/comment");
-        const titleRef = ref(handle, "title");
+        const titleRef = handle.ref("title");
         const subscriber = vi.fn();
 
         annotations.subscribe(subscriber);
@@ -261,7 +261,7 @@ describe("annotations context", () => {
 
       it("should support unsubscribing from changes", () => {
         const Comment = defineAnnotationType<string>("test/comment");
-        const titleRef = ref(handle, "title");
+        const titleRef = handle.ref("title");
         const subscriber = vi.fn();
 
         const unsubscribe = annotations.subscribe(subscriber);
@@ -289,7 +289,7 @@ describe("annotations context", () => {
       handle.change((d: any) => {
         d.content = "Document content";
       });
-      const contentRef = ref(handle, "content");
+      const contentRef = handle.ref("content");
 
       // Tool A imports and adds annotations
       const moduleA = await import("../src/index");

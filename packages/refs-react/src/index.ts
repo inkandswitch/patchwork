@@ -1,4 +1,4 @@
-import { Ref } from "@inkandswitch/patchwork-refs";
+import type { Ref } from "@automerge/automerge-repo";
 import { useCallback, useSyncExternalStore } from "react";
 
 /**
@@ -16,9 +16,9 @@ import { useCallback, useSyncExternalStore } from "react";
  * }
  * ```
  */
-export function useRefValue<T>(ref: Ref<any, any>): T | undefined;
-export function useRefValue<T>(ref: Ref<any, any> | undefined): T | undefined;
-export function useRefValue<T>(ref?: Ref<any, any>): T | undefined {
+export function useRefValue<T>(ref: Ref<T>): T | undefined;
+export function useRefValue<T>(ref: Ref<T> | undefined): T | undefined;
+export function useRefValue<T>(ref?: Ref<T>): T | undefined {
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
       if (!ref) {
@@ -32,7 +32,7 @@ export function useRefValue<T>(ref?: Ref<any, any>): T | undefined {
   );
 
   const getSnapshot = useCallback(
-    () => (ref ? (ref.value() as T | undefined) : undefined),
+    () => (ref ? ref.value() : undefined),
     [ref]
   );
 

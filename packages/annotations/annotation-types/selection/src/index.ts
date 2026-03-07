@@ -1,7 +1,7 @@
 import { defineAnnotationType } from "@inkandswitch/annotations";
 import { annotations } from "@inkandswitch/annotations-context";
 import { computed, Subscribable } from "@inkandswitch/subscribables";
-import { Ref } from "@inkandswitch/patchwork-refs";
+import type { Ref } from "@automerge/automerge-repo";
 
 /**
  * Helper function to check if two arrays contain the same values in the same order.

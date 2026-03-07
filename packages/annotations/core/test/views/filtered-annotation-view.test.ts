@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Repo, type DocHandle } from "@automerge/automerge-repo";
-import { ref } from "@inkandswitch/patchwork-refs";
+
 import { AnnotationSet } from "../../src/annotation-set";
 import { defineAnnotationType } from "../../src/annotation-type";
 
@@ -22,10 +22,10 @@ describe("FilteredAnnotationView", () => {
     it("should filter annotations on direct children of an array ref", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
-      const item1Ref = ref(handle, "items", 1);
-      const nestedRef = ref(handle, "items", 0, "name");
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
+      const item1Ref = handle.ref("items", 1);
+      const nestedRef = handle.ref("items", 0, "name");
 
       annotations.add(item0Ref, Comment("Item 0 comment"));
       annotations.add(item1Ref, Comment("Item 1 comment"));
@@ -42,8 +42,8 @@ describe("FilteredAnnotationView", () => {
     it("should not include parent ref annotations", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
 
       annotations.add(itemsRef, Comment("Parent comment"));
       annotations.add(item0Ref, Comment("Child comment"));
@@ -60,10 +60,10 @@ describe("FilteredAnnotationView", () => {
     it("should filter annotations anywhere in subtree", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
-      const nameRef = ref(handle, "items", 0, "name");
-      const titleRef = ref(handle, "title");
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
+      const nameRef = handle.ref("items", 0, "name");
+      const titleRef = handle.ref("title");
 
       annotations.add(item0Ref, Comment("Item comment"));
       annotations.add(nameRef, Comment("Name comment"));
@@ -80,8 +80,8 @@ describe("FilteredAnnotationView", () => {
     it("should not include the parent ref itself", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
 
       annotations.add(itemsRef, Comment("Parent comment"));
       annotations.add(item0Ref, Comment("Child comment"));
@@ -101,9 +101,9 @@ describe("FilteredAnnotationView", () => {
         "test/highlight"
       );
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
-      const item1Ref = ref(handle, "items", 1);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
+      const item1Ref = handle.ref("items", 1);
 
       annotations.add(item0Ref, Comment("Comment on item 0"));
       annotations.add(item0Ref, Highlight({ color: "yellow" }));
@@ -116,9 +116,9 @@ describe("FilteredAnnotationView", () => {
     it("should support chaining onRef after onChildrenOf", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
-      const item1Ref = ref(handle, "items", 1);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
+      const item1Ref = handle.ref("items", 1);
 
       annotations.add(item0Ref, Comment("Comment on item 0"));
       annotations.add(item1Ref, Comment("Comment on item 1"));
@@ -133,9 +133,9 @@ describe("FilteredAnnotationView", () => {
     it("should support chaining onChildrenOf after onPartOf", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
-      const nameRef = ref(handle, "items", 0, "name");
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
+      const nameRef = handle.ref("items", 0, "name");
 
       annotations.add(item0Ref, Comment("Direct child"));
       annotations.add(nameRef, Comment("Nested child"));
@@ -154,8 +154,8 @@ describe("FilteredAnnotationView", () => {
     it("should support lookup on filtered view", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
 
       annotations.add(item0Ref, Comment("Comment on item 0"));
 
@@ -167,8 +167,8 @@ describe("FilteredAnnotationView", () => {
     it("should return undefined for lookup outside filter", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const titleRef = ref(handle, "title");
+      const itemsRef = handle.ref("items");
+      const titleRef = handle.ref("title");
 
       annotations.add(titleRef, Comment("Title comment"));
 
@@ -180,8 +180,8 @@ describe("FilteredAnnotationView", () => {
     it("should support lookupAll on filtered view", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
 
       annotations.add(item0Ref, Comment("First"));
       annotations.add(item0Ref, Comment("Second"));
@@ -198,8 +198,8 @@ describe("FilteredAnnotationView", () => {
     it("should be reactive to changes matching filter", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
       const changeHandler = vi.fn();
 
       const childAnnotations = annotations.onChildrenOf(itemsRef);
@@ -215,8 +215,8 @@ describe("FilteredAnnotationView", () => {
     it("should not emit for changes outside filter", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const titleRef = ref(handle, "title");
+      const itemsRef = handle.ref("items");
+      const titleRef = handle.ref("title");
       const changeHandler = vi.fn();
 
       const childAnnotations = annotations.onChildrenOf(itemsRef);
@@ -230,8 +230,8 @@ describe("FilteredAnnotationView", () => {
     it("should support subscribe for Observable interface", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
       const subscriber = vi.fn();
 
       const childAnnotations = annotations.onChildrenOf(itemsRef);
@@ -247,9 +247,9 @@ describe("FilteredAnnotationView", () => {
     it("should iterate over matching annotations", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
-      const item1Ref = ref(handle, "items", 1);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
+      const item1Ref = handle.ref("items", 1);
 
       annotations.add(item0Ref, Comment("Comment 0"));
       annotations.add(item1Ref, Comment("Comment 1"));
@@ -261,9 +261,9 @@ describe("FilteredAnnotationView", () => {
     it("should iterate refs", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
-      const item1Ref = ref(handle, "items", 1);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
+      const item1Ref = handle.ref("items", 1);
 
       annotations.add(item0Ref, Comment("Comment 0"));
       annotations.add(item1Ref, Comment("Comment 1"));
@@ -281,8 +281,8 @@ describe("FilteredAnnotationView", () => {
         "test/highlight"
       );
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
 
       annotations.add(item0Ref, Comment("A comment"));
       annotations.add(item0Ref, Highlight({ color: "yellow" }));
@@ -295,9 +295,9 @@ describe("FilteredAnnotationView", () => {
     it("should support entriesOnRef", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
-      const item1Ref = ref(handle, "items", 1);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
+      const item1Ref = handle.ref("items", 1);
 
       annotations.add(item0Ref, Comment("Comment 0"));
       annotations.add(item1Ref, Comment("Comment 1"));
@@ -316,9 +316,9 @@ describe("FilteredAnnotationView", () => {
         "test/highlight"
       );
       const annotations = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
-      const item1Ref = ref(handle, "items", 1);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
+      const item1Ref = handle.ref("items", 1);
 
       annotations.add(item0Ref, Comment("Comment 0"));
       annotations.add(item0Ref, Highlight({ color: "yellow" }));
@@ -339,9 +339,9 @@ describe("FilteredAnnotationView", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const parent = new AnnotationSet();
       const child = new AnnotationSet();
-      const itemsRef = ref(handle, "items");
-      const item0Ref = ref(handle, "items", 0);
-      const item1Ref = ref(handle, "items", 1);
+      const itemsRef = handle.ref("items");
+      const item0Ref = handle.ref("items", 0);
+      const item1Ref = handle.ref("items", 1);
 
       parent.add(item0Ref, Comment("Parent comment"));
       child.add(item1Ref, Comment("Child comment"));

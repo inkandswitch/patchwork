@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Repo, type DocHandle } from "@automerge/automerge-repo";
-import { ref } from "@inkandswitch/patchwork-refs";
+
 import { AnnotationSet } from "../src/annotation-set";
 import { defineAnnotationType } from "../src/annotation-type";
 
@@ -22,7 +22,7 @@ describe("AnnotationSet", () => {
     it("should add a single annotation to a ref", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       annotations.add(titleRef, Comment("A comment"));
 
@@ -38,7 +38,7 @@ describe("AnnotationSet", () => {
     it("should add multiple annotations to the same ref", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       annotations.add(titleRef, [Comment("First"), Comment("Second")]);
 
@@ -60,7 +60,7 @@ describe("AnnotationSet", () => {
         "test/highlight"
       );
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       annotations.add(titleRef, [
         Comment("A comment"),
@@ -85,7 +85,7 @@ describe("AnnotationSet", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const parent = new AnnotationSet();
       const child = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       child.add(titleRef, Comment("Child comment"));
       parent.add(child);
@@ -101,7 +101,7 @@ describe("AnnotationSet", () => {
     it("should emit change event when adding annotations", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
       const changeHandler = vi.fn();
 
       annotations.on("change", changeHandler);
@@ -123,7 +123,7 @@ describe("AnnotationSet", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const parent = new AnnotationSet();
       const child = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
       const changeHandler = vi.fn();
 
       parent.add(child);
@@ -149,7 +149,7 @@ describe("AnnotationSet", () => {
         "test/highlight"
       );
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       annotations.add(titleRef, Comment("A comment"));
       annotations.add(titleRef, Highlight({ color: "yellow" }));
@@ -168,8 +168,8 @@ describe("AnnotationSet", () => {
     it("should remove all annotations for a ref", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
+      const titleRef = handle.ref("title");
+      const itemRef = handle.ref("items", 0);
 
       annotations.add(titleRef, Comment("Title comment"));
       annotations.add(itemRef, Comment("Item comment"));
@@ -190,7 +190,7 @@ describe("AnnotationSet", () => {
         "test/highlight"
       );
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       annotations.add(titleRef, Comment("A comment"));
       annotations.add(titleRef, Highlight({ color: "yellow" }));
@@ -210,7 +210,7 @@ describe("AnnotationSet", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const parent = new AnnotationSet();
       const child = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       child.add(titleRef, Comment("Child comment"));
       parent.add(child);
@@ -230,7 +230,7 @@ describe("AnnotationSet", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const parent = new AnnotationSet();
       const child = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
       const changeHandler = vi.fn();
 
       parent.add(child);
@@ -245,7 +245,7 @@ describe("AnnotationSet", () => {
     it("should emit change event when removing annotations", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
       const changeHandler = vi.fn();
 
       annotations.add(titleRef, Comment("A comment"));
@@ -269,8 +269,8 @@ describe("AnnotationSet", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
       const child = new AnnotationSet();
-      const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
+      const titleRef = handle.ref("title");
+      const itemRef = handle.ref("items", 0);
 
       annotations.add(titleRef, Comment("Direct comment"));
       child.add(itemRef, Comment("Child comment"));
@@ -293,7 +293,7 @@ describe("AnnotationSet", () => {
     it("should emit change event with all removed annotations", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
       const changeHandler = vi.fn();
 
       annotations.add(titleRef, Comment("First"));
@@ -320,7 +320,7 @@ describe("AnnotationSet", () => {
     it("should lookup a single value by ref and type", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       annotations.add(titleRef, Comment("A comment"));
 
@@ -331,7 +331,7 @@ describe("AnnotationSet", () => {
     it("should return undefined if no annotation exists", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       const value = annotations.lookup(titleRef, Comment);
       expect(value).toBeUndefined();
@@ -340,7 +340,7 @@ describe("AnnotationSet", () => {
     it("should lookupAll values by ref and type", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       annotations.add(titleRef, Comment("First"));
       annotations.add(titleRef, Comment("Second"));
@@ -356,8 +356,8 @@ describe("AnnotationSet", () => {
     it("should iterate over all annotations", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
+      const titleRef = handle.ref("title");
+      const itemRef = handle.ref("items", 0);
 
       annotations.add(titleRef, Comment("Title comment"));
       annotations.add(itemRef, Comment("Item comment"));
@@ -377,8 +377,8 @@ describe("AnnotationSet", () => {
     it("should iterate over refs", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
+      const titleRef = handle.ref("title");
+      const itemRef = handle.ref("items", 0);
 
       annotations.add(titleRef, Comment("Title comment"));
       annotations.add(itemRef, Comment("Item comment"));
@@ -392,7 +392,7 @@ describe("AnnotationSet", () => {
     it("should deduplicate refs with multiple annotations", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       annotations.add(titleRef, Comment("First"));
       annotations.add(titleRef, Comment("Second"));
@@ -406,8 +406,8 @@ describe("AnnotationSet", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const parent = new AnnotationSet();
       const child = new AnnotationSet();
-      const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
+      const titleRef = handle.ref("title");
+      const itemRef = handle.ref("items", 0);
 
       parent.add(titleRef, Comment("Parent comment"));
       child.add(itemRef, Comment("Child comment"));
@@ -429,8 +429,8 @@ describe("AnnotationSet", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const parent = new AnnotationSet();
       const child = new AnnotationSet();
-      const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
+      const titleRef = handle.ref("title");
+      const itemRef = handle.ref("items", 0);
 
       parent.add(titleRef, Comment("Parent comment"));
       child.add(itemRef, Comment("Child comment"));
@@ -448,7 +448,7 @@ describe("AnnotationSet", () => {
         "test/highlight"
       );
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       annotations.add(titleRef, Comment("A comment"));
       annotations.add(titleRef, Highlight({ color: "yellow" }));
@@ -468,8 +468,8 @@ describe("AnnotationSet", () => {
         "test/highlight"
       );
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
+      const titleRef = handle.ref("title");
+      const itemRef = handle.ref("items", 0);
 
       annotations.add(titleRef, Comment("Title comment"));
       annotations.add(titleRef, Highlight({ color: "yellow" }));
@@ -492,8 +492,8 @@ describe("AnnotationSet", () => {
     it("should batch multiple operations into one event", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
+      const titleRef = handle.ref("title");
+      const itemRef = handle.ref("items", 0);
       const changeHandler = vi.fn();
 
       annotations.on("change", changeHandler);
@@ -520,7 +520,7 @@ describe("AnnotationSet", () => {
     it("should batch adds and removes", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
       const changeHandler = vi.fn();
 
       annotations.add(titleRef, Comment("Original"));
@@ -562,7 +562,7 @@ describe("AnnotationSet", () => {
     it("should throw on nested changes", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       expect(() => {
         annotations.change(() => {
@@ -578,7 +578,7 @@ describe("AnnotationSet", () => {
     it("should support subscribe for Observable interface", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
       const subscriber = vi.fn();
 
       annotations.subscribe(subscriber);
@@ -590,7 +590,7 @@ describe("AnnotationSet", () => {
     it("should support unsubscribing", () => {
       const Comment = defineAnnotationType<string>("test/comment");
       const annotations = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
       const subscriber = vi.fn();
 
       const unsubscribe = annotations.subscribe(subscriber);
@@ -607,7 +607,7 @@ describe("AnnotationSet", () => {
       const root = new AnnotationSet();
       const level1 = new AnnotationSet();
       const level2 = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
 
       level2.add(titleRef, Comment("Deep comment"));
       level1.add(level2);
@@ -627,7 +627,7 @@ describe("AnnotationSet", () => {
       const root = new AnnotationSet();
       const level1 = new AnnotationSet();
       const level2 = new AnnotationSet();
-      const titleRef = ref(handle, "title");
+      const titleRef = handle.ref("title");
       const changeHandler = vi.fn();
 
       level1.add(level2);
@@ -655,8 +655,8 @@ describe("AnnotationSet", () => {
       const root = new AnnotationSet();
       const source1 = new AnnotationSet();
       const source2 = new AnnotationSet();
-      const titleRef = ref(handle, "title");
-      const itemRef = ref(handle, "items", 0);
+      const titleRef = handle.ref("title");
+      const itemRef = handle.ref("items", 0);
 
       root.add(titleRef, Comment("Root comment"));
       source1.add(titleRef, Highlight({ color: "yellow" }));
@@ -690,11 +690,11 @@ describe("AnnotationSet", () => {
       });
 
       // Add annotation using pattern-based ref
-      const patternRef = ref(handle, "todos", { id: "abc" });
+      const patternRef = handle.ref("todos", { id: "abc" });
       annotations.add(patternRef, Comment("Comment on first todo"));
 
       // Lookup using index-based ref (equivalent to pattern ref)
-      const indexRef = ref(handle, "todos", 0);
+      const indexRef = handle.ref("todos", 0);
       expect(indexRef.isEquivalent(patternRef)).toBe(true);
 
       const found = annotations.lookup(indexRef, Comment);
@@ -713,11 +713,11 @@ describe("AnnotationSet", () => {
       });
 
       // Add annotation using index-based ref
-      const indexRef = ref(handle, "todos", 0);
+      const indexRef = handle.ref("todos", 0);
       annotations.add(indexRef, Comment("Comment on first todo"));
 
       // Lookup using pattern-based ref
-      const patternRef = ref(handle, "todos", { id: "abc" });
+      const patternRef = handle.ref("todos", { id: "abc" });
       expect(patternRef.isEquivalent(indexRef)).toBe(true);
 
       const found = annotations.lookup(patternRef, Comment);
@@ -735,11 +735,11 @@ describe("AnnotationSet", () => {
         ];
       });
 
-      const patternRef = ref(handle, "todos", { id: "def" });
+      const patternRef = handle.ref("todos", { id: "def" });
       annotations.add(patternRef, Comment("Comment on second"));
 
       // Query using index ref
-      const indexRef = ref(handle, "todos", 1);
+      const indexRef = handle.ref("todos", 1);
       const entries = [...annotations.entriesOnRef(indexRef)];
 
       expect(entries).toHaveLength(1);
@@ -754,13 +754,13 @@ describe("AnnotationSet", () => {
         d.todos = [{ id: "abc", title: "First" }];
       });
 
-      const patternRef = ref(handle, "todos", { id: "abc" });
+      const patternRef = handle.ref("todos", { id: "abc" });
       annotations.add(patternRef, [
         Comment("First comment"),
         Comment("Second comment"),
       ]);
 
-      const indexRef = ref(handle, "todos", 0);
+      const indexRef = handle.ref("todos", 0);
       const found = annotations.lookupAll(indexRef, Comment);
 
       expect(found).toHaveLength(2);
@@ -779,11 +779,11 @@ describe("AnnotationSet", () => {
         ];
       });
 
-      const firstRef = ref(handle, "todos", { id: "abc" });
+      const firstRef = handle.ref("todos", { id: "abc" });
       annotations.add(firstRef, Comment("Comment on first"));
 
       // Try to lookup with ref to second item
-      const secondRef = ref(handle, "todos", { id: "def" });
+      const secondRef = handle.ref("todos", { id: "def" });
       expect(firstRef.isEquivalent(secondRef)).toBe(false);
 
       const found = annotations.lookup(secondRef, Comment);

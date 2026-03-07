@@ -1,5 +1,5 @@
 import { SubscribableObject, SubscriberSet } from "@inkandswitch/subscribables";
-import { type Ref } from "@inkandswitch/patchwork-refs";
+import { type Ref } from "@automerge/automerge-repo";
 import EventEmitter from "eventemitter3";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
 import {
@@ -76,7 +76,7 @@ export class FilteredAnnotationView
   /**
    * Filter to direct children of a ref (for arrays/text)
    */
-  onChildrenOf(ref: Ref<string | Array<unknown>>): FilteredAnnotationView {
+  onChildrenOf(ref: Ref): FilteredAnnotationView {
     return new FilteredAnnotationView(this, (otherRef, _) =>
       otherRef.isChildOf(ref)
     );
@@ -85,7 +85,7 @@ export class FilteredAnnotationView
   /**
    * Filter to the subtree under a ref (ref itself and all descendants)
    */
-  onPartOf(ref: Ref<unknown>): FilteredAnnotationView {
+  onPartOf(ref: Ref<any>): FilteredAnnotationView {
     return new FilteredAnnotationView(this, (otherRef, _) =>
       ref.contains(otherRef)
     );
@@ -151,11 +151,11 @@ export class FilteredAnnotationView
   /**
    * Iterator for all unique refs that have annotations matching the filter
    */
-  get refs(): Iterable<Ref<unknown>> {
+  get refs(): Iterable<Ref<any>> {
     const self = this;
     return {
       *[Symbol.iterator]() {
-        const seenRefs = new Set<Ref<unknown>>();
+        const seenRefs = new Set<Ref<any>>();
 
         for (const [ref, annotation] of self.#source) {
           if (self.#filter(ref, annotation) && !seenRefs.has(ref)) {

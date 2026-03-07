@@ -1,5 +1,5 @@
 import { SubscribableObject, SubscriberSet } from "@inkandswitch/subscribables";
-import { type Ref } from "@inkandswitch/patchwork-refs";
+import { type Ref } from "@automerge/automerge-repo";
 import EventEmitter from "eventemitter3";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
 import {
@@ -45,7 +45,7 @@ export class AnnotationsOnRef<T = unknown>
   #setupSubscription(): () => void {
     const handleChange = (change: AnnotationChange) => {
       const filteredChange = filterAnnotationChange(change, (ref) =>
-        ref.isEquivalent(this.#ref)
+        ref.isEquivalent(this.#ref as Ref<any>)
       );
       if (!isChangeEmpty(filteredChange)) {
         this.emit("change", filteredChange);
@@ -100,7 +100,7 @@ export class AnnotationsOnRef<T = unknown>
    */
   *entriesOnRef(ref: Ref<any>): Iterable<[Ref<any>, AnnotationValue<any>]> {
     // Only yield if requested ref is equivalent to our filtered ref
-    if (ref.isEquivalent(this.#ref)) {
+    if (ref.isEquivalent(this.#ref as Ref<any>)) {
       yield* this.#source.entriesOnRef(ref);
     }
   }
@@ -121,7 +121,7 @@ export class AnnotationsOnRef<T = unknown>
    * Make the view iterable
    * Uses source's entriesOnRef for efficient iteration by ref
    */
-  *[Symbol.iterator](): Iterator<Annotation<T, unknown>> {
+  *[Symbol.iterator](): Iterator<Annotation<T, any>> {
     for (const [, annotation] of this.#source.entriesOnRef(this.#ref)) {
       yield [this.#ref, annotation];
     }

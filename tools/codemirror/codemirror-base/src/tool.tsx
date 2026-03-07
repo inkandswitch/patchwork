@@ -7,12 +7,11 @@ import { commentButtonGutter } from "./lib/comments/commentButtonGutter.ts";
 
 /** Automerge */
 import type { PatchworkToolProps } from "./types.ts";
-import { parseAutomergeUrl } from "@automerge/automerge-repo";
-import type { DocHandle } from "@automerge/automerge-repo";
+import { parseAutomergeUrl, cursor } from "@automerge/automerge-repo";
+import type { DocHandle, Ref } from "@automerge/automerge-repo";
 
 /** Patchwork */
 import { getRegistry } from "@inkandswitch/patchwork-plugins";
-import { cursor, ref, type Ref } from "@inkandswitch/patchwork-refs";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
 import { Diff } from "@inkandswitch/annotations-diff";
 import { IsSelected } from "@inkandswitch/annotations-selection";
@@ -33,7 +32,7 @@ export type TextDoc = {
 const PATH = ["content"];
 
 export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
-  const contentRef = () => ref(props.handle as DocHandle<TextDoc>, ...PATH);
+  const contentRef = () => (props.handle as DocHandle<TextDoc>).ref(...PATH);
 
   const isReadOnly = () => !!parseAutomergeUrl(props.handle.url).heads;
 
@@ -145,7 +144,7 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
     editorSelectionAnnotations.change(() => {
       editorSelectionAnnotations.clear();
 
-      const selectedRef = ref(props.handle, ...PATH, cursor(from, to));
+      const selectedRef = props.handle.ref(...PATH, cursor(from, to));
       editorSelectionAnnotations.add(selectedRef, IsSelected(true));
     });
   };
@@ -160,7 +159,7 @@ export function CodeMirrorEditor(props: PatchworkToolProps<TextDoc>) {
       return;
     }
     createComment({
-      refs: [ref(props.handle, ...PATH, cursor(from, to))],
+      refs: [props.handle.ref(...PATH, cursor(from, to))],
       content: "",
       contactUrl,
     });

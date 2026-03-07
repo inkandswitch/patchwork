@@ -21,7 +21,6 @@ import { ViewHeads } from "@inkandswitch/annotations-diff";
 import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
 import { useSubscribe } from "@inkandswitch/subscribables-react";
 import { useDatatype } from "@inkandswitch/patchwork-react";
-import { ref } from "@inkandswitch/patchwork-refs";
 
 const HistoryView = () => {
   const selectedDocUrls = useSubscribe($selectedDocUrls);
@@ -46,7 +45,7 @@ const DocHistoryView = ({ docUrl }: { docUrl: AutomergeUrl }) => {
   const title = useDatatype(getType(doc))?.module.getTitle(doc);
 
   const docHandle = useDocHandle(docUrl, { suspense: true });
-  const docRef = useMemo(() => ref(docHandle), [docHandle]);
+  const docRef = useMemo(() => docHandle.ref(), [docHandle]);
 
   // add selected view heads to global context
 
