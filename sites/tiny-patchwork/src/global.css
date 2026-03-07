@@ -28,6 +28,27 @@ html {
   }
 }
 
+@media all and (display-mode: window-controls-overlay) {
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(titlebar-area-height, 0px);
+    background-color: oklch(98% 0 0);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    z-index: 9999;
+    -webkit-app-region: drag;
+    app-region: drag;
+
+    @media (prefers-color-scheme: dark) {
+      background-color: oklch(23.26% 0.014 253.1 / 85%);
+    }
+  }
+}
+
 patchwork-view {
   display: block;
   height: 100%;
