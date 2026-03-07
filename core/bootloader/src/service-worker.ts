@@ -85,6 +85,7 @@ self.addEventListener("message", async (event) => {
 // request ids are kept in a counter
 let reqcount = 0;
 self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
+  log("fetch event", fetchEvent.request.url);
   const request = fetchEvent.request;
   if (request.method !== "GET") return fetchEvent.respondWith(fetch(request));
   const url = new URL(fetchEvent.request.url);
@@ -152,9 +153,12 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
             message
           );
           if (!client) {
-            return new Response("no patchwork tabs available to handle request", {
-              status: 503,
-            });
+            return new Response(
+              "no patchwork tabs available to handle request",
+              {
+                status: 503,
+              }
+            );
           }
           client.postMessage(message);
           // this'll finish when the main thread gets back to us
