@@ -203,7 +203,7 @@ export default function Folder(props: {
             (folder()?.title ?? props.name)
           }
           class="document-list-folder__toggle"
-          onClick={(event) => {
+          on:click={(event: MouseEvent) => {
             event.stopImmediatePropagation();
             setExpanded((yn) => !yn);
           }}

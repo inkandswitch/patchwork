@@ -326,6 +326,10 @@ export default function Item(props: {
           if (event.ctrlKey || event.metaKey) {
             return;
           }
+          const target = event.target as Element;
+          if (target.closest(".document-list-folder__toggle, .create-new-button")) {
+            return;
+          }
           dragstack.clear();
           props.openWith();
         }}

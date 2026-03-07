@@ -147,7 +147,7 @@ export default function CreateNew(props: CreateNewProps) {
       <DropdownMenu.Trigger
         class="create-new-button"
         aria-label="create new"
-        onClick={(event) => {
+        on:click={(event: MouseEvent) => {
           event.stopImmediatePropagation();
           event.stopPropagation();
         }}
