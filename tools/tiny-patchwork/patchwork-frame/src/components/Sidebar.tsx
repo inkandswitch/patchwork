@@ -12,23 +12,16 @@ interface SidebarProps {
 }
 
 /**
- * Reusable sidebar component for left and right sidebars
+ * Reusable sidebar component for left and right sidebars.
+ * Props are accessed via `props.x` (not destructured) to preserve Solid reactivity.
  */
-export function Sidebar({
-  side,
-  isCollapsed,
-  width,
-  toolId,
-  docUrl,
-  onMouseDown,
-  onToggleClick,
-}: SidebarProps) {
+export function Sidebar(props: SidebarProps) {
   const widthStyle = () =>
-    `${isCollapsed() ? (side === "right" ? 2 : 0) : width()}px`;
+    `${props.isCollapsed() ? (props.side === "right" ? 2 : 0) : props.width()}px`;
   const flexClass = () =>
-    `flex relative ${side === "right" ? "bg-base-100" : ""}`;
+    `flex relative ${props.side === "right" ? "bg-base-100" : ""}`;
   const widthClass = () =>
-    isCollapsed() ? (side === "right" ? "w-0.5" : "w-0") : "";
+    props.isCollapsed() ? (props.side === "right" ? "w-0.5" : "w-0") : "";
 
   return (
     <div
@@ -36,15 +29,15 @@ export function Sidebar({
       style={{ width: widthStyle() }}
     >
       {/* Sidebar content when expanded */}
-      {side === "left" && toolId && !isCollapsed() && (
-        <patchwork-view class="h-full" doc-url={docUrl} tool-id={toolId} />
+      {props.side === "left" && props.toolId && !props.isCollapsed() && (
+        <patchwork-view class="h-full" doc-url={props.docUrl} tool-id={props.toolId} />
       )}
 
       {/* Toggle/resize button - left side shows when expanded */}
-      {side === "left" && !isCollapsed() && (
+      {props.side === "left" && !props.isCollapsed() && (
         <button
-          onClick={(e) => onToggleClick(side, e)}
-          onMouseDown={(e) => onMouseDown(side, e)}
+          onClick={(e) => props.onToggleClick(props.side, e)}
+          onMouseDown={(e) => props.onMouseDown(props.side, e)}
           class="sidebar-toggle sidebar-toggle--resizable"
           aria-label="Toggle or resize sidebar"
           title="Click to toggle, drag to resize"
@@ -52,9 +45,9 @@ export function Sidebar({
       )}
 
       {/* Toggle button when collapsed - left side */}
-      {side === "left" && isCollapsed() && (
+      {props.side === "left" && props.isCollapsed() && (
         <button
-          onClick={(e) => onToggleClick(side, e)}
+          onClick={(e) => props.onToggleClick(props.side, e)}
           class="sidebar-toggle"
           aria-label="Expand sidebar"
           title="Expand sidebar"
@@ -62,10 +55,10 @@ export function Sidebar({
       )}
 
       {/* Toggle/resize button - right side shows when expanded */}
-      {side === "right" && !isCollapsed() && (
+      {props.side === "right" && !props.isCollapsed() && (
         <button
-          onClick={(e) => onToggleClick(side, e)}
-          onMouseDown={(e) => onMouseDown(side, e)}
+          onClick={(e) => props.onToggleClick(props.side, e)}
+          onMouseDown={(e) => props.onMouseDown(props.side, e)}
           class="sidebar-toggle sidebar-toggle--resizable"
           aria-label="Toggle or resize sidebar"
           title="Click to toggle, drag to resize"
@@ -73,9 +66,9 @@ export function Sidebar({
       )}
 
       {/* Toggle button when collapsed - right side */}
-      {side === "right" && isCollapsed() && (
+      {props.side === "right" && props.isCollapsed() && (
         <button
-          onClick={(e) => onToggleClick(side, e)}
+          onClick={(e) => props.onToggleClick(props.side, e)}
           class="sidebar-toggle"
           aria-label="Expand sidebar"
           title="Expand sidebar"
@@ -83,8 +76,8 @@ export function Sidebar({
       )}
 
       {/* Sidebar content when expanded - right side */}
-      {side === "right" && toolId && !isCollapsed() && (
-        <patchwork-view doc-url={docUrl} tool-id={toolId} />
+      {props.side === "right" && props.toolId && !props.isCollapsed() && (
+        <patchwork-view doc-url={props.docUrl} tool-id={props.toolId} />
       )}
     </div>
   );

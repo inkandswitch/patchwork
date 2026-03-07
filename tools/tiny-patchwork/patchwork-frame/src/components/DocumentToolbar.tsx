@@ -1,6 +1,6 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { Accessor } from "solid-js";
-import { Show } from "solid-js";
+import { For, Show } from "solid-js";
 
 interface DocumentToolbarProps {
   toolIds?: string[];
@@ -8,20 +8,22 @@ interface DocumentToolbarProps {
 }
 
 /**
- * Renders the document toolbar with configured tools
+ * Renders the document toolbar with configured tools.
+ * Props are accessed via `props.x` (not destructured) to preserve Solid reactivity.
  */
-export function DocumentToolbar({ toolIds, docUrl }: DocumentToolbarProps) {
+export function DocumentToolbar(props: DocumentToolbarProps) {
   return (
-    <Show when={docUrl() && toolIds && toolIds.length > 0}>
+    <Show when={props.docUrl() && props.toolIds && props.toolIds.length > 0}>
       <div class="p-2 bg-base-200 border-b border-base-300 flex items-center gap-2 flex-start">
-        {toolIds!.map((toolId, index) => (
-          <patchwork-view
-            class="w-fit! h-8! overflow-hidden! flex!"
-            doc-url={docUrl()!}
-            tool-id={toolId}
-            key={index}
-          />
-        ))}
+        <For each={props.toolIds}>
+          {(toolId) => (
+            <patchwork-view
+              class="w-fit! h-8! overflow-hidden! flex!"
+              doc-url={props.docUrl()!}
+              tool-id={toolId}
+            />
+          )}
+        </For>
       </div>
     </Show>
   );

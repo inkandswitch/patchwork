@@ -8,7 +8,7 @@
   gap: 1.5rem;
   max-width: 28rem;
   font-family: system-ui, -apple-system, sans-serif;
-  color: var(--bc, oklch(0.278 0.033 256.848));
+  color: var(--bc);
 }
 
 .configurator.loading {
@@ -20,10 +20,11 @@
   font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: -0.01em;
+  color: inherit;
 }
 
 .config-section {
-  border: 1px solid oklch(0.5 0 0 / 0.12);
+  border: 1px solid color-mix(in oklch, currentColor 15%, transparent);
   border-radius: 0.5rem;
   padding: 0.75rem;
   margin: 0;
@@ -34,7 +35,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: oklch(0.5 0 0 / 0.7);
+  opacity: 0.6;
   padding: 0 0.25rem;
 }
 
@@ -57,13 +58,13 @@
 }
 
 .radio-option:hover {
-  background: oklch(0.5 0 0 / 0.06);
+  background: color-mix(in oklch, currentColor 8%, transparent);
 }
 
 .radio-option input[type="radio"] {
   width: 0.875rem;
   height: 0.875rem;
-  accent-color: oklch(0.55 0.15 250);
+  accent-color: oklch(0.6 0.15 250);
   margin: 0;
   cursor: pointer;
 }
@@ -84,13 +85,13 @@
   gap: 0.375rem;
   padding: 0.3125rem 0.375rem;
   border-radius: 0.375rem;
-  background: oklch(0.5 0 0 / 0.04);
+  background: color-mix(in oklch, currentColor 6%, transparent);
   font-size: 0.8125rem;
   user-select: none;
 }
 
 .sortable-item:hover {
-  background: oklch(0.5 0 0 / 0.08);
+  background: color-mix(in oklch, currentColor 12%, transparent);
 }
 
 .drag-handle {
@@ -101,17 +102,19 @@
   height: 1.25rem;
   border: none;
   background: none;
-  color: oklch(0.5 0 0 / 0.35);
+  color: inherit;
+  opacity: 0.35;
   cursor: grab;
   border-radius: 0.25rem;
   flex-shrink: 0;
   padding: 0;
   touch-action: none;
+  transition: opacity 120ms;
 }
 
 .drag-handle:hover {
-  color: oklch(0.5 0 0 / 0.6);
-  background: oklch(0.5 0 0 / 0.06);
+  opacity: 0.7;
+  background: color-mix(in oklch, currentColor 8%, transparent);
 }
 
 .drag-handle:active {
@@ -134,17 +137,19 @@
   height: 1.25rem;
   border: none;
   background: none;
-  color: oklch(0.5 0 0 / 0.3);
+  color: inherit;
+  opacity: 0.3;
   cursor: pointer;
   border-radius: 0.25rem;
   flex-shrink: 0;
   padding: 0;
-  transition: color 120ms, background 120ms;
+  transition: opacity 120ms, background 120ms, color 120ms;
 }
 
 .remove-btn:hover {
-  color: oklch(0.55 0.2 20);
-  background: oklch(0.55 0.2 20 / 0.08);
+  opacity: 1;
+  color: oklch(0.65 0.2 20);
+  background: oklch(0.65 0.2 20 / 0.12);
 }
 
 /* Add button and menu */
@@ -154,20 +159,21 @@
   gap: 0.375rem;
   margin-top: 0.375rem;
   padding: 0.3125rem 0.5rem;
-  border: 1px dashed oklch(0.5 0 0 / 0.2);
+  border: 1px dashed color-mix(in oklch, currentColor 20%, transparent);
   border-radius: 0.375rem;
   background: none;
-  color: oklch(0.5 0 0 / 0.5);
+  color: inherit;
+  opacity: 0.5;
   font-size: 0.8125rem;
   cursor: pointer;
   width: 100%;
-  transition: border-color 120ms, color 120ms, background 120ms;
+  transition: border-color 120ms, opacity 120ms, background 120ms;
 }
 
 .add-btn:hover {
-  border-color: oklch(0.55 0.15 250 / 0.4);
-  color: oklch(0.55 0.15 250);
-  background: oklch(0.55 0.15 250 / 0.04);
+  opacity: 0.8;
+  border-color: color-mix(in oklch, currentColor 35%, transparent);
+  background: color-mix(in oklch, currentColor 4%, transparent);
 }
 
 .add-menu {
@@ -176,9 +182,9 @@
   gap: 2px;
   margin-top: 0.375rem;
   padding: 0.25rem;
-  border: 1px solid oklch(0.5 0 0 / 0.12);
+  border: 1px solid color-mix(in oklch, currentColor 15%, transparent);
   border-radius: 0.375rem;
-  background: oklch(1 0 0);
+  background: color-mix(in oklch, currentColor 4%, transparent);
 }
 
 .add-option {
@@ -189,7 +195,7 @@
   border: none;
   border-radius: 0.25rem;
   background: none;
-  color: oklch(0.35 0 0);
+  color: inherit;
   font-size: 0.8125rem;
   cursor: pointer;
   text-align: left;
@@ -198,12 +204,11 @@
 }
 
 .add-option:hover {
-  background: oklch(0.55 0.15 250 / 0.08);
-  color: oklch(0.45 0.15 250);
+  background: color-mix(in oklch, currentColor 10%, transparent);
 }
 
 .add-option svg {
-  color: oklch(0.55 0.15 250 / 0.6);
+  opacity: 0.5;
   flex-shrink: 0;
 }
 
@@ -215,20 +220,22 @@
   border: none;
   border-radius: 0.25rem;
   background: none;
-  color: oklch(0.5 0 0 / 0.5);
+  color: inherit;
+  opacity: 0.5;
   font-size: 0.75rem;
   cursor: pointer;
-  transition: background 120ms;
+  transition: background 120ms, opacity 120ms;
 }
 
 .add-cancel:hover {
-  background: oklch(0.5 0 0 / 0.06);
+  opacity: 0.8;
+  background: color-mix(in oklch, currentColor 8%, transparent);
 }
 
 .empty-message {
-  font-size: 0.75rem;
-  color: oklch(0.5 0 0 / 0.5);
+  font-size: 0.8125rem;
+  opacity: 0.7;
   font-style: italic;
   margin: 0;
-  padding: 0.25rem 0;
+  padding: 0.375rem 0.25rem;
 }

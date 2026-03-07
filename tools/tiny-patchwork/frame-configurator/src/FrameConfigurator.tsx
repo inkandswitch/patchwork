@@ -324,7 +324,8 @@ export function FrameConfigurator({
   const setArrayField = useCallback(
     (key: keyof TinyPatchworkLayoutDoc, next: string[]) => {
       changeAccountDoc((doc) => {
-        (doc as any)[key] = next;
+        const arr = (doc as any)[key];
+        arr.splice(0, arr.length, ...next);
       });
     },
     [changeAccountDoc]
