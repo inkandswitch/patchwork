@@ -25,6 +25,7 @@ import {
   parseAutomergeUrl,
   Repo,
   stringifyAutomergeUrl,
+  WebSocketClientAdapter,
   type AutomergeUrl,
   type UrlHeads,
 } from "@automerge/vanillajs";
@@ -47,9 +48,21 @@ declare global {
   }
 }
 
+const workerLogChannel = new BroadcastChannel("automerge-worker-logs");
+workerLogChannel.onmessage = (event) => {
+  const { level, args } = event.data;
+  const method = level in console ? level : "log";
+  (console as any)[method](...args);
+};
+
+const isTauri = "__TAURI__" in window;
+
 const repo = new Repo({
   storage: new IndexedDBStorageAdapter(),
   async sharePolicy(peerId) {
+    if (isTauri) {
+      return peerId.startsWith("storage-server-");
+    }
     return peerId.includes("service-worker");
   },
   enableRemoteHeadsGossiping: true,
@@ -59,15 +72,24 @@ repo.subscribeToRemotes([
   "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
 ]);
 
-const result = await setup();
-if (!result) {
-  throw new Error("Failed to set up service worker");
-}
+if (isTauri) {
+  // In Tauri, connect to a local sync server that stores the repo
+  // in ~/.cache/automerge. No SharedWorker needed — the sync server
+  // handles persistence and cross-window sync.
+  repo.networkSubsystem.addNetworkAdapter(
+    new WebSocketClientAdapter("ws://localhost:3030")
+  );
+} else {
+  const result = await setup();
+  if (!result) {
+    throw new Error("Failed to set up service worker");
+  }
 
-repo.networkSubsystem.addNetworkAdapter(
-  new MessageChannelNetworkAdapter(result.port)
-);
-await repo.networkSubsystem.whenReady();
+  repo.networkSubsystem.addNetworkAdapter(
+    new MessageChannelNetworkAdapter(result.port)
+  );
+  await repo.networkSubsystem.whenReady();
+}
 
 window.getRepoChannel = () => {
   const { port1, port2 } = new MessageChannel();
