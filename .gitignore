@@ -11,3 +11,5 @@ dummy-non-existing-folder/
 **/.pnpm-store/
 .claude/
 .pushwork/
+src-tauri/target/
+src-tauri/gen/
