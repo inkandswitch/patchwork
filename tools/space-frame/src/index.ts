@@ -8,7 +8,7 @@ export const plugins: Plugin<any>[] = [
   {
     type: "patchwork:tool",
     id: "space-frame",
-    category: "frame",
+    tags: ["frame-tool"],
     name: "Space Frame",
     icon: "LayoutGrid",
     supportedDatatypes: ["account"],
