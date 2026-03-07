@@ -6,7 +6,7 @@ export const plugins: Plugin<any>[] = [
   {
     type: "patchwork:tool",
     id: "patchwork-frame",
-    category: "frame",
+    tags: ["frame-tool"],
     name: "Patchwork Frame",
     icon: "Window",
     supportedDatatypes: ["account"],

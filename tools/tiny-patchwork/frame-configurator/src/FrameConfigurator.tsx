@@ -1,44 +1,218 @@
 import "./styles.css";
 import { useDocument } from "@automerge/automerge-repo-react-hooks";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { TinyPatchworkLayoutDoc } from "./types";
 import type { ToolElement } from "@inkandswitch/patchwork-plugins";
 import { useToolDescriptions } from "@inkandswitch/patchwork-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type ModuleOption = {
   id: string;
   name: string;
 };
 
-const FRAME_TOOL_OPTIONS: ModuleOption[] = [
-  { id: "patchwork-frame", name: "Patchwork Frame" },
-];
+function SortableItem({
+  id,
+  name,
+  onRemove,
+}: {
+  id: string;
+  name: string;
+  onRemove: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
 
-const ACCOUNT_SIDEBAR_OPTIONS: ModuleOption[] = [
-  { id: "chee/sideboard", name: "Sideboard" },
-];
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
-const CONTEXT_SIDEBAR_OPTIONS: ModuleOption[] = [
-  { id: "context-sidebar", name: "Context Sidebar" },
-];
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className="sortable-item"
+    >
+      <button
+        className="drag-handle"
+        {...attributes}
+        {...listeners}
+        aria-label="Drag to reorder"
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <circle cx="3.5" cy="2" r="1.2" />
+          <circle cx="8.5" cy="2" r="1.2" />
+          <circle cx="3.5" cy="6" r="1.2" />
+          <circle cx="8.5" cy="6" r="1.2" />
+          <circle cx="3.5" cy="10" r="1.2" />
+          <circle cx="8.5" cy="10" r="1.2" />
+        </svg>
+      </button>
+      <span className="item-label">{name}</span>
+      <button
+        className="remove-btn"
+        onClick={onRemove}
+        aria-label={`Remove ${name}`}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <line x1="4" y1="4" x2="10" y2="10" />
+          <line x1="10" y1="4" x2="4" y2="10" />
+        </svg>
+      </button>
+    </li>
+  );
+}
 
-const DOCUMENT_TOOLBAR_OPTIONS: ModuleOption[] = [
-  { id: "document-title", name: "Document Title" },
-  { id: "back-link-button", name: "Back Link Button" },
-  { id: "spacer", name: "Spacer" },
-  { id: "highlight-changes-checkbox", name: "Highlight Changes" },
-  { id: "sync-indicator", name: "Sync Indicator" },
-  { id: "add-doc-to-sidebar-button", name: "Add doc to sidebar button" },
-];
+function SortableList({
+  label,
+  values,
+  setValues,
+  allOptions,
+}: {
+  label: string;
+  values: string[] | undefined;
+  setValues: (next: string[]) => void;
+  allOptions: ModuleOption[];
+}) {
+  const [showAdd, setShowAdd] = useState(false);
 
-const CONTEXT_TOOL_OPTIONS: ModuleOption[] = [
-  { id: "comments-view", name: "Comments" },
-  { id: "history-view", name: "History" },
-  { id: "context-view", name: "Context" },
-];
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
-function LabeledSelect({
+  const currentIds = useMemo(() => new Set(values ?? []), [values]);
+  const available = useMemo(
+    () => allOptions.filter((o) => !currentIds.has(o.id)),
+    [allOptions, currentIds]
+  );
+
+  const nameOf = useCallback(
+    (id: string) => allOptions.find((o) => o.id === id)?.name ?? id,
+    [allOptions]
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id || !values) return;
+      const oldIndex = values.indexOf(active.id as string);
+      const newIndex = values.indexOf(over.id as string);
+      if (oldIndex === -1 || newIndex === -1) return;
+      setValues(arrayMove(values, oldIndex, newIndex));
+    },
+    [values, setValues]
+  );
+
+  const removeAt = useCallback(
+    (index: number) => {
+      if (!values) return;
+      setValues(values.filter((_, i) => i !== index));
+    },
+    [setValues, values]
+  );
+
+  const add = useCallback(
+    (id: string) => {
+      setValues([...(values ?? []), id]);
+      setShowAdd(false);
+    },
+    [setValues, values]
+  );
+
+  const items = values ?? [];
+
+  return (
+    <fieldset className="config-section">
+      <legend className="section-label">{label}</legend>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={items} strategy={verticalListSortingStrategy}>
+          <ul className="sortable-list">
+            {items.map((id, index) => (
+              <SortableItem
+                key={id}
+                id={id}
+                name={nameOf(id)}
+                onRemove={() => removeAt(index)}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
+
+      {available.length > 0 && (
+        <>
+          {showAdd ? (
+            <div className="add-menu">
+              {available.map((opt) => (
+                <button
+                  key={opt.id}
+                  className="add-option"
+                  onClick={() => add(opt.id)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <line x1="7" y1="3" x2="7" y2="11" />
+                    <line x1="3" y1="7" x2="11" y2="7" />
+                  </svg>
+                  {opt.name}
+                </button>
+              ))}
+              <button
+                className="add-cancel"
+                onClick={() => setShowAdd(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button className="add-btn" onClick={() => setShowAdd(true)}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <line x1="7" y1="3" x2="7" y2="11" />
+                <line x1="3" y1="7" x2="11" y2="7" />
+              </svg>
+              Add
+            </button>
+          )}
+        </>
+      )}
+
+      {items.length === 0 && available.length === 0 && (
+        <p className="empty-message">No tools available</p>
+      )}
+    </fieldset>
+  );
+}
+
+function SingleSelect({
   label,
   value,
   onChange,
@@ -49,135 +223,32 @@ function LabeledSelect({
   onChange: (v: string) => void;
   options: ModuleOption[];
 }) {
-  return (
-    <label className="form-control w-full max-w-xl gap-1">
-      <span className="label-text text-sm text-base-content/80">{label}</span>
+  if (options.length === 0) {
+    return (
+      <fieldset className="config-section">
+        <legend className="section-label">{label}</legend>
+        <p className="empty-message">No tools available</p>
+      </fieldset>
+    );
+  }
 
-      <select
-        className="select select-bordered select-sm"
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-      >
+  return (
+    <fieldset className="config-section">
+      <legend className="section-label">{label}</legend>
+      <div className="radio-group">
         {options.map((opt) => (
-          <option key={opt.id} value={opt.id}>
-            {opt.name}
-          </option>
+          <label key={opt.id} className="radio-option">
+            <input
+              type="radio"
+              name={label}
+              checked={value === opt.id}
+              onChange={() => onChange(opt.id)}
+            />
+            <span>{opt.name}</span>
+          </label>
         ))}
-      </select>
-    </label>
-  );
-}
-
-function ArrayEditor({
-  label,
-  values,
-  setValues,
-  addOptions,
-}: {
-  label: string;
-  values: string[] | undefined;
-  setValues: (next: string[]) => void;
-  addOptions: ModuleOption[];
-}) {
-  const [pendingAdd, setPendingAdd] = useState(addOptions[0]?.id ?? "");
-
-  // Update pendingAdd when options become available
-  useEffect(() => {
-    if (!pendingAdd && addOptions.length > 0) {
-      setPendingAdd(addOptions[0].id);
-    }
-  }, [addOptions, pendingAdd]);
-
-  const move = useCallback(
-    (index: number, delta: number) => {
-      if (!values) return;
-      const next = values.slice();
-      const newIndex = index + delta;
-      if (newIndex < 0 || newIndex >= next.length) return;
-      const [item] = next.splice(index, 1);
-      next.splice(newIndex, 0, item);
-      setValues(next);
-    },
-    [setValues, values]
-  );
-
-  const removeAt = useCallback(
-    (index: number) => {
-      if (!values) return;
-      const next = values.slice();
-      next.splice(index, 1);
-      setValues(next);
-    },
-    [setValues, values]
-  );
-
-  const add = useCallback(() => {
-    const toAdd = pendingAdd;
-    const next = [...(values ?? []), toAdd];
-    setValues(next);
-  }, [pendingAdd, setValues, values]);
-
-  const nameOf = useCallback(
-    (id: string) => addOptions.find((o) => o.id === id)?.name ?? id,
-    [addOptions]
-  );
-
-  return (
-    <div
-      className="w-full max-w-xl"
-      style={{ fontFamily: "Chalkboard SE, Comic Sans MS !important" }}
-    >
-      <div className="text-sm text-base-content/80 mb-1">{label}</div>
-      <div className="flex items-center gap-2 mb-2">
-        <select
-          className="select select-bordered select-sm"
-          value={pendingAdd}
-          onChange={(e) => setPendingAdd(e.target.value)}
-        >
-          {addOptions.map((opt) => (
-            <option key={opt.id} value={opt.id}>
-              {opt.name}
-            </option>
-          ))}
-        </select>
-        <button className="btn btn-sm" onClick={add} disabled={!pendingAdd}>
-          Add
-        </button>
       </div>
-      <ul className="flex flex-col gap-1">
-        {(values ?? []).map((id, index) => (
-          <li
-            key={`${id}-${index}`}
-            className="flex items-center justify-between bg-base-200 rounded px-2 py-1"
-          >
-            <span className="text-sm">{nameOf(id)}</span>
-            <div className="flex items-center gap-1">
-              <button
-                className="btn btn-ghost btn-xs"
-                onClick={() => move(index, -1)}
-                aria-label="Move up"
-              >
-                ↑
-              </button>
-              <button
-                className="btn btn-ghost btn-xs"
-                onClick={() => move(index, 1)}
-                aria-label="Move down"
-              >
-                ↓
-              </button>
-              <button
-                className="btn btn-ghost btn-xs text-error"
-                onClick={() => removeAt(index)}
-                aria-label="Remove"
-              >
-                ✕
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </fieldset>
   );
 }
 
@@ -191,32 +262,52 @@ export function FrameConfigurator({
   const [accountDoc, changeAccountDoc] =
     useDocument<TinyPatchworkLayoutDoc>(docUrl);
 
-  // Dynamically discover tools marked for titlebar
   const allTools = useToolDescriptions();
 
-  const documentToolbarOptions = useMemo(() => {
-    return allTools
-      .filter((tool) => (tool.tags || []).includes("titlebar-tool"))
-      .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [allTools]);
+  const frameOptions = useMemo(
+    () =>
+      allTools
+        .filter((t) => (t.tags ?? []).includes("frame-tool"))
+        .map((t) => ({ id: t.id, name: t.name || t.id }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [allTools]
+  );
 
-  const frameOptions = allTools
-    .filter((tool) => (tool.tags || []).includes("frame-tool"))
-    .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-  const sidebarOptions = allTools
-    .filter((tool) => (tool.tags || []).includes("sidebar-account"))
-    .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-  const contextSidebarOptions = allTools
-    .filter((tool) => (tool.tags || []).includes("sidebar-context"))
-    .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-  const contextToolOptions = allTools
-    .filter((tool) => (tool.tags || []).includes("context-tool"))
-    .map((tool) => ({ id: tool.id, name: tool.name || tool.id }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const sidebarOptions = useMemo(
+    () =>
+      allTools
+        .filter((t) => (t.tags ?? []).includes("sidebar-account"))
+        .map((t) => ({ id: t.id, name: t.name || t.id }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [allTools]
+  );
+
+  const contextSidebarOptions = useMemo(
+    () =>
+      allTools
+        .filter((t) => (t.tags ?? []).includes("sidebar-context"))
+        .map((t) => ({ id: t.id, name: t.name || t.id }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [allTools]
+  );
+
+  const documentToolbarOptions = useMemo(
+    () =>
+      allTools
+        .filter((t) => (t.tags ?? []).includes("titlebar-tool"))
+        .map((t) => ({ id: t.id, name: t.name || t.id }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [allTools]
+  );
+
+  const contextToolOptions = useMemo(
+    () =>
+      allTools
+        .filter((t) => (t.tags ?? []).includes("context-tool"))
+        .map((t) => ({ id: t.id, name: t.name || t.id }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [allTools]
+  );
 
   const setField = useCallback(
     <K extends keyof TinyPatchworkLayoutDoc>(
@@ -239,56 +330,50 @@ export function FrameConfigurator({
     [changeAccountDoc]
   );
 
-  const values = useMemo(() => accountDoc ?? null, [accountDoc]);
-
-  if (!values) {
+  if (!accountDoc) {
     return (
-      <div className="p-4 text-base-content">
-        Loading account configuration…
-      </div>
+      <div className="configurator loading">Loading configuration…</div>
     );
   }
 
   return (
-    <div className="p-4 flex flex-col gap-4 text-base-content">
-      <h2 className="text-lg font-semibold">Frame Configurator</h2>
+    <div className="configurator">
+      <h2 className="configurator-title">Frame Configurator</h2>
 
-      <div className="grid grid-cols-1 gap-4">
-        <LabeledSelect
-          label="Frame Tool"
-          value={values.frameToolId}
-          onChange={(v) => setField("frameToolId", v as any)}
-          options={frameOptions}
-        />
+      <SingleSelect
+        label="Frame Tool"
+        value={accountDoc.frameToolId}
+        onChange={(v) => setField("frameToolId", v as any)}
+        options={frameOptions}
+      />
 
-        <LabeledSelect
-          label="Account Sidebar Tool"
-          value={values.accountSidebarToolId}
-          onChange={(v) => setField("accountSidebarToolId", v as any)}
-          options={sidebarOptions}
-        />
+      <SingleSelect
+        label="Account Sidebar"
+        value={accountDoc.accountSidebarToolId}
+        onChange={(v) => setField("accountSidebarToolId", v as any)}
+        options={sidebarOptions}
+      />
 
-        <LabeledSelect
-          label="Context Sidebar Tool"
-          value={values.contextSidebarToolId}
-          onChange={(v) => setField("contextSidebarToolId", v as any)}
-          options={contextSidebarOptions}
-        />
+      <SingleSelect
+        label="Context Sidebar"
+        value={accountDoc.contextSidebarToolId}
+        onChange={(v) => setField("contextSidebarToolId", v as any)}
+        options={contextSidebarOptions}
+      />
 
-        <ArrayEditor
-          label="Document Toolbar Tools"
-          values={values.documentToolbarToolIds}
-          setValues={(next) => setArrayField("documentToolbarToolIds", next)}
-          addOptions={documentToolbarOptions}
-        />
+      <SortableList
+        label="Toolbar"
+        values={accountDoc.documentToolbarToolIds}
+        setValues={(next) => setArrayField("documentToolbarToolIds", next)}
+        allOptions={documentToolbarOptions}
+      />
 
-        <ArrayEditor
-          label="Context Tools"
-          values={values.contextToolIds}
-          setValues={(next) => setArrayField("contextToolIds", next)}
-          addOptions={contextToolOptions}
-        />
-      </div>
+      <SortableList
+        label="Context Tools"
+        values={accountDoc.contextToolIds}
+        setValues={(next) => setArrayField("contextToolIds", next)}
+        allOptions={contextToolOptions}
+      />
     </div>
   );
 }
