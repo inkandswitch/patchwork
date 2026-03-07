@@ -1,0 +1,574 @@
+@import "tailwindcss";
+
+/* ===== Root ===== */
+
+patchwork-space#space-root {
+  width: 100vw;
+  height: 100vh;
+  gap: 0px;
+  padding: 0px;
+  transition: gap 0.35s ease, padding 0.35s ease;
+}
+
+patchwork-space#space-root[editing] {
+  gap: 6px;
+  padding: 8px;
+  background-image: radial-gradient(circle, color-mix(in oklch, currentColor 15%, transparent) 0.7px, transparent 0.7px);
+  background-size: 16px 16px;
+}
+
+/* ===== Views fill their space ===== */
+
+patchwork-space > patchwork-view {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ===== Child spaces ===== */
+
+patchwork-space > patchwork-space {
+  gap: 0px;
+  padding: 0px;
+  transition: border-radius 0.3s ease, box-shadow 0.3s ease, gap 0.3s ease, padding 0.3s ease;
+}
+
+/*
+ * Depth color system:
+ *   depth 0 = root (invisible)
+ *   depth 1 = outermost visible spaces → grey (no chroma)
+ *   depth 2+ = nested → hue-shifted colors
+ *
+ * We use (depth - 2) so that depth=2 starts at the base hue.
+ */
+patchwork-space[editing] > patchwork-space {
+  --depth-chroma: clamp(0, calc((var(--depth, 0) - 1) * 0.15), 0.15);
+  --depth-hue: calc(250 - max(0, var(--depth, 0) - 2) * 40);
+  --depth-color: oklch(0.55 var(--depth-chroma) var(--depth-hue));
+  border-radius: 10px;
+  box-shadow: 0 0 0 1.5px color-mix(in oklch, var(--depth-color) 45%, transparent);
+  overflow: hidden;
+}
+
+/* Container children in edit mode (only spaces that have child spaces) */
+patchwork-space[editing] > patchwork-space:has(> patchwork-space) {
+  gap: 6px;
+  padding: 4px;
+  overflow: visible;
+  background: color-mix(in oklch, var(--depth-color) 8%, transparent);
+  box-shadow:
+    0 0 0 1.5px color-mix(in oklch, var(--depth-color) 45%, transparent),
+    inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 10%, transparent),
+    inset 0 2px 12px color-mix(in oklch, var(--depth-color) 6%, transparent);
+}
+
+@media (prefers-color-scheme: light) {
+  patchwork-space[editing] > patchwork-space:has(> patchwork-space) {
+    background: color-mix(in oklch, var(--depth-color) 10%, transparent);
+    box-shadow:
+      0 0 0 1.5px color-mix(in oklch, var(--depth-color) 45%, transparent),
+      inset 0 0 0 1px color-mix(in oklch, var(--depth-color) 12%, transparent),
+      inset 0 2px 12px color-mix(in oklch, var(--depth-color) 8%, transparent);
+  }
+}
+
+/* ===== Drag (folk-reorderable pattern) ===== */
+
+patchwork-space {
+  --drag-x: 0px;
+  --drag-y: 0px;
+  transform: translate(var(--drag-x), var(--drag-y));
+  transition: transform 0.2s ease, border-radius 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+patchwork-space[aria-grabbed="true"] {
+  z-index: 999999;
+  transition: none;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.3) !important;
+  opacity: 0.85;
+  border-radius: 12px !important;
+}
+
+/* ===== Drop target ===== */
+
+patchwork-space.drop-target {
+  box-shadow: 0 0 0 2px oklch(0.6 0.2 250), 0 0 16px oklch(0.6 0.2 250 / 0.25) !important;
+  transition: box-shadow 0.1s ease !important;
+}
+
+/* ===== Drop indicator ===== */
+
+.space-drop-indicator {
+  position: fixed;
+  z-index: 100000;
+  background: oklch(0.6 0.2 250);
+  border-radius: 3px;
+  pointer-events: none;
+  transition: left 0.1s ease, top 0.1s ease, width 0.1s ease, height 0.1s ease;
+  box-shadow: 0 0 8px oklch(0.6 0.2 250 / 0.5);
+}
+
+/* ===== Add ghost (drag-to-add) ===== */
+
+.space-add-ghost {
+  position: fixed;
+  z-index: 100001;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: oklch(0.3 0.15 250);
+  color: oklch(0.9 0.05 250);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  white-space: nowrap;
+}
+
+/* ===== Empty state ===== */
+
+.space-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  opacity: 0.5;
+  font-size: 14px;
+}
+
+/* ===== Toolbar ===== */
+
+.space-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.space-toolbar-item {
+  width: fit-content !important;
+  height: 32px !important;
+  overflow: hidden !important;
+  display: flex !important;
+}
+
+/* ===== Drag handle (bar with grip icon + close button) ===== */
+
+.space-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 11;
+  user-select: none;
+  touch-action: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  border-radius: 8px 8px 0 0;
+  color: var(--depth-color, color-mix(in oklch, currentColor 50%, transparent));
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='40'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E"),
+    color-mix(in oklch, var(--depth-color, currentColor) 10%, transparent);
+  background-size: 200px 40px, auto;
+}
+
+patchwork-space[editing] > patchwork-space > .space-drag-handle {
+  opacity: 0.8;
+}
+
+.space-drag-handle:hover {
+  opacity: 1 !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='40'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E"),
+    color-mix(in oklch, var(--depth-color, currentColor) 16%, transparent);
+  background-size: 200px 40px, auto;
+}
+
+.space-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Close button integrated into drag handle */
+.space-handle-close {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.8;
+  transition: opacity 0.1s ease, background 0.1s ease;
+  pointer-events: auto;
+}
+
+.space-handle-close:hover {
+  opacity: 1;
+  background: color-mix(in oklch, var(--depth-color, currentColor) 25%, transparent);
+}
+
+/* (dividers are now patchwork-pipe elements — styles below) */
+
+/* ===== Edit controls bar ===== */
+
+.edit-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.edit-overlay > * {
+  pointer-events: auto;
+}
+
+.edit-controls-bar {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: color-mix(in oklch, currentColor 6%, Canvas);
+  backdrop-filter: blur(20px) saturate(1.8);
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, currentColor 10%, transparent),
+    0 4px 16px rgba(0,0,0,0.10);
+  z-index: 1001;
+  color: CanvasText;
+}
+
+.edit-ctrl-btn {
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  white-space: nowrap;
+}
+
+.edit-ctrl-btn:hover {
+  background: color-mix(in oklch, currentColor 8%, transparent);
+}
+
+.edit-ctrl-btn--primary {
+  background: oklch(0.55 0.2 250);
+  color: white;
+  font-weight: 600;
+}
+
+.edit-ctrl-btn--primary:hover {
+  background: oklch(0.50 0.22 250);
+}
+
+.edit-ctrl-btn--add {
+  color: oklch(0.55 0.2 250);
+  font-weight: 600;
+}
+
+.edit-ctrl-btn--add:hover {
+  background: oklch(0.55 0.2 250 / 0.08);
+}
+
+.edit-ctrl-sep {
+  width: 1px;
+  height: 16px;
+  background: color-mix(in oklch, currentColor 12%, transparent);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+/* ===== Preview element ===== */
+
+patchwork-preview {
+  background: Canvas;
+  color: CanvasText;
+}
+
+/* ===== Space picker (new space type selector) ===== */
+
+.space-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  background: color-mix(in oklch, currentColor 3%, Canvas);
+  color: CanvasText;
+}
+
+.space-picker-title {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.5;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.space-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  min-width: 160px;
+}
+
+.space-picker-option:hover {
+  background: color-mix(in oklch, currentColor 6%, transparent);
+  border-color: color-mix(in oklch, currentColor 20%, transparent);
+}
+
+.space-picker-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+/* ===== Pipe center button ===== */
+
+.pipe-center-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in oklch, var(--depth-color, currentColor) 40%, transparent);
+  background: Canvas;
+  color: color-mix(in oklch, var(--depth-color, currentColor) 70%, CanvasText);
+  font-size: 12px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  pointer-events: auto;
+}
+
+patchwork-pipe[editing]:hover .pipe-center-btn {
+  opacity: 1;
+}
+
+patchwork-pipe[editing][transform] .pipe-center-btn {
+  opacity: 0.7;
+  border-color: oklch(0.55 0.2 250 / 0.6);
+  color: oklch(0.55 0.2 250);
+}
+
+patchwork-pipe[editing][transform]:hover .pipe-center-btn {
+  opacity: 1;
+}
+
+.pipe-center-btn:hover {
+  background: oklch(0.55 0.2 250);
+  color: white;
+  border-color: oklch(0.55 0.2 250);
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+/* ===== Pipe indicator ===== */
+
+.pipe-indicator {
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: none;
+  background: oklch(0.55 0.2 250);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  z-index: 10;
+  transition: transform 0.15s ease;
+}
+
+.pipe-indicator:hover {
+  transform: scale(1.1);
+}
+
+/* ===== Pipe editor ===== */
+
+.pipe-editor {
+  position: absolute;
+  z-index: 1002;
+  background: color-mix(in oklch, currentColor 5%, Canvas);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 0 0 1px color-mix(in oklch, currentColor 10%, transparent);
+  min-width: 240px;
+  overflow: visible;
+  color: CanvasText;
+}
+
+.pipe-editor-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pipe-editor-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pipe-editor-close,
+.pipe-editor-expand-btn,
+.pipe-editor-clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.5;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.pipe-editor-close:hover,
+.pipe-editor-expand-btn:hover {
+  opacity: 1;
+}
+
+.pipe-editor-clear-btn {
+  color: oklch(0.55 0.25 25);
+  opacity: 0.7;
+}
+
+.pipe-editor-clear-btn:hover {
+  opacity: 1;
+  background: oklch(0.55 0.25 25 / 0.1);
+}
+
+.pipe-editor-body {
+  padding: 4px;
+}
+
+.pipe-editor-empty {
+  padding: 12px;
+  text-align: center;
+  opacity: 0.5;
+  font-size: 13px;
+}
+
+.pipe-editor-picker-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: inherit;
+  transition: background 0.1s ease;
+}
+
+.pipe-editor-picker-item:hover {
+  background: color-mix(in oklch, currentColor 8%, transparent);
+}
+
+.pipe-editor-picker-item.active {
+  background: oklch(0.55 0.2 250 / 0.12);
+  color: oklch(0.45 0.2 250);
+  font-weight: 500;
+}
+
+/* ===== patchwork-pipe (also serves as resize divider) ===== */
+
+patchwork-pipe {
+  position: relative;
+  flex-shrink: 0;
+  touch-action: none;
+  border-radius: 2px;
+  transition: background 0.15s ease;
+}
+
+patchwork-pipe[editing] {
+  background: color-mix(in oklch, var(--depth-color, currentColor) 20%, transparent);
+}
+
+patchwork-pipe[editing]:hover {
+  background: color-mix(in oklch, var(--depth-color, currentColor) 50%, transparent);
+}
+
+patchwork-pipe[expanded] {
+  display: flex !important;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  background: Canvas;
+}
+
+/* ===== Expanded pipe header ===== */
+
+.pipe-expanded-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 8px;
+  background: color-mix(in oklch, currentColor 6%, Canvas);
+  border-bottom: 1px solid color-mix(in oklch, currentColor 10%, transparent);
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: color-mix(in oklch, currentColor 60%, Canvas);
+}
+
+.pipe-expanded-collapse {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: inherit;
+  opacity: 0.6;
+  padding: 2px 4px;
+}
+
+.pipe-expanded-collapse:hover {
+  opacity: 1;
+}
