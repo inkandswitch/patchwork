@@ -1,4 +1,10 @@
-import type { DocHandle, Repo } from "@automerge/automerge-repo";
+import {
+  isValidAutomergeUrl,
+  parseAutomergeUrl,
+  stringifyAutomergeUrl,
+  type DocHandle,
+  type Repo,
+} from "@automerge/automerge-repo";
 import type {
   LoadablePlugin,
   LoadedPlugin,
@@ -41,9 +47,19 @@ export const createDocOfDatatype2 = async <D>(
   const handle = await repo.create2<D & HasPatchworkMetadata>();
   handle.change((doc) => {
     datatype.module.init(doc, repo);
+    let importUrl = datatype.importUrl;
+    if (isValidAutomergeUrl(importUrl)) {
+      const parsed = parseAutomergeUrl(importUrl);
+      if (parsed.heads) {
+        console.warn(
+          `stripping heads from importUrl for ${datatype.id} for new document`
+        );
+      }
+      importUrl = stringifyAutomergeUrl(parsed.documentId);
+    }
     (doc as any)["@patchwork"] = {
       type: datatype.id,
-      suggestedImportUrl: datatype.importUrl,
+      suggestedImportUrl: importUrl,
     };
     if (change) {
       change(doc);
