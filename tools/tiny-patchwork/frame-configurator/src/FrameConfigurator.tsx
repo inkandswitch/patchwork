@@ -100,6 +100,7 @@ function SortableList({
   allOptions: ModuleOption[];
 }) {
   const [showAdd, setShowAdd] = useState(false);
+  const [customId, setCustomId] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -140,12 +141,25 @@ function SortableList({
   const add = useCallback(
     (id: string) => {
       setValues([...(values ?? []), id]);
-      setShowAdd(false);
     },
     [setValues, values]
   );
 
+  const addCustom = useCallback(() => {
+    const id = customId.trim();
+    if (!id) return;
+    setValues([...(values ?? []), id]);
+    setCustomId("");
+  }, [customId, setValues, values]);
+
   const items = values ?? [];
+
+  const plusIcon = (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <line x1="7" y1="3" x2="7" y2="11" />
+      <line x1="3" y1="7" x2="11" y2="7" />
+    </svg>
+  );
 
   return (
     <fieldset className="config-section">
@@ -169,44 +183,47 @@ function SortableList({
         </SortableContext>
       </DndContext>
 
-      {available.length > 0 && (
-        <>
-          {showAdd ? (
-            <div className="add-menu">
-              {available.map((opt) => (
-                <button
-                  key={opt.id}
-                  className="add-option"
-                  onClick={() => add(opt.id)}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <line x1="7" y1="3" x2="7" y2="11" />
-                    <line x1="3" y1="7" x2="11" y2="7" />
-                  </svg>
-                  {opt.name}
-                </button>
-              ))}
-              <button
-                className="add-cancel"
-                onClick={() => setShowAdd(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button className="add-btn" onClick={() => setShowAdd(true)}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <line x1="7" y1="3" x2="7" y2="11" />
-                <line x1="3" y1="7" x2="11" y2="7" />
-              </svg>
-              Add
+      {showAdd ? (
+        <div className="add-menu">
+          {available.map((opt) => (
+            <button
+              key={opt.id}
+              className="add-option"
+              onClick={() => add(opt.id)}
+            >
+              {plusIcon}
+              {opt.name}
             </button>
-          )}
-        </>
-      )}
-
-      {items.length === 0 && available.length === 0 && (
-        <p className="empty-message">No tools available</p>
+          ))}
+          <div className="add-custom">
+            <input
+              type="text"
+              className="add-custom-input"
+              placeholder="tool-id"
+              value={customId}
+              onChange={(e) => setCustomId(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addCustom()}
+            />
+            <button
+              className="add-custom-btn"
+              onClick={addCustom}
+              disabled={!customId.trim()}
+            >
+              {plusIcon}
+            </button>
+          </div>
+          <button
+            className="add-cancel"
+            onClick={() => { setShowAdd(false); setCustomId(""); }}
+          >
+            Done
+          </button>
+        </div>
+      ) : (
+        <button className="add-btn" onClick={() => setShowAdd(true)}>
+          {plusIcon}
+          Add
+        </button>
       )}
     </fieldset>
   );
@@ -344,7 +361,10 @@ export function FrameConfigurator({
       <SingleSelect
         label="Frame Tool"
         value={accountDoc.frameToolId}
-        onChange={(v) => setField("frameToolId", v as any)}
+        onChange={(v) => {
+          setField("frameToolId", v as any);
+          setTimeout(() => window.location.reload(), 200);
+        }}
         options={frameOptions}
       />
 

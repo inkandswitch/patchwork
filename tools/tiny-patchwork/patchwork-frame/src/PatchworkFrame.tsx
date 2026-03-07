@@ -14,7 +14,7 @@ import {
 import { Sidebar } from "./components/Sidebar";
 import { DocumentToolbar } from "./components/DocumentToolbar";
 import { MainDocumentView } from "./components/MainDocumentView";
-import { createMemo } from "solid-js";
+import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import "./styles.css";
 
 // Sidebar dimensions
@@ -31,13 +31,28 @@ export const PatchworkFrame = ({
   element: HTMLElement | ShadowRoot;
   repo: Repo;
 }) => {
-  // Use useDocHandle and read doc() directly to avoid autoproduce wrapper
-  // which conflicts with pattern-based refs used in comment modifications
+  // Track doc changes via a version counter so accountDoc() recomputes
+  // on every change. We avoid useDocument/autoproduce because its store
+  // proxying conflicts with Automerge array splice operations.
   const accountDocHandle = useDocHandle<TinyPatchworkConfigDoc>(
     () => handle.url,
     { repo }
   );
-  const accountDoc = createMemo(() => accountDocHandle()?.doc());
+  const [docVersion, setDocVersion] = createSignal(0);
+
+  createEffect(() => {
+    const h = accountDocHandle();
+    if (!h) return;
+    const onChange = () => setDocVersion((v) => v + 1);
+    h.on("change", onChange);
+    onCleanup(() => h.off("change", onChange));
+  });
+
+  const accountDoc = createMemo(() => {
+    docVersion();
+    return accountDocHandle()?.doc();
+  });
+
   const accountDocUrl = handle.url;
 
   // Sidebar state management
@@ -104,7 +119,7 @@ export const PatchworkFrame = ({
       {/* Main Content Area */}
       <div class="flex flex-col flex-1 h-full">
         <DocumentToolbar
-          toolIds={accountDoc()?.documentToolbarToolIds}
+          toolIds={() => accountDoc()?.documentToolbarToolIds}
           docUrl={selectedDoc.selectedDocUrl}
         />
         <MainDocumentView
