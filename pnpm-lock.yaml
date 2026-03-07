@@ -128,10 +128,16 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../plugins
+      debug:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
         version: 0.1.0-alpha.14
+      '@types/debug':
+        specifier: ^4.1.12
+        version: 4.1.12
       '@types/node':
         specifier: ^20.19.9
         version: 20.19.22

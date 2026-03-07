@@ -5,10 +5,8 @@ import {
   type Repo,
 } from "@automerge/automerge-repo";
 import {
-  getSuggestedImportUrl,
   getType,
   type HasPatchworkMetadata,
-  type ModuleWatcher,
 } from "@inkandswitch/patchwork-filesystem";
 import {
   getFallbackTool,
@@ -16,7 +14,10 @@ import {
   isLoadablePlugin,
   type LoadedTool,
 } from "@inkandswitch/patchwork-plugins";
+import debug from "debug";
 import { MountedEvent, NoToolEvent } from "./events.js";
+
+const log = debug("patchwork:elements:view");
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
@@ -310,7 +311,7 @@ export function registerPatchworkViewElement(
           toolRegistry.load(this.#tool.id);
           if (toolRegistry.loading.has(this.#tool.id)) {
             this.#state = "unable";
-            console.log(`loading ${toolId}`);
+            log(`loading ${toolId}`);
             this.#displayLoading(toolId);
           } else {
             this.#state = "unable";
