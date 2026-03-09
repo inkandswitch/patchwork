@@ -166,9 +166,15 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           const handoffResponse = await resolvers.promise;
           log("received handoff response", handoffResponse);
           if (handoffResponse) {
+            const headers = new Headers(handoffResponse.headers);
+            headers.set(
+              "cross-origin-embedder-policy",
+              "credentialless"
+            );
+            headers.set("cross-origin-resource-policy", "cross-origin");
             const response = new Response(handoffResponse.body, {
               status: handoffResponse.status,
-              headers: handoffResponse.headers,
+              headers,
             });
             if (handoffResponse.cache === false) {
               log(`caching disabled on ${handoffURL}`);
