@@ -27,8 +27,8 @@
     "vitest": "^2.1.8"
   },
   "dependencies": {
+    "@automerge/automerge-repo": "catalog:",
     "@inkandswitch/subscribables": "workspace:*",
-    "@inkandswitch/patchwork-refs": "workspace:*",
     "eventemitter3": "^5.0.1"
   }
 }

@@ -1,5 +1,5 @@
 import { SubscribableObject, SubscriberSet } from "@inkandswitch/subscribables";
-import { type Ref } from "@inkandswitch/patchwork-refs";
+import { type Ref } from "@automerge/automerge-repo";
 import EventEmitter from "eventemitter3";
 import type {
   AnnotationType,
@@ -487,11 +487,11 @@ export class AnnotationSet
   /**
    * Iterator for all unique refs that have annotations
    */
-  get refs(): Iterable<Ref<unknown>> {
+  get refs(): Iterable<Ref<any>> {
     const self = this;
     return {
       *[Symbol.iterator]() {
-        const seenRefs = new Set<Ref<unknown>>();
+        const seenRefs = new Set<Ref<any>>();
 
         // Yield refs from local storage
         for (const ref of self.#typeIdsByRef.keys()) {
@@ -518,7 +518,7 @@ export class AnnotationSet
    * Make the annotation set iterable
    * Iterates over own annotations and all sub-annotation sets
    */
-  *[Symbol.iterator](): Iterator<[Ref<unknown>, AnnotationValue<any>]> {
+  *[Symbol.iterator](): Iterator<[Ref<any>, AnnotationValue<any>]> {
     // Yield own annotations
     for (const [, annotationsByRef] of this.#annotationsByTypeId) {
       for (const [ref, annotations] of annotationsByRef) {

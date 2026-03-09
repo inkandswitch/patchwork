@@ -17,13 +17,7 @@ import {
   createReply,
 } from "@inkandswitch/annotations-comments";
 import { useSubscribe } from "@inkandswitch/subscribables-react";
-import {
-  Ref,
-  RefOfType,
-  ref,
-  findRef,
-  RefUrl,
-} from "@inkandswitch/patchwork-refs";
+import { findRef, type Ref, type RefUrl } from "@automerge/automerge-repo";
 import { useRefValue } from "@inkandswitch/patchwork-refs-react";
 import { Repo } from "@automerge/automerge-repo";
 
@@ -69,15 +63,12 @@ const ThreadView = ({
   threadRef,
   onSelectRefs,
 }: {
-  threadRef: RefOfType<SerializedCommentThread>;
+  threadRef: Ref<SerializedCommentThread>;
   onSelectRefs: (refs: Ref[]) => void;
 }) => {
   const selectedRefs = useSubscribe($selectedRefs);
 
-  // Cast to Ref<any, any> for useRefValue - RefOfType is structurally compatible at runtime
-  const thread = useRefValue<SerializedCommentThread>(
-    threadRef as unknown as Ref<any, any> // todo: fix types
-  );
+  const thread = useRefValue(threadRef);
   const repo = useRepo();
 
   // Get current account's contactUrl
@@ -105,11 +96,9 @@ const ThreadView = ({
   const { comments } = thread;
 
   const onResolveThread = () => {
-    (threadRef as unknown as Ref<any, any>).change(
-      (thread: SerializedCommentThread) => {
-        thread.isResolved = true;
-      }
-    );
+    threadRef.change((thread: SerializedCommentThread) => {
+      thread.isResolved = true;
+    });
   };
 
   const onSelect = () => {
@@ -119,13 +108,13 @@ const ThreadView = ({
   const onReplyToComment = () => {
     if (!currentAccount?.contactUrl) return;
     createReply({
-      threadRef: threadRef as unknown as Ref<any, any>,
+      threadRef,
       content: "",
       contactUrl: currentAccount.contactUrl,
     });
   };
 
-  const onDeleteComment = (commentRef: Ref<any, any>) => {
+  const onDeleteComment = (commentRef: Ref) => {
     commentRef.remove();
 
     // If no comments left, delete the thread
@@ -139,8 +128,7 @@ const ThreadView = ({
     (c) => c.draftContent !== undefined || c.content === undefined
   );
   const draftCommentRef = draftComment
-    ? ref(
-        threadRef.docHandle,
+    ? threadRef.docHandle.ref(
         "@comments",
         "threads",
         { id: thread.id },
@@ -151,7 +139,7 @@ const ThreadView = ({
 
   const onSaveDraft = () => {
     if (!draftCommentRef) return;
-    (draftCommentRef as Ref<any, any>).change((comment: Comment) => {
+    draftCommentRef.change((comment: Comment) => {
       comment.content = comment.draftContent;
       comment.timestamp = Date.now();
 
@@ -163,10 +151,10 @@ const ThreadView = ({
     if (!draftCommentRef) return;
     const commentValue = draftCommentRef.value() as Comment | undefined;
     if (commentValue?.content === undefined) {
-      onDeleteComment(draftCommentRef as Ref<any, any>);
+      onDeleteComment(draftCommentRef);
       return;
     }
-    (draftCommentRef as Ref<any, any>).change((comment: Comment) => {
+    draftCommentRef.change((comment: Comment) => {
       delete comment.draftContent;
     });
   };
@@ -179,8 +167,7 @@ const ThreadView = ({
       >
         <div className="card-body p-2 space-y-2">
           {comments.map((comment) => {
-            const commentRef = ref(
-              threadRef.docHandle,
+            const commentRef = threadRef.docHandle.ref(
               "@comments",
               "threads",
               { id: thread.id },
@@ -191,7 +178,7 @@ const ThreadView = ({
             return (
               <CommentView
                 key={commentRef.url}
-                commentRef={commentRef as Ref<any, any>}
+                commentRef={commentRef}
                 onSelect={onSelect}
                 currentContactUrl={currentAccount?.contactUrl}
               />
@@ -253,7 +240,7 @@ const ThreadView = ({
 };
 
 type CommentViewProps = {
-  commentRef: Ref<any, any>;
+  commentRef: Ref;
   onSelect: () => void;
   currentContactUrl?: string;
 };

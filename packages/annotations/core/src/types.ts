@@ -1,11 +1,11 @@
 import EventEmitter from "eventemitter3";
-import { type Ref } from "@inkandswitch/patchwork-refs";
+import { type Ref } from "@automerge/automerge-repo";
 
 import type { AnnotationType, AnnotationValue } from "./annotation-type";
 
 export type AnnotationSource<
-  RefType = unknown,
-  AnnotationValueType = unknown,
+  RefType = any,
+  AnnotationValueType = any,
 > = EventEmitter<AnnotationEvents> & {
   [Symbol.iterator](): Iterator<
     [Ref<RefType>, AnnotationValue<AnnotationValueType>]
@@ -22,7 +22,7 @@ export type AnnotationSource<
   refs: Iterable<Ref<RefType>>;
 };
 
-export type Annotation<RefType = unknown, AnnotationValueType = unknown> = [
+export type Annotation<RefType = any, AnnotationValueType = any> = [
   Ref<RefType>,
   AnnotationValue<AnnotationValueType>,
 ];
@@ -41,8 +41,8 @@ export type AnnotationEvents = {
  * Predicate function for filtering annotations
  */
 export type AnnotationFilter<
-  RefType = unknown,
-  AnnotationValueType = unknown,
+  RefType = any,
+  AnnotationValueType = any,
 > = (
   ref: Ref<RefType>,
   annotation: AnnotationValue<AnnotationValueType>

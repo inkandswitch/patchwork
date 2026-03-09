@@ -3,17 +3,16 @@ import { AnnotationSet } from "@inkandswitch/annotations";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
 import { IsSelected } from "@inkandswitch/annotations-selection";
 import { CommentThread } from "@inkandswitch/annotations-comments";
-import type { Ref } from "@inkandswitch/patchwork-refs";
-import type { RefOfType } from "@inkandswitch/patchwork-refs";
+import type { Ref } from "@automerge/automerge-repo";
 import type {
   SerializedCommentThread,
   CommentThread as CommentThreadType,
 } from "@inkandswitch/annotations-comments";
 
 interface UseAnnotationsParams {
-  selectedDocRef: Accessor<Ref<unknown> | undefined>;
+  selectedDocRef: Accessor<Ref | undefined>;
   commentThreadsWithRef: Accessor<
-    [RefOfType<SerializedCommentThread>, CommentThreadType][]
+    [Ref<SerializedCommentThread>, CommentThreadType][]
   >;
 }
 

@@ -1,5 +1,5 @@
 import { SubscribableObject, SubscriberSet } from "@inkandswitch/subscribables";
-import { type Ref } from "@inkandswitch/patchwork-refs";
+import { type Ref } from "@automerge/automerge-repo";
 import EventEmitter from "eventemitter3";
 import { AnnotationType, AnnotationValue } from "../annotation-type";
 import {
@@ -64,7 +64,7 @@ export class AnnotationsOfType<T>
   /**
    * Lookup the first annotation value for a ref
    */
-  lookup(ref: Ref<unknown>): T | undefined {
+  lookup(ref: Ref<any>): T | undefined {
     for (const [entryRef, annotation] of this.#source.entriesOfType(
       this.#type
     )) {
@@ -78,7 +78,7 @@ export class AnnotationsOfType<T>
   /**
    * Lookup all annotation values for a ref
    */
-  lookupAll(ref: Ref<unknown>): T[] {
+  lookupAll(ref: Ref<any>): T[] {
     const result: T[] = [];
     for (const [entryRef, annotation] of this.#source.entriesOfType(
       this.#type
@@ -93,12 +93,12 @@ export class AnnotationsOfType<T>
   /**
    * Iterator for all unique refs that have annotations of this type
    */
-  get refs(): Iterable<Ref<unknown>> {
+  get refs(): Iterable<Ref<any>> {
     const source = this.#source;
     const type = this.#type;
     return {
       *[Symbol.iterator]() {
-        const seenRefs = new Set<Ref<unknown>>();
+        const seenRefs = new Set<Ref<any>>();
 
         for (const [ref] of source.entriesOfType(type)) {
           if (!seenRefs.has(ref)) {

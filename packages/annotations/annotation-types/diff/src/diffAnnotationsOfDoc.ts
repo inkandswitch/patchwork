@@ -1,8 +1,7 @@
-import { DocHandle } from "@automerge/automerge-repo";
+import { DocHandle, cursor } from "@automerge/automerge-repo";
 import { Automerge } from "@automerge/automerge-repo/slim";
 import { AnnotationSet } from "@inkandswitch/annotations";
 import { last, lookup } from "./utils";
-import { cursor, ref } from "@inkandswitch/patchwork-refs";
 import { Diff } from "./types";
 
 /**
@@ -50,7 +49,7 @@ export function diffAnnotationsOfDoc(
       const key = JSON.stringify(ancestorSubPath);
       if (modifiedPaths.has(key)) break;
 
-      const ancestorRef = ref(docHandle, ...ancestorSubPath);
+      const ancestorRef = docHandle.ref(...ancestorSubPath);
       const before = lookup(docBefore, ancestorSubPath);
 
       if (before) {
@@ -63,7 +62,7 @@ export function diffAnnotationsOfDoc(
     }
 
     // Then add leaf annotations for the specific patch
-    const objRef = ref(docHandle, ...patch.path);
+    const objRef = docHandle.ref(...patch.path);
 
     switch (patch.action) {
       case "put":
@@ -93,8 +92,7 @@ export function diffAnnotationsOfDoc(
             );
 
             // Marker position = patch position (patches are ordered, so this is the current doc position)
-            const textSpanRef = ref(
-              docHandle,
+            const textSpanRef = docHandle.ref(
               ...parentPath,
               cursor(patchPosition, patchPosition)
             );
@@ -137,8 +135,7 @@ export function diffAnnotationsOfDoc(
         const offset = offsetByPath.get(key) ?? 0;
 
         // Annotation position = patch position (patches are ordered)
-        const textSpanRef = ref(
-          docHandle,
+        const textSpanRef = docHandle.ref(
           ...parentPath,
           cursor(patchPosition, patchPosition + length)
         );

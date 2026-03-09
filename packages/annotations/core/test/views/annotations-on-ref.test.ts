@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Repo, type DocHandle } from "@automerge/automerge-repo";
-import { ref } from "@inkandswitch/patchwork-refs";
+
 import { AnnotationSet } from "../../src/annotation-set";
 import { defineAnnotationType } from "../../src/annotation-type";
 
@@ -20,8 +20,8 @@ describe("AnnotationsOnRef", () => {
   it("should filter annotations by ref", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
-    const itemRef = ref(handle, "items", 0);
+    const titleRef = handle.ref("title");
+    const itemRef = handle.ref("items", 0);
 
     annotations.add(titleRef, Comment("Title comment"));
     annotations.add(itemRef, Comment("Item comment"));
@@ -35,7 +35,7 @@ describe("AnnotationsOnRef", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const Highlight = defineAnnotationType<{ color: string }>("test/highlight");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
+    const titleRef = handle.ref("title");
 
     annotations.add(titleRef, Comment("A comment"));
     annotations.add(titleRef, Highlight({ color: "yellow" }));
@@ -49,7 +49,7 @@ describe("AnnotationsOnRef", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const Highlight = defineAnnotationType<{ color: string }>("test/highlight");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
+    const titleRef = handle.ref("title");
 
     annotations.add(titleRef, Comment("A comment"));
 
@@ -60,7 +60,7 @@ describe("AnnotationsOnRef", () => {
   it("should lookupAll values by type", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
+    const titleRef = handle.ref("title");
 
     annotations.add(titleRef, Comment("First"));
     annotations.add(titleRef, Comment("Second"));
@@ -76,7 +76,7 @@ describe("AnnotationsOnRef", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const Highlight = defineAnnotationType<{ color: string }>("test/highlight");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
+    const titleRef = handle.ref("title");
 
     annotations.add(titleRef, Comment("A comment"));
 
@@ -87,7 +87,7 @@ describe("AnnotationsOnRef", () => {
   it("should be reactive to changes on that ref", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
+    const titleRef = handle.ref("title");
     const changeHandler = vi.fn();
 
     const titleAnnotations = annotations.onRef(titleRef);
@@ -103,8 +103,8 @@ describe("AnnotationsOnRef", () => {
   it("should not emit for changes on different ref", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
-    const itemRef = ref(handle, "items", 0);
+    const titleRef = handle.ref("title");
+    const itemRef = handle.ref("items", 0);
     const changeHandler = vi.fn();
 
     const titleAnnotations = annotations.onRef(titleRef);
@@ -118,7 +118,7 @@ describe("AnnotationsOnRef", () => {
   it("should support subscribe for Observable interface", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
+    const titleRef = handle.ref("title");
     const subscriber = vi.fn();
 
     const titleAnnotations = annotations.onRef(titleRef);
@@ -132,7 +132,7 @@ describe("AnnotationsOnRef", () => {
   it("should iterate over refs (only the filtered ref)", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
+    const titleRef = handle.ref("title");
 
     annotations.add(titleRef, Comment("A comment"));
 
@@ -146,7 +146,7 @@ describe("AnnotationsOnRef", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const Highlight = defineAnnotationType<{ color: string }>("test/highlight");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
+    const titleRef = handle.ref("title");
 
     annotations.add(titleRef, Comment("A comment"));
     annotations.add(titleRef, Highlight({ color: "yellow" }));
@@ -160,8 +160,8 @@ describe("AnnotationsOnRef", () => {
   it("should support entriesOnRef (only yields for matching ref)", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
-    const itemRef = ref(handle, "items", 0);
+    const titleRef = handle.ref("title");
+    const itemRef = handle.ref("items", 0);
 
     annotations.add(titleRef, Comment("Title comment"));
 
@@ -178,7 +178,7 @@ describe("AnnotationsOnRef", () => {
     const Comment = defineAnnotationType<string>("test/comment");
     const parent = new AnnotationSet();
     const child = new AnnotationSet();
-    const titleRef = ref(handle, "title");
+    const titleRef = handle.ref("title");
 
     parent.add(titleRef, Comment("Parent comment"));
     child.add(titleRef, Comment("Child comment"));
@@ -193,7 +193,7 @@ describe("AnnotationsOnRef", () => {
     const Highlight = defineAnnotationType<{ color: string }>("test/highlight");
     const Tag = defineAnnotationType<string>("test/tag");
     const annotations = new AnnotationSet();
-    const titleRef = ref(handle, "title");
+    const titleRef = handle.ref("title");
 
     annotations.add(titleRef, Comment("A comment"));
     annotations.add(titleRef, Highlight({ color: "yellow" }));
@@ -216,11 +216,11 @@ describe("AnnotationsOnRef", () => {
       });
 
       // Add annotation using pattern-based ref
-      const patternRef = ref(handle, "todos", { id: "abc" });
+      const patternRef = handle.ref("todos", { id: "abc" });
       annotations.add(patternRef, Comment("Comment on first"));
 
       // Create view using index-based ref
-      const indexRef = ref(handle, "todos", 0);
+      const indexRef = handle.ref("todos", 0);
       const view = annotations.onRef(indexRef);
 
       expect([...view]).toHaveLength(1);
@@ -237,12 +237,12 @@ describe("AnnotationsOnRef", () => {
       });
 
       // Create view with index-based ref
-      const indexRef = ref(handle, "todos", 0);
+      const indexRef = handle.ref("todos", 0);
       const view = annotations.onRef(indexRef);
       view.on("change", changeHandler);
 
       // Add annotation with pattern-based ref (equivalent)
-      const patternRef = ref(handle, "todos", { id: "abc" });
+      const patternRef = handle.ref("todos", { id: "abc" });
       annotations.add(patternRef, Comment("New comment"));
 
       expect(changeHandler).toHaveBeenCalled();
@@ -263,12 +263,12 @@ describe("AnnotationsOnRef", () => {
       });
 
       // Create view for first item
-      const firstRef = ref(handle, "todos", 0);
+      const firstRef = handle.ref("todos", 0);
       const view = annotations.onRef(firstRef);
       view.on("change", changeHandler);
 
       // Add annotation to second item
-      const secondRef = ref(handle, "todos", { id: "def" });
+      const secondRef = handle.ref("todos", { id: "def" });
       annotations.add(secondRef, Comment("Comment on second"));
 
       expect(changeHandler).not.toHaveBeenCalled();
@@ -282,10 +282,10 @@ describe("AnnotationsOnRef", () => {
         d.todos = [{ id: "abc", title: "First" }];
       });
 
-      const patternRef = ref(handle, "todos", { id: "abc" });
+      const patternRef = handle.ref("todos", { id: "abc" });
       annotations.add(patternRef, Comment("A comment"));
 
-      const indexRef = ref(handle, "todos", 0);
+      const indexRef = handle.ref("todos", 0);
       const view = annotations.onRef(indexRef);
 
       // entriesOnRef with the same ref should work

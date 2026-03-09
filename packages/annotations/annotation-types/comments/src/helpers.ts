@@ -1,10 +1,4 @@
-import { DocHandle, Repo } from "@automerge/automerge-repo";
-import {
-  type Ref,
-  type RefOfType,
-  ref,
-  findRef,
-} from "@inkandswitch/patchwork-refs";
+import { DocHandle, Repo, type Ref, findRef } from "@automerge/automerge-repo";
 import { DocWithComments, CommentThread, Comment } from "./types";
 import type {
   CommentThread as CommentThreadType,
@@ -15,9 +9,9 @@ import { AnnotationSet } from "@inkandswitch/annotations";
 /**
  * Create a new comment thread attached to the given refs.
  */
-export function createCommentThread(refs: Ref[]): Ref<DocWithComments> {
+export function createCommentThread(refs: Ref[]): Ref {
   const docHandle = refs[0].docHandle as DocHandle<DocWithComments>;
-  const docRef = ref(docHandle);
+  const docRef = docHandle.ref();
   const threadId = crypto.randomUUID();
 
   docRef.change((doc) => {
@@ -33,7 +27,7 @@ export function createCommentThread(refs: Ref[]): Ref<DocWithComments> {
     });
   });
 
-  return ref(docHandle, "@comments", "threads", { id: threadId });
+  return docHandle.ref("@comments", "threads", { id: threadId });
 }
 
 /**
@@ -44,10 +38,10 @@ export function createReply({
   content,
   contactUrl,
 }: {
-  threadRef: Ref;
+  threadRef: Ref<any>;
   content?: string;
   contactUrl: string;
-}): Ref<DocWithComments> {
+}): Ref {
   const commentId = crypto.randomUUID();
 
   threadRef.change((thread: CommentThread) => {
@@ -61,7 +55,7 @@ export function createReply({
       comment.content = content;
     }
 
-    (thread as CommentThread).comments.push(comment);
+    thread.comments.push(comment);
   });
 
   const docHandle = threadRef.docHandle as DocHandle<DocWithComments>;
@@ -69,7 +63,7 @@ export function createReply({
   const threadValue = threadRef.value() as CommentThread | undefined;
   const threadIndex = threads.findIndex((t) => t.id === threadValue?.id);
 
-  return ref(docHandle, "@comments", "threads", threadIndex, "comments", {
+  return docHandle.ref("@comments", "threads", threadIndex, "comments", {
     id: commentId,
   });
 }
@@ -85,7 +79,7 @@ export function createComment({
   refs: Ref[];
   content: string;
   contactUrl: string;
-}): Ref<DocWithComments> {
+}): Ref {
   const threadRef = createCommentThread(refs);
   return createReply({ threadRef, content, contactUrl });
 }
@@ -96,7 +90,7 @@ export function createComment({
 export async function commentThreadsWithRefOfDoc(
   docHandle: DocHandle<DocWithComments>,
   repo: Repo
-): Promise<[RefOfType<SerializedCommentThread>, CommentThread][]> {
+): Promise<[Ref<SerializedCommentThread>, CommentThread][]> {
   const result = new AnnotationSet();
   const serializedThreads = docHandle.doc()["@comments"]?.threads;
 
@@ -112,11 +106,11 @@ export async function commentThreadsWithRefOfDoc(
           serializedThread.refs.map((refUrl) => findRef(repo, refUrl))
         ),
       };
-      const threadRef = ref(docHandle, "@comments", "threads", {
+      const threadRef = docHandle.ref("@comments", "threads", {
         id: thread.id,
       });
 
-      return [threadRef as RefOfType<SerializedCommentThread>, thread];
+      return [threadRef as Ref<SerializedCommentThread>, thread];
     })
   );
 }

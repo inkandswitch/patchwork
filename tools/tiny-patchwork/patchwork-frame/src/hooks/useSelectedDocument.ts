@@ -16,7 +16,6 @@ import {
 import type { AnnotationsOnRef } from "@inkandswitch/annotations";
 import { annotations as globalAnnotations } from "@inkandswitch/annotations-context";
 import { ViewHeads } from "@inkandswitch/annotations-diff";
-import { ref } from "@inkandswitch/patchwork-refs";
 import type { OpenDocumentEvent } from "@inkandswitch/patchwork-elements";
 
 interface UseSelectedDocumentParams {
@@ -39,11 +38,11 @@ export function useSelectedDocument({
 
   const selectedDocRef = createMemo(() => {
     const handle = selectedDocHandle();
-    return handle ? ref(handle) : undefined;
+    return handle ? handle.ref() : undefined;
   });
 
   const [selectedDocAnnotations, setSelectedDocAnnotations] = createSignal<
-    AnnotationsOnRef<unknown> | undefined
+    AnnotationsOnRef | undefined
   >(undefined, { equals: false });
 
   // Subscribe to annotations for selected document

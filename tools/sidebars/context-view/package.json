@@ -23,7 +23,6 @@
     "@inkandswitch/annotations": "workspace:^",
     "@inkandswitch/annotations-context": "workspace:^",
     "@inkandswitch/subscribables-react": "workspace:^",
-    "@inkandswitch/patchwork-refs": "workspace:^",
     "@inkandswitch/patchwork-refs-react": "workspace:^",
     "@inkandswitch/subscribables": "workspace:^",
     "react": "^18.0.0",
