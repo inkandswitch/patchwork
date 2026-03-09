@@ -116,7 +116,16 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
 
           if (match) {
             log(`serving handoff ${handoffURL} from cache ${cachename}`);
-            return match;
+            const headers = new Headers(match.headers);
+            headers.set(
+              "cross-origin-embedder-policy",
+              "credentialless"
+            );
+            headers.set("cross-origin-resource-policy", "cross-origin");
+            return new Response(match.body, {
+              status: match.status,
+              headers,
+            });
           }
           let client = await self.clients.get(fetchEvent.clientId);
 
