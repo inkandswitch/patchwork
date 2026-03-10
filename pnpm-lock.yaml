@@ -1883,6 +1883,9 @@ importers:
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.4.0
         version: 2.5.2(@automerge/automerge@3.2.4)(solid-js@1.9.10)
+      '@awarth/tasklib':
+        specifier: ^0.0.7
+        version: 0.0.7
       '@inkandswitch/annotations':
         specifier: workspace:^
         version: link:../../../packages/annotations/core
@@ -2706,6 +2709,9 @@ packages:
 
   '@automerge/vanillajs@2.5.3':
     resolution: {integrity: sha512-YCQbN2X0XL+YdmsSsP+eOzXPDK0Q0Fb7j0VtuO6bLrkMp38T2R4UYl4J1Lg7k/Qr8kx/a/GEMlnm6Eq4yyb1pA==}
+
+  '@awarth/tasklib@0.0.7':
+    resolution: {integrity: sha512-ELeHaDX9P5Wi9g3mOxSnZDcqWGzCnHAFiAt7jcso5/FRMJjTepb3DQE61C1l6FVP3yJ5DuboEu8LHxQtrIYmsw==}
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -8769,6 +8775,12 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  '@awarth/tasklib@0.0.7':
+    dependencies:
+      '@automerge/automerge-repo': 2.5.3
+    transitivePeerDependencies:
+      - supports-color
 
   '@babel/code-frame@7.27.1':
     dependencies:

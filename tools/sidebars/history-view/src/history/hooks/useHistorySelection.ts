@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
-import type { ViewHeadsType, HistoryItem } from "../types";
-import { isHistoryChange, isHistoryGroup } from "../types";
+import type { ViewHeadsType, HistoryItem } from "../../types";
+import { isHistoryChange, isHistoryGroup } from "../../types";
 
 /**
  * Hook to manage history selection state
@@ -18,7 +18,6 @@ export function useHistorySelection() {
    * afterHeads: the state after the change(s) were applied
    */
   const selectItem = (item: HistoryItem) => {
-
     if (isHistoryChange(item)) {
       // Single change selection
       const beforeHeads = item.beforeHead ? [item.beforeHead] : [];

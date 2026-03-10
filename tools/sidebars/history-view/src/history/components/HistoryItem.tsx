@@ -1,8 +1,9 @@
 import { Show } from "solid-js";
 import type { ChangeMetadata } from "@automerge/automerge";
-import { formatTime } from "../utils/formatTime";
+import { formatTime } from "../utils";
 import { TimelineCard } from "./TimelineCard";
 import { CopyHashButton } from "./CopyHashButton";
+import { LabeledField } from "./LabeledField";
 
 export interface HistoryItemProps {
   hash: string;
@@ -24,10 +25,9 @@ export function HistoryItem(props: HistoryItemProps) {
       <div class="flex justify-between items-start mb-2">
         <div class="flex-1 min-w-0">
           <Show when={author()}>
-            <div class="text-[11px] font-medium text-base-content/50 uppercase tracking-wide mb-0.5">
-              Author
-            </div>
-            <div class="text-sm text-base-content truncate">{author()}</div>
+            <LabeledField label="Author">
+              <span class="truncate">{author()}</span>
+            </LabeledField>
           </Show>
         </div>
         <CopyHashButton hash={props.hash} />
@@ -35,12 +35,7 @@ export function HistoryItem(props: HistoryItemProps) {
 
       {/* Time section */}
       <Show when={timeDisplay()}>
-        <div class="mb-2">
-          <div class="text-[11px] font-medium text-base-content/50 uppercase tracking-wide mb-0.5">
-            Time
-          </div>
-          <div class="text-sm text-base-content">{timeDisplay()}</div>
-        </div>
+        <LabeledField label="Time">{timeDisplay()}</LabeledField>
       </Show>
     </TimelineCard>
   );

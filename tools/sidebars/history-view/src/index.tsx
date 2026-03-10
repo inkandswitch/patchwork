@@ -3,6 +3,7 @@ import {
   Plugin,
   type ToolImplementation,
 } from "@inkandswitch/patchwork-plugins";
+import { HistoryGroupingsDoc } from "./types";
 
 export const plugins: Plugin<any>[] = [
   {
@@ -12,8 +13,23 @@ export const plugins: Plugin<any>[] = [
     icon: "History",
     unlisted: true,
     async load() {
-      const { ChangeGroupsDataType } = await import("./datatype.js");
-      return ChangeGroupsDataType;
+      return {
+        init: (doc: HistoryGroupingsDoc) => {
+          if (!doc.sourceDocumentUrl) return;
+          Object.assign(doc, {
+            ["@patchwork"]: { type: "patchwork:history-change-groups" },
+            version: doc.version || 1,
+            sourceDocumentUrl: doc.sourceDocumentUrl,
+            updatedAt: doc.updatedAt || 0,
+            throttleMs: doc.throttleMs || 30 * 60 * 1000,
+            heads: doc.heads || [],
+            groupings: doc.groupings || {},
+          } as HistoryGroupingsDoc);
+        },
+        getTitle: (doc: HistoryGroupingsDoc) => {
+          return `History Change Groups for ${doc.sourceDocumentUrl}`;
+        },
+      };
     },
   },
   {
@@ -23,7 +39,7 @@ export const plugins: Plugin<any>[] = [
     icon: "History",
     supportedDatatypes: ["account"],
     async load(): Promise<ToolImplementation<any>> {
-      const { HistoryTimeline } = await import("./HistoryTimeline");
+      const { HistoryTimeline } = await import("./history/HistoryTimeline");
       return function (_handle, element) {
         return render(() => <HistoryTimeline repo={element.repo} />, element);
       };
@@ -37,7 +53,7 @@ export const plugins: Plugin<any>[] = [
     supportedDatatypes: "*",
     async load(): Promise<ToolImplementation<any>> {
       const { HighlightChangesOption } =
-        await import("./HighlightChangesCheckbox");
+        await import("./highlight/HighlightChangesCheckbox");
       return function (_handle, element) {
         return render(
           () => <HighlightChangesOption repo={element.repo} />,
