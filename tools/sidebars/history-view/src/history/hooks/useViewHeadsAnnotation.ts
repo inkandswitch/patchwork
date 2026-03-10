@@ -2,7 +2,7 @@ import { createEffect, onCleanup, Accessor } from "solid-js";
 import { annotations as ANNOTATIONS } from "@inkandswitch/annotations-context";
 import { AnnotationSet } from "@inkandswitch/annotations";
 import { ViewHeads } from "@inkandswitch/annotations-diff";
-import type { ViewHeadsType } from "../types";
+import type { ViewHeadsType } from "../../types";
 
 /**
  * Hook to manage ViewHeads annotations

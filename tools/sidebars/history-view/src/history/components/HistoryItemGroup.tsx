@@ -1,8 +1,9 @@
 import { Show } from "solid-js";
-import type { HistoryGroup } from "../types";
-import { formatTime } from "../utils/formatTime";
+import type { HistoryGroup } from "../../types";
+import { formatTime } from "../utils";
 import { TimelineCard } from "./TimelineCard";
 import { CopyHashButton } from "./CopyHashButton";
+import { LabeledField } from "./LabeledField";
 
 export interface HistoryItemGroupProps {
   group: HistoryGroup;
@@ -37,33 +38,22 @@ export function HistoryItemGroup(props: HistoryItemGroupProps) {
       {/* Top row: Authors and Hash */}
       <div class="flex justify-between items-start mb-2">
         <div class="flex-1 min-w-0">
-          <div class="text-[11px] font-medium text-base-content/50 uppercase tracking-wide mb-0.5">
-            {authorCount() === 1 ? "Author" : "Authors"}
-          </div>
-          <div class="text-sm text-base-content truncate">{authors()}</div>
+          <LabeledField label={authorCount() === 1 ? "Author" : "Authors"}>
+            <span class="truncate">{authors()}</span>
+          </LabeledField>
         </div>
         <CopyHashButton hash={latestHash()} />
       </div>
 
       {/* Time section */}
       <Show when={timeDisplay()}>
-        <div class="mb-2">
-          <div class="text-[11px] font-medium text-base-content/50 uppercase tracking-wide mb-0.5">
-            Time
-          </div>
-          <div class="text-sm text-base-content">{timeDisplay()}</div>
-        </div>
+        <LabeledField label="Time">{timeDisplay()}</LabeledField>
       </Show>
 
       {/* Stats section */}
-      <div class="mb-2">
-        <div class="text-[11px] font-medium text-base-content/50 uppercase tracking-wide mb-0.5">
-          Stats
-        </div>
-        <div class="text-sm text-base-content">
-          {changeCount()} {changeCount() === 1 ? "change" : "changes"}
-        </div>
-      </div>
+      <LabeledField label="Stats">
+        {changeCount()} {changeCount() === 1 ? "change" : "changes"}
+      </LabeledField>
     </TimelineCard>
   );
 }

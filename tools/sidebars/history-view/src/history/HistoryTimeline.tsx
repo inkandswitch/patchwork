@@ -3,16 +3,16 @@ import { For } from "solid-js";
 import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
 import { useSubscribe } from "@inkandswitch/subscribables-solid";
 import { DocHistoryView } from "./components/DocHistoryView";
-import "./styles.css";
+import "../styles.css";
 
-export interface PatchworkToolProps<T> {
+export interface PatchworkToolProps {
   repo: Repo;
 }
 
 /**
  * Main timeline component that renders history views for all selected documents
  */
-export function HistoryTimeline(props: PatchworkToolProps<any>) {
+export function HistoryTimeline(props: PatchworkToolProps) {
   const selectedDocUrls = useSubscribe($selectedDocUrls);
 
   return (

@@ -2,12 +2,13 @@ import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { createSignal, createMemo } from "solid-js";
 import { useDocument } from "@automerge/automerge-repo-solid-primitives";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
-import { useDocumentMetadata } from "../hooks/useDocumentMetadata";
-import { useHistorySelection } from "../hooks/useHistorySelection";
-import { useViewHeadsAnnotation } from "../hooks/useViewHeadsAnnotation";
-import { useHistoryWithGrouping } from "../hooks/useHistoryWithGrouping";
-import type { GroupingStrategyConfig } from "../types";
-import { findItemByHash } from "../types";
+import {
+  useDocumentMetadata,
+  useHistorySelection,
+  useViewHeadsAnnotation,
+  useCachedHistory,
+} from "../hooks";
+import { type GroupingStrategyConfig, findItemByHash } from "../../types";
 import { DocHistoryHeader } from "./DocHistoryHeader";
 import { HistoryList } from "./HistoryList";
 import { GroupingSelector } from "./GroupingSelector";
@@ -37,11 +38,7 @@ export function DocHistoryView(props: DocHistoryViewProps) {
     });
 
   // Unified hook that manages history grouping with optimized updates
-  const groupedItems = useHistoryWithGrouping(
-    handle,
-    strategyConfig,
-    props.repo
-  );
+  const groupedItems = useCachedHistory(handle, strategyConfig, props.repo);
 
   // Selection hook
   const { viewHeads, selectItem, clearSelection } = useHistorySelection();
@@ -79,7 +76,6 @@ export function DocHistoryView(props: DocHistoryViewProps) {
         items={groupedItems()}
         selectedItem={selectedItem()}
         onSelectItem={selectItem}
-        loading={false}
       />
     </div>
   );

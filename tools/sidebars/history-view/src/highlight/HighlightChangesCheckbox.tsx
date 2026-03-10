@@ -14,8 +14,8 @@ import {
 import { $selectedRefs } from "@inkandswitch/annotations-selection";
 import { useSubscribe } from "@inkandswitch/subscribables-solid";
 import { createSignal, createEffect, onCleanup } from "solid-js";
-import { useDocuments } from "./hooks/useDocuments";
-import "./styles.css";
+import { useDocuments } from "./useDocuments";
+import "../styles.css";
 
 const PATCHWORK_HIGHLIGHT_CHANGES = "PATCHWORK_HIGHLIGHT_CHANGES";
 

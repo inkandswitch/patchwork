@@ -4,9 +4,7 @@ import type { AutomergeUrl } from "@automerge/automerge-repo/slim";
 /**
  * Represents a single change in the document history
  */
-export interface HistoryChange {
-  hash: string;
-  metadata: ChangeMetadata;
+export interface HistoryChange extends ChangeMetadata {
   beforeHead?: string;
 }
 
@@ -16,8 +14,9 @@ export interface HistoryChange {
 export interface HistoryGroup {
   id: string;
   changes: HistoryChange[];
-  // Can include aggregate metadata in the future
+  /** Start time of the group in Unix seconds (from Automerge ChangeMetadata.time) */
   startTime?: number;
+  /** End time of the group in Unix seconds (from Automerge ChangeMetadata.time) */
   endTime?: number;
   beforeHead?: string;
 }
@@ -59,28 +58,35 @@ export interface ViewHeadsType {
 /**
  * Configuration for a grouping strategy including parameters
  */
+export type StrategyName = "none" | "timeWindow" | "author";
 export interface GroupingStrategyConfig {
-  name: "none" | "timeWindow" | "author";
+  name: StrategyName;
   params?: {
     timeWindow?: number; // in milliseconds
   };
 }
 
 /**
- * Cached grouping with staleness tracking
+ * Cached grouping for a single strategy
  */
 export interface CachedGrouping {
-  heads: string[];
   items: HistoryItem[];
 }
 
 /**
- * Document structure for storing persistent history groupings
+ * Document structure for storing persistent history groupings.
+ * `heads` is stored at the top level because the background task
+ * computes all strategies in a single pass.
  */
 export interface HistoryGroupingsDoc {
   ["@patchwork"]: { type: "patchwork:history-change-groups" };
   version: number;
   sourceDocumentUrl: AutomergeUrl;
+  /** Unix ms timestamp of when the task last ran (set at task start) */
+  updatedAt: number;
+  /** Throttle interval in ms — minimum wait before dispatching another task */
+  throttleMs: number;
+  heads: string[];
   groupings: {
     [strategyKey: string]: CachedGrouping;
   };
