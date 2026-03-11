@@ -93,6 +93,7 @@ const repoPromise = (async () => {
     console.log("[automerge worker: CONNECTED] websocket ready");
   });
   console.log("[automerge worker: READY] repo created");
+  (self as any).repo = repo;
   return repo;
 })();
 
