@@ -78,6 +78,7 @@ export function registerPatchworkViewElement(
       #handle: DocHandle<HasPatchworkMetadata> | null = null;
       #tool: LoadedTool | null = null;
       #state: State = State.none;
+      #requestedToolImports = new Set<string>();
 
       get docUrl() {
         return this.#docUrl;
@@ -240,6 +241,7 @@ export function registerPatchworkViewElement(
         this.#teardowns.clear();
         this.#handle = null;
         this.#tool = null;
+        this.#requestedToolImports.clear();
         this.textContent = "";
         this.#state = State.none;
       }
@@ -269,10 +271,7 @@ export function registerPatchworkViewElement(
         const toolId = this.toolId || this.#fallbackId;
 
         if (fallingBack) {
-          console.warn(
-            `falling back to default tool for ${this.#docUrl}. attempting to load suggested import URL`
-          );
-          this.dispatchEvent(new NoToolEvent({ url: this.docUrl }));
+          console.warn(`falling back to default tool for ${this.#docUrl}`);
         }
 
         if (!toolId) {
@@ -301,8 +300,7 @@ export function registerPatchworkViewElement(
         if (!this.#tool) {
           this.#state = "unable";
           this.#displayError(`I couldn't find the tool with id ${toolId}.`);
-          console.log("dispatching patchwork:no-tool for", this.docUrl);
-          this.dispatchEvent(new NoToolEvent({ url: this.docUrl }));
+          this.#notool();
           return;
         }
 
@@ -389,6 +387,20 @@ export function registerPatchworkViewElement(
           div.style.opacity = "1";
         });
       };
+
+      #notool() {
+        if (!this.docUrl || !this.#handle) return;
+        const suggestedImportUrl =
+          this.#handle.doc()?.["@patchwork"]?.suggestedImportUrl;
+        if (
+          !suggestedImportUrl ||
+          this.#requestedToolImports.has(suggestedImportUrl)
+        )
+          return;
+        this.#requestedToolImports.add(suggestedImportUrl);
+        log("dispatching patchwork:no-tool for", this.docUrl);
+        this.dispatchEvent(new NoToolEvent({ url: this.docUrl }));
+      }
 
       #resetDisplay = () => {
         this.replaceChildren();
