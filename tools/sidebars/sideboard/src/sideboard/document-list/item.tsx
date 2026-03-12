@@ -419,74 +419,83 @@ export default function Item(props: {
               </ContextMenu.Portal>
             </ContextMenu.Sub>
           </Show>
-          <ContextMenu.Item
-            class="popmenu__item"
-            onSelect={() =>
-              navigator.clipboard.writeText(props.url)
-            }
-          >
-            Copy automerge url
-          </ContextMenu.Item>
-          <Show when={tools.length}>
-            <ContextMenu.Sub>
-              <ContextMenu.SubTrigger class="popmenu__sub-trigger">
-                Copy automerge url with...
-              </ContextMenu.SubTrigger>
-              <ContextMenu.Portal>
-                <ContextMenu.SubContent class="popmenu__sub-content">
-                  <For each={tools}>
-                    {(tool) => (
-                      <ContextMenu.Item
-                        class="popmenu__item"
-                        onSelect={() =>
-                          navigator.clipboard.writeText(
-                            `${props.url}&tool=${tool.id}`
-                          )
-                        }
-                      >
-                        {tool.name}
-                      </ContextMenu.Item>
-                    )}
-                  </For>
-                </ContextMenu.SubContent>
-              </ContextMenu.Portal>
-            </ContextMenu.Sub>
-          </Show>
-          <ContextMenu.Item
-            class="popmenu__item"
-            onSelect={() =>
-              navigator.clipboard.writeText(
-                `${location.protocol}//${location.host}/#doc=${parseAutomergeUrl(props.url).documentId}`
-              )
-            }
-          >
-            Copy patchwork url
-          </ContextMenu.Item>
-          <Show when={tools.length}>
-            <ContextMenu.Sub>
-              <ContextMenu.SubTrigger class="popmenu__sub-trigger">
-                Copy patchwork url with...
-              </ContextMenu.SubTrigger>
-              <ContextMenu.Portal>
-                <ContextMenu.SubContent class="popmenu__sub-content">
-                  <For each={tools}>
-                    {(tool) => (
-                      <ContextMenu.Item
-                        class="popmenu__item"
-                        onSelect={() =>
-                          navigator.clipboard.writeText(
-                            `${location.protocol}//${location.host}/#doc=${parseAutomergeUrl(props.url).documentId}&tool=${tool.id}`
-                          )
-                        }
-                      >
-                        {tool.name}
-                      </ContextMenu.Item>
-                    )}
-                  </For>
-                </ContextMenu.SubContent>
-              </ContextMenu.Portal>
-            </ContextMenu.Sub>
-          </Show>
+          <ContextMenu.Sub>
+            <ContextMenu.SubTrigger class="popmenu__sub-trigger">
+              Copy
+            </ContextMenu.SubTrigger>
+            <ContextMenu.Portal>
+              <ContextMenu.SubContent class="popmenu__sub-content">
+                <ContextMenu.Item
+                  class="popmenu__item"
+                  onSelect={() =>
+                    navigator.clipboard.writeText(props.url)
+                  }
+                >
+                  Automerge url
+                </ContextMenu.Item>
+                <Show when={tools.length}>
+                  <ContextMenu.Sub>
+                    <ContextMenu.SubTrigger class="popmenu__sub-trigger">
+                      Automerge url with...
+                    </ContextMenu.SubTrigger>
+                    <ContextMenu.Portal>
+                      <ContextMenu.SubContent class="popmenu__sub-content">
+                        <For each={tools}>
+                          {(tool) => (
+                            <ContextMenu.Item
+                              class="popmenu__item"
+                              onSelect={() =>
+                                navigator.clipboard.writeText(
+                                  `${props.url}&tool=${tool.id}`
+                                )
+                              }
+                            >
+                              {tool.name}
+                            </ContextMenu.Item>
+                          )}
+                        </For>
+                      </ContextMenu.SubContent>
+                    </ContextMenu.Portal>
+                  </ContextMenu.Sub>
+                </Show>
+                <ContextMenu.Item
+                  class="popmenu__item"
+                  onSelect={() =>
+                    navigator.clipboard.writeText(
+                      `${location.protocol}//${location.host}/#doc=${parseAutomergeUrl(props.url).documentId}`
+                    )
+                  }
+                >
+                  Patchwork url
+                </ContextMenu.Item>
+                <Show when={tools.length}>
+                  <ContextMenu.Sub>
+                    <ContextMenu.SubTrigger class="popmenu__sub-trigger">
+                      Patchwork url with...
+                    </ContextMenu.SubTrigger>
+                    <ContextMenu.Portal>
+                      <ContextMenu.SubContent class="popmenu__sub-content">
+                        <For each={tools}>
+                          {(tool) => (
+                            <ContextMenu.Item
+                              class="popmenu__item"
+                              onSelect={() =>
+                                navigator.clipboard.writeText(
+                                  `${location.protocol}//${location.host}/#doc=${parseAutomergeUrl(props.url).documentId}&tool=${tool.id}`
+                                )
+                              }
+                            >
+                              {tool.name}
+                            </ContextMenu.Item>
+                          )}
+                        </For>
+                      </ContextMenu.SubContent>
+                    </ContextMenu.Portal>
+                  </ContextMenu.Sub>
+                </Show>
+              </ContextMenu.SubContent>
+            </ContextMenu.Portal>
+          </ContextMenu.Sub>
           <ContextMenu.Item
             class="popmenu__item"
             onSelect={() => props.startRenaming()}
