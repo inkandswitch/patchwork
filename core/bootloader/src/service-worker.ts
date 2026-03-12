@@ -5,6 +5,8 @@ import type { HandoffResponse, HandoffResponseMessage } from "./types.js";
 let cachename = "default";
 let debugging = false;
 
+const cacheableStatuses = [200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501];
+
 function log(...args: any[]) {
   if (!debugging) return;
   console.log.call(
@@ -187,9 +189,15 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
             });
             if (handoffResponse.cache === false) {
               log(`caching disabled on ${handoffURL}`);
-            } else {
+            } else if (
+              cacheableStatuses.includes(handoffResponse.status ?? 200)
+            ) {
               log(`caching ${handoffURL}`);
               await cache.put(request, response.clone());
+            } else {
+              log(
+                `skipping uncacheable response code from cache: ${handoffResponse.status} for ${handoffURL}`
+              );
             }
             return response;
           }
@@ -202,8 +210,15 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           // network first strategy for external requests
           const response = await fetch(request);
           if (response) {
-            if (response.ok && response.url.match(/^https?\:/)) {
+            if (
+              cacheableStatuses.includes(response.status) &&
+              response.url.match(/^https?\:/)
+            ) {
               await cache.put(request, response.clone());
+            } else {
+              log(
+                `skipping uncacheable response code from cache: ${response.status} for ${response.url}`
+              );
             }
             return response;
           }
