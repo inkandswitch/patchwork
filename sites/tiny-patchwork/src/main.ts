@@ -142,8 +142,8 @@ if (initialParams.has("frame")) {
     : accountDocHandle.url;
   rootElement.setAttribute("doc-url", docUrl);
 } else {
-  rootElement.setAttribute("doc-url", accountDocHandle.url);
   rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
+  rootElement.setAttribute("doc-url", accountDocHandle.url);
 }
 
 const defaultToolsUrl =
