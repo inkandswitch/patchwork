@@ -298,9 +298,12 @@ export function registerPatchworkViewElement(
         this.#tool =
           getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
 
+        if (fallingBack || !this.#tool) {
+          this.#notool();
+        }
+
         if (!this.#tool) {
           this.#state = "unable";
-          this.#notool();
           this.#displayError(`I couldn't find the tool with id ${toolId}.`);
           return;
         }
