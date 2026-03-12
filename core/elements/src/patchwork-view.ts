@@ -276,6 +276,7 @@ export function registerPatchworkViewElement(
 
         if (!toolId) {
           this.#state = "unable";
+          this.#notool();
           // Check if the document is missing @patchwork metadata
           const hasPatchworkMetadata = doc && "@patchwork" in doc;
           if (!hasPatchworkMetadata) {
@@ -300,7 +301,6 @@ export function registerPatchworkViewElement(
         if (!this.#tool) {
           this.#state = "unable";
           this.#displayError(`I couldn't find the tool with id ${toolId}.`);
-          this.#notool();
           return;
         }
 
