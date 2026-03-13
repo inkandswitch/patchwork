@@ -4,10 +4,7 @@ import {
   registerPatchworkViewElement,
   openDocument,
 } from "@inkandswitch/patchwork-elements";
-import {
-  ModuleWatcher,
-  createFilesystemHandoffHandler,
-} from "@inkandswitch/patchwork-filesystem";
+import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
 import {
   registerPlugins,
@@ -28,7 +25,6 @@ import {
   parseAutomergeUrl,
   Repo,
   stringifyAutomergeUrl,
-  WebSocketClientAdapter,
   type AutomergeUrl,
   type UrlHeads,
 } from "@automerge/vanillajs";
@@ -51,17 +47,10 @@ declare global {
   }
 }
 
-const workerLogChannel = new BroadcastChannel("automerge-worker-logs");
-workerLogChannel.onmessage = (event) => {
-  const { level, args } = event.data;
-  const method = level in console ? level : "log";
-  (console as any)[method](...args);
-};
-
 const repo = new Repo({
   storage: new IndexedDBStorageAdapter(),
   async sharePolicy(peerId) {
-    return peerId.includes("shared-worker");
+    return peerId.includes("service-worker");
   },
   enableRemoteHeadsGossiping: true,
 });
@@ -70,59 +59,24 @@ repo.subscribeToRemotes([
   "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
 ]);
 
-function createSharedWorker() {
-  return new SharedWorker(new URL("./automerge-worker.ts", import.meta.url), {
-    type: "module",
-    name: "automerge-repo-shared-worker",
-  });
-}
-
-function getRepoChannel() {
-  try {
-    const worker = createSharedWorker();
-    return worker.port;
-  } catch (error) {
-    console.error(error);
-    console.error("Falling back to tab-only repo strategy");
-    const { port1, port2 } = new MessageChannel();
-    repo.networkSubsystem.addNetworkAdapter(
-      new MessageChannelNetworkAdapter(port1)
-    );
-    return port2;
-  }
-}
-
-window.getRepoChannel = getRepoChannel;
-
-try {
-  const sharedWorker = createSharedWorker();
+const swPort = await setup();
+if (swPort) {
   repo.networkSubsystem.addNetworkAdapter(
-    new MessageChannelNetworkAdapter(sharedWorker.port)
-  );
-} catch (error) {
-  console.error(error);
-  console.error("Falling back to tab-only repo strategy");
-  repo.networkSubsystem.addNetworkAdapter(
-    new WebSocketClientAdapter("wss://sync3.automerge.org")
+    new MessageChannelNetworkAdapter(swPort)
   );
 }
+
+window.getRepoChannel = () => {
+  const { port1, port2 } = new MessageChannel();
+  navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
+  return port1;
+};
 
 document.body.style.background = "#fffffe";
 
-await repo.networkSubsystem.adapters[0].whenReady();
-// if this helps then we are sad and confused but at least it helped
-await new Promise((resolve) => setTimeout(resolve, 1000));
 window.repo = repo;
 window.Automerge = Automerge;
 window.AutomergeRepo = AutomergeRepo;
-
-const handlers = {
-  "automerge:": createFilesystemHandoffHandler(repo),
-} as const;
-
-setup(async (href, request) =>
-  handlers[new URL(href).protocol as keyof typeof handlers]?.(href, request)
-);
 
 const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
 

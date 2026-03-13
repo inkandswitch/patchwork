@@ -1,7 +1,5 @@
 /// <reference types="service-worker-types" />
 
-import type { HandoffResponse, HandoffResponseMessage } from "./types.js";
-
 let cachename = "default";
 let debugging = false;
 
@@ -36,38 +34,50 @@ self.addEventListener("activate", async () => {
   clients.claim();
 });
 
-// a map of response promises by their id
-const responseResolvers = new Map<
-  number,
-  PromiseWithResolvers<HandoffResponse>
->();
+// Lazy repo initialization
+let repoPromise: Promise<import("@automerge/vanillajs").Repo> | null = null;
 
-function accept(message: HandoffResponseMessage) {
-  const responseItem = responseResolvers.get(message.id);
-  if (!responseItem) {
-    return console.warn(`No read response found for id ${message.id}`);
+async function getRepo() {
+  if (!repoPromise) {
+    repoPromise = (async () => {
+      const {
+        Repo,
+        IndexedDBStorageAdapter,
+        WebSocketClientAdapter,
+      } = await import("@automerge/vanillajs");
+      const repo = new Repo({
+        storage: new IndexedDBStorageAdapter(),
+        network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
+        peerId: ("service-worker-" +
+          (Math.random() * 10000).toString(36).slice(2)) as import("@automerge/automerge-repo").PeerId,
+        async sharePolicy(peerId) {
+          return peerId.includes("storage-server");
+        },
+        enableRemoteHeadsGossiping: true,
+      });
+      repo.subscribeToRemotes([
+        "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
+      ]);
+      return repo;
+    })();
   }
-  return responseItem.resolve(message.response);
+  return repoPromise;
 }
 
-const bc = new BroadcastChannel("@patchwork/handoff");
+// Connect client MessagePorts to the repo for sync
+async function connectPort(port: MessagePort) {
+  const repo = await getRepo();
+  const { MessageChannelNetworkAdapter } = await import("@automerge/vanillajs");
+  repo.networkSubsystem.addNetworkAdapter(
+    new MessageChannelNetworkAdapter(port, { useWeakRef: true })
+  );
+}
 
-bc.addEventListener("message", (event) => {
-  if (event.data.type == "response") accept(event.data);
-});
-
-// when we receive a `response` req, we resolve the promise with that id
 self.addEventListener("message", async (event) => {
-  if (event.data.type == "response") {
-    accept(event.data);
-  } else if (event.data.type == "port") {
-    log("recieved messagechannel");
+  if (event.data.type == "port") {
+    log("received messagechannel");
     const [port] = event.ports;
-    port.addEventListener("message", (event) => {
-      if (event.data.type == "response") {
-        accept(event.data);
-      }
-    });
+    connectPort(port);
   } else if (event.data.type == "cachename") {
     const nextCachename = event.data.cachename;
     if (cachename == nextCachename) {
@@ -84,8 +94,86 @@ self.addEventListener("message", async (event) => {
   }
 });
 
-// request ids are kept in a counter
-let reqcount = 0;
+// Filesystem types (inlined to avoid cross-package dependency)
+interface FolderDoc {
+  title: string;
+  docs: Array<{ name: string; url: string }>;
+}
+
+interface FileDoc {
+  content: string | Uint8Array;
+  mimeType?: string;
+}
+
+async function resolveAutomergeUrl(handoffURL: URL): Promise<Response> {
+  const repo = await getRepo();
+  const {
+    isValidAutomergeUrl,
+    parseAutomergeUrl,
+    stringifyAutomergeUrl,
+  } = await import("@automerge/vanillajs");
+
+  const href = handoffURL.href;
+  const [maybeAutomergeUrl, ...path] = href.split("/");
+
+  if (!isValidAutomergeUrl(maybeAutomergeUrl)) {
+    return new Response("invalid automerge url", { status: 400 });
+  }
+
+  // Trim trailing empty path segment
+  if (path.length && !path[path.length - 1]) path.pop();
+
+  const { heads, documentId } = parseAutomergeUrl(maybeAutomergeUrl);
+
+  if (!heads) {
+    // Redirect to pinned-heads URL
+    const folder = await repo.find(maybeAutomergeUrl);
+    const latestHeads = folder.heads();
+    const url = stringifyAutomergeUrl({ documentId, heads: latestHeads });
+    let location = `/${encodeURIComponent(url)}`;
+    if (path.length) location += `/${path.join("/")}`;
+    return new Response(null, {
+      status: 307,
+      headers: { location },
+    });
+  }
+
+  // Navigate folder structure to find the file
+  let current = await repo.find<FolderDoc>(maybeAutomergeUrl);
+
+  for (const part of path.map(decodeURIComponent)) {
+    const doc = current.doc();
+    if (!doc?.docs) {
+      throw new Error(
+        `folder at ${current.url} has no docs array (resolving ${path.join("/")})`
+      );
+    }
+    const target = doc.docs.find((link: { name: string; url: string }) => link.name === part);
+    if (!target?.url) {
+      throw new Error(
+        `couldn't find ${part} in folder at ${current.url} (resolving ${path.join("/")})`
+      );
+    }
+    current = await repo.find(target.url as import("@automerge/automerge-repo").AutomergeUrl);
+  }
+
+  const fileDoc = current.doc() as unknown as FileDoc;
+  const content = fileDoc?.content;
+  if (!content) {
+    throw new Error(`file at ${href} has no content`);
+  }
+
+  const body: BodyInit =
+    content instanceof Uint8Array ? new Uint8Array(content) as BlobPart : String(content);
+  const mimeType = fileDoc.mimeType ?? "text/plain";
+
+  const headers = new Headers({ "content-type": mimeType });
+  headers.set("cross-origin-embedder-policy", "credentialless");
+  headers.set("cross-origin-resource-policy", "cross-origin");
+
+  return new Response(body, { status: 200, headers });
+}
+
 self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
   log("fetch event", fetchEvent.request.url);
   const request = fetchEvent.request;
@@ -114,10 +202,10 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
 
       try {
         if (handoffURL) {
-          // cache-first strategy for handoff requests
+          // cache-first strategy for automerge requests
 
           if (match) {
-            log(`serving handoff ${handoffURL} from cache ${cachename}`);
+            log(`serving ${handoffURL} from cache ${cachename}`);
             const headers = new Headers(match.headers);
             headers.set(
               "cross-origin-embedder-policy",
@@ -129,83 +217,20 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
               headers,
             });
           }
-          let client = await self.clients.get(fetchEvent.clientId);
 
-          if (!client) {
-            // SharedWorkers and direct navigations aren't window clients.
-            // Find any available window client to handle the request.
-            const allClients = await self.clients.matchAll({ type: "window" });
-            client = allClients[0] ?? null;
-            log(
-              `clientId ${fetchEvent.clientId} not found, falling back to ${client ? "another window client" : "nobody"}`
-            );
-          }
+          const response = await resolveAutomergeUrl(handoffURL);
 
-          // set up a request id
-          const reqid = reqcount++;
-          // create a place for the response event handler to put the response
-          const resolvers = Promise.withResolvers<HandoffResponse>();
-          responseResolvers.set(reqid, resolvers);
-
-          const message = {
-            id: reqid,
-            type: "request",
-            cache: cachename,
-            request: {
-              url: handoffURL.href,
-              headers: Object.fromEntries(request.headers.entries()),
-              method: request.method,
-              destination: request.destination,
-              referrer: request.referrer,
-            },
-          };
-          log(
-            `sending handoff request to client for cache ${cachename}`,
-            message
-          );
-          if (!client) {
-            return new Response(
-              "no patchwork tabs available to handle request",
-              {
-                status: 503,
-              }
-            );
-          }
-          client.postMessage(message);
-          // this'll finish when the main thread gets back to us
-          fetchEvent.waitUntil(resolvers.promise);
-          const handoffResponse = await resolvers.promise;
-          log("received handoff response", handoffResponse);
-          if (handoffResponse) {
-            const headers = new Headers(handoffResponse.headers);
-            headers.set(
-              "cross-origin-embedder-policy",
-              "credentialless"
-            );
-            headers.set("cross-origin-resource-policy", "cross-origin");
-            const response = new Response(handoffResponse.body, {
-              status: handoffResponse.status,
-              headers,
-            });
-            if (handoffResponse.cache === false) {
-              log(`caching disabled on ${handoffURL}`);
-            } else if (
-              cacheableStatuses.includes(handoffResponse.status ?? 200)
-            ) {
-              log(`caching ${handoffURL}`);
-              await cache.put(request, response.clone());
-            } else {
-              log(
-                `skipping uncacheable response code from cache: ${handoffResponse.status} for ${handoffURL}`
-              );
-            }
+          if (response.status === 307) {
+            // don't cache redirects
             return response;
           }
 
-          // no idea what's going on now i'm a teapot i'm a teapot
-          return new Response("handler returned nothing", {
-            status: 418,
-          });
+          if (cacheableStatuses.includes(response.status)) {
+            log(`caching ${handoffURL}`);
+            await cache.put(request, response.clone());
+          }
+
+          return response;
         } else {
           // network first strategy for external requests
           const response = await fetch(request);
@@ -227,14 +252,12 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
         }
       } catch (error) {
         console.error(
-          `handoff error. responding with ${match ? "stale" : "error"}`,
+          `error resolving ${handoffURL}. responding with ${match ? "stale" : "error"}`,
           error
         );
         if (match) return match;
 
-        // if something fucked up happens, serve a stale thing if there is one
-        // probably can do better error messaging here based on what was caught
-        return new Response(`yikes: ${error}`, { status: 555 });
+        return new Response(`error: ${error}`, { status: 500 });
       }
     })()
   );

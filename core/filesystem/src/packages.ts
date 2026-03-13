@@ -1,7 +1,7 @@
 import { type AutomergeUrl } from "@automerge/automerge-repo";
 import { resolve } from "resolve.exports";
 import debug from "debug";
-import { automergeUrlToServiceWorkerUrl } from "./handoff.js";
+import { automergeUrlToServiceWorkerUrl } from "./urls.js";
 const log = debug("patchwork:filesystem");
 
 export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
