@@ -70,6 +70,13 @@ export default async function setupServiceWorker(
         return;
       }
 
+      // Wait for the controller to be available
+      if (!navigator.serviceWorker.controller) {
+        await new Promise<void>((resolve) => {
+          navigator.serviceWorker.addEventListener("controllerchange", () => resolve(), { once: true });
+        });
+      }
+
       // Send a MessagePort so the SW's repo can sync with clients
       const { port1, port2 } = new MessageChannel();
       navigator.serviceWorker.controller!.postMessage({ type: "port" }, [
