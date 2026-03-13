@@ -1,10 +1,4 @@
-import type { Repo } from "@automerge/vanillajs/slim";
-import type {
-  HandoffHandler,
-  HandoffRequestMessage,
-  HandoffResponse,
-  SetupServiceWorkerOptions,
-} from "./types.js";
+import type { SetupServiceWorkerOptions } from "./types.js";
 import debug from "debug";
 
 const debugging = debug.enabled("patchwork:serviceworker");
@@ -46,16 +40,7 @@ export function bumpServiceWorkerCache(
 
 (window as any).bumpServiceWorkerCache = bumpServiceWorkerCache;
 
-const encoder = new TextEncoder();
-
-declare global {
-  interface Window {
-    repo: Repo;
-  }
-}
-
 export default async function setupServiceWorker(
-  handler: HandoffHandler,
   options?: SetupServiceWorkerOptions
 ) {
   navigator.serviceWorker.addEventListener(
@@ -65,67 +50,8 @@ export default async function setupServiceWorker(
         "%cnew service worker. i'd imagine that refreshing would be a good idea, but... i'm scared",
         "color: pink; font-weight: bold"
       );
-      // i don't think we need to bump the service worker cache when we deploy, it's chill
-      //bumpServiceWorkerCache(navigator.serviceWorker.controller);
-      // ensure we've saved docs before we reload
-      await window.repo.flush?.();
-      //location.reload();
     }
   );
-
-  navigator.serviceWorker.addEventListener("message", async (event) => {
-    if (event.data.type == "request") {
-      const requestMessage: HandoffRequestMessage = event.data;
-      const source = event.source;
-
-      if (!source) {
-        throw new TypeError("can't operate without a source");
-      }
-
-      async function send(
-        response: HandoffResponse,
-        transfer?: Transferable[]
-      ) {
-        source!.postMessage(
-          {
-            id: requestMessage.id,
-            type: "response",
-            response,
-          },
-          { transfer }
-        );
-      }
-
-      const handoffResponse = await handler(
-        requestMessage.request.url,
-        requestMessage.request
-      );
-
-      if (!handoffResponse) {
-        return source?.postMessage({ id: requestMessage.id, type: "response" });
-      }
-
-      if (typeof handoffResponse == "string") {
-        return send({ body: handoffResponse }, [handoffResponse]);
-      }
-
-      if (handoffResponse instanceof Uint8Array) {
-        return send({ body: handoffResponse }, [handoffResponse.buffer]);
-      }
-
-      const { body: handoffBody, headers, status, cache } = handoffResponse;
-
-      const body =
-        handoffBody instanceof Uint8Array
-          ? handoffBody
-          : handoffBody && encoder.encode(handoffBody);
-
-      send(
-        { body, headers, status, cache },
-        body instanceof Uint8Array ? [body.buffer] : undefined
-      );
-    }
-  });
 
   const existingSw = await navigator.serviceWorker.getRegistration();
 
@@ -141,12 +67,21 @@ export default async function setupServiceWorker(
         // bump the sw cache once
         bumpServiceWorkerCache(sw.installing);
         queueMicrotask(() => location.reload());
-        return sw.active!;
+        return;
       }
+
+      // Send a MessagePort so the SW's repo can sync with clients
+      const { port1, port2 } = new MessageChannel();
+      navigator.serviceWorker.controller!.postMessage(
+        { type: "port" },
+        [port2]
+      );
 
       console.log(
         "service worker alive, loading %c patchwork system ",
         "background: #fff8f0; border: 1px solid; border-radius: 4px"
       );
+
+      return port1;
     });
 }
