@@ -72,16 +72,15 @@ export default async function setupServiceWorker(
 
       // Send a MessagePort so the SW's repo can sync with clients
       const { port1, port2 } = new MessageChannel();
-      navigator.serviceWorker.controller!.postMessage(
-        { type: "port" },
-        [port2]
-      );
+      navigator.serviceWorker.controller!.postMessage({ type: "port" }, [
+        port2,
+      ]);
 
       console.log(
         "service worker alive, loading %c patchwork system ",
         "background: #fff8f0; border: 1px solid; border-radius: 4px"
       );
 
-      return port1;
+      return { port: port1 };
     });
 }

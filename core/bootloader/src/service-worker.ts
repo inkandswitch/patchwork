@@ -1,5 +1,20 @@
 /// <reference types="service-worker-types" />
 
+import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64";
+import { initializeBase64Wasm } from "@automerge/automerge/slim";
+import {
+  Repo,
+  IndexedDBStorageAdapter,
+  WebSocketClientAdapter,
+  MessageChannelNetworkAdapter,
+  isValidAutomergeUrl,
+  parseAutomergeUrl,
+  stringifyAutomergeUrl,
+  type AutomergeUrl,
+  type PeerId,
+  type StorageId,
+} from "@automerge/vanillajs/slim";
+
 let cachename = "default";
 let debugging = false;
 
@@ -34,32 +49,27 @@ self.addEventListener("activate", async () => {
   clients.claim();
 });
 
-// Lazy repo initialization
-let repoPromise: Promise<import("@automerge/vanillajs").Repo> | null = null;
+let repoPromise: Promise<Repo> | null = null;
 
-async function getRepo() {
+function getRepo() {
   if (!repoPromise) {
-    repoPromise = (async () => {
-      const {
-        Repo,
-        IndexedDBStorageAdapter,
-        WebSocketClientAdapter,
-      } = await import("@automerge/vanillajs");
+    repoPromise = initializeBase64Wasm(automergeWasmBase64).then(() => {
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
         network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
         peerId: ("service-worker-" +
-          (Math.random() * 10000).toString(36).slice(2)) as import("@automerge/automerge-repo").PeerId,
+          (Math.random() * 10000).toString(36).slice(2)) as PeerId,
         async sharePolicy(peerId) {
           return peerId.includes("storage-server");
         },
         enableRemoteHeadsGossiping: true,
       });
       repo.subscribeToRemotes([
-        "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
+        "3760df37-a4c6-4f66-9ecd-732039a9385d" as StorageId,
       ]);
+      (self as any).repo = repo;
       return repo;
-    })();
+    });
   }
   return repoPromise;
 }
@@ -67,7 +77,6 @@ async function getRepo() {
 // Connect client MessagePorts to the repo for sync
 async function connectPort(port: MessagePort) {
   const repo = await getRepo();
-  const { MessageChannelNetworkAdapter } = await import("@automerge/vanillajs");
   repo.networkSubsystem.addNetworkAdapter(
     new MessageChannelNetworkAdapter(port, { useWeakRef: true })
   );
@@ -107,12 +116,6 @@ interface FileDoc {
 
 async function resolveAutomergeUrl(handoffURL: URL): Promise<Response> {
   const repo = await getRepo();
-  const {
-    isValidAutomergeUrl,
-    parseAutomergeUrl,
-    stringifyAutomergeUrl,
-  } = await import("@automerge/vanillajs");
-
   const href = handoffURL.href;
   const [maybeAutomergeUrl, ...path] = href.split("/");
 
@@ -154,7 +157,7 @@ async function resolveAutomergeUrl(handoffURL: URL): Promise<Response> {
         `couldn't find ${part} in folder at ${current.url} (resolving ${path.join("/")})`
       );
     }
-    current = await repo.find(target.url as import("@automerge/automerge-repo").AutomergeUrl);
+    current = await repo.find(target.url as AutomergeUrl);
   }
 
   const fileDoc = current.doc() as unknown as FileDoc;
@@ -251,13 +254,18 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           return new Response("couldnt fetch and no stale", { status: 503 });
         }
       } catch (error) {
+        const message = error instanceof Error
+          ? `${error.message}\n\n${error.stack}`
+          : String(error);
         console.error(
-          `error resolving ${handoffURL}. responding with ${match ? "stale" : "error"}`,
-          error
+          `service worker error resolving ${request.url}${handoffURL ? ` (handoff: ${handoffURL})` : ""}.\n${message}`
         );
         if (match) return match;
 
-        return new Response(`error: ${error}`, { status: 500 });
+        return new Response(message, {
+          status: 500,
+          headers: { "content-type": "text/plain" },
+        });
       }
     })()
   );

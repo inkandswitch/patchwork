@@ -59,11 +59,16 @@ repo.subscribeToRemotes([
   "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
 ]);
 
-const swPort = await setup();
-if (swPort) {
+const result = await setup();
+if (!result) {
+  throw new Error("Failed to set up service worker");
+}
+
+if (result.port) {
   repo.networkSubsystem.addNetworkAdapter(
-    new MessageChannelNetworkAdapter(swPort)
+    new MessageChannelNetworkAdapter(result.port)
   );
+  await repo.networkSubsystem.whenReady();
 }
 
 window.getRepoChannel = () => {
@@ -79,6 +84,7 @@ window.Automerge = Automerge;
 window.AutomergeRepo = AutomergeRepo;
 
 const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
+await repo.flush();
 
 window.accountDocHandle = accountDocHandle;
 
@@ -92,7 +98,9 @@ if (initialParams.has("frame")) {
   rootElement.setAttribute("tool-id", initialParams.get("frame")!);
   const docId = initialParams.get("doc");
   const docUrl = docId
-    ? stringifyAutomergeUrl({ documentId: docId as import("@automerge/automerge-repo").DocumentId })
+    ? stringifyAutomergeUrl({
+        documentId: docId as import("@automerge/automerge-repo").DocumentId,
+      })
     : accountDocHandle.url;
   rootElement.setAttribute("doc-url", docUrl);
 } else {
