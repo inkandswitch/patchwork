@@ -31,8 +31,7 @@ jobs:
         run: pnpm build
 
       - name: pushwork track
-        run: npx pushwork track
-        working-directory: tools/tiny-patchwork/module-settings-manager
+        run: npx pushwork track automerge:58P7iJNhNTSSBn59Y9uLwWS6MAx
 
       - name: pushwork sync
         run: npx pushwork sync

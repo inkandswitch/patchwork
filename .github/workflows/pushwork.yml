@@ -33,9 +33,12 @@ jobs:
       - name: build the package
         run: pnpm build
 
+      - name: read pushwork url
+        id: pushwork-url
+        run: echo "url=$(jq -r '.pushwork.url' ${{ inputs.package_path }}/package.json)" >> "$GITHUB_OUTPUT"
+
       - name: pushwork track
-        run: npx pushwork track
-        working-directory: ${{ inputs.package_path }}
+        run: npx pushwork track ${{ steps.pushwork-url.outputs.url }}
 
       - name: pushwork sync
         run: npx pushwork sync
