@@ -16,6 +16,7 @@ interface ModuleTableProps {
     | "id-desc";
   onToggleSort: (column: "name" | "type" | "id") => void;
   onRemoveModule: (url: AutomergeUrl) => void;
+  onToggleEnabled: (url: AutomergeUrl, enabled: boolean) => void;
 }
 
 export function ModuleTable(props: ModuleTableProps) {
@@ -26,15 +27,17 @@ export function ModuleTable(props: ModuleTableProps) {
     <div class="module-settings-manager__table-container">
       <table class="module-settings-manager__table">
         <colgroup>
-          <col style={{ width: "20%" }} />
-          <col style={{ width: "14%" }} />
-          <col style={{ width: "20%" }} />
-          <col style={{ width: "20%" }} />
+          <col style={{ width: "5%" }} />
+          <col style={{ width: "18%" }} />
+          <col style={{ width: "13%" }} />
+          <col style={{ width: "19%" }} />
+          <col style={{ width: "19%" }} />
           <col style={{ width: "14%" }} />
           <col style={{ width: "12%" }} />
         </colgroup>
         <thead>
           <tr>
+            <th>Enabled</th>
             <th
               class="module-settings-manager__sortable-header"
               onClick={() => props.onToggleSort("name")}
@@ -83,7 +86,21 @@ export function ModuleTable(props: ModuleTableProps) {
         <tbody>
           <For each={props.plugins}>
             {(plugin) => (
-              <tr>
+              <tr classList={{ "module-settings-manager__row--disabled": !plugin.enabled }}>
+                <td class="module-settings-manager__table-enabled">
+                  <input
+                    type="checkbox"
+                    checked={plugin.enabled}
+                    onChange={() =>
+                      props.onToggleEnabled(
+                        plugin.importUrl as AutomergeUrl,
+                        !plugin.enabled
+                      )
+                    }
+                    class="module-settings-manager__enabled-checkbox"
+                    title={plugin.enabled ? "Disable module" : "Enable module"}
+                  />
+                </td>
                 <td class="module-settings-manager__table-name" title={plugin.name}>
                   <span class="module-settings-manager__table-name-text">{plugin.name}</span>
                 </td>

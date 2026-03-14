@@ -1245,6 +1245,23 @@
   }
 }
 
+/* Enabled checkbox */
+.module-settings-manager__table-enabled {
+  text-align: center;
+  overflow: visible;
+}
+
+.module-settings-manager__enabled-checkbox {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--module-settings-manager-primary);
+  cursor: pointer;
+}
+
+.module-settings-manager__row--disabled {
+  opacity: 0.5;
+}
+
 .module-settings-manager__footer {
   margin-top: auto;
 }

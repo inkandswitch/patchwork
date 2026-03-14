@@ -40,6 +40,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   const { filteredPlugins, uniquePluginTypes, uniqueDataTypes } =
     useModulePlugins({
       modules: doc.modules,
+      disabled: doc.disabled ?? [],
       searchQuery: debouncedSearch,
       filterPluginType,
       filterDataType,
@@ -60,6 +61,37 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
       if (idx !== -1) {
         doc.modules.splice(idx, 1);
       }
+      const disabledIdx = (doc.disabled ?? []).indexOf(url);
+      if (disabledIdx !== -1) {
+        doc.disabled!.splice(disabledIdx, 1);
+      }
+    });
+  };
+
+  const handleToggleEnabled = (url: AutomergeUrl, enabled: boolean) => {
+    props.handle.change((doc) => {
+      if (!doc.disabled) {
+        doc.disabled = [];
+      }
+      if (enabled) {
+        // Move from disabled to modules
+        const disabledIdx = doc.disabled.indexOf(url);
+        if (disabledIdx !== -1) {
+          doc.disabled.splice(disabledIdx, 1);
+        }
+        if (!doc.modules.includes(url)) {
+          doc.modules.push(url);
+        }
+      } else {
+        // Move from modules to disabled
+        const idx = doc.modules.indexOf(url);
+        if (idx !== -1) {
+          doc.modules.splice(idx, 1);
+        }
+        if (!doc.disabled.includes(url)) {
+          doc.disabled.push(url);
+        }
+      }
     });
   };
 
@@ -75,7 +107,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   };
 
   const isModuleInstalled = (url: AutomergeUrl) => {
-    return doc.modules.includes(url);
+    return doc.modules.includes(url) || (doc.disabled ?? []).includes(url);
   };
 
   return (
@@ -102,6 +134,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
             sortOrder={sortOrder()}
             onToggleSort={handleToggleSort}
             onRemoveModule={handleRemoveModule}
+            onToggleEnabled={handleToggleEnabled}
           />
         </div>
       </div>

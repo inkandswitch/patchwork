@@ -11,6 +11,7 @@ import { FolderDoc } from "./types.js";
 
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
+  disabled?: AutomergeUrl[];
 } & HasPatchworkMetadata & {
     "@patchwork": { type: "patchwork:module-settings" };
   };

@@ -74,7 +74,8 @@ export const commands = (
       );
 
       moduleSettingsHandle.change((doc) => {
-        const doesModuleAlreadyExist = doc.modules.includes(url);
+        const doesModuleAlreadyExist =
+          doc.modules.includes(url) || (doc.disabled ?? []).includes(url);
         if (doesModuleAlreadyExist) {
           console.log("Module already installed, skipping");
           return;

@@ -59,6 +59,7 @@ async function createLayoutDoc(
     >({
       ["@patchwork"]: { type: "patchwork:module-settings" },
       modules: [],
+      disabled: [],
     });
     moduleSettingsUrl = moduleSettingsHandle.url;
   }

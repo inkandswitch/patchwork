@@ -17,6 +17,7 @@ import type {
 
 interface UseModulePluginsParams {
   modules: AutomergeUrl[];
+  disabled: AutomergeUrl[];
   searchQuery: Accessor<string>;
   filterPluginType: Accessor<string>;
   filterDataType: Accessor<string>;
@@ -28,13 +29,14 @@ interface UseModulePluginsParams {
 export type EnrichedPlugin = Plugin<PluginDescription> & {
   isValidUrl: boolean;
   datatypesDisplay: DatatypesDisplay;
+  enabled: boolean;
 };
 
 export function useModulePlugins(params: UseModulePluginsParams) {
-  const { modules, searchQuery, filterPluginType, filterDataType, sortOrder } =
+  const { modules, disabled, searchQuery, filterPluginType, filterDataType, sortOrder } =
     params;
 
-  // Load all plugins from user's modules
+  // Load all plugins from user's enabled modules
   const modulePlugins = mapArray(
     () => modules,
     (url) => {
@@ -42,7 +44,22 @@ export function useModulePlugins(params: UseModulePluginsParams) {
         () => url,
         async (url) => {
           const module = await importModuleFromFolderDocUrl(url);
-          return module?.plugins || [];
+          return (module?.plugins || []).map((p: Plugin<PluginDescription>) => ({ ...p, enabled: true }));
+        }
+      );
+      return plugins;
+    }
+  );
+
+  // Load all plugins from user's disabled modules
+  const disabledPlugins = mapArray(
+    () => disabled,
+    (url) => {
+      const [plugins] = createResource(
+        () => url,
+        async (url) => {
+          const module = await importModuleFromFolderDocUrl(url);
+          return (module?.plugins || []).map((p: Plugin<PluginDescription>) => ({ ...p, enabled: false }));
         }
       );
       return plugins;
@@ -51,9 +68,13 @@ export function useModulePlugins(params: UseModulePluginsParams) {
 
   // Flatten all plugin accessors into a single array
   const allPlugins = createMemo(() => {
-    return modulePlugins().flatMap(
+    const enabled = modulePlugins().flatMap(
       (pluginsAccessor) => pluginsAccessor() || []
     );
+    const disabledList = disabledPlugins().flatMap(
+      (pluginsAccessor) => pluginsAccessor() || []
+    );
+    return [...enabled, ...disabledList];
   });
 
   // Get unique plugin types for filter dropdown
@@ -139,6 +160,7 @@ export function useModulePlugins(params: UseModulePluginsParams) {
           ? (plugin.supportedDatatypes as string[] | string | undefined)
           : undefined
       ),
+      enabled: (plugin as any).enabled !== false,
     }));
   });
 
