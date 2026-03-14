@@ -322,6 +322,7 @@
 .sideboard-footer {
   container-type: inline-size;
   height: 4rem;
+  min-height: 4em;
   display: flex;
   overflow: hidden;
   justify-content: space-between;
@@ -329,8 +330,8 @@
   gap: 1rem;
   padding: var(--sideboard-padding-x);
   padding-bottom: calc(0.25rem + env(safe-area-inset-bottom));
-  padding-left: calc(var(--sideboard-padding-x) + env(safe-area-inset-left));
-  padding-right: calc(var(--sideboard-padding-x) + env(safe-area-inset-right));
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
   background: var(--sideboard-footer-fill);
   color: var(--sideboard-line);
   border-top: 1px solid
