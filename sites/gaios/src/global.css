@@ -37,7 +37,14 @@ patchwork-view {
 
 body > patchwork-view {
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
+  width: 100dvw;
+
+  @media all and (display-mode: standalone) {
+    height: 100lvh;
+    width: 100lvw;
+  }
 }
 
 /**
