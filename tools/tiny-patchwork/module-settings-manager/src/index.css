@@ -1290,6 +1290,49 @@
   transform: translateX(0.875rem);
 }
 
+/* Switch wrapper + tooltip */
+.module-settings-manager__switch-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.module-settings-manager__tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: var(--msm-widget-bg, #1a1a1a);
+  color: var(--msm-widget-text, #e0e0e0);
+  border: 1px solid var(--msm-widget-darken-16, #444);
+  border-radius: 6px;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.module-settings-manager__tooltip-header {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.module-settings-manager__tooltip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.module-settings-manager__tooltip-list li {
+  padding: 0.1rem 0;
+}
+
+.module-settings-manager__tooltip-kind {
+  opacity: 0.6;
+}
+
 .module-settings-manager__row--disabled {
   opacity: 0.5;
 }

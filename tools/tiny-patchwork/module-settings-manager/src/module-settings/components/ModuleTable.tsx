@@ -1,4 +1,4 @@
-import { For, Show, createMemo } from "solid-js";
+import { For, Show, createMemo, createSignal } from "solid-js";
 import { type AutomergeUrl } from "@automerge/automerge-repo";
 import { ViewRaw } from "./ViewRaw.tsx";
 import { TrashIcon } from "../icons";
@@ -26,6 +26,51 @@ interface ModuleTableProps {
   onToggleEnabled: (url: AutomergeUrl, enabled: boolean) => void;
 }
 
+function SwitchWithTooltip(props: {
+  enabled: boolean;
+  plugins: SiblingPlugin[];
+  formatKind: (type: string) => string;
+  onToggle: () => void;
+}) {
+  const [hovered, setHovered] = createSignal(false);
+
+  return (
+    <div
+      class="module-settings-manager__switch-wrapper"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <label class="module-settings-manager__switch">
+        <input
+          type="checkbox"
+          checked={props.enabled}
+          onChange={props.onToggle}
+        />
+        <span class="module-settings-manager__switch-slider" />
+      </label>
+      <Show when={hovered() && props.plugins.length > 0}>
+        <div class="module-settings-manager__tooltip">
+          <div class="module-settings-manager__tooltip-header">
+            This will {props.enabled ? "disable" : "enable"}:
+          </div>
+          <ul class="module-settings-manager__tooltip-list">
+            <For each={props.plugins}>
+              {(p) => (
+                <li>
+                  <span class="module-settings-manager__tooltip-kind">
+                    {props.formatKind(p.type)}
+                  </span>{" "}
+                  {p.name}
+                </li>
+              )}
+            </For>
+          </ul>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
 export function ModuleTable(props: ModuleTableProps) {
   const [copiedIdText, copyId] = useCopyToClipboard();
   const [copiedUrlText, copyUrl] = useCopyToClipboard();
@@ -40,18 +85,14 @@ export function ModuleTable(props: ModuleTableProps) {
     return map;
   });
 
-  function getToggleTooltip(plugin: EnrichedPlugin): string {
-    const siblings = (siblingsByUrl().get(plugin.importUrl as string) || [])
-      .filter((p) => p.name !== plugin.name || p.type !== plugin.type);
-    if (siblings.length === 0) {
-      return plugin.enabled ? "Disable module" : "Enable module";
-    }
-    const action = plugin.enabled ? "disable" : "enable";
-    const descriptions = siblings.map((s) => {
-      const kind = s.type === "patchwork:datatype" ? "datatype" : s.type === "patchwork:tool" ? "tool" : s.type;
-      return `${kind} "${s.name}"`;
-    });
-    return `This will ${action} ${descriptions.join(", ")}`;
+  function getPackagePlugins(plugin: EnrichedPlugin): SiblingPlugin[] {
+    return siblingsByUrl().get(plugin.importUrl as string) || [];
+  }
+
+  function formatPluginKind(type: string): string {
+    if (type === "patchwork:datatype") return "datatype";
+    if (type === "patchwork:tool") return "tool";
+    return type;
   }
 
   return (
@@ -204,22 +245,17 @@ export function ModuleTable(props: ModuleTableProps) {
                 </td>
                 <td class="module-settings-manager__table-actions">
                   <div class="module-settings-manager__action-buttons">
-                    <label
-                      class="module-settings-manager__switch"
-                      title={getToggleTooltip(plugin)}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={plugin.enabled}
-                        onChange={() =>
-                          props.onToggleEnabled(
-                            plugin.importUrl as AutomergeUrl,
-                            !plugin.enabled
-                          )
-                        }
-                      />
-                      <span class="module-settings-manager__switch-slider" />
-                    </label>
+                    <SwitchWithTooltip
+                      enabled={plugin.enabled}
+                      plugins={getPackagePlugins(plugin)}
+                      formatKind={formatPluginKind}
+                      onToggle={() =>
+                        props.onToggleEnabled(
+                          plugin.importUrl as AutomergeUrl,
+                          !plugin.enabled
+                        )
+                      }
+                    />
                     <Show when={plugin.isValidUrl}>
                       <ViewRaw
                         url={plugin.importUrl as AutomergeUrl}
