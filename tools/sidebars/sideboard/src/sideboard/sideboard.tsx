@@ -153,13 +153,6 @@ export function Sideboard(
       <Show when={moduleSettingsUrl() && contactUrl()}>
         <footer class="sideboard-footer">
           <button
-            onClick={() => open({ url: moduleSettingsUrl()! })}
-            class="sideboard-footer__button"
-          >
-            Modules
-          </button>
-
-          <button
             onClick={() =>
               open({
                 url: accountDocUrl(),
@@ -169,6 +162,13 @@ export function Sideboard(
             class="sideboard-footer__button"
           >
             <patchwork-view doc-url={contactUrl()!} tool-id="contact-avatar" />
+          </button>
+
+          <button
+            onClick={() => open({ url: moduleSettingsUrl()! })}
+            class="sideboard-footer__button"
+          >
+            Packages
           </button>
 
           <button
