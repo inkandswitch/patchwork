@@ -1,4 +1,5 @@
-import { For, Show, createMemo, createSignal } from "solid-js";
+import { For, Show, createMemo, createSignal, onCleanup } from "solid-js";
+import { Portal } from "solid-js/web";
 import { type AutomergeUrl } from "@automerge/automerge-repo";
 import { ViewRaw } from "./ViewRaw.tsx";
 import { TrashIcon } from "../icons";
@@ -33,11 +34,25 @@ function SwitchWithTooltip(props: {
   onToggle: () => void;
 }) {
   const [hovered, setHovered] = createSignal(false);
+  const [pos, setPos] = createSignal({ top: 0, right: 0 });
+  let wrapperRef!: HTMLDivElement;
+
+  const updatePos = () => {
+    const rect = wrapperRef.getBoundingClientRect();
+    setPos({
+      top: rect.top,
+      right: window.innerWidth - rect.right,
+    });
+  };
 
   return (
     <div
+      ref={wrapperRef}
       class="module-settings-manager__switch-wrapper"
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={() => {
+        updatePos();
+        setHovered(true);
+      }}
       onMouseLeave={() => setHovered(false)}
     >
       <label class="module-settings-manager__switch">
@@ -49,23 +64,33 @@ function SwitchWithTooltip(props: {
         <span class="module-settings-manager__switch-slider" />
       </label>
       <Show when={hovered() && props.plugins.length > 0}>
-        <div class="module-settings-manager__tooltip">
-          <div class="module-settings-manager__tooltip-header">
-            This will {props.enabled ? "disable" : "enable"}:
+        <Portal>
+          <div
+            class="module-settings-manager__tooltip"
+            style={{
+              position: "fixed",
+              top: `${pos().top}px`,
+              right: `${pos().right}px`,
+              transform: "translateY(calc(-100% - 6px))",
+            }}
+          >
+            <div class="module-settings-manager__tooltip-header">
+              This will {props.enabled ? "disable" : "enable"}:
+            </div>
+            <ul class="module-settings-manager__tooltip-list">
+              <For each={props.plugins}>
+                {(p) => (
+                  <li>
+                    <span class="module-settings-manager__tooltip-kind">
+                      {props.formatKind(p.type)}
+                    </span>{" "}
+                    {p.name}
+                  </li>
+                )}
+              </For>
+            </ul>
           </div>
-          <ul class="module-settings-manager__tooltip-list">
-            <For each={props.plugins}>
-              {(p) => (
-                <li>
-                  <span class="module-settings-manager__tooltip-kind">
-                    {props.formatKind(p.type)}
-                  </span>{" "}
-                  {p.name}
-                </li>
-              )}
-            </For>
-          </ul>
-        </div>
+        </Portal>
       </Show>
     </div>
   );
