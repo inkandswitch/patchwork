@@ -44,7 +44,7 @@ export function useModulePlugins(params: UseModulePluginsParams) {
         () => url,
         async (url) => {
           const module = await importModuleFromFolderDocUrl(url);
-          return (module?.plugins || []).map((p: Plugin<PluginDescription>) => ({ ...p, enabled: true }));
+          return (module?.plugins || []).map((p: Plugin<PluginDescription>) => ({ ...p, importUrl: url, enabled: true }));
         }
       );
       return plugins;
@@ -59,7 +59,7 @@ export function useModulePlugins(params: UseModulePluginsParams) {
         () => url,
         async (url) => {
           const module = await importModuleFromFolderDocUrl(url);
-          return (module?.plugins || []).map((p: Plugin<PluginDescription>) => ({ ...p, enabled: false }));
+          return (module?.plugins || []).map((p: Plugin<PluginDescription>) => ({ ...p, importUrl: url, enabled: false }));
         }
       );
       return plugins;
