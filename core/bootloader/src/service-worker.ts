@@ -64,6 +64,7 @@ function getRepo() {
         async sharePolicy(peerId) {
           return peerId.includes("storage-server");
         },
+        enableRemoteHeadsGossiping: true,
       });
 
       (self as any).repo = repo;
