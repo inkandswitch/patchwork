@@ -32,7 +32,6 @@ jobs:
 
       - name: build the package
         run: pnpm build
-        working-directory: ${{ inputs.package_path }}
 
       - name: pushwork track
         run: npx pushwork track
