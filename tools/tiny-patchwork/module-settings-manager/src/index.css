@@ -1245,17 +1245,49 @@
   }
 }
 
-/* Enabled checkbox */
-.module-settings-manager__table-enabled {
-  text-align: center;
-  overflow: visible;
+/* Switch toggle */
+.module-settings-manager__switch {
+  position: relative;
+  display: inline-block;
+  width: 2rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  cursor: pointer;
 }
 
-.module-settings-manager__enabled-checkbox {
-  width: 1rem;
-  height: 1rem;
-  accent-color: var(--module-settings-manager-primary);
-  cursor: pointer;
+.module-settings-manager__switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.module-settings-manager__switch-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--msm-widget-darken-16, #ccc);
+  border-radius: 1rem;
+  transition: background 0.2s;
+}
+
+.module-settings-manager__switch-slider::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 0.8125rem;
+  height: 0.8125rem;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.module-settings-manager__switch input:checked + .module-settings-manager__switch-slider {
+  background: var(--module-settings-manager-primary);
+}
+
+.module-settings-manager__switch input:checked + .module-settings-manager__switch-slider::before {
+  transform: translateX(0.875rem);
 }
 
 .module-settings-manager__row--disabled {

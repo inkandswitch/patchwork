@@ -37,7 +37,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   });
 
   // Load and filter plugins
-  const { filteredPlugins, uniquePluginTypes, uniqueDataTypes } =
+  const { allPlugins, filteredPlugins, uniquePluginTypes, uniqueDataTypes } =
     useModulePlugins({
       modules: doc.modules,
       disabled: doc.disabled ?? [],
@@ -131,6 +131,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
           />
           <ModuleTable
             plugins={filteredPlugins()}
+            allPlugins={allPlugins()}
             sortOrder={sortOrder()}
             onToggleSort={handleToggleSort}
             onRemoveModule={handleRemoveModule}

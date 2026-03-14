@@ -1,12 +1,19 @@
-import { For, Show } from "solid-js";
+import { For, Show, createMemo } from "solid-js";
 import { type AutomergeUrl } from "@automerge/automerge-repo";
 import { ViewRaw } from "./ViewRaw.tsx";
 import { TrashIcon } from "../icons";
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard.ts";
 import type { EnrichedPlugin } from "../hooks/useModulePlugins.ts";
 
+interface SiblingPlugin {
+  importUrl: string;
+  name: string;
+  type: string;
+}
+
 interface ModuleTableProps {
   plugins: EnrichedPlugin[];
+  allPlugins: SiblingPlugin[];
   sortOrder:
     | "name-asc"
     | "name-desc"
@@ -23,21 +30,43 @@ export function ModuleTable(props: ModuleTableProps) {
   const [copiedIdText, copyId] = useCopyToClipboard();
   const [copiedUrlText, copyUrl] = useCopyToClipboard();
 
+  const siblingsByUrl = createMemo(() => {
+    const map = new Map<string, SiblingPlugin[]>();
+    for (const p of props.allPlugins) {
+      const url = p.importUrl as string;
+      if (!map.has(url)) map.set(url, []);
+      map.get(url)!.push(p);
+    }
+    return map;
+  });
+
+  function getToggleTooltip(plugin: EnrichedPlugin): string {
+    const siblings = (siblingsByUrl().get(plugin.importUrl as string) || [])
+      .filter((p) => p.name !== plugin.name || p.type !== plugin.type);
+    if (siblings.length === 0) {
+      return plugin.enabled ? "Disable module" : "Enable module";
+    }
+    const action = plugin.enabled ? "disable" : "enable";
+    const descriptions = siblings.map((s) => {
+      const kind = s.type === "patchwork:datatype" ? "datatype" : s.type === "patchwork:tool" ? "tool" : s.type;
+      return `${kind} "${s.name}"`;
+    });
+    return `This will also ${action} ${descriptions.join(", ")}`;
+  }
+
   return (
     <div class="module-settings-manager__table-container">
       <table class="module-settings-manager__table">
         <colgroup>
-          <col style={{ width: "5%" }} />
-          <col style={{ width: "18%" }} />
+          <col style={{ width: "20%" }} />
           <col style={{ width: "13%" }} />
           <col style={{ width: "19%" }} />
           <col style={{ width: "19%" }} />
           <col style={{ width: "14%" }} />
-          <col style={{ width: "12%" }} />
+          <col style={{ width: "15%" }} />
         </colgroup>
         <thead>
           <tr>
-            <th>Enabled</th>
             <th
               class="module-settings-manager__sortable-header"
               onClick={() => props.onToggleSort("name")}
@@ -87,20 +116,7 @@ export function ModuleTable(props: ModuleTableProps) {
           <For each={props.plugins}>
             {(plugin) => (
               <tr classList={{ "module-settings-manager__row--disabled": !plugin.enabled }}>
-                <td class="module-settings-manager__table-enabled">
-                  <input
-                    type="checkbox"
-                    checked={plugin.enabled}
-                    onChange={() =>
-                      props.onToggleEnabled(
-                        plugin.importUrl as AutomergeUrl,
-                        !plugin.enabled
-                      )
-                    }
-                    class="module-settings-manager__enabled-checkbox"
-                    title={plugin.enabled ? "Disable module" : "Enable module"}
-                  />
-                </td>
+
                 <td class="module-settings-manager__table-name" title={plugin.name}>
                   <span class="module-settings-manager__table-name-text">{plugin.name}</span>
                 </td>
@@ -188,6 +204,22 @@ export function ModuleTable(props: ModuleTableProps) {
                 </td>
                 <td class="module-settings-manager__table-actions">
                   <div class="module-settings-manager__action-buttons">
+                    <label
+                      class="module-settings-manager__switch"
+                      title={getToggleTooltip(plugin)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={plugin.enabled}
+                        onChange={() =>
+                          props.onToggleEnabled(
+                            plugin.importUrl as AutomergeUrl,
+                            !plugin.enabled
+                          )
+                        }
+                      />
+                      <span class="module-settings-manager__switch-slider" />
+                    </label>
                     <Show when={plugin.isValidUrl}>
                       <ViewRaw
                         url={plugin.importUrl as AutomergeUrl}
