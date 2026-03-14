@@ -1,0 +1,41 @@
+name: "TEST: Build and push module-settings-manager"
+
+on:
+  push:
+    branches:
+      - claude/module-enabled-checkbox-ipOLj
+
+jobs:
+  build-and-push:
+    name: build and push module-settings-manager
+    runs-on: ubuntu-latest
+    environment: Patchwork
+    steps:
+      - name: check out the repository
+        uses: actions/checkout@v3
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: install javascript
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: install dependencies
+        run: pnpm install
+
+      - name: build the package
+        run: pnpm build
+        working-directory: tools/tiny-patchwork/module-settings-manager
+
+      - name: pushwork track
+        run: npx pushwork track
+        working-directory: tools/tiny-patchwork/module-settings-manager
+
+      - name: pushwork sync
+        run: npx pushwork sync
+        working-directory: tools/tiny-patchwork/module-settings-manager
