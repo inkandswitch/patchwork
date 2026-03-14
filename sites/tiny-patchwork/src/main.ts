@@ -64,12 +64,10 @@ if (!result) {
   throw new Error("Failed to set up service worker");
 }
 
-if (result.port) {
-  repo.networkSubsystem.addNetworkAdapter(
-    new MessageChannelNetworkAdapter(result.port)
-  );
-  await repo.networkSubsystem.whenReady();
-}
+repo.networkSubsystem.addNetworkAdapter(
+  new MessageChannelNetworkAdapter(result.port)
+);
+await repo.networkSubsystem.whenReady();
 
 window.getRepoChannel = () => {
   const { port1, port2 } = new MessageChannel();
