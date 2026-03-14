@@ -67,6 +67,12 @@ function getRepo() {
       });
 
       (self as any).repo = repo;
+      console.log(
+        "[service worker] repo initialized, waiting for network subsystem to be ready"
+      );
+      await repo.networkSubsystem.whenReady();
+      console.log("[service worker] repo network subsystem ready");
+
       return repo;
     });
   }

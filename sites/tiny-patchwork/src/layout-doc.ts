@@ -120,24 +120,45 @@ export async function getOrCreateLayoutDocHandle(
   hive?: AutomergeRepoKeyhive
 ) {
   const accountDocKey = `tinyPatchwork${hive ? "Keyhive" : ""}AccountUrl`;
+  const previousKey = `tinyPatchwork${hive ? "Keyhive" : ""}PreviousAccountUrls`;
   const existing = localStorage.getItem(accountDocKey) as
     | AutomergeUrl
     | undefined;
 
   if (existing) {
-    const accountDocHandle = await repo.find<
-      TinyPatchworkLayoutDoc & HasPatchworkMetadata
-    >(existing);
+    let accountDoc: TinyPatchworkLayoutDoc & HasPatchworkMetadata | undefined;
+    try {
+      const findPromise = repo.find<
+        TinyPatchworkLayoutDoc & HasPatchworkMetadata
+      >(existing);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout finding account doc')), 5000)
+      );
+      const accountDocHandle = await Promise.race([findPromise, timeoutPromise]);
 
-    const accountDoc = accountDocHandle.doc();
+      accountDoc = accountDocHandle.doc();
 
-    if (isValidLayoutDoc(accountDoc)) {
-      return accountDocHandle;
+      if (isValidLayoutDoc(accountDoc)) {
+        return accountDocHandle;
+      }
+    } catch (e) {
+      console.warn(
+        "Failed to find existing account document, creating new one",
+        e
+      );
     }
 
-    // Invalid account doc, create a new one but preserve existing folder and settings
+    // Store the previous account URL
+    let previousUrls: AutomergeUrl[] = JSON.parse(localStorage.getItem(previousKey) || '[]');
+    if (!previousUrls.includes(existing)) {
+      previousUrls.push(existing);
+      if (previousUrls.length > 10) previousUrls = previousUrls.slice(-10);
+      localStorage.setItem(previousKey, JSON.stringify(previousUrls));
+    }
+
+    // Invalid account doc or timeout, create a new one but preserve existing folder and settings
     console.warn(
-      "Old account document detected, creating new account doc with preserved data"
+      "Old account document detected or inaccessible, creating new account doc with preserved data"
     );
     const account = await createLayoutDoc(repo, {
       contactUrl: accountDoc?.contactUrl,
