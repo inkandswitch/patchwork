@@ -1,0 +1,44 @@
+name: Build and push module
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_path:
+        description: "Path to the package folder (e.g. tools/tiny-patchwork/module-settings-manager)"
+        required: true
+        type: string
+
+jobs:
+  build-and-push:
+    name: build and push
+    runs-on: ubuntu-latest
+    environment: Patchwork
+    steps:
+      - name: check out the repository
+        uses: actions/checkout@v3
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: install javascript
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: install dependencies
+        run: pnpm install
+
+      - name: build the package
+        run: pnpm build
+        working-directory: ${{ inputs.package_path }}
+
+      - name: pushwork track
+        run: npx pushwork track
+        working-directory: ${{ inputs.package_path }}
+
+      - name: pushwork sync
+        run: npx pushwork sync
+        working-directory: ${{ inputs.package_path }}
