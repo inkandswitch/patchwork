@@ -18,7 +18,9 @@ import {
 let cachename = "default";
 let debugging = false;
 
-const cacheableStatuses = [200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501];
+const cacheableStatuses = [
+  200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501,
+];
 
 function log(...args: any[]) {
   if (!debugging) return;
@@ -62,11 +64,8 @@ function getRepo() {
         async sharePolicy(peerId) {
           return peerId.includes("storage-server");
         },
-        enableRemoteHeadsGossiping: true,
       });
-      repo.subscribeToRemotes([
-        "3760df37-a4c6-4f66-9ecd-732039a9385d" as StorageId,
-      ]);
+
       (self as any).repo = repo;
       return repo;
     });
@@ -151,7 +150,9 @@ async function resolveAutomergeUrl(handoffURL: URL): Promise<Response> {
         `folder at ${current.url} has no docs array (resolving ${path.join("/")})`
       );
     }
-    const target = doc.docs.find((link: { name: string; url: string }) => link.name === part);
+    const target = doc.docs.find(
+      (link: { name: string; url: string }) => link.name === part
+    );
     if (!target?.url) {
       throw new Error(
         `couldn't find ${part} in folder at ${current.url} (resolving ${path.join("/")})`
@@ -167,7 +168,9 @@ async function resolveAutomergeUrl(handoffURL: URL): Promise<Response> {
   }
 
   const body: BodyInit =
-    content instanceof Uint8Array ? new Uint8Array(content) as BlobPart : String(content);
+    content instanceof Uint8Array
+      ? (new Uint8Array(content) as BlobPart)
+      : String(content);
   const mimeType = fileDoc.mimeType ?? "text/plain";
 
   const headers = new Headers({ "content-type": mimeType });
@@ -210,10 +213,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           if (match) {
             log(`serving ${handoffURL} from cache ${cachename}`);
             const headers = new Headers(match.headers);
-            headers.set(
-              "cross-origin-embedder-policy",
-              "credentialless"
-            );
+            headers.set("cross-origin-embedder-policy", "credentialless");
             headers.set("cross-origin-resource-policy", "cross-origin");
             return new Response(match.body, {
               status: match.status,
@@ -254,9 +254,10 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           return new Response("couldnt fetch and no stale", { status: 503 });
         }
       } catch (error) {
-        const message = error instanceof Error
-          ? `${error.message}\n\n${error.stack}`
-          : String(error);
+        const message =
+          error instanceof Error
+            ? `${error.message}\n\n${error.stack}`
+            : String(error);
         console.error(
           `service worker error resolving ${request.url}${handoffURL ? ` (handoff: ${handoffURL})` : ""}.\n${message}`
         );
