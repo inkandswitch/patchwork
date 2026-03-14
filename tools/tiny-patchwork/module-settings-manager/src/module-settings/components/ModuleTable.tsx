@@ -51,7 +51,7 @@ export function ModuleTable(props: ModuleTableProps) {
       const kind = s.type === "patchwork:datatype" ? "datatype" : s.type === "patchwork:tool" ? "tool" : s.type;
       return `${kind} "${s.name}"`;
     });
-    return `This will also ${action} ${descriptions.join(", ")}`;
+    return `This will ${action} ${descriptions.join(", ")}`;
   }
 
   return (

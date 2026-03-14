@@ -75,20 +75,20 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
       }
       if (enabled) {
         // Move from disabled to modules
-        const disabledIdx = doc.disabled.indexOf(url);
+        const disabledIdx = doc.disabled.findIndex((u) => u === url);
         if (disabledIdx !== -1) {
           doc.disabled.splice(disabledIdx, 1);
         }
-        if (!doc.modules.includes(url)) {
+        if (!doc.modules.some((u) => u === url)) {
           doc.modules.push(url);
         }
       } else {
         // Move from modules to disabled
-        const idx = doc.modules.indexOf(url);
+        const idx = doc.modules.findIndex((u) => u === url);
         if (idx !== -1) {
           doc.modules.splice(idx, 1);
         }
-        if (!doc.disabled.includes(url)) {
+        if (!doc.disabled.some((u) => u === url)) {
           doc.disabled.push(url);
         }
       }
