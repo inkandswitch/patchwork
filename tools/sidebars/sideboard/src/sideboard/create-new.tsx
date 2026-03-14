@@ -148,7 +148,6 @@ export default function CreateNew(props: CreateNewProps) {
         class="create-new-button"
         aria-label="create new"
         on:click={(event: MouseEvent) => {
-          event.stopImmediatePropagation();
           event.stopPropagation();
         }}
       >
@@ -199,7 +198,9 @@ export default function CreateNew(props: CreateNewProps) {
           <Show when={isUrl()}>
             <DropdownMenu.Item
               class="popmenu__item"
-              classList={{ "popmenu__item--highlighted": highlightIndex() === 0 }}
+              classList={{
+                "popmenu__item--highlighted": highlightIndex() === 0,
+              }}
               onSelect={() => handleUrlSubmit(query())}
               onPointerMove={() => setHighlightIndex(0)}
             >
