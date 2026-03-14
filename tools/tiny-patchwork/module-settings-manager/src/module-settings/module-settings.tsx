@@ -70,6 +70,9 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
 
   const handleToggleEnabled = (url: AutomergeUrl, enabled: boolean) => {
     props.handle.change((doc) => {
+      if (!doc.modules) {
+        doc.modules = [];
+      }
       if (!doc.disabled) {
         doc.disabled = [];
       }

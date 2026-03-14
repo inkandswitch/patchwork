@@ -115,8 +115,9 @@ export function ModuleTable(props: ModuleTableProps) {
   }
 
   function formatPluginKind(type: string): string {
-    if (type === "patchwork:datatype") return "datatype";
-    if (type === "patchwork:tool") return "tool";
+    const t = type.toLowerCase();
+    if (t === "patchwork:datatype") return "datatype";
+    if (t === "patchwork:tool") return "tool";
     return type;
   }
 
