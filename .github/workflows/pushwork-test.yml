@@ -9,7 +9,6 @@ jobs:
   build-and-push:
     name: build and push module-settings-manager
     runs-on: ubuntu-latest
-    environment: Patchwork
     steps:
       - name: check out the repository
         uses: actions/checkout@v3

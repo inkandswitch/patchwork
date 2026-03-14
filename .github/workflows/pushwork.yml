@@ -12,7 +12,6 @@ jobs:
   build-and-push:
     name: build and push
     runs-on: ubuntu-latest
-    environment: Patchwork
     steps:
       - name: check out the repository
         uses: actions/checkout@v3
