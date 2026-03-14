@@ -96,7 +96,7 @@ export const PatchworkFrame = ({
   } = useDebugRegistryToast();
 
   return (
-    <div class="flex w-full h-full overflow-hidden">
+    <div class="flex w-full h-full">
       <DebugRegistryToast
         events={debugEvents()}
         onDismiss={dismissEvent}
