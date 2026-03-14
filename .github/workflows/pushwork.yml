@@ -39,6 +39,7 @@ jobs:
 
       - name: pushwork track
         run: npx pushwork track ${{ steps.pushwork-url.outputs.url }}
+        working-directory: ${{ inputs.package_path }}
 
       - name: pushwork sync
         run: npx pushwork sync
