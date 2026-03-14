@@ -55,7 +55,7 @@ let repoPromise: Promise<Repo> | null = null;
 
 function getRepo() {
   if (!repoPromise) {
-    repoPromise = initializeBase64Wasm(automergeWasmBase64).then(() => {
+    repoPromise = initializeBase64Wasm(automergeWasmBase64).then(async () => {
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
         network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
