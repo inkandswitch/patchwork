@@ -128,31 +128,6 @@ if (isTauri) {
         return;
       }
 
-      const { heads, documentId } = parseAutomergeUrl(
-        maybeAutomergeUrl as AutomergeUrl
-      );
-
-      if (!heads) {
-        // Redirect to pinned-heads URL
-        const folder = await repo.find(maybeAutomergeUrl as AutomergeUrl);
-        const latestHeads = folder.heads();
-        const pinnedUrl = stringifyAutomergeUrl({
-          documentId,
-          heads: latestHeads,
-        });
-        let location = `patchwork://localhost/${encodeURIComponent(pinnedUrl)}`;
-        if (path.length) location += `/${path.map(encodeURIComponent).join("/")}`;
-
-        await invoke("resolve_protocol_request", {
-          id,
-          body: [],
-          mimeType: "text/plain",
-          status: 307,
-          headers: { location },
-        });
-        return;
-      }
-
       // Navigate folder structure to find the file
       const folderHandle = await repo.find<FolderDoc>(
         maybeAutomergeUrl as AutomergeUrl
