@@ -159,8 +159,9 @@ pub fn run() {
                                 builder = builder.header(key.as_str(), value.as_str());
                             }
 
-                            // Always set CORS headers for cross-origin isolation
+                            // Always set CORS headers so tauri:// can fetch patchwork://
                             builder = builder
+                                .header("access-control-allow-origin", "tauri://localhost")
                                 .header("cross-origin-embedder-policy", "credentialless")
                                 .header("cross-origin-resource-policy", "cross-origin");
 
