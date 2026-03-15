@@ -4,7 +4,10 @@ import {
   registerPatchworkViewElement,
   openDocument,
 } from "@inkandswitch/patchwork-elements";
-import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
+import {
+  ModuleWatcher,
+  findHandleInFolderHandle,
+} from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
 import {
   registerPlugins,
@@ -20,6 +23,7 @@ import {
 import {
   DocHandle,
   IndexedDBStorageAdapter,
+  isValidAutomergeUrl,
   isValidDocumentId,
   MessageChannelNetworkAdapter,
   parseAutomergeUrl,
@@ -44,6 +48,14 @@ declare global {
       modules: ModuleWatcher;
       plugins: typeof plugins;
       accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
+    };
+    __TAURI__: {
+      event: {
+        listen: (event: string, handler: (event: any) => void) => Promise<() => void>;
+      };
+      core: {
+        invoke: (cmd: string, args?: Record<string, unknown>) => Promise<any>;
+      };
     };
   }
 }
@@ -79,6 +91,115 @@ if (isTauri) {
   repo.networkSubsystem.addNetworkAdapter(
     new WebSocketClientAdapter("ws://localhost:3030")
   );
+
+  // Handle patchwork:// protocol requests from the Rust side.
+  // This replaces the service worker for resolving automerge documents —
+  // critical on iOS where WKWebView doesn't support service workers.
+  const { listen } = window.__TAURI__.event;
+  const { invoke } = window.__TAURI__.core;
+
+  interface FolderDoc {
+    title: string;
+    docs: Array<{ name: string; url: string }>;
+  }
+  interface FileDoc {
+    content: string | Uint8Array;
+    mimeType?: string;
+  }
+
+  listen("patchwork-protocol-request", async (event: any) => {
+    const { id, url } = event.payload as { id: number; url: string };
+    try {
+      // URL looks like patchwork://localhost/automerge%3Adocid%23heads/path/to/file
+      const parsed = new URL(url);
+      const rawPath = parsed.pathname.slice(1); // strip leading /
+      const segments = rawPath.split("/").filter(Boolean);
+      const maybeAutomergeUrl = decodeURIComponent(segments[0]);
+      const path = segments.slice(1).map(decodeURIComponent);
+
+      if (!isValidAutomergeUrl(maybeAutomergeUrl)) {
+        await invoke("resolve_protocol_request", {
+          id,
+          body: Array.from(new TextEncoder().encode("invalid automerge url")),
+          mimeType: "text/plain",
+          status: 400,
+          headers: {},
+        });
+        return;
+      }
+
+      const { heads, documentId } = parseAutomergeUrl(
+        maybeAutomergeUrl as AutomergeUrl
+      );
+
+      if (!heads) {
+        // Redirect to pinned-heads URL
+        const folder = await repo.find(maybeAutomergeUrl as AutomergeUrl);
+        const latestHeads = folder.heads();
+        const pinnedUrl = stringifyAutomergeUrl({
+          documentId,
+          heads: latestHeads,
+        });
+        let location = `patchwork://localhost/${encodeURIComponent(pinnedUrl)}`;
+        if (path.length) location += `/${path.map(encodeURIComponent).join("/")}`;
+
+        await invoke("resolve_protocol_request", {
+          id,
+          body: [],
+          mimeType: "text/plain",
+          status: 307,
+          headers: { location },
+        });
+        return;
+      }
+
+      // Navigate folder structure to find the file
+      const folderHandle = await repo.find<FolderDoc>(
+        maybeAutomergeUrl as AutomergeUrl
+      );
+      const fileHandle = path.length
+        ? await findHandleInFolderHandle<FileDoc>(repo, folderHandle, path)
+        : folderHandle;
+
+      const fileDoc = fileHandle?.doc() as FileDoc | undefined;
+      const content = fileDoc?.content;
+
+      if (!content) {
+        await invoke("resolve_protocol_request", {
+          id,
+          body: Array.from(
+            new TextEncoder().encode(`no content at ${url}`)
+          ),
+          mimeType: "text/plain",
+          status: 404,
+          headers: {},
+        });
+        return;
+      }
+
+      const body =
+        content instanceof Uint8Array
+          ? Array.from(content)
+          : Array.from(new TextEncoder().encode(String(content)));
+
+      await invoke("resolve_protocol_request", {
+        id,
+        body,
+        mimeType: fileDoc?.mimeType ?? "text/plain",
+        status: 200,
+        headers: {},
+      });
+    } catch (error) {
+      console.error("[patchwork protocol]", error);
+      await invoke("resolve_protocol_request", {
+        id,
+        body: Array.from(new TextEncoder().encode(String(error))),
+        mimeType: "text/plain",
+        status: 500,
+        headers: {},
+      });
+    }
+  });
 } else {
   const result = await setup();
   if (!result) {
@@ -91,11 +212,13 @@ if (isTauri) {
   await repo.networkSubsystem.whenReady();
 }
 
-window.getRepoChannel = () => {
-  const { port1, port2 } = new MessageChannel();
-  navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
-  return port1;
-};
+if (!isTauri) {
+  window.getRepoChannel = () => {
+    const { port1, port2 } = new MessageChannel();
+    navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
+    return port1;
+  };
+}
 
 document.body.style.background = "#fffffe";
 

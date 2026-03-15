@@ -1,13 +1,67 @@
 use samod::storage::TokioFilesystemStorage;
 use samod::{AcceptorHandle, BackoffConfig, PeerId, Repo};
+use serde::Deserialize;
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
-use tauri::{WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tokio::net::TcpListener;
+use tokio::sync::{oneshot, Mutex as AsyncMutex};
 
 static WINDOW_COUNTER: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(1);
 
+/// Shared state for the patchwork:// custom protocol handler.
+/// Rust registers the protocol, then forwards resolution requests to JS
+/// (which has the automerge repo) via Tauri events. JS calls back with
+/// the resolved content via the `resolve_protocol_request` command.
+struct ProtocolState {
+    pending: AsyncMutex<HashMap<u64, oneshot::Sender<ProtocolResponse>>>,
+    counter: AtomicU64,
+}
+
+#[derive(Deserialize)]
+struct ProtocolResponse {
+    body: Vec<u8>,
+    #[serde(default = "default_mime")]
+    mime_type: String,
+    #[serde(default = "default_status")]
+    status: u16,
+    #[serde(default)]
+    headers: HashMap<String, String>,
+}
+
+fn default_mime() -> String {
+    "text/plain".into()
+}
+
+fn default_status() -> u16 {
+    200
+}
+
+#[tauri::command]
+async fn resolve_protocol_request(
+    id: u64,
+    body: Vec<u8>,
+    mime_type: String,
+    status: u16,
+    headers: HashMap<String, String>,
+    state: tauri::State<'_, Arc<ProtocolState>>,
+) -> Result<(), String> {
+    if let Some(tx) = state.pending.lock().await.remove(&id) {
+        tx.send(ProtocolResponse {
+            body,
+            mime_type,
+            status,
+            headers,
+        })
+        .map_err(|_| "response channel closed".to_string())?;
+    }
+    Ok(())
+}
+
 fn create_window(app: &tauri::AppHandle) -> tauri::Result<()> {
-    let n = WINDOW_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    let n = WINDOW_COUNTER.fetch_add(1, Ordering::SeqCst);
     let label = format!("main-{n}");
     WebviewWindowBuilder::new(app, &label, WebviewUrl::default())
         .title("Patchwork")
@@ -67,8 +121,81 @@ async fn start_sync_server() -> Result<(), Box<dyn std::error::Error + Send + Sy
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let protocol_state = Arc::new(ProtocolState {
+        pending: AsyncMutex::new(HashMap::new()),
+        counter: AtomicU64::new(0),
+    });
+    let protocol_state_for_handler = protocol_state.clone();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .manage(protocol_state)
+        .invoke_handler(tauri::generate_handler![resolve_protocol_request])
+        .register_asynchronous_uri_scheme_protocol(
+            "patchwork",
+            move |ctx, request, responder| {
+                let state = protocol_state_for_handler.clone();
+                let app = ctx.app_handle().clone();
+                let uri = request.uri().to_string();
+
+                tauri::async_runtime::spawn(async move {
+                    let id = state.counter.fetch_add(1, Ordering::SeqCst);
+                    let (tx, rx) = oneshot::channel();
+                    state.pending.lock().await.insert(id, tx);
+
+                    // Ask the JS side to resolve this URL
+                    let _ = app.emit(
+                        "patchwork-protocol-request",
+                        serde_json::json!({ "id": id, "url": uri }),
+                    );
+
+                    match tokio::time::timeout(std::time::Duration::from_secs(30), rx).await {
+                        Ok(Ok(response)) => {
+                            let mut builder = tauri::http::Response::builder()
+                                .status(response.status)
+                                .header("content-type", &response.mime_type);
+
+                            for (key, value) in &response.headers {
+                                builder = builder.header(key.as_str(), value.as_str());
+                            }
+
+                            // Always set CORS headers for cross-origin isolation
+                            builder = builder
+                                .header("cross-origin-embedder-policy", "credentialless")
+                                .header("cross-origin-resource-policy", "cross-origin");
+
+                            responder.respond(
+                                builder.body(response.body).unwrap_or_else(|_| {
+                                    tauri::http::Response::builder()
+                                        .status(500)
+                                        .body(b"failed to build response".to_vec())
+                                        .unwrap()
+                                }),
+                            );
+                        }
+                        Ok(Err(_)) => {
+                            responder.respond(
+                                tauri::http::Response::builder()
+                                    .status(500)
+                                    .body(b"protocol handler channel closed".to_vec())
+                                    .unwrap(),
+                            );
+                        }
+                        Err(_) => {
+                            eprintln!(
+                                "[protocol] timeout resolving {uri} (waited 30s for JS response)"
+                            );
+                            responder.respond(
+                                tauri::http::Response::builder()
+                                    .status(504)
+                                    .body(b"protocol handler timeout".to_vec())
+                                    .unwrap(),
+                            );
+                        }
+                    }
+                });
+            },
+        )
         .setup(|app| {
             // Start the embedded sync server in the background
             tauri::async_runtime::spawn(async {
