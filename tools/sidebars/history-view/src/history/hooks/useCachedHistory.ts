@@ -5,7 +5,7 @@ import {
   makeDocumentProjection,
   useDocument,
 } from "@automerge/automerge-repo-solid-primitives";
-import { createMemo, createEffect, Accessor } from "solid-js";
+import { createMemo, createEffect, Accessor, onCleanup } from "solid-js";
 import type {
   HistoryItem,
   GroupingStrategyConfig,
@@ -19,14 +19,20 @@ const taskQueue = tasklib.queue(
   "automerge:3AXXV4FHVom6sWu1rD8kBRWq9Bmd" as AutomergeUrl
 );
 
+const DEBOUNCE_TIME = 5000; // 5 seconds
+const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the same document
+
 /**
  * Hook that manages history grouping with history document as source of truth.
  *
- * Dispatches a background task to create/update the history document:
+ * A single effect actively watches the source document and dispatches a
+ * background task to create or update the history document:
  * - If no history doc exists, dispatches immediately (task creates it)
- * - If history doc exists but cache is stale, dispatches with throttle
+ * - If history doc exists and heads match, does nothing
+ * - If history doc exists but heads differ, dispatches with throttle
  *
  * REACTIVE FLOW:
+ * - Source doc changes → effect checks history doc → dispatches task if needed
  * - Task creates/updates history doc → source doc gets history URL → hook subscribes
  * - History doc updates → UI updates reactively
  *
@@ -56,55 +62,103 @@ export function useCachedHistory(
     return metadata?.history as AutomergeUrl | undefined;
   });
 
-  // PART 2: If no history doc exists, dispatch task to create one
-  createEffect(() => {
-    if (historyUrl()) return; // history doc already exists, handled by PART 4
-
-    const source = sourceHandle();
-    if (!source) return;
-
-    // No history doc — dispatch task to create it
-    taskQueue.addTask<AutomergeUrl, void>({
-      input: source.url,
-      importUrl: new URL(/* @vite-ignore */ "../task.js", import.meta.url),
-    });
-  });
-
-  // PART 3: Subscribe to history document reactively (for UI updates)
+  // PART 2: Subscribe to history document reactively (for UI updates)
   const [historyDoc, historyDocHandle] = useDocument<HistoryGroupingsDoc>(
     historyUrl,
     { repo }
   );
 
-  // PART 4: Throttled staleness check (only when history doc exists)
-  // Uses updatedAt and throttleMs from the history doc to throttle task dispatch.
-  // Re-runs reactively when historyDocHandle() changes (e.g. when
-  // the task writes updatedAt or heads)
+  let lastDispatchTime = 0;
+  let taskDispatchDelayTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const dispatchTask = (sourceUrl: AutomergeUrl) => {
+    taskQueue.addTask<AutomergeUrl, void>({
+      input: sourceUrl,
+      importUrl: new URL(/* @vite-ignore */ "../task.js", import.meta.url),
+    });
+    lastDispatchTime = Date.now();
+  };
+
+  // PART 3: Handle initial load and missing history document
   createEffect(() => {
     const source = sourceHandle();
-    const hHandle = historyDocHandle();
-    if (!source || !hHandle) return;
+    if (!source) return;
+    const sourceRawDoc = source.doc();
 
-    const sourceDoc = source.doc();
-    const histDoc = hHandle.doc();
-    if (!sourceDoc || !histDoc) return;
+    if (!(sourceRawDoc as HasPatchworkMetadata)?.["@patchwork"]?.history) {
+      // No history doc exists — dispatch task to create it
+      dispatchTask(source.url);
+      return;
+    } else {
+      // update in case there have been changes since the history doc was last loaded
+      // TODO: we should check the history doc staleness & throttle
+      dispatchTask(source.url);
+    }
+  });
 
-    const currentHeads = Automerge.getHeads(sourceDoc);
-    const cachedHeads = histDoc.heads;
+  // PART 4: Subscribe to source document changes and update history as needed
+  // Re-runs reactively when source doc, history URL, or history doc changes.
+  // Reading sourceDoc() (the reactive projection) establishes a Solid dependency
+  // so this effect re-runs when the document content changes.
+  createEffect(() => {
+    const source = sourceHandle();
+    if (!source) return;
 
-    // Cache is current — nothing to do
-    if (cachedHeads && headsEqual(currentHeads, cachedHeads)) return;
+    const onChange = () => {
+      const now = Date.now();
+      // Debounce: ignore changes for 5s after a task dispatch
+      const elapsed = now - lastDispatchTime;
+      if (elapsed < DEBOUNCE_TIME) {
+        // Ensure we re-check after the debounce window expires
+        if (!taskDispatchDelayTimer) {
+          taskDispatchDelayTimer = setTimeout(() => {
+            taskDispatchDelayTimer = undefined;
+            onChange();
+          }, DEBOUNCE_TIME - elapsed);
+        }
+        return;
+      }
 
-    // Cache is stale — check if a task ran recently (throttle)
-    const now = Date.now();
-    const lastUpdate = histDoc.updatedAt ?? 0;
-    const throttleMs = histDoc.throttleMs ?? 2 * 60 * 1000;
-    if (now - lastUpdate < throttleMs) return;
+      // Use the raw doc from the handle for getHeads (needs the Automerge doc, not the projection)
+      const sourceRawDoc = source.doc();
+      if (!sourceRawDoc) return;
 
-    // Dispatch full computation task
-    taskQueue.addTask<AutomergeUrl, void>({
-      input: source.url,
-      importUrl: new URL(/* @vite-ignore */ "../task.js", import.meta.url),
+      const hHandle = historyDocHandle();
+      if (!hHandle) return;
+
+      const histDoc = hHandle.doc();
+      if (!histDoc) return;
+
+      // Check staleness by comparing heads of source doc and cached heads in history doc
+      const currentHeads = Automerge.getHeads(sourceRawDoc);
+      const cachedHeads = histDoc.heads;
+
+      // Heads match — cache is current, nothing to do
+      if (cachedHeads && headsEqual(currentHeads, cachedHeads)) return;
+
+      // Heads differ — check throttle before dispatching task to update cache
+      const lastUpdate = histDoc.updatedAt ?? 0;
+      const throttleMs = histDoc.throttleMs ?? THROTTLE_MS;
+      const elapsedSinceUpdate = now - lastUpdate;
+      if (elapsedSinceUpdate < throttleMs) {
+        if (!taskDispatchDelayTimer) {
+          taskDispatchDelayTimer = setTimeout(() => {
+            taskDispatchDelayTimer = undefined;
+            onChange();
+          }, throttleMs - elapsedSinceUpdate);
+        }
+        return;
+      }
+
+      // Dispatch task to recompute
+      dispatchTask(source.url);
+    };
+
+    source.on("change", onChange);
+    onCleanup(() => {
+      source.off("change", onChange);
+      clearTimeout(taskDispatchDelayTimer);
+      taskDispatchDelayTimer = undefined;
     });
   });
 
