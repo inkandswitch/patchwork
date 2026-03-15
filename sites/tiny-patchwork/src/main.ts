@@ -110,7 +110,7 @@ if (isTauri) {
   listen("patchwork-protocol-request", async (event: any) => {
     const { id, url } = event.payload as { id: number; url: string };
     try {
-      // URL looks like patchwork://localhost/automerge%3Adocid%23heads/path/to/file
+      // URL looks like http://localhost:3030/automerge%3Adocid%23heads/path/to/file
       const parsed = new URL(url);
       const rawPath = parsed.pathname.slice(1); // strip leading /
       const segments = rawPath.split("/").filter(Boolean);
@@ -132,23 +132,31 @@ if (isTauri) {
         maybeAutomergeUrl as AutomergeUrl
       );
 
-      // Pin heads if not already pinned, so the resolved content is
-      // version-stable (same role as the 307 redirect in the service worker,
-      // but done inline because custom-scheme redirects don't work in WebKit).
-      let resolvedAutomergeUrl: AutomergeUrl;
-      if (heads) {
-        resolvedAutomergeUrl = maybeAutomergeUrl as AutomergeUrl;
-      } else {
+      // If no heads pinned, redirect to a versioned URL so that import()
+      // caches each version under a unique URL (same as the service worker).
+      if (!heads) {
         const folder = await repo.find(maybeAutomergeUrl as AutomergeUrl);
         const latestHeads = folder.heads();
-        resolvedAutomergeUrl = stringifyAutomergeUrl({
+        const pinnedUrl = stringifyAutomergeUrl({
           documentId,
           heads: latestHeads,
-        }) as AutomergeUrl;
+        });
+        let location = `/${encodeURIComponent(pinnedUrl)}`;
+        if (path.length) location += `/${path.join("/")}`;
+        await invoke("resolve_protocol_request", {
+          id,
+          body: [],
+          mimeType: "text/plain",
+          status: 307,
+          headers: { location },
+        });
+        return;
       }
 
       // Navigate folder structure to find the file
-      const folderHandle = await repo.find<FolderDoc>(resolvedAutomergeUrl);
+      const folderHandle = await repo.find<FolderDoc>(
+        maybeAutomergeUrl as AutomergeUrl
+      );
       const fileHandle = path.length
         ? await findHandleInFolderHandle<FileDoc>(repo, folderHandle, path)
         : folderHandle;

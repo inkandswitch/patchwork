@@ -11,10 +11,10 @@ use tokio::sync::{oneshot, Mutex as AsyncMutex};
 
 static WINDOW_COUNTER: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(1);
 
-/// Shared state for the patchwork:// custom protocol handler.
-/// Rust registers the protocol, then forwards resolution requests to JS
-/// (which has the automerge repo) via Tauri events. JS calls back with
-/// the resolved content via the `resolve_protocol_request` command.
+/// Shared state for bridging HTTP content requests to JS.
+/// Rust receives the HTTP request, forwards it to JS (which has the automerge
+/// repo) via Tauri events, and JS calls back with the resolved content via the
+/// `resolve_protocol_request` command.
 struct ProtocolState {
     pending: AsyncMutex<HashMap<u64, oneshot::Sender<ProtocolResponse>>>,
     counter: AtomicU64,
@@ -70,18 +70,97 @@ fn create_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
+/// Combined state for the Axum server: WebSocket sync + HTTP content serving.
+#[derive(Clone)]
+struct ServerState {
+    acceptor: AcceptorHandle,
+    app: tauri::AppHandle,
+    protocol: Arc<ProtocolState>,
+}
+
 async fn websocket_handler(
     ws: axum::extract::ws::WebSocketUpgrade,
-    axum::extract::State(acceptor): axum::extract::State<AcceptorHandle>,
+    axum::extract::State(state): axum::extract::State<ServerState>,
 ) -> axum::response::Response {
     ws.on_upgrade(|socket| async move {
-        if let Err(e) = acceptor.accept_axum(socket) {
+        if let Err(e) = state.acceptor.accept_axum(socket) {
             eprintln!("[sync] failed to accept websocket: {e:?}");
         }
     })
 }
 
-async fn start_sync_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+/// Handle HTTP requests for automerge content.
+/// Bridges to JS via Tauri events, returns the response (including 307 redirects).
+async fn content_handler(
+    axum::extract::State(state): axum::extract::State<ServerState>,
+    req: axum::extract::Request,
+) -> axum::response::Response {
+    use axum::http::{HeaderValue, StatusCode};
+    use axum::response::IntoResponse;
+
+    let uri = req.uri().to_string();
+    // Build a URL matching the format JS expects
+    let url = format!("http://localhost:3030{uri}");
+
+    let id = state.protocol.counter.fetch_add(1, Ordering::SeqCst);
+    let (tx, rx) = oneshot::channel();
+    state.protocol.pending.lock().await.insert(id, tx);
+
+    // Ask the JS side to resolve this URL
+    let _ = state.app.emit(
+        "patchwork-protocol-request",
+        serde_json::json!({ "id": id, "url": url }),
+    );
+
+    let cors = |mut resp: axum::http::Response<axum::body::Body>| {
+        let h = resp.headers_mut();
+        h.insert("access-control-allow-origin", HeaderValue::from_static("*"));
+        h.insert(
+            "cross-origin-embedder-policy",
+            HeaderValue::from_static("credentialless"),
+        );
+        h.insert(
+            "cross-origin-resource-policy",
+            HeaderValue::from_static("cross-origin"),
+        );
+        resp
+    };
+
+    match tokio::time::timeout(std::time::Duration::from_secs(30), rx).await {
+        Ok(Ok(response)) => {
+            let status =
+                StatusCode::from_u16(response.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+            let mut builder = axum::http::Response::builder()
+                .status(status)
+                .header("content-type", &response.mime_type);
+
+            for (key, value) in &response.headers {
+                builder = builder.header(key.as_str(), value.as_str());
+            }
+
+            cors(
+                builder
+                    .body(axum::body::Body::from(response.body))
+                    .unwrap_or_else(|_| {
+                        (StatusCode::INTERNAL_SERVER_ERROR, "failed to build response")
+                            .into_response()
+                    }),
+            )
+        }
+        Ok(Err(_)) => cors(
+            (StatusCode::INTERNAL_SERVER_ERROR, "protocol handler channel closed").into_response(),
+        ),
+        Err(_) => {
+            eprintln!("[content] timeout resolving {url} (waited 30s for JS response)");
+            cors((StatusCode::GATEWAY_TIMEOUT, "protocol handler timeout").into_response())
+        }
+    }
+}
+
+async fn start_sync_server(
+    app: tauri::AppHandle,
+    protocol: Arc<ProtocolState>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let storage_dir = dirs::cache_dir()
         .expect("could not find cache directory")
         .join("automerge");
@@ -111,11 +190,20 @@ async fn start_sync_server() -> Result<(), Box<dyn std::error::Error + Send + Sy
     let local_url: samod::Url = "ws://127.0.0.1:3030".parse().expect("valid url");
     let acceptor = repo.make_acceptor(local_url)?;
 
-    let app = axum::Router::new()
-        .route("/", axum::routing::get(websocket_handler))
-        .with_state(acceptor);
+    let state = ServerState {
+        acceptor,
+        app,
+        protocol,
+    };
 
-    axum::serve(listener, app).await?;
+    let router = axum::Router::new()
+        // WebSocket sync on the root path
+        .route("/", axum::routing::get(websocket_handler))
+        // Automerge content on all other paths
+        .fallback(axum::routing::get(content_handler))
+        .with_state(state);
+
+    axum::serve(listener, router).await?;
     Ok(())
 }
 
@@ -125,84 +213,18 @@ pub fn run() {
         pending: AsyncMutex::new(HashMap::new()),
         counter: AtomicU64::new(0),
     });
-    let protocol_state_for_handler = protocol_state.clone();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .manage(protocol_state)
+        .manage(protocol_state.clone())
         .invoke_handler(tauri::generate_handler![resolve_protocol_request])
-        .register_asynchronous_uri_scheme_protocol(
-            "patchwork",
-            move |ctx, request, responder| {
-                let state = protocol_state_for_handler.clone();
-                let app = ctx.app_handle().clone();
-                let uri = request.uri().to_string();
+        .setup(move |app| {
+            let app_handle = app.handle().clone();
+            let protocol = protocol_state.clone();
 
-                tauri::async_runtime::spawn(async move {
-                    let id = state.counter.fetch_add(1, Ordering::SeqCst);
-                    let (tx, rx) = oneshot::channel();
-                    state.pending.lock().await.insert(id, tx);
-
-                    // Ask the JS side to resolve this URL
-                    let _ = app.emit(
-                        "patchwork-protocol-request",
-                        serde_json::json!({ "id": id, "url": uri }),
-                    );
-
-                    // Helper: attach CORS + isolation headers to every
-                    // response so tauri:// can fetch patchwork://.
-                    let cors = |b: tauri::http::response::Builder| {
-                        b.header("access-control-allow-origin", "*")
-                            .header("cross-origin-embedder-policy", "credentialless")
-                            .header("cross-origin-resource-policy", "cross-origin")
-                    };
-
-                    match tokio::time::timeout(std::time::Duration::from_secs(30), rx).await {
-                        Ok(Ok(response)) => {
-                            let mut builder = tauri::http::Response::builder()
-                                .status(response.status)
-                                .header("content-type", &response.mime_type);
-
-                            for (key, value) in &response.headers {
-                                builder = builder.header(key.as_str(), value.as_str());
-                            }
-
-                            builder = cors(builder);
-
-                            responder.respond(
-                                builder.body(response.body).unwrap_or_else(|_| {
-                                    tauri::http::Response::builder()
-                                        .status(500)
-                                        .body(b"failed to build response".to_vec())
-                                        .unwrap()
-                                }),
-                            );
-                        }
-                        Ok(Err(_)) => {
-                            responder.respond(
-                                cors(tauri::http::Response::builder().status(500))
-                                    .body(b"protocol handler channel closed".to_vec())
-                                    .unwrap(),
-                            );
-                        }
-                        Err(_) => {
-                            eprintln!(
-                                "[protocol] timeout resolving {uri} (waited 30s for JS response)"
-                            );
-                            responder.respond(
-                                cors(tauri::http::Response::builder().status(504))
-                                    .body(b"protocol handler timeout".to_vec())
-                                    .unwrap(),
-                            );
-                        }
-                    }
-                });
-            },
-        )
-        .setup(|app| {
-            // Start the embedded sync server in the background
-            tauri::async_runtime::spawn(async {
-                match start_sync_server().await {
+            // Start the embedded sync + content server in the background
+            tauri::async_runtime::spawn(async move {
+                match start_sync_server(app_handle, protocol).await {
                     Ok(()) => eprintln!("[sync] server shut down"),
                     Err(e) => eprintln!("[sync] server error: {e}"),
                 }
