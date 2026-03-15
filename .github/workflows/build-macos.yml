@@ -1,0 +1,67 @@
+name: build macOS app
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build macOS app
+    runs-on: macos-latest
+    steps:
+      - name: check out the repository
+        uses: actions/checkout@v4
+
+      - name: install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache Rust build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: macos-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: macos-cargo-
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: install JS dependencies
+        run: pnpm install
+
+      - name: install Tauri CLI
+        run: pnpm install -g @tauri-apps/cli
+
+      - name: build the app
+        run: cargo tauri build
+        working-directory: .
+
+      - name: upload .app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Patchwork-macOS
+          path: src-tauri/target/release/bundle/macos/Patchwork.app
+          if-no-files-found: error
+
+      - name: upload .dmg installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Patchwork-macOS-dmg
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: warn
