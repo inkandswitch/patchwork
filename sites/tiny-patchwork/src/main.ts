@@ -132,9 +132,9 @@ if (isTauri) {
         maybeAutomergeUrl as AutomergeUrl
       );
 
-      // Pin heads if not already pinned. The primary head-pinning happens in
-      // importModuleFromFolderDocUrl (before import() so each version gets a
-      // unique cache key). This is a fallback for direct fetches like package.json.
+      // Pin heads if not already pinned, so the resolved content is
+      // version-stable (same role as the 307 redirect in the service worker,
+      // but done inline because custom-scheme redirects don't work in WebKit).
       let resolvedAutomergeUrl: AutomergeUrl;
       if (heads) {
         resolvedAutomergeUrl = maybeAutomergeUrl as AutomergeUrl;

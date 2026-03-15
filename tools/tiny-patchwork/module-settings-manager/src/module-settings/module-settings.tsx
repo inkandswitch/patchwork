@@ -40,7 +40,6 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   const { filteredPlugins, uniquePluginTypes, uniqueDataTypes } =
     useModulePlugins({
       modules: doc.modules,
-      repo: props.repo,
       searchQuery: debouncedSearch,
       filterPluginType,
       filterDataType,
