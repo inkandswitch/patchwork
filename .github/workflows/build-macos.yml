@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - claude/patchwork-ios-capture-tool-oLM3H
   workflow_dispatch:
 
 concurrency:
