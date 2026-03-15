@@ -46,6 +46,9 @@ jobs:
       - name: install JS dependencies
         run: pnpm install
 
+      - name: build JS packages
+        run: pnpm build
+
       - name: install Tauri CLI
         run: cargo install tauri-cli
 
