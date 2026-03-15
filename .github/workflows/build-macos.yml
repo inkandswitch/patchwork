@@ -23,14 +23,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: cache Rust build artifacts
-        uses: actions/cache@v4
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            src-tauri/target
-          key: macos-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
-          restore-keys: macos-cargo-
+          workspaces: src-tauri
+          cache-on-failure: true
 
       - name: install pnpm
         uses: pnpm/action-setup@v4
@@ -50,7 +46,7 @@ jobs:
         run: pnpm build
 
       - name: install Tauri CLI
-        run: cargo install tauri-cli
+        run: cargo install tauri-cli --locked
 
       - name: build the app
         run: cargo tauri build
