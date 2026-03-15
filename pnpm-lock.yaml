@@ -49,8 +49,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: 2.5.2
-        version: 2.5.2
+        specifier: 2.5.3
+        version: 2.5.3
       '@automerge/automerge-repo-network-websocket':
         specifier: 2.5.2
         version: 2.5.2
@@ -2557,6 +2557,9 @@ packages:
 
   '@automerge/automerge-repo-network-messagechannel@2.5.3':
     resolution: {integrity: sha512-Fow5znCjn3sECbMBzEoZZ4Ks5AxySR6qzEc+e6jTvBEE18l9MIwZn6sE+g/UVYVvqoqbRO0Imi2kGJoNH3lPnA==}
+
+  '@automerge/automerge-repo-network-websocket@2.5.2':
+    resolution: {integrity: sha512-+3RqXCBWBX330wGviN0DJmeMAFLdvatpqSD/gBJRTl8q1v3H5zqmJ/dX8/2h/ip0zzZQea0fCiLjl3TrpqKiYQ==}
 
   '@automerge/automerge-repo-network-websocket@2.5.2-alpha.0':
     resolution: {integrity: sha512-r6oDOW7CztDEZ4qaxqXXMPMjyXQFr1BXQ8rRmgT+I7QhZncTALvX2mZWzjwMHpuLY6wChg4MHYnA2lAFe7ALUg==}
@@ -8306,6 +8309,19 @@ snapshots:
       eventemitter3: 5.0.1
     transitivePeerDependencies:
       - supports-color
+
+  '@automerge/automerge-repo-network-websocket@2.5.2':
+    dependencies:
+      '@automerge/automerge-repo': 2.5.3
+      cbor-x: 1.6.0
+      debug: 4.4.3
+      eventemitter3: 5.0.1
+      isomorphic-ws: 5.0.0(ws@8.18.3)
+      ws: 8.18.3
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
 
   '@automerge/automerge-repo-network-websocket@2.5.2-alpha.0':
     dependencies:
