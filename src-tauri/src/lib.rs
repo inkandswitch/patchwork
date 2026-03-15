@@ -149,6 +149,14 @@ pub fn run() {
                         serde_json::json!({ "id": id, "url": uri }),
                     );
 
+                    // Helper: attach CORS + isolation headers to every
+                    // response so tauri:// can fetch patchwork://.
+                    let cors = |b: tauri::http::response::Builder| {
+                        b.header("access-control-allow-origin", "*")
+                            .header("cross-origin-embedder-policy", "credentialless")
+                            .header("cross-origin-resource-policy", "cross-origin")
+                    };
+
                     match tokio::time::timeout(std::time::Duration::from_secs(30), rx).await {
                         Ok(Ok(response)) => {
                             let mut builder = tauri::http::Response::builder()
@@ -159,11 +167,7 @@ pub fn run() {
                                 builder = builder.header(key.as_str(), value.as_str());
                             }
 
-                            // Always set CORS headers so tauri:// can fetch patchwork://
-                            builder = builder
-                                .header("access-control-allow-origin", "tauri://localhost")
-                                .header("cross-origin-embedder-policy", "credentialless")
-                                .header("cross-origin-resource-policy", "cross-origin");
+                            builder = cors(builder);
 
                             responder.respond(
                                 builder.body(response.body).unwrap_or_else(|_| {
@@ -176,8 +180,7 @@ pub fn run() {
                         }
                         Ok(Err(_)) => {
                             responder.respond(
-                                tauri::http::Response::builder()
-                                    .status(500)
+                                cors(tauri::http::Response::builder().status(500))
                                     .body(b"protocol handler channel closed".to_vec())
                                     .unwrap(),
                             );
@@ -187,8 +190,7 @@ pub fn run() {
                                 "[protocol] timeout resolving {uri} (waited 30s for JS response)"
                             );
                             responder.respond(
-                                tauri::http::Response::builder()
-                                    .status(504)
+                                cors(tauri::http::Response::builder().status(504))
                                     .body(b"protocol handler timeout".to_vec())
                                     .unwrap(),
                             );
