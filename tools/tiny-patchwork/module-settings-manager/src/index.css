@@ -1283,7 +1283,7 @@
 }
 
 .module-settings-manager__switch input:checked + .module-settings-manager__switch-slider {
-  background: #0099cc;
+  background: #0077b6;
 }
 
 .module-settings-manager__switch input:checked + .module-settings-manager__switch-slider::before {
