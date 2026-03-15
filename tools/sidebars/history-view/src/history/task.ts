@@ -13,12 +13,15 @@ import type {
 } from "../types";
 import { ChangeMetadata } from "@automerge/automerge";
 
+const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the same document
+
 /**
  * Background task that computes full history groupings for a source document.
  * Handles get-or-create of the history groupings document, then computes
  * author and time-window groupings and writes results.
  */
 export default async function (source: AutomergeUrl) {
+  const now = Date.now();
   const sourceDocHandle = await repo.find<HasPatchworkMetadata>(source);
   const sourceDoc = sourceDocHandle.doc();
   if (!sourceDoc) {
@@ -39,8 +42,8 @@ export default async function (source: AutomergeUrl) {
     >({
       ["@patchwork"]: { type: "patchwork:history-change-groups" },
       sourceDocumentUrl: sourceDocHandle.url,
-      throttleMs: 2 * 60 * 1000,
-      updatedAt: Date.now(),
+      throttleMs: THROTTLE_MS,
+      updatedAt: now,
       version: 1,
       heads: [],
       groupings: {},
@@ -56,15 +59,23 @@ export default async function (source: AutomergeUrl) {
       doc["@patchwork"].history = historyDocHandle!.url;
     });
   } else {
+    // Check throttle before computing to avoid duplicate tasks
+    const histDoc = historyDocHandle.doc();
+    if (!histDoc) {
+      console.warn("History task: history document not available");
+      return;
+    }
+    const lastUpdate = histDoc.updatedAt ?? 0;
+    const throttleMs = histDoc.throttleMs ?? THROTTLE_MS;
+    if (now - lastUpdate < throttleMs) return;
+
     // Mark that a task is running — write timestamp before computation to avoid duplicate tasks
     historyDocHandle.change((doc: HistoryGroupingsDoc) => {
-      doc.updatedAt = Date.now();
+      doc.updatedAt = now;
     });
   }
 
   // Get all metadata for all changes since the beginning
-  // TODO: use topoHistoryTraversal and save a reduced version of it for comparison
-  // (reduce every linear sequence into start & end commit)
   const allMeta = Automerge.getChangesMetaSince(sourceDoc, []);
   const currentHeads = Automerge.getHeads(sourceDoc);
 
@@ -133,7 +144,6 @@ export const DEFAULT_TIME_WINDOW = TIME_WINDOW_OPTIONS["30m"];
  * Generate a unique cache key for a grouping strategy configuration
  *
  * Format:
- * - "none" - No grouping
  * - "author" - Group by author
  * - "timeWindow:300000" - Time window grouping with specific window in ms
  *
@@ -142,8 +152,6 @@ export const DEFAULT_TIME_WINDOW = TIME_WINDOW_OPTIONS["30m"];
  */
 export function getStrategyKey(config: GroupingStrategyConfig): string {
   switch (config.name) {
-    case "none":
-      return "none";
     case "author":
       return "author";
     case "timeWindow": {
@@ -153,13 +161,6 @@ export function getStrategyKey(config: GroupingStrategyConfig): string {
     default:
       throw new Error(`Unknown strategy: ${config.name}`);
   }
-}
-
-/**
- * Default strategy: no grouping, returns changes as-is
- */
-function noGrouping(changes: HistoryChange[]): HistoryItem[] {
-  return changes;
 }
 
 /**
@@ -292,8 +293,6 @@ function applyGroupingStrategy(
   changes: HistoryChange[]
 ): HistoryItem[] {
   switch (config.name) {
-    case "none":
-      return noGrouping(changes);
     case "author":
       return groupByAuthor(changes);
     case "timeWindow": {

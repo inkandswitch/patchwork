@@ -23,7 +23,7 @@ function getItemDate(item: HistoryItemType): Date | null {
   let timestamp: number | undefined;
 
   if (isHistoryChange(item)) {
-    timestamp = item.metadata?.time;
+    timestamp = item.time;
   } else if (isHistoryGroup(item)) {
     timestamp = item.endTime;
   }
@@ -87,7 +87,8 @@ export function HistoryList(props: HistoryListProps) {
                       ) : (
                         <HistoryItem
                           hash={item.hash}
-                          metadata={item.metadata}
+                          actor={item.actor}
+                          time={item.time}
                           isSelected={isSelected()}
                           onClick={() => props.onSelectItem(item)}
                         />

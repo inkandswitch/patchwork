@@ -7,7 +7,8 @@ import { LabeledField } from "./LabeledField";
 
 export interface HistoryItemProps {
   hash: string;
-  metadata?: ChangeMetadata;
+  actor: string;
+  time: number;
   isSelected: boolean;
   onClick: () => void;
 }
@@ -16,8 +17,8 @@ export interface HistoryItemProps {
  * Component to display a single history change
  */
 export function HistoryItem(props: HistoryItemProps) {
-  const author = () => props.metadata?.actor || "Unknown";
-  const timeDisplay = () => formatTime(props.metadata?.time);
+  const author = () => props.actor || "Unknown";
+  const timeDisplay = () => formatTime(props.time);
 
   return (
     <TimelineCard isSelected={props.isSelected} onClick={props.onClick}>

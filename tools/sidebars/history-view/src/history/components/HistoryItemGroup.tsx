@@ -23,7 +23,7 @@ export function HistoryItemGroup(props: HistoryItemGroupProps) {
   const uniqueAuthors = () => {
     const seen: string[] = [];
     for (const c of props.group.changes) {
-      const actor = c.metadata?.actor;
+      const actor = c.actor;
       if (actor && !seen.includes(actor)) seen.push(actor);
     }
     return seen;
