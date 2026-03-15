@@ -47,7 +47,7 @@ jobs:
         run: pnpm install
 
       - name: install Tauri CLI
-        run: pnpm install -g @tauri-apps/cli
+        run: cargo install tauri-cli
 
       - name: build the app
         run: cargo tauri build
