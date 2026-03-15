@@ -1,4 +1,5 @@
 import "./global.css";
+import "./hash-bar";
 
 import {
   registerPatchworkViewElement,
