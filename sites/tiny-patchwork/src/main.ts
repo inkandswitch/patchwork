@@ -128,10 +128,27 @@ if (isTauri) {
         return;
       }
 
-      // Navigate folder structure to find the file
-      const folderHandle = await repo.find<FolderDoc>(
+      const { heads, documentId } = parseAutomergeUrl(
         maybeAutomergeUrl as AutomergeUrl
       );
+
+      // Pin heads if not already pinned, so the resolved content is
+      // version-stable (same role as the 307 redirect in the service worker,
+      // but done inline because custom-scheme redirects don't work in WebKit).
+      let resolvedAutomergeUrl: AutomergeUrl;
+      if (heads) {
+        resolvedAutomergeUrl = maybeAutomergeUrl as AutomergeUrl;
+      } else {
+        const folder = await repo.find(maybeAutomergeUrl as AutomergeUrl);
+        const latestHeads = folder.heads();
+        resolvedAutomergeUrl = stringifyAutomergeUrl({
+          documentId,
+          heads: latestHeads,
+        }) as AutomergeUrl;
+      }
+
+      // Navigate folder structure to find the file
+      const folderHandle = await repo.find<FolderDoc>(resolvedAutomergeUrl);
       const fileHandle = path.length
         ? await findHandleInFolderHandle<FileDoc>(repo, folderHandle, path)
         : folderHandle;
