@@ -1,11 +1,44 @@
-import { type AutomergeUrl } from "@automerge/automerge-repo";
+import {
+  type AutomergeUrl,
+  type Repo,
+  parseAutomergeUrl,
+  stringifyAutomergeUrl,
+} from "@automerge/automerge-repo";
 import { resolve } from "resolve.exports";
 import debug from "debug";
 import { automergeUrlToServiceWorkerUrl } from "./urls.js";
 const log = debug("patchwork:filesystem");
 
-export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
+/**
+ * Pin heads on the URL so that `import()` caches each version at a unique URL.
+ * Without this, a headless URL gets cached by the browser module loader and
+ * subsequent imports never re-fetch even when the doc has new content.
+ */
+async function pinHeads(
+  folderDocUrl: AutomergeUrl,
+  repo: Repo
+): Promise<AutomergeUrl> {
+  const { heads } = parseAutomergeUrl(folderDocUrl);
+  if (heads) return folderDocUrl; // already pinned
+  const handle = await repo.find(folderDocUrl);
+  return stringifyAutomergeUrl({
+    documentId: parseAutomergeUrl(folderDocUrl).documentId,
+    heads: handle.heads(),
+  }) as AutomergeUrl;
+}
+
+export async function importModuleFromFolderDocUrl(
+  folderDocUrl: AutomergeUrl,
+  repo?: Repo
+) {
   log(`Importing module from folder doc url ${folderDocUrl}`);
+
+  // Pin heads so each version gets a unique import() cache entry.
+  if (repo) {
+    folderDocUrl = await pinHeads(folderDocUrl, repo);
+    log(`Pinned heads: ${folderDocUrl}`);
+  }
+
   const entryPointUrl = await packageEntryPointUrl(folderDocUrl);
   if (!entryPointUrl) {
     throw new Error("No entry point found in package.json");

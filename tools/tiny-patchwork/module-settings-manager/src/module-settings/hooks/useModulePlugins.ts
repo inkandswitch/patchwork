@@ -2,6 +2,7 @@ import { createMemo, createResource, mapArray, type Accessor } from "solid-js";
 import {
   isValidAutomergeUrl,
   type AutomergeUrl,
+  type Repo,
 } from "@automerge/automerge-repo";
 import { importModuleFromFolderDocUrl } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -17,6 +18,7 @@ import type {
 
 interface UseModulePluginsParams {
   modules: AutomergeUrl[];
+  repo?: Repo;
   searchQuery: Accessor<string>;
   filterPluginType: Accessor<string>;
   filterDataType: Accessor<string>;
@@ -31,8 +33,14 @@ export type EnrichedPlugin = Plugin<PluginDescription> & {
 };
 
 export function useModulePlugins(params: UseModulePluginsParams) {
-  const { modules, searchQuery, filterPluginType, filterDataType, sortOrder } =
-    params;
+  const {
+    modules,
+    repo,
+    searchQuery,
+    filterPluginType,
+    filterDataType,
+    sortOrder,
+  } = params;
 
   // Load all plugins from user's modules
   const modulePlugins = mapArray(
@@ -41,7 +49,7 @@ export function useModulePlugins(params: UseModulePluginsParams) {
       const [plugins] = createResource(
         () => url,
         async (url) => {
-          const module = await importModuleFromFolderDocUrl(url);
+          const module = await importModuleFromFolderDocUrl(url, repo);
           return module?.plugins || [];
         }
       );
