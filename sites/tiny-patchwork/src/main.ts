@@ -219,6 +219,31 @@ if (isTauri) {
     }
   });
 
+  // If the window was opened with #new=<datatypeId>, trigger doc creation.
+  // This happens when the tray "New" action had to create a fresh window
+  // (the event-based path doesn't work because JS hasn't loaded yet).
+  const newParam = initialParams.get("new");
+  if (newParam) {
+    // Clear the hash so it doesn't re-trigger on reload
+    history.replaceState(null, "", window.location.pathname);
+    const datatypeId = newParam;
+    (async () => {
+      try {
+        const loaded = await datatypeRegistry.load(datatypeId);
+        if (!loaded) {
+          console.warn(`[tray] unknown datatype from #new: ${datatypeId}`);
+          return;
+        }
+        const handle = await createDocOfDatatype2(loaded, repo);
+        const { documentId } = parseAutomergeUrl(handle.url);
+        await addToRootFolder(handle.url, loaded.name || datatypeId, datatypeId);
+        window.location.hash = `doc=${documentId}&type=${datatypeId}`;
+      } catch (e) {
+        console.error(`[tray] failed to create ${datatypeId} from #new:`, e);
+      }
+    })();
+  }
+
   // Sync user profile (name + avatar) to the native tray menu
   (async () => {
     try {

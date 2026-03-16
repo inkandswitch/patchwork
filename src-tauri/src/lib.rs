@@ -274,10 +274,10 @@ fn show_settings_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     WebviewWindowBuilder::new(
         app,
         "settings",
-        WebviewUrl::App("index.html#frame=settings".into()),
+        WebviewUrl::App("settings.html".into()),
     )
     .title("Patchwork Settings")
-    .inner_size(500., 400.)
+    .inner_size(560., 460.)
     .resizable(true)
     .build()?;
 
@@ -285,15 +285,41 @@ fn show_settings_window(app: &tauri::AppHandle) -> tauri::Result<()> {
 }
 
 /// Ensure Patchwork is visible and focused. Creates a window if none exist.
-fn ensure_focused(app: &tauri::AppHandle) {
-    // If there are existing windows, focus the first one
+/// Returns true if the window was already loaded (existing), false if newly created.
+fn ensure_focused(app: &tauri::AppHandle) -> bool {
     let windows = app.webview_windows();
-    if let Some((_label, win)) = windows.iter().next() {
+    // Skip non-main windows (settings, capture-panel)
+    let main_win = windows.iter().find(|(label, _)| label.starts_with("main-"));
+    if let Some((_label, win)) = main_win {
         let _ = win.show();
         let _ = win.set_focus();
+        true
     } else {
-        // No windows — create one
+        // No main windows — create one
         let _ = create_window(app);
+        false
+    }
+}
+
+/// Ensure a window is visible and create a new document of the given datatype.
+/// If the window is freshly created, passes the datatype via URL hash so the
+/// frontend picks it up on load (since events would be lost before JS loads).
+fn ensure_focused_and_new(app: &tauri::AppHandle, datatype_id: &str) {
+    let windows = app.webview_windows();
+    let main_win = windows.iter().find(|(label, _)| label.starts_with("main-"));
+    if let Some((_label, win)) = main_win {
+        let _ = win.show();
+        let _ = win.set_focus();
+        let _ = app.emit("tray-new-document", datatype_id.to_string());
+    } else {
+        // Create window with new-doc action in the URL hash
+        let n = WINDOW_COUNTER.fetch_add(1, Ordering::SeqCst);
+        let label = format!("main-{n}");
+        let url = WebviewUrl::App(format!("index.html#new={}", datatype_id).into());
+        let _ = WebviewWindowBuilder::new(app, &label, url)
+            .title("Patchwork")
+            .inner_size(1024., 768.)
+            .build();
     }
 }
 
@@ -812,8 +838,15 @@ pub fn run() {
                 .accelerator("CmdOrCtrl+N")
                 .build(app)?;
 
+            let settings_menu = MenuItemBuilder::with_id("menu-settings", "Settings...")
+                .accelerator("CmdOrCtrl+,")
+                .build(app)?;
+
             let file_menu = SubmenuBuilder::new(app, "File")
                 .item(&new_window_menu)
+                .separator()
+                .item(&settings_menu)
+                .separator()
                 .close_window()
                 .build()?;
 
@@ -843,6 +876,8 @@ pub fn run() {
             app.on_menu_event(move |app, event| {
                 if event.id() == "new-window" {
                     let _ = create_window(app);
+                } else if event.id() == "menu-settings" {
+                    let _ = show_settings_window(app);
                 }
             });
 
@@ -879,20 +914,28 @@ pub fn run() {
                     } else if id == "tray-quit" {
                         app.exit(0);
                     } else if let Some(datatype_id) = id.strip_prefix("tray-new-") {
-                        // Ensure we have a window to handle the new doc
-                        ensure_focused(app);
-                        let _ = app.emit("tray-new-document", datatype_id.to_string());
+                        ensure_focused_and_new(app, datatype_id);
                     }
                 })
                 .build(app)?;
 
             Ok(())
         })
-        // Keep running in the background when all windows are closed
-        .on_window_event(|_window, event| {
-            if let tauri::WindowEvent::CloseRequested { .. } = event {
-                // Let the window close normally — the app stays alive via
-                // ExitRequested handler below + tray icon.
+        // On macOS: hide the last main window instead of closing it so the
+        // app stays backgrounded with a warm webview. Additional windows
+        // close normally.
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let app = window.app_handle();
+                let main_count = app
+                    .webview_windows()
+                    .keys()
+                    .filter(|l| l.starts_with("main-"))
+                    .count();
+                if main_count <= 1 && window.label().starts_with("main-") {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
             }
         })
         .build(tauri::generate_context!())
@@ -905,11 +948,11 @@ pub fn run() {
                 tauri::RunEvent::ExitRequested { api, .. } => {
                     api.prevent_exit();
                 }
-                // macOS: user clicked the dock icon with no visible windows — open one.
+                // macOS: user clicked the dock icon — show a window.
+                // Since we hide (rather than destroy) the last window, there
+                // may be a hidden window we can re-show.
                 tauri::RunEvent::Reopen { .. } => {
-                    if app.webview_windows().is_empty() {
-                        let _ = create_window(app);
-                    }
+                    ensure_focused(app);
                 }
                 _ => {}
             }
