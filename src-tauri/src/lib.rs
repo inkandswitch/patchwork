@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::tray::TrayIconBuilder;
-use tauri::{Emitter, Listener, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tokio::net::TcpListener;
 use tokio::sync::{oneshot, Mutex as AsyncMutex};
 
@@ -118,7 +118,7 @@ fn register_shortcut_for_capture(
     let app_clone = app.clone();
     manager
         .on_shortcut(shortcut_str, move |_app, _shortcut, event| {
-            if matches!(event, tauri_plugin_global_shortcut::ShortcutEvent::Pressed) {
+            if event.state == tauri_plugin_global_shortcut::ShortcutState::Pressed {
                 let _ = show_capture_panel(&app_clone);
             }
         })
