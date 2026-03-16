@@ -232,6 +232,7 @@ fn mime_for_path(path: &str) -> &'static str {
 }
 
 /// Read a string field from an automerge document.
+/// Handles both scalar strings and Text objects.
 fn read_str_field(doc: &automerge::Automerge, obj: &automerge::ObjId, key: &str) -> Option<String> {
     match doc.get(obj, key) {
         Ok(Some((automerge::Value::Scalar(s), _))) => {
@@ -240,6 +241,9 @@ fn read_str_field(doc: &automerge::Automerge, obj: &automerge::ObjId, key: &str)
             } else {
                 None
             }
+        }
+        Ok(Some((automerge::Value::Object(automerge::ObjType::Text), text_id))) => {
+            doc.text(&text_id).ok()
         }
         _ => None,
     }
