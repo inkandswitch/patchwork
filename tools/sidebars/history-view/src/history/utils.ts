@@ -52,8 +52,6 @@ export const DEFAULT_TIME_WINDOW = TIME_WINDOW_OPTIONS["30m"];
  */
 export function getStrategyKey(config: GroupingStrategyConfig): string {
   switch (config.name) {
-    case "none":
-      return "none";
     case "author":
       return "author";
     case "timeWindow": {
