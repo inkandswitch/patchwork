@@ -20,9 +20,18 @@ struct DatatypeInfo {
     name: String,
 }
 
-/// Datatypes known to the tray, updated by the frontend via `update_tray_datatypes`.
-struct TrayDatatypes {
+/// User profile info shown in the tray menu.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+struct UserProfile {
+    name: String,
+    #[serde(default)]
+    avatar_png: Option<Vec<u8>>,
+}
+
+/// Tray state: datatypes + user profile.
+struct TrayState {
     datatypes: AsyncMutex<Vec<DatatypeInfo>>,
+    profile: AsyncMutex<UserProfile>,
 }
 
 /// Pending eval requests waiting for JS to respond.
@@ -86,17 +95,40 @@ async fn eval_in_patchwork(
 async fn update_tray_datatypes(
     datatypes: Vec<DatatypeInfo>,
     app: tauri::AppHandle,
-    state: tauri::State<'_, Arc<TrayDatatypes>>,
+    state: tauri::State<'_, Arc<TrayState>>,
 ) -> Result<(), String> {
     *state.datatypes.lock().await = datatypes;
     rebuild_tray_menu(&app, &state).await.map_err(|e| e.to_string())
 }
 
+/// Called by the JS frontend with the user's profile info from their contact doc.
+#[tauri::command]
+async fn update_tray_profile(
+    name: String,
+    avatar_png: Option<Vec<u8>>,
+    app: tauri::AppHandle,
+    state: tauri::State<'_, Arc<TrayState>>,
+) -> Result<(), String> {
+    *state.profile.lock().await = UserProfile { name, avatar_png };
+    rebuild_tray_menu(&app, &state).await.map_err(|e| e.to_string())
+}
+
 async fn rebuild_tray_menu(
     app: &tauri::AppHandle,
-    state: &TrayDatatypes,
+    state: &TrayState,
 ) -> tauri::Result<()> {
     let datatypes = state.datatypes.lock().await;
+    let profile = state.profile.lock().await;
+
+    let mut menu_builder = MenuBuilder::new(app);
+
+    // User profile at the top (if available)
+    if !profile.name.is_empty() {
+        let profile_item = MenuItemBuilder::with_id("tray-profile", &profile.name)
+            .enabled(false)
+            .build(app)?;
+        menu_builder = menu_builder.item(&profile_item).separator();
+    }
 
     // Build the "New" submenu from current datatypes
     let mut new_submenu = SubmenuBuilder::new(app, "New");
@@ -119,7 +151,7 @@ async fn rebuild_tray_menu(
     let quit = MenuItemBuilder::with_id("tray-quit", "Quit Patchwork")
         .build(app)?;
 
-    let menu = MenuBuilder::new(app)
+    let menu = menu_builder
         .item(&new_submenu)
         .item(&show_capture)
         .separator()
@@ -131,6 +163,12 @@ async fn rebuild_tray_menu(
     // Update the existing tray icon's menu
     if let Some(tray) = app.tray_by_id("patchwork-tray") {
         tray.set_menu(Some(menu))?;
+        // Update tray icon with avatar if available
+        if let Some(png_bytes) = &profile.avatar_png {
+            if let Ok(img) = tauri::image::Image::from_bytes(png_bytes) {
+                let _ = tray.set_icon(Some(img));
+            }
+        }
     }
 
     Ok(())
@@ -144,6 +182,19 @@ fn create_window(app: &tauri::AppHandle) -> tauri::Result<()> {
         .inner_size(1024., 768.)
         .build()?;
     Ok(())
+}
+
+/// Ensure Patchwork is visible and focused. Creates a window if none exist.
+fn ensure_focused(app: &tauri::AppHandle) {
+    // If there are existing windows, focus the first one
+    let windows = app.webview_windows();
+    if let Some((_label, win)) = windows.iter().next() {
+        let _ = win.show();
+        let _ = win.set_focus();
+    } else {
+        // No windows — create one
+        let _ = create_window(app);
+    }
 }
 
 fn show_capture_panel(app: &tauri::AppHandle) -> tauri::Result<()> {
@@ -607,8 +658,9 @@ async fn start_sync_server(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let tray_datatypes = Arc::new(TrayDatatypes {
+    let tray_state = Arc::new(TrayState {
         datatypes: AsyncMutex::new(Vec::new()),
+        profile: AsyncMutex::new(UserProfile::default()),
     });
 
     let eval_state = Arc::new(EvalState {
@@ -618,10 +670,11 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .manage(tray_datatypes.clone())
+        .manage(tray_state.clone())
         .manage(eval_state.clone())
         .invoke_handler(tauri::generate_handler![
             update_tray_datatypes,
+            update_tray_profile,
             resolve_eval
         ])
         .setup(move |app| {
@@ -712,7 +765,8 @@ pub fn run() {
                     } else if id == "tray-quit" {
                         app.exit(0);
                     } else if let Some(datatype_id) = id.strip_prefix("tray-new-") {
-                        // Tell JS to create a new document of this type
+                        // Ensure we have a window to handle the new doc
+                        ensure_focused(app);
                         let _ = app.emit("tray-new-document", datatype_id.to_string());
                     }
                 })

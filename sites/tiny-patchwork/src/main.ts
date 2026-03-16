@@ -201,6 +201,40 @@ if (isTauri) {
     }
   });
 
+  // Sync user profile (name + avatar) to the native tray menu
+  (async () => {
+    try {
+      const accountDoc = accountDocHandle.doc();
+      if (!accountDoc.contactUrl) return;
+
+      const contactHandle = await repo.find(accountDoc.contactUrl);
+      const contact = contactHandle.doc() as any;
+      if (!contact?.name) return;
+
+      let avatarPng: number[] | null = null;
+      if (contact.avatarUrl) {
+        try {
+          const avatarHandle = await repo.find(contact.avatarUrl);
+          const avatarDoc = avatarHandle.doc() as any;
+          if (avatarDoc?.content instanceof Uint8Array) {
+            avatarPng = Array.from(avatarDoc.content);
+          }
+        } catch (e) {
+          console.warn("[tray] failed to load avatar:", e);
+        }
+      }
+
+      invoke("update_tray_profile", {
+        name: contact.name,
+        avatarPng,
+      }).catch((e: any) =>
+        console.warn("[tray] failed to update profile:", e)
+      );
+    } catch (e) {
+      console.warn("[tray] failed to load contact:", e);
+    }
+  })();
+
   // Handle eval requests from Rust (HTTP API, Shortcuts, etc.)
   listen("patchwork-eval", async (event: any) => {
     const { id, code } = event.payload as { id: number; code: string };
