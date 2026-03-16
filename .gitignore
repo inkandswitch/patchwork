@@ -1,6 +1,5 @@
 node_modules
 .DS_Store
-*/dist
 .env
 **/.env
 **/.env.local
@@ -11,3 +10,4 @@ dummy-non-existing-folder/
 **/.pnpm-store/
 .claude/
 .pushwork/
+dist/
