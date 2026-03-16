@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::tray::TrayIconBuilder;
-use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Listener, Manager, WebviewUrl, WebviewWindowBuilder};
 use tokio::net::TcpListener;
 use tokio::sync::{oneshot, Mutex as AsyncMutex};
 
@@ -52,6 +52,18 @@ struct TrayDatatypes {
     datatypes: AsyncMutex<Vec<DatatypeInfo>>,
 }
 
+/// Pending eval requests waiting for JS to respond.
+struct EvalState {
+    pending: AsyncMutex<HashMap<u64, oneshot::Sender<EvalResponse>>>,
+    counter: AtomicU64,
+}
+
+#[derive(Serialize, Deserialize)]
+struct EvalResponse {
+    result: Option<String>,
+    error: Option<String>,
+}
+
 #[tauri::command]
 async fn resolve_protocol_request(
     id: u64,
@@ -71,6 +83,49 @@ async fn resolve_protocol_request(
         .map_err(|_| "response channel closed".to_string())?;
     }
     Ok(())
+}
+
+/// Called by the JS frontend to return the result of an eval request.
+#[tauri::command]
+async fn resolve_eval(
+    id: u64,
+    result: Option<String>,
+    error: Option<String>,
+    state: tauri::State<'_, Arc<EvalState>>,
+) -> Result<(), String> {
+    if let Some(tx) = state.pending.lock().await.remove(&id) {
+        tx.send(EvalResponse { result, error })
+            .map_err(|_| "eval response channel closed".to_string())?;
+    }
+    Ok(())
+}
+
+/// Eval JS in the first available webview window.
+/// Used by the HTTP API and could be used by Shortcuts.
+async fn eval_in_patchwork(
+    app: &tauri::AppHandle,
+    eval_state: &Arc<EvalState>,
+    code: String,
+) -> Result<String, String> {
+    let id = eval_state.counter.fetch_add(1, Ordering::SeqCst);
+    let (tx, rx) = oneshot::channel();
+    eval_state.pending.lock().await.insert(id, tx);
+
+    // Send the eval request to JS
+    app.emit("patchwork-eval", serde_json::json!({ "id": id, "code": code }))
+        .map_err(|e| format!("failed to emit eval event: {e}"))?;
+
+    match tokio::time::timeout(std::time::Duration::from_secs(30), rx).await {
+        Ok(Ok(response)) => {
+            if let Some(err) = response.error {
+                Err(err)
+            } else {
+                Ok(response.result.unwrap_or_default())
+            }
+        }
+        Ok(Err(_)) => Err("eval response channel closed".into()),
+        Err(_) => Err("eval timed out (30s)".into()),
+    }
 }
 
 /// Called by the JS frontend whenever the set of registered datatypes changes.
@@ -161,12 +216,13 @@ fn show_capture_panel(app: &tauri::AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
-/// Combined state for the Axum server: WebSocket sync + HTTP content serving.
+/// Combined state for the Axum server: WebSocket sync + HTTP content serving + eval API.
 #[derive(Clone)]
 struct ServerState {
     acceptor: AcceptorHandle,
     app: tauri::AppHandle,
     protocol: Arc<ProtocolState>,
+    eval: Arc<EvalState>,
 }
 
 async fn websocket_handler(
@@ -248,9 +304,25 @@ async fn content_handler(
     }
 }
 
+/// HTTP POST /eval — accepts JS code in the request body, evals it in the webview,
+/// returns the result. This is the endpoint Apple Shortcuts hits.
+async fn eval_handler(
+    axum::extract::State(state): axum::extract::State<ServerState>,
+    body: String,
+) -> axum::response::Response {
+    use axum::http::StatusCode;
+    use axum::response::IntoResponse;
+
+    match eval_in_patchwork(&state.app, &state.eval, body).await {
+        Ok(result) => (StatusCode::OK, result).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err).into_response(),
+    }
+}
+
 async fn start_sync_server(
     app: tauri::AppHandle,
     protocol: Arc<ProtocolState>,
+    eval: Arc<EvalState>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let storage_dir = dirs::cache_dir()
         .expect("could not find cache directory")
@@ -285,11 +357,14 @@ async fn start_sync_server(
         acceptor,
         app,
         protocol,
+        eval,
     };
 
     let router = axum::Router::new()
         // WebSocket sync on the root path
         .route("/", axum::routing::get(websocket_handler))
+        // Eval JS in the webview — POST /eval
+        .route("/eval", axum::routing::post(eval_handler))
         // Automerge content on all other paths
         .fallback(axum::routing::get(content_handler))
         .with_state(state);
@@ -309,21 +384,29 @@ pub fn run() {
         datatypes: AsyncMutex::new(Vec::new()),
     });
 
+    let eval_state = Arc::new(EvalState {
+        pending: AsyncMutex::new(HashMap::new()),
+        counter: AtomicU64::new(0),
+    });
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(protocol_state.clone())
         .manage(tray_datatypes.clone())
+        .manage(eval_state.clone())
         .invoke_handler(tauri::generate_handler![
             resolve_protocol_request,
-            update_tray_datatypes
+            update_tray_datatypes,
+            resolve_eval
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
             let protocol = protocol_state.clone();
+            let eval = eval_state.clone();
 
             // Start the embedded sync + content server in the background
             tauri::async_runtime::spawn(async move {
-                match start_sync_server(app_handle, protocol).await {
+                match start_sync_server(app_handle, protocol, eval).await {
                     Ok(()) => eprintln!("[sync] server shut down"),
                     Err(e) => eprintln!("[sync] server error: {e}"),
                 }

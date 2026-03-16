@@ -1,0 +1,23 @@
+{
+  "name": "@inkandswitch/patchwork-native",
+  "type": "module",
+  "private": true,
+  "version": "0.1.0",
+  "description": "System APIs for Patchwork — bridges JS to native capabilities via Tauri",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput"
+  },
+  "dependencies": {
+    "@automerge/automerge-repo": "catalog:",
+    "@inkandswitch/patchwork-plugins": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

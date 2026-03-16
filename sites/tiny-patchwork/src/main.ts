@@ -305,6 +305,20 @@ if (isTauri) {
       console.error(`[tray] failed to create ${datatypeId} document:`, e);
     }
   });
+
+  // Handle eval requests from Rust (HTTP API, Shortcuts, etc.)
+  listen("patchwork-eval", async (event: any) => {
+    const { id, code } = event.payload as { id: number; code: string };
+    try {
+      // Use indirect eval to run in global scope with access to window.patchwork
+      const fn = new Function(`return (async () => { ${code} })()`);
+      const result = await fn();
+      const serialized = result === undefined ? "undefined" : JSON.stringify(result);
+      invoke("resolve_eval", { id, result: serialized, error: null });
+    } catch (e: any) {
+      invoke("resolve_eval", { id, result: null, error: String(e) });
+    }
+  });
 }
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
