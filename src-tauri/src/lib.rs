@@ -218,10 +218,10 @@ async fn rebuild_tray_menu(
     }
     let new_submenu = new_submenu.build()?;
 
-    let show_capture = MenuItemBuilder::with_id("tray-capture", "Capture...")
+    let show_patchwork = MenuItemBuilder::with_id("tray-show", "Show Patchwork")
         .build(app)?;
 
-    let new_window = MenuItemBuilder::with_id("tray-new-window", "New Window")
+    let show_capture = MenuItemBuilder::with_id("tray-capture", "Capture...")
         .build(app)?;
 
     let settings = MenuItemBuilder::with_id("tray-settings", "Settings...")
@@ -231,10 +231,11 @@ async fn rebuild_tray_menu(
         .build(app)?;
 
     let menu = menu_builder
+        .item(&show_patchwork)
+        .separator()
         .item(&new_submenu)
         .item(&show_capture)
         .separator()
-        .item(&new_window)
         .item(&settings)
         .separator()
         .item(&quit)
@@ -895,7 +896,7 @@ pub fn run() {
             // --- System tray ---
             // Start with a minimal menu; JS will call update_tray_datatypes
             // once plugins are loaded to populate the "New" submenu.
-            let tray_new_window = MenuItemBuilder::with_id("tray-new-window", "New Window")
+            let tray_show = MenuItemBuilder::with_id("tray-show", "Show Patchwork")
                 .build(app)?;
             let tray_capture = MenuItemBuilder::with_id("tray-capture", "Capture...")
                 .build(app)?;
@@ -903,9 +904,9 @@ pub fn run() {
                 .build(app)?;
 
             let tray_menu = MenuBuilder::new(app)
-                .item(&tray_capture)
+                .item(&tray_show)
                 .separator()
-                .item(&tray_new_window)
+                .item(&tray_capture)
                 .separator()
                 .item(&tray_quit)
                 .build()?;
@@ -916,8 +917,8 @@ pub fn run() {
                 .show_menu_on_left_click(true)
                 .on_menu_event(|app, event| {
                     let id = event.id().as_ref();
-                    if id == "tray-new-window" {
-                        let _ = create_window(app);
+                    if id == "tray-show" {
+                        ensure_focused(app);
                     } else if id == "tray-capture" {
                         let _ = show_capture_panel(app);
                     } else if id == "tray-settings" {

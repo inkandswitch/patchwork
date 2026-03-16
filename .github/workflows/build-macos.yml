@@ -78,6 +78,9 @@ jobs:
         working-directory: .
         env:
           APPLE_SIGNING_IDENTITY: ${{ env.CODESIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: build Swift extensions (Shortcuts + Share)
         run: ./scripts/build-swift-extensions.sh
