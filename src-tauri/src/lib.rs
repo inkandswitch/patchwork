@@ -1,10 +1,11 @@
 use samod::storage::TokioFilesystemStorage;
 use samod::{AcceptorHandle, BackoffConfig, PeerId, Repo};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
+use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tokio::net::TcpListener;
 use tokio::sync::{oneshot, Mutex as AsyncMutex};
@@ -39,6 +40,18 @@ fn default_status() -> u16 {
     200
 }
 
+/// A datatype reported by the JS frontend for the tray menu.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct DatatypeInfo {
+    id: String,
+    name: String,
+}
+
+/// Datatypes known to the tray, updated by the frontend via `update_tray_datatypes`.
+struct TrayDatatypes {
+    datatypes: AsyncMutex<Vec<DatatypeInfo>>,
+}
+
 #[tauri::command]
 async fn resolve_protocol_request(
     id: u64,
@@ -60,6 +73,62 @@ async fn resolve_protocol_request(
     Ok(())
 }
 
+/// Called by the JS frontend whenever the set of registered datatypes changes.
+/// Rebuilds the tray menu to include a "New <datatype>" item for each.
+#[tauri::command]
+async fn update_tray_datatypes(
+    datatypes: Vec<DatatypeInfo>,
+    app: tauri::AppHandle,
+    state: tauri::State<'_, Arc<TrayDatatypes>>,
+) -> Result<(), String> {
+    *state.datatypes.lock().await = datatypes;
+    rebuild_tray_menu(&app, &state).await.map_err(|e| e.to_string())
+}
+
+async fn rebuild_tray_menu(
+    app: &tauri::AppHandle,
+    state: &TrayDatatypes,
+) -> tauri::Result<()> {
+    let datatypes = state.datatypes.lock().await;
+
+    // Build the "New" submenu from current datatypes
+    let mut new_submenu = SubmenuBuilder::new(app, "New");
+    for dt in datatypes.iter() {
+        let item = MenuItemBuilder::with_id(
+            format!("tray-new-{}", dt.id),
+            &dt.name,
+        )
+        .build(app)?;
+        new_submenu = new_submenu.item(&item);
+    }
+    let new_submenu = new_submenu.build(app)?;
+
+    let show_capture = MenuItemBuilder::with_id("tray-capture", "Capture...")
+        .build(app)?;
+
+    let new_window = MenuItemBuilder::with_id("tray-new-window", "New Window")
+        .build(app)?;
+
+    let quit = MenuItemBuilder::with_id("tray-quit", "Quit Patchwork")
+        .build(app)?;
+
+    let menu = MenuBuilder::new(app)
+        .item(&new_submenu)
+        .item(&show_capture)
+        .separator()
+        .item(&new_window)
+        .separator()
+        .item(&quit)
+        .build(app)?;
+
+    // Update the existing tray icon's menu
+    if let Some(tray) = app.tray_by_id("patchwork-tray") {
+        tray.set_menu(Some(menu))?;
+    }
+
+    Ok(())
+}
+
 fn create_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     let n = WINDOW_COUNTER.fetch_add(1, Ordering::SeqCst);
     let label = format!("main-{n}");
@@ -67,6 +136,28 @@ fn create_window(app: &tauri::AppHandle) -> tauri::Result<()> {
         .title("Patchwork")
         .inner_size(1024., 768.)
         .build()?;
+    Ok(())
+}
+
+fn show_capture_panel(app: &tauri::AppHandle) -> tauri::Result<()> {
+    // If the capture panel already exists, just show and focus it
+    if let Some(win) = app.get_webview_window("capture-panel") {
+        win.show()?;
+        win.set_focus()?;
+        return Ok(());
+    }
+
+    // Create a small panel-style window for capture/browsing
+    WebviewWindowBuilder::new(
+        app,
+        "capture-panel",
+        WebviewUrl::App("index.html#frame=capture-panel".into()),
+    )
+    .title("Patchwork Capture")
+    .inner_size(480., 600.)
+    .resizable(true)
+    .build()?;
+
     Ok(())
 }
 
@@ -214,10 +305,18 @@ pub fn run() {
         counter: AtomicU64::new(0),
     });
 
+    let tray_datatypes = Arc::new(TrayDatatypes {
+        datatypes: AsyncMutex::new(Vec::new()),
+    });
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(protocol_state.clone())
-        .invoke_handler(tauri::generate_handler![resolve_protocol_request])
+        .manage(tray_datatypes.clone())
+        .invoke_handler(tauri::generate_handler![
+            resolve_protocol_request,
+            update_tray_datatypes
+        ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
             let protocol = protocol_state.clone();
@@ -237,12 +336,12 @@ pub fn run() {
                 .build()?;
 
             // Build native menu with File > New Window
-            let new_window = MenuItemBuilder::with_id("new-window", "New Window")
+            let new_window_menu = MenuItemBuilder::with_id("new-window", "New Window")
                 .accelerator("CmdOrCtrl+N")
                 .build(app)?;
 
             let file_menu = SubmenuBuilder::new(app, "File")
-                .item(&new_window)
+                .item(&new_window_menu)
                 .close_window()
                 .build()?;
 
@@ -275,7 +374,50 @@ pub fn run() {
                 }
             });
 
+            // --- System tray ---
+            // Start with a minimal menu; JS will call update_tray_datatypes
+            // once plugins are loaded to populate the "New" submenu.
+            let tray_new_window = MenuItemBuilder::with_id("tray-new-window", "New Window")
+                .build(app)?;
+            let tray_capture = MenuItemBuilder::with_id("tray-capture", "Capture...")
+                .build(app)?;
+            let tray_quit = MenuItemBuilder::with_id("tray-quit", "Quit Patchwork")
+                .build(app)?;
+
+            let tray_menu = MenuBuilder::new(app)
+                .item(&tray_capture)
+                .separator()
+                .item(&tray_new_window)
+                .separator()
+                .item(&tray_quit)
+                .build()?;
+
+            let _tray = TrayIconBuilder::with_id("patchwork-tray")
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&tray_menu)
+                .menu_on_left_click(true)
+                .on_menu_event(|app, event| {
+                    let id = event.id().as_ref();
+                    if id == "tray-new-window" {
+                        let _ = create_window(app);
+                    } else if id == "tray-capture" {
+                        let _ = show_capture_panel(app);
+                    } else if id == "tray-quit" {
+                        app.exit(0);
+                    } else if let Some(datatype_id) = id.strip_prefix("tray-new-") {
+                        // Tell JS to create a new document of this type
+                        let _ = app.emit("tray-new-document", datatype_id.to_string());
+                    }
+                })
+                .build(app)?;
+
             Ok(())
+        })
+        // Keep running in the background when all windows are closed
+        .on_window_event(|_window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                // Don't exit — tray keeps the app alive
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

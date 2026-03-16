@@ -15,6 +15,7 @@ import {
   DatatypeDescription,
   DatatypeImplementation,
   getRegistry,
+  createDocOfDatatype2,
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 import {
@@ -268,6 +269,43 @@ const moduleWatcher = new ModuleWatcher(
 );
 
 window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
+
+// --- Tray integration (Tauri only) ---
+if (isTauri) {
+  const { invoke } = window.__TAURI__.core;
+  const { listen } = window.__TAURI__.event;
+
+  // Sync datatype registry to the native tray menu
+  const datatypeRegistry = getRegistry<DatatypeDescription>("patchwork:datatype");
+  const syncTrayDatatypes = () => {
+    const all = datatypeRegistry.all().filter((d) => !d.unlisted);
+    const datatypes = all.map((d) => ({ id: d.id, name: d.name }));
+    invoke("update_tray_datatypes", { datatypes }).catch((e: any) =>
+      console.warn("[tray] failed to update datatypes:", e)
+    );
+  };
+  datatypeRegistry.on("changed", syncTrayDatatypes);
+  // Send initial state in case plugins are already loaded
+  syncTrayDatatypes();
+
+  // Handle "New <datatype>" from tray menu
+  listen("tray-new-document", async (event: any) => {
+    const datatypeId = event.payload as string;
+    try {
+      const loaded = await datatypeRegistry.load(datatypeId);
+      if (!loaded) {
+        console.warn(`[tray] unknown datatype: ${datatypeId}`);
+        return;
+      }
+      const handle = await createDocOfDatatype2(loaded, repo);
+      const { documentId } = parseAutomergeUrl(handle.url);
+      // Open in a new or existing window
+      window.location.hash = `doc=${documentId}&type=${datatypeId}`;
+    } catch (e) {
+      console.error(`[tray] failed to create ${datatypeId} document:`, e);
+    }
+  });
+}
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
   moduleWatcher.loadSuggestedImportUrl(event.detail.url);

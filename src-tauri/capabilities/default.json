@@ -2,6 +2,6 @@
 	"$schema": "../gen/schemas/desktop-schema.json",
 	"identifier": "default",
 	"description": "Capability for all windows",
-	"windows": ["main-*"],
+	"windows": ["main-*", "capture-panel"],
 	"permissions": ["core:default", "opener:default"]
 }
