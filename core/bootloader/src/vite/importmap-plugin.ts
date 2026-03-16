@@ -3,6 +3,9 @@ import type {
   ImportMap,
   PatchworkVitePluginOptions,
 } from "./patchwork-plugin.js";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
 
 /**
  * these dependencies will be built into the outdir,
@@ -41,6 +44,16 @@ export function importmap(options?: PatchworkVitePluginOptions): Plugin {
           preserveSignature: "strict",
         });
       }
+
+      // Emit automerge wasm so the service worker can fetch it
+      const wasmPath = require.resolve(
+        "@automerge/automerge/automerge.wasm"
+      );
+      this.emitFile({
+        type: "asset",
+        fileName: "automerge.wasm",
+        source: readFileSync(wasmPath),
+      });
     },
     resolveId(id) {
       if (id in importmap.imports && !(id in builtins)) {
