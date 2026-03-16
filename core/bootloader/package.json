@@ -41,6 +41,7 @@
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@types/debug": "^4.1.12",
     "debug": "^4.4.3",
+    "es-module-lexer": "^2.0.0",
     "resolve.exports": "^2.0.3",
     "service-worker-types": "npm:@types/serviceworker@^0.0.153",
     "tinyargs": "^0.1.4"
