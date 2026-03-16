@@ -87,7 +87,7 @@ export class ModuleWatcher {
       const valid = isValidAutomergeUrl(importName);
 
       const mod = valid
-        ? importModuleFromFolderDocUrl(importName, this.repo)
+        ? importModuleFromFolderDocUrl(importName)
         : import(/* @vite-ignore */ importName);
       return mod;
     } catch (error) {

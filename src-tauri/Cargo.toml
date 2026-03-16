@@ -23,5 +23,6 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 axum = { version = "0.8", features = ["ws"] }
 dirs = "6"
 urlencoding = "2"
+bs58 = "0.5"
 tracing = "0.1"
 tracing-subscriber = "0.3"

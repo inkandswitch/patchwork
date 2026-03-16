@@ -1,24 +1,11 @@
-import { type AutomergeUrl, type Repo } from "@automerge/automerge-repo";
+import { type AutomergeUrl } from "@automerge/automerge-repo";
 import { resolve } from "resolve.exports";
 import debug from "debug";
 import { automergeUrlToServiceWorkerUrl } from "./urls.js";
-import type { FolderDoc } from "./types.js";
 const log = debug("patchwork:filesystem");
 
-export async function importModuleFromFolderDocUrl(
-  folderDocUrl: AutomergeUrl,
-  repo?: Repo
-) {
+export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
   log(`Importing module from folder doc url ${folderDocUrl}`);
-
-  // When a repo is provided, wait for the folder document to be synced before
-  // fetching via HTTP. This ensures the content server (samod) has the actual
-  // document content, not just an empty placeholder.
-  if (repo) {
-    const handle = await repo.find<FolderDoc>(folderDocUrl);
-    await handle.whenReady();
-    log(`Folder doc ${folderDocUrl} is ready, fetching package.json`);
-  }
 
   const entryPointUrl = await packageEntryPointUrl(folderDocUrl);
   if (!entryPointUrl) {

@@ -189,12 +189,23 @@ async fn websocket_handler(
 }
 
 /// Parse an automerge URL like "automerge:docId" or "automerge:docId#heads"
-/// and return the document ID portion (base58 encoded).
-fn parse_automerge_doc_id(url: &str) -> Option<String> {
+/// and return (doc_id, Option<heads_str>).
+fn parse_automerge_url(url: &str) -> Option<(String, Option<String>)> {
     let stripped = url.strip_prefix("automerge:")?;
-    // Strip heads if present (everything after #)
-    let doc_id = stripped.split('#').next()?;
-    Some(doc_id.to_string())
+    if let Some((doc_id, heads)) = stripped.split_once('#') {
+        Some((doc_id.to_string(), Some(heads.to_string())))
+    } else {
+        Some((stripped.to_string(), None))
+    }
+}
+
+/// Encode automerge heads as a base58 comma-separated string.
+fn encode_heads(heads: &[automerge::ChangeHash]) -> String {
+    heads
+        .iter()
+        .map(|h| bs58::encode(h.as_ref()).into_string())
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 /// Guess MIME type from file name.
@@ -234,25 +245,57 @@ fn read_str_field(doc: &automerge::Automerge, obj: &automerge::ObjId, key: &str)
     }
 }
 
+/// Diagnostic info about a folder doc's structure.
+struct FolderDiag {
+    has_docs: bool,
+    doc_count: usize,
+    entry_names: Vec<String>,
+    root_keys: Vec<String>,
+}
+
 /// Navigate a folder doc's `docs` list to find a child entry by name.
-/// Returns the automerge URL of the matching entry.
-fn find_child_url(doc: &automerge::Automerge, name: &str) -> Option<String> {
+/// Returns Ok(url) on success, Err(diagnostic) on failure.
+fn find_child_url(doc: &automerge::Automerge, name: &str) -> Result<String, FolderDiag> {
+    // Collect root-level keys for diagnostics
+    let root_keys: Vec<String> = doc
+        .keys(automerge::ROOT)
+        .collect();
+
     let docs_list = match doc.get(automerge::ROOT, "docs") {
         Ok(Some((automerge::Value::Object(automerge::ObjType::List), id))) => id,
-        _ => return None,
+        _ => {
+            return Err(FolderDiag {
+                has_docs: false,
+                doc_count: 0,
+                entry_names: vec![],
+                root_keys,
+            });
+        }
     };
 
     let len = doc.length(&docs_list);
+    let mut entry_names = Vec::with_capacity(len);
+
     for i in 0..len {
         if let Ok(Some((automerge::Value::Object(automerge::ObjType::Map), entry_id))) =
             doc.get(&docs_list, i as usize)
         {
-            if read_str_field(doc, &entry_id, "name").as_deref() == Some(name) {
-                return read_str_field(doc, &entry_id, "url");
+            let entry_name = read_str_field(doc, &entry_id, "name").unwrap_or_default();
+            if entry_name == name {
+                if let Some(url) = read_str_field(doc, &entry_id, "url") {
+                    return Ok(url);
+                }
             }
+            entry_names.push(entry_name);
         }
     }
-    None
+
+    Err(FolderDiag {
+        has_docs: true,
+        doc_count: len,
+        entry_names,
+        root_keys,
+    })
 }
 
 /// Handle HTTP requests for automerge content.
@@ -260,6 +303,8 @@ fn find_child_url(doc: &automerge::Automerge, name: &str) -> Option<String> {
 ///
 /// URL format: GET /{automerge_url}/{path/to/file}
 /// where automerge_url is percent-encoded like "automerge%3AdocId" or "automerge%3AdocId%23heads"
+///
+/// If the URL has no #heads, we redirect (307) to a heads-pinned URL for caching consistency.
 async fn content_handler(
     axum::extract::State(state): axum::extract::State<ServerState>,
     req: axum::extract::Request,
@@ -290,8 +335,8 @@ async fn content_handler(
         Err(_) => return cors((StatusCode::BAD_REQUEST, "invalid URL encoding").into_response()),
     };
 
-    let doc_id_str = match parse_automerge_doc_id(&automerge_url) {
-        Some(id) => id,
+    let (doc_id_str, heads_str) = match parse_automerge_url(&automerge_url) {
+        Some(parsed) => parsed,
         None => return cors((StatusCode::BAD_REQUEST, "not an automerge URL").into_response()),
     };
 
@@ -311,8 +356,9 @@ async fn content_handler(
     let root_handle = match state.repo.find(doc_id).await {
         Ok(Some(handle)) => handle,
         Ok(None) => {
-            eprintln!("[content] 404: root document not found for {}", automerge_url);
-            return cors((StatusCode::NOT_FOUND, "document not found").into_response());
+            let msg = format!("document not found: {}", automerge_url);
+            eprintln!("[content] 404: {}", msg);
+            return cors((StatusCode::NOT_FOUND, msg).into_response());
         }
         Err(_) => {
             return cors(
@@ -321,32 +367,78 @@ async fn content_handler(
         }
     };
 
+    // If no heads in URL, redirect to a heads-pinned URL for caching consistency
+    if heads_str.is_none() {
+        let heads_encoded = tokio::task::spawn_blocking({
+            let handle = root_handle.clone();
+            move || handle.with_document(|doc| encode_heads(&doc.get_heads()))
+        })
+        .await
+        .unwrap_or_default();
+
+        let pinned_url = format!("automerge:{}#{}", doc_id_str, heads_encoded);
+        let mut location = format!("/{}", urlencoding::encode(&pinned_url));
+        if let Some(rest) = segments.get(1) {
+            location.push('/');
+            location.push_str(rest);
+        }
+        return cors(
+            axum::http::Response::builder()
+                .status(StatusCode::TEMPORARY_REDIRECT)
+                .header("location", &location)
+                .body(axum::body::Body::empty())
+                .unwrap_or_else(|_| {
+                    (StatusCode::INTERNAL_SERVER_ERROR, "redirect failed").into_response()
+                }),
+        );
+    }
+
     // Navigate the folder structure: each folder doc has { docs: [{ name, url }] }
     // Follow the sub_path segments through nested folder documents.
     let mut current_handle = root_handle;
 
     for part in &sub_path {
         // Read the current document to find the child entry
-        let child_url: Option<String> = tokio::task::spawn_blocking({
+        let result: Result<String, FolderDiag> = tokio::task::spawn_blocking({
             let current = current_handle.clone();
             let part = part.to_string();
             move || current.with_document(|doc| find_child_url(doc, &part))
         })
         .await
-        .unwrap_or(None);
+        .unwrap_or(Err(FolderDiag {
+            has_docs: false,
+            doc_count: 0,
+            entry_names: vec![],
+            root_keys: vec![],
+        }));
 
-        let child_url = match child_url {
-            Some(url) => url,
-            None => {
-                let msg = format!("path segment '{}' not found in folder for {}", part, automerge_url);
+        let child_url = match result {
+            Ok(url) => url,
+            Err(diag) => {
+                let msg = if !diag.has_docs {
+                    format!(
+                        "path segment '{}' not found in folder for {} — folder has NO 'docs' array (root keys: [{}])",
+                        part,
+                        automerge_url,
+                        diag.root_keys.join(", ")
+                    )
+                } else {
+                    format!(
+                        "path segment '{}' not found in folder for {} — docs has {} entries: [{}]",
+                        part,
+                        automerge_url,
+                        diag.doc_count,
+                        diag.entry_names.join(", ")
+                    )
+                };
                 eprintln!("[content] 404: {}", msg);
                 return cors((StatusCode::NOT_FOUND, msg).into_response());
             }
         };
 
         // Parse and find the child document
-        let child_doc_id_str = match parse_automerge_doc_id(&child_url) {
-            Some(id) => id,
+        let (child_doc_id_str, _child_heads) = match parse_automerge_url(&child_url) {
+            Some(parsed) => parsed,
             None => {
                 return cors(
                     (StatusCode::INTERNAL_SERVER_ERROR, "invalid child URL").into_response(),
@@ -366,7 +458,10 @@ async fn content_handler(
         current_handle = match state.repo.find(child_doc_id).await {
             Ok(Some(handle)) => handle,
             Ok(None) => {
-                let msg = format!("child document {} not found (resolving '{}' in {})", &child_url, part, automerge_url);
+                let msg = format!(
+                    "child document {} not found (resolving '{}' in {})",
+                    &child_url, part, automerge_url
+                );
                 eprintln!("[content] 404: {}", msg);
                 return cors((StatusCode::NOT_FOUND, msg).into_response());
             }
@@ -424,10 +519,9 @@ async fn content_handler(
                 }),
         ),
         None => {
-            eprintln!("[content] 404: no content field in document {} (path: {})", automerge_url, raw_path);
-            cors(
-                (StatusCode::NOT_FOUND, "no content field in document").into_response(),
-            )
+            let msg = format!("no content field in document {} (path: {})", automerge_url, raw_path);
+            eprintln!("[content] 404: {}", msg);
+            cors((StatusCode::NOT_FOUND, msg).into_response())
         }
     }
 }
