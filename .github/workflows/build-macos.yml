@@ -73,21 +73,32 @@ jobs:
           IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | head -1 | sed 's/.*"\(.*\)".*/\1/')
           echo "CODESIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
 
+      - name: write App Store Connect API key
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          mkdir -p ~/private_keys
+          echo "$APPLE_API_KEY_CONTENT" > ~/private_keys/AuthKey_${APPLE_API_KEY}.p8
+
       - name: build the app
         run: cargo tauri build
         working-directory: .
         env:
           APPLE_SIGNING_IDENTITY: ${{ env.CODESIGN_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_PATH: ~/private_keys/AuthKey_${{ secrets.APPLE_API_KEY }}.p8
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: build Swift extensions (Shortcuts + Share)
         run: ./scripts/build-swift-extensions.sh
 
-      - name: cleanup keychain
+      - name: cleanup keychain and keys
         if: always()
-        run: security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" 2>/dev/null || true
+        run: |
+          security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" 2>/dev/null || true
+          rm -rf ~/private_keys 2>/dev/null || true
 
       - name: upload .app bundle
         uses: actions/upload-artifact@v4
