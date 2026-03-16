@@ -70,6 +70,11 @@ workerLogChannel.onmessage = (event) => {
 const isTauri = "__TAURI__" in window;
 
 const repo = new Repo({
+  // In Tauri, give the browser a recognizable peer ID so samod's announce
+  // policy can skip it (avoid flooding the browser with every document).
+  ...(isTauri
+    ? { peerId: `browser-${crypto.randomUUID()}` as any }
+    : {}),
   storage: new IndexedDBStorageAdapter(),
   async sharePolicy(peerId) {
     if (isTauri) {

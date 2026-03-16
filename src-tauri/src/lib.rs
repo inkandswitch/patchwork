@@ -494,6 +494,13 @@ async fn start_sync_server(
     let repo = Repo::build_tokio()
         .with_peer_id(PeerId::from("storage-server-patchwork-d9f7e2a1"))
         .with_storage(storage)
+        // Only announce documents to upstream sync servers, never to local
+        // browser peers. Otherwise opening a window floods the browser with
+        // every document samod has ever seen. Browser peers use a
+        // "browser-<uuid>" peer ID (set in main.ts).
+        .with_announce_policy(|_doc: DocumentId, peer: PeerId| {
+            !peer.as_ref().starts_with("browser-")
+        })
         .load()
         .await;
     eprintln!("[sync] repo loaded");
