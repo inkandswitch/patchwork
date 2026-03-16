@@ -56,6 +56,13 @@ document.body.innerHTML = `
 <div class="section-title">Capture</div>
 <div class="section">
   <div class="row">
+    <span class="row-label">Capture tool</span>
+    <div class="row-value">
+      <input type="text" id="capture-tool-input" placeholder="e.g. capture-panel" />
+    </div>
+  </div>
+  <div class="hint">The tool ID to use for the capture panel window.</div>
+  <div class="row">
     <span class="row-label">Global shortcut</span>
     <div class="row-value">
       <input type="text" id="shortcut-input" class="shortcut-capture" placeholder="Click to record..." readonly />
@@ -77,6 +84,9 @@ document.body.innerHTML = `
 
 // --- Logic ---
 
+const captureToolInput = document.getElementById(
+  "capture-tool-input"
+) as HTMLInputElement;
 const shortcutInput = document.getElementById(
   "shortcut-input"
 ) as HTMLInputElement;
@@ -129,6 +139,9 @@ function formatShortcut(e: KeyboardEvent): string | null {
 async function loadSettings() {
   try {
     currentSettings = await invoke("get_settings");
+    if (currentSettings.capture_tool_id) {
+      captureToolInput.value = currentSettings.capture_tool_id;
+    }
     if (currentSettings.capture_shortcut) {
       shortcutInput.value = currentSettings.capture_shortcut;
     }
@@ -136,6 +149,18 @@ async function loadSettings() {
     console.error("Failed to load settings:", e);
   }
 }
+
+// Capture tool ID
+captureToolInput.addEventListener("change", async () => {
+  const value = captureToolInput.value.trim() || null;
+  currentSettings.capture_tool_id = value;
+  try {
+    await invoke("set_settings", { settings: currentSettings });
+    showStatus("Saved");
+  } catch (err: any) {
+    showStatus(`Error: ${err}`);
+  }
+});
 
 // Shortcut recording
 let recording = false;
