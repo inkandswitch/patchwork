@@ -317,6 +317,19 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@24.9.1)(@vitest/ui@3.2.4(vitest@3.2.4))(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.0)
 
+  packages/native:
+    dependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.5.3
+        version: 2.5.3
+      '@inkandswitch/patchwork-plugins':
+        specifier: workspace:^
+        version: link:../../core/plugins
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   packages/react:
     dependencies:
       '@automerge/automerge-repo-react-hooks':
