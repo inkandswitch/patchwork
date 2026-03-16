@@ -154,10 +154,10 @@ if (isTauri) {
         return;
       }
 
-      // Navigate folder structure to find the file.
-      // Always look up by base document ID — heads are only for cache-busting.
-      const baseUrl = stringifyAutomergeUrl({ documentId });
-      const folderHandle = await repo.find<FolderDoc>(baseUrl);
+      // Navigate folder structure to find the file
+      const folderHandle = await repo.find<FolderDoc>(
+        maybeAutomergeUrl as AutomergeUrl
+      );
       const fileHandle = path.length
         ? await findHandleInFolderHandle<FileDoc>(repo, folderHandle, path)
         : folderHandle;
