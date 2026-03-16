@@ -12,14 +12,11 @@ import {
   isValidAutomergeUrl,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
-  type AutomergeUrl,
   type PeerId,
 } from "@automerge/automerge-repo/slim";
 import {
   findHandleInFolderHandle,
   resolvePackageExport,
-  automergeUrlToServiceWorkerUrl,
-  defaultImportConditions,
   type FolderDoc,
 } from "@inkandswitch/patchwork-filesystem";
 
@@ -28,16 +25,6 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 
-// Small — bundled directly into the SW
-import { init as lexerReady, parse as parseImports } from "es-module-lexer";
-import externals from "./externals.js";
-
-// Build-time importmap: bare specifier → URL for shared/builtin packages.
-// When an automerge-served JS file does `import "solid-js"`, we resolve
-// it to /packages/solid-js.js without touching automerge at all.
-const builtinImports: Record<string, string> = Object.fromEntries(
-  externals.map((name) => [name, `/packages/${name}.js`])
-);
 
 let cachename = "default";
 let debugging = false;
@@ -138,176 +125,6 @@ self.addEventListener("message", async (event) => {
 interface FileDoc {
   content: string | Uint8Array;
   mimeType?: string;
-}
-
-// ── Bare import rewriting ──────────────────────────────────────────────
-
-function isBareSpecifier(specifier: string): boolean {
-  return (
-    specifier.length > 0 &&
-    !specifier.startsWith(".") &&
-    !specifier.startsWith("/") &&
-    !specifier.includes(":")
-  );
-}
-
-/**
- * Given a folder's automerge URL, read its package.json or importmap.json
- * and return the dependency map: { "lol": "automerge:defghi", ... }
- */
-async function getDependencyMap(
-  repo: Repo,
-  folderUrl: AutomergeUrl
-): Promise<Record<string, string> | undefined> {
-  const folderHandle = await repo.find<FolderDoc>(folderUrl);
-
-  for (const name of ["package.json", "importmap.json"]) {
-    const fileHandle = await findHandleInFolderHandle<FileDoc>(
-      repo,
-      folderHandle,
-      [name]
-    );
-    if (!fileHandle) continue;
-
-    const fileDoc = fileHandle.doc() as FileDoc | undefined;
-    if (!fileDoc?.content) continue;
-
-    const json = JSON.parse(String(fileDoc.content));
-
-    if (name === "importmap.json") {
-      return json.imports;
-    } else {
-      return json.dependencies;
-    }
-  }
-
-  return undefined;
-}
-
-/**
- * Given a dep's automerge URL and a subpath (e.g. "." or "./utils"),
- * resolve the entry point via package.json exports and return
- * the full SW-handoff URL path (e.g. /automerge%3Adefghi/dist/index.js).
- */
-async function resolveDepEntryPoint(
-  repo: Repo,
-  depAutomergeUrl: AutomergeUrl,
-  subpath: string = ".",
-  conditions: string[] = defaultImportConditions
-): Promise<string | undefined> {
-  const folderHandle = await repo.find<FolderDoc>(depAutomergeUrl);
-  const pkgFileHandle = await findHandleInFolderHandle<FileDoc>(
-    repo,
-    folderHandle,
-    ["package.json"]
-  );
-  if (!pkgFileHandle) return undefined;
-
-  const pkgFileDoc = pkgFileHandle.doc() as FileDoc | undefined;
-  if (!pkgFileDoc?.content) return undefined;
-
-  const pkgJson = JSON.parse(String(pkgFileDoc.content));
-
-  let entryPoint: string | undefined;
-  try {
-    entryPoint = resolvePackageExport(pkgJson, subpath, conditions);
-  } catch {}
-
-  if (!entryPoint) return undefined;
-
-  // Build the SW-handoff URL: /automerge%3A.../dist/index.js
-  const base = automergeUrlToServiceWorkerUrl(depAutomergeUrl);
-  const resolved = new URL(entryPoint, new URL(base, "http://x")).pathname;
-  return resolved;
-}
-
-/**
- * Rewrite bare import specifiers in JS source to resolved URLs.
- * Checks builtins first (/packages/...), then the folder's dependency map.
- */
-async function rewriteBareImports(
-  source: string,
-  rootAutomergeUrl: AutomergeUrl,
-  repo: Repo
-): Promise<string> {
-  await lexerReady;
-  const [imports] = parseImports(source);
-
-  if (!imports.length) return source;
-
-  // Collect bare specifiers
-  const bareSpecifiers = new Set<string>();
-  for (const imp of imports) {
-    if (imp.n && isBareSpecifier(imp.n)) {
-      bareSpecifiers.add(imp.n);
-    }
-  }
-
-  if (!bareSpecifiers.size) return source;
-
-  // Fetch the dependency map from the root folder
-  const deps = await getDependencyMap(repo, rootAutomergeUrl);
-
-  // Build a resolution map: bare specifier → resolved URL
-  const resolutions = new Map<string, string>();
-  for (const specifier of bareSpecifiers) {
-    // 1. Check builtins first (solid-js, @automerge/automerge, etc.)
-    if (builtinImports[specifier]) {
-      resolutions.set(specifier, builtinImports[specifier]);
-      continue;
-    }
-
-    if (!deps) continue;
-
-    // 2. Split "lol/utils" into package name "lol" and subpath "./utils"
-    const firstSlash = specifier.indexOf("/");
-    const isScoped = specifier.startsWith("@");
-    let pkgName: string;
-    let subpath: string;
-
-    if (isScoped) {
-      const secondSlash = specifier.indexOf("/", firstSlash + 1);
-      if (secondSlash === -1) {
-        pkgName = specifier;
-        subpath = ".";
-      } else {
-        pkgName = specifier.slice(0, secondSlash);
-        subpath = "./" + specifier.slice(secondSlash + 1);
-      }
-    } else if (firstSlash === -1) {
-      pkgName = specifier;
-      subpath = ".";
-    } else {
-      pkgName = specifier.slice(0, firstSlash);
-      subpath = "./" + specifier.slice(firstSlash + 1);
-    }
-
-    const depValue = deps[pkgName];
-    if (!depValue) continue;
-
-    if (isValidAutomergeUrl(depValue)) {
-      const entryUrl = await resolveDepEntryPoint(repo, depValue, subpath);
-      if (entryUrl) {
-        resolutions.set(specifier, entryUrl);
-      }
-    }
-  }
-
-  if (!resolutions.size) return source;
-
-  // Rewrite the source string, working backwards to preserve offsets
-  let result = source;
-  const sorted = [...imports]
-    .filter((imp) => imp.n && resolutions.has(imp.n))
-    .sort((a, b) => b.s - a.s);
-
-  for (const imp of sorted) {
-    const resolved = resolutions.get(imp.n!);
-    if (!resolved) continue;
-    result = result.slice(0, imp.s) + resolved + result.slice(imp.e);
-  }
-
-  return result;
 }
 
 // ── Automerge URL resolution ───────────────────────────────────────────
@@ -424,26 +241,6 @@ async function resolveAutomergeUrl(handoffURL: URL): Promise<Response> {
       ? (new Uint8Array(content) as BlobPart)
       : String(content);
   const mimeType = fileDoc.mimeType ?? "text/plain";
-
-  // Rewrite bare imports in JS files served from automerge folders
-  const lastPart = path[path.length - 1];
-  const isJS =
-    mimeType === "application/javascript" ||
-    mimeType === "text/javascript" ||
-    lastPart?.endsWith(".js") ||
-    lastPart?.endsWith(".mjs");
-
-  if (isJS && typeof content === "string") {
-    try {
-      body = await rewriteBareImports(
-        content,
-        maybeAutomergeUrl as AutomergeUrl,
-        repo
-      );
-    } catch (e) {
-      log("failed to rewrite bare imports", e);
-    }
-  }
 
   const headers = new Headers({ "content-type": mimeType });
   headers.set("cross-origin-embedder-policy", "credentialless");
