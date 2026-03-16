@@ -109,9 +109,6 @@ importers:
       debug:
         specifier: ^4.4.3
         version: 4.4.3
-      es-module-lexer:
-        specifier: ^2.0.0
-        version: 2.0.0
       resolve.exports:
         specifier: ^2.0.3
         version: 2.0.3
@@ -6680,9 +6677,6 @@ packages:
 
   es-module-lexer@1.7.0:
     resolution: {integrity: sha512-jEQoCwk8hyb2AZziIOLhDqpm5+2ww5uIE6lkO/6jcOCusfk6LhMHpXXfBLXTZ7Ydyt0j4VoUQv6uGNYbdW+kBA==}
-
-  es-module-lexer@2.0.0:
-    resolution: {integrity: sha512-5POEcUuZybH7IdmGsD8wlf0AI55wMecM9rVBTI/qEAy2c1kTOm3DjFYjrBdI2K3BaJjJYfYFeRtM0t9ssnRuxw==}
 
   esbuild-plugin-tailwindcss@2.1.0:
     resolution: {integrity: sha512-Mqd9Dko8fHGOWVhN53wXefAZZ45i5sZVY3XvyFN5ZKhOPpxXrducAcDPE5iqFw0aJoEm6MG1V9x4Kz6TiQV9kQ==}
@@ -13432,8 +13426,6 @@ snapshots:
   entities@6.0.1: {}
 
   es-module-lexer@1.7.0: {}
-
-  es-module-lexer@2.0.0: {}
 
   esbuild-plugin-tailwindcss@2.1.0:
     dependencies:
