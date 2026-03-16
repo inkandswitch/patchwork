@@ -1,14 +1,28 @@
 import { type AutomergeUrl } from "@automerge/automerge-repo";
 import { resolve } from "resolve.exports";
 import debug from "debug";
-import { automergeUrlToServiceWorkerUrl } from "./urls.js";
+import { getImportableUrlFromAutomergeUrl } from "./urls.js";
 const log = debug("patchwork:filesystem");
 
-export async function importModuleFromFolderDocUrl(folderDocUrl: AutomergeUrl) {
-  log(`Importing module from folder doc url ${folderDocUrl}`);
-  const entryPointUrl = await packageEntryPointUrl(folderDocUrl);
+export const defaultImportConditions = ["patchwork", "browser", "import"];
+
+export async function importModuleFromFolderDocUrl(
+  folderDocUrl: AutomergeUrl,
+  subpath: string = ".",
+  conditions: string[] = defaultImportConditions
+) {
+  log(
+    `Importing module from folder doc url ${folderDocUrl} (subpath: ${subpath})`
+  );
+  const entryPointUrl = await packageEntryPointUrl(
+    folderDocUrl,
+    subpath,
+    conditions
+  );
   if (!entryPointUrl) {
-    throw new Error("No entry point found in package.json");
+    throw new Error(
+      `No entry point found for subpath "${subpath}" in package.json`
+    );
   }
 
   log(`Importing module from entry point url ${entryPointUrl}`);
@@ -22,7 +36,7 @@ async function packageJsonContentsFromFolderDocUrl(
   const packageJSONPath = new URL(
     "package.json",
     new URL(
-      automergeUrlToServiceWorkerUrl(folderDocUrl),
+      getImportableUrlFromAutomergeUrl(folderDocUrl),
       window.location.origin
     )
   ).href;
@@ -35,35 +49,42 @@ async function packageJsonContentsFromFolderDocUrl(
   return response.json();
 }
 
-function packageEntryPointFromPackageJson(
-  pkgJson: Record<string, any>
+export function resolvePackageExport(
+  pkgJson: Record<string, any>,
+  subpath: string = ".",
+  conditions: string[] = defaultImportConditions
 ): string {
   try {
-    const resolved = resolve(pkgJson, ".", {
-      conditions: ["import", "patchwork"],
-    });
+    const resolved = resolve(pkgJson, subpath, { conditions });
     if (resolved) return resolved[0];
   } catch {
     // ignore, fallback to main
   }
 
-  // 2) fallback to main
-  if (typeof pkgJson.main !== "string") {
-    throw new Error("No valid 'exports' or 'main' in package.json");
+  // fallback to main only for the root export
+  if (subpath === "." && typeof pkgJson.main === "string") {
+    return pkgJson.main;
   }
-  return pkgJson.main;
+
+  throw new Error(
+    `No valid 'exports' for "${subpath}" or 'main' in package.json`
+  );
 }
 
-async function packageEntryPointUrl(folderDocUrl: AutomergeUrl) {
+async function packageEntryPointUrl(
+  folderDocUrl: AutomergeUrl,
+  subpath: string = ".",
+  conditions: string[] = defaultImportConditions
+) {
   const pkgJson = await packageJsonContentsFromFolderDocUrl(folderDocUrl);
   if (!pkgJson) return undefined;
 
-  const entryPoint = packageEntryPointFromPackageJson(pkgJson);
+  const entryPoint = resolvePackageExport(pkgJson, subpath, conditions);
   if (!entryPoint) return undefined;
 
   // Build the final URL via the URL constructor
   const base = new URL(
-    automergeUrlToServiceWorkerUrl(folderDocUrl),
+    getImportableUrlFromAutomergeUrl(folderDocUrl),
     window.location.origin
   );
 

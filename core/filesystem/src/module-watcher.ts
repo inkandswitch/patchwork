@@ -5,9 +5,13 @@ import {
   isValidAutomergeUrl,
   type Repo,
 } from "@automerge/automerge-repo/slim";
-import { importModuleFromFolderDocUrl } from "./packages.js";
+import {
+  importModuleFromFolderDocUrl,
+  resolvePackageExport,
+} from "./packages.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
 import { FolderDoc } from "./types.js";
+import { getImportableUrlFromAutomergeUrl } from "./urls.js";
 
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
