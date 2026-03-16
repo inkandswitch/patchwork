@@ -1,6 +1,5 @@
 /// <reference types="service-worker-types" />
 
-
 // Heavy imports — marked external by the service-worker vite plugin,
 // resolved to /packages/... URLs at build time. The SW is registered with
 // type:"module" so the browser fetches these as regular network requests.
@@ -287,11 +286,7 @@ async function rewriteBareImports(
     if (!depValue) continue;
 
     if (isValidAutomergeUrl(depValue)) {
-      const entryUrl = await resolveDepEntryPoint(
-        repo,
-        depValue,
-        subpath
-      );
+      const entryUrl = await resolveDepEntryPoint(repo, depValue, subpath);
       if (entryUrl) {
         resolutions.set(specifier, entryUrl);
       }
