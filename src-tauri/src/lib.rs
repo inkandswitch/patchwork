@@ -842,10 +842,18 @@ pub fn run() {
                 .accelerator("CmdOrCtrl+,")
                 .build(app)?;
 
+            let quit_menu = MenuItemBuilder::with_id("menu-quit", "Quit Patchwork")
+                .accelerator("CmdOrCtrl+Q")
+                .build(app)?;
+
+            let app_menu = SubmenuBuilder::new(app, "Patchwork")
+                .item(&settings_menu)
+                .separator()
+                .item(&quit_menu)
+                .build()?;
+
             let file_menu = SubmenuBuilder::new(app, "File")
                 .item(&new_window_menu)
-                .separator()
-                .item(&settings_menu)
                 .separator()
                 .close_window()
                 .build()?;
@@ -866,6 +874,7 @@ pub fn run() {
                 .build()?;
 
             let menu = MenuBuilder::new(app)
+                .item(&app_menu)
                 .item(&file_menu)
                 .item(&edit_menu)
                 .item(&window_menu)
@@ -878,6 +887,8 @@ pub fn run() {
                     let _ = create_window(app);
                 } else if event.id() == "menu-settings" {
                     let _ = show_settings_window(app);
+                } else if event.id() == "menu-quit" {
+                    app.exit(0);
                 }
             });
 

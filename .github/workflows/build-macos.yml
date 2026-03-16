@@ -76,6 +76,8 @@ jobs:
       - name: build the app
         run: cargo tauri build
         working-directory: .
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ env.CODESIGN_IDENTITY }}
 
       - name: build Swift extensions (Shortcuts + Share)
         run: ./scripts/build-swift-extensions.sh
