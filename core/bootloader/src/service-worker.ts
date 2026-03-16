@@ -1,6 +1,5 @@
 /// <reference types="service-worker-types" />
 
-console.log("hi from claude");
 
 // Heavy imports — marked external by the service-worker vite plugin,
 // resolved to /packages/... URLs at build time. The SW is registered with
