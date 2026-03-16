@@ -1,44 +1,16 @@
 use samod::storage::TokioFilesystemStorage;
-use samod::{AcceptorHandle, BackoffConfig, PeerId, Repo};
+use samod::{AcceptorHandle, BackoffConfig, DocumentId, PeerId, Repo};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::tray::TrayIconBuilder;
-use tauri::{Emitter, Listener, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tokio::net::TcpListener;
 use tokio::sync::{oneshot, Mutex as AsyncMutex};
 
 static WINDOW_COUNTER: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(1);
-
-/// Shared state for bridging HTTP content requests to JS.
-/// Rust receives the HTTP request, forwards it to JS (which has the automerge
-/// repo) via Tauri events, and JS calls back with the resolved content via the
-/// `resolve_protocol_request` command.
-struct ProtocolState {
-    pending: AsyncMutex<HashMap<u64, oneshot::Sender<ProtocolResponse>>>,
-    counter: AtomicU64,
-}
-
-#[derive(Deserialize)]
-struct ProtocolResponse {
-    body: Vec<u8>,
-    #[serde(default = "default_mime")]
-    mime_type: String,
-    #[serde(default = "default_status")]
-    status: u16,
-    #[serde(default)]
-    headers: HashMap<String, String>,
-}
-
-fn default_mime() -> String {
-    "text/plain".into()
-}
-
-fn default_status() -> u16 {
-    200
-}
 
 /// A datatype reported by the JS frontend for the tray menu.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -62,27 +34,6 @@ struct EvalState {
 struct EvalResponse {
     result: Option<String>,
     error: Option<String>,
-}
-
-#[tauri::command]
-async fn resolve_protocol_request(
-    id: u64,
-    body: Vec<u8>,
-    mime_type: String,
-    status: u16,
-    headers: HashMap<String, String>,
-    state: tauri::State<'_, Arc<ProtocolState>>,
-) -> Result<(), String> {
-    if let Some(tx) = state.pending.lock().await.remove(&id) {
-        tx.send(ProtocolResponse {
-            body,
-            mime_type,
-            status,
-            headers,
-        })
-        .map_err(|_| "response channel closed".to_string())?;
-    }
-    Ok(())
 }
 
 /// Called by the JS frontend to return the result of an eval request.
@@ -220,8 +171,8 @@ fn show_capture_panel(app: &tauri::AppHandle) -> tauri::Result<()> {
 #[derive(Clone)]
 struct ServerState {
     acceptor: AcceptorHandle,
+    repo: Repo,
     app: tauri::AppHandle,
-    protocol: Arc<ProtocolState>,
     eval: Arc<EvalState>,
 }
 
@@ -236,8 +187,43 @@ async fn websocket_handler(
     })
 }
 
+/// Parse an automerge URL like "automerge:docId" or "automerge:docId#heads"
+/// and return the document ID portion (base58 encoded).
+fn parse_automerge_doc_id(url: &str) -> Option<String> {
+    let stripped = url.strip_prefix("automerge:")?;
+    // Strip heads if present (everything after #)
+    let doc_id = stripped.split('#').next()?;
+    Some(doc_id.to_string())
+}
+
+/// Guess MIME type from file name.
+fn mime_for_path(path: &str) -> &'static str {
+    if path.ends_with(".js") || path.ends_with(".mjs") {
+        "application/javascript"
+    } else if path.ends_with(".ts") || path.ends_with(".mts") {
+        "application/javascript"
+    } else if path.ends_with(".css") {
+        "text/css"
+    } else if path.ends_with(".html") {
+        "text/html"
+    } else if path.ends_with(".json") {
+        "application/json"
+    } else if path.ends_with(".wasm") {
+        "application/wasm"
+    } else if path.ends_with(".svg") {
+        "image/svg+xml"
+    } else if path.ends_with(".png") {
+        "image/png"
+    } else {
+        "text/plain"
+    }
+}
+
 /// Handle HTTP requests for automerge content.
-/// Bridges to JS via Tauri events, returns the response (including 307 redirects).
+/// Reads directly from samod's repo — no JS roundtrip needed.
+///
+/// URL format: GET /{automerge_url}/{path/to/file}
+/// where automerge_url is percent-encoded like "automerge%3AdocId" or "automerge%3AdocId%23heads"
 async fn content_handler(
     axum::extract::State(state): axum::extract::State<ServerState>,
     req: axum::extract::Request,
@@ -245,19 +231,8 @@ async fn content_handler(
     use axum::http::{HeaderValue, StatusCode};
     use axum::response::IntoResponse;
 
-    let uri = req.uri().to_string();
-    // Build a URL matching the format JS expects
-    let url = format!("http://localhost:3030{uri}");
-
-    let id = state.protocol.counter.fetch_add(1, Ordering::SeqCst);
-    let (tx, rx) = oneshot::channel();
-    state.protocol.pending.lock().await.insert(id, tx);
-
-    // Ask the JS side to resolve this URL
-    let _ = state.app.emit(
-        "patchwork-protocol-request",
-        serde_json::json!({ "id": id, "url": url }),
-    );
+    let raw_path = req.uri().path().trim_start_matches('/');
+    let segments: Vec<&str> = raw_path.splitn(2, '/').collect();
 
     let cors = |mut resp: axum::http::Response<axum::body::Body>| {
         let h = resp.headers_mut();
@@ -273,35 +248,220 @@ async fn content_handler(
         resp
     };
 
-    match tokio::time::timeout(std::time::Duration::from_secs(30), rx).await {
-        Ok(Ok(response)) => {
-            let status =
-                StatusCode::from_u16(response.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-            let mut builder = axum::http::Response::builder()
-                .status(status)
-                .header("content-type", &response.mime_type);
+    // Decode the automerge URL from the first path segment
+    let automerge_url = match urlencoding::decode(segments[0]) {
+        Ok(u) => u.into_owned(),
+        Err(_) => return cors((StatusCode::BAD_REQUEST, "invalid URL encoding").into_response()),
+    };
 
-            for (key, value) in &response.headers {
-                builder = builder.header(key.as_str(), value.as_str());
-            }
+    let doc_id_str = match parse_automerge_doc_id(&automerge_url) {
+        Some(id) => id,
+        None => return cors((StatusCode::BAD_REQUEST, "not an automerge URL").into_response()),
+    };
 
-            cors(
-                builder
-                    .body(axum::body::Body::from(response.body))
-                    .unwrap_or_else(|_| {
-                        (StatusCode::INTERNAL_SERVER_ERROR, "failed to build response")
-                            .into_response()
-                    }),
-            )
+    let doc_id = match doc_id_str.parse::<DocumentId>() {
+        Ok(id) => id,
+        Err(_) => return cors((StatusCode::BAD_REQUEST, "invalid document ID").into_response()),
+    };
+
+    // The sub-path within the folder document (e.g. "src/index.js")
+    let sub_path: Vec<&str> = if segments.len() > 1 {
+        segments[1].split('/').filter(|s| !s.is_empty()).collect()
+    } else {
+        vec![]
+    };
+
+    // Find the root document in samod's repo
+    let root_handle = match state.repo.find(doc_id).await {
+        Ok(Some(handle)) => handle,
+        Ok(None) => {
+            return cors((StatusCode::NOT_FOUND, "document not found").into_response());
         }
-        Ok(Err(_)) => cors(
-            (StatusCode::INTERNAL_SERVER_ERROR, "protocol handler channel closed").into_response(),
-        ),
         Err(_) => {
-            eprintln!("[content] timeout resolving {url} (waited 30s for JS response)");
-            cors((StatusCode::GATEWAY_TIMEOUT, "protocol handler timeout").into_response())
+            return cors(
+                (StatusCode::INTERNAL_SERVER_ERROR, "repo stopped").into_response(),
+            );
         }
+    };
+
+    // Navigate the folder structure: each folder doc has { docs: [{ name, url }] }
+    // Follow the sub_path segments through nested folder documents.
+    let mut current_handle = root_handle;
+
+    for part in &sub_path {
+        // Read the current document to find the child entry
+        let child_url = tokio::task::spawn_blocking({
+            let current = current_handle.clone();
+            let part = part.to_string();
+            move || {
+                current.with_document(|doc| {
+                    // Look for a "docs" list in the automerge document
+                    let docs_val = doc.get(automerge::ROOT, "docs")?;
+                    let (docs_obj, _) = match docs_val {
+                        (automerge::Value::Object(automerge::ObjType::List), id) => (id, ()),
+                        _ => return None,
+                    };
+
+                    let len = doc.length(&docs_obj);
+                    for i in 0..len {
+                        if let Some((automerge::Value::Object(automerge::ObjType::Map), entry_id)) =
+                            doc.get(&docs_obj, i as usize)
+                        {
+                            let name = doc
+                                .get(&entry_id, "name")
+                                .and_then(|(v, _)| match v {
+                                    automerge::Value::Scalar(s) => {
+                                        if let automerge::ScalarValue::Str(s) = s.as_ref() {
+                                            Some(s.to_string())
+                                        } else {
+                                            None
+                                        }
+                                    }
+                                    _ => None,
+                                });
+                            if name.as_deref() == Some(&part) {
+                                return doc
+                                    .get(&entry_id, "url")
+                                    .and_then(|(v, _)| match v {
+                                        automerge::Value::Scalar(s) => {
+                                            if let automerge::ScalarValue::Str(s) = s.as_ref() {
+                                                Some(s.to_string())
+                                            } else {
+                                                None
+                                            }
+                                        }
+                                        _ => None,
+                                    });
+                            }
+                        }
+                    }
+                    None
+                })
+            }
+        })
+        .await
+        .unwrap_or(None);
+
+        let child_url = match child_url {
+            Some(url) => url,
+            None => {
+                let msg = format!("path segment '{}' not found in folder", part);
+                return cors((StatusCode::NOT_FOUND, msg).into_response());
+            }
+        };
+
+        // Parse and find the child document
+        let child_doc_id_str = match parse_automerge_doc_id(&child_url) {
+            Some(id) => id,
+            None => {
+                return cors(
+                    (StatusCode::INTERNAL_SERVER_ERROR, "invalid child URL").into_response(),
+                );
+            }
+        };
+
+        let child_doc_id = match child_doc_id_str.parse::<DocumentId>() {
+            Ok(id) => id,
+            Err(_) => {
+                return cors(
+                    (StatusCode::INTERNAL_SERVER_ERROR, "invalid child document ID").into_response(),
+                );
+            }
+        };
+
+        current_handle = match state.repo.find(child_doc_id).await {
+            Ok(Some(handle)) => handle,
+            Ok(None) => {
+                let msg = format!("child document {} not found", child_url);
+                return cors((StatusCode::NOT_FOUND, msg).into_response());
+            }
+            Err(_) => {
+                return cors(
+                    (StatusCode::INTERNAL_SERVER_ERROR, "repo stopped").into_response(),
+                );
+            }
+        };
     }
+
+    // Read the content from the final document
+    let (body, mime_type) = tokio::task::spawn_blocking({
+        let handle = current_handle;
+        let last_segment = sub_path.last().copied().unwrap_or("").to_string();
+        move || {
+            handle.with_document(|doc| {
+                // Try to read "content" field
+                let content = doc.get(automerge::ROOT, "content");
+                let mime = doc
+                    .get(automerge::ROOT, "mimeType")
+                    .and_then(|(v, _)| match v {
+                        automerge::Value::Scalar(s) => {
+                            if let automerge::ScalarValue::Str(s) = s.as_ref() {
+                                Some(s.to_string())
+                            } else {
+                                None
+                            }
+                        }
+                        _ => None,
+                    })
+                    .unwrap_or_else(|| mime_for_path(&last_segment).to_string());
+
+                match content {
+                    Some((automerge::Value::Scalar(s), _)) => {
+                        if let automerge::ScalarValue::Str(text) = s.as_ref() {
+                            Some((text.to_string().into_bytes(), mime))
+                        } else {
+                            None
+                        }
+                    }
+                    Some((automerge::Value::Object(automerge::ObjType::Text), text_id)) => {
+                        let text = doc.text(&text_id).unwrap_or_default();
+                        Some((text.into_bytes(), mime))
+                    }
+                    _ => {
+                        // Try reading raw bytes
+                        if let Some((automerge::Value::Scalar(s), _)) =
+                            doc.get(automerge::ROOT, "content")
+                        {
+                            if let automerge::ScalarValue::Bytes(bytes) = s.as_ref() {
+                                return Some((bytes.to_vec(), mime));
+                            }
+                        }
+                        None
+                    }
+                }
+            })
+        }
+    })
+    .await
+    .unwrap_or(None)
+    .unwrap_or_else(|| {
+        (
+            b"no content field in document".to_vec(),
+            "text/plain".to_string(),
+        )
+    });
+
+    if body == b"no content field in document" {
+        return cors(
+            axum::http::Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .header("content-type", "text/plain")
+                .body(axum::body::Body::from(body))
+                .unwrap_or_else(|_| {
+                    (StatusCode::NOT_FOUND, "no content").into_response()
+                }),
+        );
+    }
+
+    cors(
+        axum::http::Response::builder()
+            .status(StatusCode::OK)
+            .header("content-type", mime_type)
+            .body(axum::body::Body::from(body))
+            .unwrap_or_else(|_| {
+                (StatusCode::INTERNAL_SERVER_ERROR, "failed to build response").into_response()
+            }),
+    )
 }
 
 /// HTTP POST /eval — accepts JS code in the request body, evals it in the webview,
@@ -321,7 +481,6 @@ async fn eval_handler(
 
 async fn start_sync_server(
     app: tauri::AppHandle,
-    protocol: Arc<ProtocolState>,
     eval: Arc<EvalState>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let storage_dir = dirs::cache_dir()
@@ -333,7 +492,7 @@ async fn start_sync_server(
 
     let storage = TokioFilesystemStorage::new(&storage_dir);
     let repo = Repo::build_tokio()
-        .with_peer_id(PeerId::from("storage-server-patchwork"))
+        .with_peer_id(PeerId::from("storage-server-patchwork-d9f7e2a1"))
         .with_storage(storage)
         .load()
         .await;
@@ -355,8 +514,8 @@ async fn start_sync_server(
 
     let state = ServerState {
         acceptor,
+        repo,
         app,
-        protocol,
         eval,
     };
 
@@ -365,7 +524,7 @@ async fn start_sync_server(
         .route("/", axum::routing::get(websocket_handler))
         // Eval JS in the webview — POST /eval
         .route("/eval", axum::routing::post(eval_handler))
-        // Automerge content on all other paths
+        // Automerge content served directly from samod's repo
         .fallback(axum::routing::get(content_handler))
         .with_state(state);
 
@@ -375,11 +534,6 @@ async fn start_sync_server(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let protocol_state = Arc::new(ProtocolState {
-        pending: AsyncMutex::new(HashMap::new()),
-        counter: AtomicU64::new(0),
-    });
-
     let tray_datatypes = Arc::new(TrayDatatypes {
         datatypes: AsyncMutex::new(Vec::new()),
     });
@@ -391,22 +545,19 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .manage(protocol_state.clone())
         .manage(tray_datatypes.clone())
         .manage(eval_state.clone())
         .invoke_handler(tauri::generate_handler![
-            resolve_protocol_request,
             update_tray_datatypes,
             resolve_eval
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
-            let protocol = protocol_state.clone();
             let eval = eval_state.clone();
 
             // Start the embedded sync + content server in the background
             tauri::async_runtime::spawn(async move {
-                match start_sync_server(app_handle, protocol, eval).await {
+                match start_sync_server(app_handle, eval).await {
                     Ok(()) => eprintln!("[sync] server shut down"),
                     Err(e) => eprintln!("[sync] server error: {e}"),
                 }
