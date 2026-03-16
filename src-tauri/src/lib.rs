@@ -1,3 +1,4 @@
+use automerge::ReadDoc;
 use samod::storage::TokioFilesystemStorage;
 use samod::{AcceptorHandle, BackoffConfig, DocumentId, PeerId, Repo};
 use serde::{Deserialize, Serialize};
@@ -107,7 +108,7 @@ async fn rebuild_tray_menu(
         .build(app)?;
         new_submenu = new_submenu.item(&item);
     }
-    let new_submenu = new_submenu.build(app)?;
+    let new_submenu = new_submenu.build()?;
 
     let show_capture = MenuItemBuilder::with_id("tray-capture", "Capture...")
         .build(app)?;
@@ -125,7 +126,7 @@ async fn rebuild_tray_menu(
         .item(&new_window)
         .separator()
         .item(&quit)
-        .build(app)?;
+        .build()?;
 
     // Update the existing tray icon's menu
     if let Some(tray) = app.tray_by_id("patchwork-tray") {
@@ -219,6 +220,41 @@ fn mime_for_path(path: &str) -> &'static str {
     }
 }
 
+/// Read a string field from an automerge document.
+fn read_str_field(doc: &automerge::Automerge, obj: &automerge::ObjId, key: &str) -> Option<String> {
+    match doc.get(obj, key) {
+        Ok(Some((automerge::Value::Scalar(s), _))) => {
+            if let automerge::ScalarValue::Str(s) = s.as_ref() {
+                Some(s.to_string())
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
+}
+
+/// Navigate a folder doc's `docs` list to find a child entry by name.
+/// Returns the automerge URL of the matching entry.
+fn find_child_url(doc: &automerge::Automerge, name: &str) -> Option<String> {
+    let docs_list = match doc.get(automerge::ROOT, "docs") {
+        Ok(Some((automerge::Value::Object(automerge::ObjType::List), id))) => id,
+        _ => return None,
+    };
+
+    let len = doc.length(&docs_list);
+    for i in 0..len {
+        if let Ok(Some((automerge::Value::Object(automerge::ObjType::Map), entry_id))) =
+            doc.get(&docs_list, i as usize)
+        {
+            if read_str_field(doc, &entry_id, "name").as_deref() == Some(name) {
+                return read_str_field(doc, &entry_id, "url");
+            }
+        }
+    }
+    None
+}
+
 /// Handle HTTP requests for automerge content.
 /// Reads directly from samod's repo — no JS roundtrip needed.
 ///
@@ -290,54 +326,10 @@ async fn content_handler(
 
     for part in &sub_path {
         // Read the current document to find the child entry
-        let child_url = tokio::task::spawn_blocking({
+        let child_url: Option<String> = tokio::task::spawn_blocking({
             let current = current_handle.clone();
             let part = part.to_string();
-            move || {
-                current.with_document(|doc| {
-                    // Look for a "docs" list in the automerge document
-                    let docs_val = doc.get(automerge::ROOT, "docs")?;
-                    let (docs_obj, _) = match docs_val {
-                        (automerge::Value::Object(automerge::ObjType::List), id) => (id, ()),
-                        _ => return None,
-                    };
-
-                    let len = doc.length(&docs_obj);
-                    for i in 0..len {
-                        if let Some((automerge::Value::Object(automerge::ObjType::Map), entry_id)) =
-                            doc.get(&docs_obj, i as usize)
-                        {
-                            let name = doc
-                                .get(&entry_id, "name")
-                                .and_then(|(v, _)| match v {
-                                    automerge::Value::Scalar(s) => {
-                                        if let automerge::ScalarValue::Str(s) = s.as_ref() {
-                                            Some(s.to_string())
-                                        } else {
-                                            None
-                                        }
-                                    }
-                                    _ => None,
-                                });
-                            if name.as_deref() == Some(&part) {
-                                return doc
-                                    .get(&entry_id, "url")
-                                    .and_then(|(v, _)| match v {
-                                        automerge::Value::Scalar(s) => {
-                                            if let automerge::ScalarValue::Str(s) = s.as_ref() {
-                                                Some(s.to_string())
-                                            } else {
-                                                None
-                                            }
-                                        }
-                                        _ => None,
-                                    });
-                            }
-                        }
-                    }
-                    None
-                })
-            }
+            move || current.with_document(|doc| find_child_url(doc, &part))
         })
         .await
         .unwrap_or(None);
@@ -372,7 +364,7 @@ async fn content_handler(
         current_handle = match state.repo.find(child_doc_id).await {
             Ok(Some(handle)) => handle,
             Ok(None) => {
-                let msg = format!("child document {} not found", child_url);
+                let msg = format!("child document {} not found", &child_url);
                 return cors((StatusCode::NOT_FOUND, msg).into_response());
             }
             Err(_) => {
@@ -384,84 +376,54 @@ async fn content_handler(
     }
 
     // Read the content from the final document
-    let (body, mime_type) = tokio::task::spawn_blocking({
+    let result: Option<(Vec<u8>, String)> = tokio::task::spawn_blocking({
         let handle = current_handle;
         let last_segment = sub_path.last().copied().unwrap_or("").to_string();
         move || {
             handle.with_document(|doc| {
-                // Try to read "content" field
-                let content = doc.get(automerge::ROOT, "content");
-                let mime = doc
-                    .get(automerge::ROOT, "mimeType")
-                    .and_then(|(v, _)| match v {
-                        automerge::Value::Scalar(s) => {
-                            if let automerge::ScalarValue::Str(s) = s.as_ref() {
-                                Some(s.to_string())
-                            } else {
-                                None
-                            }
-                        }
-                        _ => None,
-                    })
+                let mime = read_str_field(doc, &automerge::ROOT, "mimeType")
                     .unwrap_or_else(|| mime_for_path(&last_segment).to_string());
 
-                match content {
-                    Some((automerge::Value::Scalar(s), _)) => {
-                        if let automerge::ScalarValue::Str(text) = s.as_ref() {
+                // Try to read "content" field
+                match doc.get(automerge::ROOT, "content") {
+                    Ok(Some((automerge::Value::Scalar(s), _))) => match s.as_ref() {
+                        automerge::ScalarValue::Str(text) => {
                             Some((text.to_string().into_bytes(), mime))
-                        } else {
-                            None
                         }
-                    }
-                    Some((automerge::Value::Object(automerge::ObjType::Text), text_id)) => {
+                        automerge::ScalarValue::Bytes(bytes) => {
+                            Some((bytes.to_vec(), mime))
+                        }
+                        _ => None,
+                    },
+                    Ok(Some((
+                        automerge::Value::Object(automerge::ObjType::Text),
+                        text_id,
+                    ))) => {
                         let text = doc.text(&text_id).unwrap_or_default();
                         Some((text.into_bytes(), mime))
                     }
-                    _ => {
-                        // Try reading raw bytes
-                        if let Some((automerge::Value::Scalar(s), _)) =
-                            doc.get(automerge::ROOT, "content")
-                        {
-                            if let automerge::ScalarValue::Bytes(bytes) = s.as_ref() {
-                                return Some((bytes.to_vec(), mime));
-                            }
-                        }
-                        None
-                    }
+                    _ => None,
                 }
             })
         }
     })
     .await
-    .unwrap_or(None)
-    .unwrap_or_else(|| {
-        (
-            b"no content field in document".to_vec(),
-            "text/plain".to_string(),
-        )
-    });
+    .unwrap_or(None);
 
-    if body == b"no content field in document" {
-        return cors(
+    match result {
+        Some((body, mime_type)) => cors(
             axum::http::Response::builder()
-                .status(StatusCode::NOT_FOUND)
-                .header("content-type", "text/plain")
+                .status(StatusCode::OK)
+                .header("content-type", mime_type)
                 .body(axum::body::Body::from(body))
                 .unwrap_or_else(|_| {
-                    (StatusCode::NOT_FOUND, "no content").into_response()
+                    (StatusCode::INTERNAL_SERVER_ERROR, "failed to build response").into_response()
                 }),
-        );
+        ),
+        None => cors(
+            (StatusCode::NOT_FOUND, "no content field in document").into_response(),
+        ),
     }
-
-    cors(
-        axum::http::Response::builder()
-            .status(StatusCode::OK)
-            .header("content-type", mime_type)
-            .body(axum::body::Body::from(body))
-            .unwrap_or_else(|_| {
-                (StatusCode::INTERNAL_SERVER_ERROR, "failed to build response").into_response()
-            }),
-    )
 }
 
 /// HTTP POST /eval — accepts JS code in the request body, evals it in the webview,
@@ -499,7 +461,7 @@ async fn start_sync_server(
         // every document samod has ever seen. Browser peers use a
         // "browser-<uuid>" peer ID (set in main.ts).
         .with_announce_policy(|_doc: DocumentId, peer: PeerId| {
-            !peer.as_ref().starts_with("browser-")
+            !peer.as_str().starts_with("browser-")
         })
         .load()
         .await;
@@ -636,7 +598,7 @@ pub fn run() {
             let _tray = TrayIconBuilder::with_id("patchwork-tray")
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&tray_menu)
-                .menu_on_left_click(true)
+                .show_menu_on_left_click(true)
                 .on_menu_event(|app, event| {
                     let id = event.id().as_ref();
                     if id == "tray-new-window" {
