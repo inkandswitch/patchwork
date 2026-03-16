@@ -25,7 +25,6 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 
-
 let cachename = "default";
 let debugging = false;
 
@@ -129,9 +128,9 @@ interface FileDoc {
 
 // ── Automerge URL resolution ───────────────────────────────────────────
 
-async function resolveAutomergeUrl(handoffURL: URL): Promise<Response> {
+async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   const repo = await getRepo();
-  const href = handoffURL.href;
+  const href = automergeURL.href;
   const [maybeAutomergeUrl, ...path] = href.split("/");
 
   if (!isValidAutomergeUrl(maybeAutomergeUrl)) {
@@ -257,7 +256,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
   if (request.method !== "GET") return fetchEvent.respondWith(fetch(request));
   const url = new URL(fetchEvent.request.url);
 
-  let handoffURL: URL | undefined;
+  let specialURL: URL | undefined;
 
   if (
     url.hostname == self.location.hostname &&
@@ -265,8 +264,8 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
     url.protocol == self.location.protocol
   ) {
     try {
-      handoffURL = new URL(decodeURIComponent(url.pathname.slice(1)));
-      log(`received handoff request ${handoffURL}`);
+      specialURL = new URL(decodeURIComponent(url.pathname.slice(1)));
+      log(`received special request ${specialURL}`);
     } catch {}
   }
 
@@ -276,9 +275,9 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
       const match = await cache.match(request);
 
       try {
-        if (handoffURL) {
+        if (specialURL) {
           if (match) {
-            log(`serving ${handoffURL} from cache ${cachename}`);
+            log(`serving ${specialURL} from cache ${cachename}`);
             const headers = new Headers(match.headers);
             headers.set("cross-origin-embedder-policy", "credentialless");
             headers.set("cross-origin-resource-policy", "cross-origin");
@@ -288,14 +287,14 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
             });
           }
 
-          const response = await resolveAutomergeUrl(handoffURL);
+          const response = await resolveAutomergeUrl(specialURL);
 
           if (response.status === 307) {
             return response;
           }
 
           if (cacheableStatuses.includes(response.status)) {
-            log(`caching ${handoffURL}`);
+            log(`caching ${specialURL}`);
             await cache.put(request, response.clone());
           }
 
@@ -324,7 +323,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
             ? `${error.message}\n\n${error.stack}`
             : String(error);
         console.error(
-          `service worker error resolving ${request.url}${handoffURL ? ` (handoff: ${handoffURL})` : ""}.\n${message}`
+          `service worker error resolving ${request.url}${specialURL ? ` (for: ${specialURL})` : ""}.\n${message}`
         );
         if (match) return match;
 
