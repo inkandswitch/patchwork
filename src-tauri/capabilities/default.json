@@ -2,6 +2,12 @@
 	"$schema": "../gen/schemas/desktop-schema.json",
 	"identifier": "default",
 	"description": "Capability for all windows",
-	"windows": ["main-*", "capture-panel"],
-	"permissions": ["core:default", "opener:default"]
+	"windows": ["main-*", "capture-panel", "settings"],
+	"permissions": [
+		"core:default",
+		"opener:default",
+		"global-shortcut:allow-register",
+		"global-shortcut:allow-unregister",
+		"global-shortcut:allow-unregister-all"
+	]
 }

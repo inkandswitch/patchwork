@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::tray::TrayIconBuilder;
-use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Listener, Manager, WebviewUrl, WebviewWindowBuilder};
 use tokio::net::TcpListener;
 use tokio::sync::{oneshot, Mutex as AsyncMutex};
 
@@ -59,6 +59,82 @@ async fn resolve_eval(
             .map_err(|_| "eval response channel closed".to_string())?;
     }
     Ok(())
+}
+
+/// Patchwork settings, persisted to a JSON file.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+struct PatchworkSettings {
+    #[serde(default)]
+    capture_tool_id: Option<String>,
+    #[serde(default)]
+    capture_shortcut: Option<String>,
+}
+
+fn settings_path() -> std::path::PathBuf {
+    dirs::config_dir()
+        .expect("could not find config directory")
+        .join("patchwork")
+        .join("settings.json")
+}
+
+fn load_settings() -> PatchworkSettings {
+    let path = settings_path();
+    match std::fs::read_to_string(&path) {
+        Ok(json) => serde_json::from_str(&json).unwrap_or_default(),
+        Err(_) => PatchworkSettings::default(),
+    }
+}
+
+fn save_settings(settings: &PatchworkSettings) -> Result<(), String> {
+    let path = settings_path();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let json = serde_json::to_string_pretty(settings).map_err(|e| e.to_string())?;
+    std::fs::write(&path, json).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_settings() -> Result<PatchworkSettings, String> {
+    Ok(load_settings())
+}
+
+#[tauri::command]
+fn set_settings(settings: PatchworkSettings) -> Result<(), String> {
+    save_settings(&settings)
+}
+
+/// Register (or re-register) the global shortcut for the capture panel.
+fn register_shortcut_for_capture(
+    app: &tauri::AppHandle,
+    shortcut_str: &str,
+) -> Result<(), String> {
+    use tauri_plugin_global_shortcut::GlobalShortcutExt;
+
+    let manager = app.global_shortcut();
+    // Unregister all existing shortcuts first
+    let _ = manager.unregister_all();
+
+    let app_clone = app.clone();
+    manager
+        .on_shortcut(shortcut_str, move |_app, _shortcut, event| {
+            if matches!(event, tauri_plugin_global_shortcut::ShortcutEvent::Pressed) {
+                let _ = show_capture_panel(&app_clone);
+            }
+        })
+        .map_err(|e| format!("failed to register shortcut: {e}"))
+}
+
+#[tauri::command]
+fn register_capture_shortcut(
+    shortcut: String,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    register_shortcut_for_capture(&app, &shortcut)?;
+    // Persist to settings
+    let mut settings = load_settings();
+    settings.capture_shortcut = Some(shortcut);
+    save_settings(&settings)
 }
 
 /// Eval JS in the first available webview window.
@@ -148,6 +224,9 @@ async fn rebuild_tray_menu(
     let new_window = MenuItemBuilder::with_id("tray-new-window", "New Window")
         .build(app)?;
 
+    let settings = MenuItemBuilder::with_id("tray-settings", "Settings...")
+        .build(app)?;
+
     let quit = MenuItemBuilder::with_id("tray-quit", "Quit Patchwork")
         .build(app)?;
 
@@ -156,6 +235,7 @@ async fn rebuild_tray_menu(
         .item(&show_capture)
         .separator()
         .item(&new_window)
+        .item(&settings)
         .separator()
         .item(&quit)
         .build()?;
@@ -181,6 +261,26 @@ fn create_window(app: &tauri::AppHandle) -> tauri::Result<()> {
         .title("Patchwork")
         .inner_size(1024., 768.)
         .build()?;
+    Ok(())
+}
+
+fn show_settings_window(app: &tauri::AppHandle) -> tauri::Result<()> {
+    if let Some(win) = app.get_webview_window("settings") {
+        win.show()?;
+        win.set_focus()?;
+        return Ok(());
+    }
+
+    WebviewWindowBuilder::new(
+        app,
+        "settings",
+        WebviewUrl::App("index.html#frame=settings".into()),
+    )
+    .title("Patchwork Settings")
+    .inner_size(500., 400.)
+    .resizable(true)
+    .build()?;
+
     Ok(())
 }
 
@@ -670,12 +770,16 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .manage(tray_state.clone())
         .manage(eval_state.clone())
         .invoke_handler(tauri::generate_handler![
             update_tray_datatypes,
             update_tray_profile,
-            resolve_eval
+            resolve_eval,
+            get_settings,
+            set_settings,
+            register_capture_shortcut
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
@@ -688,6 +792,14 @@ pub fn run() {
                     Err(e) => eprintln!("[sync] server error: {e}"),
                 }
             });
+
+            // Register the global capture shortcut from settings (if configured)
+            let settings = load_settings();
+            if let Some(ref shortcut) = settings.capture_shortcut {
+                if let Err(e) = register_shortcut_for_capture(app.handle(), shortcut) {
+                    eprintln!("[shortcut] failed to register '{}': {}", shortcut, e);
+                }
+            }
 
             // Create initial window
             WebviewWindowBuilder::new(app, "main-0", WebviewUrl::default())
@@ -762,6 +874,8 @@ pub fn run() {
                         let _ = create_window(app);
                     } else if id == "tray-capture" {
                         let _ = show_capture_panel(app);
+                    } else if id == "tray-settings" {
+                        let _ = show_settings_window(app);
                     } else if id == "tray-quit" {
                         app.exit(0);
                     } else if let Some(datatype_id) = id.strip_prefix("tray-new-") {
