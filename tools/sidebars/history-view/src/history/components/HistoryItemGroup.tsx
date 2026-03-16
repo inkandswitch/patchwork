@@ -39,7 +39,7 @@ export function HistoryItemGroup(props: HistoryItemGroupProps) {
       <div class="flex justify-between items-start mb-2">
         <div class="flex-1 min-w-0">
           <LabeledField label={authorCount() === 1 ? "Author" : "Authors"}>
-            <span class="truncate">{authors()}</span>
+            <span>{authors()}</span>
           </LabeledField>
         </div>
         <CopyHashButton hash={latestHash()} />

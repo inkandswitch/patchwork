@@ -87,19 +87,21 @@ export default async function (source: AutomergeUrl) {
 
   // Apply all grouping strategies to get grouped items for each strategy
   // TODO: it would be good to have some way to manage the set of strategies to apply
-  const authorGrouping = groupByAuthor(historyChanges);
+
   const timeConfig = {
     name: "timeWindow" as StrategyName,
     params: { timeWindow: DEFAULT_TIME_WINDOW },
   };
   const timeGrouping = applyGroupingStrategy(timeConfig, historyChanges);
+  // TODO: this was an experimental stand-in for author grouping, but we can't really implement it until we have proper author data (e.g. via Keyhive)
+  // const authorGrouping = groupByAuthor(historyChanges);
 
   // Write to history doc
   historyDocHandle.change((doc: HistoryGroupingsDoc) => {
     doc.heads = currentHeads;
-    doc.groupings["author"] = {
-      items: authorGrouping as HistoryItem[],
-    };
+    // doc.groupings["author"] = {
+    //   items: authorGrouping as HistoryItem[],
+    // };
     doc.groupings[getStrategyKey(timeConfig)] = {
       items: timeGrouping as HistoryItem[],
     };

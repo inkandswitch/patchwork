@@ -11,7 +11,8 @@ import {
 import { type GroupingStrategyConfig, findItemByHash } from "../../types";
 import { DocHistoryHeader } from "./DocHistoryHeader";
 import { HistoryList } from "./HistoryList";
-import { GroupingSelector } from "./GroupingSelector";
+// TODO: re-enable when we have more grouping strategies to choose from
+// import { GroupingSelector } from "./GroupingSelector";
 
 export interface DocHistoryViewProps {
   url: AutomergeUrl;
@@ -66,12 +67,13 @@ export function DocHistoryView(props: DocHistoryViewProps) {
         hasSelection={viewHeads() !== null}
         onReset={clearSelection}
       />
-      <div class="px-2 pb-2">
+      {/* TODO: actor id was a stand-in for author, but we're waiting for keyhive to do it properly */}
+      {/* <div class="px-2 pb-2">
         <GroupingSelector
           selectedConfig={strategyConfig()}
           onConfigChange={setStrategyConfig}
         />
-      </div>
+      </div> */}
       <HistoryList
         items={groupedItems()}
         selectedItem={selectedItem()}

@@ -1,5 +1,4 @@
 import { Show } from "solid-js";
-import type { ChangeMetadata } from "@automerge/automerge";
 import { formatTime } from "../utils";
 import { TimelineCard } from "./TimelineCard";
 import { CopyHashButton } from "./CopyHashButton";
@@ -27,7 +26,7 @@ export function HistoryItem(props: HistoryItemProps) {
         <div class="flex-1 min-w-0">
           <Show when={author()}>
             <LabeledField label="Author">
-              <span class="truncate">{author()}</span>
+              <span>{author()}</span>
             </LabeledField>
           </Show>
         </div>
