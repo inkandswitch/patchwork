@@ -311,6 +311,7 @@ async fn content_handler(
     let root_handle = match state.repo.find(doc_id).await {
         Ok(Some(handle)) => handle,
         Ok(None) => {
+            eprintln!("[content] 404: root document not found for {}", automerge_url);
             return cors((StatusCode::NOT_FOUND, "document not found").into_response());
         }
         Err(_) => {
@@ -337,7 +338,8 @@ async fn content_handler(
         let child_url = match child_url {
             Some(url) => url,
             None => {
-                let msg = format!("path segment '{}' not found in folder", part);
+                let msg = format!("path segment '{}' not found in folder for {}", part, automerge_url);
+                eprintln!("[content] 404: {}", msg);
                 return cors((StatusCode::NOT_FOUND, msg).into_response());
             }
         };
@@ -364,7 +366,8 @@ async fn content_handler(
         current_handle = match state.repo.find(child_doc_id).await {
             Ok(Some(handle)) => handle,
             Ok(None) => {
-                let msg = format!("child document {} not found", &child_url);
+                let msg = format!("child document {} not found (resolving '{}' in {})", &child_url, part, automerge_url);
+                eprintln!("[content] 404: {}", msg);
                 return cors((StatusCode::NOT_FOUND, msg).into_response());
             }
             Err(_) => {
@@ -420,9 +423,12 @@ async fn content_handler(
                     (StatusCode::INTERNAL_SERVER_ERROR, "failed to build response").into_response()
                 }),
         ),
-        None => cors(
-            (StatusCode::NOT_FOUND, "no content field in document").into_response(),
-        ),
+        None => {
+            eprintln!("[content] 404: no content field in document {} (path: {})", automerge_url, raw_path);
+            cors(
+                (StatusCode::NOT_FOUND, "no content field in document").into_response(),
+            )
+        }
     }
 }
 

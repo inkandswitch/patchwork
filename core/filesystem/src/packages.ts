@@ -27,12 +27,17 @@ async function packageJsonContentsFromFolderDocUrl(
     )
   ).href;
 
-  const response = await fetch(packageJSONPath);
-  if (!response.ok) {
-    return undefined;
+  // Retry with backoff — on iOS/Tauri the content server reads from samod's
+  // repo which may not have synced the folder documents yet at startup.
+  const delays = [0, 500, 1000, 2000, 4000];
+  for (let attempt = 0; attempt < delays.length; attempt++) {
+    if (delays[attempt]) await new Promise((r) => setTimeout(r, delays[attempt]));
+    const response = await fetch(packageJSONPath);
+    if (response.ok) return response.json();
+    if (response.status !== 404) return undefined;
+    log(`package.json fetch attempt ${attempt + 1}/${delays.length} returned 404 for ${folderDocUrl}`);
   }
-
-  return response.json();
+  return undefined;
 }
 
 function packageEntryPointFromPackageJson(
