@@ -126,15 +126,18 @@ export async function getOrCreateLayoutDocHandle(
     | undefined;
 
   if (existing) {
-    let accountDoc: TinyPatchworkLayoutDoc & HasPatchworkMetadata | undefined;
+    let accountDoc: (TinyPatchworkLayoutDoc & HasPatchworkMetadata) | undefined;
     try {
       const findPromise = repo.find<
         TinyPatchworkLayoutDoc & HasPatchworkMetadata
       >(existing);
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout finding account doc')), 5000)
+        setTimeout(() => reject(new Error("Timeout finding account doc")), 5000)
       );
-      const accountDocHandle = await Promise.race([findPromise, timeoutPromise]);
+      const accountDocHandle = await Promise.race([
+        findPromise,
+        timeoutPromise,
+      ]);
 
       accountDoc = accountDocHandle.doc();
 
@@ -149,7 +152,9 @@ export async function getOrCreateLayoutDocHandle(
     }
 
     // Store the previous account URL
-    let previousUrls: AutomergeUrl[] = JSON.parse(localStorage.getItem(previousKey) || '[]');
+    let previousUrls: AutomergeUrl[] = JSON.parse(
+      localStorage.getItem(previousKey) || "[]"
+    );
     if (!previousUrls.includes(existing)) {
       previousUrls.push(existing);
       if (previousUrls.length > 10) previousUrls = previousUrls.slice(-10);
@@ -158,7 +163,7 @@ export async function getOrCreateLayoutDocHandle(
 
     // Invalid account doc or timeout, create a new one but preserve existing folder and settings
     console.warn(
-      "Old account document detected or inaccessible, creating new account doc with preserved data"
+      `account document unavailable. moving its id to ${previousKey} and creating a new one. existing account doc url: ${existing}`
     );
     const account = await createLayoutDoc(repo, {
       contactUrl: accountDoc?.contactUrl,
