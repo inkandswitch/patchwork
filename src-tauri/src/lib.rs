@@ -723,9 +723,27 @@ pub fn run() {
         // Keep running in the background when all windows are closed
         .on_window_event(|_window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
-                // Don't exit — tray keeps the app alive
+                // Let the window close normally — the app stays alive via
+                // ExitRequested handler below + tray icon.
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            match event {
+                // Prevent auto-exit when all windows are closed.
+                // The app stays alive in the tray. Cmd+Q / tray "Quit" still work
+                // because they call app.exit() directly.
+                tauri::RunEvent::ExitRequested { api, .. } => {
+                    api.prevent_exit();
+                }
+                // macOS: user clicked the dock icon with no visible windows — open one.
+                tauri::RunEvent::Reopen { .. } => {
+                    if app.webview_windows().is_empty() {
+                        let _ = create_window(app);
+                    }
+                }
+                _ => {}
+            }
+        });
 }
