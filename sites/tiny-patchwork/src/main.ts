@@ -183,6 +183,20 @@ if (isTauri) {
   // Send initial state in case plugins are already loaded
   syncTrayDatatypes();
 
+  // Add a document to the user's root folder
+  const addToRootFolder = async (docUrl: string, name: string, type: string) => {
+    try {
+      const accountDoc = accountDocHandle.doc();
+      const rootFolderHandle = await repo.find(accountDoc.rootFolderUrl);
+      rootFolderHandle.change((d: any) => {
+        if (!d.docs) d.docs = [];
+        d.docs.push({ name, type: "file", url: docUrl });
+      });
+    } catch (e) {
+      console.warn("[tray] failed to add to root folder:", e);
+    }
+  };
+
   // Handle "New <datatype>" from tray menu
   listen("tray-new-document", async (event: any) => {
     const datatypeId = event.payload as string;
@@ -194,6 +208,10 @@ if (isTauri) {
       }
       const handle = await createDocOfDatatype2(loaded, repo);
       const { documentId } = parseAutomergeUrl(handle.url);
+
+      // Auto-add to root folder
+      await addToRootFolder(handle.url, loaded.name || datatypeId, datatypeId);
+
       // Open in a new or existing window
       window.location.hash = `doc=${documentId}&type=${datatypeId}`;
     } catch (e) {
