@@ -141,11 +141,18 @@ class ShareViewController: NSViewController {
 
         var text: String?
         var url: String?
+        var fileURLs: [String] = []
         let title = item.attributedContentText?.string
 
         let group = DispatchGroup()
         for attachment in item.attachments ?? [] {
-            if attachment.hasItemConformingToTypeIdentifier("public.url") {
+            if attachment.hasItemConformingToTypeIdentifier("public.file-url") {
+                group.enter()
+                attachment.loadItem(forTypeIdentifier: "public.file-url") { item, _ in
+                    if let u = item as? URL { fileURLs.append(u.absoluteString) }
+                    group.leave()
+                }
+            } else if attachment.hasItemConformingToTypeIdentifier("public.url") {
                 group.enter()
                 attachment.loadItem(forTypeIdentifier: "public.url") { item, _ in
                     if let u = item as? URL { url = u.absoluteString }
@@ -161,15 +168,19 @@ class ShareViewController: NSViewController {
         }
 
         group.notify(queue: .main) { [weak self] in
-            self?.sendToPatchwork(text: text, url: url, title: title)
+            self?.sendToPatchwork(text: text, url: url, title: title, fileURLs: fileURLs)
         }
     }
 
-    private func sendToPatchwork(text: String?, url: String?, title: String?) {
+    private func sendToPatchwork(text: String?, url: String?, title: String?, fileURLs: [String]) {
         var parts: [String] = []
         if let t = text { parts.append("text: \(jsString(t))") }
         if let u = url { parts.append("url: \(jsString(u))") }
         if let t = title { parts.append("title: \(jsString(t))") }
+        if !fileURLs.isEmpty {
+            let jsArray = fileURLs.map { jsString($0) }.joined(separator: ", ")
+            parts.append("files: [\(jsArray)]")
+        }
 
         let code = """
         window.dispatchEvent(new CustomEvent("patchwork:share", {
@@ -246,6 +257,8 @@ cat > "$SHARE_APPEX/Contents/Info.plist" << PLIST
         <true/>
         <key>NSExtensionActivationSupportsWebURLWithMaxCount</key>
         <integer>1</integer>
+        <key>NSExtensionActivationSupportsFileWithMaxCount</key>
+        <integer>10</integer>
       </dict>
     </dict>
   </dict>

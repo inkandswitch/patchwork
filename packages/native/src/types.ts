@@ -9,4 +9,5 @@ export interface ShareItem {
   title?: string;
   mimeType?: string;
   data?: Uint8Array;
+  files?: string[];
 }
