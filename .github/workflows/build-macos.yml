@@ -41,10 +41,10 @@ jobs:
           cache: "pnpm"
 
       - name: install JS dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: build JS packages
-        run: pnpm build
+        run: pnpm -r --filter '...{sites/tiny-patchwork}...' build
 
       - name: install Tauri CLI
         run: cargo install tauri-cli --locked
