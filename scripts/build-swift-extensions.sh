@@ -105,18 +105,12 @@ METADATA_DIR="$APP_BUNDLE/Contents/Resources/Metadata.appintents"
 mkdir -p "$METADATA_DIR"
 
 # appintentsmetadataprocessor extracts Shortcut definitions from compiled Swift.
-# --xcode-version needs the build number (e.g. 16A242d), not the marketing version.
-# --target-triple is required to specify the architecture and platform.
-XCODE_BUILD_VERSION="$(xcodebuild -version 2>/dev/null | tail -1 | sed 's/Build version //' || echo '16A242d')"
-TARGET_TRIPLE="$(uname -m)-apple-macosx${DEPLOYMENT_TARGET}"
 xcrun appintentsmetadataprocessor \
   --binary-file "$FRAMEWORKS_DIR/PatchworkIntents.framework/PatchworkIntents" \
   --module-name PatchworkIntents \
   --output "$METADATA_DIR" \
   --sdk-root "$SDK_PATH" \
   --deployment-target "$DEPLOYMENT_TARGET" \
-  --xcode-version "$XCODE_BUILD_VERSION" \
-  --target-triple "$TARGET_TRIPLE" \
   --source-files "${INTENTS_SRC[@]}" \
   2>&1
 echo "    - Metadata files: $(ls "$METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
@@ -356,8 +350,6 @@ xcrun appintentsmetadataprocessor \
   --output "$WIDGET_METADATA_DIR" \
   --sdk-root "$SDK_PATH" \
   --deployment-target "$DEPLOYMENT_TARGET" \
-  --xcode-version "$XCODE_BUILD_VERSION" \
-  --target-triple "$TARGET_TRIPLE" \
   --source-files "$WIDGET_SRC" \
   2>&1
 echo "    - Widget metadata files: $(ls "$WIDGET_METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
