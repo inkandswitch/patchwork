@@ -58,12 +58,15 @@ mkdir -p "$INTENTS_CONSTVALS_DIR"
 
 # Compile the framework. Use -whole-module-optimization so swiftc invokes a
 # single swift-frontend, which can accept exactly one -emit-const-values-path.
+# -emit-const-values is a driver flag that enables const extraction;
+# -emit-const-values-path (via -Xfrontend) sets the output location.
 INTENTS_CONSTVALS="$INTENTS_CONSTVALS_DIR/PatchworkIntents.swiftconstvalues"
 swiftc \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
   -parse-as-library \
   -whole-module-optimization \
+  -emit-const-values \
   -o "$INTENTS_FW_VERSIONED/PatchworkIntents" \
   -emit-module-path "$INTENTS_FW_VERSIONED/Modules/PatchworkIntents.swiftmodule" \
   -sdk "$SDK_PATH" \
@@ -347,6 +350,7 @@ swiftc \
   -parse-as-library \
   -emit-executable \
   -whole-module-optimization \
+  -emit-const-values \
   -o "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
