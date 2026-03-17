@@ -1,12 +1,16 @@
 name: pushwork init
 
 on:
+  push:
+    branches:
+      - main
+      - claude/patchwork-ios-capture-tool-oLM3H
+      - claude/trigger-ci-pipeline-MRqib
   workflow_dispatch:
-    inputs:
-      tool_path:
-        description: "Path to the tool directory (e.g. tools/tauri/xterm)"
-        required: true
-        default: "tools/tauri/xterm"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   init:
@@ -16,43 +20,64 @@ jobs:
       - name: check out the repository
         uses: actions/checkout@v4
 
+      - name: find tools missing pushwork url
+        id: find
+        run: |
+          DIRS=""
+          for pkg in tools/**/package.json; do
+            dir=$(dirname "$pkg")
+            if ! grep -q '"pushwork"' "$pkg" 2>/dev/null; then
+              DIRS="$DIRS $dir"
+            fi
+          done
+          DIRS=$(echo "$DIRS" | xargs)
+          echo "dirs=$DIRS" >> "$GITHUB_OUTPUT"
+          if [ -z "$DIRS" ]; then
+            echo "All tools already have pushwork URLs"
+          else
+            echo "Tools needing init: $DIRS"
+          fi
+
       - name: install pnpm
+        if: steps.find.outputs.dirs != ''
         uses: pnpm/action-setup@v4
         with:
           run_install: false
 
       - name: install Node.js
+        if: steps.find.outputs.dirs != ''
         uses: actions/setup-node@v4
         with:
           node-version: 24
 
-      - name: run pushwork init
-        working-directory: ${{ inputs.tool_path }}
+      - name: run pushwork init on each tool
+        if: steps.find.outputs.dirs != ''
         run: |
-          npx pushwork init .
-          ROOT_URL=$(npx pushwork url)
-          echo "ROOT_URL=$ROOT_URL" >> "$GITHUB_ENV"
-          echo "Got rootFolderUrl: $ROOT_URL"
-
-      - name: add pushwork url to package.json
-        working-directory: ${{ inputs.tool_path }}
-        run: |
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            pkg.pushwork = { url: process.env.ROOT_URL };
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-          cat package.json
-
-      - name: sync to persist the folder document
-        working-directory: ${{ inputs.tool_path }}
-        run: npx pushwork sync
+          for dir in ${{ steps.find.outputs.dirs }}; do
+            echo "==> Initializing $dir"
+            cd "$dir"
+            npx pushwork init .
+            ROOT_URL=$(npx pushwork url)
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              pkg.pushwork = { url: '$ROOT_URL' };
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            "
+            npx pushwork sync
+            echo "    $dir → $ROOT_URL"
+            cd "$GITHUB_WORKSPACE"
+          done
 
       - name: commit and push
+        if: steps.find.outputs.dirs != ''
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "${{ inputs.tool_path }}/package.json" "${{ inputs.tool_path }}/.pushwork"
-          git commit -m "pushwork init ${{ inputs.tool_path }}"
-          git push
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "pushwork init new tools"
+            git push
+          fi
