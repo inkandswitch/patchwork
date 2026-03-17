@@ -4,7 +4,7 @@ export const plugins = [
     id: "xterm",
     name: "Terminal",
     icon: "Terminal",
-    importPath: "./xterm-datatype.js",
+    async load() { return import("./xterm-datatype.js").then(mod => mod.default) }
   },
   {
     type: "patchwork:tool",
@@ -12,6 +12,6 @@ export const plugins = [
     name: "Terminal",
     icon: "Terminal",
     supportedDatatypes: ["xterm"],
-    importPath: "./xterm-tool.js",
+    async load() { return import("./xterm-tool.js").then(mod => mod.default) }
   },
 ];
