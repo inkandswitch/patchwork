@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSRemindersUsageDescription</key>
+	<string>Patchwork uses Reminders to let tools create and manage reminders on your behalf.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Patchwork uses Calendar to let tools read and create calendar events.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Patchwork uses Apple Events to integrate with macOS system apps like Reminders and Calendar.</string>
+</dict>
+</plist>

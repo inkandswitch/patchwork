@@ -1,0 +1,12 @@
+{
+  "name": "@patchwork/xterm",
+  "version": "0.0.1",
+  "description": "Terminal emulator tool using xterm.js and macOS PTY",
+  "type": "module",
+  "main": "xterm.js",
+  "exports": {
+    ".": "xterm.js"
+  },
+  "keywords": [],
+  "author": ""
+}

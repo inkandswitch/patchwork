@@ -25,6 +25,14 @@
 			"icons/128x128@2x.png",
 			"icons/icon.icns",
 			"icons/icon.ico"
-		]
+		],
+		"macOS": {
+			"entitlements": "Entitlements.plist",
+			"infoPlist": {
+				"NSRemindersUsageDescription": "Patchwork uses Reminders to let tools create and manage reminders on your behalf.",
+				"NSCalendarsUsageDescription": "Patchwork uses Calendar to let tools read and create calendar events.",
+				"NSAppleEventsUsageDescription": "Patchwork uses Apple Events to integrate with macOS system apps like Reminders and Calendar."
+			}
+		}
 	}
 }

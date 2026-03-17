@@ -16,6 +16,7 @@ BUILD_DIR="$(mktemp -d)"
 SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
 DEPLOYMENT_TARGET="14.0"
 SIGN_IDENTITY="${CODESIGN_IDENTITY:--}" # ad-hoc by default
+ENTITLEMENTS="src-tauri/Entitlements.plist"
 
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
@@ -46,6 +47,7 @@ mkdir -p "$INTENTS_FW_VERSIONED/Modules" "$INTENTS_FW_VERSIONED/Resources"
 swiftc \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
+  -parse-as-library \
   -o "$INTENTS_FW_VERSIONED/PatchworkIntents" \
   -emit-module-path "$INTENTS_FW_VERSIONED/Modules/PatchworkIntents.swiftmodule" \
   -sdk "$SDK_PATH" \
@@ -97,6 +99,7 @@ xcrun appintentsmetadataprocessor \
   --output "$METADATA_DIR" \
   --sdk-root "$SDK_PATH" \
   --deployment-target "$DEPLOYMENT_TARGET" \
+  --source-files "${INTENTS_SRC[@]}" \
   2>&1 || echo "Warning: appintentsmetadataprocessor had issues (Shortcuts may not register)"
 
 # ---------------------------------------------------------------------------
@@ -195,6 +198,7 @@ SWIFT
 swiftc \
   -module-name PatchworkShare \
   -emit-library -emit-module \
+  -parse-as-library \
   -o "$SHARE_APPEX_CONTENTS/PatchworkShare" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
@@ -257,9 +261,11 @@ WIDGET_APPEX="$BUILD_DIR/PatchworkWidget.appex"
 WIDGET_APPEX_CONTENTS="$WIDGET_APPEX/Contents/MacOS"
 mkdir -p "$WIDGET_APPEX_CONTENTS" "$WIDGET_APPEX/Contents/Resources"
 
-# Compile the widget extension binary
+# Compile the widget extension binary — needs -parse-as-library because the
+# source uses @main which conflicts with swiftc's default top-level code mode
 swiftc \
   -module-name PatchworkWidget \
+  -parse-as-library \
   -emit-executable \
   -o "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
   -sdk "$SDK_PATH" \
@@ -320,8 +326,39 @@ if [ -d "$PLUGINS_DIR/PatchworkWidget.appex" ]; then
   codesign --force --sign "$SIGN_IDENTITY" --deep "$PLUGINS_DIR/PatchworkWidget.appex"
 fi
 
-# Re-sign the main app (must be last)
-codesign --force --sign "$SIGN_IDENTITY" --deep "$APP_BUNDLE"
+# Re-sign the main app with entitlements (must be last)
+if [ -f "$ENTITLEMENTS" ]; then
+  codesign --force --sign "$SIGN_IDENTITY" --entitlements "$ENTITLEMENTS" --deep "$APP_BUNDLE"
+else
+  codesign --force --sign "$SIGN_IDENTITY" --deep "$APP_BUNDLE"
+fi
+
+# ---------------------------------------------------------------------------
+# 6. Rebuild the DMG with the updated .app bundle
+# ---------------------------------------------------------------------------
+echo "==> Rebuilding DMG..."
+
+DMG_DIR="src-tauri/target/release/bundle/dmg"
+APP_NAME="Patchwork"
+
+if [ -d "$DMG_DIR" ]; then
+  # Remove old DMG(s)
+  rm -f "$DMG_DIR"/*.dmg
+
+  DMG_PATH="$DMG_DIR/${APP_NAME}.dmg"
+  DMG_TEMP="$BUILD_DIR/dmg-staging"
+  mkdir -p "$DMG_TEMP"
+  cp -R "$APP_BUNDLE" "$DMG_TEMP/"
+  ln -s /Applications "$DMG_TEMP/Applications"
+
+  hdiutil create -volname "$APP_NAME" \
+    -srcfolder "$DMG_TEMP" \
+    -ov -format UDZO \
+    "$DMG_PATH" \
+    2>&1 || echo "Warning: DMG creation had issues"
+
+  echo "    - Rebuilt DMG at $DMG_PATH"
+fi
 
 echo "==> Done! Swift extensions integrated into $APP_BUNDLE"
 echo "    - PatchworkIntents.framework (Shortcuts)"
