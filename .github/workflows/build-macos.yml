@@ -154,11 +154,14 @@ jobs:
           security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" 2>/dev/null || true
           rm -rf ~/private_keys 2>/dev/null || true
 
+      - name: zip .app bundle
+        run: ditto -c -k --keepParent src-tauri/target/release/bundle/macos/Patchwork.app src-tauri/target/release/bundle/macos/Patchwork.app.zip
+
       - name: upload .app bundle
         uses: actions/upload-artifact@v4
         with:
           name: Patchwork-macOS
-          path: src-tauri/target/release/bundle/macos/Patchwork.app
+          path: src-tauri/target/release/bundle/macos/Patchwork.app.zip
           if-no-files-found: error
 
       - name: upload .dmg installer
