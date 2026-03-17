@@ -334,11 +334,16 @@ fn show_capture_panel(app: &tauri::AppHandle) -> tauri::Result<()> {
         return Ok(());
     }
 
+    // Use the tool ID from settings, falling back to "capture-panel"
+    let tool_id = load_settings()
+        .capture_tool_id
+        .unwrap_or_else(|| "capture-panel".into());
+
     // Create a small panel-style window for capture/browsing
     WebviewWindowBuilder::new(
         app,
         "capture-panel",
-        WebviewUrl::App("index.html#frame=capture-panel".into()),
+        WebviewUrl::App(format!("index.html#frame={tool_id}").into()),
     )
     .title("Patchwork Capture")
     .inner_size(480., 600.)

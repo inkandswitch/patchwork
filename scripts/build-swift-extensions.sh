@@ -56,6 +56,13 @@ mkdir -p "$INTENTS_FW_VERSIONED/Modules" "$INTENTS_FW_VERSIONED/Resources"
 INTENTS_CONSTVALS_DIR="$BUILD_DIR/intents-constvals"
 mkdir -p "$INTENTS_CONSTVALS_DIR"
 
+# Build -Xfrontend flags to emit .swiftconstvalues for each source file
+CONSTVALS_FLAGS=()
+for src in "${INTENTS_SRC[@]}"; do
+  base="$(basename "$src" .swift)"
+  CONSTVALS_FLAGS+=(-Xfrontend -emit-const-values-path -Xfrontend "$INTENTS_CONSTVALS_DIR/${base}.swiftconstvalues")
+done
+
 swiftc \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
@@ -65,14 +72,13 @@ swiftc \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
   -O \
-  -emit-const-values \
+  "${CONSTVALS_FLAGS[@]}" \
   -Xlinker -install_name -Xlinker "@rpath/PatchworkIntents.framework/Versions/A/PatchworkIntents" \
   -framework AppIntents \
   -framework Foundation \
   "${INTENTS_SRC[@]}"
 
-# Collect .swiftconstvalues files for appintentsmetadataprocessor
-find "$BUILD_DIR" -name "*.swiftconstvalues" -exec cp {} "$INTENTS_CONSTVALS_DIR/" \; 2>/dev/null || true
+echo "    - Const values files: $(ls "$INTENTS_CONSTVALS_DIR" 2>/dev/null | tr '\n' ' ')"
 
 # Framework structure symlinks
 ln -sf A "$INTENTS_FW_DIR/Versions/Current"
@@ -115,6 +121,13 @@ mkdir -p "$METADATA_DIR"
 XCODE_BUILD_VERSION="$(xcodebuild -version | tail -1 | sed 's/Build version //')"
 TARGET_TRIPLE="$(uname -m)-apple-macosx${DEPLOYMENT_TARGET}"
 TOOLCHAIN_DIR="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain"
+
+# Build --swift-const-vals args (one per .swiftconstvalues file)
+CONSTVALS_ARGS=()
+for f in "$INTENTS_CONSTVALS_DIR"/*.swiftconstvalues; do
+  [ -f "$f" ] && CONSTVALS_ARGS+=(--swift-const-vals "$f")
+done
+
 if ! xcrun appintentsmetadataprocessor \
   --binary-file "$FRAMEWORKS_DIR/PatchworkIntents.framework/PatchworkIntents" \
   --module-name PatchworkIntents \
@@ -124,7 +137,8 @@ if ! xcrun appintentsmetadataprocessor \
   --toolchain-dir "$TOOLCHAIN_DIR" \
   --xcode-version "$XCODE_BUILD_VERSION" \
   --deployment-target "$DEPLOYMENT_TARGET" \
-  --swift-const-vals-path "$INTENTS_CONSTVALS_DIR" \
+  --compile-time-extraction \
+  "${CONSTVALS_ARGS[@]}" \
   --source-files "${INTENTS_SRC[@]}" \
   2>&1; then
   echo "Warning: appintentsmetadataprocessor failed for PatchworkIntents (Shortcuts may not appear)"
@@ -167,23 +181,30 @@ class ShareViewController: NSViewController {
 
         let group = DispatchGroup()
         for attachment in item.attachments ?? [] {
-            if attachment.hasItemConformingToTypeIdentifier("public.file-url") {
+            // Check URL types first (web URLs also conform to public.url)
+            if attachment.hasItemConformingToTypeIdentifier("public.url") {
                 group.enter()
-                attachment.loadItem(forTypeIdentifier: "public.file-url") { item, _ in
-                    if let u = item as? URL { fileURLs.append(u.absoluteString) }
-                    group.leave()
-                }
-            } else if attachment.hasItemConformingToTypeIdentifier("public.url") {
-                group.enter()
-                attachment.loadItem(forTypeIdentifier: "public.url") { item, _ in
-                    if let u = item as? URL { url = u.absoluteString }
-                    group.leave()
+                attachment.loadItem(forTypeIdentifier: "public.url") { item, error in
+                    defer { group.leave() }
+                    if let u = item as? URL {
+                        if u.isFileURL {
+                            fileURLs.append(u.absoluteString)
+                        } else {
+                            url = u.absoluteString
+                        }
+                    } else if let s = item as? String {
+                        url = s
+                    }
                 }
             } else if attachment.hasItemConformingToTypeIdentifier("public.plain-text") {
                 group.enter()
-                attachment.loadItem(forTypeIdentifier: "public.plain-text") { item, _ in
-                    if let s = item as? String { text = s }
-                    group.leave()
+                attachment.loadItem(forTypeIdentifier: "public.plain-text") { item, error in
+                    defer { group.leave() }
+                    if let s = item as? String {
+                        text = s
+                    } else if let d = item as? Data, let s = String(data: d, encoding: .utf8) {
+                        text = s
+                    }
                 }
             }
         }
@@ -204,10 +225,11 @@ class ShareViewController: NSViewController {
         }
 
         let code = """
+        console.log("[share-ext] dispatching patchwork:share with parts: \(parts.count)");
         window.dispatchEvent(new CustomEvent("patchwork:share", {
             detail: { \(parts.joined(separator: ", ")) }
         }));
-        return "shared";
+        return "shared (\(parts.count) fields)";
         """
 
         let requestUrl = Foundation.URL(string: "http://localhost:3030/eval")!
@@ -315,6 +337,8 @@ WIDGET_SRC="$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift"
 WIDGET_CONSTVALS_DIR="$BUILD_DIR/widget-constvals"
 mkdir -p "$WIDGET_CONSTVALS_DIR"
 
+WIDGET_BASE="$(basename "$WIDGET_SRC" .swift)"
+
 # Compile the widget extension binary — needs -parse-as-library because the
 # source uses @main which conflicts with swiftc's default top-level code mode.
 swiftc \
@@ -325,16 +349,14 @@ swiftc \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
   -O \
-  -emit-const-values \
+  -Xfrontend -emit-const-values-path -Xfrontend "$WIDGET_CONSTVALS_DIR/${WIDGET_BASE}.swiftconstvalues" \
   -framework WidgetKit \
   -framework SwiftUI \
   -framework AppIntents \
   -Xlinker -rpath -Xlinker "@executable_path/../../../../Frameworks" \
   "$WIDGET_SRC"
 
-# Collect .swiftconstvalues for widget metadata extraction
-find "$BUILD_DIR" -name "*.swiftconstvalues" -newer "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
-  -exec cp {} "$WIDGET_CONSTVALS_DIR/" \; 2>/dev/null || true
+echo "    - Widget const values: $(ls "$WIDGET_CONSTVALS_DIR" 2>/dev/null | tr '\n' ' ')"
 
 # Info.plist for the Widget Extension
 cat > "$WIDGET_APPEX/Contents/Info.plist" << PLIST
@@ -368,6 +390,12 @@ PLIST
 # Extract widget AppIntents metadata (for WidgetConfigurationIntent discovery)
 WIDGET_METADATA_DIR="$WIDGET_APPEX/Contents/Resources/Metadata.appintents"
 mkdir -p "$WIDGET_METADATA_DIR"
+# Build --swift-const-vals args for widget
+WIDGET_CONSTVALS_ARGS=()
+for f in "$WIDGET_CONSTVALS_DIR"/*.swiftconstvalues; do
+  [ -f "$f" ] && WIDGET_CONSTVALS_ARGS+=(--swift-const-vals "$f")
+done
+
 if ! xcrun appintentsmetadataprocessor \
   --binary-file "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
   --module-name PatchworkWidget \
@@ -377,7 +405,8 @@ if ! xcrun appintentsmetadataprocessor \
   --toolchain-dir "$TOOLCHAIN_DIR" \
   --xcode-version "$XCODE_BUILD_VERSION" \
   --deployment-target "$DEPLOYMENT_TARGET" \
-  --swift-const-vals-path "$WIDGET_CONSTVALS_DIR" \
+  --compile-time-extraction \
+  "${WIDGET_CONSTVALS_ARGS[@]}" \
   --source-files "$WIDGET_SRC" \
   2>&1; then
   echo "Warning: appintentsmetadataprocessor failed for PatchworkWidget (Widget may not appear)"
