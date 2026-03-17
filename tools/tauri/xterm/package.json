@@ -8,5 +8,8 @@
     ".": "xterm.js"
   },
   "keywords": [],
-  "author": ""
+  "author": "",
+  "pushwork": {
+    "url": "automerge:2iWT4EMck4yirAkr5fbtiratyjX6"
+  }
 }
