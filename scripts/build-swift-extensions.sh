@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # build-swift-extensions.sh
 #
-# Post-build script that compiles the Swift AppIntents and Share Extension,
-# then integrates them into the Tauri-built .app bundle.
+# Post-build script that compiles the Swift AppIntents, Share Extension,
+# and Widget Extension, then integrates them into the Tauri-built .app bundle.
 #
 # Requirements: Xcode command-line tools (xcrun, swiftc, codesign)
 # Expected to run after `cargo tauri build` on macOS.
@@ -14,7 +14,7 @@ BUNDLE_ID="com.inkandswitch.patchwork"
 SWIFT_PLUGINS="src-tauri/swift-plugins"
 BUILD_DIR="$(mktemp -d)"
 SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
-DEPLOYMENT_TARGET="13.0"
+DEPLOYMENT_TARGET="14.0"
 SIGN_IDENTITY="${CODESIGN_IDENTITY:--}" # ad-hoc by default
 
 trap 'rm -rf "$BUILD_DIR"' EXIT
@@ -108,17 +108,85 @@ SHARE_APPEX="$BUILD_DIR/PatchworkShare.appex"
 SHARE_APPEX_CONTENTS="$SHARE_APPEX/Contents/MacOS"
 mkdir -p "$SHARE_APPEX_CONTENTS" "$SHARE_APPEX/Contents/Resources"
 
-# The Share Extension needs a small main entry point
-cat > "$BUILD_DIR/ShareMain.swift" << 'SWIFT'
-import AppIntents
+# The Share Extension principal class — an NSViewController that handles
+# incoming share items and forwards them to the running Patchwork app.
+cat > "$BUILD_DIR/ShareViewController.swift" << 'SWIFT'
+import Cocoa
 import Foundation
 
-// Share Extension entry point — delegates to ShareToPatchworkIntent
-@available(macOS 13.0, *)
-@main
-struct ShareExtensionMain {
-    static func main() async {
-        // Extension lifecycle managed by the system
+class ShareViewController: NSViewController {
+    override var nibName: NSNib.Name? { nil }
+
+    override func loadView() {
+        self.view = NSView(frame: NSRect(x: 0, y: 0, width: 1, height: 1))
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        guard let item = self.extensionContext?.inputItems.first as? NSExtensionItem else {
+            self.extensionContext?.completeRequest(returningItems: nil)
+            return
+        }
+
+        var text: String?
+        var url: String?
+        let title = item.attributedContentText?.string
+
+        let group = DispatchGroup()
+        for attachment in item.attachments ?? [] {
+            if attachment.hasItemConformingToTypeIdentifier("public.url") {
+                group.enter()
+                attachment.loadItem(forTypeIdentifier: "public.url") { item, _ in
+                    if let u = item as? URL { url = u.absoluteString }
+                    group.leave()
+                }
+            } else if attachment.hasItemConformingToTypeIdentifier("public.plain-text") {
+                group.enter()
+                attachment.loadItem(forTypeIdentifier: "public.plain-text") { item, _ in
+                    if let s = item as? String { text = s }
+                    group.leave()
+                }
+            }
+        }
+
+        group.notify(queue: .main) { [weak self] in
+            self?.sendToPatchwork(text: text, url: url, title: title)
+        }
+    }
+
+    private func sendToPatchwork(text: String?, url: String?, title: String?) {
+        var parts: [String] = []
+        if let t = text { parts.append("text: \(jsString(t))") }
+        if let u = url { parts.append("url: \(jsString(u))") }
+        if let t = title { parts.append("title: \(jsString(t))") }
+
+        let code = """
+        window.dispatchEvent(new CustomEvent("patchwork:share", {
+            detail: { \(parts.joined(separator: ", ")) }
+        }));
+        return "shared";
+        """
+
+        let requestUrl = Foundation.URL(string: "http://localhost:3030/eval")!
+        var request = URLRequest(url: requestUrl)
+        request.httpMethod = "POST"
+        request.httpBody = code.data(using: .utf8)
+        request.timeoutInterval = 10
+
+        URLSession.shared.dataTask(with: request) { [weak self] _, _, _ in
+            DispatchQueue.main.async {
+                self?.extensionContext?.completeRequest(returningItems: nil)
+            }
+        }.resume()
+    }
+
+    private func jsString(_ s: String) -> String {
+        let escaped = s
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+        return "\"\(escaped)\""
     }
 }
 SWIFT
@@ -126,15 +194,12 @@ SWIFT
 # Compile the share extension binary
 swiftc \
   -module-name PatchworkShare \
-  -emit-executable \
+  -emit-library -emit-module \
   -o "$SHARE_APPEX_CONTENTS/PatchworkShare" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
-  -I "$INTENTS_FW_VERSIONED/Modules" \
-  -F "$BUILD_DIR" \
   -O \
-  "$SWIFT_PLUGINS/PatchworkIntents/Sources/ShareToPatchworkIntent.swift" \
-  "$BUILD_DIR/ShareMain.swift" \
+  "$BUILD_DIR/ShareViewController.swift" \
   2>&1 || echo "Warning: Share Extension compilation had issues"
 
 # Info.plist for the Share Extension
@@ -160,7 +225,7 @@ cat > "$SHARE_APPEX/Contents/Info.plist" << PLIST
     <key>NSExtensionPointIdentifier</key>
     <string>com.apple.share-services</string>
     <key>NSExtensionPrincipalClass</key>
-    <string>PatchworkShare.ShareExtensionMain</string>
+    <string>PatchworkShare.ShareViewController</string>
     <key>NSExtensionAttributes</key>
     <dict>
       <key>NSExtensionActivationRule</key>
@@ -184,7 +249,61 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 4. Re-codesign everything
+# 4. Build Widget Extension (.appex)
+# ---------------------------------------------------------------------------
+echo "==> Building Widget Extension..."
+
+WIDGET_APPEX="$BUILD_DIR/PatchworkWidget.appex"
+WIDGET_APPEX_CONTENTS="$WIDGET_APPEX/Contents/MacOS"
+mkdir -p "$WIDGET_APPEX_CONTENTS" "$WIDGET_APPEX/Contents/Resources"
+
+# Compile the widget extension binary
+swiftc \
+  -module-name PatchworkWidget \
+  -emit-executable \
+  -o "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
+  -sdk "$SDK_PATH" \
+  -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
+  -O \
+  "$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift" \
+  2>&1 || echo "Warning: Widget Extension compilation had issues"
+
+# Info.plist for the Widget Extension
+cat > "$WIDGET_APPEX/Contents/Info.plist" << PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key>
+  <string>${BUNDLE_ID}.widget</string>
+  <key>CFBundleName</key>
+  <string>PatchworkWidget</string>
+  <key>CFBundleDisplayName</key>
+  <string>Patchwork Widget</string>
+  <key>CFBundlePackageType</key>
+  <string>XPC!</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>CFBundleShortVersionString</key>
+  <string>0.1.0</string>
+  <key>NSExtension</key>
+  <dict>
+    <key>NSExtensionPointIdentifier</key>
+    <string>com.apple.widgetkit-extension</string>
+  </dict>
+</dict>
+</plist>
+PLIST
+
+# Copy widget extension into app bundle (only if build succeeded)
+if [ -f "$WIDGET_APPEX_CONTENTS/PatchworkWidget" ]; then
+  cp -R "$WIDGET_APPEX" "$PLUGINS_DIR/"
+else
+  echo "Warning: Widget Extension binary not found, skipping"
+fi
+
+# ---------------------------------------------------------------------------
+# 5. Re-codesign everything
 # ---------------------------------------------------------------------------
 echo "==> Codesigning..."
 
@@ -196,6 +315,11 @@ if [ -d "$PLUGINS_DIR/PatchworkShare.appex" ]; then
   codesign --force --sign "$SIGN_IDENTITY" --deep "$PLUGINS_DIR/PatchworkShare.appex"
 fi
 
+# Sign widget extension (if present)
+if [ -d "$PLUGINS_DIR/PatchworkWidget.appex" ]; then
+  codesign --force --sign "$SIGN_IDENTITY" --deep "$PLUGINS_DIR/PatchworkWidget.appex"
+fi
+
 # Re-sign the main app (must be last)
 codesign --force --sign "$SIGN_IDENTITY" --deep "$APP_BUNDLE"
 
@@ -203,5 +327,8 @@ echo "==> Done! Swift extensions integrated into $APP_BUNDLE"
 echo "    - PatchworkIntents.framework (Shortcuts)"
 if [ -d "$PLUGINS_DIR/PatchworkShare.appex" ]; then
   echo "    - PatchworkShare.appex (Share Extension)"
+fi
+if [ -d "$PLUGINS_DIR/PatchworkWidget.appex" ]; then
+  echo "    - PatchworkWidget.appex (Widget Extension)"
 fi
 echo "    - AppIntents metadata extracted"

@@ -92,7 +92,7 @@ jobs:
           APPLE_API_KEY_PATH: ~/private_keys/AuthKey_${{ secrets.APPLE_API_KEY }}.p8
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
-      - name: build Swift extensions (Shortcuts + Share)
+      - name: build Swift extensions (Shortcuts + Share + Widget)
         run: ./scripts/build-swift-extensions.sh
 
       - name: cleanup keychain and keys
