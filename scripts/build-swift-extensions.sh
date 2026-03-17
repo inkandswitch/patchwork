@@ -51,12 +51,8 @@ INTENTS_SRC=(
 )
 INTENTS_FW_DIR="$BUILD_DIR/PatchworkIntents.framework"
 INTENTS_FW_VERSIONED="$INTENTS_FW_DIR/Versions/A"
-INTENTS_CONSTVALS_DIR="$BUILD_DIR/intents-constvals"
-mkdir -p "$INTENTS_FW_VERSIONED/Modules" "$INTENTS_FW_VERSIONED/Resources" "$INTENTS_CONSTVALS_DIR"
+mkdir -p "$INTENTS_FW_VERSIONED/Modules" "$INTENTS_FW_VERSIONED/Resources"
 
-# -emit-const-values: generates .swiftconstvalues files that
-# appintentsmetadataprocessor needs to discover AppIntent types.
-# Without these, the processor silently outputs empty metadata.
 swiftc \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
@@ -69,11 +65,7 @@ swiftc \
   -Xlinker -install_name -Xlinker "@rpath/PatchworkIntents.framework/Versions/A/PatchworkIntents" \
   -framework AppIntents \
   -framework Foundation \
-  -Xfrontend -emit-const-values \
   "${INTENTS_SRC[@]}"
-
-# Collect .swiftconstvalues files for the metadata processor
-find "$BUILD_DIR" -name "*.swiftconstvalues" -exec cp {} "$INTENTS_CONSTVALS_DIR/" \; 2>/dev/null || true
 
 # Framework structure symlinks
 ln -sf A "$INTENTS_FW_DIR/Versions/Current"
@@ -122,7 +114,6 @@ xcrun appintentsmetadataprocessor \
   --sdk-root "$SDK_PATH" \
   --deployment-target "$DEPLOYMENT_TARGET" \
   --platform macosx \
-  --swift-const-vals-path "$INTENTS_CONSTVALS_DIR" \
   --source-files "${INTENTS_SRC[@]}" \
   2>&1
 echo "    - Metadata files: $(ls "$METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
@@ -304,14 +295,12 @@ echo "==> Building Widget Extension..."
 
 WIDGET_APPEX="$BUILD_DIR/PatchworkWidget.appex"
 WIDGET_APPEX_CONTENTS="$WIDGET_APPEX/Contents/MacOS"
-WIDGET_CONSTVALS_DIR="$BUILD_DIR/widget-constvals"
-mkdir -p "$WIDGET_APPEX_CONTENTS" "$WIDGET_APPEX/Contents/Resources" "$WIDGET_CONSTVALS_DIR"
+mkdir -p "$WIDGET_APPEX_CONTENTS" "$WIDGET_APPEX/Contents/Resources"
 
 WIDGET_SRC="$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift"
 
 # Compile the widget extension binary — needs -parse-as-library because the
 # source uses @main which conflicts with swiftc's default top-level code mode.
-# -emit-const-values: needed for widget configuration intent discovery.
 swiftc \
   -module-name PatchworkWidget \
   -parse-as-library \
@@ -323,12 +312,8 @@ swiftc \
   -framework WidgetKit \
   -framework SwiftUI \
   -framework AppIntents \
-  -Xfrontend -emit-const-values \
   -Xlinker -rpath -Xlinker "@executable_path/../../../../Frameworks" \
   "$WIDGET_SRC"
-
-# Collect widget const values for metadata extraction
-find "$BUILD_DIR" -name "*.swiftconstvalues" -newer "$WIDGET_APPEX_CONTENTS/PatchworkWidget" -exec cp {} "$WIDGET_CONSTVALS_DIR/" \; 2>/dev/null || true
 
 # Info.plist for the Widget Extension
 cat > "$WIDGET_APPEX/Contents/Info.plist" << PLIST
@@ -369,7 +354,6 @@ xcrun appintentsmetadataprocessor \
   --sdk-root "$SDK_PATH" \
   --deployment-target "$DEPLOYMENT_TARGET" \
   --platform macosx \
-  --swift-const-vals-path "$WIDGET_CONSTVALS_DIR" \
   --source-files "$WIDGET_SRC" \
   2>&1
 echo "    - Widget metadata files: $(ls "$WIDGET_METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
