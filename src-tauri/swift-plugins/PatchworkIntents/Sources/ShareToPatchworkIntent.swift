@@ -28,7 +28,7 @@ struct ShareToPatchworkIntent: AppIntent {
         if let title = title { parts.append("title: \(jsString(title))") }
 
         let code = """
-        window.dispatchEvent(new CustomEvent("patchwork:share", {
+        window.dispatchEvent(new CustomEvent("patchwork:share-raw", {
             detail: { \(parts.joined(separator: ", ")) }
         }));
         return "shared";

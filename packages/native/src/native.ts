@@ -105,7 +105,7 @@ export class PatchworkNative {
   async handleShare(item: ShareItem): Promise<void> {
     const payload = JSON.stringify(item);
     await this.eval(`
-      window.dispatchEvent(new CustomEvent("patchwork:share", {
+      window.dispatchEvent(new CustomEvent("patchwork:share-raw", {
         detail: ${payload}
       }));
     `);

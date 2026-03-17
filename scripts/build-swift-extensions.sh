@@ -56,23 +56,20 @@ mkdir -p "$INTENTS_FW_VERSIONED/Modules" "$INTENTS_FW_VERSIONED/Resources"
 INTENTS_CONSTVALS_DIR="$BUILD_DIR/intents-constvals"
 mkdir -p "$INTENTS_CONSTVALS_DIR"
 
-# Build -Xfrontend flags to emit .swiftconstvalues for each source file
-CONSTVALS_FLAGS=()
-for src in "${INTENTS_SRC[@]}"; do
-  base="$(basename "$src" .swift)"
-  CONSTVALS_FLAGS+=(-Xfrontend -emit-const-values-path -Xfrontend "$INTENTS_CONSTVALS_DIR/${base}.swiftconstvalues")
-done
-
+# Use -whole-module-optimization so swiftc invokes a single swift-frontend
+# process, which can accept exactly one -emit-const-values-path.
 swiftc \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
   -parse-as-library \
+  -whole-module-optimization \
   -o "$INTENTS_FW_VERSIONED/PatchworkIntents" \
   -emit-module-path "$INTENTS_FW_VERSIONED/Modules/PatchworkIntents.swiftmodule" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
   -O \
-  "${CONSTVALS_FLAGS[@]}" \
+  -Xfrontend -emit-const-values-path \
+  -Xfrontend "$INTENTS_CONSTVALS_DIR/PatchworkIntents.swiftconstvalues" \
   -Xlinker -install_name -Xlinker "@rpath/PatchworkIntents.framework/Versions/A/PatchworkIntents" \
   -framework AppIntents \
   -framework Foundation \
@@ -225,8 +222,8 @@ class ShareViewController: NSViewController {
         }
 
         let code = """
-        console.log("[share-ext] dispatching patchwork:share with parts: \(parts.count)");
-        window.dispatchEvent(new CustomEvent("patchwork:share", {
+        console.log("[share-ext] dispatching patchwork:share-raw with parts: \(parts.count)");
+        window.dispatchEvent(new CustomEvent("patchwork:share-raw", {
             detail: { \(parts.joined(separator: ", ")) }
         }));
         return "shared (\(parts.count) fields)";

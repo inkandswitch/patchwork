@@ -298,49 +298,51 @@ if (isTauri) {
 }
 
 // --- Share extension handler ---
-// When the Share extension (or Shortcuts) dispatches "patchwork:share",
-// create a new document from the shared content and unshift it into the
-// user's root folder.
-window.addEventListener("patchwork:share", async (event: any) => {
-  const detail = (event as CustomEvent).detail;
-  console.log("[share] patchwork:share event received", detail);
+// The native Share extension dispatches "patchwork:share-raw" with
+// {text, url, title, files}. We transform it into a DataTransfer-shaped
+// "patchwork:share" event so tools can handle it like a drop/paste.
+window.addEventListener("patchwork:share-raw", (event: any) => {
+  const raw = (event as CustomEvent).detail;
+  console.log("[share] patchwork:share-raw received", raw);
 
-  try {
-    const accountUrl = localStorage.getItem("tinyPatchworkAccountUrl");
-    if (!accountUrl) {
-      console.warn("[share] no tinyPatchworkAccountUrl in localStorage");
-      return;
-    }
-
-    const accountHandle = await repo.find(accountUrl as AutomergeUrl);
-    const accountDoc = accountHandle.doc();
-    if (!accountDoc?.rootFolderUrl) {
-      console.warn("[share] account doc has no rootFolderUrl");
-      return;
-    }
-
-    const rootFolderHandle = await repo.find(accountDoc.rootFolderUrl);
-
-    // Create a new document with the shared content
-    const sharedDocHandle = repo.create();
-    sharedDocHandle.change((d: any) => {
-      if (detail.title) d.title = detail.title;
-      if (detail.text) d.text = detail.text;
-      if (detail.url) d.url = detail.url;
-      if (detail.files) d.files = detail.files;
-      d["@patchwork"] = { type: "shared-content" };
-    });
-
-    const name = detail.title || detail.url || "Shared content";
-    rootFolderHandle.change((d: any) => {
-      if (!d.docs) d.docs = [];
-      d.docs.unshift({ name, type: "file", url: sharedDocHandle.url });
-    });
-
-    console.log("[share] added shared content to root folder:", sharedDocHandle.url);
-  } catch (e) {
-    console.error("[share] failed to handle patchwork:share:", e);
+  // Build a map of MIME types from the shared content
+  const data: Record<string, string> = {};
+  if (raw.url) {
+    data["text/uri-list"] = raw.url;
+    data["text/plain"] = raw.url;
   }
+  if (raw.text) {
+    data["text/plain"] = raw.text;
+  }
+  if (raw.title) {
+    data["text/x-patchwork-title"] = raw.title;
+  }
+  // Include everything as structured JSON
+  data["application/json"] = JSON.stringify(raw);
+
+  // DataTransfer-shaped object
+  const dataTransfer = {
+    types: Object.keys(data),
+    getData(type: string) {
+      return data[type] ?? "";
+    },
+    files: [] as File[],
+    items: Object.entries(data).map(([type, value]) => ({
+      kind: "string" as const,
+      type,
+      getAsString(cb: (s: string) => void) {
+        cb(value);
+      },
+    })),
+    dropEffect: "copy" as const,
+    effectAllowed: "copy" as const,
+  };
+
+  console.log("[share] dispatching patchwork:share with types:", dataTransfer.types);
+
+  window.dispatchEvent(
+    new CustomEvent("patchwork:share", { detail: dataTransfer })
+  );
 });
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
