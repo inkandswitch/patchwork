@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - claude/patchwork-ios-capture-tool-oLM3H
+      - claude/trigger-ci-pipeline-MRqib
   workflow_dispatch:
 
 concurrency:
