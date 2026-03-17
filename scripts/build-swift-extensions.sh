@@ -105,15 +105,14 @@ METADATA_DIR="$APP_BUNDLE/Contents/Resources/Metadata.appintents"
 mkdir -p "$METADATA_DIR"
 
 # appintentsmetadataprocessor extracts Shortcut definitions from compiled Swift.
-# --swift-const-vals-path points to the .swiftconstvalues files emitted by the
-# compiler, which contain the compile-time constant data the processor needs.
+XCODE_VERSION="$(xcodebuild -version 2>/dev/null | head -1 | sed 's/Xcode //' || echo '16.0')"
 xcrun appintentsmetadataprocessor \
   --binary-file "$FRAMEWORKS_DIR/PatchworkIntents.framework/PatchworkIntents" \
   --module-name PatchworkIntents \
   --output "$METADATA_DIR" \
   --sdk-root "$SDK_PATH" \
   --deployment-target "$DEPLOYMENT_TARGET" \
-  --platform macosx \
+  --xcode-version "$XCODE_VERSION" \
   --source-files "${INTENTS_SRC[@]}" \
   2>&1
 echo "    - Metadata files: $(ls "$METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
@@ -353,7 +352,7 @@ xcrun appintentsmetadataprocessor \
   --output "$WIDGET_METADATA_DIR" \
   --sdk-root "$SDK_PATH" \
   --deployment-target "$DEPLOYMENT_TARGET" \
-  --platform macosx \
+  --xcode-version "$XCODE_VERSION" \
   --source-files "$WIDGET_SRC" \
   2>&1
 echo "    - Widget metadata files: $(ls "$WIDGET_METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
