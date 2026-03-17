@@ -136,7 +136,15 @@ jobs:
             cp -R "$APP_BUNDLE" "$STAGING/"
             ln -s /Applications "$STAGING/Applications"
             hdiutil create -volname "Patchwork" -srcfolder "$STAGING" -ov -format UDZO "$DMG_PATH"
-            # Staple the DMG too
+
+            # Notarize the DMG separately
+            xcrun notarytool submit "$DMG_PATH" \
+              --key "$APPLE_API_KEY_PATH" \
+              --key-id "$APPLE_API_KEY" \
+              --issuer "$APPLE_API_ISSUER" \
+              --wait --timeout 600
+
+            # Staple the DMG
             xcrun stapler staple "$DMG_PATH"
           fi
 
