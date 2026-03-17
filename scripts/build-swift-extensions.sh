@@ -68,7 +68,6 @@ swiftc \
   -emit-module-path "$INTENTS_FW_VERSIONED/Modules/PatchworkIntents.swiftmodule" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
-  -Xfrontend -emit-const-values \
   -Xfrontend -emit-const-values-path \
   -Xfrontend "$INTENTS_CONSTVALS" \
   -Xlinker -install_name -Xlinker "@rpath/PatchworkIntents.framework/Versions/A/PatchworkIntents" \
@@ -351,7 +350,6 @@ swiftc \
   -o "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
-  -Xfrontend -emit-const-values \
   -Xfrontend -emit-const-values-path -Xfrontend "$WIDGET_CONSTVALS" \
   -framework WidgetKit \
   -framework SwiftUI \
