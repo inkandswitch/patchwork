@@ -1,0 +1,58 @@
+name: pushwork init
+
+on:
+  workflow_dispatch:
+    inputs:
+      tool_path:
+        description: "Path to the tool directory (e.g. tools/tauri/xterm)"
+        required: true
+        default: "tools/tauri/xterm"
+
+jobs:
+  init:
+    name: pushwork init
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out the repository
+        uses: actions/checkout@v4
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: run pushwork init
+        working-directory: ${{ inputs.tool_path }}
+        run: |
+          npx pushwork init .
+          ROOT_URL=$(npx pushwork url)
+          echo "ROOT_URL=$ROOT_URL" >> "$GITHUB_ENV"
+          echo "Got rootFolderUrl: $ROOT_URL"
+
+      - name: add pushwork url to package.json
+        working-directory: ${{ inputs.tool_path }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.pushwork = { url: process.env.ROOT_URL };
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          cat package.json
+
+      - name: sync to persist the folder document
+        working-directory: ${{ inputs.tool_path }}
+        run: npx pushwork sync
+
+      - name: commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${{ inputs.tool_path }}/package.json" "${{ inputs.tool_path }}/.pushwork"
+          git commit -m "pushwork init ${{ inputs.tool_path }}"
+          git push
