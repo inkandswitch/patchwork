@@ -828,6 +828,8 @@ pub fn run() {
             macintosh::mac_shell_kill,
             macintosh::mac_system_hostname,
             macintosh::mac_frontmost_app,
+            macintosh::mac_run_shortcut,
+            macintosh::mac_list_shortcuts,
             macintosh::mac_run_applescript,
             macintosh::mac_run_jxa
         ])

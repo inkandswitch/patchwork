@@ -136,6 +136,13 @@ export interface Macintosh {
     }>;
   };
 
+  shortcuts: {
+    /** List all available Apple Shortcuts. */
+    list(): Promise<string[]>;
+    /** Run an Apple Shortcut by name, optionally passing text input. */
+    run(name: string, input?: string): Promise<string>;
+  };
+
   /** Run raw AppleScript and return the result. */
   applescript(script: string): Promise<string>;
 
@@ -271,6 +278,12 @@ export function initMacintosh() {
     system: {
       hostname: () => invoke("mac_system_hostname"),
       frontmostApp: () => invoke("mac_frontmost_app"),
+    },
+
+    shortcuts: {
+      list: () => invoke("mac_list_shortcuts"),
+      run: (name, input) =>
+        invoke("mac_run_shortcut", { name, input: input ?? null }),
     },
 
     applescript: (script) => invoke("mac_run_applescript", { script }),

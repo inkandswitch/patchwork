@@ -573,6 +573,45 @@ pub fn mac_frontmost_app() -> Result<serde_json::Value, String> {
     serde_json::from_str(&result).map_err(|e| format!("parse error: {e}"))
 }
 
+/// Run an Apple Shortcut by name, optionally passing text input.
+/// Uses the `shortcuts` CLI tool available on macOS 12+.
+#[tauri::command]
+pub fn mac_run_shortcut(name: String, input: Option<String>) -> Result<String, String> {
+    let mut cmd = std::process::Command::new("shortcuts");
+    cmd.args(["run", &name]);
+    if let Some(ref input_text) = input {
+        cmd.args(["-i", input_text]);
+    }
+    let output = cmd
+        .output()
+        .map_err(|e| format!("failed to run shortcut '{}': {e}", name))?;
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        Err(if stderr.is_empty() {
+            format!("shortcut '{}' exited with {}", name, output.status)
+        } else {
+            stderr
+        })
+    }
+}
+
+/// List all available Apple Shortcuts.
+#[tauri::command]
+pub fn mac_list_shortcuts() -> Result<Vec<String>, String> {
+    let output = std::process::Command::new("shortcuts")
+        .arg("list")
+        .output()
+        .map_err(|e| format!("failed to list shortcuts: {e}"))?;
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        Ok(stdout.lines().map(|l| l.trim().to_string()).filter(|l| !l.is_empty()).collect())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).trim().to_string())
+    }
+}
+
 /// Run an arbitrary AppleScript string (for power users building tools).
 #[tauri::command]
 pub fn mac_run_applescript(script: String) -> Result<String, String> {

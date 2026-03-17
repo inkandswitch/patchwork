@@ -61,6 +61,9 @@ swiftc \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
   -O \
+  -Xlinker -install_name -Xlinker "@rpath/PatchworkIntents.framework/Versions/A/PatchworkIntents" \
+  -framework AppIntents \
+  -framework Foundation \
   "${INTENTS_SRC[@]}"
 
 # Framework structure symlinks
@@ -222,6 +225,8 @@ swiftc \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
   -O \
+  -framework Cocoa \
+  -framework Foundation \
   "$BUILD_DIR/ShareViewController.swift" \
   2>&1 || echo "Warning: Share Extension compilation had issues"
 
@@ -233,6 +238,8 @@ cat > "$SHARE_APPEX/Contents/Info.plist" << PLIST
 <dict>
   <key>CFBundleIdentifier</key>
   <string>${BUNDLE_ID}.share-extension</string>
+  <key>CFBundleExecutable</key>
+  <string>PatchworkShare</string>
   <key>CFBundleName</key>
   <string>PatchworkShare</string>
   <key>CFBundleDisplayName</key>
@@ -292,6 +299,9 @@ swiftc \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
   -O \
+  -framework WidgetKit \
+  -framework SwiftUI \
+  -framework AppIntents \
   "$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift" \
   2>&1 || echo "Warning: Widget Extension compilation had issues"
 
@@ -303,6 +313,8 @@ cat > "$WIDGET_APPEX/Contents/Info.plist" << PLIST
 <dict>
   <key>CFBundleIdentifier</key>
   <string>${BUNDLE_ID}.widget</string>
+  <key>CFBundleExecutable</key>
+  <string>PatchworkWidget</string>
   <key>CFBundleName</key>
   <string>PatchworkWidget</string>
   <key>CFBundleDisplayName</key>

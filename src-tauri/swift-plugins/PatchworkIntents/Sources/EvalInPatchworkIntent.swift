@@ -140,32 +140,34 @@ struct ListDatatypesIntent: AppIntent {
 @available(iOS 16.0, macOS 13.0, *)
 struct PatchworkShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: EvalInPatchworkIntent(),
-            phrases: [
-                "Eval in \(.applicationName)",
-                "Run JavaScript in \(.applicationName)"
-            ],
-            shortTitle: "Eval in Patchwork",
-            systemImageName: "terminal"
-        )
-        AppShortcut(
-            intent: CreateDocumentIntent(),
-            phrases: [
-                "Create a document in \(.applicationName)",
-                "New \(.applicationName) document"
-            ],
-            shortTitle: "Create Document",
-            systemImageName: "doc.badge.plus"
-        )
-        AppShortcut(
-            intent: ListDatatypesIntent(),
-            phrases: [
-                "List \(.applicationName) datatypes",
-                "What can \(.applicationName) create"
-            ],
-            shortTitle: "List Datatypes",
-            systemImageName: "list.bullet"
-        )
+        return [
+            AppShortcut(
+                intent: EvalInPatchworkIntent(),
+                phrases: [
+                    "Eval in \(.applicationName)",
+                    "Run JavaScript in \(.applicationName)"
+                ],
+                shortTitle: "Eval in Patchwork",
+                systemImageName: "terminal"
+            ),
+            AppShortcut(
+                intent: CreateDocumentIntent(),
+                phrases: [
+                    "Create a document in \(.applicationName)",
+                    "New \(.applicationName) document"
+                ],
+                shortTitle: "Create Document",
+                systemImageName: "doc.badge.plus"
+            ),
+            AppShortcut(
+                intent: ListDatatypesIntent(),
+                phrases: [
+                    "List \(.applicationName) datatypes",
+                    "What can \(.applicationName) create"
+                ],
+                shortTitle: "List Datatypes",
+                systemImageName: "list.bullet"
+            ),
+        ]
     }
 }
