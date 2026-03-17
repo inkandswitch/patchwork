@@ -82,18 +82,63 @@ jobs:
           mkdir -p ~/private_keys
           echo "$APPLE_API_KEY_CONTENT" > ~/private_keys/AuthKey_${APPLE_API_KEY}.p8
 
-      - name: build the app
+      - name: build the app (unsigned)
         run: cargo tauri build
-        working-directory: .
+
+      - name: build Swift extensions (Shortcuts + Share + Widget)
+        run: ./scripts/build-swift-extensions.sh
+
+      - name: sign and notarize the app bundle
         env:
-          APPLE_SIGNING_IDENTITY: ${{ env.CODESIGN_IDENTITY }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           APPLE_API_KEY_PATH: ~/private_keys/AuthKey_${{ secrets.APPLE_API_KEY }}.p8
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          APP_BUNDLE="src-tauri/target/release/bundle/macos/Patchwork.app"
+          ENTITLEMENTS="src-tauri/Entitlements.plist"
 
-      - name: build Swift extensions (Shortcuts + Share + Widget)
-        run: ./scripts/build-swift-extensions.sh
+          # Sign all nested components first (inside-out)
+          find "$APP_BUNDLE/Contents/Frameworks" -type d -name "*.framework" -exec \
+            codesign --force --sign "$CODESIGN_IDENTITY" --deep --options runtime {} \;
+          find "$APP_BUNDLE/Contents/PlugIns" -type d -name "*.appex" -exec \
+            codesign --force --sign "$CODESIGN_IDENTITY" --deep --options runtime {} \;
+
+          # Sign the main app bundle last
+          if [ -f "$ENTITLEMENTS" ]; then
+            codesign --force --sign "$CODESIGN_IDENTITY" --entitlements "$ENTITLEMENTS" --options runtime --deep "$APP_BUNDLE"
+          else
+            codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --deep "$APP_BUNDLE"
+          fi
+
+          # Notarize
+          DMG_DIR="src-tauri/target/release/bundle/dmg"
+          DMG_PATH="$DMG_DIR/Patchwork.dmg"
+
+          # Create a zip for notarization (notarytool needs zip or dmg)
+          NOTARIZE_ZIP="$RUNNER_TEMP/Patchwork-notarize.zip"
+          ditto -c -k --keepParent "$APP_BUNDLE" "$NOTARIZE_ZIP"
+
+          xcrun notarytool submit "$NOTARIZE_ZIP" \
+            --key "$APPLE_API_KEY_PATH" \
+            --key-id "$APPLE_API_KEY" \
+            --issuer "$APPLE_API_ISSUER" \
+            --wait --timeout 600
+
+          # Staple the notarization ticket
+          xcrun stapler staple "$APP_BUNDLE"
+
+          # Rebuild the DMG with the signed+notarized app
+          if [ -d "$DMG_DIR" ]; then
+            rm -f "$DMG_DIR"/*.dmg
+            STAGING="$RUNNER_TEMP/dmg-staging"
+            mkdir -p "$STAGING"
+            cp -R "$APP_BUNDLE" "$STAGING/"
+            ln -s /Applications "$STAGING/Applications"
+            hdiutil create -volname "Patchwork" -srcfolder "$STAGING" -ov -format UDZO "$DMG_PATH"
+            # Staple the DMG too
+            xcrun stapler staple "$DMG_PATH"
+          fi
 
       - name: cleanup keychain and keys
         if: always()

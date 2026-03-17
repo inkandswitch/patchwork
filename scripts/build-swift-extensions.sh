@@ -322,23 +322,23 @@ fi
 echo "==> Codesigning..."
 
 # Sign framework
-codesign --force --sign "$SIGN_IDENTITY" --deep "$FRAMEWORKS_DIR/PatchworkIntents.framework"
+codesign --force --sign "$SIGN_IDENTITY" --options runtime --deep "$FRAMEWORKS_DIR/PatchworkIntents.framework"
 
 # Sign share extension (if present)
 if [ -d "$PLUGINS_DIR/PatchworkShare.appex" ]; then
-  codesign --force --sign "$SIGN_IDENTITY" --deep "$PLUGINS_DIR/PatchworkShare.appex"
+  codesign --force --sign "$SIGN_IDENTITY" --options runtime --deep "$PLUGINS_DIR/PatchworkShare.appex"
 fi
 
 # Sign widget extension (if present)
 if [ -d "$PLUGINS_DIR/PatchworkWidget.appex" ]; then
-  codesign --force --sign "$SIGN_IDENTITY" --deep "$PLUGINS_DIR/PatchworkWidget.appex"
+  codesign --force --sign "$SIGN_IDENTITY" --options runtime --deep "$PLUGINS_DIR/PatchworkWidget.appex"
 fi
 
 # Re-sign the main app with entitlements (must be last)
 if [ -f "$ENTITLEMENTS" ]; then
-  codesign --force --sign "$SIGN_IDENTITY" --entitlements "$ENTITLEMENTS" --deep "$APP_BUNDLE"
+  codesign --force --sign "$SIGN_IDENTITY" --entitlements "$ENTITLEMENTS" --options runtime --deep "$APP_BUNDLE"
 else
-  codesign --force --sign "$SIGN_IDENTITY" --deep "$APP_BUNDLE"
+  codesign --force --sign "$SIGN_IDENTITY" --options runtime --deep "$APP_BUNDLE"
 fi
 
 # ---------------------------------------------------------------------------
