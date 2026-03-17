@@ -56,8 +56,9 @@ mkdir -p "$INTENTS_FW_VERSIONED/Modules" "$INTENTS_FW_VERSIONED/Resources"
 INTENTS_CONSTVALS_DIR="$BUILD_DIR/intents-constvals"
 mkdir -p "$INTENTS_CONSTVALS_DIR"
 
-# Use -whole-module-optimization so swiftc invokes a single swift-frontend
-# process, which can accept exactly one -emit-const-values-path.
+# Compile the framework. Use -whole-module-optimization so swiftc invokes a
+# single swift-frontend, which can accept exactly one -emit-const-values-path.
+INTENTS_CONSTVALS="$INTENTS_CONSTVALS_DIR/PatchworkIntents.swiftconstvalues"
 swiftc \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
@@ -67,15 +68,18 @@ swiftc \
   -emit-module-path "$INTENTS_FW_VERSIONED/Modules/PatchworkIntents.swiftmodule" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
-  -O \
   -Xfrontend -emit-const-values-path \
-  -Xfrontend "$INTENTS_CONSTVALS_DIR/PatchworkIntents.swiftconstvalues" \
+  -Xfrontend "$INTENTS_CONSTVALS" \
   -Xlinker -install_name -Xlinker "@rpath/PatchworkIntents.framework/Versions/A/PatchworkIntents" \
   -framework AppIntents \
   -framework Foundation \
   "${INTENTS_SRC[@]}"
 
-echo "    - Const values files: $(ls "$INTENTS_CONSTVALS_DIR" 2>/dev/null | tr '\n' ' ')"
+if [ -f "$INTENTS_CONSTVALS" ]; then
+  echo "    - Const values: $(wc -c < "$INTENTS_CONSTVALS") bytes"
+else
+  echo "    - Warning: no .swiftconstvalues generated (Shortcuts metadata may be incomplete)"
+fi
 
 # Framework structure symlinks
 ln -sf A "$INTENTS_FW_DIR/Versions/Current"
@@ -135,7 +139,7 @@ if ! xcrun appintentsmetadataprocessor \
   --xcode-version "$XCODE_BUILD_VERSION" \
   --deployment-target "$DEPLOYMENT_TARGET" \
   --compile-time-extraction \
-  "${CONSTVALS_ARGS[@]}" \
+  ${CONSTVALS_ARGS[@]+"${CONSTVALS_ARGS[@]}"} \
   --source-files "${INTENTS_SRC[@]}" \
   2>&1; then
   echo "Warning: appintentsmetadataprocessor failed for PatchworkIntents (Shortcuts may not appear)"
@@ -334,7 +338,7 @@ WIDGET_SRC="$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift"
 WIDGET_CONSTVALS_DIR="$BUILD_DIR/widget-constvals"
 mkdir -p "$WIDGET_CONSTVALS_DIR"
 
-WIDGET_BASE="$(basename "$WIDGET_SRC" .swift)"
+WIDGET_CONSTVALS="$WIDGET_CONSTVALS_DIR/PatchworkWidget.swiftconstvalues"
 
 # Compile the widget extension binary — needs -parse-as-library because the
 # source uses @main which conflicts with swiftc's default top-level code mode.
@@ -342,18 +346,22 @@ swiftc \
   -module-name PatchworkWidget \
   -parse-as-library \
   -emit-executable \
+  -whole-module-optimization \
   -o "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
-  -O \
-  -Xfrontend -emit-const-values-path -Xfrontend "$WIDGET_CONSTVALS_DIR/${WIDGET_BASE}.swiftconstvalues" \
+  -Xfrontend -emit-const-values-path -Xfrontend "$WIDGET_CONSTVALS" \
   -framework WidgetKit \
   -framework SwiftUI \
   -framework AppIntents \
   -Xlinker -rpath -Xlinker "@executable_path/../../../../Frameworks" \
   "$WIDGET_SRC"
 
-echo "    - Widget const values: $(ls "$WIDGET_CONSTVALS_DIR" 2>/dev/null | tr '\n' ' ')"
+if [ -f "$WIDGET_CONSTVALS" ]; then
+  echo "    - Widget const values: $(wc -c < "$WIDGET_CONSTVALS") bytes"
+else
+  echo "    - Warning: no widget .swiftconstvalues generated"
+fi
 
 # Info.plist for the Widget Extension
 cat > "$WIDGET_APPEX/Contents/Info.plist" << PLIST
@@ -403,7 +411,7 @@ if ! xcrun appintentsmetadataprocessor \
   --xcode-version "$XCODE_BUILD_VERSION" \
   --deployment-target "$DEPLOYMENT_TARGET" \
   --compile-time-extraction \
-  "${WIDGET_CONSTVALS_ARGS[@]}" \
+  ${WIDGET_CONSTVALS_ARGS[@]+"${WIDGET_CONSTVALS_ARGS[@]}"} \
   --source-files "$WIDGET_SRC" \
   2>&1; then
   echo "Warning: appintentsmetadataprocessor failed for PatchworkWidget (Widget may not appear)"
