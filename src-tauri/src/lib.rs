@@ -3,7 +3,7 @@ use samod::storage::TokioFilesystemStorage;
 use samod::{AcceptorHandle, BackoffConfig, DocumentId, PeerId, Repo};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::tray::TrayIconBuilder;
@@ -859,6 +859,11 @@ pub fn run() {
                 .inner_size(1024., 768.)
                 .build()?;
 
+            // Flag to distinguish deliberate quit (Cmd+Q / tray) from
+            // automatic exit when the last window closes.
+            let quitting = Arc::new(AtomicBool::new(false));
+            app.manage(quitting.clone());
+
             // Build native menu with File > New Window
             let new_window_menu = MenuItemBuilder::with_id("new-window", "New Window")
                 .accelerator("CmdOrCtrl+N")
@@ -908,13 +913,15 @@ pub fn run() {
 
             app.set_menu(menu)?;
 
+            let menu_quitting = quitting.clone();
             app.on_menu_event(move |app, event| {
                 if event.id() == "new-window" {
                     let _ = create_window(app);
                 } else if event.id() == "menu-settings" {
                     let _ = show_settings_window(app);
                 } else if event.id() == "menu-quit" {
-                    std::process::exit(0);
+                    menu_quitting.store(true, Ordering::SeqCst);
+                    app.exit(0);
                 }
             });
 
@@ -940,18 +947,22 @@ pub fn run() {
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&tray_menu)
                 .show_menu_on_left_click(true)
-                .on_menu_event(|app, event| {
-                    let id = event.id().as_ref();
-                    if id == "tray-show" {
-                        ensure_focused(app);
-                    } else if id == "tray-capture" {
-                        let _ = show_capture_panel(app);
-                    } else if id == "tray-settings" {
-                        let _ = show_settings_window(app);
-                    } else if id == "tray-quit" {
-                        std::process::exit(0);
-                    } else if let Some(datatype_id) = id.strip_prefix("tray-new-") {
-                        ensure_focused_and_new(app, datatype_id);
+                .on_menu_event({
+                    let tray_quitting = quitting.clone();
+                    move |app, event| {
+                        let id = event.id().as_ref();
+                        if id == "tray-show" {
+                            ensure_focused(app);
+                        } else if id == "tray-capture" {
+                            let _ = show_capture_panel(app);
+                        } else if id == "tray-settings" {
+                            let _ = show_settings_window(app);
+                        } else if id == "tray-quit" {
+                            tray_quitting.store(true, Ordering::SeqCst);
+                            app.exit(0);
+                        } else if let Some(datatype_id) = id.strip_prefix("tray-new-") {
+                            ensure_focused_and_new(app, datatype_id);
+                        }
                     }
                 })
                 .build(app)?;
@@ -977,13 +988,15 @@ pub fn run() {
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app, event| {
+        .run(move |app, event| {
             match event {
-                // Prevent auto-exit when all windows are closed.
-                // The app stays alive in the tray. Cmd+Q / tray "Quit" still work
-                // because they call app.exit() directly.
+                // Prevent auto-exit when all windows are closed — the app
+                // stays alive in the tray. But allow exit when the user
+                // explicitly chose Cmd+Q or tray "Quit".
                 tauri::RunEvent::ExitRequested { api, .. } => {
-                    api.prevent_exit();
+                    if !quitting.load(Ordering::SeqCst) {
+                        api.prevent_exit();
+                    }
                 }
                 // macOS: user clicked the dock icon — show a window.
                 // Since we hide (rather than destroy) the last window, there
