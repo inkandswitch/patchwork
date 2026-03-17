@@ -914,7 +914,7 @@ pub fn run() {
                 } else if event.id() == "menu-settings" {
                     let _ = show_settings_window(app);
                 } else if event.id() == "menu-quit" {
-                    app.exit(0);
+                    std::process::exit(0);
                 }
             });
 
@@ -949,7 +949,7 @@ pub fn run() {
                     } else if id == "tray-settings" {
                         let _ = show_settings_window(app);
                     } else if id == "tray-quit" {
-                        app.exit(0);
+                        std::process::exit(0);
                     } else if let Some(datatype_id) = id.strip_prefix("tray-new-") {
                         ensure_focused_and_new(app, datatype_id);
                     }
