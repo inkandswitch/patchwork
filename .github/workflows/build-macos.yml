@@ -97,12 +97,17 @@ jobs:
         run: |
           APP_BUNDLE="src-tauri/target/release/bundle/macos/Patchwork.app"
           ENTITLEMENTS="src-tauri/Entitlements.plist"
+          EXT_ENTITLEMENTS="src-tauri/Extension.entitlements.plist"
 
-          # Sign all nested components first (inside-out)
+          # Sign frameworks first (inside-out)
           find "$APP_BUNDLE/Contents/Frameworks" -type d -name "*.framework" -exec \
             codesign --force --sign "$CODESIGN_IDENTITY" --deep --options runtime {} \;
-          find "$APP_BUNDLE/Contents/PlugIns" -type d -name "*.appex" -exec \
-            codesign --force --sign "$CODESIGN_IDENTITY" --deep --options runtime {} \;
+
+          # Sign extensions with their sandbox+network entitlements
+          for appex in "$APP_BUNDLE/Contents/PlugIns"/*.appex; do
+            [ -d "$appex" ] || continue
+            codesign --force --sign "$CODESIGN_IDENTITY" --entitlements "$EXT_ENTITLEMENTS" --options runtime "$appex"
+          done
 
           # Sign the main app bundle last
           if [ -f "$ENTITLEMENTS" ]; then

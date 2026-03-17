@@ -4,17 +4,17 @@ import AppIntents
 
 // MARK: - Configuration Intent
 
-/// Users choose a document URL and tool ID when configuring the widget.
+/// Users choose a document URL and tool/frame ID when configuring the widget.
 @available(macOS 14.0, *)
 struct PatchworkDocumentIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Patchwork Document"
-    static var description = IntentDescription("Display a Patchwork document with a specific tool.")
+    static var description = IntentDescription("Pin a Patchwork document to your desktop, rendered with a specific tool.")
 
     @Parameter(title: "Document URL", description: "The automerge URL of the document (e.g. automerge:abc123)")
     var documentUrl: String
 
-    @Parameter(title: "Tool ID", description: "The tool to render the document with")
-    var toolId: String
+    @Parameter(title: "Frame (tool ID)", description: "The tool to render the document with (e.g. patchwork-frame, chee/tldraw)")
+    var frameToolId: String
 
     @Parameter(title: "Title", default: "Patchwork")
     var displayTitle: String
@@ -27,6 +27,7 @@ struct PatchworkEntry: TimelineEntry {
     let title: String
     let content: String
     let isError: Bool
+    let deepLink: URL?
 }
 
 // MARK: - Timeline Provider
@@ -37,21 +38,24 @@ struct PatchworkProvider: AppIntentTimelineProvider {
     typealias Entry = PatchworkEntry
 
     func placeholder(in context: Context) -> PatchworkEntry {
-        PatchworkEntry(date: .now, title: "Patchwork", content: "Loading...", isError: false)
+        PatchworkEntry(date: .now, title: "Patchwork", content: "Loading...", isError: false, deepLink: nil)
     }
 
     func snapshot(for configuration: PatchworkDocumentIntent, in context: Context) async -> PatchworkEntry {
-        PatchworkEntry(date: .now, title: configuration.displayTitle, content: "Preview", isError: false)
+        PatchworkEntry(date: .now, title: configuration.displayTitle, content: "Preview", isError: false, deepLink: nil)
     }
 
     func timeline(for configuration: PatchworkDocumentIntent, in context: Context) async -> Timeline<PatchworkEntry> {
         let entry = await fetchContent(for: configuration)
-        // Refresh every 5 minutes
         let nextUpdate = Calendar.current.date(byAdding: .minute, value: 5, to: .now)!
         return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
 
     private func fetchContent(for config: PatchworkDocumentIntent) async -> PatchworkEntry {
+        // Build the deep link URL: #frame=<tool>&doc=<docUrl>
+        let fragment = "frame=\(config.frameToolId)&doc=\(config.documentUrl)"
+        let deepLink = URL(string: "http://localhost:3030/index.html#\(fragment)")
+
         let code = """
         const handle = await window.patchwork.repo.find("\(jsEscape(config.documentUrl))");
         const doc = handle.doc();
@@ -73,25 +77,25 @@ struct PatchworkProvider: AppIntentTimelineProvider {
 
             guard httpResponse.statusCode == 200 else {
                 let error = String(data: data, encoding: .utf8) ?? "HTTP \(httpResponse.statusCode)"
-                return PatchworkEntry(date: .now, title: config.displayTitle, content: error, isError: true)
+                return PatchworkEntry(date: .now, title: config.displayTitle, content: error, isError: true, deepLink: deepLink)
             }
 
             let resultStr = String(data: data, encoding: .utf8) ?? ""
-            // The eval endpoint wraps the result in JSON.stringify, so we need to parse it
             if let jsonData = resultStr.data(using: .utf8),
                let parsed = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
                 let title = parsed["title"] as? String ?? config.displayTitle
                 let content = parsed["content"] as? String ?? resultStr
-                return PatchworkEntry(date: .now, title: title, content: content, isError: false)
+                return PatchworkEntry(date: .now, title: title, content: content, isError: false, deepLink: deepLink)
             }
 
-            return PatchworkEntry(date: .now, title: config.displayTitle, content: resultStr, isError: false)
+            return PatchworkEntry(date: .now, title: config.displayTitle, content: resultStr, isError: false, deepLink: deepLink)
         } catch {
             return PatchworkEntry(
                 date: .now,
                 title: config.displayTitle,
                 content: "Patchwork not running",
-                isError: true
+                isError: true,
+                deepLink: deepLink
             )
         }
     }
@@ -134,6 +138,7 @@ struct PatchworkWidgetView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .widgetURL(entry.deepLink)
     }
 }
 
@@ -153,7 +158,7 @@ struct PatchworkDocWidget: Widget {
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Patchwork Document")
-        .description("Pin a Patchwork document to your desktop.")
+        .description("Pin a Patchwork document to your desktop with a specific tool frame.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

@@ -17,6 +17,7 @@ SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
 DEPLOYMENT_TARGET="14.0"
 SIGN_IDENTITY="${CODESIGN_IDENTITY:--}" # ad-hoc by default
 ENTITLEMENTS="src-tauri/Entitlements.plist"
+EXTENSION_ENTITLEMENTS="src-tauri/Extension.entitlements.plist"
 
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
@@ -216,10 +217,12 @@ class ShareViewController: NSViewController {
 }
 SWIFT
 
-# Compile the share extension binary
+# Compile the share extension as an executable.
+# macOS extension binaries must be MH_EXECUTE, not MH_DYLIB.
+# Use _NSExtensionMain as the entry point (provided by Foundation).
 swiftc \
   -module-name PatchworkShare \
-  -emit-library -emit-module \
+  -emit-executable \
   -parse-as-library \
   -o "$SHARE_APPEX_CONTENTS/PatchworkShare" \
   -sdk "$SDK_PATH" \
@@ -227,8 +230,9 @@ swiftc \
   -O \
   -framework Cocoa \
   -framework Foundation \
-  "$BUILD_DIR/ShareViewController.swift" \
-  2>&1 || echo "Warning: Share Extension compilation had issues"
+  -Xlinker -e -Xlinker _NSExtensionMain \
+  -Xlinker -rpath -Xlinker "@executable_path/../../../../Frameworks" \
+  "$BUILD_DIR/ShareViewController.swift"
 
 # Info.plist for the Share Extension
 cat > "$SHARE_APPEX/Contents/Info.plist" << PLIST
@@ -302,8 +306,8 @@ swiftc \
   -framework WidgetKit \
   -framework SwiftUI \
   -framework AppIntents \
-  "$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift" \
-  2>&1 || echo "Warning: Widget Extension compilation had issues"
+  -Xlinker -rpath -Xlinker "@executable_path/../../../../Frameworks" \
+  "$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift"
 
 # Info.plist for the Widget Extension
 cat > "$WIDGET_APPEX/Contents/Info.plist" << PLIST
@@ -349,14 +353,22 @@ echo "==> Codesigning..."
 # Sign framework
 codesign --force --sign "$SIGN_IDENTITY" --options runtime --deep "$FRAMEWORKS_DIR/PatchworkIntents.framework"
 
-# Sign share extension (if present)
-if [ -d "$PLUGINS_DIR/PatchworkShare.appex" ]; then
-  codesign --force --sign "$SIGN_IDENTITY" --options runtime --deep "$PLUGINS_DIR/PatchworkShare.appex"
-fi
-
-# Sign widget extension (if present)
-if [ -d "$PLUGINS_DIR/PatchworkWidget.appex" ]; then
-  codesign --force --sign "$SIGN_IDENTITY" --options runtime --deep "$PLUGINS_DIR/PatchworkWidget.appex"
+# Sign extensions with their entitlements (sandbox + network access)
+if [ -f "$EXTENSION_ENTITLEMENTS" ]; then
+  if [ -d "$PLUGINS_DIR/PatchworkShare.appex" ]; then
+    codesign --force --sign "$SIGN_IDENTITY" --entitlements "$EXTENSION_ENTITLEMENTS" --options runtime "$PLUGINS_DIR/PatchworkShare.appex"
+  fi
+  if [ -d "$PLUGINS_DIR/PatchworkWidget.appex" ]; then
+    codesign --force --sign "$SIGN_IDENTITY" --entitlements "$EXTENSION_ENTITLEMENTS" --options runtime "$PLUGINS_DIR/PatchworkWidget.appex"
+  fi
+else
+  echo "Warning: Extension entitlements not found at $EXTENSION_ENTITLEMENTS, signing without entitlements"
+  if [ -d "$PLUGINS_DIR/PatchworkShare.appex" ]; then
+    codesign --force --sign "$SIGN_IDENTITY" --options runtime --deep "$PLUGINS_DIR/PatchworkShare.appex"
+  fi
+  if [ -d "$PLUGINS_DIR/PatchworkWidget.appex" ]; then
+    codesign --force --sign "$SIGN_IDENTITY" --options runtime --deep "$PLUGINS_DIR/PatchworkWidget.appex"
+  fi
 fi
 
 # Re-sign the main app with entitlements (must be last)
