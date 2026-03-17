@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - claude/trigger-ci-pipeline-MRqib
     paths:
       - "tools/tauri/xterm/**"
   workflow_dispatch:
