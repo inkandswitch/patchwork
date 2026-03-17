@@ -1,8 +1,9 @@
-import { DocHandle, cursor } from "@automerge/automerge-repo";
+import { cursor, type DocHandle } from "@automerge/automerge-repo";
 import { Automerge } from "@automerge/automerge-repo/slim";
 import { AnnotationSet } from "@inkandswitch/annotations";
-import { last, lookup } from "./utils";
+
 import { Diff } from "./types";
+import { last, lookup } from "./utils";
 
 /**
  * Computes the diff between document states and returns an AnnotationSet.
@@ -107,7 +108,18 @@ export function diffAnnotationsOfDoc(
 
             // for arrays mark the individual objects in the range as deleted
           } else if (Array.isArray(parent)) {
-            throw new Error("not implemented");
+            const patchPosition = last(patch.path) as number;
+            const length = (patch as { length?: number }).length ?? 1;
+            const key = JSON.stringify(parentPath);
+            const offset = offsetByPath.get(key) ?? 0;
+            const originalPosition = patchPosition + offset;
+
+            for (let i = 0; i < length; i++) {
+              const before = parent[originalPosition + i];
+              annotations.add(objRef, Diff({ type: "deleted", before }));
+            }
+
+            offsetByPath.set(key, offset + length);
           } else {
             throw new Error("Unexpected value, this should never happen");
           }
