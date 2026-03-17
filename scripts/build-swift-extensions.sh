@@ -106,6 +106,7 @@ mkdir -p "$METADATA_DIR"
 
 # appintentsmetadataprocessor extracts Shortcut definitions from compiled Swift.
 XCODE_BUILD_VERSION="$(xcodebuild -version | tail -1 | sed 's/Build version //')"
+TARGET_TRIPLE="$(uname -m)-apple-macosx${DEPLOYMENT_TARGET}"
 xcrun appintentsmetadataprocessor \
   --binary-file "$FRAMEWORKS_DIR/PatchworkIntents.framework/PatchworkIntents" \
   --module-name PatchworkIntents \
@@ -113,6 +114,7 @@ xcrun appintentsmetadataprocessor \
   --sdk-root "$SDK_PATH" \
   --deployment-target "$DEPLOYMENT_TARGET" \
   --xcode-version "$XCODE_BUILD_VERSION" \
+  --target-triple "$TARGET_TRIPLE" \
   --source-files "${INTENTS_SRC[@]}" \
   2>&1
 echo "    - Metadata files: $(ls "$METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
@@ -353,6 +355,7 @@ xcrun appintentsmetadataprocessor \
   --sdk-root "$SDK_PATH" \
   --deployment-target "$DEPLOYMENT_TARGET" \
   --xcode-version "$XCODE_BUILD_VERSION" \
+  --target-triple "$TARGET_TRIPLE" \
   --source-files "$WIDGET_SRC" \
   2>&1
 echo "    - Widget metadata files: $(ls "$WIDGET_METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
