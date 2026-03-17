@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -459,8 +459,8 @@ pub async fn mac_shell_spawn(
         .map_err(|e| format!("failed to clone pty reader: {e}"))?;
     let writer = pair
         .master
-        .try_clone_writer()
-        .map_err(|e| format!("failed to clone pty writer: {e}"))?;
+        .take_writer()
+        .map_err(|e| format!("failed to take pty writer: {e}"))?;
 
     let id = state.counter.fetch_add(1, Ordering::SeqCst);
 
