@@ -1,5 +1,6 @@
 import "./global.css";
 import "./hash-bar";
+import { initMacintosh } from "./macintosh";
 
 import {
   registerPatchworkViewElement,
@@ -164,6 +165,9 @@ const moduleWatcher = new ModuleWatcher(
 );
 
 window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
+
+// --- macOS system bridge (Tauri only) ---
+initMacintosh();
 
 // --- Tray integration (Tauri only) ---
 if (isTauri) {

@@ -11,6 +11,8 @@ use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tokio::net::TcpListener;
 use tokio::sync::{oneshot, Mutex as AsyncMutex};
 
+mod macintosh;
+
 static WINDOW_COUNTER: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(1);
 
 /// A datatype reported by the JS frontend for the tray menu.
@@ -795,18 +797,39 @@ pub fn run() {
         counter: AtomicU64::new(0),
     });
 
+    let shell_state = Arc::new(macintosh::ShellState::new());
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .manage(tray_state.clone())
         .manage(eval_state.clone())
+        .manage(shell_state)
         .invoke_handler(tauri::generate_handler![
             update_tray_datatypes,
             update_tray_profile,
             resolve_eval,
             get_settings,
             set_settings,
-            register_capture_shortcut
+            register_capture_shortcut,
+            macintosh::mac_list_processes,
+            macintosh::mac_running_apps,
+            macintosh::mac_execute,
+            macintosh::mac_reminders_get_lists,
+            macintosh::mac_reminders_get_items,
+            macintosh::mac_reminders_create,
+            macintosh::mac_reminders_complete,
+            macintosh::mac_calendar_get_calendars,
+            macintosh::mac_calendar_get_events,
+            macintosh::mac_calendar_create_event,
+            macintosh::mac_shell_spawn,
+            macintosh::mac_shell_write,
+            macintosh::mac_shell_resize,
+            macintosh::mac_shell_kill,
+            macintosh::mac_system_hostname,
+            macintosh::mac_frontmost_app,
+            macintosh::mac_run_applescript,
+            macintosh::mac_run_jxa
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
