@@ -1,16 +1,20 @@
 import "./global.css";
+import "./hash-bar";
 
 import {
   registerPatchworkViewElement,
   openDocument,
 } from "@inkandswitch/patchwork-elements";
-import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
+import {
+  ModuleWatcher,
+} from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
 import {
   registerPlugins,
   DatatypeDescription,
   DatatypeImplementation,
   getRegistry,
+  createDocOfDatatype2,
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 import {
@@ -25,6 +29,7 @@ import {
   parseAutomergeUrl,
   Repo,
   stringifyAutomergeUrl,
+  WebSocketClientAdapter,
   type AutomergeUrl,
   type UrlHeads,
 } from "@automerge/vanillajs";
@@ -44,12 +49,37 @@ declare global {
       plugins: typeof plugins;
       accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
     };
+    __TAURI__: {
+      event: {
+        listen: (event: string, handler: (event: any) => void) => Promise<() => void>;
+      };
+      core: {
+        invoke: (cmd: string, args?: Record<string, unknown>) => Promise<any>;
+      };
+    };
   }
 }
 
+const workerLogChannel = new BroadcastChannel("automerge-worker-logs");
+workerLogChannel.onmessage = (event) => {
+  const { level, args } = event.data;
+  const method = level in console ? level : "log";
+  (console as any)[method](...args);
+};
+
+const isTauri = "__TAURI__" in window;
+
 const repo = new Repo({
+  // In Tauri, give the browser a recognizable peer ID so samod's announce
+  // policy can skip it (avoid flooding the browser with every document).
+  ...(isTauri
+    ? { peerId: `browser-${crypto.randomUUID()}` as any }
+    : {}),
   storage: new IndexedDBStorageAdapter(),
   async sharePolicy(peerId) {
+    if (isTauri) {
+      return peerId.startsWith("storage-server-");
+    }
     return peerId.includes("service-worker");
   },
   enableRemoteHeadsGossiping: true,
@@ -59,21 +89,33 @@ repo.subscribeToRemotes([
   "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
 ]);
 
-const result = await setup();
-if (!result) {
-  throw new Error("Failed to set up service worker");
+if (isTauri) {
+  // In Tauri, connect to the local samod sync server that stores the repo
+  // in ~/.cache/automerge. No SharedWorker needed — samod handles persistence
+  // and cross-window sync. Content serving (for tool module imports) is also
+  // handled directly by samod's Axum server — no JS roundtrip needed.
+  repo.networkSubsystem.addNetworkAdapter(
+    new WebSocketClientAdapter("ws://localhost:3030")
+  );
+} else {
+  const result = await setup();
+  if (!result) {
+    throw new Error("Failed to set up service worker");
+  }
+
+  repo.networkSubsystem.addNetworkAdapter(
+    new MessageChannelNetworkAdapter(result.port)
+  );
+  await repo.networkSubsystem.whenReady();
 }
 
-repo.networkSubsystem.addNetworkAdapter(
-  new MessageChannelNetworkAdapter(result.port)
-);
-await repo.networkSubsystem.whenReady();
-
-window.getRepoChannel = () => {
-  const { port1, port2 } = new MessageChannel();
-  navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
-  return port1;
-};
+if (!isTauri) {
+  window.getRepoChannel = () => {
+    const { port1, port2 } = new MessageChannel();
+    navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
+    return port1;
+  };
+}
 
 document.body.style.background = "#fffffe";
 
@@ -122,6 +164,134 @@ const moduleWatcher = new ModuleWatcher(
 );
 
 window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
+
+// --- Tray integration (Tauri only) ---
+if (isTauri) {
+  const { invoke } = window.__TAURI__.core;
+  const { listen } = window.__TAURI__.event;
+
+  // Sync datatype registry to the native tray menu
+  const datatypeRegistry = getRegistry<DatatypeDescription>("patchwork:datatype");
+  const syncTrayDatatypes = () => {
+    const all = datatypeRegistry.all().filter((d) => !d.unlisted);
+    const datatypes = all.map((d) => ({ id: d.id, name: d.name }));
+    invoke("update_tray_datatypes", { datatypes }).catch((e: any) =>
+      console.warn("[tray] failed to update datatypes:", e)
+    );
+  };
+  datatypeRegistry.on("changed", syncTrayDatatypes);
+  // Send initial state in case plugins are already loaded
+  syncTrayDatatypes();
+
+  // Add a document to the user's root folder
+  const addToRootFolder = async (docUrl: string, name: string, type: string) => {
+    try {
+      const accountDoc = accountDocHandle.doc();
+      const rootFolderHandle = await repo.find(accountDoc.rootFolderUrl);
+      rootFolderHandle.change((d: any) => {
+        if (!d.docs) d.docs = [];
+        d.docs.push({ name, type: "file", url: docUrl });
+      });
+    } catch (e) {
+      console.warn("[tray] failed to add to root folder:", e);
+    }
+  };
+
+  // Handle "New <datatype>" from tray menu
+  listen("tray-new-document", async (event: any) => {
+    const datatypeId = event.payload as string;
+    try {
+      const loaded = await datatypeRegistry.load(datatypeId);
+      if (!loaded) {
+        console.warn(`[tray] unknown datatype: ${datatypeId}`);
+        return;
+      }
+      const handle = await createDocOfDatatype2(loaded, repo);
+      const { documentId } = parseAutomergeUrl(handle.url);
+
+      // Auto-add to root folder
+      await addToRootFolder(handle.url, loaded.name || datatypeId, datatypeId);
+
+      // Open in a new or existing window
+      window.location.hash = `doc=${documentId}&type=${datatypeId}`;
+    } catch (e) {
+      console.error(`[tray] failed to create ${datatypeId} document:`, e);
+    }
+  });
+
+  // If the window was opened with #new=<datatypeId>, trigger doc creation.
+  // This happens when the tray "New" action had to create a fresh window
+  // (the event-based path doesn't work because JS hasn't loaded yet).
+  const newParam = initialParams.get("new");
+  if (newParam) {
+    // Clear the hash so it doesn't re-trigger on reload
+    history.replaceState(null, "", window.location.pathname);
+    const datatypeId = newParam;
+    (async () => {
+      try {
+        const loaded = await datatypeRegistry.load(datatypeId);
+        if (!loaded) {
+          console.warn(`[tray] unknown datatype from #new: ${datatypeId}`);
+          return;
+        }
+        const handle = await createDocOfDatatype2(loaded, repo);
+        const { documentId } = parseAutomergeUrl(handle.url);
+        await addToRootFolder(handle.url, loaded.name || datatypeId, datatypeId);
+        window.location.hash = `doc=${documentId}&type=${datatypeId}`;
+      } catch (e) {
+        console.error(`[tray] failed to create ${datatypeId} from #new:`, e);
+      }
+    })();
+  }
+
+  // Sync user profile (name + avatar) to the native tray menu
+  (async () => {
+    try {
+      const accountDoc = accountDocHandle.doc();
+      if (!accountDoc.contactUrl) return;
+
+      const contactHandle = await repo.find(accountDoc.contactUrl);
+      const contact = contactHandle.doc() as any;
+      if (!contact?.name) return;
+
+      let avatarPng: number[] | null = null;
+      if (contact.avatarUrl) {
+        try {
+          const avatarHandle = await repo.find(contact.avatarUrl);
+          const avatarDoc = avatarHandle.doc() as any;
+          if (avatarDoc?.content instanceof Uint8Array) {
+            avatarPng = Array.from(avatarDoc.content);
+          }
+        } catch (e) {
+          console.warn("[tray] failed to load avatar:", e);
+        }
+      }
+
+      invoke("update_tray_profile", {
+        name: contact.name,
+        avatarPng,
+      }).catch((e: any) =>
+        console.warn("[tray] failed to update profile:", e)
+      );
+    } catch (e) {
+      console.warn("[tray] failed to load contact:", e);
+    }
+  })();
+
+  // Handle eval requests from Rust (HTTP API, Shortcuts, etc.)
+  listen("patchwork-eval", async (event: any) => {
+    const { id, code } = event.payload as { id: number; code: string };
+    try {
+      // Use indirect eval to run in global scope with access to window.patchwork
+      const fn = new Function(`return (async () => { ${code} })()`);
+      const result = await fn();
+      const serialized = result === undefined ? "undefined" : JSON.stringify(result);
+      invoke("resolve_eval", { id, result: serialized, error: null });
+    } catch (e: any) {
+      invoke("resolve_eval", { id, result: null, error: String(e) });
+    }
+  });
+}
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
   moduleWatcher.loadSuggestedImportUrl(event.detail.url);
