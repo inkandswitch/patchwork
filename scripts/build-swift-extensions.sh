@@ -27,6 +27,14 @@ fi
 
 echo "==> Building Swift extensions for $APP_BUNDLE"
 
+# Merge usage descriptions into the app's Info.plist for permission prompts
+APP_PLIST="$APP_BUNDLE/Contents/Info.plist"
+if [ -f "$APP_PLIST" ]; then
+  /usr/libexec/PlistBuddy -c "Add :NSRemindersUsageDescription string 'Patchwork uses Reminders to let tools create and manage reminders on your behalf.'" "$APP_PLIST" 2>/dev/null || true
+  /usr/libexec/PlistBuddy -c "Add :NSCalendarsUsageDescription string 'Patchwork uses Calendar to let tools read and create calendar events.'" "$APP_PLIST" 2>/dev/null || true
+  /usr/libexec/PlistBuddy -c "Add :NSAppleEventsUsageDescription string 'Patchwork uses Apple Events to integrate with macOS system apps like Reminders and Calendar.'" "$APP_PLIST" 2>/dev/null || true
+fi
+
 PLUGINS_DIR="$APP_BUNDLE/Contents/PlugIns"
 FRAMEWORKS_DIR="$APP_BUNDLE/Contents/Frameworks"
 mkdir -p "$PLUGINS_DIR" "$FRAMEWORKS_DIR"
