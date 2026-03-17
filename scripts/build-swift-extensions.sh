@@ -53,6 +53,9 @@ INTENTS_FW_DIR="$BUILD_DIR/PatchworkIntents.framework"
 INTENTS_FW_VERSIONED="$INTENTS_FW_DIR/Versions/A"
 mkdir -p "$INTENTS_FW_VERSIONED/Modules" "$INTENTS_FW_VERSIONED/Resources"
 
+INTENTS_CONSTVALS_DIR="$BUILD_DIR/intents-constvals"
+mkdir -p "$INTENTS_CONSTVALS_DIR"
+
 swiftc \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
@@ -62,10 +65,14 @@ swiftc \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
   -O \
+  -emit-const-values \
   -Xlinker -install_name -Xlinker "@rpath/PatchworkIntents.framework/Versions/A/PatchworkIntents" \
   -framework AppIntents \
   -framework Foundation \
   "${INTENTS_SRC[@]}"
+
+# Collect .swiftconstvalues files for appintentsmetadataprocessor
+find "$BUILD_DIR" -name "*.swiftconstvalues" -exec cp {} "$INTENTS_CONSTVALS_DIR/" \; 2>/dev/null || true
 
 # Framework structure symlinks
 ln -sf A "$INTENTS_FW_DIR/Versions/Current"
@@ -108,7 +115,7 @@ mkdir -p "$METADATA_DIR"
 XCODE_BUILD_VERSION="$(xcodebuild -version | tail -1 | sed 's/Build version //')"
 TARGET_TRIPLE="$(uname -m)-apple-macosx${DEPLOYMENT_TARGET}"
 TOOLCHAIN_DIR="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain"
-xcrun appintentsmetadataprocessor \
+if ! xcrun appintentsmetadataprocessor \
   --binary-file "$FRAMEWORKS_DIR/PatchworkIntents.framework/PatchworkIntents" \
   --module-name PatchworkIntents \
   --output "$METADATA_DIR" \
@@ -117,8 +124,11 @@ xcrun appintentsmetadataprocessor \
   --toolchain-dir "$TOOLCHAIN_DIR" \
   --xcode-version "$XCODE_BUILD_VERSION" \
   --deployment-target "$DEPLOYMENT_TARGET" \
+  --swift-const-vals-path "$INTENTS_CONSTVALS_DIR" \
   --source-files "${INTENTS_SRC[@]}" \
-  2>&1
+  2>&1; then
+  echo "Warning: appintentsmetadataprocessor failed for PatchworkIntents (Shortcuts may not appear)"
+fi
 echo "    - Metadata files: $(ls "$METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
 
 # ---------------------------------------------------------------------------
@@ -302,6 +312,9 @@ mkdir -p "$WIDGET_APPEX_CONTENTS" "$WIDGET_APPEX/Contents/Resources"
 
 WIDGET_SRC="$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift"
 
+WIDGET_CONSTVALS_DIR="$BUILD_DIR/widget-constvals"
+mkdir -p "$WIDGET_CONSTVALS_DIR"
+
 # Compile the widget extension binary — needs -parse-as-library because the
 # source uses @main which conflicts with swiftc's default top-level code mode.
 swiftc \
@@ -312,11 +325,16 @@ swiftc \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
   -O \
+  -emit-const-values \
   -framework WidgetKit \
   -framework SwiftUI \
   -framework AppIntents \
   -Xlinker -rpath -Xlinker "@executable_path/../../../../Frameworks" \
   "$WIDGET_SRC"
+
+# Collect .swiftconstvalues for widget metadata extraction
+find "$BUILD_DIR" -name "*.swiftconstvalues" -newer "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
+  -exec cp {} "$WIDGET_CONSTVALS_DIR/" \; 2>/dev/null || true
 
 # Info.plist for the Widget Extension
 cat > "$WIDGET_APPEX/Contents/Info.plist" << PLIST
@@ -350,7 +368,7 @@ PLIST
 # Extract widget AppIntents metadata (for WidgetConfigurationIntent discovery)
 WIDGET_METADATA_DIR="$WIDGET_APPEX/Contents/Resources/Metadata.appintents"
 mkdir -p "$WIDGET_METADATA_DIR"
-xcrun appintentsmetadataprocessor \
+if ! xcrun appintentsmetadataprocessor \
   --binary-file "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
   --module-name PatchworkWidget \
   --output "$WIDGET_METADATA_DIR" \
@@ -359,8 +377,11 @@ xcrun appintentsmetadataprocessor \
   --toolchain-dir "$TOOLCHAIN_DIR" \
   --xcode-version "$XCODE_BUILD_VERSION" \
   --deployment-target "$DEPLOYMENT_TARGET" \
+  --swift-const-vals-path "$WIDGET_CONSTVALS_DIR" \
   --source-files "$WIDGET_SRC" \
-  2>&1
+  2>&1; then
+  echo "Warning: appintentsmetadataprocessor failed for PatchworkWidget (Widget may not appear)"
+fi
 echo "    - Widget metadata files: $(ls "$WIDGET_METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
 
 # Copy widget extension into app bundle (only if build succeeded)
