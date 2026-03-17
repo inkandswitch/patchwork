@@ -994,7 +994,8 @@ pub fn run() {
                 // stays alive in the tray. But allow exit when the user
                 // explicitly chose Cmd+Q or tray "Quit".
                 tauri::RunEvent::ExitRequested { api, .. } => {
-                    if !quitting.load(Ordering::SeqCst) {
+                    let q = app.state::<Arc<AtomicBool>>();
+                    if !q.load(Ordering::SeqCst) {
                         api.prevent_exit();
                     }
                 }
