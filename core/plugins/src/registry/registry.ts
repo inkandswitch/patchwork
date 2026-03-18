@@ -203,6 +203,25 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   }
 
   /**
+   * Remove a plugin by ID. Emits "removed" and "changed" if the plugin existed.
+   * Returns true if the plugin was found and removed, false if it wasn't registered.
+   */
+  remove(id: string): boolean {
+    if (!this.#plugins.has(id)) {
+      return false;
+    }
+
+    this.#plugins.delete(id);
+    this.#loadPromises.delete(id);
+    this.loading.delete(id);
+
+    this.#events.emit("removed", id);
+    this.#events.emit("changed");
+
+    return true;
+  }
+
+  /**
    * Check if an plugin ID is registered
    */
   has(id: string): boolean {

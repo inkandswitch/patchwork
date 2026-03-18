@@ -72,6 +72,21 @@ export function registerPlugins<D extends PluginDescription, I>(
 }
 
 /**
+ * Remove all plugins that were registered from a given importUrl.
+ * This is the counterpart to registerPlugins() and is used when a module
+ * is unloaded.
+ */
+export function unregisterPlugins(importUrl: string) {
+  for (const registry of Object.values(registries)) {
+    for (const plugin of registry.all()) {
+      if (plugin.importUrl === importUrl) {
+        registry.remove(plugin.id);
+      }
+    }
+  }
+}
+
+/**
  * Get all registries
  */
 export function getAllRegistries(): Map<string, PluginRegistry<any>> {
