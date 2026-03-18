@@ -96,7 +96,9 @@ mkdir -p "$INTENTS_FW_VERSIONED/Modules" "$INTENTS_FW_VERSIONED/Resources"
 INTENTS_CONSTVALS_DIR="$BUILD_DIR/intents-constvals"
 mkdir -p "$INTENTS_CONSTVALS_DIR"
 
-INTENTS_CONSTVALS="$INTENTS_FW_VERSIONED/PatchworkIntents.swiftconstvalues"
+# Write const values to the temp dir (not inside the framework) so codesign
+# doesn't trip over a non-binary file when signing the framework bundle.
+INTENTS_CONSTVALS="$INTENTS_CONSTVALS_DIR/PatchworkIntents.swiftconstvalues"
 try_compile_with_const_extract "$CONST_PROTOCOLS" "$INTENTS_CONSTVALS" \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
@@ -111,6 +113,14 @@ try_compile_with_const_extract "$CONST_PROTOCOLS" "$INTENTS_CONSTVALS" \
   -framework Foundation \
   "${INTENTS_SRC[@]}"
 INTENTS_CONST_EXTRACT="$CONST_EXTRACT_SUCCEEDED"
+
+# Strategy B derives the constvals path from -o, so move it to the temp dir
+# if it ended up next to the binary inside the framework.
+INTENTS_DERIVED_CONSTVALS="$INTENTS_FW_VERSIONED/PatchworkIntents.swiftconstvalues"
+if [ -f "$INTENTS_DERIVED_CONSTVALS" ] && [ "$INTENTS_DERIVED_CONSTVALS" != "$INTENTS_CONSTVALS" ]; then
+  cp "$INTENTS_DERIVED_CONSTVALS" "$INTENTS_CONSTVALS"
+  rm -f "$INTENTS_DERIVED_CONSTVALS"
+fi
 
 if [ -f "$INTENTS_CONSTVALS" ]; then
   echo "    - Const values: $(wc -c < "$INTENTS_CONSTVALS") bytes"
@@ -405,7 +415,9 @@ WIDGET_SRC="$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift"
 WIDGET_CONSTVALS_DIR="$BUILD_DIR/widget-constvals"
 mkdir -p "$WIDGET_CONSTVALS_DIR"
 
-WIDGET_CONSTVALS="$WIDGET_APPEX_CONTENTS/PatchworkWidget.swiftconstvalues"
+# Write const values to the dedicated temp dir — NOT inside Contents/MacOS.
+# codesign rejects .appex bundles that contain non-binary files in Contents/MacOS.
+WIDGET_CONSTVALS="$WIDGET_CONSTVALS_DIR/PatchworkWidget.swiftconstvalues"
 
 # Compile the widget extension binary — needs -parse-as-library because the
 # source uses @main which conflicts with swiftc's default top-level code mode.
@@ -423,6 +435,23 @@ try_compile_with_const_extract "$CONST_PROTOCOLS" "$WIDGET_CONSTVALS" \
   -Xlinker -rpath -Xlinker "@executable_path/../../../../Frameworks" \
   "$WIDGET_SRC"
 WIDGET_CONST_EXTRACT="$CONST_EXTRACT_SUCCEEDED"
+
+# Strategy B derives the constvals path from -o, so it may have written
+# PatchworkWidget.swiftconstvalues into Contents/MacOS alongside the binary.
+# Move it to the temp dir so codesign doesn't fail on the unsigned data file.
+WIDGET_DERIVED_CONSTVALS="$WIDGET_APPEX_CONTENTS/PatchworkWidget.swiftconstvalues"
+if [ -f "$WIDGET_DERIVED_CONSTVALS" ] && [ "$WIDGET_DERIVED_CONSTVALS" != "$WIDGET_CONSTVALS" ]; then
+  cp "$WIDGET_DERIVED_CONSTVALS" "$WIDGET_CONSTVALS"
+  rm -f "$WIDGET_DERIVED_CONSTVALS"
+fi
+
+# Safety: remove any remaining .swiftconstvalues from Contents/MacOS so
+# codesign does not encounter non-binary files in that directory.
+STRAY_CONSTVALS=$(find "$WIDGET_APPEX_CONTENTS" -name "*.swiftconstvalues" 2>/dev/null || true)
+if [ -n "$STRAY_CONSTVALS" ]; then
+  echo "    - Warning: found stray .swiftconstvalues in Contents/MacOS, removing before codesign"
+  find "$WIDGET_APPEX_CONTENTS" -name "*.swiftconstvalues" -delete 2>/dev/null || true
+fi
 
 if [ -f "$WIDGET_CONSTVALS" ]; then
   echo "    - Widget const values: $(wc -c < "$WIDGET_CONSTVALS") bytes"

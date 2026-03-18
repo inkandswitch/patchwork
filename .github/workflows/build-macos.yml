@@ -6,6 +6,7 @@ on:
       - main
       - claude/patchwork-ios-capture-tool-oLM3H
       - claude/trigger-ci-pipeline-MRqib
+      - copilot/fix-macos-build-shortcuts-widget
   workflow_dispatch:
 
 concurrency:
