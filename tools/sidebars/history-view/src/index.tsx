@@ -34,7 +34,7 @@ export const plugins: Plugin<any>[] = [
   },
   {
     type: "patchwork:tool",
-    id: "history-view-grjte",
+    id: "history-view",
     name: "History",
     icon: "History",
     supportedDatatypes: ["account"],
@@ -47,7 +47,7 @@ export const plugins: Plugin<any>[] = [
   },
   {
     type: "patchwork:tool",
-    id: "highlight-changes-checkbox-grjte",
+    id: "highlight-changes-checkbox",
     name: "Highlight Changes",
     icon: "Highlighter",
     supportedDatatypes: "*",

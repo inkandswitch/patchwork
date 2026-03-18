@@ -1,10 +1,10 @@
 {
-  "name": "@tiny-patchwork/history-view-grjte",
+  "name": "@tiny-patchwork/history-view",
   "type": "module",
   "private": true,
   "main": "./dist/index.js",
   "pushwork": {
-    "url": "automerge:j58BEQCacWyt8nRbPk96h9fHEuK"
+    "url": "automerge:3c61tPPwick8v75Sv9G33WjTji3R"
   },
   "scripts": {
     "dev": "vite build --watch",
