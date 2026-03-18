@@ -8,6 +8,7 @@ import { ModuleFilters, ModuleTable } from "./components";
 import { useModulePlugins } from "./hooks/useModulePlugins.ts";
 import { MODULE_FETCH_DEBOUNCE } from "./constants.ts";
 import { DebugToggle } from "./components/DebugToggle.tsx";
+import { unregisterPlugins } from "@inkandswitch/patchwork-plugins";
 
 export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   const [searchInputValue, setSearchInputValue] = createSignal("");
@@ -55,6 +56,7 @@ export function ModuleSettings(props: PatchworkToolProps<ModuleSettingsDoc>) {
   };
 
   const handleRemoveModule = (url: AutomergeUrl) => {
+    unregisterPlugins(url);
     props.handle.change((doc) => {
       const idx = doc.modules.indexOf(url);
       if (idx !== -1) {
