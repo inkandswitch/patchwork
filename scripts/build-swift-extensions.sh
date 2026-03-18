@@ -56,11 +56,11 @@ mkdir -p "$INTENTS_FW_VERSIONED/Modules" "$INTENTS_FW_VERSIONED/Resources"
 INTENTS_CONSTVALS_DIR="$BUILD_DIR/intents-constvals"
 mkdir -p "$INTENTS_CONSTVALS_DIR"
 
-# Compile the framework. Use -whole-module-optimization so swiftc invokes a
-# single swift-frontend, which can accept exactly one -emit-const-values-path.
-# -emit-const-values is a driver flag that enables const extraction;
-# -emit-const-values-path (via -Xfrontend) sets the output location.
-INTENTS_CONSTVALS="$INTENTS_CONSTVALS_DIR/PatchworkIntents.swiftconstvalues"
+# Compile the framework. -emit-const-values (driver flag) enables const
+# extraction; the driver auto-derives the output path from -o, placing
+# .swiftconstvalues alongside the binary. Do NOT also pass
+# -Xfrontend -emit-const-values-path or the frontend gets two paths and crashes.
+INTENTS_CONSTVALS="$INTENTS_FW_VERSIONED/PatchworkIntents.swiftconstvalues"
 swiftc \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
@@ -71,8 +71,6 @@ swiftc \
   -emit-module-path "$INTENTS_FW_VERSIONED/Modules/PatchworkIntents.swiftmodule" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
-  -Xfrontend -emit-const-values-path \
-  -Xfrontend "$INTENTS_CONSTVALS" \
   -Xlinker -install_name -Xlinker "@rpath/PatchworkIntents.framework/Versions/A/PatchworkIntents" \
   -framework AppIntents \
   -framework Foundation \
@@ -80,6 +78,8 @@ swiftc \
 
 if [ -f "$INTENTS_CONSTVALS" ]; then
   echo "    - Const values: $(wc -c < "$INTENTS_CONSTVALS") bytes"
+  # Copy to constvals dir for appintentsmetadataprocessor
+  cp "$INTENTS_CONSTVALS" "$INTENTS_CONSTVALS_DIR/"
 else
   echo "    - Warning: no .swiftconstvalues generated (Shortcuts metadata may be incomplete)"
 fi
@@ -341,7 +341,8 @@ WIDGET_SRC="$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift"
 WIDGET_CONSTVALS_DIR="$BUILD_DIR/widget-constvals"
 mkdir -p "$WIDGET_CONSTVALS_DIR"
 
-WIDGET_CONSTVALS="$WIDGET_CONSTVALS_DIR/PatchworkWidget.swiftconstvalues"
+# Driver auto-places .swiftconstvalues next to -o output
+WIDGET_CONSTVALS="$WIDGET_APPEX_CONTENTS/PatchworkWidget.swiftconstvalues"
 
 # Compile the widget extension binary — needs -parse-as-library because the
 # source uses @main which conflicts with swiftc's default top-level code mode.
@@ -354,7 +355,6 @@ swiftc \
   -o "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
-  -Xfrontend -emit-const-values-path -Xfrontend "$WIDGET_CONSTVALS" \
   -framework WidgetKit \
   -framework SwiftUI \
   -framework AppIntents \
@@ -363,6 +363,8 @@ swiftc \
 
 if [ -f "$WIDGET_CONSTVALS" ]; then
   echo "    - Widget const values: $(wc -c < "$WIDGET_CONSTVALS") bytes"
+  # Copy to constvals dir for appintentsmetadataprocessor
+  cp "$WIDGET_CONSTVALS" "$WIDGET_CONSTVALS_DIR/"
 else
   echo "    - Warning: no widget .swiftconstvalues generated"
 fi
