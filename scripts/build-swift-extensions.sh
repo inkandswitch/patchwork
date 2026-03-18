@@ -15,6 +15,7 @@ SWIFT_PLUGINS="src-tauri/swift-plugins"
 BUILD_DIR="$(mktemp -d)"
 SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
 DEPLOYMENT_TARGET="14.0"
+ARCH="$(uname -m)"
 SIGN_IDENTITY="${CODESIGN_IDENTITY:--}" # ad-hoc by default
 ENTITLEMENTS="src-tauri/Entitlements.plist"
 EXTENSION_ENTITLEMENTS="src-tauri/Extension.entitlements.plist"
@@ -39,17 +40,24 @@ try_compile_with_const_extract() {
     -Xfrontend -emit-const-values-path -Xfrontend "$constvals_path" \
     -Xfrontend -const-gather-protocols-file -Xfrontend "$const_protocols" \
     "$@" 2>&1; then
-    CONST_EXTRACT_SUCCEEDED=true
-    return 0
+    # Check if the constvals file was actually produced with content.
+    # An empty constvals is just "[]" (2 bytes); anything ≤ 4 bytes (allowing
+    # for trailing whitespace/newline) is treated as empty.
+    if [ -f "$constvals_path" ] && [ "$(wc -c < "$constvals_path")" -gt 4 ]; then
+      CONST_EXTRACT_SUCCEEDED=true
+      return 0
+    fi
+    echo "    - Strategy A compiled OK but constvals empty, trying driver flags..."
+  else
+    echo "    - Frontend const-extract flags failed, trying driver flags..."
   fi
 
-  echo "    - Frontend const-extract flags failed, trying driver flags..."
-
-  # Strategy B: driver-level flags (newer Swift toolchains only).
+  # Strategy B: driver-level flag -emit-const-values (newer Swift toolchains).
   # -emit-const-values auto-derives the output path from -o.
+  # -const-gather-protocols-file is a frontend flag, so pass via -Xfrontend.
   if swiftc \
     -emit-const-values \
-    -const-gather-protocols-list "$const_protocols" \
+    -Xfrontend -const-gather-protocols-file -Xfrontend "$const_protocols" \
     "$@" 2>&1; then
     CONST_EXTRACT_SUCCEEDED=true
     return 0
@@ -107,7 +115,7 @@ try_compile_with_const_extract "$CONST_PROTOCOLS" "$INTENTS_CONSTVALS" \
   -o "$INTENTS_FW_VERSIONED/PatchworkIntents" \
   -emit-module-path "$INTENTS_FW_VERSIONED/Modules/PatchworkIntents.swiftmodule" \
   -sdk "$SDK_PATH" \
-  -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
+  -target "${ARCH}-apple-macos${DEPLOYMENT_TARGET}" \
   -Xlinker -install_name -Xlinker "@rpath/PatchworkIntents.framework/Versions/A/PatchworkIntents" \
   -framework AppIntents \
   -framework Foundation \
@@ -167,7 +175,7 @@ mkdir -p "$METADATA_DIR"
 
 # appintentsmetadataprocessor extracts Shortcut definitions from compiled Swift.
 XCODE_BUILD_VERSION="$(xcodebuild -version | tail -1 | sed 's/Build version //')"
-TARGET_TRIPLE="$(uname -m)-apple-macosx${DEPLOYMENT_TARGET}"
+TARGET_TRIPLE="${ARCH}-apple-macos${DEPLOYMENT_TARGET}"
 TOOLCHAIN_DIR="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain"
 
 # Build metadata processor args conditionally based on const extraction success
@@ -175,7 +183,11 @@ CONSTVALS_ARGS=()
 METADATA_EXTRA_ARGS=()
 if [ "$INTENTS_CONST_EXTRACT" = "true" ]; then
   for f in "$INTENTS_CONSTVALS_DIR"/*.swiftconstvalues; do
-    [ -f "$f" ] && CONSTVALS_ARGS+=(--swift-const-vals "$f")
+    # Only include constvals files that have actual content (not just "[]").
+    # "[]" = 2 bytes; ≤ 4 bytes accounts for trailing whitespace/newline.
+    if [ -f "$f" ] && [ "$(wc -c < "$f")" -gt 4 ]; then
+      CONSTVALS_ARGS+=(--swift-const-vals "$f")
+    fi
   done
   if [ ${#CONSTVALS_ARGS[@]} -gt 0 ]; then
     METADATA_EXTRA_ARGS+=(--compile-time-extraction)
@@ -183,19 +195,45 @@ if [ "$INTENTS_CONST_EXTRACT" = "true" ]; then
   fi
 fi
 
-if ! xcrun appintentsmetadataprocessor \
-  --binary-file "$FRAMEWORKS_DIR/PatchworkIntents.framework/PatchworkIntents" \
-  --module-name PatchworkIntents \
-  --output "$METADATA_DIR" \
-  --sdk-root "$SDK_PATH" \
-  --target-triple "$TARGET_TRIPLE" \
-  --toolchain-dir "$TOOLCHAIN_DIR" \
-  --xcode-version "$XCODE_BUILD_VERSION" \
-  --deployment-target "$DEPLOYMENT_TARGET" \
-  ${METADATA_EXTRA_ARGS[@]+"${METADATA_EXTRA_ARGS[@]}"} \
-  --source-files "${INTENTS_SRC[@]}" \
-  2>&1; then
-  echo "Warning: appintentsmetadataprocessor failed for PatchworkIntents (Shortcuts may not appear)"
+# Run metadata processor.  If compile-time extraction was requested but produced
+# no output, retry without --compile-time-extraction so the tool falls back to
+# source-file scanning.
+METADATA_SUCCEEDED=false
+if [ ${#METADATA_EXTRA_ARGS[@]} -gt 0 ]; then
+  if xcrun appintentsmetadataprocessor \
+    --binary-file "$FRAMEWORKS_DIR/PatchworkIntents.framework/PatchworkIntents" \
+    --module-name PatchworkIntents \
+    --output "$METADATA_DIR" \
+    --sdk-root "$SDK_PATH" \
+    --target-triple "$TARGET_TRIPLE" \
+    --toolchain-dir "$TOOLCHAIN_DIR" \
+    --xcode-version "$XCODE_BUILD_VERSION" \
+    --deployment-target "$DEPLOYMENT_TARGET" \
+    "${METADATA_EXTRA_ARGS[@]}" \
+    --source-files "${INTENTS_SRC[@]}" \
+    2>&1 && [ -n "$(ls -A "$METADATA_DIR" 2>/dev/null)" ]; then
+    METADATA_SUCCEEDED=true
+  else
+    echo "    - Compile-time extraction produced no output, retrying with source scanning..."
+    rm -rf "$METADATA_DIR"
+    mkdir -p "$METADATA_DIR"
+  fi
+fi
+
+if [ "$METADATA_SUCCEEDED" = "false" ]; then
+  if ! xcrun appintentsmetadataprocessor \
+    --binary-file "$FRAMEWORKS_DIR/PatchworkIntents.framework/PatchworkIntents" \
+    --module-name PatchworkIntents \
+    --output "$METADATA_DIR" \
+    --sdk-root "$SDK_PATH" \
+    --target-triple "$TARGET_TRIPLE" \
+    --toolchain-dir "$TOOLCHAIN_DIR" \
+    --xcode-version "$XCODE_BUILD_VERSION" \
+    --deployment-target "$DEPLOYMENT_TARGET" \
+    --source-files "${INTENTS_SRC[@]}" \
+    2>&1; then
+    echo "Warning: appintentsmetadataprocessor failed for PatchworkIntents (Shortcuts may not appear)"
+  fi
 fi
 echo "    - Metadata files: $(ls "$METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
 
@@ -341,7 +379,7 @@ swiftc \
   -parse-as-library \
   -o "$SHARE_APPEX_CONTENTS/PatchworkShare" \
   -sdk "$SDK_PATH" \
-  -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
+  -target "${ARCH}-apple-macos${DEPLOYMENT_TARGET}" \
   -O \
   -framework Cocoa \
   -framework Foundation \
@@ -426,7 +464,7 @@ try_compile_with_const_extract "$CONST_PROTOCOLS" "$WIDGET_CONSTVALS" \
   -whole-module-optimization \
   -o "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
   -sdk "$SDK_PATH" \
-  -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
+  -target "${ARCH}-apple-macos${DEPLOYMENT_TARGET}" \
   -framework WidgetKit \
   -framework SwiftUI \
   -framework AppIntents \
@@ -494,7 +532,11 @@ WIDGET_CONSTVALS_ARGS=()
 WIDGET_METADATA_EXTRA_ARGS=()
 if [ "$WIDGET_CONST_EXTRACT" = "true" ]; then
   for f in "$WIDGET_CONSTVALS_DIR"/*.swiftconstvalues; do
-    [ -f "$f" ] && WIDGET_CONSTVALS_ARGS+=(--swift-const-vals "$f")
+    # Only include constvals files that have actual content (not just "[]").
+    # "[]" = 2 bytes; ≤ 4 bytes accounts for trailing whitespace/newline.
+    if [ -f "$f" ] && [ "$(wc -c < "$f")" -gt 4 ]; then
+      WIDGET_CONSTVALS_ARGS+=(--swift-const-vals "$f")
+    fi
   done
   if [ ${#WIDGET_CONSTVALS_ARGS[@]} -gt 0 ]; then
     WIDGET_METADATA_EXTRA_ARGS+=(--compile-time-extraction)
@@ -502,19 +544,44 @@ if [ "$WIDGET_CONST_EXTRACT" = "true" ]; then
   fi
 fi
 
-if ! xcrun appintentsmetadataprocessor \
-  --binary-file "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
-  --module-name PatchworkWidget \
-  --output "$WIDGET_METADATA_DIR" \
-  --sdk-root "$SDK_PATH" \
-  --target-triple "$TARGET_TRIPLE" \
-  --toolchain-dir "$TOOLCHAIN_DIR" \
-  --xcode-version "$XCODE_BUILD_VERSION" \
-  --deployment-target "$DEPLOYMENT_TARGET" \
-  ${WIDGET_METADATA_EXTRA_ARGS[@]+"${WIDGET_METADATA_EXTRA_ARGS[@]}"} \
-  --source-files "$WIDGET_SRC" \
-  2>&1; then
-  echo "Warning: appintentsmetadataprocessor failed for PatchworkWidget (Widget may not appear)"
+# Run metadata processor.  If compile-time extraction was requested but produced
+# no output, retry without --compile-time-extraction for source-file scanning.
+WIDGET_METADATA_SUCCEEDED=false
+if [ ${#WIDGET_METADATA_EXTRA_ARGS[@]} -gt 0 ]; then
+  if xcrun appintentsmetadataprocessor \
+    --binary-file "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
+    --module-name PatchworkWidget \
+    --output "$WIDGET_METADATA_DIR" \
+    --sdk-root "$SDK_PATH" \
+    --target-triple "$TARGET_TRIPLE" \
+    --toolchain-dir "$TOOLCHAIN_DIR" \
+    --xcode-version "$XCODE_BUILD_VERSION" \
+    --deployment-target "$DEPLOYMENT_TARGET" \
+    "${WIDGET_METADATA_EXTRA_ARGS[@]}" \
+    --source-files "$WIDGET_SRC" \
+    2>&1 && [ -n "$(ls -A "$WIDGET_METADATA_DIR" 2>/dev/null)" ]; then
+    WIDGET_METADATA_SUCCEEDED=true
+  else
+    echo "    - Compile-time extraction produced no output, retrying with source scanning..."
+    rm -rf "$WIDGET_METADATA_DIR"
+    mkdir -p "$WIDGET_METADATA_DIR"
+  fi
+fi
+
+if [ "$WIDGET_METADATA_SUCCEEDED" = "false" ]; then
+  if ! xcrun appintentsmetadataprocessor \
+    --binary-file "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
+    --module-name PatchworkWidget \
+    --output "$WIDGET_METADATA_DIR" \
+    --sdk-root "$SDK_PATH" \
+    --target-triple "$TARGET_TRIPLE" \
+    --toolchain-dir "$TOOLCHAIN_DIR" \
+    --xcode-version "$XCODE_BUILD_VERSION" \
+    --deployment-target "$DEPLOYMENT_TARGET" \
+    --source-files "$WIDGET_SRC" \
+    2>&1; then
+    echo "Warning: appintentsmetadataprocessor failed for PatchworkWidget (Widget may not appear)"
+  fi
 fi
 echo "    - Widget metadata files: $(ls "$WIDGET_METADATA_DIR" 2>/dev/null | tr '\n' ' ')"
 
