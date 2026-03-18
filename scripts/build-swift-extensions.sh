@@ -124,6 +124,8 @@ fi
 
 if [ -f "$INTENTS_CONSTVALS" ]; then
   echo "    - Const values: $(wc -c < "$INTENTS_CONSTVALS") bytes"
+  # Copy to constvals dir for appintentsmetadataprocessor
+  cp "$INTENTS_CONSTVALS" "$INTENTS_CONSTVALS_DIR/"
 else
   echo "    - Warning: no .swiftconstvalues generated (Shortcuts metadata may be incomplete)"
 fi
@@ -453,6 +455,8 @@ fi
 
 if [ -f "$WIDGET_CONSTVALS" ]; then
   echo "    - Widget const values: $(wc -c < "$WIDGET_CONSTVALS") bytes"
+  # Copy to constvals dir for appintentsmetadataprocessor
+  cp "$WIDGET_CONSTVALS" "$WIDGET_CONSTVALS_DIR/"
 else
   echo "    - Warning: no widget .swiftconstvalues generated"
 fi
