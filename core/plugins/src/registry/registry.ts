@@ -12,17 +12,8 @@ import {
   isLoadedPlugin,
   isPluginDescription,
 } from "./guards.js";
-import type { DatatypeImplementation } from "../datatypes.js";
 
 const log = debug("patchwork:plugins");
-
-function isAsyncFunction(fn: unknown) {
-  return (
-    typeof fn == "function" &&
-    Symbol.toStringTag in fn &&
-    fn[Symbol.toStringTag] == "AsyncFunction"
-  );
-}
 
 /**
  * Registry for managing plugins of a specific type
@@ -126,26 +117,6 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
             module: implementation,
           };
 
-          // todo remove tomorrow
-          // think about where this should live etc
-          if (description.type == "patchwork:datatype") {
-            const impl = implementation as DatatypeImplementation;
-            if (isAsyncFunction(impl.getTitle)) {
-              console.warn(
-                description.id,
-                description.importUrl,
-                "getTitle should not be an async function"
-              );
-            }
-            if (isAsyncFunction(impl.setTitle)) {
-              console.warn(
-                description.id,
-                description.importUrl,
-                "getTitle should be an async function"
-              );
-            }
-          }
-
           // Store the loaded version
           this.#plugins.set(description.id, plugin);
           this.#loadPromises.delete(id);
@@ -183,22 +154,13 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   async loadAll(plugins: Plugin<D, I>[]): Promise<LoadedPlugin<D, I>[]> {
     // Get all plugins or filter them if a filter function is provided
     // Create an array of promises for loading each plugin
-    const loadPromises = plugins.map(async (plugin) => {
-      try {
-        const Plugin = await this.load(plugin.id);
-        return Plugin;
-      } catch (error) {
-        console.warn(`Failed to load plugin ${plugin.id}:`, error);
-        return undefined;
-      }
-    });
+    const loadPromises = plugins.map((plugin) => this.load(plugin.id));
 
-    // Wait for all plugins to load and filter out any that failed
-    // TODO: use Promise.allSettled instead?
-    // TODO: error handling?
-    const results = await Promise.all(loadPromises);
-    return results.filter(
-      (plugin): plugin is Awaited<LoadedPlugin<D, I>> => plugin !== undefined
+    const results = await Promise.allSettled(loadPromises);
+    return results.flatMap((result) =>
+      result.status === "fulfilled" && result.value !== undefined
+        ? [result.value]
+        : []
     );
   }
 
@@ -228,8 +190,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     return this.#plugins.has(id);
   }
 
-  /** Subscribe to plugin events */
-  // TODO: see if we can / want to reuse the eventemitter3 API here.
+  /** Subscribe to plugin events. Returns an unsubscribe function. */
   on(
     event: "registered",
     callback: (plugin: Plugin<D, I>) => void | Promise<void>
@@ -256,11 +217,4 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     };
   }
 
-  /** Unsubscribe from plugin events */
-  off(
-    event: keyof PluginRegistryEvents<D, I>,
-    callback: (...args: any[]) => void
-  ): void {
-    this.#events.off(event, callback);
-  }
 }
