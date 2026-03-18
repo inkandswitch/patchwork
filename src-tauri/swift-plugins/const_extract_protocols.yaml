@@ -1,0 +1,8 @@
+[
+  "AppIntents.AppIntent",
+  "AppIntents.AppShortcutsProvider",
+  "AppIntents.WidgetConfigurationIntent",
+  "AppIntents.AppEnum",
+  "AppIntents.AppEntity",
+  "AppIntents.DynamicOptionsProvider"
+]

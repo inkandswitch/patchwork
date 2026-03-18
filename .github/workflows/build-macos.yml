@@ -1,0 +1,189 @@
+name: build macOS app
+
+on:
+  push:
+    branches:
+      - main
+      - claude/patchwork-ios-capture-tool-oLM3H
+      - claude/trigger-ci-pipeline-MRqib
+      - copilot/fix-macos-build-shortcuts-widget
+      - copilot/fix-shortcut-widget-installation-again
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build macOS app
+    runs-on: macos-latest
+    steps:
+      - name: check out the repository
+        uses: actions/checkout@v4
+
+      - name: install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          cache-on-failure: true
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: build JS packages
+        run: pnpm -r --filter '...{sites/tiny-patchwork}...' build
+
+      - name: install Tauri CLI
+        run: cargo install tauri-cli --locked
+
+      - name: import code signing certificate
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          CERT_PATH="$RUNNER_TEMP/certificate.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
+
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          security import "$CERT_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+
+          # Extract the signing identity name
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "CODESIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+      - name: write App Store Connect API key
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          mkdir -p ~/private_keys
+          echo "$APPLE_API_KEY_CONTENT" > ~/private_keys/AuthKey_${APPLE_API_KEY}.p8
+
+      - name: select Xcode and print Swift version
+        run: |
+          # Use the latest Xcode available on the runner
+          LATEST_XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$LATEST_XCODE" ]; then
+            sudo xcode-select -s "$LATEST_XCODE"
+          fi
+          echo "Xcode: $(xcodebuild -version)"
+          echo "Swift: $(swiftc --version)"
+
+      - name: build the app (unsigned)
+        run: cargo tauri build
+
+      - name: build Swift extensions (Shortcuts + Share + Widget)
+        run: ./scripts/build-swift-extensions.sh
+
+      - name: sign and notarize the app bundle
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_PATH: ~/private_keys/AuthKey_${{ secrets.APPLE_API_KEY }}.p8
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          APP_BUNDLE="src-tauri/target/release/bundle/macos/Patchwork.app"
+          ENTITLEMENTS="src-tauri/Entitlements.plist"
+          EXT_ENTITLEMENTS="src-tauri/Extension.entitlements.plist"
+
+          # Sign frameworks first (inside-out)
+          find "$APP_BUNDLE/Contents/Frameworks" -type d -name "*.framework" -exec \
+            codesign --force --sign "$CODESIGN_IDENTITY" --deep --options runtime {} \;
+
+          # Sign extensions with their sandbox+network entitlements
+          for appex in "$APP_BUNDLE/Contents/PlugIns"/*.appex; do
+            [ -d "$appex" ] || continue
+            codesign --force --sign "$CODESIGN_IDENTITY" --entitlements "$EXT_ENTITLEMENTS" --options runtime "$appex"
+          done
+
+          # Sign the main app bundle last
+          if [ -f "$ENTITLEMENTS" ]; then
+            codesign --force --sign "$CODESIGN_IDENTITY" --entitlements "$ENTITLEMENTS" --options runtime --deep "$APP_BUNDLE"
+          else
+            codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --deep "$APP_BUNDLE"
+          fi
+
+          # Notarize
+          DMG_DIR="src-tauri/target/release/bundle/dmg"
+          DMG_PATH="$DMG_DIR/Patchwork.dmg"
+
+          # Create a zip for notarization (notarytool needs zip or dmg)
+          NOTARIZE_ZIP="$RUNNER_TEMP/Patchwork-notarize.zip"
+          ditto -c -k --keepParent "$APP_BUNDLE" "$NOTARIZE_ZIP"
+
+          xcrun notarytool submit "$NOTARIZE_ZIP" \
+            --key "$APPLE_API_KEY_PATH" \
+            --key-id "$APPLE_API_KEY" \
+            --issuer "$APPLE_API_ISSUER" \
+            --wait --timeout 600
+
+          # Staple the notarization ticket
+          xcrun stapler staple "$APP_BUNDLE"
+
+          # Rebuild the DMG with the signed+notarized app
+          if [ -d "$DMG_DIR" ]; then
+            rm -f "$DMG_DIR"/*.dmg
+            STAGING="$RUNNER_TEMP/dmg-staging"
+            mkdir -p "$STAGING"
+            cp -R "$APP_BUNDLE" "$STAGING/"
+            ln -s /Applications "$STAGING/Applications"
+            hdiutil create -volname "Patchwork" -srcfolder "$STAGING" -ov -format UDZO "$DMG_PATH"
+
+            # Notarize the DMG separately
+            xcrun notarytool submit "$DMG_PATH" \
+              --key "$APPLE_API_KEY_PATH" \
+              --key-id "$APPLE_API_KEY" \
+              --issuer "$APPLE_API_ISSUER" \
+              --wait --timeout 600
+
+            # Staple the DMG
+            xcrun stapler staple "$DMG_PATH"
+          fi
+
+      - name: cleanup keychain and keys
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" 2>/dev/null || true
+          rm -rf ~/private_keys 2>/dev/null || true
+
+      - name: zip .app bundle
+        run: ditto -c -k --keepParent src-tauri/target/release/bundle/macos/Patchwork.app src-tauri/target/release/bundle/macos/Patchwork.app.zip
+
+      - name: upload .app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Patchwork-macOS
+          path: src-tauri/target/release/bundle/macos/Patchwork.app.zip
+          if-no-files-found: error
+
+      - name: upload .dmg installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Patchwork-macOS-dmg
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: warn
