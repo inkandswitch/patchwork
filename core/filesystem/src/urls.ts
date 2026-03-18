@@ -1,14 +1,18 @@
 import { type AutomergeUrl, type DocHandle } from "@automerge/automerge-repo";
 
+const isTauri = typeof globalThis !== "undefined" && "__TAURI__" in globalThis;
+
 export function getImportableUrlFromAutomergeUrl(
   automergeUrl: AutomergeUrl,
   subpath?: string
 ): string {
-  const base = `/${encodeURIComponent(automergeUrl)}/`;
-  if (!subpath || subpath === ".") return base;
+  const baseUrl = isTauri
+    ? `http://localhost:3030/${encodeURIComponent(automergeUrl)}/`
+    : `/${encodeURIComponent(automergeUrl)}/`;
+  if (!subpath || subpath === ".") return baseUrl;
   // Strip leading "./" if present
   const clean = subpath.replace(/^\.\//, "");
-  return `${base}${clean}`;
+  return `${baseUrl}${clean}`;
 }
 
 export function getImportableUrlFromDocHandle(

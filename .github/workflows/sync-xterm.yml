@@ -1,0 +1,33 @@
+name: sync xterm tool
+
+on:
+  push:
+    branches:
+      - main
+      - claude/trigger-ci-pipeline-MRqib
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: pushwork sync xterm
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out the repository
+        uses: actions/checkout@v4
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: pushwork sync
+        working-directory: tools/tauri/xterm
+        run: |
+          npx pushwork track automerge:2iWT4EMck4yirAkr5fbtiratyjX6
+          npx pushwork sync

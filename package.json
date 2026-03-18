@@ -16,7 +16,10 @@
     "preview": "pnpm --filter gaios preview",
     "publish-packages": "pnpm -r publish --access=public",
     "test": "pnpm --filter \"./os\" test",
-    "tsc": "pnpm -r exec tsc"
+    "tsc": "pnpm -r exec tsc",
+    "tauri": "tauri",
+    "dev:tauri": "tauri dev",
+    "build:tauri": "tauri build"
   },
   "pnpm": {
     "overrides": {
@@ -30,6 +33,7 @@
     "@changesets/cli": "^2.29.8",
     "@vitest/ui": "^3.2.4",
     "concurrently": "^9.1.2",
+    "@tauri-apps/cli": "^2",
     "cross-env": "^10.1.0",
     "prettier": "^3.7.3",
     "typescript": "^5.9.3",
@@ -41,6 +45,9 @@
     "node": "24.11.1"
   },
   "dependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-network-websocket": "2.5.2",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:"
   }
