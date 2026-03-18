@@ -22,6 +22,41 @@ CONST_PROTOCOLS="$SWIFT_PLUGINS/const_extract_protocols.yaml"
 
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
+# Compile Swift with const extraction, falling back gracefully if the toolchain
+# doesn't support the required flags.  Sets CONST_EXTRACT_SUCCEEDED=true/false.
+# Usage: try_compile_with_const_extract <protocols_file> [swiftc args...]
+try_compile_with_const_extract() {
+  local const_protocols="$1"
+  shift
+
+  CONST_EXTRACT_SUCCEEDED=false
+
+  # Strategy A: pass const-extraction flags via -Xfrontend (most portable)
+  if swiftc \
+    -Xfrontend -emit-const-values \
+    -Xfrontend -const-gather-protocols-file -Xfrontend "$const_protocols" \
+    "$@" 2>&1; then
+    CONST_EXTRACT_SUCCEEDED=true
+    return 0
+  fi
+
+  echo "    - Frontend const-extract flags failed, trying driver flags..."
+
+  # Strategy B: driver-level flags (newer Swift toolchains only)
+  if swiftc \
+    -emit-const-values \
+    -const-gather-protocols-list "$const_protocols" \
+    "$@" 2>&1; then
+    CONST_EXTRACT_SUCCEEDED=true
+    return 0
+  fi
+
+  echo "    - Warning: const extraction unavailable, compiling without it"
+
+  # Strategy C: no const extraction at all
+  swiftc "$@"
+}
+
 if [ ! -d "$APP_BUNDLE" ]; then
   echo "Error: App bundle not found at $APP_BUNDLE"
   exit 1
@@ -57,18 +92,12 @@ mkdir -p "$INTENTS_FW_VERSIONED/Modules" "$INTENTS_FW_VERSIONED/Resources"
 INTENTS_CONSTVALS_DIR="$BUILD_DIR/intents-constvals"
 mkdir -p "$INTENTS_CONSTVALS_DIR"
 
-# Compile the framework. -emit-const-values (driver flag) enables const
-# extraction; the driver auto-derives the output path from -o, placing
-# .swiftconstvalues alongside the binary. Do NOT also pass
-# -Xfrontend -emit-const-values-path or the frontend gets two paths and crashes.
 INTENTS_CONSTVALS="$INTENTS_FW_VERSIONED/PatchworkIntents.swiftconstvalues"
-swiftc \
+try_compile_with_const_extract "$CONST_PROTOCOLS" \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
   -parse-as-library \
   -whole-module-optimization \
-  -emit-const-values \
-  -const-gather-protocols-list "$CONST_PROTOCOLS" \
   -o "$INTENTS_FW_VERSIONED/PatchworkIntents" \
   -emit-module-path "$INTENTS_FW_VERSIONED/Modules/PatchworkIntents.swiftmodule" \
   -sdk "$SDK_PATH" \
@@ -77,6 +106,7 @@ swiftc \
   -framework AppIntents \
   -framework Foundation \
   "${INTENTS_SRC[@]}"
+INTENTS_CONST_EXTRACT="$CONST_EXTRACT_SUCCEEDED"
 
 if [ -f "$INTENTS_CONSTVALS" ]; then
   echo "    - Const values: $(wc -c < "$INTENTS_CONSTVALS") bytes"
@@ -128,11 +158,18 @@ XCODE_BUILD_VERSION="$(xcodebuild -version | tail -1 | sed 's/Build version //')
 TARGET_TRIPLE="$(uname -m)-apple-macosx${DEPLOYMENT_TARGET}"
 TOOLCHAIN_DIR="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain"
 
-# Build --swift-const-vals args (one per .swiftconstvalues file)
+# Build metadata processor args conditionally based on const extraction success
 CONSTVALS_ARGS=()
-for f in "$INTENTS_CONSTVALS_DIR"/*.swiftconstvalues; do
-  [ -f "$f" ] && CONSTVALS_ARGS+=(--swift-const-vals "$f")
-done
+METADATA_EXTRA_ARGS=()
+if [ "$INTENTS_CONST_EXTRACT" = "true" ]; then
+  for f in "$INTENTS_CONSTVALS_DIR"/*.swiftconstvalues; do
+    [ -f "$f" ] && CONSTVALS_ARGS+=(--swift-const-vals "$f")
+  done
+  if [ ${#CONSTVALS_ARGS[@]} -gt 0 ]; then
+    METADATA_EXTRA_ARGS+=(--compile-time-extraction)
+    METADATA_EXTRA_ARGS+=("${CONSTVALS_ARGS[@]}")
+  fi
+fi
 
 if ! xcrun appintentsmetadataprocessor \
   --binary-file "$FRAMEWORKS_DIR/PatchworkIntents.framework/PatchworkIntents" \
@@ -143,8 +180,7 @@ if ! xcrun appintentsmetadataprocessor \
   --toolchain-dir "$TOOLCHAIN_DIR" \
   --xcode-version "$XCODE_BUILD_VERSION" \
   --deployment-target "$DEPLOYMENT_TARGET" \
-  --compile-time-extraction \
-  ${CONSTVALS_ARGS[@]+"${CONSTVALS_ARGS[@]}"} \
+  ${METADATA_EXTRA_ARGS[@]+"${METADATA_EXTRA_ARGS[@]}"} \
   --source-files "${INTENTS_SRC[@]}" \
   2>&1; then
   echo "Warning: appintentsmetadataprocessor failed for PatchworkIntents (Shortcuts may not appear)"
@@ -343,18 +379,15 @@ WIDGET_SRC="$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift"
 WIDGET_CONSTVALS_DIR="$BUILD_DIR/widget-constvals"
 mkdir -p "$WIDGET_CONSTVALS_DIR"
 
-# Driver auto-places .swiftconstvalues next to -o output
 WIDGET_CONSTVALS="$WIDGET_APPEX_CONTENTS/PatchworkWidget.swiftconstvalues"
 
 # Compile the widget extension binary — needs -parse-as-library because the
 # source uses @main which conflicts with swiftc's default top-level code mode.
-swiftc \
+try_compile_with_const_extract "$CONST_PROTOCOLS" \
   -module-name PatchworkWidget \
   -parse-as-library \
   -emit-executable \
   -whole-module-optimization \
-  -emit-const-values \
-  -const-gather-protocols-list "$CONST_PROTOCOLS" \
   -o "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
@@ -363,6 +396,7 @@ swiftc \
   -framework AppIntents \
   -Xlinker -rpath -Xlinker "@executable_path/../../../../Frameworks" \
   "$WIDGET_SRC"
+WIDGET_CONST_EXTRACT="$CONST_EXTRACT_SUCCEEDED"
 
 if [ -f "$WIDGET_CONSTVALS" ]; then
   echo "    - Widget const values: $(wc -c < "$WIDGET_CONSTVALS") bytes"
@@ -404,11 +438,18 @@ PLIST
 # Extract widget AppIntents metadata (for WidgetConfigurationIntent discovery)
 WIDGET_METADATA_DIR="$WIDGET_APPEX/Contents/Resources/Metadata.appintents"
 mkdir -p "$WIDGET_METADATA_DIR"
-# Build --swift-const-vals args for widget
+# Build metadata processor args conditionally based on const extraction success
 WIDGET_CONSTVALS_ARGS=()
-for f in "$WIDGET_CONSTVALS_DIR"/*.swiftconstvalues; do
-  [ -f "$f" ] && WIDGET_CONSTVALS_ARGS+=(--swift-const-vals "$f")
-done
+WIDGET_METADATA_EXTRA_ARGS=()
+if [ "$WIDGET_CONST_EXTRACT" = "true" ]; then
+  for f in "$WIDGET_CONSTVALS_DIR"/*.swiftconstvalues; do
+    [ -f "$f" ] && WIDGET_CONSTVALS_ARGS+=(--swift-const-vals "$f")
+  done
+  if [ ${#WIDGET_CONSTVALS_ARGS[@]} -gt 0 ]; then
+    WIDGET_METADATA_EXTRA_ARGS+=(--compile-time-extraction)
+    WIDGET_METADATA_EXTRA_ARGS+=("${WIDGET_CONSTVALS_ARGS[@]}")
+  fi
+fi
 
 if ! xcrun appintentsmetadataprocessor \
   --binary-file "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
@@ -419,8 +460,7 @@ if ! xcrun appintentsmetadataprocessor \
   --toolchain-dir "$TOOLCHAIN_DIR" \
   --xcode-version "$XCODE_BUILD_VERSION" \
   --deployment-target "$DEPLOYMENT_TARGET" \
-  --compile-time-extraction \
-  ${WIDGET_CONSTVALS_ARGS[@]+"${WIDGET_CONSTVALS_ARGS[@]}"} \
+  ${WIDGET_METADATA_EXTRA_ARGS[@]+"${WIDGET_METADATA_EXTRA_ARGS[@]}"} \
   --source-files "$WIDGET_SRC" \
   2>&1; then
   echo "Warning: appintentsmetadataprocessor failed for PatchworkWidget (Widget may not appear)"
