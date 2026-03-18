@@ -1,0 +1,151 @@
+{
+  "name": "ohm-js",
+  "version": "17.2.1",
+  "description": "An object-oriented language for parsing and pattern matching",
+  "repository": "https://github.com/ohmjs/ohm",
+  "keywords": [
+    "parser",
+    "compiler",
+    "pattern matching",
+    "pattern-matching",
+    "ometa",
+    "ometa/js",
+    "ometa-js",
+    "ometajs",
+    "rapid",
+    "prototyping"
+  ],
+  "homepage": "https://ohmjs.org",
+  "bugs": "https://github.com/ohmjs/ohm/issues",
+  "type": "module",
+  "main": "./dist/ohm.cjs",
+  "module": "./index.mjs",
+  "exports": {
+    ".": [
+      {
+        "import": "./index.mjs",
+        "require": "./dist/ohm.cjs",
+        "types": "./index.d.ts"
+      },
+      "./dist/ohm.cjs"
+    ],
+    "./extras": [
+      {
+        "import": "./extras/index.mjs",
+        "require": "./dist/ohm-extras.cjs",
+        "types": "./extras/index.d.ts"
+      },
+      "./dist/ohm-extras.cjs"
+    ]
+  },
+  "files": [
+    "src",
+    "dist",
+    "extras",
+    "index.mjs",
+    "index.d.ts",
+    "!**/*.old"
+  ],
+  "types": "index.d.ts",
+  "license": "MIT",
+  "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",
+  "contributors": [
+    "Patrick Dubroy <pdubroy@gmail.com>",
+    "Meixian Li <lmeixian@gmail.com>",
+    "Marko Röder <m.roeder@photon-software.de>",
+    "Tony Garnock-Jones <tonygarnockjones@gmail.com>",
+    "Saketh Kasibatla <sake.kasi@gmail.com>",
+    "Lionel Landwerlin <llandwerlin@gmail.com>",
+    "Jason Merrill <jwmerrill@gmail.com>",
+    "Ray Toal <rtoal@lmu.edu>",
+    "Yoshiki Ohshima <Yoshiki.Ohshima@acm.org>",
+    "megabuz <3299889+megabuz@users.noreply.github.com>",
+    "Jonathan Edwards <JonathanMEdwards@gmail.com>",
+    "Milan Lajtoš <milan.lajtos@me.com>",
+    "Neil Jewers <njjewers@uwaterloo.ca>",
+    "stagas <gstagas@gmail.com>",
+    "Andy Sturrock <8336404+andysturrock@users.noreply.github.com>",
+    "AngryPowman <angrypowman@qq.com>",
+    "Arthur Carabott <arthurc@gmail.com>",
+    "BlockyPenguin <me@blockypenguin.com>",
+    "Casey Olson <casey.m.olson@gmail.com>",
+    "CrazyWinner <mertcanozdemir23@gmail.com>",
+    "Daniel Tomlinson <DanielTomlinson@me.com>",
+    "Dev Inoue <44109704+devinoue@users.noreply.github.com>",
+    "Don Isaac <donald.isaac@gmail.com>",
+    "Enzo Notario <enzo.notario@gmail.com>",
+    "Enzo Notario <ernotario@ucasal.edu.ar>",
+    "Ian Harris <ian@fofgof.xyz>",
+    "James Meng <35415298+jamesmengo@users.noreply.github.com>",
+    "Julien Gonzalez <hello@spinjs.com>",
+    "Justin Chase <justin.m.chase@gmail.com>",
+    "Leslie Ying <acetophore@users.noreply.github.com>",
+    "Luca Guzzon <luca.guzzon@gmail.com>",
+    "Mike Niebling <(none)>",
+    "Nora Gruner <4781070+nfgrusk@users.noreply.github.com>",
+    "Patrick Dubroy <patrick@sourcegraph.com>",
+    "Pierre Donias <pierre.donias@gmail.com>",
+    "Poornachandra <leopoorna99@gmail.com>",
+    "Reuben Thomas <rrt@sc3d.org>",
+    "Ryan Goree <goree.ryan@gmail.com>",
+    "Stan Rozenraukh <stan@stanistan.com>",
+    "Stephan Seidt <stephan.seidt@gmail.com>",
+    "Steve Phillips <steve@tryingtobeawesome.com>",
+    "Szymon Kaliski <kaliskiszymon@gmail.com>",
+    "Thomas Nyberg <tomnyberg@gmail.com>",
+    "Vse Mozhet Byt <vsemozhetbyt@gmail.com>",
+    "Wil Chung <10446+iamwilhelm@users.noreply.github.com>",
+    "Zachary Sakowitz <zsakowitz@gmail.com>",
+    "abego <ub@abego-software.de>",
+    "acslk <d_vd415@hotmail.com>",
+    "codeZeilen <codeZeilen@users.noreply.github.com>",
+    "kassadin <kassadin@foxmail.com>",
+    "owch <bowenrainyday@gmail.com>",
+    "sfinnie <scott.finnie@gmail.com>"
+  ],
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^21.0.1",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^13.1.3",
+    "ava": "^6.0.0",
+    "ava-spec": "^1.1.1",
+    "dedent": "^0.7.0",
+    "husky": "^4.2.5",
+    "jsdom": "^9.9.1",
+    "json": "^9.0.6",
+    "markscript": "^0.5.0",
+    "node-static": "^0.7.11",
+    "rollup": "^2.63.0",
+    "terser": "^5.15.1",
+    "uvu": "^0.5.6",
+    "walk-sync": "^2.2.0",
+    "watchlist": "^0.3.1"
+  },
+  "engines": {
+    "node": ">=0.12.1"
+  },
+  "ava": {
+    "watchMode": {
+      "ignoreChanges": [
+        "version.js"
+      ]
+    }
+  },
+  "scripts": {
+    "prebootstrap": "bash scripts/prebootstrap",
+    "bootstrap": "bash scripts/bootstrap --test || (echo 'Bootstrap failed.' && mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js && mv -v dist/built-in-rules.js.old dist/built-in-rules.js && mv -v dist/operations-and-attributes.js.old dist/operations-and-attributes.js)",
+    "build": "node scripts/prebuild.js && pnpm build:debug && pnpm build:min",
+    "build:min": "terser dist/ohm.js --mangle --compress -o dist/ohm.min.js",
+    "build:debug": "pnpm build:cjs && node scripts/generate-types.js",
+    "build:cjs": "rollup -c rollup.config.js",
+    "clean": "rm -f dist/ohm.js dist/ohm.min.js",
+    "lint": "pnpm -w lint",
+    "format": "pnpm -w format",
+    "test": "ava && node test/_test-doc.js",
+    "test-watch": "ava --watch",
+    "pre-commit": "pnpm lint && pnpm build && pnpm test",
+    "unsafe-bootstrap": "bash scripts/bootstrap",
+    "update-contributors": "bash scripts/update-contributors",
+    "watch": "pnpm build:cjs --watch"
+  }
+}

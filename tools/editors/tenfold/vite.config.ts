@@ -1,10 +1,13 @@
-import { defineConfig } from "vite";
-import solid from "vite-plugin-solid";
-import externals from "@inkandswitch/patchwork-bootloader/externals";
+import { defineConfig } from "vite"
+import solid from "vite-plugin-solid"
+import externals from "@inkandswitch/patchwork-bootloader/externals"
 
 export default defineConfig({
   base: "./",
   plugins: [solid()],
+  worker: {
+    format: "es",
+  },
   build: {
     emptyOutDir: true,
     minify: false,
@@ -18,4 +21,4 @@ export default defineConfig({
     },
     rollupOptions: { external: externals },
   },
-});
+})

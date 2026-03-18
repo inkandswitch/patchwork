@@ -1,13 +1,21 @@
+@font-face {
+  font-family: FifteenTwenty;
+  src: url("FifteenTwenty-Demi.woff2");
+}
+
+body {
+  margin: 0;
+}
+
 .tenfold {
   display: flex;
-  justify-content: center;
-  align-items: center;
   margin: 0;
   color: #fff;
-  background: black;
+  background: #000;
   overflow: hidden;
   height: 100%;
   width: 100%;
+  font-family: FifteenTwenty;
 
   * {
     box-sizing: border-box;
@@ -15,18 +23,43 @@
 
   canvas {
     display: block;
-    /* outline: 4px solid white; */
   }
 
   aside {
+    position: relative;
+    display: flex;
+    flex-flow: column;
     flex: 1 1 0;
+    height: 100%;
     padding: 32px;
     padding-left: 0;
-    height: 100%;
-    > div {
-      height: 100%;
+
+    & > div {
+      flex: 1 1 50%;
       width: 80ex;
+      height: 50%;
       font-size: 18px;
+    }
+
+    #spark {
+      flex: 0 0 50px;
+      width: 100%;
+      height: 50px;
+    }
+
+    #message-field {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 1em;
+      color: #f00;
+      pointer-events: none;
+    }
+
+    #synth-editor {
+      width: 100%;
+      height: 100%;
+      outline: none;
     }
   }
 
