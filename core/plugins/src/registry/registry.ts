@@ -219,5 +219,4 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
       this.#events.off(event, callback);
     };
   }
-
 }
