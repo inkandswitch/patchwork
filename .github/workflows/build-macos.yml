@@ -6,6 +6,7 @@ on:
       - main
       - claude/patchwork-ios-capture-tool-oLM3H
       - claude/trigger-ci-pipeline-MRqib
+      - copilot/fix-macos-build-shortcuts-widget
   workflow_dispatch:
 
 concurrency:
@@ -81,6 +82,16 @@ jobs:
         run: |
           mkdir -p ~/private_keys
           echo "$APPLE_API_KEY_CONTENT" > ~/private_keys/AuthKey_${APPLE_API_KEY}.p8
+
+      - name: select Xcode and print Swift version
+        run: |
+          # Use the latest Xcode available on the runner
+          LATEST_XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$LATEST_XCODE" ]; then
+            sudo xcode-select -s "$LATEST_XCODE"
+          fi
+          echo "Xcode: $(xcodebuild -version)"
+          echo "Swift: $(swiftc --version)"
 
       - name: build the app (unsigned)
         run: cargo tauri build

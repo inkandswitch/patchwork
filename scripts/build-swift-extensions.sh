@@ -18,8 +18,48 @@ DEPLOYMENT_TARGET="14.0"
 SIGN_IDENTITY="${CODESIGN_IDENTITY:--}" # ad-hoc by default
 ENTITLEMENTS="src-tauri/Entitlements.plist"
 EXTENSION_ENTITLEMENTS="src-tauri/Extension.entitlements.plist"
+CONST_PROTOCOLS="$SWIFT_PLUGINS/const_extract_protocols.yaml"
 
 trap 'rm -rf "$BUILD_DIR"' EXIT
+
+# Compile Swift with const extraction, falling back gracefully if the toolchain
+# doesn't support the required flags.  Sets CONST_EXTRACT_SUCCEEDED=true/false.
+# Usage: try_compile_with_const_extract <protocols_file> <constvals_output_path> [swiftc args...]
+try_compile_with_const_extract() {
+  local const_protocols="$1"
+  local constvals_path="$2"
+  shift 2
+
+  CONST_EXTRACT_SUCCEEDED=false
+
+  # Strategy A: frontend flags with explicit output path (most portable).
+  # -emit-const-values-path is a FrontendOption; -const-gather-protocols-file
+  # is also a FrontendOption.  Both must be passed via -Xfrontend.
+  if swiftc \
+    -Xfrontend -emit-const-values-path -Xfrontend "$constvals_path" \
+    -Xfrontend -const-gather-protocols-file -Xfrontend "$const_protocols" \
+    "$@" 2>&1; then
+    CONST_EXTRACT_SUCCEEDED=true
+    return 0
+  fi
+
+  echo "    - Frontend const-extract flags failed, trying driver flags..."
+
+  # Strategy B: driver-level flags (newer Swift toolchains only).
+  # -emit-const-values auto-derives the output path from -o.
+  if swiftc \
+    -emit-const-values \
+    -const-gather-protocols-list "$const_protocols" \
+    "$@" 2>&1; then
+    CONST_EXTRACT_SUCCEEDED=true
+    return 0
+  fi
+
+  echo "    - Warning: const extraction unavailable, compiling without it"
+
+  # Strategy C: no const extraction at all
+  swiftc "$@"
+}
 
 if [ ! -d "$APP_BUNDLE" ]; then
   echo "Error: App bundle not found at $APP_BUNDLE"
@@ -56,12 +96,10 @@ mkdir -p "$INTENTS_FW_VERSIONED/Modules" "$INTENTS_FW_VERSIONED/Resources"
 INTENTS_CONSTVALS_DIR="$BUILD_DIR/intents-constvals"
 mkdir -p "$INTENTS_CONSTVALS_DIR"
 
-# Compile the framework. Use -whole-module-optimization so swiftc invokes a
-# single swift-frontend, which can accept exactly one -emit-const-values-path.
-# Pass -emit-const-values-path directly via -Xfrontend to specify the output
-# location for Shortcuts metadata extraction.
+# Write const values to the temp dir (not inside the framework) so codesign
+# doesn't trip over a non-binary file when signing the framework bundle.
 INTENTS_CONSTVALS="$INTENTS_CONSTVALS_DIR/PatchworkIntents.swiftconstvalues"
-swiftc \
+try_compile_with_const_extract "$CONST_PROTOCOLS" "$INTENTS_CONSTVALS" \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
   -parse-as-library \
@@ -70,12 +108,19 @@ swiftc \
   -emit-module-path "$INTENTS_FW_VERSIONED/Modules/PatchworkIntents.swiftmodule" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
-  -Xfrontend -emit-const-values-path \
-  -Xfrontend "$INTENTS_CONSTVALS" \
   -Xlinker -install_name -Xlinker "@rpath/PatchworkIntents.framework/Versions/A/PatchworkIntents" \
   -framework AppIntents \
   -framework Foundation \
   "${INTENTS_SRC[@]}"
+INTENTS_CONST_EXTRACT="$CONST_EXTRACT_SUCCEEDED"
+
+# Strategy B derives the constvals path from -o, so move it to the temp dir
+# if it ended up next to the binary inside the framework.
+INTENTS_DERIVED_CONSTVALS="$INTENTS_FW_VERSIONED/PatchworkIntents.swiftconstvalues"
+if [ -f "$INTENTS_DERIVED_CONSTVALS" ] && [ "$INTENTS_DERIVED_CONSTVALS" != "$INTENTS_CONSTVALS" ]; then
+  cp "$INTENTS_DERIVED_CONSTVALS" "$INTENTS_CONSTVALS"
+  rm -f "$INTENTS_DERIVED_CONSTVALS"
+fi
 
 if [ -f "$INTENTS_CONSTVALS" ]; then
   echo "    - Const values: $(wc -c < "$INTENTS_CONSTVALS") bytes"
@@ -125,11 +170,18 @@ XCODE_BUILD_VERSION="$(xcodebuild -version | tail -1 | sed 's/Build version //')
 TARGET_TRIPLE="$(uname -m)-apple-macosx${DEPLOYMENT_TARGET}"
 TOOLCHAIN_DIR="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain"
 
-# Build --swift-const-vals args (one per .swiftconstvalues file)
+# Build metadata processor args conditionally based on const extraction success
 CONSTVALS_ARGS=()
-for f in "$INTENTS_CONSTVALS_DIR"/*.swiftconstvalues; do
-  [ -f "$f" ] && CONSTVALS_ARGS+=(--swift-const-vals "$f")
-done
+METADATA_EXTRA_ARGS=()
+if [ "$INTENTS_CONST_EXTRACT" = "true" ]; then
+  for f in "$INTENTS_CONSTVALS_DIR"/*.swiftconstvalues; do
+    [ -f "$f" ] && CONSTVALS_ARGS+=(--swift-const-vals "$f")
+  done
+  if [ ${#CONSTVALS_ARGS[@]} -gt 0 ]; then
+    METADATA_EXTRA_ARGS+=(--compile-time-extraction)
+    METADATA_EXTRA_ARGS+=("${CONSTVALS_ARGS[@]}")
+  fi
+fi
 
 if ! xcrun appintentsmetadataprocessor \
   --binary-file "$FRAMEWORKS_DIR/PatchworkIntents.framework/PatchworkIntents" \
@@ -140,8 +192,7 @@ if ! xcrun appintentsmetadataprocessor \
   --toolchain-dir "$TOOLCHAIN_DIR" \
   --xcode-version "$XCODE_BUILD_VERSION" \
   --deployment-target "$DEPLOYMENT_TARGET" \
-  --compile-time-extraction \
-  ${CONSTVALS_ARGS[@]+"${CONSTVALS_ARGS[@]}"} \
+  ${METADATA_EXTRA_ARGS[@]+"${METADATA_EXTRA_ARGS[@]}"} \
   --source-files "${INTENTS_SRC[@]}" \
   2>&1; then
   echo "Warning: appintentsmetadataprocessor failed for PatchworkIntents (Shortcuts may not appear)"
@@ -183,29 +234,49 @@ class ShareViewController: NSViewController {
         let title = item.attributedContentText?.string
 
         let group = DispatchGroup()
-        for attachment in item.attachments ?? [] {
-            // Check URL types first (web URLs also conform to public.url)
-            if attachment.hasItemConformingToTypeIdentifier("public.url") {
+        for provider in item.attachments ?? [] {
+            let types = provider.registeredTypeIdentifiers
+            NSLog("[share-ext] provider types: %@", types.joined(separator: ", "))
+
+            // Try loading a URL (separate if, not else-if, so text is also checked)
+            if provider.hasItemConformingToTypeIdentifier("public.url") {
                 group.enter()
-                attachment.loadItem(forTypeIdentifier: "public.url") { item, error in
+                provider.loadItem(forTypeIdentifier: "public.url", options: nil) { data, error in
                     defer { group.leave() }
-                    if let u = item as? URL {
+                    if let error = error {
+                        NSLog("[share-ext] URL load error: %@", error.localizedDescription)
+                        return
+                    }
+                    if let u = data as? URL {
                         if u.isFileURL {
                             fileURLs.append(u.absoluteString)
                         } else {
                             url = u.absoluteString
                         }
-                    } else if let s = item as? String {
+                    } else if let u = data as? NSURL, let s = u.absoluteString {
                         url = s
+                    } else if let s = data as? String {
+                        url = s
+                    } else if let d = data as? Data, let s = String(data: d, encoding: .utf8) {
+                        url = s
+                    } else {
+                        NSLog("[share-ext] URL loaded as unexpected type: %@", String(describing: type(of: data)))
                     }
                 }
-            } else if attachment.hasItemConformingToTypeIdentifier("public.plain-text") {
+            }
+
+            // Also try loading plain text (not else-if — an attachment can have both)
+            if provider.hasItemConformingToTypeIdentifier("public.plain-text") {
                 group.enter()
-                attachment.loadItem(forTypeIdentifier: "public.plain-text") { item, error in
+                provider.loadItem(forTypeIdentifier: "public.plain-text", options: nil) { data, error in
                     defer { group.leave() }
-                    if let s = item as? String {
+                    if let error = error {
+                        NSLog("[share-ext] text load error: %@", error.localizedDescription)
+                        return
+                    }
+                    if let s = data as? String {
                         text = s
-                    } else if let d = item as? Data, let s = String(data: d, encoding: .utf8) {
+                    } else if let d = data as? Data, let s = String(data: d, encoding: .utf8) {
                         text = s
                     }
                 }
@@ -213,6 +284,8 @@ class ShareViewController: NSViewController {
         }
 
         group.notify(queue: .main) { [weak self] in
+            NSLog("[share-ext] sending: text=%@, url=%@, title=%@, files=%d",
+                  text ?? "(nil)", url ?? "(nil)", title ?? "(nil)", fileURLs.count)
             self?.sendToPatchwork(text: text, url: url, title: title, fileURLs: fileURLs)
         }
     }
@@ -340,11 +413,13 @@ WIDGET_SRC="$SWIFT_PLUGINS/PatchworkWidget/Sources/PatchworkWidget.swift"
 WIDGET_CONSTVALS_DIR="$BUILD_DIR/widget-constvals"
 mkdir -p "$WIDGET_CONSTVALS_DIR"
 
+# Write const values to the dedicated temp dir — NOT inside Contents/MacOS.
+# codesign rejects .appex bundles that contain non-binary files in Contents/MacOS.
 WIDGET_CONSTVALS="$WIDGET_CONSTVALS_DIR/PatchworkWidget.swiftconstvalues"
 
 # Compile the widget extension binary — needs -parse-as-library because the
 # source uses @main which conflicts with swiftc's default top-level code mode.
-swiftc \
+try_compile_with_const_extract "$CONST_PROTOCOLS" "$WIDGET_CONSTVALS" \
   -module-name PatchworkWidget \
   -parse-as-library \
   -emit-executable \
@@ -352,12 +427,29 @@ swiftc \
   -o "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
-  -Xfrontend -emit-const-values-path -Xfrontend "$WIDGET_CONSTVALS" \
   -framework WidgetKit \
   -framework SwiftUI \
   -framework AppIntents \
   -Xlinker -rpath -Xlinker "@executable_path/../../../../Frameworks" \
   "$WIDGET_SRC"
+WIDGET_CONST_EXTRACT="$CONST_EXTRACT_SUCCEEDED"
+
+# Strategy B derives the constvals path from -o, so it may have written
+# PatchworkWidget.swiftconstvalues into Contents/MacOS alongside the binary.
+# Move it to the temp dir so codesign doesn't fail on the unsigned data file.
+WIDGET_DERIVED_CONSTVALS="$WIDGET_APPEX_CONTENTS/PatchworkWidget.swiftconstvalues"
+if [ -f "$WIDGET_DERIVED_CONSTVALS" ] && [ "$WIDGET_DERIVED_CONSTVALS" != "$WIDGET_CONSTVALS" ]; then
+  cp "$WIDGET_DERIVED_CONSTVALS" "$WIDGET_CONSTVALS"
+  rm -f "$WIDGET_DERIVED_CONSTVALS"
+fi
+
+# Safety: remove any remaining .swiftconstvalues from Contents/MacOS so
+# codesign does not encounter non-binary files in that directory.
+STRAY_CONSTVALS=$(find "$WIDGET_APPEX_CONTENTS" -name "*.swiftconstvalues" 2>/dev/null || true)
+if [ -n "$STRAY_CONSTVALS" ]; then
+  echo "    - Warning: found stray .swiftconstvalues in Contents/MacOS, removing before codesign"
+  find "$WIDGET_APPEX_CONTENTS" -name "*.swiftconstvalues" -delete 2>/dev/null || true
+fi
 
 if [ -f "$WIDGET_CONSTVALS" ]; then
   echo "    - Widget const values: $(wc -c < "$WIDGET_CONSTVALS") bytes"
@@ -397,11 +489,18 @@ PLIST
 # Extract widget AppIntents metadata (for WidgetConfigurationIntent discovery)
 WIDGET_METADATA_DIR="$WIDGET_APPEX/Contents/Resources/Metadata.appintents"
 mkdir -p "$WIDGET_METADATA_DIR"
-# Build --swift-const-vals args for widget
+# Build metadata processor args conditionally based on const extraction success
 WIDGET_CONSTVALS_ARGS=()
-for f in "$WIDGET_CONSTVALS_DIR"/*.swiftconstvalues; do
-  [ -f "$f" ] && WIDGET_CONSTVALS_ARGS+=(--swift-const-vals "$f")
-done
+WIDGET_METADATA_EXTRA_ARGS=()
+if [ "$WIDGET_CONST_EXTRACT" = "true" ]; then
+  for f in "$WIDGET_CONSTVALS_DIR"/*.swiftconstvalues; do
+    [ -f "$f" ] && WIDGET_CONSTVALS_ARGS+=(--swift-const-vals "$f")
+  done
+  if [ ${#WIDGET_CONSTVALS_ARGS[@]} -gt 0 ]; then
+    WIDGET_METADATA_EXTRA_ARGS+=(--compile-time-extraction)
+    WIDGET_METADATA_EXTRA_ARGS+=("${WIDGET_CONSTVALS_ARGS[@]}")
+  fi
+fi
 
 if ! xcrun appintentsmetadataprocessor \
   --binary-file "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
@@ -412,8 +511,7 @@ if ! xcrun appintentsmetadataprocessor \
   --toolchain-dir "$TOOLCHAIN_DIR" \
   --xcode-version "$XCODE_BUILD_VERSION" \
   --deployment-target "$DEPLOYMENT_TARGET" \
-  --compile-time-extraction \
-  ${WIDGET_CONSTVALS_ARGS[@]+"${WIDGET_CONSTVALS_ARGS[@]}"} \
+  ${WIDGET_METADATA_EXTRA_ARGS[@]+"${WIDGET_METADATA_EXTRA_ARGS[@]}"} \
   --source-files "$WIDGET_SRC" \
   2>&1; then
   echo "Warning: appintentsmetadataprocessor failed for PatchworkWidget (Widget may not appear)"
