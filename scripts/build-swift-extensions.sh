@@ -226,29 +226,49 @@ class ShareViewController: NSViewController {
         let title = item.attributedContentText?.string
 
         let group = DispatchGroup()
-        for attachment in item.attachments ?? [] {
-            // Check URL types first (web URLs also conform to public.url)
-            if attachment.hasItemConformingToTypeIdentifier("public.url") {
+        for provider in item.attachments ?? [] {
+            let types = provider.registeredTypeIdentifiers
+            NSLog("[share-ext] provider types: %@", types.joined(separator: ", "))
+
+            // Try loading a URL (separate if, not else-if, so text is also checked)
+            if provider.hasItemConformingToTypeIdentifier("public.url") {
                 group.enter()
-                attachment.loadItem(forTypeIdentifier: "public.url") { item, error in
+                provider.loadItem(forTypeIdentifier: "public.url", options: nil) { data, error in
                     defer { group.leave() }
-                    if let u = item as? URL {
+                    if let error = error {
+                        NSLog("[share-ext] URL load error: %@", error.localizedDescription)
+                        return
+                    }
+                    if let u = data as? URL {
                         if u.isFileURL {
                             fileURLs.append(u.absoluteString)
                         } else {
                             url = u.absoluteString
                         }
-                    } else if let s = item as? String {
+                    } else if let u = data as? NSURL, let s = u.absoluteString {
                         url = s
+                    } else if let s = data as? String {
+                        url = s
+                    } else if let d = data as? Data, let s = String(data: d, encoding: .utf8) {
+                        url = s
+                    } else {
+                        NSLog("[share-ext] URL loaded as unexpected type: %@", String(describing: type(of: data)))
                     }
                 }
-            } else if attachment.hasItemConformingToTypeIdentifier("public.plain-text") {
+            }
+
+            // Also try loading plain text (not else-if — an attachment can have both)
+            if provider.hasItemConformingToTypeIdentifier("public.plain-text") {
                 group.enter()
-                attachment.loadItem(forTypeIdentifier: "public.plain-text") { item, error in
+                provider.loadItem(forTypeIdentifier: "public.plain-text", options: nil) { data, error in
                     defer { group.leave() }
-                    if let s = item as? String {
+                    if let error = error {
+                        NSLog("[share-ext] text load error: %@", error.localizedDescription)
+                        return
+                    }
+                    if let s = data as? String {
                         text = s
-                    } else if let d = item as? Data, let s = String(data: d, encoding: .utf8) {
+                    } else if let d = data as? Data, let s = String(data: d, encoding: .utf8) {
                         text = s
                     }
                 }
@@ -256,6 +276,8 @@ class ShareViewController: NSViewController {
         }
 
         group.notify(queue: .main) { [weak self] in
+            NSLog("[share-ext] sending: text=%@, url=%@, title=%@, files=%d",
+                  text ?? "(nil)", url ?? "(nil)", title ?? "(nil)", fileURLs.count)
             self?.sendToPatchwork(text: text, url: url, title: title, fileURLs: fileURLs)
         }
     }
