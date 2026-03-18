@@ -24,16 +24,19 @@ trap 'rm -rf "$BUILD_DIR"' EXIT
 
 # Compile Swift with const extraction, falling back gracefully if the toolchain
 # doesn't support the required flags.  Sets CONST_EXTRACT_SUCCEEDED=true/false.
-# Usage: try_compile_with_const_extract <protocols_file> [swiftc args...]
+# Usage: try_compile_with_const_extract <protocols_file> <constvals_output_path> [swiftc args...]
 try_compile_with_const_extract() {
   local const_protocols="$1"
-  shift
+  local constvals_path="$2"
+  shift 2
 
   CONST_EXTRACT_SUCCEEDED=false
 
-  # Strategy A: pass const-extraction flags via -Xfrontend (most portable)
+  # Strategy A: frontend flags with explicit output path (most portable).
+  # -emit-const-values-path is a FrontendOption; -const-gather-protocols-file
+  # is also a FrontendOption.  Both must be passed via -Xfrontend.
   if swiftc \
-    -Xfrontend -emit-const-values \
+    -Xfrontend -emit-const-values-path -Xfrontend "$constvals_path" \
     -Xfrontend -const-gather-protocols-file -Xfrontend "$const_protocols" \
     "$@" 2>&1; then
     CONST_EXTRACT_SUCCEEDED=true
@@ -42,7 +45,8 @@ try_compile_with_const_extract() {
 
   echo "    - Frontend const-extract flags failed, trying driver flags..."
 
-  # Strategy B: driver-level flags (newer Swift toolchains only)
+  # Strategy B: driver-level flags (newer Swift toolchains only).
+  # -emit-const-values auto-derives the output path from -o.
   if swiftc \
     -emit-const-values \
     -const-gather-protocols-list "$const_protocols" \
@@ -93,7 +97,7 @@ INTENTS_CONSTVALS_DIR="$BUILD_DIR/intents-constvals"
 mkdir -p "$INTENTS_CONSTVALS_DIR"
 
 INTENTS_CONSTVALS="$INTENTS_FW_VERSIONED/PatchworkIntents.swiftconstvalues"
-try_compile_with_const_extract "$CONST_PROTOCOLS" \
+try_compile_with_const_extract "$CONST_PROTOCOLS" "$INTENTS_CONSTVALS" \
   -module-name PatchworkIntents \
   -emit-library -emit-module \
   -parse-as-library \
@@ -383,7 +387,7 @@ WIDGET_CONSTVALS="$WIDGET_APPEX_CONTENTS/PatchworkWidget.swiftconstvalues"
 
 # Compile the widget extension binary — needs -parse-as-library because the
 # source uses @main which conflicts with swiftc's default top-level code mode.
-try_compile_with_const_extract "$CONST_PROTOCOLS" \
+try_compile_with_const_extract "$CONST_PROTOCOLS" "$WIDGET_CONSTVALS" \
   -module-name PatchworkWidget \
   -parse-as-library \
   -emit-executable \
