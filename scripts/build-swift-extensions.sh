@@ -18,6 +18,7 @@ DEPLOYMENT_TARGET="14.0"
 SIGN_IDENTITY="${CODESIGN_IDENTITY:--}" # ad-hoc by default
 ENTITLEMENTS="src-tauri/Entitlements.plist"
 EXTENSION_ENTITLEMENTS="src-tauri/Extension.entitlements.plist"
+CONST_PROTOCOLS="$SWIFT_PLUGINS/const_extract_protocols.yaml"
 
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
@@ -67,6 +68,7 @@ swiftc \
   -parse-as-library \
   -whole-module-optimization \
   -emit-const-values \
+  -const-gather-protocols-list "$CONST_PROTOCOLS" \
   -o "$INTENTS_FW_VERSIONED/PatchworkIntents" \
   -emit-module-path "$INTENTS_FW_VERSIONED/Modules/PatchworkIntents.swiftmodule" \
   -sdk "$SDK_PATH" \
@@ -352,6 +354,7 @@ swiftc \
   -emit-executable \
   -whole-module-optimization \
   -emit-const-values \
+  -const-gather-protocols-list "$CONST_PROTOCOLS" \
   -o "$WIDGET_APPEX_CONTENTS/PatchworkWidget" \
   -sdk "$SDK_PATH" \
   -target "arm64-apple-macos${DEPLOYMENT_TARGET}" \
