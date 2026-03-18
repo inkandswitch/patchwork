@@ -73,7 +73,9 @@ struct PatchworkProvider: AppIntentTimelineProvider {
             request.timeoutInterval = 10
 
             let (data, response) = try await URLSession.shared.data(for: request)
-            let httpResponse = response as! HTTPURLResponse
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return PatchworkEntry(date: .now, title: config.displayTitle, content: "Invalid response", isError: true, deepLink: deepLink)
+            }
 
             guard httpResponse.statusCode == 200 else {
                 let error = String(data: data, encoding: .utf8) ?? "HTTP \(httpResponse.statusCode)"

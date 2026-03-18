@@ -40,7 +40,9 @@ try_compile_with_const_extract() {
     -Xfrontend -emit-const-values-path -Xfrontend "$constvals_path" \
     -Xfrontend -const-gather-protocols-file -Xfrontend "$const_protocols" \
     "$@" 2>&1; then
-    # Check if the constvals file was actually produced with content
+    # Check if the constvals file was actually produced with content.
+    # An empty constvals is just "[]" (2 bytes); anything ≤ 4 bytes (allowing
+    # for trailing whitespace/newline) is treated as empty.
     if [ -f "$constvals_path" ] && [ "$(wc -c < "$constvals_path")" -gt 4 ]; then
       CONST_EXTRACT_SUCCEEDED=true
       return 0
@@ -181,7 +183,8 @@ CONSTVALS_ARGS=()
 METADATA_EXTRA_ARGS=()
 if [ "$INTENTS_CONST_EXTRACT" = "true" ]; then
   for f in "$INTENTS_CONSTVALS_DIR"/*.swiftconstvalues; do
-    # Only include constvals files that have actual content (not just "[]")
+    # Only include constvals files that have actual content (not just "[]").
+    # "[]" = 2 bytes; ≤ 4 bytes accounts for trailing whitespace/newline.
     if [ -f "$f" ] && [ "$(wc -c < "$f")" -gt 4 ]; then
       CONSTVALS_ARGS+=(--swift-const-vals "$f")
     fi
@@ -529,7 +532,8 @@ WIDGET_CONSTVALS_ARGS=()
 WIDGET_METADATA_EXTRA_ARGS=()
 if [ "$WIDGET_CONST_EXTRACT" = "true" ]; then
   for f in "$WIDGET_CONSTVALS_DIR"/*.swiftconstvalues; do
-    # Only include constvals files that have actual content (not just "[]")
+    # Only include constvals files that have actual content (not just "[]").
+    # "[]" = 2 bytes; ≤ 4 bytes accounts for trailing whitespace/newline.
     if [ -f "$f" ] && [ "$(wc -c < "$f")" -gt 4 ]; then
       WIDGET_CONSTVALS_ARGS+=(--swift-const-vals "$f")
     fi

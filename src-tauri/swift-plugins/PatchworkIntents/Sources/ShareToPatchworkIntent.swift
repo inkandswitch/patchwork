@@ -41,7 +41,7 @@ struct ShareToPatchworkIntent: AppIntent {
         request.timeoutInterval = 30
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        let httpResponse = response as! HTTPURLResponse
+        guard let httpResponse = response as? HTTPURLResponse else { throw EvalError.failed("Invalid response") }
 
         guard httpResponse.statusCode == 200 else {
             let error = String(data: data, encoding: .utf8) ?? "Unknown error"
