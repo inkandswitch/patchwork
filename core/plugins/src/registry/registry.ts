@@ -22,9 +22,9 @@ const log = debug("patchwork:plugins");
  */
 export class PluginRegistry<D extends PluginDescription, I = any> {
   #plugins = new Map<string, Plugin<D, I>>();
-  #loadPromises = new Map<string, Promise<LoadedPlugin<D, I>>>();
+  #loadPromises = new Map<string, Promise<LoadedPlugin<D, I> | undefined>>();
   #events = new EventEmitter<PluginRegistryEvents<D, I>>();
-  loading = new Set<string>();
+  #loading = new Set<string>();
 
   /**
    * Register an plugin with this registry
@@ -76,75 +76,71 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
    * If shouldWait is true, will wait for the plugin to be registered if it isn't already
    */
   async load(id: string): Promise<LoadedPlugin<D, I> | undefined> {
-    // TODO: error handling?
     log(`load called for: ${id}`, {});
 
-    // Check if we already have a loaded plugin
-    const plugin = this.#plugins.get(id);
-    log(`Found existing plugin: ${id}`, {
-      hasPlugin: !!plugin,
-      isLoadable: plugin ? isLoadablePlugin<D, I>(plugin) : "N/A",
-    });
-
-    if (plugin && isLoadedPlugin<D, I>(plugin)) {
-      log(`Returning already loaded plugin: ${id}`);
-      return plugin;
-    }
-
-    // Get the plugin description
     const description = this.#plugins.get(id);
     if (!description) {
       log(`Plugin not registered: ${id}`);
       return undefined;
     }
 
-    // If the plugin is loadable, load it
-    if (isLoadablePlugin(description)) {
-      log(`Loading plugin implementation: ${id}`);
-      this.loading.add(id);
-      const loadPromise = description
-        .load()
-        .then((implementation) => {
-          log(`Successfully loaded implementation for: ${id}`, implementation);
-          // Merge the implementation with the plugin metadata to create a complete Plugin
-          // Omit the load method as it's no longer needed
-          const { load, ...descriptionWithoutLoad } = description;
-          if (!isPluginDescription<D>(descriptionWithoutLoad)) {
-            throw new Error("Invalid plugin description");
-          }
-          const plugin = {
-            ...descriptionWithoutLoad,
-            module: implementation,
-          };
-
-          // Store the loaded version
-          this.#plugins.set(description.id, plugin);
-          this.#loadPromises.delete(id);
-          this.loading.delete(id);
-
-          // Notify listeners that an plugin has been loaded
-          this.#events.emit("loaded", plugin);
-          this.#events.emit("changed");
-
-          return plugin;
-        })
-        .catch((error) => {
-          console.error(`Failed to load plugin implementation: ${id}`, error);
-          this.#loadPromises.delete(id);
-          this.loading.delete(id);
-          throw error;
-        });
-
-      // Store the promise so we don't load twice
-      this.#loadPromises.set(id, loadPromise);
-      return loadPromise;
-    }
-
     if (isLoadedPlugin<D, I>(description)) {
+      log(`Returning already loaded plugin: ${id}`);
       return description;
     }
 
-    throw new Error(`Plugin ${id} is not loadable`);
+    const existingPromise = this.#loadPromises.get(id);
+    if (existingPromise) {
+      log(`Returning in-flight load for: ${id}`);
+      return existingPromise;
+    }
+
+    if (!isLoadablePlugin(description)) {
+      throw new Error(`Plugin ${id} is not loadable`);
+    }
+
+    log(`Loading plugin implementation: ${id}`);
+    this.#loading.add(id);
+
+    const loadPromise = description
+      .load()
+      .then((implementation) => {
+        // If the plugin was removed or re-registered while loading, discard
+        if (this.#plugins.get(id) !== description) {
+          log(`Plugin ${id} was replaced or removed during load, discarding`);
+          this.#loadPromises.delete(id);
+          this.#loading.delete(id);
+          return undefined;
+        }
+
+        log(`Successfully loaded implementation for: ${id}`, implementation);
+        const { load, ...descriptionWithoutLoad } = description;
+        if (!isPluginDescription<D>(descriptionWithoutLoad)) {
+          throw new Error("Invalid plugin description");
+        }
+        const plugin = {
+          ...descriptionWithoutLoad,
+          module: implementation,
+        };
+
+        this.#plugins.set(id, plugin);
+        this.#loadPromises.delete(id);
+        this.#loading.delete(id);
+
+        this.#events.emit("loaded", plugin);
+        this.#events.emit("changed");
+
+        return plugin;
+      })
+      .catch((error) => {
+        console.error(`Failed to load plugin implementation: ${id}`, error);
+        this.#loadPromises.delete(id);
+        this.#loading.delete(id);
+        throw error;
+      });
+
+    this.#loadPromises.set(id, loadPromise);
+    return loadPromise;
   }
 
   /**
@@ -175,12 +171,19 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
 
     this.#plugins.delete(id);
     this.#loadPromises.delete(id);
-    this.loading.delete(id);
+    this.#loading.delete(id);
 
     this.#events.emit("removed", id);
     this.#events.emit("changed");
 
     return true;
+  }
+
+  /**
+   * Check if a plugin is currently being loaded
+   */
+  isLoading(id: string): boolean {
+    return this.#loading.has(id);
   }
 
   /**

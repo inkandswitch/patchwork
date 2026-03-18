@@ -31,6 +31,7 @@ export class ModuleWatcher {
   urls: AutomergeUrl[];
   handles: DocHandle<ModuleSettingsDoc>[] | undefined;
   doneLoading: Promise<void>;
+  #watchedModules = new Set<string>();
 
   onLoad: (name: string, mod: any) => void;
 
@@ -82,7 +83,7 @@ export class ModuleWatcher {
   async loadSuggestedImportUrl(docUrl: AutomergeUrl) {
     const handle = await this.repo.find<Partial<HasPatchworkMetadata>>(docUrl);
     const doc = handle.doc();
-    const url = doc["@patchwork"]?.suggestedImportUrl;
+    const url = doc?.["@patchwork"]?.suggestedImportUrl;
     return url && (await this.loadModules([url]));
   }
 
@@ -112,17 +113,19 @@ export class ModuleWatcher {
   // It would be better to watch all the files in the folder recursively
   // and to have some relationship with those other than just parsing the URL.
   private setDocWatcher(importName: string) {
+    if (this.#watchedModules.has(importName)) return;
+    this.#watchedModules.add(importName);
+
     const docUrl = isValidAutomergeUrl(importName)
       ? importName
       : (importName.match(/\/automerge\/(\w+)\//)?.[1] as DocumentId);
 
-    // This is probably a built-in, which is fine!
     if (!docUrl) return;
 
     this.repo.find<FolderDoc>(docUrl).then((handle) => {
-      let previousSyncAtTime = handle.doc().lastSyncAt || 0;
+      let previousSyncAtTime = handle.doc()?.lastSyncAt || 0;
       handle.on("change", () => {
-        const lastSyncAt = handle.doc().lastSyncAt || 0;
+        const lastSyncAt = handle.doc()?.lastSyncAt || 0;
         if (lastSyncAt <= previousSyncAtTime) {
           console.log("handle updated but not lastSyncAt");
           return;

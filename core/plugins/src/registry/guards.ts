@@ -54,11 +54,5 @@ export function isPlugin<
   T extends PluginDescription = PluginDescription,
   I = any,
 >(value: unknown): value is Plugin<T, I> {
-  if (isPluginDescription<T>(value)) {
-    return true;
-  }
-  if (isLoadablePlugin<T, I>(value)) {
-    return true;
-  }
-  return false;
+  return isPluginDescription<T>(value);
 }
