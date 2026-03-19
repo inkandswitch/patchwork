@@ -42,6 +42,7 @@ body {
     }
 
     #spark {
+      display: none; /* turned off for now, while we do friends-of-the-lab */
       flex: 0 0 50px;
       width: 100%;
       height: 50px;
@@ -57,6 +58,7 @@ body {
     }
 
     #synth-editor {
+      display: none; /* turned off for now, while we do friends-of-the-lab */
       width: 100%;
       height: 100%;
       outline: none;

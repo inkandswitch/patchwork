@@ -1,6 +1,9 @@
 // import * as ohm from "./ohm.ts"
 
-import * as ohm from "../ohm-js/index.mjs"
+// TODO: Importing from node_modules might not work, might need the below (or above) instead
+import * as ohm from "ohm-js"
+// import * as ohm from "../ohm-js/index.mjs"
+
 
 import { Signal } from "./signal.ts"
 import { inlinedFunctions } from "./inlined-functions.ts"
