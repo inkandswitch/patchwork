@@ -4,7 +4,7 @@ import type {DocHandle, Repo} from "@automerge/automerge-repo"
 import type {AutomergeUrl} from "@automerge/automerge-repo"
 
 const tenfriendRegistryUrl =
-	"automerge:2K4W5gnjbscCshxg6TH1iAAvzjk" as AutomergeUrl
+	"automerge:3hFvBeceaKEpG4AAtpJbUA1XhPiv" as AutomergeUrl
 import type {PatchworkViewElement} from "@inkandswitch/patchwork-elements"
 import {getRegistry} from "@inkandswitch/patchwork-plugins"
 import type {TenfriendDoc} from "./tenfriend-datatype"
