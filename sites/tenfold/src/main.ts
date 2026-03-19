@@ -34,14 +34,11 @@ const repo = new Repo({
   async sharePolicy(peerId) {
     return peerId.includes("service-worker");
   },
-  enableRemoteHeadsGossiping: true,
 });
 
-repo.subscribeToRemotes([
-  "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
-]);
-
-const result = await setup();
+const result = await setup({
+  syncServer: "wss://sync.tenfold.inkandswitch.com",
+});
 if (!result) {
   throw new Error("Failed to set up service worker");
 }
@@ -58,14 +55,25 @@ await repo.flush();
 registerPatchworkViewElement({ repo });
 
 const rootElement = document.getElementById("root")!;
+rootElement.addEventListener("patchwork:mounted", () => {
+  rootElement.classList.add("mounted");
+}, { once: true });
 const doc = new URLSearchParams(window.location.search).get("doc");
 if (doc) {
+  localStorage.setItem("tenfold", doc);
   rootElement.setAttribute("tool-id", "inkandswitch/tenfold");
   rootElement.setAttribute("doc-url", doc);
 } else {
-  const handle = await repo.create2({
-    "@patchwork": { type: "tenfriend" },
-  });
-  rootElement.setAttribute("tool-id", "tenfriend");
-  rootElement.setAttribute("doc-url", handle.url);
+  const saved = localStorage.getItem("tenfold");
+  if (saved) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("doc", saved);
+    window.location.href = url.toString();
+  } else {
+    const handle = await repo.create2({
+      "@patchwork": { type: "tenfriend" },
+    });
+    rootElement.setAttribute("tool-id", "tenfriend");
+    rootElement.setAttribute("doc-url", handle.url);
+  }
 }

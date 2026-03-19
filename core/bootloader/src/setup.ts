@@ -106,6 +106,13 @@ export default async function setupServiceWorker(
   const { port1, port2 } = new MessageChannel();
   navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
 
+  if (options?.syncServer) {
+    navigator.serviceWorker.controller!.postMessage({
+      type: "add-sync-server",
+      url: options.syncServer,
+    });
+  }
+
   console.log(
     "service worker alive, loading %c patchwork system ",
     "background: #fcf2f0; color: #333; border: 2px solid; border-radius: 4px"

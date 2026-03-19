@@ -23,6 +23,11 @@ patchwork-view {
   height: 100%;
   width: 100%;
   contain: layout;
+  opacity: 0;
+}
+
+patchwork-view.mounted {
+  opacity: 1;
 }
 
 body > patchwork-view {

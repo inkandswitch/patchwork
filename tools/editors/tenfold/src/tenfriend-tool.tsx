@@ -236,10 +236,11 @@ function NewTenfriendPrompt(props: {
 				background: "#000",
 				color: "#fff",
 			}}>
+			{creating() ? null : <>
 			<label
 				for="tenfriend-name"
 				style={{"font-size": "14px", opacity: "0.6"}}>
-				{creating() ? "Creating tenfolder..." : "Enter their name"}
+				Enter their name
 			</label>
 			<input
 				ref={inputRef!}
@@ -247,7 +248,6 @@ function NewTenfriendPrompt(props: {
 				type="text"
 				placeholder="adele"
 				autofocus
-				disabled={creating()}
 				onKeyDown={onKeyDown}
 				style={{
 					"font-family": "FifteenTwenty, system-ui, sans-serif",
@@ -269,7 +269,6 @@ function NewTenfriendPrompt(props: {
 			/>
 			<button
 				onClick={submit}
-				disabled={creating()}
 				style={{
 					"font-family": "FifteenTwenty, system-ui, sans-serif",
 					"font-size": "14px",
@@ -278,10 +277,11 @@ function NewTenfriendPrompt(props: {
 					"border-radius": "6px",
 					background: "#111",
 					color: "#fff",
-					cursor: creating() ? "wait" : "pointer",
+					cursor: "pointer",
 				}}>
-				{creating() ? "Creating..." : "Create"}
+				Create
 			</button>
+		</>}
 		</div>
 	)
 }

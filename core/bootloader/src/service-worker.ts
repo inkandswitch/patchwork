@@ -28,6 +28,9 @@ import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-
 let cachename = "default";
 let debugging = false;
 
+// Track WebSocket adapters by URL so we can remove them
+const syncAdapters = new Map<string, WebSocketClientAdapter>();
+
 const cacheableStatuses = [
   200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501,
 ];
@@ -118,6 +121,23 @@ self.addEventListener("message", async (event) => {
   } else if (event.data.type == "debug") {
     debugging = event.data.debug;
     log("serviceworker debugging enabled");
+  } else if (event.data.type == "add-sync-server") {
+    const url: string = event.data.url;
+    if (!syncAdapters.has(url)) {
+      const repo = await getRepo();
+      const adapter = new WebSocketClientAdapter(url);
+      syncAdapters.set(url, adapter);
+      repo.networkSubsystem.addNetworkAdapter(adapter);
+      log(`added sync server: ${url}`);
+    }
+  } else if (event.data.type == "remove-sync-server") {
+    const url: string = event.data.url;
+    const adapter = syncAdapters.get(url);
+    if (adapter) {
+      adapter.disconnect();
+      syncAdapters.delete(url);
+      log(`removed sync server: ${url}`);
+    }
   }
 });
 
