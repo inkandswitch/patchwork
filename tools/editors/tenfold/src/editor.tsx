@@ -25,6 +25,7 @@ export default function TenfoldEditor(props: {
   hint: Accessor<string>
 }) {
   const [withVim, setWithVim] = createSignal(false)
+  const [showHints, setShowHints] = createSignal(true)
 
   const historyCompartment = new Compartment()
 
@@ -130,8 +131,17 @@ export default function TenfoldEditor(props: {
         />
       </Show>
       <Show when={props.editing() == null}>
-        <TenfoldDocs hint={props.hint} />
+        <TenfoldDocs />
       </Show>
+      <div class="tenfold-hint-bar">
+        <label class="tenfold-hint-toggle">
+          <input type="checkbox" checked={showHints()} onChange={(e) => setShowHints(e.currentTarget.checked)} />
+          Hints
+        </label>
+        <Show when={showHints() && props.hint()}>
+          <div class="tenfold-hint">{props.hint()}</div>
+        </Show>
+      </div>
     </div>
   )
 }
