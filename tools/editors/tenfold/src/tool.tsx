@@ -2,23 +2,13 @@ import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo"
 import type { Tenfold } from "./index.tsx"
 import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements"
 import { makeDocumentProjection, useDocument } from "@automerge/automerge-repo-solid-primitives"
-import { CodeMirror } from "@grjte/codemirror-base/component"
 import createTenfold, { type CreateTenfoldOptions } from "./tenfold/tenfold.ts"
+import TenfoldEditor from "./editor.tsx"
 import { createMutable, createStore, produce } from "solid-js/store"
-import { createEffect, createSignal, mapArray, on, onCleanup, onMount, Show, Suspense } from "solid-js"
+import { createEffect, createSignal, mapArray, on, onCleanup, onMount, Suspense } from "solid-js"
 import font from "./font.txt?raw"
-import { javascript } from "@codemirror/lang-javascript"
-import { noirTheme } from "./codemirror/theme.ts"
-import { defaultKeymap, indentWithTab, history, historyKeymap } from "@codemirror/commands"
-import { drawSelection, EditorView, keymap } from "@codemirror/view"
 import { type WorkerShape } from "@valtown/codemirror-ts/worker"
 import * as Comlink from "comlink"
-import { tsFacet, tsAutocomplete, tsGoto, tsHover, tsLinterWorker, tsSync, tsTwoslash } from "@valtown/codemirror-ts"
-import { autocompletion, completionKeymap, completionStatus } from "@codemirror/autocomplete"
-import { vim } from "@replit/codemirror-vim"
-import { bracketMatching, indentOnInput } from "@codemirror/language"
-import { Compartment, EditorState } from "@codemirror/state"
-import { search, searchKeymap } from "@codemirror/search"
 import { addLoopBudgetInstrumentation } from "./instrumenter.ts"
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem"
 import { makePersisted } from "@solid-primitives/storage"
@@ -114,9 +104,13 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     }
   })
 
-  const [editing, setEditing] = makePersisted(createSignal<number>(0), {
+  const [editing, setEditing] = makePersisted(createSignal<number | null>(null), {
     name: `${props.handle.url}#editing`,
   })
+
+  function toggleEditing(i: number) {
+    setEditing((prev) => (prev === i ? null : i))
+  }
   const [canvas, setCanvas] = createSignal<HTMLCanvasElement>()
 
   const [letterFns, updateLetterFns] = createStore<CreateTenfoldOptions["letters"]>(Array.from(Array(9)))
@@ -140,7 +134,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     get container() {
       return canvas()!
     },
-    edit: setEditing,
+    edit: toggleEditing,
     set(i, field, value) {
       props.handle.change((doc) => (doc.states[i][field] = value))
     },
@@ -159,16 +153,23 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
 
   onMount(() => {
     canvas()!.addEventListener("tenfold:edit", (event) => {
-      setEditing((event as CustomEvent<number>).detail || 0)
+      toggleEditing((event as CustomEvent<number>).detail || 0)
     })
   })
 
-  const editingHandle = () => codeHandles[editing()]
+  const editingHandle = () => {
+    const idx = editing()
+    return idx != null ? codeHandles[idx] : undefined
+  }
 
-  const typescriptPath = () => `/letters/${folders()[editing()]}/${tenfold.states[editing()].i}.js`
+  const typescriptPath = () => {
+    const idx = editing()
+    return idx != null ? `/letters/${folders()[idx]}/${tenfold.states[idx].i}.js` : ""
+  }
 
   async function fork() {
     const idx = editing()
+    if (idx == null) return
     const hdl = letterFolderHandles[idx]
     const len = counts[idx]
     const name = (len + "").padStart(2, "0") + ".js"
@@ -193,25 +194,11 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     props.handle.change((doc) => (doc.states[idx].i = len))
   }
 
-  const [withVim, setWithVim] = createSignal(false)
-
-  const historyCompartment = new Compartment()
-
-  const tsFacetCompartment = new Compartment()
-
   createEffect(() => {
-    tsFacetCompartment.reconfigure(
-      tsFacet.of({
-        worker,
-        path: typescriptPath(),
-      })
-    )
-  })
-
-  createEffect(() => {
-    if (isNaN(tenfold.states[editing()].i)) {
+    const idx = editing()
+    if (idx != null && isNaN(tenfold.states[idx].i)) {
       props.handle.change((t) => {
-        t.states[editing()].i = 0
+        t.states[idx].i = 0
       })
     }
   })
@@ -226,94 +213,13 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
           <div id="synth-editor">
             <textarea></textarea>
           </div>
-          <div>
-            <button onClick={() => fork()}>New Letter</button>
-            <Show when={editingHandle()}>
-              <CodeMirror
-                handle={editingHandle()}
-                path={["content"]}
-                withView={(view: EditorView) => {
-                  createEffect(
-                    on(typescriptPath, () => {
-                      view.dispatch({
-                        effects: historyCompartment.reconfigure([]),
-                      })
-                      setTimeout(() => {
-                        view.dispatch({
-                          effects: historyCompartment.reconfigure(history()),
-                        })
-                      }, 1000)
-                    })
-                  )
-                }}
-                extensions={[
-                  drawSelection(),
-                  withVim() ? vim({ status: true }) : [],
-                  EditorState.allowMultipleSelections.of(true),
-                  EditorView.clickAddsSelectionRange.of((event) => event.altKey),
-                  keymap.of([
-                    indentWithTab,
-                    {
-                      preventDefault: true,
-                      mac: "m-s",
-                      key: "c-s",
-                      run() {
-                        return true
-                      },
-                    },
-                    {
-                      preventDefault: true,
-                      key: "m-c-v",
-                      run() {
-                        setWithVim((prev) => !prev)
-                        return true
-                      },
-                    },
-                    ...defaultKeymap,
-                    ...historyKeymap,
-                    ...completionKeymap,
-                    ...searchKeymap,
-                  ]),
-                  bracketMatching({}),
-                  historyCompartment.of([history()]),
-                  javascript(),
-                  noirTheme,
-                  tsFacetCompartment.of(tsFacet.of({ worker, path: typescriptPath() })),
-                  autocompletion({
-                    override: [tsAutocomplete()],
-                    closeOnBlur: false,
-                  }),
-                  tsSync(),
-                  tsGoto(),
-                  tsHover(),
-                  tsTwoslash(),
-                  tsLinterWorker(),
-                  indentOnInput(),
-                  search({ caseSensitive: false, regexp: true }),
-                  EditorView.lineWrapping,
-                  EditorState.transactionFilter.of((tr) => {
-                    const start = completionStatus(tr.startState)
-                    const after = completionStatus(tr.state)
-
-                    if (
-                      !tr.reconfigured &&
-                      tr.changes.empty &&
-                      !tr.effects.length &&
-                      start == "active" &&
-                      !after &&
-                      !tr.scrollIntoView &&
-                      tr.startState.selection == tr.newSelection &&
-                      tr.selection == tr.startState.selection
-                    ) {
-                      return []
-                    }
-
-                    return tr
-                  }),
-                ]}
-              />
-            </Show>
-          </div>
+          <TenfoldEditor
+            editing={editing}
+            editingHandle={editingHandle}
+            typescriptPath={typescriptPath}
+            fork={fork}
+            worker={worker}
+          />
         </aside>
       </article>
     </Suspense>
