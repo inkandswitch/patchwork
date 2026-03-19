@@ -33,15 +33,16 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     throw new TypeError(`words are 9 letters long. received: ${opts.word?.toString()}`)
   }
   // CONFIG
-  const thick = 2 // css pixels
+  const thick = 0.01 // cell-fraction (1% of cell width)
   const cycleTime = 8 // how many seconds per anim loop
   const color = "#fff"
   const errColor = "#f00"
   const MAX_DPR = 2 // Limit the DPR so we don't burn too much time
-  // ugh this shit aint resolution independent what a hack
-  const padding = 30
-  const gap = 30
-  const clockWaveHeight = 20
+  // All layout constants are in cell-fraction units (1 = one cell width)
+  const padding = 0.15
+  const gap = 0.15
+  const pitch = 1 + gap // cell + gap stride
+  const clockWaveHeight = 0.1
   const cleanups = new Set<() => void>()
   const states = {} as Record<number, Record<number, any>>
   const useAudio = false
@@ -54,7 +55,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const synths: Synth[] = []
 
   let PRINT = false // This will be enabled when we click the "Test Print" button
-  // TODO: also need to bump the line thickness to 4x (because we're printing at roughly 4x scale)
 
   // HELPFUL HELPERS
   // Ideally, all this stuff (or better equivalents) would be available to people writing letter functions
@@ -160,30 +160,24 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     let parentWidth = PRINT ? 3600 : box.width
     let parentHeight = PRINT ? 4800 : box.height
 
-    // calculate the "dead" width/height, eaten up by gaps and padding
-    let dw = padding * 2 + gap * 2
-    let dh = padding * 2 + gap * 3
-
-    // This is the max area the canvas will be contained within, in CSS pixels
-    let iw = parentWidth - dw
-    let ih = parentHeight - dh
+    // Grid extent in cell units: 3 cols + 2 gaps + 2 padding, 4 rows + 3 gaps + 2 padding
+    let gridW = 3 + 2 * gap + 2 * padding
+    let gridH = 4 + 3 * gap + 2 * padding
 
     // This is the size of a grid cell in CSS pixels
-    cssW = Math.min(iw / 3, ih / 4)
-
-    // We need the half-width (hw) to be floored, so we sized things based on that
-    cssW = Math.floor(cssW / 2) * 2
+    cssW = Math.min(parentWidth / gridW, parentHeight / gridH)
+    cssW = Math.floor(cssW / 2) * 2 // floor half-width so pixHW is an integer
 
     // Now, scale the canvas to cover all grid cells plus gaps and padding
-    canvas.style.width = cssW * 3 + dw + "px"
-    canvas.style.height = cssW * 4 + dh + "px"
+    canvas.style.width = cssW * gridW + "px"
+    canvas.style.height = cssW * gridH + "px"
 
     // Now calculate the internal pixel dimensions of the canvas
     dpr = clamp(Math.round(window.devicePixelRatio || 1), 1, MAX_DPR)
-    pixW = cssW * dpr // width
-    pixHW = pixW / 2 // half-width — we ensured that this is an integer
-    canvas.width = pixW * 3 + dw * dpr
-    canvas.height = pixW * 4 + dh * dpr
+    pixW = cssW * dpr
+    pixHW = pixW / 2
+    canvas.width = cssW * gridW * dpr
+    canvas.height = cssW * gridH * dpr
   }
 
   const resizeObserver = new ResizeObserver(resize)
@@ -215,23 +209,23 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
     // First, we need to figure out which region of the grid we clicked within
 
-    // Shift mouse origin to top left of grid, divide by "enlarged" grid cells.
-    // Since it includes gap, gx,gy is 0,0 at cell 0 TL and 1,1 at cell 4 TL
-    let gx = (mouseStart.x - padding) / (cssW + gap)
-    let gy = (mouseStart.y - padding) / (cssW + gap)
+    // Convert to cell units, subtract padding, divide by pitch.
+    // gx,gy is 0,0 at cell 0 TL and 1,1 at cell 4 TL
+    let gx = (mouseStart.x / cssW - padding) / pitch
+    let gy = (mouseStart.y / cssW - padding) / pitch
 
     // Get the column and row, and state (which might be null if we clicked outside the grid)
     let C = gx | 0
     let R = gy | 0
     let i = C + R * 3
 
-    // These are normalized coords *within* the current cell — we've now carved off the gap
-    let lx = ((gx - C) * (cssW + gap)) / cssW
-    let ly = ((gy - R) * (cssW + gap)) / cssW
+    // Local cell coords: 0-1 inside cell, >1 in the gap
+    let lx = (gx - C) * pitch
+    let ly = (gy - R) * pitch
 
-    // normalized position used by stuff in the kaoss pad
-    let kx = (mouseStart.x - padding - cssW - gap) / (cssW * 2 + gap)
-    let ky = ((gy - 1) * (cssW + gap)) / (cssW - clockWaveHeight - gap)
+    // Kaoss pad coords: 0-1 across its width and height
+    let kx = (mouseStart.x / cssW - padding - pitch) / (2 + gap)
+    let ky = ((gy - 1) * pitch) / (1 - clockWaveHeight - gap)
 
     // Update the mouse with all this extra context
     mouseStart = { ...mouseStart, C, R, i, lx, ly, kx, ky }
@@ -328,18 +322,17 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       dy: e.movementY,
     }
 
-    // Shift mouse origin to top left of grid, divide by "enlarged" grid cells.
-    // Since it includes gap, gx,gy is 0,0 at cell 0 TL and 1,1 at cell 4 TL
-    let gx = (mouseDragged.x - padding) / (cssW + gap)
-    let gy = (mouseDragged.y - padding) / (cssW + gap)
+    // gx,gy is 0,0 at cell 0 TL and 1,1 at cell 4 TL
+    let gx = (mouseDragged.x / cssW - padding) / pitch
+    let gy = (mouseDragged.y / cssW - padding) / pitch
 
-    // These are normalized coords within the START cell
-    let lx = ((gx - mouseStart.C) * (cssW + gap)) / cssW
-    let ly = ((gy - mouseStart.R) * (cssW + gap)) / cssW
+    // Local coords within the START cell
+    let lx = (gx - mouseStart.C) * pitch
+    let ly = (gy - mouseStart.R) * pitch
 
-    // normalized position used by stuff in the kaoss pad
-    let kx = (mouseDragged.x - padding - cssW - gap) / (cssW * 2 + gap)
-    let ky = ((gy - 1) * (cssW + gap)) / (cssW - clockWaveHeight - gap)
+    // Kaoss pad coords
+    let kx = (mouseDragged.x / cssW - padding - pitch) / (2 + gap)
+    let ky = ((gy - 1) * pitch) / (1 - clockWaveHeight - gap)
 
     // Update the mouse with all this extra context
     mouseDragged = { ...mouseDragged, lx, ly, kx, ky }
@@ -490,8 +483,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     ctx.strokeStyle = color
     ctx.lineJoin = ctx.lineCap = "round"
 
-    let scaleFix = cssW / 200 // oops, forgot to account for this, quick hack it!
-
     for (let i = 0; i < 9; i++) {
       let s = opts.states[i]
       let fn = opts.letters[i]
@@ -506,16 +497,12 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       ctx.strokeStyle = color
       ctx.fillStyle = color
 
-      // Transform to letter space
+      // Transform to clip letter space: -1 to 1 within the cell
       ctx.resetTransform()
-      ctx.translate(C * pixW, R * pixW) // center on the current grid cell
-      ctx.translate(dpr * padding, dpr * padding) // padding
-      ctx.translate(dpr * gap * C, dpr * gap * R) // gaps
+      ctx.translate((C * pitch + padding) * pixW, (R * pitch + padding) * pixW)
       ctx.scale(pixHW, pixHW) // CLIP LETTER SPACE
       ctx.translate(1, 1) // -1 to 1
-      // line width is calculated when .stroke() is called, and is affected by scale,
-      // so we need to undo the effect of grid scaling (but not dpr).
-      ctx.lineWidth = 2 * thick * (dpr / pixW)
+      ctx.lineWidth = 2 * thick
 
       // Activate collector for this letter
       let collector = collectors[i]
@@ -574,33 +561,31 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       }
 
       if (!PRINT) {
-        // Draw the letter selector
+        // Draw the letter selector in cell-fraction space
         ctx.resetTransform()
-        ctx.scale(dpr, dpr) // SCREEN SPACE
-        ctx.translate(C * cssW, R * cssW) // center on the current grid cell
-        ctx.translate(padding, padding) // padding
-        ctx.translate(gap * C, gap * R) // gaps
+        ctx.scale(dpr * cssW, dpr * cssW)
+        ctx.translate(C * pitch + padding, R * pitch + padding)
         ctx.lineWidth = thick
         {
-          let charWidth = 10 * scaleFix
-          let charHeight = 11 * scaleFix // this font is weird
+          let charWidth = 0.05
+          let charHeight = 0.055 // this font is weird
           let labelText = mappers[i] + opts.states[i].i.toString().padStart(2, "0")
           let labelWidth = charWidth * labelText.length
-          let x = 17 * scaleFix + labelWidth / 2
-          let y = cssW + gap / 2
+          let x = 0.085 + labelWidth / 2
+          let y = 1 + gap / 2
           ctx.beginPath()
-          drawText(api, labelText, x - labelWidth / 2, y - scaleFix - charHeight / 2, 16 * scaleFix, charWidth)
-          api.move(x - 26 * scaleFix, y - charHeight / 2)
-          api.line(x - 32 * scaleFix, y + 0)
-          api.line(x - 26 * scaleFix, y + charHeight / 2)
-          api.move(x + 26 * scaleFix, y - charHeight / 2)
-          api.line(x + 32 * scaleFix, y + 0)
-          api.line(x + 26 * scaleFix, y + charHeight / 2)
+          drawText(api, labelText, x - labelWidth / 2, y - 0.005 - charHeight / 2, 0.08, charWidth)
+          api.move(x - 0.13, y - charHeight / 2)
+          api.line(x - 0.16, y)
+          api.line(x - 0.13, y + charHeight / 2)
+          api.move(x + 0.13, y - charHeight / 2)
+          api.line(x + 0.16, y)
+          api.line(x + 0.13, y + charHeight / 2)
           ctx.stroke()
 
           // edit & fork
           ctx.beginPath()
-          api.circle(cssW - 6 * scaleFix, y, 6 * scaleFix)
+          api.circle(1 - 0.03, y, 0.03)
           if (opts.currentlyEditingIndex == i) ctx.fill()
           else ctx.stroke()
         }
@@ -622,20 +607,18 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
       // Draw the kaoss pad draggable
       ctx.resetTransform()
-      ctx.translate(pixW, pixW) // origin at the TL corner of the kaoss pad
-      ctx.translate(dpr * padding, dpr * padding) // padding
-      ctx.translate(dpr * gap, dpr * gap) // gaps
-      ctx.scale(pixW, pixW) // NORM LETTER SPACE
-      ctx.lineWidth = thick * (dpr / pixW)
+      ctx.translate((pitch + padding) * pixW, (pitch + padding) * pixW) // origin at the TL corner of the kaoss pad
+      ctx.scale(pixW, pixW)
+      ctx.lineWidth = thick
 
-      // kaoss pad is x: 0-2, y: 0-1
+      // kaoss pad is x: 0 to 2+gap, y: 0 to 1
       ctx.beginPath()
       let gs = 0.025 // size of the grid
       // m rows by n cols
       for (let m = 0; m < 3; m++) {
         for (let n = 0; n < 3; n++) {
-          let W = 2 + gap / cssW - gs * 3
-          let H = 1 - (clockWaveHeight * scaleFix + gap) / cssW - gs * 3
+          let W = 2 + gap - gs * 3
+          let H = 1 - clockWaveHeight - gap - gs * 3
           let X = gs * n + declip(s.q, 0, W)
           let Y = gs * m + declip(s.r, 0, H)
           if (m * 3 + n == i) ctx.fillRect(X, Y, gs, gs)
@@ -649,12 +632,10 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
     // &
     ctx.resetTransform()
-    ctx.translate(0, pixW) // center on the current grid cell
-    ctx.translate(dpr * padding, dpr * padding) // padding
-    ctx.translate(0, dpr * gap) // gaps
+    ctx.translate(padding * pixW, (pitch + padding) * pixW)
     ctx.scale(pixHW, pixHW) // CLIP LETTER SPACE
     ctx.translate(1, 1) // -1 to 1
-    ctx.lineWidth = 2 * thick * (dpr / pixW)
+    ctx.lineWidth = 2 * thick
     ctx.strokeStyle = color
 
     {
@@ -680,18 +661,16 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
     // Clock wave
     ctx.resetTransform()
-    ctx.scale(dpr, dpr) // SCREEN SPACE
-    ctx.translate(padding, padding) // padding
-    ctx.translate(gap + cssW, cssW + gap + cssW) // 0,0 at the BL corner of the kaoss pad
-    ctx.lineWidth = thick
+    ctx.scale(dpr * cssW, dpr * cssW)
+    ctx.translate(padding + pitch, padding + pitch + 1) // BL corner of the kaoss pad
     for (let i = 0; i <= 1.0001; i += 0.02) {
       ctx.beginPath()
       let phase = (((i - t + 0.5) % 1) + 1) % 1 // 0 to 1
       let p = Math.abs(denorm(phase)) // 1 to 0 to 1
       p **= 2.5
-      ctx.lineWidth = denorm(Math.min((1 - Math.abs(denorm(i))) * 4, 1) * p, 0.5, 5)
-      let x = cssW * i * 2 + gap * i
-      ctx.moveTo(x, -clockWaveHeight * scaleFix)
+      ctx.lineWidth = denorm(Math.min((1 - Math.abs(denorm(i))) * 4, 1) * p, thick / 4, (thick * 5) / 2)
+      let x = (2 + gap) * i
+      ctx.moveTo(x, -clockWaveHeight)
       ctx.lineTo(x, 0)
       ctx.stroke()
     }
