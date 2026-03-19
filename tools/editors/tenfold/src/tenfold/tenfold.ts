@@ -34,7 +34,6 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const gap = 0.15
   const pitch = 1 + gap // cell + gap stride
   const clockWaveHeight = 0.1
-  const cleanups = new Set<() => void>()
   const states = {} as Record<number, Record<number, any>>
   const useAudio = false
 
@@ -170,10 +169,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
   const resizeObserver = new ResizeObserver(resize)
   resizeObserver.observe(opts.container)
-  cleanups.add(() => resizeObserver.disconnect())
   resize()
   window.addEventListener("resize", resize)
-  cleanups.add(() => window.removeEventListener("resize", resize))
 
   // INPUT HANDLING /////////////////////////////////////////////////////////////////////////////////
 
@@ -351,13 +348,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   }
 
   canvas.addEventListener("pointerdown", pointerdown)
-  cleanups.add(() => canvas.removeEventListener("pointerdown", pointerdown))
   canvas.addEventListener("pointermove", onpointermove)
-  cleanups.add(() => canvas.removeEventListener("pointermove", onpointermove))
   window.addEventListener("pointerup", pointerup)
-  cleanups.add(() => window.removeEventListener("pointerup", pointerup))
   window.addEventListener("pointercancel", pointerup)
-  cleanups.add(() => window.removeEventListener("pointercancel", pointerup))
 
   // DRAWING API ////////////////////////////////////////////////////////////////////////////////////
 
@@ -701,10 +694,4 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   // INIT
   Spark.setup()
   requestAnimationFrame(update)
-
-  return function cleanup() {
-    alert("cleanup")
-    stop = true
-    for (const fn of cleanups) fn()
-  }
 }

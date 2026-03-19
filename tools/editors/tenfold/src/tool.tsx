@@ -5,7 +5,7 @@ import type { FolderDoc } from "@inkandswitch/patchwork-filesystem"
 import { makePersisted } from "@solid-primitives/storage"
 import { type WorkerShape } from "@valtown/codemirror-ts/worker"
 import * as Comlink from "comlink"
-import { createEffect, createSignal, mapArray, on, onCleanup, onMount, Suspense } from "solid-js"
+import { createEffect, createSignal, mapArray, on, onMount, Suspense } from "solid-js"
 import { createMutable, createStore, produce } from "solid-js/store"
 import TenfoldEditor from "./editor.tsx"
 import font from "./font.txt?raw"
@@ -149,7 +149,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
   createEffect(
     on(word, (word) => {
       if (word && word.length) {
-        onCleanup(createTenfold(tenfoldOptions))
+        createTenfold(tenfoldOptions)
       }
     })
   )
