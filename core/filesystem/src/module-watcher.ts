@@ -5,13 +5,9 @@ import {
   isValidAutomergeUrl,
   type Repo,
 } from "@automerge/automerge-repo/slim";
-import {
-  importModuleFromFolderDocUrl,
-  resolvePackageExport,
-} from "./packages.js";
+import { importModuleFromFolderDocUrl } from "./packages.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
 import { FolderDoc } from "./types.js";
-import { getImportableUrlFromAutomergeUrl } from "./urls.js";
 
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
@@ -83,7 +79,7 @@ export class ModuleWatcher {
   async loadSuggestedImportUrl(docUrl: AutomergeUrl) {
     const handle = await this.repo.find<Partial<HasPatchworkMetadata>>(docUrl);
     const doc = handle.doc();
-    const url = doc?.["@patchwork"]?.suggestedImportUrl;
+    const url = doc["@patchwork"]?.suggestedImportUrl;
     return url && (await this.loadModules([url]));
   }
 
@@ -123,9 +119,9 @@ export class ModuleWatcher {
     if (!docUrl) return;
 
     this.repo.find<FolderDoc>(docUrl).then((handle) => {
-      let previousSyncAtTime = handle.doc()?.lastSyncAt || 0;
+      let previousSyncAtTime = handle.doc().lastSyncAt || 0;
       handle.on("change", () => {
-        const lastSyncAt = handle.doc()?.lastSyncAt || 0;
+        const lastSyncAt = handle.doc().lastSyncAt || 0;
         if (lastSyncAt <= previousSyncAtTime) {
           console.log("handle updated but not lastSyncAt");
           return;
