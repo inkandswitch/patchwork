@@ -22,6 +22,7 @@ export default function TenfoldEditor(props: {
   typescriptPath: Accessor<string>
   fork: () => void
   worker: any
+  hint: Accessor<string>
 }) {
   const [withVim, setWithVim] = createSignal(false)
 
@@ -129,7 +130,7 @@ export default function TenfoldEditor(props: {
         />
       </Show>
       <Show when={props.editing() == null}>
-        <TenfoldDocs />
+        <TenfoldDocs hint={props.hint} />
       </Show>
     </div>
   )

@@ -104,6 +104,8 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     }
   })
 
+  const [hint, setHint] = createSignal("")
+
   const [editing, setEditing] = makePersisted(createSignal<number | null>(null), {
     name: `${props.handle.url}#editing`,
   })
@@ -141,6 +143,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     get word() {
       return word().join("").toUpperCase()
     },
+    onHover: setHint,
   } satisfies CreateTenfoldOptions
 
   createEffect(
@@ -213,7 +216,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
           <div id="synth-editor">
             <textarea></textarea>
           </div>
-          <TenfoldEditor editing={editing} editingHandle={editingHandle} typescriptPath={typescriptPath} fork={fork} worker={worker} />
+          <TenfoldEditor editing={editing} editingHandle={editingHandle} typescriptPath={typescriptPath} fork={fork} worker={worker} hint={hint} />
         </aside>
       </article>
     </Suspense>

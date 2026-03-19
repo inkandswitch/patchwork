@@ -9,23 +9,14 @@ import { Synth } from "./Synth.ts"
 export interface CreateTenfoldOptions {
   font: string
   letterCounts: number[]
-  letters: ((
-    ctx: any,
-    params: {
-      q: number
-      r: number
-      t: number
-      x: number
-      y: number
-      s: any
-    }
-  ) => void)[]
+  letters: ((ctx: any, params: { q: number; r: number; t: number; x: number; y: number; s: any }) => void)[]
   states: import("../index.tsx").TenfoldState[]
   currentlyEditingIndex: number | undefined | null
   container: HTMLElement
   edit(i: number): void
   set(i: number, field: "q" | "r" | "x" | "y" | "i", val: number): void
   word?: string
+  onHover(hint: string): void
 }
 
 export default function createTenfold(opts: CreateTenfoldOptions) {
@@ -146,9 +137,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
   // CANVAS /////////////////////////////////////////////////////////////////////////////////////////
   const canvas = opts.container.querySelector("canvas")!
-  const ctx = canvas.getContext("2d", {
-    alpha: true,
-  })!
+  const ctx = canvas.getContext("2d", { alpha: true })!
   let dpr: number // device pixel ratio, sigh
   let cssW: number // width of a grid cell in css units
   let pixW: number // width of a grid cell in canvas pixels
@@ -160,9 +149,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     let parentWidth = PRINT ? 3600 : box.width
     let parentHeight = PRINT ? 4800 : box.height
 
-    // Grid extent in cell units: 3 cols + 2 gaps + 2 padding, 4 rows + 3 gaps + 2 padding
-    let gridW = 3 + 2 * gap + 2 * padding
-    let gridH = 4 + 3 * gap + 2 * padding
+    let gridW = 3 + 2 * gap + 2 * padding // 3 cols, 2 gaps
+    let gridH = 4 + 3 * gap + 2 * padding // 4 rows, 3 gaps
 
     // This is the size of a grid cell in CSS pixels
     cssW = Math.min(parentWidth / gridW, parentHeight / gridH)
@@ -189,30 +177,17 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
   // INPUT HANDLING /////////////////////////////////////////////////////////////////////////////////
 
-  let dragType: null | "cell" | "param" | "timeline" = null // null, cell, param, or timeline
   let dragParam: number | null = null // the cell idx for the currently dragged param
   let mouseStart: Record<string, number> // state captured when the mouse is first pressed
   let mouseDragged: Record<string, number> // state captured as the mouse is dragged
   let lastWaffled = performance.now()
 
-  function pointerdown(e: PointerEvent) {
-    // We assume this mouse press will result in a drag, and will cancel it if not
-    window.addEventListener("pointermove", drag)
-
-    // capture the canvas-relative position, and the offset from the window to the canvas
-    mouseStart = {
-      x: e.offsetX,
-      y: e.offsetY,
-      ox: e.clientX - e.offsetX,
-      oy: e.clientY - e.offsetY,
-    }
-
-    // First, we need to figure out which region of the grid we clicked within
-
+  // Convert CSS pixel coords to grid coords
+  function hitCoords(x: number, y: number) {
     // Convert to cell units, subtract padding, divide by pitch.
     // gx,gy is 0,0 at cell 0 TL and 1,1 at cell 4 TL
-    let gx = (mouseStart.x / cssW - padding) / pitch
-    let gy = (mouseStart.y / cssW - padding) / pitch
+    let gx = (x / cssW - padding) / pitch
+    let gy = (y / cssW - padding) / pitch
 
     // Get the column and row, and state (which might be null if we clicked outside the grid)
     let C = gx | 0
@@ -224,136 +199,161 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     let ly = (gy - R) * pitch
 
     // Kaoss pad coords: 0-1 across its width and height
-    let kx = (mouseStart.x / cssW - padding - pitch) / (2 + gap)
+    let kx = (x / cssW - padding - pitch) / (2 + gap)
     let ky = ((gy - 1) * pitch) / (1 - clockWaveHeight - gap)
-
-    // Update the mouse with all this extra context
-    mouseStart = { ...mouseStart, C, R, i, lx, ly, kx, ky }
-    mouseDragged = {
-      x: e.clientX - mouseStart.ox,
-      y: e.clientY - mouseStart.oy,
-      dx: e.movementX,
-      dy: e.movementY,
-      C,
-      R,
-      i,
-      lx,
-      ly,
-      kx,
-      ky,
-    }
 
     // Check if we're inside a cell
     let lxInside = lx >= 0 && lx <= 1
     let lyInside = ly >= 0 && ly <= 1
+    let inside = lxInside && lyInside
+    return { gx, gy, C, R, i, lx, ly, kx, ky, lxInside, lyInside, inside }
+  }
 
-    // Check if we're inside one of the letters
-    if (lxInside && lyInside && R != 1) {
-      dragType = "cell"
-      return
-    }
+  type HitResult = ReturnType<typeof hitCoords>
 
-    // If we're in the gap under a letter, we do selector and bail
-    if (lxInside && ly > 1 && R != 1) {
-      if (R > 0) i -= 3
-      let s = opts.states[i]
-      if (lx < 0.33) {
-        const n = mod(s.i + (lx < 0.17 ? -1 : 1), opts.letterCounts[i] || 0)
-        opts.set(i, "i", n)
-        // reset the canvas drag position when switching letters
-        opts.set(i, "x", 0)
-        opts.set(i, "y", 0)
-      } else if (lx > 0.95) {
-        opts.edit(i)
-      }
+  // Convert grid index to letter index (0-8), accounting for the gap row
+  const letterIndex = (h: HitResult) => (h.R > 0 ? h.i - 3 : h.i)
 
-      return
-    }
-
-    // if it's in cell 3, we do ampersand stuff
-    if (i == 3) {
-      return
-    }
-
-    // if it's in the global kaoss pad, we find the closest draggable
-    if (i == 4 || i == 5) {
-      // are we dragging the time wave scrubber thingy?
-      if (lyInside && ly > 0.8) {
-        dragType = "timeline"
-        return
-      } else {
+  // These are the regions where various controls (etc) exist.
+  // Each region defines a hit test, hover hint, and optionally:
+  //   pointerdown — side effects on click (return false to prevent drag)
+  //   drag — called on pointermove while dragging
+  //   frame — called each animation frame while dragging
+  const regions = [
+    {
+      // cell
+      test: (h: HitResult) => h.lxInside && h.lyInside && h.R !== 1,
+      hint: (h: HitResult) => `Letter "${mappers[letterIndex(h)]}" — click and drag to set the x/y parameters for this letter's drawing function`,
+      drag(start: HitResult, _h: HitResult, lx: number, ly: number) {
+        let i = letterIndex(start)
+        opts.set(i, "x", clamp(denorm(lx)))
+        opts.set(i, "y", clamp(denorm(ly)))
+      },
+    },
+    {
+      // letter selector & edit button
+      test: (h: HitResult) => h.lxInside && h.ly > 1 && h.R !== 1,
+      hint(h: HitResult) {
+        if (h.lx < 0.33) return "Letter selector — click the arrows to cycle through different versions of this letter"
+        if (h.lx > 0.95) return "Edit button — click to open the code editor for this letter's drawing function"
+        return `Letter "${mappers[letterIndex(h)]}" variant — shows which version of this letter is active`
+      },
+      pointerdown(h: HitResult) {
+        let i = letterIndex(h)
+        let s = opts.states[i]
+        if (h.lx < 0.33) {
+          const n = mod(s.i + (h.lx < 0.17 ? -1 : 1), opts.letterCounts[i] || 0)
+          opts.set(i, "i", n)
+          // reset the canvas drag position when switching letters
+          opts.set(i, "x", 0)
+          opts.set(i, "y", 0)
+        } else if (h.lx > 0.95) {
+          opts.edit(i)
+        }
+      },
+    },
+    {
+      // ampersand
+      test: (h: HitResult) => h.i === 3 && h.lxInside && h.lyInside,
+      hint: () => "Ampersand — the & symbol connecting the two rows of letters",
+    },
+    {
+      // timeline — t is overridden per-frame via frame(), not per-pointermove
+      test: (h: HitResult) => (h.i === 4 || h.i === 5) && h.lyInside && h.ly > 0.8,
+      hint: () => "Timeline — click and drag to scrub through time, controlling the animation phase",
+      frame() {
+        t = 0.5 + mouseDragged.kx
+      },
+    },
+    {
+      // waffle
+      test: (h: HitResult) => (h.i === 4 || h.i === 5) && h.kx >= 0 && h.kx <= 1 && h.ky >= 0 && h.ky <= 1,
+      hint: () => "Waffle pad — each letter has a draggable dot here that controls its q/r parameters",
+      pointerdown(h: HitResult) {
         // grab the closest waffle
         dragParam = null
         let closestDist = 0.3 // need to be within this dist for the drag to count
         for (let p = 0; p < opts.states.length; p++) {
           let s = opts.states[p]
-          let dist = Math.hypot(clamp(denorm(kx)) - s.q, clamp(denorm(ky)) - s.r)
+          let dist = Math.hypot(clamp(denorm(h.kx)) - s.q, clamp(denorm(h.ky)) - s.r)
           if (dist >= closestDist) continue
           dragParam = p
           closestDist = dist
         }
-        if (dragParam != null) {
-          dragType = "param"
-          if (performance.now() - lastWaffled < 300) {
-            opts.set(dragParam, "q", dragParam / 4 - 1)
-            opts.set(dragParam, "r", (Math.random() - 0.5) / 5)
-          }
-          lastWaffled = performance.now()
-          return
+        if (dragParam == null) return false
+        if (performance.now() - lastWaffled < 300) {
+          opts.set(dragParam, "q", dragParam / 4 - 1)
+          opts.set(dragParam, "r", (Math.random() - 0.5) / 5)
         }
+        lastWaffled = performance.now()
+      },
+      drag(_start: HitResult, h: HitResult) {
+        if (dragParam == null) return
+        opts.set(dragParam, "q", clamp(denorm(h.kx)))
+        opts.set(dragParam, "r", clamp(denorm(h.ky)))
+      },
+    },
+  ]
+
+  let dragRegion: (typeof regions)[number] | null = null
+  let startHit: HitResult | null = null
+
+  function pointerdown(e: PointerEvent) {
+    mouseStart = { ox: e.clientX - e.offsetX, oy: e.clientY - e.offsetY }
+    let h = hitCoords(e.offsetX, e.offsetY)
+
+    for (const region of regions) {
+      if (!region.test(h)) continue
+
+      // pointerdown fires side effects; returning false aborts a drag
+      let ok = !region.pointerdown || region.pointerdown(h) !== false
+      if (ok && (region.drag || region.frame)) {
+        dragRegion = region
+        startHit = h
+        mouseDragged = { x: e.offsetX, y: e.offsetY, dx: 0, dy: 0, kx: h.kx, ky: h.ky }
+        window.addEventListener("pointermove", drag)
       }
+      return
     }
-
-    // nothing happened, I guess — abort the drag
-    pointerup()
   }
-
-  canvas.addEventListener("pointerdown", pointerdown)
-  cleanups.add(() => canvas.removeEventListener("pointerdown", pointerdown))
 
   const drag = (e: PointerEvent) => {
     e.preventDefault() // Prevent unwanted text selection
 
-    // use the initial offset from the window to the canvas to compute an updated canvas-relative mouse pos
-    mouseDragged = {
-      x: e.clientX - mouseStart.ox,
-      y: e.clientY - mouseStart.oy,
-      dx: e.movementX,
-      dy: e.movementY,
-    }
+    let x = e.clientX - mouseStart.ox
+    let y = e.clientY - mouseStart.oy
+    let h = hitCoords(x, y)
 
-    // gx,gy is 0,0 at cell 0 TL and 1,1 at cell 4 TL
-    let gx = (mouseDragged.x / cssW - padding) / pitch
-    let gy = (mouseDragged.y / cssW - padding) / pitch
+    // local coords relative to the START cell, not whichever cell the cursor is over now
+    let lx = (h.gx - startHit!.C) * pitch
+    let ly = (h.gy - startHit!.R) * pitch
 
-    // Local coords within the START cell
-    let lx = (gx - mouseStart.C) * pitch
-    let ly = (gy - mouseStart.R) * pitch
-
-    // Kaoss pad coords
-    let kx = (mouseDragged.x / cssW - padding - pitch) / (2 + gap)
-    let ky = ((gy - 1) * pitch) / (1 - clockWaveHeight - gap)
-
-    // Update the mouse with all this extra context
-    mouseDragged = { ...mouseDragged, lx, ly, kx, ky }
-
-    if (dragType == "cell") {
-      let i = mouseStart.i
-      if (mouseStart.R > 0) i -= 3
-      opts.set(i, "x", clamp(denorm(lx)))
-      opts.set(i, "y", clamp(denorm(ly)))
-    } else if (dragType == "param" && dragParam != null) {
-      let i = dragParam
-      opts.set(i, "q", clamp(denorm(kx)))
-      opts.set(i, "r", clamp(denorm(ky)))
-    }
+    mouseDragged = { x, y, dx: e.movementX, dy: e.movementY, lx, ly, kx: h.kx, ky: h.ky }
+    dragRegion?.drag?.(startHit!, h, lx, ly)
   }
 
   const pointerup = () => {
-    dragType = null
+    dragRegion = null
+    startHit = null
     window.removeEventListener("pointermove", drag)
   }
 
+  function hintForCoords(h: HitResult): string {
+    for (const region of regions) {
+      if (region.test(h)) return region.hint(h)
+    }
+    return ""
+  }
+
+  function onpointermove(e: PointerEvent) {
+    if (dragRegion) return
+    opts.onHover(hintForCoords(hitCoords(e.offsetX, e.offsetY)))
+  }
+
+  canvas.addEventListener("pointerdown", pointerdown)
+  cleanups.add(() => canvas.removeEventListener("pointerdown", pointerdown))
+  canvas.addEventListener("pointermove", onpointermove)
+  cleanups.add(() => canvas.removeEventListener("pointermove", onpointermove))
   window.addEventListener("pointerup", pointerup)
   cleanups.add(() => window.removeEventListener("pointerup", pointerup))
   window.addEventListener("pointercancel", pointerup)
@@ -446,7 +446,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     TAU,
     PI,
     mouse() {
-      return !!dragType
+      return !!dragRegion
     },
   }
 
@@ -471,7 +471,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
     let newT = ms / 1000 / cycleTime
     lastT ??= newT
-    if (dragType == "timeline") t = 0.5 + mouseDragged.kx
+    if (dragRegion?.frame) dragRegion.frame()
     else t += newT - lastT
     lastT = newT
 
@@ -703,7 +703,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   requestAnimationFrame(update)
 
   return function cleanup() {
-    console.log("CLEANUP")
+    alert("cleanup")
     stop = true
     for (const fn of cleanups) fn()
   }

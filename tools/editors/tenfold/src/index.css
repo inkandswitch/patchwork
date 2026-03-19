@@ -82,6 +82,14 @@ body {
     a {
       color: #fff;
     }
+
+    .tenfold-hint {
+      margin-top: 16px;
+      padding: 8px 12px;
+      font-size: 14px;
+      opacity: 0.6;
+      border-left: 2px solid #fff4;
+    }
   }
 
   .cm-editor {
