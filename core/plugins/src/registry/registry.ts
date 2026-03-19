@@ -12,8 +12,17 @@ import {
   isLoadedPlugin,
   isPluginDescription,
 } from "./guards.js";
+import type { DatatypeImplementation } from "../datatypes.js";
 
 const log = debug("patchwork:plugins");
+
+function isAsyncFunction(fn: unknown) {
+  return (
+    typeof fn == "function" &&
+    Symbol.toStringTag in fn &&
+    fn[Symbol.toStringTag] == "AsyncFunction"
+  );
+}
 
 /**
  * Registry for managing plugins of a specific type
@@ -114,7 +123,27 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
         }
 
         log(`Successfully loaded implementation for: ${id}`, implementation);
-        const { load, ...descriptionWithoutLoad } = description;
+        // TODO: remove this
+        const desc = description as LoadablePlugin<D, I>;
+        if (desc.type == "patchwork:datatype") {
+          const impl = implementation as DatatypeImplementation;
+          if (isAsyncFunction(impl.getTitle)) {
+            console.warn(
+              desc.id,
+              desc.importUrl,
+              "getTitle should not be an async function"
+            );
+          }
+          if (isAsyncFunction(impl.setTitle)) {
+            console.warn(
+              desc.id,
+              desc.importUrl,
+              "setTitle should not be an async function"
+            );
+          }
+        }
+
+        const { load, ...descriptionWithoutLoad } = desc;
         if (!isPluginDescription<D>(descriptionWithoutLoad)) {
           throw new Error("Invalid plugin description");
         }
