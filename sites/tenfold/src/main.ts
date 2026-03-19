@@ -10,6 +10,8 @@ import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 // @ts-expect-error there ain't no types for tenfold
 import * as tenfold from "@inkandswitch/tenfold";
+import "@inkandswitch/tenfold/style.css";
+
 import { registerPlugins, getRegistry } from "@inkandswitch/patchwork-plugins";
 
 const url = URL.createObjectURL(
@@ -61,5 +63,9 @@ if (doc) {
   rootElement.setAttribute("tool-id", "inkandswitch/tenfold");
   rootElement.setAttribute("doc-url", doc);
 } else {
-  rootElement.textContent = "YOU DO NEED THAT ?doc= BTW";
+  const handle = await repo.create2({
+    "@patchwork": { type: "tenfriend" },
+  });
+  rootElement.setAttribute("tool-id", "tenfriend");
+  rootElement.setAttribute("doc-url", handle.url);
 }

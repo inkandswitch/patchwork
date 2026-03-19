@@ -3,6 +3,8 @@ import type { AutomergeUrl, DocHandle } from "@automerge/automerge-repo"
 import { type LoadableDatatype, type LoadablePlugin, type ToolDescription, type ToolImplementation } from "@inkandswitch/patchwork-plugins"
 import { render } from "solid-js/web"
 import "./index.css"
+import { TenfriendDatatype } from "./tenfriend-datatype"
+import { TenfriendTool } from "./tenfriend-tool"
 
 export type TenfoldLetterer = (q: number, r: number, t: number, x: number, y: number) => void
 
@@ -94,6 +96,25 @@ export const plugins = [
       return (handle, element) => {
         return render(() => <tool.default handle={handle as DocHandle<Tenfold>} element={element} />, element)
       }
+    },
+  } satisfies LoadablePlugin<ToolDescription, ToolImplementation>,
+  {
+    type: "patchwork:datatype",
+    id: "tenfriend",
+    name: "Tenfriend",
+    icon: "Users",
+    async load() {
+      return TenfriendDatatype
+    },
+  } satisfies LoadableDatatype<any>,
+  {
+    type: "patchwork:tool",
+    id: "tenfriend",
+    name: "Tenfriend",
+    icon: "Users",
+    supportedDatatypes: ["tenfriend"],
+    async load() {
+      return TenfriendTool
     },
   } satisfies LoadablePlugin<ToolDescription, ToolImplementation>,
 ]

@@ -16,6 +16,10 @@
       "import": "./dist/tools/tenfold.js",
       "source": "./src/tool.tsx"
     },
+    "./tools/tenfriend": {
+      "import": "./dist/tools/tenfriend.js",
+      "source": "./src/tenfriend-tool.tsx"
+    },
     "./style.css": "./dist/tenfold.css"
   },
   "scripts": {

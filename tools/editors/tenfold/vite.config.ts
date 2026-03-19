@@ -16,6 +16,7 @@ export default defineConfig({
       entry: {
         index: "src/index.tsx",
         "tools/tenfold": "src/tool.tsx",
+        "tools/tenfriend": "src/tenfriend-tool.tsx",
       },
       formats: ["es"],
     },
