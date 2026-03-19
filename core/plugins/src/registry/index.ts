@@ -29,7 +29,8 @@ export function getRegistry<T extends PluginDescription>(
   return registries[type] as PluginRegistry<T>;
 }
 
-// TODO: remove this
+// todo remove this tomorrow
+// ugly and transitional
 function migrate(plugin: LoadablePlugin) {
   if (plugin.type == "patchwork:tool") {
     const tool = plugin as Tool;
