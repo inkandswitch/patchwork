@@ -31,6 +31,9 @@ let debugging = false;
 // Track WebSocket adapters by URL so we can remove them
 const syncAdapters = new Map<string, WebSocketClientAdapter>();
 
+// The default sync server adapter, so we can disconnect it if replaced
+let defaultSyncAdapter: WebSocketClientAdapter | null = null;
+
 const cacheableStatuses = [
   200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501,
 ];
@@ -71,15 +74,17 @@ function getRepo() {
     repoPromise = (async () => {
       const wasmResponse = await fetch("/automerge.wasm");
       await initializeWasm(new Uint8Array(await wasmResponse.arrayBuffer()));
+      defaultSyncAdapter = new WebSocketClientAdapter(
+        "wss://sync3.automerge.org"
+      );
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
-        network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
+        network: [defaultSyncAdapter],
         peerId: ("service-worker-" +
           (Math.random() * 10000).toString(36).slice(2)) as PeerId,
         async sharePolicy(peerId) {
           return peerId.includes("storage-server");
         },
-        enableRemoteHeadsGossiping: true,
       });
 
       (self as any).repo = repo;
@@ -121,6 +126,24 @@ self.addEventListener("message", async (event) => {
   } else if (event.data.type == "debug") {
     debugging = event.data.debug;
     log("serviceworker debugging enabled");
+  } else if (event.data.type == "set-sync-server") {
+    const url: string = event.data.url;
+    // Disconnect the default sync server
+    if (defaultSyncAdapter) {
+      defaultSyncAdapter.disconnect();
+      defaultSyncAdapter = null;
+    }
+    // Disconnect any previously added sync servers
+    for (const [, adapter] of syncAdapters) {
+      adapter.disconnect();
+    }
+    syncAdapters.clear();
+    // Add the new one
+    const repo = await getRepo();
+    const adapter = new WebSocketClientAdapter(url);
+    syncAdapters.set(url, adapter);
+    repo.networkSubsystem.addNetworkAdapter(adapter);
+    log(`set sync server: ${url}`);
   } else if (event.data.type == "add-sync-server") {
     const url: string = event.data.url;
     if (!syncAdapters.has(url)) {

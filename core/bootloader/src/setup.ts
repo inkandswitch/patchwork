@@ -108,7 +108,7 @@ export default async function setupServiceWorker(
 
   if (options?.syncServer) {
     navigator.serviceWorker.controller!.postMessage({
-      type: "add-sync-server",
+      type: "set-sync-server",
       url: options.syncServer,
     });
   }
