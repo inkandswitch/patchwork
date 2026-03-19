@@ -41,7 +41,7 @@ export default function TenfoldEditor(props: {
   })
 
   return (
-    <div>
+    <div id="dumb-tsx-container">
       <Show when={props.editing() != null}>
         <button onClick={() => props.fork()}>New Letter</button>
       </Show>

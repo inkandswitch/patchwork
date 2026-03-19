@@ -143,8 +143,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   let pixHW: number // half the width of a grid cell in canvas pixels
 
   function resize() {
-    // If we need to nest the canvas within a smaller area, specify that area here
     const box = opts.container.getBoundingClientRect()
+
+    // we want to leave some space at the right for the code editor, so we're gonna subtract that here
+    box.width /= 2
+
     let parentWidth = PRINT ? 3600 : box.width
     let parentHeight = PRINT ? 4800 : box.height
 

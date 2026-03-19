@@ -29,17 +29,13 @@ body {
     position: relative;
     display: flex;
     flex-flow: column;
-    flex: 1 1 0;
+    flex: 1 1 100%;
     height: 100%;
-    padding: 32px;
-    padding-left: 0;
 
-    & > div {
+    & > * {
       display: flex;
       flex-direction: column;
-      flex: 1 1 50%;
-      width: 80ex;
-      height: 50%;
+      flex: 1 1 auto;
       font-size: 18px;
     }
 
@@ -51,6 +47,7 @@ body {
     }
 
     #message-field {
+      display: none; /* turned off for now, while we do friends-of-the-lab */
       position: absolute;
       inset: 0;
       width: 100%;
@@ -125,6 +122,7 @@ body {
   }
 
   .cm-editor {
+    width: 100%;
     height: 100%;
     overflow: auto;
   }
@@ -146,8 +144,4 @@ body {
   .cm-matchingBracket {
     background-color: #ffffff66 !important;
   }
-}
-
-.cm-editor {
-  height: 100%;
 }
