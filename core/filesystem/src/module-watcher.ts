@@ -5,13 +5,9 @@ import {
   isValidAutomergeUrl,
   type Repo,
 } from "@automerge/automerge-repo/slim";
-import {
-  importModuleFromFolderDocUrl,
-  resolvePackageExport,
-} from "./packages.js";
+import { importModuleFromFolderDocUrl } from "./packages.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
 import { FolderDoc } from "./types.js";
-import { getImportableUrlFromAutomergeUrl } from "./urls.js";
 
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
@@ -31,6 +27,7 @@ export class ModuleWatcher {
   urls: AutomergeUrl[];
   handles: DocHandle<ModuleSettingsDoc>[] | undefined;
   doneLoading: Promise<void>;
+  #watchedModules = new Set<string>();
 
   onLoad: (name: string, mod: any) => void;
 
@@ -112,11 +109,13 @@ export class ModuleWatcher {
   // It would be better to watch all the files in the folder recursively
   // and to have some relationship with those other than just parsing the URL.
   private setDocWatcher(importName: string) {
+    if (this.#watchedModules.has(importName)) return;
+    this.#watchedModules.add(importName);
+
     const docUrl = isValidAutomergeUrl(importName)
       ? importName
       : (importName.match(/\/automerge\/(\w+)\//)?.[1] as DocumentId);
 
-    // This is probably a built-in, which is fine!
     if (!docUrl) return;
 
     this.repo.find<FolderDoc>(docUrl).then((handle) => {

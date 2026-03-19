@@ -31,9 +31,9 @@ function isAsyncFunction(fn: unknown) {
  */
 export class PluginRegistry<D extends PluginDescription, I = any> {
   #plugins = new Map<string, Plugin<D, I>>();
-  #loadPromises = new Map<string, Promise<LoadedPlugin<D, I>>>();
+  #loadPromises = new Map<string, Promise<LoadedPlugin<D, I> | undefined>>();
   #events = new EventEmitter<PluginRegistryEvents<D, I>>();
-  loading = new Set<string>();
+  #loading = new Set<string>();
 
   /**
    * Register an plugin with this registry
@@ -85,95 +85,91 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
    * If shouldWait is true, will wait for the plugin to be registered if it isn't already
    */
   async load(id: string): Promise<LoadedPlugin<D, I> | undefined> {
-    // TODO: error handling?
     log(`load called for: ${id}`, {});
 
-    // Check if we already have a loaded plugin
-    const plugin = this.#plugins.get(id);
-    log(`Found existing plugin: ${id}`, {
-      hasPlugin: !!plugin,
-      isLoadable: plugin ? isLoadablePlugin<D, I>(plugin) : "N/A",
-    });
-
-    if (plugin && isLoadedPlugin<D, I>(plugin)) {
-      log(`Returning already loaded plugin: ${id}`);
-      return plugin;
-    }
-
-    // Get the plugin description
     const description = this.#plugins.get(id);
     if (!description) {
       log(`Plugin not registered: ${id}`);
       return undefined;
     }
 
-    // If the plugin is loadable, load it
-    if (isLoadablePlugin(description)) {
-      log(`Loading plugin implementation: ${id}`);
-      this.loading.add(id);
-      const loadPromise = description
-        .load()
-        .then((implementation) => {
-          log(`Successfully loaded implementation for: ${id}`, implementation);
-          // Merge the implementation with the plugin metadata to create a complete Plugin
-          // Omit the load method as it's no longer needed
-          const { load, ...descriptionWithoutLoad } = description;
-          if (!isPluginDescription<D>(descriptionWithoutLoad)) {
-            throw new Error("Invalid plugin description");
-          }
-          const plugin = {
-            ...descriptionWithoutLoad,
-            module: implementation,
-          };
-
-          // todo remove tomorrow
-          // think about where this should live etc
-          if (description.type == "patchwork:datatype") {
-            const impl = implementation as DatatypeImplementation;
-            if (isAsyncFunction(impl.getTitle)) {
-              console.warn(
-                description.id,
-                description.importUrl,
-                "getTitle should not be an async function"
-              );
-            }
-            if (isAsyncFunction(impl.setTitle)) {
-              console.warn(
-                description.id,
-                description.importUrl,
-                "getTitle should be an async function"
-              );
-            }
-          }
-
-          // Store the loaded version
-          this.#plugins.set(description.id, plugin);
-          this.#loadPromises.delete(id);
-          this.loading.delete(id);
-
-          // Notify listeners that an plugin has been loaded
-          this.#events.emit("loaded", plugin);
-          this.#events.emit("changed");
-
-          return plugin;
-        })
-        .catch((error) => {
-          console.error(`Failed to load plugin implementation: ${id}`, error);
-          this.#loadPromises.delete(id);
-          this.loading.delete(id);
-          throw error;
-        });
-
-      // Store the promise so we don't load twice
-      this.#loadPromises.set(id, loadPromise);
-      return loadPromise;
-    }
-
     if (isLoadedPlugin<D, I>(description)) {
+      log(`Returning already loaded plugin: ${id}`);
       return description;
     }
 
-    throw new Error(`Plugin ${id} is not loadable`);
+    const existingPromise = this.#loadPromises.get(id);
+    if (existingPromise) {
+      log(`Returning in-flight load for: ${id}`);
+      return existingPromise;
+    }
+
+    if (!isLoadablePlugin(description)) {
+      throw new Error(`Plugin ${id} is not loadable`);
+    }
+
+    log(`Loading plugin implementation: ${id}`);
+    this.#loading.add(id);
+
+    const loadPromise = description
+      .load()
+      .then((implementation) => {
+        // If the plugin was removed or re-registered while loading, discard
+        if (this.#plugins.get(id) !== description) {
+          log(`Plugin ${id} was replaced or removed during load, discarding`);
+          this.#loadPromises.delete(id);
+          this.#loading.delete(id);
+          return undefined;
+        }
+
+        log(`Successfully loaded implementation for: ${id}`, implementation);
+        // TODO: remove this
+        const desc = description as LoadablePlugin<D, I>;
+        if (desc.type == "patchwork:datatype") {
+          const impl = implementation as DatatypeImplementation;
+          if (isAsyncFunction(impl.getTitle)) {
+            console.warn(
+              desc.id,
+              desc.importUrl,
+              "getTitle should not be an async function"
+            );
+          }
+          if (isAsyncFunction(impl.setTitle)) {
+            console.warn(
+              desc.id,
+              desc.importUrl,
+              "setTitle should not be an async function"
+            );
+          }
+        }
+
+        const { load, ...descriptionWithoutLoad } = desc;
+        if (!isPluginDescription<D>(descriptionWithoutLoad)) {
+          throw new Error("Invalid plugin description");
+        }
+        const plugin = {
+          ...descriptionWithoutLoad,
+          module: implementation,
+        };
+
+        this.#plugins.set(id, plugin);
+        this.#loadPromises.delete(id);
+        this.#loading.delete(id);
+
+        this.#events.emit("loaded", plugin);
+        this.#events.emit("changed");
+
+        return plugin;
+      })
+      .catch((error) => {
+        console.error(`Failed to load plugin implementation: ${id}`, error);
+        this.#loadPromises.delete(id);
+        this.#loading.delete(id);
+        throw error;
+      });
+
+    this.#loadPromises.set(id, loadPromise);
+    return loadPromise;
   }
 
   /**
@@ -183,23 +179,40 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   async loadAll(plugins: Plugin<D, I>[]): Promise<LoadedPlugin<D, I>[]> {
     // Get all plugins or filter them if a filter function is provided
     // Create an array of promises for loading each plugin
-    const loadPromises = plugins.map(async (plugin) => {
-      try {
-        const Plugin = await this.load(plugin.id);
-        return Plugin;
-      } catch (error) {
-        console.warn(`Failed to load plugin ${plugin.id}:`, error);
-        return undefined;
-      }
-    });
+    const loadPromises = plugins.map((plugin) => this.load(plugin.id));
 
-    // Wait for all plugins to load and filter out any that failed
-    // TODO: use Promise.allSettled instead?
-    // TODO: error handling?
-    const results = await Promise.all(loadPromises);
-    return results.filter(
-      (plugin): plugin is Awaited<LoadedPlugin<D, I>> => plugin !== undefined
+    const results = await Promise.allSettled(loadPromises);
+    return results.flatMap((result) =>
+      result.status === "fulfilled" && result.value !== undefined
+        ? [result.value]
+        : []
     );
+  }
+
+  /**
+   * Remove a plugin by ID. Emits "removed" and "changed" if the plugin existed.
+   * Returns true if the plugin was found and removed, false if it wasn't registered.
+   */
+  remove(id: string): boolean {
+    if (!this.#plugins.has(id)) {
+      return false;
+    }
+
+    this.#plugins.delete(id);
+    this.#loadPromises.delete(id);
+    this.#loading.delete(id);
+
+    this.#events.emit("removed", id);
+    this.#events.emit("changed");
+
+    return true;
+  }
+
+  /**
+   * Check if a plugin is currently being loaded
+   */
+  isLoading(id: string): boolean {
+    return this.#loading.has(id);
   }
 
   /**
@@ -209,8 +222,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     return this.#plugins.has(id);
   }
 
-  /** Subscribe to plugin events */
-  // TODO: see if we can / want to reuse the eventemitter3 API here.
+  /** Subscribe to plugin events. Returns an unsubscribe function. */
   on(
     event: "registered",
     callback: (plugin: Plugin<D, I>) => void | Promise<void>
@@ -235,13 +247,5 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     return () => {
       this.#events.off(event, callback);
     };
-  }
-
-  /** Unsubscribe from plugin events */
-  off(
-    event: keyof PluginRegistryEvents<D, I>,
-    callback: (...args: any[]) => void
-  ): void {
-    this.#events.off(event, callback);
   }
 }

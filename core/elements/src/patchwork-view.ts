@@ -130,16 +130,16 @@ export function registerPatchworkViewElement(
       // each time the element is moved to a different place in the DOM via Element.moveBefore()
       connectedMoveCallback() {}
 
-      attributeChangedCallback(name: string, _: string, val: string | null) {
+      attributeChangedCallback(name: string, old: string | null, val: string | null) {
+        if (old === val) return;
+
         if (name === attrs.toolId) {
-          if (this.toolId != val) {
-            this.toolId = val;
-            this.#teardown().then(() => this.#init());
-          }
+          this.#toolId = val;
+          this.#teardown().then(() => this.#init());
         }
 
         if (name === attrs.docUrl) {
-          this.docUrl = val as AutomergeUrl;
+          this.#docUrl = val as AutomergeUrl;
           this.#teardown().then(() => this.#init());
         }
       }
@@ -311,7 +311,7 @@ export function registerPatchworkViewElement(
         if (!this.#tool.module) {
           const toolRegistry = getRegistry("patchwork:tool");
           toolRegistry.load(this.#tool.id);
-          if (toolRegistry.loading.has(this.#tool.id)) {
+          if (toolRegistry.isLoading(this.#tool.id)) {
             this.#state = "unable";
             log(`loading ${toolId}`);
             this.#displayLoading(toolId);
@@ -324,10 +324,11 @@ export function registerPatchworkViewElement(
 
         try {
           const cleanup = this.#tool.module(this.#handle, this);
-          if (typeof cleanup != "function") {
+          if (typeof cleanup === "function") {
+            this.#teardowns.add(cleanup);
+          } else {
             console.warn(`return a cleanup function from ${toolId}`);
           }
-          this.#teardowns.add(cleanup);
           this.#state = fallingBack ? "fallback" : "rendered";
           this.dispatchEvent(new MountedEvent({ url: this.docUrl, toolId }));
         } catch (error) {
