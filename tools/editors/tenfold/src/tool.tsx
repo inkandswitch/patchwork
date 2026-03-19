@@ -1,17 +1,17 @@
 import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo"
-import type { Tenfold } from "./index.tsx"
-import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements"
 import { makeDocumentProjection, useDocument } from "@automerge/automerge-repo-solid-primitives"
-import createTenfold, { type CreateTenfoldOptions } from "./tenfold/tenfold.ts"
-import TenfoldEditor from "./editor.tsx"
-import { createMutable, createStore, produce } from "solid-js/store"
-import { createEffect, createSignal, mapArray, on, onCleanup, onMount, Suspense } from "solid-js"
-import font from "./font.txt?raw"
-import { type WorkerShape } from "@valtown/codemirror-ts/worker"
-import * as Comlink from "comlink"
-import { addLoopBudgetInstrumentation } from "./instrumenter.ts"
+import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements"
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem"
 import { makePersisted } from "@solid-primitives/storage"
+import { type WorkerShape } from "@valtown/codemirror-ts/worker"
+import * as Comlink from "comlink"
+import { createEffect, createSignal, mapArray, on, onCleanup, onMount, Suspense } from "solid-js"
+import { createMutable, createStore, produce } from "solid-js/store"
+import TenfoldEditor from "./editor.tsx"
+import font from "./font.txt?raw"
+import type { Tenfold } from "./index.tsx"
+import { addLoopBudgetInstrumentation } from "./instrumenter.ts"
+import createTenfold, { type CreateTenfoldOptions } from "./tenfold/tenfold.ts"
 
 const innerWorker = new Worker(new URL("./codemirror/worker.ts", import.meta.url), { type: "module" })
 const worker = Comlink.wrap<WorkerShape>(innerWorker)
@@ -213,13 +213,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
           <div id="synth-editor">
             <textarea></textarea>
           </div>
-          <TenfoldEditor
-            editing={editing}
-            editingHandle={editingHandle}
-            typescriptPath={typescriptPath}
-            fork={fork}
-            worker={worker}
-          />
+          <TenfoldEditor editing={editing} editingHandle={editingHandle} typescriptPath={typescriptPath} fork={fork} worker={worker} />
         </aside>
       </article>
     </Suspense>

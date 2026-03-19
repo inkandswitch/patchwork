@@ -1,8 +1,8 @@
 // todo remove when we are doing the right thing re: module loading from within system
-import "./index.css"
 import type { AutomergeUrl, DocHandle } from "@automerge/automerge-repo"
 import { type LoadableDatatype, type LoadablePlugin, type ToolDescription, type ToolImplementation } from "@inkandswitch/patchwork-plugins"
 import { render } from "solid-js/web"
+import "./index.css"
 
 export type TenfoldLetterer = (q: number, r: number, t: number, x: number, y: number) => void
 
