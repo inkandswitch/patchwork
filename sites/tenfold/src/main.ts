@@ -17,8 +17,6 @@ const url = URL.createObjectURL(
 );
 
 registerPlugins(tenfold.plugins, url);
-await getRegistry("patchwork:tool").load("inkandswitch/tenfold");
-
 (window as any).tools = getRegistry("patchwork:tool");
 
 declare global {
