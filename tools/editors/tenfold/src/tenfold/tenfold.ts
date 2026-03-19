@@ -203,13 +203,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     let lxInside = lx >= 0 && lx <= 1
     let lyInside = ly >= 0 && ly <= 1
     let inside = lxInside && lyInside
-    return { gx, gy, C, R, i, lx, ly, kx, ky, lxInside, lyInside, inside }
+    let li = R > 0 ? i - 3 : i // letter index (0-8), accounting for the gap row
+    return { gx, gy, C, R, i, li, lx, ly, kx, ky, lxInside, lyInside, inside }
   }
 
   type HitResult = ReturnType<typeof hitCoords>
-
-  // Convert grid index to letter index (0-8), accounting for the gap row
-  const letterIndex = (h: HitResult) => (h.R > 0 ? h.i - 3 : h.i)
 
   // These are the regions where various controls (etc) exist.
   // Each region defines a hit test, hover hint, and optionally:
@@ -219,12 +217,11 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const regions = [
     {
       // cell
-      test: (h: HitResult) => h.lxInside && h.lyInside && h.R !== 1,
-      hint: (h: HitResult) => `Letter "${mappers[letterIndex(h)]}" — click and drag to set the x/y parameters for this letter's drawing function`,
+      test: (h: HitResult) => h.inside && h.R !== 1,
+      hint: (h: HitResult) => `Letter "${mappers[h.li]}" — click and drag to set the x/y parameters for this letter's drawing function`,
       drag(start: HitResult, _h: HitResult, lx: number, ly: number) {
-        let i = letterIndex(start)
-        opts.set(i, "x", clamp(denorm(lx)))
-        opts.set(i, "y", clamp(denorm(ly)))
+        opts.set(start.li, "x", clamp(denorm(lx)))
+        opts.set(start.li, "y", clamp(denorm(ly)))
       },
     },
     {
@@ -233,25 +230,24 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       hint(h: HitResult) {
         if (h.lx < 0.33) return "Letter selector — click the arrows to cycle through different versions of this letter"
         if (h.lx > 0.95) return "Edit button — click to open the code editor for this letter's drawing function"
-        return `Letter "${mappers[letterIndex(h)]}" variant — shows which version of this letter is active`
+        return `Letter "${mappers[h.li]}" variant — shows which version of this letter is active`
       },
       pointerdown(h: HitResult) {
-        let i = letterIndex(h)
-        let s = opts.states[i]
+        let s = opts.states[h.li]
         if (h.lx < 0.33) {
-          const n = mod(s.i + (h.lx < 0.17 ? -1 : 1), opts.letterCounts[i] || 0)
-          opts.set(i, "i", n)
+          const n = mod(s.i + (h.lx < 0.17 ? -1 : 1), opts.letterCounts[h.li] || 0)
+          opts.set(h.li, "i", n)
           // reset the canvas drag position when switching letters
-          opts.set(i, "x", 0)
-          opts.set(i, "y", 0)
+          opts.set(h.li, "x", 0)
+          opts.set(h.li, "y", 0)
         } else if (h.lx > 0.95) {
-          opts.edit(i)
+          opts.edit(h.li)
         }
       },
     },
     {
       // ampersand
-      test: (h: HitResult) => h.i === 3 && h.lxInside && h.lyInside,
+      test: (h: HitResult) => h.i === 3 && h.inside,
       hint: () => "Ampersand — the & symbol connecting the two rows of letters",
     },
     {
@@ -453,9 +449,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   let mappers = Array.from(opts.word ?? "INKSWITCH")
   let lastT: number
 
-  let stop = false
   function update(ms: number) {
-    if (stop) return
     requestAnimationFrame(update)
     // the states doc isn't ready
     if (!opts.states.length) return
@@ -478,12 +472,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
     for (let i = 0; i < 9; i++) {
       let s = opts.states[i]
-      let fn = opts.letters[i]
-      let C = Math.floor(i % 3)
-      let _R = Math.floor(i / 3)
-      let R = _R > 0 ? _R + 1 : _R
-      if (!states[i]) states[i] = {}
-      if (!states[i]?.[s.i]) states[i][s.i] = {}
+      let C = i % 3
+      let R = i < 3 ? 0 : Math.floor(i / 3) + 1
+      ;(states[i] ??= {})[s.i] ??= {}
       const state = states[i][s.i]
 
       // the previous letter may have turned red
@@ -509,7 +500,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       ctx.beginPath()
 
       try {
-        fn?.(api, { ...s, t: mod(t), s: state })
+        opts.letters[i]?.(api, { ...s, t: mod(t), s: state })
       } catch (error) {
         ctx.strokeStyle = errColor
         ctx.fillStyle = errColor
