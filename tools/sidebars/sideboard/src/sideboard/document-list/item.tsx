@@ -1,10 +1,8 @@
 import { ContextMenu } from "@kobalte/core/context-menu";
 import {
-  createEffect,
   createSignal,
   For,
   Show,
-  untrack,
   type JSX,
 } from "solid-js";
 import { useSupportedToolsForType } from "@patchwork/solid";
@@ -12,9 +10,12 @@ import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements";
 import {
   type SideboardDragAndDropItem,
   dragstack,
+  addToDragstack,
+  removeFromDragstack,
+  clearDragstack,
   setDragging,
-  dropTarget,
-  throttledSetDropTarget,
+  getDropTarget,
+  setDropTarget,
   isAbove,
   clearDropTarget,
   copyMode,
@@ -37,7 +38,6 @@ export default function Item(props: {
   url: AutomergeUrl;
   name: string;
   type: string;
-  pressed: boolean;
   children: JSX.Element;
   openWith(toolId?: string): void;
   startRenaming(): void;
@@ -56,18 +56,6 @@ export default function Item(props: {
   const tools = useSupportedToolsForType(props.type);
   const [trigger, setTrigger] = createSignal<HTMLButtonElement>();
 
-  createEffect((prev) => {
-    if (props.pressed && !prev) {
-      const el = untrack(trigger);
-      if (el) {
-        // @ts-expect-error this is non-critical, we can add a
-        // ponyfill if we so desire
-        el?.scrollIntoViewIfNeeded?.();
-      }
-    }
-    return props.pressed;
-  });
-
   const dnd = (): SideboardDragAndDropItem => ({
     id: props.id,
     type: props.type,
@@ -75,12 +63,6 @@ export default function Item(props: {
     name: props.name,
     source: props.element.toolId!,
   });
-
-  const dropState = () => {
-    const target = dropTarget();
-    if (!target || target.id !== props.id) return undefined;
-    return target.position;
-  };
 
   async function handleDrop(
     event: DragEvent,
@@ -131,8 +113,8 @@ export default function Item(props: {
         ref={setTrigger}
         ondragstart={(event: DragEvent) => {
           if (!dragstack.has(props.id)) {
-            dragstack.clear();
-            dragstack.set(props.id, dnd());
+            clearDragstack();
+            addToDragstack(props.id, dnd());
           }
 
           const items = dragstack.values();
@@ -214,7 +196,7 @@ export default function Item(props: {
           }
         }}
         ondragend={(event: DragEvent) => {
-          dragstack.clear();
+          clearDragstack();
           setCopyMode(false);
           setDragging(false);
         }}
@@ -255,7 +237,7 @@ export default function Item(props: {
             event.stopPropagation();
           }
 
-          throttledSetDropTarget({ id: props.id, position });
+          setDropTarget({ id: props.id, position });
         }}
         ondragleave={(event: DragEvent) => {
           // Only clear if we're actually leaving (not entering a child)
@@ -265,7 +247,7 @@ export default function Item(props: {
           }
         }}
         ondrop={(event: DragEvent) => {
-          const target = dropTarget();
+          const target = getDropTarget();
           console.log(
             "[DnD] Item ondrop event fired",
             props.id,
@@ -297,29 +279,24 @@ export default function Item(props: {
         }}
         draggable
         data-dnd-item={props.id}
-        data-dnd-droplist-state={dropState()}
+        data-doc-url={props.url}
         aria-label={props["aria-label"]}
         aria-haspopup="menu"
         as="button"
         class="popmenu__trigger document-list-item"
         role="treeitem"
-        aria-selected={props.pressed ? "true" : undefined}
-        aria-checked={!!dragstack.has(props.id)}
         onMouseDown={(event: MouseEvent) => {
           if (event.ctrlKey || event.metaKey) {
-            if (dragstack.size == 0) {
-              // Empty comment preserved from original
-            }
             if (dragstack.has(props.id)) {
-              dragstack.delete(props.id);
+              removeFromDragstack(props.id);
             } else {
-              dragstack.set(props.id, dnd());
+              addToDragstack(props.id, dnd());
             }
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
           } else if (!dragstack.has(props.id)) {
-            dragstack.clear();
+            clearDragstack();
           }
         }}
         on:click={(event: MouseEvent) => {
@@ -330,7 +307,7 @@ export default function Item(props: {
           if (target.closest(".document-list-folder__toggle, .create-new-button")) {
             return;
           }
-          dragstack.clear();
+          clearDragstack();
           props.openWith();
         }}
         onkeydown={(event: KeyboardEvent) => {

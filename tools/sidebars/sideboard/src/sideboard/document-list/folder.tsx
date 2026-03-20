@@ -12,7 +12,7 @@ import type {
 } from "@inkandswitch/patchwork-elements";
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem";
 import { handleFilesDrop } from "./file-drop.ts";
-import { createEffect, createSignal, onMount, Show } from "solid-js";
+import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js";
 import CreateNew from "../create-new.tsx";
 import { filter, filterMatches, setRenaming } from "../state.ts";
 import { DocumentList } from "./document-list.tsx";
@@ -20,8 +20,8 @@ import Item from "./item.tsx";
 import { ItemName } from "./name.tsx";
 import { Chevron } from "../icons.tsx";
 import {
-  dropTarget,
-  throttledSetDropTarget,
+  getDropTarget,
+  setDropTarget,
   clearDropTarget,
   copyMode,
 } from "../dnd/dnd.ts";
@@ -36,7 +36,6 @@ export default function Folder(props: {
   open(detail: OpenDocumentEventDetail): void;
   name?: string;
   hive?: AutomergeRepoKeyhive;
-  selectedDocUrls: AutomergeUrl[];
   visitedFolders?: Set<AutomergeUrl>;
   element: PatchworkViewElement;
   rootFolderHandle: DocHandle<FolderDoc>;
@@ -117,12 +116,6 @@ export default function Folder(props: {
     );
   }
 
-  const folderDropState = () => {
-    const target = dropTarget();
-    if (!target || target.id !== props.url) return undefined;
-    return target.position === "inside" ? "inside" : undefined;
-  };
-
   return (
     <div
       class="document-list-folder"
@@ -131,7 +124,6 @@ export default function Folder(props: {
       style={folderDepthStyle()}
       aria-expanded={expanded()}
       data-dnd-container={props.url}
-      data-drop-state={folderDropState()}
       ondragover={(event: DragEvent) => {
         event.preventDefault();
         event.stopPropagation();
@@ -147,7 +139,7 @@ export default function Folder(props: {
 
         if (!isOverItem) {
           // Dropping into folder empty space
-          throttledSetDropTarget({ id: props.url, position: "inside" });
+          setDropTarget({ id: props.url, position: "inside" });
         }
       }}
       ondragleave={(event: DragEvent) => {
@@ -163,7 +155,7 @@ export default function Folder(props: {
 
         // Check the drop position - only handle "inside" drops
         // (The item handles its own "above" and "below" drops)
-        const target = dropTarget();
+        const target = getDropTarget();
 
         if (target?.position === "inside") {
           handleDropIntoFolder(event, props.url);
@@ -180,7 +172,6 @@ export default function Folder(props: {
         id={props.url}
         url={props.url}
         name={folder()?.title ?? props.name ?? ""}
-        pressed={props.selectedDocUrls.includes(props.url)}
         type="folder"
         element={props.element}
         repo={props.repo}
@@ -240,7 +231,6 @@ export default function Folder(props: {
           handle={handle.latest!}
           open={props.open}
           hive={props.hive}
-          selectedDocUrls={props.selectedDocUrls}
           visitedFolders={nextVisitedFolders}
           element={props.element}
           rootFolderHandle={props.rootFolderHandle}

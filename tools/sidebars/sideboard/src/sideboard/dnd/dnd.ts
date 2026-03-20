@@ -1,5 +1,4 @@
 import { createSignal } from "solid-js";
-import { ReactiveMap } from "@solid-primitives/map";
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 
 export const [dragging, setDragging] = createSignal(false);
@@ -7,10 +6,43 @@ export const [copyMode, setCopyMode] = createSignal(false);
 
 export type DropPosition = "above" | "below" | "inside" | null;
 
-export const [dropTarget, setDropTarget] = createSignal<{
-  id: string;
-  position: DropPosition;
-} | null>(null);
+// Drop target is a plain variable — not a SolidJS signal.
+// Visual state is updated via direct DOM manipulation to avoid
+// O(n) reactive updates across all items on every dragover.
+let currentDropTarget: { id: string; position: DropPosition } | null = null;
+
+export function getDropTarget() {
+  return currentDropTarget;
+}
+
+function updateDropTargetDOM(
+  oldTarget: { id: string; position: DropPosition } | null,
+  newTarget: { id: string; position: DropPosition } | null
+) {
+  if (oldTarget) {
+    const item = document.querySelector(
+      `[data-dnd-item="${CSS.escape(oldTarget.id)}"]`
+    );
+    if (item) item.removeAttribute("data-dnd-droplist-state");
+    const container = document.querySelector(
+      `[data-dnd-container="${CSS.escape(oldTarget.id)}"]`
+    );
+    if (container) container.removeAttribute("data-drop-state");
+  }
+  if (newTarget) {
+    const item = document.querySelector(
+      `[data-dnd-item="${CSS.escape(newTarget.id)}"]`
+    );
+    if (item)
+      item.setAttribute("data-dnd-droplist-state", newTarget.position ?? "");
+    if (newTarget.position === "inside") {
+      const container = document.querySelector(
+        `[data-dnd-container="${CSS.escape(newTarget.id)}"]`
+      );
+      if (container) container.setAttribute("data-drop-state", "inside");
+    }
+  }
+}
 
 export type SideboardDragAndDropItem = {
   id: string;
@@ -20,7 +52,37 @@ export type SideboardDragAndDropItem = {
   source: string;
 };
 
-export const dragstack = new ReactiveMap<string, SideboardDragAndDropItem>();
+// Plain Map — not reactive. aria-checked is updated via DOM manipulation
+// to avoid O(n) reactive updates when selection changes.
+export const dragstack = new Map<string, SideboardDragAndDropItem>();
+
+function setDragChecked(id: string, checked: boolean) {
+  const el = document.querySelector(`[data-dnd-item="${CSS.escape(id)}"]`);
+  if (el) {
+    if (checked) {
+      el.setAttribute("aria-checked", "true");
+    } else {
+      el.removeAttribute("aria-checked");
+    }
+  }
+}
+
+export function addToDragstack(id: string, item: SideboardDragAndDropItem) {
+  dragstack.set(id, item);
+  setDragChecked(id, true);
+}
+
+export function removeFromDragstack(id: string) {
+  dragstack.delete(id);
+  setDragChecked(id, false);
+}
+
+export function clearDragstack() {
+  for (const id of dragstack.keys()) {
+    setDragChecked(id, false);
+  }
+  dragstack.clear();
+}
 
 export function isAbove(clientY: number, element: Element) {
   const rect = element.getBoundingClientRect();
@@ -29,24 +91,15 @@ export function isAbove(clientY: number, element: Element) {
 }
 
 export function clearDropTarget() {
-  setDropTarget(null);
+  updateDropTargetDOM(currentDropTarget, null);
+  currentDropTarget = null;
 }
 
-// Throttle helper to prevent too many updates
-let lastDropTargetUpdate = 0;
-const THROTTLE_MS = 100; // Update max every 50ms
-
-export function throttledSetDropTarget(
+export function setDropTarget(
   target: { id: string; position: DropPosition } | null
 ) {
-  const now = Date.now();
-  if (now - lastDropTargetUpdate < THROTTLE_MS) {
-    return;
-  }
-  lastDropTargetUpdate = now;
-
   // Only update if actually changed
-  const current = dropTarget();
+  const current = currentDropTarget;
   if (!current && !target) return;
   if (
     current &&
@@ -57,5 +110,6 @@ export function throttledSetDropTarget(
     return;
   }
 
-  setDropTarget(target);
+  updateDropTargetDOM(current, target);
+  currentDropTarget = target;
 }

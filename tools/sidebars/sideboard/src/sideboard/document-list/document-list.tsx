@@ -47,7 +47,6 @@ export interface DocumentListProps {
   repo: Repo;
   open(detail: OpenDocumentEventDetail): void;
   hive?: AutomergeRepoKeyhive;
-  selectedDocUrls: AutomergeUrl[];
   visitedFolders?: Set<AutomergeUrl>;
   element: PatchworkViewElement;
   rootFolderHandle: DocHandle<FolderDoc>;
@@ -174,7 +173,6 @@ export function DocumentList(props: DocumentListProps) {
                       open={props.open}
                       name={doc.name}
                       hive={props.hive}
-                      selectedDocUrls={props.selectedDocUrls}
                       visitedFolders={visitedFolders}
                       element={props.element}
                       rootFolderHandle={props.rootFolderHandle}
@@ -189,7 +187,6 @@ export function DocumentList(props: DocumentListProps) {
                     id={relid()}
                     startRenaming={() => setRenaming(relid())}
                     remove={remove}
-                    pressed={props.selectedDocUrls.includes(doc.url)}
                     type={doc.type}
                     element={props.element}
                     repo={props.repo}

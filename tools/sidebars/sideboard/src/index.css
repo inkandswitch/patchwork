@@ -306,6 +306,11 @@
   font-size: 0.9em;
 }
 
+.sideboard__item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 2.25rem;
+}
+
 .sideboard__item--invisible {
   display: none;
 }
