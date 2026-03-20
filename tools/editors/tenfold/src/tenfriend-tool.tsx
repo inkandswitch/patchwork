@@ -3,7 +3,7 @@ import { createSignal } from "solid-js"
 import type { DocHandle, Repo } from "@automerge/automerge-repo"
 import type { AutomergeUrl } from "@automerge/automerge-repo"
 
-const tenfriendRegistryUrl = "automerge:49ShNEDqQbD17N9cybA5VnD43AbJ" as AutomergeUrl
+const tenfriendRegistryUrl = "automerge:3qUerKfy4MQp7kbyuwFEt8JoHVSr" as AutomergeUrl
 import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements"
 import { getRegistry } from "@inkandswitch/patchwork-plugins"
 import type { TenfriendDoc } from "./tenfriend-datatype"
