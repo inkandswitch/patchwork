@@ -1,4 +1,13 @@
 import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo"
+
+const sharedLettersUrl = "automerge:rURon86ahm9WtRWv57iwu2ox9g" as AutomergeUrl
+
+function cuteId() {
+  const chars = "abcdefghijkmnpqrstuvwxyz23456789"
+  let id = ""
+  for (let i = 0; i < 6; i++) id += chars[(Math.random() * chars.length) | 0]
+  return id
+}
 import { makeDocumentProjection, useDocument } from "@automerge/automerge-repo-solid-primitives"
 import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements"
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem"
@@ -197,6 +206,22 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     props.handle.change((doc) => (doc.states[idx].i = len))
   }
 
+  async function share() {
+    const idx = editing()
+    if (idx == null) return
+    const code = codeHandles[idx]?.doc()?.content
+    if (!code) return
+    const id = cuteId()
+    const letterName = folders()[idx]
+    const registryHandle = await props.element.repo.find(sharedLettersUrl)
+    await registryHandle.whenReady()
+    registryHandle.change((d: any) => {
+      d[id] = code
+    })
+    const url = `https://tenfold.inkandswitch.com/?letter=${letterName}&share=${id}`
+    await navigator.clipboard.writeText(url)
+  }
+
   createEffect(() => {
     const idx = editing()
     if (idx != null && isNaN(tenfold.states[idx].i)) {
@@ -216,7 +241,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
           <div id="synth-editor">
             <textarea></textarea>
           </div>
-          <TenfoldEditor editing={editing} editingHandle={editingHandle} typescriptPath={typescriptPath} fork={fork} worker={worker} hint={hint} />
+          <TenfoldEditor editing={editing} editingHandle={editingHandle} typescriptPath={typescriptPath} fork={fork} share={share} worker={worker} hint={hint} />
         </aside>
       </article>
     </Suspense>
