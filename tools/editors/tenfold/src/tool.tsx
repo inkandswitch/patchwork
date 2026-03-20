@@ -1,12 +1,9 @@
 import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo"
 
-const sharedLettersUrl = "automerge:rURon86ahm9WtRWv57iwu2ox9g" as AutomergeUrl
+const sharedLettersUrl = "automerge:LaGmbNDA1mjnsvy2Bpvgt9NY4CN" as AutomergeUrl
 
 function cuteId() {
-  const chars = "abcdefghijkmnpqrstuvwxyz23456789"
-  let id = ""
-  for (let i = 0; i < 6; i++) id += chars[(Math.random() * chars.length) | 0]
-  return id
+  return Math.random().toString(36).slice(2)
 }
 import { makeDocumentProjection, useDocument } from "@automerge/automerge-repo-solid-primitives"
 import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements"
