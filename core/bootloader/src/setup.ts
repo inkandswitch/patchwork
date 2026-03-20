@@ -103,21 +103,19 @@ export default async function setupServiceWorker(
   }
 
   // Tell the SW which sync server to use and wait for it to be ready.
-  // getRepo() in the SW blocks until it receives this message, connects
-  // the WebSocket, and confirms back via the ack port.
-  if (options?.syncServer) {
-    const { port1: ackPort, port2: ackRemote } = new MessageChannel();
-    await new Promise<void>((resolve) => {
-      ackPort.onmessage = () => {
-        ackPort.close();
-        resolve();
-      };
-      navigator.serviceWorker.controller!.postMessage(
-        { type: "set-sync-server", url: options.syncServer },
-        [ackRemote]
-      );
-    });
-  }
+  // getRepo() in the SW blocks until it receives this message.
+  const syncServer = options?.syncServer ?? "wss://sync3.automerge.org";
+  const { port1: ackPort, port2: ackRemote } = new MessageChannel();
+  await new Promise<void>((resolve) => {
+    ackPort.onmessage = () => {
+      ackPort.close();
+      resolve();
+    };
+    navigator.serviceWorker.controller!.postMessage(
+      { type: "set-sync-server", url: syncServer },
+      [ackRemote]
+    );
+  });
 
   // Send a MessagePort so the SW's repo can sync with clients
   const { port1, port2 } = new MessageChannel();
