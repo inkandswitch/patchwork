@@ -102,16 +102,26 @@ export default async function setupServiceWorker(
     });
   }
 
+  // Tell the SW which sync server to use and wait for it to be ready.
+  // getRepo() in the SW blocks until it receives this message, connects
+  // the WebSocket, and confirms back via the ack port.
+  if (options?.syncServer) {
+    const { port1: ackPort, port2: ackRemote } = new MessageChannel();
+    await new Promise<void>((resolve) => {
+      ackPort.onmessage = () => {
+        ackPort.close();
+        resolve();
+      };
+      navigator.serviceWorker.controller!.postMessage(
+        { type: "set-sync-server", url: options.syncServer },
+        [ackRemote]
+      );
+    });
+  }
+
   // Send a MessagePort so the SW's repo can sync with clients
   const { port1, port2 } = new MessageChannel();
   navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
-
-  if (options?.syncServer) {
-    navigator.serviceWorker.controller!.postMessage({
-      type: "set-sync-server",
-      url: options.syncServer,
-    });
-  }
 
   console.log(
     "service worker alive, loading %c patchwork system ",

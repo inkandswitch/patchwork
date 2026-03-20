@@ -31,8 +31,11 @@ let debugging = false;
 // Track WebSocket adapters by URL so we can remove them
 const syncAdapters = new Map<string, WebSocketClientAdapter>();
 
-// The default sync server adapter, so we can disconnect it if replaced
-let defaultSyncAdapter: WebSocketClientAdapter | null = null;
+// Resolves when the main thread tells us which sync server to use
+let resolveSyncServer: (url: string) => void;
+const syncServerReady = new Promise<string>((resolve) => {
+  resolveSyncServer = resolve;
+});
 
 const cacheableStatuses = [
   200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501,
@@ -74,12 +77,15 @@ function getRepo() {
     repoPromise = (async () => {
       const wasmResponse = await fetch("/automerge.wasm");
       await initializeWasm(new Uint8Array(await wasmResponse.arrayBuffer()));
-      defaultSyncAdapter = new WebSocketClientAdapter(
-        "wss://sync3.automerge.org"
-      );
+
+      // Wait for the main thread to tell us which sync server to use
+      const syncServerUrl = await syncServerReady;
+      const syncAdapter = new WebSocketClientAdapter(syncServerUrl);
+      syncAdapters.set(syncServerUrl, syncAdapter);
+
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
-        network: [defaultSyncAdapter],
+        network: [syncAdapter],
         peerId: ("service-worker-" +
           (Math.random() * 10000).toString(36).slice(2)) as PeerId,
         async sharePolicy(peerId) {
@@ -128,21 +134,15 @@ self.addEventListener("message", async (event) => {
     log("serviceworker debugging enabled");
   } else if (event.data.type == "set-sync-server") {
     const url: string = event.data.url;
-    // Disconnect the default sync server
-    if (defaultSyncAdapter) {
-      defaultSyncAdapter.disconnect();
-      defaultSyncAdapter = null;
+    // Unblock getRepo() — it waits for this before creating the WebSocket
+    resolveSyncServer(url);
+    // Wait for the repo (and its WebSocket) to be fully ready, then ack
+    await getRepo();
+    const [ackPort] = event.ports;
+    if (ackPort) {
+      ackPort.postMessage("ready");
+      ackPort.close();
     }
-    // Disconnect any previously added sync servers
-    for (const [, adapter] of syncAdapters) {
-      adapter.disconnect();
-    }
-    syncAdapters.clear();
-    // Add the new one
-    const repo = await getRepo();
-    const adapter = new WebSocketClientAdapter(url);
-    syncAdapters.set(url, adapter);
-    repo.networkSubsystem.addNetworkAdapter(adapter);
     log(`set sync server: ${url}`);
   } else if (event.data.type == "add-sync-server") {
     const url: string = event.data.url;

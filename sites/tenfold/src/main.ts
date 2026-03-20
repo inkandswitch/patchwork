@@ -55,9 +55,13 @@ await repo.flush();
 registerPatchworkViewElement({ repo });
 
 const rootElement = document.getElementById("root")!;
-rootElement.addEventListener("patchwork:mounted", () => {
-  rootElement.classList.add("mounted");
-}, { once: true });
+rootElement.addEventListener(
+  "patchwork:mounted",
+  () => {
+    rootElement.classList.add("mounted");
+  },
+  { once: true }
+);
 const doc = new URLSearchParams(window.location.search).get("doc");
 if (doc) {
   localStorage.setItem("tenfold", doc);
