@@ -114,6 +114,8 @@ export const plugins = [
     icon: "Users",
     supportedDatatypes: ["tenfriend"],
     async load() {
+      const styles = await loadStyles()
+      addStyles(styles)
       return TenfriendTool
     },
   } satisfies LoadablePlugin<ToolDescription, ToolImplementation>,

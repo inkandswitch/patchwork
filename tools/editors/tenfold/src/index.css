@@ -3,6 +3,10 @@
   src: url("FifteenTwenty-Demi.woff2");
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
 }
@@ -16,10 +20,6 @@ body {
   height: 100%;
   width: 100%;
   font-family: FifteenTwenty;
-
-  * {
-    box-sizing: border-box;
-  }
 
   canvas {
     display: block;
@@ -124,6 +124,18 @@ body {
     }
   }
 
+  .tenfold-toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    color: #000;
+    border: 1em solid #000;
+    padding: 1em;
+    z-index: 9999;
+  }
+
   .cm-editor {
     width: 100%;
     height: 100%;
@@ -146,5 +158,54 @@ body {
 
   .cm-matchingBracket {
     background-color: #ffffff66 !important;
+  }
+}
+
+.tenfriend-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: max-content;
+  margin-inline: auto;
+  height: 100%;
+  gap: 1em;
+  font-family: FifteenTwenty, system-ui, sans-serif;
+  font-size: 18px;
+  background: #000;
+  color: #fff;
+
+  .tenfriend-row {
+    display: flex;
+    gap: 2px;
+  }
+
+  .tenfriend-input {
+    font: inherit;
+    font-size: 24px;
+    line-height: 1em;
+    padding: 0.7em 0.7em 0.5em;
+    border: 1px solid #fff;
+    width: 100%;
+    outline: none;
+    background: inherit;
+    color: inherit;
+
+    &:focus {
+      outline: 2px solid #fff;
+    }
+  }
+
+  .tenfriend-button {
+    font: inherit;
+    padding: 0.7em 1.2em 0.5em;
+    border: 1px solid #fff;
+    background: #000;
+    color: inherit;
+    cursor: pointer;
+
+    &:focus {
+      outline: 2px solid #fff;
+    }
   }
 }

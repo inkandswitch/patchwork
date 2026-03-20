@@ -111,6 +111,8 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
   })
 
   const [hint, setHint] = createSignal("")
+  const [showToast, setShowToast] = createSignal(false)
+  let toastTimer: ReturnType<typeof setTimeout>
 
   const [editing, setEditing] = makePersisted(createSignal<number | null>(null), {
     name: `${props.handle.url}#editing`,
@@ -217,6 +219,9 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     })
     const url = `https://tenfold.inkandswitch.com/?letter=${letterName}&share=${id}`
     await navigator.clipboard.writeText(url)
+    setShowToast(true)
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => setShowToast(false), 2000)
   }
 
   createEffect(() => {
@@ -292,6 +297,9 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
 
   return (
     <Suspense>
+      {showToast() && (
+        <div class="tenfold-toast">Copied to clipboard</div>
+      )}
       <article class="tenfold" ref={setCanvas}>
         <canvas />
         <aside>

@@ -213,64 +213,18 @@ function NewTenfriendPrompt(props: { handle: DocHandle<TenfriendDoc>; element: P
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        "flex-direction": "column",
-        "align-items": "center",
-        "justify-content": "center",
-        height: "100%",
-        gap: "12px",
-        "font-family": "FifteenTwenty, system-ui, sans-serif",
-        background: "#000",
-        color: "#fff",
-      }}
-    >
+    <div class="tenfriend-prompt">
       {creating() ? null : (
         <>
-          <label for="tenfriend-name" style={{ "font-size": "14px", opacity: "0.6" }}>
-            Enter their name
+          <label class="tenfriend-label" for="tenfriend-name">
+            WHAT NAME MAY WE USE TO CREDIT YOU?
           </label>
-          <input
-            ref={inputRef!}
-            id="tenfriend-name"
-            type="text"
-            placeholder="adele"
-            autofocus
-            onKeyDown={onKeyDown}
-            style={{
-              "font-family": "FifteenTwenty, system-ui, sans-serif",
-              "font-size": "16px",
-              padding: "8px 12px",
-              border: "1px solid #555",
-              "border-radius": "6px",
-              "min-width": "240px",
-              outline: "none",
-              background: "#000",
-              color: "#fff",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style["border-color"] = "#fff"
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style["border-color"] = "#555"
-            }}
-          />
-          <button
-            onClick={submit}
-            style={{
-              "font-family": "FifteenTwenty, system-ui, sans-serif",
-              "font-size": "14px",
-              padding: "6px 16px",
-              border: "1px solid #555",
-              "border-radius": "6px",
-              background: "#111",
-              color: "#fff",
-              cursor: "pointer",
-            }}
-          >
-            Create
-          </button>
+          <div class="tenfriend-row">
+            <input ref={inputRef!} class="tenfriend-input" id="tenfriend-name" type="text" autofocus onKeyDown={onKeyDown} />
+            <button class="tenfriend-button" onClick={submit}>
+              OK
+            </button>
+          </div>
         </>
       )}
     </div>
