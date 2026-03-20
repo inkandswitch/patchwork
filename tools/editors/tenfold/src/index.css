@@ -185,27 +185,33 @@ body {
     font-size: 24px;
     line-height: 1em;
     padding: 0.7em 0.7em 0.5em;
-    border: 1px solid #fff;
+    border: 1.5px solid #fff;
+    border-radius: 1px;
     width: 100%;
     outline: none;
     background: inherit;
     color: inherit;
 
     &:focus {
-      outline: 2px solid #fff;
+      outline: 1.5px solid #fff;
+      outline-offset: -6px;
     }
   }
 
-  .tenfriend-button {
-    font: inherit;
-    padding: 0.7em 1.2em 0.5em;
-    border: 1px solid #fff;
-    background: #000;
-    color: inherit;
-    cursor: pointer;
+}
 
-    &:focus {
-      outline: 2px solid #fff;
-    }
+.tenfriend-button {
+  font-family: FifteenTwenty, system-ui, sans-serif;
+  font-size: 18px;
+  padding: 0.7em 1.2em 0.5em;
+  border: 1.5px solid #fff;
+  border-radius: 1px;
+  background: #000;
+  color: #fff;
+  cursor: pointer;
+
+  &:focus {
+    outline: 1.5px solid #fff;
+    outline-offset: -6px;
   }
 }

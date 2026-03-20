@@ -44,8 +44,8 @@ export default function TenfoldEditor(props: {
   return (
     <div id="dumb-tsx-container">
       <Show when={props.editing() != null}>
-        <button onClick={() => props.fork()}>New Letter</button>
-        <button onClick={() => props.share()}>Share Letter</button>
+        <button class="tenfriend-button" onClick={() => props.fork()}>New Letter</button>
+        <button class="tenfriend-button" onClick={() => props.share()}>Share Letter</button>
       </Show>
       <Show when={props.editingHandle()}>
         <CodeMirror
