@@ -58,9 +58,19 @@ body {
 
     #synth-editor {
       display: none; /* turned off for now, while we do friends-of-the-lab */
-      width: 100%;
+      height: 50%;
+    }
+
+    #dumb-tsx-container {
       height: 100%;
-      outline: none;
+
+      .tenfold-hint-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: auto;
+        min-height: 2em;
+      }
     }
   }
 
@@ -81,13 +91,6 @@ body {
     a {
       color: #fff;
     }
-  }
-
-  .tenfold-hint-bar {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    margin-top: auto;
   }
 
   .tenfold-hint {

@@ -136,7 +136,7 @@ export default function TenfoldEditor(props: {
       <div class="tenfold-hint-bar">
         <label class="tenfold-hint-toggle">
           <input type="checkbox" checked={showHints()} onChange={(e) => setShowHints(e.currentTarget.checked)} />
-          Hints
+          Show Hints
         </label>
         <Show when={showHints() && props.hint()}>
           <div class="tenfold-hint">{props.hint()}</div>
