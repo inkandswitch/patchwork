@@ -228,6 +228,57 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     }
   })
 
+  // Handle ?letter=&share= URLs: import shared letter code
+  createEffect(() => {
+    const f = folders()
+    if (!f.length) return
+    const params = new URLSearchParams(window.location.search)
+    const letterParam = params.get("letter")
+    const shareId = params.get("share")
+    if (!letterParam || !shareId) return
+
+    // Clear the params so we don't re-import on reactivity re-runs
+    const cleanUrl = new URL(window.location.href)
+    cleanUrl.searchParams.delete("letter")
+    cleanUrl.searchParams.delete("share")
+    window.history.replaceState({}, "", cleanUrl.toString())
+
+    const letterIdx = f.indexOf(letterParam)
+    if (letterIdx === -1) return
+
+    ;(async () => {
+      const registryHandle = await props.element.repo.find(sharedLettersUrl)
+      await registryHandle.whenReady()
+      const code = (registryHandle.doc() as any)?.[shareId]
+      if (!code) return
+
+      const hdl = letterFolderHandles[letterIdx]
+      if (!hdl) return
+      const len = counts[letterIdx]
+      const name = (len + "").padStart(2, "0") + ".js"
+
+      const newDoc = await props.element.repo.create2({
+        "@patchwork": { type: "file" },
+        mimeType: "application/javascript",
+        extension: "js",
+        metadata: { permissions: 420 },
+        content: code,
+        name,
+      })
+
+      hdl.change((folder) => {
+        folder.docs.push({
+          type: "file",
+          url: newDoc.url,
+          name,
+        })
+      })
+
+      props.handle.change((doc) => (doc.states[letterIdx].i = len))
+      setEditing(letterIdx)
+    })()
+  })
+
   return (
     <Suspense>
       <article class="tenfold" ref={setCanvas}>
