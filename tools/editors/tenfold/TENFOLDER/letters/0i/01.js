@@ -16,14 +16,15 @@ let rad = 0.1 // minimum circle radius
 let a = params.r + 1.4 // amount of curvature — waffle control
 
 // You can rotate the shape in 3d
-let rotX = params.q * 0.03 + 0.03 // waffle control
-let rotY = params.t / U // animation
+let rotX = params.q * 0.03 + 0.03 // params.q is the waffle control x
+let rotY = params.t / U // params.t is time — rotate one segment per animation loop
 let rotZ = 0 // not used yet :)
 
 // We need to store the points and their bounding box
+// so that we can nicely frame the catenoid within view
 let points = []
-let lo = { x:0, y:0 }
-let hi = { x:0, y:0 }
+let lo = { x: 0, y: 0 }
+let hi = { x: 0, y: 0 }
 
 // This helper function generates points on the surface
 // of the catenoid shape, and then rotates them in 3d.
@@ -31,7 +32,7 @@ let point = (u, v) => {
   let y = clip(v / V)
   let x = rad + a * cosh(y / a) - a
   let z = 0
-  
+
   let uf = u / U - 0.25
   let x1 = x * cosn(uf) - z * sinn(uf)
   let z1 = x * sinn(uf) + z * cosn(uf)
@@ -73,7 +74,7 @@ for (let p of points) {
 for (let v = 0; v <= V; v++) {
   begin()
   for (let u = 0; u <= U; u++) {
-    let {x, y} = points[mod(u, U) + v * U]
+    let { x, y } = points[mod(u, U) + v * U]
     line(x, y)
   }
 }
@@ -82,7 +83,7 @@ for (let v = 0; v <= V; v++) {
 for (let u = 0; u < U; u++) {
   begin()
   for (let v = 0; v <= V; v++) {
-    let {x, y} = points[u + v * U]
+    let { x, y } = points[u + v * U]
     line(x, y)
   }
 }
