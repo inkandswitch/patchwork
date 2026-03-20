@@ -221,7 +221,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     {
       // cell
       test: (h: HitResult) => h.inside && h.R !== 1,
-      hint: (h: HitResult) => `Letter "${mappers[h.li]}" — click and drag to set the x/y parameters for this letter's drawing function`,
+      hint: (h: HitResult) => `Letter "${mappers[h.li]}" - click and drag to set the x/y parameters for this letter's drawing function`,
       drag(start: HitResult, _h: HitResult, lx: number, ly: number) {
         opts.set(start.li, "x", clamp(denorm(lx)))
         opts.set(start.li, "y", clamp(denorm(ly)))
@@ -231,9 +231,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       // letter selector & edit button
       test: (h: HitResult) => h.lxInside && h.ly > 1 && h.R !== 1,
       hint(h: HitResult) {
-        if (h.lx < 0.33) return "Letter selector — click the arrows to cycle through different versions of this letter"
-        if (h.lx > 0.95) return "Edit button — click to open the code editor for this letter's drawing function"
-        return `Letter "${mappers[h.li]}" variant — shows which version of this letter is active`
+        if (h.lx < 0.33) return "Letter selector - click the arrows to cycle through different versions of this letter"
+        if (h.lx > 0.95) return "Edit button - click to open the code editor for this letter's drawing function"
+        return `Letter "${mappers[h.li]}" variant - shows which version of this letter is active`
       },
       pointerdown(h: HitResult) {
         let s = opts.states[h.li]
@@ -251,12 +251,12 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     {
       // ampersand
       test: (h: HitResult) => h.i === 3 && h.inside,
-      hint: () => "Ampersand — the & symbol connecting the two rows of letters",
+      hint: () => "Ampersand - the & symbol connecting the two rows of letters",
     },
     {
       // timeline — t is overridden per-frame via frame(), not per-pointermove
       test: (h: HitResult) => (h.i === 4 || h.i === 5) && h.lyInside && h.ly > 0.8,
-      hint: () => "Timeline — click and drag to scrub through time, controlling the animation phase",
+      hint: () => "Timeline - click and drag to scrub through time, controlling the animation phase",
       frame() {
         t = 0.5 + mouseDragged.kx
       },
@@ -264,7 +264,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     {
       // waffle
       test: (h: HitResult) => (h.i === 4 || h.i === 5) && h.kx >= 0 && h.kx <= 1 && h.ky >= 0 && h.ky <= 1,
-      hint: () => "Waffle pad — each letter has a draggable dot here that controls its q/r parameters",
+      hint: () => "Waffle pad - each letter has a draggable dot here that controls its q/r parameters",
       pointerdown(h: HitResult) {
         // grab the closest waffle
         dragParam = null
@@ -673,7 +673,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       synth.synth.connect(input)
       synths.push(synth)
       setSynthPatch(i, loadSynthText(i))
-      synth.setMessageField(messageField) // this is fine — only the active one will write
+      synth.setMessageField(messageField) // this is fine -only the active one will write
       synth.noteOn(48)
     }
 

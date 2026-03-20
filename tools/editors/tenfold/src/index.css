@@ -75,7 +75,10 @@ body {
   }
 
   .tenfold-docs {
-    padding: 16px 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    padding: 16px;
     line-height: 1.5;
 
     h2 {
@@ -85,17 +88,20 @@ body {
 
     p {
       margin: 4px 0;
-      opacity: 0.7;
     }
 
     a {
       color: #fff;
     }
+
+    pre {
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+    }
   }
 
   .tenfold-hint {
     font-size: 14px;
-    opacity: 0.6;
   }
 
   .tenfold-hint-toggle {
@@ -104,12 +110,15 @@ body {
     gap: 6px;
     font-size: 13px;
     color: #fff;
-    opacity: 0.4;
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
+    -webkit-user-select: none;
+    user-select: none;
 
     input[type="checkbox"] {
+      position: relative;
+      top: -0.2em;
       appearance: none;
       width: 10px;
       height: 10px;
@@ -140,11 +149,15 @@ body {
     width: 100%;
     height: 100%;
     overflow: auto;
+
+    &.cm-focused {
+      outline: none;
+    }
   }
 
   .cm-editor *,
   .cm-editor * * {
-    caret-color: cyan !important;
+    caret-color: #fff !important;
   }
 
   .cm-lintRange-error {
@@ -157,7 +170,7 @@ body {
   }
 
   .cm-matchingBracket {
-    background-color: #ffffff66 !important;
+    background-color: #fff !important;
   }
 }
 
