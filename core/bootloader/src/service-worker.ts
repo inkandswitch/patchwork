@@ -193,10 +193,7 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
     const url = stringifyAutomergeUrl({ documentId, heads: latestHeads });
     let location = `/${encodeURIComponent(url)}`;
     if (path.length) location += `/${path.join("/")}`;
-    return new Response(null, {
-      status: 307,
-      headers: { location },
-    });
+    return Response.redirect(location, 307);
   }
 
   // If no path, check if this is a package with exports to resolve
