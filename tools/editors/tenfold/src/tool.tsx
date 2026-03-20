@@ -228,33 +228,44 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     }
   })
 
-  // Handle ?letter=&share= URLs: import shared letter code
-  createEffect(() => {
-    const f = folders()
-    if (!f.length) return
-    const params = new URLSearchParams(window.location.search)
-    const letterParam = params.get("letter")
-    const shareId = params.get("share")
-    if (!letterParam || !shareId) return
+  // Handle ?letter=&share= URLs: import shared letter code.
+  // Read params once, store in a signal, then wait for data to be ready.
+  const params = new URLSearchParams(window.location.search)
+  const [pendingShare, setPendingShare] = createSignal(
+    params.get("letter") && params.get("share")
+      ? { letter: params.get("letter")!, shareId: params.get("share")! }
+      : null
+  )
 
-    // Clear the params so we don't re-import on reactivity re-runs
+  // Clear share params from URL immediately
+  if (pendingShare()) {
     const cleanUrl = new URL(window.location.href)
     cleanUrl.searchParams.delete("letter")
     cleanUrl.searchParams.delete("share")
     window.history.replaceState({}, "", cleanUrl.toString())
+  }
 
-    const letterIdx = f.indexOf(letterParam)
+  createEffect(() => {
+    const pending = pendingShare()
+    if (!pending) return
+    const f = folders()
+    if (!f.length) return
+    const letterIdx = f.indexOf(pending.letter)
     if (letterIdx === -1) return
+    const hdl = letterFolderHandles[letterIdx]
+    if (!hdl) return
+    const len = counts[letterIdx]
+    if (len < 0) return
+
+    // All data ready — consume the pending share
+    setPendingShare(null)
 
     ;(async () => {
       const registryHandle = await props.element.repo.find(sharedLettersUrl)
       await registryHandle.whenReady()
-      const code = (registryHandle.doc() as any)?.[shareId]
+      const code = (registryHandle.doc() as any)?.[pending.shareId]
       if (!code) return
 
-      const hdl = letterFolderHandles[letterIdx]
-      if (!hdl) return
-      const len = counts[letterIdx]
       const name = (len + "").padStart(2, "0") + ".js"
 
       const newDoc = await props.element.repo.create2({
