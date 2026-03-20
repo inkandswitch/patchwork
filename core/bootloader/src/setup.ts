@@ -72,14 +72,6 @@ export default async function setupServiceWorker(
     }
   });
 
-  navigator.serviceWorker.addEventListener("controllerchange", function () {
-    console.info(
-      "%cnew service worker took control, reloading...",
-      "color: pink; font-weight: bold"
-    );
-    location.reload();
-  });
-
   const path = options?.path ?? "/service-worker.js";
   const reg = await navigator.serviceWorker.register(path, { type: "module" });
 
@@ -120,6 +112,16 @@ export default async function setupServiceWorker(
   // Send a MessagePort so the SW's repo can sync with clients
   const { port1, port2 } = new MessageChannel();
   navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
+
+  // Reload on future SW updates (added after setup so the initial
+  // activation doesn't trigger a reload loop).
+  navigator.serviceWorker.addEventListener("controllerchange", function () {
+    console.info(
+      "%cnew service worker took control, reloading...",
+      "color: pink; font-weight: bold"
+    );
+    location.reload();
+  });
 
   console.log(
     "service worker alive, loading %c patchwork system ",
