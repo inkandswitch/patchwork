@@ -3,6 +3,7 @@ import "./global.css";
 import {
   registerPatchworkViewElement,
   openDocument,
+  OpenDocumentEvent,
 } from "@inkandswitch/patchwork-elements";
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
@@ -105,15 +106,12 @@ if (initialParams.has("frame")) {
 
 rootElement.addEventListener("patchwork:open-document", async (event) => {
   const params = new URLSearchParams();
-  const { url, toolId, type, title } = event.detail;
+  const { url, toolId, title } = event.detail;
   const { documentId, heads } = parseAutomergeUrl(url);
   params.set("doc", documentId);
   if (heads) params.set("heads", heads?.join("|"));
   if (toolId) params.set("tool", toolId);
   if (title) params.set("title", title);
-  if (type) {
-    params.set("type", type);
-  }
   window.location.hash = params.toString();
 
   try {
@@ -121,7 +119,7 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
       stringifyAutomergeUrl({ documentId, heads })
     );
     const doc = docHandle.doc();
-    const docType = type || doc?.["@patchwork"]?.type;
+    const docType = doc?.["@patchwork"]?.type;
     if (docType) {
       const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
       const datatype = await registry.load(docType);
@@ -167,7 +165,7 @@ rootElement.addEventListener("patchwork:no-tool", (event) => {
 });
 
 const bigPatchworkHashRegex =
-  /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;
+  /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)/;
 
 const handleHashChange = async () => {
   const hash = window.location.hash.slice(1);
@@ -196,16 +194,12 @@ const handleHashChange = async () => {
   const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
   const toolId = params.get("tool");
   const title = params.get("title");
-  const type = params.get("type");
   if (isValidDocumentId(documentId)) {
     rootElement.dispatchEvent(
-      new CustomEvent("patchwork:open-document", {
-        detail: {
-          url: stringifyAutomergeUrl({ documentId, heads }),
-          toolId,
-          title,
-          type,
-        },
+      new OpenDocumentEvent({
+        url: stringifyAutomergeUrl({ documentId, heads }),
+        toolId: toolId ?? undefined,
+        title: title ?? undefined,
       })
     );
   }
