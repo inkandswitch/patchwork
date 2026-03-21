@@ -36,6 +36,7 @@ export default function Folder(props: {
   open(detail: OpenDocumentEventDetail): void;
   name?: string;
   hive?: AutomergeRepoKeyhive;
+  selectedDocUrls: AutomergeUrl[];
   visitedFolders?: Set<AutomergeUrl>;
   element: PatchworkViewElement;
   rootFolderHandle: DocHandle<FolderDoc>;
@@ -69,6 +70,31 @@ export default function Folder(props: {
       setExpanded((open) => open || has);
     }, 500);
   });
+
+  // Auto-expand/collapse folders during drag hover.
+  // 1s: toggle. 2s: commit (don't revert on leave). Requires re-entry after commit.
+  // Auto-expand/collapse folders during drag hover.
+  // After 1s hovering over this folder's header: toggle and commit.
+  // Requires re-entry to trigger again.
+  let dragToggleTimer: ReturnType<typeof setTimeout> | null = null;
+  let dragAutoCommitted = false;
+
+  function startDragAutoToggle() {
+    if (dragToggleTimer || dragAutoCommitted) return;
+
+    dragToggleTimer = setTimeout(() => {
+      setExpanded((v) => !v);
+      dragAutoCommitted = true;
+      dragToggleTimer = null;
+    }, 1000);
+  }
+
+  function stopDragAutoToggle() {
+    if (dragToggleTimer) { clearTimeout(dragToggleTimer); dragToggleTimer = null; }
+    dragAutoCommitted = false;
+  }
+
+  onCleanup(stopDragAutoToggle);
 
   function rename(name: string) {
     handle()?.change((doc) => updateText(doc, ["title"], name));
@@ -141,14 +167,22 @@ export default function Folder(props: {
           // Dropping into folder empty space
           setDropTarget({ id: props.url, position: "inside" });
         }
+
+        // Auto-toggle: only when hovering over THIS folder's header
+        const overItem = (event.target as Element).closest(".document-list-item");
+        if (overItem?.getAttribute("data-dnd-item") === props.url) {
+          startDragAutoToggle();
+        }
       }}
       ondragleave={(event: DragEvent) => {
         const related = event.relatedTarget as Element;
         if (!related || !(event.currentTarget as Element).contains(related)) {
+          stopDragAutoToggle();
           clearDropTarget();
         }
       }}
       ondrop={(event: DragEvent) => {
+        stopDragAutoToggle();
         log("Folder ondrop event fired", props.url);
         event.preventDefault();
         event.stopPropagation();
@@ -172,6 +206,7 @@ export default function Folder(props: {
         id={props.url}
         url={props.url}
         name={folder()?.title ?? props.name ?? ""}
+        pressed={props.selectedDocUrls.includes(props.url)}
         type="folder"
         element={props.element}
         repo={props.repo}
@@ -231,6 +266,7 @@ export default function Folder(props: {
           handle={handle.latest!}
           open={props.open}
           hive={props.hive}
+          selectedDocUrls={props.selectedDocUrls}
           visitedFolders={nextVisitedFolders}
           element={props.element}
           rootFolderHandle={props.rootFolderHandle}

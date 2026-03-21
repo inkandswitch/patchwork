@@ -21,7 +21,7 @@ import type {
   HasPatchworkMetadata,
 } from "@inkandswitch/patchwork-filesystem";
 import { getRegistry, type Datatype } from "@inkandswitch/patchwork-plugins";
-import { createSignal, For, Match, Show, Switch } from "solid-js";
+import { createSignal, For, Match, Show, Suspense, Switch } from "solid-js";
 import { filter, filterMatches, setRenaming } from "../state.ts";
 import Folder from "./folder.tsx";
 import Item from "./item.tsx";
@@ -47,6 +47,7 @@ export interface DocumentListProps {
   repo: Repo;
   open(detail: OpenDocumentEventDetail): void;
   hive?: AutomergeRepoKeyhive;
+  selectedDocUrls: AutomergeUrl[];
   visitedFolders?: Set<AutomergeUrl>;
   element: PatchworkViewElement;
   rootFolderHandle: DocHandle<FolderDoc>;
@@ -115,7 +116,7 @@ export function DocumentList(props: DocumentListProps) {
     });
   }
   return (
-    <>
+    <Suspense>
       <For each={props.docs}>
         {(doc, index) => {
           const visible = () => !filter().length || filterMatches(doc.name);
@@ -173,6 +174,7 @@ export function DocumentList(props: DocumentListProps) {
                       open={props.open}
                       name={doc.name}
                       hive={props.hive}
+                      selectedDocUrls={props.selectedDocUrls}
                       visitedFolders={visitedFolders}
                       element={props.element}
                       rootFolderHandle={props.rootFolderHandle}
@@ -187,6 +189,7 @@ export function DocumentList(props: DocumentListProps) {
                     id={relid()}
                     startRenaming={() => setRenaming(relid())}
                     remove={remove}
+                    pressed={props.selectedDocUrls.includes(doc.url)}
                     type={doc.type}
                     element={props.element}
                     repo={props.repo}
@@ -236,6 +239,6 @@ export function DocumentList(props: DocumentListProps) {
           onClose={() => setShareModalUrl(null)}
         />
       </Show>
-    </>
+    </Suspense>
   );
 }

@@ -1,8 +1,10 @@
 import { ContextMenu } from "@kobalte/core/context-menu";
 import {
+  createEffect,
   createSignal,
   For,
   Show,
+  untrack,
   type JSX,
 } from "solid-js";
 import { useSupportedToolsForType } from "@patchwork/solid";
@@ -14,6 +16,8 @@ import {
   removeFromDragstack,
   clearDragstack,
   setDragging,
+  setDragSourceItems,
+  clearDragSourceItems,
   getDropTarget,
   setDropTarget,
   isAbove,
@@ -38,6 +42,7 @@ export default function Item(props: {
   url: AutomergeUrl;
   name: string;
   type: string;
+  pressed: boolean;
   children: JSX.Element;
   openWith(toolId?: string): void;
   startRenaming(): void;
@@ -55,6 +60,17 @@ export default function Item(props: {
 }) {
   const tools = useSupportedToolsForType(props.type);
   const [trigger, setTrigger] = createSignal<HTMLButtonElement>();
+
+  createEffect((prev) => {
+    if (props.pressed && !prev) {
+      const el = untrack(trigger);
+      if (el) {
+        // @ts-expect-error scrollIntoViewIfNeeded is non-standard
+        el?.scrollIntoViewIfNeeded?.();
+      }
+    }
+    return props.pressed;
+  });
 
   const dnd = (): SideboardDragAndDropItem => ({
     id: props.id,
@@ -187,6 +203,7 @@ export default function Item(props: {
           // Clean up after drag
           setTimeout(() => preview.remove(), 0);
 
+          setDragSourceItems([...dragstack.keys()]);
           setDragging(true);
         }}
         ondrag={(event: DragEvent) => {
@@ -196,6 +213,7 @@ export default function Item(props: {
           }
         }}
         ondragend={(event: DragEvent) => {
+          clearDragSourceItems();
           clearDragstack();
           setCopyMode(false);
           setDragging(false);
@@ -285,6 +303,7 @@ export default function Item(props: {
         as="button"
         class="popmenu__trigger document-list-item"
         role="treeitem"
+        aria-selected={props.pressed ? "true" : undefined}
         onMouseDown={(event: MouseEvent) => {
           if (event.ctrlKey || event.metaKey) {
             if (dragstack.has(props.id)) {

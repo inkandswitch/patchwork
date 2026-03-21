@@ -3,14 +3,16 @@ import { render } from "solid-js/web";
 import { type ToolImplementation } from "@inkandswitch/patchwork-plugins";
 import type { TinyPatchworkAccountDoc } from "./types.ts";
 
-function addStyles() {
+async function loadStyles() {
+  const url = new URL("./index.css", import.meta.url);
+  return (await fetch(url)).text();
+}
+
+function addStyles(textContent: string) {
   const id = "sideboard-styles";
   const el =
-    (document.head.querySelector(`#${id}`) as HTMLLinkElement) ??
-    document.createElement("link");
-  el.href = new URL("./index.css", import.meta.url).href;
-  el.rel = "stylesheet";
-  el.id = id;
+    document.head.querySelector(`#${id}`) ?? document.createElement("style");
+  Object.assign(el, { textContent, id });
   document.head.append(el);
 }
 
@@ -24,9 +26,12 @@ export const plugins = [
     icon: "FolderOpen",
     unlisted: true,
     async load(): Promise<ToolImplementation<TinyPatchworkAccountDoc>> {
-      const { Sideboard } = await import("./sideboard/sideboard.tsx");
+      const [{ Sideboard }, styles] = await Promise.all([
+        import("./sideboard/sideboard.tsx"),
+        loadStyles(),
+      ]);
       return (handle, element) => {
-        addStyles();
+        addStyles(styles);
         return render(
           () => (
             // @ts-expect-error - handle type doesn't know it supports folders

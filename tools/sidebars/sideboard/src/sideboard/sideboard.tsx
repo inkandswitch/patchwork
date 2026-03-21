@@ -20,7 +20,7 @@ import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 import { useSubscribe } from "@inkandswitch/subscribables-solid";
 import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
-import { createEffect, createSignal, Show } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import { handleFilesDrop } from "./document-list/file-drop.ts";
 
 export function Sideboard(
@@ -37,35 +37,6 @@ export function Sideboard(
   const accountDocUrl = () => props.handle.url;
   const contactUrl = () => ("contactUrl" in doc ? doc.contactUrl : undefined);
   const selectedDocUrls = useSubscribe($selectedDocUrls);
-
-  // Manage aria-selected + scrollIntoView via DOM to avoid O(n) per item.
-  createEffect((prev: AutomergeUrl[]) => {
-    const urls = (selectedDocUrls() as AutomergeUrl[]) ?? [];
-    const newSet = new Set(urls);
-    const prevSet = new Set(prev);
-
-    for (const url of prev) {
-      if (!newSet.has(url)) {
-        const el = props.element.querySelector(
-          `[data-doc-url="${CSS.escape(url)}"]`
-        );
-        if (el) el.removeAttribute("aria-selected");
-      }
-    }
-    for (const url of urls) {
-      const el = props.element.querySelector(
-        `[data-doc-url="${CSS.escape(url)}"]`
-      );
-      if (el) {
-        el.setAttribute("aria-selected", "true");
-        if (!prevSet.has(url)) {
-          // @ts-expect-error scrollIntoViewIfNeeded is non-standard
-          el.scrollIntoViewIfNeeded?.();
-        }
-      }
-    }
-    return urls;
-  }, [] as AutomergeUrl[]);
 
   function open(detail: OpenDocumentEventDetail) {
     props.element.dispatchEvent(createOpenEvent(detail));
@@ -174,6 +145,7 @@ export function Sideboard(
           handle={folderHandle.latest!}
           open={open}
           hive={props.element.hive}
+          selectedDocUrls={(selectedDocUrls() as AutomergeUrl[]) ?? []}
           element={props.element}
           rootFolderHandle={folderHandle.latest!}
         />

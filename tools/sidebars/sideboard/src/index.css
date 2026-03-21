@@ -230,6 +230,9 @@
       color-mix(in oklch, var(--sideboard-line), transparent 50%);
     outline-offset: -4px;
   }
+  &[data-dnd-dragging] {
+    opacity: 0.4;
+  }
   &[data-dnd-droplist-state]::before {
     content: "";
     position: absolute;

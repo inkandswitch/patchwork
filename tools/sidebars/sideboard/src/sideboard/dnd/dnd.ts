@@ -84,6 +84,19 @@ export function clearDragstack() {
   dragstack.clear();
 }
 
+export function setDragSourceItems(ids: string[]) {
+  for (const id of ids) {
+    const el = document.querySelector(`[data-dnd-item="${CSS.escape(id)}"]`);
+    if (el) el.setAttribute("data-dnd-dragging", "");
+  }
+}
+
+export function clearDragSourceItems() {
+  for (const el of document.querySelectorAll("[data-dnd-dragging]")) {
+    el.removeAttribute("data-dnd-dragging");
+  }
+}
+
 export function isAbove(clientY: number, element: Element) {
   const rect = element.getBoundingClientRect();
   const offset = clientY - rect.top;
