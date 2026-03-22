@@ -16,7 +16,6 @@ export interface CreateTenfoldOptions {
   edit(i: number): void
   set(i: number, field: "q" | "r" | "x" | "y" | "i", val: number): void
   word?: string
-  onHover(hint: string): void
 }
 
 export default function createTenfold(opts: CreateTenfoldOptions) {
@@ -33,13 +32,18 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const padding = 0.15
   const gap = 0.15
   const pitch = 1 + gap // cell + gap stride
-  const clockWaveHeight = 0.1
+  // Middle row layout (cell-local ly units)
+  const waffleEnd = 0.85 // ly where waffle pad ends
+  const timelineStart = 0.9 // ly where timeline begins
+  const timelineEnd = 1.0 // ly where timeline ends
   const states = {} as Record<number, Record<number, any>>
   const useAudio = false
 
   // ANIMATION STATE
   let t = 0
   const timers: Averager[] = []
+  const editAnim = new Float32Array(9)
+  const selectorAnim = new Float32Array(9)
 
   // AUDIO STATE
   const synths: Synth[] = []
@@ -168,6 +172,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     pixHW = pixW / 2
     canvas.width = cssW * gridW * dpr
     canvas.height = cssW * gridH * dpr
+    opts.container.style.setProperty("--cell", cssW + "px")
   }
 
   const resizeObserver = new ResizeObserver(resize)
@@ -200,7 +205,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
     // Kaoss pad coords: 0-1 across its width and height
     let kx = (x / cssW - padding - pitch) / (2 + gap)
-    let ky = ((gy - 1) * pitch) / (1 - clockWaveHeight - gap)
+    let ky = ((gy - 1) * pitch) / waffleEnd
 
     // Check if we're inside a cell
     let lxInside = lx >= 0 && lx <= 1
@@ -213,58 +218,68 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   type HitResult = ReturnType<typeof hitCoords>
 
   // These are the regions where various controls (etc) exist.
-  // Each region defines a hit test, hover hint, and optionally:
+  // Each region defines a hit test, cursor, and optionally:
   //   pointerdown — side effects on click (return false to prevent drag)
   //   drag — called on pointermove while dragging
   //   frame — called each animation frame while dragging
   const regions = [
     {
       // cell
+      cursor: "move",
       test: (h: HitResult) => h.inside && h.R !== 1,
-      hint: (h: HitResult) => `Letter "${mappers[h.li]}" - click and drag to set the x/y parameters for this letter's drawing function`,
       drag(start: HitResult, _h: HitResult, lx: number, ly: number) {
         opts.set(start.li, "x", clamp(denorm(lx)))
         opts.set(start.li, "y", clamp(denorm(ly)))
       },
     },
     {
-      // letter selector & edit button
-      test: (h: HitResult) => h.lxInside && h.ly > 1 && h.R !== 1,
-      hint(h: HitResult) {
-        if (h.lx < 0.33) return "Letter selector - click the arrows to cycle through different versions of this letter"
-        if (h.lx > 0.95) return "Edit button - click to open the code editor for this letter's drawing function"
-        return `Letter "${mappers[h.li]}" variant - shows which version of this letter is active`
-      },
+      // prev letter button
+      cursor: "pointer",
+      test: (h: HitResult) => h.R !== 1 && Math.hypot(h.lx - 0.02, h.ly - (1 + gap / 2)) <= 0.075,
       pointerdown(h: HitResult) {
-        let s = opts.states[h.li]
-        if (h.lx < 0.33) {
-          const n = mod(s.i + (h.lx < 0.17 ? -1 : 1), opts.letterCounts[h.li] || 0)
-          opts.set(h.li, "i", n)
-          // reset the canvas drag position when switching letters
-          opts.set(h.li, "x", 0)
-          opts.set(h.li, "y", 0)
-        } else if (h.lx > 0.95) {
-          opts.edit(h.li)
-        }
+        selectorAnim[h.li] = -1
+        opts.set(h.li, "i", mod(opts.states[h.li].i - 1, opts.letterCounts[h.li] || 0))
+        opts.set(h.li, "x", 0)
+        opts.set(h.li, "y", 0)
       },
     },
     {
-      // ampersand
-      test: (h: HitResult) => h.i === 3 && h.inside,
-      hint: () => "Ampersand - the & symbol connecting the two rows of letters",
+      // next letter button
+      cursor: "pointer",
+      test: (h: HitResult) => h.R !== 1 && Math.hypot(h.lx - 0.30, h.ly - (1 + gap / 2)) <= 0.075,
+      pointerdown(h: HitResult) {
+        selectorAnim[h.li] = 1
+        opts.set(h.li, "i", mod(opts.states[h.li].i + 1, opts.letterCounts[h.li] || 0))
+        opts.set(h.li, "x", 0)
+        opts.set(h.li, "y", 0)
+      },
+    },
+    {
+      // edit button
+      cursor: "pointer",
+      test: (h: HitResult) => h.R !== 1 && Math.hypot(h.lx - 0.95, h.ly - (1 + gap / 2)) <= 0.075,
+      pointerdown(h: HitResult) {
+        opts.edit(h.li)
+      },
     },
     {
       // timeline — t is overridden per-frame via frame(), not per-pointermove
-      test: (h: HitResult) => (h.i === 4 || h.i === 5) && h.lyInside && h.ly > 0.8,
-      hint: () => "Timeline - click and drag to scrub through time, controlling the animation phase",
+      cursor: "ew-resize",
+      test: (h: HitResult) => (h.i === 4 || h.i === 5) && h.kx >= 0 && h.kx <= 1 && h.ly > timelineStart && h.ly <= timelineEnd,
       frame() {
         t = 0.5 + mouseDragged.kx
       },
     },
     {
       // waffle
+      cursor(h: HitResult) {
+        for (let p = 0; p < opts.states.length; p++) {
+          let s = opts.states[p]
+          if (Math.hypot(clamp(denorm(h.kx)) - s.q, clamp(denorm(h.ky)) - s.r) < 0.15) return "move"
+        }
+        return "default"
+      },
       test: (h: HitResult) => (h.i === 4 || h.i === 5) && h.kx >= 0 && h.kx <= 1 && h.ky >= 0 && h.ky <= 1,
-      hint: () => "Waffle pad - each letter has a draggable dot here that controls its q/r parameters",
       pointerdown(h: HitResult) {
         // grab the closest waffle
         dragParam = null
@@ -334,20 +349,19 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     window.removeEventListener("pointermove", drag)
   }
 
-  function hintForCoords(h: HitResult): string {
-    for (const region of regions) {
-      if (region.test(h)) return region.hint(h)
-    }
-    return ""
-  }
-
   function onpointermove(e: PointerEvent) {
     if (dragRegion) return
-    opts.onHover(hintForCoords(hitCoords(e.offsetX, e.offsetY)))
+    let h = hitCoords(e.offsetX, e.offsetY)
+    let cursor = "default"
+    for (const region of regions) {
+      if (region.test(h)) { cursor = typeof region.cursor === "function" ? region.cursor(h) : region.cursor ?? "default"; break }
+    }
+    canvas.style.cursor = cursor
   }
 
   canvas.addEventListener("pointerdown", pointerdown)
   canvas.addEventListener("pointermove", onpointermove)
+  canvas.addEventListener("pointerleave", () => { canvas.style.cursor = "default" })
   window.addEventListener("pointerup", pointerup)
   window.addEventListener("pointercancel", pointerup)
 
@@ -558,23 +572,30 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
           let charHeight = 0.055 // this font is weird
           let labelText = mappers[i] + opts.states[i].i.toString().padStart(2, "0")
           let labelWidth = charWidth * labelText.length
+          selectorAnim[i] *= 0.85
+          let bump = selectorAnim[i] * 0.01
           let x = 0.085 + labelWidth / 2
           let y = 1 + gap / 2
           ctx.beginPath()
+          let prevBump = bump < 0 ? bump : 0
+          let nextBump = bump > 0 ? bump : 0
           drawText(api, labelText, x - labelWidth / 2, y - 0.005 - charHeight / 2, 0.08, charWidth)
-          api.move(x - 0.13, y - charHeight / 2)
-          api.line(x - 0.16, y)
-          api.line(x - 0.13, y + charHeight / 2)
-          api.move(x + 0.13, y - charHeight / 2)
-          api.line(x + 0.16, y)
-          api.line(x + 0.13, y + charHeight / 2)
+          api.move(x - 0.13 + prevBump, y - charHeight / 2)
+          api.line(x - 0.16 + prevBump, y)
+          api.line(x - 0.13 + prevBump, y + charHeight / 2)
+          api.move(x + 0.13 + nextBump, y - charHeight / 2)
+          api.line(x + 0.16 + nextBump, y)
+          api.line(x + 0.13 + nextBump, y + charHeight / 2)
           ctx.stroke()
 
           // edit & fork
+          editAnim[i] += ((opts.currentlyEditingIndex == i ? 1 : 0) - editAnim[i]) * 0.3
           ctx.beginPath()
-          api.circle(1 - 0.03, y, 0.03)
-          if (opts.currentlyEditingIndex == i) ctx.fill()
-          else ctx.stroke()
+          api.circle(0.95, y, 0.04)
+          ctx.stroke()
+          ctx.beginPath()
+          api.circle(0.95, y, denorm(editAnim[i], 0.01, 0.04))
+          ctx.fill()
         }
       }
 
@@ -605,7 +626,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       for (let m = 0; m < 3; m++) {
         for (let n = 0; n < 3; n++) {
           let W = 2 + gap - gs * 3
-          let H = 1 - clockWaveHeight - gap - gs * 3
+          let H = waffleEnd - gs * 3
           let X = gs * n + declip(s.q, 0, W)
           let Y = gs * m + declip(s.r, 0, H)
           if (m * 3 + n == i) ctx.fillRect(X, Y, gs, gs)
@@ -638,7 +659,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       api.line(0.8, 0.5)
       api.line(0.8 - 0.8, 0.5 + 0.1)
       api.move(0.8, 0.5)
-      api.line(0.8 + 0.8, 0.5 - 0.1)
+      api.line(0.8 + 0.4, 0.5 - 0.05)
       ctx.stroke()
 
       ctx.beginPath()
@@ -649,7 +670,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     // Clock wave
     ctx.resetTransform()
     ctx.scale(dpr * cssW, dpr * cssW)
-    ctx.translate(padding + pitch, padding + pitch + 1) // BL corner of the kaoss pad
+    ctx.translate(padding + pitch, padding + pitch + timelineStart)
     for (let i = 0; i <= 1.0001; i += 0.02) {
       ctx.beginPath()
       let phase = (((i - t + 0.5) % 1) + 1) % 1 // 0 to 1
@@ -657,9 +678,57 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       p **= 2.5
       ctx.lineWidth = denorm(Math.min((1 - Math.abs(denorm(i))) * 4, 1) * p, thick / 4, (thick * 5) / 2)
       let x = (2 + gap) * i
-      ctx.moveTo(x, -clockWaveHeight)
-      ctx.lineTo(x, 0)
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, timelineEnd - timelineStart)
       ctx.stroke()
+    }
+
+    // DEBUG: region hit areas
+    if (false) {
+    ctx.resetTransform()
+    ctx.scale(dpr * cssW, dpr * cssW)
+    let debugR = 0
+    const debugFill = () => { ctx.fillStyle = `hsla(${debugR++ * 137.5}, 70%, 50%, 0.2)` }
+    // cells (inside && R !== 1)
+    debugFill()
+    for (let R of [0, 2, 3]) {
+      for (let C = 0; C < 3; C++) {
+        ctx.fillRect(C * pitch + padding, R * pitch + padding, 1, 1)
+      }
+    }
+    // prev letter button
+    debugFill()
+    for (let R of [0, 2, 3]) {
+      for (let C = 0; C < 3; C++) {
+        ctx.beginPath()
+        ctx.arc(C * pitch + padding + 0.02, R * pitch + padding + 1 + gap / 2, 0.075, 0, TAU)
+        ctx.fill()
+      }
+    }
+    // next letter button
+    debugFill()
+    for (let R of [0, 2, 3]) {
+      for (let C = 0; C < 3; C++) {
+        ctx.beginPath()
+        ctx.arc(C * pitch + padding + 0.30, R * pitch + padding + 1 + gap / 2, 0.075, 0, TAU)
+        ctx.fill()
+      }
+    }
+    // edit button
+    debugFill()
+    for (let R of [0, 2, 3]) {
+      for (let C = 0; C < 3; C++) {
+        ctx.beginPath()
+        ctx.arc(C * pitch + padding + 0.95, R * pitch + padding + 1 + gap / 2, 0.075, 0, TAU)
+        ctx.fill()
+      }
+    }
+    // timeline ((i=4||i=5) && lyInside && ly > 0.8)
+    debugFill()
+    ctx.fillRect(pitch + padding, pitch + padding + timelineStart, 2 + gap, timelineEnd - timelineStart)
+    // waffle (kx 0-1, ky 0-1, i=4||i=5)
+    debugFill()
+    ctx.fillRect(pitch + padding, pitch + padding, 2 + gap, waffleEnd)
     }
   }
 

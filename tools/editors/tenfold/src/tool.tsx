@@ -110,9 +110,13 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     }
   })
 
-  const [hint, setHint] = createSignal("")
-  const [showToast, setShowToast] = createSignal(false)
+  const [toastMessage, setToastMessage] = createSignal("")
   let toastTimer: ReturnType<typeof setTimeout>
+  function toast(msg: string) {
+    setToastMessage(msg)
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => setToastMessage(""), 2000)
+  }
 
   const [editing, setEditing] = makePersisted(createSignal<number | null>(null), {
     name: `${props.handle.url}#editing`,
@@ -151,7 +155,6 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     get word() {
       return word().join("").toUpperCase()
     },
-    onHover: setHint,
   } satisfies CreateTenfoldOptions
 
   createEffect(
@@ -178,7 +181,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     return idx != null ? `/letters/${folders()[idx]}/${tenfold.states[idx].i}.js` : ""
   }
 
-  async function fork() {
+  async function newLetter() {
     const idx = editing()
     if (idx == null) return
     const hdl = letterFolderHandles[idx]
@@ -190,7 +193,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
       mimeType: "application/javascript",
       extension: "js",
       metadata: { permissions: 420 },
-      content: codeHandles[idx].doc().content ?? "",
+      content: `// Untitled ${folders()[idx][1].toUpperCase()} <0x${Math.floor(Math.random() * 0x10000).toString(16).padStart(4, "0")}>\n// by ${tenfold.name}\n`,
       name,
     })
 
@@ -203,6 +206,29 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     })
 
     props.handle.change((doc) => (doc.states[idx].i = len))
+  }
+
+  async function deleteLetter() {
+    const idx = editing()
+    if (idx == null) return
+    const hdl = letterFolderHandles[idx]
+    const si = tenfold.states[idx].i
+
+    if (counts[idx] <= 1) await newLetter()
+
+    const name = makeName(si)
+    hdl.change((folder) => {
+      const i = folder.docs.findIndex((doc) => doc.name === name)
+      if (i !== -1) folder.docs.splice(i, 1)
+      // Rename subsequent files to close the gap
+      for (const doc of folder.docs) {
+        if (!doc.name.endsWith(".js")) continue
+        const num = parseInt(doc.name)
+        if (num > si) doc.name = makeName(num - 1)
+      }
+    })
+    const newI = si >= counts[idx] - 1 ? Math.max(0, si - 1) : si
+    props.handle.change((doc) => (doc.states[idx].i = newI))
   }
 
   async function share() {
@@ -219,9 +245,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     })
     const url = `https://tenfold.inkandswitch.com/?letter=${letterName}&share=${id}`
     await navigator.clipboard.writeText(url)
-    setShowToast(true)
-    clearTimeout(toastTimer)
-    toastTimer = setTimeout(() => setShowToast(false), 2000)
+    toast("Copied to clipboard")
   }
 
   createEffect(() => {
@@ -236,11 +260,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
   // Handle ?letter=&share= URLs: import shared letter code.
   // Read params once, store in a signal, then wait for data to be ready.
   const params = new URLSearchParams(window.location.search)
-  const [pendingShare, setPendingShare] = createSignal(
-    params.get("letter") && params.get("share")
-      ? { letter: params.get("letter")!, shareId: params.get("share")! }
-      : null
-  )
+  const [pendingShare, setPendingShare] = createSignal(params.get("letter") && params.get("share") ? { letter: params.get("letter")!, shareId: params.get("share")! } : null)
 
   // Clear share params from URL immediately
   if (pendingShare()) {
@@ -264,7 +284,6 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
 
     // All data ready — consume the pending share
     setPendingShare(null)
-
     ;(async () => {
       const registryHandle = await props.element.repo.find(sharedLettersUrl)
       await registryHandle.whenReady()
@@ -297,19 +316,10 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
 
   return (
     <Suspense>
-      {showToast() && (
-        <div class="tenfold-toast">Copied to clipboard</div>
-      )}
       <article class="tenfold" ref={setCanvas}>
+        {toastMessage() && <div class="tenfold-toast">{toastMessage()}</div>}
         <canvas />
-        <aside>
-          <canvas id="spark"></canvas>
-          <div id="message-field"></div>
-          <div id="synth-editor">
-            <textarea></textarea>
-          </div>
-          <TenfoldEditor editing={editing} editingHandle={editingHandle} typescriptPath={typescriptPath} fork={fork} share={share} worker={worker} hint={hint} />
-        </aside>
+        <TenfoldEditor editing={editing} editingHandle={editingHandle} typescriptPath={typescriptPath} newLetter={newLetter} share={share} deleteLetter={deleteLetter} toast={toast} close={() => setEditing(null)} worker={worker} />
       </article>
     </Suspense>
   )

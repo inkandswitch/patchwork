@@ -1,8 +1,6 @@
 // delauney / voronoi by peter
 // with assist from orion & claude
 
-__loopBudget = 60000
-
 const { x, y, q, r, t, s } = params
 
 // DEBUG PENS

@@ -2,8 +2,6 @@
 // By Marcel
 // Use the waffle to tweak amount / density of shapes
 
-__loopBudget = 20000
-
 // Library
 // draw a polygon
 function poly(points) {

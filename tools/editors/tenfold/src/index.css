@@ -1,151 +1,166 @@
 @font-face {
   font-family: FifteenTwenty;
-  src: url("FifteenTwenty-Demi.woff2");
+  src: url("FifteenTwenty.woff2");
 }
 
 * {
   box-sizing: border-box;
+  scrollbar-color: #fff #000;
 }
 
 body {
   margin: 0;
 }
 
+::-webkit-scrollbar {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 1.5px solid #fff;
+  border-radius: 1px;
+  background: transparent;
+}
+
 .tenfold {
   display: flex;
-  margin: 0;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  font: clamp(12px, 1.2vw, 22px) FifteenTwenty;
   color: #fff;
   background: #000;
+  color-scheme: dark;
   overflow: hidden;
-  height: 100%;
-  width: 100%;
-  font-family: FifteenTwenty;
 
   canvas {
     display: block;
   }
 
   aside {
+    flex: 1 1 0;
+    min-width: 0; /* needed for text wrap for some reason */
     position: relative;
     display: flex;
     flex-flow: column;
-    flex: 1 1 100%;
     height: 100%;
+  }
 
-    & > * {
-      display: flex;
-      flex-direction: column;
-      flex: 1 1 auto;
-      font-size: 18px;
-    }
+  #spark {
+    display: none; /* turned off for now, while we do friends-of-the-lab */
+    flex: 0 0 50px;
+    width: 100%;
+    height: 50px;
+  }
 
-    #spark {
-      display: none; /* turned off for now, while we do friends-of-the-lab */
-      flex: 0 0 50px;
-      width: 100%;
-      height: 50px;
-    }
+  #message-field {
+    position: absolute;
+    display: none; /* turned off for now, while we do friends-of-the-lab */
+    inset: 0;
+    width: 100%;
+    height: 1em;
+    color: #f00;
+    pointer-events: none;
+  }
 
-    #message-field {
-      display: none; /* turned off for now, while we do friends-of-the-lab */
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 1em;
-      color: #f00;
-      pointer-events: none;
-    }
-
-    #synth-editor {
-      display: none; /* turned off for now, while we do friends-of-the-lab */
-      height: 50%;
-    }
-
-    #dumb-tsx-container {
-      height: 100%;
-
-      .tenfold-hint-bar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-top: auto;
-        min-height: 2em;
-      }
-    }
+  #synth-editor {
+    display: none; /* turned off for now, while we do friends-of-the-lab */
+    flex: 1 1 50%;
+    height: 50%;
   }
 
   .tenfold-docs {
-    overflow-y: auto;
-    overflow-x: hidden;
-    min-height: 0;
-    padding: 16px;
-    line-height: 1.5;
+    font-size: 1.2em;
+    flex: 1 1 0;
+    /* min-width: 0; */
+    /* min-height: 0; */
+    overflow: hidden auto;
+
+    h1 {
+      margin-block: 0 1rem;
+      font-size: 2em;
+    }
 
     h2 {
-      margin: 0 0 8px;
-      font-size: 24px;
+      margin-block: 3rem 1rem;
+      font-size: 1.5em;
+    }
+
+    h3 {
+      margin-block: 2rem 1rem;
+      font-size: 1.3em;
+    }
+
+    h4 {
+      margin-block: 1.5rem 0;
+      font-size: 1.2em;
     }
 
     p {
-      margin: 4px 0;
+      margin-block: 0 1rem;
+      line-height: 1.3;
     }
 
     a {
-      color: #fff;
+      color: inherit;
+    }
+
+    code {
+      font-family: inherit;
+      background: white;
+      color: black;
+      border-radius: 1px;
     }
 
     pre {
+      width: max-content;
+      max-width: 100%;
+      padding: 1rem;
+      border: calc(0.01 * var(--cell, 100px)) solid #fff;
+      border-radius: 1px;
+      font-family: inherit;
       white-space: pre-wrap;
       overflow-wrap: break-word;
     }
+
+    & > :first-child {
+      padding-top: calc(0.15 * var(--cell, 2vmin));
+    }
+
+    & > :last-child {
+      padding-bottom: calc(0.15 * var(--cell, 2vmin));
+    }
   }
 
-  .tenfold-hint {
-    font-size: 14px;
-  }
-
-  .tenfold-hint-toggle {
+  .tenfold-button-row {
     display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: #fff;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    -webkit-user-select: none;
-    user-select: none;
+    gap: 2px;
+    margin-bottom: 2px;
 
-    input[type="checkbox"] {
-      position: relative;
-      top: -0.2em;
-      appearance: none;
-      width: 10px;
-      height: 10px;
-      border: 1.5px solid #fff;
-      border-radius: 50%;
-      margin: 0;
-      cursor: pointer;
-
-      &:checked {
-        background: #fff;
-      }
+    & > :last-child {
+      margin-left: auto;
     }
   }
 
   .tenfold-toast {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    inset: 0;
+    width: fit-content;
+    height: fit-content;
+    margin: auto;
+    padding: 3em 3em;
+    border-radius: 1px;
     background: #fff;
     color: #000;
-    border: 1em solid #000;
-    padding: 1em;
     z-index: 9999;
+    pointer-events: none;
+    animation:
+      toast-crt 100ms ease-out reverse,
+      toast-crt 200ms ease-out 1.7s forwards;
   }
 
   .cm-editor {
+    flex: 1 1 auto;
     width: 100%;
     height: 100%;
     overflow: auto;
@@ -155,8 +170,11 @@ body {
     }
   }
 
-  .cm-editor *,
-  .cm-editor * * {
+  .cm-scroller {
+    scrollbar-gutter: stable;
+  }
+
+  .cm-editor .cm-content {
     caret-color: #fff !important;
   }
 
@@ -164,7 +182,7 @@ body {
     background: none !important;
     text-decoration: underline;
     text-decoration-style: wavy;
-    text-decoration-thickness: 2px;
+    text-decoration-thickness: 1.5px;
     text-decoration-skip-ink: none;
     text-decoration-color: #f00;
   }
@@ -174,19 +192,75 @@ body {
   }
 }
 
+@keyframes toast-crt {
+  0% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  30% {
+    transform: scaleY(0.05);
+    opacity: 1;
+  }
+  50% {
+    transform: scaleY(0.05);
+    opacity: 0;
+  }
+  65% {
+    transform: scaleY(0.05);
+    opacity: 1;
+  }
+  80% {
+    transform: scaleY(0.05);
+    opacity: 0;
+  }
+  90% {
+    transform: scaleY(0.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+}
+
+@keyframes delete-fill {
+  0% {
+    background-size: 0% 100%;
+  }
+  85% {
+    background-size: 100% 100%;
+    opacity: 1;
+    color: inherit;
+  }
+  90% {
+    background-size: 100% 100%;
+    opacity: 0;
+    color: #000;
+  }
+  95% {
+    background-size: 100% 100%;
+    opacity: 1;
+    color: #000;
+  }
+  100% {
+    background-size: 100% 100%;
+    opacity: 0;
+    color: #000;
+  }
+}
+
 .tenfriend-prompt {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   max-width: max-content;
-  margin-inline: auto;
   height: 100%;
+  margin-inline: auto;
   gap: 1em;
-  font-family: FifteenTwenty, system-ui, sans-serif;
-  font-size: 18px;
-  background: #000;
+  font: 18px FifteenTwenty;
   color: #fff;
+  background: #000;
 
   .tenfriend-row {
     display: flex;
@@ -194,37 +268,42 @@ body {
   }
 
   .tenfriend-input {
+    width: 100%;
+    padding: 0.7em 0.7em 0.5em;
+    border: calc(0.01 * var(--cell, 100px)) solid #fff;
+    border-radius: 1px;
+    outline: none;
     font: inherit;
     font-size: 24px;
     line-height: 1em;
-    padding: 0.7em 0.7em 0.5em;
-    border: 1.5px solid #fff;
-    border-radius: 1px;
-    width: 100%;
-    outline: none;
-    background: inherit;
     color: inherit;
+    background: inherit;
 
     &:focus {
-      outline: 1.5px solid #fff;
-      outline-offset: -6px;
+      outline: calc(0.01 * var(--cell, 100px)) solid #fff;
+      outline-offset: calc(-0.02 * var(--cell, 100px));
     }
   }
-
 }
 
 .tenfriend-button {
-  font-family: FifteenTwenty, system-ui, sans-serif;
-  font-size: 18px;
   padding: 0.7em 1.2em 0.5em;
-  border: 1.5px solid #fff;
+  border: calc(0.01 * var(--cell, 100px)) solid #fff;
   border-radius: 1px;
-  background: #000;
+  font: inherit;
   color: #fff;
+  background: #000;
+  background-image: linear-gradient(#fff, #fff);
+  background-repeat: no-repeat;
+  background-size: 0% 100%;
   cursor: pointer;
 
+  &.holding {
+    animation: delete-fill 1.3s linear forwards;
+  }
+
   &:focus {
-    outline: 1.5px solid #fff;
-    outline-offset: -6px;
+    outline: calc(0.01 * var(--cell, 100px)) solid #fff;
+    outline-offset: calc(-0.02 * var(--cell, 100px));
   }
 }
