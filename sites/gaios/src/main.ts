@@ -1,75 +1,32 @@
 import "./global.css";
 
+import patchwork, { getRegistry } from "@inkandswitch/patchwork";
+import { openDocument } from "@inkandswitch/patchwork-elements";
 import {
-  registerPatchworkViewElement,
-  openDocument,
-} from "@inkandswitch/patchwork-elements";
-import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
-import setup from "@inkandswitch/patchwork-bootloader";
-import {
-  registerPlugins,
   DatatypeDescription,
   DatatypeImplementation,
-  getRegistry,
 } from "@inkandswitch/patchwork-plugins";
-import * as plugins from "@inkandswitch/patchwork-plugins";
 import {
   getOrCreateLayoutDocHandle,
   TinyPatchworkLayoutDoc,
 } from "./layout-doc";
 import {
   DocHandle,
-  IndexedDBStorageAdapter,
-  isValidAutomergeUrl,
   isValidDocumentId,
-  MessageChannelNetworkAdapter,
   parseAutomergeUrl,
-  Repo,
   stringifyAutomergeUrl,
   type UrlHeads,
 } from "@automerge/vanillajs";
-import * as Automerge from "@automerge/automerge";
-import * as AutomergeRepo from "@automerge/automerge-repo";
+import type * as AutomergeRepo from "@automerge/automerge-repo";
 
-declare global {
-  interface Window {
-    accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
-    Automerge: typeof import("@automerge/automerge");
-    AutomergeRepo: typeof import("@automerge/automerge-repo");
-    repo: Repo;
-    getRepoChannel: () => MessagePort;
-    patchwork: {
-      repo: Repo;
-      modules: ModuleWatcher;
-      plugins: typeof plugins;
-      accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
-    };
-  }
-}
-
-const repo = new Repo({
-  storage: new IndexedDBStorageAdapter(),
-  async sharePolicy(peerId) {
-    return peerId.includes("service-worker");
+await patchwork.setup({
+  repo: {
+    enableRemoteHeadsGossiping: true,
+    subscribeToRemotes: [
+      "3760df37-a4c6-4f66-9ecd-732039a9385d",
+    ],
   },
-  enableRemoteHeadsGossiping: true,
 });
-
-repo.subscribeToRemotes([
-  "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
-]);
-
-const result = await setup();
-if (!result) {
-  throw new Error("Failed to set up service worker");
-}
-
-if (result.port) {
-  repo.networkSubsystem.addNetworkAdapter(
-    new MessageChannelNetworkAdapter(result.port)
-  );
-  await repo.networkSubsystem.whenReady();
-}
 
 window.getRepoChannel = () => {
   const { port1, port2 } = new MessageChannel();
@@ -77,16 +34,8 @@ window.getRepoChannel = () => {
   return port1;
 };
 
-window.repo = repo;
-window.Automerge = Automerge;
-window.AutomergeRepo = AutomergeRepo;
-
-const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
-await repo.flush();
-
-window.accountDocHandle = accountDocHandle;
-
-registerPatchworkViewElement({ repo });
+const accountDocHandle = await getOrCreateLayoutDocHandle(patchwork.repo);
+(window as any).accountDocHandle = accountDocHandle;
 
 const rootElement = document.getElementById("root")!;
 
@@ -117,7 +66,7 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
   window.location.hash = params.toString();
 
   try {
-    const docHandle = await repo.find(
+    const docHandle = await patchwork.repo.find(
       stringifyAutomergeUrl({ documentId, heads })
     );
     const doc = docHandle.doc();
@@ -143,27 +92,14 @@ rootElement.addEventListener("patchwork:mounted", () => {
   handleHashChange();
 });
 
-const moduleWatcher = new ModuleWatcher(
-  repo,
-  [
-    accountDocHandle.doc().moduleSettingsUrl,
-    // default tools for gaios
-    "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
-  ],
-  (name, mod) => {
-    if (Array.isArray(mod.plugins)) {
-      // TODO: maybe get rid of this check?
-      if (isValidAutomergeUrl(name)) {
-        registerPlugins(mod.plugins, name);
-      }
-    }
-  }
-);
-
-window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
+patchwork.watch([
+  accountDocHandle.doc().moduleSettingsUrl,
+  // default tools for gaios
+  "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
+]);
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
-  moduleWatcher.loadSuggestedImportUrl(event.detail.url);
+  patchwork.modules!.loadSuggestedImportUrl(event.detail.url);
 });
 
 const bigPatchworkHashRegex =

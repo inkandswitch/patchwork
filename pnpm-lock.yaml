@@ -12,12 +12,6 @@ catalogs:
     '@automerge/automerge-repo-react-hooks':
       specifier: 2.5.3
       version: 2.5.3
-    '@automerge/automerge-repo-solid-primitives':
-      specifier: 2.4.0
-      version: 2.4.0
-    '@automerge/react':
-      specifier: 2.5.3
-      version: 2.5.3
     '@automerge/vanillajs':
       specifier: 2.5.3
       version: 2.5.3
@@ -174,6 +168,49 @@ importers:
       resolve.exports:
         specifier: ^2.0.3
         version: 2.0.3
+
+  core/patchwork:
+    dependencies:
+      '@automerge/automerge':
+        specifier: 3.2.4
+        version: 3.2.4
+      '@automerge/automerge-repo':
+        specifier: 2.5.3
+        version: 2.5.3
+      '@automerge/automerge-repo-network-messagechannel':
+        specifier: ^2.5.3
+        version: 2.5.3
+      '@automerge/automerge-repo-storage-indexeddb':
+        specifier: ^2.5.3
+        version: 2.5.3
+      '@automerge/vanillajs':
+        specifier: 'catalog:'
+        version: 2.5.3
+      '@inkandswitch/patchwork-bootloader':
+        specifier: workspace:^
+        version: link:../bootloader
+      '@inkandswitch/patchwork-elements':
+        specifier: workspace:^
+        version: link:../elements
+      '@inkandswitch/patchwork-filesystem':
+        specifier: workspace:^
+        version: link:../filesystem
+      '@inkandswitch/patchwork-plugins':
+        specifier: workspace:^
+        version: link:../plugins
+      '@types/debug':
+        specifier: ^4.1.12
+        version: 4.1.12
+      debug:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@automerge/automerge-repo-keyhive':
+        specifier: 'catalog:'
+        version: 0.1.0-alpha.14
+      esbuild:
+        specifier: ^0.23.1
+        version: 0.23.1
 
   core/plugins:
     dependencies:
@@ -442,6 +479,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.6
         version: 6.38.8
+      '@inkandswitch/patchwork':
+        specifier: workspace:^
+        version: link:../../core/patchwork
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../core/elements
@@ -560,6 +600,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.6
         version: 6.38.8
+      '@inkandswitch/patchwork':
+        specifier: workspace:^
+        version: link:../../core/patchwork
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../core/elements
@@ -687,6 +730,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.6
         version: 6.38.8
+      '@inkandswitch/patchwork':
+        specifier: workspace:^
+        version: link:../../core/patchwork
       '@inkandswitch/patchwork-elements':
         specifier: workspace:^
         version: link:../../core/elements
@@ -735,9 +781,6 @@ importers:
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9
-      tailwindcss:
-        specifier: ^4.1.14
-        version: 4.1.15
     devDependencies:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
@@ -748,9 +791,6 @@ importers:
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../core/bootloader
-      '@tailwindcss/vite':
-        specifier: ^4.1.14
-        version: 4.1.15(vite@7.1.11(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.44.0))
       '@types/react':
         specifier: 'catalog:'
         version: 18.3.1

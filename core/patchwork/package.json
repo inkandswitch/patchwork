@@ -1,0 +1,48 @@
+{
+  "name": "@inkandswitch/patchwork",
+  "version": "0.0.1",
+  "author": "Ink & Switch",
+  "type": "module",
+  "license": "MIT",
+  "description": "Unified setup for patchwork sites",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./head": {
+      "import": "./dist/head.js"
+    },
+    "./vite": {
+      "import": "./dist/vite.js",
+      "types": "./dist/vite.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc && node build-head.js",
+    "dev": "tsc -w --preserveWatchOutput"
+  },
+  "dependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-network-messagechannel": "^2.5.3",
+    "@automerge/automerge-repo-storage-indexeddb": "^2.5.3",
+    "@automerge/vanillajs": "catalog:",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-elements": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@types/debug": "^4.1.12",
+    "debug": "^4.4.3"
+  },
+  "devDependencies": {
+    "@automerge/automerge-repo-keyhive": "catalog:",
+    "esbuild": "^0.23.1"
+  },
+  "peerDependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-keyhive": "catalog:",
+    "@automerge/vanillajs": "catalog:"
+  }
+}

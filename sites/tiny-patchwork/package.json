@@ -7,7 +7,6 @@
     "@eslint/js": "^9.37.0",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@keyhive/keyhive": "catalog:",
-    "@tailwindcss/vite": "^4.1.14",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@typescript-eslint/parser": "^8.40.0",
@@ -36,6 +35,7 @@
     "@codemirror/language": "^6.11.3",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.6",
+    "@inkandswitch/patchwork": "workspace:^",
     "@inkandswitch/patchwork-elements": "workspace:^",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
@@ -51,7 +51,6 @@
     "react-dom": "catalog:",
     "scheduler": "^0.27.0",
     "signia": "^0.1.5",
-    "solid-js": "^1.9.9",
-    "tailwindcss": "^4.1.14"
+    "solid-js": "^1.9.9"
   }
 }
