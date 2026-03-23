@@ -49,8 +49,8 @@ export default function TenfoldDocs() {
 
       <p>A low-res screenshot of Tenfold:</p>
 
-      <pre>{`I N K ………
-& === ………
+      <pre>{`I N K ………………
+& === ……………
 S W I [#=]
 T C H [I]`}</pre>
 
@@ -61,12 +61,12 @@ T C H [I]`}</pre>
    II
    II
 IIIIIIII
-<I00>  o`}</pre>
+<I00>  ⦿`}</pre>
 
       <p>
         <code>{"<I00>"}</code> flips through variations of the letter.
         <br />
-        <code>o</code> flips between the code and these docs.
+        <code>⦿</code> flips between the code and these docs.
       </p>
 
       <p>
@@ -81,11 +81,11 @@ IIIIIIII
 
       <p>Zoom in on the second row:</p>
 
-      <pre>{`   __
- /    \\   #     #           #
+      <pre>{`   _
+ /   \\    #     #           #
  \\_          #    #      #    #
  /                  #   #
-|    __--
+|    __-
  \\____/  ||||||||||||||||||||||`}</pre>
 
       <p>The ampersand is inert. It holds place.</p>
@@ -140,9 +140,7 @@ IIIIIIII
         and we measure the space with coordinates.
       </p>
 
-      <p>
-        You'll find 0,0 - the origin - at the center.
-      </p>
+      <p>You'll find 0,0 - the origin - at the center.</p>
 
       <p>
         Negatives are up and left.
@@ -152,14 +150,14 @@ IIIIIIII
 
       <p>Some of my favourite positions:</p>
 
-      <pre>{`-1,-1 --------- +1,-1
-|         |         |
-|         |         |
-|        0,0        |
-|         |         |
-|         |         |
--1,+1 --------- +1,+1
-<H00>               o`}</pre>
+      <pre>{`-1,-1 ----- +1,-1
+|       |       |
+|       |       |
+|      0,0      |
+|       |       |
+|       |       |
+-1,+1 ----- +1,+1
+<X00>             ⦿`}</pre>
 
       <h3>Lines</h3>
 
@@ -172,9 +170,9 @@ IIIIIIII
         <br />
         Call it once to set the start point.
         <br />
-        Call it again to draw a line
+        Call it again to draw a line from
         <br />
-        from the last point to the new one.
+        the last point to the new one.
       </p>
 
       <h4>
@@ -233,7 +231,23 @@ IIIIIIII
         Use "\n" for newlines.
       </p>
 
-      <p>If you don't pass x, y, or size, the text will appear just above your letter. Handy for debugging.</p>
+      <h3>There Are Many Functions</h3>
+
+      <p>
+        We won't list them all here.
+        <br />
+        You might discover them yourself
+        <br />
+        or learn about them from friends.
+      </p>
+
+      <p>The functions all have sensible default values.</p>
+
+      <p>
+        Try <code>rect()</code> or <code>circle()</code>,
+        <br />
+        or <code>text("up here")</code>.
+      </p>
 
       <h2>{"<4 • Parameters>"}</h2>
 
@@ -265,7 +279,7 @@ IIIIIIII
 
       <p>
         When working with the drawing functions and parameters described above, and the helper functions described below, you'll notice that they're all designed to work with
-        values from -1 to 1 or 0 to 1. These particular ranges are really, really useful, so we're going to give them names to make it easier to talk about them.
+        values from <code>-1 to 1</code> or <code>0 to 1</code>. These particular ranges are really, really useful, so we're going to give them names to make it easier to talk about them.
       </p>
 
       <h3>-1 to 1 - "Clip"</h3>
@@ -298,6 +312,8 @@ IIIIIIII
       </p>
 
       <p>
+        Calling all JavaScript lovers:
+        <br />
         In Tenfold, we've done <code>with(Math)</code> so you can just say <code>max(a,b)</code> instead of <code>Math.max(a,b)</code>, or <code>PI</code> instead of{" "}
         <code>Math.PI</code>, etc.
       </p>
@@ -313,20 +329,26 @@ IIIIIIII
         <code>norm(v, lo = -1, hi = 1)</code>
       </h4>
 
-      <p>Takes a value that ranges from lo to hi, and remaps it to the range 0 to 1.</p>
+      <p>Convert TO norm.</p>
+
+      <p>Takes a value that ranges from <code>lo</code> to <code>hi</code>, and remaps it to the range 0 to 1.</p>
 
       <h4>
         <code>clip(v, lo = -1, hi = 1)</code>
       </h4>
 
-      <p>Takes a value that ranges from lo to hi, and remaps it to the range -1 to 1.</p>
+      <p>Convert TO clip.</p>
+
+      <p>Takes a value that ranges from <code>lo</code> to <code>hi</code>, and remaps it to the range -1 to 1.</p>
 
       <h4>
         <code>denorm(v, lo = -1, hi = 1)</code>
       </h4>
 
+      <p>Convert FROM norm.</p>
+
       <p>
-        Takes a value that ranges from 0 to 1, and remaps it to the range lo to hi.
+        Takes a value that ranges from 0 to 1, and remaps it to the range <code>lo</code> to <code>hi</code>.
         <br />
         This is also known as 'lerp' (though with a different argument order).
       </p>
@@ -335,19 +357,19 @@ IIIIIIII
         <code>declip(v, lo = 0, hi = 1)</code>
       </h4>
 
-      <p>Takes a value that ranges from -1 to 1, and remaps it to the range lo to hi.</p>
+      <p>Convert FROM clip.</p>
+
+      <p>Takes a value that ranges from -1 to 1, and remaps it to the range <code>lo</code> to <code>hi</code>.</p>
 
       <h3>Range Manipulation</h3>
 
-      <p>
-        For the above functions, if you pass values that extend beyond the input range they'll be remapped proportionally. If you don't want that, use the following:
-      </p>
+      <p>For the above functions, if you pass values that extend beyond the input range they'll be remapped proportionally. If you don't want that, use the following:</p>
 
       <h4>
         <code>clamp(v, lo = -1, hi = 1)</code>
       </h4>
 
-      <p>Limits a value to be between lo and hi.</p>
+      <p>Limits a value to be between <code>lo</code> and <code>hi</code>.</p>
 
       <h4>
         <code>renorm(v, lo = -1, hi = 1, LO = -1, HI = 1, doClamp = false)</code>
@@ -356,9 +378,9 @@ IIIIIIII
       <p>
         This function combines all the above.
         <br />
-        Takes a value that ranges from lo to hi, and remaps it to the range LO to HI.
+        Takes a value that ranges from <code>lo</code> to <code>hi</code>, and remaps it to the range <code>LO</code> to <code>HI</code>.
         <br />
-        If doClamp is true, the result will be clamped to the range LO to HI.
+        If <code>doClamp</code> is true, the result will be clamped to the range <code>LO</code> to <code>HI</code>.
       </p>
 
       <h3>Misc</h3>
@@ -370,7 +392,7 @@ IIIIIIII
       <p>Equivalent to 2 * PI</p>
 
       <h4>
-        <code>sinn(v)</code> / <code>cosn(v)</code>
+        <code>sinn(turns)</code> / <code>cosn(turns)</code>
       </h4>
 
       <p>Sine and cosine that take a normalized angle, which you can think of as "full turns"</p>
@@ -379,14 +401,14 @@ IIIIIIII
         <code>rand(lo = -1, hi = 1)</code>
       </h4>
 
-      <p>Returns a random number between lo and hi</p>
+      <p>Returns a random number between <code>lo</code> and <code>hi</code></p>
 
       <h4>
         <code>mod(v, d = 1)</code>
       </h4>
 
       <p>
-        Gives you the remainder when v is divided by d, with different handling of negatives than the common <code>%</code> operator. This difference makes <code>mod()</code>{" "}
+        Gives you the remainder when <code>v</code> is divided by <code>d</code>, with different handling of negatives than the common <code>%</code> operator. This difference makes <code>mod()</code>{" "}
         useful for creating cycling patterns because it doesn't 'mirror' the pattern across 0.
       </p>
 
