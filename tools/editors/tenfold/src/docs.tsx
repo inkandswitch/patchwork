@@ -424,6 +424,24 @@ IIIIIIII
         Returns an object with the x,y of the rotated point.
       </p>
 
+      <h4>
+        <code>rotaten(n)</code>
+      </h4>
+
+      <p>Rotate the entire drawing canvas by <code>n</code> turns.</p>
+
+      <h4>
+        <code>scalen(n)</code>
+      </h4>
+
+      <p>Scales the entire drawing up or down to <code>n</code> times the original.</p>
+
+      <h4>
+        <code>translate(x, y)</code>
+      </h4>
+
+      <p>Move the entire drawing by <code>x</code> and <code>y</code> amount.</p>
+
       <h2>{"<7 • Conclusion>"}</h2>
 
       <p>

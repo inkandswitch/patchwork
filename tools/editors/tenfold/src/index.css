@@ -135,7 +135,7 @@ body {
   .tenfold-button-row {
     display: flex;
     gap: 2px;
-    margin-bottom: 2px;
+    margin-block: 2px;
 
     & > :last-child {
       margin-left: auto;

@@ -265,6 +265,18 @@ Rotate point x,y around pivot point px,py by a given number of turns.
 1 turn is equivalent to 360º or 2π radians.
 Returns an object with the x,y of the rotated point.
 
+#### `rotaten(n)`
+
+Rotate the entire drawing canvas by `n` turns.
+
+#### `scalen(n)`
+
+Scales the entire drawing up or down to `n` times the original.
+
+#### `translate(x, y)`
+
+Move the entire drawing by `x` and `y` amount.
+
 ## <7 • Conclusion>
 
 Thanks for joining our communal art project,
