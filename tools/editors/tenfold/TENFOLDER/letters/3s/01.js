@@ -2,15 +2,6 @@
 // By Marcel
 // Use the waffle to tweak amount / density of shapes
 
-// Library
-// draw a polygon
-function poly(points) {
-  begin()
-  for (const pt of points) {
-    line(pt.x, pt.y)
-  }
-}
-
 function pointToPathDistance(point, path) {
   if (!Array.isArray(path) || path.length < 2) return null
 
@@ -86,8 +77,6 @@ const path = [
   }
 })
 
-//poly(path)
-
 const shapes = [
   (x, y, d) => {
     for (let i = 0; i <= d; i += 0.01) {
@@ -131,16 +120,15 @@ const steps = 5 + (params.q + 1) * 8
 const saturation = 5 + (params.r + 1) * 15
 for (let x = 0; x < steps; x++) {
   for (let y = 0; y < steps; y++) {
-    const pt = {
+    let pt = {
       x: clip(x, 0, steps - 1),
       y: clip(y, 0, steps - 1),
     }
 
-    const offsetPt = {
-      x: pt.x,
-      y: pt.y,
-    }
-    const d = pointToPathDistance(offsetPt, path)
+    let angle = atan2(params.y, params.x) / TAU
+    pt = rotate(pt.x, pt.y, angle)
+
+    const d = pointToPathDistance(pt, path)
     const i = max(0, floor(d * saturation) - 1)
     if (shapes[i]) {
       shapes[i](pt.x, pt.y, 1 / steps)

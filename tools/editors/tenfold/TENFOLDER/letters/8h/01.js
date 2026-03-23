@@ -3,8 +3,11 @@
 
 let { q, r, t } = params
 
+scalen(1.3)
+translate(0, .17)
+
 // rotation with the waffle
-let angleY = q * 0.5 + 0.375 // left/right rotation
+let angleY = q * 0.5 + 0.43 // left/right rotation
 
 // Isometric projection
 function iso(x3, y3, z3) {
@@ -20,7 +23,7 @@ function iso(x3, y3, z3) {
 
 // --- chair
 let s = 0.3 // half-size of seat
-let seatY = 0
+let seatY = params.y / 5
 
 let seat = [
   iso(-s, seatY, -s),

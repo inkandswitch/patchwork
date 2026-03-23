@@ -1,113 +1,65 @@
-// Potassium by Mimi
-// Click to add water
+// K0
+// by Paul
 
-// 1. DRAW THE PERIODIC TABLE FRAME
-// ------------------------------
-// Draw the outer border slightly inside the clip edge
-begin()
-rect()
+let y = -1
+let x = 0
 
-// Draw the text labels
-// Atomic Number (Top Left)
-text("19", -0.8, -0.75, 0.15)
+const random = seededRandom(100)
 
-// Element Name (Bottom Center-ish)
-// We adjust X to center the word "Potassium"
-text("Potassium", -0.45, 0.65, 0.145)
+const STEP = denorm(norm(params.y) ** 2, .06, .22)
+const VARIANCE = renorm(sinn(params.t), 0, 1, 0.2, 0.3)
+const TOTAL_MARKERS = denorm(norm(params.x) ** 2, 11, 35)
 
-// Atomic Weight (Bottom Center-ish)
-text("39.098", -0.22, 0.81, 0.1)
+const markers = []
+for (let i = 0; i < TOTAL_MARKERS; i++) {
+  markers.push({
+    pos: {
+      y: -1,
+      x: i * (2 / TOTAL_MARKERS) - 1,
+    },
+    dir: {
+      x: 0,
+      y: 1,
+    },
+  })
+}
 
-// 2. THE SAND PHYSICS SYSTEM
-// --------------------------
-// We will construct the big "K" manually out of thousands of dots.
-// This allows us to manipulate every "grain" of the letter.
+do {
+  for (let i = 0; i < markers.length; i++) {
+    const m = markers[i]
+    const shift = renorm(random(), 0, 1, -VARIANCE, VARIANCE)
+    const next = markers[i + 1]
 
-// Configuration for the K shape
-const density = 450 // How many grains of sand per limb
-const thick = 0.15 // Thickness of the K strokes
+    m.dir = rotate(m.dir.x, m.dir.y, shift)
 
-// Helper function to draw a single grain of sand
-function grain(ox, oy) {
-  // A. Calculate Physics
-  // --------------------
+    const biasX = i > TOTAL_MARKERS / 2 ? m.pos.y * renorm(i / markers.length, 0, 1, 0.3, 0.8) : 0
+    const biasY = 1
 
-  // 1. Natural Shimmer (Brownian motion)
-  // Use time (params.t) and random noise to make it vibrate
-  let noiseX = rand(-0.01, 0.01) * sin(params.t * 10)
-  let noiseY = rand(-0.01, 0.01) * cos(params.t * 10)
+    m.dir.x = (m.dir.x + biasX) / 2
+    m.dir.y = (m.dir.x + biasY) / 2
 
-  // 2. Interaction (The Explosion)
-  // Check distance between this grain and the mouse (params.x, params.y)
-  let dx = ox - params.x
-  let dy = oy - params.y
-  let dist = (dx ** 2 + dy ** 2) ** 0.2
+    if (next) {
+      m.dir.x = (next.dir.x * 3 + m.dir.x) / 4
+      m.dir.y = (next.dir.y * 3 + m.dir.y) / 4
+    }
 
-  // Explode if mouse is close (within 0.5 units)
-  let pushX = 0
-  let pushY = 0
+    move(m.pos.x, m.pos.y)
 
-  // If the mouse is active (params.x is rarely exactly 0 if active)
-  // and close to the grain:
-  if (dist < 0.6) {
-    // Calculate repulsion force (inverse square law-ish)
-    let force = (0.6 - dist) * 15 // Strength multiplier
+    m.pos.x += m.dir.x * STEP
+    m.pos.y += m.dir.y * STEP
 
-    // Add chaos/scatter based on random noise
-    pushX = (dx / dist) * force + rand(-0.1, 0.1)
-    pushY = (dy / dist) * force + rand(-0.1, 0.1)
+    if (m.pos.y < 1) {
+      line(m.pos.x, m.pos.y)
+    }
   }
+} while (markers.some((m) => m.pos.y < 1))
 
-  // B. Draw the Grain
-  // -----------------
-  let finalX = ox + noiseX + pushX
-  let finalY = oy + noiseY + pushY
+function seededRandom(seed) {
+  let state = seed
 
-  // Draw a tiny dot (move to pos, draw line to pos + epsilon)
-  move(finalX, finalY)
-  line(finalX + 0.01, finalY)
-}
-
-// 3. GENERATE THE "K"
-// -------------------
-// We generate the K using three rectangular volumes of sand.
-
-// LIMB 1: The Vertical Spine
-// x: -0.4 to -0.2, y: -0.5 to 0.5
-for (let i = 0; i < density; i++) {
-  let gx = rand(-0.45, -0.25)
-  let gy = rand(-0.5, 0.5)
-  grain(gx, gy)
-}
-
-// LIMB 2: The Top Arm
-// Starts near center, goes up-right
-for (let i = 0; i < density; i++) {
-  // Interpolate along the arm
-  let t = rand(0, 0.9)
-  // Start point (-0.25, 0) -> End point (0.35, -0.5)
-  let lx = -0.25 + 0.55 * t
-  let ly = 0 + -0.5 * t
-
-  // Add thickness scatter
-  lx += rand(-thick / 2, thick / 2)
-  ly += rand(-thick / 2, thick / 2)
-
-  grain(lx, ly)
-}
-
-// LIMB 3: The Bottom Arm
-// Starts near center, goes down-right
-for (let i = 0; i < density; i++) {
-  // Interpolate along the arm
-  let t = rand(0, 0.9)
-  // Start point (-0.2, 0) -> End point (0.35, 0.5)
-  let lx = -0.2 + 0.55 * t
-  let ly = 0 + 0.5 * t
-
-  // Add thickness scatter
-  lx += rand(-thick / 2, thick / 2)
-  ly += rand(-thick / 2, thick / 2)
-
-  grain(lx, ly)
+  return function () {
+    // Linear Congruential Generator algorithm
+    state = (state * 1664525 + 1013904223) % 4294967296
+    return state / 4294967296
+  }
 }

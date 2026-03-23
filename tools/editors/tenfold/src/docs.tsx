@@ -56,11 +56,11 @@ T C H [I]`}</pre>
 
       <p>Zoom in on the letter "I":</p>
 
-      <pre>{`////////
-   //
-   //
-   //
-////////
+      <pre>{`IIIIIIII
+   II
+   II
+   II
+IIIIIIII
 <I00>  o`}</pre>
 
       <p>
@@ -131,6 +131,35 @@ T C H [I]`}</pre>
         <br />
         to do it with just these tools.
       </p>
+
+      <h3>Space</h3>
+
+      <p>
+        Each letter occupies space,
+        <br />
+        and we measure the space with coordinates.
+      </p>
+
+      <p>
+        You'll find 0,0 - the origin - at the center.
+      </p>
+
+      <p>
+        Negatives are up and left.
+        <br />
+        Positives are right and down.
+      </p>
+
+      <p>Some of my favourite positions:</p>
+
+      <pre>{`-1,-1 --------- +1,-1
+|         |         |
+|         |         |
+|        0,0        |
+|         |         |
+|         |         |
+-1,+1 --------- +1,+1
+<H00>               o`}</pre>
 
       <h3>Lines</h3>
 
@@ -204,33 +233,7 @@ T C H [I]`}</pre>
         Use "\n" for newlines.
       </p>
 
-      <h3>Curves</h3>
-
-      <h4>
-        <code>arc(x, y, radius, start = 0, end = 1, counterclockwise = false)</code>
-      </h4>
-
-      <p>
-        Draw an arc along a circle centered at the given position.
-        <br />
-        Start/end are "normalized" - 0 is the rightmost point on the circle,
-        <br />
-        increasing as you go clockwise (or counterclockwise if you want),
-        <br />
-        with 0.5 at the leftmost and then 1 at the rightmost again.
-      </p>
-
-      <h4>
-        <code>quadratic(cx, cy, x, y)</code>
-      </h4>
-
-      <p>Draw a quadratic bezier curve from the previous line to position x,y, using cx,cy as a control point to bend the curve.</p>
-
-      <h4>
-        <code>cubic(cx1, cy1, cx2, cy2, x, y)</code>
-      </h4>
-
-      <p>Draw a cubic bezier curve from the current line position to position x,y, using two control points to bend the curve.</p>
+      <p>If you don't pass x, y, or size, the text will appear just above your letter. Handy for debugging.</p>
 
       <h2>{"<4 • Parameters>"}</h2>
 

@@ -1,76 +1,63 @@
 // This Cool S is by Mimi and every high school student since 1980
 
-let th = -0.5
-let c = 0
-let tb = -0.2
-let spacing = 0.4
+// I'll come back and make it good math but rn it's trail and error
 
-// not sure who made this but this is a clever way to do timelines!
-// - orion r
-const steps = [
-  () => {
-    move(-spacing, th)
-    line(-spacing, tb)
-  },
-  () => {
-    move(c, th)
-    line(c, tb)
-  },
-  () => {
-    move(spacing, th)
-    line(spacing, tb)
-  },
+// vars
+let c = 0 // centre
+let th = -0.5 // top of top vertical line
+let tb = -0.2 // bottom of top vertical line
+let spacing = 0.4 //width from middle to side
 
-  () => {
-    move(-spacing, -th)
-    line(-spacing, -tb)
-  },
-  () => {
-    move(c, -th)
-    line(c, -tb)
-  },
-  () => {
-    move(spacing, -th)
-    line(spacing, -tb)
-  },
+scalen(1.2) // big plz
 
-  () => {
-    move(-spacing, (th - tb) / 1.5)
-    line(c, (tb - th) / 1.5)
-  },
-  () => {
-    move(0, (th - tb) / 1.5)
-    line(spacing, (tb - th) / 1.5)
-  },
-  () => {
-    move(0, th + (th + tb) / 2)
-    line(spacing, th)
-  },
-  () => {
-    move(0, th + (th + tb) / 2)
-    line(-spacing, th)
-  },
-  () => {
-    move(0, -th - (th + tb) / 2)
-    line(spacing, -th)
-  },
-  () => {
-    move(0, -th - (th + tb) / 2)
-    line(-spacing, -th)
-  },
-  () => {
-    move(spacing, (th - tb) / 1.5)
-    line(c + spacing / 2, (tb - th) / 64)
-  },
-  () => {
-    move(-spacing, -(th - tb) / 1.5)
-    line(-(c + spacing / 2), (tb - th) / 64)
-  },
-]
+// top 3 lines
+line(c,th)
+line(c,tb)
 
-let s = denorm(params.t * 2, 0, steps.length + 1)
+move(spacing, th)
+line(spacing,tb)
 
-for (const step of steps.slice(0, s)) {
-  rotaten(denorm(sinn(params.t), 0.0001, 0.0007))
-  step()
-}
+move(-spacing, th)
+line(-spacing, tb)
+
+// bottom 3 lines
+
+move(c,-th)
+line(c,-tb)
+
+move(spacing, -th)
+line(spacing,-tb)
+
+move(-spacing, -th)
+line(-spacing, -tb)
+
+//middle diagonals
+
+move(-spacing, (th-tb)/1.5)
+line(c, (tb-th)/1.5)
+
+move(0, (th-tb)/1.5)
+line(spacing, (tb-th)/1.5)
+
+// top diagonals
+
+move(0, th+((th+tb)/2))
+line(spacing, th)
+
+move(0, th+((th+tb)/2))
+line(-spacing, th)
+
+// bottom diagonals
+move(0, -th-((th+tb)/2))
+line(spacing, -th)
+
+move(0, -th-((th+tb)/2))
+line(-spacing, -th)
+
+// final half middle diagonals
+
+move(spacing, (th-tb)/1.5)
+line((c+spacing/2), (tb-th)/64)
+
+move(-spacing, -(th-tb)/1.5)
+line(-(c+spacing/2), (tb-th)/64)

@@ -2,7 +2,7 @@ import type { DocHandle } from "@automerge/automerge-repo"
 import { autocompletion, completionKeymap, completionStatus } from "@codemirror/autocomplete"
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands"
 import { javascript } from "@codemirror/lang-javascript"
-import { bracketMatching, indentOnInput } from "@codemirror/language"
+import { indentOnInput } from "@codemirror/language"
 import { search, searchKeymap } from "@codemirror/search"
 import { Compartment, EditorState } from "@codemirror/state"
 import { drawSelection, EditorView, keymap } from "@codemirror/view"
@@ -143,7 +143,6 @@ export default function TenfoldEditor(props: {
                   ...completionKeymap,
                   ...searchKeymap,
                 ]),
-                bracketMatching({}),
                 historyCompartment.of([history()]),
                 javascript(),
                 noirTheme,

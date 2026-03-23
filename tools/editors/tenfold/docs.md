@@ -36,11 +36,11 @@ T C H [I]
 Zoom in on the letter "I":
 
 ```
-////////
-   //
-   //
-   //
-////////
+IIIIIIII
+   II
+   II
+   II
+IIIIIIII
 <I00>  o
 ```
 
@@ -87,6 +87,29 @@ If there's something you want to do,
 the challenge is to figure out how
 to do it with just these tools.
 
+### Space
+
+Each letter occupies space,
+and we measure the space with coordinates.
+
+You'll find 0,0 - the origin - at the center.
+
+Negatives are up and left.
+Positives are right and down.
+
+Some of my favourite positions:
+
+```
+-1,-1 --------- +1,-1
+|         |         |
+|         |         |
+|        0,0        |
+|         |         |
+|         |         |
+-1,+1 --------- +1,+1
+<H00>               o
+```
+
 ### Lines
 
 #### `line(x, y)`
@@ -125,22 +148,7 @@ your resolve and dispel dissonance.
 Draw the given string of letters.
 Use "\n" for newlines.
 
-### Curves
-
-#### `arc(x, y, radius, start = 0, end = 1, counterclockwise = false)`
-
-Draw an arc along a circle centered at the given position.
-Start/end are "normalized" - 0 is the rightmost point on the circle,
-increasing as you go clockwise (or counterclockwise if you want),
-with 0.5 at the leftmost and then 1 at the rightmost again.
-
-#### `quadratic(cx, cy, x, y)`
-
-Draw a quadratic bezier curve from the previous line to position x,y, using cx,cy as a control point to bend the curve.
-
-#### `cubic(cx1, cy1, cx2, cy2, x, y)`
-
-Draw a cubic bezier curve from the current line position to position x,y, using two control points to bend the curve.
+If you don't pass x, y, or size, the text will appear just above your letter. Handy for debugging.
 
 ## <4 • Parameters>
 

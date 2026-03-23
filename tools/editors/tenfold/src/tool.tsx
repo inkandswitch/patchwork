@@ -113,9 +113,12 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
   const [toastMessage, setToastMessage] = createSignal("")
   let toastTimer: ReturnType<typeof setTimeout>
   function toast(msg: string) {
-    setToastMessage(msg)
+    setToastMessage("")
     clearTimeout(toastTimer)
-    toastTimer = setTimeout(() => setToastMessage(""), 2000)
+    queueMicrotask(() => {
+      setToastMessage(msg)
+      toastTimer = setTimeout(() => setToastMessage(""), 2000)
+    })
   }
 
   const [editing, setEditing] = makePersisted(createSignal<number | null>(null), {
@@ -193,7 +196,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
       mimeType: "application/javascript",
       extension: "js",
       metadata: { permissions: 420 },
-      content: `// Untitled ${folders()[idx][1].toUpperCase()} <0x${Math.floor(Math.random() * 0x10000).toString(16).padStart(4, "0")}>\n// by ${tenfold.name}\n`,
+      content: `// Untitled ${folders()[idx][1].toUpperCase()} <0x${Math.floor(Math.random() * 0x10000).toString(16).padStart(4, "0")}>\n// by ${tenfold.name}\n\nrect()\ncircle()\n\nrotaten(params.x)\n\nline( 0, -1)\nline( 0,  1)\nmove(-1,  0)\nline( 1,  0)\n`,
       name,
     })
 

@@ -1,23 +1,29 @@
-// (You're looking at the code for the letter "I" at the top left.)
-// (When making a letter, you can name it and name it…)
-
-// Example I
+// The I's Have It
 // by Ivan
 
-// params.t is "time"
-// starts at 0, rises slowly to 1, then resets back to 0
-let t = params.t // 0 to 1
+// Our trusty loop counter.
+let I = 0
 
-// sinn() takes a number between 0 and 1 ("normalized")
-// and returns a sine wave between -1 and 1 ("clip")
-let sineWave = cosn(params.t)
+// How dense should the drawing be?
+// We will use the Waffle to decide.
+let steps = declip(params.q, 20, .5)
 
-// declip() takes a number between -1 and 1,
-// and scales that number so it falls proportionally
-// between the latter two values.
-let size = declip(sineWave, 1.9, 2.0)
+// How big should the lil I's be?
+// Drag the letter to decide.
+let size = declip(params.y, .1, .7)
 
-// Render the letter "I".
-// The x/y params let you move the letter by dragging on it.
-// The size will cycle slowly between 1.9 and 2.0
-text("I", params.x, params.y, size)
+// Animate the size slightly
+size += declip(sinn(params.t), -.1, .1)
+
+// Shrink Dust by Chad VanGaalen
+scalen(.8)
+
+// Loop across the top
+for (I = -1; I <= 1; I += 1/steps) text("I", I, -1, size)
+
+// and down the middle
+// (shh - H is just a rotated I it's fine)
+for (I = -1; I <= 1; I += 1/steps) text("H", 0, I, size)
+
+// and across the bottom
+for (I = -1; I <= 1; I += 1/steps) text("I", I, 1, size)

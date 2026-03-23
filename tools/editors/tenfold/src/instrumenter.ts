@@ -10,7 +10,7 @@ interface Loop {
 }
 
 export function addLoopBudgetInstrumentation(code: string) {
-  const loopBudgetVarDecl = `let __loopBudget = 50_000;\n`
+  const loopBudgetVarDecl = `let __loopBudget = 5_000;\n`
   const enforceBudget = `if (--__loopBudget <= 0) throw new Error("Loop budget exceeded");`
 
   const tree = parser.parse(code)

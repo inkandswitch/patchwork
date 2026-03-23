@@ -1,154 +1,53 @@
-// A-mazing C
-// by marcel
+// Eclipse
+// By Ivan
 
-const letter = "C"
+params.t = mod(params.t + 0.85)
 
-const fonts = ["Arial", "Helvetica", "Verdana", "Tahoma", "Trebuchet MS", "Times New Roman", "Times", "Georgia", "Courier New", "Courier"]
+let U = 64 // segments east-west
+let V = 1 + 23 * params.t ** 2 // segments north-south
 
-// Use waffle to scrub font & resolution
-const size = floor(20 + ((params.q + 1) / 2) * 30)
-const fontIndex = floor(((params.r + 1) / 2) * fonts.length + 1)
-const width = size
-const height = size
+let rotX = (2 * params.t) ** 3.1
+let rotZ = 0.75 + params.t ** 4
 
-let state = window.mazeCState
-if (!state || params.t <= 0.01 || size != state.size || fontIndex != state.fontIndex) {
-  state = initMazeState(width, height)
-  window.mazeCState = state
+let point = (u, v) => {
+  let uf = u / U
+  let vf = v / V
+
+  let x = sinn(vf) * cosn(uf)
+  let z = sinn(vf) * sinn(uf)
+  let y = cosn(vf)
+
+  // Rotate around X axis
+  let y1 = y * cosn(rotX) - z * sinn(rotX)
+  let z1 = y * sinn(rotX) + z * cosn(rotX)
+
+  // Rotate around Z axis
+  let x2 = x * cosn(rotZ) - y1 * sinn(rotZ)
+  let y2 = x * sinn(rotZ) + y1 * cosn(rotZ)
+
+  return { x: x2, y: y2 }
 }
 
-function initMazeState(width, height) {
-  const grid = Array.from({ length: height }, () => Array.from({ length: width }, () => true))
+for (let v = 1; v <= V; v++) {
+  begin()
+  for (let u = 0; u <= U; u++) {
+    let vf = v / V
 
-  // Stolen from ivanovich
-  let enca = new OffscreenCanvas(width, height)
-  let enc = enca.getContext("2d", { alpha: true, willReadFrequently: true })
+    // point on sphere
+    let { x, y } = point(u, v)
 
-  enc.scale(width, height)
-  const font = fonts[fontIndex]
-  enc.font = "1.1px " + font
-  enc.textAlign = "center"
-  enc.fillStyle = "#fff"
-  enc.fillText(letter, 0.5, 0.85)
+    // circle in screenspace
+    let cx = denorm(params.t, 4, 0)
+    let cy = 0
+    let r = 1
 
-  let data = enc.getImageData(0, 0, width, height).data
+    // distance from sphere point to circle
+    const dy = y - cy
+    const dx = sqrt(r * r - dy * dy)
 
-  // mark inaccessible region
-  // here as an example: a circle mask
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      let d = data[(x + y * height) * 4] >= 128
-      if (!d) {
-        grid[y][x] = null // inaccessible
-      }
-    }
-  }
-
-  const start = pickValidStart(grid, width, height)
-
-  grid[start[0]][start[1]] = false
-
-  return {
-    grid,
-    size,
-    fontIndex,
-    stack: [start],
-    done: false,
-  }
-}
-
-function pickValidStart(grid, width, height) {
-  function randOdd(limit) {
-    let r = Math.floor(Math.random() * limit)
-    return r % 2 === 0 ? r + 1 : r
-  }
-
-  let iter = 0
-  while (iter < 1000) {
-    iter++
-    const sy = randOdd(height - 1)
-    const sx = randOdd(width - 1)
-
-    if (grid[sy][sx] === true) {
-      return [sy, sx]
-    }
-  }
-}
-
-function touchesNull(grid, y, x) {
-  const dirs = [
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-  ]
-  for (const [dy, dx] of dirs) {
-    const ny = y + dy
-    const nx = x + dx
-    if (grid[ny] && grid[ny][nx] === null) return true
-  }
-  return false
-}
-
-function stepCarve(state, stepsPerFrame = 20) {
-  const { grid, stack } = state
-
-  const directions = [
-    [0, 2],
-    [0, -2],
-    [2, 0],
-    [-2, 0],
-  ]
-
-  for (let i = 0; i < stepsPerFrame; i++) {
-    if (!stack.length) {
-      state.done = true
-      return
-    }
-
-    const [y, x] = stack[stack.length - 1]
-
-    const dirs = directions.slice().sort(() => Math.random() - 0.5)
-
-    let carved = false
-
-    for (const [dy, dx] of dirs) {
-      const ny = y + dy
-      const nx = x + dx
-
-      if (ny > 0 && ny < height && nx > 0 && nx < width && grid[ny][nx]) {
-        grid[y + dy / 2][x + dx / 2] = false
-        grid[ny][nx] = false
-        stack.push([ny, nx])
-        carved = true
-        break
-      }
-    }
-
-    if (!carved) {
-      stack.pop()
-    }
-  }
-}
-
-// ---------- FRAME LOOP ----------
-
-// advance carving a bit each frame
-if (!state.done) {
-  stepCarve(state, 1) // adjust speed here
-}
-
-const cs = 2 / size
-
-for (let y = 0; y < width; y++) {
-  for (let x = 0; x < height; x++) {
-    if (state.grid[y][x]) {
-      const pt = {
-        x: clip(x, 0, width - 1),
-        y: clip(y, 0, height - 1),
-      }
-      begin(true)
-      rect(pt.x, pt.y, cs, cs)
-    }
+    // if the point is outside the circle, draw
+    if (abs(dy) > r || x > cx + dx || x < cx - dx) {
+      line(x, y)
+    } else begin()
   }
 }

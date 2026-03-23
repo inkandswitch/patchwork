@@ -34,6 +34,7 @@ const letterFileUrls: Record<string, Record<string, URL>> = {
   "5i": {
     "00.js": new URL("../TENFOLDER/letters/5i/00.js", import.meta.url),
     "01.js": new URL("../TENFOLDER/letters/5i/01.js", import.meta.url),
+    "02.js": new URL("../TENFOLDER/letters/5i/02.js", import.meta.url),
   },
   "6t": {
     "00.js": new URL("../TENFOLDER/letters/6t/00.js", import.meta.url),

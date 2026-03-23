@@ -11,7 +11,6 @@ const rot = (a, n) => [...a.slice(a.length -n, a.length), ...a.slice(0, a.length
 
 const serifs = 1
 const distan = 2
-const weight = 1
 
 let grid = [
   ...Array(serifs).fill(serif),
@@ -22,11 +21,11 @@ let grid = [
   ...Array(1).fill(bserif),
 ];
 
-let offsets = [-0.75, -0.75]
-let width = 0.2
-let height = 0.2
+let width = declip(params.y, .15, .25)
+let height = declip(params.x, .1, .3)
+let offsets = [-params.y/4-.75, -params.x/3-.75]
 
-let radius = 0.2
+let radius = declip(params.q, 0, 0.2)
 
 const topTriangle = (x, y, w, c) => {
   move(x, y);
@@ -57,11 +56,13 @@ const scribble = (x, y, w, c) => {
 
 }
 
+let cnt = 1 + round(params.t * 5)
+
 let shapes = {
-  1: (x, y) => scribble(x-0.02, y-0.02, abs(radius), 4),
-  2: (x, y) => topTriangle(x-0.02, y-0.02, radius, 4),
-  3: (x, y) => botTriangle(x-0.02, y-0.02, abs(radius), 4),
-  4: (x, y) => topTriangle(x+width-0.02, y+height-0.02, -radius, 4),
+  1: (x, y) => scribble(x, y, abs(radius), cnt),
+  2: (x, y) => topTriangle(x, y, radius, cnt),
+  3: (x, y) => botTriangle(x, y, abs(radius), cnt),
+  4: (x, y) => topTriangle(x+width, y+height, -radius, cnt),
 }
 
 // remember loops

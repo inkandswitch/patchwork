@@ -51,9 +51,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   let PRINT = false // This will be enabled when we click the "Test Print" button
 
   // HELPFUL HELPERS
-  // Ideally, all this stuff (or better equivalents) would be available to people writing letter functions
-  const PI = Math.PI
-  const TAU = PI * 2
+  const TAU = Math.PI * 2
 
   const mod = (v: number, m = 1) => ((v % m) + m) % m
   const rand = (lo = -1, hi = 1) => denorm(Math.random(), lo, hi)
@@ -83,9 +81,18 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     }
   }
 
-  const rotaten = (n: number) => {
+  const rotaten = (n = 0) => {
     // rootin' tootin' rotatn'
     ctx.rotate(n * TAU)
+  }
+
+  const scalen = (n = 0) => {
+    // scootin' tootin' scalen'
+    ctx.scale(n, n)
+  }
+
+  const translate = (x = 0, y = 0) => {
+    ctx.translate(x, y)
   }
 
   // UNHELPFUL HELPERS
@@ -246,7 +253,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     {
       // next letter button
       cursor: "pointer",
-      test: (h: HitResult) => h.R !== 1 && Math.hypot(h.lx - 0.30, h.ly - (1 + gap / 2)) <= 0.075,
+      test: (h: HitResult) => h.R !== 1 && Math.hypot(h.lx - 0.3, h.ly - (1 + gap / 2)) <= 0.075,
       pointerdown(h: HitResult) {
         selectorAnim[h.li] = 1
         opts.set(h.li, "i", mod(opts.states[h.li].i + 1, opts.letterCounts[h.li] || 0))
@@ -354,14 +361,19 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     let h = hitCoords(e.offsetX, e.offsetY)
     let cursor = "default"
     for (const region of regions) {
-      if (region.test(h)) { cursor = typeof region.cursor === "function" ? region.cursor(h) : region.cursor ?? "default"; break }
+      if (region.test(h)) {
+        cursor = typeof region.cursor === "function" ? region.cursor(h) : (region.cursor ?? "default")
+        break
+      }
     }
     canvas.style.cursor = cursor
   }
 
   canvas.addEventListener("pointerdown", pointerdown)
   canvas.addEventListener("pointermove", onpointermove)
-  canvas.addEventListener("pointerleave", () => { canvas.style.cursor = "default" })
+  canvas.addEventListener("pointerleave", () => {
+    canvas.style.cursor = "default"
+  })
   window.addEventListener("pointerup", pointerup)
   window.addEventListener("pointercancel", pointerup)
 
@@ -429,7 +441,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       if (api.newPath) api.move(cx1, cy1) // this is a CHOICE, but not including it also feels like a CHOICE, ugh
       api.ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x, y)
     },
-    text(str = "you found the rabbit egg", x = 0, y = 0, size = 2, tracking = size * 0.75) {
+    text(str = "you found the rabbit egg", x = -1, y = -1.1, size = 0.1, tracking = size * 0.75) {
       // TODO: collector
       // compensate for font weirdness, so that passing 0,0 centers the first char
       x -= 0.3625 * size
@@ -449,8 +461,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     sinn,
     rotate,
     rotaten,
+    scalen,
+    translate,
     TAU,
-    PI,
     mouse() {
       return !!dragRegion
     },
@@ -552,11 +565,12 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       }
 
       // If the draw function took too long, apply shame
-      if (cost > 3) {
+      if (cost > 6) {
         ctx.beginPath()
         ctx.lineWidth *= 3
         ctx.strokeStyle = errColor
-        drawText(api, "COST : " + cost.toFixed(1) + " > 3", -1, -1, 0.15)
+        ctx.fillStyle = errColor
+        drawText(api, "COST : " + cost.toFixed(1) + " > 3", -1, -1, 0.19)
         ctx.stroke()
         ctx.lineWidth /= 3
       }
@@ -588,7 +602,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
           api.line(x + 0.13 + nextBump, y + charHeight / 2)
           ctx.stroke()
 
-          // edit & fork
+          // edit button
           editAnim[i] += ((opts.currentlyEditingIndex == i ? 1 : 0) - editAnim[i]) * 0.3
           ctx.beginPath()
           api.circle(0.95, y, 0.04)
@@ -685,50 +699,52 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
     // DEBUG: region hit areas
     if (false) {
-    ctx.resetTransform()
-    ctx.scale(dpr * cssW, dpr * cssW)
-    let debugR = 0
-    const debugFill = () => { ctx.fillStyle = `hsla(${debugR++ * 137.5}, 70%, 50%, 0.2)` }
-    // cells (inside && R !== 1)
-    debugFill()
-    for (let R of [0, 2, 3]) {
-      for (let C = 0; C < 3; C++) {
-        ctx.fillRect(C * pitch + padding, R * pitch + padding, 1, 1)
+      ctx.resetTransform()
+      ctx.scale(dpr * cssW, dpr * cssW)
+      let debugR = 0
+      const debugFill = () => {
+        ctx.fillStyle = `hsla(${debugR++ * 137.5}, 70%, 50%, 0.2)`
       }
-    }
-    // prev letter button
-    debugFill()
-    for (let R of [0, 2, 3]) {
-      for (let C = 0; C < 3; C++) {
-        ctx.beginPath()
-        ctx.arc(C * pitch + padding + 0.02, R * pitch + padding + 1 + gap / 2, 0.075, 0, TAU)
-        ctx.fill()
+      // cells (inside && R !== 1)
+      debugFill()
+      for (let R of [0, 2, 3]) {
+        for (let C = 0; C < 3; C++) {
+          ctx.fillRect(C * pitch + padding, R * pitch + padding, 1, 1)
+        }
       }
-    }
-    // next letter button
-    debugFill()
-    for (let R of [0, 2, 3]) {
-      for (let C = 0; C < 3; C++) {
-        ctx.beginPath()
-        ctx.arc(C * pitch + padding + 0.30, R * pitch + padding + 1 + gap / 2, 0.075, 0, TAU)
-        ctx.fill()
+      // prev letter button
+      debugFill()
+      for (let R of [0, 2, 3]) {
+        for (let C = 0; C < 3; C++) {
+          ctx.beginPath()
+          ctx.arc(C * pitch + padding + 0.02, R * pitch + padding + 1 + gap / 2, 0.075, 0, TAU)
+          ctx.fill()
+        }
       }
-    }
-    // edit button
-    debugFill()
-    for (let R of [0, 2, 3]) {
-      for (let C = 0; C < 3; C++) {
-        ctx.beginPath()
-        ctx.arc(C * pitch + padding + 0.95, R * pitch + padding + 1 + gap / 2, 0.075, 0, TAU)
-        ctx.fill()
+      // next letter button
+      debugFill()
+      for (let R of [0, 2, 3]) {
+        for (let C = 0; C < 3; C++) {
+          ctx.beginPath()
+          ctx.arc(C * pitch + padding + 0.3, R * pitch + padding + 1 + gap / 2, 0.075, 0, TAU)
+          ctx.fill()
+        }
       }
-    }
-    // timeline ((i=4||i=5) && lyInside && ly > 0.8)
-    debugFill()
-    ctx.fillRect(pitch + padding, pitch + padding + timelineStart, 2 + gap, timelineEnd - timelineStart)
-    // waffle (kx 0-1, ky 0-1, i=4||i=5)
-    debugFill()
-    ctx.fillRect(pitch + padding, pitch + padding, 2 + gap, waffleEnd)
+      // edit button
+      debugFill()
+      for (let R of [0, 2, 3]) {
+        for (let C = 0; C < 3; C++) {
+          ctx.beginPath()
+          ctx.arc(C * pitch + padding + 0.95, R * pitch + padding + 1 + gap / 2, 0.075, 0, TAU)
+          ctx.fill()
+        }
+      }
+      // timeline ((i=4||i=5) && lyInside && ly > 0.8)
+      debugFill()
+      ctx.fillRect(pitch + padding, pitch + padding + timelineStart, 2 + gap, timelineEnd - timelineStart)
+      // waffle (kx 0-1, ky 0-1, i=4||i=5)
+      debugFill()
+      ctx.fillRect(pitch + padding, pitch + padding, 2 + gap, waffleEnd)
     }
   }
 

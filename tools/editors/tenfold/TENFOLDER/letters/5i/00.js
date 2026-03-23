@@ -3,6 +3,9 @@
 // grab 't' to freeze
 // the handle toggles calmness
 
+// adjust size
+scalen(1.3)
+
 // remember randomness
 const rand = (from, to) => {
   // remember calmness
