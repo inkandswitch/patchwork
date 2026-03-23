@@ -27,8 +27,8 @@ and, soon, computer code to edit.
 A low-res screenshot of Tenfold:
 
 ```
-I N K ………
-& === ………
+I N K ………………
+& === ……………
 S W I [#=]
 T C H [I]
 ```
@@ -41,11 +41,11 @@ IIIIIIII
    II
    II
 IIIIIIII
-<I00>  o
+<I00>  ⦿
 ```
 
 `<I00>` flips through variations of the letter.
-`o` flips between the code and these docs.
+`⦿` flips between the code and these docs.
 
 Click and drag on the letter and,
 if the code was written just so,
@@ -55,11 +55,11 @@ it might do something.
 Zoom in on the second row:
 
 ```
-   __
- /    \   #     #           #
+   _
+ /   \    #     #           #
  \_          #    #      #    #
  /                  #   #
-|    __--
+|    __-
  \____/  ||||||||||||||||||||||
 ```
 
@@ -100,14 +100,14 @@ Positives are right and down.
 Some of my favourite positions:
 
 ```
--1,-1 --------- +1,-1
-|         |         |
-|         |         |
-|        0,0        |
-|         |         |
-|         |         |
--1,+1 --------- +1,+1
-<H00>               o
+-1,-1 ----- +1,-1
+|       |       |
+|       |       |
+|      0,0      |
+|       |       |
+|       |       |
+-1,+1 ----- +1,+1
+<X00>             ⦿
 ```
 
 ### Lines
@@ -116,8 +116,8 @@ Some of my favourite positions:
 
 This code lets you draw a line.
 Call it once to set the start point.
-Call it again to draw a line
-from the last point to the new one.
+Call it again to draw a line from
+the last point to the new one.
 
 #### `begin()`
 
@@ -148,7 +148,16 @@ your resolve and dispel dissonance.
 Draw the given string of letters.
 Use "\n" for newlines.
 
-If you don't pass x, y, or size, the text will appear just above your letter. Handy for debugging.
+### There Are Many Functions
+
+We won't list them all here.
+You might discover them yourself
+or learn about them from friends.
+
+The functions all have sensible default values.
+
+Try `rect()` or `circle()`,
+or `text("up here")`.
 
 ## <4 • Parameters>
 
@@ -168,7 +177,7 @@ You can also poke directly at letters using your mouse. When a letter is poked (
 
 ## <5 • Common Ranges>
 
-When working with the drawing functions and parameters described above, and the helper functions described below, you'll notice that they're all designed to work with values from -1 to 1 or 0 to 1. These particular ranges are really, really useful, so we're going to give them names to make it easier to talk about them.
+When working with the drawing functions and parameters described above, and the helper functions described below, you'll notice that they're all designed to work with values from `-1 to 1` or `0 to 1`. These particular ranges are really, really useful, so we're going to give them names to make it easier to talk about them.
 
 ### -1 to 1 - "Clip"
 
@@ -186,6 +195,7 @@ Here's a nice thing that combines both of the above: `circle(0, 0, 1)` gives you
 
 One slightly math-y thing about clip and norm: numbers between -1 and 1 behave in stable, predictable ways when multiplied. You can multiply a bunch of clip/norm values together and they'll remain clip/norm. That's nice.
 
+Calling all JavaScript lovers:
 In Tenfold, we've done `with(Math)` so you can just say `max(a,b)` instead of `Math.max(a,b)`, or `PI` instead of `Math.PI`, etc.
 
 In addition to the standard Math functions and constants, here are a handful of extra math functions you can use. You'll notice that many of them are designed to work with clip or norm values by default.
@@ -194,20 +204,28 @@ In addition to the standard Math functions and constants, here are a handful of 
 
 #### `norm(v, lo = -1, hi = 1)`
 
-Takes a value that ranges from lo to hi, and remaps it to the range 0 to 1.
+Convert TO norm.
+
+Takes a value that ranges from `lo` to `hi`, and remaps it to the range 0 to 1.
 
 #### `clip(v, lo = -1, hi = 1)`
 
-Takes a value that ranges from lo to hi, and remaps it to the range -1 to 1.
+Convert TO clip.
+
+Takes a value that ranges from `lo` to `hi`, and remaps it to the range -1 to 1.
 
 #### `denorm(v, lo = -1, hi = 1)`
 
-Takes a value that ranges from 0 to 1, and remaps it to the range lo to hi.
+Convert FROM norm.
+
+Takes a value that ranges from 0 to 1, and remaps it to the range `lo` to `hi`.
 This is also known as 'lerp' (though with a different argument order).
 
 #### `declip(v, lo = 0, hi = 1)`
 
-Takes a value that ranges from -1 to 1, and remaps it to the range lo to hi.
+Convert FROM clip.
+
+Takes a value that ranges from -1 to 1, and remaps it to the range `lo` to `hi`.
 
 ### Range Manipulation
 
@@ -215,13 +233,13 @@ For the above functions, if you pass values that extend beyond the input range t
 
 #### `clamp(v, lo = -1, hi = 1)`
 
-Limits a value to be between lo and hi.
+Limits a value to be between `lo` and `hi`.
 
 #### `renorm(v, lo = -1, hi = 1, LO = -1, HI = 1, doClamp = false)`
 
 This function combines all the above.
-Takes a value that ranges from lo to hi, and remaps it to the range LO to HI.
-If doClamp is true, the result will be clamped to the range LO to HI.
+Takes a value that ranges from `lo` to `hi`, and remaps it to the range `LO` to `HI`.
+If `doClamp` is true, the result will be clamped to the range `LO` to `HI`.
 
 ### Misc
 
@@ -229,17 +247,17 @@ If doClamp is true, the result will be clamped to the range LO to HI.
 
 Equivalent to 2 \* PI
 
-#### `sinn(v)` / `cosn(v)`
+#### `sinn(turns)` / `cosn(turns)`
 
 Sine and cosine that take a normalized angle, which you can think of as "full turns"
 
 #### `rand(lo = -1, hi = 1)`
 
-Returns a random number between lo and hi
+Returns a random number between `lo` and `hi`
 
 #### `mod(v, d = 1)`
 
-Gives you the remainder when v is divided by d, with different handling of negatives than the common `%` operator. This difference makes `mod()` useful for creating cycling patterns because it doesn't 'mirror' the pattern across 0.
+Gives you the remainder when `v` is divided by `d`, with different handling of negatives than the common `%` operator. This difference makes `mod()` useful for creating cycling patterns because it doesn't 'mirror' the pattern across 0.
 
 #### `rotate(x, y, turns, px = 0, py = 0) => {x,y}`
 
