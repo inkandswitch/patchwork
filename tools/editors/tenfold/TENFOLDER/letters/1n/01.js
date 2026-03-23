@@ -90,7 +90,7 @@ const shape = [
   { x: -1, y: 1 },
 ]
 
-let state = window.treeNState
+let state = params.s.treeNState
 if (!state || params.t <= 0.01 || state.density != density) {
   state = {
     targets: randomPoints(density).filter((pt) => isInPoly(pt, shape)),
@@ -98,7 +98,7 @@ if (!state || params.t <= 0.01 || state.density != density) {
     targetIndex: 0,
     density,
   }
-  window.treeNState = state
+  params.s.treeNState = state
 }
 
 // Grow the tree

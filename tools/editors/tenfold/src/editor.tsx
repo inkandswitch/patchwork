@@ -42,11 +42,16 @@ export default function TenfoldEditor(props: {
   })
 
   // Reset scroll when switching between letters
-  createEffect(on(() => props.editing(), (curr, prev) => {
-    if (curr != null && prev != null && curr !== prev && editorView) {
-      editorView.scrollDOM.scrollTop = 0
-    }
-  }))
+  createEffect(
+    on(
+      () => props.editing(),
+      (curr, prev) => {
+        if (curr != null && prev != null && curr !== prev && editorView) {
+          editorView.scrollDOM.scrollTop = 0
+        }
+      }
+    )
+  )
 
   createEffect(() => {
     tsFacetCompartment.reconfigure(
@@ -66,9 +71,14 @@ export default function TenfoldEditor(props: {
       </div>
       <div style={{ display: props.editing() != null ? undefined : "none" }}>
         <div class="tenfold-button-row">
-          <button class="tenfriend-button" onClick={() => props.newLetter()}>New Letter</button>
-          <button class="tenfriend-button" onClick={() => props.share()}>Share Letter</button>
-          <button class="tenfriend-button"
+          <button class="tenfriend-button" onClick={() => props.newLetter()}>
+            New Letter
+          </button>
+          <button class="tenfriend-button" onClick={() => props.share()}>
+            Share Letter
+          </button>
+          <button
+            class="tenfriend-button"
             onPointerDown={(e) => {
               const btn = e.currentTarget
               const start = Date.now()
@@ -82,6 +92,7 @@ export default function TenfoldEditor(props: {
               const holdTimer = setTimeout(() => {
                 cleanup()
                 props.deleteLetter()
+                btn.blur()
               }, 1300)
               const onUp = () => {
                 cleanup()
@@ -90,8 +101,12 @@ export default function TenfoldEditor(props: {
               window.addEventListener("pointerup", onUp)
               window.addEventListener("pointercancel", onUp)
             }}
-          >Delete Letter</button>
-          <button class="tenfriend-button" onClick={() => props.close()}>X</button>
+          >
+            Delete Letter
+          </button>
+          <button class="tenfriend-button" onClick={() => props.close()}>
+            X
+          </button>
         </div>
       </div>
       <Show when={lastHandle()}>
