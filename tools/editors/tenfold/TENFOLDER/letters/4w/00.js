@@ -2,12 +2,12 @@
 // by grjte
 
 let t = params.t
-let abs_t = abs(cosn(t/2))
+let abs_t = abs(cosn(t / 2))
 
 let top = -0.75
-let bottom = -top*abs_t
-let middle_top = top*(1-abs_t)
-let left = -0.5*abs_t
+let bottom = -top * abs_t
+let middle_top = top * (1 - abs_t)
+let left = -0.5 * abs_t
 let right = -left
 
 move(left, top)
@@ -22,4 +22,3 @@ move(right, top)
 line(right, bottom)
 
 circle()
-rect()

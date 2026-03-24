@@ -72,8 +72,6 @@ body {
   .tenfold-docs {
     font-size: 1.2em;
     flex: 1 1 0;
-    /* min-width: 0; */
-    /* min-height: 0; */
     overflow: hidden auto;
 
     h1 {
@@ -185,6 +183,12 @@ body {
     text-decoration-thickness: 1.5px;
     text-decoration-skip-ink: none;
     text-decoration-color: #f00;
+  }
+}
+
+@media (max-width: 900px) {
+  .tenfold .tenfold-docs br {
+    display: none;
   }
 }
 
