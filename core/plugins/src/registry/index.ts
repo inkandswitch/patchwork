@@ -1,6 +1,9 @@
 import type { Tool } from "../tools.js";
 import { PluginRegistry } from "./registry.js";
 import { LoadablePlugin, PluginDescription } from "./types.js";
+import debug from "debug";
+
+const log = debug("patchwork:plugins");
 
 export { PluginRegistry };
 export type {
@@ -35,7 +38,7 @@ function migrate(plugin: LoadablePlugin) {
   if (plugin.type == "patchwork:tool") {
     const tool = plugin as Tool;
     if ("supportedDataTypes" in tool) {
-      console.warn(
+      log(
         plugin.id,
         plugin.importUrl,
         "supportedDataTypes was renamed to supportedDatatypes (lowercase t in types). fix it to get rid of this warning"
@@ -43,7 +46,7 @@ function migrate(plugin: LoadablePlugin) {
       tool.supportedDatatypes = tool.supportedDataTypes as string[];
     }
   } else if (plugin.type == "patchwork:dataType") {
-    console.warn(
+    log(
       plugin.id,
       plugin.importUrl,
       '"type": "patchwork:dataType" was renamed to patchwork:datatype (lowercase t in type). fix it to get rid of this warning'
@@ -62,7 +65,7 @@ export function registerPlugins<D extends PluginDescription, I>(
   // Register each group with its appropriate registry
   plugins.forEach((plugin) => {
     if (!plugin.type) {
-      console.warn("Plugin has no type", plugin);
+      log("Plugin has no type", plugin);
       return;
     }
     migrate(plugin);

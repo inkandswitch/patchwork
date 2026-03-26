@@ -50,7 +50,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
       if (existing.importUrl == importUrl) {
         log(`updating ${plugin.id} provided by "${existing.importUrl}"`);
       } else {
-        console.warn(
+        log(
           `overriding "${plugin.id}" provided by "${existing.importUrl}" with new plugin provided by "${importUrl}"`
         );
       }
@@ -128,14 +128,14 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
         if (desc.type == "patchwork:datatype") {
           const impl = implementation as DatatypeImplementation;
           if (isAsyncFunction(impl.getTitle)) {
-            console.warn(
+            log(
               desc.id,
               desc.importUrl,
               "getTitle should not be an async function"
             );
           }
           if (isAsyncFunction(impl.setTitle)) {
-            console.warn(
+            log(
               desc.id,
               desc.importUrl,
               "setTitle should not be an async function"

@@ -11,6 +11,9 @@ import type {
   PluginDescription,
 } from "./registry/types.js";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
+import debug from "debug";
+
+const log = debug("patchwork:plugins:datatypes");
 
 // Datatype implementation interface
 export type DatatypeImplementation<D = unknown> = {
@@ -51,7 +54,7 @@ export const createDocOfDatatype2 = async <D>(
     if (isValidAutomergeUrl(importUrl)) {
       const parsed = parseAutomergeUrl(importUrl);
       if (parsed.heads) {
-        console.warn(
+        log(
           `stripping heads from importUrl for ${datatype.id} for new document`
         );
       }
