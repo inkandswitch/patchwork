@@ -8,6 +8,9 @@ import {
 import { importModuleFromFolderDocUrl } from "./packages.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
 import { FolderDoc } from "./types.js";
+import debug from "debug";
+
+const log = debug("patchwork:modules");
 
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
@@ -66,7 +69,7 @@ export class ModuleWatcher {
       modules.map(async (importName) => {
         this.setDocWatcher(importName);
         await this.announce(importName).catch((error) => {
-          console.log(
+          console.error(
             new Error(`Failed to load module ${importName}: ${error}`, {
               cause: error,
             })
@@ -123,12 +126,12 @@ export class ModuleWatcher {
       handle.on("change", () => {
         const lastSyncAt = handle.doc().lastSyncAt || 0;
         if (lastSyncAt <= previousSyncAtTime) {
-          console.log("handle updated but not lastSyncAt");
+          log("handle updated but not lastSyncAt");
           return;
         }
         previousSyncAtTime = lastSyncAt;
         const versionedImport = handle.view(handle.heads()).url;
-        console.log(`change in ${importName}, reloading at ${versionedImport}`);
+        log(`change in ${importName}, reloading at ${versionedImport}`);
         this.announce(versionedImport);
       });
     });
