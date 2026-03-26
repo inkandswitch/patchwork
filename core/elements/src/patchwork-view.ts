@@ -271,7 +271,7 @@ export function registerPatchworkViewElement(
         const toolId = this.toolId || this.#fallbackId;
 
         if (fallingBack) {
-          console.warn(`falling back to default tool for ${this.#docUrl}`);
+          log(`falling back to default tool for ${this.#docUrl}`);
         }
 
         if (!toolId) {
@@ -280,14 +280,14 @@ export function registerPatchworkViewElement(
           // Check if the document is missing @patchwork metadata
           const hasPatchworkMetadata = doc && "@patchwork" in doc;
           if (!hasPatchworkMetadata) {
-            console.warn(
+            log(
               `Document ${this.#docUrl} is missing @patchwork metadata`
             );
             this.#displayError(
               `This document is missing @patchwork metadata and cannot be opened.`
             );
           } else {
-            console.warn(`no tool for ${this.#docUrl}`);
+            log(`no tool for ${this.#docUrl}`);
             this.#displayError(
               `I couldn't find a tool to open ${this.#docUrl}.`
             );
