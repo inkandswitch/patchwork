@@ -1,6 +1,7 @@
 import type { SetupServiceWorkerOptions } from "./types.js";
 import debug from "debug";
 
+const log = debug("patchwork:bootloader");
 const debugging = debug.enabled("patchwork:serviceworker");
 
 const key = "patchworkServiceWorkerCacheVersion";
@@ -116,14 +117,14 @@ export default async function setupServiceWorker(
   // Reload on future SW updates (added after setup so the initial
   // activation doesn't trigger a reload loop).
   navigator.serviceWorker.addEventListener("controllerchange", function () {
-    console.info(
+    log(
       "%cnew service worker took control, reloading...",
       "color: pink; font-weight: bold"
     );
     location.reload();
   });
 
-  console.log(
+  log(
     "service worker alive, loading %c patchwork system ",
     "background: #fcf2f0; color: #333; border: 2px solid; border-radius: 4px"
   );
