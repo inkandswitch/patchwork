@@ -1,11 +1,5 @@
 import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo"
-
-const sharedLettersUrl = "automerge:LaGmbNDA1mjnsvy2Bpvgt9NY4CN" as AutomergeUrl
-
-function cuteId() {
-  return Math.random().toString(36).slice(2)
-}
-import { makeDocumentProjection, useDocument } from "@automerge/automerge-repo-solid-primitives"
+import { makeDocumentProjection, useDocument, useDocHandle } from "@automerge/automerge-repo-solid-primitives"
 import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements"
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem"
 import { makePersisted } from "@solid-primitives/storage"
@@ -22,6 +16,10 @@ import createTenfold, { type CreateTenfoldOptions } from "./tenfold/tenfold.ts"
 const innerWorker = new Worker(new URL("./codemirror/worker.ts", import.meta.url), { type: "module" })
 const worker = Comlink.wrap<WorkerShape>(innerWorker)
 await worker.initialize()
+
+const sharedLettersUrl = "automerge:LaGmbNDA1mjnsvy2Bpvgt9NY4CN" as AutomergeUrl
+
+const cuteId = () => Math.random().toString(36).slice(2)
 
 function createCode(code: string) {
   const instrumented = addLoopBudgetInstrumentation(code)
@@ -42,6 +40,9 @@ type TextFile = { content: string }
 
 export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; element: PatchworkViewElement }) {
   const tenfold = makeDocumentProjection(props.handle) as Doc<Tenfold>
+
+  // Eagerly load the shared letters registry so it's ready for share/import
+  const sharedLettersHandle = useDocHandle(() => sharedLettersUrl, { repo: props.element.repo })
 
   createEffect(() => {
     if (!tenfold.tenfolder) {
@@ -196,7 +197,9 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
       mimeType: "application/javascript",
       extension: "js",
       metadata: { permissions: 420 },
-      content: `// Untitled ${folders()[idx][1].toUpperCase()} <0x${Math.floor(Math.random() * 0x10000).toString(16).padStart(4, "0")}>\n// by ${tenfold.name}\n\nrect()\ncircle()\n\nrotaten(params.x)\n\nline( 0, -1)\nline( 0,  1)\nmove(-1,  0)\nline( 1,  0)\n`,
+      content: `// Untitled ${folders()[idx][1].toUpperCase()} <0x${Math.floor(Math.random() * 0x10000)
+        .toString(16)
+        .padStart(4, "0")}>\n// by ${tenfold.name}\n\nrect()\ncircle()\n\nrotaten(params.x)\n\nline( 0, -1)\nline( 0,  1)\nmove(-1,  0)\nline( 1,  0)\n`,
       name,
     })
 
@@ -234,20 +237,20 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     props.handle.change((doc) => (doc.states[idx].i = newI))
   }
 
-  async function share() {
+  function share() {
     const idx = editing()
     if (idx == null) return
     const code = codeHandles[idx]?.doc()?.content
     if (!code) return
+    const registry = sharedLettersHandle()
+    if (!registry) return toast("Still loading, try again")
     const id = cuteId()
     const letterName = folders()[idx]
-    const registryHandle = await props.element.repo.find(sharedLettersUrl)
-    await registryHandle.whenReady()
-    registryHandle.change((d: any) => {
+    registry.change((d: any) => {
       d[id] = code
     })
     const url = `https://tenfold.inkandswitch.com/?letter=${letterName}&share=${id}`
-    await navigator.clipboard.writeText(url)
+    navigator.clipboard.writeText(url)
     toast("Copied to clipboard")
   }
 
@@ -285,12 +288,13 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     const len = counts[letterIdx]
     if (len < 0) return
 
+    const registry = sharedLettersHandle()
+    if (!registry) return
+
     // All data ready — consume the pending share
     setPendingShare(null)
     ;(async () => {
-      const registryHandle = await props.element.repo.find(sharedLettersUrl)
-      await registryHandle.whenReady()
-      const code = (registryHandle.doc() as any)?.[pending.shareId]
+      const code = (registry.doc() as any)?.[pending.shareId]
       if (!code) return
 
       const name = (len + "").padStart(2, "0") + ".js"
@@ -322,7 +326,17 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
       <article class="tenfold" ref={setCanvas}>
         {toastMessage() && <div class="tenfold-toast">{toastMessage()}</div>}
         <canvas />
-        <TenfoldEditor editing={editing} editingHandle={editingHandle} typescriptPath={typescriptPath} newLetter={newLetter} share={share} deleteLetter={deleteLetter} toast={toast} close={() => setEditing(null)} worker={worker} />
+        <TenfoldEditor
+          editing={editing}
+          editingHandle={editingHandle}
+          typescriptPath={typescriptPath}
+          newLetter={newLetter}
+          share={share}
+          deleteLetter={deleteLetter}
+          toast={toast}
+          close={() => setEditing(null)}
+          worker={worker}
+        />
       </article>
     </Suspense>
   )
