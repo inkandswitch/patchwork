@@ -36,17 +36,20 @@ const repo = new Repo({
   },
 });
 
+console.info("setting up service worker")
 const result = await setup({
   syncServer: "wss://sync.tenfold.inkandswitch.com",
 });
 if (!result) {
   throw new Error("Failed to set up service worker");
 }
-
+console.info("adding network")
 repo.networkSubsystem.addNetworkAdapter(
   new MessageChannelNetworkAdapter(result.port)
 );
+console.info("waiting for network ready")
 await repo.networkSubsystem.whenReady();
+console.info("network ready")
 
 window.repo = repo;
 window.Automerge = Automerge;
