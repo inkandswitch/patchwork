@@ -21,8 +21,8 @@
   "pnpm": {
     "overrides": {
       "@automerge/automerge": "catalog:",
-      "@automerge/automerge-repo": "file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo",
-      "@automerge/automerge-subduction": "/home/alex/Projects/automerge/subduction/automerge_subduction_wasm"
+      "@automerge/automerge-repo": "link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo",
+      "@automerge/automerge-subduction": "link:/Users/expede/Documents/Code/subduction/automerge_subduction_wasm"
     }
   },
   "keywords": [],

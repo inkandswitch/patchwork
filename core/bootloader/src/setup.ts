@@ -96,7 +96,8 @@ export default async function setupServiceWorker(
 
   // Tell the SW which sync server to use and wait for it to be ready.
   // getRepo() in the SW blocks until it receives this message.
-  const syncServer = options?.syncServer ?? "wss://sync3.automerge.org";
+  const syncServer =
+    options?.syncServer ?? "wss://subduction.sync.inkandswitch.com";
   const { port1: ackPort, port2: ackRemote } = new MessageChannel();
   await new Promise<void>((resolve) => {
     ackPort.onmessage = () => {

@@ -39,8 +39,8 @@ catalogs:
 
 overrides:
   '@automerge/automerge': 3.2.4
-  '@automerge/automerge-repo': file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-  '@automerge/automerge-subduction': /home/alex/Projects/automerge/subduction/automerge_subduction_wasm
+  '@automerge/automerge-repo': link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+  '@automerge/automerge-subduction': link:/Users/expede/Documents/Code/subduction/automerge_subduction_wasm
 
 importers:
 
@@ -87,8 +87,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-network-messagechannel':
         specifier: ^2.5.3
         version: 2.5.3
@@ -99,7 +99,7 @@ importers:
         specifier: ^2.5.3
         version: 2.5.3
       '@automerge/automerge-subduction':
-        specifier: /home/alex/Projects/automerge/subduction/automerge_subduction_wasm
+        specifier: link:/Users/expede/Documents/Code/subduction/automerge_subduction_wasm
         version: link:../../../subduction/automerge_subduction_wasm
       '@automerge/vanillajs':
         specifier: 'catalog:'
@@ -136,8 +136,8 @@ importers:
   core/elements:
     dependencies:
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -164,8 +164,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -185,8 +185,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -219,8 +219,8 @@ importers:
   packages/annotations/annotation-types/comments:
     dependencies:
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../../automerge-repo/packages/automerge-repo
       '@inkandswitch/annotations':
         specifier: workspace:*
         version: link:../../core
@@ -241,8 +241,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../../automerge-repo/packages/automerge-repo
       '@inkandswitch/annotations':
         specifier: workspace:*
         version: link:../../core
@@ -260,8 +260,8 @@ importers:
   packages/annotations/annotation-types/selection:
     dependencies:
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../../automerge-repo/packages/automerge-repo
       '@inkandswitch/annotations':
         specifier: workspace:*
         version: link:../../core
@@ -283,8 +283,8 @@ importers:
         version: link:../core
     devDependencies:
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       jsdom:
         specifier: ^26.1.0
         version: 26.1.0
@@ -298,8 +298,8 @@ importers:
   packages/annotations/core:
     dependencies:
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@inkandswitch/subscribables':
         specifier: workspace:*
         version: link:../../subscribables/core
@@ -338,8 +338,8 @@ importers:
   packages/refs-react:
     dependencies:
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       react:
         specifier: ^18.0.0
         version: 18.3.1
@@ -408,8 +408,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -426,13 +426,13 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/automerge-subduction':
-        specifier: /home/alex/Projects/automerge/subduction/automerge_subduction_wasm
+        specifier: link:/Users/expede/Documents/Code/subduction/automerge_subduction_wasm
         version: link:../../../subduction/automerge_subduction_wasm
       '@automerge/vanillajs':
         specifier: 'catalog:'
@@ -547,13 +547,13 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/automerge-subduction':
-        specifier: /home/alex/Projects/automerge/subduction/automerge_subduction_wasm
+        specifier: link:/Users/expede/Documents/Code/subduction/automerge_subduction_wasm
         version: link:../../../subduction/automerge_subduction_wasm
       '@automerge/vanillajs':
         specifier: 'catalog:'
@@ -677,13 +677,13 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@automerge/automerge-subduction':
-        specifier: /home/alex/Projects/automerge/subduction/automerge_subduction_wasm
+        specifier: link:/Users/expede/Documents/Code/subduction/automerge_subduction_wasm
         version: link:../../../subduction/automerge_subduction_wasm
       '@automerge/vanillajs':
         specifier: 'catalog:'
@@ -804,8 +804,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.4.0
         version: 2.5.2(@automerge/automerge@3.2.4)(solid-js@1.9.10)
@@ -902,8 +902,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@babel/core':
         specifier: ^7.28.4
         version: 7.28.4
@@ -954,8 +954,8 @@ importers:
         version: link:../../../core/bootloader
     devDependencies:
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@babel/core':
         specifier: ^7.28.4
         version: 7.28.4
@@ -1063,8 +1063,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1139,8 +1139,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1236,8 +1236,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.4.0
         version: 2.4.0(@automerge/automerge@3.2.4)(solid-js@1.9.9)
@@ -1406,8 +1406,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@eslint/js':
         specifier: ^9.36.0
         version: 9.38.0
@@ -1491,8 +1491,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@eslint/js':
         specifier: ^9.36.0
         version: 9.38.0
@@ -1542,8 +1542,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1612,8 +1612,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1718,8 +1718,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1797,8 +1797,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1891,8 +1891,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.4.0
         version: 2.5.2(@automerge/automerge@3.2.4)(solid-js@1.9.10)
@@ -1998,8 +1998,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
         version: 0.1.0-alpha.14
@@ -2055,8 +2055,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../automerge-repo/packages/automerge-repo
       '@automerge/vanillajs':
         specifier: 'catalog:'
         version: 2.5.3
@@ -2099,8 +2099,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@babel/core':
         specifier: 7.28.4
         version: 7.28.4
@@ -2163,8 +2163,8 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@eslint/js':
         specifier: ^9.36.0
         version: 9.38.0
@@ -2208,8 +2208,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2303,8 +2303,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../../../core/filesystem
@@ -2339,8 +2339,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.4.0
         version: 2.5.2(@automerge/automerge@3.2.4)(solid-js@1.9.10)
@@ -2412,8 +2412,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../../../core/filesystem
@@ -2455,8 +2455,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-react-hooks':
         specifier: 'catalog:'
         version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2531,8 +2531,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../../../core/filesystem
@@ -2568,8 +2568,8 @@ importers:
   tools/toolbar/sidebar-toggles:
     dependencies:
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
@@ -2590,8 +2590,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../../core/plugins
@@ -2624,8 +2624,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4
       '@automerge/automerge-repo':
-        specifier: file:/home/alex/Projects/automerge/automerge-repo/packages/automerge-repo
-        version: file:../automerge-repo/packages/automerge-repo
+        specifier: link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo
+        version: link:../../../../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-solid-primitives':
         specifier: ^2.5.2
         version: 2.5.2(@automerge/automerge@3.2.4)(solid-js@1.9.10)
@@ -2708,9 +2708,6 @@ packages:
 
   '@automerge/automerge-repo-storage-indexeddb@2.5.3':
     resolution: {integrity: sha512-i4tSzY7sC8ZqurHm4Sd9H1lFL2Don9v9yaSoq0FXi4T+4Wg8eus/mtMlUCmS5XwYQL8GX+epbplrlBaBe+fYiw==}
-
-  '@automerge/automerge-repo@file:../automerge-repo/packages/automerge-repo':
-    resolution: {directory: ../automerge-repo/packages/automerge-repo, type: directory}
 
   '@automerge/automerge@3.2.4':
     resolution: {integrity: sha512-/IAShHSxme5d4ZK0Vs4A0P+tGaR/bSz6KtIJSCIPfwilCxsIqfRHAoNjmsXip6TGouadmbuw3WfLop6cal8pPQ==}
@@ -3925,10 +3922,6 @@ packages:
 
   '@napi-rs/wasm-runtime@1.1.1':
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
-
-  '@noble/hashes@1.8.0':
-    resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
-    engines: {node: ^14.21.3 || >=16}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -6439,9 +6432,6 @@ packages:
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
-  base-x@4.0.1:
-    resolution: {integrity: sha512-uAZ8x6r6S3aUM9rbHGVOIsR15U/ZSc82b3ymnCPsT45Gk1DDvhDPdIgB5MrhirZWt+5K0EEPQH985kNqZgNPFw==}
-
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
@@ -6473,12 +6463,6 @@ packages:
     resolution: {integrity: sha512-ZC5Bd0LgJXgwGqUknZY/vkUQ04r8NXnJZ3yYi4vDmSiZmC/pdSN0NbNRPxZpbtO4uAfDUAFffO8IZoM3Gj8IkA==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
-
-  bs58@5.0.0:
-    resolution: {integrity: sha512-r+ihvQJvahgYT50JD05dyJNKlmmSlMoOGwn1lCcEzanPglg7TxYjioQUYehQ9mAR/+hOSd2jRc/Z2y5UxBymvQ==}
-
-  bs58check@3.0.1:
-    resolution: {integrity: sha512-hjuuJvoWEybo7Hn/0xOrczQKKEKD63WguEjlhLExYs2wUBcebDC1jDNK17eEAD2lYfw82d5ASC1d7K3SWszjaQ==}
 
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
@@ -6855,9 +6839,6 @@ packages:
 
   fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
-
-  fast-sha256@1.3.0:
-    resolution: {integrity: sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ==}
 
   fastq@1.19.1:
     resolution: {integrity: sha512-GwLTyxkCXjXbxqIhTsMI2Nui8huMPtnxg7krajPJAjnEG/iiOS7i+zCtWGZR9G0NBKbXKh6X9m9UIsYX/N6vvQ==}
@@ -8253,10 +8234,6 @@ packages:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
     hasBin: true
 
-  uuid@9.0.1:
-    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
-    hasBin: true
-
   validate-html-nesting@1.2.3:
     resolution: {integrity: sha512-kdkWdCl6eCeLlRShJKbjVOU2kFKxMF8Ghu50n+crEoyx+VKm3FxAxF9z4DCy6+bbTOqNW0+jcIYRnjoIRzigRw==}
 
@@ -8632,9 +8609,6 @@ packages:
   xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
 
-  xstate@5.29.0:
-    resolution: {integrity: sha512-p0hiOPhhBgXn29t18zDScaN95+y1MAu1Pz5Z2IduCuOUh+d3RqJO7fmexbuQ6rlwFNgYFeXvFsFeiuiAiH3mhg==}
-
   y18n@5.0.8:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
     engines: {node: '>=10'}
@@ -8678,7 +8652,7 @@ snapshots:
 
   '@automerge/automerge-repo-keyhive@0.1.0-alpha.14':
     dependencies:
-      '@automerge/automerge-repo': file:../automerge-repo/packages/automerge-repo
+      '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-network-websocket': 2.5.2-alpha.0
       '@keyhive/keyhive': 0.0.0-alpha.54
       cbor-x: 1.6.0
@@ -8690,25 +8664,19 @@ snapshots:
 
   '@automerge/automerge-repo-network-broadcastchannel@2.5.3':
     dependencies:
-      '@automerge/automerge-repo': file:../automerge-repo/packages/automerge-repo
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
+      '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
 
   '@automerge/automerge-repo-network-messagechannel@2.5.3':
     dependencies:
-      '@automerge/automerge-repo': file:../automerge-repo/packages/automerge-repo
+      '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
       debug: 4.4.3
       eventemitter3: 5.0.1
     transitivePeerDependencies:
-      - bufferutil
       - supports-color
-      - utf-8-validate
 
   '@automerge/automerge-repo-network-websocket@2.5.2-alpha.0':
     dependencies:
-      '@automerge/automerge-repo': file:../automerge-repo/packages/automerge-repo
+      '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
       cbor-x: 1.6.0
       debug: 4.4.3
       eventemitter3: 5.0.1
@@ -8721,7 +8689,7 @@ snapshots:
 
   '@automerge/automerge-repo-network-websocket@2.5.3':
     dependencies:
-      '@automerge/automerge-repo': file:../automerge-repo/packages/automerge-repo
+      '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
       cbor-x: 1.6.0
       debug: 4.4.3
       eventemitter3: 5.0.1
@@ -8735,15 +8703,11 @@ snapshots:
   '@automerge/automerge-repo-react-hooks@2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@automerge/automerge': 3.2.4
-      '@automerge/automerge-repo': file:../automerge-repo/packages/automerge-repo
+      '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
       eventemitter3: 5.0.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-usestateref: 1.0.9(react@18.3.1)
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
 
   '@automerge/automerge-repo-solid-primitives@2.4.0(@automerge/automerge@3.2.4)(solid-js@1.9.10)':
     dependencies:
@@ -8767,34 +8731,13 @@ snapshots:
 
   '@automerge/automerge-repo-storage-indexeddb@2.5.3':
     dependencies:
-      '@automerge/automerge-repo': file:../automerge-repo/packages/automerge-repo
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-
-  '@automerge/automerge-repo@file:../automerge-repo/packages/automerge-repo':
-    dependencies:
-      '@automerge/automerge': 3.2.4
-      '@automerge/automerge-subduction': link:../subduction/automerge_subduction_wasm
-      bs58check: 3.0.1
-      cbor-x: 1.6.0
-      debug: 4.4.3
-      eventemitter3: 5.0.1
-      fast-sha256: 1.3.0
-      uuid: 9.0.1
-      ws: 8.18.3
-      xstate: 5.29.0
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
+      '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
 
   '@automerge/automerge@3.2.4': {}
 
   '@automerge/react@2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@automerge/automerge-repo': file:../automerge-repo/packages/automerge-repo
+      '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-network-broadcastchannel': 2.5.3
       '@automerge/automerge-repo-network-messagechannel': 2.5.3
       '@automerge/automerge-repo-network-websocket': 2.5.3
@@ -8809,7 +8752,7 @@ snapshots:
 
   '@automerge/vanillajs@2.5.3':
     dependencies:
-      '@automerge/automerge-repo': file:../automerge-repo/packages/automerge-repo
+      '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
       '@automerge/automerge-repo-network-broadcastchannel': 2.5.3
       '@automerge/automerge-repo-network-messagechannel': 2.5.3
       '@automerge/automerge-repo-network-websocket': 2.5.3
@@ -8821,11 +8764,7 @@ snapshots:
 
   '@awarth/tasklib@0.0.7':
     dependencies:
-      '@automerge/automerge-repo': file:../automerge-repo/packages/automerge-repo
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
+      '@automerge/automerge-repo': link:../automerge-repo/packages/automerge-repo
 
   '@babel/code-frame@7.27.1':
     dependencies:
@@ -10146,8 +10085,6 @@ snapshots:
       '@emnapi/runtime': 1.7.1
       '@tybys/wasm-util': 0.10.1
     optional: true
-
-  '@noble/hashes@1.8.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -13138,8 +13075,6 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
-  base-x@4.0.1: {}
-
   base64-js@1.5.1: {}
 
   baseline-browser-mapping@2.9.8: {}
@@ -13174,15 +13109,6 @@ snapshots:
       electron-to-chromium: 1.5.267
       node-releases: 2.0.27
       update-browserslist-db: 1.2.3(browserslist@4.28.1)
-
-  bs58@5.0.0:
-    dependencies:
-      base-x: 4.0.1
-
-  bs58check@3.0.1:
-    dependencies:
-      '@noble/hashes': 1.8.0
-      bs58: 5.0.0
 
   buffer-from@1.1.2:
     optional: true
@@ -13661,8 +13587,6 @@ snapshots:
   fast-json-stable-stringify@2.1.0: {}
 
   fast-levenshtein@2.0.6: {}
-
-  fast-sha256@1.3.0: {}
 
   fastq@1.19.1:
     dependencies:
@@ -15130,8 +15054,6 @@ snapshots:
 
   uuid@10.0.0: {}
 
-  uuid@9.0.1: {}
-
   validate-html-nesting@1.2.3: {}
 
   vite-node@2.1.9(@types/node@24.9.1)(lightningcss@1.32.0)(terser@5.44.0):
@@ -15514,8 +15436,6 @@ snapshots:
   xml-name-validator@5.0.0: {}
 
   xmlchars@2.2.0: {}
-
-  xstate@5.29.0: {}
 
   y18n@5.0.8: {}
 

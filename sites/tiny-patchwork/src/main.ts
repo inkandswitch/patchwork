@@ -31,9 +31,11 @@ import {
 } from "@automerge/vanillajs";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
-import * as Subduction from "@automerge/automerge-subduction"
 
-const ignored = new Subduction.MemorySigner()
+// Side-effect import: initializes the Subduction Wasm module (via initSync)
+// before the Repo constructor accesses it. The Vite alias ensures this resolves
+// to the same underlying module as @automerge/automerge-subduction/slim.
+import "@automerge/automerge-subduction";
 
 declare global {
   interface Window {
