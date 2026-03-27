@@ -30,6 +30,7 @@
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-subduction": "catalog:",
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@automerge/vanillajs": "catalog:",
     "@codemirror/commands": "^6.9.0",

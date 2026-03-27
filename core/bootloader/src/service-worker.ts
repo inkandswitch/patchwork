@@ -9,6 +9,10 @@ import { SwLogger, type SwLoggerInterface } from "./sw-logger.js";
 // Wasm is fetched from /automerge.wasm (emitted by the vite plugin) instead
 // of bundling the ~3MB base64 string.
 import { initializeWasm } from "@automerge/automerge/slim";
+// eslint-disable-next-line
+// @ts-ignore wat
+import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim"
+
 import {
   Repo,
   isValidAutomergeUrl,
@@ -26,6 +30,7 @@ import {
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
+
 
 let cachename = "default";
 let debugging = false;
@@ -112,6 +117,10 @@ function getRepo() {
       await initializeWasm(new Uint8Array(await wasmResponse.arrayBuffer()));
       logger.info("wasm initialized");
 
+      const sdnWasmResponse = await fetch("/subduction.wasm");
+      initSubductionSync(new Uint8Array(await sdnWasmResponse.arrayBuffer()))
+
+
       // Wait for the main thread to tell us which sync server to use
       logger.info("waiting for sync server URL from main thread");
       const syncServerUrl = await syncServerReady;
@@ -128,6 +137,7 @@ function getRepo() {
           return peerId.includes("storage-server");
         },
         enableRemoteHeadsGossiping: true,
+        subductionWebsocketEndpoints: ["wss://subduction.sync.inkandswitch.com"],
       });
 
       (self as any).repo = repo;
@@ -182,11 +192,11 @@ self.addEventListener("message", async (event) => {
   } else if (event.data.type == "add-sync-server") {
     const url: string = event.data.url;
     if (!syncAdapters.has(url)) {
-      const repo = await getRepo();
-      const adapter = new WebSocketClientAdapter(url);
-      syncAdapters.set(url, adapter);
-      repo.networkSubsystem.addNetworkAdapter(adapter);
-      log(`added sync server: ${url}`);
+      //const repo = await getRepo();
+      //const adapter = new WebSocketClientAdapter(url);
+      //syncAdapters.set(url, adapter);
+      //repo.networkSubsystem.addNetworkAdapter(adapter);
+      //log(`added sync server: ${url}`);
     }
   } else if (event.data.type == "remove-sync-server") {
     const url: string = event.data.url;

@@ -31,6 +31,9 @@ import {
 } from "@automerge/vanillajs";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
+import * as Subduction from "@automerge/automerge-subduction"
+
+const ignored = new Subduction.MemorySigner()
 
 declare global {
   interface Window {

@@ -54,6 +54,16 @@ export function importmap(options?: PatchworkVitePluginOptions): Plugin {
         fileName: "automerge.wasm",
         source: readFileSync(wasmPath),
       });
+
+      // Emit automerge wasm so the service worker can fetch it
+      const subdWasmPath = require.resolve(
+        "@automerge/automerge-subduction/wasm"
+      );
+      this.emitFile({
+        type: "asset",
+        fileName: "subduction.wasm",
+        source: readFileSync(subdWasmPath),
+      });
     },
     resolveId(id) {
       if (id in importmap.imports && !(id in builtins)) {

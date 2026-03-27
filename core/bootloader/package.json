@@ -38,6 +38,7 @@
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-subduction": "catalog",
     "@automerge/automerge-repo-network-messagechannel": "^2.5.3",
     "@automerge/automerge-repo-network-websocket": "^2.5.3",
     "@automerge/automerge-repo-storage-indexeddb": "^2.5.3",
