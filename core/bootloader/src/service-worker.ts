@@ -10,8 +10,12 @@ import { SwLogger, type SwLoggerInterface } from "./sw-logger.js";
 // of bundling the ~3MB base64 string.
 import { initializeWasm } from "@automerge/automerge/slim";
 // eslint-disable-next-line
-// @ts-ignore wat
+// @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
+import {
+  setSubductionLogLevel,
+  WebCryptoSigner,
+} from "@automerge/automerge-subduction/slim";
 
 import {
   Repo,
@@ -29,6 +33,10 @@ import {
 // Small adapters — bundled directly into the SW
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
+
+// TEMPORARY: enable debug npm module in SW context (no localStorage available)
+import debug from "debug";
+debug.enable("automerge-repo:subduction*");
 
 let cachename = "default";
 let debugging = false;
@@ -116,6 +124,12 @@ function getRepo() {
       const sdnWasmResponse = await fetch("/subduction.wasm");
       initSubductionSync(new Uint8Array(await sdnWasmResponse.arrayBuffer()));
 
+      // TEMPORARY: enable verbose Subduction tracing in the SW for debugging
+      (self as any).__SUBDUCTION_DEBUG = true;
+      try {
+        setSubductionLogLevel("debug");
+      } catch {}
+
       // Wait for the main thread to tell us the Subduction endpoint(s)
       logger.info("waiting for subduction endpoints from main thread");
       await subductionReady;
@@ -123,8 +137,12 @@ function getRepo() {
         endpoints: subductionEndpoints,
       });
 
+      // Persistent signer — survives SW restarts via IndexedDB
+      const signer = await WebCryptoSigner.setup();
+
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
+        signer,
         peerId: ("service-worker-" +
           (Math.random() * 10000).toString(36).slice(2)) as PeerId,
         async sharePolicy(peerId) {

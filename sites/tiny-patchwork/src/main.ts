@@ -112,14 +112,15 @@ if (initialParams.has("frame")) {
   rootElement.setAttribute("doc-url", accountDocHandle.url);
 }
 
-const defaultToolsUrl =
-  "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl;
-
 function onModuleLoaded(name: string, mod: any) {
   if (Array.isArray(mod.plugins)) {
     registerPlugins(mod.plugins, name);
   }
 }
+
+// Published tools are registered in this module settings doc by publish-all-tools.
+const defaultToolsUrl =
+  "automerge:2EXjvP4xrcC2zbH1kNpDCoxJiVp2" as AutomergeUrl;
 
 const moduleWatcher = new ModuleWatcher(
   repo,

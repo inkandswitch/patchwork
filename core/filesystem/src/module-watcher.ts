@@ -64,7 +64,8 @@ export class ModuleWatcher {
   async loadModules(modules: string[]) {
     await Promise.all(
       modules
-        .filter((m): m is string => typeof m === "string" && m.length > 0)
+        .map((m) => String(m))
+        .filter((m) => m.length > 0)
         .map(async (importName) => {
           this.setDocWatcher(importName);
           await this.announce(importName).catch((error) => {
