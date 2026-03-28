@@ -36,20 +36,20 @@ const repo = new Repo({
   },
 });
 
-console.info("setting up service worker")
+console.info("setting up service worker");
 const result = await setup({
   syncServer: "wss://sync.tenfold.inkandswitch.com",
 });
 if (!result) {
   throw new Error("Failed to set up service worker");
 }
-console.info("adding network")
+console.info("adding network");
 repo.networkSubsystem.addNetworkAdapter(
   new MessageChannelNetworkAdapter(result.port)
 );
-console.info("waiting for network ready")
+console.info("waiting for network ready");
 await repo.networkSubsystem.whenReady();
-console.info("network ready")
+console.info("network ready");
 
 window.repo = repo;
 window.Automerge = Automerge;
@@ -65,22 +65,18 @@ rootElement.addEventListener(
   },
   { once: true }
 );
-const doc = new URLSearchParams(window.location.search).get("doc");
-if (doc) {
-  localStorage.setItem("tenfold", doc);
+
+const saved = localStorage.getItem("tenfold");
+const param = new URLSearchParams(window.location.search).get("doc");
+
+if (param || saved) {
   rootElement.setAttribute("tool-id", "inkandswitch/tenfold");
-  rootElement.setAttribute("doc-url", doc);
+  rootElement.setAttribute("doc-url", "" + (param ?? saved));
+  param && localStorage.setItem("tenfold", param);
 } else {
-  const saved = localStorage.getItem("tenfold");
-  if (saved) {
-    const url = new URL(window.location.href);
-    url.searchParams.set("doc", saved);
-    window.location.href = url.toString();
-  } else {
-    const handle = await repo.create2({
-      "@patchwork": { type: "tenfriend" },
-    });
-    rootElement.setAttribute("tool-id", "tenfriend");
-    rootElement.setAttribute("doc-url", handle.url);
-  }
+  const handle = repo.create({
+    "@patchwork": { type: "tenfriend" },
+  });
+  rootElement.setAttribute("tool-id", "tenfriend");
+  rootElement.setAttribute("doc-url", handle.url);
 }
