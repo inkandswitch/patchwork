@@ -1,11 +1,11 @@
-import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo"
+import { ImmutableString, type AutomergeUrl, type Doc, type DocHandle } from "@automerge/automerge-repo"
 import { makeDocumentProjection, useDocument, useDocHandle } from "@automerge/automerge-repo-solid-primitives"
 import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements"
 import type { FolderDoc } from "@inkandswitch/patchwork-filesystem"
 import { makePersisted } from "@solid-primitives/storage"
 import { type WorkerShape } from "@valtown/codemirror-ts/worker"
 import * as Comlink from "comlink"
-import { createEffect, createSignal, mapArray, on, onMount, Suspense } from "solid-js"
+import { createEffect, createResource, createSignal, mapArray, on, onMount, Suspense } from "solid-js"
 import { createMutable, createStore, produce } from "solid-js/store"
 import TenfoldEditor from "./editor.tsx"
 import font from "./font.txt?raw"
@@ -17,7 +17,7 @@ const innerWorker = new Worker(new URL("./codemirror/worker.ts", import.meta.url
 const worker = Comlink.wrap<WorkerShape>(innerWorker)
 await worker.initialize()
 
-const sharedLettersUrl = "automerge:LaGmbNDA1mjnsvy2Bpvgt9NY4CN" as AutomergeUrl
+const sharedLettersUrl = "automerge:45iRPYFD1u7UwMcyGSRw6ypsvLNE" as AutomergeUrl
 
 const cuteId = () => Math.random().toString(36).slice(2)
 
@@ -38,16 +38,77 @@ function makeName(idx: number) {
 
 type TextFile = { content: string }
 
+declare global {
+  interface Window {
+    Automerge: typeof import("@automerge/automerge")
+    AutomergeRepo: typeof import("@automerge/automerge-repo")
+    repo: import("@automerge/automerge-repo").Repo
+  }
+}
+
+async function coshare(tenfolderUrl: AutomergeUrl) {
+  // Handle ?letter=&share= URLs: import shared letter code.
+  // Read params once, store in a signal, then wait for data to be ready.
+  const params = new URLSearchParams(window.location.search)
+  let share = params.get("letter") && params.get("share") ? { letter: params.get("letter")!, shareId: params.get("share")! } : null
+  if (!share) return
+
+  const tenfolderHandle = await self.repo.find<FolderDoc>(tenfolderUrl)
+  const lettersFolderHandle = await self.repo.find<FolderDoc>(tenfolderHandle.doc().docs.find((doc) => doc.name == "letters")?.url!)
+  const letterFolderHandle = await self.repo.find<FolderDoc>(lettersFolderHandle.doc().docs.find((doc) => doc.name == share.letter)?.url!)
+  const indexInLetter = letterFolderHandle.doc().docs.filter((doc) => doc.name.endsWith(".js")).length
+  const registryHandle = await self.repo.find<Record<string, ImmutableString>>(sharedLettersUrl)
+  const registry = registryHandle.doc()
+  if (!(share.shareId in registry)) {
+    alert("Shared letter not found. It may have been deleted, or the share ID may be incorrect.")
+    return
+  }
+  const code = registry[share.shareId]
+  const name = (indexInLetter + "").padStart(2, "0") + ".js"
+
+  const newDoc = self.repo.create({
+    "@patchwork": { type: "file" },
+    mimeType: "application/javascript",
+    extension: "js",
+    metadata: { permissions: 420 },
+    content: code.toString(),
+    name,
+  })
+
+  letterFolderHandle.change((folder) =>
+    folder.docs.push({
+      type: "file",
+      url: newDoc.url,
+      name,
+    })
+  )
+
+  const cleanUrl = new URL(window.location.href)
+  cleanUrl.searchParams.delete("letter")
+  cleanUrl.searchParams.delete("share")
+  window.history.replaceState({}, "", cleanUrl.toString())
+
+  return [+share.letter[0], indexInLetter]
+}
+
 export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; element: PatchworkViewElement }) {
   const tenfold = makeDocumentProjection(props.handle) as Doc<Tenfold>
 
   // Eagerly load the shared letters registry so it's ready for share/import
   const sharedLettersHandle = useDocHandle(() => sharedLettersUrl, { repo: props.element.repo })
 
+  const [coshareResource] = createResource(() => tenfold.tenfolder, coshare)
+
+  const coshareIndex = () => coshareResource()
+
+  // really sorry about the variable names in this function
+  // i've slept about 18 hours in the past week, and they were all on tuesday
   createEffect(() => {
-    if (!tenfold.tenfolder) {
+    const coindex = coshareIndex()
+    if (coindex != null) {
+      const [letterNumber, letterIndex] = coindex
       props.handle.change((doc) => {
-        doc.tenfolder = "automerge:2c4E6m5u6rPWkeDxA6i1YWrAjTzD" as AutomergeUrl
+        doc.states[letterNumber].i = letterIndex
       })
     }
   })
@@ -185,14 +246,14 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     return idx != null ? `/letters/${folders()[idx]}/${tenfold.states[idx].i}.js` : ""
   }
 
-  async function newLetter() {
+  function newLetter() {
     const idx = editing()
     if (idx == null) return
     const hdl = letterFolderHandles[idx]
     const len = counts[idx]
     const name = (len + "").padStart(2, "0") + ".js"
 
-    const newDoc = await props.element.repo.create2({
+    const newDoc = props.element.repo.create({
       "@patchwork": { type: "file" },
       mimeType: "application/javascript",
       extension: "js",
@@ -246,11 +307,13 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     if (!registry) return toast("Still loading, try again")
     const id = cuteId()
     const letterName = folders()[idx]
-    registry.change((d: any) => {
-      d[id] = code
-    })
-    const url = `https://tenfold.inkandswitch.com/?letter=${letterName}&share=${id}`
-    navigator.clipboard.writeText(url)
+    registry.change((d: any) => (d[id] = new ImmutableString(code)))
+
+    const url = new URL("/", window.location.origin)
+    url.searchParams.set("letter", letterName)
+    url.searchParams.set("share", id)
+
+    navigator.clipboard.writeText(url.href)
     toast("Copied to clipboard")
   }
 
@@ -261,64 +324,6 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
         t.states[idx].i = 0
       })
     }
-  })
-
-  // Handle ?letter=&share= URLs: import shared letter code.
-  // Read params once, store in a signal, then wait for data to be ready.
-  const params = new URLSearchParams(window.location.search)
-  const [pendingShare, setPendingShare] = createSignal(params.get("letter") && params.get("share") ? { letter: params.get("letter")!, shareId: params.get("share")! } : null)
-
-  // Clear share params from URL immediately
-  if (pendingShare()) {
-    const cleanUrl = new URL(window.location.href)
-    cleanUrl.searchParams.delete("letter")
-    cleanUrl.searchParams.delete("share")
-    window.history.replaceState({}, "", cleanUrl.toString())
-  }
-
-  createEffect(() => {
-    const pending = pendingShare()
-    if (!pending) return
-    const f = folders()
-    if (!f.length) return
-    const letterIdx = f.indexOf(pending.letter)
-    if (letterIdx === -1) return
-    const hdl = letterFolderHandles[letterIdx]
-    if (!hdl) return
-    const len = counts[letterIdx]
-    if (len < 0) return
-
-    const registry = sharedLettersHandle()
-    if (!registry) return
-
-    // All data ready — consume the pending share
-    setPendingShare(null)
-    ;(async () => {
-      const code = (registry.doc() as any)?.[pending.shareId]
-      if (!code) return
-
-      const name = (len + "").padStart(2, "0") + ".js"
-
-      const newDoc = await props.element.repo.create2({
-        "@patchwork": { type: "file" },
-        mimeType: "application/javascript",
-        extension: "js",
-        metadata: { permissions: 420 },
-        content: code,
-        name,
-      })
-
-      hdl.change((folder) => {
-        folder.docs.push({
-          type: "file",
-          url: newDoc.url,
-          name,
-        })
-      })
-
-      props.handle.change((doc) => (doc.states[letterIdx].i = len))
-      setEditing(letterIdx)
-    })()
   })
 
   return (
