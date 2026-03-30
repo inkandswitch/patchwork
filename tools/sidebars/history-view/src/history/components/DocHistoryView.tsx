@@ -74,11 +74,15 @@ export function DocHistoryView(props: DocHistoryViewProps) {
           onConfigChange={setStrategyConfig}
         />
       </div> */}
-      <HistoryList
-        items={groupedItems()}
-        selectedItem={selectedItem()}
-        onSelectItem={selectItem}
-      />
+      {groupedItems().length === 0 ? (
+        "Loading..."
+      ) : (
+        <HistoryList
+          items={groupedItems()}
+          selectedItem={selectedItem()}
+          onSelectItem={selectItem}
+        />
+      )}
     </div>
   );
 }
