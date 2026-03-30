@@ -214,6 +214,62 @@ interface FileDoc {
   mimeType?: string;
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────
+
+const ENTRY_WAIT_TIMEOUT_MS = 60_000;
+
+/**
+ * Wait until a folder doc's `docs` array contains an entry with the given
+ * name. Returns the entry if found, or `undefined` if the timeout expires.
+ *
+ * On first load, folder docs sync incrementally — the `docs` array starts
+ * empty and entries appear one by one as Automerge changes arrive from the
+ * Subduction sync server. This function blocks the fetch handler until the
+ * needed entry is available, rather than immediately serving a 500 for data
+ * that hasn't arrived yet.
+ */
+function waitForDocEntry(
+  handle: any, // DocHandle<FolderDoc>
+  entryName: string,
+  timeoutMs = ENTRY_WAIT_TIMEOUT_MS
+): Promise<any | undefined> {
+  // Fast path: already present
+  const doc = handle.doc();
+  const found = doc?.docs?.find((d: any) => d.name === entryName);
+  if (found) return Promise.resolve(found);
+
+  return new Promise<any | undefined>((resolve) => {
+    const timer = setTimeout(() => {
+      handle.removeListener("change", onChange);
+      resolve(undefined);
+    }, timeoutMs);
+
+    function onChange() {
+      const doc = handle.doc();
+      const entry = doc?.docs?.find((d: any) => d.name === entryName);
+      if (entry) {
+        clearTimeout(timer);
+        handle.removeListener("change", onChange);
+        resolve(entry);
+      }
+    }
+
+    handle.on("change", onChange);
+  });
+}
+
+/**
+ * Determine the first path component we need to resolve in the folder.
+ * For direct paths like `["dist", "index.js"]`, it's `"dist"`.
+ * For root resolution (no path), we need `"package.json"`.
+ */
+function neededEntry(path: string[]): string {
+  if (path.length > 0) {
+    return decodeURIComponent(path[0]);
+  }
+  return "package.json";
+}
+
 // ── Automerge URL resolution ───────────────────────────────────────────
 
 async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
@@ -237,9 +293,12 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   // The heads parameter is now treated as optional; we always serve the
   // latest state.
 
-  // If no path, check if this is a package with exports to resolve
-  // e.g. /automerge%3Adocid/abc → resolve "abc" via package.json exports
+  // Wait for the folder doc to have the entry we need before resolving.
+  // On first load, folder docs sync incrementally — the `docs` array
+  // starts empty and fills in as Automerge changes arrive.
   const folderHandle = await repo.find<FolderDoc>(maybeAutomergeUrl);
+  const needed = neededEntry(path);
+  const entry = await waitForDocEntry(folderHandle, needed);
 
   if (debugging) {
     const folderDoc = folderHandle.doc();
@@ -249,7 +308,18 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
     );
   }
 
-  let fileHandle;
+  if (!entry) {
+    const names = folderHandle.doc()?.docs?.map((d: any) => d.name) ?? [];
+    logger.warn(
+      `timed out waiting for "${needed}" in folder ${documentId.slice(0, 8)}`,
+      { docs: names }
+    );
+    throw new Error(
+      `timed out waiting for "${needed}" in folder at ${maybeAutomergeUrl}`
+    );
+  }
+
+  let fileHandle: any;
   if (path.length) {
     // Try direct file navigation first
     fileHandle = await findHandleInFolderHandle<FileDoc>(
@@ -268,7 +338,7 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
         ["package.json"]
       );
       if (pkgFileHandle) {
-        const pkgDoc = pkgFileHandle.doc() as FileDoc | undefined;
+        const pkgDoc = pkgFileHandle.doc() as unknown as FileDoc | undefined;
         if (pkgDoc?.content) {
           const pkgJson = JSON.parse(String(pkgDoc.content));
           try {
@@ -298,7 +368,7 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
       `[sw:resolve] ${documentId.slice(0, 8)} pkgFileHandle=${pkgFileHandle ? "found" : "null"}`
     );
     if (pkgFileHandle) {
-      const pkgDoc = pkgFileHandle.doc() as FileDoc | undefined;
+      const pkgDoc = pkgFileHandle.doc() as unknown as FileDoc | undefined;
       console.log(
         `[sw:resolve] ${documentId.slice(0, 8)} pkgDoc.content=${
           pkgDoc?.content
@@ -341,10 +411,33 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
     throw new Error(msg);
   }
 
-  const fileDoc = fileHandle.doc() as unknown as FileDoc;
+  // Wait for the file doc to have content. On first load, the file handle
+  // may exist (heads > 0) but its blob data hasn't been loaded yet.
+  let fileDoc = fileHandle.doc() as unknown as FileDoc;
+  if (!fileDoc?.content) {
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        fileHandle.removeListener("change", onChange);
+        resolve();
+      }, ENTRY_WAIT_TIMEOUT_MS);
+
+      function onChange() {
+        const doc = fileHandle.doc() as unknown as FileDoc;
+        if (doc?.content) {
+          clearTimeout(timer);
+          fileHandle.removeListener("change", onChange);
+          resolve();
+        }
+      }
+
+      fileHandle.on("change", onChange);
+    });
+    fileDoc = fileHandle.doc() as unknown as FileDoc;
+  }
+
   const content = fileDoc?.content;
   if (!content) {
-    const msg = `file at ${href} has no content`;
+    const msg = `file at ${href} has no content (timed out)`;
     logger.warn(msg);
     throw new Error(msg);
   }

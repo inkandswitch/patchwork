@@ -23,9 +23,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@automerge/automerge": "catalog:",
-      "@automerge/automerge-repo": "link:/Users/expede/Documents/Code/automerge-repo/packages/automerge-repo",
-      "@automerge/automerge-subduction": "link:/Users/expede/Documents/Code/subduction/automerge_subduction_wasm"
+      "@automerge/automerge": "catalog:"
     }
   },
   "keywords": [],
