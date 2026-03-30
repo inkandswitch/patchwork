@@ -6,6 +6,7 @@ import {
 } from "@inkandswitch/patchwork-elements";
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
+import { SwLogReader } from "@inkandswitch/patchwork-bootloader/sw-logger";
 import {
   registerPlugins,
   DatatypeDescription,
@@ -122,6 +123,22 @@ const moduleWatcher = new ModuleWatcher(
 );
 
 window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
+
+// ── SW log access (mirrors the SW inspector console API) ────────────────
+(window.patchwork as any).sw = {
+  printLogs: async (n = 200) => {
+    const entries = await SwLogReader.tail(n);
+    for (const e of entries) {
+      const prefix = `[${e.ts}] [${e.level}]`;
+      if (e.data !== undefined) console.log(prefix, e.msg, e.data);
+      else console.log(prefix, e.msg);
+    }
+    console.log(`--- ${entries.length} entries ---`);
+  },
+  tailLogs: (n = 200) => SwLogReader.tail(n),
+  exportLogs: () => SwLogReader.exportAll(),
+  clearLogs: () => SwLogReader.clear(),
+};
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
   moduleWatcher.loadSuggestedImportUrl(event.detail.url);
