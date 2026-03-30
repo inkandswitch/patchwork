@@ -27,7 +27,12 @@ export async function importModuleFromFolderDocUrl(
 
   log(`Importing module from entry point url ${entryPointUrl}`);
 
-  return import(/* @vite-ignore */ entryPointUrl);
+  // Cache-bust: browsers cache failed dynamic import() results by URL.
+  // Adding a unique query parameter ensures retries are treated as fresh
+  // requests even if a previous attempt for the same URL failed.
+  const bustUrl = `${entryPointUrl}${entryPointUrl.includes("?") ? "&" : "?"}t=${Date.now()}`;
+
+  return import(/* @vite-ignore */ bustUrl);
 }
 
 async function packageJsonContentsFromFolderDocUrl(
@@ -41,7 +46,11 @@ async function packageJsonContentsFromFolderDocUrl(
     )
   ).href;
 
-  const response = await fetch(packageJSONPath);
+  // Cache-bust: the SW may return 500 if the folder doc hasn't synced yet.
+  // Without this, the browser caches the error response and retries fail.
+  const bustUrl = `${packageJSONPath}${packageJSONPath.includes("?") ? "&" : "?"}t=${Date.now()}`;
+
+  const response = await fetch(bustUrl);
   if (!response.ok) {
     return undefined;
   }

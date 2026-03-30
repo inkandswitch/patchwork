@@ -154,8 +154,13 @@ function getRepo() {
 
       (self as any).repo = repo;
       logger.info("repo constructed, waiting for network subsystem");
-      await repo.networkSubsystem.whenReady();
-      logger.info("repo network subsystem ready");
+
+      // Don't block getRepo() on whenReady() — the network subsystem starts
+      // with no adapters (MessageChannel is added later via connectPort),
+      // and blocking here prevents the fetch handler from serving requests.
+      repo.networkSubsystem.whenReady().then(() => {
+        logger.info("repo network subsystem ready");
+      });
 
       return repo;
     })();
@@ -226,15 +231,11 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
 
   const { heads, documentId } = parseAutomergeUrl(maybeAutomergeUrl);
 
-  if (!heads) {
-    // Redirect to pinned-heads URL
-    const folder = await repo.find(maybeAutomergeUrl);
-    const latestHeads = folder.heads();
-    const url = stringifyAutomergeUrl({ documentId, heads: latestHeads });
-    let location = `/${encodeURIComponent(url)}`;
-    if (path.length) location += `/${path.join("/")}`;
-    return Response.redirect(location, 307);
-  }
+  // NOTE: previously this redirected headless URLs to pinned-heads URLs
+  // (307 redirect). Removed because during initial sync, folder docs are
+  // partially loaded — pinning captures incomplete state and defeats retries.
+  // The heads parameter is now treated as optional; we always serve the
+  // latest state.
 
   // If no path, check if this is a package with exports to resolve
   // e.g. /automerge%3Adocid/abc → resolve "abc" via package.json exports
@@ -293,12 +294,29 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
       folderHandle,
       ["package.json"]
     );
+    console.log(
+      `[sw:resolve] ${documentId.slice(0, 8)} pkgFileHandle=${pkgFileHandle ? "found" : "null"}`
+    );
     if (pkgFileHandle) {
       const pkgDoc = pkgFileHandle.doc() as FileDoc | undefined;
+      console.log(
+        `[sw:resolve] ${documentId.slice(0, 8)} pkgDoc.content=${
+          pkgDoc?.content
+            ? `${typeof pkgDoc.content}(${
+                pkgDoc.content instanceof Uint8Array
+                  ? pkgDoc.content.byteLength
+                  : String(pkgDoc.content).length
+              }b)`
+            : "null"
+        }`
+      );
       if (pkgDoc?.content) {
         const pkgJson = JSON.parse(String(pkgDoc.content));
         try {
           const resolved = resolvePackageExport(pkgJson);
+          console.log(
+            `[sw:resolve] ${documentId.slice(0, 8)} resolved=${resolved}`
+          );
           if (resolved) {
             const resolvedPath = resolved.replace(/^\.\//, "").split("/");
             fileHandle = await findHandleInFolderHandle<FileDoc>(
@@ -307,7 +325,11 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
               resolvedPath
             );
           }
-        } catch {}
+        } catch (e) {
+          console.log(
+            `[sw:resolve] ${documentId.slice(0, 8)} resolvePackageExport threw: ${e}`
+          );
+        }
       }
     }
   }

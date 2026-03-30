@@ -1,0 +1,28 @@
+{
+  "id": "1e4b2badbd249d340c1a386de2290897",
+  "root_directory_id": "automerge:2obVHjqF6u4WQeTD3j4oXdjpJBki",
+  "ignore": [
+    ".git/",
+    "target/",
+    "node_modules/",
+    ".darn-staging-*/",
+    ".env"
+  ],
+  "attributes": {
+    "immutable": [
+      "*.js.map",
+      "*.css.map",
+      "*.map",
+      "*.min.js",
+      "*.min.css",
+      "*.lock",
+      "package-lock.json",
+      "pnpm-lock.yaml",
+      "yarn.lock",
+      "Cargo.lock",
+      "Gemfile.lock",
+      "poetry.lock",
+      "composer.lock"
+    ]
+  }
+}

@@ -68,13 +68,7 @@ export class ModuleWatcher {
         .filter((m) => m.length > 0)
         .map(async (importName) => {
           this.setDocWatcher(importName);
-          await this.announce(importName).catch((error) => {
-            console.log(
-              new Error(`Failed to load module ${importName}: ${error}`, {
-                cause: error,
-              })
-            );
-          });
+          await this.announceWithRetry(importName);
         })
     );
   }
@@ -106,6 +100,61 @@ export class ModuleWatcher {
   private async announce(importName: string) {
     const mod = await this.importModuleSafe(importName);
     mod && this.onLoad(importName, mod);
+    return mod;
+  }
+
+  #pendingModules = new Set<string>();
+
+  private async announceWithRetry(importName: string) {
+    // First attempt — may fail if folder doc hasn't synced yet
+    const mod = await this.announce(importName).catch(() => null);
+    if (mod) return;
+
+    // Mark as pending — the change listener will retry when the doc syncs
+    this.#pendingModules.add(importName);
+
+    // Event-driven retry: watch the folder doc for changes.
+    // When it receives data from sync, retry the import.
+    if (isValidAutomergeUrl(importName)) {
+      this.repo.find<FolderDoc>(importName).then((handle) => {
+        const retryOnChange = async () => {
+          if (!this.#pendingModules.has(importName)) {
+            handle.removeListener("change", retryOnChange);
+            return;
+          }
+          const retried = await this.announce(importName).catch(() => null);
+          if (retried) {
+            this.#pendingModules.delete(importName);
+            handle.removeListener("change", retryOnChange);
+          }
+        };
+        handle.on("change", retryOnChange);
+      });
+    }
+
+    // Fallback: periodic retry for cases where the doc change event
+    // doesn't fire (e.g., the folder doc structure arrived but the
+    // sub-documents with file content sync later via a different handle).
+    const retryIntervalMs = 10_000;
+    const maxRetries = 30; // ~5 minutes total
+    let retries = 0;
+    const timer = setInterval(async () => {
+      if (!this.#pendingModules.has(importName) || retries >= maxRetries) {
+        clearInterval(timer);
+        if (retries >= maxRetries) {
+          console.warn(
+            `[module-watcher] gave up loading ${importName} after ${maxRetries} retries`
+          );
+        }
+        return;
+      }
+      retries++;
+      const retried = await this.announce(importName).catch(() => null);
+      if (retried) {
+        this.#pendingModules.delete(importName);
+        clearInterval(timer);
+      }
+    }, retryIntervalMs);
   }
 
   // TODO: This is a bit janky and relies on a bunch of heuristics.

@@ -15,7 +15,7 @@
 set -euo pipefail
 
 DARN="${DARN:-darn}"
-SETTINGS_URL="${SETTINGS_URL:-automerge:2EXjvP4xrcC2zbH1kNpDCoxJiVp2}"
+SETTINGS_URL="${SETTINGS_URL:-automerge:3EpoPqZxz1AfgtUqJBJ65udPF7C3}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TOOLS_DIR="$(dirname "$SCRIPT_DIR")/tools"
 

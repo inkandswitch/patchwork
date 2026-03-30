@@ -120,7 +120,7 @@ function onModuleLoaded(name: string, mod: any) {
 
 // Published tools are registered in this module settings doc by publish-all-tools.
 const defaultToolsUrl =
-  "automerge:2EXjvP4xrcC2zbH1kNpDCoxJiVp2" as AutomergeUrl;
+  "automerge:3EpoPqZxz1AfgtUqJBJ65udPF7C3" as AutomergeUrl;
 
 const moduleWatcher = new ModuleWatcher(
   repo,
