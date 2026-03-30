@@ -1,5 +1,5 @@
 import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { createSignal, createMemo } from "solid-js";
+import { createSignal, createMemo, Accessor } from "solid-js";
 import { useDocument } from "@automerge/automerge-repo-solid-primitives";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -17,6 +17,7 @@ import { HistoryList } from "./HistoryList";
 export interface DocHistoryViewProps {
   url: AutomergeUrl;
   repo: Repo;
+  taskQueueUrl: Accessor<AutomergeUrl | undefined>;
 }
 
 /**
@@ -39,7 +40,7 @@ export function DocHistoryView(props: DocHistoryViewProps) {
     });
 
   // Unified hook that manages history grouping with optimized updates
-  const groupedItems = useCachedHistory(handle, strategyConfig, props.repo);
+  const groupedItems = useCachedHistory(handle, strategyConfig, props.repo, props.taskQueueUrl);
 
   // Selection hook
   const { viewHeads, selectItem, clearSelection } = useHistorySelection();
@@ -75,7 +76,9 @@ export function DocHistoryView(props: DocHistoryViewProps) {
         />
       </div> */}
       {groupedItems().length === 0 ? (
-        "Loading..."
+        props.taskQueueUrl() === undefined
+          ? "No task queues available for computing history groups"
+          : "Loading..."
       ) : (
         <HistoryList
           items={groupedItems()}

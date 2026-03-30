@@ -15,10 +15,6 @@ import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import { getStrategyKey } from "../utils";
 import * as tasklib from "@awarth/tasklib";
 
-const taskQueue = tasklib.queue(
-  "automerge:3AXXV4FHVom6sWu1rD8kBRWq9Bmd" as AutomergeUrl
-);
-
 const DEBOUNCE_TIME = 5000; // 5 seconds
 const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the same document
 
@@ -44,7 +40,8 @@ const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the sam
 export function useCachedHistory(
   sourceHandle: Accessor<DocHandle<unknown> | undefined>,
   strategyConfig: Accessor<GroupingStrategyConfig>,
-  repo: Repo
+  repo: Repo,
+  taskQueueUrl: Accessor<AutomergeUrl | undefined>
 ): Accessor<HistoryItem[]> {
   const sourceDoc = createMemo(() => {
     const handle = sourceHandle();
@@ -72,6 +69,10 @@ export function useCachedHistory(
   let taskDispatchDelayTimer: ReturnType<typeof setTimeout> | undefined;
 
   const dispatchTask = (sourceUrl: AutomergeUrl) => {
+    const queueUrl = taskQueueUrl();
+    if (!queueUrl) return;
+
+    const taskQueue = tasklib.queue(queueUrl);
     taskQueue.addTask<AutomergeUrl, void>({
       input: sourceUrl,
       importUrl: new URL(/* @vite-ignore */ "../task.js", import.meta.url),

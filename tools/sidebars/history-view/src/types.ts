@@ -1,6 +1,14 @@
 import type { ChangeMetadata } from "@automerge/automerge";
 import type { AutomergeUrl } from "@automerge/automerge-repo/slim";
 
+export type TinyPatchworkAccountDoc = {
+  ["__taskQueues__"]?: {
+    [queueUrl: AutomergeUrl]: boolean;
+  };
+  rootFolderUrl: AutomergeUrl;
+  moduleSettingsUrl: AutomergeUrl;
+};
+
 /**
  * Represents a single change in the document history
  */
