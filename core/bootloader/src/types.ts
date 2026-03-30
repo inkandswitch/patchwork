@@ -5,8 +5,8 @@ export type SetupServiceWorkerOptions = {
    */
   path?: string;
   /**
-   * WebSocket URL for a sync server.
-   * If provided, the default sync server is replaced with this one.
+   * Subduction WebSocket endpoint URLs.
+   * Defaults to `["wss://subduction.sync.inkandswitch.com"]`.
    */
-  syncServer?: string;
+  subductionEndpoints?: string[];
 };

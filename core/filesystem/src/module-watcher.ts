@@ -63,16 +63,18 @@ export class ModuleWatcher {
 
   async loadModules(modules: string[]) {
     await Promise.all(
-      modules.map(async (importName) => {
-        this.setDocWatcher(importName);
-        await this.announce(importName).catch((error) => {
-          console.log(
-            new Error(`Failed to load module ${importName}: ${error}`, {
-              cause: error,
-            })
-          );
-        });
-      })
+      modules
+        .filter((m): m is string => typeof m === "string" && m.length > 0)
+        .map(async (importName) => {
+          this.setDocWatcher(importName);
+          await this.announce(importName).catch((error) => {
+            console.log(
+              new Error(`Failed to load module ${importName}: ${error}`, {
+                cause: error,
+              })
+            );
+          });
+        })
     );
   }
 

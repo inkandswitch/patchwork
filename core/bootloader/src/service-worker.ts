@@ -11,7 +11,7 @@ import { SwLogger, type SwLoggerInterface } from "./sw-logger.js";
 import { initializeWasm } from "@automerge/automerge/slim";
 // eslint-disable-next-line
 // @ts-ignore wat
-import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim"
+import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
 
 import {
   Repo,
@@ -28,9 +28,7 @@ import {
 
 // Small adapters — bundled directly into the SW
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
-import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
-
 
 let cachename = "default";
 let debugging = false;
@@ -63,13 +61,11 @@ const slog = SwLogger.open().then((logger) => {
   return logger;
 });
 
-// Track WebSocket adapters by URL so we can remove them
-const syncAdapters = new Map<string, WebSocketClientAdapter>();
-
-// Resolves when the main thread tells us which sync server to use
-let resolveSyncServer: (url: string) => void;
-const syncServerReady = new Promise<string>((resolve) => {
-  resolveSyncServer = resolve;
+// Resolves when the main thread tells us the Subduction endpoint(s)
+let resolveSubductionReady: () => void;
+let subductionEndpoints: string[] = [];
+const subductionReady = new Promise<void>((resolve) => {
+  resolveSubductionReady = resolve;
 });
 
 const cacheableStatuses = [
@@ -118,26 +114,24 @@ function getRepo() {
       logger.info("wasm initialized");
 
       const sdnWasmResponse = await fetch("/subduction.wasm");
-      initSubductionSync(new Uint8Array(await sdnWasmResponse.arrayBuffer()))
+      initSubductionSync(new Uint8Array(await sdnWasmResponse.arrayBuffer()));
 
-
-      // Wait for the main thread to tell us which sync server to use
-      logger.info("waiting for sync server URL from main thread");
-      const syncServerUrl = await syncServerReady;
-      logger.info("sync server URL received", { url: syncServerUrl });
-      const syncAdapter = new WebSocketClientAdapter(syncServerUrl);
-      syncAdapters.set(syncServerUrl, syncAdapter);
+      // Wait for the main thread to tell us the Subduction endpoint(s)
+      logger.info("waiting for subduction endpoints from main thread");
+      await subductionReady;
+      logger.info("subduction endpoints received", {
+        endpoints: subductionEndpoints,
+      });
 
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
-        network: [syncAdapter],
         peerId: ("service-worker-" +
           (Math.random() * 10000).toString(36).slice(2)) as PeerId,
         async sharePolicy(peerId) {
           return peerId.includes("storage-server");
         },
         enableRemoteHeadsGossiping: true,
-        subductionWebsocketEndpoints: ["wss://subduction.sync.inkandswitch.com"],
+        subductionWebsocketEndpoints: subductionEndpoints,
       });
 
       (self as any).repo = repo;
@@ -177,35 +171,18 @@ self.addEventListener("message", async (event) => {
   } else if (event.data.type == "debug") {
     debugging = event.data.debug;
     log("serviceworker debugging enabled");
-  } else if (event.data.type == "set-sync-server") {
-    const url: string = event.data.url;
-    // Unblock getRepo() — it waits for this before creating the WebSocket
-    resolveSyncServer(url);
-    // Wait for the repo (and its WebSocket) to be fully ready, then ack
+  } else if (event.data.type == "set-subduction-endpoints") {
+    const urls: string[] = event.data.urls;
+    subductionEndpoints = urls;
+    resolveSubductionReady();
+    // Wait for the repo to be fully ready, then ack
     await getRepo();
     const [ackPort] = event.ports;
     if (ackPort) {
       ackPort.postMessage("ready");
       ackPort.close();
     }
-    log(`set sync server: ${url}`);
-  } else if (event.data.type == "add-sync-server") {
-    const url: string = event.data.url;
-    if (!syncAdapters.has(url)) {
-      //const repo = await getRepo();
-      //const adapter = new WebSocketClientAdapter(url);
-      //syncAdapters.set(url, adapter);
-      //repo.networkSubsystem.addNetworkAdapter(adapter);
-      //log(`added sync server: ${url}`);
-    }
-  } else if (event.data.type == "remove-sync-server") {
-    const url: string = event.data.url;
-    const adapter = syncAdapters.get(url);
-    if (adapter) {
-      adapter.disconnect();
-      syncAdapters.delete(url);
-      log(`removed sync server: ${url}`);
-    }
+    log(`set subduction endpoints: ${urls.join(", ")}`);
   }
 });
 
