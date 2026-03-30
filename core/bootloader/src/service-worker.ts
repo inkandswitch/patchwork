@@ -1,5 +1,7 @@
 /// <reference types="service-worker-types" />
 
+import { SwLogger, type SwLoggerInterface } from "./sw-logger.js";
+
 // Heavy imports — marked external by the service-worker vite plugin,
 // resolved to /packages/... URLs at build time. The SW is registered with
 // type:"module" so the browser fetches these as regular network requests.
@@ -27,6 +29,34 @@ import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-
 
 let cachename = "default";
 let debugging = false;
+
+// ── Persistent logger ───────────────────────────────────────────────────
+// Initialized eagerly so it's available for the entire SW lifetime.
+// Access from the SW inspector console via self.printLogs(), self.tailLogs(),
+// self.exportLogs(), self.clearLogs().
+const slog = SwLogger.open().then((logger) => {
+  (self as any).slog = logger;
+
+  (self as any).printLogs = async (n = 200) => {
+    const entries = await logger.tail(n);
+    for (const e of entries) {
+      const prefix = `[${e.ts}] [${e.level}]`;
+      if (e.data !== undefined) {
+        console.log(prefix, e.msg, e.data);
+      } else {
+        console.log(prefix, e.msg);
+      }
+    }
+    console.log(`--- ${entries.length} entries ---`);
+  };
+
+  (self as any).tailLogs = (n = 200) => logger.tail(n);
+  (self as any).exportLogs = () => logger.exportAll();
+  (self as any).clearLogs = () => logger.clear();
+
+  logger.info("sw-logger initialized");
+  return logger;
+});
 
 // Track WebSocket adapters by URL so we can remove them
 const syncAdapters = new Map<string, WebSocketClientAdapter>();
@@ -75,11 +105,17 @@ let repoPromise: Promise<Repo> | null = null;
 function getRepo() {
   if (!repoPromise) {
     repoPromise = (async () => {
+      const logger = await slog;
+
+      logger.info("initializing wasm");
       const wasmResponse = await fetch("/automerge.wasm");
       await initializeWasm(new Uint8Array(await wasmResponse.arrayBuffer()));
+      logger.info("wasm initialized");
 
       // Wait for the main thread to tell us which sync server to use
+      logger.info("waiting for sync server URL from main thread");
       const syncServerUrl = await syncServerReady;
+      logger.info("sync server URL received", { url: syncServerUrl });
       const syncAdapter = new WebSocketClientAdapter(syncServerUrl);
       syncAdapters.set(syncServerUrl, syncAdapter);
 
@@ -95,11 +131,9 @@ function getRepo() {
       });
 
       (self as any).repo = repo;
-      console.log(
-        "[service worker] repo initialized, waiting for network subsystem to be ready"
-      );
+      logger.info("repo constructed, waiting for network subsystem");
       await repo.networkSubsystem.whenReady();
-      console.log("[service worker] repo network subsystem ready");
+      logger.info("repo network subsystem ready");
 
       return repo;
     })();
@@ -174,6 +208,7 @@ interface FileDoc {
 
 async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   const repo = await getRepo();
+  const logger = await slog;
   const href = automergeURL.href;
   const [maybeAutomergeUrl, ...path] = href.split("/");
 
@@ -199,6 +234,14 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   // If no path, check if this is a package with exports to resolve
   // e.g. /automerge%3Adocid/abc → resolve "abc" via package.json exports
   const folderHandle = await repo.find<FolderDoc>(maybeAutomergeUrl);
+
+  if (debugging) {
+    const folderDoc = folderHandle.doc();
+    const docNames = folderDoc?.docs?.map((d: any) => d.name) ?? [];
+    logger.debug(
+      `resolve ${documentId.slice(0, 8)} path=[${path.join("/")}] heads=${folderHandle.heads()?.length ?? 0} docs=[${docNames.join(",")}]`
+    );
+  }
 
   let fileHandle;
   if (path.length) {
@@ -265,15 +308,18 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   }
 
   if (!fileHandle) {
-    throw new Error(
-      `couldn't resolve ${path.join("/")} in folder at ${maybeAutomergeUrl}`
-    );
+    const msg = `couldn't resolve ${path.join("/")} in folder at ${maybeAutomergeUrl}`;
+    const names = folderHandle.doc()?.docs?.map((d: any) => d.name) ?? [];
+    logger.warn(msg, { docs: names });
+    throw new Error(msg);
   }
 
   const fileDoc = fileHandle.doc() as unknown as FileDoc;
   const content = fileDoc?.content;
   if (!content) {
-    throw new Error(`file at ${href} has no content`);
+    const msg = `file at ${href} has no content`;
+    logger.warn(msg);
+    throw new Error(msg);
   }
 
   let body: BodyInit =
