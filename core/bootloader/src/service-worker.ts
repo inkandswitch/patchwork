@@ -258,13 +258,52 @@ function neededEntry(path: string[]): string {
   return "package.json";
 }
 
+// ── In-memory response cache ───────────────────────────────────────────
+//
+// Keyed by canonical Automerge path (e.g. "automerge:3abc.../dist/index.js").
+// Entries are evicted when the folder doc's `docs` array changes, which
+// covers both initial sync arrival and HMR updates via `lastSyncAt`.
+//
+// This bypasses the HTTP Cache API entirely, avoiding the `?t=Date.now()`
+// cache-buster that packages.ts appends. On first load this eliminates
+// redundant Automerge doc walks for the ~200 fetch requests that all go
+// through resolveAutomergeUrl.
+
+interface CacheEntry {
+  response: Response;
+  folderDocId: string;
+}
+
+const responseCache = new Map<string, CacheEntry>();
+
+// Coalesce concurrent requests for the same canonical path.
+// If a resolve is already in flight, subsequent callers await the same promise
+// instead of starting a parallel Automerge doc walk.
+const inflightResolves = new Map<string, Promise<Response>>();
+
+// Track which folder docs we've already subscribed to for invalidation.
+const watchedFolders = new Set<string>();
+
+function watchFolderForInvalidation(folderHandle: any, folderDocId: string) {
+  if (watchedFolders.has(folderDocId)) return;
+  watchedFolders.add(folderDocId);
+
+  folderHandle.on("change", () => {
+    // Evict all cached responses for this folder.
+    for (const [key, entry] of responseCache) {
+      if (entry.folderDocId === folderDocId) {
+        responseCache.delete(key);
+      }
+    }
+  });
+}
+
 // ── Automerge URL resolution ───────────────────────────────────────────
 
 async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   const repo = await getRepo();
   const logger = await slog;
-  const href = automergeURL.href;
-  const [maybeAutomergeUrl, ...path] = href.split("/");
+  const [maybeAutomergeUrl, ...path] = automergeURL.href.split("/");
 
   if (!isValidAutomergeUrl(maybeAutomergeUrl)) {
     return new Response("invalid automerge url", { status: 400 });
@@ -275,6 +314,51 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
 
   const { heads, documentId } = parseAutomergeUrl(maybeAutomergeUrl);
 
+  // ── In-memory cache lookup ──────────────────────────────────────────
+  // Key is the canonical automerge URL + path, ignoring query params
+  // (e.g. ?t=<timestamp> cache busters from packages.ts).
+  const cacheKey =
+    maybeAutomergeUrl + (path.length ? "/" + path.join("/") : "");
+  const cached = responseCache.get(cacheKey);
+  if (cached) {
+    log(`in-memory cache hit: ${cacheKey}`);
+    return cached.response.clone();
+  }
+
+  // ── Request coalescing ────────────────────────────────────────────
+  // If another caller is already resolving this exact path, piggyback
+  // on that promise instead of doing a parallel Automerge doc walk.
+  const inflight = inflightResolves.get(cacheKey);
+  if (inflight) {
+    log(`coalescing request: ${cacheKey}`);
+    const coalesced = await inflight;
+    return coalesced.clone();
+  }
+
+  const resolvePromise = resolveAutomergeUrlInner(
+    repo,
+    logger,
+    maybeAutomergeUrl,
+    path,
+    documentId,
+    cacheKey
+  );
+  inflightResolves.set(cacheKey, resolvePromise);
+  try {
+    return await resolvePromise;
+  } finally {
+    inflightResolves.delete(cacheKey);
+  }
+}
+
+async function resolveAutomergeUrlInner(
+  repo: Repo,
+  logger: any,
+  maybeAutomergeUrl: string,
+  path: string[],
+  documentId: string,
+  cacheKey: string
+): Promise<Response> {
   // NOTE: previously this redirected headless URLs to pinned-heads URLs
   // (307 redirect). Removed because during initial sync, folder docs are
   // partially loaded — pinning captures incomplete state and defeats retries.
@@ -284,7 +368,9 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   // Wait for the folder doc to have the entry we need before resolving.
   // On first load, folder docs sync incrementally — the `docs` array
   // starts empty and fills in as Automerge changes arrive.
-  const folderHandle = await repo.find<FolderDoc>(maybeAutomergeUrl);
+  const folderHandle = await repo.find<FolderDoc>(
+    maybeAutomergeUrl as import("@automerge/automerge-repo/slim").AutomergeUrl
+  );
   const needed = neededEntry(path);
   const entry = await waitForDocEntry(folderHandle, needed);
 
@@ -419,7 +505,7 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
 
   const content = fileDoc?.content;
   if (!content) {
-    const msg = `file at ${href} has no content (timed out)`;
+    const msg = `file at ${cacheKey} has no content (timed out)`;
     logger.warn(msg);
     throw new Error(msg);
   }
@@ -434,7 +520,17 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   headers.set("cross-origin-embedder-policy", "credentialless");
   headers.set("cross-origin-resource-policy", "cross-origin");
 
-  return new Response(body, { status: 200, headers });
+  const response = new Response(body, { status: 200, headers });
+
+  // ── Store in in-memory cache ──────────────────────────────────────
+  // Watch the folder doc so we evict when it changes (HMR / sync updates).
+  watchFolderForInvalidation(folderHandle, documentId);
+  responseCache.set(cacheKey, {
+    response: response.clone(),
+    folderDocId: documentId,
+  });
+
+  return response;
 }
 
 // ── Fetch handler ──────────────────────────────────────────────────────
@@ -453,7 +549,12 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
     url.protocol == self.location.protocol
   ) {
     try {
-      specialURL = new URL(decodeURIComponent(url.pathname.slice(1)));
+      // Strip query parameters (e.g. ?t=<timestamp> cache busters from
+      // packages.ts) so the in-memory response cache can match on the
+      // canonical Automerge path regardless of cache-bust suffixes.
+      const decoded = decodeURIComponent(url.pathname.slice(1));
+      const sansQuery = decoded.replace(/\?.*$/, "");
+      specialURL = new URL(sansQuery);
       log(`received special request ${specialURL}`);
     } catch {}
   }

@@ -50,16 +50,22 @@ async function packageJsonContentsFromFolderDocUrl(
     )
   ).href;
 
-  // Cache-bust: the SW may return 500 if the folder doc hasn't synced yet.
-  // Without this, the browser caches the error response and retries fail.
-  const bustUrl = `${packageJSONPath}${packageJSONPath.includes("?") ? "&" : "?"}t=${Date.now()}`;
+  // First attempt: use a stable URL so the SW's in-memory cache can hit.
+  const response = await fetch(packageJSONPath);
+  if (response.ok) {
+    return response.json();
+  }
 
-  const response = await fetch(bustUrl);
-  if (!response.ok) {
+  // Retry with cache-bust: the browser may have cached a failed response
+  // (e.g. 500 from a folder doc that hadn't synced yet). A unique query
+  // parameter forces a fresh request through the SW.
+  const bustUrl = `${packageJSONPath}${packageJSONPath.includes("?") ? "&" : "?"}t=${Date.now()}`;
+  const retryResponse = await fetch(bustUrl);
+  if (!retryResponse.ok) {
     return undefined;
   }
 
-  return response.json();
+  return retryResponse.json();
 }
 
 export function resolvePackageExport(
