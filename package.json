@@ -6,7 +6,7 @@
   "main": "index.js",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 pnpm -r --workspace-concurrency=1 build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 pnpm -r --filter '!tenfold.inkandswitch.com' --workspace-concurrency=1 build",
     "clean": "rm -rf **/node_modules **/dist",
     "darn-clean": "bash scripts/darn-clean.sh",
     "dev": "pnpm -r --filter ...{sites/${SITE:-tiny-patchwork}}... --parallel dev",
@@ -23,7 +23,15 @@
   },
   "pnpm": {
     "overrides": {
-      "@automerge/automerge": "catalog:"
+      "@automerge/automerge": "catalog:",
+      "@automerge/automerge-repo": "catalog:",
+      "@automerge/automerge-subduction": "catalog:",
+      "@automerge/automerge-repo-storage-indexeddb": "catalog:",
+      "@automerge/automerge-repo-network-messagechannel": "catalog:",
+      "@automerge/automerge-repo-network-websocket": "catalog:",
+      "@automerge/automerge-repo-react-hooks": "catalog:",
+      "@automerge/react": "catalog:",
+      "@automerge/vanillajs": "catalog:"
     }
   },
   "keywords": [],

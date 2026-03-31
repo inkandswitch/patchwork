@@ -2,16 +2,6 @@ import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 import patchwork from "@inkandswitch/patchwork-bootloader/vite";
 import tailwindcss from "@tailwindcss/vite";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-
-// Force single copies to avoid duplicate Wasm module instances.
-const automergeEntryDir = dirname(
-  fileURLToPath(import.meta.resolve("@automerge/automerge"))
-);
-const subductionDir = dirname(
-  fileURLToPath(import.meta.resolve("@automerge/automerge-subduction"))
-);
 
 export default defineConfig({
   plugins: [
@@ -41,17 +31,6 @@ export default defineConfig({
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cross-Origin-Embedder-Policy": "credentialless",
     },
-  },
-  resolve: {
-    alias: {
-      "@automerge/automerge/slim": resolve(automergeEntryDir, "slim.js"),
-      "@automerge/automerge": resolve(automergeEntryDir, "fullfat_bundler.js"),
-      "@automerge/automerge-subduction/slim": resolve(subductionDir, "slim.js"),
-      "@automerge/automerge-subduction": resolve(subductionDir, "web.js"),
-    },
-  },
-  optimizeDeps: {
-    exclude: ["@automerge/automerge-subduction"],
   },
   build: {
     target: "firefox137",

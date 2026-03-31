@@ -12,6 +12,10 @@
 
 set -euo pipefail
 
+echo "WARNING: This deletes ALL darn workspaces and storage globally, not just this project."
+echo "Press Ctrl+C within 2 seconds to abort."
+sleep 2
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 DARN_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/darn"

@@ -116,20 +116,25 @@ export class ModuleWatcher {
     // Event-driven retry: watch the folder doc for changes.
     // When it receives data from sync, retry the import.
     if (isValidAutomergeUrl(importName)) {
-      this.repo.find<FolderDoc>(importName).then((handle) => {
-        const retryOnChange = async () => {
-          if (!this.#pendingModules.has(importName)) {
-            handle.removeListener("change", retryOnChange);
-            return;
-          }
-          const retried = await this.announce(importName).catch(() => null);
-          if (retried) {
-            this.#pendingModules.delete(importName);
-            handle.removeListener("change", retryOnChange);
-          }
-        };
-        handle.on("change", retryOnChange);
-      });
+      this.repo
+        .find<FolderDoc>(importName)
+        .then((handle) => {
+          const retryOnChange = async () => {
+            if (!this.#pendingModules.has(importName)) {
+              handle.removeListener("change", retryOnChange);
+              return;
+            }
+            const retried = await this.announce(importName).catch(() => null);
+            if (retried) {
+              this.#pendingModules.delete(importName);
+              handle.removeListener("change", retryOnChange);
+            }
+          };
+          handle.on("change", retryOnChange);
+        })
+        .catch(() => {
+          // find() failed — the fallback timer will handle retries.
+        });
     }
 
     // Fallback: periodic retry for cases where the doc change event
@@ -142,6 +147,7 @@ export class ModuleWatcher {
       if (!this.#pendingModules.has(importName) || retries >= maxRetries) {
         clearInterval(timer);
         if (retries >= maxRetries) {
+          this.#pendingModules.delete(importName);
           console.warn(
             `[module-watcher] gave up loading ${importName} after ${maxRetries} retries`
           );

@@ -12,10 +12,7 @@ import { initializeWasm } from "@automerge/automerge/slim";
 // eslint-disable-next-line
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
-import {
-  setSubductionLogLevel,
-  WebCryptoSigner,
-} from "@automerge/automerge-subduction/slim";
+import { WebCryptoSigner } from "@automerge/automerge-subduction/slim";
 
 import {
   Repo,
@@ -35,9 +32,6 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 
 // TEMPORARY: enable debug npm module in SW context (no localStorage available)
-import debug from "debug";
-debug.enable("automerge-repo:subduction*");
-
 let cachename = "default";
 let debugging = false;
 
@@ -123,12 +117,6 @@ function getRepo() {
 
       const sdnWasmResponse = await fetch("/subduction.wasm");
       initSubductionSync(new Uint8Array(await sdnWasmResponse.arrayBuffer()));
-
-      // TEMPORARY: enable verbose Subduction tracing in the SW for debugging
-      (self as any).__SUBDUCTION_DEBUG = true;
-      try {
-        setSubductionLogLevel("debug");
-      } catch {}
 
       // Wait for the main thread to tell us the Subduction endpoint(s)
       logger.info("waiting for subduction endpoints from main thread");
@@ -364,29 +352,22 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
       folderHandle,
       ["package.json"]
     );
-    console.log(
-      `[sw:resolve] ${documentId.slice(0, 8)} pkgFileHandle=${pkgFileHandle ? "found" : "null"}`
-    );
+    if (debugging) {
+      logger.debug(
+        `resolve ${documentId.slice(0, 8)} pkgFileHandle=${pkgFileHandle ? "found" : "null"}`
+      );
+    }
     if (pkgFileHandle) {
       const pkgDoc = pkgFileHandle.doc() as unknown as FileDoc | undefined;
-      console.log(
-        `[sw:resolve] ${documentId.slice(0, 8)} pkgDoc.content=${
-          pkgDoc?.content
-            ? `${typeof pkgDoc.content}(${
-                pkgDoc.content instanceof Uint8Array
-                  ? pkgDoc.content.byteLength
-                  : String(pkgDoc.content).length
-              }b)`
-            : "null"
-        }`
-      );
       if (pkgDoc?.content) {
         const pkgJson = JSON.parse(String(pkgDoc.content));
         try {
           const resolved = resolvePackageExport(pkgJson);
-          console.log(
-            `[sw:resolve] ${documentId.slice(0, 8)} resolved=${resolved}`
-          );
+          if (debugging) {
+            logger.debug(
+              `resolve ${documentId.slice(0, 8)} resolved=${resolved}`
+            );
+          }
           if (resolved) {
             const resolvedPath = resolved.replace(/^\.\//, "").split("/");
             fileHandle = await findHandleInFolderHandle<FileDoc>(
@@ -396,8 +377,9 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
             );
           }
         } catch (e) {
-          console.log(
-            `[sw:resolve] ${documentId.slice(0, 8)} resolvePackageExport threw: ${e}`
+          logger.warn(
+            `resolve ${documentId.slice(0, 8)} resolvePackageExport threw`,
+            e
           );
         }
       }

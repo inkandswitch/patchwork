@@ -77,7 +77,7 @@ else
 
   echo "Syncing $TOTAL tools in parallel..."
 
-  # Wait for jobs as they finish (bash 4.3+ wait -n)
+  # Wait for jobs as they finish (bash 5.1+; wait -n -p requires 5.1)
   while [ ${#PIDS[@]} -gt 0 ]; do
     # wait -n -p sets FINISHED_PID to whichever PID completed
     if wait -n -p FINISHED_PID "${!PIDS[@]}" 2>/dev/null; then
@@ -121,6 +121,9 @@ for dir in "${TOOL_DIRS[@]}"; do
 done
 
 # ── Register all URLs in one batch ─────────────────────────────────────
+# Intentionally clears and rebuilds the module list from scratch so it
+# matches exactly what was successfully published in this run. Tools that
+# failed to sync above are excluded from the final list.
 if [ "${SKIP_REGISTER:-0}" != "1" ] && [ ${#URLS[@]} -gt 0 ]; then
   echo
   echo "=== Registering ${#URLS[@]} modules in $SETTINGS_URL ==="

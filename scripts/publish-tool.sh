@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Publish a single Patchwork tool: build (if applicable) and sync via darn.
+# Publish a single Patchwork tool: initialize (if needed) and sync via darn.
 #
 # Usage:
 #   pnpm publish-tool tools/toolbar/doc-title

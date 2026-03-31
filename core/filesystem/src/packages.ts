@@ -27,12 +27,16 @@ export async function importModuleFromFolderDocUrl(
 
   log(`Importing module from entry point url ${entryPointUrl}`);
 
-  // Cache-bust: browsers cache failed dynamic import() results by URL.
-  // Adding a unique query parameter ensures retries are treated as fresh
-  // requests even if a previous attempt for the same URL failed.
-  const bustUrl = `${entryPointUrl}${entryPointUrl.includes("?") ? "&" : "?"}t=${Date.now()}`;
-
-  return import(/* @vite-ignore */ bustUrl);
+  try {
+    // Try importing with a stable URL so successful loads are cached
+    // and module side effects don't re-execute on subsequent calls.
+    return await import(/* @vite-ignore */ entryPointUrl);
+  } catch {
+    // Cache-bust on retry: browsers cache failed dynamic import() results
+    // by URL. A unique query parameter forces a fresh request.
+    const bustUrl = `${entryPointUrl}${entryPointUrl.includes("?") ? "&" : "?"}t=${Date.now()}`;
+    return import(/* @vite-ignore */ bustUrl);
+  }
 }
 
 async function packageJsonContentsFromFolderDocUrl(
