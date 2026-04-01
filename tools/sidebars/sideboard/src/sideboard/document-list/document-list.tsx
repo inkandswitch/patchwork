@@ -75,19 +75,19 @@ export function DocumentList(props: DocumentListProps) {
       structuredClone(oldDoc)
     );
 
-    // Add sync server with pull access
+    // Add sync server with relay access
     if (props.hive.syncServer) {
       try {
         const serverContactCard = ContactCard.fromJson(
           props.hive.syncServer.contactCard.toJson()
         );
         if (serverContactCard) {
-          const pullAccess = Access.tryFromString("pull");
-          if (pullAccess) {
+          const relayAccess = Access.tryFromString("relay");
+          if (relayAccess) {
             await props.hive.addMemberToDoc(
               newHandle.url,
               serverContactCard,
-              pullAccess
+              relayAccess
             );
           }
         }

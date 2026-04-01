@@ -38,7 +38,7 @@ async function createNew(
 
   const docHandle = await createDocOfDatatype2(datatype, repo);
   if (hive) {
-    await hive.addSyncServerPullToDoc(docHandle.url);
+    await hive.addSyncServerRelayToDoc(docHandle.url);
   }
   const doc = docHandle.doc();
   const name = datatype.module.getTitle(doc);

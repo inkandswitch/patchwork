@@ -25,7 +25,7 @@ interface ShareModalProps {
   onClose: () => void;
 }
 
-const ACCESS_LEVELS = ["Pull", "Read", "Write", "Admin"] as const;
+const ACCESS_LEVELS = ["Relay", "Read", "Edit", "Admin"] as const;
 
 async function fetchAccessList(
   hive: AutomergeRepoKeyhive,
@@ -172,7 +172,7 @@ export function ShareModal(props: ShareModalProps) {
         throw new Error("Invalid ContactCard JSON");
       }
 
-      const access = Access.tryFromString("write");
+      const access = Access.tryFromString("edit");
       if (!access) {
         throw new Error("Invalid access level");
       }
@@ -204,7 +204,7 @@ export function ShareModal(props: ShareModalProps) {
 
   const handleMakePublic = async () => {
     try {
-      const access = Access.tryFromString("write");
+      const access = Access.tryFromString("edit");
       if (!access) {
         throw new Error("Invalid access level");
       }
