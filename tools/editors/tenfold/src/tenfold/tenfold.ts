@@ -1,5 +1,6 @@
 import { setupContext } from "./audio.ts"
 import Averager from "./Averager.ts"
+import { createControlSurface, type ControlCtx } from "./controls/index.ts"
 import { activeCollector, collectors, setActiveCollector } from "./drawing-collector.ts"
 import { drawText, loadFont } from "./font.ts"
 import { patches } from "./patches.ts"
@@ -33,9 +34,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const gap = 0.15
   const pitch = 1 + gap // cell + gap stride
   // Middle row layout (cell-local ly units)
-  const waffleEnd = 0.85 // ly where waffle pad ends
-  const timelineStart = 0.9 // ly where timeline begins
-  const timelineEnd = 1.0 // ly where timeline ends
+  const waffleEnd = 0.55 // ly where waffle pad ends
+  const timelineStart = 0.60 // ly where controls strip begins
+  const timelineEnd = 1.0 // ly where controls strip ends
   const states = {} as Record<number, Record<number, any>>
   const useAudio = false
 
@@ -189,10 +190,8 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
 
   // INPUT HANDLING /////////////////////////////////////////////////////////////////////////////////
 
-  let dragParam: number | null = null // the cell idx for the currently dragged param
   let mouseStart: Record<string, number> // state captured when the mouse is first pressed
   let mouseDragged: Record<string, number> // state captured as the mouse is dragged
-  let lastWaffled = performance.now()
 
   // Convert CSS pixel coords to grid coords
   function hitCoords(x: number, y: number) {
@@ -223,6 +222,30 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   }
 
   type HitResult = ReturnType<typeof hitCoords>
+
+  // Control surface: waffles, ampersand, time/chaos/sound controls.
+  // api is set below after the api object is constructed (circular dependency avoided via mutation).
+  const controlCtx: ControlCtx = {
+    ctx,
+    api: null as any, // set after api is defined below
+    getPixW: () => pixW,
+    getPixHW: () => pixHW,
+    getCssW: () => cssW,
+    getDpr: () => dpr,
+    thick,
+    color,
+    padding,
+    gap,
+    pitch,
+    waffleEnd,
+    controlsStart: timelineStart,
+    controlsEnd: timelineEnd,
+    opts,
+    getMouseDragged: () => mouseDragged,
+  }
+  const controlSurface = createControlSurface(controlCtx, (newT: number) => {
+    t = newT
+  })
 
   // These are the regions where various controls (etc) exist.
   // Each region defines a hit test, cursor, and optionally:
@@ -269,48 +292,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         opts.edit(h.li)
       },
     },
-    {
-      // timeline — t is overridden per-frame via frame(), not per-pointermove
-      cursor: "ew-resize",
-      test: (h: HitResult) => (h.i === 4 || h.i === 5) && h.kx >= 0 && h.kx <= 1 && h.ly > timelineStart && h.ly <= timelineEnd,
-      frame() {
-        t = 0.5 + mouseDragged.kx
-      },
-    },
-    {
-      // waffle
-      cursor(h: HitResult) {
-        for (let p = 0; p < opts.states.length; p++) {
-          let s = opts.states[p]
-          if (Math.hypot(clamp(denorm(h.kx)) - s.q, clamp(denorm(h.ky)) - s.r) < 0.15) return "move"
-        }
-        return "default"
-      },
-      test: (h: HitResult) => (h.i === 4 || h.i === 5) && h.kx >= 0 && h.kx <= 1 && h.ky >= 0 && h.ky <= 1,
-      pointerdown(h: HitResult) {
-        // grab the closest waffle
-        dragParam = null
-        let closestDist = 0.3 // need to be within this dist for the drag to count
-        for (let p = 0; p < opts.states.length; p++) {
-          let s = opts.states[p]
-          let dist = Math.hypot(clamp(denorm(h.kx)) - s.q, clamp(denorm(h.ky)) - s.r)
-          if (dist >= closestDist) continue
-          dragParam = p
-          closestDist = dist
-        }
-        if (dragParam == null) return false
-        if (performance.now() - lastWaffled < 300) {
-          opts.set(dragParam, "q", dragParam / 4 - 1)
-          opts.set(dragParam, "r", (Math.random() - 0.5) / 5)
-        }
-        lastWaffled = performance.now()
-      },
-      drag(_start: HitResult, h: HitResult) {
-        if (dragParam == null) return
-        opts.set(dragParam, "q", clamp(denorm(h.kx)))
-        opts.set(dragParam, "r", clamp(denorm(h.ky)))
-      },
-    },
+    ...controlSurface.regions,
   ]
 
   let dragRegion: (typeof regions)[number] | null = null
@@ -468,6 +450,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       return !!dragRegion
     },
   }
+
+  // Wire api into the control surface context (api was defined after controlCtx)
+  controlCtx.api = api
 
   // ENGINE /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -627,75 +612,10 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
         api.setCtx(ctx) // spark sets its own api ctx (ugh this is so nasty)
       }
 
-      // Draw the kaoss pad draggable
-      ctx.resetTransform()
-      ctx.translate((pitch + padding) * pixW, (pitch + padding) * pixW) // origin at the TL corner of the kaoss pad
-      ctx.scale(pixW, pixW)
-      ctx.lineWidth = thick
-
-      // kaoss pad is x: 0 to 2+gap, y: 0 to 1
-      ctx.beginPath()
-      let gs = 0.025 // size of the grid
-      // m rows by n cols
-      for (let m = 0; m < 3; m++) {
-        for (let n = 0; n < 3; n++) {
-          let W = 2 + gap - gs * 3
-          let H = waffleEnd - gs * 3
-          let X = gs * n + declip(s.q, 0, W)
-          let Y = gs * m + declip(s.r, 0, H)
-          if (m * 3 + n == i) ctx.fillRect(X, Y, gs, gs)
-          api.rect(X, Y, gs, gs)
-        }
-      }
-      ctx.stroke()
     }
 
-    // DAWN OF THE SECOND ROW
-
-    // &
-    ctx.resetTransform()
-    ctx.translate(padding * pixW, (pitch + padding) * pixW)
-    ctx.scale(pixHW, pixHW) // CLIP LETTER SPACE
-    ctx.translate(1, 1) // -1 to 1
-    ctx.lineWidth = 2 * thick
-    ctx.strokeStyle = color
-
-    {
-      let r = 0.3
-      ctx.beginPath()
-      api.arc(0, -0.5, r, 0, -0.25, true)
-      api.arc(-0.75, -0.5, r, -0.25, 0.25, true)
-      api.line(-0.6, -0.2)
-      api.move(-0.6, -0.1)
-      api.arc(-0.75, 0.2, r, -0.25, -0.5, true)
-      api.arc(-0.75, 0.8, r, 0.5, 0.25, true)
-      api.arc(0.5, 0.8, r, 0.25, 0, true)
-      api.line(0.8, 0.5)
-      api.line(0.8 - 0.8, 0.5 + 0.1)
-      api.move(0.8, 0.5)
-      api.line(0.8 + 0.4, 0.5 - 0.05)
-      ctx.stroke()
-
-      ctx.beginPath()
-      api.circle(0.8, 0.5, 0.04)
-      ctx.fill()
-    }
-
-    // Clock wave
-    ctx.resetTransform()
-    ctx.scale(dpr * cssW, dpr * cssW)
-    ctx.translate(padding + pitch, padding + pitch + timelineStart)
-    for (let i = 0; i <= 1.0001; i += 0.02) {
-      ctx.beginPath()
-      let phase = (((i - t + 0.5) % 1) + 1) % 1 // 0 to 1
-      let p = Math.abs(denorm(phase)) // 1 to 0 to 1
-      p **= 2.5
-      ctx.lineWidth = denorm(Math.min((1 - Math.abs(denorm(i))) * 4, 1) * p, thick / 4, (thick * 5) / 2)
-      let x = (2 + gap) * i
-      ctx.moveTo(x, 0)
-      ctx.lineTo(x, timelineEnd - timelineStart)
-      ctx.stroke()
-    }
+    // Control surface: ampersand, waffles, time/chaos/sound controls
+    controlSurface.draw(t, ms)
 
     // DEBUG: region hit areas
     if (false) {
