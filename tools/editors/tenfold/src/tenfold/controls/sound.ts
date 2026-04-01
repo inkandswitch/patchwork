@@ -1,4 +1,5 @@
 import type { ControlCtx, Region, HitResult } from "./types.ts"
+import { controlBounds } from "./layout.ts"
 
 const GRID_N = 10    // N×N isometric tiles
 const GRID_CW = 0.9  // tile width in normalized units (relative to control slot)
@@ -15,23 +16,20 @@ export function createSoundControl(cc: ControlCtx): {
 
   function draw(dt: number) {
     const { ctx, color } = cc
-    const cssW = cc.getCssW()
-    const dpr = cc.getDpr()
-    const { padding, pitch, gap, controlsStart, controlsEnd } = cc
 
     elapsed += dt
 
     const t = (elapsed / 4) % 1
 
-    // Slot 1 (middle third of kaoss pad, kx 1/3..2/3)
-    const kaossLeft = (padding + pitch) * cssW * dpr
-    const kaossPxW = (2 + gap) * cssW * dpr
-    const slotPxW = kaossPxW / 3
-    const slotPxH = (controlsEnd - controlsStart) * cssW * dpr
-    const slotCx = kaossLeft + slotPxW * 1.5 // center of slot 1
-    const slotTop = (padding + pitch + controlsStart) * cssW * dpr
+    const { soundCx: slotCx, soundCy, soundW, soundH: slotPxH } = controlBounds(cc)
+    const slotTop = soundCy - slotPxH / 2
+    const slotPxW = soundW
 
-    const CW = GRID_CW * (slotPxW / (GRID_N * 1.5)) // tile width in px
+    // Constrain tile size so the full grid fits within the control height.
+    // Isometric grid vertical span ≈ GRID_N * CW; reserve ~60% of height for grid body.
+    const CW_byWidth = GRID_CW * (slotPxW / (GRID_N * 1.5))
+    const CW_byHeight = (slotPxH * 0.6) / GRID_N
+    const CW = Math.min(CW_byWidth, CW_byHeight)
     const CH = CW / 2
     const AMP_CENTER = slotPxH * 0.45
     const AMP_FALLOFF = 1.6
@@ -109,12 +107,14 @@ export function createSoundControl(cc: ControlCtx): {
 
   const region: Region = {
     cursor: "pointer",
-    test: (h: HitResult) =>
-      (h.i === 4 || h.i === 5) &&
-      h.kx >= 1 / 3 &&
-      h.kx < 2 / 3 &&
-      h.ly > cc.controlsStart &&
-      h.ly <= cc.controlsEnd,
+    test: (h: HitResult) => {
+      const { chaosKxEnd, timeKxStart } = controlBounds(cc)
+      return (h.i === 4 || h.i === 5) &&
+        h.kx >= chaosKxEnd &&
+        h.kx < timeKxStart &&
+        h.ly > cc.controlsStart &&
+        h.ly <= cc.controlsEnd
+    },
     pointerdown() {
       state.on = !state.on
     },

@@ -34,9 +34,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const gap = 0.15
   const pitch = 1 + gap // cell + gap stride
   // Middle row layout (cell-local ly units)
-  const waffleEnd = 0.55 // ly where waffle pad ends
-  const timelineStart = 0.60 // ly where controls strip begins
-  const timelineEnd = 1.0 // ly where controls strip ends
+  const waffleEnd = 0.38 // ly where waffle pad ends
+  const timelineStart = 0.36 // ly where controls strip begins
+  const timelineEnd = 1.0 // ly where controls strip ends (~3/4 of cell height)
   const states = {} as Record<number, Record<number, any>>
   const useAudio = false
 
