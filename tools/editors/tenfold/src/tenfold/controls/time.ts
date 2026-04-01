@@ -1,6 +1,7 @@
 import type { ControlCtx, Region, HitResult } from "./types.ts"
+import { controlBounds } from "./layout.ts"
 
-const N_SPOKES = 36
+const N_SPOKES = 24
 const LOOP_DURATION = 6 // seconds per cycle
 const TAU = Math.PI * 2
 
@@ -11,30 +12,21 @@ export function createTimeControl(
   cc: ControlCtx,
   onTimeUpdate: (t: number) => void,
 ): { draw(dt: number): void; region: Region } {
-  let phase = 0  // accumulates in seconds
+  let phase = 0       // accumulates in seconds
   let playing = true
+  let startPhase = 0  // phase at drag start
+  let startKx = 0     // kx at drag start
 
   function draw(dt: number) {
     if (playing) phase += dt
 
     const { ctx, color } = cc
-    const cssW = cc.getCssW()
-    const dpr = cc.getDpr()
-    const { padding, pitch, gap, controlsStart, controlsEnd } = cc
-
-    // Slot 2 (right third of kaoss pad, kx 2/3..1)
-    const kaossLeft = (padding + pitch) * cssW * dpr
-    const kaossPxW = (2 + gap) * cssW * dpr
-    const slotPxW = kaossPxW / 3
-    const stripPxH = (controlsEnd - controlsStart) * cssW * dpr
-    const cx = kaossLeft + slotPxW * 2.5 // center of slot 2
-    const cy = (padding + pitch + controlsStart) * cssW * dpr + stripPxH * 0.5
-    const slotR = Math.min(slotPxW, stripPxH) * 0.42
-    const R_OUTER = slotR
-    const R_INNER = slotR * 0.28
+    const { timeCx: cx, timeCy: cy, timeR } = controlBounds(cc)
+    const R_OUTER = timeR
+    const R_INNER = timeR * 0.28
     const baseStroke = cc.thick * cc.getPixW()
     const W_MIN = baseStroke
-    const W_MAX = baseStroke * 3.5
+    const W_MAX = baseStroke * 3.5 - 2 * cc.getDpr()
 
     const t = (phase % LOOP_DURATION) / LOOP_DURATION // 0..1
     const headAngle = t * TAU - Math.PI / 2
@@ -71,16 +63,22 @@ export function createTimeControl(
   }
 
   const region: Region = {
-    cursor: "pointer",
+    cursor: "ew-resize",
     test: (h: HitResult) =>
       (h.i === 4 || h.i === 5) &&
-      h.kx >= 2 / 3 &&
+      h.kx >= controlBounds(cc).timeKxStart &&
       h.kx <= 1 &&
       h.ly > cc.controlsStart &&
       h.ly <= cc.controlsEnd,
-    pointerdown() {
-      playing = !playing
-      onTimeUpdate((phase % LOOP_DURATION) / LOOP_DURATION)
+    pointerdown(h: HitResult) {
+      startPhase = phase
+      startKx = h.kx
+    },
+    frame() {
+      const kx = cc.getMouseDragged().kx
+      // kx spans 0-1 across the full kaoss pad; map displacement to seconds
+      phase = (((startPhase + (kx - startKx) * LOOP_DURATION) % LOOP_DURATION) + LOOP_DURATION) % LOOP_DURATION
+      onTimeUpdate(phase / LOOP_DURATION)
     },
   }
 

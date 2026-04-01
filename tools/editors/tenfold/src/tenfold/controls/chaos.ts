@@ -1,4 +1,5 @@
 import type { ControlCtx, Region, HitResult } from "./types.ts"
+import { controlBounds } from "./layout.ts"
 
 // Harmonics state — randomized once, fixed per session
 const H = 8
@@ -46,10 +47,6 @@ export function createChaosControl(cc: ControlCtx): {
 
   function draw(dt: number) {
     const { ctx, color } = cc
-    const pixW = cc.getPixW()
-    const cssW = cc.getCssW()
-    const dpr = cc.getDpr()
-    const { padding, pitch, gap, controlsStart, controlsEnd } = cc
 
     elapsed += dt
 
@@ -82,15 +79,7 @@ export function createChaosControl(cc: ControlCtx): {
       sdy0 += curAm[j] * Math.sin(curYF[j] * 0 + h.yP[j])
     }
 
-    // Slot 0 (left third of kaoss pad, kx 0..1/3)
-    const kaossLeft = (padding + pitch) * cssW * dpr // kaoss pad left edge in px
-    const kaossPxW = (2 + gap) * cssW * dpr          // kaoss pad width in px
-    const slotPxW = kaossPxW / 3
-    const stripPxH = (controlsEnd - controlsStart) * cssW * dpr
-    const cx = kaossLeft + slotPxW * 0.5
-    const cy = (padding + pitch + controlsStart) * cssW * dpr + stripPxH * 0.5
-    const Rs = Math.min(slotPxW, stripPxH) * 0.42
-
+    const { chaosCx: cx, chaosCy: cy, chaosR: Rs } = controlBounds(cc)
     const baseStroke = cc.thick * cc.getPixW()
 
     ctx.resetTransform()
@@ -142,7 +131,7 @@ export function createChaosControl(cc: ControlCtx): {
     test: (h: HitResult) =>
       (h.i === 4 || h.i === 5) &&
       h.kx >= 0 &&
-      h.kx < 1 / 3 &&
+      h.kx < controlBounds(cc).chaosKxEnd &&
       h.ly > cc.controlsStart &&
       h.ly <= cc.controlsEnd,
     pointerdown() {

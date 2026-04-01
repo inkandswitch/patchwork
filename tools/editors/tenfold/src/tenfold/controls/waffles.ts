@@ -10,7 +10,7 @@ export function createWaffles(cc: ControlCtx): { draw(): void; region: Region } 
   let lastWaffled = performance.now()
 
   function draw() {
-    const { ctx, api, padding, pitch, gap, waffleEnd, opts, color } = cc
+    const { ctx, api, padding, pitch, gap, waffleEnd, opts, color } = cc  // padding reused as top offset
     const pixW = cc.getPixW()
 
     ctx.resetTransform()
@@ -21,15 +21,16 @@ export function createWaffles(cc: ControlCtx): { draw(): void; region: Region } 
     ctx.fillStyle = color
 
     const gs = 0.025 // size of each dot square
+    const topPad = padding // match the outer grid padding, pushes waffles off the top edge
     for (let i = 0; i < 9; i++) {
       const s = opts.states[i]
       ctx.beginPath()
       for (let m = 0; m < 3; m++) {
         for (let n = 0; n < 3; n++) {
           const W = 2 + gap - gs * 3
-          const H = waffleEnd - gs * 3
+          const H = waffleEnd - topPad - gs * 3
           const X = gs * n + declip(s.q, 0, W)
-          const Y = gs * m + declip(s.r, 0, H)
+          const Y = gs * m + topPad + declip(s.r, 0, H)
           if (m * 3 + n === i) ctx.fillRect(X, Y, gs, gs)
           api.rect(X, Y, gs, gs)
         }
