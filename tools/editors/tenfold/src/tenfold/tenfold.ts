@@ -13,6 +13,7 @@ export interface CreateTenfoldOptions {
   letters: ((ctx: any, params: { q: number; r: number; t: number; x: number; y: number; s: any }) => void)[]
   states: import("../index.tsx").TenfoldState[]
   currentlyEditingIndex: number | undefined | null
+  editorCollapsed: boolean
   container: HTMLElement
   edit(i: number): void
   set(i: number, field: "q" | "r" | "x" | "y" | "i", val: number): void
@@ -158,9 +159,9 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     const box = opts.container.getBoundingClientRect()
 
     // we want to leave some space at the right for the code editor, so we're gonna subtract that here
-    box.width /= 2
+    const maxCanvasWidth = opts.editorCollapsed ? box.width : box.width / 2
 
-    let parentWidth = PRINT ? 3600 : box.width
+    let parentWidth = PRINT ? 3600 : maxCanvasWidth
     let parentHeight = PRINT ? 4800 : box.height
 
     let gridW = 3 + 2 * gap + 2 * padding // 3 cols, 2 gaps

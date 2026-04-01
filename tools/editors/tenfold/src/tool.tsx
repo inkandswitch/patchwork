@@ -5,7 +5,7 @@ import type { FolderDoc } from "@inkandswitch/patchwork-filesystem"
 import { makePersisted } from "@solid-primitives/storage"
 import { type WorkerShape } from "@valtown/codemirror-ts/worker"
 import * as Comlink from "comlink"
-import { createEffect, createResource, createSignal, mapArray, on, onMount, Suspense } from "solid-js"
+import { createEffect, createResource, createSignal, mapArray, on, onMount, Show, Suspense } from "solid-js"
 import { createMutable, createStore, produce } from "solid-js/store"
 import TenfoldEditor from "./editor.tsx"
 import font from "./font.txt?raw"
@@ -187,6 +187,15 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     name: `${props.handle.url}#editing`,
   })
 
+  const [editorCollapsed, setEditorCollapsed] = makePersisted(createSignal(false), {
+    name: `${props.handle.url}#editorCollapsed`,
+  })
+
+  // Trigger canvas resize recalculation when collapsed state changes
+  createEffect(
+    on(() => editorCollapsed(), () => window.dispatchEvent(new Event("resize")), { defer: true })
+  )
+
   function toggleEditing(i: number) {
     setEditing((prev) => (prev === i ? null : i))
   }
@@ -205,6 +214,9 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     },
     get currentlyEditingIndex() {
       return editing()
+    },
+    get editorCollapsed() {
+      return editorCollapsed() ?? false
     },
     font,
     get states() {
@@ -328,9 +340,10 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
 
   return (
     <Suspense>
-      <article class="tenfold" ref={setCanvas}>
+      <article class={`tenfold${editorCollapsed() ? " tenfold--collapsed" : ""}`} ref={setCanvas}>
         {toastMessage() && <div class="tenfold-toast">{toastMessage()}</div>}
         <canvas />
+        <div class="tenfold-divider" onClick={() => setEditorCollapsed((c) => !c)} />
         <TenfoldEditor
           editing={editing}
           editingHandle={editingHandle}
@@ -342,6 +355,9 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
           close={() => setEditing(null)}
           worker={worker}
         />
+        <Show when={editorCollapsed()}>
+          <div class="tenfold-expand" onClick={() => setEditorCollapsed(false)} />
+        </Show>
       </article>
     </Suspense>
   )

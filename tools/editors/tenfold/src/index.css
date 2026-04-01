@@ -157,6 +157,48 @@ body {
       toast-crt 200ms ease-out 1.7s forwards;
   }
 
+  .tenfold-divider,
+  .tenfold-expand {
+    cursor: pointer;
+    position: relative;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: 2px;
+      margin-inline: auto;
+      background: #333;
+      transition: background 150ms;
+    }
+
+    &:hover::after {
+      background: #fff;
+    }
+  }
+
+  .tenfold-divider {
+    flex: 0 0 8px;
+    align-self: stretch;
+  }
+
+  .tenfold-expand {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 12px;
+    height: 100%;
+  }
+
+  &.tenfold--collapsed {
+    justify-content: center;
+
+    aside,
+    .tenfold-divider {
+      display: none;
+    }
+  }
+
   .cm-editor {
     flex: 1 1 auto;
     width: 100%;
