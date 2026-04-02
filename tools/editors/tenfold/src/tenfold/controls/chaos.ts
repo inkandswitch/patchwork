@@ -79,7 +79,8 @@ export function createChaosControl(cc: ControlCtx): {
       sdy0 += curAm[j] * Math.sin(curYF[j] * 0 + h.yP[j])
     }
 
-    const { chaosCx: cx, chaosCy: cy, chaosR: Rs } = controlBounds(cc)
+    const { chaosCx: cx, chaosCy: cy, chaosR: baseR } = controlBounds(cc)
+    const Rs = baseR * (1 + 0.4 * m)
     const baseStroke = cc.thick * cc.getPixW()
 
     ctx.resetTransform()
