@@ -8,11 +8,11 @@ import {
   useViewHeadsAnnotation,
   useCachedHistory,
 } from "../hooks";
-import { type GroupingStrategyConfig, findItemByHash } from "../../types";
+import type { GroupingStrategyConfig } from "../../types";
+import { applyGroupingStrategy } from "../utils";
 import { DocHistoryHeader } from "./DocHistoryHeader";
 import { HistoryList } from "./HistoryList";
-// TODO: re-enable when we have more grouping strategies to choose from
-// import { GroupingSelector } from "./GroupingSelector";
+import { GroupingSelector } from "./GroupingSelector";
 
 export interface DocHistoryViewProps {
   url: AutomergeUrl;
@@ -39,8 +39,17 @@ export function DocHistoryView(props: DocHistoryViewProps) {
       name: "timeWindow",
     });
 
-  // Unified hook that manages history grouping with optimized updates
-  const groupedItems = useCachedHistory(handle, strategyConfig, props.repo, props.taskQueueUrl);
+  // Get raw minute-keyed groupings from history document
+  const rawGroupings = useCachedHistory(
+    handle,
+    props.repo,
+    props.taskQueueUrl
+  );
+
+  // Apply grouping strategy as a derived memo — changing strategy only re-runs this
+  const groupedItems = createMemo(() => {
+    return applyGroupingStrategy(strategyConfig(), rawGroupings());
+  });
 
   // Selection hook
   const { viewHeads, selectItem, clearSelection } = useHistorySelection();
@@ -56,9 +65,7 @@ export function DocHistoryView(props: DocHistoryViewProps) {
     const afterHash = heads.afterHeads[0];
     if (!afterHash) return null;
 
-    // Find the item containing this hash
-    // TODO: do this better - we should be able to directly track the selected item without searching through the list each time
-    return findItemByHash(groupedItems(), afterHash);
+    return groupedItems().find((g) => g.afterHead === afterHash) ?? null;
   });
 
   return (
@@ -69,16 +76,18 @@ export function DocHistoryView(props: DocHistoryViewProps) {
         onReset={clearSelection}
       />
       {/* TODO: actor id was a stand-in for author, but we're waiting for keyhive to do it properly */}
-      {/* <div class="px-2 pb-2">
+      <div class="px-2 pb-2">
         <GroupingSelector
           selectedConfig={strategyConfig()}
           onConfigChange={setStrategyConfig}
         />
-      </div> */}
+      </div>
       {groupedItems().length === 0 ? (
-        props.taskQueueUrl() === undefined
-          ? "No task queues available for computing history groups"
-          : "Loading..."
+        props.taskQueueUrl() === undefined ? (
+          "No task queues available for computing history groups"
+        ) : (
+          "Loading..."
+        )
       ) : (
         <HistoryList
           items={groupedItems()}

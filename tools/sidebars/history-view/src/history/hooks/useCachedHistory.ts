@@ -7,19 +7,20 @@ import {
 } from "@automerge/automerge-repo-solid-primitives";
 import { createMemo, createEffect, Accessor, onCleanup } from "solid-js";
 import type {
-  HistoryItem,
-  GroupingStrategyConfig,
   HistoryGroupingsDoc,
+  StoredChangeEntry,
 } from "../../types";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
-import { getStrategyKey } from "../utils";
 import * as tasklib from "@awarth/tasklib";
 
 const DEBOUNCE_TIME = 5000; // 5 seconds
 const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the same document
 
 /**
- * Hook that manages history grouping with history document as source of truth.
+ * Hook that manages history data with history document as source of truth.
+ *
+ * Returns raw minute-keyed groupings from the history document.
+ * Grouping strategies are applied separately by the consumer.
  *
  * A single effect actively watches the source document and dispatches a
  * background task to create or update the history document:
@@ -27,29 +28,23 @@ const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the sam
  * - If history doc exists and heads match, does nothing
  * - If history doc exists but heads differ, dispatches with throttle
  *
- * REACTIVE FLOW:
- * - Source doc changes → effect checks history doc → dispatches task if needed
- * - Task creates/updates history doc → source doc gets history URL → hook subscribes
- * - History doc updates → UI updates reactively
- *
  * @param sourceHandle - Handle to the source document
- * @param strategyConfig - Grouping strategy configuration (reactive)
  * @param repo - Automerge repository
- * @returns Reactive accessor to grouped history items
+ * @param taskQueueUrl - Task queue URL for dispatching background tasks
+ * @returns Reactive accessor to raw minute-keyed groupings
  */
 export function useCachedHistory(
   sourceHandle: Accessor<DocHandle<unknown> | undefined>,
-  strategyConfig: Accessor<GroupingStrategyConfig>,
   repo: Repo,
   taskQueueUrl: Accessor<AutomergeUrl | undefined>
-): Accessor<HistoryItem[]> {
+): Accessor<{ [minuteTimestamp: string]: StoredChangeEntry[] } | undefined> {
   const sourceDoc = createMemo(() => {
     const handle = sourceHandle();
     if (!handle) return undefined;
     return makeDocumentProjection(handle as DocHandle<HasPatchworkMetadata>);
   });
 
-  // PART 1: Get history document URL from source document
+  // STEP 1: Get history document URL from source document
   const historyUrl = createMemo<AutomergeUrl | undefined>(() => {
     const handle = sourceHandle();
     const doc = sourceDoc();
@@ -59,7 +54,7 @@ export function useCachedHistory(
     return metadata?.history as AutomergeUrl | undefined;
   });
 
-  // PART 2: Subscribe to history document reactively (for UI updates)
+  // STEP 2: Subscribe to history document reactively (for UI updates)
   const [historyDoc, historyDocHandle] = useDocument<HistoryGroupingsDoc>(
     historyUrl,
     { repo }
@@ -80,7 +75,7 @@ export function useCachedHistory(
     lastDispatchTime = Date.now();
   };
 
-  // PART 3: Handle initial load and missing history document
+  // STEP 3: Handle initial load and missing history document
   createEffect(() => {
     const source = sourceHandle();
     if (!source) return;
@@ -97,7 +92,7 @@ export function useCachedHistory(
     }
   });
 
-  // PART 4: Subscribe to source document changes and update history as needed
+  // STEP 4: Subscribe to source document changes and update history as needed
   // Re-runs reactively when source doc, history URL, or history doc changes.
   // Reading sourceDoc() (the reactive projection) establishes a Solid dependency
   // so this effect re-runs when the document content changes.
@@ -163,14 +158,11 @@ export function useCachedHistory(
     });
   });
 
-  // PART 5: Return reactive items that update when history doc or strategy changes
-  return createMemo<HistoryItem[]>(() => {
-    const doc = historyDoc(); // reactive read - subscribes to history doc
-    if (!doc) return [];
-
-    const strategyKey = getStrategyKey(strategyConfig());
-    const cached = doc.groupings?.[strategyKey];
-    return cached?.items || [];
+  // Return raw groupings from the history document
+  return createMemo(() => {
+    const doc = historyDoc();
+    if (!doc) return undefined;
+    return doc.groupings;
   });
 }
 

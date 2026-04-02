@@ -1,33 +1,25 @@
 import { For, createMemo } from "solid-js";
-import type { HistoryItem as HistoryItemType } from "../../types";
-import { isHistoryGroup, isHistoryChange, isItemSelected } from "../../types";
-import { HistoryItem } from "./HistoryItem";
+import type { HistoryGroup } from "../../types";
+import { isItemSelected } from "../../types";
 import { HistoryItemGroup } from "./HistoryItemGroup";
 import { DateHeader } from "./DateHeader";
 
 export interface HistoryListProps {
-  items: HistoryItemType[];
-  selectedItem: HistoryItemType | null;
-  onSelectItem: (item: HistoryItemType) => void;
+  items: HistoryGroup[];
+  selectedItem: HistoryGroup | null;
+  onSelectItem: (item: HistoryGroup) => void;
 }
 
 interface GroupedByDate {
   date: Date;
-  items: HistoryItemType[];
+  items: HistoryGroup[];
 }
 
 /**
  * Get the date (without time) from a history item
  */
-function getItemDate(item: HistoryItemType): Date | null {
-  let timestamp: number | undefined;
-
-  if (isHistoryChange(item)) {
-    timestamp = item.time;
-  } else if (isHistoryGroup(item)) {
-    timestamp = item.endTime;
-  }
-
+function getItemDate(item: HistoryGroup): Date | null {
+  const timestamp = item.endTime;
   if (!timestamp) return null;
 
   const date = new Date(timestamp * 1000);
@@ -38,7 +30,6 @@ function getItemDate(item: HistoryItemType): Date | null {
 
 /**
  * Scrollable list container for history items
- * Renders either individual changes or grouped changes based on the item type
  * Groups items by date and shows date headers
  */
 export function HistoryList(props: HistoryListProps) {
@@ -78,21 +69,11 @@ export function HistoryList(props: HistoryListProps) {
 
                   return (
                     <div class={isLast() ? "last-timeline-item" : ""}>
-                      {isHistoryGroup(item) ? (
-                        <HistoryItemGroup
-                          group={item}
-                          isSelected={isSelected()}
-                          onClick={() => props.onSelectItem(item)}
-                        />
-                      ) : (
-                        <HistoryItem
-                          hash={item.hash}
-                          actor={item.actor}
-                          time={item.time}
-                          isSelected={isSelected()}
-                          onClick={() => props.onSelectItem(item)}
-                        />
-                      )}
+                      <HistoryItemGroup
+                        group={item}
+                        isSelected={isSelected()}
+                        onClick={() => props.onSelectItem(item)}
+                      />
                     </div>
                   );
                 }}

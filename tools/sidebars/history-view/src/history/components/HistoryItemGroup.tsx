@@ -16,21 +16,10 @@ export interface HistoryItemGroupProps {
  * Shows aggregate information about the group.
  */
 export function HistoryItemGroup(props: HistoryItemGroupProps) {
-  const changeCount = () => props.group.changes.length;
-
-  const latestHash = () => props.group.changes[0]?.hash ?? "";
-
-  const uniqueAuthors = () => {
-    const seen: string[] = [];
-    for (const c of props.group.changes) {
-      const actor = c.actor;
-      if (actor && !seen.includes(actor)) seen.push(actor);
-    }
-    return seen;
-  };
-
-  const authors = () => uniqueAuthors().join(", ") || "Unknown";
-  const authorCount = () => uniqueAuthors().length;
+  const changeCount = () => props.group.changeCount;
+  const latestHash = () => props.group.afterHead;
+  const authors = () => props.group.actors.join(", ") || "Unknown";
+  const authorCount = () => props.group.actors.length;
   const timeDisplay = () => formatTime(props.group.endTime);
 
   return (

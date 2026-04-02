@@ -1,4 +1,8 @@
-import type { GroupingStrategyConfig } from "../types";
+import type {
+  GroupingStrategyConfig,
+  HistoryGroup,
+  StoredChangeEntry,
+} from "../types";
 import { relativeTime } from "@patchwork/util/src/relative-time";
 
 /**
@@ -40,25 +44,128 @@ export const TIME_WINDOW_OPTIONS = {
 export const DEFAULT_TIME_WINDOW = TIME_WINDOW_OPTIONS["30m"];
 
 /**
- * Generate a unique cache key for a grouping strategy configuration
- *
- * Format:
- * - "none" - No grouping
- * - "author" - Group by author
- * - "timeWindow:300000" - Time window grouping with specific window in ms
- *
- * The key is used to store and retrieve cached groupings from the groupings document.
- * Each unique combination of strategy name and parameters gets its own cache entry.
+ * Apply a grouping strategy to minute-keyed groupings, producing display-ready HistoryGroup[].
  */
-export function getStrategyKey(config: GroupingStrategyConfig): string {
+export function applyGroupingStrategy(
+  config: GroupingStrategyConfig,
+  groupings: { [minuteTimestamp: string]: StoredChangeEntry[] } | undefined
+): HistoryGroup[] {
+  if (!groupings) return [];
+
   switch (config.name) {
     case "author":
-      return "author";
+      // TODO: implement author grouping on minute buckets
+      // For now, fall back to time window with default window
+      return groupByTimeWindow(DEFAULT_TIME_WINDOW, groupings);
     case "timeWindow": {
       const windowMs = config.params?.timeWindow ?? DEFAULT_TIME_WINDOW;
-      return `timeWindow:${windowMs}`;
+      return groupByTimeWindow(windowMs, groupings);
     }
     default:
       throw new Error(`Unknown strategy: ${config.name}`);
   }
+}
+
+interface MinuteBucket {
+  minuteTimestamp: number;
+  entries: StoredChangeEntry[];
+}
+
+/**
+ * Group changes by time window operating directly on minute buckets.
+ * Minute buckets are processed newest-first, while entries within a
+ * bucket remain in their stored oldest-first order.
+ */
+function groupByTimeWindow(
+  windowMs: number,
+  groupings: { [minuteTimestamp: string]: StoredChangeEntry[] }
+): HistoryGroup[] {
+  const minuteBuckets = Object.entries(groupings)
+    .map(([minuteTimestamp, entries]) => ({
+      minuteTimestamp: Number(minuteTimestamp),
+      entries,
+    }))
+    .sort((a, b) => b.minuteTimestamp - a.minuteTimestamp);
+
+  if (minuteBuckets.length === 0) return [];
+
+  const groups: HistoryGroup[] = [];
+  let currentBuckets: MinuteBucket[] = [];
+  let newestMinuteInGroupMs = 0;
+
+  for (const bucket of minuteBuckets) {
+    const bucketMinuteMs = bucket.minuteTimestamp * 1000;
+
+    if (currentBuckets.length === 0) {
+      currentBuckets.push(bucket);
+      newestMinuteInGroupMs = bucketMinuteMs;
+    } else {
+      const timeDiff = Math.abs(newestMinuteInGroupMs - bucketMinuteMs);
+
+      if (timeDiff <= windowMs) {
+        currentBuckets.push(bucket);
+      } else {
+        groups.push(buildGroupFromBuckets(currentBuckets));
+        currentBuckets = [bucket];
+        newestMinuteInGroupMs = bucketMinuteMs;
+      }
+    }
+  }
+
+  if (currentBuckets.length > 0) {
+    groups.push(buildGroupFromBuckets(currentBuckets));
+  }
+
+  // Link beforeHead: each group's beforeHead = next group's afterHead
+  for (let i = 0; i < groups.length - 1; i++) {
+    groups[i].beforeHead = groups[i + 1].afterHead;
+  }
+
+  return groups;
+}
+
+/**
+ * Build a HistoryGroup from minute buckets ordered newest-first.
+ * Entries inside each bucket are stored oldest-first.
+ */
+function buildGroupFromBuckets(buckets: MinuteBucket[]): HistoryGroup {
+  const newestBucket = buckets[0];
+  const afterHead = newestBucket.entries[newestBucket.entries.length - 1]?.head;
+
+  if (!afterHead) {
+    throw new Error("Cannot build history group from an empty minute bucket");
+  }
+
+  const actorSet = new Set<string>();
+  const messages: string[] = [];
+  let minTime = Infinity;
+  let maxTime = -Infinity;
+  let changeCount = 0;
+
+  // Preserve chronological order for per-entry summary fields.
+  for (let bucketIndex = buckets.length - 1; bucketIndex >= 0; bucketIndex--) {
+    const bucket = buckets[bucketIndex];
+
+    for (const entry of bucket.entries) {
+      actorSet.add(entry.actor);
+      changeCount += 1;
+
+      if (entry.message) {
+        messages.push(entry.message);
+      }
+
+      if (entry.time < minTime) minTime = entry.time;
+      if (entry.time > maxTime) maxTime = entry.time;
+    }
+  }
+
+  return {
+    id: `group-${afterHead}-${changeCount}`,
+    afterHead,
+    actors: Array.from(actorSet),
+    changeCount,
+    messages,
+    startTime: minTime !== Infinity ? minTime : undefined,
+    endTime: maxTime !== -Infinity ? maxTime : undefined,
+  };
 }

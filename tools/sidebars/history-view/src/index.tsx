@@ -18,10 +18,10 @@ export const plugins: Plugin<any>[] = [
           if (!doc.sourceDocumentUrl) return;
           Object.assign(doc, {
             ["@patchwork"]: { type: "patchwork:history-change-groups" },
-            version: doc.version || 1,
+            version: doc.version || 2,
             sourceDocumentUrl: doc.sourceDocumentUrl,
             updatedAt: doc.updatedAt || 0,
-            throttleMs: doc.throttleMs || 30 * 60 * 1000,
+            throttleMs: doc.throttleMs || 30 * 1000,
             heads: doc.heads || [],
             groupings: doc.groupings || {},
           } as HistoryGroupingsDoc);
