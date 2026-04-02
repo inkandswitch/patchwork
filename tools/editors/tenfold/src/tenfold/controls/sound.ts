@@ -52,8 +52,8 @@ export function createSoundControl(cc: ControlCtx): {
           h =
             amp *
             Math.abs(
-              Math.sin(col * 1.9 + t * 6.28318 * 1.1) * Math.sin(row * 2.7 + t * 6.28318 * 0.85) * 0.65 +
-                Math.sin(col * 0.7 + row * 1.9 + t * 6.28318 * 1.75) * 0.35,
+              Math.sin(col * 1.9 + t * 6.28318 * 1) * Math.sin(row * 2.7 + t * 6.28318 * 1) * 0.65 +
+                Math.sin(col * 0.7 + row * 1.9 + t * 6.28318 * 2) * 0.35,
             )
         }
         rp.push({ x: sx, y: sy_base - h })
